@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode, regionToCountryCode } from '@/shared/lib/countryMapping';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads';

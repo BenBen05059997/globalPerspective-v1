@@ -2,7 +2,7 @@
 // question (or no threadId) the slide shows nothing extra.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 vi.mock('@/shared/hooks/usePeek.js', () => ({ usePeek: () => ({ openId: null, bind: () => ({}), open: () => {}, close: () => {} }) }));
 const holder = vi.hoisted(() => ({ q: null }));

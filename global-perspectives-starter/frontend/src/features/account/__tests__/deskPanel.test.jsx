@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { IRAN_COUNTRY_HISTORY } from '@/features/account/__tests__/fixtures/iranCountryHistory';
 
 const mockUsePreferences = vi.fn();

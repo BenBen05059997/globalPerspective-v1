@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';

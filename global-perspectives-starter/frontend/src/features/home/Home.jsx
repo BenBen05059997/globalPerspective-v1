@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import SummaryDisplay from '@/features/home/components/SummaryDisplay';

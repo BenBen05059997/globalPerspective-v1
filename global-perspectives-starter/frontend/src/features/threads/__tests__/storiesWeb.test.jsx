@@ -3,7 +3,7 @@
 // header counts put scored tiers first with a dim "N not yet scored"; phone tabs are READ / MAP / TIMELINE.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import archiveFixture from '@fixtures/archive.json';
 import threadAnalysesFixture from '@fixtures/thread_analyses.json';

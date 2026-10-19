@@ -13,7 +13,7 @@
 //   - in-text links: an exact title of another story in the story-web index (`webThreads`, loaded by
 //     the console) inside the card's text becomes a StoryLink (cardMentions.js); no other matching.
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import { knownStoryTitles, linkMentions } from '@/features/map/lib/cardMentions.js';
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import '@/shared/ui/primitives.css';
 
 // Button — the one button. A router <Link> (`to`), a plain <a> (`href`) or a <button> (default),

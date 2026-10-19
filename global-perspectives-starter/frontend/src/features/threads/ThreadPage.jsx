@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import { useAuth } from '@/shared/contexts/AuthContext';

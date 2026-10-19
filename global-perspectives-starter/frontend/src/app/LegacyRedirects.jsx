@@ -5,7 +5,7 @@
 //   /breaking            -> /                         (the map's alert stack replaced the feed)
 //   /breaking/:id        -> the alert's story /weekly/thread/:threadId when the alert resolves to
 //                           one (the single-alert read says it has an arc), else /
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 import { useBreakingAlert } from '@/features/breaking';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { threadPath } from '@/shared/lib/threadPath';

@@ -2,7 +2,7 @@
 // a read-only noindex page with honest states; the signed-out example is "not ready yet" until a real share exists.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 
 const api = vi.hoisted(() => ({ token: 'tok', fetchMock: vi.fn() }));
 vi.mock('@/shared/api/restProxy', () => ({ currentAuthToken: async () => api.token }));

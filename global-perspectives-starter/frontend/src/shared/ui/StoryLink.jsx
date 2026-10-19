@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';

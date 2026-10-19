@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import { storyLinkPath, peekInputForStory } from '@/features/briefings';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';

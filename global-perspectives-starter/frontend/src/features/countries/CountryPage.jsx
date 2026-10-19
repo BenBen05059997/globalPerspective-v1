@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useWeeklyArchive, useThreadAnalyses } from '@/features/threads';

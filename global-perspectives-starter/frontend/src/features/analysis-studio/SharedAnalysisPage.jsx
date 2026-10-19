@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import SharedAnalysisView from '@/features/analysis-studio/components/SharedAnalysisView.jsx';
 import { shareConfigured, fetchShare, deleteShare, forgetShare } from '@/features/analysis-studio/lib/shareApi.js';

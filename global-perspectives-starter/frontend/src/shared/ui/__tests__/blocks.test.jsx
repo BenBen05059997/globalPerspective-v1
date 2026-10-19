@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import StatusGlyph from '@/shared/ui/StatusGlyph.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';

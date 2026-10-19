@@ -3,7 +3,7 @@
 // Props:
 //   impact: full economic_impact record from useEconomicImpact
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import InstrumentChip from '@/features/economy/components/InstrumentChip.jsx';
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';

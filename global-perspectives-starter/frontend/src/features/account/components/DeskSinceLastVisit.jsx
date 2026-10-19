@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/features/account/lib/desk';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import Card from '@/shared/ui/Card.jsx';

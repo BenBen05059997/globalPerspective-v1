@@ -3,7 +3,7 @@
 // "Selection cleared" live region, and the rail itself no longer carries aria-live.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const WORLD = {
   schema: 1,

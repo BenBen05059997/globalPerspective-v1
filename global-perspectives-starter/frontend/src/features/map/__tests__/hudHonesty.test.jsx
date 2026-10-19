@@ -2,7 +2,7 @@
 // news situations while analysis is paused — it must say so plainly, with a computed date.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const OLD_GENERATED_AT = '2026-09-12T09:00:00.000Z'; // > 36h before any plausible "now" in CI
 

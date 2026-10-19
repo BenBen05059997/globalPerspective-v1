@@ -1,5 +1,5 @@
 // global-perspectives-starter/frontend/src/App.jsx
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
@@ -11,7 +11,7 @@ import { ErrorBoundary } from '@/app/errors/ErrorHandling';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { createCheckout, createCreditCheckout, creditPacks } from '@/shared/api/restProxy';

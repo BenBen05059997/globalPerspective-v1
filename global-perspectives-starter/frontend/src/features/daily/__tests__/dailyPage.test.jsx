@@ -3,7 +3,7 @@
 // an outage; and "AI-generated" only (no human-review step is evidenced in the repo).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
 
 vi.mock('firebase/app', () => ({

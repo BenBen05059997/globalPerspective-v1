@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';

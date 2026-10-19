@@ -2,7 +2,7 @@
 // the Key explains them (dimmed when none are on the map).
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import RadarMap from '@/shared/map/RadarMap.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
 

@@ -6,7 +6,7 @@
 // read auto-corrects continuously, not just once.
 // Renders nothing when the read hasn't materially changed (honest-empty).
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { computeCountryDrift } from '@/features/countries/lib/countryDrift';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
 import '@/features/countries/components/CountryWhatChanged.css';

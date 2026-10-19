@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import { usePreferences } from '@/shared/hooks/usePreferences';

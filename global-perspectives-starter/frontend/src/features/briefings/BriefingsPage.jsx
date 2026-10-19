@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { useWeeklyBrief } from '@/features/weekly-brief';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';

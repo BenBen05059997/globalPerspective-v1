@@ -3,7 +3,7 @@
 // missing, and a genuine fetch error (header + "Open full story" only, reported to the sink).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const TOPIC = {
   topicId: 'topic-saudi-pipeline', threadId: 'thread-saudi-pipeline',

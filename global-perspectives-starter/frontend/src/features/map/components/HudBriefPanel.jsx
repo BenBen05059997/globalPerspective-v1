@@ -3,7 +3,7 @@
 // stories feed, honestly dated) with "open story →", and the tier breakdown. Zero-count tiers
 // are shown dimmed, never hidden (an honest "0 high" reads better than a missing row that looks
 // like the data didn't load). The tier dots use the legend's size steps + HIGH double ring.
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';

@@ -16,7 +16,7 @@
 //   • Tagged as a reviewed/weekly wrap (NOT live) via the kicker + dateline.
 
 import { useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyMarkets } from '@/features/economy/hooks/useWeeklyMarkets';
 import '@/features/economy/components/WeeklyMarketsView.css';

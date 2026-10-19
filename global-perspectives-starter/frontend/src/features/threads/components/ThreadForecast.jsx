@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';

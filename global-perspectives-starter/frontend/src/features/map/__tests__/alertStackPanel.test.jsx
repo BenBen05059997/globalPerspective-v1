@@ -2,7 +2,7 @@
 // selects it (the map flies there, the live region announces it), and an honest empty line.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 let SITUATIONS = [];
 vi.mock('@/features/map/hooks/useWorld.js', () => ({

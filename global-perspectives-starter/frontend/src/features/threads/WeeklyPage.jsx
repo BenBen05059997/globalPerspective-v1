@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import Chip from '@/shared/ui/Chip.jsx';
 import Button from '@/shared/ui/Button.jsx';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';

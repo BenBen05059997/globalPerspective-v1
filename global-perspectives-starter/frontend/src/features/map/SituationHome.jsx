@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';

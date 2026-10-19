@@ -2,7 +2,7 @@
 // not spend its 24 briefing-lookup slots on them.
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const lookups = vi.hoisted(() => ({ names: null }));
 const e = (regions, i) => ({ topicId: 't' + i, threadId: 'th' + i, title: 'x', category: 'politics', regions });

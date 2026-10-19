@@ -9,7 +9,7 @@
 // Every other SituationHome test in this folder already mocks both; this one now matches them.
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import SituationHome from '@/features/map/SituationHome.jsx';
 
 vi.mock('@/features/map/hooks/useWorld.js', () => ({

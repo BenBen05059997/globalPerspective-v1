@@ -1,35 +1,128 @@
 {
-  "note": "Per-file count of hard-coded colour literals in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
-  "total": 314,
+  "note": "Per-file, per-kind count of hard-coded colours in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
+  "totals": {
+    "func": 69,
+    "hex": 246,
+    "tokenCopy": 87,
+    "named": 1,
+    "rgbArray": 19,
+    "template": 1
+  },
   "files": {
-    "app/index.css": 2,
-    "features/account/components/Desk.css": 4,
-    "features/account/SignIn.jsx": 4,
-    "features/briefings/BriefingsPage.css": 1,
-    "features/briefings/components/BriefingMode.css": 4,
-    "features/economy/components/Sparkline.jsx": 1,
-    "features/economy/components/WeeklyMarketsView.css": 48,
-    "features/economy/EconomyPage.css": 7,
-    "features/map/components/AlertStack.jsx": 1,
-    "features/map/components/HudStatusLine.css": 4,
-    "features/map/components/MapLegend.jsx": 7,
-    "features/map/components/RadarMap.jsx": 20,
-    "features/map/components/SituationMap.jsx": 4,
-    "features/map/components/SituationMap3D.jsx": 3,
-    "features/map/components/StoryCard.jsx": 1,
-    "features/map/lib/countryRiskLayer.js": 1,
-    "features/map/lib/globeIcons.js": 2,
-    "features/map/lib/legend.js": 3,
-    "features/map/SituationHome.css": 96,
-    "features/threads/components/CompactTimeline.jsx": 1,
-    "features/threads/components/PhoneStoryMode.css": 2,
-    "features/threads/components/QuestionChip.css": 3,
-    "features/threads/components/StoryMode.css": 5,
-    "features/threads/components/WeeklyMap.jsx": 21,
-    "features/threads/ThreadPage.css": 1,
-    "features/threads/ThreadPage.jsx": 1,
-    "features/threads/WeeklyPage.css": 53,
-    "shared/lib/crisisHue.js": 5,
-    "shared/ui/boot/BootLoader.css": 9
+    "app/index.css": {
+      "func": 2
+    },
+    "features/account/components/Desk.css": {
+      "func": 4
+    },
+    "features/account/SignIn.jsx": {
+      "hex": 4
+    },
+    "features/briefings/BriefingsPage.css": {
+      "hex": 1
+    },
+    "features/briefings/components/BriefingMode.css": {
+      "hex": 4,
+      "tokenCopy": 4
+    },
+    "features/economy/components/Sparkline.jsx": {
+      "hex": 1
+    },
+    "features/economy/components/WeeklyMarketsView.css": {
+      "hex": 48
+    },
+    "features/economy/EconomyPage.css": {
+      "hex": 5,
+      "func": 2
+    },
+    "features/home/AIComponents.css": {
+      "named": 1
+    },
+    "features/map/components/AlertStack.jsx": {
+      "hex": 1
+    },
+    "features/map/components/HudStatusLine.css": {
+      "hex": 2,
+      "func": 2,
+      "tokenCopy": 2
+    },
+    "features/map/components/MapLegend.jsx": {
+      "hex": 7,
+      "tokenCopy": 5
+    },
+    "features/map/components/RadarMap.jsx": {
+      "hex": 17,
+      "func": 3,
+      "tokenCopy": 10
+    },
+    "features/map/components/SituationMap.jsx": {
+      "hex": 4,
+      "func": 1,
+      "tokenCopy": 4
+    },
+    "features/map/components/SituationMap3D.jsx": {
+      "hex": 3,
+      "func": 1,
+      "rgbArray": 13,
+      "tokenCopy": 4
+    },
+    "features/map/components/StoryCard.jsx": {
+      "hex": 1
+    },
+    "features/map/lib/countryRiskLayer.js": {
+      "hex": 1
+    },
+    "features/map/lib/globeIcons.js": {
+      "hex": 2
+    },
+    "features/map/lib/legend.js": {
+      "hex": 3,
+      "rgbArray": 1,
+      "template": 1,
+      "tokenCopy": 3
+    },
+    "features/map/SituationHome.css": {
+      "hex": 61,
+      "func": 34,
+      "tokenCopy": 38
+    },
+    "features/threads/components/CompactTimeline.jsx": {
+      "hex": 1
+    },
+    "features/threads/components/PhoneStoryMode.css": {
+      "func": 2
+    },
+    "features/threads/components/QuestionChip.css": {
+      "hex": 3,
+      "tokenCopy": 2
+    },
+    "features/threads/components/StoryMode.css": {
+      "hex": 3,
+      "func": 2
+    },
+    "features/threads/components/WeeklyMap.jsx": {
+      "hex": 20,
+      "func": 1
+    },
+    "features/threads/ThreadPage.css": {
+      "hex": 1
+    },
+    "features/threads/ThreadPage.jsx": {
+      "hex": 1
+    },
+    "features/threads/WeeklyPage.css": {
+      "hex": 40,
+      "func": 13
+    },
+    "shared/lib/crisisHue.js": {
+      "hex": 5,
+      "rgbArray": 5,
+      "tokenCopy": 7
+    },
+    "shared/ui/boot/BootLoader.css": {
+      "hex": 7,
+      "func": 2,
+      "tokenCopy": 8
+    }
   }
 }

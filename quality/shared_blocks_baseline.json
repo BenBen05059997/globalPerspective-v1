@@ -1,0 +1,100 @@
+{
+  "note": "Per-file count of hand-made tier chips / tab lists / section headers outside shared/ui (see quality/check_shared_blocks.mjs). Counts may only fall; lower them with --lower after moving to the shared block.",
+  "totals": {
+    "tabs": 42,
+    "sectionHeader": 23,
+    "tierChip": 13
+  },
+  "files": {
+    "features/account/Account.css": {
+      "tabs": 1,
+      "sectionHeader": 4
+    },
+    "features/analysis-studio/AnalysisStudio.css": {
+      "sectionHeader": 1
+    },
+    "features/analysis-studio/components/StudioDeck.css": {
+      "tabs": 2
+    },
+    "features/analysis-studio/components/StudioDeck.jsx": {
+      "tabs": 4
+    },
+    "features/briefings/components/BriefingMode.jsx": {
+      "tabs": 2
+    },
+    "features/briefings/components/PhoneBriefingMode.jsx": {
+      "tabs": 3
+    },
+    "features/countries/CountryListPage.css": {
+      "sectionHeader": 1
+    },
+    "features/countries/CountryPage.css": {
+      "tierChip": 2,
+      "tabs": 4,
+      "sectionHeader": 3
+    },
+    "features/countries/CountryPage.jsx": {
+      "tabs": 1
+    },
+    "features/economy/EconomyPage.css": {
+      "sectionHeader": 1
+    },
+    "features/economy/EconomyPage.jsx": {
+      "tabs": 1
+    },
+    "features/home/AIComponents.css": {
+      "tabs": 2
+    },
+    "features/home/components/TodayArchiveSidebar.css": {
+      "tabs": 2,
+      "sectionHeader": 3
+    },
+    "features/home/components/TopicNav.css": {
+      "sectionHeader": 3
+    },
+    "features/map/components/MapPhoneTabs.jsx": {
+      "tabs": 1
+    },
+    "features/map/SituationHome.css": {
+      "tierChip": 9,
+      "sectionHeader": 1
+    },
+    "features/threads/components/PhoneStoryMode.css": {
+      "tabs": 2
+    },
+    "features/threads/components/PhoneStoryMode.jsx": {
+      "tabs": 2
+    },
+    "features/threads/components/StoriesHeader.jsx": {
+      "tabs": 2
+    },
+    "features/threads/components/StoryMode.jsx": {
+      "tabs": 1
+    },
+    "features/threads/components/WeeklyMap.css": {
+      "sectionHeader": 1
+    },
+    "features/threads/Stories.css": {
+      "tabs": 4,
+      "sectionHeader": 1
+    },
+    "features/threads/ThreadPage.css": {
+      "tierChip": 1,
+      "tabs": 5,
+      "sectionHeader": 3
+    },
+    "features/threads/ThreadPage.jsx": {
+      "tabs": 1
+    },
+    "features/track-record/components/ForecastBoard.css": {
+      "tabs": 1,
+      "sectionHeader": 1
+    },
+    "features/track-record/components/ForecastBoard.jsx": {
+      "tabs": 1
+    },
+    "shared/styles/tokens.css": {
+      "tierChip": 1
+    }
+  }
+}

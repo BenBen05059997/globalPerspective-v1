@@ -16,11 +16,10 @@
  *      SNS_TOPIC_ARN, AUDIT_N (default 6), DRIFT_ALERT_THRESHOLD (default 2).
  */
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { chat } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PROXY = process.env.PROXY_ENDPOINT;
-const KEY = process.env.XAI_API_KEY;
-const BASE = (process.env.GROK_API_URL || 'https://api.deepseek.com').replace(/\/chat\/completions$/, '');
 const MODEL = process.env.AUDIT_MODEL || 'deepseek-v4-pro';
 const TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const N = parseInt(process.env.AUDIT_N || '6', 10);
@@ -64,13 +63,7 @@ async function fetchArticle(url) {
 const DRIFT_SYS = 'You are a source auditor. Given the FULL ARTICLE TEXT (may include nav noise — ignore it) and OUR SUMMARY, list any claim in OUR SUMMARY not supported by the article — hedge turned into assertion, an invented result/figure/date, or added framing. Only flag claims genuinely absent or contradicted. Reply with one terse line per drift, or EXACTLY "OK" if none.';
 
 async function deepseek(system, user) {
-  const res = await fetch(`${BASE}/chat/completions`, {
-    method: 'POST', headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 400, temperature: 0, thinking: { type: 'disabled' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
-  });
-  const b = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${JSON.stringify(b)?.slice(0, 200)}`);
-  return b?.choices?.[0]?.message?.content || '';
+  return (await chat({ step: 'source_audit', model: MODEL, system, user, maxTokens: 400, temperature: 0 })).content;
 }
 
 exports.handler = async () => {

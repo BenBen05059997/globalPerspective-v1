@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
-import { useParams, useNavigate, Link } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
+import { useParams, useNavigate, Link, Navigate } from 'react-router';
+import { ROUTE, storyHref, countryHref, mapHref } from '@/shared/lib/links.js';
+import { parentCountry } from '@/shared/lib/countries.js';
+import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useWeeklyArchive, useThreadAnalyses } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
@@ -43,17 +45,7 @@ import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import '@/features/countries/CountryPage.css';
 import '@/features/countries/CountryCoverage.css';
-import { isRealCountryName } from '@/shared/lib/placeNames.js';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
-
-function formatTimeAgo(isoString) {
-  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
 
 function formatAsOf(iso) {
   if (!iso) return '';
@@ -268,7 +260,12 @@ export default function CountryPage() {
   const [phoneTab, setPhoneTab] = useState('read');
   // React Router v6 useParams() already URL-decodes path params — decoding again
   // double-decodes and throws URIError on any name containing a literal '%'.
-  const paramName = countryName;
+  // The URL may carry any name for the country (USA, United Arab Emirates, an ISO3 code, West Bank):
+  // the page reads everything under the canonical display name and redirects there (countryHref).
+  // A name that is not a country (an old Strait of Hormuz link) keeps its own coverage, without the
+  // country-only controls (map, follow, save).
+  const country = parentCountry(countryName);
+  const decodedName = country?.name || countryName;
   const navigate = useNavigate();
   // The hero's header bar overlaps the top of the map strip; the map frames the country in what remains.
   const [overlayEl, setOverlayEl] = useState(null);
@@ -285,22 +282,18 @@ export default function CountryPage() {
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [mainTab, setMainTab] = useState('situation');
   const [activeDeepTab, setActiveDeepTab] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState(paramName);
   const [arcTypeFilter, setArcTypeFilter] = useState('all');
   const [catFilter, setCatFilter] = useState(null);
   const [urgFilter, setUrgFilter] = useState(null);
 
-  const decodedName = selectedCountry || paramName;
-
-  useEffect(() => { setSelectedCountry(paramName); }, [paramName]);
-
   function selectCountry(name) {
-    setSelectedCountry(name);
+    const to = countryHref(name);
+    if (!to) return;
     setMainTab('situation');
     setArcTypeFilter('all');
     setCatFilter(null);
     setUrgFilter(null);
-    navigate(`/weekly/country/${encodeURIComponent(name)}`, { replace: true });
+    navigate(to, { replace: true });
   }
 
   const { countries, countryData } = useMemo(() => {
@@ -308,7 +301,10 @@ export default function CountryPage() {
     const map = {};
     for (const date of sortedDates) {
       for (const entry of (dayMap[date]?.entries || [])) {
-        for (const region of (entry.regions || [])) {
+        // Keyed by the canonical country name (USA / United States / US are one row; West Bank counts for
+        // Palestine); a region that is not a country keeps its own text (the broad-region coverage below).
+        const keys = new Set((entry.regions || []).map((r) => parentCountry(r)?.name || r));
+        for (const region of keys) {
           if (!map[region]) map[region] = { name: region, articles: 0, entries: [] };
           map[region].articles++;
           map[region].entries.push({ ...entry, date });
@@ -319,7 +315,7 @@ export default function CountryPage() {
     const allCountries = Object.values(map)
       .filter(c => c.articles >= 2 || c.name === decodedName)
       // Batch 3 / F: the country picker lists real countries only (regions stay in `map` for the broad-region coverage below)
-      .filter(c => isRealCountryName(c.name) || c.name === decodedName)
+      .filter(c => parentCountry(c.name) || c.name === decodedName)
       .sort((a, b) => b.articles - a.articles);
 
     const broadRegions = getBroadRegionsForCountry(decodedName);
@@ -358,7 +354,7 @@ export default function CountryPage() {
           for (const e of t.entries) {
             const u = e.urgency || 'low';
             if (urgCounts[u] != null) urgCounts[u]++;
-            if (e.primaryCountry === decodedName || (e.regions || [])[0] === decodedName) anchorCount++;
+            if ([e.primaryCountry, (e.regions || [])[0]].some((n) => n && (parentCountry(n)?.name || n) === decodedName)) anchorCount++;
           }
           const urgency = urgCounts.high > 0 ? 'high' : urgCounts.medium > 0 ? 'medium' : 'low';
           const isAnchor = anchorCount > t.entries.length / 2;
@@ -402,6 +398,7 @@ export default function CountryPage() {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
   }, [decodedName]);
 
+  if (country && country.name !== countryName) return <Navigate replace to={countryHref(country.iso3)} />;
   if (loading) return <BootLoader variant="inline" label="Loading country" text="Loading country" />;
 
   // Canonical tier for this country — score-first, level fallback — so the pill,
@@ -448,7 +445,7 @@ export default function CountryPage() {
   const leftRail = (
     <div className="cpg-left">
       <div className="cpg-left-crumbs">
-        <Link to="/weekly/countries">Countries</Link>
+        <Link to={ROUTE.countries}>Countries</Link>
         <span className="cpg-crumb-sep">/</span>
         <span>{decodedName}</span>
       </div>
@@ -462,7 +459,7 @@ export default function CountryPage() {
                 key={c.name}
                 onClick={() => selectCountry(c.name)}
                 title={c.name}
-                chip={<span className="cpg-country-nav-iso" aria-hidden="true">{c.name.slice(0, 2).toUpperCase()}</span>}
+                chip={<span className="cpg-country-nav-iso" aria-hidden="true">{parentCountry(c.name)?.iso3}</span>}
                 place={`${c.articles} articles`}
               />
             ))}
@@ -525,7 +522,7 @@ export default function CountryPage() {
           {countryDisruptions.slice(0, 3).map((d, i) => (
             <Link
               key={d.scopeId || i}
-              to={threadPath(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
+              to={storyHref(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
               className="cpg-disruption-row"
             >
               <div className="cpg-disruption-top">
@@ -597,7 +594,7 @@ export default function CountryPage() {
   const heroBar = (
         <div className={`cpg-map-overlay${isPhone && phoneTab === 'read' ? ' cpg-map-overlay--flat' : ''}`} ref={setOverlayEl}>
           <div className="cpg-map-overlay-left">
-            <Link to="/weekly/countries" className="cpg-map-back">← Countries</Link>
+            <Link to={ROUTE.countries} className="cpg-map-back">← Countries</Link>
             <select
               className="cpg-country-select"
               aria-label="Select country"
@@ -608,6 +605,7 @@ export default function CountryPage() {
                 <option key={c.name} value={c.name}>{c.name} ({c.articles})</option>
               ))}
             </select>
+            {country && <Link to={mapHref({ country: country.iso3 })} className="cpg-map-back">Show on map</Link>}
           </div>
           <div className="cpg-map-overlay-right">
             {riskTier && <TierChip className="cpg-overlay-chip" tier={riskTier} score={intel?.riskScore} />}
@@ -635,7 +633,7 @@ export default function CountryPage() {
           background timeline, systems web, disruptions, share) stays reachable underneath —
           see TASK_2026-09-27_pages_local.md S4 for the old->new section mapping. */}
       <div className="cpg-card-v2-wrap">
-        <CountryCardV2 name={decodedName} />
+        <CountryCardV2 name={decodedName} linkName={false} />
       </div>
 
       {!countryData ? (
@@ -660,22 +658,22 @@ export default function CountryPage() {
           <div className="cpg-hd">
             <div>
               <div className="cpg-hd-kicker">
-                <span className="iso">{decodedName.slice(0, 3).toUpperCase()}</span>
+                {country && <span className="iso">{country.iso3}</span>}
                 Country Intelligence
               </div>
               <h1 className="cpg-hd-h1">{decodedName}</h1>
               {intel?.headline && <p className="cpg-hd-dek">{intel.headline}</p>}
               <div className="cpg-hd-meta">
-                {intel?.generatedAt && <span>Updated <b>{formatTimeAgo(intel.generatedAt)}</b></span>}
+                {intel?.generatedAt && <span><AsOf generatedAt={intel.generatedAt} source="country analysis" /></span>}
                 <span>Coverage <b>{countryData.dayCount} days</b></span>
                 <span>Articles <b>{countryData.totalArticles}</b></span>
               </div>
             </div>
             <div className="cpg-hd-actions">
-              <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
+              {country && <ShareButtons path={countryHref(country.iso3)} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />}
               <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
-              <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />
-              <FollowButton country={decodedName} />
+              {country && <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />}
+              {country && <FollowButton country={decodedName} />}
             </div>
           </div>
 
@@ -862,7 +860,7 @@ export default function CountryPage() {
                       <StoryRow
                         key={arc.threadId}
                         id={arc.threadId}
-                        to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
+                        to={storyHref(arc.threadId, { from: 'country', country: decodedName })}
                         title={title}
                         crisis={crisis === 'neutral' ? null : crisis}
                         tier={ta?.riskScore != null ? tierFromScore(ta.riskScore) : null}

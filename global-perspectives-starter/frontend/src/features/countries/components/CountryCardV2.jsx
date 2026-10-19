@@ -5,10 +5,13 @@
 //
 // Mounted from two places: the /map console (SituationHome, passed `situations` for the watch
 // flag) and the public /weekly/country/:name page (CountryPage, no `situations` — watch flag
-// omitted there rather than duplicating the map's world fetch). Role tokens only; risk is a
+// omitted there rather than duplicating the map's world fetch; `linkName={false}` there, since the name would
+// link to the page it is on). Role tokens only; risk is a
 // TierChip + neutral bars, direction a DirectionArrow (no tier colour on text, fills or arrows).
 import { useMemo, useState } from 'react';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { studioHref } from '@/shared/lib/links.js';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
@@ -22,7 +25,7 @@ import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js
 import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
 import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { resolveCountry } from '@/shared/lib/countries.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
@@ -38,7 +41,7 @@ function fmtShort(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function CountryCardV2({ name, situations = null, onBack = null, onClose = null, variant = 'panel' }) {
+export default function CountryCardV2({ name, situations = null, onBack = null, onClose = null, variant = 'panel', linkName = true }) {
   const namesArr = useMemo(() => (name ? [name] : []), [name]);
   const { intelligence, loading: intelLoading } = useCountryIntelligence(namesArr);
   const intel = name ? intelligence[name] : null;
@@ -64,7 +67,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
 
   const headline = intel ? deriveHeadline(intel) : deriveHeadline(null);
   const direction = computeCountryDirection(snapshots, now);
-  const iso3 = iso3ForName(name);
+  const iso3 = resolveCountry(name)?.iso3 || null;
   const watch = situations ? countryWatchFlag(situations, iso3, now) : null;
   const triggers = futureDatedTriggers(deadlines, now, 2);
   const fx = fxRowForCountry(name, markets?.fx);
@@ -86,7 +89,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
     <div className={`ccv2 ccv2-${variant}`} role="region" aria-label={`${name} country card`}>
       <div className="ccv2-head">
         {onBack ? <Button variant="icon" label="Back" className="ccv2-back" onClick={onBack}>← Back</Button> : null}
-        <h2 className="ccv2-name">{name}</h2>
+        <h2 className="ccv2-name">{linkName ? <EntityLink kind="country" id={name}>{name}</EntityLink> : name}</h2>
         {watch ? (
           <span className={`ccv2-watch ccv2-watch-${watch.kind}`} title={watch.label}>
             ⚑ WATCH
@@ -207,13 +210,13 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
       {triggers.length > 0 ? (
         <ul className="ccv2-triggers">
           {triggers.map((t) => (
-            <li key={t.id}>{t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
+            <li key={t.id}>{t.qid ? <EntityLink kind="forecast" id={t.qid}>{t.label}</EntityLink> : t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
           ))}
           {legacyNote(triggers) && <li className="ccv2-trigger-note">{legacyNote(triggers)}</li>}
         </ul>
       ) : null}
 
-      <Button to="/analyze" className={`ccv2-studio-btn${state === 'never_briefed' ? ' ccv2-generate' : ''}`}>
+      <Button to={studioHref(stories.map((s) => s.threadId))} className={`ccv2-studio-btn${state === 'never_briefed' ? ' ccv2-generate' : ''}`}>
         {state === 'never_briefed' ? 'Generate a briefing in Studio →' : 'Analyze in Studio →'}
       </Button>
     </div>

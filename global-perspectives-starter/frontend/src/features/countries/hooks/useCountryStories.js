@@ -9,6 +9,7 @@ import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { buildDeadlines } from '@/features/threads';
+import { countryMatcher } from '@/features/countries/lib/countryMatch.js';
 
 /**
  * useCountryStories(countryName) -> { stories, deadlines, loading }
@@ -23,11 +24,12 @@ export function useCountryStories(countryName) {
 
   const { stories, topicIds, topicIdToThreadId } = useMemo(() => {
     if (!countryName || !dayMap) return { stories: [], topicIds: [], topicIdToThreadId: new Map() };
+    const inCountry = countryMatcher(countryName);
     const threadMap = new Map();
     const topicIdToThreadIdMap = new Map();
     for (const day of Object.values(dayMap)) {
       for (const entry of (day?.entries || [])) {
-        if (!(entry.regions || []).includes(countryName)) continue;
+        if (!inCountry(entry.regions)) continue;
         if (entry.topicId && entry.threadId) topicIdToThreadIdMap.set(entry.topicId, entry.threadId);
         const key = entry.threadId || entry.topicId;
         if (!key) continue;

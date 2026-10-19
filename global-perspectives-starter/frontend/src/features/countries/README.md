@@ -10,17 +10,18 @@ one-screen country card the map console also mounts.
   `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated (FX box labelled "Market prices · raw quotes · as of <time>", no story link; decision 0031).
 
 ## Routes
-- `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`:
-  `app/App.jsx` passes it to `WeeklyPage` as `countriesView`)
-- `/weekly/country/:countryName` -> `CountryPage` (`useParams()` already decodes; decoding again throws on `%`)
+- `/weekly/countries` -> `CountryListPage` (`/weekly?section=countries` redirects here, `app/LegacyRedirects.jsx`)
+- `/weekly/country/:countryName` -> `CountryPage`: aliases, ISO3 codes, places (`USA`, `ARE`, `West Bank`) redirect to the
+  canonical name (`countryHref`), data read under it only; a non-country keeps coverage, no map/follow/save/share.
+- Links: all from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`, card forecasts -> `?q=<qid>`, `studioHref`).
 
 ## Frontend
 - `CountryListPage.jsx` - sortable list (risk, coverage, A-Z; disruption only when economy is not parked)
 - `CountryPage.jsx` - hero + map band, `CountryCardV2`, tabs, rails; phone Read / Map tabs
-- `components/CountryCardV2.jsx` - facts, summary, risk + direction, latest change, stories, triggers, FX
+- `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers, FX; name links out (`linkName`)
 - `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps;
   "Map unavailable" without `window.GOOGLE_MAPS_API_KEY`)
-- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `countryFacts`, `countryMacro`,
+- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `countryFacts`, `countryMacro`, `countryMatch`,
   `countryTier`, `countryTriggers`, `countryWatch`
 - CSS: `CountryListPage.css`, `CountryPage.css`, `CountryCoverage.css`, `components/*.css` (no threads CSS)
 - Public API (`index.js`): `CountryCardV2` — used by `map` (gets `situations` for the watch flag there; not on CountryPage)

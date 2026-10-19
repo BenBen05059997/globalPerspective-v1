@@ -62,7 +62,7 @@ flowchart LR
   URLS <--> FE
 ```
 
-Two stores, split by kind of data (`project-docs/architecture/DATA_STRATEGY.md` holds the rules):
+Two stores, split by kind of data (`project-docs/rules/DATA_STRATEGY.md` holds the rules):
 DynamoDB for the older topic/analysis pipeline and for per-user mutable records; the private S3
 "world" bucket for everything the situation pipeline computes about the world. The browser never
 talks to S3 directly — only through the Worker's `/data/*` route.
@@ -158,8 +158,8 @@ Times are UTC unless noted; exact cron expressions and ENABLED/DISABLED state ar
 
 1. `newsInvokeGemini-dev` (three times a day) reads 26 RSS feeds, asks the LLM to pick and cluster the
    day's topics, and writes them to DynamoDB `NewsCache` item `id='staging'`. It also writes a raw
-   capture of what it saw to S3 `audit/ingest-capture/` for the impact audit. Brave search is no
-   longer used in ingest.
+   capture of what it saw to S3 `audit/ingest-capture/` (read by the selection shadow and the parked
+   impact audit). Brave search is no longer used in ingest.
 2. `NewsProjectInvokeAgentLambda-dev` (10 minutes later) reads `staging`, writes a summary, cause
    trace and forecast per topic to `SummarizeAndPredict` (`TOPIC#…` keys), logs each forecast to
    `GlobalPerspectivePredictionLog`, assigns thread ids (writing `threads/story-map.json` to S3 by
@@ -175,11 +175,11 @@ The site reads all of this through `newsSensitiveData-dev`.
 
 ### 2. Situations and the map (S3)
 
-1. `newsGdacsIngest` (every 20 min, no LLM) reads the GDACS feed and writes Orange/Red observations to
-   `situations/inbox/` (plus the overwritten pointer `situations/inbox/gdacs-latest.json`) and the full
-   snapshot to `corpus/gdacs/latest.json`.
-2. `newsGdeltConflict` (every 6 h, no LLM) writes conflict events to `corpus/gdelt/<day>.json`; today
-   only the impact audit reads them.
+1. `newsGdacsIngest` (every 20 min, no LLM) reads the GDACS feed and overwrites the Orange/Red
+   observations to `situations/inbox/gdacs-latest.json` and the full snapshot to
+   `corpus/gdacs/latest.json`. It is the only inbox opener; the per-event append inbox was never built.
+2. `newsGdeltConflict` (every 6 h, no LLM) writes conflict events to `corpus/gdelt/<day>.json`; only
+   the impact audit reads them, and it is parked.
 3. `newsSituationIngest` (hourly) reads RSS, classifies each headline with the LLM (country, location,
    axis, severity; cached in `stories/classify-cache.json`), clusters deterministically, and writes
    `corpus/<date>/<hour>.jsonl`, `stories/state/`, `stories/index.json`.
@@ -202,7 +202,7 @@ never added to the Worker's `/data/*` allow-list.
 ### 3. Forecasts and the track record
 
 Forecasts are written by the agent Lambda (step 1.2) to `GlobalPerspectivePredictionLog`.
-`newsPredictionResolver` (daily tick) commits a weekly random seed, draws a sample of questions, and on
+`newsPredictionResolver` (daily tick; unparked, decision 0027) commits a weekly random seed, draws a sample of questions, and on
 Mondays asks the LLM to draft verdicts; it never sees the forecast probability. Nothing is final until
 the operator confirms each draft with `predictions/settle-review.js`. Records are write-once
 (conditional puts). `newsPredictionsSnapshot` (every 30 min) scans the log into
@@ -212,11 +212,13 @@ the operator confirms each draft with `predictions/settle-review.js`. Records ar
 ### 4. Country risk and living analysis
 
 `newsCountryFactsUpdater` (weekly, Mondays JST) writes current facts from Wikidata and ACLED to
-`FACTS#<country>`. `newsCountryIntelligence` (daily) reads thread analyses, facts and news search, and
+`FACTS#<country>`. `newsCountryIntelligence` (daily) reads thread analyses and facts, and
 writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` plus a dated `HISTORY#<date>` snapshot.
 `newsDriftCorrector` (daily) compares snapshots; when a risk level, score (|Δ| ≥ 8) or trajectory
 moves, it grounds the move in a real archived event and writes a note (`DRIFT#<date>` with a 60-day
-TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten.
+TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. Brave news grounding
+is coded in `newsCountryIntelligence`, `newsThreadAnalysis` and the agent Lambda but off live: none has
+`BRAVE_SEARCH_API_KEY` set (checked 2026-10-19).
 
 Risk tiers are 0–24 low, 25–49 moderate, 50–74 elevated, 75–100 high: `src/shared/lib/riskTiers.js`
 on the frontend, `tierFromScore` in `riskDimensions.js` on the backend.
@@ -306,7 +308,8 @@ header and the browser fails with "Failed to fetch". Grep the source before touc
 ### LLM providers
 
 Every LLM-calling pipeline Lambda checked on 2026-10-19 calls DeepSeek (`api.deepseek.com`); the
-model is the live env value (`GROK_MODEL`, and `PREDICTION_MODEL` on the agent Lambda).
+model is the live env value (`GROK_MODEL`; `PREDICTION_MODEL` on the agent Lambda; `AUDIT_MODEL` on
+`newsSourceAudit`).
 `newsSelectionShadow` is the exception (external "Jev" scorer). Studio BYOK calls whatever provider
 the user picks.
 
@@ -316,10 +319,13 @@ name.
 
 ### Cost and usage logs
 
-There is no central cost store. Several LLM Lambdas (`newsInvokeGemini`, `newsThreadAnalysis`,
-`newsWeeklyBrief`, `newsCountryIntelligence`, `newsPostDevTo`, `newsSituationIngest`,
-`newsSystemsAnalysis`) each `console.log` a `[usage]` JSON line (function, step, model, token usage)
-into CloudWatch Logs. Nothing computes dollars; `newsAnalyze` logs no usage.
+There is no central cost store. Every caller of `backend/shared/src/llm.js` (`newsInvokeGemini`,
+`newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`,
+`newsWeeklyBrief`, `newsPostDevTo`, `newsSituationIngest`, `newsSensitiveData`, `newsSourceAudit`,
+`newsImpactAudit`, `newsPredictionResolver`) plus `NewsProjectInvokeAgentLambda` and
+`newsSelectionShadow` `console.log` a `[usage]` JSON line (function, step, model, token usage) into
+CloudWatch Logs. `newsModelGuard` turns a measured daily burn into a balance-runway alert; nothing
+else computes dollars. `newsAnalyze` logs no usage.
 
 ### Monitoring
 
@@ -341,7 +347,7 @@ Active checks are run by hand: `scripts/smoke-test.mjs`, `link-crawl.mjs`, `auth
 - Frontend: `./deploy.sh` with no target verifies, builds and packages locally, nothing more.
   `--target candidate|production` uploads to the Cloudflare site Worker; `--target legacy-pages` runs
   the GitHub Pages release (production today). Each upload target needs explicit operator approval.
-  Details: `project-docs/ops/DEPLOYMENT_NOTES.md`.
+  Details: `project-docs/runbooks/DEPLOYMENT_NOTES.md`.
 - Lambdas: `scripts/lambda.sh <name> diff|package|deploy|rollback` packages
   `<dir>/src` from functions.json (no node_modules, no tests), refuses to deploy over deployed
   files it cannot find in git unless forced, backs up first, and refuses `deployBlocked` functions.
@@ -364,8 +370,10 @@ changing env, fetch the full map, merge, and write it back whole.
 - No read paywall: content is free; membership buys Studio compute.
 - No Amplify, no CI, no secrets manager (Lambda env holds secrets by choice).
 - No direct browser access to S3, and no public bucket.
-- Economy surfaces are parked: `newsEconomicImpact`, `newsEconomicQuality`, `newsWeeklyMarkets` and
-  `newsPairIntelligence` rules are DISABLED; `/weekly-markets` redirects to `/briefings`.
+- Economy is parked (decision 0009): `newsEconomicImpact`, `newsEconomicQuality`, `newsWeeklyMarkets` and
+  `newsPairIntelligence` rules are DISABLED and `/weekly-markets` redirects to `/briefings`. Still
+  running: `newsMarketsData` (hourly/daily/weekly rules ENABLED) and the `/economy` route, which is
+  reachable by URL though not in the nav.
 
 ## Reference (generated — re-run `node scripts/gen-reference.mjs`)
 
@@ -379,4 +387,4 @@ changing env, fetch the full map, merge, and write it back whole.
   `GlobalPerspectiveUserTable`, `GlobalPerspectiveUserPrefs`, `GlobalPerspectiveSavedItems`,
   `GlobalPerspectiveShares`, `GlobalPerspectiveBreakingAlerts`, `GlobalPerspectiveClientErrors`,
   `GlobalPerspectiveApiKeys`, `GlobalPerspectiveMarkets`, `NewsProject-linkedin-posts`. Storage
-  rules: `project-docs/architecture/DATA_STRATEGY.md`.
+  rules: `project-docs/rules/DATA_STRATEGY.md`.

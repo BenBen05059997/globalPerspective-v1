@@ -1,12 +1,10 @@
-import React from 'react';
+import StaticPage, { StaticSection } from '@/features/static/StaticPage.jsx';
 
 function PrivacyTerms() {
   return (
-    <div className="card" style={{ maxWidth: '880px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '1rem' }}>Privacy &amp; Terms</h1>
+    <StaticPage title="Privacy & Terms">
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Overview</h2>
+      <StaticSection title="Overview">
         <p>
           Global Perspectives is an AI-powered global news intelligence platform. All content — today's topics, the
           interactive map, weekly narrative analysis, country and thread intelligence, and economic analysis — is
@@ -15,11 +13,10 @@ function PrivacyTerms() {
           every analysis stays free. It funds the project and adds depth for members: the full self-correction history,
           email change-alerts on the countries they follow, and running the Analysis Studio on our compute.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Data Collection</h2>
-        <ul style={{ paddingLeft: '1.25rem' }}>
+      <StaticSection title="Data Collection">
+        <ul>
           <li>
             The application stores cached data (topics, archive, preferences) in your browser via <code>localStorage</code>.
           </li>
@@ -46,28 +43,25 @@ function PrivacyTerms() {
             topic analysis, summaries, and predictions. No user-identifiable data is sent to these services.
           </li>
         </ul>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Use of Information</h2>
+      <StaticSection title="Use of Information">
         <p>
           Content displayed is generated or summarized by AI services. You may browse, share links, or cite the material
           with attribution. Automated scraping or commercial redistribution without permission is prohibited.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Cookies &amp; Storage</h2>
+      <StaticSection title="Cookies & Storage">
         <p>
           We do not set first-party tracking cookies. The site uses <code>localStorage</code> for topic caching,
           user preferences, and session data. Google Analytics may set cookies for analytics purposes.
           Firebase Authentication uses session storage for sign-in state. Clearing your browser data removes all locally stored information.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Third-Party Services</h2>
-        <ul style={{ paddingLeft: '1.25rem' }}>
+      <StaticSection title="Third-Party Services">
+        <ul>
           <li>DeepSeek &mdash; topic detection, AI summaries, predictions, and narrative analysis</li>
           <li>Brave Search &mdash; supplementary news source discovery</li>
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
@@ -79,38 +73,35 @@ function PrivacyTerms() {
           Usage of those services is subject to their respective terms. By interacting with the site you agree to
           their processing of requests made on your behalf.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Account Deletion</h2>
+      <StaticSection title="Account Deletion">
         <p>
           To delete your account and all associated data, email{' '}
           <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a> from the
           email address associated with your account. We will remove your account data within 5 business days
           and confirm by email.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Liability</h2>
+      <StaticSection title="Liability">
         <p>
           The material is provided &ldquo;as is&rdquo; without warranties of accuracy, completeness, or fitness for any purpose.
           Decisions should not be based solely on AI-generated content. We are not responsible for damages arising from
           reliance on the summaries, predictions, or map visualizations.
         </p>
-      </section>
+      </StaticSection>
 
-      <section>
-        <h2 style={{ fontSize: '1.25rem' }}>Updates</h2>
+      <StaticSection title="Updates">
         <p>
           Policies may evolve as new features launch. The page will display the latest revision date and changelog notes.
           Significant updates will be announced on the About page.
         </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+        <p className="sp-updated">
           Last updated: 2026-05-26
         </p>
-      </section>
-    </div>
+      </StaticSection>
+    </StaticPage>
   );
 }
 

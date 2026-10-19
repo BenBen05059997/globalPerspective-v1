@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { WIDTH, HEIGHT, WORLD_PATH, centroidForCountry } from '@/features/account/lib/deskMap';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // FOLLOWING (K1 board, right column top) — a small honest-geography map (real coastlines,
 // see lib/deskMap.js) plus a chip per followed country. Unfollowing stays on the country page
@@ -8,19 +10,19 @@ import { WIDTH, HEIGHT, WORLD_PATH, centroidForCountry } from '@/features/accoun
 export default function DeskFollowing({ isMember, followedCountries, countryResults }) {
   if (!isMember) {
     return (
-      <section className="desk-panel desk-following">
-        <div className="desk-kicker">FOLLOWING</div>
+      <Card as="section" pad="sm" className="desk-following">
+        <SectionHeader label="FOLLOWING" />
         <p className="desk-empty">Following countries is part of membership.</p>
-      </section>
+      </Card>
     );
   }
 
   if (!followedCountries || followedCountries.length === 0) {
     return (
-      <section className="desk-panel desk-following">
-        <div className="desk-kicker">FOLLOWING</div>
+      <Card as="section" pad="sm" className="desk-following">
+        <SectionHeader label="FOLLOWING" />
         <p className="desk-empty">You don't follow any country yet.</p>
-      </section>
+      </Card>
     );
   }
 
@@ -37,8 +39,8 @@ export default function DeskFollowing({ isMember, followedCountries, countryResu
   });
 
   return (
-    <section className="desk-panel desk-following">
-      <div className="desk-kicker">FOLLOWING</div>
+    <Card as="section" pad="sm" className="desk-following">
+      <SectionHeader label="FOLLOWING" />
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="desk-following-map"
@@ -58,6 +60,6 @@ export default function DeskFollowing({ isMember, followedCountries, countryResu
           </Link>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

@@ -7,6 +7,8 @@ import DeskSinceLastVisit from '@/features/account/components/DeskSinceLastVisit
 import DeskFollowing from '@/features/account/components/DeskFollowing';
 import { SavedPanel } from '@/features/account/components/SavedPanel';
 import '@/features/account/components/Desk.css';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // Desk (A4, K1 board): the default account view — since-your-last-visit (left), following +
 // saved (right). Countries only in v1 (operator decision, no story follows). No backend changes:
@@ -45,10 +47,10 @@ export default function DeskPanel({ savedItems, savedLoading, onUnsave }) {
           followedCountries={followedCountries}
           countryResults={results}
         />
-        <section className="desk-panel desk-saved">
-          <div className="desk-kicker">SAVED</div>
+        <Card as="section" pad="sm" className="desk-saved">
+          <SectionHeader label="SAVED" />
           <SavedPanel savedItems={savedItems} savedLoading={savedLoading} onUnsave={onUnsave} />
-        </section>
+        </Card>
       </div>
     </div>
   );

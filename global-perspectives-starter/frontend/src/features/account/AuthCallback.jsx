@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import '@/features/threads/WeeklyPage.css';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import '@/features/account/SignIn.css';
 
 export default function AuthCallback() {
   const { completeSignIn } = useAuth();
@@ -28,13 +30,13 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="weekly-gate">
-        <div className="weekly-gate-icon">⚠️</div>
-        <h2>Sign-in failed</h2>
-        <p>{error}</p>
-        <Link to="/signin" className="weekly-gate-submit" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-          Try again
-        </Link>
+      <div className="acct-signin-shell">
+        <Card className="acct-signin-panel">
+          <div className="acct-signin-icon" aria-hidden="true">⚠️</div>
+          <h2 className="acct-signin-title">Sign-in failed</h2>
+          <p className="acct-signin-body">{error}</p>
+          <Button variant="primary" to="/signin" className="acct-signin-cta">Try again</Button>
+        </Card>
       </div>
     );
   }

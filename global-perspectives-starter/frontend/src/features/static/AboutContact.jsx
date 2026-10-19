@@ -2,6 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
+import Card from '@/shared/ui/Card.jsx';
+import StaticPage, { StaticSection } from '@/features/static/StaticPage.jsx';
 
 export default function AboutContact() {
   useEffect(() => { document.title = 'About — Global Perspectives'; }, []);
@@ -17,14 +19,8 @@ export default function AboutContact() {
   }), [latestBrief, briefLoading, briefError]);
 
   return (
-    <div className="card" style={{ maxWidth: '880px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '0.5rem' }}>About Global Perspectives</h1>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.75rem' }}>
-        AI-powered global news intelligence
-      </p>
-
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>What We Do</h2>
+    <StaticPage title="About Global Perspectives" lede="AI-powered global news intelligence">
+      <StaticSection title="What We Do">
         <p>
           Global Perspectives tracks how the world's biggest stories evolve across days, countries, and sources.
           When the pipeline runs, it processes new articles, identifies narrative threads, and generates
@@ -35,40 +31,37 @@ export default function AboutContact() {
               : ` Analysis has been paused since ${paused.label}.`
           )}
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>How It Works</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
+      <StaticSection title="How It Works">
+        <div className="sp-steps">
           {[
             { step: '1', title: 'Collect', desc: 'RSS feeds + Brave Search surface global news from many sources when the collection pipeline runs.' },
             { step: '2', title: 'Analyze', desc: 'DeepSeek V4 identifies topics, assigns categories, and links articles into narrative threads.' },
             { step: '3', title: 'Synthesize', desc: 'AI generates summaries, predictions, root cause analysis, and country-level intelligence briefings.' },
             { step: '4', title: 'Visualize', desc: 'Interactive maps, timelines, and structured briefings make the intelligence accessible at a glance.' },
           ].map(s => (
-            <div key={s.step} style={{ padding: '14px', border: '1px solid var(--hairline)', borderRadius: '10px' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>{s.step}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '4px' }}>{s.title}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{s.desc}</div>
-            </div>
+            <Card key={s.step} level={2} pad="sm">
+              <div className="sp-step__num">{s.step}</div>
+              <div className="sp-step__title">{s.title}</div>
+              <div className="sp-step__desc">{s.desc}</div>
+            </Card>
           ))}
         </div>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Key Features</h2>
-        <ul style={{ paddingLeft: '1.25rem', lineHeight: 1.8 }}>
+      <StaticSection title="Key Features">
+        <ul className="sp-list">
           <li><strong>Daily Topics</strong> — ~13 global topics, refreshed with AI analysis when the pipeline runs</li>
           <li><strong>Story Arc Intelligence</strong> — track how stories evolve across days with narrative threading</li>
           <li><strong>Country Intelligence</strong> — AI-powered country briefings with risk levels, timelines, and watch triggers</li>
           <li><strong>Interactive World Map</strong> — geographic visualization of news connections and country replay</li>
           <li><strong>Structured Briefings</strong> — bottom-line assessments, key developments, and "why it matters" for every major story</li>
         </ul>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Our Sources</h2>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+      <StaticSection title="Our Sources">
+        <p className="sp-note">
           We aggregate from 29 outlets across every major region, combining RSS feeds with search APIs. No single source dominates our coverage.
         </p>
         {[
@@ -81,53 +74,39 @@ export default function AboutContact() {
           { region: 'Oceania', outlets: ['ABC Australia'] },
           { region: 'Specialized', outlets: ['Straits Times*', 'Times of India*', 'Korea Herald*', 'Kyiv Independent*'] },
         ].map(g => (
-          <div key={g.region} style={{ marginBottom: '10px' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>{g.region}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {g.outlets.map(name => (
-                <span key={name} style={{
-                  fontSize: '0.8rem',
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--hairline)',
-                  color: 'var(--text-secondary)',
-                  background: 'var(--bg-secondary)',
-                }}>{name}</span>
-              ))}
+          <div key={g.region} className="sp-region">
+            <div className="sp-region__name">{g.region}</div>
+            <div className="sp-tags">
+              {g.outlets.map(name => <span key={name} className="sp-tag">{name}</span>)}
             </div>
           </div>
         ))}
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '8px' }}>
-          * Sourced via Brave Search API (no RSS available)
-        </p>
-      </section>
+        <p className="sp-fine">* Sourced via Brave Search API (no RSS available)</p>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Who We Are</h2>
+      <StaticSection title="Who We Are">
         <p>
           Global Perspectives is built by an independent team passionate about making global news more
           accessible and understandable. We believe AI can help people see the connections between events
           that traditional news coverage misses.
         </p>
-      </section>
+      </StaticSection>
 
-      <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Contact</h2>
+      <StaticSection title="Contact">
         <p>
           Email: <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a>
         </p>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+        <p className="sp-note">
           We welcome feedback, bug reports, feature suggestions, and partnership inquiries. We aim to respond within 2 business days.
         </p>
-      </section>
+      </StaticSection>
 
-      <section>
-        <h2 style={{ fontSize: '1.25rem' }}>Learn More</h2>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-          <Link to="/disclosures" style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
-          <Link to="/privacy" style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Privacy & Terms →</Link>
+      <StaticSection title="Learn More">
+        <div className="sp-links">
+          <Link to="/disclosures">Disclosures →</Link>
+          <Link to="/privacy">Privacy & Terms →</Link>
         </div>
-      </section>
-    </div>
+      </StaticSection>
+    </StaticPage>
   );
 }

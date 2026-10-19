@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { usePreferences } from '@/features/account/hooks/usePreferences';
+import Button from '@/shared/ui/Button.jsx';
+import '@/features/account/components/ActionButtons.css';
 
 // Member-only "follow this country's read" control → drift-alert emails (MEMBER_GATING_PLAN.md P5).
 // Members get a live toggle; non-members (incl. anon) see a subtle locked CTA to /membership —
@@ -17,14 +18,6 @@ function Bell({ filled }) {
   );
 }
 
-const BASE = {
-  display: 'inline-flex', alignItems: 'center', gap: '6px',
-  font: '600 12px/1 -apple-system,Helvetica,Arial,sans-serif',
-  padding: '7px 11px', borderRadius: '999px', textDecoration: 'none',
-  border: '1px solid var(--hairline)',
-  background: 'none', color: 'var(--text-head)',
-};
-
 export function FollowButton({ country }) {
   const { isMember, available, loading: memLoading } = useMembership();
   const { isFollowing, follow, saving, endpointMissing } = usePreferences();
@@ -36,32 +29,25 @@ export function FollowButton({ country }) {
   // Non-member (incl. anonymous): the upsell hint.
   if (!isMember) {
     return (
-      <Link to="/membership" style={{ ...BASE, opacity: 0.85 }}
+      <Button compact to="/membership"
         title={`Get emailed when our read on ${country} changes — a member feature`}>
-        <Bell /> Follow <span style={{ opacity: 0.6 }}>· Members</span>
-      </Link>
+        <Bell /> Follow <span className="follow-button__members">· Members</span>
+      </Button>
     );
   }
 
   const following = isFollowing(country);
   return (
-    <button
-      type="button"
+    <Button
+      compact
       onClick={() => follow(country, !following)}
       disabled={saving}
-      aria-pressed={following}
+      selected={following}
       title={following
         ? `You're alerted when our read on ${country} changes. Click to stop.`
         : `Get emailed when our read on ${country} changes.`}
-      style={{
-        ...BASE,
-        cursor: saving ? 'default' : 'pointer',
-        opacity: saving ? 0.6 : 1,
-        border: `1px solid ${following ? 'var(--accent)' : 'var(--hairline)'}`,
-        color: following ? 'var(--accent)' : 'var(--text-head)',
-      }}
     >
       <Bell filled={following} /> {following ? 'Following' : 'Follow'}
-    </button>
+    </Button>
   );
 }

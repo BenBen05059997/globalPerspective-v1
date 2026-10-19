@@ -1,80 +1,38 @@
-.subcard {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  padding: 1.05rem 1.35rem;
-  background: var(--panel-2);
-  margin: 1.25rem 0;
-}
+/* Email subscribe card: a shared <Card> (as aside) with a shared <Button>; layout + type on tokens. */
+.subcard { display: flex; align-items: center; gap: var(--space-5); margin: var(--space-5) 0; }
 
 /* Home: sits under the masthead. Weekly: sits under the KPIs. Breaking: under the header. */
-.subcard--home { margin: 1.4rem 0 0.75rem; }
-.subcard--weekly { margin: 1.4rem 0; }
-.subcard--breaking { margin: 1.25rem 0 1.75rem; }
+.subcard--home { margin: var(--space-6) 0 var(--space-3); }
+.subcard--weekly { margin: var(--space-6) 0; }
+.subcard--breaking { margin: var(--space-5) 0 var(--space-6); }
 
-/* Breaking variant: red kicker to match the BREAKING accent. */
-.subcard--breaking .subcard-kicker { color: var(--tier-high); }
-
-/* Thank-you state (just subscribed): green accent, wins over the per-kind kicker color. */
-.subcard--thanks { border-color: var(--ok); }
+/* Thank-you state (just subscribed): status = the subscribe succeeded. */
 .subcard--thanks .subcard-kicker { color: var(--ok); }
 
 .subcard-body { flex: 1 1 auto; min-width: 0; }
 
 .subcard-kicker {
-  font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.12em;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--hud-label-tracking);
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-2);
 }
 
-.subcard-h {
-  font: 600 17px/1.3 Georgia, 'Times New Roman', serif;
-  color: var(--text-head);
-}
+.subcard-h { font-family: var(--serif); font-size: var(--text-xl); font-weight: var(--weight-semibold); line-height: 1.3; color: var(--text-head); }
 
-.subcard-sub {
-  margin: 0.35rem 0 0;
-  font-size: 0.86rem;
-  line-height: 1.5;
-  color: var(--text-muted);
-}
+.subcard-sub { margin: var(--space-1) 0 0; font-size: var(--text-base); line-height: var(--leading-normal); color: var(--text-muted); }
 
-.subcard-err {
-  margin: 0.4rem 0 0;
-  font-size: 0.8rem;
-  color: var(--error);
-}
+/* status: the subscribe failed */
+.subcard-err { margin: var(--space-2) 0 0; font-size: var(--text-ui); color: var(--error); }
 
 .subcard-action { flex: 0 0 auto; }
 
-.subcard-btn {
-  display: inline-block;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font: 600 13px/1 -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
-  padding: 0.72rem 1.2rem;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: opacity 0.15s ease;
-}
-.subcard-btn:hover { opacity: 0.88; }
-.subcard-btn:disabled { opacity: 0.55; cursor: default; }
-
-.subcard-btn--ghost {
-  background: transparent;
-  color: var(--text-head);
-  border: 1px solid var(--hairline);
-}
-
 @media (max-width: 560px) {
-  .subcard { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+  .subcard { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .subcard-action { width: 100%; }
-  .subcard-btn { width: 100%; text-align: center; }
+  .gp-btn.subcard-btn { width: 100%; }
 }

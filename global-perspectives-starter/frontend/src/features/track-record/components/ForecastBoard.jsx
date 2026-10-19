@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import Tabs from '@/shared/ui/Tabs.jsx';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
 import { itemState, stateMeta, VOID_REASON_LABEL } from '@/features/track-record/lib/questionStates.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
@@ -17,10 +19,8 @@ import '@/features/track-record/components/ForecastBoard.css';
 // reference every render and the effect re-ran forever ("Maximum update depth exceeded").
 const NO_SITUATIONS = [];
 const NO_COUNTRY_RISK = [];
-
-function hueFor() {
-  return 'var(--c-accent)';
-}
+const PLACE_HUE = 'var(--accent)';
+const VIEWS = [{ key: 'map', label: 'MAP' }, { key: 'board', label: 'BOARD' }];
 
 // One question: text, frozen %, named source, state, verdict evidence. Used by the panel and the tiles.
 function QuestionDetail({ item }) {
@@ -51,23 +51,14 @@ export default function ForecastBoard({ items = [], emptyText = null }) {
 
   const places = useMemo(() => forecastPlaceCounts(items), [items]);
   const shading = useMemo(
-    () => places.map((p) => ({ iso3: p.iso3, count: p.all, hue: hueFor(p), top: { title: p.name } })),
+    () => places.map((p) => ({ iso3: p.iso3, count: p.all, hue: PLACE_HUE, top: { title: p.name } })),
     [places],
   );
   const selected = places.find((p) => p.iso3 === selectedIso3) || null;
 
   return (
     <div className="tr-fb">
-      <div className="tr-fb-toggle" role="tablist" aria-label="Forecast board view">
-        <button
-          type="button" role="tab" aria-selected={view === 'map'}
-          className={`tr-fb-tab${view === 'map' ? ' on' : ''}`} onClick={() => setView('map')}
-        >MAP</button>
-        <button
-          type="button" role="tab" aria-selected={view === 'board'}
-          className={`tr-fb-tab${view === 'board' ? ' on' : ''}`} onClick={() => setView('board')}
-        >BOARD</button>
-      </div>
+      <Tabs variant="segmented" idBase="tr-fb" label="Forecast board view" tabs={VIEWS} active={view} onChange={setView} />
       {items.length === 0 && emptyText && <p className="tr-fb-panel-hint">{emptyText}</p>}
 
       {view === 'map' ? (
@@ -81,7 +72,7 @@ export default function ForecastBoard({ items = [], emptyText = null }) {
               countryRisk={NO_COUNTRY_RISK}
             />
           </div>
-          <div className="tr-fb-panel">
+          <Card pad="sm" className="tr-fb-panel">
             {selected ? (
               <>
                 <h4 className="tr-fb-panel-title">{selected.name}</h4>
@@ -102,16 +93,16 @@ export default function ForecastBoard({ items = [], emptyText = null }) {
             ) : (
               <p className="tr-fb-panel-hint">No question names a country we can plot.</p>
             )}
-          </div>
+          </Card>
         </div>
       ) : (
         <ul className="tr-fb-boardlist">
           {items.length === 0 && <li className="tr-fb-panel-hint">Nothing to show yet.</li>}
           {items.map((it, i) => (
-            <li key={it.qid || i} className="tr-fb-tile">
+            <Card as="li" pad="sm" key={it.qid || i}>
               <QuestionDetail item={it} />
               {it.storyTitle || it.title ? <p className="tr-fb-tile-meta">{it.storyTitle || it.title}</p> : null}
-            </li>
+            </Card>
           ))}
         </ul>
       )}

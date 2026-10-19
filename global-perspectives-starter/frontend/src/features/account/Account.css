@@ -1,385 +1,232 @@
-/* Account page — console shell (A3, K1) + saved items */
-
-/* ── Account shell (K1: left rail + content) ─────────────────────────────
-   `.gp-console` (tokens.css) supplies the `--c-*` dark theme; this page is the second
-   consumer of it after /map. Desktop: fixed rail + content, side by side. Under 900px
-   (matches useIsPhone / the site's other breakpoints) the rail becomes a single-row,
-   horizontally scrollable chip strip pinned above the content — no second tab bar, since
-   the phone bottom tab bar (A2) already occupies that space. */
+/* Account page — shell (A3, K1): left rail + content. Panels are shared <Card>s with a
+   <SectionHeader>; actions are <Button>s. Tokens only. Desktop: fixed rail + content side by side.
+   Under 900px (matches useIsPhone) the rail becomes a single-row, horizontally scrollable strip
+   pinned above the content — no second tab bar, since the phone bottom tab bar already exists. */
 .acct-shell {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 24px;
+  gap: var(--space-6);
   max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  padding: var(--space-6) var(--space-5) var(--space-10);
   background: var(--bg);
   color: var(--text-body);
   min-height: 60vh;
 }
 
-.acct-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 220px;
-  flex-shrink: 0;
-}
+.acct-rail { display: flex; flex-direction: column; gap: var(--space-2); width: 220px; flex-shrink: 0; }
 
 .acct-rail-btn {
   display: block;
   width: 100%;
-  min-height: 44px;
+  min-height: var(--tap-min);
   text-align: left;
-  padding: 8px 10px;
-  border-radius: 3px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
   cursor: pointer;
   background: transparent;
   border: 1px solid var(--hairline);
   font: inherit;
+  transition: border-color var(--fast) var(--ease);
 }
+.acct-rail-btn:hover { border-color: var(--hairline-strong); }
+.acct-rail-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+/* the one selected style: accent outline + accent text, no fill */
+.acct-rail-btn--active, .acct-rail-btn--active:hover { border-color: var(--accent); }
 
-.acct-rail-btn--active {
-  background: var(--accent-wash);
-  border-color: var(--accent);
-}
-
-.acct-rail-label {
-  display: block;
-  font-size: 13px;
-  color: var(--text-head);
-}
-
+.acct-rail-label { display: block; font-size: var(--text-ui); color: var(--text-head); }
 .acct-rail-btn--active .acct-rail-label { color: var(--accent); }
+.acct-rail-sub { display: block; font-size: var(--text-xs); color: var(--text-dim); margin-top: var(--space-1); }
 
-.acct-rail-sub {
-  display: block;
-  font-size: 10.5px;
-  color: var(--text-dim);
-  margin-top: 2px;
+/* Saved-count on the Desk rail item */
+.acct-rail-count {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
 }
 
 .acct-content { flex: 1; min-width: 0; }
 
-.acct-section-kicker {
-  font-family: var(--c-mono, monospace);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-}
-
 .acct-section-title {
-  font-family: var(--c-serif, serif);
-  font-size: 24px;
-  font-weight: 600;
+  font-family: var(--serif);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
   color: var(--text-head);
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
 }
+.acct-section-sub { font-size: var(--text-ui); color: var(--text-dim); margin: var(--space-1) 0 var(--space-4); max-width: 900px; }
 
-.acct-section-sub {
-  font-size: 12.5px;
-  color: var(--text-dim);
-  margin: 4px 0 14px;
-  max-width: 900px;
-}
-
-/* Phone (<900px): rail collapses to one horizontal scrollable row at the top; subtitles
-   hide to keep the chip row a single line. Content stacks below, full width. */
 @media (max-width: 900px) {
-  .acct-shell { flex-direction: column; padding: 16px 16px 32px; gap: 12px; }
+  .acct-shell { flex-direction: column; padding: var(--space-4) var(--space-4) var(--space-8); gap: var(--space-3); }
   .acct-rail {
     flex-direction: row;
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap;
-    padding-bottom: 4px;
+    padding-bottom: var(--space-1);
   }
   .acct-rail-btn { flex: 0 0 auto; white-space: nowrap; }
   .acct-rail-sub { display: none; }
 }
 
-/* ── Signed-out desk (A3; A6 replaces with the full sign-in board) ── */
-.acct-signedout {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 8px 4px;
-}
+/* ── Signed-out desk ── */
+.acct-signedout { max-width: 560px; margin: 0 auto; padding: var(--space-2) var(--space-1); }
 .acct-signedout-list {
-  margin: 14px 0 18px;
-  padding-left: 20px;
+  margin: var(--space-4) 0 var(--space-5);
+  padding-left: var(--space-5);
   color: var(--text-body);
-  font-size: 13.5px;
+  font-size: var(--text-base);
   line-height: 1.7;
 }
-.acct-signin-btn { margin-top: 4px; }
+.acct-signedout-note { font-size: var(--text-ui); color: var(--text-dim); margin: var(--space-3) 0 0; }
+.acct-signin-btn { margin-top: var(--space-1); }
 
-/* Console overrides for the moved panels (Desk/Alerts/Studio use `.account-panel` /
-   `.account-key-*`; SavedPanel uses `.saved-*`) — visual only, no behavior change. */
-.gp-console .account-panel-title { color: var(--text-head); }
-.gp-console .account-panel-desc { color: var(--text-dim); }
-.gp-console .account-panel-desc a { color: var(--accent); }
-.gp-console .account-key-card {
-  border-color: var(--hairline);
-  background: var(--panel);
+/* ── Panels (alerts / studio / plan / profile) ── */
+.acct-col { max-width: 520px; margin: 0 auto; }
+.acct-card { margin-bottom: var(--space-4); }
+.acct-card .gp-sec { margin-bottom: var(--space-3); }
+.acct-card__action { margin-top: var(--space-3); }
+
+.acct-desc { color: var(--text-dim); font-size: var(--text-base); line-height: var(--leading-normal); margin: 0 0 var(--space-4); max-width: 60ch; }
+.acct-desc a { color: var(--accent); }
+.acct-desc--flush { margin: 0; }
+.acct-desc--after { margin: var(--space-3) 0 0; }
+.acct-muted { font-size: var(--text-base); color: var(--text-dim); line-height: var(--leading-normal); }
+.acct-fine { font-size: var(--text-ui); color: var(--text-dim); margin-top: var(--space-1); line-height: 1.45; }
+.acct-fine--lead { margin: 0 0 var(--space-3); line-height: var(--leading-normal); }
+.acct-nowrap { white-space: nowrap; }
+
+/* Profile */
+.acct-identity { display: flex; align-items: center; gap: var(--space-4); }
+.acct-avatar {
+  width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-wash); color: var(--accent);
+  font-size: var(--text-2xl); font-weight: var(--weight-bold);
 }
-.gp-console .account-key-label { color: var(--text-dim); }
-.gp-console .account-key-val { color: var(--text-head); }
-.gp-console .account-key-btn {
-  border-color: var(--hairline-strong);
-  background: var(--panel-2);
-  color: var(--text-head);
+.acct-identity__text { min-width: 0; }
+.acct-identity__email {
+  font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-head);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.gp-console .account-key-btn:hover { border-color: var(--accent); }
-.gp-console .account-key-btn--danger { color: var(--error); border-color: var(--error); }
-.gp-console .account-key-btn--danger:hover { background: var(--error-wash); border-color: var(--error); }
+.acct-stack { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.gp-btn.acct-btn-block { width: 100%; justify-content: flex-start; }
 
-.gp-console .saved-card {
-  background: var(--panel);
-  border-color: var(--hairline);
-}
-.gp-console .saved-card-title { color: var(--text-head); }
-.gp-console .saved-card-meta,
-.gp-console .saved-card-time { color: var(--text-dim); }
-.gp-console .saved-filter-chip {
-  border-color: var(--hairline);
-  color: var(--text-dim);
-}
-.gp-console .saved-filter-chip--active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-.gp-console .saved-empty { color: var(--text-dim); }
-.gp-console .saved-empty-title { color: var(--text-head); }
-
-.gp-console .btn-gp {
-  border-color: var(--hairline-strong);
-  background: var(--panel-2);
-  color: var(--text-head);
-}
-.gp-console .btn-gp:hover { border-color: var(--accent); color: var(--accent); }
-.gp-console .btn-gp.accent {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-.gp-console .btn-gp.accent:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
-
-
-
-
-
-
-
-
-/* Filter chips */
-.saved-filters {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.saved-filter-chip {
-  background: none;
-  border: 1.5px solid var(--hairline);
-  border-radius: 999px;
-  padding: 3px 12px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
-}
-
-.saved-filter-chip:hover {
-  border-color: var(--hairline-strong);
-  color: var(--text-head);
-}
-
-.saved-filter-chip--active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-
-/* Cards grid */
-.saved-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-@media (min-width: 680px) {
-  .saved-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* Individual card */
-.saved-card {
-  position: relative;
-  background: var(--bg-primary);
-  border: 1.5px solid var(--hairline);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-  padding-left: 1.1rem;
-  border-left-width: 4px;
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-  transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
-  overflow: hidden;
-  max-height: 200px;
-}
-
-.saved-card:hover {
-  box-shadow: 0 4px 16px var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.saved-card--collapsing {
-  opacity: 0;
-  max-height: 0;
+/* Text buttons (Delete account / Unfollow / Unsubscribe from all / Cancel). Destructive ones read
+   in --error; everything else is dim. */
+.acct-textbtn {
+  min-height: var(--tap-min);
   padding: 0;
-  margin: 0;
-  border-width: 0;
-  transition: opacity 0.2s, max-height 0.25s 0.05s, padding 0.2s, margin 0.2s, border-width 0.2s;
-}
-
-.saved-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.45rem;
-}
-
-.saved-card-type {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.saved-card-time {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  margin-right: 28px; /* space for unsave btn */
-}
-
-.saved-card-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-head);
-  line-height: 1.4;
-  margin-bottom: 0.3rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.saved-card-meta {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.saved-card-unsave {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
-  background: none;
   border: none;
-  padding: 4px;
+  background: none;
+  font: inherit;
+  font-size: var(--text-ui);
+  color: var(--text-dim);
   cursor: pointer;
-  color: var(--error);
-  opacity: 0.7;
-  transition: opacity 0.15s, transform 0.15s;
-  border-radius: 4px;
+  text-align: left;
+}
+.acct-textbtn:disabled { cursor: not-allowed; opacity: 0.6; }
+.acct-textbtn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.acct-textbtn--danger { color: var(--error); }
+.acct-after { margin-top: var(--space-3); }
+
+.acct-confirm {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--error);
+  border-radius: var(--r-md);
+  background: var(--error-wash);
+  font-size: var(--text-base);
+}
+.acct-confirm__title { font-weight: var(--weight-semibold); color: var(--error); margin-bottom: var(--space-2); }
+.acct-confirm__body { color: var(--text-body); margin-bottom: var(--space-2); line-height: var(--leading-normal); }
+.acct-confirm__body a { color: var(--accent); }
+
+/* Plan / credits */
+.acct-plan-name { font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-head); }
+.acct-ok { color: var(--ok); }
+.acct-credits { display: flex; align-items: baseline; gap: var(--space-2); }
+.acct-credits__num { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-head); }
+
+/* Alerts: toggle rows, the frequency select, confirmations */
+.acct-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hairline);
 }
+.acct-row--center { align-items: center; }
+.acct-row--inline { align-items: center; justify-content: flex-start; gap: var(--space-3); }
+.acct-row__text { flex: 1; }
+.acct-row__label { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); }
+.acct-row__link { text-decoration: none; }
+.acct-row__link:hover { text-decoration: underline; }
 
-.saved-card-unsave:hover {
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-/* Empty state */
-.saved-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.saved-empty-icon {
-  font-size: 2.2rem;
-  margin-bottom: 0.75rem;
-}
-
-.saved-empty-title {
-  font-size: 0.95rem;
-  font-weight: 600;
+.acct-select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  background: var(--panel-3);
   color: var(--text-head);
-  margin-bottom: 0.4rem;
+  font-size: var(--text-ui);
 }
+.acct-select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-.saved-empty-hint {
-  font-size: 0.83rem;
-  line-height: 1.6;
+.acct-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--hairline-strong);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
 }
+.acct-switch[aria-checked='true'] { background: var(--accent); }
+.acct-switch:disabled { cursor: not-allowed; opacity: 0.55; }
+.acct-switch:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.acct-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-head);
+  box-shadow: var(--shadow-sm);
+  transition: left var(--fast) var(--ease);
+}
+.acct-switch[aria-checked='true'] .acct-switch__knob { left: 21px; }
 
-/* ── Analysis Studio key panel ──────────────────── */
-.account-panel { padding: 8px 2px; }
-.account-panel-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; }
-.account-panel-desc { color: var(--text-muted); font-size: 0.875rem; line-height: 1.5; margin: 0 0 16px; max-width: 60ch; }
-.account-key-card {
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  padding: 16px;
-  background: var(--panel-2);
-  max-width: 460px;
-}
+/* status: a save persisted / failed */
+.acct-notice { margin-top: var(--space-3); font-size: var(--text-ui); color: var(--ok); line-height: var(--leading-normal); }
+.acct-error { margin-top: var(--space-3); font-size: var(--text-ui); color: var(--error); }
+
+/* Analysis Studio key */
+.account-key-card { max-width: 460px; }
 .account-key-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0;
-  font-size: 0.9rem;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: var(--text-base);
 }
-.account-key-label { color: var(--text-muted); }
-.account-key-val { color: var(--text-head); font-weight: 500; }
-.account-key-mono { font-family: var(--mono, monospace); font-weight: 400; }
-.account-key-actions { display: flex; gap: 10px; margin-top: 14px; }
-.account-key-btn {
-  padding: 8px 14px;
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
-  background: var(--bg);
-  font-size: 0.875rem;
-  color: var(--text-head);
-  cursor: pointer;
-}
-.account-key-btn:hover { border-color: var(--hairline-strong); }
-.account-key-btn--danger { color: var(--error); border-color: var(--error); }
-.account-key-btn--danger:hover { background: var(--error-wash); border-color: var(--error); }
-.acct-signedout-note { font-size: 12.5px; color: var(--text-dim); margin: 10px 0 0; }
-/* Saved-count badge on the Desk rail item (kept after the old tab strip was removed). */
-.account-tab-badge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-family: var(--c-mono);
-  font-size: 10px;
-  background: var(--accent-wash);
-  color: var(--accent);
-}
+.account-key-label { color: var(--text-dim); }
+.account-key-val { color: var(--text-head); font-weight: var(--weight-medium); }
+.account-key-mono { font-family: var(--mono); font-weight: var(--weight-regular); }
+.account-key-actions { display: flex; gap: var(--space-3); margin-top: var(--space-3); }
+.gp-btn.acct-danger { color: var(--error); border-color: var(--error); }
+.gp-btn.acct-danger:hover { background: var(--error-wash); }

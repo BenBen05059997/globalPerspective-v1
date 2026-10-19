@@ -98,7 +98,7 @@ operator's yes.
 ### L2 · Related ids at the source
 - [x] Add the missing related ids where the data is written (merged 2026-10-19: L2-IDS ab2cc23, L2-JOINS 0e23594) (decided from L0): e.g. forecasts → thread id,
       brief items → thread id + ISO3, situations → ISO3 list, weekly signals → thread id + ISO3.
-- [x] Deployed 2026-10-19 except `newsSituationIngest` and `newsSituationTracker` (situation ids change: deploy right after the website release, whose map resolves old ids through `aliases[]`). Country record merge: backup taken (`SummarizeAndPredict-pre-country-merge-2026-10-19`); `node .board/linking/country_merge.mjs --apply` still to run (operator). Signals build rule disabled.
+- [x] Deployed 2026-10-19 except `newsSituationIngest` and `newsSituationTracker` (situation ids change: deploy right after the website release, whose map resolves old ids through `aliases[]`). Country record merge applied 2026-10-20 after a backup. Signals build rule disabled.
 
 ### L3 · Apply on every page
 - [x] Story page: countries, forecast → track record, "show on map".
@@ -127,11 +127,33 @@ operator's yes.
 - [x] C1 (`useSystemsAnalysis` deleted, P-SMALL) one address for the countries list, the other redirects.
 - [x] Decision records for 2-5 (0028-0032) (superseding 0016's /today wording only where needed, and 0017's client-only redirects).
 
-### R · Release
-- [ ] Website build; Cloudflare preview upload (yes); browser click-through of every page and link at desktop
-      and phone width; production release (yes).
-- [ ] Worker upload with the 301s and `/today` pre-render (yes).
-- [ ] Open from the 2026-10-19 run: `newsPostLinkedin` deploy needs `--force` (operator runs it or says leave it).
+### R · Release (deploy later; operator says when)
+Done 2026-10-20: country record merge applied (backup `SummarizeAndPredict-pre-country-merge-2026-10-19`; 105 copied,
+368 deleted); `newsPostLinkedin` deployed (posts link the story page); Cloudflare candidate uploaded, but it cannot load
+data: the read API's CORS allows only the site origins, so a `workers.dev` preview shows "could not be loaded".
+- [ ] Release the website: `./deploy.sh --target legacy-pages --commit "..." --push` (Pages serves production).
+- [ ] Upload the front Worker `cloudflare/front-worker/production/worker.mjs` (301s for retired addresses, bot
+      pre-render for `/briefings` modes and `/today`): code-only, keep name, routes, bindings, secrets and settings;
+      record the live version first (rollback target); never a bare `wrangler deploy`.
+- [ ] Right after the website: deploy `newsSituationIngest` and `newsSituationTracker` (situation ids change; the new
+      map resolves old ids through `aliases[]`).
+- [ ] Smoke checks on production: the 5 curl checks in `runbooks/DEPLOYMENT_NOTES.md`, plus `/daily` and
+      `/weekly-brief` return 301 to `/briefings`.
+- [ ] Browser click-through on production, desktop and phone width:
+  - Map: `/?story=<threadId>` (today's and an older thread), `/?country=ARE`, `/?country=Europe` (no fly-to),
+    `/?focus=<old situation id>`, affected-country chips, "Open the country page", "Read today's topics".
+  - Story page: country links, forecast links to `/track-record?q=`, "Show on map", "Analyze this arc", related stories.
+  - Stories `/weekly`: Countries link, board/web/timeline/map views open stories; `/weekly?section=countries` redirects.
+  - Country: `/weekly/country/USA`, `/United Arab Emirates`, `/ARE` redirect to the short name; UAE and DR Congo show
+    analysis; Show on map; `/weekly/country/Strait of Hormuz` has no follow/save/map.
+  - Track record: `?q=<qid>` scrolls and highlights on desktop and phone; story and country links.
+  - Briefings: read (previous/next/latest day, share, copy, save), weekly (week before, latest, save), present (deck
+    toggle, editions, "Show <country> on the map"); `/daily`, `/daily/<date>`, `/weekly-brief` redirect.
+  - /today: "Story arc" opens the thread, country links, archive modal links; no masthead Studio link.
+  - Account: saved daily/weekly/story/country items open the right page. Breaking bell and strip.
+  - Studio `/analyze?stories=<threadId>`; shared analysis "Run your own".
+- [ ] If anything fails: Pages rollback via `./deploy.sh --target stage-pages --artifact <previous hash>`; Worker
+      rollback to the recorded version.
 
 ## Added 2026-10-19 (operator yes; each point checked in code and live data, not assumed)
 

@@ -1,9 +1,9 @@
 {
   "note": "Per-file, per-kind count of hard-coded colours in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
   "totals": {
-    "func": 69,
-    "hex": 246,
-    "tokenCopy": 87,
+    "func": 67,
+    "hex": 242,
+    "tokenCopy": 83,
     "named": 1,
     "rgbArray": 19,
     "template": 1
@@ -51,9 +51,9 @@
       "tokenCopy": 5
     },
     "features/map/components/RadarMap.jsx": {
-      "hex": 17,
-      "func": 3,
-      "tokenCopy": 10
+      "hex": 13,
+      "func": 1,
+      "tokenCopy": 6
     },
     "features/map/components/SituationMap.jsx": {
       "hex": 4,

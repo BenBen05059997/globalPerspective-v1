@@ -20,6 +20,15 @@ function fmtWeekOf(weekOf) {
   return `${months[+m[2] - 1]} ${+m[3]}, ${m[1]}`;
 }
 
+// Decision 0013: risk tier is never a colour. One neutral ink; the tier shows as weight + border.
+const TIER_TAG_STYLE = {
+  high: 'font-weight:700;border:2px solid #1a1a1a;padding:1px 6px;border-radius:3px;',
+  elevated: 'font-weight:700;border:1px solid #1a1a1a;padding:2px 6px;border-radius:3px;',
+  moderate: 'font-weight:600;border:1px solid #b8b5ae;padding:2px 6px;border-radius:3px;',
+  low: 'font-weight:500;border:1px solid #e5e3df;padding:2px 6px;border-radius:3px;',
+};
+const DEV_TAG_STYLE = 'font-weight:600;';
+
 function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
   const weekLabel = fmtWeekOf(brief.weekOf);
   const signals = Array.isArray(brief.signals) ? brief.signals : [];
@@ -63,10 +72,10 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
   const sigHtml = signals.map((s, i) => {
     const isDev = s.kind === 'development';
     const tag = isDev ? 'DEVELOPMENT' : `${String(s.riskLevel || '').toUpperCase()} RISK`;
-    const color = isDev ? '#5b6b7a' : (s.riskLevel === 'high' ? '#b03328' : s.riskLevel === 'elevated' ? '#c2622a' : s.riskLevel === 'moderate' ? '#caa23a' : '#3f8f6b');
+    const tagStyle = isDev ? DEV_TAG_STYLE : (TIER_TAG_STYLE[s.riskLevel] || TIER_TAG_STYLE.low);
     return `
       <tr><td style="padding:16px 0;border-bottom:1px solid #ececea;">
-        <div style="font:600 11px/1.4 monospace;letter-spacing:.06em;color:${color};text-transform:uppercase;">${i + 1} · ${esc(tag)}</div>
+        <div style="font:600 11px/1.4 monospace;letter-spacing:.06em;color:#1a1a1a;text-transform:uppercase;">${i + 1} · <span style="${tagStyle}">${esc(tag)}</span></div>
         <div style="font:600 17px/1.35 Georgia,serif;color:#1a1a1a;margin:4px 0 6px;">${esc(s.lede)}</div>
         ${s.fact ? `<div style="font:400 14px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#333;">${esc(s.fact)}</div>` : ''}
         ${s.soWhat ? `<div style="font:400 13px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#555;margin-top:6px;"><b>So what:</b> ${esc(s.soWhat)}</div>` : ''}

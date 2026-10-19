@@ -174,6 +174,8 @@ function loadSender(env) {
   check('List-Unsubscribe header present', !!(fetchCalls[0].body.headers && fetchCalls[0].body.headers['List-Unsubscribe']));
   check('unsub link carries the token', /tok-a/.test(fetchCalls[0].body.headers['List-Unsubscribe']));
   check('html body includes a signal', /Ebola contacts unknown/.test(fetchCalls[0].body.html));
+  check('high tier tag is neutral ink with the heaviest border (decision 0013)', /<span style="font-weight:700;border:2px solid #1a1a1a;[^"]*">HIGH RISK<\/span>/.test(fetchCalls[0].body.html));
+  check('no traffic-light tier colours in the weekly html', !/#b03328|#c2622a|#caa23a|#3f8f6b/i.test(fetchCalls[0].body.html));
   check('idempotency marker written after real send', !!store.marker['EMAILLOG#weekly#2026-06-28']);
 
   // 4) TEST_RECIPIENT override

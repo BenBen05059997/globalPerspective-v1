@@ -32,6 +32,7 @@ const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/clien
 const adapter = require('./signalAdapter');
 const store = require('./signalStore');
 const { usableCountryRecord } = require('./_shared/placeFilter');
+const { forecastHref, absoluteUrl } = require('./_shared/links');
 const { extractKey, verifyKey } = require('./apiKeys');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -42,7 +43,8 @@ const API_KEYS_TABLE = process.env.API_KEYS_TABLE || 'GlobalPerspectiveApiKeys';
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const SIGNALS_PREFIX = (process.env.SIGNALS_PREFIX || 'signals').replace(/\/$/, '');
 const LATEST_KEY = `${SIGNALS_PREFIX}/latest.json`;
-const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
+// The public track record page (SITE_URL env overrides the origin; _shared/links.js holds the default).
+const TRACK_RECORD_URL = absoluteUrl(forecastHref(), process.env.SITE_URL);
 const SIGNAL_TTL_DAYS = Number(process.env.SIGNAL_TTL_DAYS) || 120;
 const FREE_DELAY_HOURS = Number(process.env.FREE_DELAY_HOURS) || 24; // free tier sees signals delayed
 const DEFAULT_LIMIT = 50;
@@ -159,7 +161,7 @@ async function build() {
     if (!p || String(it.SK || '') > String(p.SK || '')) latestByTopic.set(it.topicId, it);
   }
   for (const it of latestByTopic.values()) {
-    collect(adapter.fromPredictionLog(it, { emittedAt, calibration, trackRecordUrl: `${SITE_URL}/track-record` }), 'forecast');
+    collect(adapter.fromPredictionLog(it, { emittedAt, calibration, trackRecordUrl: TRACK_RECORD_URL }), 'forecast');
   }
 
   // 3. Country intelligence (current standing record per country)
@@ -296,7 +298,7 @@ async function serveGet(signalId, keyCtx) {
 async function serveTrackRecord() {
   const predItems = await scanAll({ TableName: PREDICTION_LOG_TABLE });
   const cal = computeCalibration(predItems);
-  return reply(200, { ok: true, track_record: { ...cal, track_record_url: `${SITE_URL}/track-record` } });
+  return reply(200, { ok: true, track_record: { ...cal, track_record_url: TRACK_RECORD_URL } });
 }
 
 // Map an HTTP event (Function URL / API Gateway) to { method, path, qs, headers }.
@@ -326,7 +328,7 @@ async function serve(event) {
   try {
     if (m) return withHeaders(await serveGet(decodeURIComponent(m[1]), keyCtx), rlHeaders);
     if (/\/v1\/signals$/.test(norm)) return withHeaders(await serveList(qs, keyCtx), rlHeaders);
-    if (/\/v1\/track-record$/.test(norm)) return withHeaders(await serveTrackRecord(), rlHeaders);
+    if (norm.endsWith('/v1/track-record')) return withHeaders(await serveTrackRecord(), rlHeaders);
     return reply(404, { ok: false, error: 'unknown_route' }, rlHeaders);
   } catch (err) {
     console.error('serve error', err);

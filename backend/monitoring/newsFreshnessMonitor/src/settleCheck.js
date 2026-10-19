@@ -5,7 +5,9 @@
 // Every condition needs something to have been committed first, so nothing can fire during the
 // warm-up (before the first seed commitment exists) and an empty board is silent.
 
-const OVERDUE_DAYS = 10;      // due + 3-day grace, then this many more days without a verdict
+const { forecastHref, absoluteUrl } = require('./_shared/links');
+
+const OVERDUE_DAYS = 10;     // due + 3-day grace, then this many more days without a verdict
 const STALE_BOARD_HOURS = 6;  // the aggregate is rebuilt every 30 minutes
 const SEND_HOUR_UTC = 12;     // the monitor runs at :30 of every even hour; only the 12:30 run sends
 
@@ -27,7 +29,7 @@ function evaluateSettle(questions, nowIso) {
 
 const shouldSendNow = (nowIso) => new Date(nowIso).getUTCHours() === SEND_HOUR_UTC;
 
-function buildMessage(evaluation, questions, { siteUrl = 'https://globalperspective.net', nowIso } = {}) {
+function buildMessage(evaluation, questions, { siteUrl, nowIso } = {}) {
   const c = (questions && questions.counts) || {};
   const lines = [
     'The weekly forecast-settling flow needs attention. This message is sent at most once a day.',
@@ -41,7 +43,7 @@ function buildMessage(evaluation, questions, { siteUrl = 'https://globalperspect
     '- Confirm drafted verdicts:  node predictions/settle-review.js --list   then   node predictions/settle-review.js',
     '- If the draw, commitment or tick is missing: check the newsPredictionResolver logs and rule TriggerPredictionResolver (ENABLED?), then run {"action":"tick"} once.',
     '',
-    `Public page: ${siteUrl}/track-record`,
+    `Public page: ${absoluteUrl(forecastHref(), siteUrl)}`,
     `Checked: ${nowIso || new Date().toISOString()}`,
   ];
   return { subject: '[GP] Prediction settling overdue', body: lines.join('\n') };

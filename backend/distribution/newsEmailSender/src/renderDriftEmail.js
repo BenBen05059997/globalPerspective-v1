@@ -11,6 +11,8 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+const { countryHref, absoluteUrl } = require('./_shared/links');
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fmtDay(s) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
@@ -84,11 +86,11 @@ function whyLine(n) {
 }
 
 function renderDriftEmail(country, notes, { siteUrl, unsubUrl } = {}) {
-  const site = (siteUrl || 'https://globalperspective.net').replace(/\/$/, '');
   const list = Array.isArray(notes) ? notes.slice() : [];
   // Newest first.
   list.sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
-  const countryUrl = `${site}/weekly/country/${encodeURIComponent(country)}`;
+  // A name that is not a country has no page: the email then carries no link rather than a broken one.
+  const countryUrl = absoluteUrl(countryHref(country), siteUrl);
   const n = list.length;
 
   const subject = n === 1
@@ -111,7 +113,7 @@ function renderDriftEmail(country, notes, { siteUrl, unsubUrl } = {}) {
     if (why) tLines.push(`  ${why}`);
     tLines.push('');
   });
-  tLines.push(`See the full living analysis: ${countryUrl}`);
+  if (countryUrl) tLines.push(`See the full living analysis: ${countryUrl}`);
   if (unsubUrl) tLines.push(`Stop following ${country} / unsubscribe: ${unsubUrl}`);
   const text = tLines.join('\n');
 
@@ -145,9 +147,9 @@ function renderDriftEmail(country, notes, { siteUrl, unsubUrl } = {}) {
           <div style="font:400 13px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#666;">${n} grounded correction${n === 1 ? '' : 's'} — what moved, and the cited reason it moved.</div>
         </td></tr>
         <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
-        <tr><td style="padding-top:24px;">
+        ${countryUrl ? `<tr><td style="padding-top:24px;">
           <a href="${esc(countryUrl)}" style="display:inline-block;background:#1a1a1a;color:#fff;font:600 13px/1 -apple-system,Helvetica,Arial,sans-serif;text-decoration:none;padding:11px 18px;border-radius:6px;">See the full living analysis →</a>
-        </td></tr>
+        </td></tr>` : ''}
         <tr><td style="padding-top:22px;border-top:1px solid #ececea;">
           <div style="font:400 11px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#999;">
             You follow ${esc(country)} on Global Perspectives — we alert you only when a <em>conclusion</em> moves and a real cited event explains it. Never a silent overwrite.

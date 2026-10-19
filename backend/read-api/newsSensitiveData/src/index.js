@@ -8,6 +8,7 @@ const { assembleDossier } = require('./dossier');
 const { isCountryName } = require('./_shared/placeFilter');
 const { iso3List } = require('./_shared/resolveIso3');
 const { chat } = require('./_shared/llm');
+const { storyHref, absoluteUrl } = require('./_shared/links');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -2265,7 +2266,7 @@ async function generateRssFeed(event) {
       ? entry.sources[0].url
       : null;
     const link = firstSourceUrl
-      || (entry.threadId ? `${SITE_URL}/weekly/thread/${encodeURIComponent(entry.threadId)}` : SITE_URL);
+      || (entry.threadId ? absoluteUrl(storyHref(entry.threadId), SITE_URL) : SITE_URL);
 
     return `    <item>
       <title>${escapeXml(entry.title)}</title>

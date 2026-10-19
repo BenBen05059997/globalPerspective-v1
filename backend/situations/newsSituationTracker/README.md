@@ -17,6 +17,7 @@ Sole writer of situation state and the map bundle. Each sweep reads the GDACS sn
 - `DRY_RUN` defaults to true in code: unless it is exactly `false`, everything is written under `shadow/situations/` and `world/shadow/`. Live env sets `DRY_RUN=false` (checked 2026-10-19).
 - The code default for `SWEEP_MIN` is 10; the live rule is 30 minutes and live `SWEEP_MIN` is 30 (checked 2026-10-19). `SWEEP_MIN` only sets `next_expected_at`.
 - A humanitarian news story sharing a country with a GDACS situation is skipped (one event, one pin).
+- Each ranked situation's `href` is its story page (`storyHref`) when threaded, else the map focused on it (`mapHref`, `/?focus=<id>`); both from `src/_shared/links.js`.
 - `situations-core` comes from `backend/shared/src` through the `src/_shared` symlink (one copy, shared with newsGdacsIngest); `scripts/lambda.sh` zips it as a real file. Its tests: `backend/shared/test/situations-core.test.mjs`.
 
 ## Tests

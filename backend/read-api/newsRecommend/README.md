@@ -1,6 +1,6 @@
 # newsRecommend
 
-Content-based recommendations (no ML) plus notification preferences. Default action ranks the `latest` topic pool: personalized from the user's saved items when a valid Firebase JWT is sent, else "Trending" (popularity x recency); scorer is `scoring.js`. Other actions: `get_prefs`/`set_prefs` (JWT; email opt-ins, default off), `follow_country`/`unfollow_country` (JWT + member tier, fail-closed), public `list_alerts` (bell feed) and `get_alert` (`/breaking/:id`), and public token-auth `unsubscribe` (GET or RFC 8058 POST, returns HTML). Direct invoke `{ uid?, limit? }` returns recommendations without HTTP.
+Content-based recommendations (no ML) plus notification preferences. Default action ranks the `latest` topic pool: personalized from the user's saved items when a valid Firebase JWT is sent, else "Trending" (popularity x recency); scorer is `scoring.js`. Other actions: `get_prefs`/`set_prefs` (JWT; email opt-ins, default off), `follow_country`/`unfollow_country` (JWT + member tier, fail-closed), public `list_alerts` (bell feed; each alert's `url` is its story page when it has a thread arc, else the map) and `get_alert` (single alert; `threadUrl` only with an arc), and public token-auth `unsubscribe` (GET or RFC 8058 POST, returns HTML). Direct invoke `{ uid?, limit? }` returns recommendations without HTTP.
 
 ## Deployment
 - Deployed name `newsRecommend` · runtime `nodejs20.x` · group `read-api` (scripts/functions.json)
@@ -19,6 +19,7 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - CORS: code does not emit `Access-Control-Allow-Origin`, so the Function-URL CORS config must stay populated.
 - Profile caching is fire-and-forget; a failure only logs.
 - `list_alerts` returns `[]` when the alerts table is absent or empty.
+- Site addresses (story, map) come from `src/_shared/links.js` (symlink to `backend/shared/src`, zipped as real files); env `SITE_URL` only overrides the origin.
 - Following a country also opts the user into drift email and stamps consent + unsubscribe token.
 
 ## Tests

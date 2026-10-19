@@ -14,7 +14,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row sent. LLM 
 ## Reads / writes
 - DynamoDB read: `TOPICS_DDB_TABLE` (`id: 'latest'`); `SUMMARIZE_PREDICT_TABLE` `COUNTRY#<r>`/`COUNTRY_INTELLIGENCE`, `ECON#THREAD#<id>`/`ECONOMIC_IMPACT`, `THREAD#<id>`/`THREAD_ANALYSIS`, `TOPIC#<id>`/`SUMMARY|PREDICTION|TRACE_CAUSE`.
 - DynamoDB write: `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`), key `alertKey` = threadId; doubles as dedupe row (`DEDUPE_DAYS` 5, `ttl` `DEDUPE_TTL_DAYS` 14).
-- External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Links use `SITE_URL`.
+- External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Story links come from `src/_shared/links.js` (`storyHref` + `absoluteUrl`; env `SITE_URL` only overrides the origin), and only when the story has a real thread arc.
 
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.

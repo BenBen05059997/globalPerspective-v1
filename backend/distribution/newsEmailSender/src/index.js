@@ -26,7 +26,7 @@ const PREFS_TABLE = process.env.USER_PREFS_TABLE || 'GlobalPerspectiveUserPrefs'
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE || 'SummarizeAndPredict';
 const ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
 const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-const SITE_URL = process.env.SITE_URL || 'https://globalperspective.net';
+const SITE_URL = process.env.SITE_URL; // optional origin override; _shared/links.js holds the default
 const UNSUB_BASE = process.env.UNSUB_BASE_URL || ''; // newsRecommend Function URL
 const TEST_RECIPIENT = process.env.TEST_RECIPIENT || null;
 const DRY_RUN = process.env.EMAIL_SEND_DRY_RUN !== 'false'; // default ON

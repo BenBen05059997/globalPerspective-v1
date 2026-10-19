@@ -123,7 +123,7 @@
       "dir": "backend/distribution/newsEmailSender",
       "runtime": "nodejs20.x",
       "group": "distribution",
-      "features": ["weekly-brief", "breaking", "account"],
+      "features": ["briefings", "breaking", "account"],
       "nodeModules": false,
       "schedules": [
         {
@@ -322,7 +322,7 @@
       "dir": "backend/distribution/newsPostDevTo",
       "runtime": "nodejs24.x",
       "group": "distribution",
-      "features": ["daily", "briefings"],
+      "features": ["briefings"],
       "nodeModules": true,
       "schedules": [
         {
@@ -432,7 +432,7 @@
       "dir": "backend/read-api/newsSensitiveData",
       "runtime": "nodejs22.x",
       "group": "read-api",
-      "features": ["home", "threads", "map", "countries", "daily", "weekly-brief", "briefings", "analysis-studio", "track-record", "account", "economy"],
+      "features": ["home", "threads", "map", "countries", "briefings", "analysis-studio", "track-record", "account", "economy"],
       "nodeModules": false,
       "schedules": []
     },
@@ -539,7 +539,7 @@
       "dir": "backend/distribution/newsWeeklyBrief",
       "runtime": "nodejs20.x",
       "group": "distribution",
-      "features": ["weekly-brief", "briefings"],
+      "features": ["briefings"],
       "nodeModules": false,
       "schedules": [
         {

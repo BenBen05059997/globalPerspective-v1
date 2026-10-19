@@ -24,7 +24,7 @@ the Studio key panel. The Save / Follow / Subscribe controls other pages embed l
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`
 - Public API: none (no `index.js`; nothing outside imports this folder).
 - Imports from other features: `@/features/analysis-studio` -> `loadByok`, `clearByok`, `getProvider`, `ProviderModal`;
-  `@/features/weekly-brief` -> `useWeeklyBrief`. Shared hooks: `useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`.
+  `@/features/briefings` -> `useWeeklyBrief`. Shared hooks: `useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`.
 
 ## Backend
 - Generated row: [reference/features.md#account](../../../../../project-docs/reference/features.md#account)

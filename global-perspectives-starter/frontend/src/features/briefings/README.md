@@ -6,7 +6,7 @@ Weekly Signals Brief; **present** — the slide deck (map + horizontal slides + 
 section is built only from fields the brief payload carries; links are built only to real ids.
 
 ## Status
-- Live, public. Markets briefings paused with economy (`?from=markets` shows a one-line note; no Economic Footprint).
+- Live, public. Markets paused with economy (`?from=markets`: one-line note). Weekly brief published without review.
 
 ## Routes
 - `/briefings?mode=read|weekly|present` -> `BriefingsPage` (no `mode` = read). `&date=YYYY-MM-DD` daily
@@ -16,20 +16,19 @@ section is built only from fields the brief payload carries; links are built onl
   `/weekly-markets` -> `?from=markets`.
 
 ## Frontend
-- `BriefingsPage.jsx` - reads the URL, the mode switch (shared `Tabs`), `PresentMode` (picks `BriefingMode` /
-  `PhoneBriefingMode` via `useIsPhone`); one `document.title` per mode
-- `components/ReadMode.jsx` - date prev/next (from the served edition), fallback note, relative-day tag, Key
-  Takeaways, stat grid, top stories, rising thread, country to watch, Shape of the Day, Full Analysis, Share /
-  Copy / Save, empty state
+- `BriefingsPage.jsx` - URL, mode switch (`Tabs`), `PresentMode` (`BriefingMode` / `PhoneBriefingMode`); a title per mode
+- `components/ReadMode.jsx` - date prev/next (from the served edition), fallback note, Key Takeaways, stats, top
+  stories, rising thread, country to watch, Shape of the Day, Full Analysis, Share / Copy / Save, empty state
 - `components/WeeklyMode.jsx` - KPIs, signal cards (sources, Related, story arc), watch list, method note,
   `SubscribeCard`, Save (`itemType: weekly`), `WeeklyEditionNav` (week before / latest)
 - `components/BriefingSlides.jsx` (slide bodies; the weekly deck ends with `SubscribeCard`), `EditionsStrip.jsx`
   (daily marks + pause range; `WeeklyEditionNav`), `BriefingError.jsx` (failed request: reported, retry), `Trajectory.jsx`
-- Addresses: `briefingHref({ mode, date, week, deck })` from `@/shared/lib/links.js`; `lib/dateKey.js` (`dateKeyOrNull`),
-  `lib/briefingSlides.js` (slide builders, link paths), `lib/editions.js` (pure date helpers)
-- Public API (`index.js`): nothing; `app` (redirects) and `account` (saved items) use `briefingHref`
-- Imports from other features: `@/features/weekly-brief` -> `useWeeklyBrief`. Shared: `useDailyBrief`, `StoryMap`,
-  `StoryLink`/`StoryPeek`, `SubscribeCard`, `SaveButton`, `ShareButtons`, `CopyBriefing`, `TierChip`, `SectionHeader`
+- `lib/dateKey.js` (`dateKeyOrNull`), `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (dates);
+  `hooks/useWeeklyBrief.js` (the weekly brief; ex-`features/weekly-brief`, deleted 2026-10-19)
+- Links: `@/shared/lib/links.js` (`briefingHref`, `storyHref`, `countryHref`) / `EntityLink`; a story only with a real
+  `threadId`, a region or bloc is plain text
+- Public API (`index.js`): `useWeeklyBrief` (used by `account`, `map`; keep its return shape). Imports from other
+  features: none. Shared: `useDailyBrief`, `StoryMap`, `EntityLink`/`StoryLink`, `SubscribeCard`, `SaveButton`, `TierChip`
 
 ## Backend
 - Generated row: [reference/features.md#briefings](../../../../../project-docs/reference/features.md#briefings)
@@ -48,7 +47,7 @@ section is built only from fields the brief payload carries; links are built onl
 - Decisions: [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md) (retired routes),
   [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md); 0028 (Briefings 301s)
 - Plans: [linking and pages](../../../../../project-docs/plans/PLAN_2026-10-19_linking_and_pages.md)
-- Runbooks: [daily-brief.md](../../../../../project-docs/runbooks/daily-brief.md), [weekly-brief.md](../../../../../project-docs/runbooks/weekly-brief.md)
+- Runbooks: [daily-brief.md](../../../../../project-docs/runbooks/daily-brief.md), [weekly-brief.md](../../../../../project-docs/runbooks/weekly-brief.md), [weekly-email.md](../../../../../project-docs/runbooks/weekly-email.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/briefings src/app`; Worker
@@ -56,5 +55,6 @@ section is built only from fields the brief payload carries; links are built onl
 - Latest daily brief (from the repo root):
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"latest_daily_brief","payload":{"lookbackDays":7}}' | head -c 300`
 - Weekly: same command with `-d '{"action":"weekly_brief","payload":{"week":"YYYY-MM-DD"}}'` (omit payload for latest)
+- Weekly job ran: `aws logs tail /aws/lambda/newsWeeklyBrief --since 7d --region ap-northeast-1 --filter-pattern '"[weekly] published:"'`
 
 Last verified: 2026-10-19

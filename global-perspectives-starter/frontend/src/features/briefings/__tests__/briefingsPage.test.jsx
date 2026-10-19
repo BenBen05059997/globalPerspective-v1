@@ -31,7 +31,7 @@ vi.mock('@/shared/hooks/useDailyBrief', () => ({
 }));
 let weeklyValue;
 const weeklyArgs = [];
-vi.mock('@/features/weekly-brief', () => ({
+vi.mock('@/features/briefings/hooks/useWeeklyBrief.js', () => ({
   useWeeklyBrief: (week) => { weeklyArgs.push(week); return weeklyValue; },
 }));
 

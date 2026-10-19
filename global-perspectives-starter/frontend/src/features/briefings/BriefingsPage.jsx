@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
-import { useWeeklyBrief } from '@/features/weekly-brief';
+import { useWeeklyBrief } from '@/features/briefings/hooks/useWeeklyBrief.js';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { briefingHref } from '@/shared/lib/links.js';

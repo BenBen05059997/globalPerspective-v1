@@ -21,7 +21,7 @@ COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 - Map kit in `@/shared/map/` (shared with threads, track-record, analysis-studio, briefings): `legend`, `pulse`, `radar`,
   `globeSpin`, `storyLinkArcs`, `countryRiskLayer`, `gdacsLevel`, `landGeometry` …
 - Public API (`index.js`): `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (app layout), `WAITING_SENSORS` (route fallback)
-- Imports from other features: `@/features/weekly-brief` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`;
+- Imports from other features: `@/features/briefings` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`;
   `@/features/threads` -> `useWebIndex`, `deriveFromIndex`
 - Situations not updated in 30+ days are hidden and counted, never dropped silently (`situationFreshness`).
   Boot sensors tick only on real data; the boot screen shows once per page load (`bootShown`).

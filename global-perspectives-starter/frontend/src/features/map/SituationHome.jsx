@@ -4,7 +4,7 @@ import { useSearchParams, Link } from 'react-router';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
-import { useWeeklyBrief } from '@/features/weekly-brief';
+import { useWeeklyBrief } from '@/features/briefings';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';

@@ -2,9 +2,10 @@
 
 // Real-country rule + record policy (Batch 3 / phase F). The `regions` an LLM puts on a story include
 // aggregates (Europe, Asia, Middle East, Americas, Africa, Global, European Union, NATO ...); those must
-// not be briefed or read as countries. The logic below is a byte-for-byte copy of `isCountryName` in
-// newsCountryIntelligence/src/refreshPolicy.js (R1b) together with its two name tables; the copies are
-// kept identical by scripts/check-shared-sync.mjs. Pure: no AWS, no network.
+// not be briefed or read as countries. The logic below is the same text as `isCountryName` in
+// newsCountryIntelligence/src/refreshPolicy.js (R1b); both read the name tables next to this file, and
+// scripts/check-shared-sync.mjs keeps the rule text (and the frontend copies) equal. One copy, used by the
+// Lambdas through src/_shared. Pure: no AWS, no network.
 
 const ISO3_NAMES = require('./iso3Names.json');
 const PLACE_NAMES = require('./placeNames.json');

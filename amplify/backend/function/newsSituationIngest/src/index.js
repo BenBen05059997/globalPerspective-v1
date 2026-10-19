@@ -2,7 +2,7 @@
 
 // newsSituationIngest — the NEWS producer (S3, DATA_STRATEGY.md). Hourly:
 //   1. fetch RSS headlines (world news)
-//   2. classify each in batches on the flash model (deepseek-v4-flash) → iso3/latlon/axis/severity
+//   2. classify each in batches on the flash model (GROK_MODEL; live: deepseek-flash) → iso3/latlon/axis/severity
 //   3. deterministically cluster into STORIES (outlets, velocity, spread)
 //   4. write corpus/YYYY/MM/DD/HH.jsonl (classified articles) + stories/state/<id>.json + stories/index.json
 // The tracker (S3·T3) reads stories/index and opens situations for significant stories → the map's
@@ -14,7 +14,7 @@ const { buildMessages, parseClassification, normalizeClassified, clusterStories,
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-const MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
+const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 const API_KEY = process.env.XAI_API_KEY;
 const API_BASE = (process.env.GROK_API_URL || 'https://api.deepseek.com').replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
 const BATCH = Number(process.env.CLASSIFY_BATCH) || 35;

@@ -40,17 +40,17 @@
 ### Review Checklist (Before Finalizing Any Asset)
 - [ ] Does it match the voice in voice-profile.md?
 - [ ] Is every factual claim accurate (no invented stats)?
-- [ ] Does it communicate at least one of the 5 key messages from brand-context.md?
+- [ ] Does it communicate at least one of the 5 key messages in .agents/product-marketing-context.md?
 - [ ] Is the CTA specific and actionable?
 - [ ] Has a human reviewed it before publishing?
 
 ### Context Files to Attach for Each Task Type
 | Task | Attach |
 |------|--------|
-| Blog posts, long-form | voice-profile.md + brand-context.md |
-| Ad copy | brand-context.md (personas + key messages) |
-| Email sequences | voice-profile.md + brand-context.md (persona section) |
+| Blog posts, long-form | voice-profile.md + product-marketing-context.md |
+| Ad copy | product-marketing-context.md (personas + key messages) |
+| Email sequences | voice-profile.md + product-marketing-context.md (persona section) |
 | Social posts | voice-profile.md (platform adjustments section) |
-| Landing page copy | brand-context.md (value prop + competitor table) |
-| SEO briefs | brand-context.md (product features + data points) |
-| Competitive analysis | brand-context.md (competitor table as baseline) |
+| Landing page copy | product-marketing-context.md (positioning + competitor table) |
+| SEO briefs | product-marketing-context.md (differentiation + proof points) |
+| Competitive analysis | product-marketing-context.md (competitor table as baseline) |

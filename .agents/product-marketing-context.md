@@ -1,15 +1,18 @@
 # Product Marketing Context
 
-*Last updated: 2026-09-24*
+*Last updated: 2026-10-19 (facts checked against code and live AWS). This is the single marketing context file; `internal-docs/marketing/brand-context.md` points here.*
 
 ## Product Overview
 **One-liner:** AI-powered geopolitical intelligence platform that tracks how stories evolve — not just what happened today.
 
-**What it does:** Global Perspectives ingests news from 20+ international sources across 6 continents hourly, clusters articles into ~13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. An interactive world map with geodesic connection lines shows how events span borders. All reading is free, including the archive and thread/country intelligence; Polar membership buys deeper correction history, change-alerts on followed countries, and Analysis Studio compute.
+**What it does:** Global Perspectives ingests news from 20+ international sources across five continents three times a day (04:15, 12:15, 20:15 UTC), selects up to 13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. The home page is a world situation map: open situations on four axes (conflict, political, economic, humanitarian), each with a severity tier, plus severe natural disasters from the UN/EU GDACS feed. All reading is free, including the archive and thread/country intelligence; Polar membership buys deeper correction history, change-alerts on followed countries, and Analysis Studio compute.
 
 **Product category:** Geopolitical intelligence / AI news analysis
 
-**Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (custom domain on GitHub Pages frontend, AWS Lambda backend)
+**Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (GitHub Pages frontend behind a Cloudflare Worker, AWS Lambda backend, DeepSeek models)
+
+## Positioning Statement
+**For analysts, executives, researchers, and globally-minded professionals who need to understand the world — not just follow it — Global Perspectives is the geopolitical intelligence platform that tracks how stories move, not just what happened today. Unlike Stratfor or Bloomberg Intelligence (which cost thousands and serve only large organizations) or basic news aggregators (which serve headlines without context), Global Perspectives provides narrative-level AI analysis at accessible pricing with free reading that requires no account.**
 
 **Business model:** Reading is free, no account required, no archive gating. Polar membership is $15/month or $150/year — it buys Analysis Studio compute + depth (fuller correction history, country change-alerts via email), not access to reading. There is no Enterprise tier. Paddle is dead; Polar is the live Merchant of Record. No welcome-email service is currently wired (Loops.so is not in use).
 
@@ -69,7 +72,7 @@
 
 | Competitor | Price | Weakness vs Us |
 |------------|-------|----------------|
-| Stratfor | $1,000+/year | Enterprise only; no real-time hourly updates; no narrative threading UI |
+| Stratfor | $1,000+/year | Enterprise only; no narrative threading UI |
 | Oxford Analytica | $5,000+/year | Human-authored (slower); enterprise only; not interactive |
 | Bloomberg Intelligence | $25,000+/year | Designed for finance, not geopolitical narrative tracking |
 | Ground News | ~$10/month | No AI synthesis; shows bias labels, not narrative arcs |
@@ -81,16 +84,30 @@
 
 ## Differentiation
 **Key differentiators:**
-1. **Narrative threading:** Persistent `threadId` system links related events across 7 days (member) or 30 days (enterprise) — showing how stories develop, not just what happened today
+1. **Narrative threading:** Persistent `threadId` system links related events across the 30-day archive — showing how stories develop, not just what happened today
 2. **Three-layer analysis per topic:** Summary (what), Prediction (next), Trace Cause (why)
-3. **Thread Intelligence:** Daily story arc, trajectory forecast, root cause chain, and watch questions for top 10 active threads
-4. **Country Intelligence:** Daily situation assessments for top 10 most active countries — headline, situation summary, trajectory, risk signals
+3. **Thread Intelligence:** Story arc, trajectory forecast, root cause chain, and watch questions for up to 10 active threads, re-run daily when a thread has new events
+4. **Country Intelligence:** Situation assessments for the 20 most-covered countries (plus up to 5 more with an active alert), refreshed when something changes and at least weekly — headline, situation summary, trajectory, risk signals
 5. **Non-Western sourcing:** Al Jazeera, SCMP, Dawn, Japan Times alongside Western wire services — intelligence without geographic bias
-6. **World map with geodesic connection lines:** Visual evidence of how stories connect across borders
+6. **World situation map:** Open situations by axis and severity tier, with the scoring inputs shown on every situation
 7. **Free tier with no account required:** Public access, no friction
 8. **Accessible pricing:** $15/month vs. $1,000+/year for the nearest professional alternative
 
 **How we do it differently:** Instead of aggregating 1,000 headlines, we show ~13 topics per cycle with complete narrative context — what happened, why, what's next, and how today's event connects to last week's chapter.
+
+## Key Messages (always communicate these)
+1. **Intelligence, not headlines.** We show how stories move, not just what happened today.
+2. **Stories evolve. We track them.** The narrative arc threading system links events across days and geographies automatically.
+3. **Global without Western bias.** Deliberately sourced from Al Jazeera, SCMP, Dawn, Japan Times — not just Reuters and AP.
+4. **Accessible.** Reading is free and requires no account. Member is $15/month. The equivalent from Stratfor is $1,000+/year.
+5. **AI augments, doesn't replace.** Every analysis is traceable to named source articles. Human judgment stays at the center.
+
+## What We Are Not
+- Not a news outlet (we don't write original reporting)
+- Not a bias-detection tool (we read across viewpoints, but we don't label bias)
+- Not a financial terminal (no market data, no trading signals)
+- Not a chatbot (proactive monitoring, not reactive Q&A)
+- Not a newsletter (interactive platform, not a daily email)
 
 ## Objections
 
@@ -113,7 +130,7 @@
 
 **Habit:** People default to existing feeds and aggregators. Scrolling feels productive even when it doesn't produce understanding.
 
-**Anxiety:** "Is the AI trustworthy?" — addressed by traceable sources. "Will it stay live?" — platform is live, pipeline runs hourly, membership is live today.
+**Anxiety:** "Is the AI trustworthy?" — addressed by traceable sources. "Will it stay live?" — platform is live, the topic pipeline runs three times a day, membership is live today.
 
 ## Customer Language
 **How they describe the problem:**
@@ -142,7 +159,8 @@
 | Summary | Key takeaways per topic |
 | Topic | A cluster of related articles from multiple sources and regions |
 | threadId | Persistent identifier linking related events across days and geographies |
-| Spider Web | Geodesic connection lines on the world map between countries sharing the same news topic |
+| Situation | An event on one of four axes (conflict, political, economic, humanitarian) that opens when independent outlets converge on it, scored low / moderate / elevated / high |
+| Web view | The Stories board's web of links between stories judged to feed into one another (`/weekly?view=web`); it replaced the retired Spider Web demo |
 
 ## Brand Voice
 **Tone:** Credible, analytical, direct. The voice of a senior analyst who respects your time and treats you as intelligent.
@@ -153,17 +171,17 @@
 
 ## Proof Points
 **Current metrics:**
-- 20+ international sources across 6 continents ingested hourly
-- ~13 AI-clustered topics per cycle, refreshed hourly
+- 20+ international sources across five continents, ingested three times a day
+- Up to 13 AI-selected topics per cycle, three cycles a day
 - 3 analysis layers per topic: Summary, Prediction, Trace Cause
-- Narrative thread system: 7 days (member) / 30 days (enterprise)
-- Thread Intelligence: daily analysis of top 10 active story arcs
-- Country Intelligence: daily briefings for top 10 most active countries
+- Narrative thread system across the 30-day archive (reading is not gated)
+- Thread Intelligence: up to 10 active story arcs, re-analysed daily when they have new events
+- Country Intelligence: the 20 most-covered countries plus up to 5 with an active alert, refreshed on change and at least weekly
 - Hallucination filter: every URL in AI output verified against ingested articles
 - Free tier: no account required
 - Pricing: $15/month vs. $1,000+/year Stratfor comparable
 
-**Product Hunt:** Launched (see PRODUCT_HUNT_PREP.md)
+**Product Hunt:** unverified — the repo has no launch record (`PRODUCT_HUNT_PREP.md` was never committed); confirm with the operator before citing a launch.
 
 **Launch mode:** Membership ($15/month or $150/year via Polar) is live and billing today; there is no free-launch grace period.
 
@@ -177,7 +195,6 @@
 4. Share or recommend to colleagues
 
 **Active marketing channels:**
-- LinkedIn (via `newsPostLinkedIn` Lambda, daily)
-- Bluesky (via the same Lambda)
+- LinkedIn and Bluesky (via the `newsPostLinkedin` Lambda, every 3 hours; up to 5 new topics per platform per run)
 
-**Pending / not currently active:** X/Twitter, Threads, Dev.to, a Buffer-scheduled bulk-post queue, an SEO blog, and richer map-image social posts — none of these are live; verify current status before citing them as active.
+**Pending / not currently active:** X/Twitter, Threads, Dev.to (the publish path was removed 2026-05-18; the daily `newsPostDevTo` run now only builds the in-app Daily Brief at `/daily`), a Buffer-scheduled bulk-post queue, an SEO blog, and richer map-image social posts — none of these are live; verify current status before citing them as active.

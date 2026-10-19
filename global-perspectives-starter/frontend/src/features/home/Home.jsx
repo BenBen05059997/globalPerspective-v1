@@ -27,6 +27,10 @@ import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
 import '@/features/home/AIComponents.css';
 import '@/features/home/Home.css';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // SVG icons
 const SumIcon = () => (
@@ -342,14 +346,15 @@ function Home() {
       <TodayArchiveSidebar mode="rail" entries={filteredArchiveEntries} />
       <div className="home-rail-coffee">
         <p>We run ad-free. Help keep it that way.</p>
-        <a
+        <Button
           href="https://buymeacoffee.com/BenBen990505"
           target="_blank"
           rel="noopener noreferrer"
+          compact
           className="home-rail-coffee-btn"
         >
           Buy Me a Coffee ↗
-        </a>
+        </Button>
       </div>
     </>
   );
@@ -387,13 +392,13 @@ function Home() {
         {isStale && (
           <div className="home-alert stale">
             <span>Topics refreshing — showing latest available</span>
-            <button onClick={refetch}>Refresh</button>
+            <Button compact onClick={refetch}>Refresh</Button>
           </div>
         )}
         {hasNewData && !isStale && (
           <div className="home-alert fresh">
             <span>New topics available</span>
-            <button onClick={refetch}>Load</button>
+            <Button compact onClick={refetch}>Load</Button>
           </div>
         )}
       </div>
@@ -409,7 +414,7 @@ function Home() {
               </>
             );
             return (
-              <div key={i} className={`home-trust-card${c.to ? ' is-link' : ''}`}>
+              <Card key={i} className={`home-trust-card${c.to ? ' is-link' : ''}`}>
                 {c.to
                   ? <Link to={c.to} className="home-trust-card-link">{body}</Link>
                   : body}
@@ -419,7 +424,7 @@ function Home() {
                 {c.hint && (
                   <Link to={c.hintTo || '/membership'} className="home-trust-hint">{c.hint}</Link>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -435,7 +440,7 @@ function Home() {
       {!loading && error && totalTopics === 0 && (
         <div className="home-unavailable" role="status" data-testid="today-unavailable">
           <p>Couldn't load today's topics.</p>
-          <button type="button" className="home-unavailable-btn" onClick={refetch}>Retry</button>
+          <Button onClick={refetch}>Retry</Button>
         </div>
       )}
 
@@ -459,23 +464,23 @@ function Home() {
             return (
               <article key={globalIdx} id={`topic-${id}`} className="home-topic">
                 <div className="home-topic-kicker">
-                  {t.category && <span className="home-topic-cat">{t.category}</span>}
-                  {t.x_trending && <span className="home-trend-pill">TRENDING</span>}
-                  {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
+                  <CategoryTag category={t.category} />
+                  {t.x_trending && <span className="home-flag-tag home-flag-tag--trend">Trending</span>}
+                  {t.urgency === 'high' && <span className="home-flag-tag">Urgent</span>}
                   {!ECONOMY_PARKED && t.threadId && disruptionByThread[t.threadId]?.severity && (
                     <Link
                       to={threadPath(t.threadId, { tab: 'economy' })}
-                      style={{ textDecoration: 'none' }}
+                      className="home-topic-sev"
                       title="Economic disruption — click for analysis"
                     >
                       <SeverityBadge level={disruptionByThread[t.threadId].severity} size="sm" />
                     </Link>
                   )}
                   {country && (
-                    <span> · <Link
+                    <Link
                       to={`/weekly/country/${encodeURIComponent(country)}`}
                       className="home-topic-country-link"
-                    >{country}</Link></span>
+                    >{country}</Link>
                   )}
                 </div>
 
@@ -532,64 +537,39 @@ function Home() {
 
                 <div className="home-topic-actions">
                   <div className="home-ai-row">
-                    {/* Summary */}
-                    <button
-                      className={`home-ai-btn sum${hasSummary || summaryLoading[id] ? ' active' : ''}${summaryLoading[id] ? ' loading' : ''}`}
-                      onClick={() => handleGenerateSummary(t, globalIdx)}
-                      disabled={summaryLoading[id]}
-                    >
-                      {summaryLoading[id]
-                        ? <span className="home-ai-spinner" />
-                        : hasSummary
-                          ? <span className="btn-dot" />
-                          : <SumIcon />
-                      }
-                      Summary
-                    </button>
-
-                    {/* Predict */}
-                    <button
-                      className={`home-ai-btn pre${hasPredict || predictionLoading[id] ? ' active' : ''}${predictionLoading[id] ? ' loading' : ''}`}
-                      onClick={() => handleGeneratePrediction(t, globalIdx)}
-                      disabled={predictionLoading[id]}
-                    >
-                      {predictionLoading[id]
-                        ? <span className="home-ai-spinner" />
-                        : hasPredict
-                          ? <span className="btn-dot" />
-                          : <PreIcon />
-                      }
-                      Predict
-                    </button>
-
-                    {/* Trace Cause */}
-                    <button
-                      className={`home-ai-btn tra${hasTrace || traceCauseLoading[id] ? ' active' : ''}${traceCauseLoading[id] ? ' loading' : ''}`}
-                      onClick={() => handleGenerateTraceCause(t, globalIdx)}
-                      disabled={traceCauseLoading[id]}
-                    >
-                      {traceCauseLoading[id]
-                        ? <span className="home-ai-spinner" />
-                        : hasTrace
-                          ? <span className="btn-dot" />
-                          : <TraIcon />
-                      }
-                      Trace Cause
-                    </button>
+                    {[
+                      { label: 'Summary', has: hasSummary, loading: !!summaryLoading[id], run: handleGenerateSummary, icon: <SumIcon /> },
+                      { label: 'Predict', has: hasPredict, loading: !!predictionLoading[id], run: handleGeneratePrediction, icon: <PreIcon /> },
+                      { label: 'Trace Cause', has: hasTrace, loading: !!traceCauseLoading[id], run: handleGenerateTraceCause, icon: <TraIcon /> },
+                    ].map(({ label, has, loading: busy, run, icon }) => (
+                      <Button
+                        key={label}
+                        compact
+                        className="home-ai-btn"
+                        selected={has || busy}
+                        aria-busy={busy}
+                        onClick={() => run(t, globalIdx)}
+                        disabled={busy}
+                      >
+                        {has ? <span className="btn-dot" aria-hidden="true" /> : icon}
+                        {label}
+                      </Button>
+                    ))}
 
                     {/* Analyze (Analysis Studio) */}
-                    <Link className="home-ai-btn ana" to={`/analyze?stories=${encodeURIComponent(id)}`}>
+                    <Button compact className="home-ai-btn" to={`/analyze?stories=${encodeURIComponent(id)}`}>
                       <AnaIcon />
                       Analyze
-                    </Link>
+                    </Button>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="home-topic-src">
                     {Array.isArray(t.sources) && t.sources.length > 0 && (
                       <button
+                        type="button"
                         className="home-src-link"
+                        aria-expanded={!!sourcesExpanded[id]}
                         onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       >
                         {sourcesExpanded[id] ? 'Hide sources' : `${t.sources.length} source${t.sources.length !== 1 ? 's' : ''} ↗`}
                       </button>
@@ -620,10 +600,9 @@ function Home() {
                   const sorted = [...diversitySort(primary), ...diversitySort(secondary)];
                   return (
                     <div className="home-sources-panel">
-                      <div className="home-sources-hd" onClick={() => toggleSourcesExpanded(t, globalIdx)}>
-                        <span>Article Sources ({t.sources.length})</span>
-                        <span className="home-sources-close">✕</span>
-                      </div>
+                      <SectionHeader as="h4" className="home-sources-hd" label="Article Sources" count={t.sources.length}>
+                        <Button variant="icon" compact label="Hide sources" onClick={() => toggleSourcesExpanded(t, globalIdx)}>✕</Button>
+                      </SectionHeader>
                       <div className="home-sources-body">
                         {sorted.map((src, si) => (
                           <div key={si} className={`home-source-item${src.tier === 'secondary' ? ' is-secondary' : ''}`}>

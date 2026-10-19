@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import '@/features/home/components/TopicNav.css';
 
-function TopicNav({ topics, categorizedTopics, mode = 'float' }) {
+// TopicNav — the /today right rail (inside EditorialShell): every topic grouped by region, the one
+// in view marked as the selected row; a click scrolls to it.
+function TopicNav({ topics, categorizedTopics }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [collapsedRegions, setCollapsedRegions] = useState({});
   const observerRef = useRef(null);
-  const isRail = mode === 'rail';
 
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
@@ -60,10 +63,6 @@ function TopicNav({ topics, categorizedTopics, mode = 'float' }) {
     }
   };
 
-  const toggleRegion = (region) => {
-    setCollapsedRegions(prev => ({ ...prev, [region]: !prev[region] }));
-  };
-
   if (!topics || topics.length === 0) return null;
 
   const sortedRegions = Object.entries(categorizedTopics)
@@ -74,86 +73,32 @@ function TopicNav({ topics, categorizedTopics, mode = 'float' }) {
       return b[1].length - a[1].length;
     });
 
-  // Rail mode — no floating chrome, used inside EditorialShell right slot.
-  if (isRail) {
-    return (
-      <div className="topic-nav-rail">
-        <div className="topic-nav-rail-head">
-          <span className="topic-nav-rail-title">Topics</span>
-          <span className="topic-nav-rail-count">{topics.length}</span>
-        </div>
-        {sortedRegions.map(([region, regionTopics]) => (
-          <div key={region} className="topic-nav-rail-region">
-            <div className="topic-nav-rail-lbl">
-              {region} <span className="topic-nav-rail-n">{regionTopics.length}</span>
-            </div>
+  return (
+    <div className="topic-nav-rail">
+      <SectionHeader label="Topics" count={topics.length} />
+      {sortedRegions.map(([region, regionTopics]) => (
+        <div key={region} className="topic-nav-rail-region">
+          <SectionHeader as="h3" label={region} count={regionTopics.length} />
+          <ul className="topic-nav-rail-list">
             {regionTopics.map((topic) => {
               const globalIdx = topics.indexOf(topic);
               const id = getTopicId(topic, globalIdx);
-              const isActive = activeTopicId === `topic-${id}`;
+              const category = topic.category || 'general';
               return (
-                <div
+                <StoryRow
                   key={id}
-                  className={`topic-nav-rail-item ${isActive ? 'active' : ''}`}
+                  title={topic.title}
+                  hue={crisisDotVar(category)}
+                  chip={<CategoryTag category={category} />}
+                  meta={topic.x_trending ? <span className="topic-nav-rail-trend">Trending</span> : null}
+                  active={activeTopicId === `topic-${id}`}
                   onClick={() => scrollToTopic(id)}
-                >
-                  <div className="topic-nav-rail-item-t">{topic.title}</div>
-                  <div className="topic-nav-rail-item-m">
-                    <span>{topic.category || 'general'}</span>
-                    {topic.x_trending && <span className="topic-nav-rail-trend">trending</span>}
-                  </div>
-                </div>
+                />
               );
             })}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className={`topic-nav ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="topic-nav-header" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <span className="topic-nav-title">Topics</span>
-        <span className="topic-nav-count">{topics.length}</span>
-        <span className="topic-nav-toggle">{isCollapsed ? '◀' : '▶'}</span>
-      </div>
-
-      {!isCollapsed && (
-        <div className="topic-nav-list">
-          {sortedRegions.map(([region, regionTopics]) => {
-            const isRegionCollapsed = collapsedRegions[region];
-            return (
-              <div key={region} className="topic-nav-region">
-                <div
-                  className="topic-nav-region-header"
-                  onClick={() => toggleRegion(region)}
-                >
-                  <span className="topic-nav-region-label">{region}</span>
-                  <span className="topic-nav-region-count">{regionTopics.length}</span>
-                  <span className="topic-nav-region-toggle">{isRegionCollapsed ? '▶' : '▼'}</span>
-                </div>
-
-                {!isRegionCollapsed && regionTopics.map((topic) => {
-                  const globalIdx = topics.indexOf(topic);
-                  const id = getTopicId(topic, globalIdx);
-                  const isActive = activeTopicId === `topic-${id}`;
-
-                  return (
-                    <div
-                      key={id}
-                      className={`topic-nav-item ${isActive ? 'active' : ''}`}
-                      onClick={() => scrollToTopic(id)}
-                    >
-                      <span className="topic-nav-item-title">{topic.title}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+          </ul>
         </div>
-      )}
+      ))}
     </div>
   );
 }

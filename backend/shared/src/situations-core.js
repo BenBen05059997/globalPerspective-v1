@@ -231,7 +231,42 @@ function coolSituation(prev, obs, nowIso, ttl) {
 
 // ── news stories → situations (S3·T3) ────────────────────────────────────────
 // A clustered news story (from newsSituationIngest) → situation state. Tier from severity, axis from
-// the story; escalating when coverage is accelerating or spreading. situationId `news#<storyId>`.
+// the story; escalating when coverage is accelerating or spreading.
+// Situation id (L2 linking, 2026-10-19): a story on a story thread keys by country + thread,
+// `news#<ISO3>#<threadId>`, so every story of one country and thread (storyIds split by axis and
+// entity, e.g. conflict#AFG#afghan / #afghan-taliban) folds into one situation; a story without a
+// thread keeps `news#<storyId>`. The country is the storyId's ISO3 (`<axis>#<ISO3>#<entity>`).
+function storyCountry(story) {
+  const m = /^[^#]+#([A-Z]{3})#/.exec(String((story && story.storyId) || ''));
+  return m ? m[1] : ((story && story.iso3) || [])[0] || null;
+}
+function newsSituationId(story, threadId) {
+  const iso = storyCountry(story);
+  return threadId && iso ? `news#${iso}#${threadId}` : `news#${story.storyId}`;
+}
+// Several stories → the one story buildStorySituation folds. The most significant story (outlets ×
+// severity) leads (title, axis, centroid); counts take the max (outlets may overlap across stories,
+// so they are not summed); countries and headlines are the union.
+function mergeStories(stories) {
+  if (stories.length === 1) return { ...stories[0], storyIds: [stories[0].storyId] };
+  const weight = (s) => (Number(s.outlets) || 0) * (Number(s.max_severity) || 0);
+  const lead = stories.slice().sort((a, b) => weight(b) - weight(a))[0];
+  const union = (key) => [...new Set(stories.flatMap((s) => s[key] || []))];
+  const seen = new Set();
+  const headlines = [];
+  for (const h of [lead, ...stories.filter((s) => s !== lead)].flatMap((s) => s.headlines || [])) {
+    if (h && !seen.has(h.url)) { seen.add(h.url); headlines.push(h); }
+  }
+  const max = (key) => Math.max(...stories.map((s) => Number(s[key]) || 0));
+  return {
+    ...lead,
+    storyIds: stories.map((s) => s.storyId),
+    iso3: [...new Set([...(lead.iso3 || []), ...union('iso3')])],
+    spread_new_iso3: union('spread_new_iso3'),
+    outlets: max('outlets'), max_severity: max('max_severity'), velocity: max('velocity'),
+    headlines: headlines.slice(0, 5),
+  };
+}
 const SEV_TIER = { 5: 'high', 4: 'elevated', 3: 'moderate', 2: 'low', 1: 'low' };
 const TIER_ORDER = ['low', 'moderate', 'elevated', 'high'];
 // Corroboration cap (audit F2): a single-outlet story can't claim 'high' on one LLM severity call.
@@ -271,8 +306,14 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
   else if (reopened) change = 'reopened';
   else if (escalating && prev.state !== 'escalating' && raiseCooledDown) change = 'raised';
   const state = (!prev || reopened) ? 'emerging' : (escalating ? 'escalating' : 'peak');
+  const situationId = opts.situationId || `news#${story.storyId}`;
+  // Old ids this situation answers to (folded storyIds, pre-2026-10-19 `news#<storyId>` keys), so a
+  // saved `/?focus=<old id>` still resolves. Never the situation's own id.
+  const aliases = [...new Set([...((prev && prev.aliases) || []), ...(opts.aliases || [])])].filter((a) => a !== situationId);
   const base = {
-    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId,
+    situationId, source: 'news', storyId: story.storyId,
+    storyIds: story.storyIds || [story.storyId],
+    aliases,
     // Event-registry link (Phase 1): the current map wins when present; otherwise LATCH the
     // previously-proven threadId for the situation's lifetime. Latching (not mirroring) because
     // topics rotate every ~4h while the thread page lives 90 days — a URL-proven link shouldn't
@@ -308,5 +349,5 @@ module.exports = {
   OPEN_STATES, OPENING_LEVELS, LEVEL_RANK, LEVEL_TIER, TIER_CADENCE_MIN,
   parseGeometry, eventKeyOf, eventLabel, affectedIso3, cleanSeverity, verbLabel,
   buildObservation, nextCheckAt, appendHistory, buildSituation, coolSituation, buildStorySituation,
-  capTierByOutlets,
+  capTierByOutlets, storyCountry, newsSituationId, mergeStories,
 };

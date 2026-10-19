@@ -1,6 +1,6 @@
 # newsSituationTracker
 
-Sole writer of situation state and the map bundle. Each sweep reads the GDACS snapshot and the significant news stories, folds them into prior state (open / raise / spread / cool, close after N cooling sweeps, archive closed ones after `CLOSED_KEEP_HOURS`), and assembles `world/latest.json` with situations, ranked list, templated lede and freshness. Links a story to a thread via `threads/story-map.json`. No LLM.
+Sole writer of situation state and the map bundle. Each sweep reads the GDACS snapshot and the significant news stories, folds them into prior state (open / raise / spread / cool, close after N cooling sweeps, archive closed ones after `CLOSED_KEEP_HOURS`), and assembles `world/latest.json` with situations, ranked list, templated lede and freshness. Links a story to a thread via `threads/story-map.json` (a prior situation latches the thread for its stories). A threaded story's situation id is `news#<ISO3>#<threadId>` (ISO3 from the storyId), so stories of one country and thread fold into one situation (`storyIds[]`); an unthreaded story keeps `news#<storyId>`. Old ids a situation absorbed stay in `aliases[]` (state, index and `world/latest.json`) so `/?focus=<old id>` can resolve; the absorbed old state objects are archived, not cooled. No LLM.
 
 ## Deployment
 - Deployed name `newsSituationTracker` · runtime `nodejs22.x` · group `situations` (scripts/functions.json)
@@ -20,6 +20,6 @@ Sole writer of situation state and the map bundle. Each sweep reads the GDACS sn
 - `situations-core` comes from `backend/shared/src` through the `src/_shared` symlink (one copy, shared with newsGdacsIngest); `scripts/lambda.sh` zips it as a real file. Its tests: `backend/shared/test/situations-core.test.mjs`.
 
 ## Tests
-- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` - 7 passed 2026-10-19
+- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` - 12 passed 2026-10-19
 
 Last verified: 2026-10-19

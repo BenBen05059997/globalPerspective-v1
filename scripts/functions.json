@@ -1,0 +1,530 @@
+{
+  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (amplify/backend/function/<dir>/src), runtime, feature group, whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
+  "functions": {
+    "newsAnalyze": {
+      "dir": "newsAnalyze",
+      "runtime": "nodejs20.x",
+      "group": "membership-studio",
+      "nodeModules": false,
+      "schedules": [],
+      "deployBlocked": "Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md)."
+    },
+    "newsAnalyze-sandbox": {
+      "dir": null,
+      "runtime": "nodejs20.x",
+      "group": "membership-studio",
+      "nodeModules": false,
+      "schedules": [],
+      "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
+    },
+    "newsBreakingAlert": {
+      "dir": "newsBreakingAlert",
+      "runtime": "nodejs22.x",
+      "group": "distribution",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerBreakingAlert",
+          "expr": "cron(35 4/8 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsClientErrors": {
+      "dir": "newsClientErrors",
+      "runtime": "nodejs24.x",
+      "group": "read-api",
+      "nodeModules": false,
+      "schedules": []
+    },
+    "newsCountryFactsUpdater": {
+      "dir": "newsCountryFactsUpdater",
+      "runtime": "nodejs24.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "Fact",
+          "expr": "cron(0 5 ? * MON *)",
+          "tz": "Asia/Tokyo",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsCountryIntelligence": {
+      "dir": "newsCountryIntelligence",
+      "runtime": "nodejs24.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "countryIntelliegence",
+          "expr": "cron(15 5 * * ? *)",
+          "tz": "UTC",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsDriftCorrector": {
+      "dir": "newsDriftCorrector",
+      "runtime": "nodejs20.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerDriftCorrector",
+          "expr": "cron(30 5 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsEconomicImpact": {
+      "dir": "newsEconomicImpact",
+      "runtime": "nodejs22.x",
+      "group": "economy-parked",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerNewsEconomicImpact",
+          "expr": "cron(30 7 * * ? *)",
+          "state": "DISABLED"
+        }
+      ]
+    },
+    "newsEconomicQuality": {
+      "dir": "newsEconomicQuality",
+      "runtime": "nodejs22.x",
+      "group": "economy-parked",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerNewsEconomicQuality",
+          "expr": "cron(0 8 * * ? *)",
+          "state": "DISABLED"
+        }
+      ]
+    },
+    "newsEmailSender": {
+      "dir": "newsEmailSender",
+      "runtime": "nodejs20.x",
+      "group": "distribution",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerBreakingEmailSend",
+          "expr": "rate(15 minutes)",
+          "state": "DISABLED",
+          "input": "{\"mode\":\"breaking\"}"
+        },
+        {
+          "via": "events",
+          "name": "TriggerDriftEmailSend",
+          "expr": "cron(40 7 * * ? *)",
+          "state": "DISABLED",
+          "input": "{\"mode\":\"drift_alert\"}"
+        },
+        {
+          "via": "events",
+          "name": "TriggerWeeklyEmailSend",
+          "expr": "cron(0 14 ? * SUN *)",
+          "state": "ENABLED",
+          "input": "{\"mode\":\"weekly\"}"
+        }
+      ]
+    },
+    "newsErrorDigest": {
+      "dir": "newsErrorDigest",
+      "runtime": "nodejs24.x",
+      "group": "monitoring",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerErrorDigest",
+          "expr": "cron(15 0/6 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsFreshnessMonitor": {
+      "dir": "newsFreshnessMonitor",
+      "runtime": "nodejs24.x",
+      "group": "monitoring",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerFreshnessMonitor",
+          "expr": "cron(30 0/2 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsGdacsIngest": {
+      "dir": "newsGdacsIngest",
+      "runtime": "nodejs22.x",
+      "group": "situations",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerGdacsIngest",
+          "expr": "rate(20 minutes)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsGdeltConflict": {
+      "dir": "newsGdeltConflict",
+      "runtime": "nodejs22.x",
+      "group": "situations",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerGdeltConflict",
+          "expr": "cron(0 */6 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsImpactAudit": {
+      "dir": "newsImpactAudit",
+      "runtime": "nodejs22.x",
+      "group": "monitoring",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerImpactAudit",
+          "expr": "cron(0 9 * * ? *)",
+          "state": "DISABLED"
+        }
+      ]
+    },
+    "newsInvokeGemini-dev": {
+      "dir": "newsInvokeGemini",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "InvokeGoogleGemini",
+          "expr": "cron(15 4/8 * * ? *)",
+          "tz": "UTC",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsMarketsData": {
+      "dir": "newsMarketsData",
+      "runtime": "nodejs24.x",
+      "group": "economy-parked",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "MarketsDataHourly",
+          "expr": "rate(1 hour)",
+          "state": "ENABLED",
+          "input": "{\"source\":\"all\"}"
+        },
+        {
+          "via": "events",
+          "name": "MarketsMacrosWeekly",
+          "expr": "cron(0 2 ? * SUN *)",
+          "state": "ENABLED",
+          "input": "{\"source\":\"macros\"}"
+        },
+        {
+          "via": "events",
+          "name": "MarketsYieldsDaily",
+          "expr": "cron(0 6 ? * MON-FRI *)",
+          "state": "ENABLED",
+          "input": "{\"source\":\"yields\"}"
+        }
+      ]
+    },
+    "newsModelGuard": {
+      "dir": "newsModelGuard",
+      "runtime": "nodejs20.x",
+      "group": "monitoring",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerModelGuard",
+          "expr": "cron(0 12 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsPairIntelligence": {
+      "dir": "newsPairIntelligence",
+      "runtime": "nodejs24.x",
+      "group": "economy-parked",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerPairIntelligenceWeekly",
+          "expr": "cron(0 8 ? * MON *)",
+          "state": "DISABLED",
+          "input": "{}"
+        }
+      ]
+    },
+    "newsPolarBilling": {
+      "dir": "newsPolarBilling",
+      "runtime": "nodejs20.x",
+      "group": "membership-studio",
+      "nodeModules": false,
+      "schedules": []
+    },
+    "newsPolarBilling-sandbox": {
+      "dir": null,
+      "runtime": "nodejs20.x",
+      "group": "membership-studio",
+      "nodeModules": false,
+      "schedules": [],
+      "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
+    },
+    "newsPostDevTo": {
+      "dir": "newsPostDevTo",
+      "runtime": "nodejs24.x",
+      "group": "distribution",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "InvokeDev",
+          "expr": "cron(0 23 * * ? *)",
+          "tz": "Asia/Tokyo",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsPostLinkedin": {
+      "dir": "newsPostLinkedIn",
+      "runtime": "nodejs24.x",
+      "group": "distribution",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "InvokeLinkedIn",
+          "expr": "cron(20 */3 * * ? *)",
+          "tz": "Asia/Tokyo",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsPredictionResolver": {
+      "dir": "newsPredictionResolver",
+      "runtime": "nodejs22.x",
+      "group": "predictions",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerPredictionResolver",
+          "expr": "cron(30 10 * * ? *)",
+          "state": "ENABLED",
+          "input": "{\"action\":\"tick\"}"
+        }
+      ]
+    },
+    "newsPredictionsSnapshot": {
+      "dir": "newsPredictionsSnapshot",
+      "runtime": "nodejs22.x",
+      "group": "predictions",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerPredictionsSnapshot",
+          "expr": "rate(30 minutes)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "NewsProjectInvokeAgentLambda-dev": {
+      "dir": "NewsProjectInvokeAgentLambda",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "scheduler",
+          "name": "InvokeNewsAgent",
+          "expr": "cron(25 4/8 * * ? *)",
+          "tz": "UTC",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsRecommend": {
+      "dir": "newsRecommend",
+      "runtime": "nodejs20.x",
+      "group": "read-api",
+      "nodeModules": false,
+      "schedules": []
+    },
+    "newsSavedItems": {
+      "dir": "newsSavedItems",
+      "runtime": "nodejs24.x",
+      "group": "read-api",
+      "nodeModules": true,
+      "schedules": []
+    },
+    "newsSelectionShadow": {
+      "dir": "newsSelectionShadow",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerSelectionShadow",
+          "expr": "cron(20 4,12,20 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsSensitiveData-dev": {
+      "dir": "newsSensitiveData",
+      "runtime": "nodejs22.x",
+      "group": "read-api",
+      "nodeModules": false,
+      "schedules": []
+    },
+    "newsSharedAnalysis": {
+      "dir": "newsSharedAnalysis",
+      "runtime": "nodejs22.x",
+      "group": "read-api",
+      "nodeModules": false,
+      "schedules": []
+    },
+    "newsSignals": {
+      "dir": "newsSignals",
+      "runtime": "nodejs22.x",
+      "group": "read-api",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerSignalsBuild",
+          "expr": "cron(0 10 * * ? *)",
+          "state": "ENABLED",
+          "input": "{\"action\":\"build\"}"
+        }
+      ]
+    },
+    "newsSituationIngest": {
+      "dir": "newsSituationIngest",
+      "runtime": "nodejs22.x",
+      "group": "situations",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerSituationIngest",
+          "expr": "rate(1 hour)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsSituationTracker": {
+      "dir": "newsSituationTracker",
+      "runtime": "nodejs22.x",
+      "group": "situations",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerSituationTracker",
+          "expr": "rate(30 minutes)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsSourceAudit": {
+      "dir": "newsSourceAudit",
+      "runtime": "nodejs22.x",
+      "group": "monitoring",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "newsSourceAuditDaily",
+          "expr": "cron(30 11 ? * MON,WED,FRI *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsSystemsAnalysis": {
+      "dir": "newsSystemsAnalysis",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "nodeModules": true,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerNewsSystemsAnalysis",
+          "expr": "cron(0 5 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsThreadAnalysis": {
+      "dir": "newsThreadAnalysis",
+      "runtime": "nodejs24.x",
+      "group": "pipeline",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerDailyAnalysis",
+          "expr": "cron(40 4 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsWeeklyBrief": {
+      "dir": "newsWeeklyBrief",
+      "runtime": "nodejs20.x",
+      "group": "distribution",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerWeeklyBrief",
+          "expr": "cron(0 6 ? * SUN *)",
+          "state": "ENABLED"
+        }
+      ]
+    },
+    "newsWeeklyMarkets": {
+      "dir": "newsWeeklyMarkets",
+      "runtime": "nodejs20.x",
+      "group": "economy-parked",
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerWeeklyMarkets",
+          "expr": "cron(30 8 ? * SUN *)",
+          "state": "DISABLED"
+        }
+      ]
+    }
+  }
+}

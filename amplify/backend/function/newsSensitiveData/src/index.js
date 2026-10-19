@@ -1910,7 +1910,7 @@ async function buildEventDossier(countryName, threadId, hops) {
 // Reason over a dossier with the honesty contract (DeepSeek — public, ungated,
 // bounded by token cap; same engine as newsAnalyze/newsSystemsAnalysis).
 const DOSSIER_LLM_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
+const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 async function analyzeDossierWithLLM(dossier) {
   const key = process.env.XAI_API_KEY;
   if (!key) throw new Error('LLM key not configured');

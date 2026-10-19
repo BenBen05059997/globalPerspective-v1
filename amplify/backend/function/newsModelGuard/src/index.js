@@ -155,7 +155,7 @@ exports.handler = async () => {
       `Live DeepSeek models: ${live ? live.join(', ') : `(UNVERIFIED — ${liveErr || 'no key'})`}\n\n` +
       `Fix (proven recipe, BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md): patch thinking:{type:'disabled'} into ` +
       `the DeepSeek request body if not already present, then flip the env var to a live model id ` +
-      `(deepseek-v4-flash or deepseek-v4-pro). Deploy code BEFORE the env flip.\n\n` +
+      `from the list above, and update the code's fallback literal to match. Deploy code BEFORE the env flip.\n\n` +
       `Checked ${fns.length} functions in ${REGION} at ${new Date().toISOString()}.`;
     await sns.send(new PublishCommand({
       TopicArn: SNS_TOPIC_ARN,

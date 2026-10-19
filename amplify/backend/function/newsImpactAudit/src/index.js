@@ -31,7 +31,7 @@ const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
 const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
 const API_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // deepseek-chat retired 2026-07-24; v4-flash is the current flash model (verified 2026-09-08)
+const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 
 const s3 = new S3Client({ region: REGION });
 const sns = new SNSClient({ region: REGION });

@@ -26,9 +26,10 @@ global-perspectives-starter/frontend/site-dist/
 global-perspectives-starter/frontend/.wrangler/
 .site-releases/
 
-# Lambda deploy artifacts
+# Lambda deploy artifacts (scripts/lambda.sh writes builds + pre-deploy backups to .deploy-backups/)
 amplify/**/*.zip
 amplify/**/*.zip.bak
+.deploy-backups/
 
 # Local design mockups / scratch archives (public repo — keep them out)
 global perspective.zip

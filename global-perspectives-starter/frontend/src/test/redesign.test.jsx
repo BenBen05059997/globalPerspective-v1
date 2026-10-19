@@ -200,18 +200,18 @@ describe('Redesign v2 — CountryListPage', () => {
 
   it('country entry surfaces the headline from intelligence fixture', () => {
     renderWithRouter(<CountryListPage />);
-    const headlines = document.querySelectorAll('.clp-card-headline, .clp-row-headline');
+    const headlines = document.querySelectorAll('.clp-card-headline, .clp-row .gp-row__sum');
     expect(headlines.length).toBeGreaterThan(0);
     // At least one headline should be non-empty text
     const hasReal = Array.from(headlines).some(h => h.textContent.trim().length > 10);
     expect(hasReal).toBe(true);
   });
 
-  it('clicks "Coverage" sort button and applies active state', () => {
+  it('clicks "Coverage" sort chip and marks it selected', () => {
     renderWithRouter(<CountryListPage />);
     const btn = screen.getByRole('button', { name: /coverage/i });
     fireEvent.click(btn);
-    expect(btn).toHaveClass('active');
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('search filter narrows the visible entries', () => {
@@ -226,7 +226,7 @@ describe('Redesign v2 — CountryListPage', () => {
   it('right rail leaderboard rows are clickable links', () => {
     renderWithRouter(<CountryListPage />);
     const right = document.querySelector('.es-right');
-    const link = right.querySelector('a.clp-lb-row');
+    const link = right.querySelector('.clp-lb-row a');
     expect(link).toBeInTheDocument();
     expect(link.getAttribute('href')).toMatch(/^\/weekly\/country\//);
   });

@@ -24,18 +24,24 @@ import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
-import { riskTierToVar } from '@/shared/styles/tokens';
-import { crisisDotVar } from '@/shared/lib/crisisHue';
-import { tierFromScore, tierFromLevel, tierLabel } from '@/shared/lib/riskTiers';
+import { crisisTypeForCategory } from '@/shared/lib/crisisHue';
+import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
+import { countryTier } from '@/features/countries/lib/countryTier';
+import { trajectoryOf } from '@/features/countries/lib/trajectory';
 import BackgroundTimeline from '@/features/countries/components/BackgroundTimeline';
 import { SaveButton } from '@/features/account/components/SaveButton';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
-import '@/features/threads/WeeklyPage.css';
+import { usePeek } from '@/shared/hooks/usePeek.js';
+import { peekData } from '@/shared/lib/peekData.js';
 import '@/features/countries/CountryPage.css';
 import '@/features/countries/CountryCoverage.css';
 import { isRealCountryName } from '@/shared/lib/placeNames.js';
@@ -57,12 +63,12 @@ function formatAsOf(iso) {
   } catch { return iso; }
 }
 
-const TRAJECTORY_BADGES = {
-  escalating:      { arrow: '↗', label: 'Escalating',    color: 'var(--tier-high)' },
-  stable:          { arrow: '→', label: 'Stable',         color: 'var(--text-muted)' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating', color: 'var(--tier-low)' },
-};
-
+// The three AI read-outs on a coverage item. The kind is the button label, never a colour.
+const AI_VIEWS = [
+  { key: 'summary', field: 'summary', label: 'Summarize' },
+  { key: 'prediction', field: 'prediction', label: 'Predict' },
+  { key: 'trace', field: 'trace_cause', label: 'Trace Cause' },
+];
 
 function BoldText({ text }) {
   if (!text) return null;
@@ -123,19 +129,18 @@ function CoverageList({ entries, country }) {
           <div className="cp-coverage-hint">Tap an article for sources and AI analysis</div>
           {categories.length > 1 && (
             <div className="cp-coverage-filters">
-              <button className={`cp-cov-filter ${!activeCat ? 'active' : ''}`} onClick={() => setActiveCat(null)}>All</button>
-              {categories.map(([cat, count]) => {
-                const isActive = activeCat === cat;
-                return (
-                  <button
-                    key={cat}
-                    className={`cp-cov-filter ${isActive ? 'active' : ''}`}
-                    onClick={() => setActiveCat(isActive ? null : cat)}
-                  >
-                    {cat} {count}
-                  </button>
-                );
-              })}
+              <Chip selected={!activeCat} onClick={() => setActiveCat(null)}>All</Chip>
+              {categories.map(([cat, count]) => (
+                <Chip
+                  key={cat}
+                  className="cp-cap"
+                  selected={activeCat === cat}
+                  count={count}
+                  onClick={() => setActiveCat(activeCat === cat ? null : cat)}
+                >
+                  {cat}
+                </Chip>
+              ))}
             </div>
           )}
         </div>
@@ -152,8 +157,8 @@ function CoverageList({ entries, country }) {
                 {!isCollapsed && dayEntries.map((entry, i) => {
                   const id = entry.topicId || `${date}-${i}`;
                   const isExpanded = expandedId === id;
-                  const hasAi = entry.ai?.summary || entry.ai?.prediction || entry.ai?.trace_cause;
-                  const aiKey = activeAi === 'trace' ? 'trace_cause' : activeAi;
+                  const aiViews = AI_VIEWS.filter(v => entry.ai?.[v.field]);
+                  const aiOpen = aiViews.find(v => v.key === activeAi);
                   const cat = (entry.category || 'other').toLowerCase();
                   return (
                     <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
@@ -168,50 +173,44 @@ function CoverageList({ entries, country }) {
                           {entry.sources?.length > 0 && (
                             <div className="cp-coverage-sources">
                               {entry.sources.slice(0, 5).map((s, j) => (
-                                <span key={j} className="story-entry-source-tag">
+                                <span key={j} className="cp-source-tag">
                                   {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.source || s.title || 'Source'}</a> : (s.source || s.title || 'Source')}
                                 </span>
                               ))}
                             </div>
                           )}
                           <div className="cp-coverage-actions">
-                            <a
+                            <Button
+                              compact
                               href={`https://www.google.com/search?q=${encodeURIComponent(entry.title)}&tbm=nws&tbs=qdr:d`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="cp-google-news-btn"
                             >
                               View Google News ↗
-                            </a>
+                            </Button>
                             {entry.threadId && (
                               <StoryLink
                                 threadId={entry.threadId}
                                 pathOpts={country ? { from: 'country', country } : {}}
                                 topic={{ title: entry.title, category: entry.category, regions: entry.regions }}
                                 asOf={entry.date}
-                                className="cp-view-arc-btn"
+                                className="gp-btn gp-btn--quiet gp-btn--compact"
                               >
                                 View full story →
                               </StoryLink>
                             )}
                           </div>
-                          {hasAi && (
-                            <div className="ai-toolbar" style={{ marginTop: 8 }}>
-                              {entry.ai?.summary && (
-                                <button className={`ai-btn ai-btn-summary ${activeAi === 'summary' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'summary' ? null : 'summary')}>Summarize</button>
-                              )}
-                              {entry.ai?.prediction && (
-                                <button className={`ai-btn ai-btn-predict ${activeAi === 'prediction' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'prediction' ? null : 'prediction')}>Predict</button>
-                              )}
-                              {entry.ai?.trace_cause && (
-                                <button className={`ai-btn ai-btn-trace ${activeAi === 'trace' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'trace' ? null : 'trace')}>Trace Cause</button>
-                              )}
+                          {aiViews.length > 0 && (
+                            <div className="cp-ai-actions">
+                              {aiViews.map(v => (
+                                <Button key={v.key} compact selected={activeAi === v.key} onClick={() => setActiveAi(activeAi === v.key ? null : v.key)}>
+                                  {v.label}
+                                </Button>
+                              ))}
                             </div>
                           )}
-                          {activeAi && entry.ai?.[aiKey] && (
-                            <div className={`story-entry-ai-content ${activeAi}`}>
-                              <div className="story-entry-section-text">{entry.ai[aiKey]}</div>
-                            </div>
+                          {aiOpen && (
+                            <div className="cp-ai-panel">{entry.ai[aiOpen.field]}</div>
                           )}
                         </div>
                       )}
@@ -227,7 +226,7 @@ function CoverageList({ entries, country }) {
             </button>
           )}
           {dayGroups.length === 0 && (
-            <div className="cpg-empty" style={{ padding: '1rem 0' }}>No articles match this filter.</div>
+            <div className="cpg-empty cpg-empty--tight">No articles match this filter.</div>
           )}
         </div>
       </>}
@@ -235,7 +234,8 @@ function CoverageList({ entries, country }) {
   );
 }
 
-function RiskSparkline({ snapshots, color = 'var(--accent)' }) {
+// The line is neutral ink: the tier is the chip's word, never the line's colour.
+function RiskSparkline({ snapshots }) {
   if (!snapshots || snapshots.length < 2) return null;
   const scores = snapshots.map(s => s.riskScore ?? null).filter(v => v != null);
   if (scores.length < 2) return null;
@@ -249,8 +249,8 @@ function RiskSparkline({ snapshots, color = 'var(--accent)' }) {
     return `${x},${y}`;
   }).join(' ');
   return (
-    <svg width={w} height={h} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+    <svg width={w} height={h} className="cpg-spark" aria-hidden="true">
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -265,6 +265,7 @@ export default function CountryPage() {
   // Phone P1: READ (the card + everything below) / MAP (the country on the map). The map is only
   // mounted while MAP is open; desktop keeps the map band above the card.
   const isPhone = useIsPhone();
+  const peek = usePeek();
   const [phoneTab, setPhoneTab] = useState('read');
   // React Router v6 useParams() already URL-decodes path params — decoding again
   // double-decodes and throws URIError on any name containing a literal '%'.
@@ -406,9 +407,8 @@ export default function CountryPage() {
 
   // Canonical tier for this country — score-first, level fallback — so the pill,
   // stat tile and sparkline all agree (and "moderate" no longer reads as elevated).
-  const riskTier = intel ? (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) : null;
-  const riskVar = riskTier ? riskTierToVar(riskTier) : null;
-  const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
+  const riskTier = countryTier(intel);
+  const trajectory = trajectoryOf(intel?.trajectory);
 
   // Facet counts
   const allArcs = countryData?.arcs || [];
@@ -456,16 +456,18 @@ export default function CountryPage() {
 
       {siblings.length > 0 && (
         <>
-          <div className="cpg-left-hd">Most covered</div>
-          {siblings.map(c => (
-            <button key={c.name} className="cpg-country-nav" onClick={() => selectCountry(c.name)}>
-              <span className="cpg-country-nav-iso">{c.name.slice(0, 2).toUpperCase()}</span>
-              <div className="cpg-country-nav-body">
-                <span className="cpg-country-nav-name">{c.name}</span>
-                <span className="cpg-country-nav-sub">{c.articles} articles</span>
-              </div>
-            </button>
-          ))}
+          <SectionHeader label="Most covered" />
+          <ul className="cpg-country-nav">
+            {siblings.map(c => (
+              <StoryRow
+                key={c.name}
+                onClick={() => selectCountry(c.name)}
+                title={c.name}
+                chip={<span className="cpg-country-nav-iso" aria-hidden="true">{c.name.slice(0, 2).toUpperCase()}</span>}
+                place={`${c.articles} articles`}
+              />
+            ))}
+          </ul>
         </>
       )}
 
@@ -481,7 +483,7 @@ export default function CountryPage() {
       {/* Key actors */}
       {intel?.keyActors?.length > 0 && (
         <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">Key Actors</div>
+          <SectionHeader label="Key Actors" />
           {intel.keyActors.slice(0, 5).map((a, i) => (
             <div key={i} className="cpg-actor-row">
               <div className="cpg-actor-av">
@@ -503,12 +505,12 @@ export default function CountryPage() {
       {/* Live web evidence */}
       {intel?.groundingSources?.length > 0 && (
         <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">Live Web Evidence</div>
+          <SectionHeader label="Live Web Evidence" />
           {intel.groundingSources.slice(0, 4).map((s, i) => (
-            <div key={i} style={{ fontSize: 12, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--hairline)' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-head)', lineHeight: 1.4 }}>{s.title}</div>
-              {s.snippet && <div style={{ color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{s.snippet.slice(0, 100)}{s.snippet.length > 100 ? '…' : ''}</div>}
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)', marginTop: 3 }}>{s.source}{s.age ? ` · ${s.age}` : ''}</div>
+            <div key={i} className="cpg-evidence">
+              <div className="cpg-evidence-title">{s.title}</div>
+              {s.snippet && <div className="cpg-evidence-snippet">{s.snippet.slice(0, 100)}{s.snippet.length > 100 ? '…' : ''}</div>}
+              <div className="cpg-evidence-src">{s.source}{s.age ? ` · ${s.age}` : ''}</div>
             </div>
           ))}
         </div>
@@ -519,38 +521,31 @@ export default function CountryPage() {
           [] (fetch skipped above), but the flag also guards the render directly. */}
       {!ECONOMY_PARKED && countryDisruptions?.length > 0 && (
         <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">
-            Economic Disruption
-            <span className="cpg-rail-asof">{countryDisruptions.length} active</span>
-          </div>
+          <SectionHeader label="Economic Disruption" hint={`${countryDisruptions.length} active`} />
+          <div className="cpg-disruptions">
           {countryDisruptions.slice(0, 3).map((d, i) => (
             <Link
               key={d.scopeId || i}
               to={threadPath(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
               className="cpg-disruption-row"
-              style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--hairline)' : 'none', textDecoration: 'none', color: 'inherit' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div className="cpg-disruption-top">
                 <SeverityBadge level={d.severity} size="sm" />
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>
+                <span className="cpg-disruption-insts">
                   {(d.instruments || []).slice(0, 3).map(inst => (
-                    <span key={inst.instrumentId} style={{ marginRight: 6 }}>
-                      <b style={{ color: 'var(--text-head)' }}>{inst.instrumentId}</b>
+                    <span key={inst.instrumentId}>
+                      <b>{inst.instrumentId}</b>
                       <DirectionArrow dir={inst.direction} />
                     </span>
                   ))}
                 </span>
               </div>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 13, lineHeight: 1.35, color: 'var(--text-head)' }}>
-                {d.headline}
-              </div>
+              <div className="cpg-disruption-head">{d.headline}</div>
             </Link>
           ))}
+          </div>
           {/* Zoom out to the weekly markets wrap (global v1; country deep-link is a v2 nicety) */}
-          <Link
-            to="/briefings?from=markets"
-            style={{ display: 'inline-block', marginTop: 10, fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
-          >
+          <Link to="/briefings?from=markets" className="cpg-rail-link">
             How markets moved this week →
           </Link>
         </div>
@@ -559,10 +554,7 @@ export default function CountryPage() {
       {/* Markets snapshot — structural baseline (annual macros + FX) */}
       {markets?.macro && Object.keys(markets.macro).length > 0 && (
         <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">
-            Macro Baseline
-            {markets.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.asOf)}</span>}
-          </div>
+          <SectionHeader label="Macro Baseline" hint={markets.asOf ? formatAsOf(markets.asOf) : null} />
           {(() => {
             const mv = f => (f != null && typeof f === 'object' ? f.value : f);
             const gdp = mv(markets.macro.gdp);
@@ -582,10 +574,7 @@ export default function CountryPage() {
       {/* FX snapshot */}
       {markets?.fx?.rates && Object.keys(markets.fx.rates).length > 0 && (
         <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">
-            FX Rates vs {markets.fx.base || 'USD'}
-            {markets.fx.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.fx.asOf)}</span>}
-          </div>
+          <SectionHeader label={`FX Rates vs ${markets.fx.base || 'USD'}`} hint={markets.fx.asOf ? formatAsOf(markets.fx.asOf) : null} />
           {Object.entries(markets.fx.rates)
             .slice(0, 5)
             .map(([pair, rate]) => (
@@ -599,7 +588,7 @@ export default function CountryPage() {
 
       {!intel && !markets && (
         <div className="cpg-rail-section">
-          <div className="cpg-ai-pending" style={{ padding: '24px 0' }}>Analysis generates daily</div>
+          <div className="cpg-ai-pending">Analysis generates daily</div>
         </div>
       )}
     </div>
@@ -623,17 +612,17 @@ export default function CountryPage() {
             </select>
           </div>
           <div className="cpg-map-overlay-right">
-            {riskTier && <TierChip className="cpg-risk-pill" tier={riskTier} score={intel?.riskScore} />}
+            {riskTier && <TierChip className="cpg-overlay-chip" tier={riskTier} score={intel?.riskScore} />}
             {trajectory && (
-              <span className="cpg-traj-pill" style={{ color: trajectory.color }}>
-                {trajectory.arrow} {trajectory.label}
+              <span className="cpg-overlay-chip cpg-traj">
+                <DirectionArrow dir={trajectory.dir} /> {trajectory.label}
               </span>
             )}
           </div>
         </div>
   );
   const mapHero = (
-    <div className={`cpg-map-hero${isPhone ? ' cpg-map-hero--tab' : ''}`}>
+    <div className={`cpg-map-hero${isPhone ? ' cpg-map-hero--phone' : ''}`}>
       {heroBar}
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
           <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} frameInsets={overlayInset} />
@@ -652,9 +641,9 @@ export default function CountryPage() {
       </div>
 
       {!countryData ? (
-        <div className="cpg-empty" style={{ paddingTop: 80, textAlign: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 12 }}>No coverage for {decodedName}</h3>
-          <p style={{ color: 'var(--text-body)' }}>This country has no recent news in the archive.</p>
+        <div className="cpg-nocov">
+          <h3>No coverage for {decodedName}</h3>
+          <p>This country has no recent news in the archive.</p>
         </div>
       ) : (
         <EditorialShell
@@ -711,15 +700,15 @@ export default function CountryPage() {
             </div>
             <div className="cpg-stat">
               <div className="cpg-stat-k">Risk level</div>
-              <div className="cpg-stat-v tier">
+              <div className="cpg-stat-v cpg-stat-v--chip">
                 {riskTier ? <TierChip tier={riskTier} /> : '—'}
               </div>
               <div className="cpg-stat-d">
                 {intel?.riskScore != null && <span className="cpg-stat-num">{intel.riskScore} · </span>}
                 {riskHistory.length >= 2 ? (
-                  <RiskSparkline snapshots={riskHistory} color={riskVar || undefined} />
+                  <RiskSparkline snapshots={riskHistory} />
                 ) : (
-                  trajectory ? `${trajectory.arrow} ${trajectory.label}` : 'AI-assessed'
+                  trajectory ? <><DirectionArrow dir={trajectory.dir} /> {trajectory.label}</> : 'AI-assessed'
                 )}
               </div>
             </div>
@@ -733,21 +722,22 @@ export default function CountryPage() {
           <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} driftNotesTotal={driftNotesTotal} driftNotesGated={driftNotesGated} />
 
           {/* Tabs */}
-          <div className="cpg-tabs" role="tablist" aria-label="Country views">
-            <button role="tab" aria-selected={mainTab === 'situation'} className={`cpg-tab${mainTab === 'situation' ? ' on' : ''}`} onClick={() => setMainTab('situation')}>
-              Situation
-            </button>
-            <button role="tab" aria-selected={mainTab === 'arcs'} className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
-              Story Arcs <span className="c">{filteredArcs.length}</span>
-            </button>
-            <button role="tab" aria-selected={mainTab === 'coverage'} className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
-              Coverage <span className="c">{countryData.totalArticles}</span>
-            </button>
-          </div>
+          <Tabs
+            idBase="country"
+            label="Country views"
+            className="cpg-views"
+            tabs={[
+              { key: 'situation', label: 'Situation' },
+              { key: 'arcs', label: 'Story Arcs', count: filteredArcs.length },
+              { key: 'coverage', label: 'Coverage', count: countryData.totalArticles },
+            ]}
+            active={mainTab}
+            onChange={setMainTab}
+          />
 
           {/* Situation tab */}
           {mainTab === 'situation' && (
-            <div className="cpg-tab-content">
+            <div className="cpg-view" {...tabPanelProps('country', 'situation')}>
               {intel?.bluf && (
                 <>
                   <SectionHeader label="Bottom Line" />
@@ -789,23 +779,22 @@ export default function CountryPage() {
               )}
 
               {(intel?.trajectoryDetail || intel?.crossThreadInsight) && (
-                <div className="cp-deep" style={{ marginTop: 16 }}>
+                <div className="cp-deep">
                   {[
-                    { key: 'trajectoryDetail', label: "What's Next", cssClass: 'prediction' },
-                    { key: 'crossThreadInsight', label: 'Cross-Thread Connections', cssClass: 'trace' },
+                    { key: 'trajectoryDetail', label: "What's Next" },
+                    { key: 'crossThreadInsight', label: 'Cross-Thread Connections' },
                   ].filter(t => intel[t.key]).map(tab => (
                     <div key={tab.key} className="cp-deep-section">
                       <button
-                        className={`cp-deep-toggle ${activeDeepTab === tab.key ? 'active' : ''}`}
+                        className="cp-deep-toggle"
+                        aria-expanded={activeDeepTab === tab.key}
                         onClick={() => setActiveDeepTab(activeDeepTab === tab.key ? null : tab.key)}
                       >
                         <span>{tab.label}</span>
                         <span className={`cp-deep-chevron ${activeDeepTab === tab.key ? 'open' : ''}`}>▾</span>
                       </button>
                       {activeDeepTab === tab.key && (
-                        <div className={`story-entry-ai-content ${tab.cssClass}`}>
-                          <div className="story-entry-section-text"><BoldText text={intel[tab.key]} /></div>
-                        </div>
+                        <div className="cp-ai-panel"><BoldText text={intel[tab.key]} /></div>
                       )}
                     </div>
                   ))}
@@ -820,15 +809,12 @@ export default function CountryPage() {
 
           {/* Story arcs tab */}
           {mainTab === 'arcs' && (
-            <div className="cpg-tab-content">
+            <div className="cpg-view" {...tabPanelProps('country', 'arcs')}>
               <SectionHeader label="Story Arcs" count={filteredArcs.length}>
                 {(arcTypeFilter !== 'all' || catFilter || urgFilter) && (
-                  <button
-                    className="cpg-clear-filters"
-                    onClick={() => { setArcTypeFilter('all'); setCatFilter(null); setUrgFilter(null); }}
-                  >
+                  <Button compact onClick={() => { setArcTypeFilter('all'); setCatFilter(null); setUrgFilter(null); }}>
                     Clear filters ×
-                  </button>
+                  </Button>
                 )}
               </SectionHeader>
 
@@ -842,37 +828,24 @@ export default function CountryPage() {
                       ['anchor', 'Anchor', anchorCount],
                       ['linked', 'Linked', linkedCount],
                     ].map(([type, label, count]) => (
-                      <button key={type} aria-pressed={arcTypeFilter === type} className={`cpg-fchip${arcTypeFilter === type ? ' on' : ''}`} onClick={() => setArcTypeFilter(type)}>
-                        {label} <span className="c">{count}</span>
-                      </button>
+                      <Chip key={type} selected={arcTypeFilter === type} count={count} onClick={() => setArcTypeFilter(type)}>{label}</Chip>
                     ))}
                   </div>
                   {catCounts.length > 1 && (
                     <div className="cpg-fgroup">
                       <span className="cpg-fgroup-lbl">Category</span>
-                      <button aria-pressed={!catFilter} className={`cpg-fchip${!catFilter ? ' on' : ''}`} onClick={() => setCatFilter(null)}>All</button>
-                      {catCounts.map(([cat, count]) => {
-                        return (
-                          <button
-                            key={cat}
-                            aria-pressed={catFilter === cat}
-                            className={`cpg-fchip${catFilter === cat ? ' on' : ''}`}
-                            onClick={() => setCatFilter(catFilter === cat ? null : cat)}
-                          >
-                            {cat} <span className="c">{count}</span>
-                          </button>
-                        );
-                      })}
+                      <Chip selected={!catFilter} onClick={() => setCatFilter(null)}>All</Chip>
+                      {catCounts.map(([cat, count]) => (
+                        <Chip key={cat} className="cp-cap" selected={catFilter === cat} count={count} onClick={() => setCatFilter(catFilter === cat ? null : cat)}>{cat}</Chip>
+                      ))}
                     </div>
                   )}
                   {urgCounts.length > 1 && (
                     <div className="cpg-fgroup">
                       <span className="cpg-fgroup-lbl">Urgency</span>
-                      <button aria-pressed={!urgFilter} className={`cpg-fchip${!urgFilter ? ' on' : ''}`} onClick={() => setUrgFilter(null)}>All</button>
+                      <Chip selected={!urgFilter} onClick={() => setUrgFilter(null)}>All</Chip>
                       {urgCounts.map(([urg, count]) => (
-                        <button key={urg} aria-pressed={urgFilter === urg} className={`cpg-fchip${urgFilter === urg ? ' on' : ''}`} onClick={() => setUrgFilter(urgFilter === urg ? null : urg)}>
-                          {urg} <span className="c">{count}</span>
-                        </button>
+                        <Chip key={urg} className="cp-cap" selected={urgFilter === urg} count={count} onClick={() => setUrgFilter(urgFilter === urg ? null : urg)}>{urg}</Chip>
                       ))}
                     </div>
                   )}
@@ -880,41 +853,34 @@ export default function CountryPage() {
               )}
 
               {filteredArcs.length > 0 ? (
-                filteredArcs.map(arc => {
-                  const dotColor = crisisDotVar(arc.category);
-                  const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
-                  const ta = threadAnalyses?.[arc.threadId];
-                  return (
-                    <StoryLink
-                      key={arc.threadId}
-                      threadId={arc.threadId}
-                      pathOpts={{ from: 'country', country: decodedName }}
-                      topic={{ title, category: arc.category }}
-                      className={`cpg-arc-card${arc.isAnchor ? ' anchor' : ' linked'}`}
-                    >
-                      <div className="cpg-arc-card-dot" style={dotColor ? { background: dotColor } : { visibility: 'hidden' }} />
-                      <div className="cpg-arc-card-body">
-                        <div className="cpg-arc-card-kicker">
-                          <span className={`cpg-arc-type${arc.isAnchor ? '' : ' linked'}`}>{arc.isAnchor ? 'ANCHOR' : 'LINKED'}</span>
-                          <span className="cpg-arc-dot">·</span>
-                          {arc.category}
-                          {arc.urgency === 'high' && <span className="cpg-urg-badge">URGENT</span>}
-                        </div>
-                        <div className="cpg-arc-card-title">{title}</div>
-                        {ta?.storyArc && (
-                          <div className="cpg-arc-card-sum">{ta.storyArc.split(/[.!?]/)[0].trim()}.</div>
-                        )}
-                      </div>
-                      <div className="cpg-arc-card-meta">
-                        <div><b>{arc.articleCount}</b> articles</div>
-                        <div><b>{arc.dayCount}</b> days</div>
-                        {ta?.riskScore != null && (
-                          <div><TierChip tier={tierFromScore(ta.riskScore)} score={ta.riskScore} /></div>
-                        )}
-                      </div>
-                    </StoryLink>
-                  );
-                })
+                <ul className="cpg-arcs">
+                  {filteredArcs.map(arc => {
+                    const ta = threadAnalyses?.[arc.threadId];
+                    const title = ta?.threadTitle || arc.latestTitle;
+                    const crisis = crisisTypeForCategory(arc.category);
+                    const pd = peekData({ title, category: arc.category });
+                    if (pd) pd.hint = 'Open the full story';
+                    return (
+                      <StoryRow
+                        key={arc.threadId}
+                        id={arc.threadId}
+                        to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
+                        title={title}
+                        crisis={crisis === 'neutral' ? null : crisis}
+                        tier={ta?.riskScore != null ? tierFromScore(ta.riskScore) : null}
+                        score={ta?.riskScore}
+                        place={`${arc.articleCount} articles · ${arc.dayCount} days`}
+                        meta={<span className="cpg-arc-kicker">
+                          <b>{arc.isAnchor ? 'Anchor' : 'Linked'}</b> · {arc.category}
+                          {arc.urgency === 'high' && <span className="cpg-urg-badge">Urgent</span>}
+                        </span>}
+                        summary={ta?.storyArc ? `${ta.storyArc.split(/[.!?]/)[0].trim()}.` : null}
+                        peek={peek}
+                        peekData={pd}
+                      />
+                    );
+                  })}
+                </ul>
               ) : (
                 <div className="cpg-empty">No story arcs match this filter</div>
               )}
@@ -923,7 +889,7 @@ export default function CountryPage() {
 
           {/* Coverage tab */}
           {mainTab === 'coverage' && (
-            <div className="cpg-tab-content">
+            <div className="cpg-view" {...tabPanelProps('country', 'coverage')}>
               <CoverageList entries={countryData.entries} country={decodedName} />
             </div>
           )}

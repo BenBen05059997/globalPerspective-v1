@@ -4,6 +4,8 @@ import Markdown from '@/shared/ui/Markdown';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import { tierFromLevel } from '@/shared/lib/riskTiers';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/weekly-brief/WeeklyBriefPage.css';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
@@ -20,7 +22,7 @@ function SignalChip({ kind, level }) {
   // "Development" chip for cooperative/non-threat stories (so a climate framework isn't shown as
   // an elevated risk). An unknown level reads "Not scored" rather than claiming a tier.
   if (kind === 'development') return <span className="wb-chip">Development</span>;
-  return <TierChip className="wb-sig-chip" tier={level} />;
+  return <TierChip className="wb-sig-chip" tier={tierFromLevel(level)} />;
 }
 
 function sourceOutlets(sources) {
@@ -36,7 +38,7 @@ function sourceOutlets(sources) {
 function SignalCard({ s }) {
   const outlets = sourceOutlets(s.sources);
   return (
-    <div className="wb-sig">
+    <Card as="article" className="wb-sig">
       <div className="wb-sig-top">
         {s.threadId ? (
           <StoryLink className="wb-sig-lede wb-sig-lede-link" threadId={s.threadId} topic={{ title: s.lede, regions: s.region ? [s.region] : undefined }} asOf={s.asOf}>{s.lede}</StoryLink>
@@ -64,7 +66,7 @@ function SignalCard({ s }) {
           {s.related && <> <span className="wb-dot">·</span> <span className="wb-rel">Related: {s.related}</span></>}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -76,7 +78,7 @@ export default function WeeklyBriefPage() {
   // Risk KPIs count THREAT signals only (a cooperative "development" isn't a risk).
   const threats = signals ? signals.filter((s) => s.kind !== 'development') : [];
   const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
-  const highest = threats.length ? threats[0].riskLevel : null;
+  const highest = threats.length ? tierFromLevel(threats[0].riskLevel) : null;
 
   return (
     <div className="wb-page">
@@ -101,10 +103,10 @@ export default function WeeklyBriefPage() {
             <h1 className="wb-h1">The week’s signals, ranked by risk</h1>
 
             <div className="wb-kpis">
-              <div className="wb-kpi"><div className="wb-kpi-n">{signals.length}</div><div className="wb-kpi-l">Signals tracked</div></div>
-              <div className="wb-kpi"><div className="wb-kpi-n">{(highest || '—').toUpperCase()}</div><div className="wb-kpi-l">Highest risk</div></div>
-              <div className="wb-kpi"><div className="wb-kpi-n">{highRisk}</div><div className="wb-kpi-l">At high risk</div></div>
-              <div className="wb-kpi"><div className="wb-kpi-n">{watch.length}</div><div className="wb-kpi-l">To watch</div></div>
+              <Card pad="sm"><div className="wb-kpi-n">{signals.length}</div><div className="wb-kpi-l">Signals tracked</div></Card>
+              <Card pad="sm"><div className="wb-kpi-n wb-kpi-n--chip">{highest ? <TierChip tier={highest} /> : '—'}</div><div className="wb-kpi-l">Highest risk</div></Card>
+              <Card pad="sm"><div className="wb-kpi-n">{highRisk}</div><div className="wb-kpi-l">At high risk</div></Card>
+              <Card pad="sm"><div className="wb-kpi-n">{watch.length}</div><div className="wb-kpi-l">To watch</div></Card>
             </div>
 
             <SubscribeCard variant="weekly" />
@@ -115,14 +117,14 @@ export default function WeeklyBriefPage() {
             {watch.length > 0 && (
               <>
                 <SectionHeader className="wb-sec-watch" label="What to watch" count={watch.length} />
-                <div className="wb-watch">
+                <Card pad="none" className="wb-watch">
                   {watch.map((w, i) => (
                     <div className="wb-w-row" key={i}>
                       <div className="wb-w-ev">{w.event}{w.date && <span className="wb-w-date">{w.date}</span>}</div>
                       {w.stake && <div className="wb-w-stake">{w.stake}</div>}
                     </div>
                   ))}
-                </div>
+                </Card>
               </>
             )}
 

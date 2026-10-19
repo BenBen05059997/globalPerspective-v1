@@ -1,21 +1,13 @@
 import { useState, useMemo } from 'react';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import '@/features/countries/CountryCoverage.css';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 
-// Dots read the role tokens (no second palette): the four crisis hues plus accent/warn/ok.
-const CAT_COLORS = {
-  conflict:  'var(--hue-conflict)',
-  politics:  'var(--hue-political)',
-  economy:   'var(--hue-economic)',
-  diplomacy: 'var(--accent)',
-  security:  'var(--warn)',
-  society:   'var(--hue-humanitarian)',
-  military:  'var(--hue-conflict)',
-  technology:'var(--text-muted)',
-  health:    'var(--ok)',
-};
-const FALLBACK_DOT = 'var(--text-dim)';
+// Dot = the event category's crisis type (the same mapping CategoryTag uses); a topic with no
+// crisis type keeps the dim default in CSS. Never a status colour.
+const dotStyle = (category) => ({ '--cat-dot': crisisDotVar(category) });
 
 function matchScore(eventText, articleTitle) {
   const eWords = new Set(eventText.toLowerCase().split(/\W+/).filter(w => w.length > 3));
@@ -98,7 +90,6 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
           const isExpanded = expandedDates.has(date);
           const primary = dayEvents[0];
           const rest = dayEvents.slice(1);
-          const primaryColor = CAT_COLORS[primary.category] || FALLBACK_DOT;
           const linkedArticles = isExpanded ? findLinkedArticles(primary, date) : [];
 
           return (
@@ -116,7 +107,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
                   className={`bgt-event ${primary.topicId ? 'clickable' : ''}`}
                   onClick={() => primary.topicId && onEventClick?.(primary.topicId, date)}
                 >
-                  <div className="bgt-event-dot" style={{ background: primaryColor }} />
+                  <div className="bgt-event-dot" style={dotStyle(primary.category)} />
                   <div className="bgt-event-content">
                     <span className="bgt-event-cat">
                       {primary.category} #{primary.catIndex}
@@ -147,21 +138,20 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
 
                 {/* Expand toggle */}
                 {(rest.length > 0 || (entriesByDate[date]?.length > 0 && !isExpanded)) && !isExpanded && (
-                  <button className="bgt-expand" onClick={() => toggleDate(date)}>
+                  <Button compact className="bgt-expand" onClick={() => toggleDate(date)}>
                     {rest.length > 0 ? `+${rest.length} more event${rest.length !== 1 ? 's' : ''}` : 'Show related articles'}
-                  </button>
+                  </Button>
                 )}
 
                 {/* Expanded events */}
                 {isExpanded && rest.map((e, i) => {
-                  const color = CAT_COLORS[e.category] || FALLBACK_DOT;
                   return (
                     <div
                       key={i}
                       className={`bgt-event ${e.topicId ? 'clickable' : ''}`}
                       onClick={() => e.topicId && onEventClick?.(e.topicId, date)}
                     >
-                      <div className="bgt-event-dot" style={{ background: color }} />
+                      <div className="bgt-event-dot" style={dotStyle(e.category)} />
                       <div className="bgt-event-content">
                         <span className="bgt-event-cat">
                           {e.category} #{e.catIndex}
@@ -174,9 +164,9 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
                 })}
 
                 {isExpanded && (
-                  <button className="bgt-expand" onClick={() => toggleDate(date)}>
+                  <Button compact className="bgt-expand" onClick={() => toggleDate(date)}>
                     Show less
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -190,7 +180,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
           .sort((a, b) => b[1] - a[1])
           .map(([cat, count]) => (
             <span key={cat} className="bgt-legend-item">
-              <span className="bgt-legend-dot" style={{ background: CAT_COLORS[cat] || FALLBACK_DOT }} />
+              <span className="bgt-legend-dot" style={dotStyle(cat)} />
               {cat} ({count})
             </span>
           ))}

@@ -7,10 +7,12 @@ import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList'
 import InstrumentChip from '@/features/economy/components/InstrumentChip';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import { riskTierToVar } from '@/shared/styles/tokens';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
+import { trajectoryOf } from '@/features/countries/lib/trajectory';
 import TierChip from '@/shared/ui/TierChip.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow';
 import SharedSectionHeader from '@/shared/ui/SectionHeader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
@@ -19,11 +21,12 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/daily/DailyPage.css';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 
-const TRAJECTORY_LABELS = {
-  escalating:      { arrow: '↗', label: 'Escalating',      cls: 'up' },
-  stable:          { arrow: '→', label: 'Stable',           cls: 'flat' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating',   cls: 'down' },
-};
+// Trajectory = arrow glyph + word in neutral ink (never a status or tier colour).
+function Trajectory({ value, className }) {
+  const t = trajectoryOf(value);
+  if (!t) return null;
+  return <span className={className}><DirectionArrow dir={t.dir} /> {t.label}</span>;
+}
 
 function BoldText({ text }) {
   if (!text) return null;
@@ -181,10 +184,7 @@ function EconomicFootprint() {
         <p className="daily-footprint-lead">
           <SeverityBadge level={disruptions[0].severity} size="sm" />{' '}
           {disruptions[0].scopeId ? (
-            <Link
-              to={threadPath(disruptions[0].scopeId, { tab: 'economy' })}
-              style={{ color: 'inherit' }}
-            >
+            <Link to={threadPath(disruptions[0].scopeId, { tab: 'economy' })}>
               {leadHeadline}
             </Link>
           ) : leadHeadline}
@@ -244,10 +244,8 @@ export default function DailyPage() {
 
   const stats = brief.stats || {};
   const RisingCard = /^thread-/.test(brief.risingThread?.threadId || '') ? StoryLink : Link;
-  const risingTraj = brief.risingThread?.trajectory
-    ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
-    : null;
-  const countryTier = brief.countryToWatch?.riskLevel ? (tierFromLevel(brief.countryToWatch.riskLevel) || 'moderate') : null;
+  // An unrecognised level reads "Not scored" (TierChip), never a guessed tier.
+  const countryTier = tierFromLevel(brief.countryToWatch?.riskLevel);
   const catEntries = Object.entries(brief.categoryBreakdown || {})
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
@@ -406,9 +404,9 @@ export default function DailyPage() {
 
                   <div className="daily-story-body">
                     <div className="daily-story-kicker">
-                      {story.category && <span className="daily-tag daily-tag-cat" data-dot={crisisDotVar(story.category) ? 'on' : 'off'} style={{ '--cat-dot': crisisDotVar(story.category) }}>{story.category}</span>}
+                      <CategoryTag category={story.category} />
                       {(story.regions || []).slice(0, 3).map((r, j) => (
-                        <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-tag daily-tag-region">{r}</Link>
+                        <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-tag-region">{r}</Link>
                       ))}
                       {story.sourceCount > 0 && (
                         <span className="daily-tag-src">{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
@@ -444,11 +442,7 @@ export default function DailyPage() {
           >
             <div className="daily-highlight-kicker">
               <span>Rising Thread</span>
-              {risingTraj && (
-                <span className={`daily-highlight-traj ${risingTraj.cls}`}>
-                  {risingTraj.arrow} {risingTraj.label}
-                </span>
-              )}
+              <Trajectory value={brief.risingThread.trajectory} className="daily-traj daily-traj--pill" />
               {brief.risingThread.articleCount > 0 && (
                 <span className="daily-highlight-meta">
                   {brief.risingThread.articleCount} articles · {brief.risingThread.dayCount || '?'} days
@@ -471,17 +465,12 @@ export default function DailyPage() {
           <Link
             to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
             className="daily-riskcard"
-            style={countryTier ? { borderLeftColor: riskTierToVar(countryTier) } : {}}
           >
             <div className="daily-riskcard-flag">{brief.countryToWatch.countryName}</div>
             <div className="daily-riskcard-body">
               <div className="daily-riskcard-top">
-                {countryTier && <TierChip tier={countryTier} />}
-                {brief.countryToWatch.trajectory && TRAJECTORY_LABELS[brief.countryToWatch.trajectory] && (
-                  <span className={`daily-traj ${TRAJECTORY_LABELS[brief.countryToWatch.trajectory].cls}`}>
-                    {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].arrow} {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].label}
-                  </span>
-                )}
+                {brief.countryToWatch.riskLevel && <TierChip tier={countryTier} />}
+                <Trajectory value={brief.countryToWatch.trajectory} className="daily-traj" />
               </div>
               {brief.countryToWatch.headline && (
                 <div className="daily-riskcard-headline">{brief.countryToWatch.headline}</div>
@@ -500,21 +489,19 @@ export default function DailyPage() {
         <section className="daily-sec">
           <SectionHeader num="6" title="Shape of the Day" meta="stories by category" />
           <div className="daily-bars">
-            {catEntries.map(([cat, count]) => {
-              const dot = crisisDotVar(cat);
-              return (
-                <div key={cat} className="daily-bar-row">
-                  <span className="daily-bar-label">{cat}</span>
-                  <div className="daily-bar-track">
-                    <div
-                      className="daily-bar-fill"
-                      style={{ width: `${Math.max(4, (count / catMax) * 100)}%`, background: dot || 'var(--text-dim)' }}
-                    />
-                  </div>
-                  <span className="daily-bar-val">{count}</span>
+            {catEntries.map(([cat, count]) => (
+              <div key={cat} className="daily-bar-row">
+                <span className="daily-bar-label">{cat}</span>
+                <div className="daily-bar-track">
+                  {/* fill = the category's crisis hue (type), dim grey when it maps to none */}
+                  <div
+                    className="daily-bar-fill"
+                    style={{ width: `${Math.max(4, (count / catMax) * 100)}%`, '--bar-hue': crisisDotVar(cat) }}
+                  />
                 </div>
-              );
-            })}
+                <span className="daily-bar-val">{count}</span>
+              </div>
+            ))}
           </div>
         </section>
       )}

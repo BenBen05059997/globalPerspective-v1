@@ -30,7 +30,7 @@ function threadColor(category) {
 
 // Dark base painted from the role tokens (read from :root when the map is created).
 const rootVar = (name) => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
-// `var(--name)` -> its value on :root (Google Maps symbols need a concrete colour).
+// A CSS custom-property reference -> its value on :root (Google Maps symbols need a concrete colour).
 const cssColor = (v) => {
   const m = /^var\(--([\w-]+)\)$/.exec(v || '');
   return (m ? rootVar(m[1]) : v) || rootVar('text-dim');

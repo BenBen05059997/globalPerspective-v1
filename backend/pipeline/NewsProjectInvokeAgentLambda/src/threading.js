@@ -99,6 +99,21 @@ function matchThread(topic, pastEntries = []) {
   return { threadId: null, via: 'new', score: bestAny.score, kwScore: bestAny.kwScore, matched: null };
 }
 
+// The thread a topic gets (a new one when nothing matches) as the agent logs it:
+// { topicId, threadId, via, score, kwScore } — score/kwScore are the joined entry's, or the best seen
+// for a new thread, rounded to 3 places.
+function joinRecord(topic, pastEntries = []) {
+  const m = matchThread(topic, pastEntries);
+  const round = (n) => Math.round(n * 1000) / 1000;
+  return {
+    topicId: topic.id || topic.topicId || null,
+    threadId: m.threadId || generateThreadId(topic),
+    via: m.via,
+    score: round(m.score),
+    kwScore: round(m.kwScore),
+  };
+}
+
 // Past entries on the same story as the topic, by the same rule (the forecast's arc digest).
 function relatedEntries(topic, pastEntries = []) {
   return pastEntries.filter(e => continuesEntry(topic, e) || sameTitle(topic, e) || passesJoin(joinScore(topic, e)));
@@ -106,5 +121,5 @@ function relatedEntries(topic, pastEntries = []) {
 
 module.exports = {
   JOIN_MIN_SCORE, JOIN_MIN_KW,
-  slugify, generateThreadId, normalizeTitle, topicSignature, jaccard, joinScore, passesJoin, matchThread, relatedEntries,
+  slugify, generateThreadId, normalizeTitle, topicSignature, jaccard, joinScore, passesJoin, matchThread, joinRecord, relatedEntries,
 };

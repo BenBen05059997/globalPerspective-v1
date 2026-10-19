@@ -1139,13 +1139,11 @@ function formatDateKey(date) {
 // NARRATIVE THREADING - threadId assignment
 // ============================================================
 
+// Every assignment logs one `[join] {topicId, threadId, via, score, kwScore}` line (threading.joinRecord).
 function assignThreadId(topic, pastEntries) {
-  const m = threading.matchThread(topic, pastEntries);
-  if (m.via === 'continues_topic' || m.via === 'title') console.log(`Thread inherited via ${m.via}: "${topic.title}" -> ${m.threadId}`);
-  else if (m.via === 'score') console.log(`Thread inherited via Jaccard (${m.score.toFixed(2)}, kw ${m.kwScore.toFixed(2)}): "${topic.title}" -> ${m.threadId}`);
-  const threadId = m.threadId || threading.generateThreadId(topic);
-  if (m.via === 'new') console.log(`New thread created: "${topic.title}" -> ${threadId}`);
-  return threadId;
+  const rec = threading.joinRecord(topic, pastEntries);
+  console.log(`[join] ${JSON.stringify(rec)}`);
+  return rec.threadId;
 }
 
 async function readPastArchiveEntries(days) {

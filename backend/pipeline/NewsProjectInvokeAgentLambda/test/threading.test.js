@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { joinScore, passesJoin, matchThread, relatedEntries, generateThreadId, normalizeTitle } = require('../src/threading');
+const { joinScore, passesJoin, matchThread, relatedEntries, generateThreadId, normalizeTitle, joinRecord } = require('../src/threading');
 
 const past = (t, threadId) => ({ ...t, threadId });
 
@@ -86,6 +86,25 @@ test('the same title (case variant) joins by title, taking the newest entry', ()
   const m = matchThread(variant, [past(halzen, 'thread-newer'), past(halzen, 'thread-older')]);
   assert.equal(m.via, 'title');
   assert.equal(m.threadId, 'thread-newer');
+});
+
+// ---------- [join] log record ----------
+
+test('joinRecord carries topicId, threadId, via, score and kwScore for a score join', () => {
+  const rec = joinRecord({ ...plagueRu, id: 'Russia plague-3' }, [past(plagueUs, 'thread-plague')]);
+  assert.deepEqual(Object.keys(rec), ['topicId', 'threadId', 'via', 'score', 'kwScore']);
+  assert.equal(rec.topicId, 'Russia plague-3');
+  assert.equal(rec.threadId, 'thread-plague');
+  assert.equal(rec.via, 'score');
+  assert.equal(rec.kwScore, Math.round(rec.kwScore * 1000) / 1000);
+});
+
+test('joinRecord founds a new thread id and keeps the best score seen', () => {
+  const rec = joinRecord({ ...flyingCar, id: 'car-0' }, [past(rogueAgent, 'thread-agent')]);
+  assert.equal(rec.via, 'new');
+  assert.equal(rec.threadId, generateThreadId(flyingCar));
+  assert.equal(rec.score, 0.5);
+  assert.equal(rec.kwScore, 0);
 });
 
 test('an empty continues_topic never matches an untitled entry', () => {

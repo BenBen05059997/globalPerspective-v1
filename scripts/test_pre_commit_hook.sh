@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Self-test for pre-commit doc guard. Builds a throwaway git repo under the
-# scratchpad, installs the hook, and exercises the five cases from the task.
-# Never touches the real globalPerspective-v1 repo. Run:
-#   bash scripts/test_pre_commit_hook.sh
+# Self-test for .githooks/pre-commit (2026-10-19 rules reset: config.js guard + style ratchets).
+# Builds a throwaway git repo in a temp dir, installs the hook and a stub quality/ check, and
+# exercises each rule. Never touches the real repo. Run: bash scripts/test_pre_commit_hook.sh
 
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -15,94 +14,63 @@ trap cleanup EXIT
 
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAIL=1; }
+g() { git -C "$WORK" "$@"; }
+commit_ok() { g commit -q -m "$1" >"$WORK/.log" 2>&1; }
 
-git -C "$WORK" init -q -b main
-git -C "$WORK" config user.email "test@example.com"
-git -C "$WORK" config user.name "Test"
-mkdir -p "$WORK/.githooks"
+g init -q -b main
+g config user.email "test@example.com"
+g config user.name "Test"
+mkdir -p "$WORK/.githooks" "$WORK/quality" "$WORK/docs" "$WORK/scripts" \
+  "$WORK/amplify/backend/function/newsFoo/src" "$WORK/global-perspectives-starter/frontend/src/features/foo"
 cp "$HOOK_SRC" "$WORK/.githooks/pre-commit"
 chmod +x "$WORK/.githooks/pre-commit"
-git -C "$WORK" config core.hooksPath .githooks
-
-mkdir -p "$WORK/amplify/backend/function/newsFoo/src"
-mkdir -p "$WORK/global-perspectives-starter/frontend/src/components"
-mkdir -p "$WORK/scripts"
-mkdir -p "$WORK/project-docs/architecture/_active"
+g config core.hooksPath .githooks
+# Stub ratchet: fails while quality/.ratchet-fail exists (the real checks are quality/check_*.mjs).
+cat > "$WORK/quality/check_stub.mjs" <<'EOF'
+import fs from 'node:fs';
+if (fs.existsSync(new URL('./.ratchet-fail', import.meta.url))) { console.log('stub ratchet: rise'); process.exit(1); }
+EOF
 echo "seed" > "$WORK/README.md"
 echo "# Changes" > "$WORK/CHANGES.md"
-git -C "$WORK" add -A
-git -C "$WORK" commit -q -m "seed"
+g add -A && g commit -q -m "seed" --no-verify
 
-# --- (a) code change without CHANGES.md -> blocked ---
+# (a) staged docs/config.js is blocked
+echo "window.CONFIG = {}" > "$WORK/docs/config.js"
+g add docs/config.js
+if commit_ok "config"; then fail "(a) docs/config.js should be blocked"; else
+  grep -q "operator-owned" "$WORK/.log" && pass "(a) docs/config.js blocked" || fail "(a) blocked without the config message: $(cat "$WORK/.log")"
+fi
+g reset -q; rm -f "$WORK/docs/config.js"
+
+# (b) code change without a CHANGES.md entry passes (CHANGES.md is frozen; no changelog rule)
 echo "console.log(1)" > "$WORK/amplify/backend/function/newsFoo/src/index.js"
-git -C "$WORK" add amplify/backend/function/newsFoo/src/index.js
-if git -C "$WORK" commit -q -m "code only" >/tmp/precommit_test_a.log 2>&1; then
-  fail "(a) code change without CHANGES.md should have been blocked"
-else
-  pass "(a) code change without CHANGES.md blocked"
-fi
-git -C "$WORK" reset -q >/dev/null 2>&1
+g add amplify/backend/function/newsFoo/src/index.js
+commit_ok "lambda code only" && pass "(b) code change without CHANGES.md passes" || fail "(b) should pass: $(cat "$WORK/.log")"
 
-# --- (b) code change + CHANGES.md -> passes ---
-echo "console.log(2)" > "$WORK/amplify/backend/function/newsFoo/src/index.js"
-echo "## 2026-09-24 entry" >> "$WORK/CHANGES.md"
-git -C "$WORK" add amplify/backend/function/newsFoo/src/index.js CHANGES.md
-if git -C "$WORK" commit -q -m "code + changelog" >/tmp/precommit_test_b.log 2>&1; then
-  pass "(b) code change + CHANGES.md passes"
-else
-  fail "(b) code change + CHANGES.md should have passed: $(cat /tmp/precommit_test_b.log)"
+# (c) frontend source + a failing ratchet is blocked, and the check's output is shown
+touch "$WORK/quality/.ratchet-fail"
+echo "export const a = 1" > "$WORK/global-perspectives-starter/frontend/src/features/foo/a.js"
+g add global-perspectives-starter/frontend/src/features/foo/a.js
+if commit_ok "frontend with rise"; then fail "(c) failing ratchet should block a frontend commit"; else
+  grep -q "stub ratchet: rise" "$WORK/.log" && pass "(c) failing ratchet blocks and prints its output" || fail "(c) blocked without check output: $(cat "$WORK/.log")"
 fi
 
-# --- (c) doc-only change -> passes ---
-echo "doc update" >> "$WORK/README.md"
-git -C "$WORK" add README.md
-if git -C "$WORK" commit -q -m "doc only" >/tmp/precommit_test_c.log 2>&1; then
-  pass "(c) doc-only change passes"
-else
-  fail "(c) doc-only change should have passed: $(cat /tmp/precommit_test_c.log)"
-fi
+# (d) frontend source + passing ratchets passes
+rm -f "$WORK/quality/.ratchet-fail"
+commit_ok "frontend clean" && pass "(d) frontend commit with passing ratchets passes" || fail "(d) should pass: $(cat "$WORK/.log")"
 
-# --- (d) SKIP_DOC_GUARD=1 -> passes ---
-echo "console.log(3)" > "$WORK/scripts/util.sh"
-git -C "$WORK" add scripts/util.sh
-if SKIP_DOC_GUARD=1 git -C "$WORK" commit -q -m "bypass" >/tmp/precommit_test_d.log 2>&1; then
-  pass "(d) SKIP_DOC_GUARD=1 bypass passes"
-else
-  fail "(d) SKIP_DOC_GUARD=1 should have passed: $(cat /tmp/precommit_test_d.log)"
-fi
+# (e) ratchets run only when frontend source is staged
+touch "$WORK/quality/.ratchet-fail"
+echo "echo hi" > "$WORK/scripts/util.sh"
+g add scripts/util.sh
+commit_ok "non-frontend" && pass "(e) non-frontend commit skips the ratchets" || fail "(e) should pass: $(cat "$WORK/.log")"
 
-# --- (e) active task file: affected-docs reminder prints, does not block ---
-cat > "$WORK/project-docs/architecture/_active/TASK_2026-09-24_test.md" <<'EOF'
-## test task — 2026-09-24 — active
-**Goal:** exercise the reminder path.
-**Reads / references:** none.
-**Changes (code):**
-- global-perspectives-starter/frontend/src/components/Widget.jsx
-**Docs to update on completion:**
-- project-docs/architecture/ARCHITECTURE.md — Widget row
-**Completion checklist:**
-- [ ] code
-EOF
-git -C "$WORK" add project-docs/architecture/_active/TASK_2026-09-24_test.md
-git -C "$WORK" commit -q -m "add task file"
-
-mkdir -p "$WORK/global-perspectives-starter/frontend/src/components"
-echo "export default function Widget(){}" > "$WORK/global-perspectives-starter/frontend/src/components/Widget.jsx"
-echo "## 2026-09-24 widget change" >> "$WORK/CHANGES.md"
-git -C "$WORK" add global-perspectives-starter/frontend/src/components/Widget.jsx CHANGES.md
-OUT=$(git -C "$WORK" commit -m "widget change" 2>&1)
-RC=$?
-if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q "ARCHITECTURE.md"; then
-  pass "(e) task-file reminder prints and does not block"
-else
-  fail "(e) expected exit 0 + reminder mentioning ARCHITECTURE.md; got rc=$RC out=[$OUT]"
-fi
+# (f) frontend CSS counts as frontend source too
+echo ".a{}" > "$WORK/global-perspectives-starter/frontend/src/features/foo/a.css"
+g add global-perspectives-starter/frontend/src/features/foo/a.css
+if commit_ok "css with rise"; then fail "(f) CSS change should run the ratchets"; else pass "(f) CSS change runs the ratchets"; fi
+g reset -q; rm -f "$WORK/quality/.ratchet-fail"
 
 echo
-if [ "$FAIL" -eq 0 ]; then
-  echo "ALL CASES PASSED"
-  exit 0
-else
-  echo "ONE OR MORE CASES FAILED"
-  exit 1
-fi
+if [ "$FAIL" -eq 0 ]; then echo "ALL CASES PASSED"; exit 0; fi
+echo "ONE OR MORE CASES FAILED"; exit 1

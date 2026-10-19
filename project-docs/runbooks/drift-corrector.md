@@ -21,4 +21,4 @@ Moves already noted today are skipped, so a re-run is safe; single target: paylo
 
 ## Escalate
 - Alarm/alert: None specific; `Lambda-Errors-Spike`.
-- LLM errors (`Grok API error:`, `OpenAI error:`, `DeepSeek <status>:`, `llm <status>:`) with HTTP 402 mean the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+- LLM errors: the deployed zip (checked 2026-10-19) logs `llm <status>:`; the repo code logs `LLM <status>: <message>` or `LLM timeout after <ms>ms` (`backend/shared/src/llm.js`) once it is deployed (`bash scripts/lambda.sh newsDriftCorrector diff` shows the gap). Status 402 / `Insufficient Balance` means the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

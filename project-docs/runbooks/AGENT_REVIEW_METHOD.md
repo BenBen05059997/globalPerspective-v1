@@ -2,6 +2,8 @@
 
 **Established:** 2026-05-26 — during the `ARCHITECTURE.md` re-verification + subscription deprecation work.
 
+Last verified: 2026-10-19 (file, test and Lambda references checked against the repo and `aws lambda list-functions`).
+
 A repeatable way to use multiple AI agents to verify documentation and code against ground truth, instead of trusting a single pass. Use it whenever a change depends on the *current* state of the system (docs that may have drifted, "is this still wired?", "what does the deployed Lambda actually use?").
 
 ---
@@ -12,7 +14,7 @@ A repeatable way to use multiple AI agents to verify documentation and code agai
 - Holds full context and is the only actor that edits files.
 - Splits the target into independent slices, briefs one auditor per slice, runs them in parallel.
 - Consolidates findings, re-checks the highest-risk ones itself, then applies fixes.
-- Records genuinely actionable findings in the right plan/TODO — not just doc edits.
+- Records genuinely actionable findings in the relevant plan under `project-docs/plans/` — not just doc edits.
 
 **Auditors (parallel sub-agents, one per slice).**
 - Read-only. Do **not** trust the doc or any planning file — verify every claim from **primary sources**.
@@ -29,7 +31,7 @@ A repeatable way to use multiple AI agents to verify documentation and code agai
 
 ### The cardinal rule
 **Never infer deployed behavior from source identifiers or a planning doc's checkbox.** Two real misses on this project both came from breaking this rule:
-- Env vars named `XAI_API_KEY` / `GROK_MODEL` actually hold DeepSeek/Gemini values.
+- Env vars named `XAI_API_KEY` / `GROK_MODEL` actually hold DeepSeek values (decisions/0014).
 - A migration plan's unticked "Phase 2" box said pair-intelligence was "still on Grok" — the deployed function was already on DeepSeek.
 
 If a fact is load-bearing, run the CLI/read the file. "The doc/plan says X" ≠ "X is true now."
@@ -62,7 +64,7 @@ Goal: bring `ARCHITECTURE.md` back in line with reality.
 - 4 auditors ran in parallel (Lambdas #1–8, Lambdas #9–16, data+infra, frontend), each verifying against source + live AWS.
 - They confirmed all schedules and DDB schemas, and caught real drift: stale TTLs, wrong Brave-query count, dead social platforms, an `ACLED_API_KEY` that doesn't exist, a `/daily` worker route, and a badly outdated frontend routes/components/hooks section (a "Cut: orphans" commit had deleted components the doc still listed).
 - The orchestrator re-verified the frontend route deletions itself (they conflicted with memory), then fixed the doc.
-- One genuine latent bug surfaced (`newsStripeWebhook` deployed with `STRIPE_*` vars while the code requires `PADDLE_WEBHOOK_SECRET`) and was routed to `BACKEND_TODO.md` rather than silently patched.
+- One genuine latent bug surfaced (`newsStripeWebhook` deployed with `STRIPE_*` vars while the code requires `PADDLE_WEBHOOK_SECRET`) and was routed to the backend TODO of the time rather than silently patched.
 
 ---
 
@@ -74,17 +76,17 @@ Each variant reuses the same orchestrator + parallel-auditor loop. What changes 
 
 ## Variant 1 — Pre-deploy frontend check
 
-**Trigger:** before building + copying to `docs/` + pushing any change under `global-perspectives-starter/frontend/src/`.
+**Trigger:** before releasing (`./deploy.sh --target …`, see [DEPLOYMENT_NOTES](DEPLOYMENT_NOTES.md)) any change under `global-perspectives-starter/frontend/src/`.
 
 **Primary sources:** `npm run lint` / `npm run build` output, `npx vitest run`, and a **real browser** (dev server or `vite preview` + Playwright) — not "the build passed."
 
 **Auditor slices:**
 1. **Build & static** — lint (0 *new* errors), `npm run build` succeeds, no new chunk/import warnings introduced by the change; grep for dangling imports/refs to anything deleted.
-2. **Tests** — `vitest run`; confirm the *changed* components' tests pass and note any pre-existing failures (e.g. the `layers.test.jsx` d3-in-jsdom one) so they aren't mistaken for regressions.
+2. **Tests** — `vitest run`; confirm the *changed* components' tests pass and note any pre-existing failures so they aren't mistaken for regressions.
 3. **Golden-path browser** — drive the affected route(s) in a browser: the feature does what the change intended, on desktop **and** mobile width (`useIsMobile` 600px breakpoint).
 4. **Regression sweep** — click through 2–3 *unrelated* high-traffic routes (`/`, `/weekly`, `/map`) to confirm nothing else broke.
 
-**Gate:** do NOT copy to `docs/` until 1–4 pass. Auth-gated routes (`/account`) that can't be exercised without a signed-in user → say so explicitly; don't claim "verified."
+**Gate:** do NOT release until 1–4 pass (`npm run verify` covers 1–2). Auth-gated routes (`/account`) that can't be exercised without a signed-in user → say so explicitly; don't claim "verified."
 
 **Why this shape:** "build-passes ≠ feature-works" — actually exercise controls in the browser before deploy. (Matches the standing project rule.)
 
@@ -97,14 +99,14 @@ Each variant reuses the same orchestrator + parallel-auditor loop. What changes 
 **Primary sources (in order):** `aws lambda get-function-configuration` (deployed env), `aws scheduler get-schedule` / `aws events describe-rule` (live crons), CloudWatch Logs (recent invocations/errors), then source. Region `ap-northeast-1`.
 
 **Auditor slices (by Lambda group):**
-1. **Pipeline** (newsInvokeGemini → AgentLambda → threadAnalysis → countryIntelligence) — schedule firing? last run succeeded? deployed `GROK_MODEL`/`GROK_API_URL` = the *intended* provider? recent 429s / timeouts?
-2. **Derived analyses** (systems, pair, economicImpact, economicQuality) — same checks; confirm DDB writes have fresh `generatedAt`/`asOf`.
+1. **Pipeline** (newsInvokeGemini-dev → NewsProjectInvokeAgentLambda-dev → newsThreadAnalysis → newsCountryIntelligence) — schedule firing? last run succeeded? deployed `GROK_MODEL`/`GROK_API_URL` = the *intended* provider? recent 429s / timeouts?
+2. **Derived analyses** (systems, drift corrector, prediction resolver; pair and economy jobs are parked) — same checks; confirm DDB writes have fresh `generatedAt`/`asOf`.
 3. **Edge / data** (marketsData, countryFactsUpdater, savedItems, sensitiveData proxy) — feeds returning data, proxy actions 200, no auth regressions.
-4. **Distribution** (postLinkedIn, linkedInAutoPost, postDevTo) — known-broken tokens (LinkedIn 401, Dev.to 401) confirmed or cleared.
+4. **Distribution** (newsPostLinkedin, newsPostDevTo, newsEmailSender, newsBreakingAlert) — per-platform `Complete: <ok>/<tried>` lines, expired tokens (LinkedIn 401) or rate limits (LinkedIn 429).
 
 **Cardinal rule front-and-center:** provider is whatever the **deployed env var holds**, never the source default or a migration-plan checkbox.
 
-**Output:** per-Lambda green/red + the specific failing CLI evidence. Latent bugs → `BACKEND_TODO.md`, never silent-patched.
+**Output:** per-Lambda green/red + the specific failing CLI evidence. Latent bugs → the backend plan in `project-docs/plans/`, never silent-patched.
 
 ---
 
@@ -112,12 +114,12 @@ Each variant reuses the same orchestrator + parallel-auditor loop. What changes 
 
 **Trigger:** spot-checking generated content, or validating a prompt/model change.
 
-**Primary sources:** the actual stored records in `SUMMARIZE_PREDICT_TABLE` (the real generated text), plus the source articles/`topicId`s they cite. Generalizes the `newsEconomicQuality` LLM-as-judge.
+**Primary sources:** the actual stored records in `SUMMARIZE_PREDICT_TABLE` (the real generated text), plus the source articles/`topicId`s they cite. Generalizes the (parked) `newsEconomicQuality` LLM-as-judge.
 
 **Auditor slices (one judge per content type — use a *different* model family than the producer so errors decorrelate):**
 1. **Summaries / predictions / trace_cause** (`TOPIC#`)
 2. **Thread analyses** (`THREAD#`) — storyArc, trajectory, rootCauseChain
-3. **Country / pair intelligence** (`COUNTRY#`/`PAIR#`)
+3. **Country intelligence** (`COUNTRY#`)
 4. **Systems graph** (`SYSTEMS#`) — every edge cites a real `topicId`
 
 **Each judge scores fixed axes** (reuse: coherence / citation_fidelity / analog_match / severity_calibration / no_bs), flags any axis ≤ 2, and **must quote the offending text + the citation it fails**. No vibes — every "low quality" verdict cites evidence.
@@ -161,14 +163,14 @@ Decide the slice: the **routed pages** (route + component-table + hooks + servic
 
 ### 2. Fan out auditors (one message, parallel)
 Brief each auditor with: the pages it owns, the doc sections to check against, the **cardinal rule** (verify from code, never from the doc/memory/plan), and the punch-list output format (`CONFIRMED / WRONG / GAP` with `file:line`). Tell them **not to edit**.
-For a **content** audit, give them the current reality to check copy against (e.g. "billing is deprecated — flag any subscription/Stripe/pricing claim"; "providers are DeepSeek+Gemini, not Grok"; "these routes were removed — flag links to them").
+For a **content** audit, give them the current reality to check copy against (e.g. "flag any Stripe/Paddle claim — billing is Polar"; "the AI provider is DeepSeek, not Grok or Gemini"; "these routes were removed — flag links to them").
 
 ### 3. Quick wins you do yourself (cheap greps)
 - Dead internal links: `grep -rnE 'to="/(removed|routes|here)'` across `src/`.
 - Residual stale strings after fixing: `grep -rni "grok\|xai\|stripe\|subscription" src/`.
 
 ### 4. Consolidate + write the problem → fix log
-Group findings `CONFIRMED / WRONG / GAP`. Write each **problem and the fix** into `CHANGES.md` (and route latent/legal items to `BACKEND_TODO.md`). This log is also what the review agent verifies against.
+Group findings `CONFIRMED / WRONG / GAP`. Write each **problem and the fix** into a list you keep for the commit message (route latent/legal items to the relevant plan). This log is also what the review agent verifies against.
 
 ### 5. Trust-but-verify before sweeping changes
 If a finding is surprising, contradicts memory, or implies a deletion/rename across many files, re-verify it yourself first (read `App.jsx`, grep the symbol). Don't act on an auditor's claim you haven't confirmed.
@@ -180,13 +182,13 @@ If a finding is surprising, contradicts memory, or implies a deletion/rename acr
 - Anything destructive or legal-sensitive that isn't a clear-cut deletion → write it down and confirm, don't freelance.
 
 ### 7. Gate: lint + build + test
-`npm run lint` (0 *new* errors), `npm run build` (succeeds), `npx vitest run` (note pre-existing failures like the `layers.test.jsx` d3-in-jsdom one so they aren't mistaken for regressions). For auth-gated pages you can't exercise without a login, say so — don't claim "verified."
+`cd global-perspectives-starter/frontend && npm run verify` (the pre-commit gate), then `npm run build`; note pre-existing failures so they aren't mistaken for regressions. For auth-gated pages you can't exercise without a login, say so — don't claim "verified."
 
 ### 8. Independent review of the fixes
 Spawn a **fresh** review agent. Give it the problem→fix list and tell it to verify each fix against the actual code (rename complete? doc matches code? no residual stale strings? no broken refs?). Address anything it flags before shipping.
 
 ### 9. Deploy + commit
-`rm -rf docs/assets && cp -r dist/assets docs/assets && cp dist/index.html docs/index.html` — **never** touch `docs/config.js`. Stage explicitly (avoid stray untracked files), commit with a problem→fix summary, push.
+Commit with a problem→fix summary (explicit paths), then release only with the operator's fresh yes: [DEPLOYMENT_NOTES](DEPLOYMENT_NOTES.md). Never hand-copy into `docs/` or touch `docs/config.js`.
 
 ### Worked run (2026-05-26)
-Two passes. Pass 1 (route/structure): 3 auditors over 16 pages → fixed Home/Weekly/Thread/Daily/SignIn descriptions, the Google-Maps API row, `useDisruptionsList` consumers; renamed `graphqlService.js`→`contentService.js` (8 files); killed the "Grok · xAI" chip. Pass 2 (content): 1 auditor over the 5 static pages → removed materially false subscription/Stripe/pricing copy from Disclosures, PrivacyTerms, Contact, WhitepaperPage. Each pass: problem→fix log in `CHANGES.md`, review agent verified, lint/build/test gate, deploy, commit.
+Two passes. Pass 1 (route/structure): 3 auditors over 16 pages → fixed Home/Weekly/Thread/Daily/SignIn descriptions, the Google-Maps API row, `useDisruptionsList` consumers; renamed `graphqlService.js`→`contentService.js` (8 files); killed the "Grok · xAI" chip. Pass 2 (content): 1 auditor over the 5 static pages → removed materially false subscription/Stripe/pricing copy from Disclosures, PrivacyTerms, Contact, WhitepaperPage. Each pass: problem→fix log (then in `CHANGES.md`, deleted 2026-10-19), review agent verified, lint/build/test gate, deploy, commit.

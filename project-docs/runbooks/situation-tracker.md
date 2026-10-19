@@ -12,7 +12,7 @@ Sole writer of situation state and the map bundle: folds the GDACS inbox, `stori
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1`
 - Last runs: `aws logs tail /aws/lambda/newsSituationTracker --since 1d --region ap-northeast-1`
-- Success line: `aws logs tail /aws/lambda/newsSituationTracker --since 2d --region ap-northeast-1 --filter-pattern '"[tracker] {"ok":true"'`
+- Success line: `aws logs tail /aws/lambda/newsSituationTracker --since 2d --region ap-northeast-1 --filter-pattern '"[tracker] {\"ok\":true"'`
 - Known failures: `[tracker] metric failed`, `[tracker] archive failed`, `[tracker] inbox move failed` — `aws logs tail /aws/lambda/newsSituationTracker --since 2d --region ap-northeast-1 --filter-pattern '"[tracker] metric failed"'`
 - Errors per hour: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --dimensions Name=FunctionName,Value=newsSituationTracker --start-time $(date -u -v-1d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 3600 --statistics Sum --region ap-northeast-1`
 

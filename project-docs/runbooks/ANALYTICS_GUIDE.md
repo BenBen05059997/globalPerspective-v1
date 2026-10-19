@@ -1,6 +1,6 @@
 # Analytics Guide — Global Perspectives
 
-> ℹ️ **Reviewed 2026-09-08 — mostly current.** GA4 setup (tag `G-VT6QENX4MB`) is valid. Corrected below: the Conversion-Tracking section referenced a Stripe paywall + `/upgrade/success` route that no longer exist — billing is now **Polar** ($15/mo · $150/yr) via `/membership`, and content is free (membership buys compute, not access).
+Last verified: 2026-10-19 (GA4 tag in `docs/index.html`; `/membership` route and prices in `MembershipPage.jsx`; no GA4 purchase event in `src/`).
 
 
 How to read and act on the data from Google Analytics 4 (GA4) and Cloudflare.
@@ -67,8 +67,7 @@ After a Reddit post or Product Hunt launch, watch for a spike in Referral or Una
 
 What to look for:
 - Home / map page getting most views — people using the core product
-- Weekly / pricing page getting views — people exploring paid features
-- High views on pricing = buying intent
+- `/membership` getting views — people exploring paid features (buying intent)
 
 ---
 
@@ -100,7 +99,7 @@ This gives you a week-by-week growth chart — the single most useful chart to s
 
 ### Conversion Tracking (Polar membership)
 
-Billing is **Polar** (`newsPolarBilling` + `/membership`, LIVE 2026-06-22) — there is no Stripe paywall and no `/upgrade/success` route. Content stays free; membership buys analysis *compute*. When a user completes Polar checkout and returns, fire this GA4 event:
+Billing is **Polar** (`newsPolarBilling` + `/membership`: $15/month or $150/year). Content stays free; membership buys analysis *compute*. **Not implemented:** the frontend fires no GA4 `purchase` event today, so GA4 has no revenue data. Adding it (billing code: operator's fresh yes) would mean firing this when a user returns from Polar checkout:
 
 ```js
 gtag('event', 'purchase', {
@@ -137,18 +136,6 @@ Cloudflare counts every IP that hits your domain (including bots, crawlers, pref
 GA4 only counts real browsers that loaded the JavaScript tag.
 
 **Use GA4 for user behavior. Use Cloudflare for infrastructure and traffic volume.**
-
----
-
-## Current Benchmarks (as of 2026-03-15)
-
-| Period | Unique Visitors | Daily Avg |
-|--------|----------------|-----------|
-| Last 24h | 102 | 102 |
-| Last 7 days | 786 | 112/day |
-| Last 30 days | 2,470 | 82/day |
-
-7-day daily average (112) is 53% higher than prior 23-day average (73) — traffic is accelerating organically with zero paid marketing.
 
 ---
 

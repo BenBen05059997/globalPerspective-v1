@@ -21,4 +21,4 @@ No run guard: a manual run makes a paid LLM call and replaces `staging` with a n
 
 ## Escalate
 - Alarm/alert: `lambda-errors-newsInvokeGemini-dev` (Errors ≥ 1 in 5 min → SNS `GlobalPerspectivesAlerts`); the freshness monitor reports stale topics.
-- LLM errors (`Grok API error:`, `OpenAI error:`, `DeepSeek <status>:`, `llm <status>:`) with HTTP 402 mean the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+- LLM errors: the deployed zip (checked 2026-10-19) logs the OpenAI SDK error text under `Lambda error:`; the repo code logs `LLM <status>: <message>` or `LLM timeout after <ms>ms` (`backend/shared/src/llm.js`) once it is deployed (`bash scripts/lambda.sh newsInvokeGemini diff` shows the gap). Status 402 / `Insufficient Balance` means the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

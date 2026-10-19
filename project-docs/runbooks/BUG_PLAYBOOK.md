@@ -1,5 +1,7 @@
 # Bug-Fighting Playbook
 
+Last verified: 2026-10-19 (scripts, monitor schedules, `STALE_HOURS` and SNS topics checked against the repo and live AWS).
+
 How we find bugs *before* users do. This project has no CI gate by choice — these
 are **on-demand playbooks** you run by hand (typically before/after a deploy), not
 automated pipelines. Grounded in standard industry practice (testing trophy, SPA
@@ -125,8 +127,10 @@ only parsing + asserting the mounted shape catches it.
 The four checks above are **active**: they only run when a human runs them, so a
 failure that happens on a schedule (the content pipeline stalling overnight) or
 between runs (a transient outage) is their blind spot. These passive monitors watch
-continuously and **push an alert** instead of waiting to be asked. All alerts go to
-one SNS topic `GlobalPerspectiveAlerts` → email (benlai310@gmail.com). They follow the
+continuously and **push an alert** instead of waiting to be asked. The monitor Lambdas
+publish to SNS `GlobalPerspectiveAlerts` (email); the CloudWatch Lambda/DynamoDB alarms
+mostly notify the near-identically named `GlobalPerspectivesAlerts` (email + AWS Chatbot)
+— see [alarms](alarms.md). They follow the
 same **honest-failure rule** as the rest of the site: they only ever alert on a real
 problem; they never emit a fake "all clear" that could be mistaken for a guarantee.
 
@@ -134,7 +138,7 @@ problem; they never emit a fake "all clear" that could be mistaken for a guarant
 - **`newsFreshnessMonitor`** — data-freshness dead-man's-switch. EventBridge
   `TriggerFreshnessMonitor` (every 2h at :30) invokes it; it hits the public proxy
   `?action=topics`, reads `asOf`, and alerts if content is older than `STALE_HOURS`
-  (=9 — the content pipeline runs every ~4h, so 9h tolerates ~2 missed cycles) **or**
+  (=9 — the content pipeline runs every 8h at 04/12/20 UTC, so 9h flags one missed cycle) **or**
   the proxy is unreachable/timestampless (so it doubles as a read-path uptime check).
   Catches the #1 silent failure for a news site: the pipeline stalls and the site
   quietly serves stale content — and it earned its keep on 2026-06-01, surfacing a
@@ -212,7 +216,7 @@ Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.
   POST) → `newsClientErrors` Lambda + Function URL → `GlobalPerspectiveClientErrors`
   DynamoDB table (counter rows keyed by `day#fingerprint`, TTL 30d). Read back with
   `node scripts/errors.mjs` (de-minifies via the private `dist/` source map). This is
-  the **passive** complement to the six active contracts below: a contract only exists
+  the **passive** complement to the eight active contracts below: a contract only exists
   once a bug has shipped, so a novel uncaught error lands in the sink first.
 
 Deliberately skipped: consumer-driven contract testing (Pact) — overkill for a single
@@ -226,12 +230,12 @@ This is the part a **fix-until-green loop** consumes. Each class below is a clos
 contract: a *detect* command, the *green* criterion that ends the loop for that class,
 the *if-red* action, and the *scope* (what is deliberately out of bounds, so the loop
 doesn't chase non-bugs). The loop runs every contract, fixes what's red, re-runs, and
-stops when **all seven are green**. It is a convergence engine, not a detector — these
+stops when **all eight are green**. It is a convergence engine, not a detector — these
 contracts are what tell it "broken" from "done."
 
-Why these six and not others: every contract maps to a failure mode this repo has
+Why these eight and not others: every contract maps to a failure mode this repo has
 **actually shipped** (commit refs are the receipts), not a hypothetical. New bug class →
-add a seventh contract; don't widen an existing one past its evidence.
+add a ninth contract; don't widen an existing one past its evidence.
 
 ### 1 — Dangling references  *(receipts: ecf54e4, 74510da, b0f84bc)*
 - **Detect:** `node scripts/link-crawl.mjs` then `SMOKE_STORY_CAP=100 node scripts/smoke-test.mjs`
@@ -332,7 +336,7 @@ add a seventh contract; don't widen an existing one past its evidence.
 - **No deploy / commit / push without explicit confirmation.** The loop fixes source and
   re-runs checks; shipping is a separate, human-gated step.
 - **Never** overwrite `docs/config.js`; **never** `git add -A`/`.`.
-- Deploy Lambdas only via manual `aws lambda update-function-code` — never inside the loop.
+- Deploy Lambdas only by hand with `bash scripts/lambda.sh <name> deploy` (CLAUDE.md authorization) — never inside the loop.
 - Stop and ask if a "fix" would remove a user-facing feature (layout-intent ≠ feature-list).
-- **Stopping condition:** all six contracts green on a clean re-run, *or* a contract is red
+- **Stopping condition:** all eight contracts green on a clean re-run, *or* a contract is red
   for a reason outside these scopes (then surface it, don't thrash).

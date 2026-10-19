@@ -7,12 +7,12 @@ EventBridge Scheduler `InvokeLinkedIn`, `cron(20 */3 * * ? *)` Asia/Tokyo, no in
 Repo source: `backend/distribution/newsPostLinkedIn/src/`.
 
 ## What it means
-Posts up to 5 new `latest` topics per run to LinkedIn and/or Bluesky (whichever credentials are set), deduped by a `POSTED#<PLATFORM>#<fingerprint>` row in `SOCIAL_POSTS_TABLE`. Public posts.
+Posts up to 5 new `latest` topics per run to LinkedIn and/or Bluesky (whichever credentials are set), deduped by a `POSTED#<PLATFORM>#<fingerprint>` row in the posts table (`SOCIAL_POSTS_TABLE`, else `LINKEDIN_POSTS_TABLE`; live sets only `LINKEDIN_POSTS_TABLE`). Public posts.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name InvokeLinkedIn --region ap-northeast-1`
 - Last runs: `aws logs tail /aws/lambda/newsPostLinkedin --since 1d --region ap-northeast-1`
-- Success line: `aws logs tail /aws/lambda/newsPostLinkedin --since 2d --region ap-northeast-1 --filter-pattern '"Complete:"'`
+- Success line: `aws logs tail /aws/lambda/newsPostLinkedin --since 2d --region ap-northeast-1 --filter-pattern '"Complete:"'` — one `[<PLATFORM>] Complete: <ok>/<tried> succeeded` line per platform; watch for `Complete: 0/` (LinkedIn has logged `0/5` with `Rate limited` on most runs since at least 2026-10-16)
 - Known failures: `Auth failed, stopping further posts`, `Rate limited, stopping further posts`, `newsPostLinkedIn error:` — `aws logs tail /aws/lambda/newsPostLinkedin --since 2d --region ap-northeast-1 --filter-pattern '"Auth failed, stopping further posts"'`
 - Errors per hour: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --dimensions Name=FunctionName,Value=newsPostLinkedin --start-time $(date -u -v-1d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 3600 --statistics Sum --region ap-northeast-1`
 
@@ -20,5 +20,5 @@ Posts up to 5 new `latest` topics per run to LinkedIn and/or Bluesky (whichever 
 `Auth failed` on LinkedIn means the 60-day access token expired: the operator regenerates it (secret: fresh yes) and env is updated fetch → merge → write. Fingerprint rows prevent double posts, but a failed marker write is only logged, so check the feed before re-running.
 
 ## Escalate
-- Alarm/alert: `lambda-errors-newsPostLinkedin` (→ SNS `GlobalPerspectivesAlerts`).
+- Alarm/alert: `lambda-errors-newsPostLinkedin` (→ SNS `GlobalPerspectivesAlerts`), but it does not fire for posting failures: per-platform errors are caught (`Platform <name> failed:`) and even the top-level `newsPostLinkedIn error:` returns a 500 response without throwing. Check the `Complete:` lines instead.
 - Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

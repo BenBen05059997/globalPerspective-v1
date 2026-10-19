@@ -1,8 +1,8 @@
 # Custom Domain Setup – globalperspective.net
 
+Last verified: 2026-10-19 (GA4 id and the absent Cloudflare beacon read from `docs/index.html`; DNS settings not re-read).
+
 > **Current status (2026-10-05):** production remains GitHub Pages with the existing `globalperspective-rss` Worker in front. This document's GitHub Pages/DNS instructions describe the current legacy origin and recovery setup; they are not the Cloudflare Workers cutover procedure. The new site Worker and candidate front-Worker wrapper are local only and have not been uploaded. Zone, route, and Worker-source reads succeeded; DNS, SSL, and rules configuration reads remain unauthorized, so the precise DNS/SSL transition sequence is still an open gate. Do not use this old checklist to cut over hosting. See [`CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md`](../plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md).
->
-> ℹ️ **Reviewed 2026-09-08 — historical setup corrections retained.** The current front Worker requires proxied Cloudflare traffic for bot rendering and `/rss`; site analytics is GA4 `G-VT6QENX4MB` (see `../architecture/ANALYTICS_GUIDE.md`), not the Cloudflare Web Analytics beacon.
 
 
 Production currently serves `globalperspective.net` from GitHub Pages with Cloudflare DNS and the `globalperspective-rss` Worker in front. Use the steps below only to understand or restore that existing Pages configuration; the migration plan owns any future origin change.
@@ -37,18 +37,16 @@ You can verify the DNS status in the Pages settings panel or run `dig globalpers
 
 ---
 
-## 3. Cloudflare Web Analytics
+## 3. Analytics
 
-- **(Corrected 2026-09-08: no Cloudflare beacon is currently in `docs/index.html`.)** Site analytics is **GA4 `G-VT6QENX4MB`** (see `../architecture/ANALYTICS_GUIDE.md`). If Cloudflare Web Analytics is re-added later, embed its snippet in `docs/index.html`.
-- If the token rotates, update that file and the disclosure in `PrivacyTerms.jsx`.
-- Cloudflare Web Analytics operates in manual-snippet mode; no additional DNS changes are required.
+Site analytics is GA4 `G-VT6QENX4MB` (see [ANALYTICS_GUIDE](ANALYTICS_GUIDE.md)). No Cloudflare Web
+Analytics beacon is embedded and none needs DNS changes.
 
 ---
 
 ## 4. Verification Checklist
 
 - Visit `https://globalperspective.net` in an incognito window and confirm the site loads over HTTPS.
-- GA4 (`G-VT6QENX4MB`) is the configured site analytics; Cloudflare Web Analytics is not currently embedded.
 - GitHub Pages → Settings should show *Active* status with HTTPS enforced.
 - The Cloudflare proxy is required for the current Worker route. Do not change proxy status as part of frontend migration without following the reviewed cutover plan.
 

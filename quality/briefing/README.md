@@ -1,7 +1,11 @@
 # Economy Briefing — eval set
 
+> **Parked with the economy surface** (page soft-hidden 2026-09-25; daily economy jobs disabled
+> and surfaces behind `ECONOMY_PARKED` 2026-09-28). Kept so the standard is ready if economy
+> returns; `capture.js` reads economy actions that may be stale or empty while parked.
+
 A fixed standard for the "Today in the economy" briefing on `/economy`
-(see `ECONOMY_BRIEFING_PLAN.md`, workstream **W1**). Build the standard before
+(plan deleted 2026-10-19: `git show 120de90:project-docs/archive/economy/_proposed/ECONOMY_BRIEFING_PLAN.md`, workstream **W1**). Build the standard before
 tuning any prompt: you can't optimize against a target that comes from the optimizer.
 
 Three parts:

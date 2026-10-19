@@ -12,8 +12,8 @@ For the top `AUDIT_N` live topics, fetches source articles and asks DeepSeek (`A
 ## Check
 - Schedule state: `aws events describe-rule --name newsSourceAuditDaily --region ap-northeast-1`
 - Last runs: `aws logs tail /aws/lambda/newsSourceAudit --since 1d --region ap-northeast-1`
-- Success line: `aws logs tail /aws/lambda/newsSourceAudit --since 2d --region ap-northeast-1 --filter-pattern '"Source audit:"'`
-- Known failures: `audit-error:`, `No topics — skipping audit.` — `aws logs tail /aws/lambda/newsSourceAudit --since 2d --region ap-northeast-1 --filter-pattern '"audit-error:"'`
+- Success line: `aws logs tail /aws/lambda/newsSourceAudit --since 3d --region ap-northeast-1 --filter-pattern '"Source audit:"'`
+- Known failures: `audit-error:`, `No topics — skipping audit.` — `aws logs tail /aws/lambda/newsSourceAudit --since 3d --region ap-northeast-1 --filter-pattern '"audit-error:"'`
 - Errors per hour: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --dimensions Name=FunctionName,Value=newsSourceAudit --start-time $(date -u -v-1d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 3600 --statistics Sum --region ap-northeast-1`
 
 ## Fix
@@ -21,4 +21,4 @@ An alert means summaries disagree with their sources: read the `[audit] … DRIF
 
 ## Escalate
 - Alarm/alert: The job is itself the alert (SNS email).
-- LLM errors (`Grok API error:`, `OpenAI error:`, `DeepSeek <status>:`, `llm <status>:`) with HTTP 402 mean the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+- LLM errors: the deployed zip (checked 2026-10-19) logs `DeepSeek <status>:`; the repo code logs `LLM <status>: <message>` or `LLM timeout after <ms>ms` (`backend/shared/src/llm.js`) once it is deployed (`bash scripts/lambda.sh newsSourceAudit diff` shows the gap). Status 402 / `Insufficient Balance` means the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

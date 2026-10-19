@@ -15,6 +15,8 @@
  *   --public <proxy-url> --week 2026-W41   reads them from the PUBLIC aggregate (prediction_track_record, `questions.weeks[]`;
  *                         the pool is published for the latest 4 drawn weeks) — needs no credentials
  *
+ * Exit: 0 verified, 1 NOT VERIFIED, 3 not revealed yet (commitment only; the seed is revealed after the week).
+ *
  * The ranking rule is the Lambda's own module (backend/predictions/newsPredictionResolver/src/lib.js).
  */
 import fs from 'node:fs';
@@ -37,10 +39,14 @@ function unmarshal(av) {
   if ('M' in av) { const o = {}; for (const k of Object.keys(av.M)) o[k] = unmarshal(av.M[k]); return o; }
   return av;
 }
+// `aws dynamodb get-item` prints nothing at all when the row does not exist.
+export function parseItem(stdout) {
+  const out = stdout.trim() ? JSON.parse(stdout) : {};
+  return out.Item ? unmarshal({ M: out.Item }) : null;
+}
 function getRow(pk, sk) {
   const key = JSON.stringify({ PK: { S: pk }, SK: { S: sk } });
-  const out = JSON.parse(execFileSync('aws', ['dynamodb', 'get-item', '--table-name', 'GlobalPerspectivePredictionLog', '--region', 'ap-northeast-1', '--key', key, '--output', 'json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
-  return out.Item ? unmarshal({ M: out.Item }) : null;
+  return parseItem(execFileSync('aws', ['dynamodb', 'get-item', '--table-name', 'GlobalPerspectivePredictionLog', '--region', 'ap-northeast-1', '--key', key, '--output', 'json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
 }
 
 // Shape the public aggregate's week entry like the three DynamoDB rows.
@@ -53,16 +59,17 @@ export function fromPublicWeek(week) {
   };
 }
 
+// A pick as a fixed-order tuple: stored DynamoDB maps come back with their keys in any order.
+const pickKey = (p) => JSON.stringify([p.qid, p.h, p.clusterKey]);
+
 export function verify({ commit, reveal, draw }) {
   const problems = [];
-  if (!commit) problems.push('no commitment published');
-  if (!reveal) problems.push('seed not revealed yet');
-  if (!draw) problems.push('no draw published');
-  if (problems.length) return { ok: false, problems };
+  if (!commit) return { ok: false, problems: ['no commitment published for this week'] };
+  if (!reveal || !draw) return { ok: false, notRevealed: true, problems: ['seed not revealed yet: the commitment is published; the seed and draw are revealed after the week ends'] };
   if (lib.commitOf(reveal.seedHex) !== commit.commitHash) problems.push('sha256(seed) does not equal the published commitment');
   if (String(commit.committedAt).slice(0, 10) >= commit.weekStart) problems.push(`commitment (${commit.committedAt}) was not published before the week started (${commit.weekStart})`);
   const again = lib.draw(reveal.seedHex, draw.pool.map((x) => ({ qid: x.q, clusterKey: x.c })), draw.K);
-  if (JSON.stringify(again.picked) !== JSON.stringify(draw.picked)) problems.push('the published picks differ from the recomputed picks');
+  if (again.picked.map(pickKey).join('\n') !== draw.picked.map(pickKey).join('\n')) problems.push('the published picks differ from the recomputed picks');
   return { ok: problems.length === 0, problems, picked: again.picked.length, eligible: again.eligible, clusters: again.clusters };
 }
 
@@ -80,6 +87,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     input = { commit: getRow(`SEED#${wk}`, 'COMMIT'), reveal: getRow(`SEED#${wk}`, 'REVEAL'), draw: getRow(`SAMPLE#${wk}`, 'DRAW') };
   } else { console.error('usage: verify-draw.mjs --file draw.json | --week 2026-W41'); process.exit(2); }
   const r = verify(input);
-  if (r.ok) console.log(`OK: commitment matches the seed, and the ${r.picked} picks (from ${r.eligible} eligible questions in ${r.clusters} stories) are exactly what the published rule gives.`);
+  if (r.notRevealed) { console.log(`NOT REVEALED YET: ${r.problems[0]}.`); process.exit(3); }
+  else if (r.ok) console.log(`OK: commitment matches the seed, and the ${r.picked} picks (from ${r.eligible} eligible questions in ${r.clusters} stories) are exactly what the published rule gives.`);
   else { console.log('NOT VERIFIED:'); r.problems.forEach((p) => console.log(' - ' + p)); process.exit(1); }
 }

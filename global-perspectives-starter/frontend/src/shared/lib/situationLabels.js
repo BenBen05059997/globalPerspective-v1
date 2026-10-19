@@ -1,36 +1,12 @@
 // situationLabels — presentation helpers for the map-as-home situation feed.
-// The world bundle carries ISO-3 codes (USA, IRN); the older countryMapping tables are
-// ISO-2/name based, so this dedicated module resolves ISO-3 → display name / region and
-// builds the deterministic (template, no LLM) lede sentence. Unknown codes fall back to the
-// raw ISO-3, which an analyst audience reads fine — never a fabricated name.
+// The world bundle carries ISO-3 codes (USA, IRN); names come from the one country table through
+// shared/lib/countries.js. This module adds the region grouping and builds the deterministic
+// (template, no LLM) lede sentence. Unknown codes fall back to the raw ISO-3, which an analyst
+// audience reads fine — never a fabricated name.
+import { COUNTRIES, resolveCountry } from '@/shared/lib/countries.js';
 
-// Crisis-prone + major countries. Fallback is the code itself, so this need not be exhaustive.
-const ISO3_NAME = {
-  USA: 'United States', GBR: 'United Kingdom', FRA: 'France', DEU: 'Germany', ITA: 'Italy',
-  ESP: 'Spain', PRT: 'Portugal', NLD: 'Netherlands', BEL: 'Belgium', CHE: 'Switzerland',
-  AUT: 'Austria', SWE: 'Sweden', NOR: 'Norway', DNK: 'Denmark', FIN: 'Finland', POL: 'Poland',
-  CZE: 'Czechia', GRC: 'Greece', IRL: 'Ireland', ROU: 'Romania', HUN: 'Hungary', UKR: 'Ukraine',
-  SRB: 'Serbia', HRV: 'Croatia', BGR: 'Bulgaria', SVK: 'Slovakia', SVN: 'Slovenia', ALB: 'Albania',
-  BIH: 'Bosnia', XKX: 'Kosovo', MKD: 'North Macedonia', MDA: 'Moldova', BLR: 'Belarus', RUS: 'Russia',
-  ISR: 'Israel', PSE: 'Palestine', IRN: 'Iran', IRQ: 'Iraq', SAU: 'Saudi Arabia', ARE: 'UAE',
-  TUR: 'Turkey', SYR: 'Syria', LBN: 'Lebanon', JOR: 'Jordan', YEM: 'Yemen', OMN: 'Oman',
-  QAT: 'Qatar', KWT: 'Kuwait', BHR: 'Bahrain', EGY: 'Egypt', LBY: 'Libya', TUN: 'Tunisia',
-  MAR: 'Morocco', DZA: 'Algeria', SDN: 'Sudan', SSD: 'South Sudan', SOM: 'Somalia', ETH: 'Ethiopia',
-  ERI: 'Eritrea', KEN: 'Kenya', TZA: 'Tanzania', UGA: 'Uganda', RWA: 'Rwanda', COD: 'DR Congo',
-  COG: 'Congo', NGA: 'Nigeria', NER: 'Niger', MLI: 'Mali', BFA: 'Burkina Faso', TCD: 'Chad',
-  SEN: 'Senegal', GHA: 'Ghana', CIV: "Côte d'Ivoire", CMR: 'Cameroon', CAF: 'Central African Rep.',
-  MOZ: 'Mozambique', ZWE: 'Zimbabwe', ZMB: 'Zambia', AGO: 'Angola', ZAF: 'South Africa',
-  MWI: 'Malawi', MDG: 'Madagascar', SLE: 'Sierra Leone', LBR: 'Liberia', GIN: 'Guinea',
-  CHN: 'China', JPN: 'Japan', KOR: 'South Korea', PRK: 'North Korea', TWN: 'Taiwan', MNG: 'Mongolia',
-  IND: 'India', PAK: 'Pakistan', BGD: 'Bangladesh', LKA: 'Sri Lanka', NPL: 'Nepal', AFG: 'Afghanistan',
-  MMR: 'Myanmar', THA: 'Thailand', VNM: 'Vietnam', PHL: 'Philippines', IDN: 'Indonesia', MYS: 'Malaysia',
-  SGP: 'Singapore', KHM: 'Cambodia', LAO: 'Laos', KAZ: 'Kazakhstan', UZB: 'Uzbekistan', KGZ: 'Kyrgyzstan',
-  TJK: 'Tajikistan', TKM: 'Turkmenistan', AZE: 'Azerbaijan', ARM: 'Armenia', GEO: 'Georgia',
-  BRA: 'Brazil', MEX: 'Mexico', ARG: 'Argentina', COL: 'Colombia', CHL: 'Chile', PER: 'Peru',
-  VEN: 'Venezuela', ECU: 'Ecuador', BOL: 'Bolivia', PRY: 'Paraguay', URY: 'Uruguay', CUB: 'Cuba',
-  HTI: 'Haiti', DOM: 'Dominican Rep.', GTM: 'Guatemala', HND: 'Honduras', SLV: 'El Salvador',
-  NIC: 'Nicaragua', PAN: 'Panama', CAN: 'Canada', AUS: 'Australia', NZL: 'New Zealand', PNG: 'Papua New Guinea', FJI: 'Fiji',
-};
+// iso3 -> display name, derived from the one table (kept as an export for callers that scan text).
+const ISO3_NAME = Object.fromEntries(Object.entries(COUNTRIES).map(([iso3, c]) => [iso3, c.name]));
 
 const REGION_BY_ISO3 = {};
 const _reg = (region, codes) => codes.forEach((c) => { REGION_BY_ISO3[c] = region; });
@@ -51,7 +27,7 @@ _reg('North America', ['USA', 'CAN']);
 
 export function iso3Name(code) {
   if (!code) return '';
-  return ISO3_NAME[code] || code;
+  return COUNTRIES[code]?.name || code;
 }
 
 export function regionOf(iso3List = []) {
@@ -59,27 +35,18 @@ export function regionOf(iso3List = []) {
   return null;
 }
 
-// name -> ISO3, built once from the same table iso3Name reads (R4b, country risk layer): the
-// weekly archive / country-intelligence flow keys everything by display name, but the map draws
-// polygons keyed by ISO3 — this is the one join point. A name absent from the table (a country
-// this map has no crisis-context entry for) resolves to null, never a guess.
-let NAME_TO_ISO3 = null;
+// name -> ISO3 (R4b, country risk layer): the weekly archive / country-intelligence flow keys
+// everything by display name, but the map draws polygons keyed by ISO3 — this is the one join point.
+// Aliases resolve too ("United Arab Emirates" -> ARE); a non-country resolves to null, never a guess.
 export function iso3ForName(name) {
-  if (!name) return null;
-  if (!NAME_TO_ISO3) {
-    NAME_TO_ISO3 = {};
-    for (const [code, label] of Object.entries(ISO3_NAME)) NAME_TO_ISO3[label] = code;
-  }
-  return NAME_TO_ISO3[name] || null;
+  return resolveCountry(name)?.iso3 || null;
 }
 
 const TIER_LABEL = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 export { TIER_LABEL };
 
-// S6 (track record forecast map): the raw iso3 -> display-name table, exported so a caller can
-// scan free text for a country name (e.g. matching a forecast's stored title/trigger sentence to
-// a place) instead of only resolving a name it already has in hand. Same single source of truth
-// iso3Name/iso3ForName read from — never a second, hand-typed country list.
+// S6 (track record forecast map): the iso3 -> display-name table, exported so a caller can scan
+// free text for a country name. Derived from the one country table — never a hand-typed list.
 export { ISO3_NAME };
 
 /**

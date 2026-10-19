@@ -1,0 +1,132 @@
+{
+  "note": "Per-file count of hand-built route strings outside shared/lib/links.js and backend/shared/src/links.js (see quality/check_links.mjs). Counts may only fall; lower them with --lower after switching a caller to links.js.",
+  "totals": {
+    "/track-record": 14,
+    "/briefings": 3,
+    "/analyze": 17,
+    "/weekly/thread": 7,
+    "/weekly/country": 15,
+    "/weekly-brief": 3,
+    "/daily": 11,
+    "/today": 1
+  },
+  "files": {
+    "app/layout/Layout.jsx": {
+      "/track-record": 1,
+      "/briefings": 1,
+      "/analyze": 1
+    },
+    "backend/distribution/cli/breaking/send-test.js": {
+      "/weekly/thread": 1
+    },
+    "backend/distribution/newsBreakingAlert/src/index.js": {
+      "/weekly/thread": 1
+    },
+    "backend/distribution/newsEmailSender/src/renderDriftEmail.js": {
+      "/weekly/country": 1
+    },
+    "backend/distribution/newsEmailSender/src/renderWeeklyEmail.js": {
+      "/weekly-brief": 1
+    },
+    "backend/monitoring/newsFreshnessMonitor/src/settleCheck.js": {
+      "/track-record": 1
+    },
+    "backend/read-api/newsRecommend/src/index.js": {
+      "/weekly/thread": 1
+    },
+    "backend/read-api/newsSensitiveData/src/index.js": {
+      "/weekly/thread": 1
+    },
+    "backend/read-api/newsSignals/src/index.js": {
+      "/track-record": 3
+    },
+    "backend/situations/newsSituationTracker/src/index.js": {
+      "/weekly/thread": 1
+    },
+    "features/account/Account.jsx": {
+      "/weekly/country": 1,
+      "/analyze": 1
+    },
+    "features/account/components/DeskFollowing.jsx": {
+      "/weekly/country": 1
+    },
+    "features/account/components/SavedPanel.jsx": {
+      "/weekly/country": 1,
+      "/daily": 1
+    },
+    "features/analysis-studio/components/ShareControl.jsx": {
+      "/analyze": 2
+    },
+    "features/analysis-studio/components/SignedOutExample.jsx": {
+      "/analyze": 1
+    },
+    "features/analysis-studio/SharedAnalysisPage.jsx": {
+      "/analyze": 3
+    },
+    "features/briefings/lib/briefingSlides.js": {
+      "/weekly/country": 1
+    },
+    "features/countries/components/CountryCardV2.jsx": {
+      "/analyze": 1
+    },
+    "features/countries/components/CountryWhatChanged.jsx": {
+      "/track-record": 1
+    },
+    "features/countries/CountryListPage.jsx": {
+      "/weekly/country": 1
+    },
+    "features/countries/CountryPage.jsx": {
+      "/weekly/country": 2,
+      "/briefings": 1
+    },
+    "features/daily/DailyPage.jsx": {
+      "/weekly/country": 2,
+      "/daily": 9,
+      "/weekly-brief": 1
+    },
+    "features/economy/components/MechanismCard.jsx": {
+      "/weekly/country": 1
+    },
+    "features/economy/EconomyPage.jsx": {
+      "/weekly/country": 1,
+      "/analyze": 1
+    },
+    "features/home/Home.jsx": {
+      "/weekly/country": 1,
+      "/track-record": 4,
+      "/analyze": 2
+    },
+    "features/map/components/MapAbout.jsx": {
+      "/track-record": 1,
+      "/daily": 1,
+      "/weekly-brief": 1,
+      "/analyze": 1,
+      "/today": 1
+    },
+    "features/map/components/StoryCard.jsx": {
+      "/analyze": 1
+    },
+    "features/map/SituationHome.jsx": {
+      "/weekly/thread": 1
+    },
+    "features/static/Disclosures.jsx": {
+      "/analyze": 1
+    },
+    "features/threads/components/ThreadForecast.jsx": {
+      "/track-record": 1
+    },
+    "features/threads/ThreadPage.jsx": {
+      "/weekly/country": 1,
+      "/briefings": 1,
+      "/analyze": 2
+    },
+    "features/track-record/TrackRecordPage.jsx": {
+      "/weekly/thread": 1,
+      "/weekly/country": 1,
+      "/track-record": 1
+    },
+    "features/track-record/TrackRecordText.jsx": {
+      "/track-record": 1
+    }
+  }
+}

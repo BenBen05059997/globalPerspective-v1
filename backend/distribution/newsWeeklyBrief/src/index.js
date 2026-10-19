@@ -12,7 +12,7 @@
 const { keepDayZero } = require('./_shared/dayZero');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
-const { iso3List, resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 

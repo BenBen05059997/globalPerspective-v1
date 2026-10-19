@@ -29,3 +29,14 @@ test('usableCountryRecord: missing generatedAt, garbage or null record -> not us
   assert.strictEqual(usableCountryRecord('Iran', { generatedAt: 'nope' }, NOW), false);
   assert.strictEqual(usableCountryRecord('Iran', null, NOW), false);
 });
+test('canonicalName joins every name of one country, including its sub-national places', () => {
+  const { canonicalName } = require('../src/placeFilter');
+  for (const n of ['USA', 'United States', ' us ', 'United States of America']) assert.strictEqual(canonicalName(n), 'united states', n);
+  assert.strictEqual(canonicalName('United Arab Emirates'), 'uae');
+  assert.strictEqual(canonicalName('Democratic Republic of the Congo'), 'dr congo');
+  assert.strictEqual(canonicalName('West Bank'), 'palestine');
+  assert.strictEqual(canonicalName('Strait of  Hormuz'), 'strait of hormuz');
+});
+test('sub-national places are not countries themselves', () => {
+  for (const n of ['West Bank', 'Gaza', 'Scotland', 'Florida', 'Strait of Hormuz']) assert.strictEqual(isCountryName(n), false, n);
+});

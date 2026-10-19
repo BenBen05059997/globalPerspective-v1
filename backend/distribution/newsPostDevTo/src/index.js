@@ -10,7 +10,7 @@ const {
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
-const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { resolveIso3 } = require('./_shared/resolveIso3');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 

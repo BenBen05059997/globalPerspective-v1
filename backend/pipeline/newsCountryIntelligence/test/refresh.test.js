@@ -65,9 +65,9 @@ test('hot set: GDACS Orange + Red and HIGH news via ISO3; cooling / closed / non
 
 test('names: USA / United States / America join; DR Congo, UAE, Palestine variants', () => {
   for (const n of ['USA', 'United States', 'United States of America', 'US', ' usa ']) assert.equal(P.canonicalName(n), 'united states');
-  assert.equal(P.canonicalName('Democratic Republic of the Congo'), P.canonicalName(ISO3.COD));
-  assert.equal(P.canonicalName('United Arab Emirates'), P.canonicalName(ISO3.ARE));
-  assert.equal(P.canonicalName('Gaza'), P.canonicalName(ISO3.PSE));
+  assert.equal(P.canonicalName('Democratic Republic of the Congo'), P.canonicalName(ISO3.COD.name));
+  assert.equal(P.canonicalName('United Arab Emirates'), P.canonicalName(ISO3.ARE.name));
+  assert.equal(P.canonicalName('Gaza'), P.canonicalName(ISO3.PSE.name));
   assert.equal(P.canonicalName('Iran, Islamic Republic of'), 'iran');
 });
 
@@ -111,7 +111,7 @@ test('unmatchedAlerts lists alert countries with no record', () => {
 
 // ---------- R1b: only real countries / territories are briefed ----------
 test('isCountryName keeps real places, including those without an ISO3 table entry', () => {
-  for (const n of ['United States', 'USA', 'Iran', 'Palestine', 'Palestinian Territories', 'Gaza', 'Kosovo', 'Taiwan', 'Hong Kong', 'Greenland',
+  for (const n of ['United States', 'USA', 'Iran', 'Palestine', 'Palestinian Territories', 'Kosovo', 'Taiwan', 'Hong Kong', 'Greenland',
     'Iceland', 'Jamaica', 'Costa Rica', 'Burundi', 'Gambia', 'DR Congo', 'Democratic Republic of Congo', 'Democratic Republic of the Congo',
     'Republic of the Congo', 'Czech Republic', 'Czechia', 'Ivory Coast', "Côte d'Ivoire", 'Türkiye', 'Turkey', 'South Korea', 'North Korea',
     'United Arab Emirates', 'UAE', 'Bosnia and Herzegovina', 'Myanmar', 'Eswatini', 'Vatican City', 'Antigua and Barbuda']) {

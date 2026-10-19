@@ -16,7 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat } = require('./_shared/llm');
-const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { resolveIso3 } = require('./_shared/resolveIso3');
 const dir = require('./directionCheck');
 const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom, axisMoves } = require('./lib');
 

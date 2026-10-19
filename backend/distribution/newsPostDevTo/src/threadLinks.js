@@ -5,7 +5,7 @@
 // the story title from the headline list, and every headline is an archive entry that already
 // carries a threadId. Pure: no AWS, no network. Unit-tested in ../test/threadLinks.test.js.
 
-const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { iso3List } = require('./_shared/resolveIso3');
 
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with', 'by', 'is', 'are', 'its']);
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();

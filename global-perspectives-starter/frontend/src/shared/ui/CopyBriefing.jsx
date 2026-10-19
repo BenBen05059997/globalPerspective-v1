@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref, countryHref, briefingHref } from '@/shared/lib/links.js';
 import '@/shared/ui/ShareButtons.css';
 import { rootCauseText } from '@/shared/lib/rootCause';
 
@@ -59,7 +59,7 @@ export function formatThreadBriefing(thread, analysis) {
     lines.push('');
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net${threadPath(thread.threadId)}`);
+  lines.push(`— Global Perspectives · globalperspective.net${storyHref(thread.threadId)}`);
 
   return lines.join('\n');
 }
@@ -103,7 +103,7 @@ export function formatCountryBriefing(countryName, intel, countryData) {
     lines.push(`${countryData.totalArticles} articles across ${countryData.dayCount} days`);
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net/weekly/country/${encodeURIComponent(countryName)}`);
+  lines.push(`— Global Perspectives · globalperspective.net${countryHref(countryName) || ''}`);
 
   return lines.join('\n');
 }
@@ -154,7 +154,7 @@ export function formatDailyBrief(brief) {
     lines.push(`${brief.stats.totalArticles} articles · ${brief.stats.sourceOutlets} sources · ${brief.stats.countriesCovered} countries`);
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net/daily/${brief.dateKey}`);
+  lines.push(`— Global Perspectives · globalperspective.net${briefingHref({ date: brief.dateKey })}`);
 
   return lines.join('\n');
 }

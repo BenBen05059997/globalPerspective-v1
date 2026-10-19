@@ -10,11 +10,16 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
   fallback `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values),
   `openrouter`, `gemini`, `other`. Thinking off unless asked; transport retries; prints `[usage]` lines.
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC).
-- `placeFilter.js` + `placeNames.json`, `iso3Names.json`: real-country rule, canonical names,
-  `usableCountryRecord`.
-- `resolveIso3.js`: TEMPORARY `resolveIso3(text) -> {iso3, name}` / `iso3List(names)` over `iso3Names.json` +
-  the `placeFilter.js` aliases (canonical short names: United States, DR Congo, UAE, Palestine, Bosnia and
-  Herzegovina). Replaced by L1-LINKS `resolveCountry`; callers are marked `TODO(L1-LINKS)`.
+- `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`,
+  short display names such as "UAE", "DR Congo") and its resolver: `resolveCountry(text) -> {iso3, name} | null`,
+  `isCountry`, `parentCountry` (West Bank -> Palestine). Frontend copy: `shared/lib/countries.js` + `shared/data`.
+- `resolveIso3.js`: `resolveIso3(text) -> {iso3, name}` (a place resolves to its country) / `iso3List(names)` for
+  the Lambda writers; a thin wrapper over `countries.js`.
+- `links.js`: the site's page addresses for emails and posts, same rules as the frontend
+  `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `studioHref`,
+  `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
+- `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
+  `placeNames.json` is no longer read here (only `newsCountryIntelligence/src/refreshPolicy.js` still reads it).
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
 - `situations-core.js`: GDACS observation + situation fold (`buildSituation`, `coolSituation`,
   `buildStorySituation`). Pure, no AWS.
@@ -22,6 +27,6 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 Who uses what: `git grep "_shared/" -- backend`.
 
 ## Checks
-- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/resolveIso3.test.js test/situations-core.test.mjs`.
-- Copies that cross the frontend/Lambda boundary (name tables, the real-country rule) are compared
+- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/resolveIso3.test.js test/situations-core.test.mjs`.
+- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core) are compared
   by `node scripts/check-shared-sync.mjs`.

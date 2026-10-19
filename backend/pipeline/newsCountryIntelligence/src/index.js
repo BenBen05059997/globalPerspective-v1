@@ -6,7 +6,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
 const ISO3_NAMES = require('./_shared/iso3Names.json');
-const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { resolveIso3 } = require('./_shared/resolveIso3');
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
 
 let EDITORIAL_FACTS = {};

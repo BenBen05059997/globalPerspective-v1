@@ -6,7 +6,7 @@ const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
 const { isCountryName } = require('./_shared/placeFilter');
-const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { iso3List } = require('./_shared/resolveIso3');
 const { chat } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';

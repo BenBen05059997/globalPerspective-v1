@@ -13,8 +13,8 @@
 // The top `topN` countries by coverage are always candidates; up to `maxExtras` further countries are
 // candidates ONLY while they have an active alert.
 
-const ISO3_NAMES = require('./_shared/iso3Names.json');
-const PLACE_NAMES = require('./_shared/placeNames.json');
+// Country identity (names, aliases, sub-national places) is the one shared resolver.
+const { isCountryName, normKey, canonicalName } = require('./_shared/placeFilter');
 
 const ACTIVE_STATES = new Set(['emerging', 'escalating']);
 
@@ -26,46 +26,6 @@ const DEFAULT_CFG = {
   topN: 20,
   maxExtras: 5,
 };
-
-// Names in briefings come from the LLM's `regions` and the record keys keep them verbatim, so both
-// "USA" and "United States" exist as separate COUNTRY# records. Canonical form joins them to the
-// names used by GDACS / the iso3 table.
-const ALIASES = {
-  'usa': 'united states', 'us': 'united states', 'u.s.': 'united states', 'u.s.a.': 'united states',
-  'united states of america': 'united states', 'america': 'united states',
-  'uk': 'united kingdom', 'u.k.': 'united kingdom', 'great britain': 'united kingdom', 'britain': 'united kingdom',
-  'uae': 'united arab emirates', 'dr congo': 'democratic republic of the congo', 'drc': 'democratic republic of the congo',
-  'congo-kinshasa': 'democratic republic of the congo', 'democratic republic of congo': 'democratic republic of the congo',
-  'russian federation': 'russia', 'republic of korea': 'south korea', 'korea, south': 'south korea',
-  'dprk': 'north korea', "democratic people's republic of korea": 'north korea', 'korea, north': 'north korea',
-  'iran, islamic republic of': 'iran', 'islamic republic of iran': 'iran',
-  'palestinian territories': 'palestine', 'state of palestine': 'palestine', 'gaza': 'palestine', 'west bank': 'palestine',
-  'gaza strip': 'palestine', 'palestinian territory': 'palestine',
-  'turkiye': 'turkey', 'türkiye': 'turkey', 'burma': 'myanmar', 'czech republic': 'czechia',
-  'bosnia and herzegovina': 'bosnia', 'ivory coast': "côte d'ivoire", "cote d'ivoire": "côte d'ivoire",
-  'republic of the congo': 'congo', 'congo-brazzaville': 'congo', 'central african republic': 'central african rep.',
-  'dominican republic': 'dominican rep.', 'syrian arab republic': 'syria', 'viet nam': 'vietnam',
-  'lao pdr': 'laos', 'timor-leste': 'east timor', 'the netherlands': 'netherlands', 'holland': 'netherlands',
-  'taiwan, province of china': 'taiwan', 'republic of china': 'taiwan', 'north macedonia': 'north macedonia',
-};
-
-function canonicalName(name) {
-  const k = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  return ALIASES[k] || k;
-}
-
-// R1b: only real countries / territories are briefed, so the top-20 slots do not go to region or
-// aggregate keys the LLM puts in `regions` (Europe, Asia, Middle East, Americas, Africa, Global,
-// European Union, NATO, ...). Allowed = a name in the ISO3 table OR in placeNames.json (the CLDR list
-// of every country / territory + the variants briefings use: Kosovo, Hong Kong, Taiwan, Palestine, ...).
-// Everything else is EXCLUDED and reported by the dry run. Existing region records stay in DynamoDB.
-const normKey = (n) => String(n || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-  .replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-const PLACE_KEYS = new Set([...Object.values(ISO3_NAMES), ...PLACE_NAMES].map(normKey));
-
-function isCountryName(name) {
-  return PLACE_KEYS.has(normKey(name)) || PLACE_KEYS.has(normKey(canonicalName(name)));
-}
 
 const ymd = (iso) => String(iso || '').slice(0, 10);
 
@@ -84,7 +44,7 @@ function hotCountriesFromWorld(world, iso3Names = {}) {
     if (!isHigh && !isGdacs) continue;
     const names = new Set();
     for (const n of s.affected_names || []) names.add(canonicalName(n));
-    for (const c of s.iso3_affected || []) if (iso3Names[c]) names.add(canonicalName(iso3Names[c]));
+    for (const c of s.iso3_affected || []) if (iso3Names[c]) names.add(canonicalName(iso3Names[c].name));
     const since = [s.last_change_at, s.tier_changed_at, s.opened_at].filter(Boolean).sort().pop() || null;
     for (const n of names) {
       if (!n) continue;

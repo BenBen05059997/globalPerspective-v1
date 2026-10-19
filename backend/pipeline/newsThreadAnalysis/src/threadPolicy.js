@@ -1,6 +1,6 @@
 'use strict';
 
-const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { iso3List } = require('./_shared/resolveIso3');
 
 // Change-driven thread analysis (Batch 2 / D2). Pure: no AWS, no network.
 // A thread is re-analysed only when it has a NEW event (a topicId the stored analysis has not seen).

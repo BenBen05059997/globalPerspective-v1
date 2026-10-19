@@ -7,7 +7,7 @@
 // ⚠️ DEPLOY: this file must be included in the newsSensitiveData deploy zip
 // (index.js requires it). The zip currently lists files explicitly — add lib.js.
 
-const { resolveIso3, iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
 
 // Teaser cap: members get the whole (already newest-first) array; everyone else gets the
 // newest `teaser` items + the honest total, so the UI can show "+N earlier — Join to see all".

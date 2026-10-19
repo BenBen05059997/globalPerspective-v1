@@ -1,5 +1,5 @@
 'use strict';
-// Temporary country resolver (replaced by L1-LINKS resolveCountry) — `node --test backend/shared/test/`.
+// resolveIso3 wraps the one country resolver — `node --test backend/shared/test/`.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { resolveIso3, iso3List } = require('../src/resolveIso3');
@@ -10,7 +10,7 @@ test('aliases resolve to the canonical short name', () => {
     ['Democratic Republic of the Congo', 'COD', 'DR Congo'], ['Democratic Republic of Congo', 'COD', 'DR Congo'], ['DRC', 'COD', 'DR Congo'],
     ['United Arab Emirates', 'ARE', 'UAE'], ['UAE', 'ARE', 'UAE'],
     ['West Bank', 'PSE', 'Palestine'], ['Gaza Strip', 'PSE', 'Palestine'], ['Palestinian Territories', 'PSE', 'Palestine'],
-    ['Bosnia', 'BIH', 'Bosnia and Herzegovina'], ['Bosnia and Herzegovina', 'BIH', 'Bosnia and Herzegovina'],
+    ['Bosnia', 'BIH', 'Bosnia'], ['Bosnia and Herzegovina', 'BIH', 'Bosnia'],
     ['france', 'FRA', 'France'], ['FRA', 'FRA', 'France'],
   ]) assert.deepEqual(resolveIso3(text), { iso3, name }, text);
 });

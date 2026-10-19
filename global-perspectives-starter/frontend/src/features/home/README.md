@@ -25,9 +25,12 @@ an earlier-today archive rail and a topic nav rail.
 ## Shared blocks used
 - `EditorialShell`, `StatusStrip`, `SeverityBadge`, `SourceRobustness`, `StoryLink`, `boot/BootLoader`
 
+## Public API (`index.js`)
+- `Home` — the one page `app/App.jsx` imports eagerly
+
 ## Imports from other features
-- `breaking/components/BreakingStrip`, `account/components/SubscribeCard`, `economy/hooks/useDisruptionsList`
-- `track-record/hooks/useTrackRecord`, `track-record/hooks/useCorrectionsFeed`
+- `@/features/breaking` -> `BreakingStrip`; `@/features/track-record` -> `useTrackRecord`, `useCorrectionsFeed`
+- From shared: `@/shared/ui/SubscribeCard`, `@/shared/hooks/useDisruptionsList`
 
 ## Gotchas
 - `ECONOMY_PARKED` hides severity badges and "Economic impact" links; topics link to the story arc.

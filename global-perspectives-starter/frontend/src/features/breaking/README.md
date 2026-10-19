@@ -23,6 +23,9 @@ the last 24h; a hook resolves one alert id for the `/breaking/:id` redirect.
 ## Shared blocks used
 - None.
 
+## Public API (`index.js`)
+- `BreakingStrip` (home), `NotificationBell` (app layout), `useBreakingAlert` (app `LegacyRedirects`)
+
 ## Imports from other features
 - None.
 

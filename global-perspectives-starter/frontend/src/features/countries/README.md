@@ -23,11 +23,15 @@ one-screen country card the map console also mounts.
 ## Shared blocks used
 - `@/shared/ui/`: `EditorialShell`, `StatusStrip`, `SectionHeader`, `TierChip`, `CategoryTag`, `SeverityBadge`, `DirectionArrow`, `PhoneTabs`, `ShareButtons`, `CopyBriefing`, `StoryLink`, `risk/RiskScorecard`, `risk/RiskDeltaPill`, `boot/BootLoader`
 
+## Public API (`index.js`)
+- `CountryCardV2` — used by `map`. `CountryListPage` reaches `/weekly` as the `countriesView` prop from `app/App.jsx`.
+
 ## Imports from other features
-- `@/features/threads/`: `hooks/useWeeklyArchive`, `hooks/useThreadAnalyses`, `components/WeeklyMap` (lazy), `components/QuestionChip`, `lib/questionChips`, `lib/storyMode` (`buildDeadlines`), `lib/mapConstants`, `WeeklyPage.css`
-- `@/features/economy/hooks/useMarketsCountry`, `hooks/useDisruptionsList`
-- `@/shared/ui/SaveButton`, `FollowButton`
-- `@/shared/lib/situationLabels.js` (`iso3ForName`), `lib/countryRiskLayer.js` (chunking constants)
+- `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines`, `COUNTRY_COORDINATES`;
+  `components/WeeklyMap` stays a lazy `import()` by path so it keeps its own chunk
+- `@/features/economy` -> `useMarketsCountry`
+- From shared: `@/shared/hooks/useDisruptionsList`, `@/shared/ui/SaveButton`, `FollowButton`, `QuestionChip`; `@/shared/lib/questionChips.js`,
+  `situationLabels.js` (`iso3ForName`), `trajectory.js`; `@/shared/map/countryRiskLayer.js` (chunking constants)
 
 ## Gotchas
 - `useParams()` already decodes `:countryName`; decoding again throws on names with `%`.

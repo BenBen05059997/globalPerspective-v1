@@ -23,10 +23,12 @@ of changed reads (corrections). A plain text twin renders the same facts for pri
 ## Shared blocks used
 - `SectionHeader`, `PhoneTabs`, `boot/BootLoader`; `useIsPhone`; `safeWhy`/`safeTriggerEvent` (`@/shared/lib/driftNote`)
 
+## Public API (`index.js`)
+- `useTrackRecord`, `useCorrectionsFeed` — used by `home`
+
 ## Imports from other features
-- `@/shared/ui/FollowButton` -> follow a country from the ledger
-- `@/shared/map/RadarMap.jsx` -> forecast board map
-- `@/shared/lib/situationLabels.js` -> `ISO3_NAME` for placing questions on countries
+- None. From shared: `@/shared/ui/FollowButton`, `@/shared/map/RadarMap.jsx` (forecast board map),
+  `@/shared/lib/situationLabels.js` (`ISO3_NAME`), `questionStates.js`, `trFormatDate.js`
 
 ## Gotchas
 - July pilot (122 triggers, one 2026-07-24 confirmedAt) is excluded from every headline number.
@@ -35,6 +37,6 @@ of changed reads (corrections). A plain text twin renders the same facts for pri
 - `gp_corrections_feed` cache key ignores `limit`: Home asks 100, these pages 40; first fetch wins.
 - `sampleRule.js` mirrors `newsPredictionResolver/src/lib.js`; parity via `sampleRuleGolden.json`
   (guarded by `scripts/check-shared-sync.mjs`).
-- Hooks are reused by `features/home` (trust strip); libs by `threads` and `analysis-studio`.
+- Hooks are reused by `features/home` (trust strip) through `index.js`; `questionStates` and `trFormatDate` moved to `@/shared/lib`.
 
 Last verified: 2026-10-19

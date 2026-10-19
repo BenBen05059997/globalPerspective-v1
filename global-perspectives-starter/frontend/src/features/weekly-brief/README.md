@@ -19,8 +19,11 @@ source outlets, link to the story arc) and a "What to watch" list.
 ## Shared blocks used
 - `@/shared/ui/Markdown`, `TierChip`, `SectionHeader`, `StoryLink`, `boot/BootLoader`
 
+## Public API (`index.js`)
+- `useWeeklyBrief` — used by `account`, `briefings`, `map`
+
 ## Imports from other features
-- `@/shared/ui/SubscribeCard` -> `SubscribeCard variant="weekly"`
+- None. From shared: `@/shared/ui/SubscribeCard` -> `SubscribeCard variant="weekly"`
 
 ## Gotchas
 - KPIs count threat signals only: `kind === 'development'` signals get a neutral "Development"
@@ -29,7 +32,7 @@ source outlets, link to the story arc) and a "What to watch" list.
 - Backward-compatible branch renders an older prose brief (`headline`, `dek`, `brief` markdown)
   when `signals` is not an array.
 - Signal cards are keyed by `threadId`.
-- `useWeeklyBrief` is also imported by `features/map`, `features/briefings` and
+- `useWeeklyBrief` is also imported (through `index.js`) by `features/map`, `features/briefings` and
   `features/account`; change its return shape with care.
 
 Last verified: 2026-10-19

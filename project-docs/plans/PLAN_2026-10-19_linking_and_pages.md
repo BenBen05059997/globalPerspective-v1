@@ -35,7 +35,7 @@ the map; no single forecast is addressable.
 | Story | `threadId` (stable) | `/weekly/thread/:threadId` (`threadPath`) | Topics are not linked entities: a topic links to its thread. |
 | Country | ISO3 | `/weekly/country/:displayName` | URL keeps the display name (saved items, follows); the page resolves aliases and codes and redirects to the canonical name. Non-countries are plain text; a place inside one country links to that country. |
 | Situation | situation id | `/?focus=<id>` | No thread: link its country. |
-| Map focus | story / country | `/?story=<threadId>`, `/?country=<ISO3>` | `?story=` must resolve any thread, not only today's topics; `?country=` zooms and highlights. |
+| Map focus | story / country | `/?story=<threadId>`, `/?country=<ISO3>` | `?story=` resolves any thread via `web_index.threads[threadId]` (NOT `threads/story-map.json`, which holds only ~18 tier-1 pairs keyed `axis#ISO3#actor`); `?country=` flies to and outlines the country (`.board/linking/briefings_and_map.md` has the 3-line change for each). |
 | Forecast | `qid` | `/track-record?q=<qid>`; inline `#q-<qid>` on the story page | Track record reads `q`, opens the board, scrolls, highlights; old qids need a lookup. |
 | Briefing | date / week | `/briefings?date=YYYY-MM-DD`, `/briefings?mode=weekly&week=YYYY-MM-DD` | After the merge; old `/daily/:date`, `/weekly-brief` 301 here. |
 | Studio | thread ids | `/analyze?stories=<threadId,…>` | Today it accepts only today's topic ids. |
@@ -46,6 +46,9 @@ GUM/HKG/VAT); every other table and alias list is deleted; one resolver `resolve
 
 ### Ids to add at the source (L2)
 - Read API: `prediction_snapshot` returns `threadId`; track record `recent[]` gets `qid` + `clusterKey`.
+- Forecast trigger verdicts: the reader and the snapshot builder expect `finalVerdict` / `confirmedBy` /
+  `agentVerdict` on PRED# triggers, but no job writes them any more (the resolver writes immutable Q#/SETTLE#
+  rows) — the track record's "happened / didn't" per trigger must be read from the Q#/SETTLE# rows (`fields.md`).
 - Thread analysis: `iso3[]` (resolver over its topics' regions).
 - Country intelligence: top `threadIds[]` (from the archive's regions).
 - Archive entries, daily brief stories + country to watch, weekly signals, corrections, story web: `iso3[]` from the
@@ -166,11 +169,27 @@ operator's yes.
 - One read model per page: today the story page reads 5 data hooks, the country page 6, the map 7, each with its
   own browser cache. Target: each page reads one object (story, country, world, briefing, track record) that the
   jobs write and the read API serves; the related ids from this plan live in that object.
-- Fewer jobs: `THREAD#` records have three live writers (`newsThreadAnalysis`, `newsSystemsAnalysis`,
-  `newsCountryIntelligence`); `COUNTRY#` two. To verify before merging any job: which writer owns which fields.
+- Fewer jobs (verified in `.board/linking/fields.md`): no field has two writers across jobs; the duplication is
+  within jobs (DRIFT# = DRIFTLOG#, HISTORY# copies the main row, THREAD WEB is a slice of WEB#INDEX, SYSTEMS#
+  has no page reader). Merge candidates: the 04:40 → 05:00 → 05:15 → 05:30 chain (thread analysis, story web,
+  country intelligence, drift corrector); retire SYSTEMS# once the Worker's `world_overview` goes; stop writing
+  never-shown fields (`situationSummary`, `dominantCategory`, `activeArcCount`, `latencyMs`, `model`, `usage`,
+  the DRIFT `current*` fields); unused proxy actions `RESEARCH_BRIEFING`, `pair_analysis`.
 - Signals API: builds daily (`TriggerSignalsBuild` 10:00 UTC), 0 keys issued (`GlobalPerspectiveApiKeys`), no page
   reads it. Operator decision: delete or keep.
 
-## Data we still lack
-No analytics in the repo. Three rulings could change with numbers: `/today` visits, email/search arrivals at
-`/daily` and `/weekly-brief`, Studio use. Sources: GA4, Search Console, Worker logs for bot renders.
+## Usage evidence (read API logs, 7 days to 2026-10-19; `.board/linking/usage.md`)
+No page views exist in the repo; the read API logs only API calls with an Origin. Over 7 days of browser traffic:
+Stories pages are the most active (~10–30 loads/day); the map ~6–20 sessions/day; country pages ~4 loads/day;
+`/today` 6 direct hits in the week and its on-click Predict / Trace Cause calls: 0; `/daily` and `/weekly-brief`
+cannot be separated from the map and `/briefings` (they share the same calls); track record low; Studio 0 member
+runs and 0 shares. Open for the operator: the debate kept `/today` for its Predict and Trace Cause buttons, which
+nobody used in the window — keep `/today` (ruling) or fold it into the map after all. GA4 is the only source of
+true page views if a firmer answer is wanted.
+
+## Briefings merge facts (`.board/linking/briefings_and_map.md`)
+What moves into Read / Weekly / Present is itemised with file:line. Still without a home: a weekly archive (the
+read API returns only the latest week → needs a `week=` read), per-signal as-of and TierChip on slides, Save for
+the weekly brief (SaveButton knows only `daily`). `/weekly-brief` has no bot pre-render today; the Worker's
+`/daily` canonical uses the requested date, not the served one; `quality/verify_pages.sh` asserts DailyPage
+strings and must change with the page.

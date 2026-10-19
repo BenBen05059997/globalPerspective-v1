@@ -40,6 +40,7 @@
 .gp-tabs--line, .gp-tabs--phone { border-bottom: 1px solid var(--hairline); }
 .gp-tabs--line .gp-tabs__tab, .gp-tabs--phone .gp-tabs__tab { border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .gp-tabs--line .gp-tabs__tab[aria-selected='true'],
+.gp-tabs--line .gp-tabs__tab[aria-current='page'],
 .gp-tabs--phone .gp-tabs__tab[aria-selected='true'] { color: var(--accent); border-bottom-color: var(--accent); }
 .gp-tabs--line { overflow-x: auto; scrollbar-width: none; }
 /* phone: equal columns, mono uppercase (one switch under the page header) */

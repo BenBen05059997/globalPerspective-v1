@@ -14,7 +14,7 @@ Docs go stale; check the source of truth yourself before acting or reporting:
 - Deployed Lambda zips can differ from the repo (`newsAnalyze` especially: the repo carries parked
   credits code). Diff deployed vs repo before deploying any Lambda.
 Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHITECTURE.md`
-(system overview), `DATA_STRATEGY.md` (storage rules), plans in `_active/`/`_proposed/`.
+(system overview), `rules/DATA_STRATEGY.md` (storage rules), `decisions/`, plans in `plans/`.
 
 ## Layout
 - Frontend `global-perspectives-starter/frontend/src/`: `app/` → `features/<name>/` → `shared/`
@@ -53,7 +53,7 @@ merge → write the full map; pass secrets via a temp file. Verify after.
 
 Needs a fresh "yes" in the current message every time:
 - Frontend releases: `./deploy.sh --target candidate|production|legacy-pages` (plain `./deploy.sh`
-  only builds locally). See `.claude/skills/deploy-frontend/` and `project-docs/ops/DEPLOYMENT_NOTES.md`.
+  only builds locally). See `.claude/skills/deploy-frontend/` and `project-docs/runbooks/DEPLOYMENT_NOTES.md`.
 - secret values, IAM changes, Firebase auth config, `.env*`, `docs/config.js`
 - Polar / billing code or config (credits are parked)
 - enabling user-facing sends (email crons), destructive data ops (delete tables/items/S3 prefixes)

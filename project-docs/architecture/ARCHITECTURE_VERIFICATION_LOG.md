@@ -2,7 +2,7 @@
 
 Reverse-chronological, append-only. This is an audit/verification history for
 `ARCHITECTURE.md`, not a change log (that's `CHANGES.md`). Moved out of `ARCHITECTURE.md`
-line 5 on 2026-09-24 (see `project-docs/architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md`)
+line 5 on 2026-09-24 (see `project-docs/archive/architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md`)
 because a single 26KB line of history was consuming the read budget of every "read
 ARCHITECTURE.md first" pass.
 

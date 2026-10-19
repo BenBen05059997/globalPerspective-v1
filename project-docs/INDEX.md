@@ -4,67 +4,67 @@ _Regenerated 2026-09-08. Docs are grouped by **feature domain**; within a domain
 
 **New here?** Read `architecture/ARCHITECTURE.md` (system) + `architecture/SYSTEM_WIRING.md` (code-grounded wiring), then jump to the relevant domain below. **[GLOSSARY.md](GLOSSARY.md)** defines every score, ID, feature, and plan term in plain language with provenance (2026-09-14).
 
-_Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify / deploy playbooks for agents (bindings in `agent-kit/PROJECT.md`); `quality/` = eval + review harnesses and dated QA report snapshots; `internal-docs/` = legal / marketing / ops-internal notes; `predictions/` = forecast-resolution runbook + scripts; `amplify/**/README.md` = per-Lambda notes. See `playbooks/TASK_WORKFLOW.md` for the doc-lifecycle (status folders + supersede-by-banner) and Diátaxis folder convention._
+_Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify / deploy playbooks for agents (bindings in `agent-kit/PROJECT.md`); `quality/` = eval + review harnesses and dated QA report snapshots; `internal-docs/` = legal / marketing / ops-internal notes; `predictions/` = forecast-resolution runbook + scripts; `amplify/**/README.md` = per-Lambda notes. See `rules/TASK_WORKFLOW.md` for the doc-lifecycle (status folders + supersede-by-banner) and Diátaxis folder convention._
 
 
 ## Architecture & system reference — read first
 
 `project-docs/architecture/`
 
-- **[ANALYTICS_GUIDE.md](architecture/ANALYTICS_GUIDE.md)** — Where to find GA4 / Cloudflare analytics.
+- **[ANALYTICS_GUIDE.md](runbooks/ANALYTICS_GUIDE.md)** — Where to find GA4 / Cloudflare analytics.
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** — Authoritative system overview — Lambda inventory, DDB, routes (living doc).
-- **[BACKEND_PLAN_2026-09-27.md](architecture/_active/BACKEND_PLAN_2026-09-27.md)** — Backend operations plan: verified live AI model map (per Lambda: task, cadence, model → recommended), the 3 DeepSeek balance lapses, the retired `deepseek-v4-flash` name, waste (4-hourly full regeneration), refresh-rate plan, parking, monitoring, decisions (Gemini → DeepSeek decided; green + yellow scope incl. scoring approved) and work order. Prices with sources: [AI_PROVIDER_PRICES_2026-09-27.md](architecture/_active/AI_PROVIDER_PRICES_2026-09-27.md). 2026-09-27.
-- **[TASK_2026-09-27_parking.md](architecture/_active/TASK_2026-09-27_parking.md)** — Park P1–P3 (economic impact + quality judge, forecast resolver, impact audit): rules, downstream readers, the frontend economy surfaces to hide / label, steps, rollback, tracker. 2026-09-27.
-- **[TASK_2026-09-28_batch1_efficiency.md](architecture/_active/TASK_2026-09-28_batch1_efficiency.md)** — Batch 1 plan (P4 source audit → flash, R2 skip already-processed staging + change-driven story jobs, R3 topics every 8 h, D5 off-peak schedule, R1 event-driven weekly country briefings + frontend thresholds and a new direction rule, R4 drift / facts cadence): resources, deployed-vs-repo diffs, exact changes, verification, rollback, 11 open questions. 2026-09-28.
-- **[TASK_2026-09-30_batch3_readfixes_drift.md](architecture/_active/TASK_2026-09-30_batch3_readfixes_drift.md)** — Batch 3: read fixes a/b/c/f (re-dating readers, latest_daily_brief, topStories threadId, country facts), D9 drift direction check, region leftovers, news Lambda code-drift audit (37 Lambdas), phone fixes, deploy readiness. Goal / files / docs / checklist / tracker. 2026-09-30.
-- **[TASK_2026-09-30_batch4_scoring_web_share.md](architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md)** — Batch 4: scoring pipeline (M2 per-trigger p + source, M3 weekly sample / drafter / confirm CLI, scoring + alarm, M4 frontend), story web stage 2 (dated entries, per-story WEB, web_index, map lines), Studio share links (new Lambda + table: operator-gated). Honest 'not ready yet' copy per surface. 2026-09-30.
-- **[TASK_2026-10-01_drafter_eval.md](architecture/_active/TASK_2026-10-01_drafter_eval.md)** — Plan (not built): an eval of the scoring drafter vs the operator's labels (~25 starter cases + Monday confirmations auto-appended; code graders: agreement, false-yes rate, evidence quote present, consistency across 3 trials). Method from Anthropic's eval articles. 2026-10-01.
-- **[BACKEND_AUDIT_2026-09-10.md](architecture/BACKEND_AUDIT_2026-09-10.md)** — Whole-fleet Lambda audit (37 function dirs, live-AWS-verified): full inventory + 14 ranked cross-backend findings + deploy-model corrections. Evidence base for the 2026-09-10 ARCHITECTURE.md reconciliation.
-- **[SYSTEM_USAGE_2026-09-11.md](architecture/SYSTEM_USAGE_2026-09-11.md)** — Functional usage map: 10 verticals traced trigger→Lambda→storage→endpoint→UI element, live-verified; active-vs-dormant verdicts; found /daily broken, This-week ~10wk stale, Worker = whole-site single point of failure. 2026-09-11.
-- **[WORLD_MODEL.md](architecture/WORLD_MODEL.md)** — DRAFT semantic source of truth (the ontology): the EVENT entity, two identity roots + fingerprint bridge, canonical type system (axis+event_type; editorial-12 demoted to display mapping), the typed impact model with measured>counted>judged + the scale-by-scale deprecation map, evidence{}, two lifecycles, the no-new-IDs/scales/taxonomies guardrail. OPERATOR DECISIONS D1/D2 recorded 2026-09-12; amended
+- **[BACKEND_PLAN_2026-09-27.md](plans/BACKEND_PLAN_2026-09-27.md)** — Backend operations plan: verified live AI model map (per Lambda: task, cadence, model → recommended), the 3 DeepSeek balance lapses, the retired `deepseek-v4-flash` name, waste (4-hourly full regeneration), refresh-rate plan, parking, monitoring, decisions (Gemini → DeepSeek decided; green + yellow scope incl. scoring approved) and work order. Prices with sources: [AI_PROVIDER_PRICES_2026-09-27.md](archive/architecture/_active/AI_PROVIDER_PRICES_2026-09-27.md). 2026-09-27.
+- **[TASK_2026-09-27_parking.md](plans/TASK_2026-09-27_parking.md)** — Park P1–P3 (economic impact + quality judge, forecast resolver, impact audit): rules, downstream readers, the frontend economy surfaces to hide / label, steps, rollback, tracker. 2026-09-27.
+- **[TASK_2026-09-28_batch1_efficiency.md](archive/architecture/_active/TASK_2026-09-28_batch1_efficiency.md)** — Batch 1 plan (P4 source audit → flash, R2 skip already-processed staging + change-driven story jobs, R3 topics every 8 h, D5 off-peak schedule, R1 event-driven weekly country briefings + frontend thresholds and a new direction rule, R4 drift / facts cadence): resources, deployed-vs-repo diffs, exact changes, verification, rollback, 11 open questions. 2026-09-28.
+- **[TASK_2026-09-30_batch3_readfixes_drift.md](archive/architecture/_active/TASK_2026-09-30_batch3_readfixes_drift.md)** — Batch 3: read fixes a/b/c/f (re-dating readers, latest_daily_brief, topStories threadId, country facts), D9 drift direction check, region leftovers, news Lambda code-drift audit (37 Lambdas), phone fixes, deploy readiness. Goal / files / docs / checklist / tracker. 2026-09-30.
+- **[TASK_2026-09-30_batch4_scoring_web_share.md](archive/architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md)** — Batch 4: scoring pipeline (M2 per-trigger p + source, M3 weekly sample / drafter / confirm CLI, scoring + alarm, M4 frontend), story web stage 2 (dated entries, per-story WEB, web_index, map lines), Studio share links (new Lambda + table: operator-gated). Honest 'not ready yet' copy per surface. 2026-09-30.
+- **[TASK_2026-10-01_drafter_eval.md](plans/TASK_2026-10-01_drafter_eval.md)** — Plan (not built): an eval of the scoring drafter vs the operator's labels (~25 starter cases + Monday confirmations auto-appended; code graders: agreement, false-yes rate, evidence quote present, consistency across 3 trials). Method from Anthropic's eval articles. 2026-10-01.
+- **[BACKEND_AUDIT_2026-09-10.md](archive/architecture/BACKEND_AUDIT_2026-09-10.md)** — Whole-fleet Lambda audit (37 function dirs, live-AWS-verified): full inventory + 14 ranked cross-backend findings + deploy-model corrections. Evidence base for the 2026-09-10 ARCHITECTURE.md reconciliation.
+- **[SYSTEM_USAGE_2026-09-11.md](archive/architecture/SYSTEM_USAGE_2026-09-11.md)** — Functional usage map: 10 verticals traced trigger→Lambda→storage→endpoint→UI element, live-verified; active-vs-dormant verdicts; found /daily broken, This-week ~10wk stale, Worker = whole-site single point of failure. 2026-09-11.
+- **[WORLD_MODEL.md](rules/WORLD_MODEL.md)** — DRAFT semantic source of truth (the ontology): the EVENT entity, two identity roots + fingerprint bridge, canonical type system (axis+event_type; editorial-12 demoted to display mapping), the typed impact model with measured>counted>judged + the scale-by-scale deprecation map, evidence{}, two lifecycles, the no-new-IDs/scales/taxonomies guardrail. OPERATOR DECISIONS D1/D2 recorded 2026-09-12; amended
   2026-09-15 (urgency = 4th kept exception, significance = legacy). Binding.
-- **[WORLD_MODEL_VERIFY_2026-09-11.md](architecture/WORLD_MODEL_VERIFY_2026-09-11.md)** — The code-grounded verification the World Model was drafted from (corrected identity count, full importance-scale consumer/derivability table, exact taxonomies, lifecycle correction, registry gaps). 2026-09-11.
-- **[IMPORTANCE_SCALE_MAPPING.md](architecture/IMPORTANCE_SCALE_MAPPING.md)** — Code-grounded feasibility study for WORLD_MODEL D2 (one importance scale). Four Sonnet passes: `urgency`=tempo→reclassified as 4th KEEP exception (not mergeable); `significance`=backend LinkedIn-sort only (no frontend reads); topic surfaces can't show the tier (no topic-level score exists); `impactScores`=keep. Refines D2. 2026-09-12.
-- **[WORLD_MODEL_FRAGMENTS.md](architecture/WORLD_MODEL_FRAGMENTS.md)** — Terrain map for consolidation: every fragmented concept (identity, taxonomy, importance scales, hand-duplicated modules, lifecycles) classified TRUE-MERGE / SERIAL / DISTINCT with file:line evidence. Signal API = the live SERIAL prototype. 2026-09-14.
-- **[SCORING_STANDARDS.md](architecture/SCORING_STANDARDS.md)** — Rubric+benchmark audit of every score the system assigns (formula vs LLM-judgment; rubric quality; benchmark exists?). Verdict: predictions = gold standard; severity tier = most relied-on — its benchmark gap CLOSED 2026-09-15 (gold set + agreement baseline; rubric fix in flight, Phase 4). 2026-09-14, severity rows updated 2026-09-15.
-- **[STAGE0_FIXES_PLAN.md](architecture/_active/STAGE0_FIXES_PLAN.md)** + task **[TASK_2026-09-24_stage0_fixes.md](architecture/_active/TASK_2026-09-24_stage0_fixes.md)** — Fix-first list from the page review (SEO 404 via Worker SPA fallback, freshness honesty, parked-credits copy, onboarding-tour mobile block, request de-dupe, route lazy-loading (main chunk 1,046→425 kB), page titles, /daily fallback-window + arrows). All 9 items (a)-(i) coded + committed 2026-09-24; item (a) (Worker) prepared, not deployed. Both deploys (frontend batch + Worker) still operator-gated, pending a fresh explicit "yes".
-- **[HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md](redesign-ux/_active/HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md)** + critiques **[READER](redesign-ux/_active/HOME_MAP_BRIEFINGS_CRITIC1_READER.md)** / **[ENGINEERING](redesign-ux/_active/HOME_MAP_BRIEFINGS_CRITIC2_ENGINEERING.md)** — Opus frontend design for the new home (map + story list, linked selection) and /briefings, debated by 2 Sonnet critics, monitor rulings in §12 (keep the deck.gl map, one story list with 'On the map' badges, worded status bar, 'What's moving' until scored judgments exist, expose story-map.json early). Clickable wireframe: https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW. 2026-09-24.
-- 🔭 **[PLAN_2026-10-19_colour_consistency.md](redesign-ux/_proposed/PLAN_2026-10-19_colour_consistency.md)** — Why the map home mixes red/amber/white (risk chips take the crisis hue against DS1, crisis hues collide with status colours, ~20 surface values), target rules with sources, steps C1–C7 (C5 hue re-pick needs the operator), plus 5 bugs found on the way. Proposed 2026-10-19.
-- 🔭 **[PLAN_2026-10-19_consistency_and_modernisation.md](redesign-ux/_proposed/PLAN_2026-10-19_consistency_and_modernisation.md)** — Whole-site audit (8 agents + live pass on 12 routes): pages drift in meaning, components and type, not raw colour; 6 root causes (no primitives, frozen ratchet, no copy guard); phases 0-4 from guards and shared primitives to page migration, front-end structure (useCachedQuery, cycles) and back-end/repo (lambda.sh, shared llm.js, Node 20, feature layout). Proposed 2026-10-19.
-- **[CONSOLE_WIREFRAME_TECHNIQUE.md](redesign-ux/_active/CONSOLE_WIREFRAME_TECHNIQUE.md)** — How the v2 operations-console mock works (orthographic SVG globe + spin, conic-gradient radar sweep + scan detection, linked selection, motion safety) and how each technique maps to the real deck.gl build. Wireframe sources in `redesign-ux/_reference/wireframe-2026-09-24/`. 2026-09-24.
-- **[ACTION_CHECKLIST.md](ACTION_CHECKLIST.md)** — Living checklist: operator actions vs Claude work, what each waits on. START HERE for 'what's next'.
-- **[HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md](redesign-ux/_active/HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md)** — Operator decisions for the new home (map + story list side by side, expand-to-full, linked selection via URL, game-inspired map, stories-inside-news cards) and /briefings editions. Frontend design debate in progress. 2026-09-24.
-- **[STORY_DOSSIER_BOARD_DESIGN_BRIEF.md](redesign-ux/_active/STORY_DOSSIER_BOARD_DESIGN_BRIEF.md)** — Story page → "Story dossier" and story board → "Intel board" (console style), with the /spider-demo causal web merged in (dossier section 2 + board WEB view). Frontend design APPROVED 2026-09-25 (one scroll, dark + Reading mode, Board default); connection to the home console proposed, 3 questions open. 2026-09-25.
-- **[STORY_SPIDER_MERGE_ARCHITECTURE.md](redesign-ux/_active/STORY_SPIDER_MERGE_ARCHITECTURE.md)** — How the story page and /spider-demo are built (actions, records, writers), why a spider node IS a story, the problems to fix (per-click LLM, no story→web lookup, top-10 coverage, stale country list), shared CausalWeb at ego/country/world scale, and build order. Proposal, 2026-09-25.
-- **[STORY_WEB_RETHINK_PLAN.md](redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md)** — Operator correction: the web must be news-based, not the country web. Stage, live data facts (24% coverage, cited news items grounding links), questions, debate setup + live tracker. In progress, 2026-09-25.
-- **[ECONOMY_CONSOLE_DISCUSSION.md](redesign-ux/_active/ECONOMY_CONSOLE_DISCUSSION.md)** — /economy in the console style: verified current state (prices live, disruptions frozen since 12 Sep, TTL off), references (Offworld ticker+board, TradingView story markers, Bloomberg, Finviz, Kpler), options A/B/C and decisions E1–E8. PARKED 2026-09-25: soft-hidden from nav, weekly markets job paused.
-- **[COUNTRY_VIEW_DISCUSSION.md](redesign-ux/_active/COUNTRY_VIEW_DISCUSSION.md)** — Country view: split into map country card + Studio deep-dive + public URL; 8 reader questions × our data (live freshness), proposed card (infobox, risk/direction/watch triad, 4 chips, stories, dated watch triggers, money line, freshness), decisions C1–C8. APPROVED 2026-09-25 (card v2, canvas board C1).
-- **[REVIEW_2026-09-26_map_console_shell.md](redesign-ux/_active/REVIEW_2026-09-26_map_console_shell.md)** — Full 4-lens review of branch `map-console` (correctness, honesty, a11y/phone, perf + design fidelity): fix batches F1 (must), F2 (should), F3 design gaps for the operator, F4 pre-existing live-site honesty bugs. 2026-09-26.
-- **[TASK_2026-09-26_shell_account_local.md](redesign-ux/_active/TASK_2026-09-26_shell_account_local.md)** — Build plan: site shell (N1 menu, phone tab bar), account desk (K1), membership (K2, gated on the option + billing yes), sign-in, on branch `map-console`, local review. Goal, open decisions, facts, files per phase, docs checklist, tracker. 2026-09-26.
-- **[TASK_2026-09-27_pages_local.md](redesign-ux/_active/TASK_2026-09-27_pages_local.md)** — Build plan + live tracker for the remaining pages on branch `map-console`, local review: story mode (S2), `/briefings` (S3), country card (S4), Studio (S5a–c), track record (S6). Frontend only; backend gaps listed. 2026-09-27.
-- **[TASK_2026-10-01_home_swap.md](redesign-ux/_active/TASK_2026-10-01_home_swap.md)** — S6 home swap: the map console becomes `/`, `/map` redirects (query kept), old home kept at `/today`; feature-to-location table, Worker/sitemap notes, live tracker. 2026-10-01.
-- **[TASK_2026-10-01_boot_loader.md](redesign-ux/_active/TASK_2026-10-01_boot_loader.md)** — Option B loading animation as a shared `BootLoader` (radar globe + SENSOR STATUS with real ticks, honest failure + RETRY): pre-JS `index.html` boot, App Suspense fallback, map-home sensors, guards, live tracker. 2026-10-01.
-- **[TASK_2026-10-02_stories_board_web.md](redesign-ux/_active/TASK_2026-10-02_stories_board_web.md)** — Stories BOARD + WEB views (master plan B4; both built 2026-10-02, not deployed), /spider-demo retired into WEB (redirect, code deleted), topic dots → crisis hue, country map framing, master-plan gap audit, and P8 (master-plan gaps 1–7: map card fact/inference tags + linked stories, one `StoryLink`/StoryPeek everywhere, computed status line, phone Track record + country tabs, Read-in-full shared actors/provenance, legend motion budget; built, not deployed); live tracker. 2026-10-02.
-- **[TASK_2026-10-01_dark_site_shared_tokens.md](redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md)** — Whole site on one shared token set (console look), one dark frame and loader, light pages moved onto shared building blocks, Stories `/weekly` = A (intel-feed list) + C (30-day timeline); phases P1–P6 built + swept (not deployed; P6 = the operator's decisions 1–14: retired-route redirects, neutral risk colours, phone READ / MAP / TIMELINE, tours removed, 5-link footer, Stories summary / Watching lines), live tracker. Status: done (built, not deployed). 2026-10-01.
-- **[TASK_2026-10-01_globe_badges.md](redesign-ux/_active/TASK_2026-10-01_globe_badges.md)** — Globe status badges (▲●◆▼), GDACS ◆ diamonds and selection brackets drawn at constant screen size (pixel-space icons instead of lon/lat polygons that grew, drifted and merged when zoomed): root cause, approach, measured sizes, live tracker. 2026-10-01.
-- **[TASK_2026-09-26_map_console_local.md](redesign-ux/_active/TASK_2026-09-26_map_console_local.md)** — Build task: the map console at `/map` on branch `map-console`, locally for operator review (no deploy). Goal, decisions followed, files per phase, docs checklist, live tracker M0–M7. 2026-09-26.
-- **[REDESIGN_MASTER_PLAN.md](redesign-ux/_active/REDESIGN_MASTER_PLAN.md)** — One file for the whole redesign: the philosophy, today's constraints, every approved frontend decision page by page, the backend/data work (D1–D11), superseded decisions, open questions, and the staged build plan (stages 0–9) for agents. Draft for operator review, 2026-09-26.
-- **[TASK_2026-09-26_remaining_design.md](redesign-ux/_active/TASK_2026-09-26_remaining_design.md)** — Live tracker for the remaining design topics: navigation, phone layouts, design-system board, home leftovers, small pages, build order. Design only. 2026-09-26.
-- **[TRACK_RECORD_AND_STUDIO_RULING.md](redesign-ux/_active/TRACK_RECORD_AND_STUDIO_RULING.md)** — Debate ruling: track record = lean honest public page (ledger first, no "strong"; all 122 scores are one July week, nothing scored in ~2 months; skill CI includes 0; sample-based scoring + alarm); Studio = page (A-lite) with public example + share permalinks; decisions T1–T3, S1–S3. 2026-09-25.
-- **[PAGE_STRUCTURE_PROPOSAL_2026-09-24.md](architecture/PAGE_STRUCTURE_PROPOSAL_2026-09-24.md)** + **[PAGE_STRUCTURE_CHALLENGE_2026-09-24.md](architecture/PAGE_STRUCTURE_CHALLENGE_2026-09-24.md)** — Opus page-structure proposal vs Sonnet challenge, monitor-adjudicated (§8): keep the approved S6 map-as-home (the proposal's rejection rested on a false premise — the news layer shipped; the map is thin only because of the DeepSeek outage), no new Today page, /briefings merge yes, /world merge no, /story/:id rename bundled with the Worker SEO fix, Stage-0 fixes first. DISCUSSION — operator decisions pending. 2026-09-24.
-- **[PAGE_REVIEW_2026-09-24.md](architecture/PAGE_REVIEW_2026-09-24.md)** — Whole-site page review (26 routes, 5 Sonnet reviewers: IA/nav, content/empty states, visual/mobile/a11y, perf/SEO, product funnel + monitor browser pass). 10 P1 / ~14 P2 / ~14 P3, deduplicated, monitor-verified (false positives excluded). Top: every route but `/` returns HTTP 404 (SEO-invisible); 'LIVE/Updated hourly' badge contradicts 11–126-day-old data; legacy pages carry off-token CSS + poor CLS; no route-level code splitting + duplicate proxy calls. Diagnose-only. 2026-09-24.
-- **[CLEANUP_AUDIT_2026-09-24.md](architecture/CLEANUP_AUDIT_2026-09-24.md)** — Whole-system dead-weight audit: 3-agent verified inventory (frontend/backend-AWS/repo-data) + Cutter-vs-Keeper debate + tiered plan (Tier A/B safe-delete, C gated, D operator-decision, E confirmed-alive). Tier A/B EXECUTED; D3 (the former /map-legacy↔pair-arcs entanglement) RESOLVED — legacy map removed 2026-09-24, pair-arcs port cancelled and archived on `archive/pair-arcs-port`.
-- **[CONTEXT_HYGIENE_DECISIONS_2026-09-24.md](architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md)** — Opus 5.5 review of every file that shapes an agent session (CLAUDE.md chain, auto memory, agent-kit, skills) against official Claude Code guidance: 13 behavior-ranked findings + per-file KEEP/TRIM/MERGE/ARCHIVE/DELETE/EXCLUDE decisions. EXECUTED 2026-09-24 (CLAUDE.md 237→69 lines, memory consolidated, foreign ancestor CLAUDE.md files excluded, autoMode rescoped per repo). Decision record.
-- **[REPO_RESTRUCTURE_DESIGN_2026-09-24.md](architecture/REPO_RESTRUCTURE_DESIGN_2026-09-24.md)** — EXECUTED 2026-09-24: frontend `src/` → `app/` + `shared/` + 13 `features/` (all 193 files mapped, minus 5 P0-deleted orphans), `@/` alias, 13 reversible phases (P0–P12). Backend Lambda paths deliberately NOT moved (feature→Lambda index instead). 2026-09-24.
-- **[FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md](architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md)** + task file **[TASK_2026-09-24_frontend_feature_folders.md](architecture/_active/TASK_2026-09-24_frontend_feature_folders.md)** — DONE 2026-09-24: phase-by-phase plan for the restructure design, all P0–P12 executed and monitor-verified (per-phase file moves/verify/browser checklist/rollback). See `ARCHITECTURE.md`'s Frontend Path map for the final tree.
-- **[DESIGN_UPGRADES_2026-09-14.md](architecture/DESIGN_UPGRADES_2026-09-14.md)** — Six industry patterns pressure-tested against this shop's constraints; verdicts + adopt-list (reconciler script, generic freshness checker, shared-sync diff gate, model-default scan, completion-marker guard, severity codebook+gold set; event-chain/bundler/S3-model-config skipped with revisit conditions). Decision record. 2026-09-14.
-- **[ONE_TRUTH_EXECUTION_PLAN.md](architecture/ONE_TRUTH_EXECUTION_PLAN.md)** — Executable plan for the one-source-of-truth first slice (Phases 0/1/3; Phase 2 significance-replacement DROPPED as new-infra-for-cosmetic-gain). Phases 0-1 + 3.1-3.3 EXECUTED 2026-09-15; 3.4-3.5 DONE 2026-09-15 (Claude-labeled baseline: 40%
+- **[WORLD_MODEL_VERIFY_2026-09-11.md](archive/architecture/WORLD_MODEL_VERIFY_2026-09-11.md)** — The code-grounded verification the World Model was drafted from (corrected identity count, full importance-scale consumer/derivability table, exact taxonomies, lifecycle correction, registry gaps). 2026-09-11.
+- **[IMPORTANCE_SCALE_MAPPING.md](archive/architecture/IMPORTANCE_SCALE_MAPPING.md)** — Code-grounded feasibility study for WORLD_MODEL D2 (one importance scale). Four Sonnet passes: `urgency`=tempo→reclassified as 4th KEEP exception (not mergeable); `significance`=backend LinkedIn-sort only (no frontend reads); topic surfaces can't show the tier (no topic-level score exists); `impactScores`=keep. Refines D2. 2026-09-12.
+- **[WORLD_MODEL_FRAGMENTS.md](archive/architecture/WORLD_MODEL_FRAGMENTS.md)** — Terrain map for consolidation: every fragmented concept (identity, taxonomy, importance scales, hand-duplicated modules, lifecycles) classified TRUE-MERGE / SERIAL / DISTINCT with file:line evidence. Signal API = the live SERIAL prototype. 2026-09-14.
+- **[SCORING_STANDARDS.md](rules/SCORING_STANDARDS.md)** — Rubric+benchmark audit of every score the system assigns (formula vs LLM-judgment; rubric quality; benchmark exists?). Verdict: predictions = gold standard; severity tier = most relied-on — its benchmark gap CLOSED 2026-09-15 (gold set + agreement baseline; rubric fix in flight, Phase 4). 2026-09-14, severity rows updated 2026-09-15.
+- **[STAGE0_FIXES_PLAN.md](archive/architecture/_active/STAGE0_FIXES_PLAN.md)** + task **[TASK_2026-09-24_stage0_fixes.md](archive/architecture/_active/TASK_2026-09-24_stage0_fixes.md)** — Fix-first list from the page review (SEO 404 via Worker SPA fallback, freshness honesty, parked-credits copy, onboarding-tour mobile block, request de-dupe, route lazy-loading (main chunk 1,046→425 kB), page titles, /daily fallback-window + arrows). All 9 items (a)-(i) coded + committed 2026-09-24; item (a) (Worker) prepared, not deployed. Both deploys (frontend batch + Worker) still operator-gated, pending a fresh explicit "yes".
+- **[HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md](archive/redesign-ux/_active/HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md)** + critiques **[READER](archive/redesign-ux/_active/HOME_MAP_BRIEFINGS_CRITIC1_READER.md)** / **[ENGINEERING](archive/redesign-ux/_active/HOME_MAP_BRIEFINGS_CRITIC2_ENGINEERING.md)** — Opus frontend design for the new home (map + story list, linked selection) and /briefings, debated by 2 Sonnet critics, monitor rulings in §12 (keep the deck.gl map, one story list with 'On the map' badges, worded status bar, 'What's moving' until scored judgments exist, expose story-map.json early). Clickable wireframe: https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW. 2026-09-24.
+- 🔭 **[PLAN_2026-10-19_colour_consistency.md](plans/PLAN_2026-10-19_colour_consistency.md)** — Why the map home mixes red/amber/white (risk chips take the crisis hue against DS1, crisis hues collide with status colours, ~20 surface values), target rules with sources, steps C1–C7 (C5 hue re-pick needs the operator), plus 5 bugs found on the way. Proposed 2026-10-19.
+- 🔭 **[PLAN_2026-10-19_consistency_and_modernisation.md](plans/PLAN_2026-10-19_consistency_and_modernisation.md)** — Whole-site audit (8 agents + live pass on 12 routes): pages drift in meaning, components and type, not raw colour; 6 root causes (no primitives, frozen ratchet, no copy guard); phases 0-4 from guards and shared primitives to page migration, front-end structure (useCachedQuery, cycles) and back-end/repo (lambda.sh, shared llm.js, Node 20, feature layout). Proposed 2026-10-19.
+- **[CONSOLE_WIREFRAME_TECHNIQUE.md](archive/redesign-ux/_active/CONSOLE_WIREFRAME_TECHNIQUE.md)** — How the v2 operations-console mock works (orthographic SVG globe + spin, conic-gradient radar sweep + scan detection, linked selection, motion safety) and how each technique maps to the real deck.gl build. Wireframe sources in `redesign-ux/_reference/wireframe-2026-09-24/`. 2026-09-24.
+- **[archive/ACTION_CHECKLIST.md](archive/ACTION_CHECKLIST.md)** — Living checklist: operator actions vs Claude work, what each waits on. START HERE for 'what's next'.
+- **[HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md](archive/redesign-ux/_active/HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md)** — Operator decisions for the new home (map + story list side by side, expand-to-full, linked selection via URL, game-inspired map, stories-inside-news cards) and /briefings editions. Frontend design debate in progress. 2026-09-24.
+- **[STORY_DOSSIER_BOARD_DESIGN_BRIEF.md](archive/redesign-ux/_active/STORY_DOSSIER_BOARD_DESIGN_BRIEF.md)** — Story page → "Story dossier" and story board → "Intel board" (console style), with the /spider-demo causal web merged in (dossier section 2 + board WEB view). Frontend design APPROVED 2026-09-25 (one scroll, dark + Reading mode, Board default); connection to the home console proposed, 3 questions open. 2026-09-25.
+- **[STORY_SPIDER_MERGE_ARCHITECTURE.md](archive/redesign-ux/_active/STORY_SPIDER_MERGE_ARCHITECTURE.md)** — How the story page and /spider-demo are built (actions, records, writers), why a spider node IS a story, the problems to fix (per-click LLM, no story→web lookup, top-10 coverage, stale country list), shared CausalWeb at ego/country/world scale, and build order. Proposal, 2026-09-25.
+- **[STORY_WEB_RETHINK_PLAN.md](archive/redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md)** — Operator correction: the web must be news-based, not the country web. Stage, live data facts (24% coverage, cited news items grounding links), questions, debate setup + live tracker. In progress, 2026-09-25.
+- **[ECONOMY_CONSOLE_DISCUSSION.md](archive/redesign-ux/_active/ECONOMY_CONSOLE_DISCUSSION.md)** — /economy in the console style: verified current state (prices live, disruptions frozen since 12 Sep, TTL off), references (Offworld ticker+board, TradingView story markers, Bloomberg, Finviz, Kpler), options A/B/C and decisions E1–E8. PARKED 2026-09-25: soft-hidden from nav, weekly markets job paused.
+- **[COUNTRY_VIEW_DISCUSSION.md](archive/redesign-ux/_active/COUNTRY_VIEW_DISCUSSION.md)** — Country view: split into map country card + Studio deep-dive + public URL; 8 reader questions × our data (live freshness), proposed card (infobox, risk/direction/watch triad, 4 chips, stories, dated watch triggers, money line, freshness), decisions C1–C8. APPROVED 2026-09-25 (card v2, canvas board C1).
+- **[REVIEW_2026-09-26_map_console_shell.md](archive/redesign-ux/_active/REVIEW_2026-09-26_map_console_shell.md)** — Full 4-lens review of branch `map-console` (correctness, honesty, a11y/phone, perf + design fidelity): fix batches F1 (must), F2 (should), F3 design gaps for the operator, F4 pre-existing live-site honesty bugs. 2026-09-26.
+- **[TASK_2026-09-26_shell_account_local.md](archive/redesign-ux/_active/TASK_2026-09-26_shell_account_local.md)** — Build plan: site shell (N1 menu, phone tab bar), account desk (K1), membership (K2, gated on the option + billing yes), sign-in, on branch `map-console`, local review. Goal, open decisions, facts, files per phase, docs checklist, tracker. 2026-09-26.
+- **[TASK_2026-09-27_pages_local.md](archive/redesign-ux/_active/TASK_2026-09-27_pages_local.md)** — Build plan + live tracker for the remaining pages on branch `map-console`, local review: story mode (S2), `/briefings` (S3), country card (S4), Studio (S5a–c), track record (S6). Frontend only; backend gaps listed. 2026-09-27.
+- **[TASK_2026-10-01_home_swap.md](archive/redesign-ux/_active/TASK_2026-10-01_home_swap.md)** — S6 home swap: the map console becomes `/`, `/map` redirects (query kept), old home kept at `/today`; feature-to-location table, Worker/sitemap notes, live tracker. 2026-10-01.
+- **[TASK_2026-10-01_boot_loader.md](archive/redesign-ux/_active/TASK_2026-10-01_boot_loader.md)** — Option B loading animation as a shared `BootLoader` (radar globe + SENSOR STATUS with real ticks, honest failure + RETRY): pre-JS `index.html` boot, App Suspense fallback, map-home sensors, guards, live tracker. 2026-10-01.
+- **[TASK_2026-10-02_stories_board_web.md](archive/redesign-ux/_active/TASK_2026-10-02_stories_board_web.md)** — Stories BOARD + WEB views (master plan B4; both built 2026-10-02, not deployed), /spider-demo retired into WEB (redirect, code deleted), topic dots → crisis hue, country map framing, master-plan gap audit, and P8 (master-plan gaps 1–7: map card fact/inference tags + linked stories, one `StoryLink`/StoryPeek everywhere, computed status line, phone Track record + country tabs, Read-in-full shared actors/provenance, legend motion budget; built, not deployed); live tracker. 2026-10-02.
+- **[TASK_2026-10-01_dark_site_shared_tokens.md](archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md)** — Whole site on one shared token set (console look), one dark frame and loader, light pages moved onto shared building blocks, Stories `/weekly` = A (intel-feed list) + C (30-day timeline); phases P1–P6 built + swept (not deployed; P6 = the operator's decisions 1–14: retired-route redirects, neutral risk colours, phone READ / MAP / TIMELINE, tours removed, 5-link footer, Stories summary / Watching lines), live tracker. Status: done (built, not deployed). 2026-10-01.
+- **[TASK_2026-10-01_globe_badges.md](archive/redesign-ux/_active/TASK_2026-10-01_globe_badges.md)** — Globe status badges (▲●◆▼), GDACS ◆ diamonds and selection brackets drawn at constant screen size (pixel-space icons instead of lon/lat polygons that grew, drifted and merged when zoomed): root cause, approach, measured sizes, live tracker. 2026-10-01.
+- **[TASK_2026-09-26_map_console_local.md](archive/redesign-ux/_active/TASK_2026-09-26_map_console_local.md)** — Build task: the map console at `/map` on branch `map-console`, locally for operator review (no deploy). Goal, decisions followed, files per phase, docs checklist, live tracker M0–M7. 2026-09-26.
+- **[REDESIGN_MASTER_PLAN.md](plans/REDESIGN_MASTER_PLAN.md)** — One file for the whole redesign: the philosophy, today's constraints, every approved frontend decision page by page, the backend/data work (D1–D11), superseded decisions, open questions, and the staged build plan (stages 0–9) for agents. Draft for operator review, 2026-09-26.
+- **[TASK_2026-09-26_remaining_design.md](archive/redesign-ux/_active/TASK_2026-09-26_remaining_design.md)** — Live tracker for the remaining design topics: navigation, phone layouts, design-system board, home leftovers, small pages, build order. Design only. 2026-09-26.
+- **[TRACK_RECORD_AND_STUDIO_RULING.md](archive/redesign-ux/_active/TRACK_RECORD_AND_STUDIO_RULING.md)** — Debate ruling: track record = lean honest public page (ledger first, no "strong"; all 122 scores are one July week, nothing scored in ~2 months; skill CI includes 0; sample-based scoring + alarm); Studio = page (A-lite) with public example + share permalinks; decisions T1–T3, S1–S3. 2026-09-25.
+- **[PAGE_STRUCTURE_PROPOSAL_2026-09-24.md](archive/architecture/PAGE_STRUCTURE_PROPOSAL_2026-09-24.md)** + **[PAGE_STRUCTURE_CHALLENGE_2026-09-24.md](archive/architecture/PAGE_STRUCTURE_CHALLENGE_2026-09-24.md)** — Opus page-structure proposal vs Sonnet challenge, monitor-adjudicated (§8): keep the approved S6 map-as-home (the proposal's rejection rested on a false premise — the news layer shipped; the map is thin only because of the DeepSeek outage), no new Today page, /briefings merge yes, /world merge no, /story/:id rename bundled with the Worker SEO fix, Stage-0 fixes first. DISCUSSION — operator decisions pending. 2026-09-24.
+- **[PAGE_REVIEW_2026-09-24.md](archive/architecture/PAGE_REVIEW_2026-09-24.md)** — Whole-site page review (26 routes, 5 Sonnet reviewers: IA/nav, content/empty states, visual/mobile/a11y, perf/SEO, product funnel + monitor browser pass). 10 P1 / ~14 P2 / ~14 P3, deduplicated, monitor-verified (false positives excluded). Top: every route but `/` returns HTTP 404 (SEO-invisible); 'LIVE/Updated hourly' badge contradicts 11–126-day-old data; legacy pages carry off-token CSS + poor CLS; no route-level code splitting + duplicate proxy calls. Diagnose-only. 2026-09-24.
+- **[CLEANUP_AUDIT_2026-09-24.md](archive/architecture/CLEANUP_AUDIT_2026-09-24.md)** — Whole-system dead-weight audit: 3-agent verified inventory (frontend/backend-AWS/repo-data) + Cutter-vs-Keeper debate + tiered plan (Tier A/B safe-delete, C gated, D operator-decision, E confirmed-alive). Tier A/B EXECUTED; D3 (the former /map-legacy↔pair-arcs entanglement) RESOLVED — legacy map removed 2026-09-24, pair-arcs port cancelled and archived on `archive/pair-arcs-port`.
+- **[CONTEXT_HYGIENE_DECISIONS_2026-09-24.md](archive/architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md)** — Opus 5.5 review of every file that shapes an agent session (CLAUDE.md chain, auto memory, agent-kit, skills) against official Claude Code guidance: 13 behavior-ranked findings + per-file KEEP/TRIM/MERGE/ARCHIVE/DELETE/EXCLUDE decisions. EXECUTED 2026-09-24 (CLAUDE.md 237→69 lines, memory consolidated, foreign ancestor CLAUDE.md files excluded, autoMode rescoped per repo). Decision record.
+- **[REPO_RESTRUCTURE_DESIGN_2026-09-24.md](archive/architecture/REPO_RESTRUCTURE_DESIGN_2026-09-24.md)** — EXECUTED 2026-09-24: frontend `src/` → `app/` + `shared/` + 13 `features/` (all 193 files mapped, minus 5 P0-deleted orphans), `@/` alias, 13 reversible phases (P0–P12). Backend Lambda paths deliberately NOT moved (feature→Lambda index instead). 2026-09-24.
+- **[FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md](archive/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md)** + task file **[TASK_2026-09-24_frontend_feature_folders.md](archive/architecture/_active/TASK_2026-09-24_frontend_feature_folders.md)** — DONE 2026-09-24: phase-by-phase plan for the restructure design, all P0–P12 executed and monitor-verified (per-phase file moves/verify/browser checklist/rollback). See `ARCHITECTURE.md`'s Frontend Path map for the final tree.
+- **[DESIGN_UPGRADES_2026-09-14.md](archive/architecture/DESIGN_UPGRADES_2026-09-14.md)** — Six industry patterns pressure-tested against this shop's constraints; verdicts + adopt-list (reconciler script, generic freshness checker, shared-sync diff gate, model-default scan, completion-marker guard, severity codebook+gold set; event-chain/bundler/S3-model-config skipped with revisit conditions). Decision record. 2026-09-14.
+- **[ONE_TRUTH_EXECUTION_PLAN.md](archive/architecture/ONE_TRUTH_EXECUTION_PLAN.md)** — Executable plan for the one-source-of-truth first slice (Phases 0/1/3; Phase 2 significance-replacement DROPPED as new-infra-for-cosmetic-gain). Phases 0-1 + 3.1-3.3 EXECUTED 2026-09-15; 3.4-3.5 DONE 2026-09-15 (Claude-labeled baseline: 40%
   exact / 85% within-one, inflation diagnosed); Phase 4 prompt fix added — offline eval blocked
   pending provider top-up. 2026-09-15.
-- **[SEVERITY_CODEBOOK.md](architecture/SEVERITY_CODEBOOK.md)** — The anchored severity rubric (ACLED-style codebook): 4 axes × 4 bands × worked anchors, null rule, worst-axis-wins, operator labeling instructions. Generator prompts NOT changed — baseline measurement first. Pairs with `quality/severity_gold_set.json` + `quality/severity_agreement.js`. 2026-09-15.
+- **[SEVERITY_CODEBOOK.md](rules/SEVERITY_CODEBOOK.md)** — The anchored severity rubric (ACLED-style codebook): 4 axes × 4 bands × worked anchors, null rule, worst-axis-wins, operator labeling instructions. Generator prompts NOT changed — baseline measurement first. Pairs with `quality/severity_gold_set.json` + `quality/severity_agreement.js`. 2026-09-15.
 - **[BACKEND_GUIDE.md](architecture/BACKEND_GUIDE.md)** — Quick-start Lambda function table.
-- **[DATA_STRATEGY.md](architecture/DATA_STRATEGY.md)** — **ADOPTED 2026-09-08.** S3 for the world, DynamoDB for the user: one-writer-per-prefix, inbox/folder event sourcing, `world/latest.json` frontend contract, table-migration order. Binding for all new subsystems.
-- **[OPTIMIZATION_REPORT.md](architecture/OPTIMIZATION_REPORT.md)** — Evidence-based (file:line) perf/cost fix list; companion to SYSTEM_WIRING.
+- **[DATA_STRATEGY.md](rules/DATA_STRATEGY.md)** — **ADOPTED 2026-09-08.** S3 for the world, DynamoDB for the user: one-writer-per-prefix, inbox/folder event sourcing, `world/latest.json` frontend contract, table-migration order. Binding for all new subsystems.
+- **[OPTIMIZATION_REPORT.md](archive/architecture/OPTIMIZATION_REPORT.md)** — Evidence-based (file:line) perf/cost fix list; companion to SYSTEM_WIRING.
 - **[PAGES_GUIDE.md](architecture/PAGES_GUIDE.md)** — Page-by-page reference + 3-layer smoke-test convention.
 - **[SYSTEM_WIRING.md](architecture/SYSTEM_WIRING.md)** — Code-grounded frontend↔backend↔DDB wiring; overrides ARCHITECTURE on drift.
 
@@ -74,59 +74,59 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 
 **✅ shipped**
-- **[ANALYSIS_PRO_STRUCTURE_PLAN.md](analysis-studio/_shipped/ANALYSIS_PRO_STRUCTURE_PLAN.md)** — Analysis Studio ICD-203 packaging upgrade — shipped.
-- **[ANALYZE_OPTIONS_PRUNE_PLAN.md](analysis-studio/_shipped/ANALYZE_OPTIONS_PRUNE_PLAN.md)** — Provider/lens prune (5→3) — done.
-- **[ANALYZE_SURFACING_PLAN.md](analysis-studio/_shipped/ANALYZE_SURFACING_PLAN.md)** — Surfacing /analyze across the site — shipped.
+- **[ANALYSIS_PRO_STRUCTURE_PLAN.md](archive/analysis-studio/_shipped/ANALYSIS_PRO_STRUCTURE_PLAN.md)** — Analysis Studio ICD-203 packaging upgrade — shipped.
+- **[ANALYZE_OPTIONS_PRUNE_PLAN.md](archive/analysis-studio/_shipped/ANALYZE_OPTIONS_PRUNE_PLAN.md)** — Provider/lens prune (5→3) — done.
+- **[ANALYZE_SURFACING_PLAN.md](archive/analysis-studio/_shipped/ANALYZE_SURFACING_PLAN.md)** — Surfacing /analyze across the site — shipped.
 
 **🔧 active**
-- **[QWEN_AND_VISUAL_BLOCK_PLAN.md](analysis-studio/_active/QWEN_AND_VISUAL_BLOCK_PLAN.md)** — DeepSeek visual-block fix + Qwen BYOK provider.
+- **[QWEN_AND_VISUAL_BLOCK_PLAN.md](archive/analysis-studio/_active/QWEN_AND_VISUAL_BLOCK_PLAN.md)** — DeepSeek visual-block fix + Qwen BYOK provider.
 
 **🔭 proposed**
-- **[SUMMARY_VERIFICATION_PLAN.md](analysis-studio/_proposed/SUMMARY_VERIFICATION_PLAN.md)** — AI-truth verification — §1 grounding shipped, judge layer absent.
+- **[SUMMARY_VERIFICATION_PLAN.md](archive/analysis-studio/_proposed/SUMMARY_VERIFICATION_PLAN.md)** — AI-truth verification — §1 grounding shipped, judge layer absent.
 
 **📎 reference**
-- **[ANALYSIS_QUALITY_COMPARISON_PLAN.md](analysis-studio/_reference/ANALYSIS_QUALITY_COMPARISON_PLAN.md)** — Rubric study vs professional standards.
-- **[ANALYSIS_SOURCE_TRUTH_PLAN.md](analysis-studio/_reference/ANALYSIS_SOURCE_TRUTH_PLAN.md)** — Source-truth layer — L1 shipped, L2 auditor unbuilt.
-- **[ANALYSIS_STUDIO_BENCHMARK_PLAN.md](analysis-studio/_reference/ANALYSIS_STUDIO_BENCHMARK_PLAN.md)** — Benchmark→check reframe (superseded).
-- **[ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md](analysis-studio/_reference/ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md)** — Deep-research web mode — shipped.
-- **[ANALYSIS_STUDIO_PLAN.md](analysis-studio/_reference/ANALYSIS_STUDIO_PLAN.md)** — Core /analyze feature plan — shipped (historical).
-- **[ANALYSIS_STUDIO_TESTING_PLAN.md](analysis-studio/_reference/ANALYSIS_STUDIO_TESTING_PLAN.md)** — Output validator/eval plan.
+- **[ANALYSIS_QUALITY_COMPARISON_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_QUALITY_COMPARISON_PLAN.md)** — Rubric study vs professional standards.
+- **[ANALYSIS_SOURCE_TRUTH_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_SOURCE_TRUTH_PLAN.md)** — Source-truth layer — L1 shipped, L2 auditor unbuilt.
+- **[ANALYSIS_STUDIO_BENCHMARK_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_STUDIO_BENCHMARK_PLAN.md)** — Benchmark→check reframe (superseded).
+- **[ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md)** — Deep-research web mode — shipped.
+- **[ANALYSIS_STUDIO_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_STUDIO_PLAN.md)** — Core /analyze feature plan — shipped (historical).
+- **[ANALYSIS_STUDIO_TESTING_PLAN.md](archive/analysis-studio/_reference/ANALYSIS_STUDIO_TESTING_PLAN.md)** — Output validator/eval plan.
 
 ## Economy layer
 
 `project-docs/economy/`
 
-- **[ECONOMIC_DISRUPTION.md](economy/ECONOMIC_DISRUPTION.md)** — Economic-disruption concept & methodology (domain reference).
+- **[ECONOMIC_DISRUPTION.md](archive/economy/ECONOMIC_DISRUPTION.md)** — Economic-disruption concept & methodology (domain reference).
 
 **✅ shipped**
-- **[ECONOMIC_DISRUPTION_PLAN.md](economy/_shipped/ECONOMIC_DISRUPTION_PLAN.md)** — Economic Disruption layer build — Phases 1–2 shipped.
-- **[ECONOMY_UX_PLAN.md](economy/_shipped/ECONOMY_UX_PLAN.md)** — /economy UX overhaul (filters/skeletons/mobile) — shipped.
-- **[WEEKLY_MARKETS_PLAN.md](economy/_shipped/WEEKLY_MARKETS_PLAN.md)** — Weekly markets wrap (/economy This-week) — shipped.
+- **[ECONOMIC_DISRUPTION_PLAN.md](archive/economy/_shipped/ECONOMIC_DISRUPTION_PLAN.md)** — Economic Disruption layer build — Phases 1–2 shipped.
+- **[ECONOMY_UX_PLAN.md](archive/economy/_shipped/ECONOMY_UX_PLAN.md)** — /economy UX overhaul (filters/skeletons/mobile) — shipped.
+- **[WEEKLY_MARKETS_PLAN.md](archive/economy/_shipped/WEEKLY_MARKETS_PLAN.md)** — Weekly markets wrap (/economy This-week) — shipped.
 
 **🔭 proposed**
-- **[ECONOMY_BRIEFING_PLAN.md](economy/_proposed/ECONOMY_BRIEFING_PLAN.md)** — 'Today in the economy' briefing — Phase 1 shipped, Phase 2 proposed.
+- **[ECONOMY_BRIEFING_PLAN.md](archive/economy/_proposed/ECONOMY_BRIEFING_PLAN.md)** — 'Today in the economy' briefing — Phase 1 shipped, Phase 2 proposed.
 
 **📎 reference**
-- **[ECONOMIC_DISRUPTION_QUALITY_PLAN.md](economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md)** — Quality-layer roadmap (A/B/C shipped; D/E lapsed).
-- **[ECONOMIC_DISRUPTION_VIZ_PLAN.md](economy/_reference/ECONOMIC_DISRUPTION_VIZ_PLAN.md)** — Visualization/deep-link plan — partially shipped.
-- **[ECONOMIC_DISRUPTION_WIRING_PLAN.md](economy/_reference/ECONOMIC_DISRUPTION_WIRING_PLAN.md)** — UI structural-integration plan — P0 landed.
-- **[ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md](economy/_reference/ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md)** — Instrument universe selection (Stooq wiring dead → Yahoo).
-- **[ECONOMIC_VERIFICATION_PLAN.md](economy/_reference/ECONOMIC_VERIFICATION_PLAN.md)** — Verification-loop checklist (scripts now exist).
+- **[ECONOMIC_DISRUPTION_QUALITY_PLAN.md](archive/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md)** — Quality-layer roadmap (A/B/C shipped; D/E lapsed).
+- **[ECONOMIC_DISRUPTION_VIZ_PLAN.md](archive/economy/_reference/ECONOMIC_DISRUPTION_VIZ_PLAN.md)** — Visualization/deep-link plan — partially shipped.
+- **[ECONOMIC_DISRUPTION_WIRING_PLAN.md](archive/economy/_reference/ECONOMIC_DISRUPTION_WIRING_PLAN.md)** — UI structural-integration plan — P0 landed.
+- **[ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md](archive/economy/_reference/ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md)** — Instrument universe selection (Stooq wiring dead → Yahoo).
+- **[ECONOMIC_VERIFICATION_PLAN.md](archive/economy/_reference/ECONOMIC_VERIFICATION_PLAN.md)** — Verification-loop checklist (scripts now exist).
 
 ## Predictions & calibration
 
 `project-docs/prediction/`
 
-- **[PREDICTION_V1_EXAMPLE.md](prediction/PREDICTION_V1_EXAMPLE.md)** — Worked example companion to the prediction plan.
+- **[PREDICTION_V1_EXAMPLE.md](archive/prediction/PREDICTION_V1_EXAMPLE.md)** — Worked example companion to the prediction plan.
 
 **✅ shipped**
-- **[LIVING_ANALYSIS_PLAN.md](prediction/_shipped/LIVING_ANALYSIS_PLAN.md)** — Self-correcting corrector→drift-note→analyzer loop — live.
-- **[PREDICTION_METHODOLOGY_V1_PLAN.md](prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md)** — Forecast pipeline rebuild — 4 phases shipped (Brave grounding inert in prod).
-- **[RISK_TIERS_PLAN.md](prediction/_shipped/RISK_TIERS_PLAN.md)** — Score→tier migration (25/50/75) — complete.
-- **[SCORING_MODEL_V2_PLAN.md](prediction/_shipped/SCORING_MODEL_V2_PLAN.md)** — Multi-axis risk scoring — phases A–D deployed; C/E pending.
+- **[LIVING_ANALYSIS_PLAN.md](archive/prediction/_shipped/LIVING_ANALYSIS_PLAN.md)** — Self-correcting corrector→drift-note→analyzer loop — live.
+- **[PREDICTION_METHODOLOGY_V1_PLAN.md](archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md)** — Forecast pipeline rebuild — 4 phases shipped (Brave grounding inert in prod).
+- **[RISK_TIERS_PLAN.md](archive/prediction/_shipped/RISK_TIERS_PLAN.md)** — Score→tier migration (25/50/75) — complete.
+- **[SCORING_MODEL_V2_PLAN.md](archive/prediction/_shipped/SCORING_MODEL_V2_PLAN.md)** — Multi-axis risk scoring — phases A–D deployed; C/E pending.
 
 **🔭 proposed**
-- **[CALIBRATION_DIGEST_PLAN.md](prediction/_proposed/CALIBRATION_DIGEST_PLAN.md)** — Forecast calibration digest — designed, data-gated, DO NOT BUILD yet.
+- **[CALIBRATION_DIGEST_PLAN.md](archive/prediction/_proposed/CALIBRATION_DIGEST_PLAN.md)** — Forecast calibration digest — designed, data-gated, DO NOT BUILD yet.
 
 ## Membership & billing
 
@@ -134,47 +134,47 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 
 **✅ shipped**
-- **[MEMBER_GATING_PLAN.md](billing/_shipped/MEMBER_GATING_PLAN.md)** — Depth-gating (not whole pages) — deployed.
+- **[MEMBER_GATING_PLAN.md](archive/billing/_shipped/MEMBER_GATING_PLAN.md)** — Depth-gating (not whole pages) — deployed.
 
 **🔧 active**
-- **[POLAR_BILLING_PLAN.md](billing/_active/POLAR_BILLING_PLAN.md)** — Live billing spec — subscription live; credits built, not in prod. ⚠ token rotation open.
+- **[POLAR_BILLING_PLAN.md](archive/billing/_active/POLAR_BILLING_PLAN.md)** — Live billing spec — subscription live; credits built, not in prod. ⚠ token rotation open.
 
 **🔭 proposed / not built**
-- **[PROD_CREDITS_NEXT_STEPS.md](billing/_proposed/PROD_CREDITS_NEXT_STEPS.md)** — Ordered go-live checklist for analysis credits. PARKED 2026-07-06 — not an active task.
+- **[PROD_CREDITS_NEXT_STEPS.md](archive/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md)** — Ordered go-live checklist for analysis credits. PARKED 2026-07-06 — not an active task.
 
 ## Alerts, email & notifications
 
 `project-docs/alerts-email/`
 
-- **[BREAKING_ALERT_DEBATE_2026-06-24.md](alerts-email/BREAKING_ALERT_DEBATE_2026-06-24.md)** — Multi-agent urgency-scoring debate.
-- **[NOTIFICATION_GAP_ANALYSIS.md](alerts-email/NOTIFICATION_GAP_ANALYSIS.md)** — Competitive gap analysis for notifications.
-- **[SCORING_RUBRIC.md](alerts-email/SCORING_RUBRIC.md)** — Breaking-alert scoring source of truth.
+- **[BREAKING_ALERT_DEBATE_2026-06-24.md](archive/alerts-email/BREAKING_ALERT_DEBATE_2026-06-24.md)** — Multi-agent urgency-scoring debate.
+- **[NOTIFICATION_GAP_ANALYSIS.md](archive/alerts-email/NOTIFICATION_GAP_ANALYSIS.md)** — Competitive gap analysis for notifications.
+- **[SCORING_RUBRIC.md](archive/alerts-email/SCORING_RUBRIC.md)** — Breaking-alert scoring source of truth.
 
 **✅ shipped**
-- **[EMAIL_SENDER_PLAN.md](alerts-email/_shipped/EMAIL_SENDER_PLAN.md)** — Unified weekly+breaking+drift email Lambda — live.
-- **[FOLLOW_SURFACING_PLAN.md](alerts-email/_shipped/FOLLOW_SURFACING_PLAN.md)** — FollowButton surfacing on the ledger — shipped.
-- **[RECOMMENDATIONS_AND_DIGEST_PLAN.md](alerts-email/_shipped/RECOMMENDATIONS_AND_DIGEST_PLAN.md)** — Recs engine + email digest — live.
-- **[SETTINGS_MENU_PLAN.md](alerts-email/_shipped/SETTINGS_MENU_PLAN.md)** — Notification settings menu — shipped.
-- **[WEEKLY_DIGEST_PLAN.md](alerts-email/_shipped/WEEKLY_DIGEST_PLAN.md)** — Weekly Signals Brief — live.
+- **[EMAIL_SENDER_PLAN.md](archive/alerts-email/_shipped/EMAIL_SENDER_PLAN.md)** — Unified weekly+breaking+drift email Lambda — live.
+- **[FOLLOW_SURFACING_PLAN.md](archive/alerts-email/_shipped/FOLLOW_SURFACING_PLAN.md)** — FollowButton surfacing on the ledger — shipped.
+- **[RECOMMENDATIONS_AND_DIGEST_PLAN.md](archive/alerts-email/_shipped/RECOMMENDATIONS_AND_DIGEST_PLAN.md)** — Recs engine + email digest — live.
+- **[SETTINGS_MENU_PLAN.md](archive/alerts-email/_shipped/SETTINGS_MENU_PLAN.md)** — Notification settings menu — shipped.
+- **[WEEKLY_DIGEST_PLAN.md](archive/alerts-email/_shipped/WEEKLY_DIGEST_PLAN.md)** — Weekly Signals Brief — live.
 
 **🔧 active**
-- **[DRIFT_EMAIL_ACTIVATION_PLAN.md](alerts-email/_active/DRIFT_EMAIL_ACTIVATION_PLAN.md)** — Drift-email activation ladder (cron disabled by design).
+- **[DRIFT_EMAIL_ACTIVATION_PLAN.md](plans/DRIFT_EMAIL_ACTIVATION_PLAN.md)** — Drift-email activation ladder (cron disabled by design).
 
 **📎 reference**
-- **[BREAKING_ALERTS_PLAN.md](alerts-email/_reference/BREAKING_ALERTS_PLAN.md)** — Breaking-news email alert build — Phase 4 live, verify stubbed.
-- **[BREAKING_ALERT_V2_BUILD_PLAN.md](alerts-email/_reference/BREAKING_ALERT_V2_BUILD_PLAN.md)** — Re-scored alert scorer — Stage 1 coded, NOT deployed to prod.
+- **[BREAKING_ALERTS_PLAN.md](archive/alerts-email/_reference/BREAKING_ALERTS_PLAN.md)** — Breaking-news email alert build — Phase 4 live, verify stubbed.
+- **[BREAKING_ALERT_V2_BUILD_PLAN.md](archive/alerts-email/_reference/BREAKING_ALERT_V2_BUILD_PLAN.md)** — Re-scored alert scorer — Stage 1 coded, NOT deployed to prod.
 
 ## Causal web / Spider / dossier
 
 `project-docs/causal-web/`
 
-- **[EVENT_DOSSIER_SPEC.md](causal-web/EVENT_DOSSIER_SPEC.md)** — AI-legible export contract for the causal web.
-- **[SPIDER_BUILD_SPEC.md](causal-web/SPIDER_BUILD_SPEC.md)** — Data contract for the two-tier Causal Web.
-- **[SPIDER_DEMO_DESIGN_BRIEF.md](causal-web/SPIDER_DEMO_DESIGN_BRIEF.md)** — Design brief for the Causal Web view.
+- **[EVENT_DOSSIER_SPEC.md](archive/causal-web/EVENT_DOSSIER_SPEC.md)** — AI-legible export contract for the causal web.
+- **[SPIDER_BUILD_SPEC.md](archive/causal-web/SPIDER_BUILD_SPEC.md)** — Data contract for the two-tier Causal Web.
+- **[SPIDER_DEMO_DESIGN_BRIEF.md](archive/causal-web/SPIDER_DEMO_DESIGN_BRIEF.md)** — Design brief for the Causal Web view.
 
 **🔭 proposed**
-- **[ENTERPRISE_ANALYST_TOOL_PLAN.md](causal-web/_proposed/ENTERPRISE_ANALYST_TOOL_PLAN.md)** — Enterprise analyst tool — strategy open.
-- **[SPIDER_WEB_MODEL_PLAN.md](causal-web/_proposed/SPIDER_WEB_MODEL_PLAN.md)** — Causal-web data-model redesign — build-ready.
+- **[ENTERPRISE_ANALYST_TOOL_PLAN.md](archive/causal-web/_proposed/ENTERPRISE_ANALYST_TOOL_PLAN.md)** — Enterprise analyst tool — strategy open.
+- **[SPIDER_WEB_MODEL_PLAN.md](archive/causal-web/_proposed/SPIDER_WEB_MODEL_PLAN.md)** — Causal-web data-model redesign — build-ready.
 
 ## Pair intelligence
 
@@ -182,35 +182,35 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 
 **✅ shipped**
-- **[PAIR_INTELLIGENCE_PLAN.md](pairs/_shipped/PAIR_INTELLIGENCE_PLAN.md)** — Pair intelligence backend — built & live, but as of 2026-09-24 has NO frontend consumer (the `/map-legacy` WorldMapV2 surface it fed was removed; weekly cron disabled). Future home: an on-demand "Bilateral relationship" lens in Analysis Studio (recorded, not built).
+- **[PAIR_INTELLIGENCE_PLAN.md](archive/pairs/_shipped/PAIR_INTELLIGENCE_PLAN.md)** — Pair intelligence backend — built & live, but as of 2026-09-24 has NO frontend consumer (the `/map-legacy` WorldMapV2 surface it fed was removed; weekly cron disabled). Future home: an on-demand "Bilateral relationship" lens in Analysis Studio (recorded, not built).
 
 **🔭 proposed**
-- **[PAIR_UI_PLAN.md](pairs/_proposed/PAIR_UI_PLAN.md)** — Dedicated pair pages — NOT built (only /map arc consumes the data).
+- **[PAIR_UI_PLAN.md](archive/pairs/_proposed/PAIR_UI_PLAN.md)** — Dedicated pair pages — NOT built (only /map arc consumes the data).
 
 ## Ingest & impact-first pipeline
 
 `project-docs/pipeline-ingest/`
 
-- **[IMPACT_AUDITOR.md](pipeline-ingest/IMPACT_AUDITOR.md)** — Impact-auditor design + first real run.
-- **[IMPACT_FIRST_REDESIGN_PLAN.md](pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md)** — Root-cause master plan tying audits together.
-- **[IMPACT_VALIDATION_METHODOLOGY.md](pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md)** — QA methodology for impact-first pipeline.
+- **[IMPACT_AUDITOR.md](archive/pipeline-ingest/IMPACT_AUDITOR.md)** — Impact-auditor design + first real run.
+- **[IMPACT_FIRST_REDESIGN_PLAN.md](archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md)** — Root-cause master plan tying audits together.
+- **[IMPACT_VALIDATION_METHODOLOGY.md](archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md)** — QA methodology for impact-first pipeline.
 
 **✅ shipped**
-- **[RSS_CLOUDFLARE_TODO.md](pipeline-ingest/_shipped/RSS_CLOUDFLARE_TODO.md)** — RSS proxy via Cloudflare Worker — complete.
-- **[SIGNAL_API_PLAN.md](pipeline-ingest/_shipped/SIGNAL_API_PLAN.md)** — Signal API v1 — deployed (~5,720 signals; 0 keys minted).
-- **[SOURCE_DIVERSITY_PLAN.md](pipeline-ingest/_shipped/SOURCE_DIVERSITY_PLAN.md)** — Multi-source citation diversity — shipped, enabled.
-- **[continue-news.md](pipeline-ingest/_shipped/continue-news.md)** — Cache-refresh (stale-while-revalidate) plan.
+- **[RSS_CLOUDFLARE_TODO.md](archive/pipeline-ingest/_shipped/RSS_CLOUDFLARE_TODO.md)** — RSS proxy via Cloudflare Worker — complete.
+- **[SIGNAL_API_PLAN.md](archive/pipeline-ingest/_shipped/SIGNAL_API_PLAN.md)** — Signal API v1 — deployed (~5,720 signals; 0 keys minted).
+- **[SOURCE_DIVERSITY_PLAN.md](archive/pipeline-ingest/_shipped/SOURCE_DIVERSITY_PLAN.md)** — Multi-source citation diversity — shipped, enabled.
+- **[continue-news.md](archive/pipeline-ingest/_shipped/continue-news.md)** — Cache-refresh (stale-while-revalidate) plan.
 
 ## AI provider / model ops
 
 `project-docs/ai-provider/`
 
-- **[DEEPSEEK_QUALITY_AUDIT.md](ai-provider/DEEPSEEK_QUALITY_AUDIT.md)** — Output-quality pass/fail audit for DeepSeek V4.
+- **[DEEPSEEK_QUALITY_AUDIT.md](archive/ai-provider/DEEPSEEK_QUALITY_AUDIT.md)** — Output-quality pass/fail audit for DeepSeek V4.
 
 **✅ shipped**
-- **[AI_PROVIDER_MIGRATION_PLAN.md](ai-provider/_shipped/AI_PROVIDER_MIGRATION_PLAN.md)** — Grok→DeepSeek/Gemini cost migration history.
-- **[BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md](ai-provider/_shipped/BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md)** — deepseek-chat→V4 fleet migration — done (under incident).
-- **[DEEPSEEK_V4_STRAGGLERS_PLAN.md](ai-provider/_shipped/DEEPSEEK_V4_STRAGGLERS_PLAN.md)** — Cleanup of unmigrated DeepSeek consumers.
+- **[AI_PROVIDER_MIGRATION_PLAN.md](archive/ai-provider/_shipped/AI_PROVIDER_MIGRATION_PLAN.md)** — Grok→DeepSeek/Gemini cost migration history.
+- **[BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md](archive/ai-provider/_shipped/BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md)** — deepseek-chat→V4 fleet migration — done (under incident).
+- **[DEEPSEEK_V4_STRAGGLERS_PLAN.md](archive/ai-provider/_shipped/DEEPSEEK_V4_STRAGGLERS_PLAN.md)** — Cleanup of unmigrated DeepSeek consumers.
 
 ## Redesign & UX
 
@@ -218,82 +218,82 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 
 **✅ shipped**
-- **[PRODUCT_IMPROVEMENT_PLAN.md](redesign-ux/_shipped/PRODUCT_IMPROVEMENT_PLAN.md)** — 13-agent debate-driven UI/philosophy plan — P0/P1/P2 shipped.
-- **[REDESIGN_PLAN.md](redesign-ux/_shipped/REDESIGN_PLAN.md)** — v1 redesign + markets data — shipped.
-- **[SITE_ORIENTATION_PLAN.md](redesign-ux/_shipped/SITE_ORIENTATION_PLAN.md)** — Home/nav orientation + bot pre-render — shipped.
+- **[PRODUCT_IMPROVEMENT_PLAN.md](archive/redesign-ux/_shipped/PRODUCT_IMPROVEMENT_PLAN.md)** — 13-agent debate-driven UI/philosophy plan — P0/P1/P2 shipped.
+- **[REDESIGN_PLAN.md](archive/redesign-ux/_shipped/REDESIGN_PLAN.md)** — v1 redesign + markets data — shipped.
+- **[SITE_ORIENTATION_PLAN.md](archive/redesign-ux/_shipped/SITE_ORIENTATION_PLAN.md)** — Home/nav orientation + bot pre-render — shipped.
 
 **🔧 active**
-- **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; **v2 (stages S0–S8) after the DATA_STRATEGY decision** — S3-backed situations/stories/`world/latest.json`, Worker-served. P0 done, P1·T1 shipped-then-superseded. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
-- **[SITUATION_BACKEND_AUDIT.md](redesign-ux/_active/SITUATION_BACKEND_AUDIT.md)** — Deep live-AWS audit of `newsGdacsIngest`→`newsSituationIngest`→`newsSituationTracker`→S3→Worker→`/map`: 14 ranked findings (storyId fragmentation is the root cause of tracker churn) informing the slice 4+5 tuning plan. 2026-09-10.
-- **[MANAGEMENT_PROPOSAL_2026-09-11.md](architecture/MANAGEMENT_PROPOSAL_2026-09-11.md)** — DRAFT system-management proposal synthesized from the backend+frontend audits: 8 moves (deploy manifest, env hygiene, vendored shared/, contract checks, cron guards, audit-sweep playbook, frontend lazy()+dead-code, test rebalance) with accept/reject reasoning, sequencing, and an explicit do-not-do list. Awaiting operator decisions. 2026-09-11.
-- **[FRONTEND_STRUCTURE_AUDIT_2026-09-11.md](architecture/FRONTEND_STRUCTURE_AUDIT_2026-09-11.md)** — Frontend audited to the backend's standard: 27-route inventory, the full page→hook→endpoint→table data-contract map, ARCHITECTURE.md frontend drift list (map-as-home components undocumented), dead appsyncProxy, caching-key inventory. 2026-09-11.
-- **[FRONTEND_QUALITY_AUDIT_2026-09-11.md](architecture/FRONTEND_QUALITY_AUDIT_2026-09-11.md)** — Frontend debt ranked: no route-level code-splitting (1.3MB main chunk), verified dead-code kill list (WorldMap/MapSidePanel/MiniMap), 20 hooks hand-rolling the same cache block, test coverage inverted (legacy map tested, live /map untested). 2026-09-11.
-- **[EVENT_REGISTRY_PLAN.md](redesign-ux/_active/EVENT_REGISTRY_PLAN.md)** — One source of truth for event identity: the map's `stories/` layer becomes the canonical event registry, editorial becomes a selection over it; deterministic pins→threads bridge via exact article-URL overlap (fuzzy matching banned per T3c). Phases 0–3, spine change shadow-week-gated. Direction approved 2026-09-10; supersedes S7·T1's "selector consumes stories" remainder.
+- **[MAP_HOME_SITUATION_PLAN.md](plans/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; **v2 (stages S0–S8) after the DATA_STRATEGY decision** — S3-backed situations/stories/`world/latest.json`, Worker-served. P0 done, P1·T1 shipped-then-superseded. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](plans/MAP_HOME_SITUATION_LEDGER.md)**.
+- **[SITUATION_BACKEND_AUDIT.md](archive/redesign-ux/_active/SITUATION_BACKEND_AUDIT.md)** — Deep live-AWS audit of `newsGdacsIngest`→`newsSituationIngest`→`newsSituationTracker`→S3→Worker→`/map`: 14 ranked findings (storyId fragmentation is the root cause of tracker churn) informing the slice 4+5 tuning plan. 2026-09-10.
+- **[MANAGEMENT_PROPOSAL_2026-09-11.md](archive/architecture/MANAGEMENT_PROPOSAL_2026-09-11.md)** — DRAFT system-management proposal synthesized from the backend+frontend audits: 8 moves (deploy manifest, env hygiene, vendored shared/, contract checks, cron guards, audit-sweep playbook, frontend lazy()+dead-code, test rebalance) with accept/reject reasoning, sequencing, and an explicit do-not-do list. Awaiting operator decisions. 2026-09-11.
+- **[FRONTEND_STRUCTURE_AUDIT_2026-09-11.md](archive/architecture/FRONTEND_STRUCTURE_AUDIT_2026-09-11.md)** — Frontend audited to the backend's standard: 27-route inventory, the full page→hook→endpoint→table data-contract map, ARCHITECTURE.md frontend drift list (map-as-home components undocumented), dead appsyncProxy, caching-key inventory. 2026-09-11.
+- **[FRONTEND_QUALITY_AUDIT_2026-09-11.md](archive/architecture/FRONTEND_QUALITY_AUDIT_2026-09-11.md)** — Frontend debt ranked: no route-level code-splitting (1.3MB main chunk), verified dead-code kill list (WorldMap/MapSidePanel/MiniMap), 20 hooks hand-rolling the same cache block, test coverage inverted (legacy map tested, live /map untested). 2026-09-11.
+- **[EVENT_REGISTRY_PLAN.md](archive/redesign-ux/_active/EVENT_REGISTRY_PLAN.md)** — One source of truth for event identity: the map's `stories/` layer becomes the canonical event registry, editorial becomes a selection over it; deterministic pins→threads bridge via exact article-URL overlap (fuzzy matching banned per T3c). Phases 0–3, spine change shadow-week-gated. Direction approved 2026-09-10; supersedes S7·T1's "selector consumes stories" remainder.
 
 **🔭 proposed**
-- **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.
+- **[REDESIGN_V2_PLAN.md](archive/redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.
 
 **📎 reference**
-- **[LEGACY_MAP_IDEA_HARVEST_2026-09-24.md](redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md)** — Idea harvest from the cancelled pair-arcs-on-`/map` relocation port (`archive/pair-arcs-port`): concepts worth revisiting distilled out before the legacy `WorldMapV2` map was removed 2026-09-24. Reference only, no build.
-- **[COUNTRY_INTEL_VS_STUDIO_2026-09-24.md](redesign-ux/_reference/COUNTRY_INTEL_VS_STUDIO_2026-09-24.md)** — Operator-question assessment: should `newsCountryIntelligence` merge into the Analysis Studio like pairs did? Verdict NO — 7 live consumers (public country pages, weekly brief, breaking scorer, PAID Signal API, drift loop, email, admin) + it's a Phase 4 severity-fix target; recommended: keep cron, add a Studio "Country deep-dive" lens later as a pure reader (after Phase 4). Reference, no build. 2026-09-24.
+- **[LEGACY_MAP_IDEA_HARVEST_2026-09-24.md](archive/redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md)** — Idea harvest from the cancelled pair-arcs-on-`/map` relocation port (`archive/pair-arcs-port`): concepts worth revisiting distilled out before the legacy `WorldMapV2` map was removed 2026-09-24. Reference only, no build.
+- **[COUNTRY_INTEL_VS_STUDIO_2026-09-24.md](archive/redesign-ux/_reference/COUNTRY_INTEL_VS_STUDIO_2026-09-24.md)** — Operator-question assessment: should `newsCountryIntelligence` merge into the Analysis Studio like pairs did? Verdict NO — 7 live consumers (public country pages, weekly brief, breaking scorer, PAID Signal API, drift loop, email, admin) + it's a Phase 4 severity-fix target; recommended: keep cron, add a Studio "Country deep-dive" lens later as a pure reader (after Phase 4). Reference, no build. 2026-09-24.
 
 ## Distribution & channels
 
 `project-docs/distribution/`
 
-- **[BLOG_POST_DEVTO.md](distribution/BLOG_POST_DEVTO.md)** — Dev.to draft post (unpublished).
-- **[DEVTO_AI_COST_OPTIMIZATION.md](distribution/DEVTO_AI_COST_OPTIMIZATION.md)** — Dev.to draft post (unpublished).
-- **[DEVTO_GLOBAL_NEWS_FOR_DEVELOPERS.md](distribution/DEVTO_GLOBAL_NEWS_FOR_DEVELOPERS.md)** — Dev.to draft post (unpublished).
-- **[DEVTO_PUBLISHING_GUIDE.md](distribution/DEVTO_PUBLISHING_GUIDE.md)** — How to publish to Dev.to.
-- **[LINKEDIN_WEEKLY_RECAP_PLAN.md](distribution/LINKEDIN_WEEKLY_RECAP_PLAN.md)** — LinkedIn recap — discussion draft, NOT built.
-- **[WORKER_FULL_CODE.md](distribution/WORKER_FULL_CODE.md)** — Cloudflare Worker paste-in code snippet.
+- **[BLOG_POST_DEVTO.md](archive/distribution/BLOG_POST_DEVTO.md)** — Dev.to draft post (unpublished).
+- **[DEVTO_AI_COST_OPTIMIZATION.md](archive/distribution/DEVTO_AI_COST_OPTIMIZATION.md)** — Dev.to draft post (unpublished).
+- **[DEVTO_GLOBAL_NEWS_FOR_DEVELOPERS.md](archive/distribution/DEVTO_GLOBAL_NEWS_FOR_DEVELOPERS.md)** — Dev.to draft post (unpublished).
+- **[DEVTO_PUBLISHING_GUIDE.md](archive/distribution/DEVTO_PUBLISHING_GUIDE.md)** — How to publish to Dev.to.
+- **[LINKEDIN_WEEKLY_RECAP_PLAN.md](archive/distribution/LINKEDIN_WEEKLY_RECAP_PLAN.md)** — LinkedIn recap — discussion draft, NOT built.
+- **[WORKER_FULL_CODE.md](archive/distribution/WORKER_FULL_CODE.md)** — Cloudflare Worker paste-in code snippet.
 
 ## Cross-cutting audits & findings
 
 `project-docs/audits/`
 
-- **[BACKEND_TODO.md](audits/BACKEND_TODO.md)** — Backend issue tracker (incl. 2026-09-08 sweep findings).
+- **[BACKEND_TODO.md](archive/audits/BACKEND_TODO.md)** — Backend issue tracker (incl. 2026-09-08 sweep findings).
 
 ## Strategy & pitch
 
 `project-docs/strategy/`
 
-- **[ANALYST_TOOL_DIRECTION.md](strategy/ANALYST_TOOL_DIRECTION.md)** — Founder direction pivot — analyst sense-making tool.
-- **[PITCH.md](strategy/PITCH.md)** — Code-grounded investor pitch.
+- **[ANALYST_TOOL_DIRECTION.md](archive/strategy/ANALYST_TOOL_DIRECTION.md)** — Founder direction pivot — analyst sense-making tool.
+- **[PITCH.md](archive/strategy/PITCH.md)** — Code-grounded investor pitch.
 
 ## Playbooks & process
 
 `project-docs/playbooks/`
 
-- **[AGENT_REVIEW_METHOD.md](playbooks/AGENT_REVIEW_METHOD.md)** — Multi-agent doc/code verification method (used for the 2026-09-08 sweep).
-- **[BUG_PLAYBOOK.md](playbooks/BUG_PLAYBOOK.md)** — On-demand bug-fighting checks (no CI by design).
-- **[PLAN_EXECUTION_PLAYBOOK.md](playbooks/PLAN_EXECUTION_PLAYBOOK.md)** — Declare→do→update loop for a multi-phase plan worked task-by-task across sessions/agents; the durable execution-ledger convention (extends TASK_WORKFLOW).
-- **[TASK_WORKFLOW.md](playbooks/TASK_WORKFLOW.md)** — Single-task declare-then-update (docs-as-code, same-commit rule); template: `TASK_TEMPLATE.md`; enforced by `.githooks/pre-commit` (blocks code commits missing a CHANGES.md entry, reminds of open task files' unstaged docs).
+- **[AGENT_REVIEW_METHOD.md](runbooks/AGENT_REVIEW_METHOD.md)** — Multi-agent doc/code verification method (used for the 2026-09-08 sweep).
+- **[BUG_PLAYBOOK.md](runbooks/BUG_PLAYBOOK.md)** — On-demand bug-fighting checks (no CI by design).
+- **[PLAN_EXECUTION_PLAYBOOK.md](archive/playbooks/PLAN_EXECUTION_PLAYBOOK.md)** — Declare→do→update loop for a multi-phase plan worked task-by-task across sessions/agents; the durable execution-ledger convention (extends TASK_WORKFLOW).
+- **[TASK_WORKFLOW.md](rules/TASK_WORKFLOW.md)** — Single-task declare-then-update (docs-as-code, same-commit rule); template: `TASK_TEMPLATE.md`; enforced by `.githooks/pre-commit` (blocks code commits missing a CHANGES.md entry, reminds of open task files' unstaged docs).
 
 ## Ops & deployment
 
 `project-docs/ops/`
 
-- **[DEPLOYMENT_NOTES.md](ops/DEPLOYMENT_NOTES.md)** — Frontend deploy checklist.
-- **[Cloudflare migration plan](ops/_proposed/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** + **[active task](ops/_active/TASK_2026-10-05_cloudflare_frontend_migration.md)** — Local implementation underway: separate candidate/production static Workers, preserved front Worker, complete release packaging. No deployment or DNS change; live baseline captured and remaining DNS/settings access gaps recorded.
-- **[DOMAIN_SETUP.md](ops/DOMAIN_SETUP.md)** — Custom-domain + Cloudflare DNS setup.
-- **[TASK_2026-10-17_grounded_forecast_and_cost.md](prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md)** — ACTIVE: stop invented dates/template odds in forecasts (single grounded call + G13 gate), threadId reuse, token logging, low-balance alert, Jev gate backtest.
-- **[DEEPSEEK_COST_ESTIMATE.md](ops/DEEPSEEK_COST_ESTIMATE.md)** — Estimated DeepSeek $/day per job, before vs after the 2026-10-05 cost fixes; how to re-measure.
-- **[SECURITY_DEPLOYMENT_NOTES.md](ops/SECURITY_DEPLOYMENT_NOTES.md)** — CORS/security notes for Lambda.
+- **[DEPLOYMENT_NOTES.md](runbooks/DEPLOYMENT_NOTES.md)** — Frontend deploy checklist.
+- **[Cloudflare migration plan](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** + **[active task](plans/TASK_2026-10-05_cloudflare_frontend_migration.md)** — Local implementation underway: separate candidate/production static Workers, preserved front Worker, complete release packaging. No deployment or DNS change; live baseline captured and remaining DNS/settings access gaps recorded.
+- **[DOMAIN_SETUP.md](runbooks/DOMAIN_SETUP.md)** — Custom-domain + Cloudflare DNS setup.
+- **[TASK_2026-10-17_grounded_forecast_and_cost.md](plans/TASK_2026-10-17_grounded_forecast_and_cost.md)** — ACTIVE: stop invented dates/template odds in forecasts (single grounded call + G13 gate), threadId reuse, token logging, low-balance alert, Jev gate backtest.
+- **[DEEPSEEK_COST_ESTIMATE.md](runbooks/DEEPSEEK_COST_ESTIMATE.md)** — Estimated DeepSeek $/day per job, before vs after the 2026-10-05 cost fixes; how to re-measure.
+- **[SECURITY_DEPLOYMENT_NOTES.md](rules/SECURITY_DEPLOYMENT_NOTES.md)** — CORS/security notes for Lambda.
 
 ## Legacy / obsolete
 
 `project-docs/_legacy/`
 
-- **[AUDIT_FINDINGS_2026-06-24.md](_legacy/AUDIT_FINDINGS_2026-06-24.md)** — Fact-checked problem register (source-truth + scoring).
-- **[FIX_BACKLOG.md](_legacy/FIX_BACKLOG.md)** — Prioritized action list from the audit session.
-- **[FRONTEND_ARCHITECTURE.md](_legacy/FRONTEND_ARCHITECTURE.md)** — Stale (Apr 2026) frontend doc, moved out of the code tree 2026-09-24; trust `architecture/ARCHITECTURE.md` instead.
-- **[FUNCTION_DEBATE.md](_legacy/FUNCTION_DEBATE.md)** — Multi-agent adversarial critique setup.
-- **[FUNCTION_DEBATE_OUTPUT.md](_legacy/FUNCTION_DEBATE_OUTPUT.md)** — Synthesis of the 3-agent function critique.
-- **[GAMMA_PITCH_WITH_CITATIONS.md](_legacy/GAMMA_PITCH_WITH_CITATIONS.md)** — Superseded Gamma.app pitch prompt.
-- **[MOBILE_APP_DEVELOPMENT_GUIDE.md](_legacy/MOBILE_APP_DEVELOPMENT_GUIDE.md)** — React Native mobile app dev guide (sub-project).
-- **[RESEARCH_EVIDENCE_COMPILATION.md](_legacy/RESEARCH_EVIDENCE_COMPILATION.md)** — Evidence compilation for investor pitch.
-- **[TIERS.md](_legacy/TIERS.md)** — ⚠ SUPERSEDED — Paddle-era tier design.
+- **[AUDIT_FINDINGS_2026-06-24.md](archive/_legacy/AUDIT_FINDINGS_2026-06-24.md)** — Fact-checked problem register (source-truth + scoring).
+- **[FIX_BACKLOG.md](archive/_legacy/FIX_BACKLOG.md)** — Prioritized action list from the audit session.
+- **[FRONTEND_ARCHITECTURE.md](archive/_legacy/FRONTEND_ARCHITECTURE.md)** — Stale (Apr 2026) frontend doc, moved out of the code tree 2026-09-24; trust `architecture/ARCHITECTURE.md` instead.
+- **[FUNCTION_DEBATE.md](archive/_legacy/FUNCTION_DEBATE.md)** — Multi-agent adversarial critique setup.
+- **[FUNCTION_DEBATE_OUTPUT.md](archive/_legacy/FUNCTION_DEBATE_OUTPUT.md)** — Synthesis of the 3-agent function critique.
+- **[GAMMA_PITCH_WITH_CITATIONS.md](archive/_legacy/GAMMA_PITCH_WITH_CITATIONS.md)** — Superseded Gamma.app pitch prompt.
+- **[MOBILE_APP_DEVELOPMENT_GUIDE.md](archive/_legacy/MOBILE_APP_DEVELOPMENT_GUIDE.md)** — React Native mobile app dev guide (sub-project).
+- **[RESEARCH_EVIDENCE_COMPILATION.md](archive/_legacy/RESEARCH_EVIDENCE_COMPILATION.md)** — Evidence compilation for investor pitch.
+- **[TIERS.md](archive/_legacy/TIERS.md)** — ⚠ SUPERSEDED — Paddle-era tier design.
 
 ## Kept at repo root
 

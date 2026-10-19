@@ -2,6 +2,12 @@
 
 Status: proposed (2026-10-19; not approved for build — decisions/0008)
 
+Under review (2026-10-21): an overnight research and design debate (6 research reads, 4 user-group studies, 3 designs,
+3 full plans, 2 judges; records in the untracked `.board/studio/`) recommends a different first version — a free,
+assembled, no-model country sheet with marked fact/judgment lines, daily story-web history kept from now, and the
+link ledger and workbench as later branches opened by measured signals. The operator decides; this plan is
+superseded or rewritten only after that decision is recorded.
+
 ## Why
 Decision 0001 makes the product an analyst tool over the story web: how a story formed, what it is likely to
 trigger, and what would falsify a thesis. Decision 0011 keeps the Studio as a page with a public example. Today the

@@ -3,13 +3,17 @@ import * as d3 from 'd3';
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
-import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
+import {
+  bearingDeg, beamCrossed, lapAngle, LAP_START_DEG, gainedIds, NO_CARDS, enqueueCard, advanceCards,
+  agoShort, scanCardText, scanControlLabel,
+} from '@/features/map/lib/radar.js';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
 import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
   tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
 } from '@/features/map/lib/legend.js';
+import '@/features/map/components/RadarMap.css';
 
 // iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
 // topojson RadarMap already draws coastlines from.
@@ -17,14 +21,19 @@ const NUM_TO_FEATURE = {};
 for (const f of land.features) NUM_TO_FEATURE[f.id] = f;
 function shadeFeature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
-const SWEEP_MS = 10000; // one lap ≈ 10s (CONSOLE_WIREFRAME_TECHNIQUE.md §3 / --c-motion-sweep)
-const TRAIL_DEG = 40;   // how far behind the leading edge the afterglow/label stays lit
-const SCAN_MARK_MS = 3000; // how long the feed's "◉ scanned" mark stays up after a pass
+const TRAIL_DEG = 30;  // the beam's faint trail behind its leading edge
+const CARD_MS = 3000;  // how long a beam-pass card stays up (C6 R4)
+const CARD_W = 220;    // beam-pass card width (px)
+const CARD_GAP = 10;   // card ↔ marker gap (px)
 
-const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
-const CARD_W = 288;
-const CARD_MINH = 128;
-const GAP = 14;
+// The beam (C6 R1): faint and thin, about a quarter of the old full-accent edge. `angle` is the
+// screen bearing of the leading edge; +90 converts it to the CSS conic-gradient convention (§3).
+function beamGradient(angle) {
+  const from = angle + 90 - TRAIL_DEG;
+  return `conic-gradient(from ${from}deg, transparent 0deg, `
+    + `color-mix(in srgb, var(--accent) 6%, transparent) ${TRAIL_DEG * 0.75}deg, `
+    + `color-mix(in srgb, var(--accent) 25%, transparent) ${TRAIL_DEG}deg, transparent ${TRAIL_DEG + 0.4}deg, transparent 360deg)`;
+}
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];
@@ -64,25 +73,52 @@ function markerAriaLabel(s, fresh) {
   ].filter(Boolean).join(', ');
 }
 
-function agoShort(iso) {
-  if (!iso) return '';
-  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+// The beam-pass card queue (C6 R4): lib/radar.js holds the pure queue; this hook only runs its
+// clock and asks `place(id)` where the card goes (null = that marker is gone, nothing shown).
+function useCardQueue(place) {
+  const [card, setCard] = useState(null);
+  const placeRef = useRef(place);
+  placeRef.current = place;
+  const state = useRef({ q: NO_CARDS, timer: null });
+  const api = useMemo(() => {
+    const sync = () => {
+      const st = state.current;
+      clearTimeout(st.timer);
+      const cur = st.q.current;
+      setCard(cur ? placeRef.current(cur.id) : null);
+      if (cur) {
+        st.timer = setTimeout(() => { st.q = advanceCards(st.q, Date.now(), CARD_MS); sync(); }, Math.max(0, cur.until - Date.now()));
+      }
+    };
+    return {
+      show(id) {
+        const st = state.current;
+        const wasIdle = !st.q.current;
+        st.q = enqueueCard(st.q, id, Date.now(), CARD_MS);
+        if (wasIdle && st.q.current) sync();
+      },
+      clear() { clearTimeout(state.current.timer); state.current.q = NO_CARDS; setCard(null); },
+    };
+  }, []);
+  useEffect(() => api.clear, [api]);
+  return [card, api];
 }
 
 /**
  * RadarMap — the flat console mode (M4): real coastlines (the same bundled countries-110m data
- * and crop as SituationMap), drawn once with d3/SVG, plus a rotating conic-gradient sweep. No
- * WebGL, so it's also the automatic fallback when the globe can't run.
+ * and crop as SituationMap), drawn once with d3/SVG. No WebGL, so it's also the automatic
+ * fallback when the globe can't run.
+ *
+ * Colour plan C6 ("one sweep that reveals"): a faint beam runs ONE lap (lib/radar.js LAP_MS) the
+ * first time there are markers and again whenever fresh data adds a situation, then stops; "Scan
+ * again" runs another. Happening-now markers (lib/pulse.js pulseSet: changed in the last 12h, at
+ * most 5) breathe; when the beam passes one, a short card shows beside it (queued, one at a time).
+ * Every marker the beam passes still fires `onScan`, so its feed row highlights.
  *
  * Perf: land + markers are drawn once per data/selection change (an ordinary React effect); the
- * sweep itself runs on a single requestAnimationFrame loop that only (a) rewrites the beam
- * element's `background`, and (b) sets opacity/radius attributes directly on the already-drawn
- * marker DOM nodes — no React re-render, no re-drawing land, per frame. The loop is skipped
- * entirely under reduced motion, and stops while the tab is hidden.
+ * lap runs on a requestAnimationFrame loop that only rewrites the beam element's `background` —
+ * no React re-render, no re-drawing land, per frame. Reduced motion: no lap, no cards, no
+ * breathing (a still halo instead). The lap clock pauses while the tab is hidden.
  */
 // Stable defaults: the draw effect lists `shading`, `linkArcs` and `countryRisk` as dependencies, and a
 // `= []` default parameter is a NEW array every render (a caller that omits one re-ran the draw on every render).
@@ -99,12 +135,12 @@ export default function RadarMap({
   const svgRef = useRef(null);
   const beamRef = useRef(null);
   const tipRef = useRef(null);
-  const markerElsRef = useRef(new Map());   // situation id -> { halo, core }
+  const markerElsRef = useRef(new Map());   // situation id -> its <g class="rd-marker"> node
   const bearingsRef = useRef(new Map());    // situation id -> bearing deg from map centre
   const projectionRef = useRef(null);
   const zoomRef = useRef(null);             // the d3-zoom behavior, rebound on every redraw
   const zoomTransformRef = useRef(null);    // F2.2: last user zoom/pan, reapplied after each redraw
-  const sweepRef = useRef(355);             // starts just past a "recent pass" look, per the mock
+  const seenIdsRef = useRef(new Set());     // situation ids the last lap trigger saw (C6 R1/R5)
   const onSelectRef = useRef(onSelect);
   const onScanRef = useRef(onScan);
   const onSelectCountryRef = useRef(onSelectCountry);
@@ -129,7 +165,8 @@ export default function RadarMap({
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
   }, []);
-  const [sweepOn, setSweepOn] = useState(!reduceMotion);
+  const [lap, setLap] = useState(0);        // bumped to run one sweep lap; 0 = none yet
+  const [scanning, setScanning] = useState(false);
   const [dims, setDims] = useState({ width: 1, height });
 
   // Brightness = freshness: 30d+ situations are hidden from the map (SituationHome counts them).
@@ -137,6 +174,37 @@ export default function RadarMap({
     () => situations.filter((s) => s.state !== 'closed' && s.centroid && situationFreshness(s) !== 'hidden'),
     [situations],
   );
+  // Happening now (C6 R2): changed in the last 12h, capped, highest tier first (lib/pulse.js).
+  const nowIds = useMemo(() => pulseSet(active, Date.now(), MOTION_BUDGET.pulses), [active]);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const nowIdsRef = useRef(nowIds);
+  nowIdsRef.current = nowIds;
+
+  // Where a beam-pass card goes: beside its marker (right, or left near the edge), from the
+  // marker's on-screen box so the visitor's zoom/pan is already accounted for.
+  const [card, cards] = useCardQueue((id) => {
+    const node = markerElsRef.current.get(id);
+    const wrap = wrapRef.current;
+    const s = activeRef.current.find((x) => x.id === id);
+    if (!node || !node.isConnected || !wrap || !s) return null;
+    const m = node.getBoundingClientRect();
+    const w = wrap.getBoundingClientRect();
+    const right = m.right - w.left + CARD_GAP;
+    const left = right + CARD_W <= w.width ? right : m.left - w.left - CARD_GAP - CARD_W;
+    const top = (m.top + m.bottom) / 2 - w.top - 24;
+    return {
+      id, text: scanCardText(s), hue: hue(s),
+      left: Math.max(4, left), top: Math.max(4, Math.min(top, w.height - 72)),
+    };
+  });
+
+  // One lap the first time there are markers, and again when fresh data adds a situation (R1/R5).
+  useEffect(() => {
+    const ids = active.map((s) => s.id);
+    if (!reduceMotion && gainedIds(seenIdsRef.current, ids)) setLap((n) => n + 1);
+    seenIdsRef.current = new Set(ids);
+  }, [active, reduceMotion]);
   // `newIds` (since-your-last-visit) is shown in the feed only — the map's badges are the
   // approved ▲●◆▼ set, so no extra undocumented ring is drawn here any more.
   void newIds;
@@ -290,21 +358,12 @@ export default function RadarMap({
         g.append('stop').attr('offset', '100%').attr('stop-color', hx).attr('stop-opacity', 0);
       }
 
-      // Motion budget (M6): only NEW/▲ situations from the last 24h pulse, capped at 8, highest
-      // tier first (lib/pulse.js) — not every escalating situation regardless of age.
-      const pulseIds = pulseSet(active, Date.now(), MOTION_BUDGET.pulses);
-      root.append('g').selectAll('circle').data(active.filter((s) => pulseIds.has(s.id))).join('circle')
-        .attr('class', 'sm-ring')
-        .attr('cx', (s) => proj(s)[0]).attr('cy', (s) => proj(s)[1])
-        .attr('r', (s) => tierSize(s.tier).r + 6)
-        .attr('fill', 'none').attr('stroke', (s) => hue(s)).attr('stroke-width', 1.5);
-
       const showTip = (e, s) => {
         const [x, y] = d3.pointer(e, wrap);
         tip.style.opacity = 1; tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
         const level = gdacsLevelBadge(s);
         const glyph = statusGlyph(s);
-        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_W[s.tier] || s.tier)}`
+        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_LABEL[s.tier] || s.tier)}`
           + `${level ? ` · ${escapeHtml(level)}` : ''}${glyph ? ` · ${escapeHtml(`${glyph.glyph} ${glyph.label}`)}` : ''}`
           + ` · ${escapeHtml(agoShort(s.last_change_at))}`;
       };
@@ -325,11 +384,11 @@ export default function RadarMap({
         .on('mouseenter', showTip).on('mousemove', showTip).on('mouseleave', hideTip)
         .on('focus', showTip).on('blur', hideTip);
 
-      // The radar's one-shot scan flare (legend §6): opacity is driven per frame by the sweep loop.
-      nodes.append('circle').attr('class', 'rd-scan')
+      // Happening now (C6 R2): a soft breathing light under the marker (RadarMap.css .rd-now);
+      // a still halo under reduced motion. No other marker moves.
+      nodes.filter((s) => nowIds.has(s.id)).append('circle').attr('class', 'rd-now')
         .attr('r', (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 8)
-        .attr('fill', (s) => hue(s))
-        .attr('opacity', 0);
+        .attr('fill', (s) => hue(s));
 
       nodes.filter((s) => markerKind(s) === 'situation').append('circle').attr('class', 'rd-soft')
         .attr('r', (s) => tierSize(s.tier).r + 11)
@@ -370,7 +429,7 @@ export default function RadarMap({
       });
 
       nodes.each(function assignRefs(s) {
-        markerElsRef.current.set(s.id, { scan: this.querySelector('.rd-scan') });
+        markerElsRef.current.set(s.id, this);
       });
 
       const labelable = active.filter((s) => s.tier === 'high' || s.tier === 'elevated')
@@ -411,78 +470,72 @@ export default function RadarMap({
     const ro = new ResizeObserver(() => draw());
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [active, focusId, height, shading, linkArcs, storyFocusIso3, countryRisk]);
+  }, [active, nowIds, focusId, height, shading, linkArcs, storyFocusIso3, countryRisk]);
 
-  // The sweep: one rAF loop, paused under reduced motion, while the sweep control is off, or
-  // while the tab is hidden. Reads/writes only refs + DOM attributes — no setState per frame.
+  // One sweep lap (C6 R1) each time `lap` is bumped: a rAF loop that only rewrites the beam's
+  // `background` (no setState per frame), fires `onScan` for every marker the beam passes and
+  // queues a card for each happening-now one, then stops. The lap clock doesn't advance while the
+  // tab is hidden, and a long frame gap is clamped so the beam never jumps.
   useEffect(() => {
-    if (reduceMotion || !sweepOn) return undefined;
+    if (!lap || reduceMotion) return undefined;
     let raf;
     let last = null;
-    const degPerMs = 360 / SWEEP_MS;
+    let elapsed = 0;
+    let prev = LAP_START_DEG;
+    setScanning(true);
     const tick = (t) => {
-      if (last != null && document.visibilityState !== 'hidden') {
-        const dt = t - last;
-        const prev = sweepRef.current;
-        const next = (prev + dt * degPerMs) % 360;
-        sweepRef.current = next;
-
-        if (beamRef.current) {
-          const from = next + 90 - TRAIL_DEG; // screen-bearing → CSS conic-gradient convention (§3)
-          beamRef.current.style.background =
-            `conic-gradient(from ${from}deg, transparent 0deg, rgba(95,212,255,0.22) ${TRAIL_DEG * 0.75}deg, ` +
-            `var(--c-accent, #5fd4ff) ${TRAIL_DEG}deg, var(--c-accent, #5fd4ff) ${TRAIL_DEG + 0.6}deg, transparent ${TRAIL_DEG + 1.2}deg, transparent 360deg)`;
-        }
-
-        for (const [id, angle] of bearingsRef.current) {
-          const els = markerElsRef.current.get(id);
-          if (!els) continue;
-          const glow = scanGlow(next, angle, TRAIL_DEG);
-          if (els.scan) els.scan.setAttribute('opacity', String(glow * 0.5));
-          if (beamCrossed(prev, next, angle) && onScanRef.current) onScanRef.current(id);
-        }
-      }
+      if (last != null && document.visibilityState !== 'hidden') elapsed += Math.min(t - last, 100);
       last = t;
+      const { angle, done } = lapAngle(elapsed);
+      if (beamRef.current) beamRef.current.style.background = beamGradient(angle);
+      for (const [id, bearing] of bearingsRef.current) {
+        if (!beamCrossed(prev, angle, bearing)) continue;
+        if (onScanRef.current) onScanRef.current(id);
+        if (nowIdsRef.current.has(id)) cards.show(id);
+      }
+      prev = angle;
+      if (done) { setScanning(false); return; }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reduceMotion, sweepOn]);
+    return () => { cancelAnimationFrame(raf); setScanning(false); };
+  }, [lap, reduceMotion, cards]);
 
-  const beamBackground = useMemo(() => {
-    const from = sweepRef.current + 90 - TRAIL_DEG;
-    return `conic-gradient(from ${from}deg, transparent 0deg, rgba(95,212,255,0.22) ${TRAIL_DEG * 0.75}deg, ` +
-      `var(--c-accent, #5fd4ff) ${TRAIL_DEG}deg, var(--c-accent, #5fd4ff) ${TRAIL_DEG + 0.6}deg, transparent ${TRAIL_DEG + 1.2}deg, transparent 360deg)`;
-  }, []); // computed once from the initial sweep angle; the rAF loop takes over from the first frame
-
-  const sc = sweepControlState(reduceMotion, sweepOn);
+  const beamSize = Math.hypot(dims.width, dims.height) * 1.3;
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
       {/* F2.10: role="group" (not "img") — the svg contains focusable role=button countries and
           situation markers, which an img role would hide from assistive tech as decorative
           content. The label still describes the whole view. */}
-      <svg ref={svgRef} role="group" aria-label="Radar view of current situations, real coastlines with a rotating scan" />
-      {!reduceMotion ? (
+      <svg ref={svgRef} role="group" aria-label="Radar view of current situations, real coastlines with a one-lap scan" />
+      {scanning ? (
         <div
           ref={beamRef} className="rd-beam"
-          style={{
-            width: Math.hypot(dims.width, dims.height) * 1.3, height: Math.hypot(dims.width, dims.height) * 1.3,
-            left: dims.width / 2, top: dims.height / 2, background: beamBackground,
-          }}
+          style={{ width: beamSize, height: beamSize, left: dims.width / 2, top: dims.height / 2, background: beamGradient(LAP_START_DEG) }}
           aria-hidden="true"
         />
       ) : null}
       <div ref={tipRef} className="sm-tip" />
+      {/* Beam-pass card (C6 R4). aria-hidden: the same facts are in the marker's own label and the
+          feed row, and a card every few seconds would be noise in a live region. */}
+      {card ? (
+        <div key={card.id} className="rd-card" style={{ left: card.left, top: card.top, width: CARD_W }} aria-hidden="true">
+          {card.text.headline ? <b className="rd-card-head">{card.text.headline}</b> : null}
+          <span className="rd-card-meta">
+            {card.text.type ? <i className="rd-card-dot" style={{ background: card.hue }} /> : null}
+            {[card.text.type, card.text.tier, card.text.ago].filter(Boolean).join(' · ')}
+          </span>
+        </div>
+      ) : null}
 
       <div className="sm-globe-foot">
         <span className="sm-attrib">Radar · real coastlines</span>
-        <button
-          className="sm-spin-ctl" aria-pressed={sc.pressed} aria-label={sc.label} title={sc.label}
-          disabled={sc.disabled} onClick={() => setSweepOn((v) => !v)}
-        >
-          {sc.disabled ? '⏸' : (sc.pressed ? '⏸' : '▶')}
-        </button>
+        {!reduceMotion ? (
+          <button className="sm-spin-ctl rd-scan-ctl" onClick={() => setLap((n) => n + 1)}>
+            {scanControlLabel(scanning)}
+          </button>
+        ) : null}
       </div>
     </div>
   );

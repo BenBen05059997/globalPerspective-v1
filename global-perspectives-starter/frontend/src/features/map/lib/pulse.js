@@ -1,20 +1,27 @@
-// pulse — the console's motion-budget helper (STORY_WEB_RETHINK_PLAN.md §8 / M6): of the three
-// things allowed to move (radar sweep, a 2.4s breathing pulse, travelling dashes on a selected
-// story's arcs), the pulse is capped — only situations that are NEW or ▲ escalating within the
-// last 24 hours pulse, at most `cap` of them, highest tier first. Everything else is static; old
-// items never move. Pure and DOM-free so both map modes (globe, radar) agree on exactly which
-// ids pulse, and it's testable without a browser.
+// pulse — the console's motion-budget helper (STORY_WEB_RETHINK_PLAN.md §8 / M6), now the
+// "happening now" rule (colour plan C6 R2, operator 2026-10-19): a situation is happening now when
+// it CHANGED within the last 12 hours, at most `cap` of them, highest tier first, then the most
+// recent. Those markers breathe (a soft ~2.4s glow); everything else is still. Pure and DOM-free so
+// both map modes (globe, radar) agree on exactly which ids move, and it's testable without a browser.
 
 /**
  * The motion budget (STORY_WEB_RETHINK_PLAN §8 / T4): at most `movers` kinds of thing may move at
- * once and at most `pulses` items pulse. Today two kinds move (the globe spin / radar sweep and the
- * breathing pulse; the selected story's link dashes are drawn static). The maps and the legend both
- * read these numbers.
+ * once and at most `pulses` items breathe. The maps and the legend both read these numbers.
  */
-export const MOTION_BUDGET = Object.freeze({ movers: 3, pulses: 8 });
+export const MOTION_BUDGET = Object.freeze({ movers: 3, pulses: 5 });
+
+/** How recent a change must be for a situation to count as happening now. */
+export const HAPPENING_NOW_MS = 12 * 60 * 60 * 1000;
 
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
-const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * When a situation last changed, from whichever timestamp the bundle actually carries:
+ * `tier_changed_at`, else `last_change_at`, else `opened_at` (some sources only set one of these).
+ */
+export function changedAt(s) {
+  return (s && (s.tier_changed_at || s.last_change_at || s.opened_at)) || null;
+}
 
 function msAgo(iso, now) {
   if (!iso) return null;
@@ -25,26 +32,19 @@ function msAgo(iso, now) {
 }
 
 /**
- * pulseSet(situations, now, cap) -> Set<id>
- *  - "new" = opened within the last 24h (`opened_at`).
- *  - "escalating" = `escalating` is true AND the change that made it so was within the last 24h,
- *    using whichever timestamp the bundle actually carries: `tier_changed_at`, else
- *    `last_change_at`, else `opened_at` (some sources only ever set one of these).
- *  - ties broken by the most recent of `tier_changed_at`/`last_change_at`/`opened_at`.
+ * pulseSet(situations, now, cap) -> Set<id> of the happening-now situations: changed within
+ * HAPPENING_NOW_MS, ordered by tier (highest first) then most recent change, capped at `cap`.
  */
 export function pulseSet(situations = [], now = Date.now(), cap = MOTION_BUDGET.pulses) {
   const list = Array.isArray(situations) ? situations : [];
   const scored = [];
   for (const s of list) {
     if (!s || s.id == null) continue;
-    const changedAt = s.tier_changed_at || s.last_change_at || s.opened_at || null;
-    const isNew = msAgo(s.opened_at, now) != null && msAgo(s.opened_at, now) <= DAY_MS;
-    const isEscalating = !!s.escalating && msAgo(changedAt, now) != null && msAgo(changedAt, now) <= DAY_MS;
-    if (!isNew && !isEscalating) continue;
-    const recency = msAgo(changedAt, now) ?? msAgo(s.opened_at, now) ?? DAY_MS;
-    scored.push({ id: s.id, tierWeight: TIER_WEIGHT[s.tier] ?? 0, recency });
+    const age = msAgo(changedAt(s), now);
+    if (age == null || age > HAPPENING_NOW_MS) continue;
+    scored.push({ id: s.id, tierWeight: TIER_WEIGHT[s.tier] ?? 0, age });
   }
-  scored.sort((a, b) => (b.tierWeight - a.tierWeight) || (a.recency - b.recency));
+  scored.sort((a, b) => (b.tierWeight - a.tierWeight) || (a.age - b.age));
   return new Set(scored.slice(0, Math.max(0, cap)).map((x) => x.id));
 }
 

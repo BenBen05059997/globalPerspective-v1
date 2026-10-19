@@ -6,10 +6,10 @@ import MapLegend from '@/features/map/components/MapLegend.jsx';
 import { MOTION_BUDGET, pulseSet } from '@/features/map/lib/pulse.js';
 
 describe('Key — motion budget', () => {
-  it('says "at most 3 moving, 8 pulsing" from MOTION_BUDGET', () => {
-    expect(MOTION_BUDGET).toEqual({ movers: 3, pulses: 8 });
+  it('says "at most 3 moving, 5 breathing" from MOTION_BUDGET', () => {
+    expect(MOTION_BUDGET).toEqual({ movers: 3, pulses: 5 });
     render(<MapLegend present={{}} />);
-    expect(screen.getByText(/at most 3 moving, 8 pulsing/)).toBeInTheDocument();
+    expect(screen.getByText(/at most 3 moving, 5 breathing/)).toBeInTheDocument();
   });
   it('the pulse cap defaults to the budget', () => {
     const now = Date.parse('2026-10-02T12:00:00Z');

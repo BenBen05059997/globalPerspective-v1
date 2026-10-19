@@ -5,7 +5,7 @@ import { webLinkMap } from '@/features/analysis-studio/lib/webCitations';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { formatCiteDate } from '@/features/analysis-studio/lib/formatDate';
 import { httpOnly } from '@/features/analysis-studio/lib/shareApi.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // SharedAnalysisView — the read-only debrief of a stored share: exactly what the reader's run wrote, the sources

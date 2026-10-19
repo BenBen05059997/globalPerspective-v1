@@ -9,7 +9,7 @@ import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
-import { trajectoryOf } from '@/features/countries/lib/trajectory';
+import { trajectoryOf } from '@/shared/lib/trajectory';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';

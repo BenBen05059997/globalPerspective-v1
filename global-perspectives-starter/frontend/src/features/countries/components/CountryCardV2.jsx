@@ -26,8 +26,8 @@ import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
-import { legacyNote } from '@/features/threads/lib/questionChips.js';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { legacyNote } from '@/shared/lib/questionChips.js';
 import '@/features/countries/components/CountryCardV2.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 

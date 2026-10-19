@@ -5,7 +5,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js';
 import { countryLinkPath, storyLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
 

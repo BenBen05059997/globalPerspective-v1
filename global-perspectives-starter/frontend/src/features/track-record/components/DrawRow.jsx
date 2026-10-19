@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { verifyDraw } from '@/features/track-record/lib/sampleRule.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import '@/features/track-record/components/DrawRow.css';

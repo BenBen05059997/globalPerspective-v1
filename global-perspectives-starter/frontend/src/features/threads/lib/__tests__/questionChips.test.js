@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { chipFor, legacyNote, hasOwnProbability } from '@/features/threads/lib/questionChips.js';
+import { chipFor, legacyNote, hasOwnProbability } from '@/shared/lib/questionChips.js';
 import { buildDeadlines } from '@/features/threads/lib/storyMode.js';
 
 const q = (o = {}) => ({ id: '0-0', text: 'Country A ratifies', deadline: '2026-11-15', question: true, qid: 'x', p: 64, source: 'Reuters or AP wire report', scoring: 'sampled', state: 'awaiting', ...o });

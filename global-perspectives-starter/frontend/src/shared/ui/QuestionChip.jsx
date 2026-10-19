@@ -1,5 +1,5 @@
-import { chipFor } from '@/features/threads/lib/questionChips.js';
-import '@/features/threads/components/QuestionChip.css';
+import { chipFor } from '@/shared/lib/questionChips.js';
+import '@/shared/ui/QuestionChip.css';
 
 // QuestionChip — "64% · source: Reuters or AP wire report · awaiting". Renders nothing for a trigger
 // without a probability of its own (see lib/questionChips.js).

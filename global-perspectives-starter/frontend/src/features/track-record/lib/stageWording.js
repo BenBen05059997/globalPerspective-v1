@@ -1,7 +1,7 @@
 // stageWording — the public status line, staged 0-3 per TRACK_RECORD_AND_STUDIO_RULING.md
 // ("Public wording by stage"). Every number and date comes from the server's `questions` block
 // (or the archived pilot's own record); this module never invents a count or a date.
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import { ACCURACY_UNLOCK_AT } from '@/features/track-record/lib/accuracyLock.js';
 
 export const STAGE3_AT = 400;

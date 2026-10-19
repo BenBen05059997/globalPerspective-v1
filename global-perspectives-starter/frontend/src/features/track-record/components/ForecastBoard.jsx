@@ -3,8 +3,8 @@ import RadarMap from '@/shared/map/RadarMap.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
-import { itemState, stateMeta, VOID_REASON_LABEL } from '@/features/track-record/lib/questionStates.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { itemState, stateMeta, VOID_REASON_LABEL } from '@/shared/lib/questionStates.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/ForecastBoard.css';
 
 // ForecastBoard — the E2 "Forecast board: MAP (default) | BOARD" (TRACK_RECORD_AND_STUDIO_

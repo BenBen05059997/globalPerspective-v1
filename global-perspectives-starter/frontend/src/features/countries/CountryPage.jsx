@@ -27,7 +27,7 @@ import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
 import { crisisTypeForCategory } from '@/shared/lib/crisisHue';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { countryTier } from '@/features/countries/lib/countryTier';
-import { trajectoryOf } from '@/features/countries/lib/trajectory';
+import { trajectoryOf } from '@/shared/lib/trajectory';
 import BackgroundTimeline from '@/features/countries/components/BackgroundTimeline';
 import { SaveButton } from '@/shared/ui/SaveButton';
 import { FollowButton } from '@/shared/ui/FollowButton';

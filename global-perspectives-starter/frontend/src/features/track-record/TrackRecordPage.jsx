@@ -7,7 +7,7 @@ import Card from '@/shared/ui/Card.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/shared/ui/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
 import DrawRow from '@/features/track-record/components/DrawRow.jsx';
 import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';

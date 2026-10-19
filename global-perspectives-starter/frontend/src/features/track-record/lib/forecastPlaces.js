@@ -6,7 +6,7 @@
 // hand-typed list, and never a guess from a city or an implied region. A trigger that names no
 // known country is simply not plotted (never a made-up pin — see StoryMode.jsx's shading rule).
 import { ISO3_NAME } from '@/shared/lib/situationLabels.js';
-import { itemState } from '@/features/track-record/lib/questionStates.js';
+import { itemState } from '@/shared/lib/questionStates.js';
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 

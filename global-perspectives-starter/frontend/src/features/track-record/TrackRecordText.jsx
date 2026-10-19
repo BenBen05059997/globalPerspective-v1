@@ -6,8 +6,8 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
 import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
-import { itemState, stateMeta } from '@/features/track-record/lib/questionStates.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { itemState, stateMeta } from '@/shared/lib/questionStates.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/TrackRecordText.css';
 
 // TrackRecordText — E1, the plain, printable, screen-reader-first text rendering of the same

@@ -3,7 +3,7 @@
 // `prediction_snapshot` (or a buildDeadlines() item carrying the same fields). A trigger without
 // `question: true` has NO probability of its own: it gets no chip (the scenario probability is
 // never shown as its own), and the surface shows one honest note instead.
-import { STATE_META } from '@/features/track-record/lib/questionStates.js';
+import { STATE_META } from '@/shared/lib/questionStates.js';
 
 const SCORING_TEXT = {
   awaiting_draw: 'not drawn yet (this week’s sample is drawn after the week closes)',

@@ -14,8 +14,8 @@ import {
   scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
-import { legacyNote } from '@/features/threads/lib/questionChips.js';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { legacyNote } from '@/shared/lib/questionChips.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';

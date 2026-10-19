@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dropRedatedRepeats } from '@/features/threads/hooks/useNarrativeThread';
+import { dropRedatedRepeats } from '@/shared/lib/dropRedatedRepeats.js';
 
 describe('dropRedatedRepeats', () => {
   it('keeps the earliest copy of a re-dated headline (live AfD case: 13 Sep re-written as 27 Sep)', () => {

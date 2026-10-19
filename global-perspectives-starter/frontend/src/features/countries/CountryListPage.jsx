@@ -6,7 +6,7 @@ import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList'
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { countryTier, compareByRisk } from '@/features/countries/lib/countryTier';
-import { trajectoryOf } from '@/features/countries/lib/trajectory';
+import { trajectoryOf } from '@/shared/lib/trajectory';
 import CountryOverviewMap from '@/features/countries/components/CountryOverviewMap';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';

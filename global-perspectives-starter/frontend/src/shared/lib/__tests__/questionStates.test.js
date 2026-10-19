@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { itemState, stateMeta } from '@/features/track-record/lib/questionStates.js';
+import { itemState, stateMeta } from '@/shared/lib/questionStates.js';
 
 describe('questionStates', () => {
   it('a past deadline is its own state: never "awaiting", never a miss', () => {

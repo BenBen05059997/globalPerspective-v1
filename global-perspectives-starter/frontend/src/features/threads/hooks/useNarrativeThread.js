@@ -3,7 +3,6 @@ import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 // dropRedatedRepeats is pure and shared (also with the Studio share Lambda): see shared/lib/dropRedatedRepeats.js
 import { dropRedatedRepeats } from '@/shared/lib/dropRedatedRepeats.js';
 
-export { dropRedatedRepeats };
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // Durable, by-ID timeline reconstruction (server scans the 90-day archive).

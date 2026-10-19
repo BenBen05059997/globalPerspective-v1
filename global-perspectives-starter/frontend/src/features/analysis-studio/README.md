@@ -28,7 +28,7 @@ Output is checked by a validator, rendered as a deck, and can be shared.
 
 ## Imports from other features
 - `@/shared/hooks/useMembership` -> member / credit balance; `@/features/threads/hooks/useWeeklyArchive`, `hooks/useNarrativeThread`, `components/StoryMode` (`StoryMap`)
-- `@/shared/lib/situationLabels.js` -> `iso3ForName`; `@/features/track-record/lib/trFormatDate.js` -> `fmtDay`
+- `@/shared/lib/situationLabels.js` -> `iso3ForName`; `@/shared/lib/trFormatDate.js` -> `fmtDay`
 
 ## Gotchas
 - Signed-out and anonymous users get a modal sign-in gate; `SignedOutExample` shows `EXAMPLE_SHARE_ID` (`lib/sharedExample.js`, currently `null` -> "not ready yet").

@@ -1,6 +1,6 @@
 // linkStates — the honest "no links" wording for a story, chosen from the index's own `state`
 // (never guessed). Every empty state ends with the refresh line: the real date of the last run.
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 
 const DAY = 86400000;
 const STALE_DAYS = 2;

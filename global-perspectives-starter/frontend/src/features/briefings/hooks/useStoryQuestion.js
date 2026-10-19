@@ -1,7 +1,7 @@
 import { fetchPredictionSnapshotByThread } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
-import { hasOwnProbability } from '@/features/threads/lib/questionChips.js';
+import { hasOwnProbability } from '@/shared/lib/questionChips.js';
 
 // The earliest still-open question with its own probability, or null. Fails empty and reports.
 export function pickNextQuestion(snapshot, today = new Date().toISOString().slice(0, 10)) {

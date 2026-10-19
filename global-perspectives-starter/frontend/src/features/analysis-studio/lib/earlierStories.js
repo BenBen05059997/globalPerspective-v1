@@ -5,7 +5,7 @@
 // without the network — AnalysisStudio.jsx supplies the fetched `dayMap` (from
 // useWeeklyArchive, the same hook /weekly already uses) and calls this.
 
-import { dropRedatedRepeats } from '@/features/threads/hooks/useNarrativeThread';
+import { dropRedatedRepeats } from '@/shared/lib/dropRedatedRepeats.js';
 
 // buildEarlierStoryList(dayMap, { excludeTopicIds, query }) → rows, newest-real-date first.
 //   dayMap:          useWeeklyArchive()'s `{ [dateLabel]: { entries, source, updatedAt } }`

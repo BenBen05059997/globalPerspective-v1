@@ -7,13 +7,10 @@ import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
+import SubscribeCard from '@/shared/ui/SubscribeCard';
+import Trajectory from '@/features/briefings/components/Trajectory.jsx';
 import { countryLinkPath, storyLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
-
-const TRAJECTORY = {
-  escalating: { arrow: '↗', label: 'Escalating' },
-  stable: { arrow: '→', label: 'Stable' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating' },
-};
 
 // A brief's riskLevel as the neutral TierChip; a value outside the four tiers stays plain text
 // (TierChip would otherwise read it as "Not scored").
@@ -44,7 +41,6 @@ function Peekable({ id, item, children }) {
 // ── Daily ─────────────────────────────────────────────────────────────────────
 
 export function DaySlide({ brief }) {
-  const stats = brief.stats || {};
   return (
     <div className="bm-slide bm-slide-day">
       <div className="bm-slide-kicker">
@@ -55,11 +51,6 @@ export function DaySlide({ brief }) {
       {brief.summary && (
         <p className="bm-slide-text">{brief.summary.split(/\n{2,}/)[0].replace(/\*\*/g, '')}</p>
       )}
-      <div className="bm-slide-stats">
-        {stats.totalArticles > 0 && <span><b>{stats.totalArticles}</b> articles</span>}
-        {stats.sourceOutlets > 0 && <span><b>{stats.sourceOutlets}</b> outlets</span>}
-        {stats.countriesCovered > 0 && <span><b>{stats.countriesCovered}</b> countries</span>}
-      </div>
     </div>
   );
 }
@@ -115,7 +106,7 @@ export function StorySlide({ story, index }) {
 }
 
 export function WatchSlide({ countryToWatch, risingThread }) {
-  const traj = countryToWatch.trajectory && TRAJECTORY[countryToWatch.trajectory];
+  const risingIsThread = /^thread-/.test(risingThread?.threadId || '');
   return (
     <div className="bm-slide bm-slide-watch">
       <div className="bm-slide-kicker">COUNTRY TO WATCH</div>
@@ -124,13 +115,17 @@ export function WatchSlide({ countryToWatch, risingThread }) {
       </h2>
       <div className="bm-slide-stats">
         {countryToWatch.riskLevel && <RiskLevel level={countryToWatch.riskLevel} />}
-        {traj && <span>{traj.arrow} {traj.label}</span>}
+        <Trajectory value={countryToWatch.trajectory} />
       </div>
       {countryToWatch.headline && <p className="bm-slide-text">{countryToWatch.headline}</p>}
       {risingThread?.title && (
         <div className="bm-rising">
           <span className="bm-inference-badge">rising thread</span>
-          <p className="bm-rising-title">{risingThread.title}</p>
+          <p className="bm-rising-title">
+            {risingIsThread
+              ? <StoryLink threadId={risingThread.threadId} topic={{ title: risingThread.title }}>{risingThread.title}</StoryLink>
+              : risingThread.title}
+          </p>
           {risingThread.oneLiner && <p>{risingThread.oneLiner}</p>}
         </div>
       )}
@@ -141,9 +136,6 @@ export function WatchSlide({ countryToWatch, risingThread }) {
 // ── Weekly ────────────────────────────────────────────────────────────────────
 
 export function WeekSlide({ brief }) {
-  const signals = brief.signals || [];
-  const threats = signals.filter((s) => s.kind !== 'development');
-  const highest = threats.length ? threats[0].riskLevel : null;
   return (
     <div className="bm-slide bm-slide-week">
       <div className="bm-slide-kicker">
@@ -151,11 +143,6 @@ export function WeekSlide({ brief }) {
         <span className="bm-ai-tag">AI-generated</span>
       </div>
       <h2 className="bm-slide-title">The week's signals, ranked by risk</h2>
-      <div className="bm-slide-stats">
-        <span><b>{signals.length}</b> signals</span>
-        {highest && <span><b>{highest}</b> highest risk</span>}
-        <span><b>{(brief.watch || []).length}</b> to watch</span>
-      </div>
     </div>
   );
 }
@@ -172,7 +159,12 @@ export function SignalSlide({ signal, index }) {
       <Peekable id={`bm-signal-${index}`} item={peekInputForSignal(signal)}>
         <h2 className="bm-slide-title">{signal.lede}</h2>
       </Peekable>
-      {signal.region && <p className="bm-slide-tags">{signal.region}</p>}
+      {(signal.region || signal.asOf) && (
+        <p className="bm-slide-tags">
+          {signal.region}
+          {signal.asOf && <span className="bm-tag-src">as of {signal.asOf}</span>}
+        </p>
+      )}
       {signal.fact && <p className="bm-slide-text"><span className="bm-fact-badge">FACT</span> {signal.fact}</p>}
       {signal.soWhat && <p className="bm-slide-text"><span className="bm-inference-badge">so what</span> {signal.soWhat}</p>}
       {signal.threadId && <Link to={threadPath(signal.threadId)} className="bm-slide-link">Read the full story arc →</Link>}
@@ -198,13 +190,23 @@ export function NextWeekSlide({ watch }) {
   );
 }
 
-export function SlideBody({ mode, slide, brief }) {
+function WeeklySlide({ slide, brief }) {
+  if (slide.kind === 'week') return <WeekSlide brief={brief} />;
+  if (slide.kind === 'signal') return <SignalSlide signal={slide.signal} index={slide.index} />;
+  if (slide.kind === 'next') return <NextWeekSlide watch={slide.watch} />;
+  return null;
+}
+
+// The weekly deck ends with the weekly-brief email sign-up (the same card as the weekly read mode).
+export function SlideBody({ mode, slide, brief, isLast = false }) {
   if (!slide) return null;
   if (mode === 'weekly') {
-    if (slide.kind === 'week') return <WeekSlide brief={brief} />;
-    if (slide.kind === 'signal') return <SignalSlide signal={slide.signal} index={slide.index} />;
-    if (slide.kind === 'next') return <NextWeekSlide watch={slide.watch} />;
-    return null;
+    return (
+      <>
+        <WeeklySlide slide={slide} brief={brief} />
+        {isLast && <SubscribeCard variant="weekly" />}
+      </>
+    );
   }
   if (slide.kind === 'day') return <DaySlide brief={brief} />;
   if (slide.kind === 'story') return <StorySlide story={slide.story} index={slide.index} />;

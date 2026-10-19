@@ -208,8 +208,11 @@ export async function fetchLatestDailyBrief(lookbackDays = 30) {
   return proxyAction('latest_daily_brief', { lookbackDays });
 }
 
-export async function fetchWeeklyBrief() {
-  return proxyAction('weekly_brief');
+// The latest published weekly brief, or the one published for `week` (its weekOf, YYYY-MM-DD) when
+// given (data null when that week has none). A read API without per-week lookup ignores the field
+// and answers with the latest edition.
+export async function fetchWeeklyBrief(week = null) {
+  return proxyAction('weekly_brief', week ? { week } : {});
 }
 
 export async function fetchWeeklyMarkets() {

@@ -32,7 +32,7 @@
  *                    reads as real content/state on an intelligence site → misinformation.
  *                    The sink POST is intercepted + aborted so the test never writes to DynamoDB.
  *
- * Param routes (/weekly/thread/:id, /weekly/country/:name, /daily/:dateKey) are
+ * Param routes (/weekly/thread/:id, /weekly/country/:name, /briefings?mode=read&date=) are
  * auto-discovered by scraping their listing page, so the test never rots on a
  * hard-coded id.
  *
@@ -104,7 +104,9 @@ const GARBAGE = [
 const STATIC_ROUTES = [
   { name: 'Home',        path: '/',                 content: ['.home-shell'] },
   { name: 'Map',         path: '/map',              content: ['.mv2'] },
-  { name: 'Daily',       path: '/daily',            content: ['.daily-footprint'] },
+  { name: 'Briefings',   path: '/briefings?mode=read', content: ['.daily-masthead'] },
+  { name: 'WeeklyBrief', path: '/briefings?mode=weekly', content: ['.wb-sig'] },
+  { name: 'Present',     path: '/briefings?mode=present', content: ['.bm-root'] },
   { name: 'Economy',     path: '/economy',          content: ['.ep-row-l1'] },
   { name: 'Weekly',      path: '/weekly',           content: ['.weekly-feed', '.arc-dots', '.weekly-empty-state'], skipPaint: true },
   { name: 'CountryList', path: '/weekly/countries', content: ['.clp-card'] },
@@ -504,8 +506,8 @@ async function checkErrorBoundary(browser) {
   if (countryPath) routes.push({ name: 'Country', path: countryPath, content: ['.cpg-hd-h1', '.cp-coverage'], region: '.cp-coverage' });
   else console.log('  ! could not discover a country from /weekly/countries — skipping Country');
 
-  const dailyPath = await discover(browser, '/daily', 'a[href*="/daily/2"]');
-  if (dailyPath) routes.push({ name: 'DailyDated', path: dailyPath, content: ['.daily-footprint'] });
+  const dailyPath = await discover(browser, '/briefings?mode=read', 'a[href*="mode=read&date=2"]');
+  if (dailyPath) routes.push({ name: 'DailyDated', path: dailyPath, content: ['.daily-masthead'] });
 
   const results = [];
   for (const route of routes) {

@@ -13,7 +13,9 @@ import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
-import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
+import {
+  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect,
+} from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
 import { WAITING_SENSORS } from '@/features/map';
@@ -29,7 +31,6 @@ const WeeklyPage = lazy(() => import('@/features/threads/WeeklyPage'));
 const ThreadPage = lazy(() => import('@/features/threads/ThreadPage'));
 const CountryPage = lazy(() => import('@/features/countries/CountryPage'));
 const CountryListPage = lazy(() => import('@/features/countries/CountryListPage'));
-const DailyPage = lazy(() => import('@/features/daily/DailyPage'));
 const SignIn = lazy(() => import('@/features/account/SignIn'));
 const AuthCallback = lazy(() => import('@/features/account/AuthCallback'));
 const Account = lazy(() => import('@/features/account/Account'));
@@ -40,7 +41,6 @@ const AnalysisStudio = lazy(() => import('@/features/analysis-studio/AnalysisStu
 const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
 const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
-const WeeklyBriefPage = lazy(() => import('@/features/weekly-brief/WeeklyBriefPage'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
@@ -125,15 +125,15 @@ export default function App() {
             <Route path="/about" element={<AboutContact />} />
             <Route path="/disclosures" element={<Disclosures />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/daily" element={<DailyPage />} />
-            <Route path="/daily/:dateKey" element={<DailyPage />} />
+            <Route path="/daily" element={<DailyRedirect />} />
+            <Route path="/daily/:dateKey" element={<DailyRedirect />} />
             <Route path="/economy" element={<EconomyPage />} />
             <Route path="/analyze" element={<AnalysisStudio />} />
             <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
             <Route path="/membership" element={<MembershipPage />} />
             <Route path="/track-record" element={<TrackRecordPage />} />
             <Route path="/track-record/text" element={<TrackRecordText />} />
-            <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
+            <Route path="/weekly-brief" element={<WeeklyBriefRedirect />} />
             <Route path="/briefings" element={<BriefingsPage />} />
             <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />

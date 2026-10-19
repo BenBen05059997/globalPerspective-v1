@@ -1,59 +1,96 @@
 import { useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { useWeeklyBrief } from '@/features/weekly-brief';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
+import { briefingPath, dateKeyOrNull } from '@/features/briefings/lib/briefingPath.js';
 import BriefingMode from '@/features/briefings/components/BriefingMode.jsx';
-import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import PhoneBriefingMode from '@/features/briefings/components/PhoneBriefingMode.jsx';
+import ReadMode from '@/features/briefings/components/ReadMode.jsx';
+import WeeklyMode from '@/features/briefings/components/WeeklyMode.jsx';
+import BriefingError from '@/features/briefings/components/BriefingError.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import Tabs from '@/shared/ui/Tabs.jsx';
 import '@/features/briefings/BriefingsPage.css';
 
-// BriefingsPage — S3: /briefings, briefing mode (map + horizontal slides + editions strip), the
-// same pattern as story mode. DAILY/WEEKLY chosen by ?mode=, a specific daily edition by ?date=
-// (both optional — default is the latest of whichever mode). `?from=markets` (the retired
-// /weekly-markets redirect) shows a one-line paused note; briefings never carries a markets line
-// while economy stays parked (REDESIGN_MASTER_PLAN.md §3.6).
-export default function BriefingsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+const MODES = [
+  { key: 'read', label: 'Daily' },
+  { key: 'weekly', label: 'Weekly' },
+  { key: 'present', label: 'Present' },
+];
+const MODE_KEYS = new Set(MODES.map((m) => m.key));
+
+// PresentMode — /briefings?mode=present: the slide deck (map + slides + editions), daily by
+// default, `deck=weekly` for the weekly deck. `date=` / `week=` pick the edition.
+function PresentMode({ deck, dateParam, weekParam }) {
+  const navigate = useNavigate();
   const isPhone = useIsPhone();
+  const daily = useDailyBrief(dateParam || undefined);
+  const weekly = useWeeklyBrief(weekParam);
+  const { index: dailyEditionsIndex } = useDailyEditionsIndex(daily.servedDateKey);
+  const current = deck === 'weekly' ? weekly : daily;
 
-  const modeParam = searchParams.get('mode') === 'weekly' ? 'weekly' : 'daily';
-  const dateParam = searchParams.get('date') || null;
-  const fromMarkets = searchParams.get('from') === 'markets';
+  useEffect(() => {
+    document.title = `${deck === 'weekly' ? 'Weekly' : 'Daily'} briefing slides | Global Perspectives`;
+  }, [deck]);
 
-  useEffect(() => { document.title = 'Briefings | Global Perspectives'; }, []);
-
-  const { brief: dailyBrief, servedDateKey, loading: dailyLoading } = useDailyBrief(dateParam || undefined);
-  const { brief: weeklyBrief, loading: weeklyLoading } = useWeeklyBrief();
-
-  const { index: dailyEditionsIndex } = useDailyEditionsIndex(servedDateKey);
-
-  const setMode = useCallback((mode) => {
-    const next = new URLSearchParams(searchParams);
-    if (mode === 'weekly') next.set('mode', 'weekly'); else next.delete('mode');
-    next.delete('date'); // a date param only ever applies to the daily edition
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
-
+  const go = useCallback((to) => navigate(to, { replace: true }), [navigate]);
+  const setDeck = useCallback((d) => go(briefingPath({ mode: 'present', deck: d })), [go]);
   const selectDailyDate = useCallback((dateKey) => {
-    const next = new URLSearchParams(searchParams);
-    next.delete('mode');
-    if (dateKey && dateKey !== servedDateKey) next.set('date', dateKey); else next.delete('date');
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, servedDateKey]);
+    go(briefingPath({ mode: 'present', date: dateKey && dateKey !== daily.servedDateKey ? dateKey : null }));
+  }, [go, daily.servedDateKey]);
+  const weekHref = useCallback((week) => briefingPath({ mode: 'present', deck: 'weekly', week }), []);
 
-  const loading = modeParam === 'weekly' ? weeklyLoading : dailyLoading;
-
-  if (loading && !dailyBrief && !weeklyBrief) {
-    return (
-      <div className="bm-page">
-        <BootLoader variant="inline" label="Loading briefing" text="Loading briefing" />
-      </div>
-    );
+  if (current.loading && !current.brief) {
+    return <BootLoader variant="inline" label="Loading briefing" text="Loading briefing" />;
+  }
+  if (current.error && !current.brief) {
+    return <BriefingError what={deck === 'weekly' ? 'weekly' : 'daily'} error={current.error} onRetry={current.refetch} />;
   }
 
   const Mode = isPhone ? PhoneBriefingMode : BriefingMode;
+  return (
+    <Mode
+      mode={deck === 'weekly' ? 'weekly' : 'daily'}
+      onModeChange={setDeck}
+      dailyBrief={daily.brief}
+      weeklyBrief={weekly.brief}
+      dailyEditionsIndex={dailyEditionsIndex}
+      dailyAnchorDateKey={daily.servedDateKey}
+      requestedDateKey={dateParam}
+      onSelectDailyDate={selectDailyDate}
+      requestedWeek={weekParam}
+      hrefForWeek={weekHref}
+    />
+  );
+}
+
+// BriefingsPage — /briefings, the one briefings page. Three modes, picked by `?mode=`:
+//   read (default)  the daily brief as a long-form read          ?date=YYYY-MM-DD
+//   weekly          the weekly signals brief as a long-form read  ?week=YYYY-MM-DD
+//   present         the slide deck (map + slides + editions)      ?deck=weekly, ?date=, ?week=
+// `?from=markets` (the retired /weekly-markets redirect) adds a one-line paused note; briefings
+// never carries a markets line while economy stays parked (REDESIGN_MASTER_PLAN.md §3.6).
+// Old addresses (/daily, /daily/:date, /weekly-brief) redirect here (app/LegacyRedirects.jsx).
+export default function BriefingsPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const modeParam = searchParams.get('mode');
+  const mode = MODE_KEYS.has(modeParam) ? modeParam : 'read';
+  const dateParam = dateKeyOrNull(searchParams.get('date'));
+  const weekParam = dateKeyOrNull(searchParams.get('week'));
+  const deck = searchParams.get('deck') === 'weekly' ? 'weekly' : 'daily';
+  const fromMarkets = searchParams.get('from') === 'markets';
+
+  // Switching mode keeps the edition that applies to the new mode (date for read, week for weekly).
+  const setMode = useCallback((next) => {
+    navigate(briefingPath({
+      mode: next,
+      date: next === 'read' ? dateParam : null,
+      week: next === 'weekly' ? weekParam : null,
+    }));
+  }, [navigate, dateParam, weekParam]);
 
   return (
     <div className="bm-page">
@@ -62,16 +99,12 @@ export default function BriefingsPage() {
           Weekly markets briefings are paused while the economy section is parked — no markets line here.
         </div>
       )}
-      <Mode
-        mode={modeParam}
-        onModeChange={setMode}
-        dailyBrief={dailyBrief}
-        weeklyBrief={weeklyBrief}
-        dailyEditionsIndex={dailyEditionsIndex}
-        dailyAnchorDateKey={servedDateKey}
-        requestedDateKey={dateParam}
-        onSelectDailyDate={selectDailyDate}
-      />
+      <div className="bm-page-head">
+        <Tabs variant="segmented" idBase="brf-mode" label="Briefing mode" tabs={MODES} active={mode} onChange={setMode} />
+      </div>
+      {mode === 'read' && <ReadMode dateParam={dateParam} />}
+      {mode === 'weekly' && <WeeklyMode weekParam={weekParam} />}
+      {mode === 'present' && <PresentMode deck={deck} dateParam={dateParam} weekParam={weekParam} />}
     </div>
   );
 }

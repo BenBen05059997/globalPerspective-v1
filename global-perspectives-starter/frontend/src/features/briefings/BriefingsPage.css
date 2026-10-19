@@ -1,6 +1,15 @@
 .bm-page { width: 100%; }
+.bm-page-head { display: flex; justify-content: center; padding: var(--space-3) var(--space-4) var(--space-2); }
 .bm-markets-note {
   margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-4);
   background: var(--warn-wash); color: var(--text-body); border: 1px solid var(--warn);
   border-radius: var(--r-md); font-size: var(--text-base); line-height: var(--leading-normal);
 }
+/* A failed request (BriefingError): a status line, not a placeholder page. */
+.bm-error {
+  max-width: 640px; margin: var(--space-10) auto; padding: var(--space-4) var(--space-5);
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  border: 1px solid var(--hairline); border-left: 3px solid var(--error); border-radius: var(--r-xs);
+  background: var(--panel-2); color: var(--text-body); font-size: var(--text-base);
+}
+.bm-error p { margin: 0; flex: 1 1 260px; }

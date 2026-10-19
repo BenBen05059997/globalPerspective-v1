@@ -183,8 +183,8 @@ test.describe('Economy layer — cross-page journey', () => {
     await expect(economyLens).toBeVisible({ timeout: 5_000 });
   });
 
-  test('Step 9: /daily renders the page and any econ section deep-links to economy tab', async ({ page }) => {
-    await page.goto('/daily');
+  test('Step 9: /briefings (read mode) renders the page and any econ section deep-links to economy tab', async ({ page }) => {
+    await page.goto('/briefings?mode=read');
     await page.waitForLoadState('networkidle');
     const econLinks = page.locator('a[href*="tab=economy"]');
     const linkCount = await econLinks.count();

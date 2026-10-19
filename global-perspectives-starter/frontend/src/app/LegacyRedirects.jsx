@@ -5,10 +5,25 @@
 //   /breaking            -> /                         (the map's alert stack replaced the feed)
 //   /breaking/:id        -> the alert's story /weekly/thread/:threadId when the alert resolves to
 //                           one (the single-alert read says it has an arc), else /
+// Briefings merge (2026-10-19): one /briefings page with read / weekly / present modes.
+//   /daily               -> /briefings?mode=read
+//   /daily/:dateKey      -> /briefings?mode=read&date=:dateKey  (a malformed date drops to latest)
+//   /weekly-brief        -> /briefings?mode=weekly
+// The Worker sends real 301s for these; the client redirects stay as the fallback.
 import { Navigate, useParams } from 'react-router';
 import { useBreakingAlert } from '@/features/breaking';
+import { briefingPath, dateKeyOrNull } from '@/features/briefings';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { threadPath } from '@/shared/lib/threadPath';
+
+export function DailyRedirect() {
+  const { dateKey } = useParams();
+  return <Navigate replace to={briefingPath({ date: dateKeyOrNull(dateKey) })} />;
+}
+
+export function WeeklyBriefRedirect() {
+  return <Navigate replace to={briefingPath({ mode: 'weekly' })} />;
+}
 
 export function MarketsRedirect() {
   return <Navigate replace to="/briefings?from=markets" />;

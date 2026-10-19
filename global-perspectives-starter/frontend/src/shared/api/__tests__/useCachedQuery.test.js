@@ -84,7 +84,17 @@ describe('useCachedQuery', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it('errors surface as `error` with data cleared, and are not cached', async () => {
+  it('a failed refetch keeps the data it had and sets `error`', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce('v1').mockRejectedValueOnce(new Error('down'));
+    const { result } = renderHook(() => useCachedQuery('k11', fetcher));
+    await waitFor(() => expect(result.current.data).toBe('v1'));
+    act(() => result.current.refetch());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.data).toBe('v1');
+    expect(result.current.error.message).toBe('down');
+  });
+
+  it('errors surface as `error` with no data, and are not cached', async () => {
     const fetcher = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce('ok');
     const { result } = renderHook(() => useCachedQuery('k8', fetcher, { storage: 'local' }));
     await waitFor(() => expect(result.current.loading).toBe(false));

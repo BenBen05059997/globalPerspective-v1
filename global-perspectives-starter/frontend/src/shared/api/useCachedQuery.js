@@ -10,7 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 // Returns { data, error, loading, refetch }. A fresh cached value is returned on the first render
 // (no loading flash, no request). Identical keys in flight share one request. A result that arrives
 // after the key changed or the component unmounted is dropped (stale guard). `refetch()` always goes
-// to the network and keeps the current data until the new value lands.
+// to the network and keeps the current data until the new value lands; a failed refetch keeps it
+// too (with `error` set), so a background refresh that fails never blanks a page.
 
 const memory = new Map(); // key -> { data, ts }
 const inFlight = new Map(); // key -> Promise<value>
@@ -73,7 +74,7 @@ export function useCachedQuery(key, fetcher, { ttl = Infinity, storage = 'memory
     const ctrl = new AbortController();
     fetchShared(key, storage, fetcher).then(
       (data) => { if (!ctrl.signal.aborted) setState({ key, data, error: null, loading: false }); },
-      (error) => { if (!ctrl.signal.aborted) setState({ key, data: undefined, error, loading: false }); },
+      (error) => { if (!ctrl.signal.aborted) setState((s) => ({ key, data: s.data, error, loading: false })); },
     );
     return () => ctrl.abort();
     // The fetcher is read when a fetch starts; the key is its identity.

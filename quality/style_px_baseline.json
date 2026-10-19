@@ -1,0 +1,333 @@
+{
+  "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
+  "totals": {
+    "spacing": 2315,
+    "fontSize": 1002,
+    "radius": 297
+  },
+  "files": {
+    "app/App.jsx": {
+      "spacing": 4
+    },
+    "app/index.css": {
+      "fontSize": 1,
+      "radius": 5,
+      "spacing": 1
+    },
+    "app/layout/Layout.css": {
+      "fontSize": 11,
+      "radius": 3,
+      "spacing": 35
+    },
+    "app/layout/LoadingIndicators.css": {
+      "fontSize": 2,
+      "spacing": 4
+    },
+    "features/account/Account.css": {
+      "fontSize": 8,
+      "radius": 8,
+      "spacing": 43
+    },
+    "features/account/Account.jsx": {
+      "radius": 5,
+      "spacing": 9
+    },
+    "features/account/components/Desk.css": {
+      "fontSize": 8,
+      "radius": 3,
+      "spacing": 18
+    },
+    "features/account/components/FollowButton.jsx": {
+      "fontSize": 1,
+      "radius": 1,
+      "spacing": 3
+    },
+    "features/account/components/SaveButton.jsx": {
+      "spacing": 1
+    },
+    "features/account/components/SubscribeCard.css": {
+      "fontSize": 3,
+      "radius": 2
+    },
+    "features/account/MembershipPage.css": {
+      "spacing": 11
+    },
+    "features/account/SignIn.css": {
+      "fontSize": 14,
+      "radius": 6,
+      "spacing": 25
+    },
+    "features/account/SignIn.jsx": {
+      "fontSize": 2,
+      "spacing": 2
+    },
+    "features/analysis-studio/AnalysisStudio.css": {
+      "fontSize": 14,
+      "radius": 4,
+      "spacing": 104
+    },
+    "features/analysis-studio/components/AnalysisVisuals.css": {
+      "fontSize": 6,
+      "radius": 2,
+      "spacing": 13
+    },
+    "features/analysis-studio/components/ProviderModal.css": {
+      "fontSize": 1,
+      "spacing": 10
+    },
+    "features/analysis-studio/components/StudioDeck.css": {
+      "fontSize": 13,
+      "spacing": 34
+    },
+    "features/analysis-studio/components/StudioPictures.css": {
+      "fontSize": 19,
+      "radius": 6,
+      "spacing": 42
+    },
+    "features/breaking/components/BreakingStrip.css": {
+      "fontSize": 5,
+      "radius": 1,
+      "spacing": 6
+    },
+    "features/breaking/components/NotificationBell.css": {
+      "fontSize": 6,
+      "radius": 3,
+      "spacing": 11
+    },
+    "features/briefings/BriefingsPage.css": {
+      "fontSize": 1,
+      "radius": 1,
+      "spacing": 3
+    },
+    "features/briefings/components/BriefingMode.css": {
+      "fontSize": 30,
+      "radius": 6,
+      "spacing": 68
+    },
+    "features/briefings/components/PhoneBriefingMode.css": {
+      "fontSize": 1,
+      "spacing": 5
+    },
+    "features/countries/components/CountryCardV2.css": {
+      "fontSize": 18,
+      "radius": 6,
+      "spacing": 32
+    },
+    "features/countries/components/CountryWhatChanged.css": {
+      "fontSize": 11,
+      "radius": 2,
+      "spacing": 22
+    },
+    "features/countries/CountryCoverage.css": {
+      "fontSize": 21,
+      "radius": 1,
+      "spacing": 54
+    },
+    "features/countries/CountryListPage.css": {
+      "fontSize": 16,
+      "radius": 6,
+      "spacing": 41
+    },
+    "features/countries/CountryPage.css": {
+      "fontSize": 57,
+      "radius": 12,
+      "spacing": 130
+    },
+    "features/countries/CountryPage.jsx": {
+      "fontSize": 6,
+      "spacing": 15
+    },
+    "features/daily/DailyPage.css": {
+      "fontSize": 43,
+      "radius": 4,
+      "spacing": 96
+    },
+    "features/economy/components/WeeklyMarketsView.css": {
+      "fontSize": 26,
+      "radius": 4,
+      "spacing": 26
+    },
+    "features/economy/EconomyPage.css": {
+      "fontSize": 76,
+      "radius": 20,
+      "spacing": 158
+    },
+    "features/home/AIComponents.css": {
+      "fontSize": 13,
+      "radius": 6,
+      "spacing": 30
+    },
+    "features/home/components/LedeBand.css": {
+      "fontSize": 4,
+      "radius": 2,
+      "spacing": 7
+    },
+    "features/home/components/PredictionDisplay.jsx": {
+      "fontSize": 16,
+      "radius": 2,
+      "spacing": 21
+    },
+    "features/home/components/SummaryDisplay.jsx": {
+      "fontSize": 3,
+      "spacing": 8
+    },
+    "features/home/components/TodayArchiveSidebar.css": {
+      "fontSize": 26,
+      "radius": 14,
+      "spacing": 68
+    },
+    "features/home/components/TopicNav.css": {
+      "fontSize": 12,
+      "radius": 6,
+      "spacing": 27
+    },
+    "features/home/components/TraceCauseDisplay.jsx": {
+      "fontSize": 17,
+      "radius": 2,
+      "spacing": 24
+    },
+    "features/home/Home.css": {
+      "fontSize": 34,
+      "radius": 7,
+      "spacing": 65
+    },
+    "features/home/Home.jsx": {
+      "spacing": 1
+    },
+    "features/map/components/HudStatusLine.css": {
+      "fontSize": 2,
+      "radius": 1,
+      "spacing": 4
+    },
+    "features/map/components/SituationMap3D.jsx": {
+      "fontSize": 1,
+      "radius": 1,
+      "spacing": 2
+    },
+    "features/map/SituationHome.css": {
+      "fontSize": 91,
+      "radius": 39,
+      "spacing": 214
+    },
+    "features/map/SituationHome.jsx": {
+      "spacing": 4
+    },
+    "features/static/AboutContact.jsx": {
+      "radius": 2,
+      "spacing": 14
+    },
+    "features/static/Contact.jsx": {
+      "radius": 3,
+      "spacing": 11
+    },
+    "features/static/WhitepaperPage.jsx": {
+      "radius": 5,
+      "spacing": 1
+    },
+    "features/threads/components/PhoneStoryMode.css": {
+      "fontSize": 11,
+      "radius": 4,
+      "spacing": 30
+    },
+    "features/threads/components/QuestionChip.css": {
+      "fontSize": 2
+    },
+    "features/threads/components/StoryEntryCard.jsx": {
+      "spacing": 1
+    },
+    "features/threads/components/StoryMode.css": {
+      "fontSize": 43,
+      "radius": 2,
+      "spacing": 55
+    },
+    "features/threads/components/WeeklyMap.css": {
+      "fontSize": 44,
+      "radius": 29,
+      "spacing": 122
+    },
+    "features/threads/components/WeeklyMap.jsx": {
+      "fontSize": 3
+    },
+    "features/threads/Stories.css": {
+      "fontSize": 42,
+      "radius": 2,
+      "spacing": 112
+    },
+    "features/threads/ThreadPage.css": {
+      "fontSize": 89,
+      "radius": 11,
+      "spacing": 156
+    },
+    "features/threads/ThreadPage.jsx": {
+      "fontSize": 12,
+      "radius": 1,
+      "spacing": 21
+    },
+    "features/threads/WeeklyPage.css": {
+      "fontSize": 15,
+      "radius": 12,
+      "spacing": 48
+    },
+    "features/track-record/components/DrawRow.css": {
+      "radius": 2,
+      "spacing": 4
+    },
+    "features/track-record/components/ForecastBoard.css": {
+      "fontSize": 2,
+      "radius": 6,
+      "spacing": 22
+    },
+    "features/track-record/components/SettlingLog.css": {
+      "radius": 2,
+      "spacing": 4
+    },
+    "features/track-record/TrackRecordPage.css": {
+      "radius": 3,
+      "spacing": 16
+    },
+    "features/weekly-brief/WeeklyBriefPage.css": {
+      "fontSize": 22,
+      "radius": 2,
+      "spacing": 23
+    },
+    "shared/styles/tokens.css": {
+      "fontSize": 3,
+      "spacing": 9
+    },
+    "shared/ui/atoms.css": {
+      "fontSize": 45,
+      "radius": 11,
+      "spacing": 103
+    },
+    "shared/ui/blocks.css": {
+      "fontSize": 10,
+      "radius": 1,
+      "spacing": 22
+    },
+    "shared/ui/boot/BootLoader.css": {
+      "fontSize": 8,
+      "radius": 1,
+      "spacing": 13
+    },
+    "shared/ui/boot/BootLoaderInline.css": {
+      "fontSize": 1,
+      "spacing": 1
+    },
+    "shared/ui/boot/LoadTopBar.css": {
+      "radius": 2
+    },
+    "shared/ui/risk/RiskScorecard.css": {
+      "fontSize": 8,
+      "radius": 5,
+      "spacing": 15
+    },
+    "shared/ui/ShareButtons.css": {
+      "fontSize": 1,
+      "spacing": 4
+    },
+    "shared/ui/TierChip.css": {
+      "fontSize": 2,
+      "spacing": 7
+    }
+  }
+}

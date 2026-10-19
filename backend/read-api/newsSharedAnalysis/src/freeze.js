@@ -91,14 +91,19 @@ export async function freezeSources({ stories, fetchers, onError = () => {} }) {
     return { ok: false, status: 502, code: 'upstream_failed', message: 'Our archive could not be read just now. Please try again.' };
   }
 
+  // Each source / citation names its story's thread (the shared context modules key them by story title).
+  const threadOf = new Map();
+  for (const s of selected) if (!threadOf.has(s.title)) threadOf.set(s.title, s.threadId);
+  const threadIdFor = (storyTitle) => threadOf.get(storyTitle) || null;
+  const citations = built.citations.map((c) => ({ ...c, threadId: threadIdFor(c.storyTitle) }));
   const sources = built.sources.map((s) => ({
     n: s.n, kind: s.kind, date: s.date ? clip(s.date, 40) : null, label: s.label ? clip(s.label, 80) : null,
-    storyTitle: s.storyTitle ? clip(s.storyTitle, 160) : null, url: safeHttpUrl(s.url), text: clip(s.text, 900),
+    storyTitle: s.storyTitle ? clip(s.storyTitle, 160) : null, threadId: threadIdFor(s.storyTitle), url: safeHttpUrl(s.url), text: clip(s.text, 900),
   }));
   return {
     ok: true,
     frozen: {
-      context: built.context, citations: built.citations, sources, thin: built.thin,
+      context: built.context, citations, sources, thin: built.thin,
       stories: selected.map((s) => ({ topicId: s.topicId, threadId: s.threadId, title: s.title })),
     },
   };

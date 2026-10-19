@@ -52,3 +52,9 @@ test('selection: only changed threads, newest first, then larger; cap; the rest 
 test('entryIds is sorted and de-duplicated', () => {
   assert.deepEqual(P.entryIds(th('t', [['b', 'd'], ['a', 'd'], ['b', 'd']])), ['a', 'b']);
 });
+
+test('threadIso3: resolved regions, most-mentioned first, regions dropped', () => {
+  const entries = [{ regions: ['Russia', 'Europe'] }, { regions: ['Ukraine', 'Russia'] }, { regions: ['USA', 'Ukraine', 'Russia'] }, { regions: ['United States'] }];
+  assert.deepEqual(P.threadIso3(entries), ['RUS', 'UKR', 'USA']);
+  assert.deepEqual(P.threadIso3([]), []);
+});

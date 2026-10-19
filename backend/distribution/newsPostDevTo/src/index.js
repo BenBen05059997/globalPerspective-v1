@@ -9,7 +9,8 @@ const {
 } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat, stripCodeFence } = require('./_shared/llm');
-const { resolveStoryThreadIds } = require('./threadLinks');
+const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
+const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
@@ -52,7 +53,8 @@ async function loadThreadAnalyses(entries) {
 async function loadCountryIntelligence(entries) {
   if (!SUMMARY_TABLE) return {};
   // Batch 3 / F: real countries only (not Europe / Middle East ...), and only records generated in the last 30 days
-  const countries = [...new Set(entries.flatMap(e => e.regions || []))].filter(isCountryName);
+  // canonical names = the COUNTRY# record keys (USA -> United States)
+  const countries = [...new Set(entries.flatMap(e => (e.regions || []).map((r) => resolveIso3(r)?.name || r)))].filter(isCountryName);
   const intel = {};
   await Promise.all(countries.slice(0, 15).map(async (name) => {
     try {
@@ -216,7 +218,7 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
     summary: brief.summary,
     topStories: Array.isArray(brief.topStories) ? brief.topStories.slice(0, 8) : [],
     risingThread: brief.risingThread || null,
-    countryToWatch: brief.countryToWatch || null,
+    countryToWatch: linkCountryToWatch(brief.countryToWatch, entries),
     categoryBreakdown: brief.categoryBreakdown || {},
     stats: {
       totalArticles: entries.length,

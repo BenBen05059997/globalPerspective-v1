@@ -69,7 +69,7 @@ exports.handler = async (event = {}) => {
     try {
       if (INTER_CALL_DELAY_MS > 0 && generated + failed > 0) await sleep(INTER_CALL_DELAY_MS);
       const analysis = await generateThreadAnalysis(thread);
-      await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS));
+      await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS), policy.threadIso3(thread.entries));
       generated++;
       console.log(`Generated analysis for ${thread.threadId} [${p.reason}] (${thread.entries.length} entries, ${analysis.modelId})`);
     } catch (err) {
@@ -220,7 +220,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
   return { ...parsed, modelId, latencyMs };
 }
 
-async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = []) {
+async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [], iso3 = []) {
   const ttl = Math.floor(Date.now() / 1000) + THREAD_TTL_DAYS * 86400;
 
   // Scoring v2: derive riskScore from the dimensions vector (worst axis); fall
@@ -251,6 +251,7 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [])
       keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 5) : [],
       entryCount,
       entryTopicIds,
+      iso3,
       generatedAt: new Date().toISOString(),
       model: analysis.modelId || GROK_MODEL,
       latencyMs: analysis.latencyMs || 0,

@@ -5,6 +5,8 @@
 // the story title from the headline list, and every headline is an archive entry that already
 // carries a threadId. Pure: no AWS, no network. Unit-tested in ../test/threadLinks.test.js.
 
+const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with', 'by', 'is', 'are', 'its']);
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const tokens = (s) => new Set(norm(s).split(' ').filter((w) => w.length > 2 && !STOP.has(w)));
@@ -55,12 +57,26 @@ function resolveStoryThreadId(title, entries, threadAnalyses = {}) {
   return r === undefined ? null : r;
 }
 
-// topStories[] -> a copy where every story has threadId (string|null). Never throws.
+// topStories[] -> a copy where every story has threadId (string|null) and iso3[] (its regions through
+// the resolver). Never throws.
 function resolveStoryThreadIds(topStories, entries, threadAnalyses = {}) {
   if (!Array.isArray(topStories)) return [];
   return topStories.map((s) => (s && typeof s === 'object'
-    ? { ...s, threadId: resolveStoryThreadId(s.title, entries, threadAnalyses) }
+    ? { ...s, threadId: resolveStoryThreadId(s.title, entries, threadAnalyses), iso3: iso3List(s.regions) }
     : s));
 }
 
-module.exports = { resolveStoryThreadId, resolveStoryThreadIds, norm };
+// countryToWatch -> a copy with iso3[] and threadId: today's thread with the most entries in that country
+// (first seen wins a tie), or null. The model's object is kept as is.
+function linkCountryToWatch(ctw, entries) {
+  if (!ctw || typeof ctw !== 'object') return ctw || null;
+  const iso3 = iso3List([ctw.countryName]);
+  const count = new Map();
+  for (const e of Array.isArray(entries) ? entries : []) {
+    if (e && e.threadId && iso3.length && iso3List(e.regions).includes(iso3[0])) count.set(e.threadId, (count.get(e.threadId) || 0) + 1);
+  }
+  const [threadId = null] = [...count.keys()].sort((a, b) => count.get(b) - count.get(a));
+  return { ...ctw, iso3, threadId };
+}
+
+module.exports = { resolveStoryThreadId, resolveStoryThreadIds, linkCountryToWatch, norm };

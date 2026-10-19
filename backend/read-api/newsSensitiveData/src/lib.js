@@ -7,6 +7,8 @@
 // ⚠️ DEPLOY: this file must be included in the newsSensitiveData deploy zip
 // (index.js requires it). The zip currently lists files explicitly — add lib.js.
 
+const { resolveIso3, iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+
 // Teaser cap: members get the whole (already newest-first) array; everyone else gets the
 // newest `teaser` items + the honest total, so the UI can show "+N earlier — Join to see all".
 // Never fabricates or blurs — real items + a real count (feedback_no_misinformation_fallback).
@@ -101,6 +103,7 @@ function lightEntry(e) {
     regions: e.regions || [],
     sources: e.sources || [],
     threadId: e.threadId || null,
+    iso3: iso3List(e.regions),
   };
 }
 // First occurrence of a topicId wins (pass `latest` first); entries without an id are kept.
@@ -147,4 +150,53 @@ function questionOutcomeState({ sampled, verdictRows, deadline, today }) {
 function verdictNo(sk) { const m = /^VERDICT#(\d+)$/.exec(String(sk)); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; }
 function latestVerdictRow(rows) { return (rows || []).slice().sort((a, b) => verdictNo(b.SK) - verdictNo(a.SK))[0] || null; }
 
-module.exports = { isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, lightEntry, unionByTopicId, shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };
+// ── Linking (L2-IDS): related ids derived server-side, never from the model ─────────────────
+// Country record keys to try for a requested name: the canonical short name first (what the writers key by
+// now), then the requested spelling (records not yet merged under the canonical name).
+function countryKeys(name) {
+  const raw = String(name || '').trim();
+  const canonical = resolveIso3(raw)?.name;
+  return canonical && canonical !== raw ? [canonical, raw] : [raw];
+}
+
+// Daily brief: top stories and the country to watch carry iso3[] (rows written before the writer added it
+// get it here from their names). Everything else passes through.
+function briefWithIso3(brief) {
+  if (!brief || typeof brief !== 'object') return brief;
+  const out = { ...brief };
+  if (Array.isArray(brief.topStories)) {
+    out.topStories = brief.topStories.map((s) => (s && typeof s === 'object' ? { ...s, iso3: Array.isArray(s.iso3) ? s.iso3 : iso3List(s.regions) } : s));
+  }
+  const ctw = brief.countryToWatch;
+  if (ctw && typeof ctw === 'object') out.countryToWatch = { ...ctw, iso3: Array.isArray(ctw.iso3) ? ctw.iso3 : iso3List([ctw.countryName]) };
+  return out;
+}
+
+// Weekly brief: signals carry iso3[] (older rows: from the "A · B" region text).
+function weeklyWithIso3(brief) {
+  if (!brief || !Array.isArray(brief.signals)) return brief;
+  return { ...brief, signals: brief.signals.map((s) => (s && typeof s === 'object'
+    ? { ...s, iso3: Array.isArray(s.iso3) ? s.iso3 : iso3List(String(s.region || '').split('·').map((x) => x.trim())) } : s)) };
+}
+
+// Story web: each link / shared-actor link carries the iso3 of its web's country; each thread the iso3 of its places.
+function webWithIso3(index) {
+  if (!index || typeof index !== 'object') return index;
+  const withCountry = (l) => (l && typeof l === 'object' ? { ...l, iso3: iso3List([l.country]) } : l);
+  const out = { ...index };
+  if (Array.isArray(index.links)) out.links = index.links.map(withCountry);
+  if (Array.isArray(index.shared)) out.shared = index.shared.map(withCountry);
+  if (index.threads && typeof index.threads === 'object') {
+    out.threads = Object.fromEntries(Object.entries(index.threads).map(([id, t]) => [id,
+      t && typeof t === 'object' ? { ...t, iso3: iso3List((t.places || []).map((p) => p && p.name)) } : t]));
+  }
+  return out;
+}
+
+// A question trigger's happened / didn't: the stored finalVerdict (July pilot) or, since no job writes that
+// any more, its Q# verdict row (yes -> fired, no -> not_fired; void and unsettled -> null).
+function triggerVerdict(finalVerdict, state) {
+  return finalVerdict || (state === 'yes' ? 'fired' : state === 'no' ? 'not_fired' : null);
+}
+
+module.exports = { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, lightEntry, unionByTopicId, shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };

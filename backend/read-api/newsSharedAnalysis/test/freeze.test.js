@@ -9,7 +9,7 @@ test('the server derives the SAME context and numbering as the browser (golden f
   const r = await freezeSources({ stories, fetchers: goldenFetchers() });
   assert.equal(r.ok, true);
   assert.equal(r.frozen.context, golden.expected.context);
-  assert.deepEqual(r.frozen.citations, golden.expected.citations);
+  assert.deepEqual(r.frozen.citations.map(({ threadId, ...c }) => c), golden.expected.citations); // threadId is server-only
   assert.equal(r.frozen.thin, golden.expected.thin);
 });
 test('frozen sources drop non-http(s) links and carry the full numbered text', async () => {
@@ -18,6 +18,12 @@ test('frozen sources drop non-http(s) links and carry the full numbered text', a
   assert.ok(r.frozen.sources.every((s) => s.url === null || /^https?:\/\//.test(s.url)));
   assert.ok(r.frozen.sources[0].text.includes('Trajectory: escalating'));
   assert.deepEqual(r.frozen.stories.map((s) => s.title), ['US strikes Iranian oil tankers', 'Japan announces stimulus package']);
+});
+test('every citation and frozen source names its story\'s thread', async () => {
+  const r = await freezeSources({ stories, fetchers: goldenFetchers() });
+  const threadByTitle = Object.fromEntries(r.frozen.stories.map((s) => [s.title, s.threadId]));
+  for (const x of [...r.frozen.citations, ...r.frozen.sources]) assert.equal(x.threadId, threadByTitle[x.storyTitle] ?? null, x.storyTitle);
+  assert.ok(r.frozen.citations.some((c) => c.threadId));
 });
 test('an archive-only story (not in today\'s topics) is named from the archive thread, never from the client', async () => {
   const noTopics = goldenFetchers({ topics: async () => ({ data: { topics: [] } }) });

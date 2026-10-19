@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { resolveStoryThreadId, resolveStoryThreadIds } = require('../src/threadLinks');
+const { resolveStoryThreadId, resolveStoryThreadIds, linkCountryToWatch } = require('../src/threadLinks');
 
 // Real 2026-09-30 titles (daily brief topStories vs archive entries).
 const ENTRIES = [
@@ -44,4 +44,19 @@ test('resolveStoryThreadIds keeps other fields, adds threadId, never throws on j
   assert.strictEqual(out[1], null);
   assert.strictEqual(out[2].threadId, null);
   assert.deepStrictEqual(resolveStoryThreadIds(undefined, ENTRIES), []);
+});
+
+test('top stories carry iso3[] from their regions (regions and unknown places dropped)', () => {
+  const [s] = resolveStoryThreadIds([{ title: 'x', regions: ['Israel', 'West Bank', 'Strait of Hormuz'] }], ENTRIES);
+  assert.deepStrictEqual(s.iso3, ['ISR', 'PSE']);
+});
+test('countryToWatch gains iso3[] and the country\'s most-covered thread today', () => {
+  const entries = [
+    { threadId: 't-a', regions: ['France'] }, { threadId: 't-b', regions: ['Belgium', 'France'] },
+    { threadId: 't-b', regions: ['France'] }, { threadId: 't-c', regions: ['Germany'] }, { threadId: null, regions: ['France'] },
+  ];
+  assert.deepStrictEqual(linkCountryToWatch({ countryName: 'France', riskLevel: 'high' }, entries),
+    { countryName: 'France', riskLevel: 'high', iso3: ['FRA'], threadId: 't-b' });
+  assert.deepStrictEqual(linkCountryToWatch({ countryName: 'Middle East' }, entries), { countryName: 'Middle East', iso3: [], threadId: null });
+  assert.strictEqual(linkCountryToWatch(null, entries), null);
 });

@@ -80,7 +80,13 @@ test('parseDriftResponse: valid event number → triggerEvent', () => {
   const events = [{ topicId: 't1', title: 'Strike', date: '2026-07-01' }];
   const r = parseDriftResponse('{"triggerEventNumber":1,"whyChanged":"Risk rose after the strike.","noSingleDriver":false}', events);
   assert.equal(r.noSingleDriver, false);
-  assert.deepEqual(r.triggerEvent, { topicId: 't1', title: 'Strike', date: '2026-07-01' });
+  assert.deepEqual(r.triggerEvent, { topicId: 't1', threadId: null, title: 'Strike', date: '2026-07-01' });
+});
+
+test('parseDriftResponse: the cited event carries its threadId', () => {
+  const events = [{ topicId: 't1', threadId: 'thread-strike-abc123', title: 'Strike', date: '2026-07-01' }];
+  const r = parseDriftResponse('{"triggerEventNumber":1,"whyChanged":"Risk rose after the strike.","noSingleDriver":false}', events);
+  assert.equal(r.triggerEvent.threadId, 'thread-strike-abc123');
 });
 
 test('parseDriftResponse: out-of-range number → dropped to noSingleDriver', () => {

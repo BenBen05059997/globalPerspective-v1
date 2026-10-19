@@ -3,8 +3,8 @@
   "totals": {
     "hex": 68,
     "func": 4,
-    "rgbArray": 5,
     "template": 1,
+    "rgbArray": 5,
     "tokenCopy": 8
   },
   "files": {
@@ -21,8 +21,8 @@
       "hex": 5,
       "func": 2
     },
-    "shared/map/SituationMap3D.jsx": {
-      "rgbArray": 5
+    "shared/lib/crisisHue.js": {
+      "hex": 1
     },
     "shared/map/globeIcons.js": {
       "hex": 2
@@ -30,8 +30,8 @@
     "shared/map/legend.js": {
       "template": 1
     },
-    "shared/lib/crisisHue.js": {
-      "hex": 1
+    "shared/map/SituationMap3D.jsx": {
+      "rgbArray": 5
     },
     "shared/ui/boot/BootLoader.css": {
       "hex": 7,

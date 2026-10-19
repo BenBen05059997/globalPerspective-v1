@@ -2,7 +2,7 @@
   "note": "Per-file count of hand-made tier chips / tab lists / section headers outside shared/ui (see quality/check_shared_blocks.mjs). Counts may only fall; lower them with --lower after moving to the shared block.",
   "totals": {
     "sectionHeader": 5,
-    "tabs": 9
+    "tabs": 7
   },
   "files": {
     "features/account/Account.css": {
@@ -25,9 +25,6 @@
     },
     "features/economy/EconomyPage.jsx": {
       "tabs": 1
-    },
-    "features/threads/components/PhoneStoryMode.css": {
-      "tabs": 2
     },
     "features/threads/components/PhoneStoryMode.jsx": {
       "tabs": 1

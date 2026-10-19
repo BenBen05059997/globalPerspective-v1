@@ -87,44 +87,44 @@ operator's yes.
       `/briefings?date=&mode=`, `/track-record` anchors, `/analyze?stories=`).
 
 ### L1 · The link module and component
-- [ ] `shared/lib/links.js`: `storyHref`, `countryHref`, `mapHref({situation|story|country})`,
+- [x] `shared/lib/links.js`: `storyHref`, `countryHref`, `mapHref({situation|story|country})`,
       `briefingHref({date|mode})`, `forecastHref`, `studioHref(stories)` — the only place addresses are built.
-- [ ] Country identity helper: name ⇄ ISO3, canonical display name, `isCountry`.
-- [ ] `<EntityLink kind id>` in `shared/ui` (extends `StoryLink`): link + hover preview for story, country,
+- [x] Country identity helper: name ⇄ ISO3, canonical display name, `isCountry`.
+- [x] `<EntityLink kind id>` in `shared/ui` (extends `StoryLink`): link + hover preview for story, country,
       situation, forecast.
-- [ ] Track-record deep links: a forecast entry is addressable (anchor or route) — design with L0 facts.
-- [ ] Back-end mirror for emails (`backend/shared/src/links.js`), same rules.
+- [x] Track-record deep links: a forecast entry is addressable (anchor or route) — design with L0 facts.
+- [x] Back-end mirror for emails (`backend/shared/src/links.js`), same rules.
 
 ### L2 · Related ids at the source
 - [x] Add the missing related ids where the data is written (merged 2026-10-19: L2-IDS ab2cc23, L2-JOINS 0e23594) (decided from L0): e.g. forecasts → thread id,
       brief items → thread id + ISO3, situations → ISO3 list, weekly signals → thread id + ISO3.
-- [ ] Deploy the changed Lambdas (the merged backend changes are in the repo, not yet deployed) with `scripts/lambda.sh` (diff first).
+- [x] Deployed 2026-10-19 except `newsSituationIngest` and `newsSituationTracker` (situation ids change: deploy right after the website release, whose map resolves old ids through `aliases[]`). Country record merge: backup taken (`SummarizeAndPredict-pre-country-merge-2026-10-19`); `node .board/linking/country_merge.mjs --apply` still to run (operator). Signals build rule disabled.
 
 ### L3 · Apply on every page
-- [ ] Story page: countries, forecast → track record, "show on map".
-- [ ] Map: affected countries, country card → country page, situation without a story → its country.
-- [ ] Country page: show on map, its forecasts, latest briefing mention.
-- [ ] Track record: each forecast → its story and country.
-- [ ] Stories map view: story → story page, country → country page.
-- [ ] Briefings (all modes) and weekly email: every story, region and country linked.
-- [ ] Studio: picked stories open their story page.
-- [ ] Remove dead links: `/weekly-markets` on `/today`, economy fallbacks, `?tab=economy`.
+- [x] Story page: countries, forecast → track record, "show on map".
+- [x] Map: affected countries, country card → country page, situation without a story → its country.
+- [x] Country page: show on map, its forecasts, latest briefing mention.
+- [x] Track record: each forecast → its story and country.
+- [x] Stories map view: story → story page, country → country page.
+- [x] Briefings (all modes) and weekly email: every story, region and country linked.
+- [x] Studio: picked stories open their story page.
+- [x] Remove dead links: `/weekly-markets` on `/today`, economy fallbacks, `?tab=economy`.
 
 ### L4 · Guard
-- [ ] `quality/check_links.mjs` (pre-commit): fails on a hand-built route string outside `shared/lib/links.js`
+- [x] `quality/check_links.mjs` (pre-commit): fails on a hand-built route string outside `shared/lib/links.js`
       (ratchet on today's count, falls to zero).
 
 ### P · Pages
-- [ ] B1 One Briefings page with read / weekly / present modes; carry over the weekly subscribe card and the
+- [x] B1 One Briefings page with read / weekly / present modes; carry over the weekly subscribe card and the
       daily share, copy, save controls.
-- [ ] B2 Real 301s in the Worker: `/daily/:date` → `/briefings?date=`, `/weekly-brief` → `/briefings?mode=weekly`,
+- [x] B2 Real 301s in the Worker: `/daily/:date` → `/briefings?date=`, `/weekly-brief` → `/briefings?mode=weekly`,
       plus the routes retired in decision 0017. Client redirects stay as a fallback. (Worker upload needs a yes.)
-- [ ] B3 Weekly email button → the new address; saved "daily" items → the new address; sitemap and the
+- [x] B3 Weekly email button → the new address; saved "daily" items → the new address; sitemap and the
       Worker's page directory updated.
-- [ ] T1 Map → "Read today's topics" link; Worker bot pre-render for `/today`.
+- [x] T1 Map → "Read today's topics" link; Worker bot pre-render for `/today`.
 - [x] S1 Studio out of the nav; `plans/` gets the Studio redesign plan with its return criteria.
 - [x] E1 Economy dead links removed; FX box labelled.
-- [ ] C1 (`useSystemsAnalysis` deleted, P-SMALL) one address for the countries list, the other redirects.
+- [x] C1 (`useSystemsAnalysis` deleted, P-SMALL) one address for the countries list, the other redirects.
 - [x] Decision records for 2-5 (0028-0032) (superseding 0016's /today wording only where needed, and 0017's client-only redirects).
 
 ### R · Release

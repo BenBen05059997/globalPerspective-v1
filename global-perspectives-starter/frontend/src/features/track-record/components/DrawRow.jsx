@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { verifyDraw } from '@/features/track-record/lib/sampleRule.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
 import '@/features/track-record/components/DrawRow.css';
 
 // DrawRow — "This week's draw": the seed commitment published BEFORE the week, the seed revealed
@@ -29,7 +31,7 @@ export default function DrawRow({ weeks = [], now = new Date() }) {
   }
 
   return (
-    <div className="tr-draw">
+    <Card pad="sm" className="tr-draw">
       {current?.commit && (
         <p className="tr-draw-line">
           <b>This week ({fmtDay(current.weekStart)}):</b> commitment <code>{short(current.commit.hash)}</code> published {fmtDay(current.commit.committedAt)}
@@ -44,9 +46,9 @@ export default function DrawRow({ weeks = [], now = new Date() }) {
       {lastDrawn ? (
         <p className="tr-draw-line">
           <b>Last draw ({fmtDay(lastDrawn.weekStart)}):</b> {lastDrawn.picked} of {lastDrawn.eligible} eligible questions from {lastDrawn.clusters} stories.{' '}
-          <button type="button" className="tr-draw-verify" onClick={onVerify} disabled={busy}>
+          <Button compact onClick={onVerify} disabled={busy}>
             {busy ? 'Verifying…' : 'Verify this draw'}
-          </button>
+          </Button>
         </p>
       ) : (
         <p className="tr-draw-line">No week has been drawn yet, so there is nothing to verify. The first draw is published after the first sampled week closes.</p>
@@ -58,6 +60,6 @@ export default function DrawRow({ weeks = [], now = new Date() }) {
             : `Not verified: ${result.problems.join('; ')}.`}
         </p>
       )}
-    </div>
+    </Card>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Card from '@/shared/ui/Card.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
@@ -62,9 +63,9 @@ function CorrectionsLedger() {
             ? `/weekly/country/${encodeURIComponent(n.name)}`
             : `/weekly/thread/${encodeURIComponent(n.name)}`;
           return (
-            <li key={i} className="tr-cl-item">
+            <Card as="li" key={i}>
               <div className="tr-cl-top">
-                <span className={`tr-cl-scope ${n.scope}`}>{n.scope === 'country' ? 'Country' : 'Story'}</span>
+                <span className="tr-cl-scope">{n.scope === 'country' ? 'Country' : 'Story'}</span>
                 <Link className="tr-cl-name" to={to}>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</Link>
                 <span className="tr-cl-delta">{changeLabel(n)}</span>
                 <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
@@ -81,7 +82,7 @@ function CorrectionsLedger() {
               ) : safeWhy(n) ? (
                 <p className="tr-cl-why">{safeWhy(n)}</p>
               ) : null}
-            </li>
+            </Card>
           );
         })}
       </ul>
@@ -121,18 +122,18 @@ export default function TrackRecordPage() {
   const readBlocks = (
     <>
       {/* ---- Status line (stage 0-3, TRACK_RECORD_AND_STUDIO_RULING.md) ---- */}
-      <section className="tr-status">
+      <Card as="section" className="tr-status">
         <span className="tr-status-tag">{stage.label}</span>
         <h2 className="tr-status-headline">{stage.headline}</h2>
         <p className="tr-status-detail">{stage.detail}</p>
         {view.notes.map((n) => <p key={n.key} className="tr-status-note" data-notready={n.key}>{n.text}</p>)}
-      </section>
+      </Card>
 
       {/* ---- Accuracy: locked until 150 resolved questions ---- */}
       <section className="tr-section">
         <SectionHeader label="Accuracy" />
         {lock.locked ? (
-          <div className="tr-lock">
+          <Card>
             <div className="tr-lock-bar"><div className="tr-lock-fill" style={{ width: `${lock.pct}%` }} /></div>
             <p className="tr-lock-label">{lock.n} resolved of {lock.target} needed</p>
             <p className="tr-lock-note" data-notready="accuracy">{view.accuracyText}</p>
@@ -141,12 +142,12 @@ export default function TrackRecordPage() {
               The July pilot&apos;s {view.pilotCount} triggers don&apos;t count toward this — they were scored
               against the parent scenario&apos;s probability, a method we&apos;ve since retired.
             </p>
-          </div>
+          </Card>
         ) : view.scoring ? (
-          <div className="tr-brier">
+          <Card>
             <div className="tr-brier-score">
               <span className="tr-brier-num">{view.scoring.brier}</span>
-              <span className="tr-brier-verdict fair">{view.skillWords}</span>
+              <span className="tr-brier-verdict">{view.skillWords}</span>
             </div>
             <p className="tr-brier-explain">
               Brier score across {view.scoring.n} resolved questions; a guess of the overall base rate ({Math.round(view.scoring.baseRate * 100)}% yes)
@@ -154,7 +155,7 @@ export default function TrackRecordPage() {
               {view.scoring.ci ? ` (95% interval ${view.scoring.ci.lo} to ${view.scoring.ci.hi}, resampled by story)` : ''}.
               {' '}Voided: {Math.round(view.scoring.voidRate * 1000) / 10}%. Lower Brier is better, 0 is perfect.
             </p>
-          </div>
+          </Card>
         ) : null}
         {view.calibrationText && <p className="tr-lock-note" data-notready="calibration">{view.calibrationText}</p>}
       </section>
@@ -174,12 +175,16 @@ export default function TrackRecordPage() {
           {q?.firstCommit && <span className="tr-eracut">sampled from {fmtDay(q.firstCommit.committedAt)}</span>}
         </SectionHeader>
         <section className="tr-stats">
-          <div className="tr-stat"><span className="tr-stat-num">{counts.locked}</span><span className="tr-stat-label">Questions locked in samples</span></div>
-          <div className="tr-stat"><span className="tr-stat-num">{counts.resolved}</span><span className="tr-stat-label">Resolved ({counts.yes} happened, {counts.no} didn&apos;t)</span></div>
-          <div className="tr-stat"><span className="tr-stat-num">{counts.void}</span><span className="tr-stat-label">Void</span></div>
-          <div className="tr-stat"><span className="tr-stat-num">{counts.awaiting}</span><span className="tr-stat-label">Open, deadline still ahead</span></div>
-          <div className="tr-stat"><span className="tr-stat-num">{counts.pastDeadlineUnchecked}</span><span className="tr-stat-label">Past deadline, not checked</span></div>
-          <div className="tr-stat"><span className="tr-stat-num">{view.pilotCount}</span><span className="tr-stat-label">July pilot (archived; method flawed)</span></div>
+          {[
+            [counts.locked, 'Questions locked in samples'],
+            [counts.resolved, `Resolved (${counts.yes} happened, ${counts.no} didn't)`],
+            [counts.void, 'Void'],
+            [counts.awaiting, 'Open, deadline still ahead'],
+            [counts.pastDeadlineUnchecked, 'Past deadline, not checked'],
+            [view.pilotCount, 'July pilot (archived; method flawed)'],
+          ].map(([num, label]) => (
+            <Card key={label} className="tr-stat"><span className="tr-stat-num">{num}</span><span className="tr-stat-label">{label}</span></Card>
+          ))}
         </section>
         {q && (
           <p className="tr-gap-note">

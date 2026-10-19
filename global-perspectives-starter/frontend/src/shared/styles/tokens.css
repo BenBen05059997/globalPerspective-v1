@@ -35,15 +35,16 @@
   --on-accent:     #06131c;                    /* text on an accent fill (11:1) */
   --warn:          #ffb347;                    /* warning amber: older / paused / needs attention */
   --ok:            #6fd29a;                    /* checks passed */
-  --error:         #ff6a4d;                    /* failed check */
+  --error:         #f2689a;                    /* failed check (rose: kept off the conflict hue) */
   --run-hatch:     #e8d5a8;                    /* reserved: a reader's own AI run marker */
   --focus-ring:    var(--accent);           /* one focus colour: the accent */
 
-  /* Crisis hues (hue = crisis TYPE only, never severity) */
+  /* Crisis hues (hue = crisis TYPE only, never severity). Re-picked 2026-10-19 (operator, option A):
+     each >=30deg from --warn/--accent/--error and >=3:1 on --bg; conflict keeps its warm red. */
   --hue-conflict:     #ee7754;
   --hue-political:    #9b8cf8;
-  --hue-economic:     #38b6e0;
-  --hue-humanitarian: #d89e28;
+  --hue-economic:     #8fd46a;
+  --hue-humanitarian: #d987e0;
 
   /* Tier = risk. DS1 (REDESIGN_MASTER_PLAN §3.1): risk is a NUMBER + a tier WORD + RING WEIGHT, never
      a traffic-light colour. These tokens are therefore neutral text/hairline greys that get brighter
@@ -62,7 +63,7 @@
   /* Status washes (tinted backgrounds for the status colours above) */
   --ok-wash:    rgba(111, 210, 154, 0.14);
   --warn-wash:  rgba(255, 179, 71, 0.14);
-  --error-wash: rgba(255, 106, 77, 0.14);
+  --error-wash: rgba(242, 104, 154, 0.14);
 
   /* Freshness ramp: live = full hue + glow (build as `0 0 8px 1px <hue>`); plain = no filter;
      older = desaturated with a warn label. Items older than 30 days are hidden upstream. */

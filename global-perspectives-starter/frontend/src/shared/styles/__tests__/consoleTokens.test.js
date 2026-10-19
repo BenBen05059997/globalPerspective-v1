@@ -20,8 +20,8 @@ describe('tokens.css — one :root palette (console values are the defaults)', (
   it('defines all four crisis hues, matching SituationHome.css exactly', () => {
     expect(rootBlock).toMatch(/--hue-conflict:\s*#ee7754/);
     expect(rootBlock).toMatch(/--hue-political:\s*#9b8cf8/);
-    expect(rootBlock).toMatch(/--hue-economic:\s*#38b6e0/);
-    expect(rootBlock).toMatch(/--hue-humanitarian:\s*#d89e28/);
+    expect(rootBlock).toMatch(/--hue-economic:\s*#8fd46a/);
+    expect(rootBlock).toMatch(/--hue-humanitarian:\s*#d987e0/);
   });
 
   it('defines the four tier outlines, four freshness tokens and a 44px tap target', () => {

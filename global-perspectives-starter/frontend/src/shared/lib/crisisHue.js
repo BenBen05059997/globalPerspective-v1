@@ -2,25 +2,22 @@
 // vocabulary (M5a). Hue = crisis TYPE only, never severity or freshness (those are separate
 // tokens — see freshnessState in shared/lib/freshness.js and TIER_R in SituationMap.jsx).
 //
-// Reuses the exact RGB/hex values situations already use for the four axes (SituationMap.jsx
-// AXIS_HUE / SituationMap3D.jsx AXIS_RGB), so a shaded country and a situation pin never disagree
-// about what a given hue means. Anything that isn't clearly one of the four crisis types gets the
-// neutral grey — this is a deliberate "no claim" colour, not a fifth crisis type.
+// Values come from the tokens (shared/styles/tokens.js mirrors tokens.css), so every map renderer
+// and every CSS rule agree about what a given hue means. Anything that isn't clearly one of the
+// four crisis types gets the neutral grey — this is a deliberate "no claim" colour, not a fifth crisis type.
+import { TOKENS } from '@/shared/styles/tokens.js';
+
+const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+
 export const CRISIS_HUE = {
-  conflict: '#ee7754',
-  political: '#9b8cf8',
-  economic: '#38b6e0',
-  humanitarian: '#d89e28',
+  conflict: TOKENS['hue-conflict'],
+  political: TOKENS['hue-political'],
+  economic: TOKENS['hue-economic'],
+  humanitarian: TOKENS['hue-humanitarian'],
   neutral: '#9aa4b2',
 };
 
-export const CRISIS_RGB = {
-  conflict: [238, 119, 84],
-  political: [155, 140, 248],
-  economic: [56, 182, 222],
-  humanitarian: [216, 158, 40],
-  neutral: [154, 164, 178],
-};
+export const CRISIS_RGB = Object.fromEntries(Object.entries(CRISIS_HUE).map(([k, v]) => [k, hexRgb(v)]));
 
 export const CRISIS_LABEL = {
   conflict: 'Conflict',

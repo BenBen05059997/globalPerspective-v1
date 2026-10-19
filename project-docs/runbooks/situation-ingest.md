@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerSituationIngest`, `rate(1 hour)`, no input.
-Repo source: `amplify/backend/function/newsSituationIngest/src/`.
+Repo source: `backend/situations/newsSituationIngest/src/`.
 
 ## What it means
 Fetches RSS, classifies only uncached articles with the LLM (`GROK_MODEL`), clusters stories and writes S3 `stories/classify-cache.json`, `corpus/YYYY/MM/DD/HH.jsonl`, `stories/state/<id>.json` and `stories/index.json`; emits `IngestArticles`, `IngestStories`, `ClassifierLLMCallsToday`, `IngestCacheHits` to `GlobalPerspective/Situations`.

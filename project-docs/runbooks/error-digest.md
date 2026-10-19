@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerErrorDigest`, `cron(15 0/6 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsErrorDigest/src/`.
+Repo source: `backend/monitoring/newsErrorDigest/src/`.
 
 ## What it means
 Folds browser error reports in `CLIENT_ERRORS_TABLE` per fingerprint and sends `[GP] Client errors: <n> new, <m> spiking` to SNS `GlobalPerspectiveAlerts` for new fingerprints or ones that grew by ≥ `SPIKE_MIN_DELTA`; saves the baseline `DIGEST#STATE` each run.

@@ -342,7 +342,7 @@ Commit: `4fa8b20` (Brave removal)
 ### S8 · T1 — Signals → S3 (redirect, option 2)
 Status: ✅ DONE 2026-09-09 — live, table dropped
 Gate: none (0 consumers — 0 reads/day over 14 days; `newsSignals` invoked 1/day, cron-only, zero HTTP)
-Reads/refs: plan §11.1 T1 design; `amplify/backend/function/newsSignals/src/index.js`
+Reads/refs: plan §11.1 T1 design; `backend/read-api/newsSignals/src/index.js`
 Changes: BUILD writes `signals/latest.json` (+ dated `signals/snapshots/YYYY-MM-DD.json`), preserves `first_emitted_at` from previous `latest.json`; 120d DDB TTL → explicit `event_time ≥ now−120d` filter at build; SERVE (`/v1/signals`, `/v1/signals/{id}`) reads `latest.json` cached in module scope by ETag (identical behaviour to today's per-request full Scan); `/v1/track-record` unchanged until T3; rate-limit + auth stay in `ApiKeys` (DDB); IAM `newsSignals-role` inline policy `newsSignals-ddb` += `s3:GetObject`/`PutObject` on `arn:aws:s3:::globalperspective-world-280362093938/signals/*`; env `WORLD_BUCKET` added, `SIGNALS_TABLE` kept until retirement; lifecycle `signals/snapshots/` → Glacier IR 30d, expire 365d (~20MB/day); Worker rule: deliberately **no** `/data/signals/*` route — paid key-gated product stays behind the Function URL only
 Docs to update: `DATA_STRATEGY.md` §4/§6 ✅ · `ARCHITECTURE.md` (newsSignals Lambda row + tables row struck) ✅ · `archive/pipeline-ingest/_shipped/SIGNAL_API_PLAN.md` (storage-migrated note) ✅ · `CHANGES.md` ✅
 Verify / exit: build wrote **5,468** current signals (table held 5,815 incl. ~347 non-source stragglers that never TTL-expired — 5,468 is the honest current set); temp paid key confirmed list/get/filter return same v1 envelopes from S3, no-key → 401; table dropped + confirmed gone

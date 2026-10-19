@@ -15,7 +15,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'project-docs/reference');
-const FN_DIR = join(ROOT, 'amplify/backend/function');
 const SRC = join(ROOT, 'global-perspectives-starter/frontend/src');
 const REGION = 'ap-northeast-1';
 const OFFLINE = process.argv.includes('--offline');
@@ -44,7 +43,7 @@ function walk(dir, exts) {
   });
 }
 
-const lambdaSources = (dir) => (dir ? walk(join(FN_DIR, dir, 'src'), ['.js', '.mjs', '.cjs']).filter((f) => !/\.test\.|__tests__|\/test_/.test(f)) : []);
+const lambdaSources = (dir) => (dir ? walk(join(ROOT, dir, 'src'), ['.js', '.mjs', '.cjs']).filter((f) => !/\.test\.|__tests__|\/test_/.test(f)) : []);
 
 // ---------- live AWS (one place, so --offline skips all of it) ----------
 // The AWS CLI auto-paginates list calls. Calls run 8 at a time (each CLI start costs seconds).
@@ -107,7 +106,7 @@ const files = {};
     if (live && live.runtime[n] && live.runtime[n] !== f.runtime) rt = `${live.runtime[n]} (functions.json says ${f.runtime})`;
     if (live && !live.runtime[n]) rt = `${f.runtime} — NOT FOUND LIVE`;
     const notes = [f.deployBlocked, f.nodeModules ? 'deployed zip ships node_modules' : ''].filter(Boolean).join(' ');
-    return [code(n), f.dir ? code(`amplify/backend/function/${f.dir}/src`) : '—', rt, f.group, triggers.join('; ') || (live ? '—' : 'schedules only (offline)'), notes];
+    return [code(n), f.dir ? code(`${f.dir}/src`) : '—', rt, f.group, triggers.join('; ') || (live ? '—' : 'schedules only (offline)'), notes];
   });
   const groups = [...new Set(NAMES.map((n) => FUNCTIONS[n].group))].sort();
   let md = header('Lambdas', '`scripts/functions.json`' + (live ? ', `aws lambda list-functions`, `list-function-url-configs`, `aws events`, `aws scheduler`' : ''));
@@ -158,7 +157,7 @@ const files = {};
     if (!f.dir) lines.push('- No repo source dir.');
     lines.push('');
   }
-  let md = header('Lambda environment keys', (live ? '`aws lambda get-function-configuration --query keys(Environment.Variables)`, ' : '') + '`process.env.*` reads in `amplify/backend/function/<dir>/src`');
+  let md = header('Lambda environment keys', (live ? '`aws lambda get-function-configuration --query keys(Environment.Variables)`, ' : '') + '`process.env.*` reads in each Lambda\'s `<dir>/src` (`dir` from `scripts/functions.json`)');
   md += '\nKey NAMES only — values are never fetched into this file. Some deployed zips differ from the repo (see lambdas.md notes), so "read in repo source" can lag the deployed code. Env names can be misleading (e.g. `GROK_*`/`XAI_*` may hold another provider) — check the live value before assuming.\n\n';
   files['env-keys.md'] = md + lines.join('\n');
 }
@@ -230,7 +229,7 @@ const files = {};
           // env-overridable prefix defaults: process.env.SIGNALS_PREFIX || 'signals'
           ...[...line.matchAll(/process\.env\.[A-Z0-9_]*PREFIX[A-Z0-9_]*\s*\|\|\s*['"`]([a-z][a-z0-9_/-]*)['"`]/g)].map((m) => m[1].replace(/\/?$/, '/')),
         ];
-        for (const lit of lits) if (!NOT_S3.test(lit.split('${')[0])) hits.push({ lit, dir });
+        for (const lit of lits) if (!NOT_S3.test(lit.split('${')[0])) hits.push({ lit, dir: dir.split('/').pop() });
       }
     }
   }
@@ -248,7 +247,7 @@ const files = {};
     if (!found.has(p)) found.set(p, new Set());
     found.get(p).add(dir);
   }
-  const ds = readFileSync(join(ROOT, 'project-docs/architecture/DATA_STRATEGY.md'), 'utf8');
+  const ds = readFileSync(join(ROOT, 'project-docs/rules/DATA_STRATEGY.md'), 'utf8');
   const docRows = [];
   let inTable = false;
   for (const line of ds.split('\n')) {
@@ -259,7 +258,7 @@ const files = {};
     docRows.push({ prefixes: [...prefixCell.replace(/\([^)]*\)/g, '').matchAll(/`([^`]+)`/g)].map((m) => m[1]), writer, cadence, readers });
   }
   const covered = (p, docPrefixes) => docPrefixes.some((d) => d.startsWith(p) || p.startsWith(normalize(d)));
-  let md = header('S3 prefixes (world bucket)', 'path-like string literals in `amplify/backend/function/*/src` (heuristic), ' + (live ? '`aws s3api list-objects-v2 --delimiter /` on the world bucket, ' : '') + 'the prefix table in `project-docs/architecture/DATA_STRATEGY.md`');
+  let md = header('S3 prefixes (world bucket)', 'path-like string literals in each Lambda\'s `<dir>/src` (heuristic), ' + (live ? '`aws s3api list-objects-v2 --delimiter /` on the world bucket, ' : '') + 'the prefix table in `project-docs/rules/DATA_STRATEGY.md`');
   md += '\nThe world bucket name comes from each Lambda\'s env (`WORLD_BUCKET` and similar; see env-keys.md). The code scan is a heuristic over string literals (including env-var defaults); keys built entirely from variables are not found, and deployed zips that differ from the repo are not scanned. Templated keys are cut at the first variable.\n\n';
   md += '## Found in Lambda source\n\n';
   const allDoc = docRows.flatMap((r) => r.prefixes);

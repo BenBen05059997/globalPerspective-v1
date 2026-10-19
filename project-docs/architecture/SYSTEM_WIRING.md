@@ -42,7 +42,7 @@ All providers expose an OpenAI-compatible `/chat/completions` endpoint, which is
 
 > The 14 rows below are the original 2026-05-18 core set. The fleet has since grown to ~33 live Lambdas — see `ARCHITECTURE.md` §Lambda Functions for the authoritative current list (adds `newsAnalyze`, `newsBreakingAlert`, `newsRecommend`, `newsEmailSender`, `newsWeeklyBrief`, `newsWeeklyMarkets`, `newsEconomicImpact`, `newsEconomicQuality`, `newsDriftCorrector`, `newsPredictionResolver`, `newsSourceAudit`, `newsSignals`/`newsImpactAudit`/`newsGdacsIngest`/`newsGdeltConflict`, `newsPolarBilling`, `newsModelGuard`, and the observability trio `newsClientErrors`/`newsFreshnessMonitor`/`newsErrorDigest`).
 
-All paths are `amplify/backend/function/<name>/src/index.js`.
+All paths are `<dir>/src/index.js`, `dir` from `scripts/functions.json` (mostly `backend/<group>/<name>`).
 
 **Note on "Calls":** any cell that says "Grok" refers to the source-code identifier; the deployed env vars point at DeepSeek (or Gemini for `newsThreadAnalysis`). See §0.
 

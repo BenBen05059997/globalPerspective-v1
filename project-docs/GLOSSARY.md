@@ -5,7 +5,7 @@ board — what it is, where it comes from, and whether it's live, dormant, dead,
 awaiting a decision. Not an essay — a reference card. Cross-checked against
 `project-docs/architecture/ARCHITECTURE.md`, `WORLD_MODEL.md`, `WORLD_MODEL_FRAGMENTS.md`,
 `SCORING_STANDARDS.md`, `IMPORTANCE_SCALE_MAPPING.md`, `DESIGN_UPGRADES_2026-09-14.md`,
-`CHANGES.md`, and the Lambda source under `amplify/backend/function/*/src/`.*
+`CHANGES.md`, and the Lambda source under `backend/<group>/*/src/` (and `amplify/backend/function/*/src/` for the three not yet moved).*
 
 ---
 
@@ -17,7 +17,7 @@ one of four plain words: low, moderate, elevated, or high. Instead of blending e
 number (which can hide a spike in one area behind calm in another), the system scores four separate
 angles — conflict, political, economic, humanitarian — and always headlines with the *worst* of the
 four.
-**Where it comes from:** `amplify/backend/function/newsCountryIntelligence/src/riskDimensions.js`
+**Where it comes from:** `backend/pipeline/newsCountryIntelligence/src/riskDimensions.js`
 (byte-identical copy in `newsThreadAnalysis/src/riskDimensions.js`); `AXES =
 ['conflict','political','economic','humanitarian']`; band cutoffs ≥75 high, ≥50 elevated, ≥25
 moderate, else low; frontend mirror `src/shared/lib/riskTiers.js`. Built as "Scoring Model v2" — Phase A
@@ -34,7 +34,7 @@ set** and **codebook** below).
 story is moving right now (high = broke/escalated in the last 24h). `significance` = how important
 it is, independent of speed. They are deliberately different axes — tempo vs. standing importance —
 not two names for the same thing.
-**Where it comes from:** `amplify/backend/function/newsInvokeGemini/src/index.js:617-647` (prompt
+**Where it comes from:** `backend/pipeline/newsInvokeGemini/src/index.js:617-647` (prompt
 definitions), `:741-776` (parsing). Part of the original topic-generation pipeline; re-examined in
 the 2026-09-14 audit.
 **Status:** Live but thinly used. `significance` has no frontend reader — only
@@ -49,7 +49,7 @@ across, the affected country's risk level (capped so it can't dominate), market 
 it's accelerating — into one number. A story alerts only once the score passes 2.0; an
 already-alerted story needs 1.8× that to re-alert, so it has to show real escalation, not just stay
 loud.
-**Where it comes from:** `amplify/backend/function/newsBreakingAlert/src/significance.js` —
+**Where it comes from:** `backend/distribution/newsBreakingAlert/src/significance.js` —
 `WEIGHTS`, `SIGNIFICANCE_THRESHOLD = 2.0`, `CONTINUATION_THRESHOLD_MULT = 1.8`, `RISK_CAP = 50`,
 `scoreStory()`. Built 2026-06-10; reworked so a story's risk contribution comes from the axis
 matching its own category rather than a country's blended score (fixed a dominance bug, ~14%
@@ -61,7 +61,7 @@ scores high enough.
 ### Economic `severity` / `severityScore`
 **What it is:** How disruptive a news event is to markets or the economy — minor, moderate, or
 severe — paired with a 0-100 confidence number that must fall inside that label's numeric band.
-**Where it comes from:** `amplify/backend/function/newsEconomicImpact/src/index.js` —
+**Where it comes from:** `backend/economy-parked/newsEconomicImpact/src/index.js` —
 `VALID_SEVERITIES`, `SEVERITY_BAND` (severe 70-100, moderate 40-69, minor 0-39), auto-downgrade logic
 (drops severity a notch if evidence is thin). Built as the "Economic Disruption" feature, live since
 2026-05-19, daily cron 07:30 UTC.
@@ -73,7 +73,7 @@ DISTINCT (a magnitude score, not mergeable into the canonical severity tier).
 (so it doesn't share the same blind spots), grades each economic write-up on five axes — coherence,
 citation fidelity, analog match, severity calibration, "no BS" — each 1-5. Any single axis at 2 or
 below flags the whole record `is_low_quality`.
-**Where it comes from:** `amplify/backend/function/newsEconomicQuality/src/index.js` —
+**Where it comes from:** `backend/economy-parked/newsEconomicQuality/src/index.js` —
 `QUALITY_AXES`, `LOW_QUALITY_THRESHOLD = 2`. Live since 2026-05-20 (Phase B LLM-as-judge), daily
 cron 08:00 UTC, right after `newsEconomicImpact`.
 **Status:** Live but inconsistently enforced — confirmed by the 2026-09-14 whole-backend read: it
@@ -87,7 +87,7 @@ real-world deadline passes, a resolver marks it fired or not. Brier score is the
 forecasts by their stated probability and show what fraction actually came true in each bucket.
 Era-cut means only forecasts made after 2026-07-04 are scored — everything older is excluded (not
 deleted) because ~28% of the pre-rebuild forecasts had broken deadlines already in the past.
-**Where it comes from:** `amplify/backend/function/newsPredictionsSnapshot/src/trackRecord.js` —
+**Where it comes from:** `backend/predictions/newsPredictionsSnapshot/src/trackRecord.js` —
 `ERA_CUT_FROM = '2026-07-04'`, `computeTrackRecord()`. Era-cut shipped 2026-07-04 after a 50-trigger
 pilot found the 28% breakage; `trackRecord.js` itself is a later (2026-09-09) optimization that
 moved the aggregation from a live per-pageview DynamoDB Scan to a cached 30-minute snapshot.
@@ -114,7 +114,7 @@ it just renders as text.
 belongs to the editorial pipeline (the daily AI-written topics/articles). `storyId`/`threadId`
 belong to the map/situation side (event clusters detected from raw news). They don't share one root
 yet — see **the convergence build** below for the plan to unify them.
-**Where it comes from:** Editorial side: `amplify/backend/function/newsInvokeGemini` and
+**Where it comes from:** Editorial side: `backend/pipeline/newsInvokeGemini` and
 `NewsProjectInvokeAgentLambda`. Map side: `newsSituationIngest` / `newsSituationTracker`. The bridge
 that links the two is the **Tier 1 matcher** (below).
 **Status:** Live, but split — the core problem the World Model / Event Registry work exists to solve.
@@ -132,7 +132,7 @@ permanently to "archive" as a daily record used later for story-threading.
 **What it is:** The Global Disaster Alert and Coordination System — a public, UN-affiliated feed of
 real-world disaster alerts (floods, quakes, storms). The site polls it every 20 minutes to open map
 "situations" for serious (Orange/Red) events.
-**Where it comes from:** `amplify/backend/function/newsGdacsIngest` (writes to
+**Where it comes from:** `backend/situations/newsGdacsIngest` (writes to
 `situations/inbox/gdacs-latest.json` and `corpus/gdacs/latest.json`); EventBridge rule
 `TriggerGdacsIngest`, rate(20 min). Built 2026-09-08 as part of the map-as-home + situation-tracker
 programme; its DynamoDB mirror was dropped 2026-09-09 in favor of pure S3.
@@ -142,7 +142,7 @@ programme; its DynamoDB mirror was dropped 2026-09-09 in favor of pure S3.
 **What it is:** One tracked real-world happening shown as a pin/entry on the map — either a GDACS
 disaster or a breaking-news alert — with a lifecycle (emerging → escalating → peak → cooling →
 closed) rather than being a static one-off article.
-**Where it comes from:** Assembled by `amplify/backend/function/newsSituationTracker`
+**Where it comes from:** Assembled by `backend/situations/newsSituationTracker`
 (`situations-core.js`'s `buildSituation` / `coolSituation`) into `situations/state/<id>.json`,
 `situations/index.json`, and `world/latest.json`. Built 2026-09-08 for the map-as-home programme;
 its DDB schema was retired to S3 the same window.
@@ -198,7 +198,7 @@ operator go/no-go.
 **What it is:** When the breaking-alert score (above) crosses threshold, the system drafts a
 proposed alert email. A human — the operator — is supposed to review and click "confirm" before it
 goes out to subscribers; it never auto-sends to the public.
-**Where it comes from:** Detector `amplify/backend/function/newsBreakingAlert/src/index.js` (writes
+**Where it comes from:** Detector `backend/distribution/newsBreakingAlert/src/index.js` (writes
 `status:'proposed'` rows); confirm/reject tool `breaking/review.js`; actual send is
 `newsEmailSender` (`mode:'breaking'`, cron `TriggerBreakingEmailSend`). Built 2026-07-03/07-04;
 detector scheduled live since ~07-25.
@@ -213,7 +213,7 @@ operated.
 ### Recommendation ranking (`newsRecommend/src/scoring.js`)
 **What it is:** Code that would personalize each reader's story list by comparing what they've saved
 to guess their interests, producing a ranked recommendation list.
-**Where it comes from:** `amplify/backend/function/newsRecommend/src/scoring.js`
+**Where it comes from:** `backend/read-api/newsRecommend/src/scoring.js`
 (`buildInterestProfile`, `isColdStart`, `rankRecommendations`), wired into the Lambda's default
 `action:'recommend'`. Built alongside the Lambda's other actions (`list_alerts`, `follow_country`,
 unsubscribe). Origin story beyond that: not recorded in `CHANGES.md`.
@@ -225,7 +225,7 @@ live infrastructure, no consumer.
 **What it is:** A robot that checks a global conflict-news database (GDELT) every 6 hours and saves
 a daily per-country conflict-intensity summary, used only to check whether the news pipeline is
 missing important stories (a coverage audit, not a reader-facing feature).
-**Where it comes from:** `amplify/backend/function/newsGdeltConflict/src/index.js`; output
+**Where it comes from:** `backend/situations/newsGdeltConflict/src/index.js`; output
 `corpus/gdelt/<day>.json`, consumed by `newsImpactAudit`. Deployed to prod in June via an unmerged
 `signal-api` branch; source only reconciled to `main` on 2026-08-01. Its DynamoDB mirror table was
 dropped 2026-09-09 (S3-only since).
@@ -252,7 +252,7 @@ would monetize a near-zero-usage feature.
 **What it is:** A safety switch. When on, the tracker practices on a private "shadow" copy of the
 data instead of touching what readers actually see, so its behavior can be watched without risk
 before trusting it live.
-**Where it comes from:** `amplify/backend/function/newsSituationTracker/src/index.js:13` —
+**Where it comes from:** `backend/situations/newsSituationTracker/src/index.js:13` —
 `const DRY_RUN = process.env.DRY_RUN !== 'false'; // default true (shadow) until explicitly flipped`.
 Designed as a ~1-week shadow trial ahead of the map-as-home situation-tracker launch.
 **Status:** Live, not shadow, in prod — the deployed override is `DRY_RUN=false` (confirmed by the

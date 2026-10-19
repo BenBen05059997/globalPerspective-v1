@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerGdacsIngest`, `rate(20 minutes)`, no input.
-Repo source: `amplify/backend/function/newsGdacsIngest/src/`.
+Repo source: `backend/situations/newsGdacsIngest/src/`.
 
 ## What it means
 Fetches the GDACS feed (free, no key, no LLM) and writes S3 `corpus/gdacs/latest.json` and the tracker inbox `situations/inbox/gdacs-latest.json` (Orange/Red events). Keeps map alerts alive even when the AI pipeline is down.

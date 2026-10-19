@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerDriftCorrector`, `cron(30 5 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsDriftCorrector/src/`.
+Repo source: `backend/pipeline/newsDriftCorrector/src/`.
 
 ## What it means
 When a country or thread HISTORY# snapshot moved, writes a grounded `DRIFT#<date>` note and a `DRIFTLOG#<date>` row (never overwrites the analysis); DeepSeek, up to 2 calls per move (direction check retry).

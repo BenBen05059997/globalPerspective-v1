@@ -25,7 +25,7 @@ Live state (verified 2026-07-08 via AWS CLI — re-verify before executing, do n
 
 ## 2. How `runDrift` works (read before touching)
 
-Source: `amplify/backend/function/newsEmailSender/src/index.js` (`runDrift`, ~line 242).
+Source: `backend/distribution/newsEmailSender/src/index.js` (`runDrift`, ~line 242).
 
 1. Scans `SUMMARY_TABLE` for **fresh** country drift notes: `begins_with(PK,'COUNTRY#') AND begins_with(SK,'DRIFT#') AND attribute_not_exists(emailedAt) AND generatedAt >= cutoff`.
 2. Groups notes by country → **one email per country** batching that country's changes.
@@ -37,7 +37,7 @@ Source: `amplify/backend/function/newsEmailSender/src/index.js` (`runDrift`, ~li
 
 ### Layer 0 — hermetic tests (no AWS, zero risk)
 ```bash
-cd amplify/backend/function/newsEmailSender/src && node test-sender.js
+cd backend/distribution/newsEmailSender/src && node test-sender.js
 ```
 Expect: all tests pass (28 at last count). Failure → stop, report.
 

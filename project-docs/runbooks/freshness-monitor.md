@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerFreshnessMonitor`, `cron(30 0/2 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsFreshnessMonitor/src/`.
+Repo source: `backend/monitoring/newsFreshnessMonitor/src/`.
 
 ## What it means
 Calls the proxy (`PROXY_URL?action=topics`) and alerts SNS `GlobalPerspectiveAlerts` with `[GP] Content STALE — <h>h old` when topics are older than `STALE_HOURS`, or `[GP] Freshness probe FAILED — …` when the proxy fails; on the 12 UTC run also `[GP] Prediction settling overdue` (see `prediction-resolver.md`).

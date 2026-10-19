@@ -140,7 +140,7 @@ problem; they never emit a fake "all clear" that could be mistaken for a guarant
   quietly serves stale content — and it earned its keep on 2026-06-01, surfacing a
   multi-hour freeze (DeepSeek JSON output truncated past `max_tokens`; the throw was
   caught/logged so CloudWatch Errors stayed 0). Role `newsFreshnessMonitor-role`
-  (sns:Publish only). Source: `amplify/backend/function/newsFreshnessMonitor/src/`.
+  (sns:Publish only). Source: `backend/monitoring/newsFreshnessMonitor/src/`.
 - **`newsErrorDigest`** — the alerting/triage layer over the passive client-error sink
   (`newsClientErrors`). EventBridge `TriggerErrorDigest` (every 6h) invokes it; it
   scans `GlobalPerspectiveClientErrors`, folds rows to per-fingerprint totals, diffs
@@ -149,7 +149,7 @@ problem; they never emit a fake "all clear" that could be mistaken for a guarant
   errors (that's alert fatigue). First run just establishes the baseline. Turns the
   sink's capture into a push alert without a paid Sentry. Role `newsErrorDigest-role`
   (sns:Publish + dynamodb Scan/Get/Put on the errors table). Source:
-  `amplify/backend/function/newsErrorDigest/src/`.
+  `backend/monitoring/newsErrorDigest/src/`.
 
 **Repo setting (no CI, runs on GitHub's infra):**
 - **`.github/dependabot.yml`** — weekly grouped npm version-update PRs for the frontend

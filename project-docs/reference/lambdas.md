@@ -10,40 +10,40 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 |---|---|---|---|---|---|
 | `newsAnalyze` | `amplify/backend/function/newsAnalyze/src` | nodejs20.x | membership-studio | Function URL (NONE) | Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md). |
 | `newsAnalyze-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh. |
-| `newsBreakingAlert` | `amplify/backend/function/newsBreakingAlert/src` | nodejs22.x | distribution | TriggerBreakingAlert cron(35 4/8 * * ? *) (ENABLED) |  |
-| `newsClientErrors` | `amplify/backend/function/newsClientErrors/src` | nodejs24.x | read-api | Function URL (NONE) |  |
-| `newsCountryFactsUpdater` | `amplify/backend/function/newsCountryFactsUpdater/src` | nodejs24.x | pipeline | Fact cron(0 5 ? * MON *) (ENABLED) |  |
-| `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src` | nodejs24.x | pipeline | countryIntelliegence cron(15 5 * * ? *) (ENABLED) |  |
-| `newsDriftCorrector` | `amplify/backend/function/newsDriftCorrector/src` | nodejs20.x | pipeline | TriggerDriftCorrector cron(30 5 * * ? *) (ENABLED) |  |
-| `newsEconomicImpact` | `amplify/backend/function/newsEconomicImpact/src` | nodejs22.x | economy-parked | TriggerNewsEconomicImpact cron(30 7 * * ? *) (DISABLED) | deployed zip ships node_modules |
-| `newsEconomicQuality` | `amplify/backend/function/newsEconomicQuality/src` | nodejs22.x | economy-parked | TriggerNewsEconomicQuality cron(0 8 * * ? *) (DISABLED) | deployed zip ships node_modules |
-| `newsEmailSender` | `amplify/backend/function/newsEmailSender/src` | nodejs20.x | distribution | TriggerBreakingEmailSend rate(15 minutes) (DISABLED); TriggerDriftEmailSend cron(40 7 * * ? *) (DISABLED); TriggerWeeklyEmailSend cron(0 14 ? * SUN *) (ENABLED) |  |
-| `newsErrorDigest` | `amplify/backend/function/newsErrorDigest/src` | nodejs24.x | monitoring | TriggerErrorDigest cron(15 0/6 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsFreshnessMonitor` | `amplify/backend/function/newsFreshnessMonitor/src` | nodejs24.x | monitoring | TriggerFreshnessMonitor cron(30 0/2 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsGdacsIngest` | `amplify/backend/function/newsGdacsIngest/src` | nodejs22.x | situations | TriggerGdacsIngest rate(20 minutes) (ENABLED) |  |
-| `newsGdeltConflict` | `amplify/backend/function/newsGdeltConflict/src` | nodejs22.x | situations | TriggerGdeltConflict cron(0 */6 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsImpactAudit` | `amplify/backend/function/newsImpactAudit/src` | nodejs22.x | monitoring | TriggerImpactAudit cron(0 9 * * ? *) (DISABLED) |  |
-| `newsInvokeGemini-dev` | `amplify/backend/function/newsInvokeGemini/src` | nodejs22.x | pipeline | InvokeGoogleGemini cron(15 4/8 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsMarketsData` | `amplify/backend/function/newsMarketsData/src` | nodejs24.x | economy-parked | MarketsDataHourly rate(1 hour) (ENABLED); MarketsMacrosWeekly cron(0 2 ? * SUN *) (ENABLED); MarketsYieldsDaily cron(0 6 ? * MON-FRI *) (ENABLED) |  |
-| `newsModelGuard` | `amplify/backend/function/newsModelGuard/src` | nodejs20.x | monitoring | TriggerModelGuard cron(0 12 * * ? *) (ENABLED) |  |
-| `newsPairIntelligence` | `amplify/backend/function/newsPairIntelligence/src` | nodejs24.x | economy-parked | TriggerPairIntelligenceWeekly cron(0 8 ? * MON *) (DISABLED) | deployed zip ships node_modules |
+| `newsBreakingAlert` | `backend/distribution/newsBreakingAlert/src` | nodejs22.x | distribution | TriggerBreakingAlert cron(35 4/8 * * ? *) (ENABLED) |  |
+| `newsClientErrors` | `backend/read-api/newsClientErrors/src` | nodejs24.x | read-api | Function URL (NONE) |  |
+| `newsCountryFactsUpdater` | `backend/pipeline/newsCountryFactsUpdater/src` | nodejs24.x | pipeline | Fact cron(0 5 ? * MON *) (ENABLED) |  |
+| `newsCountryIntelligence` | `backend/pipeline/newsCountryIntelligence/src` | nodejs24.x | pipeline | countryIntelliegence cron(15 5 * * ? *) (ENABLED) |  |
+| `newsDriftCorrector` | `backend/pipeline/newsDriftCorrector/src` | nodejs20.x | pipeline | TriggerDriftCorrector cron(30 5 * * ? *) (ENABLED) |  |
+| `newsEconomicImpact` | `backend/economy-parked/newsEconomicImpact/src` | nodejs22.x | economy-parked | TriggerNewsEconomicImpact cron(30 7 * * ? *) (DISABLED) | deployed zip ships node_modules |
+| `newsEconomicQuality` | `backend/economy-parked/newsEconomicQuality/src` | nodejs22.x | economy-parked | TriggerNewsEconomicQuality cron(0 8 * * ? *) (DISABLED) | deployed zip ships node_modules |
+| `newsEmailSender` | `backend/distribution/newsEmailSender/src` | nodejs20.x | distribution | TriggerBreakingEmailSend rate(15 minutes) (DISABLED); TriggerDriftEmailSend cron(40 7 * * ? *) (DISABLED); TriggerWeeklyEmailSend cron(0 14 ? * SUN *) (ENABLED) |  |
+| `newsErrorDigest` | `backend/monitoring/newsErrorDigest/src` | nodejs24.x | monitoring | TriggerErrorDigest cron(15 0/6 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsFreshnessMonitor` | `backend/monitoring/newsFreshnessMonitor/src` | nodejs24.x | monitoring | TriggerFreshnessMonitor cron(30 0/2 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsGdacsIngest` | `backend/situations/newsGdacsIngest/src` | nodejs22.x | situations | TriggerGdacsIngest rate(20 minutes) (ENABLED) |  |
+| `newsGdeltConflict` | `backend/situations/newsGdeltConflict/src` | nodejs22.x | situations | TriggerGdeltConflict cron(0 */6 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsImpactAudit` | `backend/monitoring/newsImpactAudit/src` | nodejs22.x | monitoring | TriggerImpactAudit cron(0 9 * * ? *) (DISABLED) |  |
+| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini/src` | nodejs22.x | pipeline | InvokeGoogleGemini cron(15 4/8 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsMarketsData` | `backend/economy-parked/newsMarketsData/src` | nodejs24.x | economy-parked | MarketsDataHourly rate(1 hour) (ENABLED); MarketsMacrosWeekly cron(0 2 ? * SUN *) (ENABLED); MarketsYieldsDaily cron(0 6 ? * MON-FRI *) (ENABLED) |  |
+| `newsModelGuard` | `backend/monitoring/newsModelGuard/src` | nodejs20.x | monitoring | TriggerModelGuard cron(0 12 * * ? *) (ENABLED) |  |
+| `newsPairIntelligence` | `backend/economy-parked/newsPairIntelligence/src` | nodejs24.x | economy-parked | TriggerPairIntelligenceWeekly cron(0 8 ? * MON *) (DISABLED) | deployed zip ships node_modules |
 | `newsPolarBilling` | `amplify/backend/function/newsPolarBilling/src` | nodejs20.x | membership-studio | Function URL (NONE) |  |
 | `newsPolarBilling-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh. |
-| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src` | nodejs24.x | distribution | InvokeDev cron(0 23 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsPostLinkedin` | `amplify/backend/function/newsPostLinkedIn/src` | nodejs24.x | distribution | InvokeLinkedIn cron(20 */3 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsPredictionResolver` | `amplify/backend/function/newsPredictionResolver/src` | nodejs22.x | predictions | TriggerPredictionResolver cron(30 10 * * ? *) (ENABLED) |  |
-| `newsPredictionsSnapshot` | `amplify/backend/function/newsPredictionsSnapshot/src` | nodejs22.x | predictions | TriggerPredictionsSnapshot rate(30 minutes) (ENABLED) |  |
+| `newsPostDevTo` | `backend/distribution/newsPostDevTo/src` | nodejs24.x | distribution | InvokeDev cron(0 23 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsPostLinkedin` | `backend/distribution/newsPostLinkedIn/src` | nodejs24.x | distribution | InvokeLinkedIn cron(20 */3 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsPredictionResolver` | `backend/predictions/newsPredictionResolver/src` | nodejs22.x | predictions | TriggerPredictionResolver cron(30 10 * * ? *) (ENABLED) |  |
+| `newsPredictionsSnapshot` | `backend/predictions/newsPredictionsSnapshot/src` | nodejs22.x | predictions | TriggerPredictionsSnapshot rate(30 minutes) (ENABLED) |  |
 | `NewsProjectInvokeAgentLambda-dev` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src` | nodejs22.x | pipeline | InvokeNewsAgent cron(25 4/8 * * ? *) (ENABLED) |  |
-| `newsRecommend` | `amplify/backend/function/newsRecommend/src` | nodejs20.x | read-api | Function URL (NONE) |  |
-| `newsSavedItems` | `amplify/backend/function/newsSavedItems/src` | nodejs24.x | read-api | Function URL (NONE) | deployed zip ships node_modules |
-| `newsSelectionShadow` | `amplify/backend/function/newsSelectionShadow/src` | nodejs22.x | pipeline | TriggerSelectionShadow cron(20 4,12,20 * * ? *) (ENABLED) |  |
-| `newsSensitiveData-dev` | `amplify/backend/function/newsSensitiveData/src` | nodejs22.x | read-api | — |  |
-| `newsSharedAnalysis` | `amplify/backend/function/newsSharedAnalysis/src` | nodejs22.x | read-api | Function URL (NONE) |  |
-| `newsSignals` | `amplify/backend/function/newsSignals/src` | nodejs22.x | read-api | TriggerSignalsBuild cron(0 10 * * ? *) (ENABLED); Function URL (NONE) |  |
-| `newsSituationIngest` | `amplify/backend/function/newsSituationIngest/src` | nodejs22.x | situations | TriggerSituationIngest rate(1 hour) (ENABLED) |  |
-| `newsSituationTracker` | `amplify/backend/function/newsSituationTracker/src` | nodejs22.x | situations | TriggerSituationTracker rate(30 minutes) (ENABLED) |  |
-| `newsSourceAudit` | `amplify/backend/function/newsSourceAudit/src` | nodejs22.x | monitoring | newsSourceAuditDaily cron(30 11 ? * MON,WED,FRI *) (ENABLED) |  |
-| `newsSystemsAnalysis` | `amplify/backend/function/newsSystemsAnalysis/src` | nodejs22.x | pipeline | TriggerNewsSystemsAnalysis cron(0 5 * * ? *) (ENABLED) | deployed zip ships node_modules |
-| `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src` | nodejs24.x | pipeline | TriggerDailyAnalysis cron(40 4 * * ? *) (ENABLED) |  |
-| `newsWeeklyBrief` | `amplify/backend/function/newsWeeklyBrief/src` | nodejs20.x | distribution | TriggerWeeklyBrief cron(0 6 ? * SUN *) (ENABLED) |  |
-| `newsWeeklyMarkets` | `amplify/backend/function/newsWeeklyMarkets/src` | nodejs20.x | economy-parked | TriggerWeeklyMarkets cron(30 8 ? * SUN *) (DISABLED) |  |
+| `newsRecommend` | `backend/read-api/newsRecommend/src` | nodejs20.x | read-api | Function URL (NONE) |  |
+| `newsSavedItems` | `backend/read-api/newsSavedItems/src` | nodejs24.x | read-api | Function URL (NONE) | deployed zip ships node_modules |
+| `newsSelectionShadow` | `backend/pipeline/newsSelectionShadow/src` | nodejs22.x | pipeline | TriggerSelectionShadow cron(20 4,12,20 * * ? *) (ENABLED) |  |
+| `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData/src` | nodejs22.x | read-api | — |  |
+| `newsSharedAnalysis` | `backend/read-api/newsSharedAnalysis/src` | nodejs22.x | read-api | Function URL (NONE) |  |
+| `newsSignals` | `backend/read-api/newsSignals/src` | nodejs22.x | read-api | TriggerSignalsBuild cron(0 10 * * ? *) (ENABLED); Function URL (NONE) |  |
+| `newsSituationIngest` | `backend/situations/newsSituationIngest/src` | nodejs22.x | situations | TriggerSituationIngest rate(1 hour) (ENABLED) |  |
+| `newsSituationTracker` | `backend/situations/newsSituationTracker/src` | nodejs22.x | situations | TriggerSituationTracker rate(30 minutes) (ENABLED) |  |
+| `newsSourceAudit` | `backend/monitoring/newsSourceAudit/src` | nodejs22.x | monitoring | newsSourceAuditDaily cron(30 11 ? * MON,WED,FRI *) (ENABLED) |  |
+| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis/src` | nodejs22.x | pipeline | TriggerNewsSystemsAnalysis cron(0 5 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsThreadAnalysis` | `backend/pipeline/newsThreadAnalysis/src` | nodejs24.x | pipeline | TriggerDailyAnalysis cron(40 4 * * ? *) (ENABLED) |  |
+| `newsWeeklyBrief` | `backend/distribution/newsWeeklyBrief/src` | nodejs20.x | distribution | TriggerWeeklyBrief cron(0 6 ? * SUN *) (ENABLED) |  |
+| `newsWeeklyMarkets` | `backend/economy-parked/newsWeeklyMarkets/src` | nodejs20.x | economy-parked | TriggerWeeklyMarkets cron(30 8 ? * SUN *) (DISABLED) |  |

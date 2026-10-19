@@ -40,11 +40,11 @@ run_layer() {
 
 # ─── L2 — Producer unit tests ───
 run_layer "L2  Producer validator unit tests" \
-  node amplify/backend/function/newsEconomicImpact/test/validator.test.js
+  node backend/economy-parked/newsEconomicImpact/test/validator.test.js
 
 # ─── L3 — Judge unit tests ───
 run_layer "L3  Judge unit tests" \
-  node amplify/backend/function/newsEconomicQuality/test/judge.test.js
+  node backend/economy-parked/newsEconomicQuality/test/judge.test.js
 
 # ─── L5/L6 — Frontend vitest (hooks + atoms) ───
 run_layer "L5/L6  Frontend vitest (hooks + atoms)" \

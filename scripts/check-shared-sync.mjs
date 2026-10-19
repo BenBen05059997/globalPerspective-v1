@@ -5,7 +5,7 @@
  * This repo has no Lambda layers — each function is a separate manual-deploy
  * unit. Backend helpers used by several Lambdas (llm.js, placeFilter.js + name
  * tables, dayZero.js, riskDimensions.js, situations-core.js) have ONE copy in
- * amplify/backend/shared/src, reached through each Lambda's committed
+ * backend/shared/src, reached through each Lambda's committed
  * src/_shared symlink and zipped as real files by scripts/lambda.sh — those need
  * no check. What is left are copies that cross a bundle boundary (frontend vs
  * Lambda) or differ by design; when one is edited and its sibling isn't, the two
@@ -47,6 +47,10 @@ const __dir = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dir, '..');
 const abs = (p) => path.join(ROOT, p);
 const req = createRequire(import.meta.url);
+// Lambda folder name -> repo dir (backend/<group>/<name>), from scripts/functions.json.
+const FN_DIRS = Object.fromEntries(Object.values(req('./functions.json').functions)
+  .filter((f) => f.dir).map((f) => [path.basename(f.dir), f.dir]));
+const fnPath = (name, rel) => { if (!FN_DIRS[name]) throw new Error(`${name} not in scripts/functions.json`); return abs(`${FN_DIRS[name]}/${rel}`); };
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -127,7 +131,7 @@ function extractUnexported(source, name) {
 // at perturbed temp copies instead of the live repo files.
 // ---------------------------------------------------------------------------
 
-const SHARED = 'amplify/backend/shared/src'; // the one backend copy (see header)
+const SHARED = 'backend/shared/src'; // the one backend copy (see header)
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
 function checkAllIdentical(paths) {
@@ -155,7 +159,7 @@ function checkPlaceRule() {
     const r = checkAllIdentical([abs(`${SHARED}/${f}`), abs(`${FE_DATA}/${f}`)]);
     if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
   }
-  const ref = placeCore(fs.readFileSync(abs('amplify/backend/function/newsCountryIntelligence/src/refreshPolicy.js'), 'utf8'));
+  const ref = placeCore(fs.readFileSync(fnPath('newsCountryIntelligence', 'src/refreshPolicy.js'), 'utf8'));
   for (const f of [`${SHARED}/placeFilter.js`, 'global-perspectives-starter/frontend/src/shared/lib/placeNames.js']) {
     const got = placeCore(fs.readFileSync(abs(f), 'utf8'));
     if (got !== ref) return { pass: false, diff: `${f}: the real-country rule text differs from refreshPolicy.js\n${textDiff('refreshPolicy.js', ref, path.basename(f), got)}` };
@@ -242,8 +246,8 @@ function livePairs() {
     {
       name: 'country_facts.json',
       run: () => checkCountryFacts(
-        abs('amplify/backend/function/newsCountryIntelligence/src/country_facts.json'),
-        abs('amplify/backend/function/newsPairIntelligence/src/country_facts.json'),
+        fnPath('newsCountryIntelligence', 'src/country_facts.json'),
+        fnPath('newsPairIntelligence', 'src/country_facts.json'),
       ),
     },
     {
@@ -260,12 +264,12 @@ function livePairs() {
       name: 'Studio share modules (frontend + newsSharedAnalysis, 7 files + golden fixture)',
       run: () => {
         for (const [f, dir] of SHARE_COPIES) {
-          const r = checkAllIdentical([abs(`global-perspectives-starter/frontend/src/${dir}${f}`), abs(`amplify/backend/function/newsSharedAnalysis/src/${f}`)]);
+          const r = checkAllIdentical([abs(`global-perspectives-starter/frontend/src/${dir}${f}`), fnPath('newsSharedAnalysis', `src/${f}`)]);
           if (!r.pass) return r;
         }
         return checkAllIdentical([
           abs('global-perspectives-starter/frontend/src/features/analysis-studio/__tests__/fixtures/contextGolden.json'),
-          abs('amplify/backend/function/newsSharedAnalysis/test/fixtures/contextGolden.json'),
+          fnPath('newsSharedAnalysis', 'test/fixtures/contextGolden.json'),
         ]);
       },
     },
@@ -274,15 +278,15 @@ function livePairs() {
       // WebCrypto). Both sides test against this one golden fixture, so the two must stay byte-identical.
       name: 'sampleRuleGolden.json (settle Lambda + frontend)',
       run: () => checkAllIdentical([
-        abs('amplify/backend/function/newsPredictionResolver/test/fixtures/sampleRuleGolden.json'),
+        fnPath('newsPredictionResolver', 'test/fixtures/sampleRuleGolden.json'),
         abs('global-perspectives-starter/frontend/src/features/track-record/__tests__/fixtures/sampleRuleGolden.json'),
       ]),
     },
     {
       name: 'entity-normalization',
       run: async () => checkEntityNormalization(
-        abs('amplify/backend/function/newsSituationIngest/src/classifier-core.js'),
-        abs('amplify/backend/function/NewsProjectInvokeAgentLambda/src/entity-normalize.js'),
+        fnPath('newsSituationIngest', 'src/classifier-core.js'),
+        fnPath('NewsProjectInvokeAgentLambda', 'src/entity-normalize.js'),
       ),
     },
   ];
@@ -326,7 +330,7 @@ function mkTmp() {
 
 async function selfTestCountryFacts() {
   const dir = mkTmp();
-  const srcA = abs('amplify/backend/function/newsCountryIntelligence/src/country_facts.json');
+  const srcA = fnPath('newsCountryIntelligence', 'src/country_facts.json');
   const a = path.join(dir, 'a.json');
   const b = path.join(dir, 'b.json');
   fs.copyFileSync(srcA, a);
@@ -356,8 +360,8 @@ async function selfTestIso3Names() {
 
 async function selfTestEntityNormalization() {
   const dir = mkTmp();
-  const srcA = abs('amplify/backend/function/newsSituationIngest/src/classifier-core.js');
-  const srcB = abs('amplify/backend/function/NewsProjectInvokeAgentLambda/src/entity-normalize.js');
+  const srcA = fnPath('newsSituationIngest', 'src/classifier-core.js');
+  const srcB = fnPath('NewsProjectInvokeAgentLambda', 'src/entity-normalize.js');
   const a = path.join(dir, 'classifier-core.js');
   const b = path.join(dir, 'entity-normalize.js');
   fs.copyFileSync(srcA, a);
@@ -384,7 +388,7 @@ async function selfTestPlaceRule() {
 async function selfTestSampleGolden() {
   const dir = mkTmp();
   const a = path.join(dir, 'a.json'); const b = path.join(dir, 'b.json');
-  const ref = fs.readFileSync(abs('amplify/backend/function/newsPredictionResolver/test/fixtures/sampleRuleGolden.json'), 'utf8');
+  const ref = fs.readFileSync(fnPath('newsPredictionResolver', 'test/fixtures/sampleRuleGolden.json'), 'utf8');
   fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace('"K": 22', '"K": 23'));
   const result = checkAllIdentical([a, b]);
   fs.rmSync(dir, { recursive: true, force: true });

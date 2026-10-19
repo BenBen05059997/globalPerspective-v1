@@ -19,7 +19,7 @@
  */
 
 const path = require('path');
-const SRC = path.join(__dirname, '..', 'amplify', 'backend', 'function', 'newsBreakingAlert', 'src');
+const SRC = path.join(__dirname, '..', 'backend', 'distribution', 'newsBreakingAlert', 'src');
 const { renderAlert } = require(path.join(SRC, 'render.js'));
 const { sendEmail } = require(path.join(SRC, 'sendEmail.js'));
 

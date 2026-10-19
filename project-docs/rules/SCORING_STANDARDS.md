@@ -4,7 +4,7 @@
 
 Severity's LIVING benchmark status is tracked in `quality/calibration/severity-*.md` reports; this document is the 2026-09-14 audit and is not re-verified per-score.
 
-Grounded in direct `grep`/`Read` of `amplify/backend/function/*/src/` and the `quality/` tree on
+Grounded in direct `grep`/`Read` of the Lambda `src/` folders (now `backend/<group>/*/src/`) and the `quality/` tree on
 this date, plus `project-docs/archive/architecture/WORLD_MODEL_FRAGMENTS.md`,
 `IMPORTANCE_SCALE_MAPPING.md`, and `project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md`.
 All citations are file:line as read today; anywhere I could not verify a claim directly, it is
@@ -28,10 +28,10 @@ For every score/rating the system assigns, two independent properties:
 
 ## 1. Canonical severity tier / 4-axis risk dimensions
 
-**Producer:** `amplify/backend/function/newsThreadAnalysis/src/index.js:263` (thread-level),
-`amplify/backend/function/newsCountryIntelligence/src/index.js:487-492` (country-level). Shared
+**Producer:** `backend/pipeline/newsThreadAnalysis/src/index.js:263` (thread-level),
+`backend/pipeline/newsCountryIntelligence/src/index.js:487-492` (country-level). Shared
 derivation module, byte-identical in both Lambdas:
-`amplify/backend/function/newsThreadAnalysis/src/riskDimensions.js` (57 lines).
+`backend/pipeline/newsThreadAnalysis/src/riskDimensions.js` (57 lines).
 
 **RUBRIC = LLM judgment, with a deterministic aggregation step bolted on.**
 
@@ -87,9 +87,9 @@ against, feeding every severity-tier display surface in the product.
 **Producers:**
 - Generation: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (two-pass
   research-then-predict), `src/lib.js` (gating/capture).
-- Resolution proposal: `amplify/backend/function/newsPredictionResolver/src/index.js`.
+- Resolution proposal: `backend/predictions/newsPredictionResolver/src/index.js`.
 - Human confirmation: `predictions/review.js` (repo root).
-- Scoring/track record: `amplify/backend/function/newsPredictionsSnapshot/src/trackRecord.js`.
+- Scoring/track record: `backend/predictions/newsPredictionsSnapshot/src/trackRecord.js`.
 
 **RUBRIC = LLM judgment (well-specified) + deterministic gate + deterministic scoring.**
 
@@ -148,7 +148,7 @@ reliability buckets).** See "The model to copy" section below for why this is th
 
 ## 3. Breaking-alert significance score
 
-**Producer:** `amplify/backend/function/newsBreakingAlert/src/significance.js` (163 lines, pure
+**Producer:** `backend/distribution/newsBreakingAlert/src/significance.js` (163 lines, pure
 function, no I/O — "so it unit-tests in isolation," L1-4).
 
 **RUBRIC = deterministic formula, decidable by construction, well-specified.**
@@ -205,7 +205,7 @@ admission.
 
 ## 4. Economic severity / severityScore
 
-**Producer:** `amplify/backend/function/newsEconomicImpact/src/index.js`.
+**Producer:** `backend/economy-parked/newsEconomicImpact/src/index.js`.
 
 **RUBRIC = partial-deterministic (LLM judgment + deterministic consistency layer).**
 
@@ -250,7 +250,7 @@ distribution-drift monitor — but zero ground-truth check on whether "severe" w
 
 ## 5. Economic quality score (`newsEconomicQuality`) — a judge with no gold set
 
-**Producer:** `amplify/backend/function/newsEconomicQuality/src/index.js` (header, L1-22).
+**Producer:** `backend/economy-parked/newsEconomicQuality/src/index.js` (header, L1-22).
 
 **RUBRIC = LLM judgment.** 5-axis judge — `coherence`, `citation_fidelity`, `analog_match`,
 `severity_calibration`, `no_bs` (`QUALITY_AXES`, L48) — scored by a **different model family**
@@ -276,7 +276,7 @@ ground truth to validate the judge's own axis scores.
 
 ## 6. Source robustness classifier + drift check (`newsSourceAudit`)
 
-**Producer:** `amplify/backend/function/newsSourceAudit/src/index.js`.
+**Producer:** `backend/monitoring/newsSourceAudit/src/index.js`.
 
 **RUBRIC = deterministic classifier (L1, well-specified) + LLM drift check (L1.5, thin).**
 
@@ -312,7 +312,7 @@ noisy?).
 
 ## 7. Impact-audit rubric (`newsImpactAudit`) — a partial benchmark on the SELECTOR, not the scores
 
-**Producer:** `amplify/backend/function/newsImpactAudit/src/index.js` (238 lines).
+**Producer:** `backend/monitoring/newsImpactAudit/src/index.js` (238 lines).
 
 **RUBRIC = LLM judgment (explicit, well-specified) + a real deterministic coverage-gap check.**
 
@@ -361,7 +361,7 @@ problem.
 
 ## 8. Editorial `significance` / `urgency` — thin/no rubric, being reclassified
 
-**Producer:** `amplify/backend/function/newsInvokeGemini/src/index.js`.
+**Producer:** `backend/pipeline/newsInvokeGemini/src/index.js`.
 
 **RUBRIC = LLM judgment, thin, and *asymmetrically validated*.**
 
@@ -427,7 +427,7 @@ range, no benchmark, but also the lowest-stakes (one on-demand display panel, no
 
 ## 10. Recommendation relevance score (`newsRecommend/src/scoring.js`)
 
-**Producer:** `amplify/backend/function/newsRecommend/src/scoring.js`.
+**Producer:** `backend/read-api/newsRecommend/src/scoring.js`.
 
 **RUBRIC = deterministic formula, well-specified, and explicitly NOT an importance score.**
 

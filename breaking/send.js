@@ -26,7 +26,7 @@
 
 const path = require('path');
 const { execFileSync } = require('child_process');
-const SRC = path.join(__dirname, '..', 'amplify', 'backend', 'function', 'newsBreakingAlert', 'src');
+const SRC = path.join(__dirname, '..', 'backend', 'distribution', 'newsBreakingAlert', 'src');
 const { sendEmail } = require(path.join(SRC, 'sendEmail.js'));
 
 const TABLE = 'GlobalPerspectiveBreakingAlerts';

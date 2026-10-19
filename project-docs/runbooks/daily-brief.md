@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge Scheduler `InvokeDev`, `cron(0 23 * * ? *)` Asia/Tokyo, no input.
-Repo source: `amplify/backend/function/newsPostDevTo/src/`.
+Repo source: `backend/distribution/newsPostDevTo/src/`.
 
 ## What it means
 Despite the name, it no longer posts to dev.to (path removed 2026-05-18): it generates the day's brief from `today-archive`, thread analyses and country briefings with one LLM call and writes `DAILY_BRIEF#<date>` / `DAILY_BRIEF` in `SUMMARIZE_PREDICT_TABLE`.

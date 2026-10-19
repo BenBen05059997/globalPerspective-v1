@@ -146,8 +146,8 @@ function buildHumanReviews() {
 function buildLambdaTimeline() {
   const lines = ['## Lambda deploy history (last commit per file)', ''];
   const files = [
-    'amplify/backend/function/newsEconomicImpact/src/index.js',
-    'amplify/backend/function/newsEconomicQuality/src/index.js',
+    'backend/economy-parked/newsEconomicImpact/src/index.js',
+    'backend/economy-parked/newsEconomicQuality/src/index.js',
     'quality/verify_ddb.js',
     'quality/calibration_report.js',
     'quality/verify_pages.sh',

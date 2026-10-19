@@ -40,6 +40,6 @@ Layout and lifecycle: decisions/0025. Finished plans, reports and legacy docs ar
 
 ## Elsewhere
 - `CLAUDE.md` — agent rules and authorization.
-- `amplify/backend/function/<name>/README.md`, `src/features/<name>/README.md` — next to the code.
+- `backend/<group>/<name>/README.md`, `src/features/<name>/README.md` — next to the code.
 - `quality/`, `predictions/` — eval harnesses and their dated reports.
 - `internal-docs/` — legal and marketing notes; `agent-kit/` — portable agent playbooks.

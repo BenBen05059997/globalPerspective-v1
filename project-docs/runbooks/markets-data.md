@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 Three EventBridge rules: `MarketsDataHourly` `rate(1 hour)` input `{"source":"all"}`; `MarketsYieldsDaily` `cron(0 6 ? * MON-FRI *)` input `{"source":"yields"}`; `MarketsMacrosWeekly` `cron(0 2 ? * SUN *)` input `{"source":"macros"}`.
-Repo source: `amplify/backend/function/newsMarketsData/src/`.
+Repo source: `backend/economy-parked/newsMarketsData/src/`.
 
 ## What it means
 Free sources (Frankfurter, Yahoo, CoinGecko, FRED, World Bank) into `MARKETS_DDB_TABLE` `LATEST` + `HISTORY#<date>` rows (FX, rates, commodities, equities, crypto, macros). No LLM. Kept running while economy is parked because country pages read it (decisions/0009).

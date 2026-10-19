@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerGdeltConflict`, `cron(0 */6 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsGdeltConflict/src/`.
+Repo source: `backend/situations/newsGdeltConflict/src/`.
 
 ## What it means
 Aggregates the latest GDELT 2.0 material-conflict export by country and writes S3 `corpus/gdelt/<date>.json` (last run of the day wins). No LLM, no key.

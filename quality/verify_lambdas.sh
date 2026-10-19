@@ -170,8 +170,8 @@ check_cron TriggerNewsEconomicQuality 'cron(0 8 * * ? *)'
 check_role_policies newsEconomicImpact \
   AWSLambdaBasicExecutionRole CloudWatchFullAccess AmazonDynamoDBFullAccess
 
-check_code_drift newsEconomicImpact  amplify/backend/function/newsEconomicImpact/src/index.js
-check_code_drift newsEconomicQuality amplify/backend/function/newsEconomicQuality/src/index.js
+check_code_drift newsEconomicImpact  backend/economy-parked/newsEconomicImpact/src/index.js
+check_code_drift newsEconomicQuality backend/economy-parked/newsEconomicQuality/src/index.js
 
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

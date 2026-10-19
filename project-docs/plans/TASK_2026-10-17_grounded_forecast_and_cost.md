@@ -21,8 +21,8 @@ Status: active.
 **Reads / references:**
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (`buildResearchPrompt`, `buildPredictionPrompt`, `generateAndStore`, `ensureStored`, `findSiblingItem`, `touchItem`, `logPredictionSnapshot`, `assignThreadId`, `readPastArchiveEntries`), `lib.js` (`decideReuse`, `validateTrigger` G1–G6, `buildGatedScenarios`, `METHODOLOGY_VERSION`), `questions.js` (G7–G12)
 - `project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md`, `project-docs/archive/prediction/PREDICTION_V1_EXAMPLE.md`
-- `amplify/backend/function/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
-- `amplify/backend/function/newsInvokeGemini/src/index.js` (`captureIngestion` → `GlobalPerspectiveIngestCapture`: SAW vs CHOSE per run), `project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md`
+- `backend/monitoring/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
+- `backend/pipeline/newsInvokeGemini/src/index.js` (`captureIngestion` → `GlobalPerspectiveIngestCapture`: SAW vs CHOSE per run), `project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md`
 - `project-docs/runbooks/DEEPSEEK_COST_ESTIMATE.md`, memory `project_deepseek_cost`
 - Consumers: `RESEARCH_BRIEFING` is served by `newsSensitiveData` (`research_briefing` action) but no frontend page calls `fetchResearchBriefingCache` → safe to stop producing.
 
@@ -95,7 +95,7 @@ Success bar for P7d: hindsight recall ≥ ours, big misses < ours, non-Western r
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (P1 prompt + single call; P3 threadId reuse + PRED gap; P4 usage logging)
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/lib.js` (P2 G13 in `buildGatedScenarios`; P3 reuse decision; version constant)
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/test/lib.test.js` (+ new tests)
-- `amplify/backend/function/newsModelGuard/src/index.js` (P5)
+- `backend/monitoring/newsModelGuard/src/index.js` (P5)
 - P4 usage logging in: `newsSituationIngest/src/index.js`, `newsInvokeGemini/src/index.js`, `newsSystemsAnalysis/src/*`, `newsCountryIntelligence/src/*`, `newsThreadAnalysis/src/*`, `newsWeeklyBrief/src/*`, `newsPostDevTo/src/*` (diff each deployed zip against the repo first)
 - New: `predictions/forecast-ab/run.mjs`, `predictions/forecast-ab/REPORT_2026-10-17.md` (P0); `predictions/jev-backtest/*` (P6)
 

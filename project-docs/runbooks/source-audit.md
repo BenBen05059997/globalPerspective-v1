@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `newsSourceAuditDaily`, `cron(30 11 ? * MON,WED,FRI *)` UTC, no input.
-Repo source: `amplify/backend/function/newsSourceAudit/src/`.
+Repo source: `backend/monitoring/newsSourceAudit/src/`.
 
 ## What it means
 For the top `AUDIT_N` live topics, fetches source articles and asks DeepSeek (`AUDIT_MODEL`) whether the cached summary drifted; no writes. When drifted summaries ≥ `DRIFT_ALERT_THRESHOLD` it publishes `⚠ Source audit: N summaries drifted from sources` to SNS `GlobalPerspectiveAlerts`.

@@ -175,9 +175,10 @@ Times are UTC unless noted; exact cron expressions and ENABLED/DISABLED state ar
    capture of what it saw to S3 `audit/ingest-capture/` (read by the selection shadow and the parked
    impact audit). Brave search is no longer used in ingest.
 2. `NewsProjectInvokeAgentLambda-dev` (10 minutes later) reads `staging`, writes a summary, cause
-   trace and forecast per topic to `SummarizeAndPredict` (`TOPIC#…` keys), logs each forecast to
-   `GlobalPerspectivePredictionLog`, assigns thread ids (writing `threads/story-map.json` to S3 by
-   matching against `stories/state/`), then swaps `staging` → `latest` and updates the archive.
+   trace and forecast per topic to `SummarizeAndPredict` (`TOPIC#…` keys, each carrying `threadId`), logs
+   each forecast to `GlobalPerspectivePredictionLog`, assigns thread ids (writing `threads/story-map.json`
+   to S3 by matching against `stories/state/`), then swaps `staging` → `latest`, updates the archive and
+   writes the thread → topic pointer `THREAD#<threadId>` / `TOPICS` (current `topicId`, all `topicIds`).
 3. `newsThreadAnalysis` (daily) writes per-thread analysis and dated history
    (`THREAD#…` / `THREAD_ANALYSIS`, `THREAD_HISTORY#<date>`); `newsSystemsAnalysis` (daily) reads those
    and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`).

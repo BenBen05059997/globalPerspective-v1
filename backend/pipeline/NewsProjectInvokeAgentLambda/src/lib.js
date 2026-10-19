@@ -502,7 +502,31 @@ function threadSiblingsToday(archiveEntries, threadId) {
   return [...new Set((archiveEntries || []).filter((e) => e && e.threadId === threadId && e.topicId).map((e) => e.topicId))];
 }
 
+// `threadId` attribute for a per-story row (omitted when unknown, so a row never stores null).
+function threadAttr(threadId) {
+  return threadId ? { threadId: String(threadId) } : {};
+}
+
+// UpdateCommand params (minus TableName) for the thread's pointer row `THREAD#<threadId>` / `TOPICS`.
+// topics = this run's topics on the thread, in list (rank) order: the first is the current topicId
+// (+ title, generation), and `topicIds` (a string set) accumulates every topicId the thread has had,
+// so a reader can go threadId -> TOPIC#<topicId> rows (current) and PRED#<topicId> rows (all).
+const THREAD_POINTER_SK = 'TOPICS';
+function threadPointerUpdate(threadId, topics, generationId, nowIso) {
+  return {
+    Key: { PK: `THREAD#${threadId}`, SK: THREAD_POINTER_SK },
+    UpdateExpression: 'SET threadId = :th, topicId = :t, title = :ti, generationId = :g, updatedAt = :n ADD topicIds :ids',
+    ExpressionAttributeValues: {
+      ':th': threadId, ':t': topics[0].id, ':ti': topics[0].title || '', ':g': generationId || null, ':n': nowIso,
+      ':ids': new Set(topics.map((t) => t.id)),
+    },
+  };
+}
+
 module.exports = {
+  threadAttr,
+  threadPointerUpdate,
+  THREAD_POINTER_SK,
   PROMPT_VERSION,
   forecastedOn,
   threadSiblingsToday,

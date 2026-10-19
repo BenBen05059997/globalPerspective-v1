@@ -22,8 +22,7 @@ Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHI
   `shared/styles/tokens.css`, shared blocks in `shared/ui/` — reuse them, never re-style locally.
 - `docs/` is build output — don't hand-edit; `docs/config.js` is operator-owned.
 - Lambdas: `backend/<group>/<name>/src/`, shared helpers in `backend/shared/src/`; `scripts/functions.json`
-  `dir` is the path (newsAnalyze, newsPolarBilling, NewsProjectInvokeAgentLambda still in
-  `amplify/backend/function/`). Deploy with `scripts/lambda.sh`.
+  maps deployed name -> `dir` and the features each serves. Deploy with `scripts/lambda.sh` (diff first).
 - Scripts/checks: `scripts/`, `quality/`, `predictions/`.
 
 ## Verify

@@ -53,7 +53,7 @@ stage() {
   rsync -aL --exclude node_modules --exclude '*.test.js' --exclude '*.test.mjs' --exclude 'test-*' \
     --exclude 'test_*' --exclude .gitignore "$SRC/" "$1/"
   if [ "${2:-}" = deps ] && [ "$NODE_MODULES" = 1 ]; then
-    local npm_flags=(--omit=dev --os=linux --cpu=x64 --no-audit --no-fund --loglevel=error)
+    local npm_flags=(--omit=dev --os=linux --cpu=x64 --force --no-audit --no-fund --loglevel=error)  # --force: linux-only optional deps (sharp) on a mac host
     if [ -f "$1/package-lock.json" ]; then (cd "$1" && npm ci "${npm_flags[@]}")
     else (cd "$1" && npm install --no-package-lock "${npm_flags[@]}"); fi
   fi

@@ -15,9 +15,10 @@ view is a dead end, and the same brief lives at three addresses.
 2. Merge `/daily`, `/weekly-brief`, `/briefings` into one Briefings page (modes: read, weekly, present). Old
    addresses keep working through real redirects in the Cloudflare Worker.
 3. Keep `/today`; link it from the map and give it a bot pre-render.
-4. Studio leaves the navigation now (still reachable by URL; shares keep working). Its redesign as the
-   bring-your-own-hypothesis tool gets its own plan. It returns when the public example, sharing and a
-   deployed version matching the repo are all in place.
+4. Studio leaves the navigation now (still reachable by URL; shares keep working). Measured 2026-10-19
+   (`.board/linking/studio.md`): 0 member runs in 30 days, 0 shares; the deployed `newsAnalyze` prompt is stale
+   against the frontend's. Its redesign as the bring-your-own-hypothesis tool gets its own plan. It returns when
+   the public example, sharing and a deployed version matching the repo are all in place.
 5. Economy stays parked (not deleted). Remove every link that dead-ends in economy; label the country FX box as
    raw market prices with a timestamp.
 
@@ -52,8 +53,11 @@ GUM/HKG/VAT); every other table and alias list is deleted; one resolver `resolve
 - Drift "Because:" lines: `threadId` next to the `topicId`.
 - Studio citations: `threadId`.
 - Weekly signals: fill `related`; a route for past weeks.
-- Country records: merge duplicates under the canonical name, retire the 7 region records (DynamoDB writes and
-  deletes: operator yes).
+- Country records: merge duplicates under the canonical name, retire the 7 region records. Prepared dry run
+  (`.board/linking/country_merge.md` + `.mjs`): copy 105, delete 368 (112 alias + 256 region), 0 user rows to
+  rewrite. Apply only after a table backup AND after the writers canonicalise names (`newsCountryIntelligence`
+  keys by the raw LLM name; `newsCountryFactsUpdater` hard-codes the long DRC/UAE names), else the duplicates
+  return; operator yes per run.
 
 ### Data-quality issues found (backlog, not part of linking)
 Thread mis-joins (a Brazil debate inside the Amazon-deforestation thread), situations fragmenting per entity
@@ -132,10 +136,17 @@ operator's yes.
 - Topic ids are the title plus the run position (`newsInvokeGemini/src/index.js:683`, `createStableTopicId(title, idx)`),
   so they change every run; summaries and forecasts are keyed by them. Thread ids are stable. Rule: every
   per-story record is keyed by `threadId`; the topic id stays internal.
-- A topic joins a thread when its `continues_topic` title matches, else when keyword Jaccard >= 0.4 against the
-  last 7 days (`NewsProjectInvokeAgentLambda/src/index.js:1189-1210`). Known mis-join live (a Brazil debate inside
-  the Amazon-deforestation thread). Work: raise the bar (require the same country and a higher score, or a
-  model check), log every join with its score, add an operator merge/split tool.
+- A topic joins a thread when its `continues_topic` title matches, else when the composite score
+  (`0.5*keywords + 0.3*region + 0.2*category`) >= 0.4 against the last 7 days
+  (`NewsProjectInvokeAgentLambda/src/index.js:1189-1210`). Measured 10-06..10-19 (`.board/linking/joins.md`, route
+  reconstructed from NewsCache `archive#` rows): 380 novel topics → 30% joined by title, 31% by score, 39% new;
+  of 15 judged joins scoring 0.40-0.55, 8 were wrong; every wrong join had keyword-only overlap <= 0.10, every
+  right one >= 0.14; same region + category alone scores 0.5 with zero keyword overlap. 39 of 153
+  `continues_topic` titles did not match verbatim (case/wording); same-day earlier generations are never
+  compared, so same-day duplicates fork. Work: keep 0.4 but require keyword-only overlap >= 0.15 (a shared ISO3
+  gate is useless: 115 of 116 score joins already share one); normalise titles in both lookups; include same-day
+  earlier generations in the lookback; log every join `{topicId, threadId, via, score, kwScore}`; operator
+  merge/split tool.
 - Situation id = `news#<axis>#<ISO3>#<entity>` (`newsSituationIngest/src/classifier-core.js:133`), so one country
   splits by entity: live 2026-10-19, 59 situations, Ukraine 8, France 7, Iran 7; only 20 carry a `threadId`.
   Work: key news situations by country + thread when a thread exists, so the map, the story and the country agree.

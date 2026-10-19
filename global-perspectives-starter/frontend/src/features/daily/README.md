@@ -4,36 +4,46 @@
 country to watch, shape of the day, full analysis) with previous/next date navigation. Its data hook
 `useDailyBrief` lives in `@/shared/hooks` because many other surfaces read the latest brief.
 
+## Status
+- Live; public for the latest brief (past dates send the auth token when there is one).
+- `ECONOMY_PARKED` (`@/shared/lib/economyFlag`): the Economic footprint block is not mounted.
+
 ## Routes
-- `/daily` -> `DailyPage` (latest available brief)
+- `/daily` -> `DailyPage` (lazy; latest available brief)
 - `/daily/:dateKey` -> `DailyPage` (a specific date)
 
-## Entry files
-- `DailyPage.jsx` - date nav, masthead, numbered sections, share / copy / save controls
-- `@/shared/hooks/useDailyBrief.js` - `useDailyBrief(dateKey)`, `loadLatestDailyBrief()`, `MAX_LOOKBACK_DAYS` (30)
+## Frontend
+- `DailyPage.jsx` - date nav, masthead, numbered sections, share / copy / save controls; local `EconomicFootprint`
+- `@/shared/hooks/useDailyBrief.js` - `useDailyBrief(dateKey)`, `loadLatestDailyBrief()`, `MAX_LOOKBACK_DAYS` (30);
+  also used by map (`SituationHome`, `usePausedSince`), static About, account (Account, DeskPanel) and briefings —
+  a change there hits them all.
+- Public API: no `index.js`; only `app/App.jsx` imports the page (lazy, by path).
+- Imports from other features: `@/features/briefings` -> `storyLinkPath`, `peekInputForStory`; `@/features/economy` ->
+  `InstrumentChip`. Trajectory comes from `@/shared/lib/trajectory` (`trajectoryOf`), not from countries.
+- The served brief may be older than the requested date; date arrows step from the served date and the page says
+  when the edition is not today's. The rising-thread card uses `StoryLink` only for ids starting `thread-`.
+
+## Backend
+- Generated row: [reference/features.md#daily](../../../../../project-docs/reference/features.md#daily)
+- `newsPostDevTo` (Scheduler `InvokeDev`, 23:00 Asia/Tokyo; it no longer posts to dev.to) writes `DAILY_BRIEF#<date>` /
+  `DAILY_BRIEF` to `SummarizeAndPredict`; `newsSensitiveData-dev` serves it.
 
 ## Data
-- No date: restProxy `latest_daily_brief` (one call, server walks back `MAX_LOOKBACK_DAYS`)
-- Explicit date: restProxy `daily_brief`, walking back in batches of 10; past dates are sent with the auth token when there is one
-- Cache: localStorage `gp_daily_brief_v1` (30-minute TTL, last 7 dates) and `gp_daily_brief_last_found_v1`; one in-flight promise per date shared across hook instances
-- Economic footprint block: `useDisruptionsList` (restProxy `economic_impact_list`), disabled while `ECONOMY_PARKED`
+- No date: restProxy `latest_daily_brief` (one call; the server walks back `lookbackDays`, 30).
+- Explicit date: restProxy `daily_brief`, walking back in batches of 10.
+- Cache: localStorage `gp_daily_brief_v1` (30-minute TTL, last 7 dates) and `gp_daily_brief_last_found_v1`; one
+  in-flight promise per date shared across hook instances; "nothing found" is cached too (no rescan per page load).
+- Economic footprint: `useDisruptionsList` (restProxy `economic_impact_list`), disabled while `ECONOMY_PARKED`.
 
-## Shared blocks used
-- `@/shared/ui/SectionHeader`, `ShareButtons`, `CopyBriefing`, `StoryLink`, `SeverityBadge`, `TierChip`, `boot/BootLoader`
+## Docs
+- Runbook: [daily-brief.md](../../../../../project-docs/runbooks/daily-brief.md)
+- Decisions: [0009](../../../../../project-docs/decisions/0009-economy-parked.md) (economy parked: footprint hidden)
 
-## Public API (`index.js`)
-- None: no `index.js`; nothing outside this folder imports it (route pages load lazily by path from `app/App.jsx`).
-
-## Imports from other features
-- `@/features/briefings` -> `storyLinkPath`, `peekInputForStory`
-- `@/features/economy` -> `InstrumentChip` (economic footprint)
-- From shared: `@/shared/hooks/useDisruptionsList`, `@/shared/ui/SaveButton`, `@/shared/lib/trajectory.js` (`trajectoryOf`)
-
-## Gotchas
-- `useDailyBrief` is also used by the map console, `usePausedSince` (map, used by Layout), About, Account / Desk, and briefings: a change here hits them all.
-- "Nothing found" is cached too, so an outage does not rescan on every page load.
-- The served brief may be older than the requested date; date arrows step from the served date, and the page says when the edition is not today's.
-- `EconomicFootprint` is not mounted while `ECONOMY_PARKED` (`@/shared/lib/economyFlag`) is true.
-- The rising-thread card uses `StoryLink` only for ids starting `thread-`, else a plain `Link`.
+## How to check it
+- Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/daily src/shared/hooks/__tests__/useDailyBrief.test.js`
+- Latest brief served (from the repo root):
+  `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"latest_daily_brief","payload":{"lookbackDays":30}}' | head -c 300`
+- Job ran: `aws logs tail /aws/lambda/newsPostDevTo --since 2d --region ap-northeast-1 --filter-pattern '"[DAILY_BRIEF] Stored for"'`
+- Schedule: `aws scheduler get-schedule --name InvokeDev --region ap-northeast-1 --query State`
 
 Last verified: 2026-10-19

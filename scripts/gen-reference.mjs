@@ -6,7 +6,8 @@
 //   node scripts/gen-reference.mjs --offline  # functions.json + source only; no AWS calls
 //
 // AWS calls are list/get only. Environment variable VALUES never leave the AWS CLI: the query asks for
-// keys(Environment.Variables), so only key names reach this process.
+// keys(Environment.Variables), so only key names reach this process — except keys ending in TABLE, whose
+// values are DynamoDB table names (features.md shows which tables a feature's Lambdas write).
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
@@ -65,9 +66,14 @@ if (!OFFLINE) {
 
   const envKeys = {};
   const url = {};
+  const tables = {}; // lambda -> { ENV_KEY_ENDING_IN_TABLE: table name }
   await pool(NAMES, async (n) => {
     envKeys[n] = (await aws('lambda', 'get-function-configuration', '--function-name', n, '--query', 'keys(Environment.Variables || `{}`)')).sort();
     url[n] = (await aws('lambda', 'list-function-url-configs', '--function-name', n, '--query', 'FunctionUrlConfigs[].AuthType')) || [];
+    const tableKeys = envKeys[n].filter((k) => /^[A-Z0-9_]+TABLE$/.test(k));
+    tables[n] = tableKeys.length
+      ? await aws('lambda', 'get-function-configuration', '--function-name', n, '--query', `{${tableKeys.map((k) => `${k}: Environment.Variables.${k}`).join(', ')}}`)
+      : {};
   });
 
   const rules = await aws('events', 'list-rules', '--query', 'Rules[].{Name: Name, State: State, ScheduleExpression: ScheduleExpression, EventPattern: EventPattern}');
@@ -89,7 +95,7 @@ if (!OFFLINE) {
   const listPrefixes = async (prefix) => (await aws('s3api', 'list-objects-v2', '--bucket', bucket, '--delimiter', '/', '--prefix', prefix, '--query', 'CommonPrefixes[].Prefix')) || [];
   const tops = await listPrefixes('');
   const s3 = { bucket, tree: await pool(tops, async (top) => ({ top, children: await listPrefixes(top) })) };
-  live = { runtime, unlisted, envKeys, url, schedules, otherRules, otherSchedules, s3 };
+  live = { runtime, unlisted, envKeys, url, tables, schedules, otherRules, otherSchedules, s3 };
 }
 
 const schedules = live ? live.schedules : NAMES.flatMap((n) => (FUNCTIONS[n].schedules || []).map((s) => ({
@@ -168,7 +174,8 @@ const files = {};
   files['env-keys.md'] = md + lines.join('\n');
 }
 
-// ---------- routes.md + features.md ----------
+// ---------- routes.md ----------
+let routes;
 {
   const app = readFileSync(join(SRC, 'app/App.jsx'), 'utf8');
   const legacy = readFileSync(join(SRC, 'app/LegacyRedirects.jsx'), 'utf8');
@@ -188,7 +195,7 @@ const files = {};
   redirectTarget.MapRedirect = 'redirect → `/` (keeps search + hash)';
   const inline = { Boom: 'deliberate crash (error-boundary test)', NotFound: '404 page' };
 
-  const routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\b/g)].map((m) => {
+  routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\b/g)].map((m) => {
     const comp = m[2];
     const imp = imports[comp];
     const feature = imp?.path.match(/^src\/features\/([^/]+)/)?.[1] || null;
@@ -199,26 +206,9 @@ const files = {};
   md += '\nPaths are relative to `global-perspectives-starter/frontend/`. Lazy = its own chunk (React.lazy).\n\n';
   md += table(['Path', 'Component', 'File', 'Lazy', 'Kind'], routes.map((r) => [code(r.path), r.comp, code(r.file), r.lazy ? 'yes' : 'no', r.kind])) + '\n';
   files['routes.md'] = md;
-
-  const featDir = join(SRC, 'features');
-  const feats = readdirSync(featDir).filter((d) => statSync(join(featDir, d)).isDirectory()).sort();
-  const rows = feats.map((name) => {
-    const dir = join(featDir, name);
-    const top = readdirSync(dir).filter((f) => /\.(jsx?|tsx?)$/.test(f) && !/\.test\./.test(f)).sort();
-    const subs = readdirSync(dir).filter((f) => statSync(join(dir, f)).isDirectory()).sort();
-    const own = routes.filter((r) => r.feature === name).map((r) => code(r.path));
-    const appImporters = walk(join(SRC, 'app'), ['.js', '.jsx']).filter((f) => new RegExp(`@/features/${name}['/]`).test(readFileSync(f, 'utf8'))).map((f) => code(relative(join(SRC, '..'), f)));
-    const nFiles = walk(dir, ['.js', '.jsx', '.ts', '.tsx']).length;
-    const routeCell = own.length ? own.join(', ') : appImporters.length ? `none — imported by ${appImporters.join(', ')}` : 'none — imported by other features';
-    return [code(`src/features/${name}`), routeCell, top.join(', ') || '—', subs.join(', ') || '—', nFiles];
-  });
-  let fmd = header('Frontend features', '`src/features/*`, routes from `src/app/App.jsx`');
-  fmd += `\n${feats.length} feature folders under \`global-perspectives-starter/frontend/src/features/\`. Dependency direction (eslint \`no-restricted-imports\`): app → features → shared.\n\n`;
-  fmd += table(['Folder', 'Routes', 'Top-level files', 'Subfolders', 'JS files'], rows) + '\n';
-  files['features.md'] = fmd;
 }
 
-// ---------- s3-prefixes.md ----------
+// ---------- s3-prefixes.md + features.md (features uses the S3 scan) ----------
 {
   // Path-like string literals in Lambda code (comments and imports skipped). A literal counts when it looks
   // like a key (file extension, trailing slash or template) or shares its top segment with one that does;
@@ -235,7 +225,7 @@ const files = {};
           // env-overridable prefix defaults: process.env.SIGNALS_PREFIX || 'signals'
           ...[...line.matchAll(/process\.env\.[A-Z0-9_]*PREFIX[A-Z0-9_]*\s*\|\|\s*['"`]([a-z][a-z0-9_/-]*)['"`]/g)].map((m) => m[1].replace(/\/?$/, '/')),
         ];
-        for (const lit of lits) if (!NOT_S3.test(lit.split('${')[0])) hits.push({ lit, dir: dir.split('/').pop() });
+        for (const lit of lits) if (!NOT_S3.test(lit.split('${')[0])) hits.push({ lit, dir: dir.split('/').pop(), file: f });
       }
     }
   }
@@ -278,6 +268,111 @@ const files = {};
   md += '## DATA_STRATEGY prefix table (documented intent)\n\n';
   md += table(['Prefix', 'Documented writer', 'Cadence', 'Readers'], docRows.map((r) => [r.prefixes.map(code).join(', '), r.writer, r.cadence, r.readers])) + '\n';
   files['s3-prefixes.md'] = md;
+
+  // features.md: one section per feature folder, so a feature check starts in one place (its README links here).
+  // Lambdas: functions.json `features` (product names; two differ from their folder). Storage: what those
+  // Lambdas write — S3 prefixes found in a source file that also puts objects, DynamoDB tables named in a
+  // write command (shared code in backend/shared is not attributed). Heuristic over repo source.
+  const FOLDER = { today: 'home', stories: 'threads' };
+  const featDir = join(SRC, 'features');
+  const feats = readdirSync(featDir).filter((d) => statSync(join(featDir, d)).isDirectory()).sort();
+  const featuresOf = (n) => (FUNCTIONS[n].features || []).map((f) => FOLDER[f] || f);
+  const unknown = [...new Set(NAMES.flatMap(featuresOf))].filter((f) => f !== 'ops' && !feats.includes(f));
+  const textOf = (() => { const cache = {}; return (f) => (cache[f] ??= readFileSync(f, 'utf8')); })();
+  const S3_WRITE = /PutObjectCommand|CopyObjectCommand|\bputJson\b|\bputObj\b|\bs3PutJson\b/;
+  const DDB_WRITE = /new\s+(?:Put|Update|Delete|BatchWrite|TransactWrite)(?:Item)?Command\s*\(/g;
+
+  const s3Writes = (dir) => [...new Set(hits.filter((h) => h.dir === dir.split('/').pop() && roots.has(h.lit.split('/')[0]) && S3_WRITE.test(textOf(h.file))).map((h) => normalize(h.lit)))].sort();
+  const tableWrites = (n) => {
+    const srcs = lambdaSources(FUNCTIONS[n].dir);
+    const dflt = {}; // env key -> code default
+    const alias = {}; // const name -> env key
+    const keys = new Set(); // every *TABLE env key the Lambda reads
+    for (const f of srcs) {
+      for (const m of textOf(f).matchAll(/process\.env\.(\w*TABLE)\b/g)) keys.add(m[1]);
+      for (const m of textOf(f).matchAll(/process\.env\.(\w*TABLE)\s*\|\|\s*['"]([^'"]+)['"]/g)) dflt[m[1]] ??= m[2];
+      for (const m of textOf(f).matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*process\.env\.(\w*TABLE)\b/g)) alias[m[1]] = m[2];
+    }
+    const name = (key) => live?.tables[n]?.[key] || dflt[key] || `env ${key}`;
+    const out = new Set();
+    for (const f of srcs) {
+      const t = textOf(f);
+      for (const m of t.matchAll(DDB_WRITE)) {
+        const win = t.slice(m.index, m.index + 300);
+        const ref = win.match(/TableName:\s*(?:process\.env\.(\w+)|['"]([^'"]+)['"]|(\w+))/) || win.match(/RequestItems:\s*\{\s*\[(?:process\.env\.(\w+)|()(\w+))\]/);
+        if (!ref) continue;
+        if (ref[1]) out.add(name(ref[1]));
+        else if (ref[2]) out.add(ref[2]);
+        else if (alias[ref[3]]) out.add(name(alias[ref[3]]));
+        // A table passed in as a parameter: unambiguous only when the Lambda reads one table key.
+        else if (keys.size === 1) out.add(name([...keys][0]));
+        else out.add('(table from a variable)');
+      }
+    }
+    return [...out].sort();
+  };
+
+  const runbooks = readdirSync(join(ROOT, 'project-docs/runbooks')).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
+  const runbookTitle = Object.fromEntries(runbooks.map((f) => [f, (readFileSync(join(ROOT, 'project-docs/runbooks', f), 'utf8').match(/^# .*$/m) || [''])[0]]));
+  const word = (s) => new RegExp(`(?<![\\w-])${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`);
+  const runbookOf = (n) => runbooks.filter((f) => word(n).test(runbookTitle[f]));
+
+  const decisionsDir = join(ROOT, 'project-docs/decisions');
+  const decisions = readdirSync(decisionsDir).filter((f) => /^\d{4}-.*\.md$/.test(f)).sort();
+  // A decision belongs to a feature when its file name or text names the folder (`features/<name>`) or its text
+  // names one of the feature's routes exactly.
+  const routeTerm = (p) => {
+    const esc = p.split('/:')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return p.includes('/:') ? `${esc}/` : `${esc}(?![\\w/-])`;
+  };
+  const decisionsOf = (name, own) => {
+    const terms = [`features/${name}(?![\\w-])`, ...own.filter((p) => p !== '/' && p !== '*').map(routeTerm)];
+    const re = new RegExp(`(?<![\\w/.-])(?:${terms.join('|')})`);
+    return decisions.filter((f) => f.includes(`-${name}-`) || re.test(readFileSync(join(decisionsDir, f), 'utf8')));
+  };
+
+  const appFiles = walk(join(SRC, 'app'), ['.js', '.jsx']);
+  const summary = [];
+  const sections = feats.map((name) => {
+    const dir = join(featDir, name);
+    const top = readdirSync(dir).filter((f) => /\.(jsx?|tsx?)$/.test(f) && !/\.test\./.test(f) && f !== 'index.js').sort();
+    const own = routes.filter((r) => r.feature === name).map((r) => r.path);
+    const appImporters = appFiles.filter((f) => new RegExp(`@/features/${name}['/]`).test(textOf(f))).map((f) => code(relative(join(SRC, '..'), f)));
+    const indexFile = join(dir, 'index.js');
+    const api = existsSync(indexFile) ? [...textOf(indexFile).matchAll(/export\s*\{([^}]+)\}/g)].flatMap((m) => m[1].split(',').map((s) => s.trim().split(/\s+as\s+/).pop())) : [];
+    const fns = NAMES.filter((n) => featuresOf(n).includes(name));
+    const decs = decisionsOf(name, own);
+    const routeCell = own.length ? own.map(code).join(', ') : appImporters.length ? `none — imported by ${appImporters.join(', ')}` : 'none — imported by other features';
+    summary.push([`[${name}](#${name})`, routeCell, fns.length]);
+
+    const lines = [`## ${name}\n`];
+    lines.push(`- Folder: ${code(`src/features/${name}`)}; routes: ${routeCell}`);
+    lines.push(`- Entry files: ${top.map(code).join(', ') || '—'}`);
+    lines.push(`- Public API (\`index.js\`): ${existsSync(indexFile) ? api.map(code).join(', ') || '—' : 'no index.js'}`);
+    lines.push(`- Decisions: ${decs.length ? decs.map((f) => `[${f.slice(0, 4)}](../decisions/${f})`).join(', ') : '— (none name its folder or routes)'}`);
+    lines.push('');
+    if (!fns.length) { lines.push('No Lambda in functions.json lists this feature.'); return lines.join('\n'); }
+    lines.push(table(['Lambda', 'Repo dir', 'Schedule (state)', 'Runbook', 'Writes S3', 'Writes DynamoDB'], fns.map((n) => {
+      const f = FUNCTIONS[n];
+      const sch = schedules.filter((s) => s.targets.includes(n)).map((s) => `${s.via === 'Scheduler' ? 'Scheduler' : 'rule'} ${s.name} ${code(s.expr)}${s.tz !== 'UTC' ? ` ${s.tz}` : ''} (${s.state})`);
+      if (live?.url[n]?.length) sch.push('Function URL');
+      const rb = runbookOf(n);
+      return [
+        code(n), f.dir ? code(f.dir) : '— (no repo source)', sch.join('; ') || '—',
+        rb.map((r) => `[${r}](../runbooks/${r})`).join(', ') || '—',
+        f.dir ? s3Writes(f.dir).map(code).join(' ') || '—' : '—',
+        f.dir ? tableWrites(n).map(code).join(' ') || '—' : '—',
+      ];
+    })));
+    return lines.join('\n');
+  });
+  let fmd = header('Frontend features', '`src/features/*`, routes from `src/app/App.jsx`, `features` lists in `scripts/functions.json`, Lambda source (S3/DynamoDB writes, heuristic), runbook titles, decision records' + (live ? ', schedules + `*TABLE` env values from live AWS' : ''));
+  fmd += `\n${feats.length} feature folders under \`global-perspectives-starter/frontend/src/features/\`. Dependency direction (eslint \`no-restricted-imports\`): app → features → shared. Each folder's README.md is the front door and links to its section here.\n\n`;
+  fmd += 'Lambdas: those whose `features` in functions.json name the folder (`today` = home, `stories` = threads); a row does not mean the page calls it directly — the read API Lambdas serve many features. Writes: S3 prefixes found in a source file that also puts objects; DynamoDB tables named in a Put/Update/Delete/BatchWrite command (`env KEY` when no name is known). Shared code in `backend/shared` and keys built only from variables are not attributed; deployed zips that differ from the repo are not scanned.\n\n';
+  fmd += table(['Feature', 'Routes', 'Lambdas'], summary) + '\n\n';
+  if (unknown.length) fmd += `functions.json names features with no folder: ${unknown.map(code).join(', ')}.\n\n`;
+  fmd += sections.join('\n\n') + '\n';
+  files['features.md'] = fmd;
 }
 
 mkdirSync(OUT, { recursive: true });

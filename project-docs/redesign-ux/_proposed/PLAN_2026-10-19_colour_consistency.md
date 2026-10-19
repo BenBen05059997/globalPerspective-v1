@@ -31,10 +31,29 @@ Why: the operator sees the home (`/`) and map mixing yellow, red, orange and whi
 | C3 | Surfaces/text/borders in `SituationHome.css` and `RadarMap.jsx` → tokens; delete `.sh-root` duplicates; one selected style | M | no |
 | C4 | One green (`--ok`), "new" uses the accent; one amber (`--warn`) for stale/paused/escalating | S | no |
 | C5 | Re-pick 2 crisis hues off the status/accent colours: humanitarian off amber, economic off the accent cyan; conflict keeps a warm red but `--error` moves away from it or is not used on the map | S code, design choice | **yes — operator picks from 2–3 swatches** |
-| C6 | Radar sweep at low opacity (or off by default) | S | yes (taste) |
+| C6 | Radar: one sweep per visit that reveals what matters (R1-R6 below), replacing the endless bright loop | M | decided 2026-10-19 |
 | C7 | Ratchet: also count deck.gl RGB arrays and named colours; baseline must fall after C1–C4 | S | no |
 
 C1 preview (live page with a local style override, nothing deployed): `risk_chips_before.png` → `risk_chips_after_neutral.png`, and `home_after_neutral_chips.jpg`. With neutral chips the colour left on the page is only the crisis type, and the alert list and feed read as one system.
+
+### Operator decisions (2026-10-19)
+- C1-C4 and C7 agreed. C5 direction agreed: conflict keeps its warm red and `--error` moves away from it; humanitarian moves off the warning amber; economic moves off the accent cyan. Final hues picked from swatches shown on the map.
+- The radar sweep is too much. Replace the endless 10s loop with a single sweep that shows what is happening and what is important (R1-R6).
+
+### C6 radar redesign: one sweep that reveals
+Today (`features/map/components/RadarMap.jsx`): the beam loops every 10s forever at full accent brightness; every marker flares as it passes; up to 8 rings (`lib/pulse.js`, new or escalating in 24h) ripple forever (`.sm-ring`, `SituationHome.css:140`). Nothing tells the reader why a marker is lit.
+| # | Change |
+|---|---|
+| R1 | One lap when the map opens (about 4-5s), then the beam stops and the map is still. The beam is faint and thin (about a quarter of today's brightness). The play button becomes "Scan again" (one lap). |
+| R2 | Only important markers react when the beam passes: new since your last visit (`newIds`) or new/escalating in 24h (`pulseSet`, cap lowered to 5). Each pings: a ring grows out 2-3 times, then stops. No flare on the others; no endless rings. |
+| R3 | A small "NEW" tag next to markers opened since your last visit; it stays until the next visit. |
+| R4 | When the beam reaches a NEW or important marker, a short card appears beside it for about 3s: headline, crisis type, risk word, how long ago (plus a one-line summary if the bundle carries one; checked before building). One card at a time, queued; the matching feed row highlights. Hover and click work as now. |
+| R5 | When fresh data arrives while the page is open, one sweep runs and pings only what is newly added. |
+| R6 | Reduced motion: no sweep and no cards; NEW tags and a static ring only. |
+Globe view keeps its spin for now; the same ping and NEW tag can follow there once the radar version is approved.
+
+### Build order (each checked in a local browser; one deploy at the end, which needs the operator's yes)
+C1 neutral tier chips → C2 one hue source → C4 one green/one amber → C3 surfaces/text/selected → C6 radar R1-R6 → C5 swatches shown, operator picks → C7 ratchet tightened, baseline lowered.
 
 ### Found on the way (bugs, not colour)
 - Country list "Highest Risk" rail sorts by tier then article count, not by score: United States (85) is listed above Ukraine (95) (`features/countries/CountryListPage.jsx:185-189`). S.

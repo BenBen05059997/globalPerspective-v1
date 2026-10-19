@@ -1,11 +1,12 @@
 'use strict';
 
-const { keepDayZero } = require('./dayZero');
+const { keepDayZero } = require('./_shared/dayZero');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
 const ISO3_NAMES = require('./iso3Names.json');
-const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./riskDimensions');
+const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
 
 let EDITORIAL_FACTS = {};
 try {
@@ -16,7 +17,6 @@ try {
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; the env sets the live model
-const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '5000', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
@@ -651,56 +651,7 @@ async function writeAnalysis(countryName, analysis, country) {
 
 // ─── Grok API ────────────────────────────────────────────────────────────────
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeGrok(prompt) {
-  const started = Date.now();
-  const response = await fetch(GROK_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROK_KEY}`,
-    },
-    body: JSON.stringify({
-      model: GROK_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: MAX_TOKENS,
-      temperature: TEMPERATURE,
-      top_p: TOP_P,
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
-    }),
-  });
-
-  const rawText = await response.text();
-  const latencyMs = Date.now() - started;
-
-  let parsed;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    parsed = rawText;
-  }
-
-  if (!response.ok) {
-    const message = parsed?.error?.message || rawText || `status ${response.status}`;
-    throw new Error(`Grok API error: ${message}`);
-  }
-
-  logUsage('country_intel', GROK_MODEL, parsed?.usage);
-  const content = extractContent(parsed);
-  return { modelId: parsed?.model || GROK_MODEL, content, latencyMs };
-}
-
-function extractContent(payload) {
-  if (!payload) return '';
-  const msg = payload?.choices?.[0]?.message?.content;
-  if (typeof msg === 'string') return stripCodeFence(msg);
-  if (typeof payload === 'string') return payload.trim();
-  return JSON.stringify(payload);
-}
-
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
+  const r = await chat({ step: 'country_intel', model: GROK_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P });
+  return { modelId: r.model, content: r.content, latencyMs: r.latencyMs };
 }

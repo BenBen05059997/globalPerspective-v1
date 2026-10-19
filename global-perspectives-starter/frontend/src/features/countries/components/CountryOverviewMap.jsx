@@ -132,7 +132,7 @@ function InnerMap({ countries, onCountryClick }) {
     }
   }, [countries, onCountryClick]);
 
-  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={mapRef} className="clp-map-canvas" />;
 }
 
 export default function CountryOverviewMap({ countries, onCountryClick }) {

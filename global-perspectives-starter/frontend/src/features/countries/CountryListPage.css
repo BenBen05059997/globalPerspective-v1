@@ -68,6 +68,8 @@
 .clp-leg-dot--elevated { box-shadow: 0 0 0 2px var(--text-head); }
 .clp-leg-dot--high { box-shadow: 0 0 0 1px var(--panel-2), 0 0 0 3px var(--text-head); }
 
+.clp-map-canvas { width: 100%; height: 100%; }
+
 /* Google InfoWindow content (CountryOverviewMap builds it as HTML; it renders in the page DOM) */
 .clp-tip { font-family: var(--sans); min-width: 200px; color: var(--text-head); }
 .clp-tip-name { font-size: var(--text-ui); font-weight: var(--weight-bold); margin-bottom: var(--space-1); }

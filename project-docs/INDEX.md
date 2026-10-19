@@ -7,17 +7,14 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
 - [Decision records](decisions/README.md) — 26 accepted decisions, newest last.
-- [GLOSSARY.md](GLOSSARY.md) — terms, scores and IDs (2026-09-14; check facts against code).
 - [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
   (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
 
 ## Rules (how things must be done)
 - [DATA_STRATEGY.md](rules/DATA_STRATEGY.md) — S3 for the world, DynamoDB for the user.
 - [SEVERITY_CODEBOOK.md](rules/SEVERITY_CODEBOOK.md) — severity rubric behind the risk tier.
-- [SCORING_STANDARDS.md](rules/SCORING_STANDARDS.md) — rubric vs benchmark for every score.
 - [WORLD_MODEL.md](rules/WORLD_MODEL.md) — events vs developments, one importance scale.
 - [TASK_WORKFLOW.md](rules/TASK_WORKFLOW.md) — plan → build → docs lifecycle.
-- [SECURITY_DEPLOYMENT_NOTES.md](rules/SECURITY_DEPLOYMENT_NOTES.md) — JWT, CORS, secrets.
 
 ## Plans (live)
 - [Docs storage](plans/PLAN_2026-10-19_docs_storage.md) — this layout, D1–D6.

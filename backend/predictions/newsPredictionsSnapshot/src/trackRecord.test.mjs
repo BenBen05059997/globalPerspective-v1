@@ -12,11 +12,11 @@ function ok(name, cond) {
 // A v1 prediction with one fired + one not_fired + one pending trigger, plus a legacy (v0) record.
 const items = [
   {
-    title: 'Referendum', category: 'politics', methodologyVersion: 1,
+    PK: 'PRED#ref-0', topicId: 'ref-0', threadId: 'thread-ref-abc123', title: 'Referendum', category: 'politics', methodologyVersion: 1,
     scenarios: [{
       label: 'Most Likely', probability: 0.7,
       triggers: [
-        { text: 'Vote by Jul 15', deadline: '2026-07-15', finalVerdict: 'fired', confirmedAt: '2026-07-16', proposal: { citation: 'reuters.com' } },
+        { text: 'Vote by Jul 15', deadline: '2026-07-15', finalVerdict: 'fired', confirmedAt: '2026-07-16', proposal: { citation: 'reuters.com' }, qid: 'aaaabbbbccccdddd0001' },
         { text: 'Coalition forms', deadline: '2026-07-20', finalVerdict: 'not_fired', confirmedAt: '2026-07-21' },
         { text: 'Still open', deadline: '2026-12-01' }, // pending
       ],
@@ -41,6 +41,10 @@ ok('calibration buckets present', Array.isArray(d.calibration) && d.calibration.
 ok('recent newest-first by confirmedAt', d.recent[0].confirmedAt === '2026-07-21');
 ok('citation falls back to proposal', d.recent.find((r) => r.trigger === 'Vote by Jul 15').citation === 'reuters.com');
 ok('eraCutFrom stamped', d.eraCutFrom === '2026-07-04');
+const vote = d.recent.find((r) => r.trigger === 'Vote by Jul 15');
+ok('recent carries qid + clusterKey (threadId first)', vote.qid === 'aaaabbbbccccdddd0001' && vote.clusterKey === 'thread-ref-abc123');
+const tail = d.recent.find((r) => r.trigger === 'Rare event');
+ok('recent without qid / thread: qid null, clusterKey null when no key at all', tail.qid === null && tail.clusterKey === null);
 
 // Empty input → honest zeros, brier null.
 const empty = computeTrackRecord([]);

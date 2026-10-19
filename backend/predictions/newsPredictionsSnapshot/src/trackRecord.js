@@ -12,7 +12,7 @@
 // (methodologyVersion >= 1) are scored; the legacy backlog is kept immutable but excluded.
 const ERA_CUT_FROM = '2026-07-04';
 
-// items: raw PredictionLog rows projected to { title, category, generatedAt, scenarios, methodologyVersion }.
+// items: raw PredictionLog rows projected to { PK, topicId, threadId, title, category, generatedAt, scenarios, methodologyVersion }.
 function computeTrackRecord(items) {
   const v1Items = items.filter((it) => Number(it.methodologyVersion || 0) >= 1);
   const legacyExcluded = items.length - v1Items.length;
@@ -63,6 +63,10 @@ function computeTrackRecord(items) {
           citation,
           confirmedBy: t.confirmedBy || null,
           confirmedAt: t.confirmedAt || null,
+          // links to the forecast (qid, when the trigger has one) and its story (same rule as the resolver's
+          // Q# SAMPLED clusterKey: threadId, else topicId, else the PRED key)
+          qid: t.qid || null,
+          clusterKey: it.threadId || it.topicId || it.PK || null,
         });
       }
     }

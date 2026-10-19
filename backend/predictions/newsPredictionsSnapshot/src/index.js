@@ -29,7 +29,7 @@ const s3 = new S3Client({ region: REGION });
 
 // One scan of the whole log. The projection covers every record family the question board needs;
 // the filter drops the seed SECRET rows (never read, not even in memory) and the operator-only DRAFT# rows.
-const ATTRS = ['PK', 'SK', 'title', 'category', 'generatedAt', 'scenarios', 'methodologyVersion', 'questionSchema',
+const ATTRS = ['PK', 'SK', 'topicId', 'threadId', 'title', 'category', 'generatedAt', 'scenarios', 'methodologyVersion', 'questionSchema',
   'weekId', 'weekStart', 'weekEnd', 'commitHash', 'committedAt', 'seedHex', 'revealedAt', 'K', 'eligible', 'clusters', 'pool',
   'picked', 'drawnAt', 'qid', 'clusterKey', 'question', 'deadline', 'resolutionSource', 'storyTitle', 'issuedAt', 'verdict',
   'voidReason', 'decidedAt', 'decidedBy', 'evidence', 'at', 'minutes', 'confirmed', 'voided'];

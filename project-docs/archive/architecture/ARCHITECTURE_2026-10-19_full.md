@@ -1,0 +1,1908 @@
+# Global Perspectives — Architecture Overview
+
+**Backend registry reconciled against the live-AWS audit of 2026-09-10** (see `BACKEND_AUDIT_2026-09-10.md` + `../redesign-ux/_active/SITUATION_BACKEND_AUDIT.md`).
+
+**Last verified:** 2026-09-10 (reconciled against live AWS). Verification history → `ARCHITECTURE_VERIFICATION_LOG.md`; changes → `CHANGES.md`.
+
+> **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](OPTIMIZATION_REPORT.md).**
+
+Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using DeepSeek V4, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
+
+**AI Provider (current):** All LLM calls run on DeepSeek V4 (v4-pro/v4-flash split) or Gemini; `deepseek-chat` is retired. See `AI_PROVIDER_MIGRATION_PLAN.md` for full migration history. Env var names (`XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`) are **legacy** — they hold DeepSeek/Gemini values in production. Always confirm the real provider with `aws lambda get-function-configuration`, never infer from the variable name.
+- **Live model map + plan (verified 2026-09-27): see `architecture/_active/BACKEND_PLAN_2026-09-27.md`** (prices with sources in `AI_PROVIDER_PRICES_2026-09-27.md`). Summary:
+- **DeepSeek V4** (`deepseek-chat` retired; all send `thinking:{type:'disabled'}`):
+  - **`deepseek-v4-pro`**: `newsCountryIntelligence`, `newsSystemsAnalysis`, `newsEconomicImpact`, `newsSourceAudit` (`AUDIT_MODEL`), `newsAnalyze`
+  - **flash** (env now `deepseek-flash`; was `deepseek-v4-flash`) on 11 news Lambdas + 2 PPA: `newsInvokeGemini-dev` (topic selection), `NewsProjectInvokeAgentLambda-dev`, `newsSituationIngest`, `newsDriftCorrector`, `newsPredictionResolver`, `newsWeeklyBrief`, `newsImpactAudit`, `newsPostDevTo` (the **daily brief** writer; live env points at `api.deepseek.com`), `newsSensitiveData-dev` (only `dossier_analysis`), `newsWeeklyMarkets`, `newsPairIntelligence`, plus 2 PPA Lambdas. ⚠️ **That name has been missing from DeepSeek's live `/models` since 2026-08-18** (current: `deepseek-flash`); `newsModelGuard` flags it daily. **Renamed to `deepseek-flash` on the 11 news Lambdas 2026-09-29** (plan item D1); the 2 PPA Lambdas still use the old name.
+  - Prices: the official page (2026-09-27) is $0.30 / $1.20 per 1M for flash and $1.32 / $3.96 for v4-pro at peak, half off-peak. The older "$0.14 / $0.28" figure is superseded.
+- `newsThreadAnalysis`, `newsEconomicQuality` → **Gemini 2.5 Flash** (free tier, 13 s pacing). Operator decision 2026-09-27: **replace Gemini with DeepSeek** (not yet applied).
+- ⚠️ DeepSeek balance lapses: 14–24 Jul, 23 Aug – 3 Sep, 13 Sep – ongoing. Most Lambdas swallow the error (CloudWatch Errors = 0), so see the plan's monitoring item.
+- `newsPairIntelligence` → **DeepSeek v4-flash** (migrated 2026-07-26 from the retired `deepseek-chat`; `api.deepseek.com`, `thinking:disabled`). Weekly rule `TriggerPairIntelligenceWeekly` **DISABLED 2026-09-24** (operator: no display surface after the legacy-map removal; future home = a Studio "Bilateral relationship" lens, recorded not built — see `redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`). Ad-hoc manual invokes still possible.
+- `newsAnalyze` → **DeepSeek v4-pro** (the member-side Analysis Studio "our-compute" run path — same cited-analysis product as BYOK `/analyze` but on our key; member-gated, `ANALYZE_DAILY_CAP=100`; deployed 2026-06-22, the paid Polar membership product)
+- `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost`, `newsPolarBilling` → **no LLM** (data feeds, cached AI from DDB, or — for `newsPolarBilling` — Polar checkout + webhook, deployed 2026-06-22)
+- `newsClientErrors`, `newsFreshnessMonitor`, `newsErrorDigest` → **no LLM** (observability — passive error capture + 24/7 monitoring; see Lambdas #17–19 and "Observability & Monitoring")
+- `newsBreakingAlert` → **no LLM today** (deterministic significance detector; the Phase-3 verify step will add **Gemini** as a judge). **DEPLOYED + scheduled** (`TriggerBreakingAlert` 4-hourly, `DRY_RUN=false`; proposes only, human confirms before send) — see Lambda #21.
+
+- **Production URL:** https://globalperspective.net (custom domain)
+- **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
+- **Frontend hosting:** GitHub Pages (served from `docs/`), behind Cloudflare and the `globalperspective-rss` Worker. A Workers Static Assets migration is underway locally; no site Worker upload or domain cutover has occurred (2026-10-05).
+- **Backend:** AWS Lambda + API Gateway + DynamoDB (managed via Amplify)
+
+---
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        SCHEDULED PIPELINE (EventBridge)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │       newsInvokeGemini          │
+                    │  RSS Feeds (26) + Brave Search │
+                    │  → DeepSeek V4 clusters topics │
+                    │  → DynamoDB Topics[id=staging] │
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │  NewsProjectInvokeAgentLambda   │
+                    │  Reads staging topics          │
+                    │  → DeepSeek V4 generates:      │
+                    │    SUMMARY / PREDICTION /      │
+                    │    TRACE_CAUSE per topic       │
+                    │  → Assigns threadId            │
+                    │  → Writes Summary DDB          │
+                    │  → Swaps staging → latest      │
+                    │  → Writes today-archive        │
+                    └───────────────┬───────────────┘
+                    ┌───────────────▼───────────────┐
+                    │         newsThreadAnalysis      │
+                    │  Daily batch (6:30 UTC)        │
+                    │  Top 10 threads (2+ entries)   │
+                    │  → Gemini 2.5 Flash generates: │
+                    │    threadTitle, storyArc,      │
+                    │    trajectory, rootCauseChain, │
+                    │    watchQuestions              │
+                    │  → Writes THREAD# to SummaryDB │
+                    └───────────────┬───────────────┘
+                    ┌───────────────▼───────────────┐
+                    │      newsCountryIntelligence    │
+                    │  Daily batch (07:00 UTC)       │
+                    │  Top 20 countries by articles  │
+                    │  Uses thread analyses + Brave  │
+                    │  → DeepSeek V4 generates:      │
+                    │    headline, situationSummary, │
+                    │    trajectory, riskSignals,    │
+                    │    riskLevel                   │
+                    │  → Writes COUNTRY# to SummaryDB│
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │    newsSystemsAnalysis         │
+                    │  Daily batch (07:15 UTC)      │
+                    │  Top N countries (test: 2)    │
+                    │  Maps causal links between    │
+                    │  story threads + confidence   │
+                    │  → DeepSeek V4 generates:     │
+                    │    nodes[], edges[], lagDays  │
+                    │  → Writes SYSTEMS# to SummaryDB
+                    └───────────────┬───────────────┘
+                                    │
+               ┌────────────────────▼────────────────────┐
+               │              newsPostLinkedIn             │
+               │  Reads latest + summaries               │
+               │  → Posts to LinkedIn / Bluesky /        │
+               │    Farcaster / Mastodon / Telegram      │
+               │  → Deduplicates via SOCIAL_POSTS_TABLE  │
+               └─────────────────────────────────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │         newsSensitiveData       │
+                    │   API Gateway REST endpoint    │
+                    │   ~33 actions — all content    │
+                    │   public during early access   │
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │     React Frontend (GitHub Pages)│
+                    │  restProxy.js → API Gateway    │
+                    │  Firebase Auth (magic link)    │
+                    │  LocalStorage cache (1hr TTL)  │
+                    │  Background poll every 10min   │
+                    └────────────────────────────────┘
+```
+
+---
+
+## Deploy model — how repo, deployed bytes, and env relate
+
+**Verified evidence base:** `BACKEND_AUDIT_2026-09-10.md` (whole-fleet, 2026-09-10) + `../redesign-ux/_active/SITUATION_BACKEND_AUDIT.md` (situation pipeline, 2026-09-10). Where this doc and those disagree, the audit docs win.
+
+1. **Repo = intent; deployed zip × env = truth.** Confirmed live divergences: `newsAnalyze` (repo carries parked credits code; the live function runs the pre-credits `ANALYZE_DAILY_CAP` gate — see #27) and `newsInvokeGemini` (repo/doc history around model defaults has drifted from live env before). **Always diff the deployed zip (`aws lambda get-function --query 'Code.Location'`) before editing any Lambda** — this is standing policy, not a one-time note. **Repeatable read-only check: `scripts/audit-lambda-drift.sh [name...]`** (downloads each deployed zip and diffs it against `src/`; never uploads). Batch 3 / G audit 2026-09-30 (37 news Lambdas): 23 identical (11 with no difference, 12 apart from repo-only test / `event.json` files), 9 trivial (dead fallback model strings, comments, a log line; repo newer), 3 real (`newsAnalyze`, `newsEmailSender`, `newsGdacsIngest`), 2 sandbox snapshots with no repo dir. The two known-real ones besides `newsAnalyze` are repo AHEAD of deployed and deliberately undeployed (`newsEmailSender`: member-perk copy in the breaking and weekly emails, an operator decision; `newsGdacsIngest`: `situations-core.js` threadId latch, inert for the GDACS path). See `_active/TASK_2026-09-30_batch3_readfixes_drift.md` §9.
+2. **Env vars are a second deploy surface — features are toggled by env alone, with no code change.** Live examples: credit-pack purchases off (`POLAR_CREDIT_PACKS` absent on `newsPolarBilling`), Perplexity web-context tier off (`PERPLEXITY_API_KEY` absent on `newsWeeklyMarkets`), Brave grounding off (`NewsProjectInvokeAgentLambda` has no Brave key even though the code path exists), `SYSTEMS_TEST_COUNTRIES` constraining `newsSystemsAnalysis` coverage, `newsSituationTracker`'s `CLOSED_KEEP_HOURS=8` tuning knob. A function's code being "correct" tells you nothing about what's actually enabled — check the env.
+3. **Human-review scripts at the repo root are pipeline stages, not scratch tooling.** `breaking/review.js`, `weekly-markets/review.js`, `predictions/review.js`, `weekly/review.js` each gate a Lambda's draft output into something served/sent. Two currently sit in default (no-op) state: `breaking/review.js` has never been run (0 `confirmed` breaking-alert rows ever, despite the 15-min send poll running), and `predictions/review.js` faces a 37,021-trigger pending backlog against a 40/day resolver cap. `weekly/review.js` is vestigial (the weekly brief auto-publishes); `weekly-markets/review.js` is the one still doing real gating work.
+4. **Hand-synced byte-identical module pairs exist and must be diffed, not assumed, before editing.** `situations-core.js` (copied into both `newsGdacsIngest` and `newsSituationTracker`) and `riskDimensions.js` (copied into both `newsCountryIntelligence` and `newsThreadAnalysis`) were both verified byte-identical (save a 2-line header-comment difference in the tracker's `situations-core.js`) as of 2026-09-10. Editing one copy without the other silently forks behavior.
+5. **Naming traps (live-verified 2026-09-10):** deploy names carry `-dev` suffixes that are actually prod (`newsInvokeGemini-dev`, `newsSensitiveData-dev`, `NewsProjectInvokeAgentLambda-dev`); the LinkedIn poster's repo dir `newsPostLinkedIn` deploys as `newsPostLinkedin` (lowercase "in"); the EventBridge Scheduler entry for country intelligence is named `countryIntelliegence` (typo, real, do not "fix" without updating the live schedule); `newsStripeWebhook`'s dir was an **undeployed** Paddle handler kept for reference until it was removed 2026-09-24 (see #12).
+6. **No CI by design.** This repo intentionally ships without automated gating (solo-dev choice, not an oversight). The compensating controls are: the dead-man's-switch Lambdas (`newsFreshnessMonitor`, `newsErrorDigest`, `newsSourceAudit`, `newsModelGuard`), the on-demand `scripts/` checks, periodic full-fleet audits like the two cited above, and the docs-as-code discipline in `CLAUDE.md` (update the doc in the same commit as the code that makes it stale).
+
+---
+
+## Auth System
+
+**Firebase Authentication** — two methods: passwordless email link (magic link) and Google Sign-In.
+
+**Magic link flow:**
+1. User enters email on `/signin`
+2. Firebase sends a magic link email
+3. User clicks link → lands on `/auth/callback`
+4. `AuthCallback` calls `completeSignIn()` → Firebase signs user in, sets welcome flag in sessionStorage
+
+**Google Sign-In flow:**
+1. User clicks Google button on `/signin`
+2. `signInWithGoogle()` in `AuthContext.jsx` calls `signInWithPopup` + `GoogleAuthProvider`
+3. Firebase signs user in immediately
+
+**In the frontend:**
+- `AuthContext.jsx` manages Firebase auth state (`onAuthStateChanged`), exposes `signInWithGoogle()`
+- `AuthBridge` in `App.jsx` calls `setAuthProvider(getIdToken)` on mount, wiring the token getter into `restProxy`
+- `proxyActionWithAuth()` in `restProxy.js` sends `Authorization: Bearer <token>` header on gated requests
+
+**First sign-in:** `newsSensitiveData` auto-creates a user record in `USERS_TABLE` (`uid`, `email`, `trialStartedAt`) on first JWT-gated request.
+
+**Firebase config** is read from `window.FIREBASE_CONFIG` (set in `docs/config.js` at runtime — never bundled into the build). Falls back to `VITE_FIREBASE_*` env vars for local dev.
+
+**Tier enforcement** is handled in `newsSensitiveData` (Lambda) — see Tier System below.
+
+---
+
+## Membership / Billing (Polar) — LIVE 2026-06-16..22; reading stays free
+
+> **CURRENT MODEL (deployed; source of truth = [`POLAR_BILLING_PLAN.md`](../billing/_active/POLAR_BILLING_PLAN.md)):** All **content is 100% free and public — there is NO read-tier gating** (`newsSensitiveData` enforces nothing; that has not changed). **Membership buys analysis *compute*, not access:** a member runs the Analysis Studio (`/analyze`) on **our** DeepSeek instead of bringing their own key — member-gated via the `newsAnalyze` Lambda with `ANALYZE_DAILY_CAP=50`. Live products: **$15/mo · $150/yr**. **Polar.sh is the Merchant of Record** (handles checkout + card data + tax; real payouts pending operator KYC). Backend deployed + machine-tested 2026-06-22 — `newsPolarBilling` (checkout + webhook, Function URL, signing secret set) and the member-side `newsAnalyze` (our-compute run path). Frontend: `/membership` page + footer link + `?returnTo=` auth funnel (see [[project-billing-deprecated]], [[project-analysis-studio]]). The four legal/marketing pages were reconciled 2026-06-22 to "free to read; membership buys compute, not access." Operator TODO still open: 100%-off comp run, KYC, **rotate the leaked token**.
+>
+> **CREDITS LAYER — code built + SANDBOX-VERIFIED 2026-06-30; prod-code deploy still pending.** Extends the pure-subscription model into *subscription allowance + purchasable credit top-ups* (decisions locked: members get `MEMBER_MONTHLY_ALLOWANCE` free runs/month then spend credits; **any signed-in user** can buy credits + run pay-as-you-go; **1 credit = 1 run**). `newsAnalyze` dropped the hard `tier=member` gate + the old `ANALYZE_DAILY_CAP` daily counter → new `consume()` (monthly allowance → atomic conditional credit decrement → `402 out_of_credits`, refunds on LLM failure). `newsPolarBilling` `create_checkout` gained a `kind:'credits'`+`pack` path → one-time Polar product; webhook `order.paid` routes credit-pack orders to an idempotent `grantCredits` (`processedOrders` set-dedupe) vs subscription orders to `tier=member`; `get_membership` returns `creditBalance`. Server-authoritative amounts via env `POLAR_CREDIT_PACKS`. Pure helpers live in each function's `src/lib.js` with `node --test` suites (`npm test`). Frontend: `MembershipPage` buy-credits section, **Account → Membership tab + a header credits pill** (both via `useMembership` → `creditBalance`), `AnalysisStudio` server path open to members **and** credit-holders.
+>
+> **SANDBOX TEST (2026-06-30):** isolated `newsPolarBilling-sandbox` + `newsAnalyze-sandbox` Lambdas deployed via `amplify/backend/function/_sandbox/deploy-sandbox.sh` (reuses prod roles, `POLAR_API_BASE=https://sandbox-api.polar.sh`, `MEMBER_MONTHLY_ALLOWANCE=2`, 5 sandbox products created). Signed-webhook test proved grant → idempotent replay → accumulation → sub-vs-pack routing against real DynamoDB. Frontend pointed at sandbox via the gitignored `public/config.js`. **Found + fixed a real bug (also present in PROD):** the Lambda code AND the Function-URL CORS config each emit `Access-Control-Allow-Origin` → duplicate header → browsers fail with "Failed to fetch" at checkout. Fix = clear the Function-URL CORS so the code is the sole CORS source (config-only, no redeploy). Applied to both sandbox + prod functions; the deploy script no longer sets `--cors`.
+>
+> **LIVING-ANALYSIS LAYER — LIVE + browser-verified 2026-07-02.** The differentiator wedge (`PITCH.md` #1): analysis that *self-corrects* as news arrives and shows **what changed & why**, grounded, never a silent overwrite. Architecture = **corrector → drift-note → analyzer** (reuses the agent pattern, no version store). Pieces: (1) `newsCountryIntelligence`/`newsThreadAnalysis` write dated `HISTORY#`/`THREAD_HISTORY#` snapshots of each read. (2) **`newsDriftCorrector`** (daily `TriggerDriftCorrector` cron ~07:20 UTC; DeepSeek; reuses `newsCountryIntelligence-role`) reads the snapshots, finds **every** conclusion-move in a 10-day window (`findAllDrifts`, gated on risk level / |Δscore|≥8 / trajectory — *not* the headline; ~37% of daily updates are cosmetic reword = noise), grounds each ungrounded move in a **real archive event** (numbered-event prompt → one trigger id or honest `noSingleDriver`; never invents), and writes `COUNTRY#/DRIFT#<date>` + `THREAD#/DRIFT#<date>` notes (never overwrites, 60d TTL). Backfilling = self-heals: a missed cron day or pre-live history is grounded on the next run (last-week backtest = 11/11 moves = 100% coverage). (3) **Feed-forward (1b.5):** `newsCountryIntelligence` reads the last 2 notes as a low-authority "RECENT CORRECTIONS" block so the next read builds on its own corrections. **Serve:** `newsSensitiveData` `country_history` returns `driftNotes[]`; `thread_analysis` attaches the latest `driftNote`. **UI:** `atoms/CountryWhatChanged` renders the "What changed" band (deterministic delta + grounded "↳ Because: <cited event>") **plus an expandable correction-history chain** (every dated move + from→to + event); ThreadPage shows a "What changed" block in the Arc Intelligence rail. Key principle (prior-art `LIVING_ANALYSIS_PLAN.md`): the corrector is a **grounded event-detector, not self-reflection** (DeepMind: LLMs can't reliably self-correct without external feedback). Honest gaps: threads populate over ~2 daily cycles; Phase 2 (LLM gate) deferred as marginal; Phase 4 (predictions-as-drift-source) blocked on the empty track record. Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
+>
+> **Operator go-live for prod credits:** create one-time Polar credit-pack products (live) → set `POLAR_CREDIT_PACKS` + `MEMBER_MONTHLY_ALLOWANCE` on the prod Lambdas → add `window.POLAR_CREDIT_PACKS` to `docs/config.js` → **deploy the new `newsAnalyze` + `newsPolarBilling` code to prod** (prod still runs the pre-credits code). Full detail in `POLAR_BILLING_PLAN.md` §5.
+
+> **Paddle is permanently dead** (torn down 2026-05-26..06-01 — `newsStripeWebhook` Lambda + Function URL + IAM role deleted). Do NOT revive it; Polar is a different provider with a different schema (`polarCustomerId`/`polarSubscriptionId`). The legacy `free`/`member`/`enterprise` tier table below is **historical** — the live model is the free-content + compute-membership split described above, not these access tiers.
+
+| Tier (legacy) | Intended access |
+|------|--------|
+| `free` | Public topics only (no auth required) |
+| `member` | 7-day archive + thread/country intelligence |
+| `enterprise` | 90-day archive + all features |
+
+In practice **every visitor gets full access** — tier is display-only metadata and enforces nothing.
+
+**Storage (legacy):** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`). Records may still carry `tier` / `paddleCustomerId` / `paddleSubscriptionId` fields from before deprecation (these fields are now never read).
+
+**Lifecycle (removed 2026-06-01):** the `newsStripeWebhook` Lambda (handled Paddle) was deleted along with its Function URL and IAM role. There is no billing/subscription sync path anymore.
+
+**Enforcement:** None. All auth gates were removed from `newsSensitiveData` on 2026-04-11. The `resolveUserTier` helper and the `user_profile` / `portal_session` proxy actions were removed 2026-06-01. Archive, thread/country intelligence, narrative thread, economic, and daily-brief actions are all open with no JWT.
+
+**Paddle Customer Portal (removed):** the `/account` billing UI and its `portal_session` call were deleted from the frontend on 2026-05-26; the backend `portal_session` action was removed 2026-06-01.
+
+---
+
+## Lambda Functions
+
+### 1. `newsInvokeGemini`
+**Path:** `amplify/backend/function/newsInvokeGemini/src/index.js`
+**Live deploy name:** `newsInvokeGemini-dev` (the `-dev` suffix is prod — verified 2026-09-10)
+**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(15 4/8 * * ? *)` UTC (04:15 / 12:15 / 20:15; verified 2026-10-18)
+
+Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the retired `deepseek-chat`; `thinking:disabled`) — no Gemini, no xAI.
+
+> ⚠️ **Brave fully removed from ingest (S7, 2026-09-10 — `BACKEND_AUDIT_2026-09-10.md`).** Article fetch is now **RSS-only** (`fetchAllNews`); the Brave Search step described below is dead code from before S7. Stale `BRAVE_SEARCH_API_KEY`/`BRAVE_CONCURRENCY` env vars remain set on the live function but are no longer read.
+
+**What it does:**
+1. Fetches articles from:
+   - **RSS feeds** (26): Global outlets (BBC, Al Jazeera, France24, SCMP, etc.) + climate (Inside Climate News, Grist) + tech (Ars Technica, MIT Tech Review)
+   - ~~Brave Search (10 dynamic queries)~~ — **removed** (see S7 note above); RSS is now the sole source
+2. Filters articles older than 48 hours; deduplicates by URL
+3. Checks soft-deduplication table (24hr window) to avoid re-covering the same story
+4. Sends to DeepSeek V4 to cluster into topics with category diversity quota
+5. Validates all URLs returned by the LLM against actually-fetched articles (hallucination filter)
+6. Assigns `continues_topic` field by scanning 7 days of past archive
+7. Writes to DynamoDB Topics table as `id=staging`
+
+**Key env vars:**
+| Variable | Notes |
+|----------|-------|
+| `XAI_API_KEY` | Required. **Legacy name** — actually holds DeepSeek key in production. |
+| `GROK_API_URL` | **Legacy name** — actually points at `https://api.deepseek.com` in production. |
+| `GROK_MODEL` | **Legacy name** — `deepseek-v4-flash` in production (was `deepseek-chat` until the 2026-07-26 retirement migration). Source default `grok-4-1-fast-non-reasoning` is dead fallback. |
+| `BRAVE_SEARCH_API_KEY` | **Dead as of S7 (2026-09-10)** — Brave fully removed from ingest; this var is stale and unread. |
+| `BRAVE_CONCURRENCY` | **Dead as of S7** — same removal; stale env var remains set. |
+| `TOPICS_DDB_TABLE` | Required. |
+| `TOPICS_CACHE_ITEM_ID` | Default: `staging`. |
+| `TOPICS_LIMIT` | AWS env var currently set to `13`. Code `DEFAULT_LIMIT=15` only applies if env var is unset. |
+
+---
+
+### 2. `NewsProjectInvokeAgentLambda`
+**Path:** `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`
+**Live deploy name:** `NewsProjectInvokeAgentLambda-dev` (the `-dev` suffix is prod — verified 2026-09-10)
+**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(25 4/8 * * ? *)` UTC (04:25 / 12:25 / 20:25, 10 min after newsInvokeGemini; verified 2026-10-18)
+
+> **M2 questions (deployed 2026-09-30, Batch 4 A).** Each forecast trigger now also carries its own `p` (integer 2–98) and a named `resolution_source`; `src/questions.js` gates G7–G12 (no `p` / generic source / near-duplicate / formality → kept as narrative `question:false`; lead time < 7 days or a restated headline → dropped) and stamps qualifying triggers `question:true`, `qid`, `p`, `resolutionSource`, `resolver:'human'`. The log row gains `questionSchema:1`, `regions`, `threadId`, `capture.questions`. `methodologyVersion` stays 1. `PREDICTION_MAX_TOKENS` default 2500.
+
+> **Grounded single-call forecast (deployed 2026-10-17 13:25 UTC, `promptVersion: 2`).** The research briefing + forecast pair (two v4-pro calls) is replaced by ONE v4-pro forecast call (`buildPredictionPrompt`; inputs built once in `forecastInputText`: snippets, FACTS# premise block, dated arc digest). Calendar rule: a date or named scheduled event may only come from those inputs. **G13** (`lib.ungroundedClaims` / `groundForecastContent`): an ungrounded dated claim in a trigger demotes it to narrative (`question:false`, `capture.dropped`); ungrounded rationale sentences are removed once and the same copy is stored and logged. Forecast and cause calls use DeepSeek **JSON mode** (`response_format: json_object`) — before, ~15% of answers came wrapped in ```json fences, were stored as markdown and skipped the PRED# log. **Once per story per UTC day:** today's same-thread topic ids (archive `threadId`) join the same-title siblings; "forecast made today" is read from the item's `generatedAt`. No `RESEARCH_BRIEFING` items any more (no reader; the proxy action returns empty). Every DeepSeek call logs one `[usage]` line. Evidence: `predictions/forecast-ab/` (before/after on live and held-out stories). Superseded the same-title-only reuse below.
+
+> **Same-title reuse (deployed 2026-10-05, cost fix).** Topic ids are `<title>-<position>` (`newsInvokeGemini` `createStableTopicId`), so the same story at a different list position got a new id and the reuse check (`lib.decideReuse`) never found its stored items: every run re-researched every story (logs: "0 reused" on every run 09-30 → 10-04; e.g. "G7 Agrees to Release 100 Million Barrels" researched in 3 consecutive runs). On a miss, `ensureStored` now looks up the same title at the other positions (`lib.siblingTopicIds`, one BatchGet), takes the newest item, applies the same reuse rules (forecast once per UTC day via the sibling's `PRED#` row; summary/cause only if the source fingerprint matches), and copies the items under the current id with `reusedFromTopicId`. No new `PRED#` row is written for a reused forecast; `prediction_snapshot` by thread / topicIds still finds the sibling's row. Effect on the ledger: no more 2–3 same-day forecasts for one story under different ids; past rows untouched.
+
+> ⚠️ **Brave grounding silently OFF (verified 2026-09-10).** The optional live-Brave-context step in the two-pass prediction path has no `BRAVE_SEARCH_API_KEY` in the live env, so it silently degrades to archive-only grounding every run — not a failure, but worth knowing before assuming Brave context is present.
+
+**What it does:**
+1. Reads topics from `id=staging` in Topics table
+2. For each topic, calls DeepSeek V4 (via native `fetch()`) to generate:
+   - **SUMMARY** — 3-4 bullet-point key takeaways. **Grounded in the article snippets (fixed 2026-06-14):** previously the prompt summarized from the *title only*, so it confabulated (e.g. asserting a referendum was "rejected by a wide margin" before the vote) and stapled the run-date in. Now it is fed `topic.sources[].snippet` with strict rules — only what the snippets report, preserve hedges, no unreported results/figures, no invented dates. Site-wide impact (everything downstream consumes SUMMARY). Audited daily by `newsSourceAudit` (#24).
+   - **PREDICTION** — chain-reaction analysis + scenarios/triggers with winners/losers (forecast — speculative by design). **Methodology v1 (deployed 2026-07-04, `PREDICTION_METHODOLOGY_V1_PLAN.md`):** the two-pass research→forecast path is now **grounded** — the research pass gets verified `FACTS#` leaders (premise block, prevents false-leader triggers), the story's own **dated arc digest** from our archive (so the forecast builds on the arc, not one day's snippets), and optional live Brave web context (no-op without `BRAVE_SEARCH_API_KEY`). The forecast emits **structured `{text, deadline}` triggers**, and every trigger passes the **capture gates** in `src/lib.js` (G1 date-valid · G2 forward-looking (kills retrodictions) · G3 ≤180d horizon · G4 falsifiability lint · G5 premise-check · **G6 capture-scope — drops pure sporting results, added 2026-07-07**) before it can enter the immutable log — a malformed or out-of-scope trigger is **dropped and recorded** in the snapshot's `capture.dropped`, never scored. G6 fires only when a trigger has BOTH a sporting-competition context AND a result/participation verb (so sport-adjacent governance triggers survive); corpus-validated 2/1038, 0 false positives. See `logPredictionSnapshot` + `lib.buildGatedScenarios`; `test/lib.test.js` is the `node --test` suite (21/21, uses the real 2026-07-04-pilot defect triggers + the 2026-07-07 Balogun box-score triggers). Gate config = pure functions, no LLM/network.
+   - **TRACE_CAUSE** — historical context and root cause (grounded in snippets; 2026-06-14 added: proximate event + specific names/figures/dates must come from snippets, no hedge-stripping)
+3. Assigns `threadId` to each topic:
+   - If topic has `continues_topic` → inherit parent's `threadId`
+   - Else → Jaccard similarity (keywords + regions + category, threshold 0.4) against 7 days of archive
+   - Else → generate new `thread-{slug}-{hash}`
+   - **threadId is computed from the RAW staging topics (which retain `continues_topic`/`category`/`search_keywords`) and stamped onto each topic BEFORE the swap, so the served `latest` topics carry `threadId`** (fixed 2026-06-10 — previously only archive entries got it, so `latest` had none and narrative links silently failed). The same map is reused for the archive so `latest` and the archive stay in sync.
+4. Writes each to Summary/Prediction DDB table with TTL
+5. Swaps Topics `staging` → `latest` (now threadId-stamped)
+6. Writes today's topics as `today-archive` entry (entries carry `threadId` + `search_keywords` for next-day threading)
+7. Prunes old cache entries
+
+**Payload options:**
+```json
+{ "action": "both" }              // "summary", "prediction", "trace_cause", or "both"
+{ "topicId": "specific-id" }      // Process one topic only
+{ "readOnly": true }              // Read cache without generating
+```
+
+**Key env vars:**
+| Variable | Notes |
+|----------|-------|
+| `XAI_API_KEY` | Required. **Legacy name** — holds DeepSeek key. |
+| `GROK_API_URL` | **Legacy name** — points at `https://api.deepseek.com/chat/completions` in production. |
+| `GROK_MODEL` | **Legacy name** — `deepseek-v4-flash` in production (was `deepseek-chat` until the 2026-07-26 retirement migration; `thinking:disabled` in the request body). |
+| `TOPICS_DDB_TABLE` | Required. |
+| `SUMMARIZE_PREDICT_TABLE` | Required. |
+| `MAX_TOKENS` | Default: `600`. |
+| `TEMPERATURE` | Default: `0.2`. |
+| `TOP_P` | Default: `0.9`. |
+| `LLM_CONCURRENCY` | Default `4`. Worker pool for concurrent per-topic LLM calls (replaced sequential loop 2026-05-18, 3.0× speedup). |
+| **Memory / Timeout** | **512MB / 600s** (bumped from 128MB/445s on 2026-05-18 to eliminate 14% timeout failure rate). |
+
+---
+
+### 3. `newsThreadAnalysis`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Path:** `amplify/backend/function/newsThreadAnalysis/src/index.js`
+**Trigger:** EventBridge — `cron(30 6 * * ? *)` (6:30 UTC daily)
+
+**What it does:**
+1. Reads 30 days of archive entries from Topics table
+2. Groups entries by `threadId`; selects top 10 threads with 2+ entries
+3. For each thread, searches Brave News + Web for external grounding
+4. Calls **Gemini 2.5 Flash** (13s pacing between calls for the free-tier RPM ceiling, thinking disabled, `MAX_TOKENS=6000`) to generate:
+   - `threadTitle` — sharp 6-10 word journalistic title
+   - `entryShortTitles` — micro-headline per entry (`{topicId, shortTitle}`)
+   - `storyArc` — 2-3 paragraphs on how the story evolved
+   - `trajectory` — 2 paragraphs on where it's heading (named scenarios + timeframes)
+   - `rootCauseChain` — 3-layer root cause (immediate trigger → medium-term condition → structural factor)
+   - `watchQuestions` — 3 specific, actionable watch questions
+5. Skips threads where `entryCount` hasn't changed since last run
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `THREAD#{threadId}` / `THREAD_ANALYSIS` (90-day TTL)
+
+**Key env vars:** `XAI_API_KEY` (legacy name — holds **Gemini** key), `GROK_MODEL` (= `gemini-2.5-flash`), `GROK_API_URL` (= Gemini OpenAI-compat endpoint), `INTER_CALL_DELAY_MS` (= `13000`), `MAX_TOKENS` (= `6000`), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+> ⚠️ Gemini free tier caps at ~20 requests/day. Fine for one scheduled run (7-10 calls), but manual test invokes the same day can exhaust quota.
+
+---
+
+### 4. `newsCountryIntelligence`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
+**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(15 5 * * ? *)` (daily 05:15 UTC, verified 2026-10-18; reduced from 3×/day on 2026-05-16 to cut cost after the DeepSeek migration)
+
+**What it does:**
+1. Reads 30 days of archive entries; groups by country (`regions` field)
+2. Loads existing thread analyses for cross-thread enrichment
+3. Selects top 20 countries with 2+ articles
+4. For each country, searches Brave News for fresh context
+5. Calls **DeepSeek V4** to generate:
+   - `headline` — 8-12 word sharp situation headline
+   - `situationSummary` — 2-3 paragraph intelligence briefing
+   - `crossThreadInsight` — connections between story arcs
+   - `trajectory` — 2 paragraphs with named scenarios + triggers
+   - `riskSignals` — 3-4 specific, concrete watch events
+   - `riskLevel` — `low` | `moderate` | `elevated` | `high`
+6. Skips countries where `totalArticles` count hasn't changed
+7. Writes to `SUMMARIZE_PREDICT_TABLE` at `COUNTRY#{countryName}` / `COUNTRY_INTELLIGENCE` (90-day TTL)
+
+**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL` (legacy names; hold DeepSeek values in production — see Lambda #1 notes), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`, `LLM_CONCURRENCY` (default `4`; added 2026-05-18 — 5.8× speedup).
+
+---
+
+### 5. `newsSensitiveData`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `world_overview` no longer serves region `SYSTEMS#` rows as country situations; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Path:** `amplify/backend/function/newsSensitiveData/src/index.js`
+**Live deploy name:** `newsSensitiveData-dev` (the `-dev` suffix is prod — verified 2026-09-10)
+**Trigger:** API Gateway HTTP POST from frontend
+
+Read-only REST proxy. All supported actions:
+
+| Action | Auth | Payload | Description |
+|--------|------|---------|-------------|
+| `topics` | None | — | Returns `latest` topics |
+| `summary` | None | `{ topicId }` | Returns cached SUMMARY |
+| `prediction` | None | `{ topicId }` | Returns cached PREDICTION |
+| `trace_cause` | None | `{ topicId }` | Returns cached TRACE_CAUSE |
+| `research_briefing` | None | `{ topicId }` | Returns cached RESEARCH_BRIEFING |
+| `geocode` | None | `{ address }` | Mapbox lat/lng lookup |
+| `today` | None | — | Today's archive entries |
+| `rss` | None (GET) | — | RSS 2.0 XML feed of latest topics |
+| `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
+| `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
+| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90). Day 0 = `latest` (labelled with its own `updatedAt` date, not today; skipped if unparsable) UNION today's `archive#<today>` row (every run of the day; `latest` holds only the newest generation), de-duplicated by `topicId`; `source` stays `latest` when `latest` contributes. Fixed 2026-09-30 (an earlier run's stories vanished until midnight) |
+| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days. Day 0 = `latest` (its own date) plus today's `archive#<today>` entries for the thread (so a story from an earlier run today stays reachable); duplicates by `topicId + date` removed |
+| `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
+| `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
+| `country_facts` | None | `{ countryNames[<=15] }` | Stored Wikidata facts per country: `{ leadership?, capital?, population? }`, each part only with `source` + own as-of (`checkedAt`; population also `year`). Leadership only for the original 12. Added 2026-09-30 (Batch 3 D) |
+| `country_history` | Optional (tier cap) | `{ countryName }` | Historical archive entries for a country: `snapshots[]` (always full/public) + `driftNotes[]` (the correction chain). **Member-gated depth (2026-07-07):** unions live `DRIFT#` + permanent `DRIFTLOG#` via `dedupeByAsOf`, then non-members get the newest **1** + `driftNotesTotal`/`driftNotesGated:true`; members get the full chain (`resolveTier`+`capForTier`) |
+| `web_index` | None | `{}` or `{ threadId }` | Batch 4 / E: the story web in one read. `{}` = the whole index (links, shared-actor links, per-story state, coverage, analysed countries). `{threadId}` = that story's `THREAD#id/WEB` record (only if it belongs to the current run) + its state. `data:null` before the first index run. |
+| `systems_analysis` | None (early access) | `{ countryName }` | Causal graph for a country: `nodes` (+`actors[]`), causal `edges`, shared-actor `backbone[]` |
+| `event_dossier` | None | `{ countryName, threadId, hops }` | AI-legible dossier: focal event's k-hop subgraph + provenance + genesis + reasoning_contract (see `EVENT_DOSSIER_SPEC.md`) |
+| `dossier_analysis` | None | `{ countryName, threadId, hops }` | Builds the dossier + has DeepSeek reason over it under the honesty contract → `{ dossier, analysis }` |
+| `world_overview` | None | `{}` | `{ situations, links }` — per-country situation stats incl. `peak`/`earliest`/`latest` (paginated SYSTEMS# scan) + cross-country shared-actor `links` (ambient excluded), for the World Overview timeline. **Enriched 2026-07-05 (additive, best-effort):** each situation also carries `riskLevel`/`riskScore` (GetItem on `COUNTRY_INTELLIGENCE`) + `latestDrift {asOf, changeLevel?, changeScore, whyChanged, noSingleDriver}` (newest `DRIFT#` note) — double try/catch, a DDB failure degrades to the unenriched payload; absent fields render honestly (grey bubble / no badge) |
+| `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
+| `latest_daily_brief` | None | `{ lookbackDays? }` (default 30, max 60) | Newest published daily brief in one call (`BatchGetItem` over the last N `DAILY_BRIEF#` keys): `{ data, dateKey, editions[] }`, `data: null` when none. Added 2026-09-30 (Batch 3 B); replaces the client's day-by-day lookback |
+| `weekly_brief` | None | — | Latest **published** Weekly Signals Brief (`{ format:'signals', weekOf, asOf, signals[], watch[] }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
+| `weekly_markets` | None | — | Latest **published** Weekly Markets Report (`{ weekOf, asOf, movers[], excluded[] }`); null until one is published via weekly-markets/review.js. Powers `/economy`'s "This week" mode (`?view=week`); `/weekly-markets` redirects there. Last published week: 2026-09-20 (generator paused 2026-09-25) |
+| `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
+| `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
+| `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
+| `economic_impact_list` | None (early access) | — | All economic-impact records (DDB Scan) |
+| `economic_top_movers` | None (early access) | — | Highest-magnitude economic-impact threads |
+| `prediction_track_record` | None | — | Forecast calibration scoreboard (DDB Scan of `GlobalPerspectivePredictionLog`): totals, Brier score, calibration buckets, recently-resolved triggers. **Scores ONLY `methodologyVersion>=1` records (the 2026-07-04 era-cut)** — returns `eraCutFrom` + `legacyPredictionsExcluded` (legacy backlog kept but unscored), reads v1 `agentVerdict.evidence` citations. **Two agent-run resolution sweeps done (07-07, 07-08) → live: resolved 35, fired 9, Brier 0.157, calibration buckets populated** (was honest-empty before 07-07) — see [Prediction calibration](#prediction-calibration-track-record) |
+| `corrections_feed` | Optional (tier cap) | `{limit?≤100}` | Site-wide corrections ledger (the living-analysis loop's aggregate view): recent grounded `DRIFT#` notes across ALL `COUNTRY#`/`THREAD#` rows, newest-first. DDB Scan filtered on `begins_with(SK,'DRIFT#')` (same pattern as `economic_impact_list`; 60d-TTL rows, client-cached 30min). Each note: `{scope, name, asOf, changeLevel?, changeScore?, changeDimensions?, triggerEvent?, whyChanged?, noSingleDriver, directionFlag?}` (`changeDimensions` + `directionFlag` added 2026-09-30, Batch 3 E: the client shows a flagged note's numbers only). **Member-gated depth (2026-07-07):** non-members get the newest **5** + `total` + `gated:true`; members get the full list (`resolveTier`+`capForTier`). Deferred optimization: a single `CORRECTIONS_FEED` GetItem row. Powers the `/track-record` Accountability hub |
+| `prediction_snapshot` | None | `{topicIds:[…]}` (≤25) or `{threadId}` (resolved through `narrative_thread`, 14 d; Batch 4 C) | Phase 4 per-thread "Living forecast" board. Parallel Query-latest per topic on `GlobalPerspectivePredictionLog`, returns the single NEWEST `methodologyVersion>=1` `PRED#` snapshot among them: `{topicId, title, generatedAt, status, scenarios[{label, probability, triggers[{id, text, deadline, verdict, confirmedBy, citation}]}]}` (dated triggers only). **v1-only** (legacy retrodiction-prone snapshots never surface); `snapshot:null` when none. Powers `ThreadForecast` on ThreadPage |
+| `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot, **plus an additive `series` map (`{ [INSTRUMENT_ID]: { spark:[≤20 daily closes], change:%vs-yesterday } }`) built from the `HISTORY#` rows — powers the `/economy` watchlist mini-sparklines + day-over-day change pills** |
+| `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
+| `markets_history` | None (early access) | `{ symbol, days }` | Per-instrument price history `[{date, value}]` for sparklines — resolves `symbol` across commodities / rates / equities / crypto / FX (was FX-only before 2026-05-26) |
+
+**All content actions are public** (no auth required). The billing-gated `user_profile` / `portal_session` actions and `resolveUserTier()` were removed 2026-06-01 along with the rest of the subscription stack — see [Lambda #12](#) below. The generic `verifyFirebaseToken` helper remains for future per-user features (currently only the separate `newsSavedItems` Lambda uses Firebase JWT).
+
+**CORS origins:** `benben05059997.github.io`, `globalperspective.net`, `www.globalperspective.net`, `localhost:5173`, `127.0.0.1:5173`
+
+**Key env vars:**
+| Variable | Notes |
+|----------|-------|
+| `TOPICS_DDB_TABLE` | Required |
+| `SUMMARIZE_PREDICT_TABLE` | Required |
+| `MARKETS_DDB_TABLE` | Markets actions. **NOTE:** the read path hard-codes the literal `'GlobalPerspectiveMarkets'` — this env var is **not** read by `newsSensitiveData` code (it is by `newsMarketsData`). |
+| `MAPBOX_GEOCODING_KEY` | Required |
+| `FIREBASE_PROJECT_ID` | Required (JWT verification) |
+| `TOPICS_CACHE_MAX_AGE_SECONDS` | Default: `9000` |
+
+---
+
+### 6. `newsPostLinkedIn`
+**Path:** `amplify/backend/function/newsPostLinkedIn/src/index.js`
+**Live deploy name:** `newsPostLinkedin` (lowercase "in" — the repo dir's casing does NOT match the deployed function name; verified 2026-09-10)
+**Trigger:** EventBridge Scheduler — `InvokeLinkedIn` — `cron(20 */3 * * ? *)`, **timezone `Asia/Tokyo`** (verified 2026-07-25 — the scheduler is NOT in UTC, same as `newsPostDevTo` #7). Fires at :20 past JST hours 0/3/6/… = **15/18/21/00/… UTC**.
+
+> ✅ **Duplicate-poster risk CLOSED 2026-09-11** — `linkedInAutoPost` (#10) was retired in full (schedule + Lambda deleted); `newsPostLinkedin` is now the sole LinkedIn poster. Still open: the live env carries **Mastodon/Telegram/Farcaster/Nostr secrets that zero code in this function references** (repo code posts to LinkedIn+Bluesky only) — either dead secrets that should be removed, or a sign of deployed-zip drift not yet resolved by a zip diff.
+
+**What it does:**
+1. Reads `latest` topics + AI summaries from DynamoDB
+2. Generates platform-specific post copy per topic
+3. Checks `SOCIAL_POSTS_TABLE` to skip already-posted topics
+4. Posts to **LinkedIn + Bluesky** (the long-tail platforms — X/Twitter, Threads, Mastodon, Telegram, Farcaster — were cut 2026-05-18; `buildPlatformList()` now wires only these two)
+5. Records each post with 30-day TTL
+
+> **LinkedIn post body — prose forecast + deep-link (fixed 2026-09-08).** The stored PREDICTION `content` is structured JSON (`contentFormat:'json'`, scenarios), which was being dumped **raw** into the post. `formatPredictionText(raw)` now parses those scenarios into prose (`Label (probability, horizon): rationale`, falling back to `stripMarkdown` for legacy prose predictions); the label reads **`Forecast:`** (was `Prediction:`). Hashtags trimmed to best-practice 3–4 (regions sliced 0–2, dropped `#WorldNews` and the trailing ` #AI`). The footer **deep-links to the specific story** — `topic.threadId ? ${SITE_URL}weekly/thread/${threadId} : SITE_URL` (route `/weekly/thread/:threadId` → ThreadPage; `SITE_URL` ends in `/`), replacing the bare homepage link.
+
+**Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `LINKEDIN_POSTS_TABLE` (=`NewsProject-linkedin-posts`; the deployed var is **not** `SOCIAL_POSTS_TABLE` — code reads `SOCIAL_POSTS_TABLE || LINKEDIN_POSTS_TABLE` so the fallback wins), `MAX_POSTS_PER_RUN` (default: 5), `MAX_POSTS_PER_DAY` (default: 100)
+
+> ⚠️ **`LINKEDIN_ACCESS_TOKEN` expires every 60 days** (shared with `linkedInAutoPost` #10). On lapse, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` while Bluesky keeps working. **Last refreshed 2026-09-08 → next ~2026-11-07** (the 08-21 lapse sat dead ~2–3 weeks unnoticed before this refresh). **Refresh procedure (token-generator UI, no client secret) → `BACKEND_GUIDE.md` "LinkedIn token refresh runbook".** Nothing alerts on this today.
+
+---
+
+### 7. `newsPostDevTo`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** the daily brief's country block skips region keys and `COUNTRY#` records older than 30 days (a region can no longer become `countryToWatch`); uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
+**Trigger:** EventBridge Scheduler — `InvokeDev` — `cron(0 23 * * ? *)`, **timezone `Asia/Tokyo`** → 23:00 JST = **14:00 UTC daily** (the scheduler is NOT in UTC; live briefs show `generatedAt ≈ 14:01 UTC`, confirming this)
+
+Despite the name and the code below, **Dev.to publishing is dead code as of 2026-05-18** (`BACKEND_AUDIT_2026-09-10.md`) — live, this function is **purely the Daily Intelligence Brief generator** behind `/daily`. `DEVTO_API_KEY` is orphaned in the live env.
+
+> ⚠️ **Misleading name + stale doc history.** This was long documented as "posts to Dev.to AND generates the Daily Brief" (corrected 2026-07-29 to flag the two-job split); the 2026-09-10 audit confirms the Dev.to half stopped actually posting back on 2026-05-18 — only the Daily Brief half remains live. `/daily` has no other producer, so a failure here still silently empties the Daily Brief page.
+> - **`generateAndStoreDailyBrief` → `callGrok`** uses **DeepSeek** via `GROK_MODEL`/`GROK_API_URL`/`XAI_API_KEY` and writes `DAILY_BRIEF#{dateKey}` to `SUMMARIZE_PREDICT_TABLE`. Migrated to `deepseek-v4-flash` + `thinking:{type:'disabled'}` on 2026-07-27 (main `c232624`) — it was the last straggler on the retired `deepseek-chat` alias. **This is the only thing the live function still does.**
+> - ~~The Dev.to article~~ — dead since 2026-05-18; `OPENROUTER_API_KEY`/`AI_MODEL`/`DEVTO_API_KEY` are orphaned env vars kept from before the removal.
+> - The stored brief carries a `model` field sourced from `GROK_MODEL`, so briefs written before 07-27 are labelled `deepseek-chat`.
+
+**What it does (live behavior):**
+1. Reads `latest` topics from Topics Table
+2. **Builds + stores the Daily Brief** (`DeepSeek`, 50 archive entries + thread/country enrichment) → `DAILY_BRIEF#{dateKey}` / `DAILY_BRIEF`, 90-day TTL. Served by the `daily_brief` action → `/daily`; `topStories[].threadId` added 2026-09-30 (Batch 3 C)
+3. ~~Calls OpenRouter AI to generate a long-form Dev.to article~~ — dead since 2026-05-18
+4. ~~Checks `SOCIAL_POSTS_TABLE` to skip if already posted today~~ — dead since 2026-05-18
+5. ~~Posts to Dev.to via API~~ — dead since 2026-05-18
+
+**Key env vars:** `XAI_API_KEY` / `GROK_MODEL` (=`deepseek-v4-flash`) / `GROK_API_URL` (the **daily-brief** path — legacy names holding DeepSeek values; the only env vars that still matter), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`. **Orphaned (dead code, kept in env):** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `AI_MODEL`, `SOCIAL_POSTS_TABLE`, `SITE_URL`.
+
+> **Note:** A deploy.zip is staged at `amplify/backend/function/newsPostDevTo/deploy.zip` — needs manual upload to AWS.
+
+---
+
+### 8. `newsPairIntelligence`
+**Path:** `amplify/backend/function/newsPairIntelligence/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerPairIntelligenceWeekly` — **DISABLED 2026-09-24** (operator decision after the legacy-map removal left `pair_analyses_list` with no frontend consumer; the capability's agreed future home is an on-demand Studio "Bilateral relationship" lens — recorded, not built). Was `cron(0 8 ? * MON *)` (Mondays 08:00 UTC; corrected 2026-07-25 — was documented as manual-only). Still invocable manually with `{"pair":["Country A","Country B"],"forceRegenerate":true}` or `{}` for the default 10 pairs.
+**Deployed:** 2026-04-18
+
+Bilateral relationship analysis between country pairs.
+
+**What it does:**
+1. Default run: analyzes 10 predefined pairs; manual run: single pair specified in payload
+2. Reads 30-day archive; deduplicates events by Jaccard title similarity
+3. Loads `country_facts.json` editorial layer + existing country intelligence + thread analyses
+4. Calls the LLM to generate: `pairTitle`, `currentState`, `timeline`, `trajectory` (3 scenarios), `rootDriver` (3 layers), `predictions`, `watchItems`
+5. Writes to `SUMMARIZE_PREDICT_TABLE` at `PAIR#{slug}` / `PAIR_ANALYSIS`
+
+> **Provider note:** the source default still reads Grok, but the **deployed** function is on DeepSeek (`GROK_MODEL=deepseek-v4-flash` since the 2026-07-26 retirement migration — was `deepseek-chat`; `GROK_API_URL=https://api.deepseek.com/chat/completions`; request body sends `thinking:disabled`). Runs weekly via `TriggerPairIntelligenceWeekly` (see trigger above) plus ad-hoc manual invokes.
+
+**Frontend:** the dedicated pair pages (PairListPage/PairPage, `/weekly/pairs` + `/weekly/pair/:slug`) were deleted in the "Cut: orphans" cleanup. The legacy `WorldMapV2.jsx` → `usePairAnalyses()` **arc overlays** (bilateral links, 7d/30d time-window filters, legend counts, selected-country link list) were its only consumer; a Phase-1 port relocating this "Connections" layer onto `/map` (`SituationMap3D.jsx`) was built and render/toggle-verified, then the operator cancelled it 2026-09-24 ("no build" — the new map is the design), so the port lives only on branch `archive/pair-arcs-port` and `usePairAnalyses.js` was deleted with the rest of the legacy map (`CLEANUP_AUDIT_2026-09-24.md` §4 D3). **`pair_analyses_list` currently has no frontend consumer** — the backend pipeline (this Lambda + weekly cron) is untouched and keeps writing data with no display surface; operator to decide disable vs leave warm.
+**API actions:** `pair_analyses_list` (all pairs, DDB Scan) — **no live frontend consumer as of 2026-09-24** (previously the removed WorldMapV2 arc overlays); `pair_analysis` (single pair by slug) — served but unconsumed (`fetchPairAnalysis` in restProxy has no callers); both kept as harmless read-only actions
+
+**Key env vars:** `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — deployed function holds **DeepSeek** values), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+---
+
+### 9. `newsSystemsAnalysis`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `groupByCountry` keeps real countries only (regions no longer take the top-N story-web slots); `event.dryRun` lists targets + excluded names with no LLM and no writes; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Story web, stage 2 (Batch 4 / E, deployed 2026-09-30):** each story is listed in the prompt with up to 10 DATED entries spread over its whole span (`src/spreadEntries.js`), each with a short code (`E1`..); the model cites the codes and `validateGraph` accepts only shown entries (a cite of an entry it was not shown is dropped; the first live run showed the model copying the whole line, so codes replaced the long topic ids). Edges keep `citedEntries` (real topic ids) and gain `cited:[{topicId,date,title}]`. After the country webs, `src/webRecords.js` builds from ALL current `SYSTEMS#` rows (real countries, ≤ 30 days old): one **`THREAD#<id>/WEB`** record per story in a web (`into`, `from`, `shared`, `analysedIn`, `places`, each web keeping its own confidence) and **`WEB#INDEX/LATEST`** (all links, per-story `state`: `linked` / `analysed_no_links` / `single_update` / `country_not_analysed`, which countries were analysed, and the measured **coverage**: stories in scope (last 14 d), those with 2+ updates, in any web, with a link). No `ttl` (table TTL is off; readers judge freshness from `generatedAt`). Event `{countries:[...]}` limits a run; `{dryRun:true}` returns prompt sizes and the coverage of the webs that exist (no LLM, no writes). Read through proxy `web_index`.
+
+**Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(0 5 * * ? *)` (daily 05:00 UTC; verified 2026-10-18)
+**Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Coverage gate `SYSTEMS_TEST_COUNTRIES` widened 2026-07-01 → **12 countries** (`Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,Democratic Republic of the Congo,South Africa`; 56 eligible; daily cron keeps them fresh)
+
+Cross-domain causal relationship analysis. Maps how events across categories connect with time lags and confidence.
+
+**What it does:**
+1. Reads 30-day archive entries; groups by country
+2. Identifies threads (2+ articles per threadId) per country; loads thread analyses
+3. For each country: builds nodes from threads, calls **DeepSeek V4** with anti-hallucination prompt
+4. The LLM returns nodes (with `actors[]`) + causal edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
+5. Dropped edges: unknown IDs, self-loops, 0 citations, confidence downgraded if citation count misses threshold. Surviving causal edges tagged `class:'causal'`
+6. **Backbone layer (deterministic, no LLM):** `buildBackboneEdges` links threads sharing SPECIFIC named actors (weight = # shared); excludes "ambient" actors — the country itself + any actor in ≥60% of nodes — so it connects the graph without a topic-wide hairball. Added 2026-07-01 (per `SPIDER_BUILD_SPEC.md` / `SPIDER_WEB_MODEL_PLAN.md`)
+7. Writes to `SUMMARIZE_PREDICT_TABLE` at `SYSTEMS#{countryName}` / `SYSTEMS_ANALYSIS` (14-day TTL)
+
+**Output shape:**
+```json
+{
+  "nodes": [{"threadId", "category", "peakDate", "actors": ["Israel","Strait of Hormuz"], "summary"}],
+  "edges": [{"from", "to", "lagDays", "mechanism", "confidence", "citedEntries", "class":"causal"}],
+  "backbone": [{"from", "to", "class":"backbone", "relation":"shared_actor", "sharedActors":[…], "weight", "directed":false}]
+}
+```
+Two layers: `edges` = sparse causal overlay (💭 model judgment); `backbone` = dense shared-actor web (✅ factual). Frontend draws backbone as solid always-on lines, causal as a dashed toggle (`SpiderDemo.jsx`).
+
+**Coverage (current):** 12 countries (widened 2026-07-01; 56 eligible) — Iran, Israel, United States, Venezuela, China, Japan, Ukraine, Russia, France, Germany, DRC, South Africa. Each carries `nodes`(+`actors[]`), causal `edges`, and shared-actor `backbone[]`. Consumed by `/spider-demo` (World + Country tiers) and the `event_dossier`/`dossier_analysis`/`world_overview` proxy actions.
+
+**Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values in production), `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`, **`MAX_TOKENS` (=`6000`; code default `3000` — see below)**
+
+> ⚠️ **`SYSTEMS_TEST_COUNTRIES` still LIVE in prod (needs operator confirmation, `BACKEND_AUDIT_2026-09-10.md` #6).** This was a "Phase 1 testing" allow-list env var; live-verified 2026-09-10 it is still set and may still be constraining coverage below the 12-country list documented above. Operator should confirm intent (keep the allow-list, or remove it and let the normal top-N-by-volume selection run) rather than assume the doc's "12 countries" figure reflects the true live cap.
+
+> ⚠️ **Output-truncation ceiling (raised 2026-07-29).** `MAX_TOKENS` was **unset**, so this ran on the code default **3000** — and the graphs outgrew it. On 07-29 the run went `7 generated, 3 failed` with `Failed to parse Grok response: Unterminated string in JSON at position 10929` for Iran/Ukraine. **Measured** (replaying the real prompts at an 8000 ceiling): Iran needs **3214** completion tokens, Ukraine **3062**, United States **3038** — the whole 12-country cohort had drifted into a 3038–3214 band straddling the 3000 limit, so which countries failed was luck, not content (US passed that day at 3038 and was already over). Truncation arithmetic confirms it exactly: 12032 full chars − 10929 clipped = 1103 chars ≈ the 214-token overshoot. Fix = env `MAX_TOKENS=6000` (~87% headroom over the measured peak); `max_tokens` is a **ceiling, not spend**, so cost is unchanged. **Silent class:** failures are caught per-country and the function exits 200, so CloudWatch `Errors` stayed `0.0` — and neither `newsFreshnessMonitor` (watches `topics` only) nor `newsModelGuard` (#30, model ids only) covers this. Same family as the 06-01 `newsInvokeGemini` JSON-truncation stall; if graphs later exceed ~20 threads, port that function's `salvageTruncatedTopics()` pattern here (this one's `JSON.parse` has no salvage branch).
+
+---
+
+### 10. `linkedInAutoPost` — **RETIRED 2026-09-11**
+**Retired in full (S9·T1, see CHANGES.md 2026-09-11):** EventBridge Scheduler `LinkedinThreadsDaily` deleted, Lambda `linkedInAutoPost` deleted from AWS (204). The repo dir was **not** actually removed at that time — the 2026-09-24 cleanup audit found it still present (23MB of stale `node_modules` + a deploy zip, both git-ignored and never tracked) and removed it 2026-09-24 (untracked, not git-recoverable; see `CLEANUP_AUDIT_2026-09-24.md` §4 A1). Live scheduler listing verified 2026-09-14: only `InvokeDev` + `InvokeLinkedIn` remain. The survivor `newsPostLinkedin` (#6, 3-hourly, LinkedIn+Bluesky) is the sole LinkedIn poster — the two-posters/duplicate-post risk formerly flagged here and at #6 is closed. Historical: it scored `THREAD_ANALYSIS`/`COUNTRY_INTELLIGENCE` items and posted the best to LinkedIn under the disjoint `POSTED#LINKEDIN_AUTO#` dedup namespace (rows may persist in `SOCIAL_POSTS_TABLE` until their 30-day TTL lapses).
+
+---
+
+### 11. `newsCountryFactsUpdater`
+**Path:** `amplify/backend/function/newsCountryFactsUpdater/src/index.js`
+**Trigger:** EventBridge Scheduler — `Fact` — `cron(0 5 ? * MON *)` (**TZ Asia/Tokyo**, weekly since Batch 1 R4; Mon 05:00 JST = Sun 20:00 UTC)
+**Deployed:** 2026-04-18 (Phase 2 complete)
+
+Keeps country facts in DynamoDB current without manual editing.
+
+**What it does:**
+1. Fetches head-of-state/government data from **Wikidata** via SPARQL query
+2. Fetches active conflicts from **ACLED API** (approval pending)
+3. Detects leadership changes vs. previously stored facts
+4. Stores results in `SUMMARIZE_PREDICT_TABLE` at `FACTS#{countryName}` / `COUNTRY_FACTS` (90-day TTL)
+5. Supports partial updates for specific countries via payload
+
+**DDB key:** `FACTS#{countryName}` / `COUNTRY_FACTS`
+**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `ACLED_USERNAME` + `ACLED_PASSWORD` (OAuth token flow against `acleddata.com/oauth/token` — there is **no** `ACLED_API_KEY`)
+
+**Batch 3 / D (2026-09-30):** 40 countries now (`TARGET_COUNTRIES`): the original 12 (hard-coded QIDs; **leadership + ACLED**, unchanged) plus 28 resolved by ISO3 (Wikidata `P298`, one query) that get **capital (`P36`, current statements only) + population (`P1082` with its own `P585` date; an undated statement is ignored) and nothing else**. Leadership is deliberately NOT stored for the 28: Wikidata head-of-state/government statements were stale or wrong for several (Australia, Sudan, DR Congo, Taiwan) and leadership feeds the country-briefing prompts. Capitals and populations are fetched in two batched SPARQL queries (`src/facts.js`, pure + tested); a failed sub-query keeps the previous value with its old `checkedAt`. A full run is ~65 s (183 s timeout; a 150 s time budget skips the tail rather than time out; `FACTS_TIME_BUDGET_MS`). Record fields added: `capital {names[], source, checkedAt}`, `population {value, year, time, source, checkedAt}`; `lastUpdatedAt` stays the leadership check date. **Known data caveats (shown as Wikidata says, labelled with source + date):** multi-capital lists (Israel "Jerusalem, Tel Aviv", Pakistan, Indonesia, Yemen, South Africa); Wikidata populations can be years old (the card hides a data year older than 8).
+**Read path:** proxy action `country_facts { countryNames[<=15] }` returns each part only with its `source` + as-of (`lib.shapeCountryFacts`); the country card (`CountryCardV2`, `features/countries/lib/countryFacts.js`) shows a part only if it was checked within 10 days (a dead weekly job must not show stale values; table TTL is disabled) and, for population, its data year is <= 8 years old. Precedence: operator JSON > Wikidata `FACTS#` > search; the card reads `FACTS#` only (the operator JSON feeds the briefing prompts; only Iran is `verified:true` and it agrees with Wikidata).
+
+---
+
+### 12. `newsStripeWebhook` (name was legacy — handled Paddle) ❌ REMOVED 2026-06-01
+**Source removed 2026-09-24:** `amplify/backend/function/newsStripeWebhook/` (was `src/index.js`, git-recoverable)
+
+> **REMOVED 2026-06-01 — billing teardown complete.** The deployed Lambda, its public Function URL (`https://tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url.ap-northeast-1.on.aws/`, 0 invocations in 30 days), its IAM role `newsStripeWebhook-role-kercpkn5`, and the orphaned per-function exec policy were all deleted via CLI. The `resolveUserTier()` logic and the `user_profile` / `portal_session` proxy actions were stripped from `newsSensitiveData` in the same pass. The 2026-06-01 decision was to keep the source in-repo for reference, but the 2026-09-24 cleanup audit reversed that by explicit operator decision: the repo dir was removed 2026-09-24 (git-recoverable from history; see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier D1). Nothing invokes it. Subscriptions are not coming back — do not rebuild on this. See [[project-billing-deprecated]].
+
+---
+
+### 13. `newsMarketsData`
+**Path:** `amplify/backend/function/newsMarketsData/src/index.js`
+**Triggers:** EventBridge Rules — `MarketsDataHourly` (`rate(1 hour)`), `MarketsYieldsDaily` (`cron(0 6 ? * MON-FRI *)`), `MarketsMacrosWeekly` (`cron(0 2 ? * SUN *)`)
+
+Free economic-data ingest — **no LLM**, all free feeds.
+
+**What it does:**
+1. **FX** — Frankfurter (ECB rates, no key), hourly
+2. **Bond yields** — FRED (free key), daily on weekdays
+3. **Commodities + equities** — **Yahoo Finance** (`chart/<sym>?interval=1d`, no key, JSON) / crypto via CoinGecko, hourly. **Migrated off Stooq 2026-06-23** (commit `51ef532`): Stooq put all its CSV endpoints behind a JS proof-of-work bot wall and removed `/q/l/` (404 site-wide), so a server-side fetch can no longer read it — commodities + equities went null in prod until this swap. `fetchYahooQuote()` + the `YAHOO_COMMODITIES`/`YAHOO_EQUITIES` maps (the same maps `seed_history` already used; VIX was already Yahoo). Priced universe (~51 instruments, the spine behind `/economy` — see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): commodities (Brent `BZ=F`, WTI `CL=F`, gold `GC=F`, copper `HG=F`, DXY `DX-Y.NYB`, VIX `^VIX`, **natural gas** `NG=F`), bond yields, equity indices + Russell 2000 (**IWM** proxy), the **full 11 GICS sector SPDR ETFs** + thematic ETFs (defense/semis/gold-miners/**agriculture DBA**/**rare-earths REMX**), and BTC/ETH.
+4. **Country macros** — World Bank (no key), weekly
+5. Writes `LATEST` rows plus dated `HISTORY#` rows (for sparklines) to `MARKETS_DDB_TABLE`
+
+**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one; `{ "source": "seed_history" }` is a **one-time** backfill that downloads ~30 days of daily closes per instrument from **Yahoo Finance** (`chart?interval=1d&range=2mo`, sequential/throttled — Yahoo rate-limits bursts) and writes the past `HISTORY#YYYY-MM-DD` rows (35-day TTL, only dates < today, skips existing rows). The hourly cron appends today's row from the Yahoo LATEST quote, and TTL keeps the window at ~30 days. This is what powers the `/economy` sparklines + Key-levels. (Stooq, the original source for both LATEST quotes and history, is fully dead — see source #4 note above.)
+
+**Key env vars:** `MARKETS_DDB_TABLE` (default `GlobalPerspectiveMarkets`), `FRED_API_KEY`
+
+---
+
+### 14. `newsEconomicImpact`
+**Path:** `amplify/backend/function/newsEconomicImpact/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicImpact` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(30 7 * * ? *)` (daily 07:30 UTC, after thread analysis)
+
+Per-thread economic disruption analysis — the "Economic Disruption Layer." Uses **DeepSeek V4**.
+
+**What it does:**
+1. Reads 30 days of archive + each thread's `THREAD_ANALYSIS` and topic `SUMMARY` records
+2. For threads with an economic dimension, calls DeepSeek with a **closed instrument allowlist** (commodities incl. natural gas, rates, equity indices, GICS sector + thematic ETFs incl. agriculture/rare-earths, crypto; any unknown ticker → dropped), presented as a live-priced menu via `buildInstrumentTable`, plus a curated `economic_analogs.json` catalog of real past events with realized moves (the model picks the closest by mechanism; the frontend shows the analog's *actual* past move, never a forecast)
+3. Output is qualitative only — `direction` (up/down/mixed), `magnitude` (small/moderate/large), **never a fabricated %**; every claim must cite real `topicId`s (uncited claims dropped post-parse)
+4. Snapshots **actual** prices from `MARKETS_DDB_TABLE` (compute, don't generate)
+5. Writes tombstone records `{ hasImpact: false }` for threads with no economic dimension
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `ECON#THREAD#{threadId}` / `ECONOMIC_IMPACT` (21-day TTL)
+
+**Key env vars:** `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `MARKETS_DDB_TABLE`, `LLM_CONCURRENCY` (default `4`), `ECON_MIN_ENTRIES` (default `2`), `ECON_MAX_THREADS` (default `15`)
+
+---
+
+### 15. `newsEconomicQuality`
+**Path:** `amplify/backend/function/newsEconomicQuality/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicQuality` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(0 8 * * ? *)` (daily 08:00 UTC, after economic impact; aligned with Gemini quota reset)
+
+LLM-as-judge quality gate for economic-impact records. Deliberately a **different model family** from the producer (DeepSeek produces, **Gemini 2.5 Flash** judges) so judge errors are less correlated with producer errors.
+
+**What it does:**
+1. Scans recent `ECON#THREAD#` records (`hasImpact: true`, not judged in last 7 days)
+2. Builds a judge prompt, calls Gemini, parses 5-axis scores: `coherence`, `citation_fidelity`, `analog_match`, `severity_calibration`, `no_bs`
+3. Flags the record `is_low_quality: true` if any axis ≤ 2
+4. Writes `qualityScores` + `is_low_quality` + `quality_judged_at` back to the record
+
+**Key env vars:** `XAI_API_KEY` (legacy name — holds **Gemini** key), `GROK_MODEL` (= `gemini-2.5-flash`), `GROK_API_URL` (= Gemini OpenAI-compat endpoint), `INTER_CALL_DELAY_MS` (= `13000`), `MAX_TOKENS` (= `16000`, large because Gemini thinking tokens count against the cap), `QUALITY_MAX_RECORDS` (default `15`), `QUALITY_RECENT_DAYS` (default `7`), `SUMMARIZE_PREDICT_TABLE`
+
+---
+
+### 16. `newsSavedItems`
+**Path:** `amplify/backend/function/newsSavedItems/src/index.js`
+**Trigger:** User-triggered — Lambda Function URL (`window.SAVED_ITEMS_ENDPOINT`) or AppSync resolver (auto-detected). **No LLM.**
+
+Per-user save/bookmark store.
+
+**What it does:**
+1. Verifies a **Firebase JWT** (lightweight Node `crypto` + Google certs — no firebase-admin) on every action
+2. Actions: `save_item`, `unsave_item`, `get_saved_items`
+3. Item types allowed: `thread`, `country`, `daily`, `pair`. Caps: 500 items/user, 4KB metadata/item
+
+**DDB:** `SAVED_ITEMS_TABLE` — **PK** `uid`, **SK** `savedKey` (= `{itemType}#{itemId}`)
+
+**Key env vars:** `SAVED_ITEMS_TABLE`, `FIREBASE_PROJECT_ID`
+
+---
+
+### 17. `newsClientErrors`
+**Path:** `amplify/backend/function/newsClientErrors/src/index.js`
+**Trigger:** User-triggered — public Lambda Function URL (AuthType NONE; errors come from anonymous visitors). **No LLM.**
+**Built:** 2026-05-30. Roll-your-own passive error sink (no paid Sentry).
+
+Receives uncaught frontend errors and aggregates them into one counter row per fingerprint.
+
+**What it does:**
+1. Frontend `shared/api/errorSink.js` (installed in `main.jsx`) listens for window `error` + `unhandledrejection`, and — via `reportBoundaryError` — React render crashes caught by the class `ErrorBoundary` around `<Routes>`. Fire-and-forget `fetch` POST, no-ops until `window.CLIENT_ERRORS_ENDPOINT` is set in `docs/config.js`. Features that catch their own failure and render an honest empty state report it with `reportFetchError(context, error)` (e.g. `/today`: `today-topics`, `today-summary`, `today-prediction`, `today-trace-cause`). **There is no generic error modal** (the `ErrorModal` + `ErrorContext`/`ErrorProvider`, whose only caller was `/today`, were removed 2026-10-01, P3b): a failed load renders in place ("Couldn't load today's topics." + Retry; per-story "Summary / Prediction / Trace cause unavailable right now" + Retry/Close via `features/home/components/AiUnavailable.jsx`) and nothing reader-facing says "Something went wrong" (guarded in `quality/verify_pages.sh`).
+2. Lambda fingerprints each error (sha1 of message + normalized top stack frame) and `ADD count`s into one DynamoDB row, so a flood of identical errors collapses to a single row + sample.
+3. Abuse-bounded: 16KB body cap, per-field length caps, CORS locked to the two site origins.
+
+**DDB:** `GlobalPerspectiveClientErrors` — **PK** `errKey` (= `day#hash`), TTL 30d.
+**Read-back:** `node scripts/errors.mjs [--days N]` — source-map-resolves the top frame (maps are `build.sourcemap:'hidden'`, stripped from `docs/` on deploy).
+**Key env vars:** `CLIENT_ERRORS_TABLE`, `ERROR_TTL_DAYS`. **Role:** `newsClientErrors-role` (dynamodb:UpdateItem on the table only).
+
+---
+
+### 18. `newsFreshnessMonitor`
+**Path:** `amplify/backend/function/newsFreshnessMonitor/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerFreshnessMonitor` — `cron(30 0/2 * * ? *)` (every 2h at :30). **No LLM.**
+**Built:** 2026-06-01. Data-freshness dead-man's-switch.
+
+The passive complement to the on-demand `scripts/` checks: catches a pipeline stall that happens on a schedule (the active checks' blind spot).
+
+**What it does:**
+1. Hits the public proxy `?action=topics`, reads `asOf` (= latest topics `updatedAt`).
+2. Alerts via SNS if content age > `STALE_HOURS` (=9; the content pipeline runs every ~4h, so 9h tolerates ~2 missed cycles) **or** the proxy is unreachable / returns no timestamp (so it doubles as a read-path uptime check, no DDB coupling).
+3. Honest-failure: only alerts on a real problem, never a fake "all clear".
+4. **Settle dead-man's alarm (Batch 4 C, 2026-09-30):** first, in its own try/catch (8 s), reads the public `prediction_track_record` `questions.settleHealth` (`src/settleCheck.js`) and alerts `[GP] Prediction settling overdue` on: a missed weekly draw (after Tuesday 12:00 UTC), a missing next-week commitment, a settle tick silent for 3 days, sampled questions past deadline + 3 days with no verdict for more than 10 days, or a board not rebuilt for 6 h. Every condition needs something committed first (silent during warm-up and on an empty board); only the 12:30 UTC run sends (once a day). Events: `{settleCheckOnly, dryRun, fixture, now, forceSend}` for testing.
+
+**Alerts → SNS topic `GlobalPerspectiveAlerts`** → email. **Key env vars:** `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `SITE_URL`. **Role:** `newsFreshnessMonitor-role` (sns:Publish only).
+
+---
+
+### 19. `newsErrorDigest`
+**Path:** `amplify/backend/function/newsErrorDigest/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerErrorDigest` — `cron(15 0/6 * * ? *)` (every 6h). **No LLM.**
+**Built:** 2026-06-01. The alerting/triage layer over the `newsClientErrors` sink (#17).
+
+Turns the sink's passive capture into a push alert without a paid Sentry.
+
+**What it does:**
+1. Scans `GlobalPerspectiveClientErrors`, folds rows to per-fingerprint totals.
+2. Diffs against the prior run (stored in one `DIGEST#STATE` row in the same table).
+3. Alerts via SNS ONLY on **new** or **spiking** (Δ ≥ `SPIKE_MIN_DELTA`=5) fingerprints — first run just baselines; known errors never re-alert (the alert-fatigue guard).
+
+**Alerts → SNS topic `GlobalPerspectiveAlerts`** → email. **Key env vars:** `CLIENT_ERRORS_TABLE`, `SNS_TOPIC_ARN`, `SPIKE_MIN_DELTA`. **Role:** `newsErrorDigest-role` (sns:Publish + dynamodb Scan/Get/Put on the errors table).
+
+---
+
+### 20. `newsPredictionResolver` — weekly prediction SETTLE Lambda (rewritten 2026-09-30, Batch 4 B; rule still DISABLED)
+**Path:** `amplify/backend/function/newsPredictionResolver/src/{index,lib,store,search,draft}.js` (the legacy proposer that scored at scenario probability is retired; the old file is kept only as a rollback zip)
+**Trigger:** EventBridge Rule `TriggerPredictionResolver` — **ENABLED** `cron(30 10 * * ? *)` (verified 2026-10-18), input `{"action":"tick"}`, outside DeepSeek's peak window. 600 s / 256 MB. Role `newsPredictionResolver-role` (DynamoDB on the log only).
+
+Actions (every one supports `dryRun`; dryRun = no LLM, no writes): **`tick`** (daily, idempotent): commit the seeds of the next two ISO weeks, draw every ended week, on Mondays run the draft pass, write a heartbeat; **`draw {weekId}`**; **`draft {limit}`**; **`status`**; **`replay {items}`** (runs the drafter on supplied questions, never writes; used for validation).
+- **Pre-registered sample (K = 22):** a random 32-byte seed per week; `sha256(seed)` is committed before the week starts and the seed is revealed at the draw. Eligible = `question:true` (M2), issued in the week, lead 7–84 days. Rank by `sha256(seed|qid)`, keep only the lowest per story (`threadId`, else `topicId`), take the first 22 (never padded). `predictions/verify-draw.mjs` recomputes it.
+- **Drafter:** two Brave searches (serialized, 429-retry) + `deepseek-v4-pro` (`DRAFT_MODEL`, code default) per sampled question past its deadline; it never receives `p`. A `yes` needs a verbatim quote found in a returned result plus a second agreeing pass; `no` only after deadline + 3 days; `void` needs a reason (`ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`). Anything else is `not_yet` or `needs_human`. **Drafts are never public; only the operator's `predictions/settle-review.js` writes a `VERDICT`.**
+- **Records** (in `GlobalPerspectivePredictionLog`, none has `methodologyVersion`, all written with attribute_not_exists = immutable): `SEED#<week>/{COMMIT,SECRET,REVEAL}`, `SAMPLE#<week>/DRAW` (with the public pool of eligible qids), `Q#<qid>/{SAMPLED,DRAFT#<iso>,VERDICT[#n]}` (SAMPLED holds the question text, deadline, source, never `p`), `SETTLE#<week>/{TICK#,REVIEW#}`.
+**Key env vars:** `PREDICTION_LOG_TABLE`, `BRAVE_SEARCH_API_KEY`, `XAI_API_KEY`/`GROK_API_URL` (hold DeepSeek), `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN` (draft limit); optional `DRAFT_MODEL`. See [Prediction calibration](#prediction-calibration-track-record) and `TASK_2026-09-30_batch4_scoring_web_share.md`.
+
+---
+
+### 21. `newsBreakingAlert` — DEPLOYED + SCHEDULED (proposal mode; `DRY_RUN=false`)
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `maxRegionRisk` ignores region keys and records older than 30 days; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Path:** `amplify/backend/function/newsBreakingAlert/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerBreakingAlert` — **ENABLED** — `cron(35 4/8 * * ? *)` (04:35 / 12:35 / 20:35, after `NewsProjectInvokeAgentLambda` writes the analysis; verified 2026-10-18).
+
+> ⚠️ **Doc corrected 2026-07-25 (agent-review staleness audit):** this function was long documented as "BUILT — NOT DEPLOYED (dry-run)". Live AWS shows it is **deployed** (Timeout 120s / 256MB), driven by the **ENABLED** rule above, wired to the `GlobalPerspectiveBreakingAlerts` table, with **`DRY_RUN=false`**. What is still true is the **human-in-the-loop / never-auto-sends** design: even at `DRY_RUN=false` the code only writes a `status:'proposed'` row and logs "awaiting human confirmation before send" — the actual email send lives in `newsEmailSender` breaking mode (#29), gated on a human `status:'confirmed'`. So "proposes automatically, sends only after human confirm," **not** "dry-run/un-deployed."
+
+Breaking-news email channel — **Component 4** of the recommendations/digest work (`RECOMMENDATIONS_AND_DIGEST_PLAN.md`); full design in `BREAKING_ALERTS_PLAN.md`. v1 is a **broadcast** alert (global significance, not personalized), pairing a breaking headline with the site's own analysis. Detects deterministically, then proposes for human review — **never auto-sends**.
+
+**What it does:**
+1. Groups `latest.topics[]` into stories by `threadId`; scores each with the **deterministic, no-LLM** `significance.js` on four real signals: popularity (`sources.length`), breadth (concurrent angles), max country `riskScore` (0–100, from `COUNTRY_INTELLIGENCE`), and economic `magnitude` (from `ECONOMIC_IMPACT`). Most cycles clear nothing — **silence is the correct output** ([[feedback-no-misinformation-fallback]]).
+2. For the top story above threshold (deduped 5d, one/run), assembles the email from real records — `SUMMARY` (*What happened*), parsed `TRACE_CAUSE` JSON (*How we got here*: trigger → building → root + underreported angle + Signal-vs-Noise), `PREDICTION` (*Our read*), `ECONOMIC_IMPACT` (market pill), sources.
+3. `render.js` returns `{subject, text, html}` — brand-styled, email-safe table layout + inline CSS, XSS-escaped, empty sections omitted.
+4. Writes a `status:'proposed'` row to `GlobalPerspectiveBreakingAlerts` (doubles as the dedupe anchor). As of 2026-06-26 the proposal also persists the **structured story** (`story:{summary,prediction,traceCause,economic,sources}`) plus flat fields the web surface reads — `category`, `regions`, `leadTopicId`, the **real** `threadId` (null when un-threaded), `hasArc` (a real multi-entry thread with `THREAD_ANALYSIS`), `outletCount`/`sourceCount` — so `/breaking/:id` reads clean fields instead of re-parsing the email. `verifyStory()` is a **stub seam** for the Phase-3 LLM verify (Gemini judges the DeepSeek-written analysis, like `newsEconomicQuality`).
+
+> **Web surface (LIVE 2026-06-26; RETIRED as pages 2026-10-01, built not deployed):** the `/breaking` feed and `/breaking/:id` detail pages are now client redirects (see the routes table); the bell and `BreakingStrip` stay and link to the `/breaking/:id` resolver / the map. Original description: confirmed alerts had an on-site home at `/breaking` (feed — **shows the past 7 days only**, older alerts dropped, 2026-07-04) + `/breaking/:id` (detail) — served by `newsRecommend`'s `list_alerts`/`get_alert` (see Lambda #22), surfaced via the nav bell + a fresh-only `BreakingStrip` on Home/Map (latest + "+N more today"). This replaced the old bell→`/weekly/thread/:id` link, which mis-resolved (a breaking story is a point-in-time snapshot, not a narrative thread; the linked id was often a topic id or a single-entry thread). `newsBreakingAlert` runs live on its 4-hourly schedule writing structured `status:'proposed'` records; legacy confirmed records render via the saved-email-text fallback in `get_alert`.
+
+**Email provider: Resend** (chosen over SES 2026-06-10 for DX + no sandbox-approval wait) — `sendEmail.js` is the single provider seam (`fetch`, no npm dep, key from `RESEND_API_KEY`).
+
+**Human-in-the-loop (no public auth surface, mirrors `predictions/review.js`):** `breaking/review.js` — operator reviews each proposal, **adds their own words** (an editor note that leads the email), confirms (`status:'confirmed'`) or rejects. `breaking/send-test.js` renders a sample and sends it via Resend (`RESEND_API_KEY=re_xxx node breaking/send-test.js`).
+
+> ⚠️ **Subscriber breaking-alert broadcast has never actually flowed** (`BACKEND_AUDIT_2026-09-10.md` #2, live-verified 2026-09-10): `newsEmailSender`'s breaking mode (#29) polls every 15 minutes for `status:'confirmed'` rows, but **zero** confirmed rows exist — `breaking/review.js` (the only path that sets `status:'confirmed'`) has simply never been run by the operator. The code chain from detection → proposal → email is intact and deployed; the human confirm step is the missing link. Options: run `breaking/review.js` regularly, add a confidence-gated auto-confirm, or disable the 15-min sender poll until the process is used.
+
+**Key env vars (deployed, verified 2026-07-25):** `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE` (=`SummarizeAndPredict`), `BREAKING_ALERTS_TABLE` (=`GlobalPerspectiveBreakingAlerts`), `RESEND_API_KEY` (set), `SITE_URL`, `DRY_RUN` (=`false`), plus `ALERT_EMAIL_FROM` (=`onboarding@resend.dev`) and `ALERT_EMAIL_TO` (operator address). `SIGNIFICANCE_THRESHOLD`/`DEDUPE_DAYS` are **not** set → code defaults only. No Function URL (this is a scheduled Lambda, not URL-invoked).
+
+---
+
+### 22. `newsRecommend`
+**Path:** `amplify/backend/function/newsRecommend/src/index.js`
+**Trigger:** Lambda **Function URL** (`window.USER_PREFS_ENDPOINT`, auth NONE + CORS) and direct invoke (digest cron). **No LLM.** Built 2026-06-05 (Component 1 of `RECOMMENDATIONS_AND_DIGEST_PLAN.md`); prefs actions added + Function URL created 2026-06-10.
+
+Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
+1. **Recommendations** — content-based ranking of `latest.topics[]` for a user (shared `scoring.js`; personalized via the user's `SavedItems` interest profile when a JWT is present, else "Trending"). On-site rail not yet wired.
+2. **Notification preferences** (added 2026-06-10) — JWT-gated `get_prefs` / `set_prefs`:
+   - `get_prefs` → `{ breakingOptIn, digestOptIn, digestCadence }` (defaults OFF — opt-in/GDPR).
+   - `set_prefs` `{ breakingOptIn?, digestOptIn?, digestCadence? }` → writes those + reserves compliance fields (`email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`) for when email delivery goes live; never clobbers `interestProfile`.
+   - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
+3. **In-app notification feed** (added 2026-06-10; enriched 2026-06-26) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ id, threadId, title, url(→/breaking/:id), category, regions, reasons, economic, outletCount, sourceCount, at }]` (or `[]`). Powers the nav bell, the `/breaking` feed, and the `BreakingStrip`. Read-state is client-side (localStorage), so no per-user write.
+
+   > ⚠️ **Weakest abuse surface in the fleet** (`BACKEND_AUDIT_2026-09-10.md` #7, live-verified 2026-09-10): `list_alerts` is a full-table **Scan**, unauthenticated, with **no rate limit and no cache**. Cheap today at current table size; an abuse/cost surface as `GlobalPerspectiveBreakingAlerts` grows. Needs either a cached read (mirroring the `newsPredictionsSnapshot` pattern), a rate limit, or both.
+4. **Single breaking alert** (added 2026-06-26) — **public** `get_alert` `{ payload:{ id } }` (no auth): `GetCommand` by `alertKey`, returns the full alert **only when `status ∈ {confirmed, sent}`** (never a raw proposal). Surfaces the structured `story` when present, else `fallbackText` = the saved email body for legacy records; includes `hasArc`/`threadUrl` so the page gates the arc link. Powers `/breaking/:id` (`useBreakingAlert`). Returns `{ alert: null }` for unknown/unconfirmed ids → honest not-found.
+5. **Public one-click unsubscribe** (added 2026-07-03; `kind=drift` added 2026-07-07) — `unsubscribe` action (no auth; the token IS the auth). Reached as a GET link from emails (`?action=unsubscribe&uid=<uid>&token=<unsubToken>&kind=<digest|breaking|drift|all>`) or a RFC 8058 `List-Unsubscribe-Post` POST. **GetItem by `uid`** (the table key — deliberately not a Scan, so the existing role suffices), verifies `unsubToken` matches, flips `digestOptIn`/`breakingOptIn`/`driftOptIn`, returns a small HTML confirmation page. Consumed by the `newsEmailSender` unsubscribe links (Lambda #29).
+6. **Follow-country actions** (added 2026-07-07, `MEMBER_GATING_PLAN.md` P5) — `follow_country`/`unfollow_country` (signed-in **AND member-tier**; `getTier` GetItem on `GlobalPerspectiveUserTable` — **needs the `ReadTier` statement added to `newsRecommend-ddb`** — fail-closed → `403 members_only`). Atomic `ADD`/`DELETE` on the `followedCountries` **String Set** on the user's `GlobalPerspectiveUserPrefs` row; a follow also defaults `driftOptIn=true` + stamps consent/token/email = a complete drift-alert subscription. `get_prefs`/`set_prefs` extended to carry `followedCountries`/`driftOptIn`.
+
+**Key env vars (deployed, verified 2026-07-25):** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `USERS_DDB_TABLE` (=`GlobalPerspectiveUserTable`, added for the follow-country tier check), `FIREBASE_PROJECT_ID`. (`BREAKING_ALERTS_TABLE` and `SITE_URL` are **not** set in the deployed env — code falls back to literals.) **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs — the unsubscribe uses Get+Update, no Scan; read on NewsCache + SavedItems, Scan + GetItem on BreakingAlerts).
+
+---
+
+### 23. `newsWeeklyBrief`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `topCountries` skips aggregates and the country block ignores records older than 30 days; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Path:** `amplify/backend/function/newsWeeklyBrief/src/index.js`
+**Trigger:** EventBridge `TriggerWeeklyBrief` — `cron(0 6 ? * SUN *)` (Sundays 06:00 UTC). Built 2026-06-10. Uses **DeepSeek V4**.
+
+Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized essay; distinct from the daily `DAILY_BRIEF`). The pivot to signals followed research into how rigorous weeklies work (Economist "world this week", ISW, Semafor): surface discrete signals, keep fact separate from judgment, never manufacture a grand thesis (an automated synthesizer overreaches).
+
+**What it does:**
+1. Reads the last 7 days of archive entries; groups by `threadId`; selects top threads + top countries.
+2. Computes **deterministic** per-signal data: `riskLevel`/`riskScore`, `region`, `asOf`, `sources` (real article links from our data).
+3. Calls DeepSeek for ONLY the per-signal **text** (`lede`, `fact`, `soWhat`) under strict epistemic rules (verb-mark claims; calibrated so-what; no thesis; no forced cross-links; no invented specifics) + a `watch` list. The risk/sources/dates are never the LLM's.
+4. Joins them → writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `format:'signals'`, `status:'published'` (180-day TTL).
+
+**Auto-publish (gate removed 2026-07-03):** the schedule now writes `status:'published'` directly. The old manual `weekly/review.js` gate went stale (nothing published 2026-06-10..07-03 → `/weekly-brief` sat empty); the synthesis prompt is already strictly grounded, so the gate added stale-risk without quality upside for a solo operator. "Set a brief to draft" remains a manual kill-switch. (Serving-scan pagination was also fixed the same day — the published row had grown past the 1 MB scan page.)
+
+> ⚠️ **Source header comment is stale (`BACKEND_AUDIT_2026-09-10.md` #9):** this function's source still carries a comment claiming "no EventBridge schedule / manual-invoke only." Live AWS shows an **ENABLED** cron (`TriggerWeeklyBrief`, Sundays 06:00 UTC — see the Scheduling table below). Fix the comment at next touch of the file.
+
+**Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict). **Email delivery:** a separate `newsEmailSender` (Lambda #29) emails the published brief to subscribers — this function only generates/stores.
+
+### 24. `newsSourceAudit` — source-truth dead-man's-switch (SHIPPED 2026-06-15)
+**Path:** `amplify/backend/function/newsSourceAudit/src/index.js`
+**Trigger:** EventBridge `newsSourceAuditDaily` — `cron(30 11 ? * MON,WED,FRI *)` (Mon/Wed/Fri 11:30 UTC despite the name; verified 2026-10-18).
+
+**What it does:** the automated half of the **source-truth layer** (`ANALYSIS_SOURCE_TRUTH_PLAN.md`) — faithfulness checks verify the *output*; this verifies the *input* is trustworthy and that OUR summary didn't drift from the source. Self-contained port of `quality/analysis/source_check.mjs`. Per run, for the top `AUDIT_N` (=6) live topics: **L1** deterministic source-robustness from `sources[]` (single-source / low-tier ⇒ "unverified"); **L1.5** fetches the full article(s) from up to 3 cited outlets and asks a DeepSeek auditor whether the cached `SUMMARY` drifted (hedge-strip / invented result / added framing). If confirmed-drift ≥ `DRIFT_ALERT_THRESHOLD` (=2) it **SNS-publishes an alert** to `GlobalPerspectiveAlerts`; always logs to CloudWatch.
+
+**Key env vars:** `XAI_API_KEY`/`GROK_API_URL` (DeepSeek, copied from newsEconomicImpact), `AUDIT_MODEL` (=`deepseek-v4-pro`), `PROXY_ENDPOINT`, `SNS_TOPIC_ARN`, `AUDIT_N`, `DRIFT_ALERT_THRESHOLD`. **Role:** `newsSourceAudit-role` (basic-exec logs + `sns:Publish` to GlobalPerspectiveAlerts). Reads content via the public proxy (no DDB perms).
+
+---
+
+### 25. `newsWeeklyMarkets` — Weekly Markets Report (SHIPPED + first report PUBLISHED 2026-06-29)
+**Path:** `amplify/backend/function/newsWeeklyMarkets/src/index.js`
+**Trigger:** EventBridge Rule `TriggerWeeklyMarkets` — `cron(30 8 ? * SUN *)` — **DISABLED 2026-09-25 (operator: `/economy` soft-hidden, job paused; re-enable with `aws events enable-rule --name TriggerWeeklyMarkets`)** (Sundays 08:30 UTC, after the daily econ-impact pipeline so coverage is fresh). **Generates a DRAFT only** — a human still publishes via `weekly-markets/review.js` (the gate is kept). Uses **DeepSeek V4** (coverage notes) + **Perplexity `sonar`** (web-context fallback). Plan: `WEEKLY_MARKETS_PLAN.md`.
+
+The **price-first** weekly markets wrap — "what moved this week and why" — the instrument→explanation counterpart of `/economy` (news→instrument). Sibling of `newsWeeklyBrief`: generate draft → human approve → publish → serve.
+
+**What it does:**
+1. Scans `GlobalPerspectiveMarkets` `HISTORY#` rows for the tracked universe and computes each instrument's ~1-week % move **deterministically** (never via LLM — same transpose the `markets_global` serve action uses). Guards: `MAX_ANCHOR_AGE_DAYS=14` (reject a stale week-ago anchor across a data gap — caught a bogus COPPER −99%), `MIN_MOVE_PCT` (drop flat rows), ≥100% sanity ceiling. Thin/gappy instruments → `excluded[]` ("history accruing").
+2. Selects the top movers by |%|. Per mover, three **honesty-layered** grounding tiers, kept visibly distinct: **coverage** (recent `ECON#THREAD#`/`ECONOMIC_IMPACT` records citing it, ~9-day window → a short DeepSeek note grounded only in our headlines), **web** (Perplexity `sonar` self-searches + cites, framed as candidate drivers not causation), or honest **none** ("no clear driver found"). Every tier degrades gracefully — an LLM/key error never blocks the report or fabricates a cause.
+3. **Quality benchmark (LLM-as-judge, added 2026-06-29):** each DeepSeek coverage note must clear a **Gemini** judge (a DIFFERENT model family → less-correlated errors, mirrors `newsEconomicQuality`) on three binary axes — **faithful** (grounded in the cited coverage, uses the most-relevant headline, no invented specifics), **coherent** (the cited cause explains a move in the *actual* direction — e.g. risk-off → VIX *up*, so a VIX *down* note citing a sell-off FAILS), **informative** (concrete reason, not vague filler). Fail any → the note is **dropped to "no clear driver found"** (honest blank beats weak/backwards analysis); the rejected note + reason are kept on the record (`noteJudge`/`rejectedNote`) for review. Fail-open only if no judge key is set. Caught VIX (backwards logic) + REMX (tangential grounding + filler) on the first live run.
+4. Writes `WEEKLY_MARKETS#{weekKey}` / `WEEKLY_MARKETS`, `status:'draft'` (180-day TTL). A human publishes via `node weekly-markets/review.js` (status → published) before it's served; served by the `weekly_markets` proxy action → rendered by `WeeklyMarketsView` in `/economy`'s **"This week" mode** (`?view=week`; `/weekly-markets` redirects there), via `useWeeklyMarkets`. **Consolidated into `/economy` 2026-06-30** (commit `41f2b5a`): Today/This-week toggle, standalone page → redirect permalink, "Markets" nav item removed.
+
+**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `MARKETS_DDB_TABLE` (=`GlobalPerspectiveMarkets`), `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values, the note producer), `JUDGE_API_KEY`/`JUDGE_MODEL`(=`gemini-2.5-flash`)/`JUDGE_API_URL`/`JUDGE_DELAY_MS` (the **Gemini** quality judge — set), `PERPLEXITY_API_KEY` (web tier — **intentionally unset**, so uncovered movers stay "no clear driver found" by decision), `WEEKLY_TOP_MOVERS`, `MIN_MOVE_PCT`, `COVERAGE_WINDOW_DAYS`. **Timeout 300s** (extra Gemini judge calls). **Role:** `newsWeeklyMarkets-role` (Scan/Get on GlobalPerspectiveMarkets, Scan/Get/Put on SummarizeAndPredict).
+
+> ⚠️ **Source header comment is stale (`BACKEND_AUDIT_2026-09-10.md` #9):** this function's source, like `newsWeeklyBrief`'s, still claims "no schedule yet." Live AWS showed an **ENABLED** cron until it was paused on 2026-09-25 (`TriggerWeeklyMarkets`, Sundays 08:30 UTC). Fix the comment at next touch of the file. Unlike `newsWeeklyBrief`, this one's draft→publish gate (`weekly-markets/review.js`) genuinely runs and is the correct live behavior.
+
+> **Markets-history backfill gotcha (2026-06-29):** `newsMarketsData` `seed_history` **skips dates whose `HISTORY#` row already exists** (`historyRowExists`). The Stooq→Yahoo outage left **null-valued** rows for 06-06..06-21, so seed_history wouldn't refill them. Fix = **delete the null rows, then re-run seed_history** (Yahoo `range=2mo` refills weekdays). This also repaired the `/economy` sparklines. Cross-page links to `/weekly-markets` live on Home/Map/Country/Thread (Economy tab) — these now redirect into `/economy?view=week` (hash preserved).
+
+---
+
+### 26. `newsDriftCorrector` — living-analysis drift corrector (LIVE 2026-07-02)
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
+**Path:** `amplify/backend/function/newsDriftCorrector/src/index.js`
+**Trigger:** EventBridge — `TriggerDriftCorrector` — `cron(30 5 * * ? *)` daily 05:30 UTC (verified 2026-10-18). Uses **DeepSeek V4** (reuses `newsCountryIntelligence-role`). Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
+
+The "self-correcting analysis" engine — detects when a country/thread read's **conclusion** moved (risk level / |Δscore|≥8 / trajectory — gated on the conclusion, NOT the headline; ~37% of daily updates are cosmetic reword = noise) and grounds the "why" in a **real cited archive event**, never inventing one.
+
+**What it does:**
+1. Reads the dated `HISTORY#`/`THREAD_HISTORY#` snapshots written by `newsCountryIntelligence`/`newsThreadAnalysis`.
+2. `findAllDrifts` finds **every** ungrounded conclusion-move in a 10-day window (so a missed cron day or pre-live history self-heals — last-week backtest = 11/11 moves grounded = 100%).
+3. Grounds each move with a numbered-event prompt → a single real trigger id or an honest `noSingleDriver` (never fabricates).
+4. Writes each note TWICE via `putDriftNote` (idempotent, country + thread): `…/DRIFT#{date}` (`DRIFT_TTL_DAYS=60`, powers the live band + ledger) **and `…/DRIFTLOG#{date}` (NO TTL, the permanent member-history archive — added 2026-07-07, `MEMBER_GATING_PLAN.md` P3)**. Never overwrites; the `alreadyNoted` GetItem guard means a note is written once, so the `emailedAt` stamp `newsEmailSender` adds (drift alerts) is never clobbered. Country-note fields: `changeScore`/`changeLevel`/`changeDimensions{axis:{from,to,delta}}` (what moved) + `priorHeadline`/`currentHeadline` + `triggerEvent`/`whyChanged`/`noSingleDriver`, **and (scoring-v2 Phase D-email, 2026-07-08) the current standing `currentDimensions`/`currentLead`/`currentRiskScore`/`currentRiskLevel`** for the email's Level-B scorecard (the vector was already loaded for `changeDimensions`; not backfilled — new notes only).
+
+**Feed-forward (1b.5):** `newsCountryIntelligence` reads the last 2 notes as a low-authority "RECENT CORRECTIONS" block. **Serve:** `newsSensitiveData` `country_history` returns `driftNotes[]`; `thread_analysis` attaches the latest `driftNote`. **UI:** `atoms/CountryWhatChanged` "What changed" band + correction-history chain on CountryPage; a "What changed" block on ThreadPage.
+
+**Key code refs:** `findAllDrifts`, `COUNTRY#…/DRIFT#`, `THREAD#…/DRIFT#`, `DRIFT_TTL_DAYS=60` (`src/index.js:17,33,76,136,26`). **Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `BRAVE_SEARCH_API_KEY`.
+
+---
+
+**D9 direction check (Batch 3 / E, 2026-09-30):** a note's `whyChanged` must not explain a lower score with a worsening (or the reverse). The prompt states each moved axis in words (risk ROSE / FELL, conditions WORSE / BETTER) and asks for `axisEffects` ("worsens" / "improves" / "unclear" for the cited event, per moved axis). `src/directionCheck.js` compares those words with the sign of the stored delta and runs a per-clause prose check tuned to stay silent when unsure. On a mismatch the model is asked ONCE more with the concrete mismatch; if it still contradicts the data the note is stored with `noSingleDriver: true`, no `triggerEvent`, a numbers-only `whyChanged` ("Humanitarian risk fell 20 points (90 to 70). No listed event explains a move in this direction.") and `directionFlag {axes, kinds, attempts, at}`; the rejected text is only logged (`[direction]`). Existing notes: `scripts/audit-drift-direction.mjs` (heuristic, `--llm` audit, `--write-flags` additive `SET directionFlag {backfilled}` on `DRIFT#` + `DRIFTLOG#`; the text is untouched). The frontend (`shared/lib/driftNote.js`) shows a flagged note's numbers only, never its explanation or cited event. `event.dryRun` lists moves without a note (no LLM, no writes). Timeout 120 to 180 s for the retry.
+
+### 27. `newsAnalyze` — member "our-compute" Analysis Studio run path (LIVE 2026-06-22)
+
+**Deployed-source snapshot (2026-09-30):** `amplify/backend/function/newsAnalyze/deployed-snapshot/` holds a byte copy of the code that is actually deployed (`CodeSha256 4pTSGsz5uw…`, the prompt-patched pre-credits zip of 2026-07-10: `index.js` + `package.json`), added after a secrets check (no key / token literal; only `process.env.*` names and public URLs). It exists because the repo `src/` carries the PARKED credits code and must never be deployed over the live function. Do not edit it; do not deploy from it without a go-live decision.
+**Path:** `amplify/backend/function/newsAnalyze/src/index.js`
+**Trigger:** Lambda **Function URL** (CORS owned in code — keep the Function-URL CORS empty, see Common Mistakes #7). Uses **DeepSeek V4**. The paid Polar-membership product; full design → `POLAR_BILLING_PLAN.md`.
+
+Runs the same cited-analysis product as the BYOK `/analyze` studio, but on **our** DeepSeek key instead of the user's — this is what membership/credits monetize.
+
+**What it does:**
+1. Verifies a Firebase JWT, then gates the run through **`consume()`**: member **monthly allowance** (`MEMBER_MONTHLY_ALLOWANCE` free runs via `analyzeMonth`/`analyzeCount`) → atomic conditional **credit** decrement → `402 out_of_credits` when neither remains. Refunds on LLM failure.
+2. Builds the cited context from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` and calls DeepSeek.
+
+**Credits layer (built 2026-06-30, prod deploy pending):** replaced the old hard `tier=member` gate + `ANALYZE_DAILY_CAP` daily counter. Pure helpers live in `src/lib.js` with a `node --test` suite (`npm test`).
+
+> **Re-confirmed 2026-09-10** (`BACKEND_AUDIT_2026-09-10.md` #4): live env still has `ANALYZE_DAILY_CAP` and **no** `MEMBER_MONTHLY_ALLOWANCE`/credit vars — the repo's credits code below is definitively not live. Standing rule: diff the deployed zip before touching this function.
+
+**⚠️ DEPLOYED ≠ REPO (2026-07-10):** prod still runs the **pre-credits 06-16 code** (gate = `ANALYZE_DAILY_CAP=50`) with the **P1 professional-structure SYSTEM_PROMPT patched in** (2026-07-10: downloaded the deployed zip, patched ONLY the prompt block, redeployed; `MAX_TOKENS` env 1600→2400 for the longer structured output). The server-pinned prompt is now mirrored **verbatim** from the frontend's `utils/analysisPrompt.js` — it had silently drifted (missing all 06-13 upgrades, so member runs got a weaker analyst than BYOK). **Re-synced again 2026-07-10 (`4193610`)** with the **gp-struct visual-block reliability fix** (embedded JSON template + emission mandate — raised valid-block emission on the DeepSeek member path from 1/4 to 8/8, so the ScenarioBars/etc. now actually render for members); the lens-task tail reminders reach the model via the frontend-built `body.user` (the Lambda only holds `SYSTEM_PROMPT`), so syncing that array was sufficient. Same patched-zip method: `FE===BE` verified byte-for-byte (5278 chars). **Never zip the repo `src/index.js` to prod until `PROD_CREDITS_NEXT_STEPS.md` runs** — it carries the parked credits code, and deploying it without the env-ordering steps can mis-grant orders. **Model switch + timeout fix (2026-07-10, prod-config only):** the member-path model was switched `deepseek-chat` (V4 Flash) → **`deepseek-v4-pro`** (env `GROK_MODEL`, the bake-off's stronger analyst), with a required code patch (same patched-deployed-zip method) sending `thinking:{type:'disabled'}` in `runDeepSeek` — v4-pro defaults to thinking mode, which without this burns the whole `MAX_TOKENS` budget on `reasoning_content` and returns **empty output** (`len=0, finish_reason=length`, proven live before the fix; code patch deployed before the env flip so there was no broken window). `ANALYZE_DAILY_CAP` raised 50→100 and `Timeout` raised 30s→120s (v4-pro takes ~40–60s; the old 30s timeout surfaced in-browser as a fake-CORS **"Failed to fetch" / "No 'Access-Control-Allow-Origin' header"** error — the Function-URL CORS config was correctly empty throughout, so this was NOT the dual-CORS trap: on a synchronous Function-URL Lambda, a timed-out invocation returns a bare platform error with no CORS headers, which reads as CORS but is actually a timeout).
+
+**Key code refs:** `consume()`, `MEMBER_MONTHLY_ALLOWANCE`, `out_of_credits` (`src/index.js:31,104,129`). **Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `USERS_DDB_TABLE`, `MEMBER_MONTHLY_ALLOWANCE`, `FIREBASE_PROJECT_ID`, `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (hold **DeepSeek** values). See [[project_credit_billing]], [[project_analysis_studio]].
+
+---
+
+### 28. `newsPolarBilling` — Polar checkout + webhook (LIVE 2026-06-22)
+**Path:** `amplify/backend/function/newsPolarBilling/src/index.js`
+**Trigger:** Lambda **Function URL** (CORS owned in code — keep the Function-URL CORS empty, see Common Mistakes #7). **No LLM.** Polar.sh is the Merchant of Record. Full design → `POLAR_BILLING_PLAN.md` §5.
+
+Owns the billing surface: `create_checkout`, the signed `order.paid` webhook, and `get_membership`.
+
+**What it does:**
+1. `create_checkout` — subscription (`$15/mo · $150/yr`) or, with `kind:'credits'`+`pack`, a one-time credit-pack Polar product (server-authoritative amounts via `POLAR_CREDIT_PACKS`).
+2. Webhook `order.paid` — routes **credit-pack** orders to an idempotent **`grantCredits`** (`processedOrders` String-Set dedupe so an order can't double-credit) vs **subscription** orders to `tier=member`.
+3. `get_membership` — returns `{ tier, creditBalance, currentPeriodEnd, … }`; powers the Account → Membership tab + the header credits pill (`useMembership`).
+
+Writes the live Polar/credits fields to `USERS_DDB_TABLE` (`billingProvider:'polar'`, `polarCustomerId`, `polarSubscriptionId`, `currentPeriodEnd`, `creditBalance`, `processedOrders`).
+
+**Key code refs:** `grantCredits`, `processedOrders`, `POLAR_CREDIT_PACKS`, `get_membership` (`src/index.js:38,108,117`). **Key env vars:** `USERS_DDB_TABLE`, `POLAR_API_BASE`, `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_CREDIT_PACKS`. See [[project_billing_deprecated]], [[project_credit_billing]].
+
+---
+
+### 29. `newsEmailSender` — one sender for weekly brief + breaking alerts + drift alerts (LIVE 2026-07-04; drift mode added 2026-07-07)
+
+**Drift (Batch 3 / G):** the repo copy is AHEAD of deployed: it adds the member-perk teaser (breaking-alert footer in `index.js` `appendUnsub`; text + HTML block in `renderWeeklyEmail.js`). NOT deployed on purpose: user-facing email copy is the operator's call.
+**Path:** `amplify/backend/function/newsEmailSender/src/index.js`
+**Trigger:** EventBridge `TriggerWeeklyEmailSend` — `cron(0 14 ? * SUN *)` (Sundays 14:00 UTC, ~8h after the brief is generated) **ENABLED**; `TriggerBreakingEmailSend` — `rate(15 minutes)` **DISABLED** (verified 2026-10-18); **`TriggerDriftEmailSend` — `cron(40 7 * * ? *)` (07:40 UTC, ~20m after the drift corrector) created DISABLED** (send-to-self smoke test before go-live). All invoke with `{mode}`. **No LLM.** Built 2026-07-03, **went live 2026-07-04** (domain verified); plan → `EMAIL_SENDER_PLAN.md`.
+
+The email **send** path both products were missing (content flowed, nothing sent — the Resend seam was orphaned). One Lambda, `event.mode` dispatch:
+1. `weekly` — paginated-scan the latest **published** `WEEKLY_BRIEF`, scan `GlobalPerspectiveUserPrefs` for `digestOptIn`, render (`renderWeeklyEmail.js`) + send one personalized email each, write idempotency marker `EMAILLOG#weekly#<weekOf>` in `SummarizeAndPredict` (re-invoke = no-op unless `{force:true}`).
+2. `breaking` — scan `GlobalPerspectiveBreakingAlerts` for `status:'confirmed'` **AND `emailedAt` unset AND `alertedAt` ≤48h** (freshness gate skips the ~50 historical `sent` alerts), reuse each alert's pre-rendered `draft{subject,html,text}`, send, stamp `emailedAt`.
+3. `drift_alert` (added 2026-07-07, `MEMBER_GATING_PLAN.md` P5) — `runDrift` scans `SummarizeAndPredict` for fresh **country** `DRIFT#` notes (`begins_with(PK,'COUNTRY#') AND begins_with(SK,'DRIFT#') AND emailedAt unset AND generatedAt ≥ DRIFT_FRESH_HOURS` [default 36]), groups by country, and for each emails the **followers** (`GlobalPerspectiveUserPrefs` where `driftOptIn` + `followedCountries` contains the country) via `renderDriftEmail.js`, then stamps `emailedAt` once (idempotent, mirrors `breaking`). `kind='drift'` unsubscribe. **Cron DISABLED at deploy** (sender is `DRY_RUN=false`=live). **Per-axis view — scoring-v2 Phase D-email (2026-07-08, `SCORING_MODEL_V2_PLAN.md` §12):** `renderDriftEmail` renders a degradation ladder — `note.currentDimensions` → **Level B** compact scorecard (`HIGH · Humanitarian 82` + 4-axis row + `⚠ N/4 elevated`); else `changeDimensions` → **Level A** per-axis change pills; else the legacy scalar. No frontend-util import (reads the note's derived headline fields; breadth flag inline). Not retroactive — Level B only for notes written after the corrector deploy.
+
+Emails carry `List-Unsubscribe`/`List-Unsubscribe-Post` headers; each links to `newsRecommend`'s public `unsubscribe` (uid+token). **Kill-switch:** `EMAIL_SEND_DRY_RUN=true` reverts to log-only (sends nothing); `TEST_RECIPIENT` (unset in prod) can override the audience to a single address for a send-to-self.
+
+**Current prod env (LIVE):** `EMAIL_SEND_DRY_RUN=false`, `EMAIL_FROM=brief@globalperspective.net`, `TEST_RECIPIENT` unset. Other env: `RESEND_API_KEY`, `UNSUB_BASE_URL` (=newsRecommend Function URL), `SITE_URL`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BREAKING_ALERTS_TABLE`. **Role:** reuses `newsprojectLambdaRolefcb19312-dev` (`AmazonDynamoDBFullAccess` — chosen to avoid creating a new IAM role). **Go-live DONE 2026-07-04:** `globalperspective.net` verified in Resend (Cloudflare auto-config), flags flipped, breaking rule enabled, **one real weekly send to the first subscriber confirmed** (`sent:1, errors:[]`). Also verified: 28/28 hermetic tests (`test-sender.js`), live dry-run both modes. See [[project_email_sender]].
+
+**Subscribe UI:** `SubscribeCard` (Home under the masthead + `/weekly-brief` under the KPIs) surfaces the `digestOptIn` opt-in (via `usePreferences` → `set_prefs`) — signed-in users subscribe in one click; anonymous users sign in (Google), then the intent is set immediately.
+
+---
+
+> **Signal-API + impact-first ingest + situation pipeline** — the numbered Lambda sections below (#31–37) cover `newsGdacsIngest`, `newsSituationIngest`, `newsSituationTracker`, `newsGdeltConflict`, `newsImpactAudit`, `newsPredictionsSnapshot`, and `newsSignals`. Their source lived only on the unmerged `signal-api` branch until it merged to `main` 2026-08-01 (`59054ec`) — see [[project_signal_api_deployed]], [[project_impact_first_redesign]]. **Merged ≠ reconciled:** the deployed bytes drifted independently from source for ~5 weeks; diff against live AWS before editing any of them. Full deep-audit evidence: `BACKEND_AUDIT_2026-09-10.md` + `../redesign-ux/_active/SITUATION_BACKEND_AUDIT.md`.
+
+---
+
+### 30. `newsModelGuard` — model-retirement dead-man's-switch (LIVE 2026-07-28)
+
+> **Balance alert (2026-10-17):** each daily run also calls `GET https://api.deepseek.com/user/balance` and publishes to SNS `GlobalPerspectiveAlerts` when `is_available` is false or the USD `total_balance` < `DEEPSEEK_BALANCE_ALERT_USD` (default $3, ~4 days at ~$0.75/day). Added after the 4th silent balance lapse (2026-10-12 → 10-15).
+**Path:** `amplify/backend/function/newsModelGuard/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerModelGuard` — **ENABLED** — `cron(0 12 * * ? *)` (daily 12:00 UTC). **No LLM** (one cheap authenticated `GET /models`).
+
+The passive guard against a repeat of the **2026-07-24 `deepseek-chat` retirement** (which became a 36h silent outage because nothing was watching the deadline — see `BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md`). Daily it `ListFunctions` across the whole account, reads each function's env for model-ID vars (`GROK_MODEL`/`LLM_MODEL`/`MODEL`/`AUDIT_MODEL`/`JUDGE_MODEL`/`PPLX_MODEL`/`AI_MODEL`), and flags any **direct DeepSeek id** (`/^deepseek-/`; the OpenRouter `deepseek/…` namespaced form is skipped) that is either a **deprecated alias** (`deepseek-chat`/`deepseek-reasoner`) or **absent from DeepSeek's live `/models` list** (already retired/invalid). Findings → SNS `GlobalPerspectiveAlerts` with the proven fix recipe; **honest-empty** (silent when all clear). Skips `*-sandbox` functions + `IGNORE_FUNCTIONS` to avoid nagging on throwaway test envs. **Known gap:** env-scan only — a function hitting the retired model via a hardcoded code default (`process.env.X || 'deepseek-chat'`) is invisible here; those were separately hardened to `deepseek-v4-flash` defaults 2026-07-28.
+
+**Key env vars:** `DEEPSEEK_API_KEY` (copied from the fleet — auths the `/models` call), `DEEPSEEK_MODELS_URL` (=`https://api.deepseek.com/models`), `SNS_TOPIC_ARN` (=`GlobalPerspectiveAlerts`), optional `MODEL_VARS`/`DEPRECATED_ALIASES`/`IGNORE_FUNCTIONS`. **Role:** `newsModelGuard-role` (basic-exec logs + `lambda:ListFunctions`/`GetFunctionConfiguration` account-wide read + `sns:Publish` to the alerts topic only).
+
+---
+
+### 31. `newsGdacsIngest` — GDACS disaster-alert ingest + situation opener
+
+**Drift (Batch 3 / G):** the repo `situations-core.js` is AHEAD of the deployed copy (threadId latch `opts.threadId || prev.threadId`, Phase 1 event registry). Inert for this Lambda (the news-situation path runs only in `newsSituationTracker`, whose deployed copy equals the repo); it ships with the next GDACS change.
+**Path:** `amplify/backend/function/newsGdacsIngest/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerGdacsIngest` — **ENABLED** — `rate(20 minutes)` (2026-09-08; was 6-hourly before). 256MB/120s. **No LLM.**
+
+The deterministic situation opener — polls GDACS for current Orange/Red disaster alerts and writes one observation snapshot to S3 `situations/inbox/gdacs-latest.json` (holds no state itself; the fold happens downstream in `newsSituationTracker`, #33). Green events cool an already-open row rather than opening one; Green **cannot** open a new situation (filtered at the source — live-verified, no false positives). Also mirrors the full current event set to S3 `corpus/gdacs/latest.json` for `newsImpactAudit` (#35) to read.
+
+**S8·T2 (2026-09-09):** the `GlobalPerspectiveGdacsEvents` DDB mirror (~1,100 writes/day) was **dropped**; S3 is now the sole output. Shares fold helpers (`buildSituation`/`coolSituation`) in `situations-core.js` with `newsSituationTracker` — **verified byte-identical between the two copies as of 2026-09-10** (diff before editing either).
+
+**Key env vars:** `WORLD_BUCKET`. **Role:** `s3:PutObject` on `situations/inbox/*` + `gdacs/*` only (its former DDB grant was removed with the table in S1).
+
+See `DATA_STRATEGY.md`, `MAP_HOME_SITUATION_PLAN.md`, and `../redesign-ux/_active/SITUATION_BACKEND_AUDIT.md` (deep audit — 14 ranked findings on the situation pipeline, F1–F14).
+
+---
+
+### 32. `newsSituationIngest` — news-story clustering for the situation pipeline
+**Path:** `amplify/backend/function/newsSituationIngest/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerSituationIngest` — **ENABLED** — `rate(1 hour)`. 512MB/300s. Uses **DeepSeek** (`deepseek-v4-flash`).
+
+Fetches fresh articles (BATCH=35, up to MAX_BATCHES=12 → a 420-article/run cap), classifies each with an LLM (category, entities, severity, `kind`), and clusters them into `stories/` (`clusterStories`), persisting a story to `stories/index.json` when it clears `outlets≥2 ∥ severity≥3` (cap 80 stories/run). Writes raw classified articles to `corpus/YYYY/MM/DD/HH.jsonl`.
+
+**Classification memory (2026-10-05, cost fix):** each run now sends only articles it has not classified before. Earlier results live in `stories/classify-cache.json` (key = url + title, so a re-headlined article is classified again; entries kept `CACHE_KEEP_HOURS`=48 from first classification). Before this, every run re-sent the whole 36h window (~430–450 articles, 12 calls) and the same article was classified ~24–36 times: about half of the daily DeepSeek spend. A cache read failure falls back to classifying everything. Run result now carries `cached` / `newlyClassified`; metric `IngestCacheHits`. The old header comment's "daily LLM cap enforced" was never true (no cap in code) and is removed. `corpus/` still holds the full classified set per run. **Snippets (2026-10-17):** each classified article carries an optional `snippet` (RSS description, ≤200 chars) in `corpus/`, the cache and `stories/state` `headlines[]`; `stories/index.json` headlines stay `{title,url,domain}`.
+
+> ⚠️ **StoryId fragmentation is the #1 finding of the situation audit** (`SITUATION_BACKEND_AUDIT.md` F1, HIGH): `storyId` is derived per-article with no entity normalization, so one real event can fragment into up to 6 storyIds — diluting corroboration, resetting velocity, and driving most of the tracker's close/reopen churn. See the audit for the full ranked findings (F1–F14) and the proposed fix order.
+> ⚠️ Silently truncates at the 420-article/run cap with no log line (F9) — live volume already brushes the ceiling.
+
+**Key env vars:** `WORLD_BUCKET`, DeepSeek endpoint vars (`deepseek-v4-flash`), `BATCH`(=35)/`MAX_BATCHES`(=12)/`CONCURRENCY`(=4)/`MAX_AGE_H`(=36) — all code defaults, no live overrides beyond the model endpoint.
+
+---
+
+### 33. `newsSituationTracker` — situation state machine (the "folder")
+**Path:** `amplify/backend/function/newsSituationTracker/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerSituationTracker` — **ENABLED** — `rate(30 minutes)`. 512MB/120s. **No LLM.**
+
+Reads the latest GDACS inbox snapshot (#31) + `stories/` (#32), folds both via `situations-core.js` (`buildSituation`/`coolSituation`) into S3 `situations/state/<id>.json` + `situations/index.json` + `situations/history/…`, and assembles `world/latest.json` (the payload the `/map` frontend reads). Situations cool when absent from a sweep, close after `CLOSE_AFTER_COOL_CHECKS` (default 3) cool sweeps, and are kept `CLOSED_KEEP_HOURS` (live env override **8h**, code default differs) before moving to `situations/archive/<id>.json`.
+
+> ⚠️ **Live env overrides:** `DRY_RUN=false`, `SWEEP_MIN=30`, `CLOSED_KEEP_HOURS=8`. See `SITUATION_BACKEND_AUDIT.md` for the full ranked findings against this function and `situations-core.js` — tier has zero corroboration input (F2), GDACS vocabulary leaks into cooling news situations (F3), escalation flip-flops with no hysteresis (F4), one-event-one-pin suppression wrongly closes live news situations (F5), closed situations can resurrect at `peak` with a stale `opened_at` (F6), `coverage_ratio` is read by the frontend but never emitted (F7), and the `stale` flag ignores the news source entirely (F8). None of these are fixed as of 2026-09-10 — all are pending operator threshold/scope decisions.
+
+**Alarms → `GlobalPerspectiveAlerts`:** `situation-tracker-stalled` (no `ChecksRun` metric in 30 min) + `situation-tracker-errors`, both verified OK and correctly tuned to the real cadence. Metrics under `GlobalPerspective/Situations`. Digest tool: `node scripts/situations-log.mjs [--days N] [--shadow]`.
+
+---
+
+### 34. `newsGdeltConflict` — GDELT conflict-event ingest
+**Path:** `amplify/backend/function/newsGdeltConflict/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerGdeltConflict` — **ENABLED** — `cron(0 */6 * * ? *)` (every 6h). 512MB/120s. **No LLM.**
+
+Pulls GDELT conflict events and writes per-day country aggregates to S3 `corpus/gdelt/<day>.json` (read by `newsImpactAudit`, #35). **S8·T2 (2026-09-09):** the `GlobalPerspectiveGdeltConflict` DDB mirror was dropped; S3 is the sole output.
+
+> Confirmed **HEALTHY** as of 2026-09-10 — running cleanly every 6h, no IP throttling observed (an older memory note about GDELT throttling from Lambda is outdated; a *separate*, still-valid decision disabled GDELT on the news-ingest side in `newsSituationIngest`).
+
+---
+
+### 35. `newsImpactAudit` — coverage dead-man's-switch
+**Path:** `amplify/backend/function/newsImpactAudit/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerImpactAudit` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(0 9 * * ? *)` (daily 09:00 UTC). 256MB/120s. Uses **DeepSeek**.
+
+Audits whether high-impact events (per GDACS/GDELT) were MISSED by the main ingest selector; SNS-alerts to `GlobalPerspectiveAlerts` when misses ≥ `MISS_ALERT_THRESHOLD` (=2). **S8·T2 (2026-09-09): fully S3, zero DynamoDB** — reads the selector's saw-vs-chose capture from `audit/ingest-capture/latest.json` and GDACS/GDELT context from `corpus/gdacs/latest.json` + `corpus/gdelt/<day>.json`; writes its verdict to `audit/impact/<date>.json` + `latest.json`.
+
+Working as designed — SNS'd a "weak" coverage verdict the day before the 2026-09-10 audit, confirming the alert path fires.
+
+**Dead env vars (from the pre-S8 DDB era, harmless but should be removed):** `IMPACT_AUDIT_TABLE`, `INGEST_CAPTURE_TABLE`.
+
+---
+
+### 36. `newsPredictionsSnapshot` — `/track-record` read-cache (NEW 2026-09-09, S8·T3)
+**Path:** `amplify/backend/function/newsPredictionsSnapshot/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerPredictionsSnapshot` — **ENABLED** — `rate(30 minutes)`. 256MB/120s. **No LLM.**
+
+Scans `GlobalPerspectivePredictionLog` once and writes the precomputed aggregate to S3 `predictions/track_record.json` (legacy pilot fields unchanged, **plus `data.questions`** since 2026-09-30: `questionBoard.js` builds the weekly sampled-question board (weeks with commitments / reveals / draws, sampled questions with frozen `p`, counts, `settleHealth`); `scoring.js` adds Brier, base-rate skill, a cluster-bootstrap CI and reliability bins **only from 150 resolved (else `scoring: null`)**; the scan filter drops seed `SECRET` and operator `DRAFT#` rows; question triggers are skipped by the legacy block), so the `newsSensitiveData` proxy's `prediction_track_record` action (#5) serves a cached object (live-Scan fallback preserved) instead of re-Scanning ~5.5k items on every page load — was ~12.5k DDB reads/day. Pure aggregation logic lives in `trackRecord.js` (11 tests), byte-verified equal to the proxy's inline computation. `PredictionLog` **stays in DynamoDB** — it is the mutable per-record store this snapshot only reads.
+
+**Key env vars:** `PREDICTION_LOG_TABLE`, `WORLD_BUCKET`.
+
+---
+
+### 37. `newsSignals` — Signal-API v1 builder + serve
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** the `COUNTRY#` scan skips region keys and records older than 30 days (a Signal API consumer never sees a region as a country); uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
+**Path:** `amplify/backend/function/newsSignals/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerSignalsBuild` — **ENABLED** — `cron(0 10 * * ? *)` (daily 10:00 UTC, build) + a public **Function URL** (AuthType NONE, key-gated in code, serve). 512MB/300s.
+
+Builds the Signal-API v1 feed from `PredictionLog`/`SummarizeAndPredict`/`BreakingAlerts`, keyed to registered API keys (`GlobalPerspectiveApiKeys`, `mint-key.mjs`). **S8·T1 (2026-09-09): migrated off DynamoDB** — the `GlobalPerspectiveSignals` table (write-only, 0 reads in the 14 days prior) was dropped; the builder now writes `signals/latest.json` + dated `signals/snapshots/` to S3, and SERVE reads `signals/latest.json` (ETag-cached) instead of a table Scan. Retention is an explicit `event_time ≥ now−120d` filter (was DDB TTL).
+
+**Deployed bytes CURRENT as of 2026-09-09** — the "~5-week drift" a memory note previously flagged is resolved; this function's repo and deployed zip matched at last check (2026-09-10 audit re-confirmed). `signals/` is **never** exposed via the Cloudflare Worker's `/data/*` route (member/paid surface only, via the key-gated Function URL).
+
+**Key env vars:** `API_KEYS_TABLE` (=`GlobalPerspectiveApiKeys`, stays DDB), `WORLD_BUCKET`, `FREE_DELAY_HOURS` (=24).
+
+---
+
+### 38. `newsSharedAnalysis` — Analysis Studio share links (**deployed 2026-09-30**; Batch 4 G + Y1–Y5)
+**Path:** `amplify/backend/function/newsSharedAnalysis/src/` (ESM, `"type":"module"`, nodejs22.x, no dependencies beyond the runtime's AWS SDK). **Status: live (2026-09-30).**
+- Table `GlobalPerspectiveShares` (on-demand, deletion protection, KEYS_ONLY GSI `uid-createdAt-index`).
+- Role `newsSharedAnalysis-role`: GetItem / PutItem / DeleteItem on the table, Query on the GSI, plus `AWSLambdaBasicExecutionRole`.
+- Lambda nodejs22.x, 256 MB, 30 s; env `SHARES_TABLE`, `FIREBASE_PROJECT_ID`, `PROXY_URL` (no secrets).
+- Function URL `https://oufakens7e5es4odls7ayf52l40nmqut.lambda-url.ap-northeast-1.on.aws/`: AuthType NONE, BUFFERED, **Function-URL CORS empty** (CORS in code), permission `fnurl-public` as `newsAnalyze`.
+- `docs/config.js` `NEWS_SHARE_ENDPOINT` is set.
+- Verified: unknown id → 404; OPTIONS → 204 with ACAO + `X-Robots-Tag` once; unauthenticated POST → 401 `sign_in_required`; the deployed 15 files are byte-identical to the repo.
+One Function URL (auth NONE; **CORS emitted in code, the URL's own CORS config stays EMPTY**, like `newsAnalyze`). Every response carries `X-Robots-Tag: noindex, nofollow`.
+- `POST /` (Firebase JWT; any signed-in user): body `{stories:[{topicId,threadId}], citations, sections:[{lensId,mode,prose,struct,webSources,focus}], run}`. The server re-fetches and **freezes the sources itself** from the public proxy with the reader's own bearer token (`freeze.js` + `analysisContext.js`, the same pure builder the browser uses; titles and snippets are never taken from the client), requires its numbering to equal the one the reader's run cited (409 `sources_changed`), **re-runs the checks** (`analysisValidator.js`, `analysisStruct.js`) and **refuses on any error** (422 `checks_failed`), allows only http(s) URLs (`urls.js`), caps prose at 32 KB in bytes, 4 sections, 8 stories, and **20 shares per user per UTC day** (429). Stores one unlisted row (128-bit id) and returns `{id}`.
+- `GET /?id=` public read (no owner id; `owner:true` only for the owner's own token; `Vary: Origin, Authorization`). `DELETE /?id=` owner only, hard delete.
+- **Storage:** DynamoDB table `GlobalPerspectiveShares` (PK `id`; GSI `uid-createdAt-index`, KEYS_ONLY, for the daily count and account-deletion cleanup) — a user-owned row per DATA_STRATEGY's sorting test; **a new-table exception to record in `DATA_STRATEGY.md` §2 when Y1 is approved.** Operator tool: `scripts/share-admin.mjs` (list / delete by uid or id, dry run by default).
+- **Shared copies (byte-identical, guarded by `scripts/check-shared-sync.mjs`):** `analysisValidator.js`, `analysisStruct.js`, `webCitations.js`, `analysisContext.js`, `analysisPrompt.js`, `driftNote.js`, `dropRedatedRepeats.js` + the golden context fixture.
+**Env (planned):** `SHARES_TABLE`, `FIREBASE_PROJECT_ID`, `PROXY_URL` (public), optional `CORS_ORIGINS`, `DAILY_SHARE_CAP`. No secret, no LLM.
+
+---
+
+### 39. `newsSelectionShadow` — layered story selector, shadow mode (**deployed 2026-10-18**, shadow week)
+**Path:** `amplify/backend/function/newsSelectionShadow/src/` (CommonJS, nodejs22.x, runtime AWS SDK only). `classifier-core.js` is a **symlink** to `newsSituationIngest/src/classifier-core.js` (zip stores the file), so clustering has one source. Plan: `prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md` P7c.
+**Trigger:** EventBridge rule `TriggerSelectionShadow` `cron(20 4,12,20 * * ? *)`, 5 min after topic selection. 256 MB / 120 s. Env `WORLD_BUCKET`, `JEV_API_KEY` (secret), optional `MAX_JEV_CALLS` (default 300).
+Each run: reads `audit/ingest-capture/latest.json` (skips when older than 30 min = selection failed), the 8 hourly `corpus/` snapshots before the run, `situations/state/gdacs_*`, the previous 24h of `audit/ingest-capture/<day>/` (Jev's "already covered") and of its own output (24h self-dedup). Selects with `selection-core.js` (shared with `predictions/jev-backtest/run.mjs`): story-scan count/spread → Jev (TypeSafe `jev-latest`: impact, new-since-last-brief, done-or-said) → code gates and quotas (done-only, one story per war, decision lift, GDACS tag only on reported disasters, ≤25% per category, ≤2 per country, slot count = the live run's). Writes `audit/selection-shadow/YYYY-MM-DD/HHMM.json` + `latest.json`: picks with storyIds, category (the 12), iso3, actors, scores, a reason line, sources `{title,url,source,snippet}`, `alsoPublished`; plus what was published. Nothing on the site reads it. Logs a `[usage]` line (Jev calls, input tokens). Measured locally 2026-10-18: 66 Jev calls, ~$0.002 per run.
+Role `newsSelectionShadow-role` (inline policy `newsSelectionShadow-s3`): `s3:GetObject` on `corpus/*`, `situations/state/*`, `audit/ingest-capture/*`, `audit/selection-shadow/*`; `s3:ListBucket` limited to those prefixes; `s3:PutObject` on `audit/selection-shadow/*`; `AWSLambdaBasicExecutionRole`.
+
+---
+
+## Observability & Monitoring
+
+Two layers, both roll-your-own (the user rejects paid Sentry on cost):
+
+- **Active / on-demand** — four standalone Playwright/static checks under `scripts/` (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`), run by hand against production. They detect the 8 bug classes in `BUG_PLAYBOOK.md`. They only run when invoked.
+- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down; **`newsSourceAudit` (#24)** alerts when our summaries fabricate / drift from their sources (source-truth dead-man's-switch); **`newsModelGuard` (#30)** alerts when any Lambda is left on a deprecated/retired DeepSeek model (the model-retirement dead-man's-switch, born from the 2026-07-24 `deepseek-chat` outage). Application-level alerts route to **`GlobalPerspectiveAlerts`** (singular; `arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription) — the app-code publishers above plus the two `situation-tracker-*` alarms. **Separately, a second topic `GlobalPerspectivesAlerts` (plural, note the "s") is the infra-monitoring sink** created by `scripts/setup-cloudwatch-alarms.sh`: ~14 generic CloudWatch alarms (`Lambda-Errors-Spike`, `lambda-errors-*`, `dynamodb-{read,write}throttleevents-*`, `lambda-throttles-*`) fan out to it → **AWS Chatbot (Slack/Chime)** + email. It is invisible to a Lambda-source grep because nothing in app code publishes to it — it's wired at the CloudWatch-alarm layer. **Both topics are live; the near-identical names are an accepted wart** (renaming a topic wired to 14 alarms is risk for no functional gain — see the cleanup audit's naming-drift call). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
+
+External monitors that need the operator's own account (UptimeRobot, Google Search Console, optional Cloudflare Web Analytics) are documented in `BUG_PLAYBOOK.md` → "Passive monitoring (24/7)".
+
+---
+
+## S3 — World Store (`globalperspective-world-280362093938`, ap-northeast-1)
+
+**Created 2026-09-08** (Stage S0·T2 of the map-as-home programme). The source of truth for everything the pipeline computes about the world — see `DATA_STRATEGY.md`. **Private:** all four public-access-block flags on, no bucket policy, default SSE-S3. Read by the browser only through the Cloudflare Worker `/data/*` route (S0·T3).
+
+**Prefixes** (one writer each; created on first write): `corpus/YYYY/MM/DD/HH.jsonl` (← `newsSituationIngest`), `stories/state|index` (← ingest), `situations/inbox/` (← openers: GDACS, breaking-alert — append only), `situations/state|index|history/` + `world/latest.json`+`world/…/HHMM.json`+`world/latest.member.json` (← `newsSituationTracker`, sole writer), `gdacs/last-seen.json` (← GDACS, its own diff state), `fixtures/` (humans). Ownership table: `DATA_STRATEGY.md` §4.
+
+**Lifecycle rules:** `corpus/` → IA 30d, expire 400d · `situations/history/` → IA 30d · `world/` → IA 30d, expire 400d (safe: `world/latest*.json` is overwritten every sweep so its age never reaches expiry; only dated snapshots age out) · `situations/inbox/processed/` expire 30d · abort incomplete MPUs 7d.
+
+> ⚠️ **Lifecycle gap (`SITUATION_BACKEND_AUDIT.md` F11, live-verified 2026-09-10): `situations/history/` and `situations/archive/` have IA transitions but NO expiration** — every sibling prefix (`world/`, `corpus/`, `stories/`, `signals/`, `audit/`) does expire. `situations/history/` accrues ~48 objects/day and `situations/archive/` gets one object per closed situation, forever. Cheap today; an unbounded-growth gap that should get expiration rules (audit suggests ~90d / ~365d respectively) as ops hygiene, no code change required.
+
+**IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (its temporary DDB `GlobalPerspectiveSituations` grant was removed in S1 when the table was dropped). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes. **Reader:** IAM user `gp-worker-s3-reader` (created S0·T3), inline policy `gp-worker-s3-read` = `s3:GetObject` on `world/*`, `situations/state/*`, `stories/state/*` — its access key lives in the Cloudflare Worker's secret store (`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`).
+
+**Writers so far:** `newsGdacsIngest` → `situations/inbox/<ts>-gdacs.json` (observation snapshots, every 20 min). `newsSituationTracker` (`TriggerSituationTracker` `rate(30 minutes)` — GDACS observes every 20 min, so 30 is the natural bundle refresh; `SWEEP_MIN=30`; Node 22 / 512MB / 120s, role `newsSituationTracker-role`) — the **folder**: reads the latest inbox snapshot, folds via `situations-core.js` (`buildSituation`/`coolSituation`) into `situations/state/<id>.json` + `situations/index.json` + `situations/history/…`, and assembles `world/latest.json` (+ `latest.member.json` + `world/YYYY/MM/DD/HH/HHMM.json`). Situations cool when absent from the snapshot and close after `CLOSE_AFTER_COOL_CHECKS` (default 3) cool sweeps (kept `CLOSED_KEEP_HOURS`=48h for the map's grey-out, then their state object is **moved to `situations/archive/<id>.json`** — durable life-story record, IA at 30d). Freshness (`stale`, `sources`) is computed here (`GDACS_STALE_MIN`=45); `lede`/`ranked` derived from situations; `systemic` empty until markets wiring. **NO LLM.** **LIVE since 2026-09-08 (S2·T2)** — writes `world/latest.json` + `situations/*`, consumes the inbox (→ `situations/inbox/processed/`). Tuning is via env knobs (`CLOSE_AFTER_COOL_CHECKS`, `GDACS_STALE_MIN`, `CLOSED_KEEP_HOURS` — no redeploy) read against metrics `GlobalPerspective/Situations` (SituationsOpen/ChecksRun/Changes/Opened/Raised/Spread/Cooled/Closed/Observations/Stale, dim `Mode`). Digest for tuning: `node scripts/situations-log.mjs [--days N] [--shadow]`. **Alarms → `GlobalPerspectiveAlerts`:** `situation-tracker-stalled` (no ChecksRun in 30 min) + `situation-tracker-errors`.
+
+**Read path (LIVE 2026-09-08):** the browser fetches `/data/<key>` from the Cloudflare Worker `globalperspective-rss` (`WORKER_FULL_CODE.md` `/data/*` route), which SigV4-signs a GET to this bucket and edge-caches public bundles (`s-maxage=300`). Verified live: `https://globalperspective.net/data/world/latest.json` → 200 (`x-rendered-by: cf-worker-data`). A missing key returns 404 (Worker maps S3's 403 → 404, since the reader has no ListBucket). `*.member.json` is fail-closed (401) until the Firebase JWKS check ships. **Bucket stays private** — no public-read.
+
+## DynamoDB Tables
+
+> **Data strategy (adopted 2026-09-08) → `DATA_STRATEGY.md`.** New rule: *S3 for the world, DynamoDB for the user.* Only `Users`, `SavedItems`, `UserPrefs`, `ApiKeys` are meant to stay in DynamoDB long-term; every other table below is a migration candidate (order in DATA_STRATEGY §6). No new table without an exception recorded there.
+
+### Topics Table (`TOPICS_DDB_TABLE`)
+**PK:** `id` (String)
+
+| id | Description |
+|----|-------------|
+| `staging` | Topics being processed (written by newsInvokeGemini) |
+| `latest` | Active topics served to frontend |
+| `today-archive` | Today's snapshot (entries array) |
+| `archive#YYYY-MM-DD` | Daily archive entries |
+
+**Topic schema (inside `latest.topics[]`):**
+```json
+{
+  "id": "topic-hash",
+  "topicId": "topic-hash",
+  "title": "Topic Title",
+  "category": "politics",
+  "regions": ["United States", "China"],
+  "threadId": "thread-slug-hash",
+  "continues_topic": "prior-topic-id",
+  "search_keywords": ["keyword1"],
+  "sources": [{ "title": "...", "url": "...", "source": "reuters.com" }]
+}
+```
+
+**Archive entry schema (inside `today-archive.entries[]` / `archive#YYYY-MM-DD.entries[]`):**
+```json
+{
+  "topicId": "topic-hash",
+  "title": "Topic Title",
+  "category": "politics",
+  "regions": ["United States"],
+  "threadId": "thread-slug-hash",
+  "sources": [...],
+  "ai": { "summary": "...", "prediction": "...", "trace_cause": "..." },
+  "archivedAt": "2026-03-20T10:00:00.000Z"
+}
+```
+
+---
+
+### Summary/Prediction Table (`SUMMARIZE_PREDICT_TABLE`)
+**PK:** composite string / **SK:** record type
+
+| PK | SK | Written by | Contents |
+|----|-----|-----------|---------|
+| `TOPIC#{topicId}` | `SUMMARY` | NewsProjectInvokeAgentLambda | Bullet-point key takeaways |
+| `TOPIC#{topicId}` | `PREDICTION` | NewsProjectInvokeAgentLambda | Chain-reaction analysis |
+| `TOPIC#{topicId}` | `TRACE_CAUSE` | NewsProjectInvokeAgentLambda | Root cause / historical context |
+| `THREAD#{threadId}` | `THREAD_ANALYSIS` | newsThreadAnalysis | threadTitle, storyArc, trajectory, rootCauseChain, watchQuestions |
+| `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
+| `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
+| `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[] (+actors[]), causal edges[] (confidence, citations), shared-actor backbone[] (14-day TTL) |
+| `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL, table TTL disabled). Since 2026-09-30 each `topStories[]` entry carries `threadId` (string or null): resolved in code from the archive entry the story was written from (`src/threadLinks.js`: exact title, containment, token Jaccard >= 0.6; ambiguous = null), never by the model. Older rows have none |
+| `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{kind('threat'|'development'),lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes kind/lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `kind` drives the chip — threats get a color-coded RISK chip, developments a neutral chip (so cooperative stories aren't shown as red risks). `status` draft→published via weekly/review.js (180-day TTL) |
+| `WEEKLY_MARKETS#{weekKey}` | `WEEKLY_MARKETS` | newsWeeklyMarkets (#25) | Weekly **markets** report (price-first): `movers[{instrumentId,name,changePct,direction,weekStart,weekEnd,grounding('coverage'|'web'|'none'),note,coverage[{threadId,headline,severity}],sources[{title,url}]}]` + `excluded[]` (thin/gappy history). The %/direction/anchors are **deterministic** (from MARKETS history, never LLM); the LLM writes only the per-mover `note`. `status` draft→published via weekly-markets/review.js (180-day TTL) |
+| `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata, original 12 only), active conflicts (ACLED, original 12), leadership change detection; since 2026-09-30 also `capital` and `population` (40 countries, each with source + `checkedAt`) (90-day TTL attribute; table TTL disabled) |
+| `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
+| `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |
+
+---
+
+### Users Table (`USERS_DDB_TABLE`)
+**PK:** `uid` (Firebase UID, String)
+
+```json
+{
+  "uid": "firebase-uid",
+  "email": "user@example.com",
+  "tier": "member",
+  "paddleCustomerId": "ctm_xxx",
+  "paddleSubscriptionId": "sub_xxx",
+  "subscriptionStatus": "active",
+  "createdAt": "2026-03-20T10:00:00.000Z",
+  "updatedAt": "2026-03-20T10:00:00.000Z"
+}
+```
+
+> **Live Polar + credits fields (written by `newsPolarBilling`/`newsAnalyze`):** `billingProvider:'polar'`, `polarCustomerId`, `polarSubscriptionId`, `currentPeriodEnd` (the `paddle*` fields above are dead legacy, never read). **Credits layer (built 2026-06-30):** `creditBalance` (Number, atomically decremented per non-allowance analysis run; topped up by credit-pack webhooks), `processedOrders` (String Set — webhook idempotency guard so an order can't double-credit), `analyzeMonth`/`analyzeCount` (member monthly free-run allowance counter, replaced the old daily `analyzeDay`/`ANALYZE_DAILY_CAP`).
+
+---
+
+### Social Posts Table (`SOCIAL_POSTS_TABLE`)
+**PK:** `topicId` + `platform`. Deduplication table for LinkedIn (`newsPostLinkedin`, deployed casing) + Bluesky posts, via the fallback `SOCIAL_POSTS_TABLE || LINKEDIN_POSTS_TABLE` (see #6). ~~Dev.to~~ — dead since 2026-05-18 (see #7); the 90-day TTL row for Dev.to is a dead branch, never written anymore. `linkedInAutoPost` (#10) writes its own disjoint `POSTED#LINKEDIN_AUTO#` namespace into the same table — no shared dedup with `newsPostLinkedin`'s `POSTED#LINKEDIN#` namespace (see #6's duplicate-post-risk note). TTL: 30 days.
+
+---
+
+### Markets Table (`MARKETS_DDB_TABLE`, default `GlobalPerspectiveMarkets`, ap-northeast-1)
+**PK:** `pk` / **SK:** `sk`. Written by `newsMarketsData`, read by `newsSensitiveData`.
+
+| pk | sk | Contents |
+|----|-----|---------|
+| `FX#USD` | `LATEST` / `HISTORY#YYYY-MM-DD` | USD-base FX rates |
+| `RATES#GLOBAL` | `LATEST` | US/UK/DE/JP bond yields |
+| `COMMODITIES#GLOBAL` | `LATEST` | Brent, WTI, gold, copper, VIX, DXY |
+| `EQUITIES#GLOBAL` | `LATEST` / `HISTORY#YYYY-MM-DD` | Indices + sector ETFs |
+| `CRYPTO#GLOBAL` | `LATEST` / `HISTORY#YYYY-MM-DD` | BTC, ETH + 24h change |
+| `MACRO#{country}` | `LATEST` / `HISTORY#YYYY-Q#` | GDP, CPI, reserves, debt/GDP, current account, unemployment |
+
+All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale data without labeling it.
+
+---
+
+### Saved Items Table (`SAVED_ITEMS_TABLE`, default `GlobalPerspectiveSavedItems`)
+**PK:** `uid` (Firebase UID) / **SK:** `savedKey` (= `{itemType}#{itemId}`). Written/read by `newsSavedItems`. Item types: `thread`, `country`, `daily`, `pair`.
+
+### User Prefs Table (`USER_PREFS_TABLE`, default `GlobalPerspectiveUserPrefs`, ap-northeast-1)
+**PK:** `uid` (Firebase UID). PAY_PER_REQUEST. Written/read by `newsRecommend` (#22). Holds two concerns on one row: `interestProfile` (M, recommendation cache) and notification prefs — `breakingOptIn`/`digestOptIn` (BOOL, default false), `digestCadence` (`weekly`|`daily`), plus compliance fields reserved for when email delivery is live: `email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`. Read by the breaking-alert/digest senders to know who to target.
+
+### Client Errors Table (`GlobalPerspectiveClientErrors`, ap-northeast-1)
+**PK:** `errKey` (= `day#hash`), TTL 30d. Written by `newsClientErrors` (#17) — identical errors `ADD count` into one row (fingerprint = sha1 of message + normalized top frame). Scanned by `newsErrorDigest` (#19), which also stores its run baseline in a single `DIGEST#STATE` row here. Read back with `node scripts/errors.mjs`.
+
+### Prediction Log Table (`PREDICTION_LOG_TABLE`, default `GlobalPerspectivePredictionLog`, ap-northeast-1)
+**PK:** `PRED#{topicId}` / **SK:** `{YYYY-MM-DD}` (daily snapshot). **No TTL — immutable forecast record.** PAY_PER_REQUEST. See [Prediction calibration](#prediction-calibration-track-record). Written by `NewsProjectInvokeAgentLambda` (snapshot at generation, status=`open`), the settle Lambda (#20) adds separate immutable record families (`SEED#`, `SAMPLE#`, `Q#`, `SETTLE#`; never edits `PRED#` rows) and `predictions/review.js` (human sets `finalVerdict`, flips status→`resolved` when all dated triggers confirmed). Scanned by the `prediction_track_record` proxy action. Each item: `{ topicId, title, category, generatedAt, generationId, model, methodologyVersion?, capture?{methodologyVersion,kept,dropped[{scenario,text,deadline,gate,why}]}, scenarios[{ label, probability(numeric midpoint), scoreable?, triggers[{ id, text, deadline, status, proposal?, finalVerdict?, confirmedAt?, confirmedBy? }] }], winners, losers, status }`. **Methodology v1 (records written from 2026-07-04, `methodologyVersion:1`):** triggers are gate-validated at capture (structured `{text,deadline}`, forward-dated, ≤180d, in-scope — G6 drops pure sporting results from 2026-07-07) and gated-out triggers are recorded in `capture.dropped` with their `gate`; a scenario with no surviving dated trigger carries `scoreable:false`. `finalVerdict`/`confirmedBy:'agent-verified'` written by the Phase-2 agent loop (first run 2026-07-07). Pre-v1 records (no `methodologyVersion`) are the legacy backlog — kept immutable but **excluded from scoring** (they carry the trigger-generation defects the 2026-07-04 pilot found: retrodictions, false premises, date artifacts). See `PREDICTION_METHODOLOGY_V1_PLAN.md`, [[project_prediction_methodology_v1]].
+
+### Breaking Alerts Table (`BREAKING_ALERTS_TABLE`, default `GlobalPerspectiveBreakingAlerts`, ap-northeast-1)
+**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL on `ttl` (~14d). **Created 2026-06-10** (empty until the detector runs). Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject); **scanned** by `newsRecommend` `list_alerts` + **`GetItem`-read** by `get_alert` (#22) for the bell, the `/breaking` feed, and the `/breaking/:id` detail page. Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, category, regions[], leadTopicId, threadId(real, nullable), hasArc, outletCount, sourceCount, story{summary,prediction,traceCause,economic,sources}, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text,html}, editorNote?, verify{status,note}, ttl }`. (The structured `story`/flat fields were added 2026-06-26 for the web surface; records written before that carry only `draft` + `title` + `reasons`, and `get_alert` falls back to `draft.text`.) Populated live by the scheduled detector (`newsBreakingAlert` runs 4-hourly, `DRY_RUN=false`) — see [Lambda #21](#21-newsbreakingalert--deployed--scheduled-proposal-mode-dry_runfalse) + `BREAKING_ALERTS_PLAN.md`.
+
+### Signal-API + ingest tables (live in prod; producer source merged to `main` 2026-08-01)
+These exist (or, as of S8, existed) in prod DynamoDB; their producers are documented as Lambdas [#31–37](#31-newsgdacsingest--gdacs-disaster-alert-ingest--situation-opener) above (note the merged-≠-reconciled caveat there). Key schemas confirmed via `describe-table` 2026-07-25; the S8 drops below re-confirmed 2026-09-10:
+
+| Table | Key | Written by | Contents |
+|-------|-----|-----------|----------|
+| ~~`GlobalPerspectiveSignals`~~ | ~~`signal_id`~~ | ~~newsSignals~~ | **DROPPED 2026-09-09 (S8·T1)** — Signal-API v1 records now live in S3 `signals/latest.json` (+ `signals/snapshots/`); the table was write-only (0 reads/14d) |
+| `GlobalPerspectiveApiKeys` | `keyHash` | mint-key.mjs / newsSignals | Signal-API access keys + rate-limit counter rows (`keyHash='RL#…'`, TTL) — **stays DynamoDB** (user/auth data) |
+| ~~`GlobalPerspectiveGdacsEvents`~~ | ~~`eventKey`~~ | ~~newsGdacsIngest~~ | **DROPPED 2026-09-09 (S8·T2)** — GDACS events now in S3 `corpus/gdacs/latest.json`; tracker reads the S3 inbox |
+| ~~`GlobalPerspectiveGdeltConflict`~~ | — | ~~newsGdeltConflict~~ | **DROPPED 2026-09-09 (S8·T2)** — GDELT aggregates now in S3 `corpus/gdelt/<day>.json` |
+| ~~`GlobalPerspectiveImpactAudit`~~ | — | ~~newsImpactAudit~~ | **DROPPED 2026-09-09 (S8·T2)** — audit verdicts now in S3 `audit/impact/`; was write-only |
+| ~~`GlobalPerspectiveIngestCapture`~~ | — | ~~newsInvokeGemini~~ | **DROPPED 2026-09-09 (S8·T2b)** — selector saw-vs-chose capture now in S3 `audit/ingest-capture/latest.json` (best-effort, fully fenced write from `captureIngestion`); read by `newsImpactAudit` |
+
+### ~~Situations Table (`GlobalPerspectiveSituations`)~~ — DELETED 2026-09-08 (Stage S1)
+> Existed only 2026-09-08 (P1·T1 → S1·T1). Situation **state now lives in S3** (`situations/state/<id>.json`, sole writer `newsSituationTracker`, S2); openers append **observations** to `situations/inbox/` (GDACS does this now). The item shape below is retained as the **S3 object shape** (minus `gsiAll`/GSIs) — the fold that produces it is `situations-core.js` (`buildSituation`/`coolSituation`). See `DATA_STRATEGY.md` §4–§5.
+
+**(historical DDB schema, now the S3 state-object shape)** Created 2026-09-08 for the map-as-home + situation-tracker programme (`redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md`). **PK:** `situationId` (`gdacs#<eventKey>` for disaster opener; `breaking#<threadId>` for the alert opener). PAY_PER_REQUEST, TTL on `ttl` (60d after last touch). **GSIs:** `state-next_check_at-index` (HASH `state` + RANGE `next_check_at` — the tracker sweeps due situations by state) and `all-updated_at-index` (HASH `gsiAll`=`'ALL'` + RANGE `updated_at` — recency listing for `situations_list`). Each item (v1, GDACS opener): `{ situationId, source('gdacs'|'breaking'), gdacsEventKey?, threadId?, title, verb_label ("China — flood"), axis('humanitarian'|'conflict'|'political'|'economic'), tier(low|moderate|elevated|high — GDACS Red→high, Orange→elevated), state('emerging'|'escalating'|'peak'|'cooling'|'closed'), iso3_origin[], iso3_affected[], centroid{lat,lon}, spread_arcs[{from,to,since}], opened_at, updated_at, last_change_at, last_checked_at, check_count, cadence_min, next_check_at, what_changed(templated — LLM only on material news change), evidence{gdacs_level,gdacs_score,gdacs_report_url,affected_count,…}, history[{at,tier,level,score,state,note}] (cap 200), ttl }`. **Written deterministically (NO LLM)** by `newsGdacsIngest` (disaster opener, Orange/Red only; Green cools an open row); to be written by `newsBreakingAlert` (alert opener) and swept by `newsSituationTracker` (state machine + adaptive cadence) — both pending. There is **no `critical` tier**; the map renders "critical" as `high` + escalating. See §3.1 (LLM boundary) of the plan.
+
+---
+
+## Prediction calibration / track record
+
+Forecast accountability pipeline (built 2026-06-02). Every published prediction is logged with dated, falsifiable triggers; as deadlines pass, each trigger is scored fired/not_fired and the running Brier score + calibration are shown publicly at `/track-record`.
+
+> **Methodology v1 + era cut (2026-07-04).** A 50-trigger resolution pilot found the *legacy* capture was structurally unscoreable — **28% retrodictions** (trigger `deadline ≤ generatedAt` → automatic wins → silent score inflation), plus false-premise + date-artifact triggers. Decision: **do not score the legacy backlog**; rebuild capture (Phase 1 below, deployed 2026-07-04 = the **era-cut date**) and score only `methodologyVersion:1` records going forward. The published methodology says so plainly — "we found defects in our early triggers and excluded them from scoring rather than cherry-pick" is a stronger trust signal than a retrofitted Brier number. Full plan: `PREDICTION_METHODOLOGY_V1_PLAN.md`; pilot verdict sheet + self-consistency evidence in [[project_prediction_methodology_v1]].
+
+**Four phases:**
+1. **Capture (v1)** — `NewsProjectInvokeAgentLambda` writes an immutable snapshot to `GlobalPerspectivePredictionLog` whenever it generates a `prediction`. Grounded generation (verified `FACTS#` premises + archive arc digest + optional Brave) + **capture gates G1–G6** (`src/lib.js`; G6 = sporting-result scope, added 2026-07-07; plus per-question gates G7–G12 in `src/questions.js` since 2026-09-30) → structured, forward-dated, in-scope, `methodologyVersion:1` triggers; malformed/out-of-scope ones dropped into `capture.dropped`. Never throws into the pipeline. Verified live 2026-07-04 (gates firing in prod).
+2. **Resolve** — legacy `newsPredictionResolver` (#20) still proposes hint-verdicts, but the pilot showed it punts `unclear` 86% of the time. The v1 loop is **agent-run** (Phase 2, `PREDICTION_METHODOLOGY_V1_PLAN.md` §4, runbook `predictions/V1_RESOLUTION_RUNBOOK.md`): scan due v1 triggers oldest-first, blind web-grounded verification (double-pass on every `fired`), write `finalVerdict` + `confirmedBy:'agent-verified'`; operator blind-spot-checks ~10%. `node predictions/review.js` remains the manual write path. No public auth surface. **Two runs done (weekly cadence):** 07-07 scored 16 of 21 due triggers (5 deferred, window still open on run day); **07-08 scored all 21 due triggers** (incl. the Le Pen appeal verdict + the 2 same-day-deferred triggers, cleared on recheck). Same-day-deadline learning: verifiers need a "defer" option when the event window hasn't closed (not yet folded into the runbook doc). Live totals: resolved 35, fired 9, Brier 0.157 (up from 0.084 after run 1 — run 2 added real high-stakes calls with genuine misses, the honest direction; the 60-80% bucket runs ~10pts hot but the curve stays monotonic).
+3. **Score + surface (Phase 3, SHIPPED 2026-07-05)** — `prediction_track_record` computes Brier (mean (p−outcome)² per resolved trigger, `unclear` excluded), calibration buckets, and recent resolved list, **scoping to `methodologyVersion>=1`** (era-cut; returns `eraCutFrom`/`legacyPredictionsExcluded`). `TrackRecordPage.jsx` (`/track-record`, hook `useTrackRecord`) is now the **"Accountability" hub**: (a) the era-cut-framed forecast scorecard with an **honest empty state** — shows nothing rather than a fabricated score until v1 verdicts exist ([[feedback-no-misinformation-fallback]]); (b) a **corrections ledger** (`useCorrectionsFeed` → `corrections_feed`) surfacing recent grounded `DRIFT#` moves across all countries+threads — the living-analysis loop's public log, populated from day one; (c) the **published methodology** incl. the pre-v1 exclusion disclosure. Kept the `/track-record` URL (reversible; alias deferred).
+4. **Surface per-thread (Phase 4, SHIPPED 2026-07-06)** — `prediction_snapshot` returns a thread's newest v1 snapshot; `ThreadForecast` (hook `useThreadForecast`) renders it as the **"Living forecast" board** at the top of ThreadPage's Arc Intelligence rail — scenarios + a dated-trigger checklist that renders pending now and strikes (`not_fired`) / checks (`fired`) as verdicts land. Honest-empty when a thread has no v1 forecast. This is the user's original "living prediction" view.
+
+5. **Feedback (Phase 5, DESIGNED 2026-07-08 — data-gated, NOT built)** — `CALIBRATION_DIGEST_PLAN.md`: a weekly `newsCalibrationDigest` Lambda will compact the resolved-trigger trace into one ~200-token `CALIBRATION#DIGEST` row (probability-bucket calibration + per-reference-class fire rates + deterministic bias lines); generation GetItems it and injects a `calibrationBlock` into `buildPredictionPrompt`, stamping `methodologyVersion:2` (the flat-65% v1 era stays as control group). Build gates: CP-1 manual measure at ~50 resolved; CP-2 infra at ~150 resolved. Honesty rule: feedback changes what the model says NEXT, never remaps stored/displayed probabilities. Digest rows must NOT carry `methodologyVersion` (the extract script and `prediction_track_record` filter on it).
+
+**The calibration unit is the trigger** (binary, dated), not the scenario — a scenario's stated probability scores each of its triggers.
+
+---
+
+## Cloudflare Workers
+
+Domain is registered and DNS-managed in Cloudflare. Orange cloud (proxy) is enabled — production traffic reaches the existing `globalperspective-rss` Worker before GitHub Pages. Zone, route, and Worker-source reads succeeded; DNS, SSL, and rules configuration reads remain unavailable for migration planning.
+
+### Worker: `globalperspective-rss`
+
+**Live baseline verified 2026-10-05:** deployed version `91ba1e98-0959-4387-84f3-10a0d5790ad8` (deployed 2026-10-01) matches `WORKER_FULL_CODE.md` exactly. Its captured source is in `cloudflare/front-worker/baseline/worker2.mjs`. The extensionless GET SPA fallback described below is already deployed. A separate candidate wrapper is prepared locally only; it has not been uploaded and production settings/secrets remain unchanged.
+
+**Routes:** `globalperspective.net/*` and `globalperspective.net/rss*`
+
+**Full source:** `WORKER_FULL_CODE.md`
+
+The Worker handles these cases:
+
+| Path | Visitor type | What happens |
+|------|-------------|--------------|
+| `/rss` | Anyone | Proxied to `newsSensitiveData ?action=rss`, returns RSS 2.0 XML, 30 min edge cache |
+| `/` | Bot (24 patterns) | **LIVE 2026-07-06** (`SITE_ORIENTATION_PLAN.md` P4b, deployed via `wrangler deploy`, version `8b73c9c7`): static `renderRootPage()` — accountability value prop + grouped page directory, no Lambda call, 24h edge cache, `x-rendered-by: cf-worker-bot`. Previously bots/AI crawlers got the empty SPA shell at the most-linked URL. Deploy recipe in the plan doc §P4 (wrangler with `workers_dev=false` + no routes preserves the dashboard routes) |
+| `/weekly/country/:name` | Bot (24 patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/weekly/thread/:id` | Bot (24 patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/daily` and `/daily/:dateKey` | Bot (24 patterns) | POSTs `daily_brief` to Lambda (with 7-day fallback lookback), returns pre-rendered HTML with OG tags |
+| Everything else (non-asset GET path) | Anyone | **LIVE, confirmed 2026-10-05** (current deployed version `91ba1e98-0959-4387-84f3-10a0d5790ad8`, deployed 2026-10-01): SPA shell (`docs/index.html`) fetched and returned with a real **200** (`x-rendered-by: cf-worker-spa-fallback`). This fixes the prior behavior where GitHub Pages returned 404 for unrecognized deep links before client-side routing. The deployed source matches the current `WORKER_FULL_CODE.md` snapshot. |
+
+**Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 13 others (24 total in `BOT_PATTERNS`).
+
+**Why this matters:**
+- Social shares of country/thread pages show rich previews (real headline, description, image) instead of blank cards
+- AI crawlers (ChatGPT, Perplexity, Claude, Google) can read and cite page content — previously invisible due to React SPA empty shell
+- Human visitors always get the full React app unchanged
+
+**Key implementation detail:** The preview actions (`country_preview`, `thread_preview`, `daily_brief`) require POST with JSON body (`{ action, payload }`). The Lambda's `payload` field is only populated from POST body, not GET query params.
+
+---
+
+## Scheduling — EventBridge Rules + Scheduler (VERIFIED via AWS CLI 2026-07-25)
+
+Most schedules use **EventBridge Scheduler** (separate service from EventBridge Rules). Several use EventBridge Rules. **EventBridge Rules run in UTC; several EventBridge *Scheduler* entries run in `Asia/Tokyo` — do NOT assume UTC for the Scheduler table** (the "All times UTC" claim was wrong pre-2026-07-25: 4 of 7 schedulers are JST — see the timezone column below). The account genuinely uses **both** services side by side, not one exclusively — re-verified 2026-09-10.
+
+> **Daily cron chain (re-verified 2026-10-18 against `aws events` / `aws scheduler`):** 04:15 `newsInvokeGemini` → 04:25 research job → 04:35 breaking alert → 04:40 `newsThreadAnalysis` → 05:00 `newsSystemsAnalysis` → 05:15 `newsCountryIntelligence` (Scheduler `countryIntelliegence`, typo real) → 05:30 `newsDriftCorrector` → 10:00 `newsSignals` → 10:30 `newsPredictionResolver`; economic impact/quality and impact audit are DISABLED (parked). Older chain from `BACKEND_AUDIT_2026-09-10.md` #11 (superseded): `newsWeeklyMarkets`/`newsWeeklyBrief` weekly (Sundays), social posters every 3h/12h, `newsPostDevTo` (daily-brief only) 23:00 JST, `newsCountryFactsUpdater` 05:00 JST. **Each stage assumes the prior stage already finished — there is no completion-ordering check**, so a slow run can silently feed the next stage stale data (structural fragility, not an observed failure as of the audit date).
+
+### EventBridge Rules
+| Rule name | Schedule | Target |
+|-----------|----------|--------|
+| `TriggerDailyAnalysis` | `cron(40 4 * * ? *)` | newsThreadAnalysis (04:40 UTC daily) |
+| `TriggerNewsSystemsAnalysis` | `cron(0 5 * * ? *)` | newsSystemsAnalysis (05:00 UTC daily) |
+| `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicImpact (07:30 UTC daily) |
+| `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicQuality (08:00 UTC daily) |
+| `TriggerPredictionResolver` | `cron(30 10 * * ? *)` | **ENABLED** — newsPredictionResolver, the weekly settle Lambda (§20) |
+| `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
+| `TriggerWeeklyMarkets` | `cron(30 8 ? * SUN *)` | newsWeeklyMarkets (Sundays 08:30 UTC — generates the weekly markets-report draft) |
+| `newsSourceAuditDaily` | `cron(30 11 ? * MON,WED,FRI *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
+| `TriggerModelGuard` | `cron(0 12 * * ? *)` | newsModelGuard (#30 — daily model-retirement guard; SNS-alerts on deprecated/retired DeepSeek model) |
+| `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
+| `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
+| `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
+| `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` — **DISABLED 2026-09-24** | newsPairIntelligence (#8 — no display surface after legacy-map removal; future home = Studio lens, recorded not built) |
+| `TriggerBreakingAlert` | `cron(35 4/8 * * ? *)` | newsBreakingAlert (#21 — 3×/day after the research job, ENABLED, `DRY_RUN=false`) |
+| `TriggerDriftCorrector` | `cron(30 5 * * ? *)` | newsDriftCorrector (#26 — 05:30 UTC daily) |
+| `TriggerWeeklyEmailSend` | `cron(0 14 ? * SUN *)` | newsEmailSender (#29 — weekly digest, ENABLED) |
+| `TriggerBreakingEmailSend` | `rate(15 minutes)` | newsEmailSender (#29 — breaking sends, **DISABLED**) |
+| `TriggerSelectionShadow` | `cron(20 4,12,20 * * ? *)` | newsSelectionShadow (§39 — shadow week, from 2026-10-18) |
+| `TriggerDriftEmailSend` | `cron(40 7 * * ? *)` | newsEmailSender (#29 — drift alerts, **DISABLED** by design) |
+| `TriggerFreshnessMonitor` | `cron(30 0/2 * * ? *)` | newsFreshnessMonitor (#18) |
+| `TriggerErrorDigest` | `cron(15 0/6 * * ? *)` | newsErrorDigest (#19) |
+| `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | newsSignals (Signal-API — deployed to prod; source merged to `main` 2026-08-01) |
+| `TriggerImpactAudit` | `cron(0 9 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
+| `TriggerPredictionsSnapshot` | `rate(30 minutes)` | newsPredictionsSnapshot (S8·T3 — precomputes `predictions/track_record.json`) |
+| `TriggerGdacsIngest` | `rate(20 minutes)` (was `cron(0 */6 * * ? *)`, 2026-09-08) | newsGdacsIngest (GDACS ingest + situation opener) |
+| `TriggerSituationTracker` | `rate(30 minutes)` (2026-09-08) | newsSituationTracker (situation folder; **LIVE** since S2·T2) |
+| `TriggerSituationIngest` | `rate(1 hour)` | newsSituationIngest (news-story clustering for the situation pipeline — #32) |
+| `TriggerGdeltConflict` | `cron(0 */6 * * ? *)` | newsGdeltConflict (GDELT ingest — source merged to `main` 2026-08-01) |
+
+### EventBridge Scheduler
+| Schedule name | Cron | Target |
+|---------------|------|--------|
+| `InvokeGoogleGemini` | `cron(15 4/8 * * ? *)` | newsInvokeGemini-dev (04:15 / 12:15 / 20:15 UTC) |
+| `InvokeNewsAgent` | `cron(25 4/8 * * ? *)` | NewsProjectInvokeAgentLambda-dev (04:25 / 12:25 / 20:25 UTC) |
+| `countryIntelliegence` | `cron(15 5 * * ? *)` | newsCountryIntelligence (daily 05:15 UTC) |
+| `InvokeLinkedIn` | `cron(20 */3 * * ? *)` **TZ Asia/Tokyo** | newsPostLinkedin (:20 past JST hours 0/3/6/… = **15/18/21/00/… UTC** — NOT UTC, corrected 2026-07-25) |
+| ~~`LinkedinThreadsDaily`~~ | ~~`cron(30 7/12 * * ? *)` TZ Asia/Tokyo~~ | **DELETED 2026-09-11** with the linkedInAutoPost retirement (#10) |
+| `InvokeDev` | `cron(0 23 * * ? *)` **TZ Asia/Tokyo** | newsPostDevTo (23:00 JST = **14:00 UTC** daily — scheduler is NOT in UTC) |
+| `Fact` | `cron(0 5 ? * MON *)` **TZ Asia/Tokyo** | newsCountryFactsUpdater (weekly, Mon 05:00 **JST** = Sun **20:00 UTC**) |
+
+> The every-2h pipeline cadence and 3×/day country-intelligence schedule were both reduced on 2026-05-16 alongside the DeepSeek migration to control cost.
+
+### No schedule (manual / user-triggered only)
+- `newsSensitiveData` / `newsSavedItems` — user-triggered via REST / Function URL
+- (`newsPairIntelligence` was listed here as "manual only" — **corrected 2026-07-25**: it is now on the ENABLED weekly rule `TriggerPairIntelligenceWeekly`, Mondays 08:00 UTC.)
+
+---
+
+## External APIs
+
+| API | Used by | Purpose |
+|-----|---------|---------|
+| DeepSeek V4 (`api.deepseek.com`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsCountryIntelligence, newsSystemsAnalysis, newsEconomicImpact, newsPairIntelligence, newsDriftCorrector, newsAnalyze | Topic clustering + AI content generation |
+| ~~OpenRouter (`openrouter.ai`)~~ | ~~newsPostDevTo (#7)~~ | **Dead as of 2026-05-18** — Dev.to article generation via `AI_MODEL` was the only OpenRouter consumer in the fleet, and that code path no longer runs (see #7); `OPENROUTER_API_KEY`/`AI_MODEL` are orphaned env vars |
+| Gemini 2.5 Flash (OpenAI-compat endpoint) | newsThreadAnalysis, newsEconomicQuality, **newsWeeklyMarkets** (#25 — quality judge gating coverage notes) | Editorial analysis + LLM-as-judge (free tier, pacing) |
+| Brave Search (news + web) | newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence; NewsProjectInvokeAgentLambda's optional grounding path is silently off (no key set) | News article search + grounding. **Removed from `newsInvokeGemini`'s ingest as of S7 2026-09-10** — that function is RSS-only now; its `BRAVE_*` env vars are stale. |
+| Frankfurter / FRED / **Yahoo Finance** / World Bank / CoinGecko | newsMarketsData | Free FX, bond yields, commodities + equities (Yahoo — replaced Stooq 2026-06-23), macros, crypto |
+| Wikidata (SPARQL) | newsCountryFactsUpdater | Head of state/government data |
+| ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
+| Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
+| Google Maps | WeeklyMap.jsx (embedded by CountryPage) | Interactive map rendering. **Note:** `/map` (`SituationHome.jsx` + lazy `SituationMap3D.jsx`, deck.gl GlobeView) does not use Google Maps. (The pre-V2 legacy `WorldMap.jsx` was removed 2026-09-24; the V2 legacy map `WorldMapV2.jsx`, d3 + topojson, was removed 2026-09-24 too — see below.) |
+| Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
+| Resend (`api.resend.com`) | newsBreakingAlert (#21, **deployed + scheduled**), newsEmailSender (#29) | Transactional/alert email send. Chosen over SES 2026-06-10 (DX + no sandbox-approval wait). Key from `RESEND_API_KEY`. The recs/digest email also targets Resend. |
+| Perplexity `sonar` (`api.perplexity.ai`) | newsWeeklyMarkets (#25) | Self-searching LLM for the weekly-markets **web-context** tier (model searches + cites). Key `PERPLEXITY_API_KEY` — **unset today**, so the tier degrades to "no clear driver found" (honest). |
+
+> Paddle (billing + Customer Portal) was removed 2026-06-01 — the `newsStripeWebhook` Lambda and the billing proxy actions are gone. See [Lambda #12](#12-newsstripewebhook-name-was-legacy--handled-paddle--removed-2026-06-01).
+
+---
+
+## Frontend
+
+**Stack:** React 19 + Vite, React Router v6; production currently GitHub Pages, migration target Cloudflare Workers Static Assets (not yet deployed)
+**Source:** `global-perspectives-starter/frontend/src/`
+**Current production:** `docs/` served by GitHub Pages behind `globalperspective-rss`. The updated `./deploy.sh` defaults to local verification/build/package; explicit candidate/production targets upload to `globalperspective-site-candidate` / `globalperspective-site`. Use `--target legacy-pages` only for an authorized Pages release. See `../ops/DEPLOYMENT_NOTES.md` and the active migration task.
+
+### Frontend imports
+
+Every import in `src/` is written as an absolute `@/…` specifier (alias for `src/`, defined in
+`vite.config.js`'s `resolve.alias` + mirrored in `jsconfig.json` for editor tooling), not a
+relative `../..` path — added 2026-09-24, P1 of the feature-folder restructure
+(`project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`). `test/redesign.test.jsx`'s
+fixture imports use a separate `@fixtures` alias (→ `tests/fixtures/`). **Exception — "N files"**:
+a handful of files are imported by Node tooling *outside* `src/` via relative path (`quality/briefing/*.mjs`,
+`quality/analysis/*.mjs`, `frontend/scripts/test-disruption-gate.mjs`), so their own outgoing
+imports must stay relative (marked with a `// imported by Node tooling outside src/ — keep
+relative imports` header comment): `features/home/lib/composeTopicsLede.js`, `features/economy/lib/composeEconomyBriefing.js`,
+`features/economy/lib/disruptionGate.js`, `features/economy/data/economicAnalogs.js`, `features/analysis-studio/lib/llm.js`, `features/analysis-studio/lib/analysisPrompt.js`,
+`features/analysis-studio/lib/analysisValidator.js`, `features/analysis-studio/lib/analysisStruct.js`. Everything that imports *those* files
+still uses `@/`; only the N files' own outbound imports (and Node tooling's imports of them) stay
+relative. `global-perspectives-starter/frontend/scripts/move-module.mjs` is the helper the
+restructure's later phases use to relocate a module and rewrite every `@/` reference to it in one
+step.
+
+### Frontend tokens (one palette, 2026-10-01)
+
+`shared/styles/tokens.css` holds **one** `:root` palette with role names — `--bg`, `--panel`/`--panel-2`/`--panel-3`, `--strip`, `--hairline` (+ `-strong`, `-3`), `--text-head`/`-body`/`-muted`/`-dim`, `--accent` (+ `-strong`, `-wash`, `--on-accent`), `--warn`/`--ok`/`--error`, `--hue-*` ×4 (crisis type), `--tier-*` ×4 (+ `-wash`; **neutral greys that get brighter with the tier** since P6, 2026-10-01: DS1 says risk is a number + a tier word + ring weight, never a traffic-light colour, so no red / orange / yellow / green is ever a tier; `--ok-wash` / `--warn-wash` / `--error-wash` are the status washes, and non-risk uses of the old tier colours, such as form errors, passed checks, danger buttons and the settling log's missed weeks, read `--error` / `--ok` / `--warn`; a test and a `verify_pages.sh` guard enforce the neutrality), `--fresh-*` ×4, `--motion-*`, `--tap-min` (44px) — and its values are the console look. Every page, the shell (nav, body, footer, phone tab bar: the console bar everywhere; desktop `/` keeps the full-bleed shell + status slot) and the boot screen read it; AA contrast is documented beside the values. The old light names (`--paper*`, `--card`, `--ink*`, `--line*`, `--risk-*`, `--amber`, `--ai-*`) and the `--c-*` console names are **aliases** pointing at the role tokens so existing CSS keeps working (note the flip: `--paper` is now a dark surface and `--ink` is light text, so a component that hard-codes a white card but reads `--ink` for its text is unreadable until it moves onto the role tokens); `.gp-console` is a no-op class that defines nothing. `shared/styles/tokens.js` mirrors the values JS needs (`TOKENS`, `RISK_SOLID`); `tokensParity.test.js` fails if the two drift. **Ratchet:** `quality/check_color_literals.mjs` counts hard-coded colour literals (hex, `rgb()`/`rgba()`/`hsl()`) per file against `quality/color_literals_baseline.json`, wired into `verify_pages.sh` and a vitest — a file's count may only fall, and a new file may not add any; after removing literals run `node quality/check_color_literals.mjs --lower`. **Converted pages (P3a + P3b):** countries, country, daily, weekly brief, track record, `/analyze` (+ `/analyze/s/:id`), `/today`, `/membership`, `/about`, `/privacy`, `/disclosures`, `/contact`, `/whitepaper`, `/breaking` (+ detail, strip, bell), account/sign-in, the shared badges. A bare `<a>` reads `--accent` (`app/index.css`; the browser blue was unreadable). `SeverityBadge` and `RiskScoreBadge` are outlines with ring weight (never fills); risk on list/detail pages is `TierChip`, and `RiskScoreBadge` has no production caller left. **Guided tours were removed in P6** (see the Frontend Path map: `app/onboarding/` and the `driver.js` dependency are gone; the map's one-line orientation banner replaces them and the nav "?" opens the map's About content). **`/weekly` (P4)** is on the shared blocks too (`StoryRow`, `TierChip`, `CategoryTag`, `FilterGroup`; `WeeklyMap.css` has no literals). **P5 sweep (2026-10-01, live data, 31 routes incl. param routes at 1440 + 390):** every body / nav / footer / phone tab bar is the dark token, 0 light surfaces and 0 text under 4.5:1 outside accent fills, 0 overflow, 0 page errors, no old loader, no "Something went wrong", the pre-JS boot is dark on `/`, `/weekly`, `/analyze` (production build, JS delayed); `html` has `scroll-padding` for the sticky nav and phone tab bar so keyboard focus is never parked under them. The remaining colour literals are tracked by the ratchet (see baseline). Plan and phases: `project-docs/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md`.
+
+### Frontend layout (final tree, 2026-09-24)
+
+The feature-folder restructure (`FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`, P0–P12) is **complete**.
+`src/` top level is now exactly:
+
+```
+src/
+  app/          routing (incl. `LegacyRedirects.jsx`), Layout/nav chrome, error boundary, main.jsx (unmoved); the onboarding tours were removed in P6
+  shared/       api/ (restProxy, errorSink) · contexts/ (Auth) · data/ (useGeminiTopics,
+                contentService) · hooks/ (useIsMobile) · lib/ (threadPath, riskTiers,
+                countryMapping, dateUtils) · styles/ (tokens) · ui/ (atoms, boot loader, story blocks,
+                Markdown, risk/ badges, SourceRobustness — cross-feature only, never imports
+                features/ or app/)
+  features/     14 feature dirs, each <name>/<Page>.jsx + components/ + hooks/ + lib/ + __tests__/:
+                home, map, threads, countries, economy, analysis-studio, breaking, account,
+                daily, weekly-brief, track-record, static, spider-demo, briefings
+  test/         cross-cutting/integration tests not owned by one feature
+```
+
+Dependency direction is enforced by `eslint.config.js`'s `no-restricted-imports` rule (added P11):
+`app → features → shared`; `shared` never imports `features`/`app`; the old flat-dir aliases
+(`@/components/*`, `@/hooks/*`, `@/utils/*`) are banned outright. Feature→feature imports are
+allowed (the design's §2.5 documented cross-feature edges — e.g. countries → threads,
+spider-demo → threads + countries, account → threads).
+
+The old→new path map below (built up one phase's rows per commit) remains the authoritative
+old→new lookup for anyone following a pre-2026-09-24 doc, `CHANGES.md` entry, or commit message
+that still cites a flat `components/`/`hooks/`/`utils/`/`services/` path (relocate-never-rename
+means the basename is unchanged, only the directory moved).
+
+**P2 — `app/` + `shared/`:**
+
+| Old | New |
+|---|---|
+| `App.jsx` | `app/App.jsx` |
+| `App.css` | `app/App.css` |
+| `index.css` | `app/index.css` |
+| `bootstrapProxy.js` | `app/bootstrapProxy.js` |
+| `components/Layout.jsx`, `Layout.css` | `app/layout/Layout.jsx`, `Layout.css` |
+| `components/AIToast.jsx` | `app/layout/AIToast.jsx` |
+| `components/LoadingBar.jsx`, `LoadingIndicators.css` | `shared/ui/boot/LoadTopBar.jsx` (2026-10-01); `app/layout/LoadingIndicators.css` now only styles `AIToast` |
+| `components/ErrorHandling.jsx` | `app/errors/ErrorHandling.jsx` |
+| `components/ErrorModal.jsx` | `app/errors/ErrorModal.jsx` |
+| `onboarding/useOnboarding.js`, `tours.js`, `tour-theme.css` | `app/onboarding/` (**deleted in P6, 2026-10-01**: the guided tours are gone; `driver.js` was dropped from `package.json`) |
+| `test/routes.test.jsx` | `app/__tests__/routes.test.jsx` |
+| `services/restProxy.js` | `shared/api/restProxy.js` |
+| `services/errorSink.js` | `shared/api/errorSink.js` |
+| `contexts/AuthContext.jsx`, `ErrorContext.jsx` | `shared/contexts/` |
+| `hooks/useGeminiTopics.js` | `shared/data/useGeminiTopics.js` |
+| `utils/contentService.js` | `shared/data/contentService.js` |
+| `hooks/useIsMobile.js` | `shared/hooks/useIsMobile.js` |
+| `utils/threadPath.js`, `riskTiers.js`, `countryMapping.js`, `dateUtils.js` | `shared/lib/` |
+| `test/riskTiers.test.js`, `utils.test.js` | `shared/lib/__tests__/` |
+| `styles/tokens.css` | `shared/styles/tokens.css` |
+| `tokens.js` | `shared/styles/tokens.js` |
+| `components/atoms/atoms.css` | `shared/ui/atoms.css` |
+| `components/atoms/EditorialShell.jsx`, `StatusStrip.jsx`, `SeverityBadge.jsx`, `DirectionArrow.jsx`, `SourceRobustness.jsx` | `shared/ui/` |
+| `components/Markdown.jsx`, `IntelligenceLoader.jsx`/`.css`, `CopyBriefing.jsx`, `ShareButtons.jsx` | `shared/ui/` |
+| `components/atoms/RiskScorecard.jsx`/`.css`, `RiskScoreBadge.jsx`, `RiskDeltaPill.jsx` | `shared/ui/risk/` |
+| `test/riskScorecard.test.jsx` | `shared/ui/risk/__tests__/riskScorecard.test.jsx` |
+
+**Added on branch `map-console` (2026-09-26, local review, not merged):**
+- `shared/styles/tokens.css` has a scoped `.gp-console` section (console DS1 tokens `--c-*`); `/map` uses it.
+- `shared/lib/freshness.js` (`pausedSince`): computes the "paused since" line from real timestamps.
+- `features/map/components/Hud*.jsx`: the console HUD panels.
+- `shared/ui/StoryPeek.jsx` + `shared/hooks/usePeek.js` + `shared/lib/peekData.js`: the one story hover/focus preview. **P8 (2026-10-02, built, not deployed):** `shared/ui/StoryLink.jsx` is the one link wherever a story is named (router link + `usePeek` + `peekData` + `StoryPeek`, peek portalled to `body`; `usePeek` opens nothing on `(hover: none)` devices, neither on hover nor on the focus a tap causes, so a phone tap just navigates; `inline` = in-text mention style). Used by the country card, Stories timeline + changed rail + WEB list twin, story page related rows + FED INTO + Shares-actors rows, `/weekly-brief`, `/today`, `/daily`, READ AS TEXT, Saved cards, Desk "After:" links, the shared analysis page, country page arcs and the map story card. Not wrapped: parked Economy surfaces. `shared/ui/PhoneTabs.jsx` = the phone P1 tab switch (Track record, country page; Stories keeps `.sf-tabs`). `shared/lib/analysisFreshness.js` = module store of the newest AI-generation time (reported by the daily-brief hook via `usePausedSince`, `useGeminiTopics` `updatedAt`, `useCountryIntelligence` `generatedAt`; no fetch of its own).
+- `shared/lib/crisisHue.js`: category → crisis hue.
+- `shared/lib/freshness.js` `freshnessState()`: live / plain / older / hidden.
+
+Note: `utils/sourceRobustness.js` (lowercase, the BYOK source-basis scorer) did **not** move in
+P2 — it stays at its flat path until P7 (`features/analysis-studio/lib/sourceRobustness.js`),
+deliberately never sharing a directory with `SourceRobustness.jsx` (case-only collision on
+case-insensitive macOS).
+
+**P3 — `features/static/` + `features/spider-demo/`:**
+
+| Old | New |
+|---|---|
+| `components/AboutContact.jsx` | `features/static/AboutContact.jsx` |
+| `components/Contact.jsx` | `features/static/Contact.jsx` |
+| `components/PrivacyTerms.jsx` | `features/static/PrivacyTerms.jsx` |
+| `components/Disclosures.jsx` | `features/static/Disclosures.jsx` |
+| `components/WhitepaperPage.jsx` | `features/static/WhitepaperPage.jsx` |
+| `components/SpiderDemo.jsx`, `.css` | `features/spider-demo/SpiderDemo.jsx`, `.css` |
+| `components/SpiderWorld.jsx` | `features/spider-demo/SpiderWorld.jsx` |
+
+**P4 — `features/daily/`, `features/weekly-brief/`, `features/track-record/`:**
+
+| Old | New |
+|---|---|
+| `components/DailyPage.jsx`, `.css` | `features/daily/DailyPage.jsx`, `.css` |
+| `hooks/useDailyBrief.js` | `features/daily/hooks/useDailyBrief.js` |
+| `components/WeeklyBriefPage.jsx`, `.css` | `features/weekly-brief/WeeklyBriefPage.jsx`, `.css` |
+| `hooks/useWeeklyBrief.js` | `features/weekly-brief/hooks/useWeeklyBrief.js` |
+| `components/TrackRecordPage.jsx`, `.css` | `features/track-record/TrackRecordPage.jsx`, `.css` |
+| `hooks/useTrackRecord.js` | `features/track-record/hooks/useTrackRecord.js` |
+| `hooks/useCorrectionsFeed.js` | `features/track-record/hooks/useCorrectionsFeed.js` |
+
+**P5 — `features/map/`:**
+
+| Old | New |
+|---|---|
+| `components/SituationHome.jsx`, `.css` | `features/map/SituationHome.jsx`, `.css` |
+| `components/SituationMap.jsx` | `features/map/components/SituationMap.jsx` |
+| `components/SituationMap3D.jsx` | `features/map/components/SituationMap3D.jsx` |
+| `hooks/useWorld.js` | `features/map/hooks/useWorld.js` |
+| `services/worldData.js` | `features/map/api/worldData.js` |
+| `utils/countryGeo.js` | `features/map/lib/countryGeo.js` |
+| `utils/situationLabels.js` | `features/map/lib/situationLabels.js` |
+| `assets/countries-110m.json` | `features/map/assets/countries-110m.json` |
+
+**P6 — `features/breaking/` + `features/account/`:**
+
+| Old | New |
+|---|---|
+| `components/BreakingFeedPage.jsx` | `features/breaking/BreakingFeedPage.jsx` |
+| `components/BreakingDetailPage.jsx` | `features/breaking/BreakingDetailPage.jsx` |
+| `components/BreakingPage.css` | `features/breaking/BreakingPage.css` |
+| `components/NotificationBell.jsx`, `.css` | `features/breaking/components/NotificationBell.jsx`, `.css` |
+| `components/atoms/BreakingStrip.jsx`, `.css` | `features/breaking/components/BreakingStrip.jsx`, `.css` |
+| `hooks/useNotifications.js` | `features/breaking/hooks/useNotifications.js` |
+| `hooks/useBreakingAlert.js` | `features/breaking/hooks/useBreakingAlert.js` |
+| `components/Account.jsx`, `.css` | `features/account/Account.jsx`, `.css` |
+| `components/SignIn.jsx` | `features/account/SignIn.jsx` |
+| `components/AuthCallback.jsx` | `features/account/AuthCallback.jsx` |
+| `components/MembershipPage.jsx`, `.css` | `features/account/MembershipPage.jsx`, `.css` |
+| `components/SaveButton.jsx` | `features/account/components/SaveButton.jsx` |
+| `components/FollowButton.jsx` | `features/account/components/FollowButton.jsx` |
+| `components/SubscribeCard.jsx`, `.css` | `features/account/components/SubscribeCard.jsx`, `.css` |
+| `hooks/useMembership.js` | `features/account/hooks/useMembership.js` |
+| `hooks/usePreferences.js` | `features/account/hooks/usePreferences.js` |
+| `hooks/useSavedItems.js` | `features/account/hooks/useSavedItems.js` |
+
+**P7 — `features/analysis-studio/`:**
+
+| Old | New |
+|---|---|
+| `components/AnalysisStudio.jsx`, `.css` | `features/analysis-studio/AnalysisStudio.jsx`, `.css` |
+| `components/ProviderModal.jsx`, `.css` | `features/analysis-studio/components/ProviderModal.jsx`, `.css` |
+| `components/atoms/AnalysisVisuals.jsx`, `.css` | `features/analysis-studio/components/AnalysisVisuals.jsx`, `.css` |
+| `services/llm.js` | `features/analysis-studio/lib/llm.js` |
+| `utils/analysis.js` | `features/analysis-studio/lib/analysis.js` |
+| `utils/analysisPrompt.js` | `features/analysis-studio/lib/analysisPrompt.js` |
+| `utils/analysisValidator.js` | `features/analysis-studio/lib/analysisValidator.js` |
+| `utils/analysisStruct.js` | `features/analysis-studio/lib/analysisStruct.js` |
+| `utils/byok.js` | `features/analysis-studio/lib/byok.js` |
+| `utils/sourceRobustness.js` | `features/analysis-studio/lib/sourceRobustness.js` |
+| `test/analysisStruct.test.js` | `features/analysis-studio/__tests__/analysisStruct.test.js` |
+| `test/analysisVisuals.test.jsx` | `features/analysis-studio/__tests__/analysisVisuals.test.jsx` |
+
+`services/llm.js`, `utils/analysisPrompt.js`, `utils/analysisValidator.js`, `utils/analysisStruct.js`
+are the N files here — their own outgoing imports (none, in this case) stay relative by
+convention, and the Node tooling that imports them by relative path (`quality/analysis/{check,
+compare,judge,run,source_check}.mjs`, 13 import lines) had its relative paths updated in this
+same commit to point at `features/analysis-studio/lib/`. `utils/sourceRobustness.js` (the
+BYOK source-basis scorer, lowercase) moved here too, completing the case-collision split with
+`shared/ui/SourceRobustness.jsx` (moved in P2) — the two never shared a directory at any point.
+
+**P8 — `features/economy/`:**
+
+| Old | New |
+|---|---|
+| `components/EconomyPage.jsx`, `.css` | `features/economy/EconomyPage.jsx`, `.css` |
+| `components/WeeklyMarketsPage.jsx` | `features/economy/WeeklyMarketsPage.jsx` |
+| `components/WeeklyMarketsView.jsx`, `.css` | `features/economy/components/WeeklyMarketsView.jsx`, `.css` |
+| `components/atoms/MechanismCard.jsx` | `features/economy/components/MechanismCard.jsx` |
+| `components/atoms/InstrumentChip.jsx` | `features/economy/components/InstrumentChip.jsx` |
+| `components/atoms/QualityFlag.jsx` | `features/economy/components/QualityFlag.jsx` |
+| `components/atoms/DisruptionRow.jsx` | `features/economy/components/DisruptionRow.jsx` |
+| `components/atoms/DisruptionPreview.jsx` | `features/economy/components/DisruptionPreview.jsx` |
+| `components/atoms/Sparkline.jsx` | `features/economy/components/Sparkline.jsx` |
+| `hooks/useDisruptionsList.js` | `features/economy/hooks/useDisruptionsList.js` |
+| `hooks/useEconomicImpact.js` | `features/economy/hooks/useEconomicImpact.js` |
+| `hooks/useTopMovers.js` | `features/economy/hooks/useTopMovers.js` |
+| `hooks/useMarketsGlobal.js` | `features/economy/hooks/useMarketsGlobal.js` |
+| `hooks/useMarketsHistory.js` | `features/economy/hooks/useMarketsHistory.js` |
+| `hooks/useMarketsCountry.js` | `features/economy/hooks/useMarketsCountry.js` |
+| `hooks/useWeeklyMarkets.js` | `features/economy/hooks/useWeeklyMarkets.js` |
+| `utils/composeEconomyBriefing.js` | `features/economy/lib/composeEconomyBriefing.js` |
+| `utils/disruptionGate.js` | `features/economy/lib/disruptionGate.js` |
+| `data/economicAnalogs.js`, `.json` | `features/economy/data/economicAnalogs.js`, `.json` |
+| `test/economyPage.test.jsx` | `features/economy/__tests__/economyPage.test.jsx` |
+| `test/atoms_economic.test.jsx` | `features/economy/__tests__/atoms_economic.test.jsx` |
+| `test/useEconomicImpact.test.js` | `features/economy/__tests__/useEconomicImpact.test.js` |
+
+`utils/composeEconomyBriefing.js`, `utils/disruptionGate.js`, `data/economicAnalogs.js` are the N
+files here — `disruptionGate.js`'s own relative import of `economicAnalogs.js` (`../data/economicAnalogs.js`)
+was preserved unchanged (same relative offset at the new location: `lib/disruptionGate.js` →
+`../data/economicAnalogs.js` → `data/economicAnalogs.js`). Node tooling importing these by
+relative path — `quality/briefing/verify_compose.mjs`, `verify_instrument_why.mjs`,
+`global-perspectives-starter/frontend/scripts/test-disruption-gate.mjs` — had their relative
+paths updated in this same commit. DisruptionRow.jsx/DisruptionPreview.jsx (test-only, no
+production importer) moved here per the operator's §0(c) decision to keep them as a parked
+widget kit, not delete them.
+
+**P9 — `features/home/`:**
+
+| Old | New |
+|---|---|
+| `components/Home.jsx`, `.css` | `features/home/Home.jsx`, `.css` |
+| `components/AIComponents.css` | `features/home/AIComponents.css` |
+| `components/TopicNav.jsx`, `.css` | `features/home/components/TopicNav.jsx`, `.css` |
+| `components/TodayArchiveSidebar.jsx`, `.css` | `features/home/components/TodayArchiveSidebar.jsx`, `.css` |
+| `components/ArchiveTopicModal.jsx` | `features/home/components/ArchiveTopicModal.jsx` |
+| `components/PredictionDisplay.jsx` | `features/home/components/PredictionDisplay.jsx` |
+| `components/SummaryDisplay.jsx` | `features/home/components/SummaryDisplay.jsx` |
+| `components/TraceCauseDisplay.jsx` | `features/home/components/TraceCauseDisplay.jsx` |
+| `components/atoms/LedeBand.jsx`, `.css` | `features/home/components/LedeBand.jsx`, `.css` |
+| `hooks/useTodayArchive.js` | `features/home/hooks/useTodayArchive.js` |
+| `utils/composeTopicsLede.js` | `features/home/lib/composeTopicsLede.js` |
+
+`utils/composeTopicsLede.js` is the N file here — its own imports stay relative (unchanged, it
+has no outgoing imports outside its own honesty-contract logic besides types). Node tooling
+importing it by relative path — `quality/briefing/verify_lede.mjs` — had its relative path
+updated in this same commit. `AIComponents.css` is imported cross-feature by
+`components/ThreadPage.jsx`/`WeeklyPage.jsx` (still at their pre-move path, moves in P11) —
+`move-module.mjs`'s repo-wide specifier rewrite retargeted those imports to
+`@/features/home/AIComponents.css` automatically; no import was stranded.
+
+**P10 — `features/countries/`:**
+
+| Old | New |
+|---|---|
+| `components/CountryListPage.jsx`, `.css` | `features/countries/CountryListPage.jsx`, `.css` |
+| `components/CountryPage.jsx`, `.css` | `features/countries/CountryPage.jsx`, `.css` |
+| `components/CountryOverviewMap.jsx` | `features/countries/components/CountryOverviewMap.jsx` |
+| `components/BackgroundTimeline.jsx` | `features/countries/components/BackgroundTimeline.jsx` |
+| `components/SystemsGraph.jsx`, `.css` | *(removed 2026-09-25: country Causal Web tab retired)* |
+| `components/atoms/CountryWhatChanged.jsx`, `.css` | `features/countries/components/CountryWhatChanged.jsx`, `.css` |
+| `hooks/useCountryIntelligence.js` | `features/countries/hooks/useCountryIntelligence.js` |
+| `hooks/useCountryHistory.js` | `features/countries/hooks/useCountryHistory.js` |
+| `hooks/useSystemsAnalysis.js` | `features/countries/hooks/useSystemsAnalysis.js` |
+| `utils/countryDrift.js` | `features/countries/lib/countryDrift.js` |
+| `test/countryDrift.test.js` | `features/countries/__tests__/countryDrift.test.js` |
+| `test/countryWhatChanged.test.jsx` | `features/countries/__tests__/countryWhatChanged.test.jsx` |
+| `test/useSystemsAnalysis.test.js` | `features/countries/__tests__/useSystemsAnalysis.test.js` |
+| `test/causalGraph.test.jsx` | `features/countries/__tests__/causalGraph.test.jsx` |
+| `test/macroValues.test.js` | `features/countries/__tests__/macroValues.test.js` |
+
+No N files in this phase. `features/spider-demo/SpiderDemo.jsx`'s cross-feature import of
+`useSystemsAnalysis` (still pointed at the pre-move `@/hooks/useSystemsAnalysis` path since P3)
+was retargeted automatically by `move-module.mjs`'s repo-wide specifier rewrite to
+`@/features/countries/hooks/useSystemsAnalysis.js`. `features/countries/CountryListPage.jsx`'s
+import of `WeeklyPage.css` was retargeted to `@/features/threads/WeeklyPage.css` in P11.
+
+**P11 — `features/threads/`:**
+
+| Old | New |
+|---|---|
+| `components/WeeklyPage.jsx`, `.css` | `features/threads/WeeklyPage.jsx`, `.css` |
+| `components/ThreadPage.jsx`, `.css` | `features/threads/ThreadPage.jsx`, `.css` |
+| `components/WeeklyMap.jsx`, `.css` | `features/threads/components/WeeklyMap.jsx`, `.css` |
+| `components/CompactTimeline.jsx` | `features/threads/components/CompactTimeline.jsx` |
+| `components/StoryEntryCard.jsx` | `features/threads/components/StoryEntryCard.jsx` |
+| `components/ThreadIntelligence.jsx` | `features/threads/components/ThreadIntelligence.jsx` |
+| `components/ThreadForecast.jsx` | `features/threads/components/ThreadForecast.jsx` |
+| `components/TrendBadge.jsx` | `features/threads/components/TrendBadge.jsx` |
+| `hooks/useWeeklyArchive.js` | `features/threads/hooks/useWeeklyArchive.js` |
+| `hooks/useThreadAnalyses.js` | `features/threads/hooks/useThreadAnalyses.js` |
+| `hooks/useNarrativeThread.js` | `features/threads/hooks/useNarrativeThread.js` |
+| `hooks/useThreadForecast.js` | `features/threads/hooks/useThreadForecast.js` |
+| `utils/mapConstants.js` | `features/threads/lib/mapConstants.js` |
+
+No N files in this phase. This was the programme's last feature phase (most inbound edges,
+per the design's ordering rationale) and its cleanup phase: `components/`, `hooks/`, `utils/`,
+`services/`, `contexts/`, `onboarding/`, `data/`, `assets/`, `styles/` were confirmed empty
+(`find <dir> -type f` returned nothing for each) and deleted. `src/` top level is now just
+`app/`, `features/`, `shared/`, `test/`, `main.jsx`.
+
+Cross-feature edges retargeted automatically by `move-module.mjs`'s repo-wide specifier
+rewrite in this commit: `CountryListPage.jsx` (countries) → `WeeklyPage.css`; `SignIn.jsx`/
+`AuthCallback.jsx` (account) → `WeeklyPage.css`; `SpiderDemo.jsx` (spider-demo) →
+`CompactTimeline`, `useNarrativeThread`. All are documented edges from the design's §2.5, not
+regressions.
+
+**Dependency-direction eslint rule (added in P11):** `eslint.config.js` gets a
+`no-restricted-imports` rule set, enforced at `npm run verify`:
+- Repo-wide: `@/components/*`, `@/hooks/*`, `@/utils/*` are banned (the old flat-dir aliases —
+  the dirs no longer exist, so this turns a bare module-not-found into a clear message).
+- `src/shared/**`: banned from importing `@/features/**` or `@/app/**` (shared must not depend
+  on features or app).
+- `src/features/**`: banned from importing `@/app/**` (features must not depend on app).
+- Feature → feature imports remain allowed (unenforced) — they're the intentional cross-feature
+  edges catalogued in the design's §2.5 (e.g. countries → threads, spider-demo → threads +
+  countries). `npm run verify` is clean under the new rule (0 errors; 3 pre-existing
+  `react-hooks/exhaustive-deps` warnings, unrelated to this rule).
+
+### Feature → Lambda index
+
+Lambdas are **not** grouped into feature subfolders (evaluated and rejected —
+`REPO_RESTRUCTURE_DESIGN_2026-09-24.md` §2.6: cost is 214+ path references across docs/scripts,
+benefit is near zero since each Lambda is already a self-contained deploy unit). This index
+answers "which Lambdas serve feature X" without moving backend code.
+
+| Feature | Lambdas |
+|---|---|
+| home (topics ingest) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsSourceAudit |
+| map (situations) | newsGdacsIngest, newsGdeltConflict, newsSituationIngest, newsSituationTracker, newsImpactAudit |
+| threads | newsThreadAnalysis, newsDriftCorrector |
+| countries | newsCountryIntelligence, newsCountryFactsUpdater, newsSystemsAnalysis, newsPairIntelligence (dormant, cron DISABLED) |
+| economy | newsMarketsData, newsEconomicImpact, newsEconomicQuality, newsWeeklyMarkets |
+| weekly-brief | newsWeeklyBrief |
+| track-record | newsPredictionResolver, newsPredictionsSnapshot |
+| breaking | newsBreakingAlert |
+| account | newsSavedItems, newsRecommend (prefs + alerts list), newsPolarBilling |
+| analysis-studio | newsAnalyze |
+| distribution | newsPostLinkedIn, newsPostDevTo, newsEmailSender, newsSignals |
+| platform / observability | newsSensitiveData (shared proxy for most pages), newsClientErrors, newsErrorDigest, newsFreshnessMonitor, newsModelGuard |
+| flag | `newsStripeWebhook/` dir still exists but was REMOVED 2026-06-01 (§12) — archive-or-delete is a separate cleanup decision, out of scope here. |
+
+### Routes
+
+Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
+
+Wired in `<Routes>` in `App.jsx` — 31 `<Route>` elements incl. catch-all (counted 2026-10-01) (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26, retired to redirects 2026-10-01; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
+
+| Path | Component | Access |
+|------|-----------|--------|
+| `/` | `SituationHome.jsx` (lazy-loads `SituationMap3D.jsx`) — the map console is the home page since the 2026-10-01 S6 swap; full-bleed dark console on desktop (Layout keys on `pathname === '/'`); no guided tour (P6): a one-line orientation banner, and the nav "?" links to `/?about=1`, which opens the About drawer (desktop) or scrolls to the About section (phone) | Public |
+| `/today` | `Home.jsx` — the old home (today's topics by region, archive, lede, subscribe card); linked from the map's About drawer (the footer is exactly About, Membership, Privacy, Disclosures, Contact since P6). Dark tokens since P3b (2026-10-01); failures are inline + reported to the error sink (no modal); on phone the archive rail is a static panel after the topics (it used to render sticky over them) | Public |
+| `/map` | `MapRedirect.jsx` — client redirect to `/`, keeping `?layer= ?country= ?story= ?focus=` and the hash | Public |
+| `/about` | `AboutContact.jsx` | Public |
+| `/contact` | `Contact.jsx` | Public |
+| `/privacy` | `PrivacyTerms.jsx` | Public |
+| `/disclosures` | `Disclosures.jsx` | Public |
+| `/whitepaper` | `WhitepaperPage.jsx` | Public |
+| `/daily` | `DailyPage.jsx` | Public |
+| `/daily/:dateKey` | `DailyPage.jsx` | Public |
+| `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (latest published weekly brief; dark tokens + `TierChip`/`SectionHeader` since P3a 2026-10-01) |
+| `/briefings` | `BriefingsPage.jsx` (`features/briefings/`) | Public — **BRIEFING MODE** (S3, REDESIGN_MASTER_PLAN.md §3.6): the same map + horizontal slides + strip pattern as story mode. `?mode=daily\|weekly` (default daily), `?date=YYYY-MM-DD` (a specific daily edition), `?from=markets` (the retired `/weekly-markets` note). DAILY: THE DAY → one slide per top story (≤8) → COUNTRY TO WATCH. WEEKLY: THE WEEK → one slide per signal (≤6) → NEXT WEEK. Editions strip: solid = a real edition (probed up to 14 days back for daily, capped + sessionStorage-cached — `useDailyEditionsIndex`; only the single latest weekly edition is confirmed, since `weekly_brief` has no per-week lookup — a real backend gap, not fabricated). READ AS TEXT renders a plain semantic article. Desktop = `BriefingMode.jsx`; phone (P1+PH) = `PhoneBriefingMode.jsx` (READ/MAP/EDITIONS tabs). |
+| `/weekly-markets` | `LegacyRedirects.jsx` `MarketsRedirect` | Public **client redirect** → `/briefings?from=markets` (S3, 2026-09-27: economy is parked, briefings never carries a markets line). Previously redirected to `/economy?view=week`; that mode is still reachable directly at `/economy`. |
+| `/economy?view=week` | `EconomyPage.jsx` → `WeeklyMarketsView.jsx` | Public — the price-first weekly markets wrap ("what moved this week & why"; honest empty state until published), the "This week" mode of the Today/This-week toggle |
+| `/breaking` | `LegacyRedirects.jsx` `BreakingFeedRedirect` | Public **client redirect** → `/` (P6, 2026-10-01; the map's alert stack replaced the feed page, which was deleted) |
+| `/breaking/:id` | `LegacyRedirects.jsx` `BreakingDetailRedirect` | Public **client redirect** (P6): reads the single alert (`get_alert`, via `useBreakingAlert`) and goes to `/weekly/thread/:threadId` when the alert has an arc and a thread id, else `/`. This stays the URL emails and the bell carry (feed rows hold only the alert key, so only this read can name the story). The detail page was deleted |
+| `/economy` | `EconomyPage.jsx` | Public |
+| `/analyze` | `AnalysisStudio.jsx` | Public (BYOK self-serve analysis — see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)) |
+| `/analyze/s/:id` | `SharedAnalysisPage.jsx` | Public, **noindex** read-only debrief of one shared Studio run (Batch 4 H; says "not available yet" while `NEWS_SHARE_ENDPOINT` is unset; the Worker never pre-renders it) |
+| `/track-record` | `TrackRecordPage.jsx` | Public — E2 service record (S6, 2026-09-27): stage status line, accuracy locked until 150 post-pilot resolved, forecast board MAP \| BOARD (counts per place, never per-country accuracy), settling log, corrections ledger. The July pilot is excluded from every headline number |
+| `/track-record/text` | `TrackRecordText.jsx` | Public — E1 plain text version of the same record |
+| `/weekly` | `WeeklyPage.jsx` | Public |
+| `/weekly/thread/:threadId` | `ThreadPage.jsx` | Public |
+| `/weekly/countries` | `CountryListPage.jsx` | Public |
+| `/weekly/country/:countryName` | `CountryPage.jsx` | Public |
+| `/signin` | `SignIn.jsx` | Public |
+| `/auth/callback` | `AuthCallback.jsx` | Public |
+| `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
+| `/account` | `Account.jsx` | Auth |
+| `/spider-demo` | `LegacyRedirects.jsx` (`SpiderDemoRedirect`) | **Retired 2026-10-02 (P7b, built, not deployed):** client redirect to `/weekly?view=web` (the Stories WEB view). `features/spider-demo/` (SpiderDemo, SpiderWorld, css) was deleted; the earlier restructure notes below that mention it are history. Not in nav or the sitemap. What the prototype had that WEB does not: the country-bubble World tier (risk-tier fill, drift badges), the per-country lane causal web with the shared-actor backbone and the 12-country selector, the Event tier "Analyze with AI" (`dossier_analysis`) read, and `?view=country&country=X` URL state; country-shaped views are not part of the story-first design (country web = a future Studio lens, STORY_WEB_RETHINK_PLAN §5). |
+| `/__boom` | `Boom` (inline in App.jsx) | ⚠ **Deliberate test route — keep, it's load-bearing.** `Boom()` throws on render to exercise the `ErrorBoundary` + `newsClientErrors` capture path. `scripts/smoke-test.mjs` drives it (`checkErrorBoundary`, navigates to `/__boom`) to verify a render crash is CONTAINED (persistent nav/chrome, no white screen) and reported — one of the `BUG_PLAYBOOK.md` bug-class checks. Ships in the prod bundle; not linked in nav; harmless unless navigated to. Do **not** delete without also updating the smoke test. |
+| `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
+
+**Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WeeklyMap.jsx` still exists as a file but is **not routed** (`/map` uses `SituationHome`; there is no `/weekly-map` or `/map-v2` route). **`WorldMap.jsx` + `WorldMap.css`** (the legacy pre-V2 Google Maps view, zero importers) **and `MapSidePanel.jsx`, `BriefingCard.jsx`** (zero live importers) **were removed 2026-09-24** as dead code (`CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1; build + test-suite verified, deploy deferred). **`WorldMapV2.jsx` + `WorldMapV2.css`, the `/map-legacy` route, `usePairAnalyses.js`, and the 3 tests that rendered it (`signalFilters.test.jsx`/`searchBar.test.jsx`/`layers.test.jsx`) were removed 2026-09-24** as the final legacy-map cleanup (`CLEANUP_AUDIT_2026-09-24.md` §4 D3): a pair-arcs relocation onto `/map` was built and verified, then the operator cancelled it in favor of pure removal (ideas harvested to `redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`; the working port is preserved on branch `archive/pair-arcs-port`, git-recoverable). `/map` is now the **only** map, served by the `SituationHome`/`SituationMap3D` family described below. The weekly `TriggerPairIntelligenceWeekly` cron and the backend pair pipeline (`newsPairIntelligence`, `pair_analyses_list` action) are untouched and still produce data with no current display surface — operator to decide disable vs leave warm.
+
+### Key Components
+
+57 component files, now under `src/features/<feature>/` (+ `src/app/` for chrome, `src/shared/ui/` for cross-feature atoms) per the P0–P11 feature-folder restructure (`FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`) — see the Path column below and the Frontend Path map above for the full old→new mapping. Incl. `LedeBand.jsx` and the Analysis Studio pair `AnalysisStudio.jsx`/`ProviderModal.jsx` added 2026-06-10. (Count as of the 2026-09-24 legacy-map removal, following the Tier B1 dead-code cleanup — see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1 and §4 D3.) Key ones:
+
+| Component | Purpose | Path |
+|-----------|---------|------|
+| `Layout.jsx` | Nav shell (since N1 / P1: five flat items + a phone bottom tab bar) + a persistent "?" link to `/?about=1` (the map's About content; tours were removed in P6, see [Onboarding](#onboarding-guided-tours-removed-in-p6-2026-10-01-built-not-deployed)); footer = About, Membership, Privacy, Disclosures, Contact (P6). **Status line (P8, 2026-10-02):** `HudStatusLine` (Layout strip on every page except `/`, which shows the same component in its HUD) says "New stories and analysis paused since <date> · disaster alerts live" only when the newest generation time across the daily brief / stories feed / country briefings already loaded (`usePausedSince` + `shared/lib/analysisFreshness.js`) is older than 36 h; the GDACS clause is computed from `world/latest.json` (`useGdacsStatus`, one static read made only while paused): live (< 2 h) / "last checked <date>" / omitted when unknown. *Historical (superseded by N1)*: **Nav grouped 2026-07-06** (`SITE_ORIENTATION_PLAN.md` P2): Briefings (Topics/Daily/Weekly Brief) · Intelligence (Threads/Countries/Map) · Markets/Analysis (Economy/Analyze) · Accountability (Track Record), hairline `.gp-nav-div` dividers between groups, every item carries a `title` tooltip describing its job (canonical one-liners in the plan doc) | `app/layout/Layout.jsx` |
+| `Home.jsx` | 3-col EditorialShell: a deterministic **"Today's lede" band** (`LedeBand`) directly under the StatusStrip, then a masthead whose sub-line states the **accountability value prop** (links `/track-record`; 2026-07-06), a **trust strip** (3 stat cards — dated forecast triggers via `useTrackRecord`, corrections logged via `useCorrectionsFeed`, sources/stories today; each card omitted when its number is absent — honest-empty) above `SubscribeCard`, then region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails | `features/home/Home.jsx` |
+| `SituationHome.jsx` | The live map at `/` (was `/map` until the 2026-10-01 S6 swap; `/map` now redirects) — orients on `useWorld`/`useSituationDetail` (situation-tracker data: state emerging/escalating/peak/cooling/closed, per-axis tier conflict/political/economic/humanitarian, "what changed" evidence), renders `SituationMap.jsx` (2D) and, when WebGL2/WebGL is available, lazily loads `SituationMap3D.jsx` (deck.gl GlobeView, code-split so the heavy dep only loads on this route) for the 2.5D globe. **Boot screen (2026-10-01):** on the first load of `/` a full-screen `BootLoader` (portal to `body`) shows three sensors ticked only by real signals — News desk = `useGeminiTopics().settled` (stories load finished, not failed empty-handed), Disaster alerts = `useWorld()` delivered `world/latest.json` carrying a checked `sources.gdacs`, Map = `RadarMap`/`SituationMap3D` `onFirstDraw` (first d3 draw / first deck.gl frame) — derived in `features/map/lib/bootSensors.js`; when all three are ready it fills the globe and crossfades into the console; a failed sensor gets the honest line + RETRY (re-runs only the failed loads) + OPEN ANYWAY (data that did load is never hidden behind another sensor's failure) and is reported via `reportFetchError`; shown once per page load (returning to `/` skips it). Detail panel shows tier/state labels, freshness ("N min ago"), and structured metrics (outlets/spread/coverage ratio) parsed from `what_changed`. Replaces the legacy `WorldMapV2.jsx` (d3 + topojson SVG map, `/map-legacy`), **removed 2026-09-24** — see the "Removed/never-wired" note above; a pair-arcs relocation onto this map was built then cancelled by the operator, so bilateral-arc/"Connections" display has no current surface (harvested ideas in `redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`). **Story card (P8, 2026-10-02):** each WHY step carries an INFERENCE tag (the story page's rule: FACT = cited dated news, INFERENCE = model judgment; a stored cause step has no citation, so none is ever FACT); in-text links = `lib/cardMentions.js` `linkMentions` (exact whole-word, case-insensitive full-title matches against `web_index.threads` titles, titles >= 15 chars, none shared by two stories; each is a `StoryLink`; zero matches in the live summaries/analyses on 2026-10-02, so today the card links through its "Linked stories" lines (`linkedStoryLines` from the same index rows, tagged model judgment)); **Key** motion row reads `MOTION_BUDGET` (`lib/pulse.js`: 3 movers, 8 pulses; today the spin/sweep and the pulse move, link dashes are static). | `features/map/SituationHome.jsx` |
+| `SituationMap3D.jsx` | deck.gl GlobeView 3D globe backing `SituationHome` — country fills + signal layers, plus an unrelated `spread-arcs` `ArcLayer` (contagion/spread visualization fed by centroid resolution via `utils/countryGeo.js`, not the removed pair-arcs feature). The ▲●◆▼ status badges, ◆ GDACS alert diamonds and HUD selection brackets are **pixel-space `IconLayer` billboards** (sprites from one generated white atlas in `features/map/lib/globeIcons.js`, tinted per marker via `mask`): constant screen size at every zoom, a fixed pixel offset from their own mark, far side and past-the-limb hidden by `lib/globeHorizon.js` (a shader extension: anchor must face the camera and the sprite centre must be inside the sphere's silhouette; no per-frame rebuild). They need `parameters.cullMode: 'none'` — GlobeView back-face-culls every layer and IconLayer's y-flip reverses its quad's winding (why IconLayer "drew nothing" in R4a). They were lon/lat polygons sized by a degrees-per-pixel guess (grew with latitude, skewed, detached) until 2026-10-01; do not go back to geographic geometry for constant-size marks | `features/map/components/SituationMap3D.jsx`, `features/map/lib/globeIcons.js` |
+| `LedeBand.jsx` (atom) | Deterministic one-line "Today's lede" orientation strip on Home + Map. Fed by `features/home/lib/composeTopicsLede` (pure, no LLM — picks the day's story by disruption severity → urgency → trending → source count; counts trace to real inputs; headline is a verbatim topic title). Renders **nothing** when there is no real lede (honest empty state). Headline links to the story-arc thread page **only when the topic carries a real `threadId`** — no fallback link. Honesty eval: `quality/briefing/verify_lede.mjs`. SHIPPED 2026-06-10. | `features/home/components/LedeBand.jsx` |
+| `EconomyPage.jsx` | `/economy` — the markets home, with a **Today / This week** segmented toggle in the masthead (URL-synced `?view=week`, folded into `buildParams`/parse so it's shareable + refresh-safe + survives a filter/sort rewrite; default Today). **"This week"** renders `WeeklyMarketsView` (the consolidated weekly markets wrap, own centered editorial layout — see route table) and hides the live timestamp; **"Today"** renders the dashboard below. The Today mode: **Leads with a deterministic "Today in the economy" briefing band** (`.ep-briefing-band`, above the 3-col shell) — a one-paragraph synthesis composed by `features/economy/lib/composeEconomyBriefing.js` from the same data already loaded (story count + severity split + most-cited cluster + sharpest story link + sanitized realized moves with consensus-vs-realized divergence flagged); no LLM, honesty-checked by `quality/briefing/assertions.js` (run `node quality/briefing/verify_compose.mjs`). **Rebuilt 2026-05-27 to match the editorial mockup** (own masthead band + 3-col shell, no longer `EditorialShell`; full-bleed via a `:has(.ep-page)` container escape, sticky rails offset by `--nav-h + --strip-h`). **Two-layer model** (see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): the right-rail **Market Context** is a *standing dashboard* — live levels for the full universe (Equities / Sectors / Commodities / Ags&Materials / Risk / Rates / Crypto via `useMarketsGlobal`), shown always, AI-independent. The center **leaderboard** ("Repricing today") is the *news-cited subset* (`useTopMovers` — consensus + direction-split + live level per instrument; **expand** → price sparkline (`useMarketsHistory`) + Key-levels box + a **lean** driving-stories list [Severity · Story → thread Economy tab · Direction] + affected-country chips; mechanism + historical analog are demoted to each story's thread Economy tab), then a dormant-instruments drawer + a severity-grouped by-story "Active disruptions" bridge. Left rail facets (severity / horizon / country). All real data — **honest degradation** where data is absent (no fabricated % change, severity bars, ISO codes, or analog %). **Deterministic display gate** (`features/economy/lib/disruptionGate.js`): FX rows are relabelled to the foreign currency with direction derived from the rationale (the `USD/XXX` label + stored direction follow no consistent quoting convention), arrow suppressed when undetectable; historical-analog realized moves render only when the event resolves against the curated catalog (`findAnalogEvent`). Proven by `scripts/test-disruption-gate.mjs`. | `features/economy/EconomyPage.jsx` |
+| `WeeklyPage.jsx` | **Stories (P4, 2026-10-01, built, not deployed):** thin page (state, `?section=countries`, `?view=list\|board\|timeline\|map\|web\|changes`, `?category=`, hooks) over `EditorialShell`: left rail `StoriesFilters` (search, crisis type x4 via `shared/lib/crisisHue`, tier, window 24 h/3 d/7 d/30 d on last-change age, region counts, sort Most covered/Most recent/Rising first), centre `StoriesHeader` (Stories \| Countries tabs, open-story count by tier, List \| Board \| Timeline \| Map switch; phone READ / MAP / TIMELINE tabs with a List \| Board toggle inside READ) + `StoriesFeed` (A: `StoryRow` list in groups Moving now <24 h / This week 1-7 d / Older 7-30 d amber, show more, Archive >30 d, Single mentions) or `StoriesBoard` (B, 2026-10-02: four columns Rising coverage / New / Steady / Quieter, status from the story's own per-day article counts via `deriveBoardStatus`, rule printed as `BOARD_RULE`, 14-day sparkline from `dayCounts`, one column on phones) or `StoriesTimeline` (C: one line per story, a dot per REAL archive day via `timelineLayout`, tier chip + title, row links to the story), right rail `StoriesChanged` ("Changed since your last visit" from a localStorage baseline, else "Moving now"; compact "Rising this week"). Pure logic in `lib/storyGroups.js` (tested); `lib/countryFrame.js` frames the country page's map hero (bounds from the 110m coastlines, `frameViewBox` for the SVG fallback, Google `fitBounds` + overlay padding); `hooks/useLastVisit.js`. Story age = the newest day's real `updatedAt` (never invented). Old arc cards, explainer, Read-arc buttons, 12 colour pills, LEAD/DEVELOPING hierarchy removed (see CHANGES). Map view = `WeeklyMap` embedded (tokens) | `features/threads/WeeklyPage.jsx`, `Stories.css`, `components/Stories*.jsx`, `StoryLine.jsx` | **WEB (P7b, 2026-10-02, built, not deployed):** `components/StoriesWeb.jsx` + pure `lib/storyWeb.js` over the whole `web_index` (`useWebIndex`): links merged across analyses (dedupe from->to, strongest word, each analysis keeps its own word, links from analyses older than 30 days hidden and counted), the N (14, "show more" up to 40) most-linked stories among those passing the Stories filters as nodes in crisis-type lanes, x = peak coverage day (archive day with most entries), dashed edges (thicker = stronger), StoryPeek on hover/focus, plus the list twin "Strongest links" (default first on phones) and a computed footnote.
+| `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar | `features/threads/components/WeeklyMap.jsx` |
+| `ThreadPage.jsx` | 3-col EditorialShell thread deep-dive: StatusStrip, 4-stat row, and a **single** content tab system Timeline/Actors/Sources/**Economy** (economic disruption via `useEconomicImpact` + `MechanismCard`). The right "Arc Intelligence" rail is a **stacked, non-tabbed synthesis column** — now led by the Phase 4 **`ThreadForecast`** "Living forecast" board (`useThreadForecast`), then Summary → What's Next → Trace → Watch → Live Web Evidence. De-tabbed + de-duplicated 2026-06-29; forecast board added 2026-07-06. **Read in full "Why" (P8, 2026-10-02):** after the FED INTO / fed-in sections: "Shares actors with" (`SharedActorsList`, FACT badge; from `web_index.shared[]` via `deriveFromIndex().shared`, merged per other story, weight >= 2 shown, weight 1 behind a toggle), the provenance line "From analyses of <countries>, as of <date>" and "N older links hidden" (`hiddenOlder`, only when N > 0); related-story rows are `StoryLink`s | `features/threads/ThreadPage.jsx` |
+| `ThreadForecast.jsx` | Phase 4 "Living forecast" board (in ThreadPage's rail): the thread's newest v1 prediction snapshot as scenarios + a dated-trigger checklist that renders pending now and strikes (`not_fired`) / checks (`fired`) as verdicts land. Presentational (data from `useThreadForecast`); honest-empty when no v1 forecast | `features/threads/components/ThreadForecast.jsx` |
+| `CountryListPage.jsx` | Index of all countries with intelligence. Briefings grid is **risk-tier banded** (2026-07-03): High = full `CountryCard`s · Elevated/Moderate/Low = condensed `CountryRow`s (density decay; risk is the axis since countries are persistent). Banding shows on the default **risk sort**; other sorts (Coverage/Disruption/A→Z) render a flat grid. Requests briefings for the top **24** countries (was 10) to cover the backend's `MAX_COUNTRIES=20` — a single batched call; countries without backend intel fall to the correctly-labeled "Others" list. Overview map, left rail (search/sort/region), right rail (Highest Risk + Most Covered leaderboards) | `features/countries/CountryListPage.jsx` |
+| `CountryPage.jsx` | Map-first country page: full-bleed map hero, then a 3-col EditorialShell — center tabs **Situation / Story Arcs / Coverage** (the country-scoped **Causal Web** tab was removed 2026-09-25: the web is story-based now, see `redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md`; a country systems view becomes an on-demand Analysis Studio lens), right rail with risk/actors/watch/economic/macro/FX modules. **Phone (P8, 2026-10-02):** READ / MAP tabs (`PhoneTabs`): READ = header bar + card + the rest, MAP = the map hero; `WeeklyMap` is mounted only while MAP is open | `features/countries/CountryPage.jsx` |
+| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList`. **Honest date (2026-06-10):** shows a relative pill ("Yesterday" / "N days ago") when the served brief is older than the requested date, and a fallback notice ("Today's brief publishes at the end of the day — showing &lt;date&gt;") when you open `/daily` before today's brief is generated (the daily brief is written once/day at 23:00 JST = **14:00 UTC** by `newsPostDevTo`, so until ~14:00 UTC `/daily` serves the prior day). | `features/daily/DailyPage.jsx` |
+| `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle | `features/threads/components/StoryEntryCard.jsx` |
+| `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) | `features/threads/components/ThreadIntelligence.jsx` |
+| `BackgroundTimeline.jsx` | Historical timeline display for country/thread context | `features/countries/components/BackgroundTimeline.jsx` |
+| `SaveButton.jsx` | Heart bookmark button — saves threads/countries/dailies to account | `features/account/components/SaveButton.jsx` |
+| `SignIn.jsx` | Firebase sign-in form — magic link + Google + **guest/anonymous** (`signInAsGuest`, "Continue as guest") | `features/account/SignIn.jsx` |
+| `Account.jsx` | User account tabs: saved items + profile | `features/account/Account.jsx` |
+| `StatusGlyph.jsx`, `TierChip.jsx`, `StoryRow.jsx`, `SectionHeader.jsx`, `FilterGroup.jsx` (+ `blocks.css`, `TierChip.css`; vocabulary in `shared/lib/statusGlyph.js` and `shared/lib/age.js`) | **Shared building blocks (P2, 2026-10-01), role tokens only, 44px targets, focus-visible ring.** `StatusGlyph` ▲ escalating / ● new / ◆ steady / ▼ cooling (`features/map/lib/legend.js` re-exports `statusGlyph`/`STATUS_GLYPHS` from shared). `TierChip` = tier word + ring weight (LOW hairline, MODERATE, ELEVATED doubled ring, HIGH heaviest + outer ring), the number only when the data has one, dashed "Not scored" when no tier; no fills (guarded). `StoryRow` = crisis-hue bar, TierChip (or a `chip` node), StatusGlyph, title, place, last-change age (amber past 7 days), the whole row ONE `<a>`/router `Link`/`<button>`, StoryPeek via the `usePeek` result; used by the map's `HudIntelFeed`. `SectionHeader` (mono uppercase label, hint, count, actions slot); `FilterGroup` (fieldset of checkboxes/radios, 44px rows). | `shared/ui/` |
+| `CategoryTag.jsx` (+ rules in `blocks.css`), `ShareButtons.css`, `features/countries/CountryCoverage.css` | **P3a additions (2026-10-01).** `CategoryTag` = a topic as a neutral outlined mono tag with a category dot (never a pastel fill). `ShareButtons.css` styles the share + copy-briefing buttons (moved out of `threads/WeeklyPage.css`). `CountryCoverage.css` holds the country page's coverage list / background timeline / accordion rules (`.cp-*`, `.bgt-*`, moved out of `WeeklyPage.css`). Countries list, country page, `/daily`, `/weekly-brief`, `/track-record` read role tokens only, risk = `TierChip`, section labels = `SectionHeader`; `quality/verify_pages.sh` guards each page CSS against light background literals. | `shared/ui/`, `features/countries/` |
+| `boot/LoadTopBar.jsx` | Thin token-coloured, indeterminate top bar shown while `gp-loading-start`/`-end` events are in flight (replaces `app/layout/LoadingBar`, deleted). `IntelligenceLoader` is deleted too: every page loader is `BootLoader variant="inline"` with an honest `text` ("Loading stories"), `className="gp-boot--tight"` inside a card or map slot. | `shared/ui/boot/` |
+| `BootLoader.jsx` (+ `BootLoader.css`, `staticBoot.js`, `index.js`) | **Shared boot / loading screen ("Option B", 2026-10-01):** wireframe globe + rotating radar sweep + optional SENSOR STATUS rows (`wait` CONNECTING / `ok` ✓ READY / `fail` NOT LOADED). Props: `sensors`, `variant` (`full` fixed cover / `inline` in flow), `ready`, `onDone`, `onRetry`, `onContinue`, `slowAfterMs` (8 s note "Still connecting: slow network", counted from page load when the visitor watched the pre-JS boot). **Sensor state comes only from props (real data arrival) — no timer ticks, no percentages**; failures are worded from which sensors failed + a real RETRY (≥44px) and reported to the error sink by the caller. Reduced motion: no sweep, no blink, no crossfade wait. Dark on every page since 2026-10-01 (the `tone` prop is ignored). Colours: site role tokens only (no new theme; `quality/boot_tokens_guard.mjs` fails if the fallbacks drift from `tokens.css`). Used by the App `Suspense` fallback (`RouteFallback`: full dark + waiting sensors on `/`, compact dark mark + sweep elsewhere), the map home and the globe chunk fallback. **Pre-JS copy:** `index.html` inlines the same CSS (minified; a test keeps it equal to `BootLoader.css`) and a tiny script builds `#gp-boot` (full + sensor list on `/`, compact elsewhere, both dark; built by script so no-JS readers/crawlers only see `<noscript>`); the sweep phase is `performance.now() % 2600` in both copies so the handoff has no jump; `removeStaticBoot()` runs on the first React commit (App layout effect + every BootLoader mount); a capture-phase window `error` listener shows an honest "The page didn't load" + RETRY if the app script itself fails to load. The Worker's bot pre-render serves its own HTML and is unaffected. | `shared/ui/boot/` |
+| `TrackRecordPage.jsx` | **Phone tabs (P8, 2026-10-02):** READ (status, accuracy, draw, records, method) / MAP (the forecast board; `ForecastBoard` is `React.lazy`, so its map code loads only when MAP is opened) / LOG (settling log + ledger); desktop shows every section in one scroll. `/track-record` — the **"Accountability" hub** (rebuilt Phase 3, 2026-07-05): era-cut forecast scorecard (stat cards, Brier + calibration + recently-resolved once verdicts land; honest empty state until then) + **corrections ledger** (`useCorrectionsFeed`; each note links to its source country/thread page) + published methodology. Trust-chain links added 2026-07-06: forecast-record foot → `/weekly` live boards; inbound links from `ThreadForecast` + `CountryWhatChanged` + the Home masthead/trust strip. **Corrections ledger now also renders `FollowButton` on country-scope rows** (2026-07-08, `FOLLOW_SURFACING_PLAN.md`, `b455ee1`) — sibling of the name link; `FollowButton` was CountryPage-only until now. See [Prediction calibration](#prediction-calibration-track-record) | `features/track-record/TrackRecordPage.jsx` |
+| `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (registered-only; see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** / **Free-form** / **Deep research (web)** → cited deep-dive from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` (deep mode also web-searches). Output runs through the validator + source-robustness banner. Runs on the user's own key (browser-only). **07-09:** accepts `?stories=<id>[,…]` preselect (seeds once on topics-load; unknown ids dropped) — deep-linked from Home per-story "Analyze →", ThreadPage "Analyze this arc", `/economy`. **07-10:** output is ICD-203-structured (Key Judgments + yardstick + confidence axis + indicators table); the trailing `gp-struct` JSON block is extracted by `utils/analysisStruct.js` (validator/Markdown get stripped prose) and rendered as `atoms/AnalysisVisuals.jsx` **ScenarioBars/IndicatorMatrix/RippleTable** (struct null → prose-only honest fallback). **07-10 (later, `4193610`):** prompt fix raised DeepSeek's `gp-struct` emission 1/4→8/8 so the visuals render reliably; **Alibaba Qwen** added to the provider list with a workspace base-URL override for `sk-ws-` keys. | `features/analysis-studio/AnalysisStudio.jsx` |
+| `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek `v4-flash`/`-pro` · **Perplexity** · Gemini · OpenRouter · Anthropic; labels which can web-search). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. | `features/analysis-studio/components/ProviderModal.jsx` |
+| `MembershipPage.jsx` | `/membership` — Polar checkout ($15/mo · $150/yr = run Analysis Studio on our compute; reading stays free). Self-states availability; "Sign in to subscribe" passes `?returnTo=/membership`. Added 2026-06-22 (footer-linked, not in top nav). | `features/account/MembershipPage.jsx` |
+| ~~`SystemsGraph.jsx`~~ | **Removed 2026-09-25** with the country page's Causal Web tab. The `systems_analysis` data (`SYSTEMS#<place>`) is kept: it is the source of the story links planned in `STORY_WEB_RETHINK_PLAN.md`, and still feeds `/spider-demo` until that retires. | — |
+| `BreakingFeedPage.jsx` | `/breaking` (2026-06-26) — the breaking-alert feed. Reuses `useNotifications`; groups confirmed alerts by Today/Yesterday/date; each card = BREAKING chip · category·regions · market pill · `SourceRobustness`. Honest empty state ("Quiet is the normal state"). | `features/breaking/BreakingFeedPage.jsx` |
+| `BreakingDetailPage.jsx` | `/breaking/:id` (2026-06-26) — native breaking-alert page via `useBreakingAlert`. Renders the structured story (What happened / How we got here [normalized TRACE_CAUSE] / Our read / Market impact / Sources); region chips → country/map; **story-arc link only when `hasArc`** (a real multi-entry thread). Falls back to the saved email text for legacy records. Honest not-found when the id isn't a confirmed alert. | `features/breaking/BreakingDetailPage.jsx` |
+| `atoms/BreakingStrip.jsx` | Slim pulsing "BREAKING" entry strip atop Home + Map (2026-06-26; today's-breaking enhancement 2026-07-04). Renders **only** when there's a confirmed alert <24h old — else nothing (no stale/fabricated banner). Surfaces the latest fresh alert's headline **+ a "+N more today" pill** counting the other <24h alerts; links to `/breaking` (full feed) when there's more than one, else deep-links to the single `/breaking/:id`. | `features/breaking/components/BreakingStrip.jsx` |
+| `atoms/SourceRobustness.jsx` | L1 source-robustness pill (P0, 2026-06-22) — amber "⚠ Single-source" vs green "✓ Corroborated · N outlets · M regions", from existing `outletCount`/`sourceCount`/`countries`. **Renders null on no data** (never a default "corroborated" badge). On Home topic-card meta + ThreadPage header kicker. The "faithfulness ≠ truth" principle made user-facing outside the BYOK Studio. | `shared/ui/SourceRobustness.jsx` |
+
+### Key Hooks
+
+28 hook files, now distributed across `src/features/<feature>/hooks/` and `src/shared/{hooks,data}/` per the P0–P11 feature-folder restructure — see the Path column below (count as of the 2026-09-24 legacy-map removal, following the Tier B1 dead-code cleanup — see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1 and §4 D3):
+
+| Hook | Purpose | Path |
+|------|---------|------|
+| `useGeminiTopics()` | Fetch daily topics; 1hr LocalStorage cache + 10min background poll | `shared/data/useGeminiTopics.js` |
+| `useWeeklyArchive()` | Fetch `archive_range` (30 days, fully public in early access); 30min cache | `features/threads/hooks/useWeeklyArchive.js` |
+| `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache; no auth required | `features/threads/hooks/useThreadAnalyses.js` |
+| `useNarrativeThread(threadId)` | Fetch all entries for a single thread across days (`narrative_thread`) — powers `ThreadPage` | `features/threads/hooks/useNarrativeThread.js` |
+| `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache; no auth required | `features/countries/hooks/useCountryIntelligence.js` |
+| `useCountryHistory(countryName)` | Fetch historical archive entries for a country | `features/countries/hooks/useCountryHistory.js` |
+| `useSystemsAnalysis(countryName)` | Fetch causal-graph (nodes/edges) for a country | `features/countries/hooks/useSystemsAnalysis.js` |
+| `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date; falls back up to 7 days back and exposes `servedDateKey` (the date that actually returned data) so the UI can label "Yesterday"/"N days ago" honestly | `features/daily/hooks/useDailyBrief.js` |
+| `useEconomicImpact(threadId)` | Fetch per-thread economic disruption analysis | `features/economy/hooks/useEconomicImpact.js` |
+| `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`, Home topic badges, DailyPage footprint, CountryPage, CountryListPage) | `features/economy/hooks/useDisruptionsList.js` |
+| `useMarketsHistory(symbol)` | Fetch per-instrument price history `[{date,value}]` for `/economy` sparklines; session-cached | `features/economy/hooks/useMarketsHistory.js` |
+| `useTopMovers()` | Fetch highest-magnitude economic-impact threads | `features/economy/hooks/useTopMovers.js` |
+| `useTrackRecord()` | Fetch forecast calibration scoreboard (`prediction_track_record`, v1 era-cut); 30min cache; powers `/track-record` | `features/track-record/hooks/useTrackRecord.js` |
+| `useCorrectionsFeed(limit)` | Fetch the site-wide corrections ledger (`corrections_feed` — recent `DRIFT#` notes across all countries+threads); 30min localStorage cache (`gp_corrections_feed`); powers the `/track-record` Accountability hub | `features/track-record/hooks/useCorrectionsFeed.js` |
+| `useThreadForecast(topicIds)` | Fetch a thread's newest v1 prediction snapshot (`prediction_snapshot`) for the "Living forecast" board; honest-empty (`null`) when none; powers `ThreadForecast` on ThreadPage | `features/threads/hooks/useThreadForecast.js` |
+| `useStoryQuestion(threadId)` | Briefings (Batch 4 D): the earliest open question with its own probability for a top story, via `prediction_snapshot({threadId})`; module-cached, fails empty. |
+| `useWebIndex()` / `useStoryLinks(threadId, regions)` | Batch 4 F: the whole `web_index` in ONE public read (module-cached 30 min) shared by story mode, the long story page and the home map; `useStoryLinks` derives that story's links (`lib/webIndexLinks.js`), its state and the honest empty-state wording (`lib/linkStates.js`, shown by `StoryLinkNote`); falls back to the old per-region reads only if the `web_index` request itself fails. `deriveFromIndex` also returns `shared` (the `web_index.shared[]` rows for the story, merged per other story), `hiddenOlder` (links dropped by the 30-day rule) and `provenance` (analysis countries + newest date) for the Read-in-full Why section (P8). Map lines: `features/map/lib/storyLinkArcs.js` (strong + medium only, approx. places) drawn by `SituationMap3D` (dashed short paths) and `RadarMap` (SVG dashes) via a `linkArcs` prop. |
+| `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot | `features/economy/hooks/useMarketsGlobal.js` |
+| `useMarketsCountry(countryName)` | Fetch country macro snapshot | `features/economy/hooks/useMarketsCountry.js` |
+| `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) | `features/account/hooks/useSavedItems.js` |
+| `usePreferences()` | Read/write notification opt-ins via newsRecommend `get/set_prefs` (JWT); optimistic save, revert-on-error; powers Account → Notifications tab | `features/account/hooks/usePreferences.js` |
+| `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell`, the `/breaking` feed, and the `BreakingStrip` | `features/breaking/hooks/useNotifications.js` |
+| `useBreakingAlert(id)` | Fetch a single breaking alert (newsRecommend `get_alert`); powers `/breaking/:id`. Null (→ honest not-found) when the id isn't a confirmed alert | `features/breaking/hooks/useBreakingAlert.js` |
+| `useWeeklyBrief()` | Fetch the latest published weekly brief (`weekly_brief`); 30-min cache; powers `/weekly-brief` (rendered via the dependency-free `Markdown.jsx`) | `features/weekly-brief/hooks/useWeeklyBrief.js` |
+| `useWeeklyMarkets()` | Fetch the latest published weekly markets report (`weekly_markets`); 30-min cache; powers `/economy`'s "This week" mode (`WeeklyMarketsView`). Null (→ honest empty state) until one is published | `features/economy/hooks/useWeeklyMarkets.js` |
+| `useMembership()` | Fetch the signed-in user's membership + `creditBalance` via `newsPolarBilling` `get_membership` (#28); powers the header credits pill, Account → Membership tab, and the `/analyze` server-run gate. Exposes `available` (false until billing is wired) | `features/account/hooks/useMembership.js` |
+| `useTodayArchive()` | Fetch today's archive entries | `features/home/hooks/useTodayArchive.js` |
+| `useArticles(topicId)` | Fetch article sources for a topic | *(not found in src/ — stale doc entry, pre-existing)* |
+| `useIsMobile(breakpoint)` | Responsive breakpoint (default 600px) | `shared/hooks/useIsMobile.js` |
+
+### Onboarding (guided tours): REMOVED in P6 (2026-10-01, built not deployed)
+
+The driver.js guided tours (`src/app/onboarding/`: the welcome popover, the site walk, the `/economy` page tour, the "Walk me through today" fly-through on the map and its tour bar) are gone, per REDESIGN_MASTER_PLAN §3.2 H1 (a one-line orientation banner replaces the tour) and §3.1 P1 (no popovers on phone). The `driver.js` dependency was dropped and nothing reads the `gp_tour_v1_*` localStorage keys any more. What replaced them: the map's slim dismissible orientation banner (`OrientationBanner`, key `gp_map_orientation_dismissed_v1`), and the nav "?" control, a plain link to `/?about=1` that opens the map's About drawer on desktop or scrolls to the About section under the tabs on a phone (from any other page it goes to the map first). `verify_pages.sh` fails if an onboarding import, `driver.js`, "Walk me through" or a tour storage key comes back.
+
+> Note: there is **no** `usePairIntelligence` hook — single-pair data is fetched via `restProxy.fetchPairAnalysis(slug)` directly.
+
+### Analysis Studio (BYOK self-serve analysis)
+
+`/analyze` (`AnalysisStudio.jsx`) — SHIPPED 2026-06-10 (commit `c1ef5f6`). The first "analyze it yourself" surface: a reader picks ≤4 real stories and gets a **cited deep-dive** built from our own intelligence. Full spec: `ANALYSIS_STUDIO_PLAN.md`. This is the feature **Polar membership monetizes** (`POLAR_BILLING_PLAN.md`): as of 2026-06-22 a **member runs it on our compute** via the `newsAnalyze` Lambda (our DeepSeek key, member-gated, `ANALYZE_DAILY_CAP=50`) instead of bringing their own — the BYOK path below stays free/public; see [[project-analysis-studio]], [[project-billing-deprecated]].
+
+- **Three input modes** (2026-06-11): **Guided** = 5 fixed lenses (Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare); **Free-form** = ask anything; **Deep research 🔎web** = the model does REAL web search (Perplexity sonar native, or Anthropic's `web_search_20250305` tool) seeded by the selected stories → What happened / Why / What next / Who's affected. Deep mode is **gated to search-capable providers** (disabled with a reason for DeepSeek/OpenAI/Gemini; `runChat` hard-refuses faking it). Pure prompt layer = `utils/analysisPrompt.js`; `utils/analysis.js` keeps the cited-context fetch + re-exports. Prompts upgraded to analyst-grade (Bottom-line thesis, structural drivers, scenario forks-on-distinct-outcomes + partition, economic direction→magnitude→mechanism) with a hard anti-fabrication counterweight.
+- **Verify system (every run) + source-truth (2026-06-11..15):** `utils/analysisValidator.js` checks the output for `phantom_citation` (error), `invented_figure`, `invented_date`, `no_citations`, `thin_input` → a pass/verify/flag banner. `utils/sourceRobustness.js` adds a **"Source basis"** line (single-source ⇒ "unverified, corroborate"). Quality has no ground truth → it's a **check, not a benchmark** (the auditor/scorers live offline in `quality/analysis/`: `run.mjs`, `judge.mjs`, `check.mjs`, `source_check.mjs`; the daily `newsSourceAudit` #24 is the automated guard). See `ANALYSIS_STUDIO_TESTING_PLAN.md` + `ANALYSIS_SOURCE_TRUTH_PLAN.md`.
+- **BYOK, key never leaves the browser.** `ProviderModal.jsx` chooses provider + model + key; `utils/byok.js` persists to `localStorage` only. `services/llm.js` calls the provider **directly from the browser** — one OpenAI-compatible path (OpenAI / DeepSeek / **Perplexity** / Gemini / OpenRouter / **Alibaba Qwen**) + an Anthropic adapter. DeepSeek shows explicit **V4 model versions** (`deepseek-v4-flash`/`-pro`; legacy `deepseek-chat` retires 2026-07-24) and sends `thinking:{type:'disabled'}` (V4 defaults to thinking, which broke output). **Qwen (added 2026-07-10)** — flagship `qwen3.7-max` (+`qwen3-max`/`qwen3.7-plus`), `enable_thinking:false` (same non-streaming reason as DeepSeek V4); its keyHint/comment flag that Alibaba **workspace-scoped `sk-ws-…` keys** 401 the default `dashscope-intl` host and need the WorkspaceId-specific `…maas.aliyuncs.com` host → handled by `allowBaseUrlOverride` + the optional "Endpoint URL" field in `ProviderModal` (persisted in `byok.js`, applied via `runChat({baseUrl})`→`baseUrl||provider.baseUrl`; every other provider unchanged when blank). **Registered-only:** `/analyze` requires a signed-in (non-anonymous) account — a blocking "Sign in to analyze" gate otherwise; key management (change/remove) lives on the Account "Analysis key" tab.
+- **Professional structure (2026-07-10, `ANALYSIS_PRO_STRUCTURE_PLAN.md`):** prompts upgraded to ICD-203/desk-note packaging — Key Judgments box (BLUF, each judgment = yardstick probability term + separate justified confidence), the ICD-203 probability yardstick verbatim, an `| Indicator to watch | Confirms | Kills |` table on the scenario lens, and a `gp-struct` machine-readable block → ScenarioBars/IndicatorMatrix/RippleTable visuals (a chart can only show numbers the prose already states; every rule carries an omit-when-unsupported escape hatch — the 06-13 structure-pressure-induces-fabrication lesson). Server prompt (`newsAnalyze`) synced verbatim; guided maxTokens 1600→2400.
+- **Surfacing (2026-07-09, `ANALYZE_SURFACING_PLAN.md`):** was ONE nav link → now Home per-story "Analyze →" pill + hero line, ThreadPage "Analyze this arc →", `/economy` cross-link, all deep-linking via `?stories=` preselect.
+- **Status:** DeepSeek browser-CORS verified for both prod origins; live BYOK call verified end-to-end. Deep-research (Perplexity/Anthropic) plumbing not yet live-tested (no key). The **member "our-compute" path is live** (`newsAnalyze`, `ANALYZE_DAILY_CAP=50`, deployed 2026-06-22) — BYOK remains uncapped/free. (Footer shows the deployed build version `v<sha>·<date>` for deploy confirmation.)
+
+### Service Layer
+
+Two modules: `restProxy.js` (the actual transport) and `shared/data/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). `useGeminiTopics`, `useTodayArchive`, and `Home` call through `contentService`; everything else calls `restProxy` directly. (`useSummary`, `usePrediction`, `useTraceCause` and `MapSidePanel.jsx` — formerly also `contentService` callers — were removed 2026-09-24 as dead code; see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1.)
+
+### Design Tokens (colors)
+
+`src/shared/styles/tokens.js` (added 2026-06-24, P2a) is the **single source of truth for risk + category colors** — import from here, never redefine. It exports `RISK_COLORS` (pastel `{bg,color}` badge), `RISK_SOLID` (editorial hex, matches the `--risk-*` CSS vars), `RISK_RGB` (canvas arrays), `riskScoreToVar(score)` (score→`--risk-*`), `riskTierToVar(tier)` (tier→`--risk-*`), `CATEGORY_BADGE_COLORS` (`{bg,color}` chip), and ~~`CATEGORY_DOT`~~ (the 12-colour topic palette, **retired 2026-10-02**: topic dots are the crisis hue only, `crisisDotVar(category)` in `shared/lib/crisisHue.js`, no dot for unmapped topics). It consolidated four divergent risk representations + three category maps previously copy-pasted across ~11 components.
+
+**Risk tier SEMANTICS live in `src/shared/lib/riskTiers.js`** (added 2026-07-03, `RISK_TIERS_PLAN.md`) — the single source of truth for score→tier and level→tier, separate from `tokens.js` (which is paint). Exports `tierFromScore(score)`, `tierFromLevel(str)`, `TIER_ORDER`, `tierLabel(tier)` on the **canonical 25/50/75 bands** (low 0-24 · moderate 25-49 · elevated 50-74 · high 75-100, mirroring the `newsThreadAnalysis` prompt calibration). This collapsed **four** divergent band definitions (tokens 75/50 w/ no moderate; `RiskScoreBadge` 70/40; a moderate→elevated string alias; a `WeeklyPage`/CountryPage arc-card 50/25) onto one, and fixed the moderate tier (previously always rendered as orange "elevated"; now amber `--risk-m`). **Display rule: state = tier · change = audit numbers** — current-state displays (ThreadPage/CountryPage/SituationHome header+stat+pill+strip) lead with the **tier word** + demote the raw score to fine print; change/audit contexts (the "What changed" band, correction chain, `RiskDeltaPill`, drift gate) stay numeric. (The risk **layout shells** — `EditorialShell` vs Economy's resizable `ep-shell` vs the Map's collapsible `mv2-body` — were intentionally **not** merged; they are behaviorally distinct, not density variants. See `PRODUCT_IMPROVEMENT_PLAN.md` P2.)
+
+> **BYOK exception (Analysis Studio):** `/analyze` does **not** route its LLM calls through `restProxy`. `services/llm.js` calls the user's chosen provider directly from the browser with the user's own key (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)); only the *story records* it analyzes come from `restProxy`'s public actions.
+
+```
+restProxy.js
+  configureProxy() / setAuthProvider(getIdToken)   ← wired by AuthBridge on mount
+  proxyAction(action, payload)            ← no auth (public actions)
+    └─ fetchTopicsCache()
+    └─ fetchSummaryCache(topicId)
+    └─ fetchPredictionCache(topicId)
+    └─ fetchTraceCauseCache(topicId)
+    └─ fetchResearchBriefingCache(topicId)
+    └─ fetchTodayArchive()
+    └─ fetchArchiveRange(days)            ← public in early access
+    └─ fetchNarrativeThread(threadId)     ← public in early access
+    └─ fetchThreadAnalyses(threadIds)     ← public in early access
+    └─ fetchCountryIntelligence(names)    ← public in early access
+    └─ fetchCountryHistory(countryName)   ← public in early access
+    └─ fetchSystemsAnalysis(countryName)  ← public in early access
+    └─ fetchDailyBrief(dateKey)           ← public in early access
+    └─ fetchPairAnalysis(slug)
+    └─ fetchPairAnalysesList()
+    └─ fetchEconomicImpact(threadId)      ← economic_impact
+    └─ fetchDisruptionsList()             ← economic_impact_list
+    └─ fetchTopMovers()                   ← economic_top_movers
+    └─ fetchMarketsGlobal()
+    └─ fetchMarketsCountry(countryName)
+    └─ fetchMarketsHistory(key)
+    └─ geocodeProxy(address)
+    └─ fetchCountryPreview(countryName)   ← SEO public preview
+    └─ fetchThreadPreview(threadId)       ← SEO public preview
+    └─ fetchWeeklyBrief()                 ← weekly_brief (latest published)
+    └─ fetchWeeklyMarkets()               ← weekly_markets (latest published)
+
+  proxyActionWithAuth(action, payload)    ← attaches Bearer token if signed in; backend no longer requires it
+    └─ (used internally by the archive/thread/country/daily helpers above; the billing
+        helpers fetchUserProfile/fetchPortalSession were removed in the 2026-05-26 cleanup)
+
+  savedItemsProxy (window.SAVED_ITEMS_ENDPOINT — separate Function URL)
+    └─ saveItem(itemType, itemId, metadata)
+    └─ unsaveItem(itemType, itemId)
+    └─ fetchSavedItems(itemType)
+```
+
+### Caching Strategy
+
+| Data | LocalStorage key | TTL |
+|------|-----------------|-----|
+| Daily topics | `gemini_topics_cache_v2` | 1 hour |
+| Weekly archive | `gp_weekly_archive_v1` | 30 min |
+| Thread analyses | `gp_thread_analyses_v2` | 30 min |
+| Country intelligence | `gp_country_intel_v1` | 30 min |
+
+> The cache keys are plain (not user-scoped) since all content is public in early-access mode.
+
+### Narrative Threading
+
+Stories are linked across days via `threadId`:
+1. `continues_topic` field → inherit parent's `threadId`
+2. Jaccard similarity (keywords + regions + category) against 7-day archive, threshold 0.4 → match existing thread
+3. Neither → generate new `thread-{slug}-{hash}`
+
+`threadId` is assigned by `NewsProjectInvokeAgentLambda` from the **raw** staging topics and stamped onto BOTH the served `latest` topics and the archive entries (fixed 2026-06-10 — see Lambda #2). Archive entries also carry `search_keywords` so the next day's Jaccard step has real keywords to match (both fields were previously dropped by `buildTopic()`, leaving `latest` link-less and Jaccard threading blind). The frontend relies on `topic.threadId` for the lede headline link and Home's "Story arc →" / "Economic impact →" badges, so this field must be present on `latest`.
+
+Weekly pages group topics by `threadId` to show how a story evolves across dates and geographies. `newsThreadAnalysis` runs daily to generate narrative-level AI analysis for top threads.
+
+---
+
+## Blog
+
+Static HTML pages currently served from `docs/blog/` on GitHub Pages — no CMS, no app build step. The hosting migration package preserves all eight tracked blog HTML pages; the current front Worker can otherwise intercept extensionless `/blog/*` paths with the SPA shell, so candidate/production blog passthrough has a separate route and verification gate.
+
+**URL:** `globalperspective.net/blog/`
+
+**Structure:**
+```
+docs/
+  blog/
+    index.html                              ← blog index (list of all posts)
+    thread-and-country-intelligence/
+      index.html                            ← post: Thread + Country Intelligence launch
+```
+
+**To add a new post:**
+1. Create `docs/blog/<slug>/index.html` — copy the existing post as a template
+2. Add an entry to `docs/blog/index.html` (the `<ul class="post-list">` section)
+3. Commit and push — no build needed (static HTML, not part of the React app)
+
+**Notes:**
+- Blog uses its own standalone HTML/CSS — separate from the React app
+- Logo image: `/logo_no_grey_bg.png` (served from `docs/` root)
+- Internal app links use full URLs (`https://globalperspective.net/...`), not React Router `<Link>`
+- Blog link is in the app footer (Layout.jsx) as a plain `<a href="/blog/">`
+- Currently published via Claude — no self-serve CMS
+
+---
+
+## Deployment Workflow
+
+Frontend: `./deploy.sh` (repo root) verifies, builds, and packages locally by default; explicit
+targets release to the candidate Worker, production Worker, or preserved Pages flow. Cloudflare
+uploads and Pages releases require current-message authorization. See
+`project-docs/ops/DEPLOYMENT_NOTES.md`, the active migration task, and repo `CLAUDE.md`. Backend:
+Lambdas deploy manually via the AWS CLI (no build step); several deployed zips differ from the repo
+source — diff before editing.
+
+---
+
+## Key File Locations
+
+| Purpose | Path |
+|---------|------|
+| This architecture doc | `project-docs/architecture/ARCHITECTURE.md` (moved from repo root 2026-09-08) |
+| Claude instructions | `CLAUDE.md` |
+| Change log | `CHANGES.md` |
+| Lambda: news fetch + clustering | `amplify/backend/function/newsInvokeGemini/src/index.js` |
+| Lambda: AI generation per topic | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` |
+| Lambda: thread-level analysis | `amplify/backend/function/newsThreadAnalysis/src/index.js` |
+| Lambda: country-level intelligence | `amplify/backend/function/newsCountryIntelligence/src/index.js` |
+| Lambda: causal graph analysis | `amplify/backend/function/newsSystemsAnalysis/src/index.js` |
+| Lambda: economic disruption | `amplify/backend/function/newsEconomicImpact/src/index.js` |
+| Lambda: economic quality judge | `amplify/backend/function/newsEconomicQuality/src/index.js` |
+| Lambda: markets data ingest | `amplify/backend/function/newsMarketsData/src/index.js` |
+| Lambda: save/bookmark | `amplify/backend/function/newsSavedItems/src/index.js` |
+| Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
+| Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
+| Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
+| Frontend source | `global-perspectives-starter/frontend/src/` |
+| Production build | `docs/` |
+| Runtime config | `docs/config.js` (sets `window.FIREBASE_CONFIG`, `window.SENSITIVE_PROXY_ENDPOINT`, Google Maps key) |
+| Auth context | `global-perspectives-starter/frontend/src/shared/contexts/AuthContext.jsx` |
+| REST proxy service | `global-perspectives-starter/frontend/src/shared/api/restProxy.js` |
+
+---
+
+## Common Mistakes to Avoid
+
+1. **Pushing frontend source without building** — changes won't appear in production
+2. **Overwriting `docs/config.js`** — it sets the Firebase config and API Gateway endpoint at runtime
+3. **Inferring the AI provider from env var names** — `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` are legacy names that hold **DeepSeek** (or **Gemini**) values in production. Confirm with `aws lambda get-function-configuration`.
+4. **Inferring the AI provider from env var names** — see #3 (kept here as a reminder). The old "ignore these outdated docs" list (`HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md`) was removed — none of those files exist in the repo anymore
+5. **Using `x-api-key` for auth** — gated endpoints now use `Authorization: Bearer <firebase-id-token>`, not static API keys
+6. **Assuming archive keys are `YYYY-MM-DD`** — the actual DynamoDB key format is `archive#YYYY-MM-DD`
+7. **Double CORS on Lambda Function URLs** — **only `newsPolarBilling` and `newsAnalyze` own CORS in code** (`corsHeaders` + an OPTIONS 204 handler); their Function-URL CORS config **must stay empty**, or AWS *and* the code each add `Access-Control-Allow-Origin` → duplicate header → the browser rejects the response with "**Failed to fetch**" (server-side `curl` doesn't enforce CORS, so it passes tests and only breaks in a real browser; bit us at the Polar checkout 2026-06-30). **Corrected 2026-07-25 (staleness audit):** `newsSavedItems` and `newsRecommend` do the **opposite** — their code emits **no** ACAO and they rely on a **populated** Function-URL CORS config. Do **not** clear their Function-URL CORS (that would remove all CORS and break them in-browser). Rule of thumb before touching any function's Function-URL CORS: grep the source for `Access-Control-Allow-Origin` first — code emits it ⇒ Function-URL CORS empty; code doesn't ⇒ Function-URL CORS populated.

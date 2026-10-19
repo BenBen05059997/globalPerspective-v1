@@ -236,37 +236,6 @@
 }
 .srb-ok:hover { background: var(--panel-3); }
 
-/* StoryPeek — shared hover/focus preview for a story mention (M5a). Reads the one token set
-   (dark panel on every page). Positioned by usePeek() via inline `style` (position: fixed). */
-.gp-story-peek {
-  z-index: 60;
-  background: var(--panel-2);
-  color: var(--text-body);
-  border: 1px solid var(--hairline-strong);
-  border-radius: 9px;
-  padding: 10px 12px;
-  font-size: 12px;
-  line-height: 1.4;
-  box-shadow: var(--shadow-lg);
-  pointer-events: none;
-}
-.gp-story-peek-cat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono, monospace);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-.gp-story-peek-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.gp-story-peek-title { font-weight: 600; color: var(--text-head); margin-bottom: 4px; }
-.gp-story-peek-meta { display: flex; gap: 10px; color: var(--text-body); margin-bottom: 2px; }
-.gp-story-peek-updated { color: var(--text-dim); font-size: 11px; }
-.gp-story-peek-hint { margin-top: 6px; color: var(--text-dim); font-style: italic; font-size: 11px; }
-
 /* H1 (Batch 3): StatusStrip with 3+ stats plus "updated Xh ago" forced the whole page wider than a 390px
    phone (e.g. /weekly/country/United States at 509px). A contained horizontal scroll keeps the one-line
    look without widening the document (same technique ThreadPage.css already applied for its own page). */

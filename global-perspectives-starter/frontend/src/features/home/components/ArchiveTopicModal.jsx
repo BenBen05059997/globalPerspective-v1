@@ -7,6 +7,8 @@ import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import '@/features/home/components/TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {
@@ -48,12 +50,16 @@ function ArchiveTopicModal({ entry, onClose }) {
       <div className="archive-modal" role="dialog" aria-modal="true" aria-label={entry.title}>
         <div className="archive-modal-header">
           <div>
-            <h3 className="archive-modal-title">{entry.title}</h3>
+            <h3 className="archive-modal-title">
+              {entry.threadId ? <StoryLink threadId={entry.threadId} topic={entry}>{entry.title}</StoryLink> : entry.title}
+            </h3>
             <div className="archive-modal-meta">
               <CategoryTag category={entry.category} />
               {entry.regions?.length > 0 && (
                 <span className="archive-modal-regions">
-                  {entry.regions.join(', ')}
+                  {entry.regions.map((r, i) => (
+                    <span key={r}>{i ? ', ' : ''}<EntityLink kind="country" id={r}>{r}</EntityLink></span>
+                  ))}
                 </span>
               )}
             </div>

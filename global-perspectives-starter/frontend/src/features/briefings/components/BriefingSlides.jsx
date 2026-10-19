@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref, mapHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import { usePeek } from '@/shared/hooks/usePeek.js';
@@ -10,7 +11,8 @@ import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import Trajectory from '@/features/briefings/components/Trajectory.jsx';
-import { countryLinkPath, storyLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
+import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
+import { threadIdOf, placeNames, firstCountry, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
 
 // A brief's riskLevel as the neutral TierChip; a value outside the four tiers stays plain text
 // (TierChip would otherwise read it as "Not scored").
@@ -63,14 +65,18 @@ function StoryNextQuestion({ threadId }) {
   return (
     <div className="bm-next-question">
       <span className="bm-next-question-kicker">Next dated question</span>
-      <p className="bm-slide-text">{q.text} <span className="bm-next-question-by">by {q.deadline}</span></p>
+      <p className="bm-slide-text">
+        {q.qid ? <EntityLink kind="forecast" id={q.qid}>{q.text}</EntityLink> : q.text}
+        {' '}<span className="bm-next-question-by">by {q.deadline}</span>
+      </p>
       <QuestionChip trigger={q} />
     </div>
   );
 }
 
 export function StorySlide({ story, index }) {
-  const region = (story.regions || [])[0];
+  const threadId = threadIdOf(story);
+  const country = firstCountry(story);
   return (
     <div className="bm-slide bm-slide-story">
       <div className="bm-slide-kicker">
@@ -82,9 +88,7 @@ export function StorySlide({ story, index }) {
       </Peekable>
       {(story.regions || []).length > 0 && (
         <p className="bm-slide-tags">
-          {story.regions.map((r) => (
-            <Link key={r} to={countryLinkPath(r)} className="bm-tag">{r}</Link>
-          ))}
+          <PlaceLinks names={story.regions} className="bm-tag" />
           {story.sourceCount > 0 && <span className="bm-tag-src">{story.sourceCount} source{story.sourceCount === 1 ? '' : 's'}</span>}
         </p>
       )}
@@ -95,23 +99,23 @@ export function StorySlide({ story, index }) {
         </div>
       )}
       {story.threadId ? <StoryNextQuestion threadId={story.threadId} /> : null}
-      {storyLinkPath(story) && (
-        <Link to={storyLinkPath(story)} className="bm-slide-link bm-story-link">Read the full story →</Link>
+      {threadId && (
+        <Link to={storyHref(threadId)} className="bm-slide-link bm-story-link">Read the full story →</Link>
       )}
-      {region && (
-        <Link to={countryLinkPath(region)} className="bm-slide-link">Show on map / country card →</Link>
+      {country && (
+        <Link to={mapHref({ country: country.iso3 })} className="bm-slide-link">Show {country.name} on the map →</Link>
       )}
     </div>
   );
 }
 
 export function WatchSlide({ countryToWatch, risingThread }) {
-  const risingIsThread = /^thread-/.test(risingThread?.threadId || '');
+  const risingId = threadIdOf(risingThread);
   return (
     <div className="bm-slide bm-slide-watch">
       <div className="bm-slide-kicker">COUNTRY TO WATCH</div>
       <h2 className="bm-slide-title">
-        <Link to={countryLinkPath(countryToWatch.countryName)}>{countryToWatch.countryName}</Link>
+        <EntityLink kind="country" id={countryToWatch.countryName}>{countryToWatch.countryName}</EntityLink>
       </h2>
       <div className="bm-slide-stats">
         {countryToWatch.riskLevel && <RiskLevel level={countryToWatch.riskLevel} />}
@@ -122,8 +126,8 @@ export function WatchSlide({ countryToWatch, risingThread }) {
         <div className="bm-rising">
           <span className="bm-inference-badge">rising thread</span>
           <p className="bm-rising-title">
-            {risingIsThread
-              ? <StoryLink threadId={risingThread.threadId} topic={{ title: risingThread.title }}>{risingThread.title}</StoryLink>
+            {risingId
+              ? <StoryLink threadId={risingId} topic={{ title: risingThread.title }}>{risingThread.title}</StoryLink>
               : risingThread.title}
           </p>
           {risingThread.oneLiner && <p>{risingThread.oneLiner}</p>}
@@ -161,13 +165,13 @@ export function SignalSlide({ signal, index }) {
       </Peekable>
       {(signal.region || signal.asOf) && (
         <p className="bm-slide-tags">
-          {signal.region}
+          <PlaceLinks names={placeNames(signal)} sep=" · " />
           {signal.asOf && <span className="bm-tag-src">as of {signal.asOf}</span>}
         </p>
       )}
       {signal.fact && <p className="bm-slide-text"><span className="bm-fact-badge">FACT</span> {signal.fact}</p>}
       {signal.soWhat && <p className="bm-slide-text"><span className="bm-inference-badge">so what</span> {signal.soWhat}</p>}
-      {signal.threadId && <Link to={threadPath(signal.threadId)} className="bm-slide-link">Read the full story arc →</Link>}
+      {threadIdOf(signal) && <Link to={storyHref(threadIdOf(signal))} className="bm-slide-link">Read the full story arc →</Link>}
     </div>
   );
 }

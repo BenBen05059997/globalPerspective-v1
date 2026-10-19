@@ -4,7 +4,7 @@ import { useSearchParams, Link } from 'react-router';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
-import { useWeeklyBrief } from '@/features/weekly-brief';
+import { useWeeklyBrief } from '@/features/briefings';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';
@@ -43,7 +43,11 @@ import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
 import { markerKind, statusGlyph, situationFreshness } from '@/shared/map/legend.js';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref, countryHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import {
+  situationForFocus, topicForStory, situationForThread, topicFromWebIndex, countryForParam, countryCardName, withFocusOutline,
+} from '@/features/map/lib/deepLinks.js';
 import { useCountryRiskLayer } from '@/features/map/hooks/useCountryRiskLayer.js';
 import { riskPeekData } from '@/shared/map/countryRiskLayer.js';
 import HudCountryRiskFeed from '@/features/map/components/HudCountryRiskFeed.jsx';
@@ -70,6 +74,8 @@ let bootShown = false;
 // radar/globe draw effect on every render and dropped keyboard focus from the SVG nodes.
 const NO_ITEMS = [];
 
+const GONE_TEXT = 'That situation is no longer being tracked — it may have closed since the link was shared.';
+const STORY_GONE_TEXT = 'That story is not on the map: it is not in today’s stories, has no situation, and is not in the story-web index.';
 const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
@@ -142,7 +148,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
       {affected.length ? (
         <div className="sh-affected">
           <SectionHeader as="h3" label="Affected" />
-          <span className="sh-chips">{affected.slice(0, 5).map((c) => <span key={c} className="sh-country">{iso3Name(c)}</span>)}
+          <span className="sh-chips">{affected.slice(0, 5).map((c) => <EntityLink key={c} kind="country" id={c} className="sh-country">{iso3Name(c)}</EntityLink>)}
             {affected.length > 5 ? <span className="sh-country sh-more">+{affected.length - 5}</span> : null}</span>
         </div>
       ) : null}
@@ -188,7 +194,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
       {(selected.threadId || (isGdacs && ev.gdacs_report_url)) && (
         <div className="sh-detail-foot">
           {selected.threadId
-            ? <Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link>
+            ? <Link to={storyHref(selected.threadId)}>Full analysis →</Link>
             : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
         </div>
       )}
@@ -323,15 +329,31 @@ export default function SituationHome() {
     () => (topicsFreshness === 'hidden' ? [] : shading.map((e) => ({ ...e, dim: topicsFreshness === 'older' }))),
     [shading, topicsFreshness]
   );
-  const selectedStory = useMemo(() => {
-    if (!storyParam) return null;
-    return topics.find((t) => (t.threadId || t.topicId) === storyParam) || null;
-  }, [topics, storyParam]);
-  const storyFocusId = selectedStory ? (selectedStory.threadId || selectedStory.topicId) : null;
-  const storyFocusIso3 = selectedStory && Array.isArray(selectedStory.iso3) ? selectedStory.iso3[0] : null;
+  // ?story=<id> (features/map/lib/deepLinks.js): today's topic first; else the situation carrying that
+  // thread (shown as the situation); else the thread from the story-web index (any thread, not only
+  // today's). Each fallback waits for its own data so a slow feed never flashes the wrong card.
+  const storyTopic = useMemo(() => topicForStory(topics, storyParam), [topics, storyParam]);
+  const storySituation = useMemo(
+    () => (storyParam && !storyTopic && topicsSettled ? situationForThread(situations, storyParam) : null),
+    [storyParam, storyTopic, topicsSettled, situations],
+  );
   // Batch 4 / F (S8): when a story is selected, faint dashed lines to the stories it is judged linked to (strong + medium
-  // only, approx. places). One cached `web_index` read, fetched only once a story with a threadId is selected.
-  const { index: webIndex } = useWebIndex(Boolean(selectedStory && selectedStory.threadId));
+  // only, approx. places). One cached `web_index` read, fetched once a ?story= is set (it also resolves
+  // a thread that is not in today's feed).
+  const { index: webIndex, loading: webIndexLoading } = useWebIndex(Boolean(storyParam && !storySituation && (!storyTopic || storyTopic.threadId)));
+  const indexStory = useMemo(
+    () => (storyParam && !storyTopic && !storySituation && topicsSettled && world ? topicFromWebIndex(webIndex, storyParam) : null),
+    [storyParam, storyTopic, storySituation, topicsSettled, world, webIndex],
+  );
+  const selectedStory = storyTopic || indexStory;
+  // A ?story= that resolves nowhere, once everything it could resolve against has answered.
+  const storyMissing = Boolean(storyParam && topicsSettled && world && !webIndexLoading && !selectedStory && !storySituation);
+  const storyFocusId = selectedStory ? (selectedStory.threadId || selectedStory.topicId) : null;
+  const storyFocusIso3 = selectedStory && Array.isArray(selectedStory.iso3) ? selectedStory.iso3[0] || null : null;
+  // ?country=<ISO3 | name>: fly to and outline the country (the card opens in the rail).
+  const countryFocus = useMemo(() => (storyParam || focus ? null : countryForParam(countryParam)), [storyParam, focus, countryParam]);
+  const countryName = countryCardName(countryParam);
+  const mapFocusIso3 = storyFocusIso3 || countryFocus?.iso3 || null;
   // The same index rows, as the story card's "Linked stories" lines (distinct stories, strongest first).
   const cardLinks = useMemo(() => (webIndex && selectedStory?.threadId
     ? linkedStoryLines(deriveFromIndex(webIndex, selectedStory.threadId))
@@ -377,12 +399,17 @@ export default function SituationHome() {
     if (entry?.name) selectCountryName(entry.name);
   }, [selectCountryName, mapPeek]);
 
-  const shadingByIso3 = useMemo(() => new Map(visibleShading.map((e) => [e.iso3, e])), [visibleShading]);
+  // The focused country (story or ?country=) is outlined even when no story of today's feed shades it.
+  const mapShading = useMemo(
+    () => withFocusOutline(visibleShading, mapFocusIso3, selectedStory?.title || countryFocus?.name),
+    [visibleShading, mapFocusIso3, selectedStory, countryFocus],
+  );
+  const shadingByIso3 = useMemo(() => new Map(mapShading.map((e) => [e.iso3, e])), [mapShading]);
   const hoveredCountry = !riskMode && mapPeek.openId ? shadingByIso3.get(mapPeek.openId) : null;
   const hoveredRiskCountry = riskMode && mapPeek.openId ? riskByIso3.get(mapPeek.openId) : null;
   const selectStoryByCountry = useCallback((iso3) => {
     const entry = shadingByIso3.get(iso3);
-    if (entry?.top) selectStory(entry.top);
+    if (entry?.top && !entry.outlineOnly) selectStory(entry.top);
   }, [shadingByIso3, selectStory]);
 
   const counts = useMemo(() => {
@@ -448,7 +475,8 @@ export default function SituationHome() {
   // ("last checked <date>" when not; nothing when unknown) — never a standing claim.
   const gdacs = useMemo(() => gdacsStatus(world), [world]);
 
-  const selected = useMemo(() => situations.find((s) => s.id === focus) || null, [situations, focus]);
+  // ?focus= by id or by an old id the situation absorbed; ?story= of a thread that has a situation.
+  const selected = useMemo(() => situationForFocus(situations, focus) || storySituation, [situations, focus, storySituation]);
   const focusMissing = focus && !selected;              // deep link to an expired/archived situation
   const ev = detail?.evidence || {};
   const isGdacs = selected?.source === 'gdacs';
@@ -472,7 +500,7 @@ export default function SituationHome() {
   }, [selected, selectedStory]);
 
   // What the map focuses (fly + highlight) and what card it shows.
-  const focusId = focus || null;
+  const focusId = selected ? selected.id : (focus || null);
 
   // M4: the console has two modes, GLOBE and RADAR — the old deck.gl "flat" mode is gone (radar,
   // drawn with SVG/canvas, replaces it as both the phone default and the no-WebGL fallback: see
@@ -624,7 +652,7 @@ export default function SituationHome() {
     else if (storyParam) selectStory(null);
     else if (countryParam) selectCountryName(null);
   }, [focus, storyParam, countryParam, select, selectStory, selectCountryName]);
-  const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryParam || null));
+  const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryName || null));
   const sheetSubtitle = selected
     ? (AXIS_LABEL[selected.axis] || selected.axis)
     : (selectedStory ? (selectedStory.category || null) : null);
@@ -632,7 +660,7 @@ export default function SituationHome() {
   // was still truthy, so the sheet used to open empty. Only open once the selection actually
   // resolves to something the sheet has content for — a live situation, a live story, the country
   // card, or the honest "no longer tracked" message for an expired `?focus=`.
-  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || countryParam || focusMissing);
+  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || countryParam || focusMissing || storyMissing);
   const hudSummary = useMemo(() => hudCompactSummary(tierCounts, sensorRows, paused), [tierCounts, sensorRows, paused]);
 
   // Legend "present" flags: which token items are actually on the map right now (the Key dims the
@@ -662,7 +690,7 @@ export default function SituationHome() {
       return {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
-        href: hero.threadId ? threadPath(hero.threadId) : null,
+        href: hero.threadId ? storyHref(hero.threadId) : null,
         onOpen: hero.threadId ? null : () => select(hero.id),
         openLabel: hero.threadId ? 'open story →' : 'show on map →',
       };
@@ -674,7 +702,7 @@ export default function SituationHome() {
       kicker: `First in the latest stories${storiesDateLabel ? ` · ${storiesDateLabel}` : ''}`,
       title: t.title,
       older: topicsFreshness === 'older',
-      href: t.threadId ? threadPath(t.threadId) : null,
+      href: t.threadId ? storyHref(t.threadId) : null,
       onOpen: t.threadId ? null : () => selectStory(t),
       openLabel: 'open story →',
     };
@@ -729,7 +757,7 @@ export default function SituationHome() {
               key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
               situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds} view="globe"
               onSelect={select} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
-              shading={riskMode ? NO_ITEMS : visibleShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={storyFocusIso3}
+              shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
               onSelectCountry={selectStoryByCountry}
               onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
               onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
@@ -746,7 +774,7 @@ export default function SituationHome() {
             key={mapAttempt} onFirstDraw={onMapFirstDraw}
             situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds}
             onSelect={select} onScan={markScanned} height={mapH}
-            shading={riskMode ? NO_ITEMS : visibleShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={storyFocusIso3}
+            shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
             onSelectCountry={selectStoryByCountry}
             onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
             onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
@@ -758,7 +786,7 @@ export default function SituationHome() {
             onLeaveCountryRisk={() => mapPeek.close()}
           />
         )}
-        {hoveredCountry ? (
+        {hoveredCountry && !hoveredCountry.outlineOnly ? (
           <StoryPeek
             id={`peek-country-${hoveredCountry.iso3}`}
             data={peekData(hoveredCountry.top, { asOf: topicsAsOf })}
@@ -793,19 +821,33 @@ export default function SituationHome() {
     </>
   );
 
+  // The map's country card links to the country's own page (a region or unknown name has none).
+  const countryHrefNow = countryParam ? countryHref(countryName) : null;
+  const countryPageLink = countryHrefNow ? (
+    <div className="sh-detail-foot"><Link to={countryHrefNow}>Open the country page →</Link></div>
+  ) : null;
+
   // The rail's content (desktop) and the sheet's body (phone) share the exact same branches —
   // only the situation/story detail's "back" affordance differs (the sheet has Collapse/Close).
   const railContent = focusMissing ? (
     <div className="sh-detail sh-gone">
       <button className="sh-back" onClick={() => select(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
-      <p className="sh-muted sh-gone-text">That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
+      <p className="sh-muted sh-gone-text">{GONE_TEXT} Browse the active situations instead.</p>
+    </div>
+  ) : storyMissing ? (
+    <div className="sh-detail sh-gone">
+      <button className="sh-back" onClick={() => selectStory(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+      <p className="sh-muted sh-gone-text">{STORY_GONE_TEXT}</p>
     </div>
   ) : selected ? (
-    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => select(null)} />
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
   ) : countryParam ? (
-    <CountryCardV2 key={countryParam} name={countryParam} situations={open} onBack={() => selectCountryName(null)} />
+    <>
+      <CountryCardV2 key={countryParam} name={countryName} situations={open} onBack={() => selectCountryName(null)} />
+      {countryPageLink}
+    </>
   ) : riskMode ? (
     <HudCountryRiskFeed
       drawn={countryRiskLayer.drawn} hiddenOld={countryRiskLayer.hiddenOld} loading={countryRiskLayer.loading}
@@ -821,13 +863,18 @@ export default function SituationHome() {
   );
 
   const sheetBody = focusMissing ? (
-    <p className="sh-muted sh-gone-text">That situation is no longer being tracked — it may have closed since the link was shared.</p>
+    <p className="sh-muted sh-gone-text">{GONE_TEXT}</p>
+  ) : storyMissing ? (
+    <p className="sh-muted sh-gone-text">{STORY_GONE_TEXT}</p>
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
   ) : countryParam ? (
-    <CountryCardV2 key={countryParam} name={countryParam} situations={open} variant="sheet" />
+    <>
+      <CountryCardV2 key={countryParam} name={countryName} situations={open} variant="sheet" />
+      {countryPageLink}
+    </>
   ) : null;
 
   const statusLine = <HudStatusLine paused={paused} gdacs={gdacs} />;

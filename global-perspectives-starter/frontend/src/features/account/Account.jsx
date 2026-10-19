@@ -8,7 +8,7 @@ import { useMembership } from '@/shared/hooks/useMembership';
 import { loadByok, clearByok, getProvider, ProviderModal } from '@/features/analysis-studio';
 import DeskPanel from '@/features/account/components/DeskPanel';
 import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
-import { useWeeklyBrief } from '@/features/weekly-brief';
+import { useWeeklyBrief } from '@/features/briefings';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
 import Button from '@/shared/ui/Button.jsx';

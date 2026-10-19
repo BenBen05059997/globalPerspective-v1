@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildDailySlides, buildWeeklySlides, countryLinkPath, storyLinkPath,
-  mapFocusForDailySlide, mapFocusForWeeklySlide,
+  buildDailySlides, buildWeeklySlides, threadIdOf, placeNames, firstCountry,
+  mapFocusForDailySlide, mapFocusForWeeklySlide, shadingForWeeklySlides,
 } from '@/features/briefings/lib/briefingSlides.js';
 
 const dailyBrief = {
@@ -24,9 +24,16 @@ const weeklyBrief = {
 };
 
 describe('briefingSlides.js', () => {
-  it('countryLinkPath builds the real CountryPage route and is null without a name', () => {
-    expect(countryLinkPath('Saudi Arabia')).toBe('/weekly/country/Saudi%20Arabia');
-    expect(countryLinkPath(null)).toBeNull();
+  it('placeNames reads daily regions[] and the weekly "A · B" string', () => {
+    expect(placeNames({ regions: ['Iraq', 'Syria'] })).toEqual(['Iraq', 'Syria']);
+    expect(placeNames({ region: 'Israel · Palestine' })).toEqual(['Israel', 'Palestine']);
+    expect(placeNames(null)).toEqual([]);
+  });
+
+  it('firstCountry prefers iso3[], else the first place that is a country (regions skipped)', () => {
+    expect(firstCountry({ iso3: ['ARE'], regions: ['Middle East'] })).toEqual({ iso3: 'ARE', name: 'UAE' });
+    expect(firstCountry({ regions: ['Middle East', 'Iran'] })).toEqual({ iso3: 'IRN', name: 'Iran' });
+    expect(firstCountry({ region: 'Global · Africa' })).toBeNull();
   });
 
   it('buildDailySlides produces THE DAY, one slide per top story, and COUNTRY TO WATCH', () => {
@@ -66,17 +73,22 @@ describe('briefingSlides.js', () => {
   it('mapFocusForWeeklySlide reads the first region out of the "A · B · C" string', () => {
     const slides = buildWeeklySlides(weeklyBrief);
     expect(mapFocusForWeeklySlide(slides[1])).toBe('ISR');
+    expect(mapFocusForWeeklySlide(slides[2])).toBeNull(); // Global · Africa: no country, no point
+  });
+
+  it('weekly shading washes only real countries', () => {
+    expect(shadingForWeeklySlides(weeklyBrief).map((e) => e.iso3)).toEqual(['ISR']);
   });
 });
 
-describe('storyLinkPath (Batch 3 / C)', () => {
-  it('links to the story page only for a real thread- id', () => {
-    expect(storyLinkPath({ threadId: 'thread-us-supreme-court-c1602d' })).toBe('/weekly/thread/thread-us-supreme-court-c1602d');
+describe('threadIdOf (Batch 3 / C)', () => {
+  it('a real thread- id is linkable', () => {
+    expect(threadIdOf({ threadId: 'thread-us-supreme-court-c1602d' })).toBe('thread-us-supreme-court-c1602d');
   });
-  it('no link for null / missing / non-thread ids (old briefs, no confident match)', () => {
-    expect(storyLinkPath({ threadId: null })).toBeNull();
-    expect(storyLinkPath({ title: 'x' })).toBeNull();
-    expect(storyLinkPath({ threadId: 'Some Title' })).toBeNull();
-    expect(storyLinkPath(null)).toBeNull();
+  it('no id for null / missing / non-thread ids (old briefs, no confident match)', () => {
+    expect(threadIdOf({ threadId: null })).toBeNull();
+    expect(threadIdOf({ title: 'x' })).toBeNull();
+    expect(threadIdOf({ threadId: 'Some Title' })).toBeNull();
+    expect(threadIdOf(null)).toBeNull();
   });
 });

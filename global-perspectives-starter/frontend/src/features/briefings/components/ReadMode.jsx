@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
-import { storyLinkPath, peekInputForStory, countryLinkPath } from '@/features/briefings/lib/briefingSlides.js';
+import { threadIdOf, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
 import { addDaysKey, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
-import { briefingHref } from '@/shared/lib/links.js';
+import { briefingHref, countryHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
@@ -85,7 +87,7 @@ function SectionHeader({ num, title, meta }) {
 // The rising thread: a story link only when the brief carries a real thread id; otherwise plain
 // text (never a guessed target).
 function RisingThreadCard({ thread }) {
-  const isThread = /^thread-/.test(thread.threadId || '');
+  const threadId = threadIdOf(thread);
   const body = (
     <>
       <div className="daily-highlight-kicker">
@@ -99,15 +101,22 @@ function RisingThreadCard({ thread }) {
       </div>
       <h3 className="daily-highlight-h3">{thread.title}</h3>
       {thread.oneLiner && <p className="daily-highlight-deck">{thread.oneLiner}</p>}
-      {isThread && <span className="daily-highlight-cta">Read full arc →</span>}
+      {threadId && <span className="daily-highlight-cta">Read full arc →</span>}
     </>
   );
-  return isThread
-    ? <StoryLink threadId={thread.threadId} topic={{ title: thread.title }} className="daily-highlight">{body}</StoryLink>
+  return threadId
+    ? <StoryLink threadId={threadId} topic={{ title: thread.title }} className="daily-highlight">{body}</StoryLink>
     : <div className="daily-highlight">{body}</div>;
 }
 
 const dayHref = (dateKey) => briefingHref({ mode: 'read', date: dateKey });
+
+// The country-to-watch card: a link to the country page, or the same card unlinked when the name is
+// not a country (a region has no page).
+function CountryCardLink({ name, className, children }) {
+  const href = countryHref(name);
+  return href ? <Link to={href} className={className}>{children}</Link> : <div className={className}>{children}</div>;
+}
 
 // ReadMode — /briefings (mode=read, the default): the daily brief as one long-form read. `?date=`
 // asks for a specific edition; the hook falls back to the nearest earlier one and says so.
@@ -211,7 +220,7 @@ export default function ReadMode({ dateParam }) {
             <div className="daily-verdict-kicker">
               <span className="daily-kicker-pill">Lead Story</span>
               {brief.countryToWatch?.countryName && (
-                <span className="daily-verdict-loc">· {brief.countryToWatch.countryName}</span>
+                <span className="daily-verdict-loc">· <EntityLink kind="country" id={brief.countryToWatch.countryName}>{brief.countryToWatch.countryName}</EntityLink></span>
               )}
             </div>
             <h2 className="daily-verdict-h3">{brief.headline}</h2>
@@ -279,22 +288,20 @@ export default function ReadMode({ dateParam }) {
           <div className="daily-stories">
             {brief.topStories.map((story, i) => {
               const hasPred = !!story.prediction;
-              const path = storyLinkPath(story);
+              const threadId = threadIdOf(story);
               return (
                 <article key={i} className={`daily-story${hasPred ? '' : ' no-pred'}`}>
                   <div className="daily-story-num">{String(i + 1).padStart(2, '0')}</div>
                   <div className="daily-story-body">
                     <div className="daily-story-kicker">
                       <CategoryTag category={story.category} />
-                      {(story.regions || []).slice(0, 3).map((r) => (
-                        <Link key={r} to={countryLinkPath(r)} className="daily-tag-region">{r}</Link>
-                      ))}
+                      <PlaceLinks names={(story.regions || []).slice(0, 3)} className="daily-tag-region" />
                       {story.sourceCount > 0 && (
                         <span className="daily-tag-src">{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
                       )}
                     </div>
                     <h3 className="daily-story-h4">
-                      {path ? <StoryLink to={path} topic={peekInputForStory(story)}>{story.title}</StoryLink> : story.title}
+                      {threadId ? <StoryLink threadId={threadId} topic={peekInputForStory(story)}>{story.title}</StoryLink> : story.title}
                     </h3>
                   </div>
                   {hasPred && (
@@ -322,7 +329,7 @@ export default function ReadMode({ dateParam }) {
       {brief.countryToWatch?.countryName && (
         <section className="daily-sec">
           <SectionHeader num="4" title="Country to Watch" />
-          <Link to={countryLinkPath(brief.countryToWatch.countryName)} className="daily-riskcard">
+          <CountryCardLink name={brief.countryToWatch.countryName} className="daily-riskcard">
             <div className="daily-riskcard-flag">{brief.countryToWatch.countryName}</div>
             <div className="daily-riskcard-body">
               <div className="daily-riskcard-top">
@@ -332,9 +339,9 @@ export default function ReadMode({ dateParam }) {
               {brief.countryToWatch.headline && (
                 <div className="daily-riskcard-headline">{brief.countryToWatch.headline}</div>
               )}
-              <div className="daily-riskcard-cta">View full briefing →</div>
+              {countryHref(brief.countryToWatch.countryName) && <div className="daily-riskcard-cta">View full briefing →</div>}
             </div>
-          </Link>
+          </CountryCardLink>
         </section>
       )}
 

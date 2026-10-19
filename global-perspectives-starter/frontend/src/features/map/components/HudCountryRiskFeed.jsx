@@ -6,6 +6,12 @@ import { riskPeekData } from '@/shared/map/countryRiskLayer.js';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import AsOf from '@/shared/ui/AsOf.jsx';
+
+// The newest briefing drawn: the layer is as fresh as that (each older row says "older").
+function newestBriefing(drawn) {
+  return drawn.reduce((best, c) => (c.generatedAt && (!best || c.generatedAt > best) ? c.generatedAt : best), null);
+}
 
 export default function HudCountryRiskFeed({
   drawn = [], hiddenOld = 0, loading = false, focusIso3 = null, onSelect, peek = null,
@@ -13,6 +19,7 @@ export default function HudCountryRiskFeed({
   return (
     <div className="hud-feed" role="region" aria-label="Country risk feed">
       <SectionHeader className="hud-feed-head" label="Country risk" count={drawn.length ? `${drawn.length} briefed` : null} />
+      {drawn.length ? <AsOf generatedAt={newestBriefing(drawn)} source="country briefings" /> : null}
       {loading && !drawn.length ? <BootLoader variant="inline" label="Loading country briefings" text="Loading country briefings" /> : null}
       {!loading && !drawn.length ? <p className="sh-muted">No country briefings available right now.</p> : null}
       <ul className="hud-feed-list">

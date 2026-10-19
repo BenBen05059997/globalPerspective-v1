@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
-import { useWeeklyBrief } from '@/features/weekly-brief';
+import { useWeeklyBrief } from '@/features/briefings/hooks/useWeeklyBrief.js';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -14,6 +14,8 @@ import { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.
 import BriefingError from '@/features/briefings/components/BriefingError.jsx';
 import { briefingHref } from '@/shared/lib/links.js';
 import { previousWeekKey } from '@/features/briefings/lib/editions.js';
+import { threadIdOf, placeNames } from '@/features/briefings/lib/briefingSlides.js';
+import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
 import '@/features/briefings/components/WeeklyMode.css';
 
 function SignalChip({ kind, level }) {
@@ -33,36 +35,48 @@ function sourceOutlets(sources) {
   return out;
 }
 
-function SignalCard({ s }) {
+// "Related" is the lede of another signal of the week (newsWeeklyBrief linkRelated); it links to that
+// signal's story when one of this week's signals carries both that lede and a real thread id.
+function relatedThreadId(s, signals) {
+  if (!s.related || !Array.isArray(s.relatedThreadIds)) return null;
+  const o = signals.find((x) => x !== s && x.lede === s.related && s.relatedThreadIds.includes(x.threadId));
+  return o ? threadIdOf(o) : null;
+}
+
+function SignalCard({ s, signals }) {
   const outlets = sourceOutlets(s.sources);
-  const topic = { title: s.lede, regions: s.region ? [s.region] : undefined };
+  const threadId = threadIdOf(s);
+  const places = placeNames(s);
+  const topic = { title: s.lede, regions: places.length ? places : undefined };
   return (
     <Card as="article" className="wb-sig">
       <div className="wb-sig-top">
-        {s.threadId ? (
-          <StoryLink className="wb-sig-lede wb-sig-lede-link" threadId={s.threadId} topic={topic} asOf={s.asOf}>{s.lede}</StoryLink>
+        {threadId ? (
+          <StoryLink className="wb-sig-lede wb-sig-lede-link" threadId={threadId} topic={topic} asOf={s.asOf}>{s.lede}</StoryLink>
         ) : (
           <div className="wb-sig-lede">{s.lede}</div>
         )}
         <SignalChip kind={s.kind} level={s.riskLevel} />
       </div>
-      <div className="wb-sig-meta">{s.region || '—'} <span className="wb-dot">·</span> as of {s.asOf || '—'}</div>
+      <div className="wb-sig-meta">{places.length ? <PlaceLinks names={places} sep=" · " /> : '—'} <span className="wb-dot">·</span> as of {s.asOf || '—'}</div>
       <p className="wb-sig-fact">{s.fact}</p>
       {s.soWhat && <p className="wb-sig-sw"><span>So what</span> {s.soWhat}</p>}
-      {(outlets.length > 0 || s.related || s.threadId) && (
+      {(outlets.length > 0 || s.related || threadId) && (
         <div className="wb-sig-src">
-          {s.threadId && (
-            <StoryLink className="wb-sig-arc" threadId={s.threadId} topic={topic} asOf={s.asOf}>Full story arc →</StoryLink>
+          {threadId && (
+            <StoryLink className="wb-sig-arc" threadId={threadId} topic={topic} asOf={s.asOf}>Full story arc →</StoryLink>
           )}
           {outlets.length > 0 && (
-            <>{s.threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (
+            <>{threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (
               <span key={o.outlet}>
                 {i > 0 && <span className="wb-dot">·</span>}
                 <a href={o.url} target="_blank" rel="noopener noreferrer">{o.outlet}</a>
               </span>
             ))}</>
           )}
-          {s.related && <> <span className="wb-dot">·</span> <span className="wb-rel">Related: {s.related}</span></>}
+          {s.related && <> <span className="wb-dot">·</span> <span className="wb-rel">Related: {relatedThreadId(s, signals)
+            ? <StoryLink threadId={relatedThreadId(s, signals)} topic={{ title: s.related }}>{s.related}</StoryLink>
+            : s.related}</span></>}
         </div>
       )}
     </Card>
@@ -147,7 +161,7 @@ export default function WeeklyMode({ weekParam }) {
         <SubscribeCard variant="weekly" />
 
         <SectionHeader label="Signals this week" count={signals.length} />
-        {signals.map((s, i) => <SignalCard key={s.threadId || i} s={s} />)}
+        {signals.map((s, i) => <SignalCard key={s.threadId || i} s={s} signals={signals} />)}
 
         {watch.length > 0 && (
           <>

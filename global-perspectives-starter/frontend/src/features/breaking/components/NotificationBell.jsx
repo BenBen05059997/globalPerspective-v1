@@ -2,14 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
+import { alertPath } from '@/features/breaking/lib/alertPath.js';
+import { mapHref } from '@/shared/lib/links.js';
 import '@/features/breaking/components/NotificationBell.css';
-
-// /breaking/:id is the alert's resolver URL (the same one emails carry): it goes to the alert's
-// story page when the single-alert read says it has one, else to the map. Feed rows carry only
-// the alert key (their `threadId` is a legacy alias of it), so the row cannot name the story itself.
-function alertPath(a) {
-  return `/breaking/${encodeURIComponent(a.id || a.threadId)}`;
-}
 
 function relTime(iso) {
   if (!iso) return '';
@@ -93,7 +88,7 @@ export default function NotificationBell() {
                 ))}
               </ul>
               <Link
-                to="/"
+                to={mapHref()}
                 className="gp-bell-all"
                 role="menuitem"
                 onClick={() => setOpen(false)}

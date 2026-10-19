@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
+import { ROUTE, storyHref, studioHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import SummaryDisplay from '@/features/home/components/SummaryDisplay';
 import PredictionDisplay from '@/features/home/components/PredictionDisplay';
@@ -115,11 +116,11 @@ function Home() {
     const sourcesN = topics.reduce(
       (sum, t) => sum + (Array.isArray(t.sources) ? t.sources.length : 0), 0);
     if (forecastsN > 0) cards.push({
-      to: '/track-record', n: forecastsN,
+      to: ROUTE.trackRecord, n: forecastsN,
       label: 'dated, falsifiable forecast triggers — scored in public as each deadline passes',
     });
     if (correctionsN > 0) cards.push({
-      to: '/track-record', n: correctionsN,
+      to: ROUTE.trackRecord, n: correctionsN,
       label: 'revised conclusions logged, each with the event that changed our read',
       // Contextual perk tease (P6a). Copy promises only what is live: members read the full correction
       // history; the country change-alert emails are OFF (drift cron disabled), so they are not named.
@@ -381,10 +382,10 @@ function Home() {
         <h1>Today's Global Topics</h1>
         <p className="home-masthead-sub">
           AI-driven global intelligence that shows its work — every forecast{' '}
-          <Link to="/track-record">publicly scored</Link>, every revised conclusion{' '}
-          <Link to="/track-record">logged</Link>. Summarise, predict, or trace the cause of any story below.
+          <Link to={ROUTE.trackRecord}>publicly scored</Link>, every revised conclusion{' '}
+          <Link to={ROUTE.trackRecord}>logged</Link>. Summarise, predict, or trace the cause of any story below.
         </p>
-        <Link className="home-markets-link" to="/analyze">Run a cited, fabrication-checked AI deep-dive →</Link>
+        <Link className="home-markets-link" to={studioHref()}>Run a cited, fabrication-checked AI deep-dive →</Link>
 
         {isStale && (
           <div className="home-alert stale">
@@ -466,7 +467,7 @@ function Home() {
                   {t.urgency === 'high' && <span className="home-flag-tag">Urgent</span>}
                   {!ECONOMY_PARKED && t.threadId && disruptionByThread[t.threadId]?.severity && (
                     <Link
-                      to={threadPath(t.threadId, { tab: 'economy' })}
+                      to={storyHref(t.threadId, { tab: 'economy' })}
                       className="home-topic-sev"
                       title="Economic disruption — click for analysis"
                     >
@@ -474,10 +475,7 @@ function Home() {
                     </Link>
                   )}
                   {country && (
-                    <Link
-                      to={`/weekly/country/${encodeURIComponent(country)}`}
-                      className="home-topic-country-link"
-                    >{country}</Link>
+                    <EntityLink kind="country" id={country} className="home-topic-country-link">{country}</EntityLink>
                   )}
                 </div>
 
@@ -488,9 +486,7 @@ function Home() {
                   }
                   {t.threadId && (
                     <Link
-                      to={!ECONOMY_PARKED && disruptionByThread[t.threadId]
-                        ? threadPath(t.threadId, { tab: 'economy' })
-                        : '/weekly'}
+                      to={storyHref(t.threadId, !ECONOMY_PARKED && disruptionByThread[t.threadId] ? { tab: 'economy' } : undefined)}
                       className="home-thread-badge"
                     >
                       {!ECONOMY_PARKED && disruptionByThread[t.threadId] ? 'Economic impact →' : 'Story arc →'}
@@ -554,7 +550,7 @@ function Home() {
                     ))}
 
                     {/* Analyze (Analysis Studio) */}
-                    <Button compact className="home-ai-btn" to={`/analyze?stories=${encodeURIComponent(id)}`}>
+                    <Button compact className="home-ai-btn" to={studioHref(id)}>
                       <AnaIcon />
                       Analyze
                     </Button>

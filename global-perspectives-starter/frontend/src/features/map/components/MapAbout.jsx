@@ -7,14 +7,18 @@
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
-import { briefingHref } from '@/shared/lib/links.js';
+import { ROUTE, briefingHref, todayHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 
-function affectedNames(s) {
-  const codes = (s.iso3_affected || []).slice(0, 3);
-  return codes.length ? ` · ${codes.map(iso3Name).join(', ')}` : '';
+// The first three affected countries, each linked to its country page.
+function AffectedNames({ codes }) {
+  const shown = (codes || []).slice(0, 3);
+  return shown.map((c, i) => (
+    <span key={c}>{i ? ', ' : ' · '}<EntityLink kind="country" id={c}>{iso3Name(c)}</EntityLink></span>
+  ));
 }
 
 export default function MapAbout({
@@ -22,7 +26,7 @@ export default function MapAbout({
 }) {
   return (
     <>
-      <p><Link to="/today">Read today’s topics →</Link></p>
+      <p><Link to={todayHref()}>Read today’s topics →</Link></p>
       <div className="sh-fold-method">
         <h2>How we read the world</h2>
         <p className="sh-dim">The map is the output of a fixed pipeline, not an editor’s judgement call.</p>
@@ -51,7 +55,7 @@ export default function MapAbout({
           <Link to={briefingHref({ mode: 'weekly' })}><b>Weekly</b><span>
             {latestWeeklyEditionLabel ? `Latest edition ${latestWeeklyEditionLabel}, with the reasoning shown.` : 'A long synthesis, with the reasoning shown.'}
           </span></Link>
-          <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
+          <Link to={ROUTE.trackRecord}><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
         </div>
       </div>
 
@@ -68,7 +72,7 @@ export default function MapAbout({
                   {items.map((s) => (
                     <li key={s.id}>
                       <button className="sh-idx-link" onClick={() => onSelect && onSelect(s.id)}>{s.verb_label}</button>
-                      <span className="sh-dim"> — {TIER_LABEL[s.tier]}{s.escalating ? ' · escalating' : ''}{affectedNames(s)}</span>
+                      <span className="sh-dim"> — {TIER_LABEL[s.tier]}{s.escalating ? ' · escalating' : ''}<AffectedNames codes={s.iso3_affected} /></span>
                     </li>
                   ))}
                 </ul>

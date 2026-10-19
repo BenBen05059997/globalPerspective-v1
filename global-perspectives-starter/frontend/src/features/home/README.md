@@ -25,7 +25,8 @@ a trust strip, an earlier-today archive rail and a topic nav rail.
 - Failures render inline (no modal) and go to `reportFetchError`. Summary and Predict retry on cache miss/503 up to
   `MAX_RETRIES` (6), `RETRY_DELAY_MS` 10 s apart; Trace does not retry.
 - The masthead no longer links to `/weekly-markets` (economy parked; decision 0031). The map's About drawer links here
-  ("Read today's topics →", decision 0029).
+  ("Read today's topics →", decision 0029). Links go through `@/shared/lib/links.js` / `EntityLink`: "Story arc" and
+  titles open the thread (only with a `threadId`), a country its page (a region stays plain text).
 
 ## Backend
 - Generated row: [reference/features.md#home](../../../../../project-docs/reference/features.md#home)

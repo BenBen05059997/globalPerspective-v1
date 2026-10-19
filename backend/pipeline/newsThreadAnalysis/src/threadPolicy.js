@@ -1,5 +1,7 @@
 'use strict';
 
+const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
+
 // Change-driven thread analysis (Batch 2 / D2). Pure: no AWS, no network.
 // A thread is re-analysed only when it has a NEW event (a topicId the stored analysis has not seen).
 // Entries ageing out of the 30-day archive window never trigger one.
@@ -43,4 +45,11 @@ function selectThreads({ threads, existingByThread, maxThreads = 10 }) {
   }));
 }
 
-module.exports = { MAX_STORED_IDS, entryIds, isStale, selectThreads };
+/** ISO3 codes of the thread's countries (its entries' regions through the resolver), most-mentioned first. */
+function threadIso3(entries) {
+  const count = new Map();
+  for (const e of entries || []) for (const c of iso3List(e.regions)) count.set(c, (count.get(c) || 0) + 1);
+  return [...count.keys()].sort((a, b) => count.get(b) - count.get(a));
+}
+
+module.exports = { MAX_STORED_IDS, entryIds, isStale, selectThreads, threadIso3 };

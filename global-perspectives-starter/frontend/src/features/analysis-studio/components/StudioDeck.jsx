@@ -4,7 +4,7 @@
 // Receipt, ◀ ▶ / dots / arrow keys), and a TIME BAR — the same pattern story mode uses
 // (Studio.dc.html v3). Built by REUSING story mode's own pieces, not forking them:
 //   - `StoryMap` (shared/map/StoryMap.jsx) for the map;
-//   - `iso3ForName` (shared/lib/situationLabels.js) to shade backed ("our data") places;
+//   - `resolveCountry` (shared/lib/countries.js) to shade backed ("our data") places;
 //   - the `.sm-*` / `.psm-*` deck shell (shared/ui/deck.css) + `.gp-console` tokens.
 //
 // DECK shows ONE section's deck at a time — F2's stacked sections become a switcher (chips)
@@ -18,7 +18,7 @@ import {
   OursVsRunStrip, ScenarioBandPicture, ComparePicturePanel, WhatChangedChart, FreeformHighlighter, StudioTimeBar,
 } from '@/features/analysis-studio/components/StudioPictures.jsx';
 import StoryMap from '@/shared/map/StoryMap.jsx';
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { resolveCountry } from '@/shared/lib/countries.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
@@ -57,7 +57,7 @@ function useShading(section, category) {
     const out = [];
     const seen = new Set();
     for (const name of ours) {
-      const iso3 = iso3ForName(name);
+      const iso3 = resolveCountry(name)?.iso3;
       if (!iso3 || seen.has(iso3)) continue;
       seen.add(iso3);
       out.push({

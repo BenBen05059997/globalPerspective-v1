@@ -2,6 +2,12 @@
 // while window.NEWS_SHARE_ENDPOINT is unset (docs/config.js, operator-owned), exactly like the member-run
 // path is hidden until NEWS_ANALYZE_ENDPOINT exists.
 import { currentAuthToken } from '@/shared/api/restProxy';
+import { ROUTE } from '@/shared/lib/links.js';
+
+// The page address of one shared run: the Studio's route + /s/<id> (App.jsx routes it to SharedAnalysisPage).
+export function sharePath(id) {
+  return `${ROUTE.studio}/s/${encodeURIComponent(id)}`;
+}
 
 // Defence in depth: the server already stores only http(s) links, and the page never renders anything else.
 export function httpOnly(url) {

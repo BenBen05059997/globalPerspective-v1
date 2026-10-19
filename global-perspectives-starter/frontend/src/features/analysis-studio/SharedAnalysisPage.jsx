@@ -8,6 +8,7 @@ import { reportFetchError } from '@/shared/api/errorSink';
 import '@/features/analysis-studio/AnalysisStudio.css';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
+import { ROUTE, studioHref } from '@/shared/lib/links.js';
 
 // /analyze/s/:id — a read-only, unlisted (noindex) debrief of one shared Studio run. States, all honest:
 // loading, endpoint not configured, deleted / never existed, could not be loaded, ready.
@@ -43,14 +44,14 @@ export default function SharedAnalysisPage() {
         <div className="as-shared-state">
           <h1>Shared analyses are not available yet</h1>
           <p>Sharing has not been switched on for this site yet. Analysis Studio itself works as usual.</p>
-          <Link to="/analyze">Open Analysis Studio →</Link>
+          <Link to={ROUTE.studio}>Open Analysis Studio →</Link>
         </div>
       )}
       {state.kind === 'gone' && (
         <div className="as-shared-state">
           <h1>This shared analysis was deleted or never existed</h1>
           <p>Its link does not point to anything we hold. The person who shared it may have removed it.</p>
-          <Link to="/analyze">Run your own analysis →</Link>
+          <Link to={ROUTE.studio}>Run your own analysis →</Link>
         </div>
       )}
       {state.kind === 'failed' && (
@@ -63,7 +64,7 @@ export default function SharedAnalysisPage() {
         <>
           <SharedAnalysisView share={state.share} />
           <div className="as-shared-actions">
-            <Button variant="primary" to="/analyze">Run your own →</Button>
+            <Button variant="primary" to={studioHref((state.share.stories || []).map((s) => s.threadId))}>Run your own →</Button>
             {(state.share.stories || []).some((s) => s.threadId) && (
               <span>
                 Open these stories live:{' '}

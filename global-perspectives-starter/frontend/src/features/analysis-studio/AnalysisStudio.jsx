@@ -9,11 +9,12 @@ import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses, fetchCountryHistory } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { isCountry } from '@/shared/lib/countries.js';
 import { buildCountryRiskSeries, buildCountryChangeLog } from '@/features/analysis-studio/lib/countryDriftPicture';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { buildEarlierStoryList } from '@/features/analysis-studio/lib/earlierStories';
+import { resolveRequestedStories } from '@/features/analysis-studio/lib/requestedStories';
 import ShareControl from '@/features/analysis-studio/components/ShareControl.jsx';
 import SignedOutExample from '@/features/analysis-studio/components/SignedOutExample.jsx';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
@@ -35,6 +36,8 @@ import Chip from '@/shared/ui/Chip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import '@/features/analysis-studio/AnalysisStudio.css';
 
@@ -43,7 +46,7 @@ const MAX_STORIES = 4;
 // S5c F1 §2 "one picture per lens" — builds the picture data for the just-finished run
 // from already-sanitized inputs only (never raw model text). `whatchanged` calls the REAL
 // `country_history` proxy action for whichever of the selected stories' regions resolve to
-// an actual country (iso3ForName — a macro-region like "East Asia" has no history to fetch
+// an actual country (isCountry — a macro-region like "East Asia" has no history to fetch
 // and is silently skipped, never faked); async because of that fetch.
 async function buildLensPicture(lensId, { struct, selectedTopics, citations, prose, today }) {
   if (!lensId) return null;
@@ -69,9 +72,9 @@ async function buildLensPicture(lensId, { struct, selectedTopics, citations, pro
     };
   }
   if (lensId === 'whatchanged') {
-    // Only names that resolve to a real country (iso3ForName) are fetchable — a macro-region
+    // Only names that resolve to a real country (isCountry) are fetchable — a macro-region
     // ("East Asia") or a body of water names no country_history record and is skipped, not faked.
-    const countryNames = [...new Set(sourceRegions.filter((r) => iso3ForName(r)))];
+    const countryNames = [...new Set(sourceRegions.filter(isCountry))];
     const countries = await Promise.all(countryNames.map(async (name) => {
       try {
         const res = await fetchCountryHistory(name);
@@ -343,17 +346,22 @@ export default function AnalysisStudio() {
 
   useEffect(() => {
     if (didSeedFromParams.current) return;
-    if (topicsLoading || topics.length === 0) return;
+    if (topicsLoading || archiveLoading) return;
     didSeedFromParams.current = true;
     const raw = searchParams.get('stories');
     if (!raw) return;
     const requested = raw.split(',').map((s) => s.trim()).filter(Boolean);
     if (requested.length === 0) return;
-    const known = new Set(topics.map((t) => t.topicId || t.id));
-    const valid = requested.filter((id) => known.has(id)).slice(0, MAX_STORIES);
-    if (valid.length > 0) setSelected(valid);
+    const { selected: valid, picked } = resolveRequestedStories(requested, {
+      topics,
+      earlierRows: buildEarlierStoryList(archiveDayMap, { excludeTopicIds: todayTopicIds }),
+      max: MAX_STORIES,
+    });
+    if (valid.length === 0) return;
+    setPickedEarlier((p) => ({ ...p, ...picked }));
+    setSelected(valid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicsLoading, topics]);
+  }, [topicsLoading, archiveLoading, topics, archiveDayMap]);
 
   function toggle(id) {
     setSelected((cur) => {
@@ -666,7 +674,7 @@ export default function AnalysisStudio() {
                     {quote.perStory.map((p, i) => (
                       <li key={i}>
                         <Richness value={p.richness} />
-                        <span className="as-quote-story-title">{p.title}</span>
+                        <EntityLink kind="story" id={p.threadId} topic={{ title: p.title }} className="as-quote-story-title">{p.title}</EntityLink>
                         <span className="as-quote-story-counts">
                           {Object.entries(p.counts).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${SOURCE_KIND_LABELS[k] || k}`).join(' · ') || 'no stored material'}
                         </span>
@@ -763,7 +771,7 @@ export default function AnalysisStudio() {
             <SignedOutExample />
             <div className="as-gate-actions">
               <Button variant="primary" onClick={() => navigate('/signin')}>Sign in</Button>
-              <Button onClick={() => navigate('/')}>Back to home</Button>
+              <Button onClick={() => navigate(ROUTE.map)}>Back to home</Button>
             </div>
           </Card>
         </div>

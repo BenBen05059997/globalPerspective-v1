@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import SharedAnalysisView from '@/features/analysis-studio/components/SharedAnalysisView.jsx';
 import { EXAMPLE_SHARE_ID } from '@/features/analysis-studio/lib/sharedExample.js';
-import { shareConfigured, fetchShare } from '@/features/analysis-studio/lib/shareApi.js';
+import { shareConfigured, fetchShare, sharePath } from '@/features/analysis-studio/lib/shareApi.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 
 // SignedOutExample — what a signed-out visitor sees instead of a locked mock-up: ONE real, complete, cited run
@@ -27,7 +27,7 @@ export default function SignedOutExample({ exampleId = EXAMPLE_SHARE_ID }) {
         <div className="label">Example: a real, cited analysis</div>
         <div className="as-example-scroll"><SharedAnalysisView share={share} compact /></div>
         <p className="as-example-cta">Sign in to run your own with your own key.{' '}
-          <Link to={`/analyze/s/${exampleId}`} target="_blank" rel="noopener noreferrer">Open the example on its own page →</Link>
+          <Link to={sharePath(exampleId)} target="_blank" rel="noopener noreferrer">Open the example on its own page →</Link>
         </p>
       </div>
     );

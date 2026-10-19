@@ -12,6 +12,9 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC).
 - `placeFilter.js` + `placeNames.json`, `iso3Names.json`: real-country rule, canonical names,
   `usableCountryRecord`.
+- `resolveIso3.js`: TEMPORARY `resolveIso3(text) -> {iso3, name}` / `iso3List(names)` over `iso3Names.json` +
+  the `placeFilter.js` aliases (canonical short names: United States, DR Congo, UAE, Palestine, Bosnia and
+  Herzegovina). Replaced by L1-LINKS `resolveCountry`; callers are marked `TODO(L1-LINKS)`.
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
 - `situations-core.js`: GDACS observation + situation fold (`buildSituation`, `coolSituation`,
   `buildStorySituation`). Pure, no AWS.
@@ -19,6 +22,6 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 Who uses what: `git grep "_shared/" -- backend`.
 
 ## Checks
-- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/situations-core.test.mjs` (28 passed 2026-10-19).
+- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/resolveIso3.test.js test/situations-core.test.mjs`.
 - Copies that cross the frontend/Lambda boundary (name tables, the real-country rule) are compared
   by `node scripts/check-shared-sync.mjs`.

@@ -22,6 +22,7 @@ Forecasts get FACTS# leaders and an arc digest as grounding (no live web search)
 
 ## Threading
 - `src/threading.js` (pure): a topic joins the thread of an archive entry from today's earlier runs or the past 7 days on its `continues_topic` title or its own title (both compared normalised: case, whitespace, punctuation), else when the composite score (0.5 keywords + 0.3 regions + 0.2 category) is >= 0.4 AND keyword-only Jaccard is >= 0.15; otherwise it founds `thread-<slug>-<sha1>`. Measured in `.board/linking/joins.md`. Each assignment logs `[join] {topicId, threadId, via, score, kwScore}` (via `continues_topic|title|score|new`).
+- Repair: `node backend/pipeline/cli/threads.mjs list-joins --since <date>` (read-only), `merge <from> <into>`, `split <threadId> <topicId...>` print every DynamoDB/S3 change and write only with `--apply` (operator yes). Tests: `node --test backend/pipeline/cli/threads.test.mjs`.
 
 ## Gotchas
 - Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.

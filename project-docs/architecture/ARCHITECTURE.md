@@ -230,9 +230,9 @@ the operator confirms each draft with `predictions/settle-review.js`. Records ar
 writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` plus a dated `HISTORY#<date>` snapshot.
 `newsDriftCorrector` (daily) compares snapshots; when a risk level, score (|Δ| ≥ 8) or trajectory
 moves, it grounds the move in a real archived event and writes a note (`DRIFT#<date>` with a 60-day
-TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. Brave news grounding
-is coded in `newsCountryIntelligence`, `newsThreadAnalysis` and the agent Lambda but off live: none has
-`BRAVE_SEARCH_API_KEY` set (checked 2026-10-19).
+TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. None of these, nor the agent Lambda, runs a web
+search: their unkeyed Brave code was deleted 2026-10-19. Brave is used only by
+`newsPredictionResolver` (and the dormant `newsPairIntelligence`), which have the key.
 
 Risk tiers are 0–24 low, 25–49 moderate, 50–74 elevated, 75–100 high: `src/shared/lib/riskTiers.js`
 on the frontend, `tierFromScore` in `riskDimensions.js` on the backend.

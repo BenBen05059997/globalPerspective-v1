@@ -14,11 +14,6 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const TOP_P = Number(process.env.TOP_P || '0.9');
 
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
-const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
-const BRAVE_WEB_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
-const SEARCH_RESULTS_PER_THREAD = 6;
-
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 
@@ -36,7 +31,7 @@ const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '0', 10)
 
 exports.handler = async (event = {}) => {
   const dryRun = Boolean(event && event.dryRun);
-  console.log(`Thread analysis started${dryRun ? ' (DRY RUN: no LLM, no Brave, no writes)' : ''}`);
+  console.log(`Thread analysis started${dryRun ? ' (DRY RUN: no LLM, no writes)' : ''}`);
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.error('Missing table configuration: TOPICS_DDB_TABLE or SUMMARIZE_PREDICT_TABLE');
@@ -76,7 +71,7 @@ exports.handler = async (event = {}) => {
       const analysis = await generateThreadAnalysis(thread);
       await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS));
       generated++;
-      console.log(`Generated analysis for ${thread.threadId} [${p.reason}] (${thread.entries.length} entries, ${analysis.searchResultsCount} web refs, ${analysis.modelId})`);
+      console.log(`Generated analysis for ${thread.threadId} [${p.reason}] (${thread.entries.length} entries, ${analysis.modelId})`);
     } catch (err) {
       failed++;
       console.error(`Failed to analyze ${thread.threadId}:`, err.message);
@@ -160,61 +155,6 @@ async function readExistingAnalysis(threadId) {
   }
 }
 
-async function searchForContext(query) {
-  if (!BRAVE_API_KEY) return [];
-  const results = [];
-
-  // 1. Recent news about this specific topic (freshness: past week)
-  try {
-    const newsUrl = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=4&search_lang=en&freshness=pw`;
-    const newsResp = await fetch(newsUrl, {
-      headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY },
-    });
-    if (newsResp.ok) {
-      const data = await newsResp.json();
-      for (const r of (data?.results || []).slice(0, 4)) {
-        const source = r.meta_url?.hostname || r.url?.split('/')[2] || 'unknown';
-        results.push({
-          title: r.title || '',
-          snippet: r.description || '',
-          source,
-          age: r.age || '',
-          type: 'news',
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Brave news search failed:', err.message);
-  }
-
-  // 2. Broader web context (background, analysis, Wikipedia) — no freshness filter
-  try {
-    const webUrl = `${BRAVE_WEB_ENDPOINT}?q=${encodeURIComponent(query + ' analysis background')}&count=4&search_lang=en&text_decorations=false`;
-    const webResp = await fetch(webUrl, {
-      headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY },
-    });
-    if (webResp.ok) {
-      const data = await webResp.json();
-      for (const r of (data?.web?.results || []).slice(0, 2)) {
-        const source = r.meta_url?.hostname || r.url?.split('/')[2] || 'unknown';
-        // Skip if we already have this source
-        if (results.some(x => x.source === source)) continue;
-        results.push({
-          title: r.title || '',
-          snippet: r.description || (r.extra_snippets || [])[0] || '',
-          source,
-          age: '',
-          type: 'web',
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Brave web search failed:', err.message);
-  }
-
-  return results.slice(0, SEARCH_RESULTS_PER_THREAD);
-}
-
 async function generateThreadAnalysis(thread) {
   // Build rich entry context: full summaries, individual AI insights, source outlets
   const entryLines = thread.entries.map((e, i) => {
@@ -234,35 +174,22 @@ async function generateThreadAnalysis(thread) {
     return `Entry ${i + 1} (${e.date}):\n  Title: ${e.title}\n  Regions: ${regions}${sourceStr}${summary}${prediction}${trace}`;
   }).join('\n\n');
 
-  // Search for external grounding using the most recent entry title as the query
-  const searchQuery = thread.entries[thread.entries.length - 1].title;
-  const searchResults = await searchForContext(searchQuery);
-
-  const referenceBlock = searchResults.length > 0
-    ? `\n=== EXTERNAL REFERENCES (web search: "${searchQuery}") ===\n` +
-      searchResults.map((r, i) => {
-        const age = r.age ? ` · ${r.age}` : '';
-        return `[${i + 1}] "${r.title}" — ${r.snippet} (${r.source}${age})`;
-      }).join('\n') +
-      '\n\nCite these as [1], [2] etc. where they support your analysis.\n'
-    : '';
-
-  const prompt = `You are a narrative intelligence analyst writing for a sophisticated global news platform. Below are entries from a multi-day news thread, listed chronologically, followed by external references from a live web search.
+  const prompt = `You are a narrative intelligence analyst writing for a sophisticated global news platform. Below are entries from a multi-day news thread, listed chronologically.
 
 === THREAD ENTRIES ===
 ${entryLines}
-${referenceBlock}
+
 Generate a JSON object with exactly these fields:
 
 1. "threadTitle": A sharp, journalistic title for the overall thread (6-10 words, no clickbait, no colons).
 
 2. "entryShortTitles": Array of objects {topicId, shortTitle} where shortTitle is a 6-10 word micro-headline capturing each day's specific new development in sequence. Use these topicIds: ${thread.entries.map(e => `"${e.topicId}"`).join(', ')}
 
-3. "storyArc": 2-3 paragraphs in analytical journalism style explaining how this story evolved. Include specific dates, key turning points, and the progression from the initial trigger to the latest development. Show the arc — how intensity, scope, or actors changed over time. Write in past tense like a coherent story, not a bullet list. Cite external references where relevant.
+3. "storyArc": 2-3 paragraphs in analytical journalism style explaining how this story evolved. Include specific dates, key turning points, and the progression from the initial trigger to the latest development. Show the arc — how intensity, scope, or actors changed over time. Write in past tense like a coherent story, not a bullet list.
 
-4. "trajectory": 2 paragraphs on where this story is concretely heading. Name specific actors, institutions, or regions to watch next. Identify 2-3 scenarios (most likely first) with rough timeframes (days/weeks/months). Ground predictions in the entry pattern and external references — avoid vague language like "tensions may rise."
+4. "trajectory": 2 paragraphs on where this story is concretely heading. Name specific actors, institutions, or regions to watch next. Identify 2-3 scenarios (most likely first) with rough timeframes (days/weeks/months). Ground predictions in the entry pattern — avoid vague language like "tensions may rise."
 
-5. "rootCauseChain": 2 paragraphs tracing the story back through three layers: (a) the immediate trigger in the first entry, (b) the medium-term political/economic/social condition that enabled it, and (c) the deeper structural or historical factor. Name specific actors, policies, or events at each layer. Use external references to verify claims.
+5. "rootCauseChain": 2 paragraphs tracing the story back through three layers: (a) the immediate trigger in the first entry, (b) the medium-term political/economic/social condition that enabled it, and (c) the deeper structural or historical factor. Name specific actors, policies, or events at each layer.
 
 6. "watchQuestions": Array of exactly 3 strings — specific, actionable questions a reader should watch for in the coming days or weeks. Name specific actors, countries, institutions, or upcoming deadlines. Avoid vague questions like "Will tensions rise?". Good example: "Will the ECB raise rates at its June meeting given this inflation data?" Each string must end with "?".
 
@@ -290,16 +217,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
     throw new Error(`Missing required fields in response: ${Object.keys(parsed).join(', ')}`);
   }
 
-  const groundingSources = searchResults.map(r => ({
-    title: r.title,
-    snippet: r.snippet,
-    source: r.source,
-    type: r.type,
-    ...(r.age && { age: r.age }),
-    queryUsed: searchQuery,
-  }));
-
-  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length, groundingSources };
+  return { ...parsed, modelId, latencyMs };
 }
 
 async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = []) {
@@ -325,7 +243,6 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [])
       trajectory: analysis.trajectory || null,
       rootCauseChain: analysis.rootCauseChain || null,
       watchQuestions: Array.isArray(analysis.watchQuestions) ? analysis.watchQuestions.slice(0, 3) : [],
-      groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
       inflectionTopicId: analysis.inflectionTopicId || null,
       riskScore,
       dimensions,
@@ -337,7 +254,6 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [])
       generatedAt: new Date().toISOString(),
       model: analysis.modelId || GROK_MODEL,
       latencyMs: analysis.latencyMs || 0,
-      searchResultsCount: analysis.searchResultsCount || 0,
       ttl,
     },
   }));

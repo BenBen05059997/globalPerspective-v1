@@ -43,7 +43,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `COUNTRY_BASELINE_HOURS`, `COUNTRY_MAX_ALERT_EXTRAS`, `COUNTRY_TOP_N`, `COVERAGE_JUMP_FACTOR`, `COVERAGE_JUMP_MIN`, `MAX_TOKENS`, `TEMPERATURE`, `TOP_P`, `WORLD_LATEST_URL`
+- Read in repo source, not set live (code default applies): `COUNTRY_BASELINE_HOURS`, `COUNTRY_MAX_ALERT_EXTRAS`, `COUNTRY_TOP_N`, `COVERAGE_JUMP_FACTOR`, `COVERAGE_JUMP_MIN`, `MAX_TOKENS`, `TEMPERATURE`, `TOP_P`, `WORLD_LATEST_URL`
 
 ## newsDriftCorrector
 
@@ -162,7 +162,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `ENV`, `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `OPENAI_API_KEY`, `PREDICTION_MODEL`, `REGION`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `ENV`, `OPENAI_API_KEY`, `REGION`, `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `ARC_DIGEST_DAYS`, `ARC_DIGEST_MAX`, `BRAVE_SEARCH_API_KEY`, `CACHE_CLEANUP_ENABLED`, `ENABLE_R3_TIER`, `MAX_TOKENS`, `PREDICTION_LOG_TABLE`, `PREDICTION_MAX_TOKENS`, `PREDICTION_SORT_KEY`, `PREDICTION_TTL_SECONDS`, `SUMMARY_PREDICT_PK_PREFIX`, `SUMMARY_PREDICT_TTL_SECONDS`, `SUMMARY_SORT_KEY`, `TEMPERATURE`, `TOP_P`, `WORLD_BUCKET`
+- Read in repo source, not set live (code default applies): `ARC_DIGEST_DAYS`, `ARC_DIGEST_MAX`, `CACHE_CLEANUP_ENABLED`, `ENABLE_R3_TIER`, `MAX_TOKENS`, `PREDICTION_LOG_TABLE`, `PREDICTION_MAX_TOKENS`, `PREDICTION_SORT_KEY`, `PREDICTION_TTL_SECONDS`, `SUMMARY_PREDICT_PK_PREFIX`, `SUMMARY_PREDICT_TTL_SECONDS`, `SUMMARY_SORT_KEY`, `TEMPERATURE`, `TOP_P`, `WORLD_BUCKET`
 
 ## newsRecommend
 
@@ -228,7 +228,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `INTER_CALL_DELAY_MS`, `MAX_TOKENS`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `MAX_THREADS`, `TEMPERATURE`, `TOP_P`
+- Read in repo source, not set live (code default applies): `MAX_THREADS`, `TEMPERATURE`, `TOP_P`
 
 ## newsWeeklyBrief
 

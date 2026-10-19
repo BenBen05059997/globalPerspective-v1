@@ -7,7 +7,7 @@ EventBridge Scheduler `InvokeNewsAgent`, `cron(25 4/8 * * ? *)` UTC (04:25, 12:2
 Repo source: `backend/pipeline/NewsProjectInvokeAgentLambda/src/`.
 
 ## What it means
-Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`); the optional Brave grounding needs `BRAVE_SEARCH_API_KEY`, which is not set live (2026-10-19).
+Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`); no web search.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name InvokeNewsAgent --region ap-northeast-1`

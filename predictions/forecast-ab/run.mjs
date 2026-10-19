@@ -196,7 +196,7 @@ if (FROM_CACHE) {
       const premiseBlock = newJob.buildPremiseBlock(topic, factsByCountry);
       // held-out stories only see archive history from BEFORE their own day (no look-ahead)
       const arcDigest = newJob.buildArcDigest(topic, topic._day ? pastEntries.filter((e) => e.date < topic._day) : pastEntries);
-      const v1 = { premiseBlock, arcDigest, webContext: '' };
+      const v1 = { premiseBlock, arcDigest };
       const inputText = newJob.forecastInputText(topic, v1);
       const row = { id: topic.id, title: topic.title, inputText, arcDigest, premiseBlock };
       try {

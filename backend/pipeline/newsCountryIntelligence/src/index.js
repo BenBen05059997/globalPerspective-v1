@@ -22,9 +22,6 @@ const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '5000', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
 const TOP_P = Number(process.env.TOP_P || '0.9');
 
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
-const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
-
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 
@@ -320,27 +317,6 @@ async function buildDriftBlock(countryName) {
 
 // ─── AI generation ───────────────────────────────────────────────────────────
 
-async function searchCountryNews(countryName) {
-  if (!BRAVE_API_KEY) return [];
-  try {
-    const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(countryName + ' news')}&count=5&search_lang=en&freshness=pw`;
-    const resp = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY },
-    });
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return (data?.results || []).slice(0, 5).map(r => ({
-      title: r.title || '',
-      snippet: r.description || '',
-      source: r.meta_url?.hostname || r.url?.split('/')[2] || 'unknown',
-      age: r.age || '',
-    }));
-  } catch (err) {
-    console.warn(`Brave search failed for ${countryName}:`, err.message);
-    return [];
-  }
-}
-
 // Load automated facts from DDB (written by newsCountryFactsUpdater) and merge into
 // EDITORIAL_FACTS. JSON operator entries always take precedence over DDB auto-entries.
 async function loadAndMergeDDBFacts(countryName) {
@@ -391,59 +367,7 @@ function buildEditorialBlock(countryName) {
 
   const stamp = facts.lastUpdated ? ` (last reviewed ${facts.lastUpdated} by operator)` : '';
   return `\n=== EDITORIAL CONTEXT for ${countryName}${stamp} — OPERATOR-VERIFIED, HIGHEST AUTHORITY ===
-These are facts verified by the platform operator. They override the archive and override web search if contradicted. Use the names, dates, and triggers below as the canonical reference.
-
-${lines.join('\n')}
-`;
-}
-
-// Targeted grounding search: verify current leadership, regime changes, conflict status.
-// Returns a formatted text block to inject into the prompt as verified facts.
-async function gatherCountryGrounding(countryName) {
-  if (!BRAVE_API_KEY) return '';
-  const year = new Date().getUTCFullYear();
-
-  const queries = [
-    { label: `Current head of state / government`, q: `${countryName} current leader president prime minister ${year}` },
-    { label: `Recent leadership changes / deaths`, q: `${countryName} leader killed assassinated resigned appointed ${year}` },
-    { label: `Current regime / government status`, q: `${countryName} government status regime change election ${year}` },
-  ];
-
-  const results = await Promise.all(queries.map(async ({ label, q }) => {
-    try {
-      const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(q)}&count=3&search_lang=en&freshness=pm`;
-      const resp = await fetch(url, {
-        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY },
-      });
-      if (!resp.ok) return { label, hits: [] };
-      const data = await resp.json();
-      const hits = (data?.results || []).slice(0, 3).map(r => ({
-        title: r.title || '',
-        snippet: r.description || '',
-        source: r.meta_url?.hostname || 'unknown',
-        age: r.age || '',
-      }));
-      return { label, hits };
-    } catch (err) {
-      console.warn(`Grounding search failed for "${countryName}" / "${label}":`, err.message);
-      return { label, hits: [] };
-    }
-  }));
-
-  const lines = [];
-  for (const { label, hits } of results) {
-    if (!hits.length) continue;
-    lines.push(`▸ ${label}:`);
-    hits.forEach(h => {
-      const age = h.age ? ` · ${h.age}` : '';
-      lines.push(`    - "${h.title}" — ${h.snippet} (${h.source}${age})`);
-    });
-  }
-
-  if (!lines.length) return '';
-
-  return `\n=== VERIFIED GROUNDING FACTS for ${countryName} (live web search — treat as authoritative) ===
-These are current web-search results about ${countryName}'s leadership and regime status. If the archive entries below reference a leader as active but these grounding facts say they have been killed, succeeded, resigned, or replaced, defer to the grounding facts. The archive entries may be weeks old or reference events before the data window — always use the current leader's name in your analysis.
+These are facts verified by the platform operator. They override the archive if contradicted. Use the names, dates, and triggers below as the canonical reference.
 
 ${lines.join('\n')}
 `;
@@ -472,29 +396,15 @@ async function generateCountryIntelligence(country) {
   await loadAndMergeDDBFacts(country.countryName);
   const editorialBlock = buildEditorialBlock(country.countryName);
 
-  const [searchResults, groundingBlock, driftBlock] = await Promise.all([
-    searchCountryNews(country.countryName),
-    gatherCountryGrounding(country.countryName),
-    buildDriftBlock(country.countryName),
-  ]);
-  const referenceBlock = searchResults.length > 0
-    ? '\n\n=== EXTERNAL REFERENCES (live web search) ===\n' +
-      searchResults.map((r, i) => {
-        const age = r.age ? ` · ${r.age}` : '';
-        return `[${i + 1}] "${r.title}" — ${r.snippet} (${r.source}${age})`;
-      }).join('\n') +
-      '\n\nCite these as [1], [2] etc. where they support your analysis.\n'
-    : '';
+  const driftBlock = await buildDriftBlock(country.countryName);
 
   const prompt = `You are a geopolitical intelligence analyst writing a country briefing for a sophisticated news intelligence platform. Below is all tracked coverage for ${country.countryName} over the past ${country.dayCount} days (${country.dateRange.from} to ${country.dateRange.to}).
 
 AUTHORITY HIERARCHY (apply in order when facts conflict):
   1. EDITORIAL CONTEXT (operator-verified) — highest authority
-  2. VERIFIED GROUNDING FACTS (live web search)
-  3. ARCHIVE ENTRIES + THREAD ANALYSES
-  4. EXTERNAL REFERENCES (Brave News)
-  5. RECENT CORRECTIONS (our own logged trajectory — continuity only, never overrides new evidence)
-${editorialBlock || ''}${groundingBlock || ''}${driftBlock || ''}
+  2. ARCHIVE ENTRIES + THREAD ANALYSES
+  3. RECENT CORRECTIONS (our own logged trajectory — continuity only, never overrides new evidence)
+${editorialBlock || ''}${driftBlock || ''}
 === OVERVIEW ===
 Country: ${country.countryName}
 Total articles: ${country.totalArticles} across ${country.dayCount} days
@@ -504,12 +414,12 @@ Category breakdown: ${catBreakdown}
 === MULTI-DAY STORY ARCS ===
 ${threadBlock || 'None'}
 ${singleBlock}
-${referenceBlock}
+
 Generate a JSON object with exactly these fields:
 
 === HARD CONSTRAINTS ===
 - The EDITORIAL CONTEXT (if present) is the canonical source of truth. If it names a current leader, use that name. If it provides a conflict startDate or trigger, cite that as the actual beginning of the crisis even if earlier archive entries only reference ongoing events.
-- If the VERIFIED GROUNDING FACTS or archive entries contradict EDITORIAL CONTEXT, defer to editorial context. Do not cite deceased or succeeded leaders as active decision-makers.
+- If archive entries contradict EDITORIAL CONTEXT, defer to editorial context. Do not cite deceased or succeeded leaders as active decision-makers.
 - When leadership has changed, note the transition once (e.g., "following the succession of X by Y on {date}") then proceed with the current leader throughout.
 - The bluf and headline must reflect current leadership, not leadership from any stale archive window.
 - When a conflict's start date from editorial context predates the archive window, use the editorial trigger as the causal anchor in backgroundTimeline (as the earliest entry) rather than treating the first archive entry as the start of the crisis.
@@ -562,15 +472,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
     throw new Error(`Missing required fields in response: ${Object.keys(parsed).join(', ')}`);
   }
 
-  const groundingSources = searchResults.map(r => ({
-    title: r.title,
-    snippet: r.snippet,
-    source: r.source,
-    ...(r.age && { age: r.age }),
-    queryUsed: `${country.countryName} news`,
-  }));
-
-  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length, groundingSources };
+  return { ...parsed, modelId, latencyMs };
 }
 
 // ─── Write to DynamoDB ───────────────────────────────────────────────────────
@@ -607,7 +509,6 @@ async function writeAnalysis(countryName, analysis, country) {
     riskScore,
     dimensions,
     lead,
-    groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
     keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 8) : [],
     dominantCategory: country.dominantCategory,
     categories: country.categories,
@@ -618,7 +519,6 @@ async function writeAnalysis(countryName, analysis, country) {
     generatedAt,
     model: analysis.modelId || GROK_MODEL,
     latencyMs: analysis.latencyMs || 0,
-    searchResultsCount: analysis.searchResultsCount || 0,
     ttl,
   };
 

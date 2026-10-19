@@ -6,7 +6,6 @@ import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import { usePreferences } from '@/shared/hooks/usePreferences';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { loadByok, clearByok, getProvider, ProviderModal } from '@/features/analysis-studio';
-import { creditPacks } from '@/shared/api/restProxy';
 import DeskPanel from '@/features/account/components/DeskPanel';
 import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
 import { useWeeklyBrief } from '@/features/weekly-brief';
@@ -141,17 +140,16 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
   );
 }
 
-// Membership & credits at a glance — current plan + credit balance, with links into the
-// /membership page to subscribe / buy more. Reads the same hook the header pill uses.
+// Membership at a glance — current plan, with a link into the /membership page.
 function MembershipPanel() {
-  const { membership, isMember, creditBalance, available, loading } = useMembership();
+  const { membership, isMember, available, loading } = useMembership();
 
   if (!available) {
     return (
       <div className="acct-col">
         <Card className="acct-card">
           <SectionHeader label="Membership" />
-          <div className="acct-muted">Membership &amp; credits aren't available yet.</div>
+          <div className="acct-muted">Membership isn't available yet.</div>
         </Card>
       </div>
     );
@@ -182,28 +180,13 @@ function MembershipPanel() {
           <>
             <div className="acct-plan-name">Free</div>
             <div className="acct-fine">
-              Reading stays free. Membership adds the full correction history, country change-alerts, and a monthly allowance of custom analyses.
+              Reading stays free. Membership adds the full correction history, country change-alerts, and the Analysis Studio on our compute.
             </div>
           </>
         )}
         <Button to="/membership" className="acct-card__action">
           {isMember ? 'Manage membership' : 'See membership'}
         </Button>
-      </Card>
-
-      {/* Credits */}
-      <Card className="acct-card">
-        <SectionHeader label="Analysis credits" />
-        <div className="acct-credits">
-          <span className="acct-credits__num">{loading ? '—' : creditBalance}</span>
-          <span className="acct-muted">credit{creditBalance === 1 ? '' : 's'}</span>
-        </div>
-        <div className="acct-fine">
-          Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
-        </div>
-        {creditPacks().length > 0 && (
-          <Button to="/membership" className="acct-card__action">Buy credits</Button>
-        )}
       </Card>
     </div>
   );

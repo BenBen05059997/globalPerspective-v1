@@ -10,16 +10,16 @@ and the Studio key panel. The save / follow / subscribe controls other pages emb
 - `SignIn.jsx` - magic link, Google, guest; stores `?returnTo=` in localStorage `gp_return_to` (default `/weekly`)
 - `AuthCallback.jsx` - finishes the magic link, then navigates to `gp_return_to` or `/weekly`
 - `Account.jsx` - five rail sections (desk, alerts, studio, plan, profile) chosen by `?tab=`
-- `MembershipPage.jsx` - plans, benefits, subscribe and credit-pack checkout
+- `MembershipPage.jsx` - plans, benefits and subscribe checkout
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`) - the Desk section
 - `lib/desk.js`, `deskMap.js`, `accountClaims.js`. The Save / Follow / Subscribe controls and their hooks live in `@/shared/ui` and `@/shared/hooks`
 
 ## Data
 - `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT` (newsSavedItems): `save_item`, `unsave_item`, `get_saved_items`
 - `usePreferences` -> `window.USER_PREFS_ENDPOINT` (newsRecommend): `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`
-- `useMembership` -> `window.POLAR_BILLING_ENDPOINT` (newsPolarBilling): `get_membership`; `createCheckout`/`createCreditCheckout` -> `create_checkout`
+- `useMembership` -> `window.POLAR_BILLING_ENDPOINT` (newsPolarBilling): `get_membership`; `createCheckout` -> `create_checkout`
 - `useDeskChanges` -> restProxy `country_history` per followed country (members only, 3 at a time)
-- Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief`; `creditPacks()` reads `window.POLAR_CREDIT_PACKS`
+- Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief`
 
 ## Shared blocks used
 - `@/shared/ui/boot/BootLoader`, `@/shared/ui/StoryLink`

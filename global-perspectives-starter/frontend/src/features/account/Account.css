@@ -150,11 +150,9 @@
 .acct-confirm__body { color: var(--text-body); margin-bottom: var(--space-2); line-height: var(--leading-normal); }
 .acct-confirm__body a { color: var(--accent); }
 
-/* Plan / credits */
+/* Plan */
 .acct-plan-name { font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-head); }
 .acct-ok { color: var(--ok); }
-.acct-credits { display: flex; align-items: baseline; gap: var(--space-2); }
-.acct-credits__num { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-head); }
 
 /* Alerts: toggle rows, the frequency select, confirmations */
 .acct-row {

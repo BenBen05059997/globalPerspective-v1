@@ -33,7 +33,6 @@ vi.mock('@/shared/api/restProxy', () => ({
   unfollowCountry: vi.fn(),
   fetchMembership: vi.fn(() => Promise.resolve(null)),
   billingConfigured: () => false,
-  creditPacks: () => [],
   fetchCountryHistory: vi.fn(() => Promise.resolve({ success: true, snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false })),
   // F1.4 (review R2): the Alerts panel now computes the weekly-brief note from real data —
   // both a fresh brief and no analysis pause by default, so other sections' assertions are

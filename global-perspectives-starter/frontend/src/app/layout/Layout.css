@@ -182,28 +182,6 @@
 .gp-btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
 .gp-btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
 
-/* Header credits pill — at-a-glance balance, links to Account → Membership. */
-.gp-credits-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 11px;
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: 999px;
-  color: var(--text-body);
-  font-family: var(--sans);
-  font-size: 13px;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background var(--fast), border-color var(--fast);
-}
-.gp-credits-pill:hover { background: var(--accent-wash); border-color: var(--hairline-strong); }
-.gp-credits-pill.is-member { border-color: var(--accent); }
-.gp-credits-dot { color: var(--accent); font-size: 9px; line-height: 1; }
-.gp-credits-n { font-weight: 700; }
-.gp-credits-label { color: var(--text-dim); }
-@media (max-width: 760px) { .gp-credits-label { display: none; } }
 
 /* ── Status strip ────────────────────────────────────────── */
 /* Site-wide computed "paused since" line (N1/DS1) — renders the HudStatusLine console component

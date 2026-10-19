@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useMembership } from '@/shared/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
 import { NotificationBell } from '@/features/breaking';
@@ -60,7 +59,6 @@ const BUILD_LABEL = `v${_ver}${_date ? ` · ${_date}` : ''}`;
 function Layout({ children }) {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { isMember, creditBalance, available: billingAvailable } = useMembership();
   // P1 phone tab bar (A2): shared 900px breakpoint — same one the map's own MAP·LIST·ALERTS tabs use.
   const isPhone = useIsPhone();
 
@@ -82,7 +80,7 @@ function Layout({ children }) {
   })();
 
   // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Map" is `/`
-  // (the logo goes there too); the old "Topics" page is `/today`, linked from the footer; "Countries" (`/weekly/countries`) and "Weekly Brief"
+  // (the logo goes there too); the old "Topics" page stays live at `/today` for existing links; "Countries" (`/weekly/countries`) and "Weekly Brief"
   // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
   // the menu. "Briefings" points at `/briefings` (S3, briefing mode); `/daily` and `/weekly-brief`
   // stay live for existing links.
@@ -165,18 +163,6 @@ function Layout({ children }) {
             </svg>
           </Link>
           <NotificationBell />
-
-          {!authLoading && user && !user.isAnonymous && billingAvailable && (creditBalance > 0 || isMember) && (
-            <Link
-              to="/account?tab=membership"
-              className={`gp-credits-pill${isMember ? ' is-member' : ''}`}
-              title={`${creditBalance} analysis credit${creditBalance === 1 ? '' : 's'}${isMember ? ' · Member' : ''} — manage`}
-            >
-              {isMember && <span className="gp-credits-dot" aria-hidden>●</span>}
-              <span className="gp-credits-n">{creditBalance}</span>
-              <span className="gp-credits-label">credits</span>
-            </Link>
-          )}
 
           {!authLoading && (
             user && !user.isAnonymous ? (

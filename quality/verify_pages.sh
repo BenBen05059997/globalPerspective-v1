@@ -461,6 +461,11 @@ must_not_have "$SRC/shared/map/SituationMap3D.jsx" "pulseSet\\(active, Date.now\
 
 # 2026-10-02 operator yes: Studio credits copy removed (credits parked); Stories rail renamed
 must_not_have "$SRC/features/analysis-studio/AnalysisStudio.jsx" "Credits · |out of analysis credits|Add credits" "Studio shows no credits copy while credits are parked"
+# 2026-10-19 operator rule (decision 0002: site copy must not promise credits): no credits copy on
+# Membership, Account or the header pill.
+for f in features/account/MembershipPage.jsx features/account/Account.jsx app/layout/Layout.jsx; do
+  must_not_have "$SRC/$f" "[Cc]redit|monthly allowance" "$f promises no analysis credits or monthly allowance (credits parked)"
+done
 must_have "$SRC/features/threads/components/StoriesChanged.jsx" "Gaining coverage this week" "the Stories rail says 'Gaining coverage this week' (not 'Rising', which is a Board column)"
 
 # ─── Summary ───

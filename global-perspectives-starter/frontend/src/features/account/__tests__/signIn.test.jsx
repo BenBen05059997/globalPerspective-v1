@@ -37,7 +37,6 @@ vi.mock('@/shared/api/restProxy', () => ({
   unfollowCountry: vi.fn(),
   fetchMembership: vi.fn(() => Promise.resolve(null)),
   billingConfigured: () => false,
-  creditPacks: () => [],
   fetchCountryHistory: vi.fn(() => Promise.resolve({ success: true, snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false })),
 }));
 vi.mock('firebase/app', () => ({

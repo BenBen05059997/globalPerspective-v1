@@ -27,7 +27,7 @@ one-screen country card the map console also mounts.
 - `@/features/threads/`: `hooks/useWeeklyArchive`, `hooks/useThreadAnalyses`, `components/WeeklyMap` (lazy), `components/QuestionChip`, `lib/questionChips`, `lib/storyMode` (`buildDeadlines`), `lib/mapConstants`, `WeeklyPage.css`
 - `@/features/economy/hooks/useMarketsCountry`, `hooks/useDisruptionsList`
 - `@/features/account/components/SaveButton`, `FollowButton`
-- `@/features/map/lib/situationLabels.js` (`iso3ForName`), `lib/countryRiskLayer.js` (chunking constants)
+- `@/shared/lib/situationLabels.js` (`iso3ForName`), `lib/countryRiskLayer.js` (chunking constants)
 
 ## Gotchas
 - `useParams()` already decodes `:countryName`; decoding again throws on names with `%`.

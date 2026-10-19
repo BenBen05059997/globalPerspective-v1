@@ -4,7 +4,7 @@ import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import { placeMapLabels } from '@/features/map/lib/mapLabels.js';
 import { land, FRAME } from '@/features/map/lib/landGeometry.js';
-import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
+import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
 import {
   bearingDeg, beamCrossed, lapAngle, LAP_START_DEG, gainedIds, NO_CARDS, enqueueCard, advanceCards,
   agoShort, scanCardText, scanControlLabel,

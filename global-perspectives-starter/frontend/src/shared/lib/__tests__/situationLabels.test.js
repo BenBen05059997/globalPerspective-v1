@@ -2,7 +2,7 @@
 // empty message (e.g. "no disaster alerts open · news situations paused since <date>") instead
 // of the generic "quiet" claim, which used to show even while news analysis was paused.
 import { describe, it, expect } from 'vitest';
-import { buildLede } from '@/features/map/lib/situationLabels.js';
+import { buildLede } from '@/shared/lib/situationLabels.js';
 
 describe('buildLede', () => {
   it('uses the generic quiet line when no situations are open and no emptyMessage is given', () => {

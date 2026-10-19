@@ -28,7 +28,7 @@ the current edition. Slides are built only from fields the brief payload actuall
 ## Imports from other features
 - `@/features/daily/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> the briefs
 - `@/features/threads/components/StoryMode.jsx` (`StoryMap`), `components/QuestionChip.jsx`, `lib/questionChips.js` (`hasOwnProbability`)
-- `@/features/map/lib/situationLabels.js` -> `iso3ForName`
+- `@/shared/lib/situationLabels.js` -> `iso3ForName`
 
 ## Gotchas
 - `?from=markets` shows a one-line "markets briefings paused" note; no markets line while economy is parked.

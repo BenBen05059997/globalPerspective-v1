@@ -26,7 +26,7 @@ of changed reads (corrections). A plain text twin renders the same facts for pri
 ## Imports from other features
 - `@/features/account/components/FollowButton` -> follow a country from the ledger
 - `@/features/map/components/RadarMap.jsx` -> forecast board map
-- `@/features/map/lib/situationLabels.js` -> `ISO3_NAME` for placing questions on countries
+- `@/shared/lib/situationLabels.js` -> `ISO3_NAME` for placing questions on countries
 
 ## Gotchas
 - July pilot (122 triggers, one 2026-07-24 confirmedAt) is excluded from every headline number.

@@ -22,7 +22,7 @@ import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js
 import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
 import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';

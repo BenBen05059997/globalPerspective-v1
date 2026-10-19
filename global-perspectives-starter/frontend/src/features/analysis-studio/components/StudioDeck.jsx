@@ -4,7 +4,7 @@
 // Receipt, ◀ ▶ / dots / arrow keys), and a TIME BAR — the same pattern story mode uses
 // (Studio.dc.html v3). Built by REUSING story mode's own pieces, not forking them:
 //   - `StoryMap` (features/threads/components/StoryMode.jsx) for the map;
-//   - `iso3ForName` (features/map/lib/situationLabels.js) to shade backed ("our data") places;
+//   - `iso3ForName` (shared/lib/situationLabels.js) to shade backed ("our data") places;
 //   - the `.sm-*` slide/scroll/fade classes + `.gp-console` tokens (StoryMode.css, imported).
 //
 // DECK shows ONE section's deck at a time — F2's stacked sections become a switcher (chips)
@@ -18,7 +18,7 @@ import {
   OursVsRunStrip, ScenarioBandPicture, ComparePicturePanel, WhatChangedChart, FreeformHighlighter, StudioTimeBar,
 } from '@/features/analysis-studio/components/StudioPictures.jsx';
 import { StoryMap } from '@/features/threads/components/StoryMode.jsx';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';

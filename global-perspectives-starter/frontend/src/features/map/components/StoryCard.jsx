@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import { knownStoryTitles, linkMentions } from '@/features/map/lib/cardMentions.js';
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';
-import { summaryFacts, firstSentences } from '@/features/map/lib/cardText.js';
+import { summaryFacts, firstSentences } from '@/shared/lib/cardText.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause.js';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -25,7 +25,7 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { threadPath } from '@/shared/lib/threadPath';
 
-// Summary/trajectory text shaping lives in lib/cardText.js (bullet-aware; see its header).
+// Summary/trajectory text shaping lives in shared/lib/cardText.js (bullet-aware; see its header).
 
 function fmtDate(iso) {
   if (!iso) return null;

@@ -4,11 +4,11 @@ import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
-import { firstSentences } from '@/features/map/lib/cardText.js';
+import { firstSentences } from '@/shared/lib/cardText.js';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildDeadlines, buildSlides, viewFrom,

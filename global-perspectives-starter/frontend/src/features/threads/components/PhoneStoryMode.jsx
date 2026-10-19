@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import Button from '@/shared/ui/Button.jsx';

@@ -21,7 +21,7 @@ import { phoneSheetStopFor, mapScrollTop } from '@/features/map/lib/phoneSheet.j
 import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
-import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import { iso3Name, buildLede, TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import { freshnessState, olderLabel } from '@/shared/lib/freshness.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import { storiesForShading } from '@/features/map/lib/storyShading.js';

@@ -9,7 +9,7 @@ import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses, fetchCountryHistory } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { buildCountryRiskSeries, buildCountryChangeLog } from '@/features/analysis-studio/lib/countryDriftPicture';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';

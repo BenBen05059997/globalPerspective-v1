@@ -12,7 +12,7 @@
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { deriveHeadline, tierLabel as tierWord } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
-import { iso3ForName, iso3Name, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName, iso3Name, TIER_LABEL } from '@/shared/lib/situationLabels.js';
 
 // Backend cap (newsSensitiveData's country_intelligence action silently slices to 15 — see
 // CLAUDE.md's "batch ≤15 names per call"): any request bigger than this loses the tail silently,

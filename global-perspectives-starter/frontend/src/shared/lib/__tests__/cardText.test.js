@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summaryFacts, firstSentences } from '@/features/map/lib/cardText.js';
+import { summaryFacts, firstSentences } from '@/shared/lib/cardText.js';
 
 const SUMMARY = `- The BRICS group of nations unanimously adopted a joint declaration on Saturday expressing deep concern over the war in the Middle East and urging maximum restraint, per al-monitor.com.
 - Chinese President Xi Jinping urged the BRICS bloc to be a peacemaker, per al-monitor.com.

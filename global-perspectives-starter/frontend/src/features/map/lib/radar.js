@@ -3,7 +3,7 @@
 // beam-pass card queue are testable in plain vitest. See
 // project-docs/redesign-ux/_active/CONSOLE_WIREFRAME_TECHNIQUE.md §3 for the original sweep design.
 import { AXIS_LABELS } from '@/shared/lib/riskTiers.js';
-import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import { changedAt } from '@/features/map/lib/pulse.js';
 
 /**

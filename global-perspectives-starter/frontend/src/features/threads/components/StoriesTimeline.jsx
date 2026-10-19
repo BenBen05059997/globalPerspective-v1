@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { crisisOf, tierOf, timelineLayout, timelineSpan, timelineTicks } from '@/features/threads/lib/storyGroups';
@@ -57,12 +58,12 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
           const lay = timelineLayout(t.dates, span, now);
           const hue = crisis === 'neutral' ? 'var(--text-dim)' : `var(--hue-${crisis})`;
           return (
-            <li key={t.threadId} className="tl-row" style={{ '--row-hue': hue }}>
+            <li key={t.threadId} className="gp-row tl-row" style={{ '--row-hue': hue }}>
               <StoryLink
                 threadId={t.threadId}
                 topic={{ title, category: t.category, regions: t.regions, sources: t.sourceCount }}
                 asOf={t.changedAt}
-                className="tl-link"
+                className="gp-row__link tl-link"
                 aria-label={`${title}. Coverage on ${t.dayCount} ${t.dayCount === 1 ? 'day' : 'days'}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
               >
                 <span className="tl-left">
@@ -89,7 +90,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
         })}
       </ul>
       {threads.length > limit ? (
-        <button type="button" className="sf-more" onClick={() => setLimit((n) => n + CAP)}>Show {Math.min(CAP, threads.length - limit)} more</button>
+        <Button className="sf-more" onClick={() => setLimit((n) => n + CAP)}>Show {Math.min(CAP, threads.length - limit)} more</Button>
       ) : null}
     </div>
   );

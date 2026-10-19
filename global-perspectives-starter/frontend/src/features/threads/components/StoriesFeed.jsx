@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
@@ -21,7 +22,7 @@ function Group({ group, items, analyses, now, peek }) {
         ))}
       </ul>
       {hidden > 0 ? (
-        <button type="button" className="sf-more" onClick={() => setShowAll(true)}>Show {hidden} more</button>
+        <Button className="sf-more" onClick={() => setShowAll(true)}>Show {hidden} more</Button>
       ) : null}
     </section>
   );
@@ -33,9 +34,9 @@ function Archive({ items, analyses, now, peek }) {
   const group = GROUPS.find((g) => g.key === 'archive');
   return (
     <div className="sf-archive">
-      <button type="button" className="sf-more sf-archive__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <Button className="sf-more sf-archive__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         Archive · {items.length} {items.length === 1 ? 'story' : 'stories'} more than 30 days old {open ? '▴' : '▾'}
-      </button>
+      </Button>
       {open ? <Group group={group} items={items} analyses={analyses} now={now} peek={peek} /> : null}
     </div>
   );
@@ -49,9 +50,9 @@ function SingleMentions({ entries }) {
   const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
   return (
     <section className="sf-single">
-      <button type="button" className="sf-more sf-archive__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <Button className="sf-more sf-archive__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         Single mentions · {entries.length} · appeared once, not yet part of a multi-day story {open ? '▴' : '▾'}
-      </button>
+      </Button>
       {open ? (
         <div className="sf-single__body">
           {dates.map((date) => (

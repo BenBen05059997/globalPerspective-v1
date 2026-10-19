@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import Chip from '@/shared/ui/Chip.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import { useSearchParams } from 'react-router-dom';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
@@ -183,7 +185,7 @@ export default function WeeklyPage() {
       {welcome ? (
         <div className="sf-welcome">
           <span>Welcome to Story Intelligence! You have full access. Explore stories, country briefings, and AI analysis below.</span>
-          <button type="button" className="sf-welcome__x" aria-label="Dismiss" onClick={() => setWelcome(false)}>✕</button>
+          <Button variant="icon" label="Dismiss" onClick={() => setWelcome(false)}>✕</Button>
         </div>
       ) : null}
       {error ? <div className="weekly-error" role="alert">{error}</div> : null}
@@ -213,15 +215,14 @@ export default function WeeklyPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button
-            type="button"
-            className="sf-chipbtn"
+          <Chip
+            selected={filtersOpen}
             aria-expanded={filtersOpen}
             aria-controls="sf-phone-filters"
             onClick={() => setFiltersOpen((o) => !o)}
           >
             Filters{activeFilters ? ` · ${activeFilters}` : ''}
-          </button>
+          </Chip>
         </div>
         {filtersOpen ? (
           <div id="sf-phone-filters" className="sf-panel">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import StoryLine from '@/features/threads/components/StoryLine.jsx';
@@ -32,7 +33,7 @@ function ChangedList({ threads, analyses, baseline, now, peek }) {
           {shown.map((t) => <StoryLine key={t.threadId} thread={t} analysis={analyses?.[t.threadId]} now={now} peek={peek} showCount={false} showText={false} scope="rail" />)}
         </ul>
       )}
-      {items.length > shown.length ? <button type="button" className="sf-more" onClick={() => setAll(true)}>Show {items.length - shown.length} more</button> : null}
+      {items.length > shown.length ? <Button className="sf-more" onClick={() => setAll(true)}>Show {items.length - shown.length} more</Button> : null}
     </section>
   );
 }

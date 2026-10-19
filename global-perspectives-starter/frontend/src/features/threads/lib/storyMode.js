@@ -225,19 +225,28 @@ export function buildScrubberTicks(startMs, endMs, targetCount = 5) {
 }
 
 /**
- * mostLikelyScenario(forecast) -> { label, probability } | null — the forecast's own highest-
+ * mostLikelyScenario(forecast) -> { name, probability, lead } | null — the forecast's own highest-
  * probability scenario (real `probability` field from the v1 prediction snapshot, never a
  * guess). Null when there's no forecast or no scenario carries a probability (S6-style: never
  * invent a "most likely" label the data doesn't support).
+ *   name  the scenario's own name, or null when it is only the rank ("Most Likely"): printing it
+ *         after "Most likely:" read "Most likely: Most Likely (60%)"
+ *   lead  the text of the scenario's earliest dated trigger (what would show it playing out), or null.
+ *         The snapshot carries no scenario description, so this is the only real short text it has.
  */
 export function mostLikelyScenario(forecast) {
   if (!forecast?.scenarios?.length) return null;
   let best = null;
   for (const s of forecast.scenarios) {
     if (s.probability == null) continue;
-    if (!best || s.probability > best.probability) best = { label: s.label, probability: s.probability };
+    if (!best || s.probability > best.probability) best = s;
   }
-  return best;
+  if (!best) return null;
+  const label = String(best.label || '').trim();
+  const lead = (best.triggers || [])
+    .filter((t) => t.text && t.deadline)
+    .sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)))[0]?.text || null;
+  return { name: label && !/^most likely$/i.test(label) ? label : null, probability: best.probability, lead };
 }
 
 export function viewFrom(entries) {

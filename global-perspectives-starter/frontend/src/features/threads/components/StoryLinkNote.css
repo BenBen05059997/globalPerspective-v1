@@ -1,0 +1,3 @@
+.sm-link-note { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border: 1px dashed var(--hairline); border-radius: var(--r-md); }
+.sm-link-note p { margin: 0; font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--text-body); }
+.sm-link-note .sm-link-note-more { margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-dim); }

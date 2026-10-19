@@ -13,25 +13,28 @@ import StoryEntryCard from '@/features/threads/components/StoryEntryCard';
 import ThreadIntelligence from '@/features/threads/components/ThreadIntelligence';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
 
-function threadHue(threadId) {
-  let hash = 0;
-  for (let i = 0; i < threadId.length; i++) {
-    hash = (hash << 5) - hash + threadId.charCodeAt(i);
-    hash |= 0;
-  }
-  return ((Math.abs(hash) % 12) * 30);
-}
-
-function threadColor(threadId) {
-  return `hsl(${threadHue(threadId)}, 65%, 45%)`;
+// A story's marks take the crisis hue of its topic (hue = crisis TYPE only); a topic with no crisis
+// type, or an entry with no thread, is the neutral dim grey. Kept as a CSS colour (`var(--hue-*)`):
+// the SVG map uses it as is, the Google map resolves it with cssColor().
+const NEUTRAL = 'var(--text-dim)';
+function threadColor(category) {
+  return crisisDotVar(category) || NEUTRAL;
 }
 
 // Dark base painted from the role tokens (read from :root when the map is created).
 const rootVar = (name) => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+// A CSS custom-property reference -> its value on :root (Google Maps symbols need a concrete colour).
+const cssColor = (v) => {
+  const m = /^var\(--([\w-]+)\)$/.exec(v || '');
+  return (m ? rootVar(m[1]) : v) || rootVar('text-dim');
+};
 const mapStyles = () => [
   { elementType: 'labels', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: rootVar('bg') }] },
@@ -67,7 +70,7 @@ function buildWeeklyMapData(dayMap, dates) {
     for (const entry of entries) {
       const codes = getTopicCountryCodes(entry);
       const tid = entry.threadId || entry.topicId || entry.title;
-      const color = entry.threadId ? threadColor(entry.threadId) : '#6b7280';
+      const color = entry.threadId ? threadColor(entry.category) : NEUTRAL;
 
       if (entry.threadId) {
         if (!threads[entry.threadId]) {
@@ -225,7 +228,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       const isCurrent = !currentDate || item.date === currentDate;
       const polyline = new window.google.maps.Polyline({
         path: [item.from, item.to],
-        strokeColor: item.color,
+        strokeColor: cssColor(item.color),
         strokeOpacity: currentDate ? (isCurrent ? 0.7 : 0.2) : (activeCountry ? 0.3 : (isHighlighted ? 0.5 : 0.15)),
         strokeWeight: currentDate ? (isCurrent ? 3 : 1) : (activeCountry ? 1.5 : (isHighlighted ? 2 : 1)),
         map,
@@ -240,7 +243,8 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       const isSelected = activeCountry && country.name === activeCountry;
       const count = country.count;
       const size = count >= 4 ? 14 : count >= 2 ? 10 : 7;
-      const primaryColor = country.topics[0].color;
+      const primaryColor = cssColor(country.topics[0].color);
+      const ring = rootVar('text-head');
       const hasCurrent = country.hasCurrent || !currentDate;
 
       // When a country is active: selected = bright + large, connected = same color but dimmed + smaller
@@ -257,14 +261,14 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
           scale: effectiveScale,
           fillColor: effectiveColor,
           fillOpacity: effectiveOpacity,
-          strokeColor: isSelected ? '#fff' : (currentDate && hasCurrent ? primaryColor : '#fff'),
+          strokeColor: isSelected ? ring : (currentDate && hasCurrent ? primaryColor : ring),
           strokeWeight: isSelected ? 3 : (currentDate && hasCurrent ? 3 : 1.5),
         },
         label: count > 1 && (isSelected || (!activeCountry && hasCurrent)) ? {
           text: String(count),
-          color: '#fff',
+          color: ring,
           fontWeight: 'bold',
-          fontSize: '10px',
+          fontSize: rootVar('text-2xs'),
         } : undefined,
         zIndex: isSelected ? 300 : (hasCurrent ? 200 : (isHighlighted ? count * 10 + 100 : count * 10)),
       });
@@ -284,14 +288,14 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
         }
 
         const topicHtml = country.topics.map(t => `
-          <div style="padding:6px 0;border-bottom:1px solid #f0f0f0;${t.threadId ? 'cursor:pointer;' : ''}" ${t.threadId ? `data-thread-id="${escapeHtml(t.threadId)}"` : ''}>
-            <div style="font-size:12px;font-weight:600;${t.threadId ? 'color:#2563eb;' : ''}">${escapeHtml(t.title)}</div>
-            <div style="font-size:10px;color:#888;margin-top:2px;">${escapeHtml(t.date)} · ${(t.sources || []).slice(0, 3).map(s => escapeHtml(s.source || s.title || '')).join(', ')}</div>
+          <div class="wmap-info-topic${t.threadId ? ' wmap-info-topic--link' : ''}" ${t.threadId ? `data-thread-id="${escapeHtml(t.threadId)}"` : ''}>
+            <div class="wmap-info-title">${escapeHtml(t.title)}</div>
+            <div class="wmap-info-meta">${escapeHtml(t.date)} · ${(t.sources || []).slice(0, 3).map(s => escapeHtml(s.source || s.title || '')).join(', ')}</div>
           </div>
         `).join('');
         infoWindowRef.current.setContent(`
-          <div class="wmap-info-window" style="max-width:300px;font-family:sans-serif;">
-            <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${escapeHtml(country.name)}</div>
+          <div class="wmap-info-window">
+            <div class="wmap-info-country">${escapeHtml(country.name)}</div>
             ${topicHtml}
           </div>
         `);
@@ -316,7 +320,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     }
   }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds, disableInfoWindow, onCountryClick, activeCountry]);
 
-  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={mapRef} className="wmap-gmap" />;
 });
 
 function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThreadIds, frameBounds = null, frameInsets = null }) {
@@ -339,7 +343,7 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
   const k = vb ? 1 / vb.scale : 1; // pixel-sized marks stay pixel-sized when zoomed
 
   return (
-    <div ref={boxRef} style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: 'var(--bg)' }} data-frame={vb ? 'country' : 'world'}>
+    <div ref={boxRef} className="wmap-svg" data-frame={vb ? 'country' : 'world'}>
       <svg width="100%" height="100%" viewBox={vb ? `${vb.x} ${vb.y} ${vb.w} ${vb.h}` : `0 0 ${WORLD_W} ${WORLD_H}`} style={{ position: 'absolute', inset: 0 }}>
         <rect x="-1000" y="-1000" width="3000" height="2500" style={{ fill: 'var(--bg)' }} />
         {CONTINENT_PATHS.map((cp, i) => (
@@ -354,7 +358,7 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
           const isHighlighted = !countryThreadIds || countryThreadIds.has(item.threadId);
           return (
             <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={item.color} strokeWidth={(isCurrent ? 2 : 1) * k} strokeOpacity={isCurrent && isHighlighted ? 0.6 : 0.15} />
+              style={{ stroke: item.color }} strokeWidth={(isCurrent ? 2 : 1) * k} strokeOpacity={isCurrent && isHighlighted ? 0.6 : 0.15} />
           );
         })}
         {Object.values(grouped).map(country => {
@@ -365,10 +369,11 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
           const isHighlighted = !countryThreadIds || country.topics.some(t => countryThreadIds.has(t.threadId));
           return (
             <g key={country.code}>
-              <circle cx={x} cy={y} r={isCurrent ? r + 2 * k : r} fill={country.color}
-                stroke={isCurrent ? country.color : '#fff'} strokeWidth={(isCurrent ? 2 : 1.5) * k} opacity={isCurrent && isHighlighted ? 1 : 0.25} />
+              <circle cx={x} cy={y} r={isCurrent ? r + 2 * k : r}
+                style={{ fill: country.color, stroke: isCurrent ? country.color : 'var(--text-head)' }}
+                strokeWidth={(isCurrent ? 2 : 1.5) * k} opacity={isCurrent && isHighlighted ? 1 : 0.25} />
               {country.count > 1 && isCurrent && isHighlighted && (
-                <text x={x} y={y + 4 * k} textAnchor="middle" fill="#fff" fontSize={9 * k} fontWeight="bold">
+                <text x={x} y={y + 4 * k} textAnchor="middle" style={{ fill: 'var(--text-head)' }} fontSize={9 * k} fontWeight="bold">
                   {country.count}
                 </text>
               )}
@@ -395,7 +400,7 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
 
   return (
     <div className="wmap-thread-detail">
-      <button className="wmap-detail-back" onClick={onBack}>← All threads</button>
+      <button type="button" className="wmap-detail-back" onClick={onBack}>← All threads</button>
       <div className="wmap-detail-header">
         <div className="wmap-detail-title">{displayTitle}</div>
       </div>
@@ -407,12 +412,14 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
       </div>
       <ThreadIntelligence analysis={analysis} />
       {canPlay && (
-        <button
-          className={`wmap-detail-play ${isPlaying ? 'playing' : ''}`}
+        <Button
+          variant={isPlaying ? 'quiet' : 'primary'}
+          selected={isPlaying}
+          className="wmap-detail-play"
           onClick={() => onPlay(isPlaying ? null : thread.threadId)}
         >
           {isPlaying ? '■ Stop Playback' : '▶ Play Evolution'}
-        </button>
+        </Button>
       )}
       {analysis ? (
         <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} onEntryFocus={onEntryFocus} />
@@ -439,23 +446,19 @@ function WmapCountryChips({ countryOptions, activeCountry, onChange, max = 6 }) 
   return (
     <div className="wmap-country-chips">
       {visible.map(({ country }) => (
-        <button
+        <Chip
           key={country}
-          className={`wmap-country-chip ${activeCountry === country ? 'active' : ''}`}
+          selected={activeCountry === country}
           onClick={() => onChange(activeCountry === country ? null : country)}
         >
           {country}
-        </button>
+        </Chip>
       ))}
       {!showAll && overflow > 0 && (
-        <button className="wmap-country-chip overflow" onClick={() => setShowAll(true)}>
-          +{overflow}
-        </button>
+        <Button compact onClick={() => setShowAll(true)}>+{overflow}</Button>
       )}
       {showAll && overflow > 0 && (
-        <button className="wmap-country-chip overflow" onClick={() => setShowAll(false)}>
-          Less
-        </button>
+        <Button compact onClick={() => setShowAll(false)}>Less</Button>
       )}
     </div>
   );
@@ -485,10 +488,9 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
     <div className={`wmap-thread-panel ${open ? '' : 'collapsed'}`}>
       {activeThread ? (
         <>
-          <div className="wmap-panel-header">
-            <span className="wmap-panel-header-left">Story Detail</span>
-            <button className="wmap-panel-close" onClick={onClose}>✕</button>
-          </div>
+          <SectionHeader as="h2" label="Story Detail" className="wmap-panel-top">
+            <Button variant="icon" compact label="Close panel" onClick={onClose}>✕</Button>
+          </SectionHeader>
           <ThreadDetailView
             thread={activeThread}
             onBack={() => onThreadClick(null)}
@@ -500,12 +502,9 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
         </>
       ) : (
         <>
-          <div className="wmap-panel-header">
-            <span className="wmap-panel-header-left">
-              {threadList.length} Thread{threadList.length !== 1 ? 's' : ''}
-            </span>
-            <button className="wmap-panel-close" onClick={onClose}>✕</button>
-          </div>
+          <SectionHeader as="h2" label={`${threadList.length} Thread${threadList.length !== 1 ? 's' : ''}`} className="wmap-panel-top">
+            <Button variant="icon" compact label="Close panel" onClick={onClose}>✕</Button>
+          </SectionHeader>
           {allRegions.length > 1 && (
             <div className="wmap-panel-filter">
               <select
@@ -546,18 +545,18 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                     <div className="wmap-country-replay-fill" style={{ width: `${((countryPlay.dateIdx + 1) / countryDates.length) * 100}%` }} />
                   </div>
                   <div className="wmap-country-replay-controls">
-                    <button className="wmap-replay-btn" onClick={() => onStepCountryPlay(-1)} disabled={countryPlay.dateIdx === 0}>&#9664;</button>
-                    <button className="wmap-replay-btn pause" onClick={onPauseCountryPlay}>
+                    <Button compact label="Previous day" onClick={() => onStepCountryPlay(-1)} disabled={countryPlay.dateIdx === 0}>◀</Button>
+                    <Button compact variant="primary" label={countryPlay.paused ? 'Play' : 'Pause'} onClick={onPauseCountryPlay}>
                       {countryPlay.paused || countryPlay.dateIdx >= countryDates.length - 1 ? '▶' : '❚❚'}
-                    </button>
-                    <button className="wmap-replay-btn" onClick={() => onStepCountryPlay(1)} disabled={countryPlay.dateIdx >= countryDates.length - 1}>&#9654;</button>
-                    <button className="wmap-replay-btn stop" onClick={onStopCountryPlay}>✕</button>
+                    </Button>
+                    <Button compact label="Next day" onClick={() => onStepCountryPlay(1)} disabled={countryPlay.dateIdx >= countryDates.length - 1}>▶</Button>
+                    <Button compact label="Stop replay" onClick={onStopCountryPlay}>✕</Button>
                   </div>
                 </>
               ) : (
-                <button className="wmap-country-replay-start" onClick={onStartCountryPlay}>
+                <Button variant="primary" className="wmap-country-replay-start" onClick={onStartCountryPlay}>
                   ▶ Replay {activeCountry} — {countryDates.length} day{countryDates.length !== 1 ? 's' : ''}
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -600,9 +599,11 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                 return (
                   <div key={category} className="wmap-category-group">
                     <button
+                      type="button"
                       className="wmap-category-group-header"
+                      aria-expanded={!isCollapsed}
                       onClick={toggleCollapse}
-                      style={dot ? { borderLeftColor: dot } : {}}
+                      style={dot ? { '--group-hue': dot } : undefined}
                     >
                       <span className="wmap-category-group-name">{category}</span>
                       <span className="wmap-category-group-count">{threads.length}</span>
@@ -627,19 +628,23 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                                 )}
                               </div>
                               {canPlay && (
-                                <button
-                                  className={`wmap-thread-play ${isPlaying ? 'playing' : ''}`}
-                                  onClick={(e) => { e.stopPropagation(); onPlayThread(isPlaying ? null : t.threadId); }}
+                                <Button
+                                  variant="icon"
+                                  compact
+                                  selected={isPlaying}
+                                  label={isPlaying ? 'Stop playback' : 'Play story evolution'}
                                   title={isPlaying ? 'Stop playback' : 'Play story evolution'}
+                                  onClick={(e) => { e.stopPropagation(); onPlayThread(isPlaying ? null : t.threadId); }}
                                 >
                                   {isPlaying ? '■' : '▶'}
-                                </button>
+                                </Button>
                               )}
                             </div>
                           );
                         })}
                         {hiddenCount > 0 && (
                           <button
+                            type="button"
                             className="wmap-category-show-more"
                             onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
                           >
@@ -711,12 +716,12 @@ function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onS
         Day {dateIdx + 1} of {thread.dates.length} · {articlesOnDate} article{articlesOnDate !== 1 ? 's' : ''}
       </div>
       <div className="wmap-playback-controls">
-        <button className="wmap-playback-btn" onClick={() => onStep(-1)} disabled={isFirst} title="Previous day">&#9664;</button>
-        <button className="wmap-playback-btn pause" onClick={onPause} title={paused ? 'Resume' : 'Pause'}>
+        <Button compact className="wmap-playback-btn" label="Previous day" title="Previous day" onClick={() => onStep(-1)} disabled={isFirst}>◀</Button>
+        <Button compact variant="primary" className="wmap-playback-btn" label={paused ? 'Resume' : 'Pause'} title={paused ? 'Resume' : 'Pause'} onClick={onPause}>
           {paused || isLast ? '▶' : '❚❚'}
-        </button>
-        <button className="wmap-playback-btn" onClick={() => onStep(1)} disabled={isLast} title="Next day">&#9654;</button>
-        <button className="wmap-playback-btn stop" onClick={onStop} title="Stop">✕</button>
+        </Button>
+        <Button compact className="wmap-playback-btn" label="Next day" title="Next day" onClick={() => onStep(1)} disabled={isLast}>▶</Button>
+        <Button compact label="Stop" title="Stop" onClick={onStop}>✕</Button>
       </div>
       {newToday.length > 0 && (
         <div className="wmap-playback-new">
@@ -746,29 +751,29 @@ function MapLegend() {
   const [open, setOpen] = useState(false);
   return (
     <div className={`wmap-legend ${open ? 'open' : ''}`}>
-      <button className="wmap-legend-toggle" onClick={() => setOpen(!open)}>
+      <Button compact className="wmap-legend-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         {open ? '✕' : '?'} {!open && 'Legend'}
-      </button>
+      </Button>
       {open && (
         <div className="wmap-legend-body">
           <div className="wmap-legend-item">
-            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#6b7280" /></svg>
+            <svg width="16" height="16"><circle cx="8" cy="8" r="5" className="wmap-legend-mark" /></svg>
             <span>Country in a story</span>
           </div>
           <div className="wmap-legend-item">
-            <svg width="16" height="16"><circle cx="8" cy="8" r="7" fill="#6b7280" /><text x="8" y="11" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold">3</text></svg>
+            <svg width="16" height="16"><circle cx="8" cy="8" r="7" className="wmap-legend-mark" /><text x="8" y="11" textAnchor="middle" className="wmap-legend-num">3</text></svg>
             <span>Multiple topics (count shown)</span>
           </div>
           <div className="wmap-legend-item">
-            <svg width="24" height="16"><line x1="0" y1="8" x2="24" y2="8" stroke="#6b7280" strokeWidth="2" strokeOpacity="0.5" /></svg>
+            <svg width="24" height="16"><line x1="0" y1="8" x2="24" y2="8" className="wmap-legend-line" /></svg>
             <span>Countries linked in same story</span>
           </div>
           <div className="wmap-legend-item">
-            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#6b7280" opacity="0.9" stroke="#6b7280" strokeWidth="2" /></svg>
+            <svg width="16" height="16"><circle cx="8" cy="8" r="5" className="wmap-legend-mark wmap-legend-mark--current" /></svg>
             <span>Highlighted / current day</span>
           </div>
           <div className="wmap-legend-item">
-            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#6b7280" opacity="0.3" /></svg>
+            <svg width="16" height="16"><circle cx="8" cy="8" r="5" className="wmap-legend-mark wmap-legend-mark--dim" /></svg>
             <span>Dimmed (other threads / past days)</span>
           </div>
         </div>
@@ -1157,9 +1162,9 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
 
           <div className="wmap-map-area">
             {!hidePanelProp && !panelOpen && (
-              <button className="wmap-panel-toggle" onClick={() => setPanelOpen(true)}>
+              <Button compact className="wmap-panel-toggle" onClick={() => setPanelOpen(true)}>
                 &#x203A; Threads
-              </button>
+              </Button>
             )}
 
             {googleApiKey ? (

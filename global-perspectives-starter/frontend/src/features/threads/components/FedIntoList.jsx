@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import '@/features/threads/components/FedIntoList.css';
 
 const CONF_DOTS = { strong: 3, medium: 2, weak: 1 };
 
@@ -61,9 +63,9 @@ export function FedIntoToggle({ label, links, direction, defaultOpen = false }) 
   if (!links?.length) return null;
   return (
     <div className="fi-toggle-wrap">
-      <button type="button" className="fi-toggle-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <Button compact aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {label} ({links.length}) {open ? '▴' : '▾'}
-      </button>
+      </Button>
       {open && <FedIntoList links={links} direction={direction} />}
     </div>
   );

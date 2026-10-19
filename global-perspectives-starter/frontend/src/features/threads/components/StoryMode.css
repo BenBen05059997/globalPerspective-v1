@@ -1,181 +1,152 @@
-/* StoryMode — S2.1 (desktop). DS1 console tokens (.gp-console, tokens.css) only; no new hues. */
+/* StoryMode — S2.1 (desktop). Role and scale tokens only (tokens.css). The shell classes (.sm-root,
+   .sm-topbar*, .sm-body, .sm-stage, .sm-mapwrap, .sm-slidecard, .sm-slidenav*, .sm-slidedot*,
+   .sm-slidescroll, .sm-slideview, .sm-slidefade, .sm-slide-kicker/-title/-text, .sm-instant,
+   .sm-readfull-btn) are also read by analysis-studio/StudioDeck and briefings/BriefingMode +
+   PhoneBriefingMode, which import this file. */
 
 .sm-root {
-  background: var(--bg);
-  color: var(--text-body);
-  border-radius: var(--c-radius-md);
-  overflow: hidden;
-  font-family: var(--c-sans);
-  margin: 0;
   display: flex;
   flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: var(--sans);
 }
 
 .sm-topbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--c-space-3) var(--c-space-4);
-  background: var(--panel-2);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--hairline);
-  flex: 0 0 auto;
+  background: var(--panel-2);
 }
 .sm-topbar-label {
-  font-family: var(--c-mono);
-  font-size: var(--c-hud-label-size);
-  letter-spacing: var(--c-hud-label-tracking);
+  font-family: var(--mono);
+  font-size: var(--hud-label-size);
+  letter-spacing: var(--hud-label-tracking);
   color: var(--accent);
 }
+/* Kept for briefings/BriefingMode.jsx's "read as text" toggle until it moves to <Button compact>. */
 .sm-readfull-btn {
-  font-family: var(--c-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--text-head);
-  background: transparent;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-3);
   border: 1px solid var(--hairline-strong);
-  border-radius: var(--c-radius-sm);
-  padding: 6px 12px;
-  min-height: var(--c-tap-min);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-head);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
   cursor: pointer;
 }
 .sm-readfull-btn:hover, .sm-readfull-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
 
-.sm-body {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
+.sm-body { flex: 1 1 auto; display: flex; min-height: 0; }
 
 .sm-drawers-rail {
-  width: 180px;
   flex: 0 0 180px;
-  border-right: 1px solid var(--hairline);
-  padding: var(--c-space-3);
+  width: 180px;
   display: flex;
   flex-direction: column;
-  gap: var(--c-space-2);
-  background: var(--panel);
+  gap: var(--space-2);
+  padding: var(--space-3);
   overflow-y: auto;
+  border-right: 1px solid var(--hairline);
+  background: var(--panel);
 }
+/* Drawer toggles are quiet Buttons; this only lays them out as a left-aligned mono column. */
 .sm-drawer-btn {
-  font-family: var(--c-mono);
-  font-size: 11px;
+  width: 100%;
+  justify-content: flex-start;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
   letter-spacing: 0.08em;
-  text-align: left;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid var(--hairline);
-  border-radius: var(--c-radius-sm);
-  padding: 10px 12px;
-  min-height: var(--c-tap-min);
-  cursor: pointer;
-}
-.sm-drawer-btn.on, .sm-drawer-btn:hover, .sm-drawer-btn:focus-visible {
-  color: var(--accent);
-  border-color: var(--hairline-strong);
 }
 .sm-drawer-body {
-  font-size: 13px;
-  line-height: 1.5;
+  padding: var(--space-2) var(--space-1) var(--space-3);
+  font-size: var(--text-ui);
+  line-height: var(--leading-normal);
   color: var(--text-body);
-  padding: var(--c-space-2) var(--c-space-1) var(--c-space-3);
 }
-.sm-drawer-step { margin-bottom: var(--c-space-3); }
+.sm-drawer-step { margin-bottom: var(--space-3); }
 .sm-drawer-step-label {
-  font-family: var(--c-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
-  text-transform: uppercase;
   margin-bottom: 2px;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 .sm-who-list, .sm-sources-list { list-style: none; margin: 0; padding: 0; }
-.sm-who-list li, .sm-sources-list li { padding: 4px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
-.sm-viewfrom-hd { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-.sm-viewfrom-row { font-size: 12.5px; margin-bottom: 6px; }
+.sm-who-list li, .sm-sources-list li { padding: var(--space-1) 0; border-bottom: 1px solid var(--hairline); font-size: var(--text-ui); }
+.sm-viewfrom-hd { margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); }
+.sm-viewfrom-row { margin-bottom: var(--space-1); font-size: var(--text-ui); }
 
 /* ── Stage: map + slide card side by side (review fix #5 — the card used to float on top of
    the map, covering ~40% of it and forcing an off-centre camera hack; now they share the row so
    the map's own centring logic never needs to know about the card). ── */
-.sm-stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-}
+.sm-stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: row; min-width: 0; }
 .sm-mapwrap { flex: 1 1 auto; min-width: 0; height: 100%; }
-.sm-maploading {
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-dim); font-family: var(--c-mono); font-size: 12px;
-}
+.sm-maploading { display: flex; align-items: center; justify-content: center; }
 /* The map component (SituationMap3D/RadarMap) owns its `.sm-*` class names; their base styling
    lives in SituationHome.css, which story mode doesn't load. Scope the few needed here instead of
-   pulling in the whole /map stylesheet (review fix #6). */
-.sm-mapwrap .sm-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(130% 100% at 50% 0%, #131a26 0%, #0d1017 60%, #090c12 100%); }
-.sm-mapwrap .sm-globe-foot { position: absolute; right: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 8px; }
-.sm-mapwrap .sm-attrib { font-family: var(--c-mono); font-size: 10px; letter-spacing: 0.03em; color: var(--text-dim); }
+   pulling in the whole /map stylesheet (review fix #6). The backdrop climbs the panel ladder. */
+.sm-mapwrap .sm-wrap {
+  position: relative; width: 100%; height: 100%; overflow: hidden;
+  background: radial-gradient(130% 100% at 50% 0%, var(--panel-3) 0%, var(--panel-2) 60%, var(--bg) 100%);
+}
+.sm-mapwrap .sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
+.sm-mapwrap .sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
 /* The story map is held still, centred on the story's country — no idle spin, so its play/pause
    control has nothing to control here (review fix #6). */
 .sm-mapwrap .sm-spin-ctl { display: none; }
 
 .sm-slidecard {
+  position: relative;
   flex: 0 0 380px;
   max-width: 44%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
-  background: var(--panel);
   border-left: 1px solid var(--hairline-strong);
-  box-shadow: -8px 0 24px rgba(0,0,0,0.35);
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
 }
-.sm-slidenav {
-  display: flex;
-  align-items: center;
-  gap: var(--c-space-2);
-  padding: var(--c-space-3) var(--c-space-4) 0;
-  flex: 0 0 auto;
-}
+.sm-slidenav { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4) 0; }
 .sm-slidenav-btn {
-  background: transparent;
-  border: 1px solid var(--hairline);
-  color: var(--text-head);
-  border-radius: var(--c-radius-sm);
   min-width: 36px;
   min-height: 36px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-head);
   cursor: pointer;
 }
 .sm-slidenav-btn:disabled { opacity: 0.3; cursor: default; }
 .sm-slidenav-btn:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
-.sm-slidedots {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
+.sm-slidenav-btn:focus-visible, .sm-slidedot:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.sm-slidedots { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
 .sm-slidedot {
-  font-family: var(--c-mono);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-  background: transparent;
+  padding: 2px var(--space-2);
   border: 1px solid var(--hairline);
-  border-radius: var(--c-radius-sm);
-  padding: 3px 6px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.05em;
   cursor: pointer;
 }
-.sm-slidedot.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+/* the one selected style: accent outline + accent text */
+.sm-slidedot.on { border-color: var(--accent); color: var(--accent); }
 
 /* Review fix #8/#9: the card's body scrolls WITHIN a fixed-height card (never grows past the
    viewport) and gets a bottom fade so a clipped slide is an obvious, not a silent, cut. */
-.sm-slidescroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--c-space-3) var(--c-space-4) var(--c-space-4);
-}
+.sm-slidescroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-3) var(--space-4) var(--space-4); }
 .sm-slidefade {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -185,175 +156,135 @@
 }
 .sm-more-btn {
   display: block;
-  margin-top: 6px;
-  font-family: var(--c-mono);
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  color: var(--accent);
-  background: none;
+  min-height: var(--tap-min);
+  margin-top: var(--space-1);
+  padding: 0;
   border: none;
+  background: none;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
   cursor: pointer;
-  padding: 4px 0;
 }
+.sm-more-btn:hover { color: var(--accent-strong); text-decoration: underline; }
+.sm-more-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 .sm-slideview.sm-instant, .sm-slideview.sm-instant * { transition: none !important; animation: none !important; }
 .sm-slide-kicker {
-  font-family: var(--c-mono);
-  font-size: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
   letter-spacing: 0.06em;
   color: var(--text-dim);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
 }
-.sm-slide-title {
-  font-family: var(--c-serif);
-  font-size: 20px;
-  line-height: 1.25;
-  color: var(--text-head);
-  margin: 0 0 10px;
-}
-.sm-slide-text { font-size: 13.5px; line-height: 1.6; color: var(--text-body); }
+.sm-slide-title { margin: 0 0 var(--space-2); font-family: var(--serif); font-size: var(--text-xl); line-height: var(--leading-tight); color: var(--text-head); }
+.sm-slide-text { font-size: var(--text-base); line-height: var(--leading-normal); color: var(--text-body); }
 .sm-slide-stats {
   display: flex;
-  gap: var(--c-space-4);
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: var(--c-space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--hairline);
-  padding-top: var(--c-space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
-.sm-ai-tag {
-  font-family: var(--c-mono);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  color: var(--accent);
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--c-radius-sm);
-  padding: 1px 5px;
-  margin-right: 4px;
-}
-.sm-flag { color: var(--warn); }
-.sm-older-tag { color: var(--warn); font-family: var(--c-mono); font-size: 10px; }
-.sm-older .sm-slide-text, .sm-older { filter: var(--c-fresh-older-filter); }
-.sm-analysis-hidden { color: var(--text-dim); font-size: 12.5px; font-style: italic; }
+.sm-slide-risk { display: inline-flex; align-items: center; gap: var(--space-1); }
+.sm-flag { color: var(--text-head); }
+.sm-older-tag { font-family: var(--mono); font-size: var(--text-2xs); color: var(--warn); }
+.sm-older .sm-slide-text, .sm-older { filter: var(--fresh-older-filter); }
+.sm-analysis-hidden { font-size: var(--text-ui); font-style: italic; color: var(--text-dim); }
 
 .sm-chapter-entries { list-style: none; margin: 0; padding: 0; }
-.sm-chapter-entries li { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
-.sm-chapter-date { font-family: var(--c-mono); font-size: 10px; color: var(--text-dim); flex: 0 0 64px; }
+.sm-chapter-entries li { display: flex; gap: var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--hairline); font-size: var(--text-ui); }
+.sm-chapter-date { flex: 0 0 64px; font-family: var(--mono); font-size: var(--text-2xs); color: var(--text-dim); }
 .sm-chapter-hl { color: var(--text-body); }
 
-.sm-caption { font-size: 11px; color: var(--text-dim); font-style: italic; margin: 0 0 10px; }
+.sm-caption { margin: 0 0 var(--space-2); font-size: var(--text-xs); font-style: italic; color: var(--text-dim); }
 
-/* fi-* — FedIntoList (shared by StoryMode's FED INTO slide, Read-in-full's "Show linked news"
-   toggle and its Why section: one rendering, styled per host page). */
-.fi-list { list-style: none; margin: 0; padding: 0; }
-.fi-row { padding: 10px 0; border-bottom: 1px solid var(--hairline); position: relative; }
-.fi-row.fi-older { filter: var(--c-fresh-older-filter); }
-.fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.fi-head a { color: var(--accent); font-size: 13px; text-decoration: none; }
-.fi-conf-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--text-dim); }
-.fi-conf-strong { color: var(--ok); }
-.fi-conf-medium { color: var(--warn); }
-.fi-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
-.fi-older-tag { color: var(--warn); font-family: var(--c-mono); font-size: 10px; }
-.fi-mechanism { font-size: 12.5px; font-style: italic; color: var(--text-body); margin: 6px 0 0; }
-.fi-cited { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-.fi-toggle-wrap { margin-top: 10px; }
-.fi-toggle-btn {
-  font-family: var(--c-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--accent);
-  background: none; border: 1px solid var(--hairline-strong); border-radius: var(--c-radius-sm);
-  padding: 6px 10px; cursor: pointer; min-height: 44px;
-}
-
-/* Fact / inference marks (review F3.5) — a persistent, honest legend rather than per-item noise. */
-.sm-fact-badge, .sm-inference-badge {
-  font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.05em; font-weight: 700;
-  border-radius: var(--c-radius-sm); padding: 1px 5px; margin-right: 4px;
-}
-.sm-fact-badge { color: var(--ok); border: 1px solid var(--ok); }
-.sm-inference-badge { color: var(--accent); border: 1px solid var(--accent); }
-.sm-legend { font-size: 10.5px; color: var(--text-dim); margin: 10px 0 0; }
+/* Fact / inference marks (review F3.5) — a persistent, honest legend rather than per-item noise (ClaimTag). */
+.sm-legend { margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--text-dim); }
 .sm-likely-badge {
-  font-size: 12px; color: var(--text-body); margin: 6px 0 0; padding: 4px 8px;
-  border: 1px dashed var(--hairline-strong); border-radius: var(--c-radius-sm); display: inline-block;
+  display: inline-block;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--text-sm);
+  color: var(--text-body);
 }
-.sm-jump-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.sm-jump-btn {
-  font-family: var(--c-mono); font-size: 11px; color: var(--accent); background: none;
-  border: 1px solid var(--hairline-strong); border-radius: var(--c-radius-sm); padding: 6px 10px;
-  cursor: pointer; min-height: 44px;
-}
-.sm-jump-btn:hover { background: var(--hairline); }
+.sm-likely-lead { display: block; margin-top: 2px; color: var(--text-muted); }
+.sm-jump-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 
 .sm-watch-list { list-style: none; margin: 0; padding: 0; }
-.sm-watch-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
-.sm-watch-diamond { color: var(--accent); }
-.sm-watch-text { font-size: 13px; color: var(--text-head); }
-.sm-watch-meta { font-size: 11px; color: var(--text-dim); }
-.sm-watch-note { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--text-dim); }
+.sm-watch-row { display: flex; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); }
+.sm-watch-diamond { color: var(--text-muted); }
+.sm-watch-text { font-size: var(--text-ui); color: var(--text-head); }
+.sm-watch-meta { font-size: var(--text-xs); color: var(--text-dim); }
+.sm-watch-note { margin: var(--space-2) 0 0; font-size: var(--text-xs); line-height: 1.45; color: var(--text-dim); }
 
 /* ── Scrubber ─────────────────────────────────── */
 .sm-scrubber {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--hairline);
   background: var(--panel-2);
-  padding: var(--c-space-2) var(--c-space-4) var(--c-space-2);
-  flex: 0 0 auto;
 }
-.sm-scrubber-chapters { position: relative; height: 16px; margin-bottom: 4px; }
+.sm-scrubber-chapters { position: relative; height: 16px; margin-bottom: var(--space-1); }
 .sm-scrubber-chapter {
   position: absolute;
   top: 0;
   height: 16px;
-  background: rgba(95, 212, 255, 0.14);
-  border: 1px solid var(--hairline-strong);
-  border-radius: 2px;
-  cursor: pointer;
-  padding: 0 4px;
   display: flex;
   align-items: center;
+  padding: 0 var(--space-1);
   overflow: hidden;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xs);
+  background: var(--accent-wash);
+  cursor: pointer;
 }
-.sm-scrubber-chapter.on { background: var(--accent); border-color: var(--accent); }
+.sm-scrubber-chapter.on { border-color: var(--accent); }
+.sm-scrubber-chapter:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .sm-scrubber-chapter-label {
-  font-family: var(--c-mono);
-  font-size: 8px;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
   letter-spacing: 0.04em;
-  color: var(--text-muted);
   white-space: nowrap;
+  color: var(--text-muted);
 }
-.sm-scrubber-chapter.on .sm-scrubber-chapter-label { color: var(--bg); }
-.sm-scrubber-track {
-  position: relative;
-  height: 40px;
-  border-top: 1px solid var(--hairline);
-}
+.sm-scrubber-chapter.on .sm-scrubber-chapter-label { color: var(--accent); }
+.sm-scrubber-track { position: relative; height: 40px; border-top: 1px solid var(--hairline); }
 .sm-scrubber-day {
   position: absolute;
   bottom: 0;
   width: 3px;
   min-height: 3px;
+  padding: 0;
+  border: none;
   background: var(--accent);
   opacity: 0.75;
-  border: none;
-  padding: 0;
   cursor: pointer;
 }
 .sm-scrubber-day:hover { opacity: 1; }
-.sm-scrubber-flag { position: absolute; top: -2px; transform: translateX(-50%); color: var(--warn); font-size: 13px; }
-.sm-scrubber-deadline { position: absolute; top: -2px; transform: translateX(-50%); color: var(--accent); font-size: 12px; cursor: help; }
-.sm-scrubber-today { position: absolute; bottom: 0; top: 0; border-left: 1px dashed var(--warn); transform: translateX(-50%); z-index: 2; }
+.sm-scrubber-flag { position: absolute; top: -2px; transform: translateX(-50%); font-size: var(--text-ui); color: var(--text-head); }
+.sm-scrubber-deadline { position: absolute; top: -2px; transform: translateX(-50%); font-size: var(--text-sm); color: var(--text-muted); cursor: help; }
+.sm-scrubber-today { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed var(--accent); transform: translateX(-50%); }
 .sm-scrubber-today-label {
   position: absolute;
   top: -14px;
   left: 2px;
-  font-family: var(--c-mono);
-  font-size: 8px;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
   letter-spacing: 0.05em;
-  color: var(--warn);
   white-space: nowrap;
+  color: var(--accent);
 }
 /* Review fix #4: date ticks along the axis so the scrubber's scale is legible, not just marks
    with no reference. */
@@ -361,22 +292,16 @@
 .sm-scrubber-tick {
   position: absolute;
   transform: translateX(-50%);
-  font-family: var(--c-mono);
-  font-size: 9px;
-  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
   white-space: nowrap;
+  color: var(--text-dim);
 }
 
 @media (max-width: 900px) {
   .sm-body { flex-direction: column; }
   .sm-drawers-rail { width: 100%; flex-direction: row; flex-wrap: wrap; }
+  .sm-drawer-btn { width: auto; }
   .sm-stage { flex-direction: column; }
   .sm-slidecard { flex: 1 1 auto; max-width: 100%; border-left: none; border-top: 1px solid var(--hairline-strong); }
 }
-.sm-link-note { margin: 10px 0 0; padding: 8px 10px; border: 1px dashed var(--hairline); border-radius: 6px; }
-.sm-link-note p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-body); }
-.sm-link-note .sm-link-note-more { margin-top: 4px; font-size: 11px; color: var(--text-dim); }
-.fi-cited-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--text-dim); }
-.fi-cited-date { font-family: var(--c-mono, var(--mono)); color: var(--text-body); }
-.fi-cited-more { font-style: italic; }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
 import { legacyNote } from '@/features/threads/lib/questionChips.js';
 
@@ -48,9 +49,7 @@ export default function ThreadForecast({ snapshot }) {
 
   return (
     <div className="tp-ai-block tp-fc">
-      <div className="tp-ai-section-lbl">
-        Living forecast{snapshot.generatedAt ? ` · as of ${fcDay(snapshot.generatedAt.slice(0, 10))}` : ''}
-      </div>
+      <SectionHeader as="h3" label={`Living forecast${snapshot.generatedAt ? ` · as of ${fcDay(snapshot.generatedAt.slice(0, 10))}` : ''}`} />
       <p className="tp-fc-intro">
         Dated, falsifiable triggers logged when the forecast was made. Each is checked as its
         deadline passes — <span className="tp-fc-k pending">☐ open</span>,{' '}

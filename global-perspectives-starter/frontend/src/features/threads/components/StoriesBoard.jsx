@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
@@ -83,12 +85,12 @@ function Column({ col, analyses, now, peek }) {
   const visible = showAll ? col.items : col.items.slice(0, INITIAL);
   const hidden = col.items.length - visible.length;
   return (
-    <section className={`sb-col sb-col--${col.key}`} aria-labelledby={`sb-h-${col.key}`}>
-      <h2 className="sb-col__head" id={`sb-h-${col.key}`}>
-        <span className="sb-col__glyph" aria-hidden="true">{col.glyph}</span>
-        <span className="sb-col__label">{col.label}</span>
-        <span className="sb-col__n">{col.items.length}</span>
-      </h2>
+    <section className="sb-col" aria-labelledby={`sb-h-${col.key}`}>
+      <SectionHeader
+        id={`sb-h-${col.key}`}
+        label={<><span className="sb-col__glyph" aria-hidden="true">{col.glyph}</span> <span className="sb-col__label">{col.label}</span></>}
+        count={col.items.length}
+      />
       {col.items.length ? (
         <ul className="sb-col__list">
           {visible.map((item) => (
@@ -96,7 +98,7 @@ function Column({ col, analyses, now, peek }) {
           ))}
         </ul>
       ) : <p className="sb-col__empty">No stories</p>}
-      {hidden > 0 ? <button type="button" className="sf-more" onClick={() => setShowAll(true)}>Show {hidden} more</button> : null}
+      {hidden > 0 ? <Button className="sf-more" onClick={() => setShowAll(true)}>Show {hidden} more</Button> : null}
     </section>
   );
 }

@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
-import { buildDeadlines } from '@/features/threads/lib/storyMode.js';
+import { buildDeadlines } from '@/features/threads';
 
 /**
  * useCountryStories(countryName) -> { stories, deadlines, loading }

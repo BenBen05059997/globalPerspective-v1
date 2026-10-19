@@ -14,7 +14,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence.js';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory.js';
-import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry.js';
+import { useMarketsCountry } from '@/features/economy';
 import { useCountryStories } from '@/features/countries/hooks/useCountryStories.js';
 import { computeCountryDirection, directionLabel } from '@/features/countries/lib/countryDirection.js';
 import { countryWatchFlag } from '@/features/countries/lib/countryWatch.js';

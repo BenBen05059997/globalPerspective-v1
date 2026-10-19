@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
+import { useWeeklyArchive } from '@/features/threads';
 import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';

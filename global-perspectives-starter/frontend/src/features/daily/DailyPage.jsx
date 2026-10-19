@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { storyLinkPath, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
+import { storyLinkPath, peekInputForStory } from '@/features/briefings';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
-import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
-import InstrumentChip from '@/features/economy/components/InstrumentChip';
+import { useDisruptionsList, InstrumentChip } from '@/features/economy';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import { crisisDotVar } from '@/shared/lib/crisisHue';

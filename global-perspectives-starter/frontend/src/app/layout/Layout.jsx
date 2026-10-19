@@ -3,11 +3,9 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
-import NotificationBell from '@/features/breaking/components/NotificationBell';
-import { usePausedSince } from '@/features/map/hooks/usePausedSince';
-import { useGdacsStatus } from '@/features/map/hooks/useGdacsStatus';
+import { NotificationBell } from '@/features/breaking';
+import { usePausedSince, useGdacsStatus, HudStatusLine } from '@/features/map';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
-import HudStatusLine from '@/features/map/components/HudStatusLine';
 import '@/app/layout/Layout.css';
 
 // P1 phone tab bar (A2): simple inline-SVG line icons, no icon library. 20x20 viewBox, stroke

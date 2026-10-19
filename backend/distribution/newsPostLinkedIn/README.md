@@ -17,7 +17,6 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 ## Gotchas
 - Throws if any of the three table env names is missing; with no platform credentials it returns `skipped`.
 - A map-image failure does not block the post.
-- `src/` also holds non-runtime files that get packaged: `mock-map.js`, `scripts/generate-map-svg.js` (needs `topojson-client`, not a dependency), and a 2026-02-07 Claude session transcript `.txt`.
 - `nostr-tools` and `ws` are dependencies but unused by the code.
 
 ## Tests

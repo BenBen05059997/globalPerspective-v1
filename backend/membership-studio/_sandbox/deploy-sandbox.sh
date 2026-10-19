@@ -40,7 +40,7 @@ set -euo pipefail
 
 REGION="${AWS_REGION:-ap-northeast-1}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FN_DIR="$(cd "$HERE/.." && pwd)"   # amplify/backend/function
+FN_DIR="$(cd "$HERE/.." && pwd)"   # backend/membership-studio
 USERS_TABLE="${USERS_DDB_TABLE:-GlobalPerspectiveUserTable}"
 ANALYZE_LLM_URL="${ANALYZE_LLM_URL:-https://api.deepseek.com}"
 ANALYZE_LLM_MODEL="${ANALYZE_LLM_MODEL:-deepseek-chat}"

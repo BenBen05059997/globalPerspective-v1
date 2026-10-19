@@ -8,8 +8,8 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 
 | Deployed name | Repo source | Runtime | Group | Triggers | Notes |
 |---|---|---|---|---|---|
-| `newsAnalyze` | `amplify/backend/function/newsAnalyze/src` | nodejs20.x | membership-studio | Function URL (NONE) | Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md). |
-| `newsAnalyze-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh. |
+| `newsAnalyze` | `backend/membership-studio/newsAnalyze/src` | nodejs20.x | membership-studio | Function URL (NONE) | Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md). |
+| `newsAnalyze-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh. |
 | `newsBreakingAlert` | `backend/distribution/newsBreakingAlert/src` | nodejs22.x | distribution | TriggerBreakingAlert cron(35 4/8 * * ? *) (ENABLED) |  |
 | `newsClientErrors` | `backend/read-api/newsClientErrors/src` | nodejs24.x | read-api | Function URL (NONE) |  |
 | `newsCountryFactsUpdater` | `backend/pipeline/newsCountryFactsUpdater/src` | nodejs24.x | pipeline | Fact cron(0 5 ? * MON *) (ENABLED) |  |
@@ -27,13 +27,13 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 | `newsMarketsData` | `backend/economy-parked/newsMarketsData/src` | nodejs24.x | economy-parked | MarketsDataHourly rate(1 hour) (ENABLED); MarketsMacrosWeekly cron(0 2 ? * SUN *) (ENABLED); MarketsYieldsDaily cron(0 6 ? * MON-FRI *) (ENABLED) |  |
 | `newsModelGuard` | `backend/monitoring/newsModelGuard/src` | nodejs20.x | monitoring | TriggerModelGuard cron(0 12 * * ? *) (ENABLED) |  |
 | `newsPairIntelligence` | `backend/economy-parked/newsPairIntelligence/src` | nodejs24.x | economy-parked | TriggerPairIntelligenceWeekly cron(0 8 ? * MON *) (DISABLED) | deployed zip ships node_modules |
-| `newsPolarBilling` | `amplify/backend/function/newsPolarBilling/src` | nodejs20.x | membership-studio | Function URL (NONE) |  |
-| `newsPolarBilling-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh. |
+| `newsPolarBilling` | `backend/membership-studio/newsPolarBilling/src` | nodejs20.x | membership-studio | Function URL (NONE) |  |
+| `newsPolarBilling-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh. |
 | `newsPostDevTo` | `backend/distribution/newsPostDevTo/src` | nodejs24.x | distribution | InvokeDev cron(0 23 * * ? *) (ENABLED) | deployed zip ships node_modules |
 | `newsPostLinkedin` | `backend/distribution/newsPostLinkedIn/src` | nodejs24.x | distribution | InvokeLinkedIn cron(20 */3 * * ? *) (ENABLED) | deployed zip ships node_modules |
 | `newsPredictionResolver` | `backend/predictions/newsPredictionResolver/src` | nodejs22.x | predictions | TriggerPredictionResolver cron(30 10 * * ? *) (ENABLED) |  |
 | `newsPredictionsSnapshot` | `backend/predictions/newsPredictionsSnapshot/src` | nodejs22.x | predictions | TriggerPredictionsSnapshot rate(30 minutes) (ENABLED) |  |
-| `NewsProjectInvokeAgentLambda-dev` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src` | nodejs22.x | pipeline | InvokeNewsAgent cron(25 4/8 * * ? *) (ENABLED) |  |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda/src` | nodejs22.x | pipeline | InvokeNewsAgent cron(25 4/8 * * ? *) (ENABLED) |  |
 | `newsRecommend` | `backend/read-api/newsRecommend/src` | nodejs20.x | read-api | Function URL (NONE) |  |
 | `newsSavedItems` | `backend/read-api/newsSavedItems/src` | nodejs24.x | read-api | Function URL (NONE) | deployed zip ships node_modules |
 | `newsSelectionShadow` | `backend/pipeline/newsSelectionShadow/src` | nodejs22.x | pipeline | TriggerSelectionShadow cron(20 4,12,20 * * ? *) (ENABLED) |  |

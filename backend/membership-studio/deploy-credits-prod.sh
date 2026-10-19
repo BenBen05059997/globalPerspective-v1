@@ -22,7 +22,7 @@
 #
 set -euo pipefail
 REGION="${AWS_REGION:-ap-northeast-1}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # amplify/backend/function
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # backend/membership-studio
 
 confirm() {
   read -r -p "Deploy credit code to PROD newsAnalyze + newsPolarBilling in $REGION? [y/N] " a

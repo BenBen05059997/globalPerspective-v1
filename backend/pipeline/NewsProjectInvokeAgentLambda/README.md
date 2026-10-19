@@ -25,6 +25,6 @@ when `BRAVE_SEARCH_API_KEY` is set, and it is not set live (checked 2026-10-19).
 - Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.
 
 ## Tests
-- `cd amplify/backend/function/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 56 pass.
+- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 56 pass.
 
 Last verified: 2026-10-19

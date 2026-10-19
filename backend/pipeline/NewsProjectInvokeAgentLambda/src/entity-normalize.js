@@ -1,7 +1,7 @@
 'use strict';
 
 // ⚠️ COPIED LOGIC — keep byte-identical with
-// amplify/backend/function/newsSituationIngest/src/classifier-core.js (normalizeEntity +
+// backend/situations/newsSituationIngest/src/classifier-core.js (normalizeEntity +
 // ACTOR_ALIASES + ENTITY_ORG_SUFFIX/ENTITY_TITLE_PREFIX). If that file's actor-folding rules change,
 // port the change here too — the R3 fingerprint match depends on BOTH sides normalizing identically.
 // (No cross-Lambda require is possible; this is a different deploy unit.)

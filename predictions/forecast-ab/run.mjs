@@ -22,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../..');
-const FN_DIR = 'amplify/backend/function/NewsProjectInvokeAgentLambda';
+const FN_DIR = 'backend/pipeline/NewsProjectInvokeAgentLambda';
+const OLD_FN_DIR = 'amplify/backend/function/NewsProjectInvokeAgentLambda'; // its path at OLD_REF, before the move to backend/
 const FN = 'NewsProjectInvokeAgentLambda-dev';
 const REGION = 'ap-northeast-1';
 const OLD_REF = process.env.OLD_REF || '0ef24cf'; // last commit with the two-call job
@@ -70,7 +71,7 @@ function loadJob(srcDir, extraExports) {
 function exportOldSources() {
   const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'forecast-old-'));
   for (const f of ['index.js', 'lib.js', 'questions.js', 'matcher.js', 'entity-normalize.js', 'url-normalize.js']) {
-    fs.writeFileSync(path.join(dir, f), execFileSync('git', ['show', `${OLD_REF}:${FN_DIR}/src/${f}`], { cwd: REPO, maxBuffer: 1 << 26 }));
+    fs.writeFileSync(path.join(dir, f), execFileSync('git', ['show', `${OLD_REF}:${OLD_FN_DIR}/src/${f}`], { cwd: REPO, maxBuffer: 1 << 26 }));
   }
   return dir;
 }

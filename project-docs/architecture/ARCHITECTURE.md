@@ -74,8 +74,7 @@ Paths are named, not linked; search for them.
 ### Backend — `backend/<group>/<dir>/src/`
 
 Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a
-README. Three still sit in the historical `amplify/backend/function/` folder: `newsAnalyze` and
-`newsPolarBilling` (billing; moving them needs an operator yes) and `NewsProjectInvokeAgentLambda`.
+README; the last three left the historical `amplify/` folder on 2026-10-19 (operator decision).
 Nothing is deployed with Amplify. Each Lambda is deployed by hand (see Deploy below).
 `scripts/functions.json` maps each deployed name to its repo dir (`dir`, relative to the repo root;
 every tool reads it from there), runtime, feature group and schedules. Names that surprise:
@@ -86,7 +85,7 @@ every tool reads it from there), runtime, feature group and schedules. Names tha
   suffix is production.
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (typo is real).
-- `amplify/backend/function/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
+- `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
   (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is a copy of what actually runs; `newsAnalyze/src/` is not it.
 

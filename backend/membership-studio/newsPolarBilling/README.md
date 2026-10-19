@@ -6,7 +6,7 @@ Polar.sh billing on one Function URL. A POST with a `webhook-signature` header i
 - Deployed name `newsPolarBilling` · runtime `nodejs20.x` · group `membership-studio` (scripts/functions.json)
 - Trigger: Function URL (Polar webhook + frontend via `window.POLAR_BILLING_ENDPOINT`, read in `features/account/hooks/useMembership.js` and `shared/api/restProxy.js`); no schedule
 - Deploy: `scripts/lambda.sh newsPolarBilling diff|package|deploy` (billing code/config needs a fresh operator "yes" per CLAUDE.md). Zip does not ship node_modules; must include `lib.js`.
-- Sandbox: `amplify/backend/function/_sandbox/deploy-sandbox.sh` stands up separate `-sandbox` copies against the Polar sandbox API.
+- Sandbox: `backend/membership-studio/_sandbox/deploy-sandbox.sh` stands up separate `-sandbox` copies against the Polar sandbox API.
 
 ## Reads / writes
 - DynamoDB: `USERS_DDB_TABLE`, key `uid` (Firebase UID); writes `tier`, `subscriptionStatus`, `billingProvider`, `polarCustomerId`, `polarSubscriptionId`, `currentPeriodEnd`, `creditBalance`, `processedOrders`
@@ -19,6 +19,6 @@ Polar.sh billing on one Function URL. A POST with a `webhook-signature` header i
 - Product IDs and credit amounts are server-side env; the client only names a plan or pack key.
 
 ## Tests
-- `cd amplify/backend/function/newsPolarBilling/src && npm test` (`node --test ../test/lib.test.js`, offline): 8/8 passed 2026-10-19. DynamoDB conditional writes are not covered.
+- `cd backend/membership-studio/newsPolarBilling/src && npm test` (`node --test ../test/lib.test.js`, offline): 8/8 passed 2026-10-19. DynamoDB conditional writes are not covered.
 
 Last verified: 2026-10-19

@@ -6,7 +6,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [Decision records](decisions/README.md) — 27 decisions, newest last.
+- [Decision records](decisions/README.md) — 32 decisions, newest last.
 - [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
   (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
 - Start a feature check at its `global-perspectives-starter/frontend/src/features/<name>/README.md`

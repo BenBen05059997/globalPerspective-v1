@@ -7,6 +7,7 @@ const { pickSpreadEntries } = require('./spreadEntries');
 const { buildWebIndex } = require('./webRecords');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
@@ -14,6 +15,7 @@ const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3000', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
 
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 
@@ -34,6 +36,7 @@ const MAX_EDGES_PER_NODE = 3;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
+const s3 = new S3Client({ region: REGION });
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -75,7 +78,7 @@ exports.handler = async (event = {}) => {
     const prompts = targets.map(c => { const p = buildSystemsPrompt(c); return { country: c.countryName, threads: c.threads.length, chars: p.length, approxTokens: Math.round(p.length / 4), shownEntries: c.threads.reduce((n, t) => n + t.shown.length, 0) }; });
     const rows = await readAllSystemsRows();
     const { index } = buildWebIndex({ rows, entries, now: new Date(), targets: targets.map(c => c.countryName), runId: 'dry-run', isCountry: isCountryName });
-    return { statusCode: 200, dryRun: true, eligible: countries.length, targets: targets.map(c => c.countryName), excluded, prompts, coverage: index.coverage, websUsed: index.websUsed };
+    return { statusCode: 200, dryRun: true, eligible: countries.length, targets: targets.map(c => c.countryName), excluded, prompts, coverage: index.coverage, websUsed: index.websUsed, webHistoryKey: webHistoryKey(new Date()) };
   }
 
   let generated = 0;
@@ -102,6 +105,12 @@ exports.handler = async (event = {}) => {
     const { index, records } = buildWebIndex({ rows, entries, now, targets: targets.map(c => c.countryName), runId, isCountry: isCountryName });
     await writeWebRecords(index, records);
     coverage = index.coverage;
+    // Dated immutable copy of today's web (history starts 2026-10-20); an S3 failure must not fail the run or the DynamoDB writes above
+    try {
+      await writeWebHistory(now, JSON.stringify({ runId, generatedAt: now.toISOString(), index, records, webs: rows }));
+    } catch (err) {
+      console.error('Web history write failed:', err.message);
+    }
     console.log(`WEB coverage ${JSON.stringify(coverage)}; ${records.length} story records, ${index.links.length} causal links, ${index.shared.length} shared-actor links`);
   } catch (err) {
     console.error('Web index build failed (the country webs themselves were written):', err.message);
@@ -114,11 +123,22 @@ exports.handler = async (event = {}) => {
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 
+function utcDateParts(date) {
+  return {
+    y: date.getUTCFullYear(),
+    m: String(date.getUTCMonth() + 1).padStart(2, '0'),
+    d: String(date.getUTCDate()).padStart(2, '0'),
+  };
+}
+
 function formatDateKey(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
+  const { y, m, d } = utcDateParts(date);
   return `archive#${y}-${m}-${d}`;
+}
+
+function webHistoryKey(date) {
+  const { y, m, d } = utcDateParts(date);
+  return `web/${y}/${m}/${d}.json`;
 }
 
 async function readArchiveEntries(days) {
@@ -515,6 +535,13 @@ async function writeWebRecords(index, records) {
   }
 }
 
+// One object per UTC day (a same-day rerun overwrites it) plus the `latest` pointer; same body for both.
+async function writeWebHistory(now, body) {
+  for (const Key of [webHistoryKey(now), 'web/latest.json']) {
+    await s3.send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key, Body: body, ContentType: 'application/json' }));
+  }
+}
+
 // ─── Write to DynamoDB ────────────────────────────────────────────────────────
 
 async function writeAnalysis(countryName, graph, country) {
@@ -558,3 +585,4 @@ module.exports.buildBackboneEdges = buildBackboneEdges;
 module.exports.normalizeActors = normalizeActors;
 module.exports.buildSystemsPrompt = buildSystemsPrompt; // for tests
 module.exports.validateGraph = validateGraph;
+module.exports.webHistoryKey = webHistoryKey;

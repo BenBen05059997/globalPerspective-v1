@@ -8,6 +8,12 @@ assembled, no-model country sheet with marked fact/judgment lines, daily story-w
 link ledger and workbench as later branches opened by measured signals. The operator decides; this plan is
 superseded or rewritten only after that decision is recorded.
 
+Decision 1 taken (operator, 2026-10-20): keep the story web's history. `newsSystemsAnalysis` now writes each run's
+web (index, per-story records, per-country webs) to `web/YYYY/MM/DD.json` and `web/latest.json` in the world bucket;
+the shared role got a write-only `s3:PutObject` on `web/*` (inline policy `newsSystemsAnalysis-web-history`). No
+lifecycle rule covers `web/`, so history is kept. About 0.4 MB a day; the yearly S3 cost is cents. The remaining
+decisions are still open.
+
 ## Why
 Decision 0001 makes the product an analyst tool over the story web: how a story formed, what it is likely to
 trigger, and what would falsify a thesis. Decision 0011 keeps the Studio as a page with a public example. Today the

@@ -32,6 +32,8 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `stories/index.json` | newsSituationIngest, newsSituationTracker | yes |
 | `stories/state/` | NewsProjectInvokeAgentLambda, newsSituationIngest | yes |
 | `threads/story-map.json` | NewsProjectInvokeAgentLambda, newsSituationTracker | yes |
+| `web/` | newsSystemsAnalysis | yes |
+| `web/latest.json` | newsSystemsAnalysis | yes |
 | `world/latest.json` | newsSituationTracker | yes |
 | `world/latest.member.json` | newsSituationTracker | yes |
 | `world/shadow/` | newsSituationTracker | yes |
@@ -50,6 +52,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `stories/` | `state/` | yes |
 | `tags/` | `backfill/` | no |
 | `threads/` | — (objects only) | yes |
+| `web/` | `2026/` | yes |
 | `world/` | `2026/` `shadow/` | yes |
 
 ## DATA_STRATEGY prefix table (documented intent)
@@ -65,6 +68,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
 | `world/latest.json`, `world/YYYY/MM/DD/HHMM.json` | `newsSituationTracker` (assembles at end of sweep) | each sweep | **frontend** (via Worker) |
 | `world/latest.member.json` | `newsSituationTracker` | each sweep | frontend, JWT-gated at the Worker |
+| `web/latest.json`, `web/YYYY/MM/DD.json` | `newsSystemsAnalysis` | daily 05:00Z | none yet (Studio country sheet, planned) |
 | `world/shadow/…`, `shadow/situations/…` | tracker in `DRY_RUN` (live `DRY_RUN=false`, so not written today) | each sweep | humans, tuning, `scripts/situations-log.mjs --shadow` |
 | `threads/story-map.json` | `NewsProjectInvokeAgentLambda` (matcher) | each story run (8h) | `newsSituationTracker` (stamps `threadId`) |
 | `tags/backfill/2026-09-11.json` | one-off matcher backfill; writer not in the repo | — | none |

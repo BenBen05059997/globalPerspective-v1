@@ -58,6 +58,7 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
 | `world/latest.json`, `world/YYYY/MM/DD/HHMM.json` | `newsSituationTracker` (assembles at end of sweep) | each sweep | **frontend** (via Worker) |
 | `world/latest.member.json` | `newsSituationTracker` | each sweep | frontend, JWT-gated at the Worker |
+| `web/latest.json`, `web/YYYY/MM/DD.json` (story web snapshot: index + per-story records + per-country webs; history starts 2026-10-20) | `newsSystemsAnalysis` | daily 05:00Z | none yet (Studio country sheet, planned) |
 | `world/shadow/…`, `shadow/situations/…` | tracker in `DRY_RUN` (live `DRY_RUN=false`, so not written today) | each sweep | humans, tuning, `scripts/situations-log.mjs --shadow` |
 | `threads/story-map.json` (storyId ↔ threadId) | `NewsProjectInvokeAgentLambda` (matcher) | each story run (8h) | `newsSituationTracker` (stamps `threadId`) |
 | `tags/backfill/2026-09-11.json` | one-off matcher backfill; writer not in the repo | — | none |
@@ -117,7 +118,7 @@ Measured 2026-09-09 (7-day CloudWatch, reads/writes per day): `SummarizeAndPredi
 | `GlobalPerspectiveMarkets` | not started (target `markets/YYYY/MM/DD/HH.json`); economy parked, `newsMarketsData` still writes hourly |
 | `GlobalPerspectiveClientErrors` | not started (target append-only `logs/errors/YYYY/MM/DD.jsonl`) |
 | `GlobalPerspectiveBreakingAlerts` | not started; `review.js` mutates rows, so it waits for an inbox-event review flow |
-| `NewsCache` (topics), `SummarizeAndPredict` | not started; last (dual-write snapshots, flip readers one action at a time, retire) |
+| `NewsCache` (topics), `SummarizeAndPredict` | not started; last (dual-write snapshots, flip readers one action at a time, retire). `WEB#INDEX` now also snapshotted daily to `web/` since 2026-10-20 |
 | `NewsProject-linkedin-posts` | not planned (posting log for `newsPostLinkedIn`) |
 
 Rule for every drop: **"nothing reads the table"** (grep + CloudWatch) before `delete-table`.

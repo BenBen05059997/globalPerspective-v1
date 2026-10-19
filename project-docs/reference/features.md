@@ -96,7 +96,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 | `newsDriftCorrector` | `backend/pipeline/newsDriftCorrector` | rule TriggerDriftCorrector `cron(30 5 * * ? *)` (ENABLED) | [drift-corrector.md](../runbooks/drift-corrector.md) | — | `SummarizeAndPredict` |
 | `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
-| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | — | `SummarizeAndPredict` |
+| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/` `web/latest.json` | `SummarizeAndPredict` |
 
 ## economy
 
@@ -167,7 +167,7 @@ No Lambda in functions.json lists this feature.
 | `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 | `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `stories/index.json` `threads/story-map.json` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
-| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | — | `SummarizeAndPredict` |
+| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/` `web/latest.json` | `SummarizeAndPredict` |
 | `newsThreadAnalysis` | `backend/pipeline/newsThreadAnalysis` | rule TriggerDailyAnalysis `cron(40 4 * * ? *)` (ENABLED) | [thread-analysis.md](../runbooks/thread-analysis.md) | — | `SummarizeAndPredict` |
 
 ## track-record

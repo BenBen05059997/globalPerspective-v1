@@ -182,7 +182,7 @@ Times are UTC unless noted; exact cron expressions and ENABLED/DISABLED state ar
    writes the thread → topic pointer `THREAD#<threadId>` / `TOPICS` (current `topicId`, all `topicIds`).
 3. `newsThreadAnalysis` (daily) writes per-thread analysis and dated history
    (`THREAD#…` / `THREAD_ANALYSIS`, `THREAD_HISTORY#<date>`); `newsSystemsAnalysis` (daily) reads those
-   and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`).
+   and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`), plus a daily snapshot to `web/YYYY/MM/DD.json` + `web/latest.json` in the world bucket.
 4. `newsSelectionShadow` runs a candidate layered selector (corpus + GDACS, scored by an external
    model "Jev") against what was published and writes only `audit/selection-shadow/`. Nothing on the
    site reads it.

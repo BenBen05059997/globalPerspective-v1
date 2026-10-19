@@ -222,7 +222,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `MAX_TOKENS`, `SUMMARIZE_PREDICT_TABLE`, `SYSTEMS_TOP_N`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `SYSTEMS_TEST_COUNTRIES`, `TEMPERATURE`
+- Read in repo source, not set live (code default applies): `SYSTEMS_TEST_COUNTRIES`, `TEMPERATURE`, `WORLD_BUCKET`
 
 ## newsThreadAnalysis
 

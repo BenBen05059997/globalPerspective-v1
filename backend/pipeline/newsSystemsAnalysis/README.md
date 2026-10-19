@@ -10,6 +10,7 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `today-archive` and `archive#YYYY-MM-DD` (key `id`)
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`; writes `SYSTEMS#<country>`/`SYSTEMS_ANALYSIS`, `WEB#INDEX`/`LATEST`, `THREAD#<id>`/`WEB`
+- S3 `WORLD_BUCKET` (fallback `globalperspective-world-280362093938`): after the DynamoDB writes, writes the same snapshot (`runId`, `index`, `records`, raw per-country `webs`) to `web/YYYY/MM/DD.json` (UTC date; a same-day rerun overwrites) and `web/latest.json`; a failure is logged and does not fail the run. Role has write-only `s3:PutObject` on `web/*`.
 - Other env names: `SYSTEMS_TEST_COUNTRIES` (comma list restricting targets), `MAX_TOKENS` (default 3000), `TEMPERATURE` (default 0.3)
 
 ## Models

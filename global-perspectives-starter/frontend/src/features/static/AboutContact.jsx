@@ -36,7 +36,7 @@ export default function AboutContact() {
       <StaticSection title="How It Works">
         <div className="sp-steps">
           {[
-            { step: '1', title: 'Collect', desc: 'RSS feeds + Brave Search surface global news from many sources when the collection pipeline runs.' },
+            { step: '1', title: 'Collect', desc: 'RSS feeds from 26 international outlets surface global news when the collection pipeline runs.' },
             { step: '2', title: 'Analyze', desc: 'DeepSeek V4 identifies topics, assigns categories, and links articles into narrative threads.' },
             { step: '3', title: 'Synthesize', desc: 'AI generates summaries, predictions, root cause analysis, and country-level intelligence briefings.' },
             { step: '4', title: 'Visualize', desc: 'Interactive maps, timelines, and structured briefings make the intelligence accessible at a glance.' },
@@ -55,24 +55,25 @@ export default function AboutContact() {
           <li><strong>Daily Topics</strong> — ~13 global topics, refreshed with AI analysis when the pipeline runs</li>
           <li><strong>Story Arc Intelligence</strong> — track how stories evolve across days with narrative threading</li>
           <li><strong>Country Intelligence</strong> — AI-powered country briefings with risk levels, timelines, and watch triggers</li>
-          <li><strong>Interactive World Map</strong> — geographic visualization of news connections and country replay</li>
+          <li><strong>Interactive World Map</strong> — tracked situations and official disaster alerts, with day-by-day replay of a story or a country</li>
           <li><strong>Structured Briefings</strong> — bottom-line assessments, key developments, and "why it matters" for every major story</li>
         </ul>
       </StaticSection>
 
       <StaticSection title="Our Sources">
         <p className="sp-note">
-          We aggregate from 29 outlets across every major region, combining RSS feeds with search APIs. No single source dominates our coverage.
+          We read the RSS feeds of 26 outlets across every major region. Each feed contributes at most 8 articles per run, so no single source dominates our coverage.
         </p>
         {[
-          { region: 'Global Wire Services', outlets: ['BBC World', 'Al Jazeera', 'Reuters*', 'AP News*'] },
+          { region: 'Global', outlets: ['BBC World', 'Al Jazeera'] },
           { region: 'Americas', outlets: ['NPR', 'CBC'] },
           { region: 'Europe', outlets: ['The Guardian', 'Deutsche Welle', 'EuroNews', 'France24'] },
           { region: 'Africa', outlets: ['AllAfrica', 'Daily Maverick', 'The East African'] },
           { region: 'Middle East', outlets: ['Middle East Eye', 'Al-Monitor'] },
           { region: 'Asia', outlets: ['SCMP', 'Asia Times', 'The Diplomat', 'Dawn', 'Japan Times', 'Channel News Asia', 'Nikkei Asia', 'Bangkok Post'] },
           { region: 'Oceania', outlets: ['ABC Australia'] },
-          { region: 'Specialized', outlets: ['Straits Times*', 'Times of India*', 'Korea Herald*', 'Kyiv Independent*'] },
+          { region: 'Climate & environment', outlets: ['Inside Climate News', 'Grist'] },
+          { region: 'Technology & science', outlets: ['Ars Technica', 'MIT Technology Review'] },
         ].map(g => (
           <div key={g.region} className="sp-region">
             <div className="sp-region__name">{g.region}</div>
@@ -81,7 +82,6 @@ export default function AboutContact() {
             </div>
           </div>
         ))}
-        <p className="sp-fine">* Sourced via Brave Search API (no RSS available)</p>
       </StaticSection>
 
       <StaticSection title="Who We Are">

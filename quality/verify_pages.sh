@@ -260,8 +260,11 @@ done
 must_not_have "$SRC/features/home/Home.jsx" "showError\\(|useError\\(|ErrorContext" "Home.jsx no longer opens the generic error modal"
 must_have "$SRC/features/home/Home.jsx" "reportFetchError" "Home reports a failed topics load to the error sink"
 must_have "$SRC/features/home/Home.jsx" "today-unavailable" "Home shows an inline honest state when topics fail to load"
+# 55b726f moved the three displays onto one AiResultCard frame, which renders AiUnavailable on error.
+must_have "$SRC/features/home/components/AiResultCard.jsx" "if \\(error\\) \\{" "AiResultCard has an error branch"
+must_have "$SRC/features/home/components/AiResultCard.jsx" "return <AiUnavailable " "AiResultCard fails inline (AiUnavailable), not in a modal"
 for d in Summary Prediction TraceCause; do
-  must_have "$SRC/features/home/components/${d}Display.jsx" "AiUnavailable" "${d}Display fails inline (AiUnavailable), not in a modal"
+  must_have "$SRC/features/home/components/${d}Display.jsx" "<AiResultCard" "${d}Display uses the AiResultCard frame (inline AiUnavailable on error)"
 done
 if [ ! -e "$SRC/app/errors/ErrorModal.jsx" ] && [ ! -e "$SRC/shared/contexts/ErrorContext.jsx" ]; then
   PASS=$((PASS + 1)); echo "  $(green PASS) the generic ErrorModal / ErrorContext are gone"
@@ -359,7 +362,8 @@ must_not_have "$T/lib/storyGroups.js" "Watching:" "no typed Watching text in the
 # 8 · first visit has no 'Changed since your last visit'
 must_have "$T/components/StoriesChanged.jsx" "if \\(!Number.isFinite\\(baseline\\)\\) return null" "the changed section needs a previous-visit baseline"
 # 12 · phone tabs READ / MAP / TIMELINE
-must_have "$T/components/StoriesHeader.jsx" "value: 'timeline', label: 'Timeline'" "phone tabs include TIMELINE"
+# e0c1a1f moved the header onto the shared Tabs block, whose tab objects use `key` (not `value`).
+must_have "$T/components/StoriesHeader.jsx" "key: 'timeline', label: 'Timeline'" "phone tabs include TIMELINE"
 must_not_have "$T/components/StoriesHeader.jsx" "label: 'Changes'" "no phone CHANGES tab"
 # ─── P7a (2026-10-02): topic dots = crisis hue only; BOARD status is derived and its rule is printed ───
 must_have "$SRC/shared/ui/CategoryTag.jsx" "crisisDotVar" "CategoryTag dots use the crisis hue (crisisDotVar)"
@@ -374,11 +378,18 @@ must_have "$T/components/StoriesBoard.jsx" "BOARD_RULE" "the board prints its st
 must_have "$T/components/StoriesBoard.jsx" "dayCounts" "board sparkline bars come from real per-day counts (dayCounts)"
 must_not_have "$T/components/StoriesBoard.jsx" "Math\\.random|StatusGlyph" "board has no Math.random and does not reuse the situation StatusGlyph ('escalating')"
 must_not_have "$T/components/StoriesBoard.jsx" "scalating" "board never says 'escalating' (it measures coverage: 'rising')"
-must_have "$T/components/StoriesHeader.jsx" "value: 'board', label: 'Board'" "the view switch has Board"
+must_have "$T/components/StoriesHeader.jsx" "key: 'board', label: 'Board'" "the view switch has Board"
 must_have "$T/lib/countryFrame.js" "export function frameViewBox" "country hero framing is a tested pure function (frameViewBox)"
 must_have "$T/components/WeeklyMap.jsx" "frameBounds" "the country map frames the country (Google fitBounds + SVG viewBox)"
 # 10 · /today copy promises only what is live (change-alert emails are off)
 must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
+must_not_have "$SRC/features/account/MembershipPage.jsx" "[Cc]hange-alerts|alerts when a country" "/membership does not promise change-alert emails (the drift cron is off)"
+# 2026-10-19 operator rule (promise only what runs): public copy matches the live pipeline — RSS-only
+# ingest (Brave removed, no Reuters/AP feed), no fixed ingest rate, no retired geodesic map lines, no
+# parked economy/pair layers, country briefings only for the most-covered countries.
+must_not_have "$SRC/features/static/WhitepaperPage.jsx" "[Gg]eodesic|connection lines|every 4 hours|every few hours|<td>Wire services|Economic disruption|Pair and systems|change-alerts" "the white paper makes no retired or parked claims"
+must_not_have "$SRC/features/static/AboutContact.jsx" "Brave Search|Reuters|AP News|29 outlets" "About lists only the RSS outlets the ingest reads"
+must_not_have "global-perspectives-starter/frontend/index.html" "190\\+ countries|thousands of sources|Brier score and calibration" "index.html makes no country-count, source-count or Brier claims"
 
 # ─── P7b (2026-10-02): Stories WEB view; /spider-demo retired into it ───
 must_not_have_unless() { # lines matching $2 that do not also match $3 (e.g. "caused" only inside 'never "caused"')
@@ -396,13 +407,15 @@ for f in components/StoriesWeb.jsx lib/storyWeb.js; do
 done
 must_have "$T/components/StoriesWeb.jsx" "judged to feed into" "the list twin says 'judged to feed into'"
 must_have "$T/components/StoriesWeb.jsx" "Strongest links" "the list twin 'Strongest links' is present"
-must_have "$T/components/StoriesWeb.jsx" "Model judgment" "link mechanisms are labelled 'Model judgment'"
+# e0c1a1f: the mechanism label is the shared ClaimTag (kind="judgment" renders MODEL JUDGMENT).
+must_have "$T/components/StoriesWeb.jsx" "<ClaimTag kind=\"judgment\"" "link mechanisms carry the judgment ClaimTag"
+must_have "$T/components/ClaimTag.jsx" "judgment: 'MODEL JUDGMENT'" "ClaimTag's judgment word is MODEL JUDGMENT"
 must_have "$T/components/StoriesWeb.jsx" "isPhone \\? <>\\{twin\\}\\{graph\\}" "phone shows the list twin first, the graph below"
 must_have "$T/components/StoriesWeb.jsx" "webFootnote\\(merged\\.analyses\\)" "the footnote is computed from the merge (webFootnote)"
 must_not_have "$T/components/StoriesWeb.jsx" "[0-9]+ (analys|older)" "no hard-coded counts in the web view strings"
 must_not_have "$T/lib/storyWeb.js" "[0-9]+ (analys|older)" "no hard-coded counts in the footnote"
 must_have "$T/lib/storyWeb.js" "older than \\$\\{WEB_HIDE_DAYS\\} days hidden" "the footnote counts analyses older than 30 days (hidden), from WEB_HIDE_DAYS"
-must_have "$T/components/StoriesHeader.jsx" "value: 'web', label: 'Web'" "the view switch has Web"
+must_have "$T/components/StoriesHeader.jsx" "key: 'web', label: 'Web'" "the view switch has Web"
 must_have "$T/WeeklyPage.jsx" "view === 'web'" "WeeklyPage renders ?view=web"
 must_have "$SRC/app/layout/Layout.jsx" "board, table, map or web" "the Stories nav tooltip names the built views"
 must_have "$SRC/app/LegacyRedirects.jsx" "to=\"/weekly\\?view=web\"" "/spider-demo redirects to /weekly?view=web"
@@ -461,6 +474,11 @@ must_not_have "$SRC/shared/map/SituationMap3D.jsx" "pulseSet\\(active, Date.now\
 
 # 2026-10-02 operator yes: Studio credits copy removed (credits parked); Stories rail renamed
 must_not_have "$SRC/features/analysis-studio/AnalysisStudio.jsx" "Credits · |out of analysis credits|Add credits" "Studio shows no credits copy while credits are parked"
+# 2026-10-19 operator rule (decision 0002: site copy must not promise credits): no credits copy on
+# Membership, Account or the header pill.
+for f in features/account/MembershipPage.jsx features/account/Account.jsx app/layout/Layout.jsx; do
+  must_not_have "$SRC/$f" "[Cc]redit|monthly allowance" "$f promises no analysis credits or monthly allowance (credits parked)"
+done
 must_have "$SRC/features/threads/components/StoriesChanged.jsx" "Gaining coverage this week" "the Stories rail says 'Gaining coverage this week' (not 'Rising', which is a Board column)"
 
 # ─── Summary ───

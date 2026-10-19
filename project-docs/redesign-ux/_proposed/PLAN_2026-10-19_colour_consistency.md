@@ -38,6 +38,7 @@ C1 preview (live page with a local style override, nothing deployed): `risk_chip
 
 ### Operator decisions (2026-10-19)
 - C1-C4 and C7 agreed. C5 direction agreed: conflict keeps its warm red and `--error` moves away from it; humanitarian moves off the warning amber; economic moves off the accent cyan. Final hues picked from swatches shown on the map.
+- C5 hues picked 2026-10-19 (option A from the swatch page): humanitarian orchid `#d987e0`, economic green `#8fd46a`, `--error` rose `#f2689a`; conflict stays `#ee7754`. Radar happening-now window: 12h, at most 5.
 - The radar sweep is too much. Replace the endless 10s loop with a single sweep that shows what is happening and what is important (R1-R6).
 
 ### C6 radar redesign: one sweep that reveals

@@ -1,19 +1,25 @@
-# v1 Prediction Resolution — runbook (Phase 2)
+# v1 Prediction Resolution — runbook (July pilot)
 
-> **Superseded 2026-09-30 (Batch 4 B) for new questions:** resolution is now the weekly sampled flow: the `newsPredictionResolver` Lambda commits a seed, draws ~22 questions a week, and drafts verdicts; you confirm them with `node predictions/settle-review.js` (about an hour a week; `--list` first). Verify a draw with `node predictions/verify-draw.mjs --week <YYYY-Www>`. The text below describes the July pilot's manual loop and stays for reference; `resolve-v1-*.js` only touch `PRED#` rows.
+Last verified: 2026-10-19 (scripts read from the repo; `verify-draw.mjs` run against live weeks 2026-W41 and 2026-W42).
 
+> **Superseded 2026-09-30 for new questions.** Resolution is now the weekly sampled flow: the
+> `newsPredictionResolver` Lambda commits a seed, draws ~22 questions a week and drafts verdicts;
+> you confirm them with `node predictions/settle-review.js` (`--list` first). Check a week's draw with
+> `node predictions/verify-draw.mjs --week <YYYY-Www>`: exit 0 = verified, 1 = NOT VERIFIED,
+> 3 = not revealed yet (only the commitment exists until the week ends). Runbook:
+> `project-docs/runbooks/prediction-resolver.md`.
+>
+> The rest of this page is the July pilot's manual loop for `methodologyVersion:1` `PRED#` rows
+> (`resolve-v1-*.js` touch nothing else). Its plan was deleted 2026-10-19:
+> `git show 120de90:project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md`.
 
 The agent-run loop that turns due `methodologyVersion:1` triggers into scored `finalVerdict`s.
-Phase 2 of `PREDICTION_METHODOLOGY_V1_PLAN.md`. Validated by the 2026-07-04 pilot; only the
-capture side (Phase 1) is automated — **resolution is deliberately agent-run**, because reliable
-verdicts require independent web-grounded verification, not a headless heuristic (the legacy
-`newsPredictionResolver` proposes but punts `unclear` ~86% of the time).
+Resolution is deliberately agent-run, because reliable verdicts need independent web-grounded
+verification, not a headless heuristic.
 
 ## When to run
 
-When `resolve-v1-extract.js` reports `due & open > 0`. Roughly weekly. The first v1 deadlines
-fall ~2026-07-11 (the pipeline went live 2026-07-04). Nothing to do until then — the extractor
-is honest-empty (`Nothing due yet`).
+When `resolve-v1-extract.js` reports `due & open > 0`; otherwise it prints `Nothing due yet`.
 
 ## The loop
 
@@ -53,7 +59,7 @@ and a snapshot flips to `status:'resolved'` only once **every** dated trigger ha
 ## Invariants (why this is trustworthy)
 
 - **Never score the legacy backlog.** Both scripts filter on `methodologyVersion`. Pre-v1 records
-  stay immutable + unscored (the era cut, `PREDICTION_METHODOLOGY_V1_PLAN.md` §2).
+  stay immutable + unscored (the era cut, §2 of the deleted plan above).
 - **`confirmedBy:'agent-verified'`**, not `'human'` — the record says exactly who confirmed it, and
   the agent's `evidence[]` is attached to every trigger, so any verdict is auditable against its cites.
 - **Unclear is the safe default** and is excluded from the Brier score — a thin/ambiguous verdict

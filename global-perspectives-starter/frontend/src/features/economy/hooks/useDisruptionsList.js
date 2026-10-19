@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
 import { fetchDisruptionsList } from '@/shared/api/restProxy.js';
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
-const CACHE_KEY = (filters) => `gp_disruptions_${JSON.stringify(filters)}`;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 /**
@@ -15,43 +14,15 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
  * Returns: { data: Array<impact>, loading, error }
  */
 export function useDisruptionsList(filters = {}, { enabled = true } = {}) {
-  const stable = useMemo(() => ({
+  const stable = {
     minSeverity: filters.minSeverity || null,
     country: filters.country || null,
     limit: filters.limit || 50,
-  }), [filters.minSeverity, filters.country, filters.limit]);
-
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const key = CACHE_KEY(stable);
-    try {
-      const cached = localStorage.getItem(key);
-      if (cached) {
-        const { data: d, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) { setData(d); return; }
-      }
-    } catch { /* malformed cache */ }
-
-    setLoading(true);
-    fetchDisruptionsList(stable)
-      .then((res) => {
-        if (res?.success && Array.isArray(res.data)) {
-          setData(res.data);
-          try { localStorage.setItem(key, JSON.stringify({ data: res.data, ts: Date.now() })); } catch { /* storage full */ }
-        } else {
-          setData([]);
-        }
-      })
-      .catch((err) => {
-        setError(err.message);
-        setData([]);
-      })
-      .finally(() => setLoading(false));
-  }, [stable, enabled]);
-
-  return { data, loading, error };
+  };
+  const key = enabled ? `gp_disruptions_${JSON.stringify(stable)}` : null;
+  const { data, loading, error } = useCachedQuery(key, async () => {
+    const res = await fetchDisruptionsList(stable);
+    return res?.success && Array.isArray(res.data) ? res.data : undefined;
+  }, { ttl: CACHE_TTL, storage: 'local' });
+  return { data: data ?? [], loading, error: error?.message ?? null };
 }

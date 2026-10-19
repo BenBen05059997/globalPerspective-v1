@@ -2,25 +2,13 @@
 // Deliberately does NOT use useWeeklyArchive() (which calls useAuth() and throws outside an
 // AuthProvider) — this hook is mounted from the map console's CountryCardV2, and the map's own
 // tests render SituationHome standalone (see useCountryRiskLayer.js's identical note). It reads
-// the same public archive_range action directly instead, with its own tiny module cache so
-// re-selecting a country doesn't re-fetch the 30-day archive every time.
+// the shared public archive (useArchiveDayMap, one cached read per tab) so re-selecting a country
+// doesn't re-fetch the 30-day archive every time.
 import { useEffect, useMemo, useState } from 'react';
-import { fetchArchiveRange, fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
+import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
+import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { buildDeadlines } from '@/features/threads/lib/storyMode.js';
-
-let archiveCache = null; // dayMap | null
-let archiveFetchPromise = null;
-
-async function loadArchive() {
-  if (archiveCache) return archiveCache;
-  if (!archiveFetchPromise) {
-    archiveFetchPromise = fetchArchiveRange(30)
-      .then((res) => { archiveCache = res?.data || {}; return archiveCache; })
-      .catch((err) => { reportFetchError('country-card-archive', err); archiveCache = {}; return archiveCache; });
-  }
-  return archiveFetchPromise;
-}
 
 /**
  * useCountryStories(countryName) -> { stories, deadlines, loading }
@@ -30,17 +18,8 @@ async function loadArchive() {
  *              for the "future only" filter — this hook returns the raw, unfiltered deadlines).
  */
 export function useCountryStories(countryName) {
-  const [dayMap, setDayMap] = useState(() => archiveCache);
+  const { dayMap, loading } = useArchiveDayMap();
   const [snapshot, setSnapshot] = useState(null);
-  const [loading, setLoading] = useState(!archiveCache);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (archiveCache) { setDayMap(archiveCache); setLoading(false); return undefined; }
-    setLoading(true);
-    loadArchive().then((data) => { if (!cancelled) { setDayMap(data); setLoading(false); } });
-    return () => { cancelled = true; };
-  }, []);
 
   const { stories, topicIds, topicIdToThreadId } = useMemo(() => {
     if (!countryName || !dayMap) return { stories: [], topicIds: [], topicIdToThreadId: new Map() };

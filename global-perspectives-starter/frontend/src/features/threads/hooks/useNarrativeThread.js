@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import { fetchNarrativeThread } from '@/shared/api/restProxy';
-
-const CACHE_KEY = (id) => `gp_narrative_thread_${id}`;
-
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 // dropRedatedRepeats is pure and shared (also with the Studio share Lambda): see shared/lib/dropRedatedRepeats.js
 import { dropRedatedRepeats } from '@/shared/lib/dropRedatedRepeats.js';
+
 export { dropRedatedRepeats };
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -13,42 +11,14 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 // rolling archive the rest of the site loads, so deep-links survive long after
 // a story's articles age out of the recent window.
 export function useNarrativeThread(threadId) {
-  const [entries, setEntries] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!threadId) { setLoading(false); return; }
-    let cancelled = false;
-
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY(threadId));
-      if (raw) {
-        const cached = JSON.parse(raw);
-        if (cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS && Array.isArray(cached.entries)) {
-          setEntries(dropRedatedRepeats(cached.entries));
-          setLoading(false);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    setLoading(true);
-    setError(null);
-    fetchNarrativeThread(threadId)
-      .then(result => {
-        if (cancelled) return;
-        const data = dropRedatedRepeats(Array.isArray(result?.data) ? result.data : []);
-        setEntries(data);
-        try {
-          sessionStorage.setItem(CACHE_KEY(threadId), JSON.stringify({ entries: data, timestamp: Date.now() }));
-        } catch { /* ignore */ }
-      })
-      .catch(err => { if (!cancelled) setError(err?.message || 'Failed to load thread'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
-  }, [threadId]);
-
-  return { entries, loading, error };
+  const key = threadId ? `gp_narrative_thread_${threadId}` : null;
+  const { data, loading, error } = useCachedQuery(key, async () => {
+    const result = await fetchNarrativeThread(threadId);
+    return dropRedatedRepeats(Array.isArray(result?.data) ? result.data : []);
+  }, { ttl: CACHE_TTL_MS, storage: 'session' });
+  return {
+    entries: data ?? null,
+    loading,
+    error: error ? (error.message || 'Failed to load thread') : null,
+  };
 }

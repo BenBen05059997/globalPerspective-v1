@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { fetchCorrectionsFeed } from '@/shared/api/restProxy.js';
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
 const CACHE_KEY = 'gp_corrections_feed';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -13,36 +13,16 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
  *   changeScore{from,to}?, triggerEvent{title,date}?, whyChanged?, noSingleDriver }
  */
 export function useCorrectionsFeed(limit = 40) {
-  const [notes, setNotes] = useState(null);
-  const [total, setTotal] = useState(0);
-  const [gated, setGated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { notes: n, total: t, gated: g, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) {
-          setNotes(n); setTotal(Number(t) || (Array.isArray(n) ? n.length : 0)); setGated(!!g);
-          setLoading(false); return;
-        }
-      }
-    } catch { /* malformed cache */ }
-
-    setLoading(true);
-    fetchCorrectionsFeed(limit)
-      .then((res) => {
-        const n = res?.success && Array.isArray(res.notes) ? res.notes : [];
-        const t = Number(res?.total) || n.length;
-        const g = !!res?.gated;
-        setNotes(n); setTotal(t); setGated(g);
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ notes: n, total: t, gated: g, ts: Date.now() })); } catch { /* storage full */ }
-      })
-      .catch((err) => { setError(err.message); setNotes([]); })
-      .finally(() => setLoading(false));
-  }, [limit]);
-
-  return { notes, total, gated, loading, error };
+  const { data, loading, error } = useCachedQuery(CACHE_KEY, async () => {
+    const res = await fetchCorrectionsFeed(limit);
+    const notes = res?.success && Array.isArray(res.notes) ? res.notes : [];
+    return { notes, total: Number(res?.total) || notes.length, gated: !!res?.gated };
+  }, { ttl: CACHE_TTL, storage: 'local' });
+  return {
+    notes: data ? data.notes : (error ? [] : null),
+    total: data?.total ?? 0,
+    gated: data?.gated ?? false,
+    loading,
+    error: error?.message ?? null,
+  };
 }

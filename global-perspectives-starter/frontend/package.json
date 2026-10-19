@@ -19,7 +19,6 @@
     "test:hosting": "node --test worker/*.test.mjs ../../scripts/prepare-site-assets.test.mjs ../../scripts/deploy-site.test.mjs ../../cloudflare/front-worker/candidate.test.mjs"
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.3",
     "@deck.gl/core": "^9.4.0",
     "@deck.gl/layers": "^9.4.0",
     "@deck.gl/react": "^9.4.0",

@@ -1,44 +1,15 @@
-import { useState, useEffect } from 'react';
 import { fetchEconomicImpact } from '@/shared/api/restProxy.js';
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
-const CACHE_KEY = (id) => `gp_econ_${id}`;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+// 404 / no record → null (treat as no economic dimension); a network/server error also leaves
+// data null (with `error` set) so the page never breaks.
 export function useEconomicImpact(threadId, { enabled = true } = {}) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!threadId || !enabled) return;
-
-    const key = CACHE_KEY(threadId);
-    try {
-      const cached = localStorage.getItem(key);
-      if (cached) {
-        const { data: d, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) { setData(d); return; }
-      }
-    } catch { /* malformed cache */ }
-
-    setLoading(true);
-    fetchEconomicImpact(threadId)
-      .then((res) => {
-        if (res?.success && res.data) {
-          setData(res.data);
-          try { localStorage.setItem(key, JSON.stringify({ data: res.data, ts: Date.now() })); } catch { /* storage full */ }
-        } else {
-          // 404 / no record → null (treat as no economic dimension)
-          setData(null);
-        }
-      })
-      .catch((err) => {
-        // Network/server error — fail silently to null, do not break the page
-        setError(err.message);
-        setData(null);
-      })
-      .finally(() => setLoading(false));
-  }, [threadId, enabled]);
-
-  return { data, loading, error };
+  const key = threadId && enabled ? `gp_econ_${threadId}` : null;
+  const { data, loading, error } = useCachedQuery(key, async () => {
+    const res = await fetchEconomicImpact(threadId);
+    return res?.success && res.data ? res.data : undefined;
+  }, { ttl: CACHE_TTL, storage: 'local' });
+  return { data: data ?? null, loading, error: error?.message ?? null };
 }

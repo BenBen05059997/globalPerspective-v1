@@ -2,7 +2,7 @@ import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } fro
 import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
-import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief.js';
+import { useDailyBrief } from '@/shared/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';

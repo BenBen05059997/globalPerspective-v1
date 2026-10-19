@@ -27,7 +27,7 @@ vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
 }));
 
 let briefValue;
-vi.mock('@/features/daily/hooks/useDailyBrief', () => ({
+vi.mock('@/shared/hooks/useDailyBrief', () => ({
   useDailyBrief: () => briefValue,
 }));
 

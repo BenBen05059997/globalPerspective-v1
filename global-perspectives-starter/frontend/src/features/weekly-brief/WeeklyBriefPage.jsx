@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
-import SubscribeCard from '@/features/account/components/SubscribeCard';
+import SubscribeCard from '@/shared/ui/SubscribeCard';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Card from '@/shared/ui/Card.jsx';

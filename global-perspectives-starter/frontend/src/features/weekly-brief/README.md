@@ -20,7 +20,7 @@ source outlets, link to the story arc) and a "What to watch" list.
 - `@/shared/ui/Markdown`, `TierChip`, `SectionHeader`, `StoryLink`, `boot/BootLoader`
 
 ## Imports from other features
-- `@/features/account/components/SubscribeCard` -> `SubscribeCard variant="weekly"`
+- `@/shared/ui/SubscribeCard` -> `SubscribeCard variant="weekly"`
 
 ## Gotchas
 - KPIs count threat signals only: `kind === 'development'` signals get a neutral "Development"

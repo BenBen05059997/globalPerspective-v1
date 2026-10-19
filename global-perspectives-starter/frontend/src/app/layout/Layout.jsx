@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useMembership } from '@/features/account/hooks/useMembership';
+import { useMembership } from '@/shared/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/features/breaking/components/NotificationBell';

@@ -10,10 +10,10 @@ import { IRAN_COUNTRY_HISTORY } from '@/features/account/__tests__/fixtures/iran
 const mockUsePreferences = vi.fn();
 const mockUseMembership = vi.fn();
 
-vi.mock('@/features/account/hooks/usePreferences', () => ({
+vi.mock('@/shared/hooks/usePreferences', () => ({
   usePreferences: () => mockUsePreferences(),
 }));
-vi.mock('@/features/account/hooks/useMembership', () => ({
+vi.mock('@/shared/hooks/useMembership', () => ({
   useMembership: () => mockUseMembership(),
 }));
 

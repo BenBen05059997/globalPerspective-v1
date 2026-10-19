@@ -9,7 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
 let trackRecordValue;
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => trackRecordValue }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0, gated: false, loading: false }) }));
-vi.mock('@/features/account/components/FollowButton', () => ({ FollowButton: () => null }));
+vi.mock('@/shared/ui/FollowButton', () => ({ FollowButton: () => null }));
 vi.mock('@/shared/map/RadarMap.jsx', () => ({ default: () => <div data-testid="radar-map-stub" /> }));
 
 import TrackRecordPage from '@/features/track-record/TrackRecordPage';

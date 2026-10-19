@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief';
+import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';

@@ -6,7 +6,7 @@ import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';
-import { useMembership } from '@/features/account/hooks/useMembership';
+import { useMembership } from '@/shared/hooks/useMembership';
 import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses, fetchCountryHistory } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { iso3ForName } from '@/shared/lib/situationLabels.js';

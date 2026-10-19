@@ -26,7 +26,7 @@ and the save / follow / subscribe controls other pages embed.
 
 ## Imports from other features
 - `@/features/analysis-studio/lib/byok`, `lib/llm`, `components/ProviderModal` -> Studio key panel
-- `@/features/daily/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> paused / edition notes
+- `@/shared/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> paused / edition notes
 - `@/shared/map/landGeometry.js` -> coastlines for the Desk map
 - `@/features/threads/WeeklyPage.css` -> error styling in `AuthCallback`
 

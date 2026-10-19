@@ -5,7 +5,7 @@ import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrections
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { FollowButton } from '@/features/account/components/FollowButton';
+import { FollowButton } from '@/shared/ui/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';

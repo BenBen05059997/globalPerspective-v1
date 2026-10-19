@@ -26,7 +26,7 @@ one-screen country card the map console also mounts.
 ## Imports from other features
 - `@/features/threads/`: `hooks/useWeeklyArchive`, `hooks/useThreadAnalyses`, `components/WeeklyMap` (lazy), `components/QuestionChip`, `lib/questionChips`, `lib/storyMode` (`buildDeadlines`), `lib/mapConstants`, `WeeklyPage.css`
 - `@/features/economy/hooks/useMarketsCountry`, `hooks/useDisruptionsList`
-- `@/features/account/components/SaveButton`, `FollowButton`
+- `@/shared/ui/SaveButton`, `FollowButton`
 - `@/shared/lib/situationLabels.js` (`iso3ForName`), `lib/countryRiskLayer.js` (chunking constants)
 
 ## Gotchas

@@ -24,7 +24,7 @@ country to watch, shape of the day, full analysis) with previous/next date navig
 ## Imports from other features
 - `@/features/briefings/lib/briefingSlides.js` -> `storyLinkPath`, `peekInputForStory`
 - `@/features/economy/hooks/useDisruptionsList`, `components/InstrumentChip` -> economic footprint
-- `@/features/account/components/SaveButton` -> save this daily brief
+- `@/shared/ui/SaveButton` -> save this daily brief
 
 ## Gotchas
 - `useDailyBrief` is also used by the map console, `usePausedSince` (map, used by Layout), About, Account / Desk, and briefings: a change here hits them all.

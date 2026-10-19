@@ -15,7 +15,7 @@ vi.mock('@/features/map/hooks/useWorld.js', () => ({
   useWorld: () => h.world,
   useSituationDetail: () => ({ detail: null }),
 }));
-vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
+vi.mock('@/shared/hooks/useDailyBrief.js', () => ({
   useDailyBrief: () => ({ brief: null, servedDateKey: null, loading: false, error: null }),
   MAX_LOOKBACK_DAYS: 30,
 }));

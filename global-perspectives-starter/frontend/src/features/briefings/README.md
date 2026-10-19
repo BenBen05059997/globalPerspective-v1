@@ -26,7 +26,7 @@ the current edition. Slides are built only from fields the brief payload actuall
 - `@/shared/ui/StoryPeek`, `@/shared/ui/StoryLink` (with `usePeek`, `peekData`)
 
 ## Imports from other features
-- `@/features/daily/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> the briefs
+- `@/shared/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> the briefs
 - `@/features/threads/components/StoryMode.jsx` (`StoryMap`), `components/QuestionChip.jsx`, `lib/questionChips.js` (`hasOwnProbability`)
 - `@/shared/lib/situationLabels.js` -> `iso3ForName`
 

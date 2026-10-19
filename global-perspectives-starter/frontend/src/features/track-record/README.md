@@ -24,7 +24,7 @@ of changed reads (corrections). A plain text twin renders the same facts for pri
 - `SectionHeader`, `PhoneTabs`, `boot/BootLoader`; `useIsPhone`; `safeWhy`/`safeTriggerEvent` (`@/shared/lib/driftNote`)
 
 ## Imports from other features
-- `@/features/account/components/FollowButton` -> follow a country from the ledger
+- `@/shared/ui/FollowButton` -> follow a country from the ledger
 - `@/shared/map/RadarMap.jsx` -> forecast board map
 - `@/shared/lib/situationLabels.js` -> `ISO3_NAME` for placing questions on countries
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useSavedItems } from '@/features/account/hooks/useSavedItems';
+import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import Button from '@/shared/ui/Button.jsx';
-import '@/features/account/components/ActionButtons.css';
+import '@/shared/ui/ActionButtons.css';
 
 export function SaveButton({ itemType, itemId, metadata = {}, className = '' }) {
   const { user } = useAuth();

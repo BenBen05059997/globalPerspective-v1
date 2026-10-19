@@ -1,7 +1,7 @@
-import { usePreferences } from '@/features/account/hooks/usePreferences';
-import { useMembership } from '@/features/account/hooks/useMembership';
+import { usePreferences } from '@/shared/hooks/usePreferences';
+import { useMembership } from '@/shared/hooks/useMembership';
 import { useDeskChanges } from '@/features/account/hooks/useDeskChanges';
-import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
 import DeskSinceLastVisit from '@/features/account/components/DeskSinceLastVisit';
 import DeskFollowing from '@/features/account/components/DeskFollowing';

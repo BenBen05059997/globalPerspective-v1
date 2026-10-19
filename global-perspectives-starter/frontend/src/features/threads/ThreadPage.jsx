@@ -11,7 +11,7 @@ import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import CopyBriefing, { formatThreadBriefing } from '@/shared/ui/CopyBriefing';
-import { SaveButton } from '@/features/account/components/SaveButton';
+import { SaveButton } from '@/shared/ui/SaveButton';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import StatusStrip from '@/shared/ui/StatusStrip';

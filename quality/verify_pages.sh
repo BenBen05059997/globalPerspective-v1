@@ -252,7 +252,7 @@ for css in features/analysis-studio/AnalysisStudio.css features/analysis-studio/
            features/home/Home.css features/home/AIComponents.css features/home/components/TodayArchiveSidebar.css \
            features/home/components/TopicNav.css features/home/components/LedeBand.css \
            features/account/MembershipPage.css features/account/Account.css features/account/SignIn.css \
-           features/account/components/SubscribeCard.css features/account/components/Desk.css \
+           shared/ui/SubscribeCard.css features/account/components/Desk.css \
            features/breaking/components/BreakingStrip.css \
            features/breaking/components/NotificationBell.css; do
   must_not_have "$SRC/$css" "$LIGHT_BG" "$css has no light background literals"

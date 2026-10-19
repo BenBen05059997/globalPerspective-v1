@@ -27,7 +27,7 @@ Output is checked by a validator, rendered as a deck, and can be shared.
 - `@/shared/ui/Markdown`, `@/shared/ui/StoryLink`, `@/shared/ui/boot/BootLoader`
 
 ## Imports from other features
-- `@/features/account/hooks/useMembership` -> member / credit balance; `@/features/threads/hooks/useWeeklyArchive`, `hooks/useNarrativeThread`, `components/StoryMode` (`StoryMap`)
+- `@/shared/hooks/useMembership` -> member / credit balance; `@/features/threads/hooks/useWeeklyArchive`, `hooks/useNarrativeThread`, `components/StoryMode` (`StoryMap`)
 - `@/shared/lib/situationLabels.js` -> `iso3ForName`; `@/features/track-record/lib/trFormatDate.js` -> `fmtDay`
 
 ## Gotchas

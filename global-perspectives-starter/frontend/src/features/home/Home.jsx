@@ -18,7 +18,7 @@ import SeverityBadge from '@/shared/ui/SeverityBadge';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
 import LedeBand from '@/features/home/components/LedeBand';
 import BreakingStrip from '@/features/breaking/components/BreakingStrip';
-import SubscribeCard from '@/features/account/components/SubscribeCard';
+import SubscribeCard from '@/shared/ui/SubscribeCard';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';

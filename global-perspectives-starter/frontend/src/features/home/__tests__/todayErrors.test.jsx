@@ -14,7 +14,7 @@ vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () =>
 vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
-vi.mock('@/features/account/components/SubscribeCard', () => ({ default: () => null }));
+vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
 vi.mock('@/features/breaking/components/BreakingStrip', () => ({ default: () => null }));
 vi.mock('@/shared/data/contentService', () => ({
   default: {

@@ -27,7 +27,7 @@ whether analysis is paused.
 - None (`@/shared/lib/freshness` is the only shared import).
 
 ## Imports from other features
-- `@/features/daily/hooks/useDailyBrief` -> `useDailyBrief`, `MAX_LOOKBACK_DAYS` (AboutContact)
+- `@/shared/hooks/useDailyBrief` -> `useDailyBrief`, `MAX_LOOKBACK_DAYS` (AboutContact)
 
 ## Gotchas
 - About wording must not claim fixed rates ("every hour", "hundreds of articles daily"); it says

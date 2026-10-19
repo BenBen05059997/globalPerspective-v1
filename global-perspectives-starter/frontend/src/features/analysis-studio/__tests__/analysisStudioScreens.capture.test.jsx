@@ -37,7 +37,7 @@ const MOCK_USER = { uid: 'test-user', isAnonymous: false };
 vi.mock('@/shared/contexts/AuthContext', () => ({
   useAuth: () => ({ user: MOCK_USER, loading: false }),
 }));
-vi.mock('@/features/account/hooks/useMembership', () => ({
+vi.mock('@/shared/hooks/useMembership', () => ({
   useMembership: () => ({ isMember: false, creditBalance: 0, available: false, refresh: vi.fn() }),
 }));
 // D2 (S5b): story-1 carries a threadId so the D2 stored-data feed activates (RICH —

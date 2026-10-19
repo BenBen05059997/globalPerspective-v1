@@ -1,7 +1,7 @@
-import { useMembership } from '@/features/account/hooks/useMembership';
-import { usePreferences } from '@/features/account/hooks/usePreferences';
+import { useMembership } from '@/shared/hooks/useMembership';
+import { usePreferences } from '@/shared/hooks/usePreferences';
 import Button from '@/shared/ui/Button.jsx';
-import '@/features/account/components/ActionButtons.css';
+import '@/shared/ui/ActionButtons.css';
 
 // Member-only "follow this country's read" control → drift-alert emails (MEMBER_GATING_PLAN.md P5).
 // Members get a live toggle; non-members (incl. anon) see a subtle locked CTA to /membership —

@@ -13,7 +13,7 @@ vi.mock('@/shared/api/restProxy', () => ({ fetchDailyBrief: vi.fn(), fetchLatest
 async function freshModule() {
   vi.resetModules();
   const restProxy = await import('@/shared/api/restProxy');
-  const hookModule = await import('@/features/daily/hooks/useDailyBrief.js');
+  const hookModule = await import('@/shared/hooks/useDailyBrief.js');
   return { ...hookModule, fetchDailyBrief: restProxy.fetchDailyBrief, fetchLatestDailyBrief: restProxy.fetchLatestDailyBrief };
 }
 

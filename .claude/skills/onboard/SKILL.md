@@ -8,14 +8,15 @@ allowed-tools: Read, Glob, Grep
 
 ## Read, in order
 
-1. `README.md` (repo root) — the router.
-2. `project-docs/INDEX.md` — the full doc map, grouped by domain and status.
-3. `project-docs/architecture/ARCHITECTURE.md` — authoritative system reference (Lambda
-   inventory, DDB schemas, frontend routes/components/hooks). Trust it over any other doc on
-   drift; deployed AWS state beats even this.
+1. `project-docs/INDEX.md` — the map of living docs (architecture, decisions, plans, runbooks,
+   rules).
+2. `project-docs/architecture/ARCHITECTURE.md` — the system overview, linked from INDEX.
 
-If a task touches active work, also open the relevant `_active/` plan named in INDEX before
-proposing next steps.
+Code and live AWS are the truth; docs describe intent and can be stale (`CLAUDE.md`, "Facts come
+from code and live AWS"). Check the code or AWS before acting on a fact from any doc.
+
+If a task touches active work, open the relevant plan in `project-docs/plans/` and the decision
+records in `project-docs/decisions/` before proposing next steps.
 
 ## Related skills
 

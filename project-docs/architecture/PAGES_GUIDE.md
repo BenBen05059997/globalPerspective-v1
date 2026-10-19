@@ -80,7 +80,7 @@ Use this when:
 > Today's-pulse/Connections/Editorial layers, `usePairAnalyses`). That component and its
 > `/map-legacy` route were removed 2026-09-24 — `/map` is now `SituationHome` only. Full
 > current behavior (hue=axis/tier deck.gl 2.5D map, GDACS/GDELT-driven situations, freshness
-> grey-out) is tracked in `project-docs/redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md` and
+> grey-out) is tracked in `project-docs/plans/MAP_HOME_SITUATION_LEDGER.md` and
 > `ARCHITECTURE.md`; this row is not re-authored line-by-line here to avoid drifting from those
 > living docs. Do not reintroduce `usePairAnalyses`/`WorldMapV2` references — `pair_analyses_list`
 > has no frontend consumer as of 2026-09-24.

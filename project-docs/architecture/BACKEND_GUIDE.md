@@ -71,7 +71,7 @@ Function URL           → newsSavedItems → SAVED_ITEMS_TABLE (JWT required)
 
 **🚀 Early access mode (ACTIVE 2026-04-11):** All content actions are fully public — no JWT required. Tiers exist in schema but are not enforced. Sign-in is only used for the save/bookmark feature (personalization).
 
-**Billing (LIVE since 2026-06-22, Polar):** content stays free/public — membership buys analysis *compute* (`/analyze` on our key, member-gated via `newsAnalyze`) + living-analysis depth, enforced by depth-capping, not a hard paywall. See [`POLAR_BILLING_PLAN.md`](../billing/_active/POLAR_BILLING_PLAN.md) + `MEMBER_GATING_PLAN.md`. (The old Paddle re-gating plan is obsolete.)
+**Billing (LIVE since 2026-06-22, Polar):** content stays free/public — membership buys analysis *compute* (`/analyze` on our key, member-gated via `newsAnalyze`) + living-analysis depth, enforced by depth-capping, not a hard paywall. See [`POLAR_BILLING_PLAN.md`](../archive/billing/_active/POLAR_BILLING_PLAN.md) + `MEMBER_GATING_PLAN.md`. (The old Paddle re-gating plan is obsolete.)
 
 ---
 

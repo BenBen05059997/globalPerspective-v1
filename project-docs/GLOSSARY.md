@@ -238,7 +238,7 @@ It feeds no map or user-facing surface.
 **What it is:** A planned pay-per-use option for the AI "Analysis Studio" — members get some free
 runs per month, then buy credit packs; non-members could also buy credits without subscribing.
 **Where it comes from:** `newsAnalyze` / `newsPolarBilling` source (credit metering, webhook grant
-logic); checklist `project-docs/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md` (PARKED 2026-07-06); design
+logic); checklist `project-docs/archive/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md` (PARKED 2026-07-06); design
 `POLAR_BILLING_PLAN.md` §5. Built and sandbox-verified 2026-06-30. Steps 1-3 of the go-live checklist
 are done (CORS fixed 07-01, code pushed, live Polar credit-pack products created 07-01 — $40/10,
 $70/20, $150/50). Steps 4-8 (set prod env vars, deploy the credit code, wire the frontend, verify,
@@ -269,7 +269,7 @@ operator decisions.
 **What it is:** The single rulebook meant to define what counts as an "event," how it's identified,
 typed, scored, and timed across the whole site, so the map, the editorial pipeline, and predictions
 all agree on meaning instead of each inventing its own.
-**Where it comes from:** `project-docs/architecture/WORLD_MODEL.md`, drafted grounded in
+**Where it comes from:** `project-docs/rules/WORLD_MODEL.md`, drafted grounded in
 `worldmodel-verify/VERIFY.md`, `IMPACT_FIRST_REDESIGN_PLAN.md`, `EVENT_REGISTRY_PLAN.md`,
 `DATA_STRATEGY.md`; debated in `WORLD_MODEL_DEBATE_2026-09-11.md` by three adversarial positions
 (Unifier / Pluralist / Visitor-First).
@@ -340,7 +340,7 @@ score ~25 real past events by hand as the correct answers (the "gold set"), then
 the automated system agrees with the human (the "agreement metric"). Today the site's entire
 severity-scoring instruction is one sentence applied to different kinds of judgments, with no
 ground-truth check at all.
-**Where it comes from:** `project-docs/architecture/DESIGN_UPGRADES_2026-09-14.md` §2 row 6, §3, §5
+**Where it comes from:** `project-docs/archive/architecture/DESIGN_UPGRADES_2026-09-14.md` §2 row 6, §3, §5
 item 6, alongside `SCORING_STANDARDS.md`. Proposed in the 2026-09-14 pressure-test of six industry
 scoring patterns against this codebase; designed to reuse existing `quality/` conventions
 (`golden_evals.json` shape, `pick_weekly_review.js` labeling workflow). Estimated cost: about half a

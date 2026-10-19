@@ -1,6 +1,6 @@
 # Brave Search audit — P0·T1 of MAP_HOME_SITUATION plan
 
-Read-only investigation, run 2026-09-08 (region ap-northeast-1). Answers: is Brave earning its place in **ingest** and in **analysis grounding**? Protocol: `project-docs/redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md` §5.1.
+Read-only investigation, run 2026-09-08 (region ap-northeast-1). Answers: is Brave earning its place in **ingest** and in **analysis grounding**? Protocol: `project-docs/plans/MAP_HOME_SITUATION_PLAN.md` §5.1.
 
 Config facts (from `aws lambda get-function-configuration newsInvokeGemini-dev`): `TOPICS_LIMIT=13`, `BRAVE_CONCURRENCY=1` (source default is 3 — prod was throttled down), Brave key present and valid (no 401/403 seen). Capture table = `GlobalPerspectiveIngestCapture` (default name; `INGEST_CAPTURE_TABLE` unset), 45-day TTL, ~197 rows. **Caveat:** the ingest log group stores only ~177KB, so log-derived counts (A1–A3) cover a *shorter* effective window than 30 days; capture-table counts (B) are the complete picture over ~45 days.
 

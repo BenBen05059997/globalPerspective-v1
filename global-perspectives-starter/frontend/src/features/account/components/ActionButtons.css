@@ -1,0 +1,4 @@
+/* Save (heart) and Follow (bell) — shared <Button>s; only the per-control details live here. */
+.gp-btn.save-button { color: var(--text-body); transition: color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.gp-btn.save-button--saved, .gp-btn.save-button--saved:hover { color: var(--accent); transform: scale(1.05); }
+.follow-button__members { color: var(--text-dim); }

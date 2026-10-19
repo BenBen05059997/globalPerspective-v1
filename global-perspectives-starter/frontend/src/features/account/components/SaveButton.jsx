@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/features/account/hooks/useSavedItems';
+import Button from '@/shared/ui/Button.jsx';
+import '@/features/account/components/ActionButtons.css';
 
 export function SaveButton({ itemType, itemId, metadata = {}, className = '' }) {
   const { user } = useAuth();
@@ -30,24 +32,14 @@ export function SaveButton({ itemType, itemId, metadata = {}, className = '' }) 
   }
 
   return (
-    <button
+    <Button
+      variant="icon"
+      compact
       onClick={handleClick}
       disabled={busy}
       title={saved ? 'Unfavorite' : 'Favorite'}
-      aria-label={saved ? 'Unfavorite' : 'Favorite'}
-      className={`save-button ${saved ? 'save-button--saved' : ''} ${busy ? 'save-button--busy' : ''} ${className}`}
-      style={{
-        background: 'none',
-        border: 'none',
-        cursor: busy ? 'default' : 'pointer',
-        padding: '4px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        color: saved ? 'var(--accent)' : 'currentColor',
-        opacity: busy ? 0.5 : 1,
-        transition: 'color 0.15s, opacity 0.15s, transform 0.15s',
-        transform: saved ? 'scale(1.05)' : 'scale(1)',
-      }}
+      label={saved ? 'Unfavorite' : 'Favorite'}
+      className={`save-button${saved ? ' save-button--saved' : ''} ${className}`.trim()}
     >
       {saved ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -58,6 +50,6 @@ export function SaveButton({ itemType, itemId, metadata = {}, className = '' }) 
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
       )}
-    </button>
+    </Button>
   );
 }

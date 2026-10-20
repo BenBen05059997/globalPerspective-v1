@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Read-only AWS CLI adapter. No SDK, API keys, LLM imports, or AWS mutation commands.
+// Read-only local adapter: CLI by default; optional existing SDK for pooled DynamoDB reads.
+// No LLM imports, API-key loading, or AWS mutation commands.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const execFileAsync=promisify(execFile);
@@ -29,8 +30,31 @@ mkdirSync(out, {
 });
 const bucket = 'globalperspective-world-280362093938';
 const region = 'ap-northeast-1';
+let sdk = null;
+let ddbClient = null;
+if (process.env.RECORD_AWS_MODULES) {
+  const installed = createRequire(resolve(process.env.RECORD_AWS_MODULES, '@aws-sdk/client-dynamodb/package.json'));
+  sdk = installed('@aws-sdk/client-dynamodb');
+  ddbClient = new sdk.DynamoDBClient({region});
+}
+const sdkRead = async (op, values) => {
+  const keys = {'--table-name':'TableName','--key':'Key','--filter-expression':'FilterExpression','--key-condition-expression':'KeyConditionExpression','--expression-attribute-values':'ExpressionAttributeValues','--exclusive-start-key':'ExclusiveStartKey','--limit':'Limit'};
+  const json = new Set(['Key','ExpressionAttributeValues','ExclusiveStartKey']);
+  const input = {};
+  for (let i=0; i<values.length; i++) {
+    if (values[i] === '--no-paginate') continue;
+    const key = keys[values[i]];
+    if (!key) throw Error('unsupported SDK read argument');
+    const value = values[++i];
+    input[key] = json.has(key) ? JSON.parse(value) : key==='Limit' ? Number(value) : value;
+  }
+  const Command = {'get-item':sdk.GetItemCommand,query:sdk.QueryCommand,scan:sdk.ScanCommand}[op];
+  if (!Command) throw Error('read-only SDK rejected operation');
+  return ddbClient.send(new Command(input));
+};
 const aws = async (service, op, values) => {
   if (!['dynamodb:get-item', 'dynamodb:query', 'dynamodb:scan', 's3api:get-object'].includes(`${service}:${op}`)) throw Error('read-only adapter rejected operation');
+  if (service === 'dynamodb' && ddbClient) return sdkRead(op, values);
   const result = await execFileAsync('aws', [service, op, ...values, '--region', region, '--output', 'json', '--no-cli-pager'], {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024
@@ -139,6 +163,7 @@ const s3json = makeS3Json({
     }
   }
 });
+console.error(`DynamoDB transport: ${ddbClient ? 'existing SDK, read-only commands' : 'AWS CLI, read-only commands'}`);
 console.error(`Reading live stores for ${date}; AWS read-only, local shadow output ${out}`);
 const input = await makeStore(io).load(date);
 writeFileSync(join(out, `input-${date}.json`), JSON.stringify(input)+'\n');

@@ -2,6 +2,14 @@
 
 Operator tools for the content pipeline. They run from a laptop with the AWS CLI configured; they are not deployed as Lambdas.
 
+
+Historical repair policy (coordinator timeline decision, 2026-10-20): `merge`, `move` and `split` are legacy in-place
+repairs. Their `--apply` paths rewrite source rows and are not the preferred repair once history is captured by the
+timeline. Prefer canonical thread aliases backed by appended correction events, and entry-scoped membership corrections
+for mixed threads; rebuild current views without rewriting timeline or source history. This alias/correction path is a
+coordinator design request, not an implemented CLI command. See the lane D mailbox `artifacts/pipeline/CLEANUP.md` and
+`DESIGN.md`. An original-list condition or S3 ETag does not make a historical rewrite append-only.
+
 ## threads.mjs
 
 Inspects and repairs story-thread joins. It uses the AWS CLI, region ap-northeast-1, and imports the join rules from

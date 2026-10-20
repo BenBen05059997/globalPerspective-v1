@@ -22,3 +22,15 @@ GlobalPerspectivePredictionLog, S3 `threads/story-map.json` and S3 `situations/s
 Offline tests for the planning half (`listJoins`, `planMerge`, `planSplit`); no AWS calls. Run with `node --test backend/pipeline/cli/threads.test.mjs`.
 
 Last verified: 2026-10-20 against code @14dd450d.
+
+## dupes.mjs (read-only)
+
+`node backend/pipeline/cli/dupes.mjs --from 2026-10-06 --to 2026-10-20`
+prints JSON evidence pairs across threads (normalized title, explicit continuation, shared URL or passing join score),
+and within-thread pairs that fail the current rule for review as potentially mixed threads. It performs one consistent
+DynamoDB get-item per date, at most 91 days; it has no write mode. `--since 2026-10-19T09:41:00Z` retains pairs
+with at least one entry archived after deployment. Include seven days before that timestamp in the date range to
+check whether new entries forked from older coverage. Similarity and shared sources are candidates, not proof that
+an event is identical; do not merge connected components automatically. Mutable archive rows cannot reconstruct
+all overwritten runs. Correlate candidates with complete paginated `[join]` logs before claiming post-fix counts.
+Offline tests: `node --test backend/pipeline/cli/dupes.test.mjs`.

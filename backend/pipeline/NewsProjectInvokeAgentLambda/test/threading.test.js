@@ -111,3 +111,38 @@ test('an empty continues_topic never matches an untitled entry', () => {
   const m = matchThread({ title: 'Brand new event', continues_topic: '' }, [past({ title: '' }, 'thread-x')]);
   assert.equal(m.via, 'new');
 });
+
+const { joinRun } = require('../src/threading');
+test('same-run score, title and forward explicit continuations share a newly minted id', () => {
+  const rows = joinRun([
+    { ...plagueRu, id: 'a' }, { ...plagueRu, id: 'b', title: plagueRu.title.toUpperCase() },
+    { id: 'c', title: 'WHO dispatches experts', continues_topic: 'A different headline' },
+    { id: 'd', title: 'A different headline' },
+  ]);
+  assert.equal(rows[0].threadId, rows[1].threadId);
+  assert.equal(rows[2].threadId, rows[3].threadId);
+  assert.notEqual(rows[0].threadId, rows[2].threadId);
+  assert.equal(rows[1].via, 'run-title');
+});
+test('a new same-run topic joins another topic anchored in history', () => {
+  const rows = joinRun([{ ...plagueRu, id: 'a' }, { ...plagueRu, id: 'b' }], [past(plagueUs, 'old')]);
+  assert.ok(rows.every(r => r.threadId === 'old'));
+});
+test('conflicting continuation/title chooses thread latest member, not just matching row', () => {
+  const topic = { title: 'Exact headline', continues_topic: 'Old headline' };
+  const entries = [
+    { title: 'Old headline', threadId: 'cont', archivedAt: '2026-10-17T12:00:00Z' },
+    { title: 'Exact headline', threadId: 'exact', archivedAt: '2026-10-18T12:00:00Z' },
+    { title: 'Other member', threadId: 'cont', archivedAt: '2026-10-19T12:00:00Z' },
+  ];
+  const rec = joinRecord(topic, entries);
+  assert.equal(rec.threadId, 'cont');
+  assert.equal(rec.conflict.reason, 'latest-thread-entry');
+  entries[2].archivedAt = '2026-10-16T12:00:00Z';
+  assert.equal(joinRecord(topic, entries).threadId, 'exact');
+  assert.equal(joinRecord(topic, entries).via, 'title');
+});
+test('same-run comparison keeps unrelated US technology topics apart', () => {
+ const rows = joinRun([{...flyingCar,id:'a'},{...rogueAgent,id:'b'}]);
+ assert.notEqual(rows[0].threadId, rows[1].threadId);
+});

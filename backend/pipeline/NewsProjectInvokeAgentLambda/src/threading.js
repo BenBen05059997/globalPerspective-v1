@@ -83,9 +83,20 @@ const sameTitle = (topic, entry) => Boolean(normalizeTitle(topic.title)) && norm
 // score/kwScore are the best composite seen (for the log), or the joined entry's when it joined.
 function matchThread(topic, pastEntries = []) {
   const withThread = pastEntries.filter(e => e && e.threadId);
-  const cont = withThread.find(e => continuesEntry(topic, e));
+  // Preserve newest-first order for undated legacy entries; dated entries use real time.
+  const latest = (entry) => Math.max(0, ...withThread.filter(e => e.threadId === entry.threadId)
+    .map(e => Date.parse(e.archivedAt || e.date || '')).filter(Number.isFinite));
+  const newest = (entries) => entries.reduce((best, e) => !best || latest(e) > latest(best) ? e : best, null);
+  const cont = newest(withThread.filter(e => continuesEntry(topic, e)));
+  const same = newest(withThread.filter(e => sameTitle(topic, e)));
+  if (cont && same && cont.threadId !== same.threadId) {
+    const chosen = latest(same) > latest(cont) ? same : cont;
+    const via = chosen === same ? 'title' : 'continues_topic';
+    return { threadId: chosen.threadId, via, ...joinScore(topic, chosen), matched: chosen,
+      conflict: { continuesThreadId: cont.threadId, titleThreadId: same.threadId, chosenThreadId: chosen.threadId,
+        continuesLatest: latest(cont), titleLatest: latest(same), reason: 'latest-thread-entry', tie: latest(cont) === latest(same) } };
+  }
   if (cont) return { threadId: cont.threadId, via: 'continues_topic', ...joinScore(topic, cont), matched: cont };
-  const same = withThread.find(e => sameTitle(topic, e));
   if (same) return { threadId: same.threadId, via: 'title', ...joinScore(topic, same), matched: same };
 
   let best = null;
@@ -111,7 +122,40 @@ function joinRecord(topic, pastEntries = []) {
     via: m.via,
     score: round(m.score),
     kwScore: round(m.kwScore),
+    ...(m.conflict ? { conflict: m.conflict } : {}),
   };
+}
+
+// Resolve historical anchors first, then compare every unresolved topic with this run's
+// assigned members before minting another id. Reverse explicit continuation handles a
+// topic naming a later member. Existing historical threads are never silently merged.
+function joinRun(topics, pastEntries = []) {
+  const records = topics.map(t => ({ topicId: t.id || t.topicId || null, ...matchThread(t, pastEntries) }));
+  const pending = new Set(records.flatMap((r,i) => r.threadId ? [] : [i]));
+  while (pending.size) {
+    let progressed = false;
+    for (const i of pending) {
+      const assigned = topics.flatMap((t,j) => pending.has(j) ? [] : [{ ...t, threadId: records[j].threadId }]);
+      let match = matchThread(topics[i], assigned);
+      if (!match.threadId) {
+        const reverse = assigned.find(t => continuesEntry(t, topics[i]));
+        if (reverse) match = { threadId: reverse.threadId, via: 'continues_topic', ...joinScore(topics[i],reverse), matched: reverse };
+      }
+      if (!match.threadId) continue;
+      records[i] = { topicId: records[i].topicId, ...match, via: `run-${match.via}`,
+        runAnchorTopicId: match.matched?.id || match.matched?.topicId || null };
+      pending.delete(i);
+      progressed = true;
+    }
+    if (!progressed) {
+      const i = pending.values().next().value;
+      records[i].threadId = generateThreadId(topics[i]);
+      pending.delete(i);
+    }
+  }
+  const round = n => Math.round(n * 1000) / 1000;
+  return records.map(r => ({ topicId: r.topicId, threadId: r.threadId, via: r.via, score: round(r.score), kwScore: round(r.kwScore),
+    ...(r.conflict ? { conflict: r.conflict } : {}), ...(r.runAnchorTopicId ? { runAnchorTopicId: r.runAnchorTopicId } : {}) }));
 }
 
 // Past entries on the same story as the topic, by the same rule (the forecast's arc digest).
@@ -121,5 +165,5 @@ function relatedEntries(topic, pastEntries = []) {
 
 module.exports = {
   JOIN_MIN_SCORE, JOIN_MIN_KW,
-  slugify, generateThreadId, normalizeTitle, topicSignature, jaccard, joinScore, passesJoin, matchThread, joinRecord, relatedEntries,
+  slugify, generateThreadId, normalizeTitle, topicSignature, jaccard, joinScore, passesJoin, matchThread, joinRecord, joinRun, relatedEntries,
 };

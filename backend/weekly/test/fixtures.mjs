@@ -7,7 +7,7 @@ export function fakeClient(raw) {
     async getItem(table,key){return rows.find(r=>sameKey(r,key)) || null;},
     async batchGet(table,keys){return keys.map(k=>rows.find(r=>sameKey(r,k))).filter(Boolean);},
     async query(table,pk,prefix){return rows.filter(r=>r.PK===pk && (!prefix || r.SK?.startsWith(prefix)));},
-    async scan(){throw Error('Unexpected table scan in fixture');},
+    async scan(table,spec){if(spec.values?.[':p']==='PRED#')return (raw.predictions || []).filter(r=>r.PK.startsWith('PRED#'));throw Error('Unexpected table scan in fixture');},
     async getS3Json(key){return raw.objects?.[key] || (key==='web/latest.json'?raw.web:null) || null;},
   };
 }

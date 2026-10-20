@@ -26,7 +26,17 @@ export async function readInputs(weekEnding,client,opts={}) {
     snapshots:await world.scenarios(client,{threadId,topicIds:[...new Set(grouped[threadId].map(e=>e.topicId).filter(Boolean))],to:weekEnding})}));
   const countries=opts.countries || (process.env.DRIFT_COUNTRIES?process.env.DRIFT_COUNTRIES.split(',').map(s=>s.trim()).filter(Boolean):DEFAULT_COUNTRIES);
   const countryRows=await pool(countries,async country=>({country,history:await world.countryHistory(client,country,from,weekEnding),drift:await world.driftNotes(client,{country},start,weekEnding)}));
-  const questions=await readQuestions(client,{from:start,to:nextEnd});
+  // The dated world scan also finds a thread's snapshots whose topic is no longer
+  // in its current TOPICS pointer or archive window. Keep world normalization and
+  // the explicit stored thread identity; never assign another thread's forecasts.
+  const [datedSnapshots,questions]=await Promise.all([
+    world.scenarios(client,{from,to:weekEnding}),
+    readQuestions(client,{from:start,to:nextEnd}),
+  ]);
+  for(const row of rows) {
+    const merged=[...row.snapshots,...datedSnapshots.filter(s=>s.threadId===row.threadId)];
+    row.snapshots=[...new Map(merged.map(s=>[s.sourceKey,s])).values()].sort((a,b)=>a.date.localeCompare(b.date)||a.pk.localeCompare(b.pk));
+  }
   const verdicts=await world.verdicts(client,questions.map(q=>q.qid),{asOf:weekEnding});
   const web=await readWeb(client,weekEnding,{fallback:'latest'});
   const webSource=web?.key || null;

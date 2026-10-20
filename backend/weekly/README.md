@@ -64,7 +64,9 @@ The local entry point uses `local-client.mjs`: a generic AWS CLI transport behin
 when the SDK is not installed. No CLI or domain-row parser lives in the readers or selector.
 Read errors propagate; only a successful missing item becomes a coverage gap. Archive reads cover
 37 days at four in parallel; analyses use batchGet, history/drift/scenarios use scoped queries.
-Archive topic ids are always passed to `scenarios` along with the story id. The default country
+Archive topic ids are always passed to `scenarios` along with the story id. A shared dated
+scenario scan over the same lookback also recovers explicitly owned snapshots whose topic
+has fallen out of the archive/current pointer; snapshots naming a different thread stay excluded. The default country
 read scope is the existing drift writer's twelve countries, overridden by DRIFT_COUNTRIES.
 
 The Sunday `web/YYYY/MM/DD.json` snapshot is preferred. Only its absence permits the latest-web

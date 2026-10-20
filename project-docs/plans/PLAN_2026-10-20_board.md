@@ -114,6 +114,47 @@ chapter marks (drift notes can seed chapters); operator sign-off for links; per-
 Order: resolver review once → trigger check in the weekly run → duplicate check → birth/chapter rows → link sign-off →
 weekly steps 3–6 → following stories → board.
 
+## Checklist: what the board can provide now, what waits, and for what (2026-10-20)
+
+"Now" means from data that exists and is verified live today (thread analyses, the story web, scenarios in the prediction
+log, daily history scores, drift notes, user prefs, saved items). "Waits" names the exact piece it waits for.
+
+| Board feature (from the canvas) | Now? | Built from | Waits for | Note |
+|---|---|---|---|---|
+| Follow stories and actors | now | `UserPrefs` new fields (`followedThreads`, `followedActors`); `followedCountries` exists | — | `newsBoard` owns the new fields; `newsRecommend` keeps countries |
+| Board store (create, rename, pins, strings, lines, weights, dismissals) | now | `SavedItems` item `kind:'board'` | the frozen pin/string schema (`backend/board/schema/`) | schema first, then code |
+| Pins: title, risk number + tier, type hue | now | `THREAD#/THREAD_ANALYSIS` (risk, type), `NewsCache latest` | — | — |
+| Pin line (one sentence as it stands) | **waits** | — | record: `line` in `record/stories/<id>` | until then the pin shows the latest headline, labelled as such |
+| Pin counts (chapters, events, live branches, last moved) | **waits** | — | record: `record/index.json` | — |
+| Strings OURS, dashed "inferred" | now | `web/latest.json` links (weak/medium/strong, shared actors) | — | all 56 links are model-inferred today; drawn dashed, never solid |
+| Strings OURS, solid "confirmed" | **waits** | — | `newsSystemsAnalysis` link-confirmation rule | small change to an existing writer |
+| Strings YOURS + your line | now | board item | — | — |
+| Drag-to-connect: cheap grounds (shared actors, place, co-movement with lag, shared outlets) and the honest "no link" | now | `WEB#INDEX` actors, `resolveIso3`, `THREAD_HISTORY#` daily scores, archive outlets | — | computed in `newsConnect` without an LLM; result cached in `record/pairs/` |
+| Drag-to-connect: mechanism sentence, direction, "what follows if", falsifier | **waits** | — | record (branches per pin) + the LLM step in `newsConnect` + a pricing decision | the paid part; not on inferred links |
+| Branches on a pin (p, trigger, due) | now, read-only | `PredictionLog PRED#<topicId>/<date>` scenarios | — | shown as drawn; no status |
+| Branch status (fired, dead, late, resurrected) | **waits** | — | record: trigger check in `newsStoryRecord` | nothing greys out until then |
+| Your weighting of branches | now | board item `weights` | scoring of it waits for branch status | store now, score later |
+| Tree mode (trunk, forks, dead stubs) | **waits** | — | record: events, forks, status rows | the trunk of dated events could be shown now from archives, but without forks it is a timeline, not a tree |
+| Chapters and the zoom ladder | **waits** | — | record: chapter rows | — |
+| Arrivals / clue pool | **waits** | — | record: duplicate check + `record/index.json` daily rows | without the duplicate check one event knocks twice |
+| "What is missing" card | partly now | shared actors across your pins from `WEB#INDEX` | record counts for the full version | the actor-only version is cheap and honest |
+| Board summary paragraph | **waits** | — | record lines + an LLM step in `newsBoard` | — |
+| The board's weekly | partly now | diff of pin risk scores week on week (`THREAD_HISTORY#`), strings you changed | record for "branches killed", "new link found", confirmed strengths | a score-diff weekly is honest but thin; the useful one waits |
+| The board's monthly | **waits** | — | four board weeklies + record | — |
+| Alerts (branch fired, date tomorrow, strength changed, line tested) | **waits** | `newsEmailSender` exists with disabled alert modes | record status rows; alert rules in prefs; a fresh yes to enable sends | "a date is tomorrow" could run now from `PRED#` due dates |
+| Presets by region / theme / desk | now | thread analyses grouped by `iso3[]` and type | confirmed strings for a good preset | first presets ship with dashed strings |
+| "This week's board" preset | **waits** | — | the analyst's weekly (`weekly/latest.json`) | — |
+| Divergence view | partly now | your strings vs ours; your weights vs ours | branch status for "cut but held" | — |
+| Export as memo / image, read-only share | now (share), later (export) | `GlobalPerspectiveShares` exists for share links | — | export after the verdict panel exists |
+| Map view of the board | now | `shared/map` kit | — | not first; graph is the home |
+| Fog (coverage gaps) | partly now | missing archive days are known (e.g. 14 Oct) | record coverage block | — |
+| Pin budget (12) | now | board store rule | — | — |
+
+Summary: **now** = following, the store, pins with risk, inferred strings, your strings and lines, cheap-grounds connect
+with honest negatives, read-only branches, your weights, region presets, share links, pin budget. **Waits for the record**
+= lines, counts, branch status, tree, chapters, arrivals, confirmed strings, the real board weekly, monthly, alerts,
+summary. **Waits for a decision** = the paid verdict panel (pricing), enabling alert sends (fresh yes).
+
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
 2. What is free and what is paid: natural seam is verdict + joint trace free, the rest paid. Pricing is yours.
@@ -129,6 +170,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: now / waits checklist added per board feature.
 - 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.
 - 2026-10-20: have/lack/how-to-get checklist added after checking the resolver (exists, daily, 0 verdicts because the
   operator review never ran) and preferences (countries followed, stories not).

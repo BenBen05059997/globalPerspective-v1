@@ -311,6 +311,54 @@ async function verdicts(client, qids, opts = {}) {
   return out;
 }
 
+// ---- Q#<qid> / SAMPLED -------------------------------------------------------------------------------------------
+// GlobalPerspectivePredictionLog { PK:'Q#<qid>', SK:'SAMPLED', qid, question, triggerId:'<si>-<ti>', clusterKey (a
+//   thread id 'thread-...' or another cluster key), deadline:'YYYY-MM-DD', issuedAt, drawnAt, weekId, hash, storyTitle,
+//   resolutionSource, pk:'PRED#<topicId>-<n>' and sk:'<date>' (the forecast row it was drawn from, lower-case names) }.
+//   Writer: newsPredictionResolver (sampler). Immutable. The questions are deliberately blind: there is no
+//   probability on the row and none is returned.
+
+const THREAD_ID = /^thread-/;
+
+function sampled(r) {
+  const qid = str(r.qid) || String(r.PK).slice('Q#'.length);
+  const clusterKey = str(r.clusterKey);
+  const deadline = str(r.deadline);
+  return {
+    ...prov(S.predictions, { PK: `Q#${qid}`, SK: 'SAMPLED' }, `Q#${qid}|SAMPLED`),
+    qid, threadId: clusterKey && THREAD_ID.test(clusterKey) ? clusterKey : null, clusterKey,
+    question: str(r.question) || str(r.text), deadline: deadline && isDay(deadline.slice(0, 10)) ? deadline.slice(0, 10) : null,
+    issuedAt: str(r.issuedAt), resolutionSource: str(r.resolutionSource), triggerId: str(r.triggerId),
+    pred: { PK: str(r.pk), SK: str(r.sk) },
+  };
+}
+
+/**
+ * Sampled forecast questions -> [question], ascending by deadline then qid. Never returns a probability.
+ *   {qids}      BatchGet of Q#<qid>/SAMPLED (qids that were never sampled are absent)
+ *   (no qids)   the one more bounded scan: begins_with(PK,'Q#') AND SK = 'SAMPLED' (no index exists); needs client.scan
+ * Then filters: {from, to} the deadline window inclusive (YYYY-MM-DD; rows without a deadline are dropped by a window),
+ * {threadId} questions whose clusterKey is that thread. The row's own key is in sourceRow; `pred` is the PRED# row it
+ * was drawn from.
+ */
+async function sampledQuestions(client, by = {}, opts = {}) {
+  const t = resolveTables(opts);
+  const { from, to, threadId } = by;
+  const qids = by.qids === undefined ? null : [...new Set(strs(by.qids))];
+  let rows;
+  if (qids) {
+    rows = qids.length ? await need(client, 'batchGet')(t.predictions, qids.map((q) => ({ PK: `Q#${q}`, SK: 'SAMPLED' }))) : [];
+  } else {
+    rows = await need(client, 'scan')(t.predictions, { expression: 'begins_with(PK, :p) AND SK = :s', values: { ':p': 'Q#', ':s': 'SAMPLED' } });
+  }
+  return rows
+    .filter((r) => r && r.SK === 'SAMPLED' && String(r.PK).startsWith('Q#'))
+    .map(sampled)
+    .filter((q) => (!from && !to) || inRange(q.deadline, from, to))
+    .filter((q) => !threadId || q.clusterKey === threadId)
+    .sort((a, b) => ((a.deadline || '') < (b.deadline || '') ? -1 : (a.deadline || '') > (b.deadline || '') ? 1 : a.qid < b.qid ? -1 : a.qid > b.qid ? 1 : 0));
+}
+
 // ---- WEB#INDEX and web/latest.json -------------------------------------------------------------------------------
 // The same bundle twice. DynamoDB SummarizeAndPredict WEB#INDEX/LATEST is the index itself; S3 web/latest.json is
 // { runId, generatedAt, index:{...the same...} }. Writer: newsSystemsAnalysis.
@@ -348,12 +396,37 @@ async function webIndex(client, opts = {}) {
   return bundle(await need(client, 'getItem')(resolveTables(opts).world, key), { store: S.world, key });
 }
 
+// One S3 web object -> { runId, generatedAt, index:{ generatedAt, links, shared, threads } } or null; `key` is stamped
+// into every link's sourceRow, so provenance names the object actually read.
+function webObject(raw, key) {
+  if (!raw || typeof raw !== 'object') return null;
+  const b = bundle(raw.index || raw, { store: S.s3, key });
+  return { runId: str(raw.runId), generatedAt: str(raw.generatedAt) || b.generatedAt, index: b };
+}
+
+const WEB_LATEST = 'web/latest.json';
+
 /** The story web from S3 (web/latest.json) -> { runId, generatedAt, index:{ generatedAt, links, shared, threads } } or null when the object does not exist. */
 async function webLatest(client) {
-  const raw = await need(client, 'getS3Json')('web/latest.json');
-  if (!raw || typeof raw !== 'object') return null;
-  const b = bundle(raw.index || raw, { store: S.s3, key: 'web/latest.json' });
-  return { runId: str(raw.runId), generatedAt: str(raw.generatedAt) || b.generatedAt, index: b };
+  return webObject(await need(client, 'getS3Json')(WEB_LATEST), WEB_LATEST);
+}
+
+/**
+ * The story web of one day from S3 (web/YYYY/MM/DD.json), normalised exactly like webLatest, plus `key` (the S3 key read)
+ * and `fellBackTo` (null, or 'web/latest.json'). Missing day: null with {fallback:'none'} (default); with
+ * {fallback:'latest'} web/latest.json is read instead and the result is marked fellBackTo. Provenance is always the key
+ * really read (sourceRow.key), never the key asked for.
+ */
+async function webAt(client, date, { fallback = 'none' } = {}) {
+  if (!isDay(date)) throw new Error('webAt needs a YYYY-MM-DD date');
+  if (fallback !== 'none' && fallback !== 'latest') throw new Error("webAt fallback must be 'none' or 'latest'");
+  const get = need(client, 'getS3Json');
+  const key = `web/${date.slice(0, 4)}/${date.slice(5, 7)}/${date.slice(8, 10)}.json`;
+  const hit = webObject(await get(key), key);
+  if (hit) return { ...hit, key, fellBackTo: null };
+  if (fallback !== 'latest') return null;
+  const latest = webObject(await get(WEB_LATEST), WEB_LATEST);
+  return latest && { ...latest, key: WEB_LATEST, fellBackTo: WEB_LATEST };
 }
 
 // ---- NewsCache `latest` ------------------------------------------------------------------------------------------
@@ -373,6 +446,6 @@ async function latestTopics(client, opts = {}) {
 
 module.exports = {
   DEFAULT_TABLES, resolveTables, verdictOrder,
-  archiveDay, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts,
-  webIndex, webLatest, latestTopics,
+  archiveDay, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
+  webIndex, webLatest, webAt, latestTopics,
 };

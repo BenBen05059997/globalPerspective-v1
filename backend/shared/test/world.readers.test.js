@@ -178,6 +178,55 @@ test('webIndex / webLatest: normalised bundle; bad links dropped; no row is empt
   assert.deepStrictEqual((await w.webLatest(empty)).index.links, []);
 });
 
+test('sampledQuestions: normalised, blind (no probability), threadId only from a thread- clusterKey', async () => {
+  const c = fresh();
+  const all = await w.sampledQuestions(c);
+  assert.deepStrictEqual(all.map((q) => q.qid), ['q3', 'q1', 'q2']); // by deadline
+  assert.deepStrictEqual(all[1], { sourceRow: { store: 'GlobalPerspectivePredictionLog', key: { PK: 'Q#q1', SK: 'SAMPLED' } }, sourceKey: 'Q#q1|SAMPLED',
+    qid: 'q1', threadId: 'thread-a', clusterKey: 'thread-a', question: 'Q?', deadline: '2026-11-22', issuedAt: '2026-10-11T04:26:03.157Z', resolutionSource: 'AG announcement', triggerId: '0-0', pred: { PK: 'PRED#t-a2', SK: '2026-10-16' } });
+  const q2 = all.find((q) => q.qid === 'q2');
+  assert.deepStrictEqual([q2.threadId, q2.clusterKey], [null, 'cluster-xyz']);
+  for (const q of all) assert.ok(!Object.keys(q).some((k) => /prob|^p$/i.test(k)), `no probability on ${q.qid}`);
+  const scans = c.calls.filter((x) => x[0] === 'scan');
+  assert.strictEqual(scans.length, 1);
+  assert.deepStrictEqual(scans[0][2], { expression: 'begins_with(PK, :p) AND SK = :s', values: { ':p': 'Q#', ':s': 'SAMPLED' } });
+  assert.ok(!c.rows.some((r) => r.item.SK === 'VERDICT' && all.some((q) => q.qid === r.item.qid && 'verdict' in q)));
+});
+
+test('sampledQuestions: deadline window inclusive, threadId, and qids use BatchGet (no scan)', async () => {
+  const c = fresh();
+  assert.deepStrictEqual((await w.sampledQuestions(c, { from: '2026-10-25', to: '2026-11-22' })).map((q) => q.qid), ['q3', 'q1']);
+  assert.deepStrictEqual((await w.sampledQuestions(c, { from: '2026-11-23' })).map((q) => q.qid), ['q2']);
+  assert.deepStrictEqual((await w.sampledQuestions(c, { to: '2026-10-24' })).map((q) => q.qid), []);
+  assert.deepStrictEqual((await w.sampledQuestions(c, { threadId: 'thread-b' })).map((q) => q.qid), ['q3']);
+  assert.deepStrictEqual((await w.sampledQuestions(c, { threadId: 'cluster-xyz' })).map((q) => q.qid), ['q2']); // clusterKey match
+  const b = fakeClient(); seed(b);
+  const got = await w.sampledQuestions(b, { qids: ['q2', 'nope', 'q1', 'q2'], to: '2026-12-31' });
+  assert.deepStrictEqual(got.map((q) => q.qid), ['q1', 'q2']);
+  assert.deepStrictEqual(b.calls.map((x) => x[0]), ['batchGet']);
+  assert.deepStrictEqual(await w.sampledQuestions(b, { qids: [] }), []);
+  assert.strictEqual(b.calls.length, 1);
+});
+
+test('webAt: dated hit (provenance = dated key), miss -> null, miss + fallback latest is marked and stamped with latest', async () => {
+  const c = fresh();
+  const hit = await w.webAt(c, '2026-10-18');
+  assert.deepStrictEqual([hit.runId, hit.key, hit.fellBackTo, hit.generatedAt], ['web-0', 'web/2026/10/18.json', null, '2026-10-18T05:00:00.000Z']);
+  assert.deepStrictEqual(hit.index.links.map((l) => l.sourceRow), [{ store: 'S3', key: 'web/2026/10/18.json', index: 0 }]);
+  assert.strictEqual(hit.index.links[0].sourceKey, 'web|thread-a|thread-b');
+  assert.strictEqual(await w.webAt(c, '2026-10-17'), null);
+  assert.strictEqual(await w.webAt(c, '2026-10-17', { fallback: 'none' }), null);
+  const fb = await w.webAt(c, '2026-10-17', { fallback: 'latest' });
+  assert.deepStrictEqual([fb.runId, fb.key, fb.fellBackTo], ['web-1', 'web/latest.json', 'web/latest.json']);
+  assert.ok(fb.index.links.every((l) => l.sourceRow.key === 'web/latest.json'));
+  assert.deepStrictEqual((await w.webAt(c, '2026-10-18', { fallback: 'latest' })).fellBackTo, null); // a hit never falls back
+  const none = fakeClient();
+  assert.strictEqual(await w.webAt(none, '2026-10-17', { fallback: 'latest' }), null);
+  assert.deepStrictEqual((await w.webLatest(c)).index.links[0].sourceRow.key, 'web/latest.json'); // shared normaliser, same shape
+  await assert.rejects(() => w.webAt(c, 'yesterday'), /YYYY-MM-DD/);
+  await assert.rejects(() => w.webAt(c, '2026-10-18', { fallback: 'x' }), /fallback/);
+});
+
 test('latestTopics: normalised pool; no row is an empty list', async () => {
   const t = await w.latestTopics(fresh());
   assert.strictEqual(t.length, 2);

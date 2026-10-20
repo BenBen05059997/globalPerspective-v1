@@ -1,7 +1,7 @@
 # world/ — the one reader of the world's raw tables
 
 **Only this folder parses the raw rows.** `archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`,
-`DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts, `WEB#INDEX`, `web/latest.json` and the `latest` topic pool are read
+`DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts and `SAMPLED` questions, `WEB#INDEX`, `web/latest.json` and `web/YYYY/MM/DD.json` and the `latest` topic pool are read
 and normalised here, once. The derivations everyone needs (story birth, branches from scenarios, coverage and missing
 days, risk tier from score, outlets) live here too, so two consumers can never print two different numbers. The rule
 (operator, 2026-10-20) is `project-docs/architecture/ARCHITECTURE_RECORD.md` §0c; storage rules are
@@ -27,7 +27,7 @@ story arc (`thread-<slug>-<hash>`); **cluster** = the map pipeline's internal he
 client.getItem(table, key)            -> item | null          key = {PK,SK} or {id}
 client.query(table, pk, skPrefix?)    -> item[]               paginates; prefix optional
 client.batchGet(table, keys)          -> item[]               chunks by 100, retries unprocessed keys
-client.scan(table, {expression, values, names?, maxItems?}) -> item[]   RARELY; only `scenarios({from,to})`
+client.scan(table, {expression, values, names?, maxItems?}) -> item[]   RARELY; only `scenarios({from,to})` and `sampledQuestions()` without qids
 client.getS3Json(key)                 -> object | null        null only for a missing key
 ```
 In a Lambda: `makeClient(makeDynamoClient({client: DynamoDBDocumentClient.from(new DynamoDBClient({})), GetCommand,
@@ -56,8 +56,10 @@ that shape is from `newsPredictionResolver`.
 | `driftNotes(client, {threadId}\|{country}, from?, to?)` | `THREAD#<id>` or `COUNTRY#<name>` / `DRIFT#<date>` and `DRIFTLOG#<date>` | ascending `[{subject:{kind,id}, date, asOf, since, source:'DRIFTLOG'\|'DRIFT', whyChanged, noSingleDriver, changeScore:{from,to,delta}, changeLevel, changeDimensions, prior, current, triggerEvent:{date,topicId,title}\|null, directionFlag, generatedAt}]` | `newsDriftCorrector` |
 | `scenarios(client, {topicIds}\|{threadId, topicIds?}\|{from,to}, …)` | GlobalPerspectivePredictionLog `PRED#<topicId>` / `<date>`; `{threadId}` first reads `THREAD#<id>`/`TOPICS`; `{from,to}` is the one bounded scan | ascending `[{pk, topicId, date, threadId, title, generatedAt, model, questionSchema, scenarios:[{index, label, probability (percent), probabilityRange, horizon, rationale, scoreable, triggers:[{id, trigger, due, p (percent), resolutionSource, question, qid, status}]}]}]` | `NewsProjectInvokeAgentLambda` |
 | `verdicts(client, qids, {asOf?})` | GlobalPerspectivePredictionLog `Q#<qid>` / `VERDICT`, `VERDICT#<n>` | `{[qid]: {qid, n, sk, verdict, decidedAt, decidedBy, reason, voidReason, evidence, all:[every verdict, ascending n]}}`; the highest `n` wins; questions with no verdict are absent | `newsPredictionResolver` |
+| `sampledQuestions(client, {from?, to?, qids?, threadId?})` | GlobalPerspectivePredictionLog `Q#<qid>` / `SAMPLED`; `{qids}` is one `batchGet`; without `qids` it is **one more bounded scan** (`begins_with(PK,'Q#') AND SK = 'SAMPLED'`, no index exists, needs `client.scan`) | ascending by deadline `[{qid, threadId (clusterKey when it starts with 'thread-', else null), clusterKey, question, deadline (YYYY-MM-DD), issuedAt, resolutionSource, triggerId, pred:{PK,SK} (the PRED# row it was drawn from)}]`; `{from,to}` = deadline window inclusive, `{threadId}` = clusterKey match. **Never a probability** (the questions are blind) | `newsPredictionResolver` |
 | `webIndex(client)` | SummarizeAndPredict `WEB#INDEX` / `LATEST` | `{generatedAt, links:[{from,to,confidence,lagDays,mechanism,cited[],country,generatedAt, confirmed?,confirmedBy?,strength?,since?,evidence?}], shared:[{a,b,actors[],weight,country,generatedAt}], threads:{[id]:{state,title,entries,places:[{name,n}],analysedIn[]}}}` | `newsSystemsAnalysis` |
 | `webLatest(client)` | S3 `web/latest.json` | `{runId, generatedAt, index:{…the webIndex shape…}}` or `null` | `newsSystemsAnalysis` |
+| `webAt(client, 'YYYY-MM-DD', {fallback:'none'\|'latest'})` | S3 `web/YYYY/MM/DD.json` | same shape as `webLatest` plus `key` (the S3 key actually read) and `fellBackTo` (`null`, or `'web/latest.json'`); `null` when the day is missing and `fallback` is `'none'` (default); with `'latest'` it reads `web/latest.json` and marks `fellBackTo` | `newsSystemsAnalysis` |
 | `latestTopics(client)` | NewsCache `id = latest` | `[{topicId, threadId, title, category, actors[], iso3[], regions[], sources[]}]` (the current pool, no history) | `NewsProjectInvokeAgentLambda` (`ACTIVE_ITEM_ID`) |
 
 ## Provenance
@@ -77,7 +79,8 @@ dropped entry never shifts the next one's index.
 | PRED# snapshot | `{GlobalPerspectivePredictionLog, {PK:'PRED#<topicId>', SK:'<date>'}}` | `<PK>\|<SK>` |
 | scenario | the snapshot's key with `index` = scenario index | `<PK>\|<SK>\|<scenario index>` |
 | verdict row (the winner and each in `all`) | `{GlobalPerspectivePredictionLog, {PK:'Q#<qid>', SK:'VERDICT' \| 'VERDICT#<n>'}}` | `<PK>\|<SK>` |
-| web link | `webLatest`: `{S3, 'web/latest.json', index}`; `webIndex`: `{SummarizeAndPredict, {PK:'WEB#INDEX', SK:'LATEST'}, index}`; `index` = place in the raw `links` | `web\|<from>\|<to>` (same from either source) |
+| sampled question | `{GlobalPerspectivePredictionLog, {PK:'Q#<qid>', SK:'SAMPLED'}}` | `Q#<qid>\|SAMPLED` |
+| web link | `webAt`: `{S3, 'web/YYYY/MM/DD.json' (or 'web/latest.json' after a fallback: always the key really read), index}`; `webLatest`: `{S3, 'web/latest.json', index}`; `webIndex`: `{SummarizeAndPredict, {PK:'WEB#INDEX', SK:'LATEST'}, index}`; `index` = place in the raw `links` | `web\|<from>\|<to>` (same from either source) |
 | web shared pair | same, `index` in the raw `shared` | `web-shared\|<a>\|<b>` |
 | latest topic | `{NewsCache, {id:'latest'}, index}` | `latest\|<topicId>` |
 
@@ -118,4 +121,4 @@ reader only for what the record does not hold (ARCHITECTURE_RECORD §0c).
 `cd backend/shared && node --test test/world.*.test.js` (fixtures in `test/world.fake.js` are shaped like the live rows).
 newsBoard: `cd backend/board/newsBoard/src && npm test`.
 
-Last verified: 2026-10-20 (provenance added)
+Last verified: 2026-10-20 (sampledQuestions, webAt added)

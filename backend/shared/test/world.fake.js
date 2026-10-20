@@ -27,7 +27,8 @@ function fakeClient() {
     },
     async scan(table, spec) {
       calls.push(['scan', table, spec]);
-      const { ':p': p, ':f': f, ':t': t } = spec.values;
+      const { ':p': p, ':f': f, ':t': t, ':s': sk } = spec.values;
+      if (sk) return rows.filter((r) => r.table === table && String(r.item.PK).startsWith(p) && r.item.SK === sk).map((r) => r.item);
       return rows.filter((r) => r.table === table && String(r.item.PK).startsWith(p) && r.item.SK >= f && r.item.SK <= t).map((r) => r.item);
     },
     async getS3Json(key) { calls.push(['getS3Json', key]); return s3.has(key) ? s3.get(key) : null; },
@@ -85,16 +86,18 @@ function seed(c) {
   c.put(T.pred, { PK: 'PRED#t-other', SK: '2026-10-16', topicId: 't-other', threadId: 'thread-zzz', scenarios: [] });
   c.put(T.pred, { PK: 'PRED#t-x', SK: '2026-10-20', topicId: 't-x', scenarios: [] });
   // verdicts
-  c.put(T.pred, { PK: 'Q#q1', SK: 'SAMPLED', qid: 'q1', question: 'Q?' });
+  c.put(T.pred, { PK: 'Q#q1', SK: 'SAMPLED', qid: 'q1', question: 'Q?', weekId: '2026-W41', hash: 'h1', triggerId: '0-0', clusterKey: 'thread-a', deadline: '2026-11-22', issuedAt: '2026-10-11T04:26:03.157Z', drawnAt: '2026-10-12T10:30:24.643Z', pk: 'PRED#t-a2', sk: '2026-10-16', storyTitle: 'A2', resolutionSource: 'AG announcement' });
   c.put(T.pred, { PK: 'Q#q1', SK: 'VERDICT', qid: 'q1', verdict: 'no', decidedAt: '2026-10-18T10:00:00.000Z', decidedBy: 'resolver', evidence: { url: 'u', quote: 'q' } });
   c.put(T.pred, { PK: 'Q#q1', SK: 'VERDICT#10', qid: 'q1', verdict: 'void', decidedAt: '2026-10-25T10:00:00.000Z', decidedBy: 'operator', reason: 'fix', voidReason: 'v' });
   c.put(T.pred, { PK: 'Q#q1', SK: 'VERDICT#2', qid: 'q1', verdict: 'yes', decidedAt: '2026-10-20T10:00:00.000Z', decidedBy: 'operator', reason: 'dispute' });
-  c.put(T.pred, { PK: 'Q#q2', SK: 'SAMPLED', qid: 'q2' });
+  c.put(T.pred, { PK: 'Q#q2', SK: 'SAMPLED', qid: 'q2', question: 'Q2?', triggerId: '1-0', clusterKey: 'cluster-xyz', deadline: '2026-12-20', issuedAt: '2026-10-10T04:26:08.570Z', pk: 'PRED#t-b1', sk: '2026-10-10', resolutionSource: 'Reuters' });
+  c.put(T.pred, { PK: 'Q#q3', SK: 'SAMPLED', qid: 'q3', question: 'Q3?', triggerId: '0-1', clusterKey: 'thread-b', deadline: '2026-10-25', issuedAt: '2026-10-13T04:00:00.000Z', pk: 'PRED#t-b2', sk: '2026-10-13', resolutionSource: 'FT' });
   // web
   const web = { links: [{ from: 'thread-a', to: 'thread-b', confidence: 'strong', lagDays: 1, mechanism: 'm', cited: [{ date: '2026-10-14', topicId: 't-a1', title: 'T' }], country: 'France', generatedAt: '2026-10-19T05:00:00.000Z' }, { from: 'thread-a' }, { a: 'thread-b', b: 'thread-c', confirmed: true, confirmedBy: 'rule', strength: 'strong' }],
     shared: [{ a: 'thread-a', b: 'thread-b', actors: ['Iran'], weight: 2, country: 'France' }, { a: 'x' }],
     threads: { 'thread-a': { state: 'linked', title: 'Story A', entries: 4, places: [{ name: 'France', n: 3 }, { n: 1 }], analysedIn: [] }, bad: null } };
   c.put(T.world, { PK: 'WEB#INDEX', SK: 'LATEST', ...web, generatedAt: '2026-10-20T05:00:21.595Z' });
+  c.putS3('web/2026/10/18.json', { runId: 'web-0', generatedAt: '2026-10-18T05:00:00.000Z', index: { generatedAt: '2026-10-18T05:00:00.000Z', links: [{ from: 'thread-a', to: 'thread-b', confidence: 'weak' }], shared: [], threads: {} } });
   c.putS3('web/latest.json', { runId: 'web-1', generatedAt: '2026-10-20T05:00:21.595Z', index: { runId: 'web-1', generatedAt: '2026-10-20T05:00:21.595Z', ...web } });
   return c;
 }

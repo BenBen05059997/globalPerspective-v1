@@ -92,7 +92,7 @@ Started 2026-10-20: step 1 in progress (code + tests by agent; deploy after diff
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
 
 ## Open
-- Storage review (side project, researched 2026-10-20, decision pending): replacing DynamoDB for the user side was
+- Storage review (side project, researched 2026-10-20; **decided: keep DynamoDB for the user side**, operator): replacing DynamoDB for the user side was
   compared against Supabase (Tokyo, Firebase JWT works with RLS, but Pro $25/mo because the free project pauses when
   idle), Neon, Cloudflare D1/Durable Objects (fastest reads behind our Worker, but Lambdas write only via a rate-limited
   REST API; would mean moving user Lambdas to Workers), Turso, Firestore and per-user JSON in S3. Finding: DynamoDB

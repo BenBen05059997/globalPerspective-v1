@@ -28,8 +28,10 @@ and verified, with the commit.
 - [x] 1. Phone-width click-through of production in the browser (390 px, 12 pages). Found and fixed: the signed-in
       name overflowed the top bar on every page; weekly briefing source labels overflowed (f736a4a6, 36f2e8d3).
       Checked on the local build at 390 px with the bell present: fits, long names end in an ellipsis.
-- [ ] 2. Breaking alerts wait for confirmation (decision 1): the site lists only `confirmed` alerts; the operator
-      email stays. Backend change, Lambda deploy, guides updated.
+- [x] 2. Breaking alerts wait for confirmation (decision 1): the bell, strip, `/breaking/:id` and the parked signal
+      feed show only `confirmed` alerts; the operator email is marked "[Unconfirmed] NOT PUBLIC YET" with the confirm
+      command; `review.js` can now confirm `sent` rows (ad0474e0). Deployed newsRecommend, newsSignals,
+      newsBreakingAlert; live `list_alerts` returns none (the one 9 Oct alert was never confirmed).
 - [ ] 3. Membership copy and the blog tier line (decision 3): no page sells membership as Studio runs.
 - [ ] 4. Country page honesty layer (decision 2): fact / judgment tags on every line, "What we don't know",
       copy as text, print view, the reader's own view box (browser only). Built from data the page already reads.

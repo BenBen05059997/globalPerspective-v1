@@ -1,0 +1,944 @@
+{
+  "weekEnding": "2026-10-18",
+  "status": "draft",
+  "generatedAt": "2026-10-20T13:01:27.984Z",
+  "producer": "codex weekly-brief v1",
+  "inputsHash": "0345df27f926f0a5263bf8bb846f53584c6fd694ee6f2b153b5d8877ec89a335",
+  "lead": {
+    "headline": "Hormuz moves from attacks to a claimed closure",
+    "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
+    "happened": {
+      "text": "BBC Verify counted 12 vessels struck near Hormuz in a week; Iran’s Revolutionary Guard subsequently declared the strait closed.",
+      "sources": [
+        {
+          "outlet": "bbc.com",
+          "url": "https://www.bbc.co.uk/news/articles/cmde8dpg8g0no?at_medium=RSS&amp;at_campaign=rss",
+          "archive": "archive#2026-10-16",
+          "topicId": "Ship Attacks Near Hormuz Reach Record High as Oil Exports Slow-1"
+        },
+        {
+          "outlet": "middleeasteye.net",
+          "url": "https://www.middleeasteye.net/live-blog/live-blog-update/irgc-declares-strait-hormuz-closed-after-tankers-hit",
+          "archive": "archive#2026-10-17",
+          "topicId": "IRGC Declares Strait of Hormuz Closed After Tankers Hit-5"
+        }
+      ]
+    },
+    "argument": {
+      "text": "Mines let Iran deter traffic without a full blockade because operators must weigh the risk of each transit.",
+      "label": "judgment",
+      "confidence": "medium"
+    },
+    "expect": {
+      "text": "We retain the recorded 65% call for a tanker to pass without incident because Iran can permit shipping while asserting control.",
+      "label": "judgment",
+      "confidence": "medium"
+    },
+    "wouldProveWrong": {
+      "condition": "No commercial tanker transits the strait without incident.",
+      "by": "2026-11-15"
+    }
+  },
+  "moved": [],
+  "trace": [
+    {
+      "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
+      "title": "Mine Strikes and the Closing of the Strait of Hormuz",
+      "risk": {
+        "score": 78,
+        "tier": "high"
+      },
+      "steps": [
+        {
+          "date": "2026-10-16",
+          "fact": {
+            "text": "BBC Verify counted 12 vessels struck near Hormuz in a week.",
+            "sources": [
+              {
+                "outlet": "bbc.com",
+                "url": "https://www.bbc.co.uk/news/articles/cmde8dpg8g0no?at_medium=RSS&amp;at_campaign=rss",
+                "archive": "archive#2026-10-16",
+                "topicId": "Ship Attacks Near Hormuz Reach Record High as Oil Exports Slow-1"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-17",
+          "fact": {
+            "text": "Iran’s Revolutionary Guard declared the Strait of Hormuz closed after tankers were hit.",
+            "sources": [
+              {
+                "outlet": "middleeasteye.net",
+                "url": "https://www.middleeasteye.net/live-blog/live-blog-update/irgc-declares-strait-hormuz-closed-after-tankers-hit",
+                "archive": "archive#2026-10-17",
+                "topicId": "IRGC Declares Strait of Hormuz Closed After Tankers Hit-5"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "The Strait of Hormuz is reopened to commercial shipping with at least one tanker transiting without incident.",
+          "p": 0.65,
+          "trigger": "The Strait of Hormuz is reopened to commercial shipping with at least one tanker transiting without incident.",
+          "by": "2026-11-15",
+          "status": "not_checked"
+        },
+        {
+          "text": "The US Navy announces it is escorting commercial vessels through the Strait of Hormuz.",
+          "p": 0.5,
+          "trigger": "The US Navy announces it is escorting commercial vessels through the Strait of Hormuz.",
+          "by": "2026-11-08",
+          "status": "not_checked"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-russia-launches-largest-attack-287240",
+      "title": "Russia Escalates Air War on Kyiv as Energy Ceasefire Collapses",
+      "risk": {
+        "score": 88,
+        "tier": "high"
+      },
+      "steps": [
+        {
+          "date": "2026-10-12",
+          "fact": {
+            "text": "Russia struck Ukrainian energy sites after Trump announced a ceasefire.",
+            "sources": [
+              {
+                "outlet": "npr.org",
+                "url": "https://www.npr.org/2026/10/12/nx-s1-5998614/trump-russia-ukraine-energy-ceasefire",
+                "archive": "archive#2026-10-12",
+                "topicId": "Russia Strikes Ukrainian Energy Sites After Trump Announces Ceasefire-0"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-18",
+          "fact": {
+            "text": "A Ukrainian drone attack on St Petersburg killed one person and hit oil facilities and a data centre.",
+            "sources": [
+              {
+                "outlet": "aljazeera.com",
+                "url": "https://www.aljazeera.com/news/2026/10/18/ukrainian-drone-attack-on-russias-st-petersburg-kills-1-hits-energy-sites?traffic_source=rss",
+                "archive": "archive#2026-10-18",
+                "topicId": "Ukrainian Drone Attack on St Petersburg Kills One, Hits Oil Facilities and Data Centre-0"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "Ukraine launches another drone attack on an oil facility or data center in St. Petersburg or Leningrad Oblast",
+          "p": 0.7,
+          "trigger": "Ukraine launches another drone attack on an oil facility or data center in St. Petersburg or Leningrad Oblast",
+          "by": "2026-11-15",
+          "status": "not_checked"
+        },
+        {
+          "text": "Russia announces new air defense deployments around St. Petersburg in response to drone threats",
+          "p": 0.6,
+          "trigger": "Russia announces new air defense deployments around St. Petersburg in response to drone threats",
+          "by": "2026-11-30",
+          "status": "not_checked"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d",
+      "title": "Houthi Missile Campaign Shatters Saudi Air Hub and Yemen Frontlines",
+      "risk": {
+        "score": 92,
+        "tier": "high"
+      },
+      "steps": [
+        {
+          "date": "2026-10-12",
+          "fact": {
+            "text": "Houthi attacks on Saudi airports killed 13 people, prompting a Saudi vow of a serious response.",
+            "sources": [
+              {
+                "outlet": "bbc.com",
+                "url": "https://www.bbc.co.uk/news/articles/cjly0zqq27e4o?at_medium=RSS&amp;at_campaign=rss",
+                "archive": "archive#2026-10-12",
+                "topicId": "Houthi Attacks on Saudi Airports Kill 13, Including Riyadh International, Sparking Vow of 'Serious Response'-0"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-18",
+          "fact": {
+            "text": "Saudi-led forces tried to break the Houthi siege of Taiz with airstrikes.",
+            "sources": [
+              {
+                "outlet": "aljazeera.com",
+                "url": "https://www.aljazeera.com/video/newsfeed/2026/10/18/saudi-led-forces-try-to-break-houthi-siege-of-taiz-with-airstrikes?traffic_source=rss",
+                "archive": "archive#2026-10-18",
+                "topicId": "Saudi-led Forces Try to Break Houthi Siege of Taiz with Airstrikes-7"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "The Saudi-led coalition announces that its airstrikes have opened a humanitarian corridor into Taiz, allowing aid convoys to enter the city.",
+          "p": 0.6,
+          "trigger": "The Saudi-led coalition announces that its airstrikes have opened a humanitarian corridor into Taiz, allowing aid convoys to enter the city.",
+          "by": "2026-11-15",
+          "status": "not_checked"
+        },
+        {
+          "text": "Houthi forces withdraw from at least one major checkpoint on a road leading into Taiz.",
+          "p": 0.4,
+          "trigger": "Houthi forces withdraw from at least one major checkpoint on a road leading into Taiz.",
+          "by": "2026-11-30",
+          "status": "not_checked"
+        }
+      ]
+    }
+  ],
+  "dates": [
+    {
+      "date": "2026-10-23",
+      "what": "Kenya begins ring vaccination of contacts and healthcare workers using rVSV-ZEBOV vaccine",
+      "kind": "forecast_due",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The Sudanese Armed Forces issues an official statement denying that it deliberately targeted artisanal miners and claiming the strike hit RSF-linked armed elements",
+      "kind": "forecast_due",
+      "threadId": "thread-sudan-airstrike-kills-72-artis-a9ec5d"
+    },
+    {
+      "date": "2026-10-19",
+      "what": "Russia announces it will treat foreign leaders visiting Kyiv as legitimate military targets or issues a formal diplomatic warning to Germany",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-19",
+      "what": "SEDENA announces deployment of Plan DN-III-E in at least one state hit by Hurricane Simon",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-19",
+      "what": "The Vatican Press Office confirms the pope will remain hospitalized beyond the initially stated one-week recovery period",
+      "kind": "trigger",
+      "threadId": "thread-pope-leo-to-undergo-surgery-fo-a06c81"
+    },
+    {
+      "date": "2026-10-19",
+      "what": "Turkey formally summons the Russian ambassador in Ankara to protest the attack",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-19",
+      "what": "UNEF, FIDL, and UNL issue a joint statement calling for a suspension of school blockades and protests pending implementation of the October 5 agreement.",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "A Republican member of Congress publicly criticizes Trump's remarks about Iran targeting US cities",
+      "kind": "trigger",
+      "threadId": "thread-trump-claims-iran-war-will-end-442c7f"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Bulgaria formally requests NATO consultations under Article 4 regarding the Black Sea attack",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Bulgarian authorities announce the conclusion of search-and-rescue operations for missing crew members",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Delhi Police detains at least 500 opposition protesters during or immediately after the march to the Supreme Court",
+      "kind": "trigger",
+      "threadId": "thread-india-election-chief-faces-cal-6a2810"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "EU Foreign Affairs Council issues conclusions committing additional air defense systems to Ukraine",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Hurricane Simon makes landfall as a Category 2 or weaker storm",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Hurricane Simon makes landfall as a Category 4 or 5 storm within 50 km of a city with population over 100,000",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Kenya imposes enhanced screening at Jomo Kenyatta International Airport for travelers from DRC and Uganda",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Mexico's federal government issues a disaster declaration for at least two Pacific-coast states affected by Hurricane Simon",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "NATO issues an official statement condemning the attack on civilian shipping in Bulgaria's EEZ",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "NYC Mayor issues a public statement condemning the ICE agent's use of force",
+      "kind": "trigger",
+      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "President Macron meets with UNEF and FIDL leaders at the Élysée Palace to discuss education demands.",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "President Macron or the Minister of National Education announces a multi-year school renovation and staffing plan exceeding €1 billion before the National Assembly budget vote",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "Presidents Lee Jae Myung and Volodymyr Zelenskyy hold a phone call to discuss the POW disclosure dispute",
+      "kind": "trigger",
+      "threadId": "thread-south-korea-warns-ukraine-over-aef176"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "The National Assembly holds a no-confidence vote against the government over the crisis",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "The UN Security Council issues a statement calling for restraint and a return to negotiations regarding the Bab el-Mandeb offensive",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "The White House issues a formal statement clarifying or walking back Trump's remarks about Iran targeting Los Angeles or San Diego",
+      "kind": "trigger",
+      "threadId": "thread-trump-claims-iran-war-will-end-442c7f"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "WHO announces deployment of experimental Bundibugyo vaccine doses to Kenya for ring vaccination of contacts",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-20",
+      "what": "WHO issues a public statement confirming it has received an official notification from Russia under IHR regarding the lab death",
+      "kind": "trigger",
+      "threadId": "thread-us-monitoring-plague-researche-51fdb6"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "NATO announces an emergency meeting specifically on Ukrainian air-defense needs and commits to expedited interceptor deliveries",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "Puerto Vallarta International Airport reopens and receives its first commercial passenger flight",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "The European Council summit on October 20-21 issues a joint statement condemning the strikes and reaffirming military support for Ukraine",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "The Houthi movement claims responsibility for the Aden airport attack in an official statement via Al Masirah TV",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "The Kremlin or White House publicly confirms the Trump-Putin call took place and issues a readout mentioning plague or biosecurity cooperation",
+      "kind": "trigger",
+      "threadId": "thread-us-monitoring-plague-researche-51fdb6"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "The UN Security Council holds an emergency session on the October 7 strikes and fails to adopt a resolution due to a Russian veto",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "The UN Security Council holds an emergency session on the October 7 strikes and issues a statement or resolution condemning the civilian deaths",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-21",
+      "what": "WHO AFRO announces deployment of Ebola vaccine doses to Kenya for ring vaccination of contacts",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-22",
+      "what": "Africa CDC deploys a rapid response team to Nairobi to support contact tracing and laboratory testing",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-22",
+      "what": "The Ethiopian Ministry of Defense issues an official statement confirming the drone strike targeted Eritrean Defense Forces positions in Tigray",
+      "kind": "trigger",
+      "threadId": "thread-ethiopia-fighting-escalates-in-bdc3d4"
+    },
+    {
+      "date": "2026-10-22",
+      "what": "The Trump administration announces it is voluntarily pulling the ads in response to the lawsuit",
+      "kind": "trigger",
+      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
+    },
+    {
+      "date": "2026-10-22",
+      "what": "Trump and Putin hold a phone call where biosecurity transparency is discussed",
+      "kind": "trigger",
+      "threadId": "thread-us-monitoring-plague-researche-51fdb6"
+    },
+    {
+      "date": "2026-10-22",
+      "what": "US State Department issues a public statement condemning the Houthi attacks and reaffirming support for Saudi territorial integrity",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "A major teachers' union (e.g., SNES-FSU) publicly calls off planned strike action and endorses the government plan",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "ACIP issues updated MMR vaccination recommendations during its October 22-23 meeting",
+      "kind": "trigger",
+      "threadId": "thread-us-records-4-410-measles-cases-a1fdfd"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "Hungary or Slovakia formally vetoes or blocks the EU Ukraine support package at the October 22–23 European Council session",
+      "kind": "trigger",
+      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "Kenya begins ring vaccination of contacts and healthcare workers using rVSV-ZEBOV vaccine",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "Riyadh King Khalid International Airport reports full resumption of scheduled commercial flights",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "SNES-FSU or SGEN-CFDT issues a public statement endorsing the 3,000-teacher plan as a credible first step",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council conclusions of October 22-23, 2026 explicitly mandate the European Commission to explore a new partnership status for Canada",
+      "kind": "trigger",
+      "threadId": "thread-eu-and-canada-seek-closer-ties-2f1e5a"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council issues a formal summit conclusion explicitly endorsing Ukraine's right to strike Russian oil refineries",
+      "kind": "trigger",
+      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council issues conclusions explicitly authorizing the Commission to prepare additional trade defence measures against China",
+      "kind": "trigger",
+      "threadId": "thread-eu-china-trade-tensions-escala-16cf3f"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council issues conclusions that commit less than €35 billion in new funding for Ukraine for 2027",
+      "kind": "trigger",
+      "threadId": "thread-zelensky-asks-eu-for-extra-79--24a4c7"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council summit ends without any new concrete funding commitment for Ukraine",
+      "kind": "trigger",
+      "threadId": "thread-zelensky-asks-eu-for-extra-79--24a4c7"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The European Council summit on October 22-23 issues a joint statement on foreign interference in European elections referencing the UK's findings.",
+      "kind": "trigger",
+      "threadId": "thread-uk-pm-burnham-says-russia-inte-be8e05"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The October 22-23, 2026 European Council conclusions make no mention of a new status for Canada or only refer to 'existing strategic partnership'",
+      "kind": "trigger",
+      "threadId": "thread-eu-and-canada-seek-closer-ties-2f1e5a"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "The Russian Ministry of Defence issues an official statement denying responsibility for the Kramatorsk bus strike and blaming Ukrainian forces.",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "WHO deploys Ebola vaccine stockpile (Ervebo) to Kenya for ring vaccination of contacts",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "A second nationwide Saturday demonstration occurs on October 24, 2026, with reported turnout of at least 50,000 nationwide",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Cal Fire reports the Norte Fire is 50% contained",
+      "kind": "trigger",
+      "threadId": "thread-southern-california-wildfire-e-4f08a7"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Interior Ministry reports that at least one October 17 demonstration results in more than 50 arrests or significant property damage in Paris or another major city.",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Kenya Ministry of Health confirms at least one secondary Ebola case linked to the index case in Nairobi",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "North Korea's Korean Central News Agency (KCNA) publishes a statement condemning the South Korean hypersonic test",
+      "kind": "trigger",
+      "threadId": "thread-south-korea-test-flies-first-d-1811b9"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Rolling electricity outages continue in at least three provinces for more than seven consecutive days after October 17",
+      "kind": "trigger",
+      "threadId": "thread-sri-lanka-suffers-nationwide-e-0ba671"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Saudi Civil Aviation Authority announces resumption of full commercial operations at King Khalid International Airport",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "Saudi-led coalition conducts at least 10 additional airstrikes on Houthi-held territory in Yemen",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "The BRICS Summit communiqué announces a new cross-border payment mechanism that reduces reliance on the U.S. dollar for Russia-related trade",
+      "kind": "trigger",
+      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "The UN Security Council's quarterly briefing on Sudan (UNITAMS) addresses the airstrike but takes no formal action",
+      "kind": "trigger",
+      "threadId": "thread-sudan-airstrike-kills-72-artis-a9ec5d"
+    },
+    {
+      "date": "2026-10-24",
+      "what": "The White House issues a formal executive order or waiver authorizing the import of Russian refined petroleum products",
+      "kind": "trigger",
+      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "All fires on the damaged tankers are extinguished and salvage operations begin without further incident.",
+      "kind": "trigger",
+      "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "CFDT and UNSA issue a joint statement calling for an end to school blockades",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "CFDT issues a statement supporting student demands but explicitly rejecting joint strike action with student unions.",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Christa Pike's legal team files an emergency motion in federal court seeking to bar any further execution attempts",
+      "kind": "trigger",
+      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Élisabeth Borne meets with representatives of UNL and FIDL for formal negotiations",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Federal government announces FONDEN disaster funds disbursement for Jalisco and Nayarit",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Federal government declares a state of emergency in at least 10 municipalities across Jalisco and Nayarit",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "ICE announces the agent involved has been placed on administrative leave pending investigation",
+      "kind": "trigger",
+      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Interior Minister Gérald Darmanin announces a suspension of arrests of minors for protest-related offenses except in cases of arson or serious violence",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Istanbul Metropolitan Municipality confirms full restoration of metro, tram, and bus services to pre-flood schedules",
+      "kind": "trigger",
+      "threadId": "thread-istanbul-hit-by-heaviest-rainf-a2ef31"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Jarosław Kaczyński issues a public statement condemning the assassination plot and calling for political de-escalation",
+      "kind": "trigger",
+      "threadId": "thread-poland-detains-man-suspected-o-cde053"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Lula publicly cites the shorter working week amendment in a campaign speech or debate before the October 25 run-off",
+      "kind": "trigger",
+      "threadId": "thread-brazil-s-congress-approves-sho-1fc611"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Lula wins the October 25 presidential run-off",
+      "kind": "trigger",
+      "threadId": "thread-brazilian-amazon-deforestation-c5bce9"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Lula wins the October 25 presidential run-off by a margin of at least 5 percentage points",
+      "kind": "trigger",
+      "threadId": "thread-brazil-s-congress-approves-sho-1fc611"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Lula wins the October 25, 2026 presidential run-off",
+      "kind": "trigger",
+      "threadId": "thread-brazilian-amazon-deforestation-35a31e"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "NDRRMA reports zero additional fatalities from the October 11 Budhi Gandaki flash floods after search-and-rescue concludes",
+      "kind": "trigger",
+      "threadId": "thread-nepal-hit-by-fresh-flash-flood-70f97b"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "No major tourist destination (Puerto Vallarta, Manzanillo, Mazatlán) experiences sustained hurricane-force winds",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Opposition candidate wins the October 25 presidential run-off",
+      "kind": "trigger",
+      "threadId": "thread-brazilian-amazon-deforestation-c5bce9"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Opposition candidate wins the October 25, 2026 presidential run-off",
+      "kind": "trigger",
+      "threadId": "thread-brazilian-amazon-deforestation-35a31e"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "PM Tusk appears at a public event without cancellation or major security lockdown",
+      "kind": "trigger",
+      "threadId": "thread-poland-detains-man-suspected-o-cde053"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Puerto Vallarta International Airport resumes commercial flight operations",
+      "kind": "trigger",
+      "threadId": "thread-category-4-hurricane-simon-bar-0d3875"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Student representatives and the education ministry hold a formal negotiation meeting",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The French government and major student unions (UNEF, FAGE) sign a joint de-escalation agreement",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The Interior Ministry issues a directive restricting use of tear gas and water cannons against student protesters",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The Sudanese Armed Forces issues an official statement denying that it deliberately targeted artisanal miners and claiming the strike hit RSF-linked armed elements",
+      "kind": "trigger",
+      "threadId": "thread-sudan-airstrike-kills-72-artis-a9ec5d"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The UK Foreign Office summons the Russian ambassador to London over the Brexit interference assessment",
+      "kind": "trigger",
+      "threadId": "thread-uk-pm-burnham-says-russia-inte-be8e05"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The UN Security Council holds an emergency session on the Zaporizhzhia attack and issues a formal statement",
+      "kind": "trigger",
+      "threadId": "thread-russia-launches-largest-attack-287240"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The UN Security Council issues a statement condemning the Riyadh airport attack and calling for de-escalation",
+      "kind": "trigger",
+      "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The Vatican announces the pope will preside over the November 1 All Saints Mass without restrictions",
+      "kind": "trigger",
+      "threadId": "thread-pope-leo-to-undergo-surgery-fo-a06c81"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "The White House announces it will restore press credentials to CNN, MS Now, and Politico",
+      "kind": "trigger",
+      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "UNL and FIDL issue a joint statement calling for an end to school blockades and vandalism",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Vatican Press Office announces Pope Leo XIV will return to the Vatican before October 25",
+      "kind": "trigger",
+      "threadId": "thread-pope-leo-to-undergo-surgery-fo-a06c81"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "WHO deploys an international response team to Kenya within 7 days",
+      "kind": "trigger",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    }
+  ],
+  "new": [
+    {
+      "threadId": "thread-israeli-settlers-attack-palest-a8e47b",
+      "title": "Settler Violence Escalates From Olive Groves to Diplomats in West Bank",
+      "firstSeen": "2026-10-16",
+      "outlets": [
+        "al-monitor.com",
+        "bbc.com",
+        "cbc.ca",
+        "channelnewsasia.com",
+        "euronews.com",
+        "france24.com",
+        "middleeasteye.net",
+        "npr.org",
+        "scmp.com"
+      ],
+      "fact": {
+        "text": "Settlers attacked Palestinian olive harvesters, injuring a Washington Post photojournalist, and then attacked European diplomats and a visiting French mayor.",
+        "sources": [
+          {
+            "outlet": "npr.org",
+            "url": "https://www.npr.org/2026/10/16/nx-s1-6004904/israeli-settlers-beat-us-photojournalist-washington-post-west-bank",
+            "archive": "archive#2026-10-16",
+            "topicId": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest-1"
+          },
+          {
+            "outlet": "scmp.com",
+            "url": "https://www.scmp.com/news/world/middle-east/article/3371275/israeli-settlers-attack-european-diplomats-beat-french-mayor-west-bank?utm_source=rss_feed",
+            "archive": "archive#2026-10-17",
+            "topicId": "Israeli Settlers Attack European Diplomats and French Mayor in West Bank-1"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "Attacks on foreign visitors can bring pressure from their governments because those governments can demand accountability directly, but the reports do not yet establish that Israeli authorities will make arrests.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-israeli-settlers-attack-west-b-b4cded",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-britain-s-green-party-votes-to-71b793",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-china-tells-israel-to-stop-for-91f79d",
+          "relation": "possibly_related"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-trump-endorses-netanyahu-in-is-d70a8a",
+      "title": "Trump Endorses Netanyahu in Israeli Election, Calling Him 'Great Warrior Prime Minister'",
+      "firstSeen": "2026-10-18",
+      "outlets": [
+        "al-monitor.com",
+        "channelnewsasia.com",
+        "middleeasteye.net",
+        "scmp.com"
+      ],
+      "fact": {
+        "text": "Trump endorsed Netanyahu ahead of Israel’s October 27 parliamentary election.",
+        "sources": [
+          {
+            "outlet": "al-monitor.com",
+            "url": "https://www.al-monitor.com/originals/2026/10/trump-backs-ally-netanyahu-ahead-israels-tight-election",
+            "archive": "archive#2026-10-18",
+            "topicId": "Trump Endorses Netanyahu in Israeli Election, Calling Him 'Great Warrior Prime Minister'-6"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "The endorsement may have little effect because it adds an external political signal while the result still depends on Israeli voters and coalition bargaining.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-israel-s-supreme-court-overtur-9e1284",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-trump-announces-us-to-import-r-8c45a3",
+          "relation": "possibly_related"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-french-supermarkets-hit-by-cyb-172642",
+      "title": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down",
+      "firstSeen": "2026-10-12",
+      "outlets": [
+        "aljazeera.com",
+        "bbc.com",
+        "channelnewsasia.com",
+        "france24.com"
+      ],
+      "fact": {
+        "text": "A cyberattack raised supermarket refrigerator temperatures across France, forcing spoiled food to be thrown away.",
+        "sources": [
+          {
+            "outlet": "france24.com",
+            "url": "https://www.france24.com/en/french-supermarkets-suffer-refrigerator-shutdown-after-unprecedented-cyberattack",
+            "archive": "archive#2026-10-13",
+            "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-2"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "We cannot yet distinguish extortion from sabotage because the cited report does not identify an attacker or a ransom demand.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-french-student-protests-turn-v-68e0fb",
+          "relation": "possibly_related"
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "stories": 88,
+    "entries": 204,
+    "outlets": 21,
+    "missingDays": [
+      "2026-10-14"
+    ],
+    "analysedNew": {
+      "analysed": 11,
+      "total": 59
+    },
+    "corrections": [],
+    "note": "Births reflect the archive lookback, and missing archives can delay the first observed date. Analysis counts use rows dated no later than the week’s Sunday. No corrections store exists."
+  },
+  "notes": {
+    "unconfirmed": [
+      "The live story-web snapshot was generated after this week; its edges are used as possibly related links, not confirmed causes.",
+      "No explicit logged revision or sustained ten-point movement passed the conservative moved gate; differently worded trajectories remain in inputs.pathReviewCandidates for review.",
+      "The first two trace branches per anchor are quoted from the latest dated prediction snapshot with future deadlines; no branch has been checked or settled by this procedure.",
+      "All quantitative calls are existing logged calls; this draft creates no new prediction-log entries.",
+      "The new section keeps the frozen top three; Hormuz also qualified and is retained in the lead and trace."
+    ]
+  }
+}

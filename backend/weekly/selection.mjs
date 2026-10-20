@@ -5,8 +5,8 @@ const require = createRequire(import.meta.url);
 const { tierFromScore } = require('../shared/src/riskDimensions.js');
 const { SECTIONS } = require('./sections.js');
 export function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
+  if (Array.isArray(value)) return `[${value.map(v=>canonical(v) ?? 'null').join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.keys(value).filter(k=>value[k]!==undefined).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
   return JSON.stringify(value);
 }
 export const hashInputs = ({ inputsHash, ...body }) => createHash('sha256').update(canonical(body)).digest('hex');
@@ -14,7 +14,7 @@ export function dayPlus(day, n) { return new Date(Date.parse(`${day}T00:00:00Z`)
 export function assertSunday(day) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '') || dayPlus(day, 0) !== day || new Date(`${day}T00:00:00Z`).getUTCDay() !== 0) throw Error('week-ending must be a valid Sunday YYYY-MM-DD');
 }
-const sorted = xs => [...xs].sort((a,b) => canonical(a).localeCompare(canonical(b)));
+const sorted = xs => xs.map(value=>({value,key:canonical(value)})).sort((a,b)=>a.key.localeCompare(b.key)).map(x=>x.value);
 const dateOf = r => String(r.asOf || r.dateKey || r.date || r.generatedAt || r.SK?.split('#').slice(1).join('#') || '').slice(0,10);
 export function eventEvidence(entry) {
   // Conservative lexical gate: a dated archive entry must name a completed action.
@@ -22,14 +22,19 @@ export function eventEvidence(entry) {
   const text = String(entry.title || '');
   const periodic = /\b(report|survey|outlook|forecast|weekly|monthly|annual|warns?|urges?|calls? for|says?|tells?)\b/i;
   const action = /\b(attack\w*|struck|strike\w*|hit|kills?|killed|die[sd]?|dead|collapse\w*|arrest\w*|elect\w*|resign\w*|launch\w*|fire[sd]?|caught fire|bomb\w*|signs?|signed|approv\w*|suspend\w*|halt\w*|shut\w*|seiz\w*|board\w*|clash\w*|endorse\w*|overtur\w*|flood\w*|landfall|begins?|began|impos\w*|releas\w*|detain\w*)\b/i;
-  return !/\b(report|survey|outlook|forecast|weekly|monthly|annual)\b/i.test(text) && action.test(text) && (!periodic.test(text) || /\b(attack\w*|struck|killed|collapse\w*|arrest\w*|caught fire|shut\w*|clash\w*)\b/i.test(text));
+  return !/\b(report|survey|outlook|forecast|weekly|monthly|annual|will|could|may|might|plans?|planned|expected|threatens?|vows?)\b/i.test(text) && action.test(text) && (!periodic.test(text) || /\b(attack\w*|struck|killed|collapse\w*|arrest\w*|caught fire|shut\w*|clash\w*)\b/i.test(text));
 }
 // Path changes need an explicit directional signal in the logged explanation and
 // different trajectory text; a mere rewrite or probability wobble is insufficient.
 export function pathChanged(before, after, notes) {
   const normalize = x => String(x || '').toLowerCase().replace(/\d+(?:\.\d+)?\s*%/g, '').replace(/\s+/g,' ').trim();
-  return !!before && !!after && normalize(before) !== normalize(after) && notes.some(n =>
-    /\b(no longer|instead of|rather than|shift(?:ed|s)? (?:from|toward)|now expect|previously expected|ceased|abandon(?:ed)?|revers(?:ed|al)|ended|suspended)\b/i.test(String(n.whyChanged || '')));
+  return !!before && !!after && normalize(before) !== normalize(after) && notes.some(n => {
+    const text=String(n.whyChanged || '');
+    // A changed title, score justification or "rather than escalation" is not
+    // an explicit revision of an expectation. Fail closed on ambiguous prose.
+    return /\b(?:no longer|now|previously|instead)\s+(?:\w+\s+){0,3}(?:expect|expected|forecast|anticipate|anticipating)\b/i.test(text) ||
+      /\b(?:expected path|expected outcome|forecast|trajectory|outlook)\b.{0,80}\b(?:changed|shifted|reversed|abandoned)\b/i.test(text);
+  });
 }
 export function selectInputs(raw, weekEnding) {
   assertSunday(weekEnding);
@@ -53,7 +58,7 @@ export function selectInputs(raw, weekEnding) {
     const riskScore = Number.isFinite(current?.riskScore) ? current.riskScore : null;
     const outlets = [...new Set(entries.flatMap(e => (e.sources || []).map(s => s.source).filter(Boolean)))].sort();
     const linked = links.filter(l => (l.from === threadId && all.some(e=>e.threadId===l.to)) || (l.to === threadId && all.some(e=>e.threadId===l.from)));
-    const sources = sorted(entries.flatMap(e => (e.sources || []).filter(s => s.source).map(s => ({outlet:s.source,archive:e.archive,...(e.topicId?{topicId:e.topicId}:{}),...(s.url?{url:s.url}:{})}))));
+    const sources = sorted(past.flatMap(e => (e.sources || []).filter(s => s.source).map(s => ({outlet:s.source,archive:e.archive,...(e.topicId?{topicId:e.topicId}:{}),...(s.url?{url:s.url}:{})}))));
     const before = h.filter(r => dateOf(r) < start).at(-1);
     const during = h.filter(r => dateOf(r) >= start);
     const notes = drift.filter(r => r.PK === `THREAD#${threadId}`);
@@ -66,11 +71,13 @@ export function selectInputs(raw, weekEnding) {
     const logged = predictions.filter(r => topicIds.has(String(r.PK).slice(5)) || r.threadId === threadId || r.clusterKey === threadId);
     return {threadId,title:current?.threadTitle || current?.title || past.at(-1)?.title || threadId,firstSeen:past[0].date,
       birthWindowLimited:past[0].date===birthStart,outlets,risk: riskScore===null?null:{score:riskScore,tier:tierFromScore(riskScore)},
-      singleOutlet:outlets.length===1,event:entries.some(eventEvidence),links:linked,sources,entries,
+      pathReview:!!before && !!current?.trajectory && before.trajectory!==current.trajectory && !movedKind,
+      singleOutlet:outlets.length===1,event:entries.some(eventEvidence),links:linked,sources,entries,archiveEntries:past,
       analysis:current || null,history:h,drift:notes,predictions:logged,
       moved: movedKind?{kind:movedKind,before:before.trajectory || '',after:current?.trajectory || '',scoreFrom:from,scoreTo:to}:null};
   });
-  const rank = (a,b) => Number(a.singleOutlet)-Number(b.singleOutlet) || b.links.length-a.links.length || (b.risk?.score ?? -1)-(a.risk?.score ?? -1) || a.threadId.localeCompare(b.threadId);
+  const tierRank = s => ({low:0,moderate:1,elevated:2,high:3}[s.risk?.tier] ?? -1);
+  const rank = (a,b) => Number(a.singleOutlet)-Number(b.singleOutlet) || b.links.length-a.links.length || tierRank(b)-tierRank(a) || a.threadId.localeCompare(b.threadId);
   const fresh = stories.filter(s => s.firstSeen>=start);
   const qualified = fresh.filter(s => s.event && (s.links.length || (s.risk?.score>=50 && s.outlets.length>=2))).sort(rank);
   const moved = stories.filter(s => s.firstSeen<start && s.moved).sort(rank).slice(0,SECTIONS.find(s=>s.key==='moved').max);
@@ -86,12 +93,13 @@ export function selectInputs(raw, weekEnding) {
   }
   const missingDays=Array.from({length:7},(_,i)=>dayPlus(start,i)).filter(d=>!archives.some(a=>a.id===`archive#${d}`));
   const body={version:1,weekEnding,weekStart:start,birthWindowStart:birthStart,nextWeekEnd:nextEnd,
-    candidates:{lead:[...stories].sort(rank),moved,trace,new:qualified.slice(0,3),dates:sorted(dates)},
+    candidates:{lead:[...stories].sort(rank),moved:moved.map(s=>({threadId:s.threadId,title:s.title,moved:s.moved})),trace:trace.map(s=>({threadId:s.threadId,title:s.title,risk:s.risk,predictions:s.predictions})),new:qualified.slice(0,3).map(s=>({threadId:s.threadId,title:s.title,firstSeen:s.firstSeen,outlets:s.outlets,risk:s.risk,singleOutlet:s.singleOutlet,links:s.links})),dates:sorted([...new Map(dates.map(d=>[canonical({date:d.date,what:d.what,kind:d.kind,threadId:d.threadId}),d])).values()])},
     excludedNew:fresh.filter(s=>!qualified.includes(s)).map(s=>({threadId:s.threadId,reason:!s.event?'No completed event in headline': 'No tracked links or elevated risk with two outlets'})),
     overflowNew:qualified.slice(3).map(s=>s.threadId),
+    pathReviewCandidates:stories.filter(s=>s.pathReview).map(s=>({threadId:s.threadId,reason:'Trajectory prose differs but no explicit logged revision or sustained score move establishes a changed expected path'})),
     coverage:{stories:ids.length,entries:week.length,outlets:new Set(week.flatMap(e=>(e.sources || []).map(s=>s.source).filter(Boolean))).size,missingDays,
       analysedNew:{analysed:fresh.filter(s=>s.analysis).length,total:fresh.length},corrections:[],
       note:'Birth dates are earliest observed archive dates within the stated lookback; missing days can delay observed births. No corrections store exists.'},
-    evidence:{archives,summary:sorted(raw.summary || []),predictions:sorted(raw.predictions || []),web:raw.web || {},countryDrift:drift.filter(r=>r.PK?.startsWith('COUNTRY#'))}};
+    evidence:{archives,summary:sorted((raw.summary || []).filter(r=>(ids.includes(String(r.PK).slice(7)) && dateOf(r)<=weekEnding) || drift.some(d=>d.PK===r.PK && d.SK===r.SK))),predictions:sorted([...new Map([...stories.flatMap(s=>s.predictions),...questions].map(r=>[`${r.PK}/${r.SK}`,r])).values()]),web:raw.web || {},countryDrift:drift.filter(r=>r.PK?.startsWith('COUNTRY#'))}};
   return {...body,inputsHash:hashInputs(body)};
 }

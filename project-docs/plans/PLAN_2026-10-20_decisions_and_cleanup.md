@@ -32,7 +32,10 @@ and verified, with the commit.
       feed show only `confirmed` alerts; the operator email is marked "[Unconfirmed] NOT PUBLIC YET" with the confirm
       command; `review.js` can now confirm `sent` rows (ad0474e0). Deployed newsRecommend, newsSignals,
       newsBreakingAlert; live `list_alerts` returns none (the one 9 Oct alert was never confirmed).
-- [ ] 3. Membership copy and the blog tier line (decision 3): no page sells membership as Studio runs.
+- [x] 3. Membership copy and the blog tier line (decision 3): membership now lists only verified perks (full country
+      correction history, full corrections ledger, following countries); six pages and two blog posts corrected;
+      follow-button titles no longer promise emails (3d52f9d8). Not pushed: `docs/blog` is served by Pages, so it
+      ships with the release (item 10).
 - [ ] 4. Country page honesty layer (decision 2): fact / judgment tags on every line, "What we don't know",
       copy as text, print view, the reader's own view box (browser only). Built from data the page already reads.
 - [ ] 5. Retire the lens Studio screens (decision 3): `/analyze` points readers to country pages; shared-run

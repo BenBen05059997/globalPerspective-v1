@@ -158,7 +158,7 @@ function Layout({ children }) {
 
           {!authLoading && (
             user && !user.isAnonymous ? (
-              <Link to="/account" className="gp-btn">
+              <Link to="/account" className="gp-btn gp-btn-account" aria-label={`Account: ${user.email?.split('@')[0] || 'Account'}`}>
                 {user.email?.split('@')[0] || 'Account'}
               </Link>
             ) : (

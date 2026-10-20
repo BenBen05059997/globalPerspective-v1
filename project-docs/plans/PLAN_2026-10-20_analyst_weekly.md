@@ -34,12 +34,15 @@ A story appears in exactly one section, by its stage:
 1. **New this week** — stories born in the last 7 days. Per story: title + first seen date + outlets; *what happened*
    (fact, sourced); *first read* (judgment, low confidence, "no forecast yet" unless one is made); *possibly connects
    to* (existing stories, "possibly related" unless the defensible-edge bar is met); *first test* (one condition with
-   a date). Cap 5. **Selection (revised after draft 1):** a story must be an event (something happened on a date;
-   periodic statements and reports do not qualify); rank by links to tracked stories first, then risk tier, then
-   entry count as a tie-break only. Risk score measures severity, not consequence.
+   a date). Cap 5. **Selection (revised after drafts 1 and 2):** a story must be an event (something happened on a
+   date; periodic statements and reports do not qualify). A story qualifies by either (a) links to tracked stories or
+   (b) risk tier elevated or high with reports from 2+ outlets. Rank qualified stories by links, then risk tier. A
+   single-outlet story ranks last and its fact line says it rests on one source. Links alone over-select (draft 2
+   dropped Hormuz, 12 vessels struck, for a one-headline boarding); risk alone selects tolls (draft 1).
 2. **Our view moved** — tracked stories whose *read* changed this week, not whose score wobbled. **Threshold (revised
-   after draft 1):** include only a change in the trajectory label/expected path, or a risk-score move of 10 or more
-   that holds at the latest regeneration. Each line says what we now expect that we did not before, in one plain
+   after drafts 1 and 2):** include only a change in the expected path, or a risk-score move of 10 or more that holds
+   at the latest regeneration, and only for stories at moderate risk or above (a 20→10 move on a low-risk story is
+   not a view moving). Each line says what we now expect that we did not before, in one plain
    sentence, with the mechanism. 3 lines max. From drift notes plus `THREAD_HISTORY` trajectory before vs after.
 3. **Forecasts** — calls that came due this week (hit / miss / unresolved, linked to the record) and calls due next
    week. Every new call made in the brief is written to the prediction log so it is scored.
@@ -58,7 +61,8 @@ Honesty rules (enforced by the check script, step 3):
 - no line may claim a figure, date or name that is not in the cited source;
 - every judgment line is one plain sentence a reader outside the pipeline can follow: the mechanism spelled out, no
   shorthand, no internal names (scenario labels, score deltas, model terms) unless explained in the line.
-Selection is never by coverage volume.
+Selection is never by coverage volume. The JSON is complete (every qualifying item); length caps apply to the
+rendered email only, never to the file.
 
 ## The pipeline
 1. **Saturday 00:00Z, scheduled headless run (cloud)** loads `.claude/skills/weekly-brief/`, gathers the inputs for
@@ -78,16 +82,31 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 - [x] 1. Inputs confirmed (read-only, Sonnet agent, 2026-10-20): see "Inputs, confirmed". Findings that change the
       spec: no stored birth date (derive from the archive); 0 forecasts ever settled under the question scheme, so the
       forecasts section is honest-thin for weeks; no corrections store; archive gap on 10-14.
-- [~] 2. First draft by hand for the week ending 2026-10-18 (Sonnet, 2026-10-20): honesty rules held (12 facts cited,
-      21 judgments with confidence, dates after the send); three rule gaps found by review: selection by risk score
-      picked non-events, "moved" reported 3-5 point score noise, judgments too compressed to read. Spec revised
-      above; draft 2 under the revised rules, reviewed by the operator. Nothing is sent.
+- [x] 2. Drafts by hand for the week ending 2026-10-18 (Sonnet, 2026-10-20). Draft 1: honesty rules held (12 facts
+      cited, 21 judgments with confidence, dates after the send); review found selection by risk score picked
+      non-events, "moved" reported 3-5 point noise, judgments too compressed. Draft 2 under revised rules: judgments
+      now plain sentences with the mechanism and a reason per test; "moved" lines in the wanted form (a week ago we
+      expected X, now Y, because Z); JSON Schema written and validated (ajv). Review found link-first selection
+      over-corrected (dropped Hormuz for a single-source boarding), a low-risk story passed the "moved" bar, and the
+      email word cap was applied to the JSON. Rules revised a second time (above) and frozen; draft 3 is produced by
+      the real procedure in step 3 as its first test. Files: scratchpad `weekly/2026-10-18.draft2.{json,txt}`,
+      `weekly/schema.json`. Nothing sent; calls not logged.
 - [ ] 3. The skill `.claude/skills/weekly-brief/SKILL.md` (the procedure) + `scripts/weekly-brief/check.mjs`
       (schema + honesty rules) + `scripts/weekly-brief/publish.mjs` (draft → published, latest.json, prediction log).
 - [ ] 4. Readers: `newsEmailSender` weekly mode and the Briefings weekly mode read `weekly/latest.json`; new renderers
       (one shared section model, two renderers). Email tested by send-to-self on a phone mail app.
 - [ ] 5. Cloud scheduled run + credential (needs yes); notification to the operator; one supervised Saturday run.
 - [ ] 6. Retire `newsWeeklyBrief` + `TriggerWeeklyBrief`; ARCHITECTURE flow, STATUS, reference regen, Atlas.
+
+## Where it lives (operator, 2026-10-20)
+- Frontend: a new feature folder `features/weekly/` (page, hook reading `weekly/latest.json` and past weeks, the
+  section model shared with the email renderer; public weekly for everyone, the member layer on top from followed
+  countries + that week's country drift notes). It replaces Briefings' `WeeklyMode`. Route `/briefings/weekly`
+  (`?week=YYYY-MM-DD`); `/weekly/*` is taken by the countries list. Email links carry the week only, never a token.
+- Agent procedure: `.claude/skills/weekly-brief/`; check + publish scripts: `scripts/weekly-brief/`; email: the
+  existing `backend/distribution/newsEmailSender`.
+- Design: the Personal Weekly canvas, https://claude.ai/artifact/CTKb75Mv3fC9Y6BV46hKnK (desktop, phone, email;
+  the site's tokens; risk as number + word; the digest band marks where the personal layer ends).
 
 ## JSON shape (draft; fixed in step 3)
 ```json

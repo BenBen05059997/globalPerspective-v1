@@ -23,6 +23,12 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
   `newsBoard` now, by the record writer later. Frontend mirror of the core block: `shared/lib/board.js`.
 - `s3json.js`: `makeS3Json({client, GetObjectCommand, PutObjectCommand, bucket})` -> `getJson`, `putOnce`
   (`If-None-Match: *`), `putLatest`; client injected so it tests without the SDK. Unused until the record writes.
+- `world/`: the one reader of the world's raw tables (`archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`,
+  `COUNTRY# HISTORY#`, `DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts, `WEB#INDEX`, `web/latest.json`, the `latest`
+  topic pool) plus the shared derivations (story birth, branches, coverage and missing days, `tierFromScore`, outlets).
+  **Rule: nobody else parses these rows**; consumers (`newsStoryRecord`, the weekly pull, `newsBoard`, later `newsConnect`)
+  require `./_shared/world` and pass an injected client (`makeDynamoClient` / `makeS3Client`, no SDK import, no aws CLI).
+  Front door: `src/world/README.md` (row table, exact derivation rules, decisions).
 - `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
   `placeNames.json` is still in `src/` but no backend code reads it any more.
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
@@ -32,6 +38,6 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 Who uses what: `git grep "_shared/" -- backend`.
 
 ## Checks
-- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/resolveIso3.test.js test/situations-core.test.mjs test/record.test.js test/s3json.test.js`.
+- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/resolveIso3.test.js test/situations-core.test.mjs test/record.test.js test/s3json.test.js test/world.*.test.js`.
 - Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core, the board rules core) are compared
   by `node scripts/check-shared-sync.mjs`.

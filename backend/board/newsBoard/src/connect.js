@@ -45,7 +45,7 @@ async function connect(store, env, nowMs, rawA, rawB) {
     if (p.kind === 'thread') {
       const an = rows.get(p.refId);
       const topic = topicOf.get(p.refId);
-      const outlets = topic ? [...new Set((topic.sources || []).map((s) => s && s.source).filter(Boolean))] : [];
+      const outlets = world.threadOutlets(topic);
       if (!topic) limits.push(`outlets unavailable for thread ${p.refId} (not in the latest topic pool)`);
       if (!an) limits.push(`no analysis row for thread ${p.refId}`);
       data.set(p.key, {

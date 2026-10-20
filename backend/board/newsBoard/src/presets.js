@@ -24,12 +24,12 @@ async function computePresets(store, env, nowMs) {
 
   const byRegion = new Map();
   for (const [id, a] of rows) {
-    if (!Number.isFinite(Number(a.riskScore))) continue;
+    if (a.riskScore === null) continue;
     const iso3 = world.threadIso3(a, index.threads[id], topicOf.get(id));
     const iso = iso3.find((c) => regionOf(c));
     if (!iso) continue;
     const region = regionOf(iso);
-    const title = a.threadTitle || (index.threads[id] && index.threads[id].title) || (topicOf.get(id) && topicOf.get(id).title) || id;
+    const title = a.title || (index.threads[id] && index.threads[id].title) || (topicOf.get(id) && topicOf.get(id).title) || id;
     if (!byRegion.has(region)) byRegion.set(region, []);
     byRegion.get(region).push({ threadId: id, title, riskScore: Number(a.riskScore), lead: a.lead || null });
   }

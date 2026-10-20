@@ -28,6 +28,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Cloudflare migration](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) — local build done; candidate and cutover gated.
 - [One link system + leaner pages](plans/PLAN_2026-10-19_linking_and_pages.md) — global links, Briefings merge, Studio out of nav; checklist.
 - [Studio redesign](plans/PLAN_2026-10-19_studio_redesign.md) — bring-your-own-hypothesis tool; return-to-menu criteria (proposed).
+- [Decisions 2026-10-20 + cleanup run](plans/PLAN_2026-10-20_decisions_and_cleanup.md) — operator's four answers, the one-by-one checklist and log.
 
 ## Runbooks
 - [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;

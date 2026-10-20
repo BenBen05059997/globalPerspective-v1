@@ -12,6 +12,9 @@ Undecided: the hidden economy tab on story pages (recommended: leave it), the fi
 switch after the shadow week. Each step below is one Sonnet agent, run in sequence; each line is ticked when done
 and verified, with the commit.
 
+Rule for every step (operator, 2026-10-20): the step updates the documentation of what we have, in the same change:
+the folder READMEs it touches, `ARCHITECTURE.md` when a flow, route or store changes, `STATUS.md`, and this log.
+
 ## Done before this plan (2026-10-20)
 - [x] Story-web history kept daily in S3 (`web/YYYY/MM/DD.json`), IAM write on `web/*` only (12fbb3de).
 - [x] Import leaks fixed: live market hook into countries, saved-key storage + provider picker into shared,
@@ -42,14 +45,20 @@ and verified, with the commit.
       fix). Click-tested on the local build at 500 px: unknowns for Iran and Kenya, copy, view box persists. Print
       button not pressed (a print dialog blocks browser automation). Open: two copy buttons in the header
       ("Copy briefing" kept); print shows only the active tab.
-- [ ] 5. Retire the lens Studio screens (decision 3): `/analyze` points readers to country pages; shared-run
-      pages keep working; libraries kept; Studio links removed from story and country pages.
+- [x] 5. Retire the lens Studio screens (decision 3): `/analyze?stories=thread-…` opens that story, `/analyze` opens the
+      country list (client redirect + Worker 301); shared-run pages kept; analysis libraries kept; Studio links removed
+      from story, map card, country card, Today, economy and account; byok/ProviderModal deleted; decision 0033
+      supersedes 0030; ARCHITECTURE flow 6 and STATUS updated (a9163a44, 62661b6f, 2c0a40b3). Click-tested locally.
+      To re-check on production: the account desk showed "Following countries is part of membership" locally
+      (membership check likely blocked from localhost).
 - [ ] 6. Small leftovers: the deadline helper countries borrows from threads; stale CLI header comments;
       unused social-platform keys on `newsPostLinkedin`; the mis-joined forecast; the account desk map's own
       country names.
 - [ ] 7. Older backlog: Lambdas on nodejs20.x to nodejs22.x; env keys no code reads; colour items C3, C4, C7.
 - [ ] 8. Cloudflare cutover preparation (decision 4): read-API origin for the test host, capture of DNS/TLS/rule
       settings, the exact cutover and reversal steps written down. DNS changes go to the operator first.
+- [ ] 8b. Docs sync: ARCHITECTURE flows for breaking alerts (confirm before public) and the country page; STATUS.md;
+      regenerate `project-docs/reference/`; republish the Atlas page.
 - [ ] 9. Record decisions 1-4 in decision records; rewrite the Studio plan; delete the temporary Studio Decision page.
 - [ ] 10. Frontend release of items 3-5 and the Studio fix (needs a fresh yes).
 

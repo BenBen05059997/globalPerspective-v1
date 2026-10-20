@@ -45,3 +45,7 @@ Errors: 401 no/invalid token; 400 validation with a message (`code` `pin_budget_
 - `cd backend/board/newsBoard/src && npm install && npm test` (`node --test ../test/*.test.js`): 35 pass. Fake in-memory store (`test/helpers.js`); `store.test.js` drives the real store over a fake `send`; `validate.test.js` checks the hand-written validator against ajv (the frontend's copy) on the schema examples and mutated boards, and skips the ajv comparison if the frontend `node_modules` are missing.
 
 Last verified: 2026-10-20
+
+## Slice 2 record views (code only)
+
+`story_view {threadId}` is public world data and returns `{recordAvailable, story}` from `record/stories/<id>/latest.json`. `get_board` remains owner-only and enriches thread pins from `record/index.json` with line, risk, born, counts and lastMoved. Missing objects return recordAvailable:false; access or parse failures propagate. Derived response fields are stripped before board validation/storage. No record write. `WORLD_BUCKET` defaults to `globalperspective-world-280362093938`. Coordinator must add scoped record GetObject/ListBucket permissions before deployment; no IAM was changed by this lane.

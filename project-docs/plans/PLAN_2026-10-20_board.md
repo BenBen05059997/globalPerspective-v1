@@ -155,20 +155,49 @@ with honest negatives, read-only branches, your weights, region presets, share l
 = lines, counts, branch status, tree, chapters, arrivals, confirmed strings, the real board weekly, monthly, alerts,
 summary. **Waits for a decision** = enabling alert sends (fresh yes). Pricing is deferred until the verdict panel exists; the board is free until then.
 
-## Slice 1: the board on data that exists (operator go, 2026-10-20; alerts and pricing later)
-Status: active. Sequential Sonnet agents; nothing user-facing is enabled; a new Lambda is created only after the operator's yes
-(creating a function needs an execution role: IAM).
-1. Backend (`backend/board/`): `schema/board.schema.json` (frozen pin/string shape), `backend/shared/src/record.js` (pure rules:
-   string texture, pin budget, cheap connect grounds) and `s3json.js` (create-only put + latest pointer; unused until the record
-   writes), `newsBoard` Lambda (Function URL, Firebase JWT like `newsSavedItems`): `list_boards`, `create_board`, `update_board`
-   (pins, strings, lines, weights, dismissed; schema-validated; pin budget 12), `delete_board`, `follow_thread`/`unfollow_thread`,
-   `follow_actor`/`unfollow_actor`, `presets` (read-only region boards computed from `THREAD#/THREAD_ANALYSIS`), `fork_preset`,
-   `connect` (cheap grounds from `WEB#INDEX` actors, places, shared outlets; honest `none`). Tests with a fake store.
-2. Frontend (`features/board/`): route `/board`, graph view (SVG), pins from followed threads via existing proxy actions
-   (`thread_analysis`, `web_index`, `latest`), our strings dashed "inferred", yours dashed in the other texture, drag-to-connect
-   calling `connect`, presets chooser, pin budget, no map view yet. Reuses `ClaimTag`, `TierChip`, `links.js`, tokens.
-3. Deploy (operator yes for the role, then standing Lambda auth), `scripts/functions.json`, `docs/config.js` endpoint
-   (operator-owned), feature README, `ARCHITECTURE_RECORD.md` §9 status, Atlas.
+## Build stages and checklist (written 2026-10-20; nothing started)
+Status: planned. Each stage is one or two sequential Sonnet agents with the operator checking in between. A box is ticked
+with its commit. Alerts and pricing are out of scope for all stages below.
+
+### Stage 0: freeze the shape (no runtime code)
+- [ ] `backend/board/schema/board.schema.json`: board `{boardId, uid, name, pins[], strings[], weights{}, dismissed[], summary{versions[]}, presetFrom?, createdAt, updatedAt}`;
+      pin `{pinId, kind: thread|country|actor, refId, addedAt}`; string `{a, b, owner: ours|yours, strength?: weak|medium|strong|inferred, mechanism?, line?, keptAt?, cutAt?}`;
+      weights `{forkId: {branchId: p}}`. Pin budget 12 as a schema constant. `a < b` lexically so one key per pair.
+- [ ] `backend/board/README.md`: the three-names table, what the group owns, what it never writes.
+- [ ] Decision: pins by `threadId` (stories), ISO3 (countries), actor name as written in `WEB#INDEX` (actors). Recorded here.
+
+### Stage 1: shared code (used by board now, by record later)
+- [ ] `backend/shared/src/record.js`: pure rules with tests: `stringTexture(string)` (ours+confirmed → solid; ours inferred → dashed; yours → dashed-alt), `pinBudgetOk(board)`, `pairKey(a,b)`, `cheapGrounds(pinA, pinB, ctx)` (shared actors, shared places via `resolveIso3`, shared outlets, co-movement with lag from two daily score series) returning `{strength: none|weak|medium, grounds[]}` with the honest `none`.
+- [ ] `backend/shared/src/s3json.js`: `getJson`, `putOnce` (`If-None-Match: *`), `putLatest`; tests with a fake client. Unused until the record writes; written now so both sides share one implementation.
+- [ ] Frontend `shared/lib/board.js` mirror of `stringTexture` and `pairKey` only (pure), guarded by `scripts/check-shared-sync.mjs` like `links.js`.
+
+### Stage 2: backend `newsBoard` (code and tests only; not created in AWS)
+- [ ] `backend/board/newsBoard/src/index.js`: Function URL handler, Firebase JWT verification copied from the `newsSavedItems` pattern (no firebase-admin), CORS per the Function-URL rule in CLAUDE.md.
+- [ ] Actions: `list_boards`, `get_board`, `create_board`, `update_board` (schema-validated; pin budget; strings normalised with `pairKey`), `delete_board`, `follow_thread`, `unfollow_thread`, `follow_actor`, `unfollow_actor`, `list_presets`, `fork_preset`, `connect {a, b}`.
+- [ ] Stores: `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads[]`, `followedActors[]` only (`followedCountries` stays with `newsRecommend`).
+- [ ] Reads for presets and connect: `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS` (risk, type, iso3), `WEB#INDEX` (actors, links), `NewsCache latest` (titles), `THREAD_HISTORY#` (daily scores for lag).
+- [ ] Tests with a fake DynamoDB: every action, auth failure, budget exceeded, schema rejection, `connect` with and without grounds.
+- [ ] `scripts/functions.json` entry (`group: board`, `features: [board]`, `nodeModules: true`), README with reads/writes/env.
+
+### Stage 3: frontend `features/board/` (local only; no release)
+- [ ] Route `/board` in `App.jsx` (lazy), nav entry only for signed-in members; `features/board/index.js` public API; README.
+- [ ] `BoardPage.jsx`: graph view in SVG: pins (title, risk number + tier word, type hue dot), our strings dashed "inferred", yours dashed-alt, string weight by strength, a selected-pair side sheet.
+- [ ] Drag a pin onto another → `connect` → verdict card: grounds listed or "No link found. Shared: nothing but the week." Keep draws a `yours` string with the line input.
+- [ ] Presets chooser (region) and fork; pin budget indicator; "what is missing" actor-only card.
+- [ ] Hooks: `useBoards`, `useBoard(boardId)`, `useFollows` on `restProxy` with the auth header; endpoint from `window.BOARD_ENDPOINT` (operator-owned `docs/config.js`; dev value in `frontend/public/config.js`).
+- [ ] Shared only: `ClaimTag`, `TierChip`, `EntityLink`, `links.js` (`boardHref`), tokens; no local styling of shared blocks; ratchets pass; `npm run verify` passes.
+- [ ] Browser click-through at desktop and phone width against a local fake endpoint (fixtures), since the Lambda is not deployed yet.
+
+### Stage 4: deploy and wire (operator yes first)
+- [ ] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
+- [ ] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
+- [ ] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).
+- [ ] Smoke: create a board, add two pins, connect, keep, fork a preset, on production as a member.
+- [ ] Docs: `ARCHITECTURE_RECORD.md` §9 status, `ARCHITECTURE.md` data flow 8, `DATA_STRATEGY` §2 field note, reference regen, Atlas.
+
+### Waits for the record (not in these stages)
+Pin lines and counts, branch status, tree, chapters, arrivals, confirmed strings, the board's weekly and monthly, summary,
+divergence "cut but held", `newsConnect` with the LLM grounds. See the now / waits checklist above.
 
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
@@ -186,7 +215,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
-- 2026-10-20: slice 1 started (backend first).
+- 2026-10-20: build stages and checklist written; nothing started (operator: write down first).
 - 2026-10-20: pricing deferred (operator); the board is free for members until the verdict panel exists.
 - 2026-10-20: now / waits checklist added per board feature.
 - 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.

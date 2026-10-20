@@ -2,7 +2,7 @@
 // Timeline persistence and projections. All object encoding/conditional writes belong
 // to shared s3json; no raw table parsing lives here.
 const {makeEvent,cursorOf,eventsThrough,rebuildStory,eventId}=require('./timeline');
-const {day,addDays,duplicates,lastStatus}=require('./rules');
+const {day,addDays,duplicates}=require('./rules');
 const copy=x=>JSON.parse(JSON.stringify(x));
 const stamp=(value,fallback)=>value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : fallback;
 const runStamp=(date,now)=>day(now)===date?new Date(now).toISOString():`${date}T23:59:59.999Z`;
@@ -54,12 +54,13 @@ function rawEvents(input,id,previous,at) {
  const a=input.analyses[id];
  if(a)add('read_changed',a,{risk:a.riskScore,trajectory:a.trajectory,from:a.source},a.generatedAt||`${a.date}T00:00:00Z`,a.source==='analysis'?`|${a.generatedAt}`:'');
  for(const d of input.drifts[id]||[])add('read_changed',d,{driftNote:d,driftDate:d.date},d.generatedAt||`${d.date}T00:00:00Z`);
- for(const f of input.forks[id]||[]){
+ const allForks=[...new Map([...(previous?.forks||[]),...(input.forks[id]||[])].map(f=>[f.forkId,f])).values()];
+ for(const f of allForks){
   const row=input.predictions.find(p=>`${p.pk}/${p.date}`===f.forkId);
   const {threadId,...fields}=f;
   const fork={...copy(fields),branches:f.branches.map(b=>{const {qid,...rest}=b;return {...copy(rest),...(qid?{qid}:{}),status:[]};})};
-  add('forecast_drawn',row,{fork},row.generatedAt||`${row.date}T00:00:00Z`);
-  for(const b of fork.branches)for(const v of input.verdicts[b.qid]?.all||[])add('verdict',v,{branchId:b.branchId,revision:v.n,
+  if(row)add('forecast_drawn',row,{fork},row.generatedAt||`${row.date}T00:00:00Z`);
+  for(const b of fork.branches)for(const v of input.verdicts[b.qid]?.all||[])add('verdict',v,{branchId:b.branchId,revision:v.n,qid:b.qid,verdict:v.verdict,decidedAt:v.decidedAt,decidedBy:v.decidedBy,evidence:v.evidence,reason:v.reason,
    scored:{verdict:v.verdict,decidedAt:v.decidedAt,sourceSK:v.sk}},v.decidedAt,`|${b.branchId}`);
  }
  for(const l of input.links.filter(l=>l.confirmed===true&&l.confirmedBy==='rule'&&(l.from===id||l.to===id))){

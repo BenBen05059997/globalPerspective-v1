@@ -1,0 +1,15 @@
+'use strict';
+const {readFileSync}=require('node:fs');
+const {resolve}=require('node:path');
+const {createRequire}=require('node:module');
+// Same existing frontend Ajv used by the board/weekly schema tests. An isolated worktree
+// can point FRONTEND_NODE_MODULES at the main checkout's installed dependencies.
+const requireFrontend = createRequire(resolve(process.env.FRONTEND_NODE_MODULES || 'global-perspectives-starter/frontend/node_modules', 'ajv/package.json'));
+const Ajv = requireFrontend('ajv');
+const ajv = new Ajv({
+  allErrors: true,
+  strict: false
+});
+const load = name => JSON.parse(readFileSync(resolve(__dirname, '../schema', name), 'utf8'));
+const validate = ajv.compile(load('story-record.schema.json'));
+module.exports={validate,load};

@@ -32,3 +32,10 @@ test('event duplicates and chapter retries never rewrite the original text',()=>
  days[date].push(event('chapter','other-key',{chapter:{startedAt:date,writtenAt:date,name:'Changed',text:'Also wrong.'}}));
  const r=rebuildStory(days,'a',{date});assert.equal(r.chapters.length,1);assert.equal(r.chapters[0].text,'A sentence.');assert.equal(cursorOf(days,date)[date],9);
 });
+
+test('two generations of the same topic in one archive remain distinct entries',()=>{
+ const days=fixture();const original=days[date].find(e=>e.kind==='entry');
+ original.payload.entry.sourceKey='archive#2026-10-19|gen-a|topic-a';
+ const second=event('entry','archive#2026-10-19|gen-b|topic-a',{entry:{...original.payload.entry,sourceKey:'archive#2026-10-19|gen-b|topic-a'}});
+ days[date].push(second);assert.equal(rebuildStory(days,'a',{date}).counts.events,2);
+});

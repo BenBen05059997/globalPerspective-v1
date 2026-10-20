@@ -32,7 +32,9 @@ function makeHandler({
     // load(date) is a read-only, as-of-date store contract; missing archive days are explicit.
     const existingIndex = await s3json.getJson(`${prefix}index.json`);
     if (existingIndex?.date > date) throw Error('refusing to rewind index');
-    const input = await store.load(date,{since:existingIndex?.date ? existingIndex.date : undefined});
+    const timeline=makeTimeline(s3json,prefix);await timeline.load(date);
+    const retainedQids=[...new Set(timeline.events(date).filter(e=>e.kind==='forecast_drawn').flatMap(e=>e.payload.fork.branches.map(b=>b.qid)).filter(Boolean))];
+    const input = await store.load(date,{since:existingIndex?.date ? existingIndex.date : undefined,qids:retainedQids});
     const report = {
       date,
       threadsProcessed: 0,
@@ -75,7 +77,6 @@ function makeHandler({
       } catch(error) {error.recordJudgment=true;error.recordTask=task;throw error;}
     };
     const at=runStamp(date,now());
-    const timeline=makeTimeline(s3json,prefix);await timeline.load(date);
     const entries=input.entries.filter(e=>e.date<=date).map(entryView);
     const ids = [...new Set(entries.filter(e => e.date >= addDays(date, -29)).map(e => e.threadId).filter(Boolean))].sort();
     report.threadsAttempted=ids.length;

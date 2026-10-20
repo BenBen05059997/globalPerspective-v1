@@ -11,7 +11,7 @@ async function inBatches(items, fn) {
 }
 
 function makeStore(client,{env={},tables,now=()=>new Date().toISOString(),readWeb=()=>world.webLatest(client)}={}) {
-  return {async load(date,{since}={}) {
+  return {async load(date,{since,qids:retainedQids=[]}={}) {
     const from=world.addDays(date,-29);
     const opts={env,tables};
     const range=await world.archiveRange(client,from,date,{...opts,nowMs:Date.parse(now())});
@@ -36,7 +36,7 @@ function makeStore(client,{env={},tables,now=()=>new Date().toISOString(),readWe
       forks[id]=world.branchesFromScenarios(predictions);
       snapshots.push(...predictions);
     });
-    const qids=Object.values(forks).flatMap(fs=>fs.flatMap(f=>f.branches.map(b=>b.qid))).filter(Boolean);
+    const qids=[...new Set([...retainedQids,...Object.values(forks).flatMap(fs=>fs.flatMap(f=>f.branches.map(b=>b.qid))).filter(Boolean)])];
     const verdicts=await world.verdicts(client,qids,{...opts,asOf:date});
     const coverage=world.coverage(range,{since:from,births,analyses});
     const analysisDates=Object.values(analyses).filter(Boolean).map(a=>a.date).filter(Boolean).sort();

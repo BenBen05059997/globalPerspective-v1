@@ -520,7 +520,7 @@ test('actual stored story, index and corrections rebuild exactly from timeline; 
  const t=makeTimeline(s.s3json,'record/');await t.load(date);
  const dated=s.get(`record/stories/a/${date}.json`);
  assert.deepEqual(t.view('a',date),dated);assert.deepEqual(indexView(t.days,date),s.get('record/index.json'));
- const {validate}=require('./schema.test');assert.equal(validate(dated),true,JSON.stringify(validate.errors));
+ const {validate}=require('./schema-validator');assert.equal(validate(dated),true,JSON.stringify(validate.errors));
  assert.equal(validate(s.get('record/index.json')),true,JSON.stringify(validate.errors));
  const beforeTimeline=Object.fromEntries([...s.objects].filter(([k])=>k.endsWith('.jsonl')));
  for(const key of [...s.objects.keys()])if(!key.includes('/timeline/'))s.objects.delete(key);
@@ -533,4 +533,18 @@ test('object-valued analysis actors contribute names and cannot create a false s
  d.analyses={a:{riskScore:50,keyActors:[{name:'Actor A',role:'leader',mentionCount:2}]},b:{riskScore:50,keyActors:[{name:'Actor B',role:'leader',mentionCount:2}]}};
  const s=setup(d);const report=await s.run({date});assert.equal(report.proposedMerges.length,0);
  assert.deepEqual(s.get('record/stories/a/latest.json').actors,['Actor A']);
+});
+
+test('divergent snapshot conflict aborts publication instead of replacing timeline truth',async()=>{
+ const s=setup();const put=s.s3json.putOnce;
+ s.s3json.putOnce=async(k,r)=>{if(k.includes('/stories/')){await put(k,{...r,line:{text:'wrong',writtenAt:date,versions:[]}});return false;}return put(k,r);};
+ await assert.rejects(s.run({date}),/snapshot disagrees with timeline/);
+ assert.equal(s.objects.has('record/stories/a/latest.json'),false);assert.equal(s.objects.has('record/index.json'),false);
+});
+test('verdict mirror keeps a retained branch after its PRED topic leaves current inputs',async()=>{
+ const d=data();const s=setup(d);await s.run({date});
+ d.entries.push(entry('a','2026-10-20'));d.predictions=[];
+ d.verdicts=[{PK:'Q#q1',SK:'VERDICT',verdict:'yes',decidedAt:'2026-10-20'}];
+ const report=await s.run({date:'2026-10-20'});
+ assert.equal(report.verdictsMirrored,1);assert.equal(s.get('record/stories/a/latest.json').forks[0].branches[0].scored.verdict,'yes');
 });

@@ -163,11 +163,14 @@ const s3json = makeS3Json({
 console.error(`DynamoDB transport: ${ddbClient ? 'existing SDK, read-only commands' : 'AWS CLI, read-only commands'}`);
 console.error(`Reading live stores for ${date}; AWS read-only, local shadow output ${out}`);
 const {readWebAsOf}=require('./src/runtime');
-const input = await makeStore(io,{readWeb:date=>readWebAsOf(io,date)}).load(date);
-writeFileSync(join(out, `input-${date}.json`), JSON.stringify(input)+'\n');
-console.error(`Read complete: ${input.entries.length} archive entries, ${Object.keys(input.analyses).length} active threads, ${input.predictions.length} PRED rows.`);
+const sourceStore=makeStore(io,{readWeb:date=>readWebAsOf(io,date)});
 const report = await makeHandler({
-  store: {load:async()=>input},
+  store: {async load(date,options){
+    const input=await sourceStore.load(date,options);
+    writeFileSync(join(out, `input-${date}.json`),JSON.stringify(input)+'\n');
+    console.error(`Read complete: ${input.entries.length} archive entries, ${Object.keys(input.analyses).length} active threads, ${input.predictions.length} PRED rows.`);
+    return input;
+  }},
   s3json,
   llm: null,
   now: () => new Date().toISOString()
@@ -175,5 +178,6 @@ const report = await makeHandler({
   date,
   shadow: true
 });
+writeFileSync(join(out, `index-${date}.json`),JSON.stringify(await s3json.getJson('record/shadow/index.json'),null,2)+'\n');
 writeFileSync(join(out, `report-${date}.json`), JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));

@@ -131,15 +131,18 @@ operator's yes.
 Done 2026-10-20: country record merge applied (backup `SummarizeAndPredict-pre-country-merge-2026-10-19`; 105 copied,
 368 deleted); `newsPostLinkedin` deployed (posts link the story page); Cloudflare candidate uploaded, but it cannot load
 data: the read API's CORS allows only the site origins, so a `workers.dev` preview shows "could not be loaded".
-- [ ] Release the website: `./deploy.sh --target legacy-pages --commit "..." --push` (Pages serves production).
-- [ ] Upload the front Worker `cloudflare/front-worker/production/worker.mjs` (301s for retired addresses, bot
+- [x] Release the website: `./deploy.sh --target legacy-pages --commit "..." --push` (Pages serves production). Done 2026-10-20 (4791606e; bundle `index-DJTVpnmC.js` served).
+- [x] Upload the front Worker `cloudflare/front-worker/production/worker.mjs` (301s for retired addresses, bot
       pre-render for `/briefings` modes and `/today`): code-only, keep name, routes, bindings, secrets and settings;
-      record the live version first (rollback target); never a bare `wrangler deploy`.
-- [ ] Right after the website: deploy `newsSituationIngest` and `newsSituationTracker` (situation ids change; the new
+      record the live version first (rollback target); never a bare `wrangler deploy`. Done 2026-10-20: code-only API upload
+      (`PUT …/workers/scripts/globalperspective-rss/content`, module `worker2.js`); live code matched the baseline first;
+      settings identical before/after; new version `cc57a42f-feb4-4607-9646-5ed2cd03d43f`; rollback target `91ba1e98-0959-4387-84f3-10a0d5790ad8`.
+- [x] Right after the website: deploy `newsSituationIngest` and `newsSituationTracker` (situation ids change; the new
       map resolves old ids through `aliases[]`).
-- [ ] Smoke checks on production: the 5 curl checks in `runbooks/DEPLOYMENT_NOTES.md`, plus `/daily` and
+- [x] Smoke checks on production (2026-10-20, all pass; `/map` now 301s to `/` by design; `/blog/` serves the blog): the 5 curl checks in `runbooks/DEPLOYMENT_NOTES.md`, plus `/daily` and
       `/weekly-brief` return 301 to `/briefings`.
-- [ ] Browser click-through on production, desktop and phone width:
+- [x] Browser click-through on production, desktop (2026-10-20). Not done: phone width (the browser window could not be resized),
+      track record `?q=` (no forecast carries an anchor until one settles). Found: `/analyze?stories=<threadId>` opens with 0 selected.
   - Map: `/?story=<threadId>` (today's and an older thread), `/?country=ARE`, `/?country=Europe` (no fly-to),
     `/?focus=<old situation id>`, affected-country chips, "Open the country page", "Read today's topics".
   - Story page: country links, forecast links to `/track-record?q=`, "Show on map", "Analyze this arc", related stories.

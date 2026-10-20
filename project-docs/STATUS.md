@@ -4,9 +4,8 @@ Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision 
 Update a line when its source changes; delete it when its source says done. Design: [ARCHITECTURE](architecture/ARCHITECTURE.md).
 
 ## In progress
-- Website release not yet shipped: legacy-pages release, front Worker upload (301s, bot pre-render), then
-  deploy `newsSituationIngest` and `newsSituationTracker`, smoke checks, click-through; all unticked, each
-  needs a fresh yes. [linking plan, section R](plans/PLAN_2026-10-19_linking_and_pages.md)
+- Website release shipped 2026-10-20 (Pages, front Worker, situation Lambdas, smoke checks, desktop click-through).
+  Left: phone-width click-through; `/analyze?stories=` opens with nothing selected. [linking plan, section R](plans/PLAN_2026-10-19_linking_and_pages.md)
 - Cloudflare migration: local build done, candidate uploaded but cannot load data (read API CORS allows only
   the site origins); cutover gated. [linking plan, R](plans/PLAN_2026-10-19_linking_and_pages.md),
   [migration plan](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)
@@ -41,7 +40,7 @@ Update a line when its source changes; delete it when its source says done. Desi
 - Studio open items: deployed `newsAnalyze` = repo needs either deploying with credits off or removing that
   code; reader-proposed questions into the public track record or a separate ledger; keep the member server
   path (0 runs) or go BYOK-only. [Studio plan, Open](plans/PLAN_2026-10-19_studio_redesign.md)
-- The unreleased website release above: when to release.
-  [linking plan](plans/PLAN_2026-10-19_linking_and_pages.md)
+- Hosting: finish the Cloudflare cutover (retire the GitHub Pages release path) or keep Pages for now.
+  [migration plan](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)
 - Selection go after the shadow week (Combined 11, ours 7, 2 split in the blind review).
   [grounded forecast plan](plans/TASK_2026-10-17_grounded_forecast_and_cost.md)

@@ -4,8 +4,8 @@ Three versions of the live front Worker live here. None of them is uploaded by a
 
 | Path | What it is | Uploaded? |
 |---|---|---|
-| `baseline/worker2.mjs` (+ sanitized `capture.json`) | Captured source of the live production Worker (version `91ba1e98…`, deployed 2026-10-01). | Is the live version. |
-| `production/worker.mjs` | Baseline plus: GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static blog pages in `docs/blog/`); real 301s (query kept) for `/daily`, `/daily/:date`, `/weekly-brief` (→ `/briefings?mode=read\|weekly`), `/weekly-markets`, `/spider-demo`, `/map`, `/weekly?section=countries`; bot pre-render for every `/briefings` mode (canonical = the edition served) and `/today`; the root page directory lists the briefings modes. | **No** (blog fix prepared 2026-10-06 in 910ca0c; redirects and pre-renders 2026-10-19; live `/blog/` still returns the app shell, checked 2026-10-19). |
+| `baseline/worker2.mjs` (+ sanitized `capture.json`) | Captured source of the production Worker before 2026-10-20 (version `91ba1e98…`, deployed 2026-10-01). | Rollback target. |
+| `production/worker.mjs` | Baseline plus: GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static blog pages in `docs/blog/`); real 301s (query kept) for `/daily`, `/daily/:date`, `/weekly-brief` (→ `/briefings?mode=read\|weekly`), `/weekly-markets`, `/spider-demo`, `/map`, `/weekly?section=countries`; bot pre-render for every `/briefings` mode (canonical = the edition served) and `/today`; the root page directory lists the briefings modes. | **Yes, live since 2026-10-20** (version `cc57a42f…`; `/blog/` now serves the blog). |
 | `candidate.mjs` | Wrapper around the baseline for `next.globalperspective.net` only: sends GET/HEAD `/blog` and `/blog/*` straight to the origin and adds `X-Robots-Tag: noindex` to every response. Other hosts keep baseline behaviour. | **No**. |
 
 Offline tests (each compares against the baseline):

@@ -66,8 +66,13 @@ the folder READMEs it touches, `ARCHITECTURE.md` when a flow, route or store cha
       and the two California wildfire entries got their own story (`thread-southern-california-wildfire-e-4f08a7`).
       Live `narrative_thread` now shows medical plane 4 entries (3-5 Oct), hurricane 5 (9-11 Oct), wildfire 2 (17 Oct).
       Left: `newsWeeklyBrief/src/index.js:6` comment still says `draft`.
-- [ ] 7. Older backlog: Lambdas on nodejs20.x to nodejs22.x; non-secret env keys no code reads; colour items C3, C4, C7;
-      regenerate `shared/map/countryGeo.js` (38 countries missing from `ISO3_TO_NUM`), then drop the desk map's name fallback.
+- [x] 7. Older backlog: country outlines regenerated and the desk map's name fallback dropped (5402bac7); colour items C3,
+      C4, C7 (111eb480). Runtime nodejs20.x to nodejs22.x (2026-10-20), each checked: newsRecommend (`list_alerts`),
+      newsDriftCorrector (dry run), newsModelGuard (invoked, 200), newsEmailSender (`{"mode":"noop"}`, sends nothing),
+      newsWeeklyBrief and newsWeeklyMarkets (deployed code loaded under Node 22 locally; a live run would write the
+      weekly record). Left on Node 20 on purpose: newsAnalyze(-sandbox) (patched zip), newsPolarBilling(-sandbox) (billing
+      needs its own yes). The `PPA*` functions belong to another project. Non-secret env keys no code reads: reported only,
+      not removed (newsEconomicQuality, newsImpactAudit, the -dev sandboxes); secret-looking keys kept.
 - [ ] 8. Cloudflare cutover preparation (decision 4): read-API origin for the test host, capture of DNS/TLS/rule
       settings, the exact cutover and reversal steps written down. DNS changes go to the operator first.
 - [ ] 8b. Docs sync: ARCHITECTURE flows for breaking alerts (confirm before public) and the country page; STATUS.md;

@@ -12,10 +12,11 @@ Update a line when its source changes; delete it when its source says done. Desi
 - Layered story selection (P7): `newsSelectionShadow` has run since 2026-10-18; shadow week ends about
   2026-10-25, then the operator decides. P1 prompt v2b is prepared and awaits a yes.
   [grounded forecast plan](plans/TASK_2026-10-17_grounded_forecast_and_cost.md)
-- Map colour consistency: C3, C4, C7 open (off-token surfaces, one green and one amber, baseline falling), plus
-  four unverified small bugs. [colour plan](plans/PLAN_2026-10-19_colour_consistency.md)
-- Back-end hygiene: 10 Lambdas on `nodejs20.x` (end of life), dead env keys, retired model default string in
-  `newsPostDevTo`. [consistency plan](plans/PLAN_2026-10-19_consistency_and_modernisation.md)
+- Map colour consistency: C3, C4, C7 done; four unverified small bugs left.
+  [colour plan](plans/PLAN_2026-10-19_colour_consistency.md)
+- Back-end hygiene: 4 Lambdas stay on `nodejs20.x` on purpose (newsAnalyze and newsPolarBilling, each with its
+  sandbox); dead non-secret env keys reported, not removed; retired model default string in `newsPostDevTo`.
+  [cleanup plan](plans/PLAN_2026-10-20_decisions_and_cleanup.md)
 
 ## Done
 - Lens Analysis Studio retired 2026-10-20: `/analyze` redirects to the first thread story or the countries list,

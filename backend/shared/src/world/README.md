@@ -60,6 +60,29 @@ that shape is from `newsPredictionResolver`.
 | `webLatest(client)` | S3 `web/latest.json` | `{runId, generatedAt, index:{…the webIndex shape…}}` or `null` | `newsSystemsAnalysis` |
 | `latestTopics(client)` | NewsCache `id = latest` | `[{topicId, threadId, title, category, actors[], iso3[], regions[], sources[]}]` (the current pool, no history) | `NewsProjectInvokeAgentLambda` (`ACTIVE_ITEM_ID`) |
 
+## Provenance
+Every object a reader returns (archive entries, analyses, history points, drift notes, scenario snapshots and scenarios,
+verdict rows, web links and shared pairs, latest topics) carries `sourceRow = {store, key, index?}` (the exact raw row)
+and `sourceKey` (a stable string; the timeline hashes `kind + sourceKey` into `eventId`). `store` is the table name
+(`NewsCache`, `SummarizeAndPredict`, `GlobalPerspectivePredictionLog`) or `S3`; `key` is the exact DynamoDB key (`{id}` or
+`{PK,SK}`) or the S3 key string. `index` is the position inside the raw row's array **before any filtering**, so a
+dropped entry never shifts the next one's index.
+
+| Object | `sourceRow` | `sourceKey` |
+|---|---|---|
+| archive entry | `{NewsCache, {id:'archive#<date>'}, index}` or, for an entry merged in from the current day, `{NewsCache, {id:'today-archive'}, index}` (the two stay distinct; `index` is its place in that row's `entries`) | `<archiveKey>\|<generationId>\|<topicId>`, `archiveKey` = `archive#<date>` or `today-archive`; `archivedAt` replaces a missing `generationId`; both missing leaves it empty. `topicId` alone is not enough (`title-<rank>` changes between runs) |
+| thread analysis | `{SummarizeAndPredict, {PK:'THREAD#<id>', SK:'THREAD_ANALYSIS'}}` | `THREAD#<id>\|THREAD_ANALYSIS` |
+| thread / country history point | `{SummarizeAndPredict, {PK, SK:'THREAD_HISTORY#<d>' \| 'HISTORY#<d>'}}` | `<PK>\|<SK>` |
+| drift note | the row the note was taken from (`DRIFTLOG#` preferred); `sourceRows` lists the key of every row merged into it (`DRIFT#` and `DRIFTLOG#` when both exist, one otherwise) | `<PK>\|DRIFT#<date>` (the note, not the row: the same whether or not the log row exists) |
+| PRED# snapshot | `{GlobalPerspectivePredictionLog, {PK:'PRED#<topicId>', SK:'<date>'}}` | `<PK>\|<SK>` |
+| scenario | the snapshot's key with `index` = scenario index | `<PK>\|<SK>\|<scenario index>` |
+| verdict row (the winner and each in `all`) | `{GlobalPerspectivePredictionLog, {PK:'Q#<qid>', SK:'VERDICT' \| 'VERDICT#<n>'}}` | `<PK>\|<SK>` |
+| web link | `webLatest`: `{S3, 'web/latest.json', index}`; `webIndex`: `{SummarizeAndPredict, {PK:'WEB#INDEX', SK:'LATEST'}, index}`; `index` = place in the raw `links` | `web\|<from>\|<to>` (same from either source) |
+| web shared pair | same, `index` in the raw `shared` | `web-shared\|<a>\|<b>` |
+| latest topic | `{NewsCache, {id:'latest'}, index}` | `latest\|<topicId>` |
+
+`branchesFromScenarios` output is derived and carries no provenance of its own; read it from the snapshot and scenario it came from.
+
 ## Derivations (exact rules)
 - **`outletsOf(entries)`**: sorted distinct `sources[].source`, trimmed, lower-cased, leading `www.` removed, empty names ignored. Works on archive entries and on topics.
 - **`entriesByThread(range)`**: `{threadId: entries ascending by date then topicId}`; entries without a `threadId` are skipped.
@@ -95,4 +118,4 @@ reader only for what the record does not hold (ARCHITECTURE_RECORD §0c).
 `cd backend/shared && node --test test/world.*.test.js` (fixtures in `test/world.fake.js` are shaped like the live rows).
 newsBoard: `cd backend/board/newsBoard/src && npm test`.
 
-Last verified: 2026-10-20
+Last verified: 2026-10-20 (provenance added)

@@ -50,6 +50,8 @@ Rules: an event is never edited or deleted; a change is a new event (a correctio
 | `correction` | fact | eventId corrected, what was wrong, reason | dead branch that fired; operator correction |
 | `link_confirmed` | judgment | other threadId, strength, mechanism, evidence | `web/` links with the confirmation rule |
 | `country_read_changed` | judgment | country, risk from→to, mechanism | `COUNTRY#/HISTORY#`, country `DRIFT#` |
+| `line` | judgment | the story's one-sentence line: text, writtenAt, confidence; earlier versions are earlier `line` events | written by `newsStoryRecord` (at birth, then weekly) |
+| `coverage` | fact | missingDays, source stamps, asOf / generatedAt, processing cursor | written by `newsStoryRecord` each run |
 | `situation` (later) | fact | opened/raised/closed, place, tier | `situations/` (map pipeline) |
 
 ## 4. Views

@@ -158,14 +158,18 @@ test('webIndex / webLatest: normalised bundle; bad links dropped; no row is empt
   const idx = await w.webIndex(c);
   assert.strictEqual(idx.generatedAt, '2026-10-20T05:00:21.595Z');
   assert.deepStrictEqual(idx.links.map((l) => [l.from, l.to]), [['thread-a', 'thread-b'], ['thread-b', 'thread-c']]);
-  assert.deepStrictEqual(idx.links[0], { from: 'thread-a', to: 'thread-b', confidence: 'strong', lagDays: 1, mechanism: 'm', cited: [{ date: '2026-10-14', topicId: 't-a1', title: 'T' }], country: 'France', generatedAt: '2026-10-19T05:00:00.000Z' });
+  assert.deepStrictEqual(idx.links[0], { sourceRow: { store: 'SummarizeAndPredict', key: { PK: 'WEB#INDEX', SK: 'LATEST' }, index: 0 }, sourceKey: 'web|thread-a|thread-b', from: 'thread-a', to: 'thread-b', confidence: 'strong', lagDays: 1, mechanism: 'm', cited: [{ date: '2026-10-14', topicId: 't-a1', title: 'T' }], country: 'France', generatedAt: '2026-10-19T05:00:00.000Z' });
   assert.deepStrictEqual([idx.links[1].confirmed, idx.links[1].confirmedBy, idx.links[1].strength], [true, 'rule', 'strong']);
-  assert.deepStrictEqual(idx.shared, [{ a: 'thread-a', b: 'thread-b', actors: ['Iran'], weight: 2, country: 'France', generatedAt: null }]);
+  assert.deepStrictEqual(idx.links[1].sourceRow.index, 2); // the bad link at raw index 1 was filtered: index 2 stays 2
+  assert.strictEqual(idx.links[1].sourceKey, 'web|thread-b|thread-c');
+  assert.deepStrictEqual(idx.shared, [{ sourceRow: { store: 'SummarizeAndPredict', key: { PK: 'WEB#INDEX', SK: 'LATEST' }, index: 0 }, sourceKey: 'web-shared|thread-a|thread-b', a: 'thread-a', b: 'thread-b', actors: ['Iran'], weight: 2, country: 'France', generatedAt: null }]);
   assert.deepStrictEqual(Object.keys(idx.threads), ['thread-a']);
   assert.deepStrictEqual(idx.threads['thread-a'].places, [{ name: 'France', n: 3 }]);
   const s3 = await w.webLatest(c);
   assert.strictEqual(s3.runId, 'web-1');
-  assert.deepStrictEqual(s3.index.links, idx.links);
+  assert.deepStrictEqual(s3.index.links.map((l) => l.sourceRow), [{ store: 'S3', key: 'web/latest.json', index: 0 }, { store: 'S3', key: 'web/latest.json', index: 2 }]);
+  assert.deepStrictEqual(s3.index.links.map((l) => l.sourceKey), idx.links.map((l) => l.sourceKey));
+  assert.deepStrictEqual(s3.index.links.map(({ sourceRow, ...l }) => l), idx.links.map(({ sourceRow, ...l }) => l));
   assert.deepStrictEqual(s3.index.threads, idx.threads);
   const empty = fakeClient();
   assert.deepStrictEqual(await w.webIndex(empty), { generatedAt: null, links: [], shared: [], threads: {} });
@@ -203,4 +207,55 @@ test('read errors propagate: a failure is never treated as absence', async () =>
   c.getItem = async () => { throw new Error('throttled'); };
   await assert.rejects(() => w.archiveDay(c, '2026-10-14'), /throttled/);
   await assert.rejects(() => w.archiveRange(c, '2026-10-14', '2026-10-15'), /throttled/);
+});
+
+test('provenance: archive entries carry NewsCache key, raw index before filtering, and a generation-based sourceKey', async () => {
+  const c = fresh();
+  const d = await w.archiveDay(c, '2026-10-16');
+  // raw array: [t-a2, t-b1, legacy]; all objects kept
+  assert.deepStrictEqual(d.entries.map((e) => e.sourceRow), [0, 1, 2].map((index) => ({ store: 'NewsCache', key: { id: 'archive#2026-10-16' }, index })));
+  assert.deepStrictEqual(d.entries.map((e) => e.sourceKey), ['archive#2026-10-16|gen-1|t-a2', 'archive#2026-10-16|gen-1|t-b1', 'archive#2026-10-16||legacy-id-only']);
+  // no generationId: archivedAt
+  c.put('NewsCache', { id: 'archive#2026-10-19', entries: [null, { topicId: 'x-1', threadId: 'thread-a', archivedAt: '2026-10-19T04:00:00.000Z', sources: [] }, { topicId: 'x-2', generationId: 'g9' }] });
+  const f = await w.archiveDay(c, '2026-10-19');
+  assert.deepStrictEqual(f.entries.map((e) => [e.sourceRow.index, e.sourceKey]), [[1, 'archive#2026-10-19|2026-10-19T04:00:00.000Z|x-1'], [2, 'archive#2026-10-19|g9|x-2']]); // the null entry did not shift the next index
+});
+
+test('provenance: today-archive entries merged into the day keep their own row and raw index', async () => {
+  const c = fresh();
+  const nowMs = Date.parse('2026-10-18T12:00:00Z');
+  c.put('NewsCache', { id: 'today-archive', entries: [
+    { topicId: 'stale', threadId: 's', archivedAt: '2026-10-17T09:00:00.000Z', sources: [] },
+    { topicId: 'fresh-1', threadId: 'n', generationId: 'g1', archivedAt: '2026-10-18T09:00:00.000Z', sources: [] },
+  ] });
+  c.put('NewsCache', { id: 'archive#2026-10-18', entries: [{ topicId: 'own', threadId: 'o', generationId: 'g1', sources: [] }] });
+  const d = await w.archiveDay(c, '2026-10-18', { nowMs });
+  assert.deepStrictEqual(d.entries.map((e) => [e.topicId, e.sourceRow, e.sourceKey]), [
+    ['own', { store: 'NewsCache', key: { id: 'archive#2026-10-18' }, index: 0 }, 'archive#2026-10-18|g1|own'],
+    ['fresh-1', { store: 'NewsCache', key: { id: 'today-archive' }, index: 1 }, 'today-archive|g1|fresh-1'], // stale at raw index 0 was filtered; fresh-1 keeps 1
+  ]);
+});
+
+test('provenance: analysis, history points, drift (both rows merged), scenarios, verdicts, latest topics', async () => {
+  const c = fresh();
+  const a = (await w.threadAnalysis(c, ['thread-a']))['thread-a'];
+  assert.deepStrictEqual([a.sourceRow, a.sourceKey], [{ store: 'SummarizeAndPredict', key: { PK: 'THREAD#thread-a', SK: 'THREAD_ANALYSIS' } }, 'THREAD#thread-a|THREAD_ANALYSIS']);
+  const h = await w.threadHistory(c, 'thread-a');
+  assert.deepStrictEqual([h[1].sourceRow.key, h[1].sourceKey], [{ PK: 'THREAD#thread-a', SK: 'THREAD_HISTORY#2026-10-16' }, 'THREAD#thread-a|THREAD_HISTORY#2026-10-16']);
+  const ch = await w.countryHistory(c, 'France');
+  assert.strictEqual(ch[1].sourceKey, 'COUNTRY#France|HISTORY#2026-10-15');
+  const notes = await w.driftNotes(c, { threadId: 'thread-a' });
+  assert.deepStrictEqual(notes[0].sourceRow.key, { PK: 'THREAD#thread-a', SK: 'DRIFTLOG#2026-10-16' }); // the row the note was taken from
+  assert.deepStrictEqual(notes[0].sourceRows, [{ PK: 'THREAD#thread-a', SK: 'DRIFT#2026-10-16' }, { PK: 'THREAD#thread-a', SK: 'DRIFTLOG#2026-10-16' }]);
+  assert.strictEqual(notes[0].sourceKey, 'THREAD#thread-a|DRIFT#2026-10-16');
+  assert.deepStrictEqual([notes[1].sourceRow.key.SK, notes[1].sourceRows.length, notes[1].sourceKey], ['DRIFT#2026-10-18', 1, 'THREAD#thread-a|DRIFT#2026-10-18']);
+  const snap = (await w.scenarios(c, { topicIds: ['t-a2'] }))[0];
+  assert.deepStrictEqual([snap.sourceRow, snap.sourceKey], [{ store: 'GlobalPerspectivePredictionLog', key: { PK: 'PRED#t-a2', SK: '2026-10-16' } }, 'PRED#t-a2|2026-10-16']);
+  assert.deepStrictEqual(snap.scenarios.map((s) => [s.sourceRow.index, s.sourceKey]), [[0, 'PRED#t-a2|2026-10-16|0'], [1, 'PRED#t-a2|2026-10-16|1']]);
+  assert.deepStrictEqual(snap.scenarios[1].sourceRow.key, { PK: 'PRED#t-a2', SK: '2026-10-16' });
+  const v = (await w.verdicts(c, ['q1'])).q1;
+  assert.deepStrictEqual([v.sourceRow, v.sourceKey], [{ store: 'GlobalPerspectivePredictionLog', key: { PK: 'Q#q1', SK: 'VERDICT#10' } }, 'Q#q1|VERDICT#10']);
+  assert.deepStrictEqual(v.all.map((x) => x.sourceKey), ['Q#q1|VERDICT', 'Q#q1|VERDICT#2', 'Q#q1|VERDICT#10']);
+  const lt = await w.latestTopics(c);
+  assert.deepStrictEqual([lt[1].sourceRow, lt[1].sourceKey], [{ store: 'NewsCache', key: { id: 'latest' }, index: 1 }, 'latest|Only id']);
 });

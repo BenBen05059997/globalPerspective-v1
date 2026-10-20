@@ -31,6 +31,14 @@ const str = (x) => (typeof x === 'string' && x.trim() ? x.trim() : null);
 const strs = (x) => arr(x).filter((v) => typeof v === 'string' && v.trim());
 const inRange = (d, from, to) => !!d && (!from || d >= from) && (!to || d <= to);
 
+// ---- provenance --------------------------------------------------------------------------------------------------
+// Every object a reader returns names the raw row it came from (ARCHITECTURE_TIMELINE §2): sourceRow = { store, key:
+// {exact DynamoDB key or S3 key}, index? } and sourceKey, a stable string (README "Provenance" lists each format).
+const S = { cache: 'NewsCache', world: 'SummarizeAndPredict', predictions: 'GlobalPerspectivePredictionLog', s3: 'S3' };
+const ddbKey = (r) => ({ PK: String(r.PK), SK: String(r.SK) });
+const prov = (store, key, sourceKey, index) => ({ sourceRow: { store, key, ...(index === undefined ? {} : { index }) }, sourceKey });
+const rowProv = (store, r, index) => prov(store, ddbKey(r), `${r.PK}|${r.SK}`, index);
+
 /** Run fn over items, at most n at a time, keeping order. */
 async function pool(items, n, fn) {
   const out = new Array(items.length);
@@ -51,10 +59,14 @@ const source = (s) => ({
   outletCountry: str(s && s.outletCountry), outletType: str(s && s.outletType), snippet: str(s && s.snippet),
 });
 
-function entry(e, date, withAi) {
+function entry(e, date, withAi, rowId, index) {
+  const topicId = str(e.topicId) || str(e.id);
+  // topicId is `title-<rank>` (unstable), so the key adds the generation (archivedAt when the entry has none).
+  const gen = str(e.generationId) || str(e.archivedAt) || '';
   return {
+    ...prov(S.cache, { id: rowId }, `${rowId}|${gen}|${topicId}`, index),
     date, archive: `archive#${date}`,
-    topicId: str(e.topicId) || str(e.id), threadId: str(e.threadId), title: str(e.title) || '',
+    topicId, threadId: str(e.threadId), title: str(e.title) || '',
     category: str(e.category), regions: strs(e.regions), iso3: strs(e.iso3), actors: strs(e.actors),
     eventType: str(e.event_type), archivedAt: str(e.archivedAt), generationId: str(e.generationId),
     continuesTopic: str(e.continues_topic),
@@ -63,7 +75,12 @@ function entry(e, date, withAi) {
   };
 }
 
-const entriesOf = (row, date, withAi) => arr(row && row.entries).filter((e) => e && typeof e === 'object').map((e) => entry(e, date, withAi));
+// index = position in the raw item's `entries` array BEFORE any filtering. `kept` (today-archive) is the subset
+// keepDayZero left of `raw`; its objects are the raw ones, so the raw position is found by identity.
+function entriesOf(raw, kept, date, withAi, rowId) {
+  const all = arr(raw);
+  return arr(kept || raw).map((e) => [e, all.indexOf(e)]).filter(([e]) => e && typeof e === 'object').map(([e, i]) => entry(e, date, withAi, rowId, i));
+}
 
 /**
  * One archive day -> { date, updatedAt, source:'archive'|'today-archive', entries } or null when the day has no row.
@@ -74,12 +91,12 @@ async function archiveDay(client, date, opts = {}) {
   if (!isDay(date)) throw new Error('archiveDay needs a YYYY-MM-DD date');
   const t = resolveTables(opts);
   const row = await need(client, 'getItem')(t.cache, { id: `archive#${date}` });
-  let entries = entriesOf(row, date, opts.withAi);
+  let entries = entriesOf(row && row.entries, null, date, opts.withAi, `archive#${date}`);
   let src = 'archive';
   if (Number.isFinite(opts.nowMs) && date === utcDay(opts.nowMs)) {
     const today = await client.getItem(t.cache, { id: 'today-archive' });
     const have = new Set(entries.map((e) => e.topicId));
-    const extra = entriesOf({ entries: keepDayZero(today && today.entries, opts.nowMs) }, date, opts.withAi).filter((e) => !have.has(e.topicId));
+    const extra = entriesOf(today && today.entries, keepDayZero(today && today.entries, opts.nowMs), date, opts.withAi, 'today-archive').filter((e) => !have.has(e.topicId));
     if (!row && extra.length) src = 'today-archive';
     entries = entries.concat(extra);
   }
@@ -103,6 +120,7 @@ function analysis(r) {
   const score = num(r.riskScore);
   const threadId = str(r.threadId) || String(r.PK || '').replace(/^THREAD#/, '');
   return {
+    ...rowProv(S.world, r),
     threadId, title: str(r.threadTitle), riskScore: score, tier: tierFromScore(score), lead: str(r.lead),
     trajectory: str(r.trajectory), iso3: strs(r.iso3), dimensions: r.dimensions || null,
     keyActors: arr(r.keyActors).map((a) => (typeof a === 'string' ? { name: a, role: null, mentionCount: null } : { name: str(a && a.name), role: str(a && a.role), mentionCount: num(a && a.mentionCount) })).filter((a) => a.name),
@@ -137,7 +155,7 @@ function points(rows, prefix, from, to, shape) {
     .map((r) => ({ date: str(r.dateKey) || String(r.SK || '').slice(prefix.length), score: num(r.riskScore), r }))
     .filter((p) => isDay(p.date) && p.score !== null && inRange(p.date, from, to))
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-    .map((p) => ({ date: p.date, score: p.score, tier: tierFromScore(p.score), trajectory: str(p.r.trajectory), generatedAt: str(p.r.generatedAt), ...shape(p.r) }));
+    .map((p) => ({ ...rowProv(S.world, p.r), date: p.date, score: p.score, tier: tierFromScore(p.score), trajectory: str(p.r.trajectory), generatedAt: str(p.r.generatedAt), ...shape(p.r) }));
 }
 
 /** Daily scores of a thread, ascending, optionally from..to (inclusive) -> [{date, score, tier, trajectory, title, lead, dimensions, generatedAt}]. */
@@ -163,9 +181,14 @@ function drift(r, kind) {
   const link = sk.startsWith('DRIFTLOG#') ? 'DRIFTLOG' : 'DRIFT';
   const cs = r.changeScore && typeof r.changeScore === 'object' ? { from: num(r.changeScore.from), to: num(r.changeScore.to), delta: num(r.changeScore.delta) } : null;
   const te = r.triggerEvent && typeof r.triggerEvent === 'object' ? { date: str(r.triggerEvent.date), topicId: str(r.triggerEvent.topicId), title: str(r.triggerEvent.title) } : null;
+  const date = sk.slice(sk.indexOf('#') + 1);
   return {
+    // sourceKey names the note, not the row: DRIFT# and DRIFTLOG# of one date are one note, so it stays the same
+    // whichever of them is read. sourceRow is the row the note was taken from; sourceRows lists every row merged.
+    ...prov(S.world, ddbKey(r), `${r.PK}|DRIFT#${date}`),
+    sourceRows: [ddbKey(r)],
     subject: kind === 'thread' ? { kind, id: String(r.PK).slice('THREAD#'.length) } : { kind, id: String(r.PK).slice('COUNTRY#'.length) },
-    date: sk.slice(sk.indexOf('#') + 1), asOf: str(r.asOf), since: str(r.since), source: link,
+    date, asOf: str(r.asOf), since: str(r.since), source: link,
     whyChanged: str(r.whyChanged) || '', noSingleDriver: r.noSingleDriver === true,
     changeScore: cs, changeLevel: r.changeLevel || null, changeDimensions: r.changeDimensions || null,
     prior: str(r.priorTitle) || str(r.priorHeadline), current: str(r.currentTitle) || str(r.currentHeadline),
@@ -190,7 +213,10 @@ async function driftNotes(client, subject, from, to, opts = {}) {
     const note = drift(r, kind);
     if (!isDay(note.date) || !inRange(note.date, from, to)) continue;
     const had = byDate.get(note.date);
-    if (!had || (note.source === 'DRIFTLOG' && had.source !== 'DRIFTLOG')) byDate.set(note.date, note);
+    if (!had) { byDate.set(note.date, note); continue; }
+    const keep = note.source === 'DRIFTLOG' && had.source !== 'DRIFTLOG' ? note : had;
+    keep.sourceRows = [...had.sourceRows, ...note.sourceRows].sort((a, b) => (a.SK < b.SK ? -1 : 1));
+    byDate.set(note.date, keep);
   }
   return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
 }
@@ -211,9 +237,11 @@ const trigger = (t, i, si) => ({
 function snapshot(r) {
   const pk = String(r.PK);
   return {
+    ...rowProv(S.predictions, r),
     pk, topicId: str(r.topicId) || pk.slice('PRED#'.length), date: String(r.SK), threadId: str(r.threadId), title: str(r.title),
     generatedAt: str(r.generatedAt), model: str(r.model), questionSchema: r.questionSchema === 1 || r.questionSchema === true,
     scenarios: arr(r.scenarios).map((s, si) => ({
+      ...prov(S.predictions, ddbKey(r), `${r.PK}|${r.SK}|${si}`, si),
       index: si, label: str(s && s.label), probability: num(s && s.probability) === null ? null : Math.round(num(s.probability) * 1000) / 10,
       probabilityRange: str(s && s.probabilityRange), horizon: str(s && s.horizon), rationale: str(s && s.rationale),
       scoreable: !!(s && s.scoreable), triggers: arr(s && s.triggers).map((t, ti) => trigger(t, ti, si)),
@@ -262,6 +290,7 @@ async function scenarios(client, by = {}, opts = {}) {
 const verdictOrder = (sk) => { const m = /^VERDICT#(\d+)$/.exec(String(sk)); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; };
 
 const verdictRow = (r) => ({
+  ...rowProv(S.predictions, r),
   qid: str(r.qid) || String(r.PK).slice('Q#'.length), n: verdictOrder(r.SK), sk: String(r.SK), verdict: str(r.verdict), decidedAt: str(r.decidedAt),
   decidedBy: str(r.decidedBy), reason: str(r.reason), voidReason: str(r.voidReason), evidence: r.evidence || null,
 });
@@ -290,16 +319,17 @@ async function verdicts(client, qids, opts = {}) {
 //   shared:  [{a, b, actors[], weight, country, generatedAt}]
 //   threads: { <threadId>: { state, title, entries, places:[{name,n}], analysedIn:[{country,generatedAt}] } }
 
-function bundle(b) {
+// where = { store, key } of the raw bundle; link/shared index = position in the raw array BEFORE filtering.
+function bundle(b, where) {
   const x = b && typeof b === 'object' ? b : {};
-  const links = arr(x.links).map((l) => {
+  const links = arr(x.links).map((l, i) => {
     const from = str(l && (l.from || l.a)); const to = str(l && (l.to || l.b));
     if (!from || !to) return null;
     const extra = {};
     for (const k of ['confirmed', 'confirmedBy', 'strength', 'since', 'evidence']) if (l[k] !== undefined) extra[k] = l[k];
-    return { from, to, confidence: str(l.confidence), lagDays: num(l.lagDays), mechanism: str(l.mechanism) || '', cited: arr(l.cited), country: str(l.country), generatedAt: str(l.generatedAt), ...extra };
+    return { ...prov(where.store, where.key, `web|${from}|${to}`, i), from, to, confidence: str(l.confidence), lagDays: num(l.lagDays), mechanism: str(l.mechanism) || '', cited: arr(l.cited), country: str(l.country), generatedAt: str(l.generatedAt), ...extra };
   }).filter(Boolean);
-  const shared = arr(x.shared).filter((s) => s && s.a && s.b).map((s) => ({ a: s.a, b: s.b, actors: strs(s.actors), weight: num(s.weight), country: str(s.country), generatedAt: str(s.generatedAt) }));
+  const shared = arr(x.shared).map((s, i) => [s, i]).filter(([s]) => s && s.a && s.b).map(([s, i]) => ({ ...prov(where.store, where.key, `web-shared|${s.a}|${s.b}`, i), a: s.a, b: s.b, actors: strs(s.actors), weight: num(s.weight), country: str(s.country), generatedAt: str(s.generatedAt) }));
   const threads = {};
   for (const [id, th] of Object.entries(x.threads && typeof x.threads === 'object' ? x.threads : {})) {
     if (!th || typeof th !== 'object') continue;
@@ -314,14 +344,15 @@ function bundle(b) {
 
 /** The story web from DynamoDB (WEB#INDEX/LATEST) -> { generatedAt, links, shared, threads }; empty arrays/object when there is no row. */
 async function webIndex(client, opts = {}) {
-  return bundle(await need(client, 'getItem')(resolveTables(opts).world, { PK: 'WEB#INDEX', SK: 'LATEST' }));
+  const key = { PK: 'WEB#INDEX', SK: 'LATEST' };
+  return bundle(await need(client, 'getItem')(resolveTables(opts).world, key), { store: S.world, key });
 }
 
 /** The story web from S3 (web/latest.json) -> { runId, generatedAt, index:{ generatedAt, links, shared, threads } } or null when the object does not exist. */
 async function webLatest(client) {
   const raw = await need(client, 'getS3Json')('web/latest.json');
   if (!raw || typeof raw !== 'object') return null;
-  const b = bundle(raw.index || raw);
+  const b = bundle(raw.index || raw, { store: S.s3, key: 'web/latest.json' });
   return { runId: str(raw.runId), generatedAt: str(raw.generatedAt) || b.generatedAt, index: b };
 }
 
@@ -332,7 +363,8 @@ async function webLatest(client) {
 /** The topic pool of the latest run -> [{topicId, threadId, title, category, actors, iso3, regions, sources}] ([] when there is no row). */
 async function latestTopics(client, opts = {}) {
   const row = await need(client, 'getItem')(resolveTables(opts).cache, { id: 'latest' });
-  return arr(row && row.topics).filter((t) => t && typeof t === 'object').map((t) => ({
+  return arr(row && row.topics).map((t, i) => [t, i]).filter(([t]) => t && typeof t === 'object').map(([t, i]) => ({
+    ...prov(S.cache, { id: 'latest' }, `latest|${str(t.topicId) || str(t.id)}`, i),
     topicId: str(t.topicId) || str(t.id), threadId: str(t.threadId), title: str(t.title) || '', category: str(t.category),
     actors: strs(t.actors), iso3: strs(t.iso3), regions: strs(t.regions),
     sources: arr(t.sources).filter((s) => s && typeof s === 'object').map(source),

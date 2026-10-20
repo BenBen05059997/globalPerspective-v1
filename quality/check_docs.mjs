@@ -2,7 +2,8 @@
 // Fails (exit 1) when: project-docs/INDEX.md is over 60 lines or links to a file that does not exist;
 // project-docs/plans/ holds more than 10 files; a plan has no `Status:` line, more than one, or one that
 // says done; CLAUDE.md is over 80 lines; a frontend feature folder has no README.md front door (over 80 lines,
-// missing one of README_SECTIONS, or no link to its row in project-docs/reference/features.md).
+// missing one of README_SECTIONS, or no link to its row in project-docs/reference/features.md); a frontend feature or
+// backend group README has no link to project-docs/architecture/ARCHITECTURE_TIMELINE.md (its "Timeline:" line).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,6 +48,13 @@ export function checkDocs() {
     const missing = README_SECTIONS.filter((h) => !text.includes(`\n## ${h}\n`));
     if (missing.length) problems.push(`features/${name}/README.md lacks section(s): ${missing.join(', ')}`);
     if (!text.includes(`reference/features.md#${name})`)) problems.push(`features/${name}/README.md does not link reference/features.md#${name}`);
+    if (!text.includes('ARCHITECTURE_TIMELINE.md')) problems.push(`features/${name}/README.md has no Timeline: line linking ARCHITECTURE_TIMELINE.md`);
+  }
+  const BACKEND = path.join(ROOT, 'backend');
+  for (const g of fs.readdirSync(BACKEND).filter((d) => fs.statSync(path.join(BACKEND, d)).isDirectory())) {
+    const readme = path.join(BACKEND, g, 'README.md');
+    if (!fs.existsSync(readme)) { problems.push(`backend/${g} has no README.md`); continue; }
+    if (!fs.readFileSync(readme, 'utf8').includes('ARCHITECTURE_TIMELINE.md')) problems.push(`backend/${g}/README.md has no Timeline: line linking ARCHITECTURE_TIMELINE.md`);
   }
   return problems;
 }

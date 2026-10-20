@@ -4,6 +4,8 @@ This group watches the site and the pipeline and tells the operator when somethi
 every alert goes to one SNS topic, `GlobalPerspectiveAlerts`. None of these Lambdas changes site content, and a quiet
 run sends nothing.
 
+Timeline: writes no timeline events; watches the pipeline that feeds it (an `LLM 402` alarm is still missing, §7.4). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Architecture
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |

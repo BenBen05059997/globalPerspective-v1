@@ -4,6 +4,8 @@ This group turns the day's analysed news into things readers receive: a daily br
 subscribers, a breaking-news alert, and social posts. It serves site visitors, email subscribers and the operator, who
 is emailed each breaking alert. It reads what the pipeline group wrote and writes briefs and alert rows that the site serves.
 
+Timeline: writes no timeline events; consumers: the weekly email and posts read raw tables today and move to the Week, Today and Story views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Architecture
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |

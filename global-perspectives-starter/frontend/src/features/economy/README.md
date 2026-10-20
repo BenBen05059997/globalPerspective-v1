@@ -5,6 +5,8 @@
 for readers who want to see price moves next to the stories behind them. The feature also owns the economic
 hooks and atoms that the story page reuses (through `index.js`); `useDisruptionsList` lives in `@/shared/hooks`.
 
+Timeline: parked; writes none; reads none while parked. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - PARKED (decision 0009, 0031). `ECONOMY_PARKED = true` (`@/shared/lib/economyFlag.js`): the daily economic-impact
   job is off, so those records are frozen. Callers outside this folder pass `enabled: !ECONOMY_PARKED` and hide their

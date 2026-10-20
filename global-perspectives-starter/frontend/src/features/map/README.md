@@ -4,6 +4,8 @@ The front page of the site (`/`). This folder is called `map` because the page i
 radar (d3) of tracked situations, with a status line, alert stack, intel feed, story card and legend. Visitors use it to see
 what is happening now and open a story or country from it. On phones it becomes tabs plus a bottom sheet.
 
+Timeline: writes none; reads `world/latest.json` (map pipeline); target: Map view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live, public; map data never gates on sign-in. No feature flag and no economy gate in this folder.
 - The SITUATIONS / COUNTRY RISK layer switch and the Globe / Radar switch are both live. Radar behaviour: decision 0023.

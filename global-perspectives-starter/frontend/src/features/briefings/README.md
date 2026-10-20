@@ -5,6 +5,8 @@ for the day's brief or the weekly signals brief. Three modes: **read** (default,
 (the Weekly Signals Brief) and **present** (a slide deck with a map, slides and an editions strip). Every section is built only from
 fields the brief carries, and links are built only to real ids.
 
+Timeline: writes none; reads the daily and weekly briefs; target: Today and Week views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live, public. Markets are paused with economy: `?from=markets` shows a one-line note and nothing else.
 - The weekly brief is written with `status: 'published'` and no review step (`newsWeeklyBrief/src/index.js`); the read action

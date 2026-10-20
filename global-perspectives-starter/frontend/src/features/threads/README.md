@@ -4,6 +4,8 @@ The Stories pages. A "thread" is one story arc followed across days. This folder
 historical) and the story page (`/weekly/thread/:threadId`). Readers use `/weekly` to browse the last 30 days of stories as a list,
 board, timeline, map or story web, and a story page to read one arc (story mode first, "Read in full" for the long tabbed page).
 
+Timeline: writes none; rebuilds story history from raw tables (`narrative_thread`, `archive_range`); target: Story view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live, public; signed-out reads work (no tier cap in the archive, thread or analysis reads).
 - `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) drops the Economy tab; `?tab=economy` falls back to Overview.

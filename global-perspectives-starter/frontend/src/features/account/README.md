@@ -4,6 +4,8 @@ Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the me
 follow, manages saved items and alert settings, and subscribes to the paid membership. The Save, Follow and
 Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 
+Timeline: writes none; reads country history and the desk from raw tables today; target: Country and Board views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live. Polar membership is live; analysis credits are parked (decision 0002) and no page mentions credits
   (`verify_pages.sh` guards it).

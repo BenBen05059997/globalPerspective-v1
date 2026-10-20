@@ -4,6 +4,8 @@
 `/` on 2026-10-01 (the map lives in `features/map`). Readers use it to scan the day's topics grouped by region, with their sources,
 and to open a stored Summary, Prediction or Trace Cause for any topic.
 
+Timeline: writes none; reads today's topics from raw tables; target: Today view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live, public; nothing gates on sign-in. The map's About drawer links here (decision 0029).
 - `ECONOMY_PARKED` (`@/shared/lib/economyFlag`, currently `true`): severity badges and "Economic impact" links are hidden, topics link

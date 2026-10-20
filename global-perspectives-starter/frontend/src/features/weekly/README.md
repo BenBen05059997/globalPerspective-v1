@@ -4,6 +4,8 @@ The analyst's weekly page (planned `/briefings/weekly?week=YYYY-MM-DD`): the sha
 It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the
 record or board data.
 
+Timeline: writes none; renders the Week view (`weekly/`) once the page exists. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - W0 only (2026-10-20): the mirrored section model. No page, no route, no hook yet; the page is stage W5 of
   `project-docs/plans/PLAN_2026-10-20_analyst_weekly.md`. Briefings' `WeeklyMode` still serves the old brief.

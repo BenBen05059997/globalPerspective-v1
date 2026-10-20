@@ -5,6 +5,8 @@ these files through its committed `src/_shared -> ../../../shared/src` symlink, 
 `scripts/lambda.sh package|diff` stages `src` with links followed, so the zip carries real files
 under `_shared/`. An edit here changes every Lambda that requires the file on its next deploy.
 
+Timeline: `world/` is the only reader of the raw tables (§5); `record.js` and `s3json.js` serve the record and board; writes no events itself. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Modules (`src/`)
 - `llm.js`: OpenAI-compatible `chat()` over fetch, no deps. Providers `deepseek` (`GROK_API_URL`,
   fallback `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values),

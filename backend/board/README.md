@@ -2,6 +2,8 @@
 
 The personal layer: a signed-in member's pins, strings, weights, dismissed suggestions and summaries. It serves the member who owns the board and nobody else.
 
+Timeline: writes no timeline events; reads raw tables through `world/` until the Index and Story views exist; the board's weekly is the Board view. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Three names, never mixed
 
 | Name | What it is | Where it lives |

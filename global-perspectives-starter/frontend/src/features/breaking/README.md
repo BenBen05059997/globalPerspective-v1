@@ -5,6 +5,8 @@ feed with a client-side unread count; the Today page strip shows the latest aler
 a hook resolves one alert id for the `/breaking/:id` redirect. Readers see a short headline that leads to
 the story or the map; they never see a "breaking" page.
 
+Timeline: writes none; reads breaking alerts; not a timeline view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live (bell and strip). The feed shows only rows the operator has confirmed (status `confirmed`; `newsRecommend` `listAlerts`). `sent` and `proposed` rows are hidden.
 - Live config differs from the older docs: `newsBreakingAlert` runs with `DRY_RUN=false` and a mail key set, so a

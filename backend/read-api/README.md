@@ -4,6 +4,8 @@ This group answers the browser. It serves topics, analysis, briefs and forecasts
 account features (saved items, notification settings, country follows, share links) to signed-in members. It also
 takes browser error reports and holds a parked, key-gated signal API.
 
+Timeline: writes no timeline events; serves pages from raw tables today; target: serve the Story, Country, Today and Index views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Architecture
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |

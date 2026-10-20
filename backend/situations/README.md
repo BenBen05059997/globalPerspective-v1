@@ -3,6 +3,8 @@
 The map's data group. It ingests disaster alerts and world news, folds them into open situations, and publishes one bundle
 for the home map. It serves readers of the home page. Two of the Lambdas also leave raw data for audits and other jobs.
 
+Timeline: writes no timeline events yet; future source of `situation` events; the map becomes the Map view later. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Architecture
 
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |

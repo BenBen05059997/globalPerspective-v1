@@ -5,6 +5,8 @@ them to learn what the site does, how to reach the operator, and the legal and A
 in each JSX file; layout comes from the `StaticPage` shell and `StaticPage.css`. Only the About page fetches
 data, to say whether analysis is paused.
 
+Timeline: writes none; reads the daily brief only; not a timeline view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Live, public. No feature flag. Policy and disclosure copy is legal text: changes are an operator decision.
 

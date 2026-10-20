@@ -6,6 +6,8 @@ redirects. What stays is the read-only page for a run someone already shared (`/
 working) and the analysis libraries that the share Lambda and the offline eval harness (`quality/analysis/`) use.
 Readers of an old share link see it; nobody creates new ones from the site.
 
+Timeline: writes none; shared-run pages only (retired Studio); reads none of the timeline. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Status
 - Retired 2026-10-20. Only the shared-run page is a screen. The country page (`features/countries`) is the
   "sheet" that replaced the Studio's role for analysts.

@@ -4,6 +4,8 @@ This group holds the paid side of the site: the member-only Analysis Studio run 
 makes someone a member. It serves signed-in members. Credits are parked, so the live studio and the live billing
 function run older code than the credits code in this repo.
 
+Timeline: writes no timeline events; billing and the retired Studio; reads none. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+
 ## Architecture
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |

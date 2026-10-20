@@ -1,1 +1,0 @@
-import{G as a,ax as o,c as s}from"./index-DJTVpnmC.js";const c=1800*1e3;async function d(){try{const e=await o();if(!e||e.success===!1)throw new Error(e?.error||"web_index failed");return e.data||null}catch(e){throw s("web-index",e),e}}function u(e=!0){const{data:r,loading:n,error:t}=a(e?"web_index":null,d,{ttl:c});return{index:r??null,loading:n,failed:!!t}}export{u};

@@ -1,1 +1,0 @@
-import{j as e}from"./index-DJTVpnmC.js";const t={fact:"FACT",inference:"INFERENCE",judgment:"MODEL JUDGMENT"};function r({kind:a}){return t[a]?e.jsx("span",{className:`claim-tag claim-tag--${a}`,children:t[a]}):null}export{r as C};

@@ -1,1 +1,0 @@
-import{aD as o,j as t}from"./index-DJTVpnmC.js";function l({generatedAt:a,source:e,now:n,className:i}){const s=o(a,n);return s?t.jsxs("span",{className:["gp-asof",i].filter(Boolean).join(" "),children:[t.jsx("time",{dateTime:s.iso,title:new Date(s.iso).toLocaleString(),children:s.text}),e?t.jsxs("span",{className:"gp-asof__source",children:[" · ",e]}):null]}):null}export{l as A};

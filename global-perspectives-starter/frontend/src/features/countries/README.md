@@ -44,7 +44,7 @@ risk, what changed, and which stories touch it. Nothing is generated on view; ev
 - `useCountryIntelligence` -> `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
   localStorage `gp_country_intel_v1`, 30 min. The auth header is sent when signed in; the action is not tier-gated.
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h). Drift-note depth is capped by tier on the
-  server, but this call sends no auth header, so pages get the anonymous cap (latest note plus a count).
+  server; the call sends the auth header when signed in, so members get full depth (anonymous: latest note plus a count).
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
 - `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`
   (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).

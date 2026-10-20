@@ -8,7 +8,7 @@ reads (corrections). A plain-text twin at `/track-record/text` shows the same fa
 - Live, public. Accuracy stays locked until 150 post-pilot questions are resolved (`ACCURACY_UNLOCK_AT` in `lib/accuracyLock.js`):
   no Brier score and no skill word before then. The July pilot is excluded from every headline number.
 - The server caps the corrections ledger by tier (anonymous: newest 5 notes plus an honest `total` and `gated`). `useCorrectionsFeed`
-  sends no auth header (`restProxy.js` `proxyAction`), so every reader of this page gets the anonymous view.
+  sends the auth header when signed in (`restProxy.js` `proxyActionWithAuth`), so members see the full ledger.
 
 ## Routes
 - `/track-record` -> `TrackRecordPage`; `/track-record/text` -> `TrackRecordText` ("Read as text")

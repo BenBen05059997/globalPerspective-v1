@@ -1,6 +1,6 @@
 # newsAnalyze
 
-Member-side Analysis Studio (`/analyze`). Verifies a Firebase JWT, decides how the run is paid
+Member-side Analysis Studio run. The Studio page retired 2026-10-20 (decision 0033), so the site no longer calls this Lambda. Verifies a Firebase JWT, decides how the run is paid
 (`src/lib.js` `decidePayment`), runs the user message against DeepSeek with a server-pinned system
 prompt, returns the Markdown report. THIS REPO SOURCE IS NOT WHAT SERVES: the deployed zip is
 prompt-patched and pre-credits (see `deployed-snapshot/README.md`); `src/` carries the PARKED credits code.

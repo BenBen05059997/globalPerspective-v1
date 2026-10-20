@@ -15,7 +15,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
   `removeStaticBoot()` hands off from the pre-JS boot screen in `index.html`.
 - `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record, the bell from `features/breaking`, Account or
   Sign in), the paused-analysis status line, the footer (About, Membership, Privacy, Disclosures, Contact).
-  `layout/AIToast.jsx` shows a toast while a generation runs. The Studio is not in the nav (decision 0030).
+  `layout/AIToast.jsx` shows a toast while a generation runs. The Studio retired 2026-10-20 (decision 0033).
 - `errors/ErrorHandling.jsx` - `ErrorBoundary` renders nothing on a crash on purpose (no "something went wrong" card)
   and reports the crash to `shared/api/errorSink.js`. The nav and footer sit outside it and survive. `/__boom` is the
   deliberate crash used by the smoke test.
@@ -31,7 +31,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 | `/weekly/countries`, `/weekly/country/:countryName` | `countries` | `CountryListPage`, `CountryPage` |
 | `/briefings` | `briefings` | `BriefingsPage` (modes read, weekly, present) |
 | `/track-record`, `/track-record/text` | `track-record` | `TrackRecordPage`, `TrackRecordText` |
-| `/analyze`, `/analyze/s/:id` | `analysis-studio` | `AnalysisStudio`, `SharedAnalysisPage` |
+| `/analyze/s/:id` | `analysis-studio` | `SharedAnalysisPage` (read-only shared run) |
 | `/economy` | `economy` | `EconomyPage` (parked, hidden) |
 | `/signin`, `/auth/callback`, `/account`, `/membership` | `account` | `SignIn`, `AuthCallback`, `Account`, `MembershipPage` |
 | `/about`, `/contact`, `/disclosures`, `/privacy`, `/whitepaper` | `static` | the five static pages |
@@ -40,7 +40,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 ## Legacy redirects (client fallback; the Cloudflare Worker sends real 301s)
 `/map` -> `/` (keeps the query, `MapRedirect.jsx`); `/daily`, `/daily/:dateKey`, `/weekly-brief` -> `/briefings` modes;
 `/weekly-markets` -> `/briefings?from=markets`; `/spider-demo` -> `/weekly?view=web`; `/breaking` -> `/`;
-`/breaking/:id` -> the alert's story or `/`. All in `LegacyRedirects.jsx`.
+`/breaking/:id` -> the alert's story or `/`; `/analyze?stories=<id,...>` -> the first id's story page when it is a thread id (`thread-...`), else `/weekly/countries` (`AnalyzeRedirect`). All in `LegacyRedirects.jsx`.
 
 ## Import direction
 - One way: `app` -> `features` -> `shared`. `features/` and `shared/` must not import `app/`; `shared/` must not import `features/`.

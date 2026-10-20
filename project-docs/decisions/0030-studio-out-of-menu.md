@@ -1,6 +1,6 @@
 # 0030. The Studio leaves the menu until its return criteria are met
 
-Status: accepted (refines 0011)
+Status: superseded by 0033 (refines 0011)
 Date: 2026-10-19
 
 ## Context

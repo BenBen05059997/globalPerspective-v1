@@ -1,6 +1,6 @@
 # Analysis Studio output tests
 
-Tests for what the `/analyze` (Analysis Studio) feature actually produces. The
+Tests for what the retired `/analyze` (Analysis Studio) feature produced; the prompt and validator libraries stay for the share Lambda and these scripts. The
 Studio's honesty rules — cite real sources, never invent figures, refuse on thin
 data — previously lived **only as instructions in the system prompt**, with
 nothing verifying the model obeyed them. These tests close that gap.

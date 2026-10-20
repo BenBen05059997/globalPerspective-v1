@@ -17,7 +17,7 @@ country "sheet": each section carries its `ClaimTag` mark, plus a computed "What
 - `/weekly/country/:countryName` -> `CountryPage`. `useParams()` already decodes the name; decoding again throws on `%`.
   Aliases and ISO3 codes (`USA`, `ARE`, `West Bank`) redirect to the canonical name (`countryHref`) and data is read under it only;
   a non-country keeps coverage but gets no map, follow, save or share.
-- Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`, `studioHref`; card forecasts -> `?q=<qid>`).
+- Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`; card forecasts -> `?q=<qid>`).
 
 ## Frontend
 - `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z; disruption only when economy is not parked)

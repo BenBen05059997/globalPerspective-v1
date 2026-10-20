@@ -34,6 +34,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0027](0027-forecast-resolver-unparked-as-weekly-settle.md) | 2026-09-30 | The forecast resolver is unparked as the weekly settle job | accepted |
 | [0028](0028-briefings-merge-real-301s.md) | 2026-10-19 | One Briefings page; old addresses get real 301s | accepted (supersedes 0017's client-only redirects) |
 | [0029](0029-today-kept-linked-from-map.md) | 2026-10-19 | /today is kept and linked from the map | accepted (refines 0016) |
-| [0030](0030-studio-out-of-menu.md) | 2026-10-19 | The Studio leaves the menu until its return criteria are met | accepted (refines 0011) |
+| [0030](0030-studio-out-of-menu.md) | 2026-10-19 | The Studio leaves the menu until its return criteria are met | superseded by 0033 |
 | [0031](0031-economy-parked-fx-box-labelled.md) | 2026-10-19 | Economy stays parked; dead links go; FX box labelled raw quotes | accepted (extends 0009) |
 | [0032](0032-signals-api-parked.md) | 2026-10-19 | The Signals API is parked | accepted (extends 0015) |
+| [0033](0033-lens-studio-retired.md) | 2026-10-20 | The lens Analysis Studio is retired | accepted (supersedes 0030) |

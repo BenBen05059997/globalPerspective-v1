@@ -11,7 +11,7 @@ takes browser error reports and holds a parked, key-gated signal API.
 | newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; GlobalPerspectivePredictionLog; GlobalPerspectiveMarkets; UserTable `tier`; S3 `predictions/track_record.json`; Mapbox; DeepSeek | Nothing | [README](newsSensitiveData/README.md) |
 | newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | Function URL (no schedule) | NewsCache `latest`; SavedItems; UserPrefs; BreakingAlerts; UserTable `tier` | UserPrefs | [README](newsRecommend/README.md) |
 | newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL, or AppSync resolver | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
-| newsSharedAnalysis | Creates, serves and deletes unlisted Analysis Studio share links. | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
+| newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
 | newsClientErrors | Public sink that counts uncaught browser errors. | Function URL | Nothing | GlobalPerspectiveClientErrors | [README](newsClientErrors/README.md) |
 | newsSignals | Parked signal API: builds one S3 document, serves it to API-key holders. | Function URL to serve; EventBridge `TriggerSignalsBuild`, 10:00 UTC, DISABLED | SummarizeAndPredict; PredictionLog; BreakingAlerts; GlobalPerspectiveApiKeys; S3 `signals/latest.json` | S3 `signals/latest.json`, `signals/snapshots/<date>.json`; rate-limit rows in ApiKeys | [README](newsSignals/README.md) |
 
@@ -29,7 +29,7 @@ Proxy actions and the feature that calls each (found by grep in `frontend/src`):
 - Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot`.
 - Track record (`/track-record`): `prediction_track_record`.
 - Economy (`/economy`, parked): `economic_impact`, `economic_top_movers`, `markets_global`, `markets_history`, `weekly_markets`.
-- Map and Analysis Studio (`/analyze`) reuse `topics`, `archive_range`, `narrative_thread`, `summary`; `geocode` is called from shared frontend code.
+- Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`; `geocode` is called from shared frontend code.
 - No frontend reference found: `country_preview`, `thread_preview`, `dossier_analysis`, `event_dossier`, `pair_analysis`, `pair_analyses_list`, `research_briefing`, `world_overview`, `rss` (GET).
 
 Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`, `list_alerts`, `get_alert` (both serve only operator-confirmed breaking alerts), `unsubscribe`; newsSavedItems `save_item`, `unsave_item`, `get_saved_items`.

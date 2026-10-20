@@ -1,7 +1,6 @@
 # account
 
-Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the membership page and the
-Studio key panel. A reader signs in here, sees what changed since their last visit for the countries they
+Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the membership page. A reader signs in here, sees what changed since their last visit for the countries they
 follow, manages saved items and alert settings, and subscribes to the paid membership. The Save, Follow and
 Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 
@@ -19,8 +18,8 @@ Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 ## Frontend
 - `SignIn.jsx` - magic link, Google, guest; stores `?returnTo=` in localStorage `gp_return_to` (default `/weekly`)
 - `AuthCallback.jsx` - finishes the magic link, then navigates to `gp_return_to` or `/weekly`
-- `Account.jsx` - five rail sections (desk, alerts, studio, plan, profile); old `?tab=` values map via `TAB_TO_SECTION`,
-  unknown -> `desk`. Signed out or anonymous shows `SignedOutDesk`, not a redirect.
+- `Account.jsx` - four rail sections (desk, alerts, plan, profile); old `?tab=` values map via `TAB_TO_SECTION`,
+  unknown (including the retired `studio` and `analysis`) -> `desk`. Signed out or anonymous shows `SignedOutDesk`, not a redirect.
 - `MembershipPage.jsx` - plans, benefits, subscribe
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`); `hooks/useDeskChanges.js`;
   `lib/desk.js`, `deskMap.js`, `accountClaims.js` (`ACCOUNT_CLAIMS`: list only features that work today)
@@ -28,8 +27,7 @@ Subscribe controls that other pages embed live in `@/shared/ui`, not here.
   a saved or followed name that is not a country renders as plain text.
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`
 - Public API: none (no `index.js`); `app/App.jsx` lazy-loads the four pages by path.
-- Other features: `@/features/briefings` -> `useWeeklyBrief`. Shared: BYOK key panel uses `shared/lib/byok.js`,
-  `shared/lib/llmProviders.js`, `shared/ui/ProviderModal.jsx`; hooks `useMembership`, `useSavedItems`,
+- Other features: `@/features/briefings` -> `useWeeklyBrief`. Shared: hooks `useMembership`, `useSavedItems`,
   `usePreferences`, `useDailyBrief`; context `useAuth`.
 
 ## Backend

@@ -12,8 +12,7 @@ Global Perspectives (globalperspective.net) is an AI global-news intelligence si
 pull news (RSS) and hazard feeds (GDACS, GDELT), use an LLM to select and explain the stories that
 matter, track situations on a world map, score country risk, make forecasts that are settled later in
 public, and send a weekly brief. Reading is free and needs no account. A paid membership (Polar) buys
-analysis compute in the Analysis Studio (out of the nav since 2026-10-19, decisions/0030), not access
-to content.
+following countries and deeper history (the Analysis Studio retired 2026-10-20), not access to content.
 
 ## Bird's-eye view
 
@@ -59,8 +58,7 @@ flowchart LR
 Live on 2026-10-20: every pipeline Lambda that calls an LLM uses `api.deepseek.com` (`deepseek-v4-pro`
 or `deepseek-flash`, from `GROK_MODEL` / `PREDICTION_MODEL`); the weekly email rule
 (`TriggerWeeklyEmailSend`) is ENABLED and `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are
-DISABLED; `newsPostLinkedin` (every 3 h, JST) and `newsPostDevTo` (daily, JST) are ENABLED. Studio BYOK
-calls whatever provider the reader picks, straight from the browser.
+DISABLED; `newsPostLinkedin` (every 3 h, JST) and `newsPostDevTo` (daily, JST) are ENABLED.
 
 ### Containers: what runs and what it exchanges
 
@@ -88,7 +86,7 @@ flowchart LR
   worker -->|signed GETs| s3
   spa -->|actions| proxy
   spa -->|user records, shares, errors| fn
-  spa -->|Studio run, checkout| member
+  spa -->|checkout| member
   proxy -->|topics, analyses, tier| ddb
   proxy -->|track record JSON| s3
   fn --> ddb
@@ -136,7 +134,7 @@ every tool reads it from there), runtime, feature group and schedules. Names tha
 
 Feature groups (from functions.json): `pipeline` (selection, analysis, country risk), `situations`
 (map pipeline), `predictions`, `distribution` (email, social), `read-api` (proxy and Function-URL
-endpoints), `membership-studio` (Studio, billing), `monitoring`, `economy-parked`.
+endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`, `economy-parked`.
 
 **Invariant:** code shared between Lambdas lives once, in `backend/shared/src/` (`llm.js` —
 the one LLM client and `[usage]` cost line; `placeFilter.js`, `resolveIso3.js` (canonical country names),
@@ -150,7 +148,7 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `src/app/` — routing (`App.jsx`), redirects for retired URLs, layout/chrome, the error boundary.
 - `src/features/<name>/` — 13 feature folders, each owning its pages, components, hooks and lib. `map` owns
   `/`, `home` owns `/today`, `threads` owns `/weekly` and thread pages, `countries` owns country pages,
-  `analysis-studio` owns `/analyze` (by URL only, not in the nav). `/weekly`'s Countries section is
+  `analysis-studio` owns only the shared-run page `/analyze/s/:id`; `/analyze` itself is a redirect in `app/`. `/weekly`'s Countries section is
   `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as a prop so `threads` never imports
   `countries`. Tables: `project-docs/reference/features.md`, `routes.md`.
 - `src/features/<name>/index.js` — a feature's public API: only what other features and `app/` import.
@@ -366,30 +364,30 @@ flowchart LR
 **Invariant:** user-facing sends are switched on only by the operator. A disabled email rule stays
 disabled until an explicit decision.
 
-### 6. Analysis Studio (`/analyze`)
+### 6. Analysis Studio (retired 2026-10-20) and the country sheet
 
 ```mermaid
 flowchart LR
-  st["/analyze page"] -->|own key, in browser| ll[LLM provider]
-  st -->|ID token| na[newsAnalyze]
-  na -->|tier check, daily cap| ut[(UserTable)]
-  na --> ll
-  st -->|share| sa[newsSharedAnalysis]
-  sa --> sh[(Shares)]
+  old["/analyze"] -->|client redirect, Worker 301| st["story page or country list"]
+  sa[newsSharedAnalysis] --> sh[(Shares)]
   sh -->|read by id| ss["/analyze/s/:id"]
+  cp["country page = sheet"] --> ds[stored country data]
 ```
 
-Two paths to the same lenses (`scenario`, `whatchanged`, `economic`, `compare`; prompts in
-`src/features/analysis-studio/lib/analysisPrompt.js`):
+The lens Studio (pick stories, run a lens on the reader's own key or on `newsAnalyze`) is gone from the
+site. `/analyze?stories=<id,...>` redirects to the first id's story page when it is a thread id
+(`thread-...`), otherwise to the countries list (`app/LegacyRedirects.jsx`; the front Worker sends the same as a
+real 301 and never bot-renders `/analyze/s/*`). Kept:
 
-- Bring-your-own-key: the key stays in the browser (localStorage) and the browser calls the provider
-  directly (`lib/llm.js`, `lib/byok.js`). No server is involved.
-- Member path: `restProxy.js` `runMemberAnalysis` posts to `newsAnalyze` (Function URL, auth in code)
-  with the Firebase ID token. The deployed code requires `tier === 'member'` and applies a per-user
-  daily cap (`ANALYZE_DAILY_CAP`).
-
-`newsSharedAnalysis` stores share links in `GlobalPerspectiveShares` (create needs a JWT; read by id
-is public, `noindex`); they render at `/analyze/s/:id`.
+- Shared-run pages: `newsSharedAnalysis` still serves shares from `GlobalPerspectiveShares` (read by id is
+  public, `noindex`); the SPA renders them at `/analyze/s/:id` so links already out there work. The site can
+  no longer create a share.
+- `newsAnalyze` and the prompt, validator and context libraries in `src/features/analysis-studio/lib/`: no page
+  calls them; the share Lambda copies some (checked by `scripts/check-shared-sync.mjs`) and the offline eval
+  harness in `quality/analysis/` imports them.
+- The country page (`/weekly/country/:countryName`) is the "sheet": fact and judgment marks on every section,
+  a computed "What we don't know", Copy as text, Print and a private "Your view". It reads stored data only; no
+  model runs on view.
 
 **Invariant:** the deployed `newsAnalyze` differs from `newsAnalyze/src/` (the repo carries parked
 credits code). Never deploy the repo file over it without a fresh go-live decision; `lambda.sh`
@@ -431,7 +429,7 @@ membership limits are enforced server-side.
 ### Runtime config
 
 `docs/config.js` is operator-owned and loaded at runtime; it sets the `window.*` endpoints and keys (proxy,
-Studio, share, billing, saved items, prefs, client errors, `FIREBASE_CONFIG`, `GOOGLE_MAPS_API_KEY`). None is
+share, billing, saved items, prefs, client errors, `FIREBASE_CONFIG`, `GOOGLE_MAPS_API_KEY`). None is
 bundled into the build. Local dev uses `frontend/public/config.js` (template `public/config.example.js`).
 
 ### Endpoints and CORS
@@ -451,8 +449,7 @@ header and the browser fails with "Failed to fetch". Grep the source before touc
 Every LLM-calling pipeline Lambda checked on 2026-10-19 calls DeepSeek (`api.deepseek.com`); the
 model is the live env value (`GROK_MODEL`; `PREDICTION_MODEL` on the agent Lambda; `AUDIT_MODEL` on
 `newsSourceAudit`).
-`newsSelectionShadow` is the exception (external "Jev" scorer). Studio BYOK calls whatever provider
-the user picks.
+`newsSelectionShadow` is the exception (external "Jev" scorer).
 
 **Invariant:** env names lie. `GROK_*` and `XAI_*` keys hold DeepSeek settings; read the live value
 (`aws lambda get-function-configuration`), never infer the provider from the name or the Lambda's
@@ -499,7 +496,7 @@ changing env, fetch the full map, merge, and write it back whole.
 
 ## Deliberately absent
 
-- No read paywall: content is free; membership buys Studio compute.
+- No read paywall: content is free; membership buys following countries and deeper history.
 - No Amplify, no CI, no secrets manager (Lambda env holds secrets by choice).
 - No direct browser access to S3, and no public bucket.
 - Economy is parked (decision 0009): `newsEconomicImpact`, `newsEconomicQuality`, `newsWeeklyMarkets` and

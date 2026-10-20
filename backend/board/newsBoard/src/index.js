@@ -85,8 +85,9 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       const item = await ownBoard(uid, body.boardId);
       if (!item) return fail(404, 'Board not found');
       // Store visit metadata only; it is not an editorial board change.
-      await store.putBoard({...item, lastVisitedAt: iso()});
-      return ok({lastVisitedAt: iso()});
+      const stamp = iso();
+      await store.setLastVisited(uid, item.boardId, stamp);
+      return ok({lastVisitedAt: stamp});
     },
     async story_view(uid, body) {
       if (typeof body.threadId !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(body.threadId)) return fail(400, 'A valid threadId is required');

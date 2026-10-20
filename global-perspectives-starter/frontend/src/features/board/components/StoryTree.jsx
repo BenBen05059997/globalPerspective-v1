@@ -19,12 +19,13 @@ export default function StoryTree({ story, loading, error }) {
       <h3>Trunk</h3>
       {story.events?.length ? <ol>{story.events.map((e) => <li key={`${e.archive}:${e.topicId}`}><time>{e.date}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => { setEvent(e); setLevel('event'); }}>{e.headline}</button></li>)}</ol> : <p className="board-line">No dated event has been recorded for this story.</p>}
       <h3>Forks</h3>
+      {story.forks?.some((f) => f.branches.length) && !story.forks.some((f) => f.branches.some((b) => b.status?.length)) ? <p className="board-line">No branch of this story has been checked yet.</p> : null}
       {!story.forks?.length ? <p className="board-line">No forecast branch has been recorded for this story.</p> : story.forks.map((f) => <details key={f.forkId}><summary><time>{f.drawnAt}</time> · {f.branches.length} branches</summary>
         {f.branches.map((b) => {
           const status = latestStatus(b);
           return <details key={b.branchId} className={status?.status === 'dead' ? 'board-tree__dead' : undefined}><summary>{b.text}{b.p != null ? ` · ${b.p}%` : ''}{status ? ` · ${status.status} ${status.date}` : ' · not checked'}</summary>
             <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${b.due}` : ''}</p>
-            {!b.status?.length ? <p className="board-line">No branch of this story has been checked yet.</p> : <ol>{b.status.map((s, i) => <li key={`${s.date}:${i}`}><ClaimTag kind="judgment" /> <time>{s.date}</time> {s.status}: {s.note} {confidence(s.confidence)}{s.evidence?.map((src, n) => <a className="board-link" key={n} href={src.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a>)}</li>)}</ol>}
+            {!b.status?.length ? <p className="board-line">This branch has not been checked yet.</p> : <ol>{b.status.map((s, i) => <li key={`${s.date}:${i}`}><ClaimTag kind="judgment" /> <time>{s.date}</time> {s.status}: {s.note} {confidence(s.confidence)}{s.evidence?.map((src, n) => <a className="board-link" key={n} href={src.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a>)}</li>)}</ol>}
           </details>;
         })}
       </details>)}

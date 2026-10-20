@@ -45,6 +45,11 @@ function makeStoreOn(send, C, env = process.env) {
       const out = await send(new C.GetCommand({ TableName: SAVED, Key: { uid, savedKey: `${BOARD_PREFIX}${boardId}` } }));
       return out.Item || null;
     },
+    async setLastVisited(uid, boardId, stamp) {
+      await send(new C.UpdateCommand({TableName:SAVED, Key:{uid,savedKey:`${BOARD_PREFIX}${boardId}`},
+        UpdateExpression:'SET lastVisitedAt = :stamp', ExpressionAttributeValues:{':stamp':stamp},
+        ConditionExpression:'attribute_exists(uid) AND attribute_exists(savedKey)'}));
+    },
     async putBoard(item) { await send(new C.PutCommand({ TableName: SAVED, Item: item })); },
     async deleteBoard(uid, boardId) { await send(new C.DeleteCommand({ TableName: SAVED, Key: { uid, savedKey: `${BOARD_PREFIX}${boardId}` } })); },
     async getFollows(uid) {

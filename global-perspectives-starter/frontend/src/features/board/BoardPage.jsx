@@ -23,6 +23,7 @@ import { boardAvailable, callBoard } from '@/features/board/lib/boardApi.js';
 import {
   addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, MAX_NAME, KIND_WORD,
 } from '@/features/board/lib/boardOps.js';
+import RecordPinDetails from '@/features/board/components/RecordPinDetails.jsx';
 import ArrivalsTray from '@/features/board/components/ArrivalsTray.jsx';
 import StoryTree from '@/features/board/components/StoryTree.jsx';
 import BoardWeekly from '@/features/board/components/BoardWeekly.jsx';
@@ -336,8 +337,8 @@ export default function BoardPage() {
                 {pins.map((p) => (
                   <li key={p.pinId}>
                     <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
-                    {p.line ? <p className="board-line"><ClaimTag kind="judgment" /> {p.line}</p> : null}
-                    {p.counts ? <p className="board-note">{p.counts.chapters} chapters · {p.counts.liveBranches} live branches · {p.counts.confirmedLinks} confirmed links</p> : null}
+                    {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-note">Latest headline</span> : null}
+                    <RecordPinDetails pin={p} />
                   </li>
                 ))}
               </ul>
@@ -354,7 +355,7 @@ export default function BoardPage() {
                 return keepString(added.board, pin.pinId, card.via[0].pinId, card.via[0].mechanism);
               });
             }} />
-          <BoardWeekly board={board} stories={records.stories} loading={records.loading} errors={records.errors} />
+          <BoardWeekly board={board} info={info} stories={records.stories} loading={records.loading} errors={records.errors} />
           <MissingCard actors={missing} onFollow={follows.followActor} />
         </>
       ) : null}

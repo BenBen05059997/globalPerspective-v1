@@ -40,7 +40,7 @@ export function usePinInfo(pins, topics) {
     }
     for (const t of topics || []) if (t.threadId && t.title) titles[t.threadId] = t.title;
     const out = {};
-    for (const p of pins) out[p.pinId] = { ...pinLabel(p, titles, risks), ...(p.recordAvailable ? { risk: p.risk } : {}) };
+    for (const p of pins) out[p.pinId] = { ...pinLabel(p, titles, risks), hasHeadline: Boolean(titles[p.refId]), ...(p.recordAvailable ? { risk: p.risk } : {}) };
     return out;
   }, [pins, analyses, topics]);
 }

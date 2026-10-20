@@ -248,3 +248,9 @@ different charts).
   operator review never ran) and preferences (countries followed, stories not).
 - 2026-10-20: brainstorm recorded; Studio Board canvas built to 12 boards (graph, map, verdict, board weekly, clue
   pool, tree, summary + monthly, presets, alerts, divergence, zoom ladder, folding rules).
+
+## Slice 2 lane H notes (2026-10-21; code only)
+
+Record reads and pin enrichment are prepared on lane/board2, followed by tree zoom, a seven-day board change panel and arrivals. Consumer contract is lane/record schema at 5a5f4069; exact examples are copied into the board's development fixtures. Missing views, absent lines/chapters/events and unchecked branches each have explicit reasons; no deadline-derived status. The public story hook reads without sign-in; private board and arrivals calls retain owner checks.
+
+Arrivals require an actual strong confirmed record link plus nonempty existing cheap grounds (which alone top out at medium), cap five, exclude pinned/dismissed/future stories, and use a server-stamped optional lastVisitedAt. Day-only births conservatively exclude the visit day; absent index titles use recorded line or story id. Country/actor matches alone do not become strong cards. Keep adds a provisional reader string; no timeline event is synthesized. Coordinator IAM and generated pipeline-role changes were requested in lane-H-board-slice2.md. Nothing deployed, released, merged, pushed or written to AWS.

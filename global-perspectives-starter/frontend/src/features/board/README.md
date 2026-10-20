@@ -10,9 +10,6 @@ This folder is stage 6: the board page (/board). Timeline: reads boards via news
 ## Status
 - Slice 1, live 2026-10-20: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. Without that key
   (local builds, or a config that lacks it) the page says "The board is not available yet." and shows no Board link.
-- Slice 1 uses only data that exists: thread analyses, the story web, daily scores. Every string of ours is drawn dashed
-  and labelled INFERENCE; nothing is shown as confirmed. Branch status, the tree, arrivals and the board's weekly wait
-  for the record (`project-docs/plans/PLAN_2026-10-20_board.md`, "Waits for the record").
 
 ## Routes
 - `/board` → the newest board (or the empty state with presets); `/board/:boardId` → that board. Built from `ROUTE.board`
@@ -69,7 +66,6 @@ Imports from other features: none.
 ## Docs
 - Generated reference: [features.md#board](../../../../../project-docs/reference/features.md#board)
 - Plan and stages: [PLAN_2026-10-20_board.md](../../../../../project-docs/plans/PLAN_2026-10-20_board.md)
-- Architecture: [ARCHITECTURE_RECORD.md](../../../../../project-docs/architecture/ARCHITECTURE_RECORD.md) (§0 three names, §2 ownership)
 - Backend: [newsBoard README](../../../../../backend/board/newsBoard/README.md), [schema](../../../../../backend/board/schema/board.schema.json)
 
 ## How to check it
@@ -79,5 +75,6 @@ Imports from other features: none.
   errors. Phone (390 wide, in an iframe): no sideways scroll, graph scrolls in its container, connect opens the bottom
   sheet. Not tested in a browser: signed-out and not-available views (unit-tested), the What is missing follow,
   co-movement grounds, touch drag on a device.
-
-Last verified: 2026-10-20
+## Slice 2 (local code)
+Pins read recorded lines/counts from the board response. Open a thread pin for the four tree zoom levels: line, chapters, forks and events, event evidence. Status histories are shown exactly as recorded (percent probability, explicit date and state), never inferred from a passed deadline. Dead branches remain folded dated stubs; resurrected history keeps its earlier death. The board weekly projects the last seven UTC dates from pin lastMoved, dated kept/cut strings, record checks and confirmed links. No data produces a specific reason, never an example number. Arrivals require a strong confirmed record link plus cheap grounds and stay capped at five; keep adds a provisional reader string, dismiss persists the id.
+Dev fake: `?devBoard=1&devRecord=1` and `/board/dev-record` serves copied lane C schema examples, including its deliberately blank line/chapters/events; `devRecord=missing` exercises missing-record reasons. Both controls and fixtures remain within the existing development-only dynamic import. Full populated tests extend the schema example in test code only; no fixture text is used as a production fallback. `story_view` is public and its hook does not require auth; board/arrivals reads remain owner-only.

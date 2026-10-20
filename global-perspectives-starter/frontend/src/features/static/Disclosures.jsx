@@ -118,8 +118,7 @@ function Disclosures() {
         <p>
           An optional <strong>membership</strong> doesn&apos;t paywall reading — every analysis stays free. It adds
           <strong> depth</strong>: the full history of how each country and thread read has changed (non-members see the
-          latest correction on each), email alerts when a country you follow materially changes, and running the{' '}
-          <Link to={ROUTE.studio}>Analysis Studio</Link> on our own servers (no API key of your own needed). See{' '}
+          latest correction on each), the complete corrections ledger on the track record, and following countries to see what changed since your last visit. See{' '}
           <Link to="/membership">Membership</Link> for current availability and pricing; payments, when active, are
           processed by Polar as Merchant of Record.
         </p>

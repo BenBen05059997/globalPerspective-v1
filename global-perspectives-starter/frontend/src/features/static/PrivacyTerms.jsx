@@ -11,7 +11,7 @@ function PrivacyTerms() {
           free and accessible to read without an account. An optional account (email magic link or Google sign-in)
           is free and enables saving items and notification preferences. An optional membership does not paywall reading —
           every analysis stays free. It funds the project and adds depth for members: the full self-correction history,
-          email change-alerts on the countries they follow, and running the Analysis Studio on our compute.
+          the complete corrections ledger, and following countries.
         </p>
       </StaticSection>
 

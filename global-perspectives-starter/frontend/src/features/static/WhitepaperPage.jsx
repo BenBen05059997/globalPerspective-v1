@@ -262,7 +262,7 @@ export default function WhitepaperPage() {
           <p>
             All three levels are <strong>free and public to read</strong> — the levels below describe increasing
             depth of analysis, not a paywall. An optional membership never paywalls reading; it adds depth for
-            members (the full self-correction history) and runs the Analysis Studio on our servers.
+            members (the full self-correction history, the complete corrections ledger and following countries).
           </p>
           {[
             {

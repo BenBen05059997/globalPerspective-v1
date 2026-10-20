@@ -184,7 +184,7 @@ function MembershipPanel() {
           <>
             <div className="acct-plan-name">Free</div>
             <div className="acct-fine">
-              Reading stays free. Membership adds the full correction history and the Analysis Studio on our compute.
+              Reading stays free. Membership adds the full correction history and following countries.
             </div>
           </>
         )}

@@ -314,7 +314,7 @@ export default function TrackRecordPage() {
           Keeping forecasts honest — logging every prediction, resolving each trigger, publishing the score even when
           it&apos;s unflattering — is the work. Reading stays <strong>free for everyone</strong>: every forecast, every
           score, and the latest correction on each read. An optional <Link to="/membership">membership</Link> funds this
-          work and adds the depth — the full correction history and running your own analysis on our compute.
+          work and adds the depth — the full correction history and the complete corrections ledger.
         </p>
       </section>
 

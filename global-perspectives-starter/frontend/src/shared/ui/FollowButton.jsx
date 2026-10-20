@@ -30,7 +30,7 @@ export function FollowButton({ country }) {
   if (!isMember) {
     return (
       <Button compact to="/membership"
-        title={`Get emailed when our read on ${country} changes — a member feature`}>
+        title={`Follow ${country} to see changes in your account desk — a member feature`}>
         <Bell /> Follow <span className="follow-button__members">· Members</span>
       </Button>
     );
@@ -44,8 +44,8 @@ export function FollowButton({ country }) {
       disabled={saving}
       selected={following}
       title={following
-        ? `You're alerted when our read on ${country} changes. Click to stop.`
-        : `Get emailed when our read on ${country} changes.`}
+        ? `You follow ${country}; changes show in your account desk. Click to stop.`
+        : `Follow ${country} to see changes in your account desk.`}
     >
       <Bell filled={following} /> {following ? 'Following' : 'Follow'}
     </Button>

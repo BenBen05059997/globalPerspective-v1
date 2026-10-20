@@ -1,4 +1,4 @@
-// Browser-only storage for the Analysis Studio BYOK config.
+// Browser-only storage for the BYOK config (account page + Analysis Studio).
 // Holds { provider, model, key, baseUrl? } in localStorage. This NEVER goes to our
 // servers — it is read in the browser and passed straight to the chosen LLM provider.
 // `baseUrl` is optional (only providers with allowBaseUrlOverride use it, e.g. `qwen`

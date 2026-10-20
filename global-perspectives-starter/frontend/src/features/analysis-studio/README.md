@@ -20,13 +20,13 @@ by a validator, rendered as a deck, and can be shared.
 ## Frontend
 - `AnalysisStudio.jsx` - picker, lens/mode, quote before the run, run, stacked sections
 - `SharedAnalysisPage.jsx`; `components/StudioDeck.jsx` (map + slide card + time bar), `StudioRunResult.jsx`,
-  `StudioPictures.jsx`, `AnalysisVisuals.jsx` (`gp-struct` visuals), `ProviderModal.jsx`, `ShareControl.jsx`,
+  `StudioPictures.jsx`, `AnalysisVisuals.jsx` (`gp-struct` visuals), `ShareControl.jsx`,
   `SignedOutExample.jsx`, `SharedAnalysisView.jsx`
 - `lib/analysisPrompt.js` (`LENSES`, prompts), `analysis.js` (fetch layer), `analysisContext.js`,
-  `analysisValidator.js`, `llm.js` (providers), `byok.js`, `shareApi.js`. Many `lib/` files are loaded by
+  `analysisValidator.js`, `llm.js` (`runChat`), `shareApi.js`. Many `lib/` files are loaded by
   Node tooling (`quality/analysis/`): keep their relative imports (header comment says so).
-- Public API (`index.js`): `loadByok`, `clearByok`, `getProvider`, `ProviderModal` — used by `account`
-- Imports from other features: `@/features/threads` -> `useWeeklyArchive`. Shared: `useMembership`,
+- Public API: none (no `index.js`). Imports from other features: `@/features/threads` -> `useWeeklyArchive`.
+  Shared: BYOK `lib/byok.js`, `llmProviders.js`, `ui/ProviderModal.jsx`; `useMembership`,
   `@/shared/map/StoryMap.jsx`, `@/shared/ui/deck.css`, `@/shared/lib/countries.js`, `links.js`, `trFormatDate.js`, `dropRedatedRepeats.js`
 
 ## Backend
@@ -41,7 +41,7 @@ by a validator, rendered as a deck, and can be shared.
 - Context per story: restProxy `narrative_thread`, `thread_analysis`, `prediction_snapshot`; fallback `summary`,
   `prediction`, `trace_cause`. What-changed picture: `country_history`.
 - Member runs: `runMemberAnalysis` (`@/shared/api/restProxy`) -> `window.NEWS_ANALYZE_ENDPOINT`
-- BYOK: the browser calls the provider directly (`lib/llm.js`); key in localStorage `gp_analyze_byok_v1`
+- BYOK: the browser calls the provider directly (`lib/llm.js`, catalog in `shared/lib/llmProviders.js`); key in localStorage `gp_analyze_byok_v1`
 - Shares: `fetchShare` / `deleteShare` (`lib/shareApi.js`) -> `window.NEWS_SHARE_ENDPOINT` with the Firebase token
 
 ## Docs

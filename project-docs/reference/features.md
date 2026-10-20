@@ -42,7 +42,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 
 - Folder: `src/features/analysis-studio`; routes: `/analyze`, `/analyze/s/:id`
 - Entry files: `AnalysisStudio.jsx`, `SharedAnalysisPage.jsx`
-- Public API (`index.js`): `loadByok`, `clearByok`, `getProvider`, `ProviderModal`
+- Public API (`index.js`): no index.js
 - Decisions: [0030](../decisions/0030-studio-out-of-menu.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |

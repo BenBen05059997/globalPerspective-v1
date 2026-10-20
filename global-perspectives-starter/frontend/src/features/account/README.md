@@ -26,8 +26,8 @@ the Studio key panel. The Save / Follow / Subscribe controls other pages embed l
   a country renders as plain text.
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`
 - Public API: none (no `index.js`; nothing outside imports this folder).
-- Imports from other features: `@/features/analysis-studio` -> `loadByok`, `clearByok`, `getProvider`, `ProviderModal`;
-  `@/features/briefings` -> `useWeeklyBrief`. Shared hooks: `useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`.
+- Imports from other features: `@/features/briefings` -> `useWeeklyBrief`. Shared: BYOK key `lib/byok.js`,
+  `lib/llmProviders.js`, `ui/ProviderModal.jsx`; hooks: `useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`.
 
 ## Backend
 - Generated row: [reference/features.md#account](../../../../../project-docs/reference/features.md#account)

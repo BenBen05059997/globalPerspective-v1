@@ -18,7 +18,8 @@ import {
   buildUserMessage,
   getLens,
 } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js';
-import { runChat, getProvider } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
+import { runChat } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
+import { getProvider } from '../../global-perspectives-starter/frontend/src/shared/lib/llmProviders.js';
 import { LIVE_FIXTURES } from './fixtures.mjs';
 
 const C = { red: '\x1b[31m', grn: '\x1b[32m', yel: '\x1b[33m', cyn: '\x1b[36m', bold: '\x1b[1m', dim: '\x1b[2m', rst: '\x1b[0m' };

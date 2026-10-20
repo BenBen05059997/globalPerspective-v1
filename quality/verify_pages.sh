@@ -256,7 +256,7 @@ must_not_have "$SRC/features/threads/WeeklyPage.css" "^\\.(bgt|cp)-|^\\.(share-b
 
 # ─── P3b (2026-10-01): analyze, today, membership, static pages, breaking, account on the dark tokens ───
 for css in features/analysis-studio/AnalysisStudio.css features/analysis-studio/components/StudioDeck.css \
-           features/analysis-studio/components/StudioPictures.css features/analysis-studio/components/ProviderModal.css \
+           features/analysis-studio/components/StudioPictures.css shared/ui/ProviderModal.css \
            features/analysis-studio/components/AnalysisVisuals.css \
            features/home/Home.css features/home/AIComponents.css features/home/components/TodayArchiveSidebar.css \
            features/home/components/TopicNav.css features/home/components/LedeBand.css \

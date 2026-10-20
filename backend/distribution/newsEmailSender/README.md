@@ -26,7 +26,7 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 - `DRIFT#` prefix match excludes the permanent `DRIFTLOG#` archive; `DRIFT_FRESH_HOURS` default 36.
 
 ## Tests
-- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch): 48 pass.
+- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch): 58 pass.
 
 - `node --test backend/distribution/newsEmailSender/src/test-weekly-render.js`: renders the committed W2 dry-run fixture to HTML and text, checks a structure snapshot, escaping, labels and empty sections.
 
@@ -45,3 +45,19 @@ is in the staged zip as a real file. scripts/lambda.sh uses rsync -aL and alread
 symlink. This lane does not edit IAM, packaging scripts, schedules, or deploy/send anything.
 
 Last verified locally: 2026-10-20 (hermetic tests; no live send)
+
+## Weekly delivery failures and retries
+
+Weekly S3, rendering, delivery and marker-write errors reject the invocation and emit
+`[pipeline-status]` with `stage7` and `failed`, so native Lambda Errors can alert.
+Missing/stale/held editions and empty audiences remain successful skips. A partial
+delivery never writes the completed edition marker. Each successful recipient gets
+a strongly read `EMAILLOG#weekly#<week>#recipient#<sha256(normalized email)>` receipt
+with the existing EMAIL_LOG shape and 180-day TTL. A retry skips those receipts and
+attempts the remaining recipients before writing the existing edition marker. Dry-run
+never writes either marker.
+
+Run one weekly invocation at a time. These receipts cover recorded successes, not a
+provider-accepted delivery followed by a process crash or failed receipt write; that
+ambiguous boundary can repeat mail and needs operator reconciliation before retry.
+Breaking/drift delivery behavior remains outside this weekly-mode change.

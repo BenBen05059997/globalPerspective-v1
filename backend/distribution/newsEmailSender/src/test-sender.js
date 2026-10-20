@@ -40,6 +40,7 @@ function resetStore() {
   ];
   store.marker = {};
   store.s3Error = null;
+  store.failEditionMarker = false;
 }
 
 // ── fake SDK ─────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ function fakeSend(cmd) {
     return Promise.resolve({ Item: undefined });
   }
   if (name === 'PutCommand') {
+    if (store.failEditionMarker && p.Item.PK === 'EMAILLOG#weekly#2026-06-28') throw Error('marker write denied');
     if (String(p.Item.PK).startsWith('EMAILLOG#')) store.marker[p.Item.PK] = p.Item;
     return Promise.resolve({});
   }
@@ -145,6 +147,7 @@ function loadSender(env) {
   check('1 recipient (a; b=unverified, c=breaking-only, d=no-email all excluded)', r.recipients === 1 && r.sent === 1);
   check('DRY_RUN sends no email (no fetch)', fetchCalls.length === 0);
   check('result flagged dryRun', r.dryRun === true);
+  check('dry-run writes no recipient or edition receipts', Object.keys(store.marker).length===0);
 
   // 2) WEEKLY idempotency — a present marker skips (dry-run doesn't WRITE the marker
   // by design, so seed it explicitly; the real-send scenario #3 proves it's written).
@@ -173,6 +176,37 @@ function loadSender(env) {
   check('no traffic-light tier colours in the weekly html', !/#b03328|#c2622a|#caa23a|#3f8f6b/i.test(fetchCalls[0].body.html));
   check('idempotency marker written after real send', !!store.marker['EMAILLOG#weekly#2026-06-28']);
 
+  console.log('\n[weekly] partial delivery retries only failed recipients');
+  resetStore(); fetchCalls = [];
+  store.prefs.push({uid:'e',email:'e@example.com',digestOptIn:true},{uid:'f',email:'f@example.com',digestOptIn:true});
+  const successfulFetch = global.fetch;
+  global.fetch = async (url,opts) => {
+    if (JSON.parse(opts.body).to[0] === 'e@example.com') throw Error('provider unavailable');
+    return successfulFetch(url,opts);
+  };
+  h = loadSender({EMAIL_SEND_DRY_RUN:'false'});
+  let deliveryError; try { await h({mode:'weekly'}); } catch(e) { deliveryError=e; }
+  check('partial failure rejects after attempting the audience', /weekly delivery failed/.test(deliveryError?.message));
+  check('partial failure leaves no completed edition marker', !store.marker['EMAILLOG#weekly#2026-06-28']);
+  check('successful recipient has a durable receipt', Object.keys(store.marker).length === 2);
+  global.fetch = successfulFetch; fetchCalls=[];
+  r = await h({mode:'weekly'});
+  check('retry sends only the failed recipient', fetchCalls.length===1 && fetchCalls[0].body.to[0]==='e@example.com');
+  check('complete retry writes final edition marker', !!store.marker['EMAILLOG#weekly#2026-06-28']);
+  r = await h({mode:'weekly'});
+  check('subsequent retry skips completed edition', r.reason==='already_sent');
+
+  resetStore(); fetchCalls=[]; store.failEditionMarker=true;
+  h=loadSender({EMAIL_SEND_DRY_RUN:'false'});
+  let markerError; try { await h({mode:'weekly'}); } catch(e) { markerError=e; }
+  check('final marker write failure rejects the invocation', markerError?.message==='marker write denied');
+  store.failEditionMarker=false; fetchCalls=[];
+  await h({mode:'weekly'});
+  check('retry repairs final marker without repeating recorded delivery', fetchCalls.length===0 && !!store.marker['EMAILLOG#weekly#2026-06-28']);
+  resetStore(); store.prefs=[]; fetchCalls=[];
+  h=loadSender({EMAIL_SEND_DRY_RUN:'false'}); r=await h({mode:'weekly'});
+  check('empty audience succeeds with no send or marker', r.ok===true && r.sent===0 && fetchCalls.length===0 && Object.keys(store.marker).length===0);
+
   // S3 gating happens before audience lookup or delivery, even with force.
   console.log('\n[weekly] S3 status and missing-object gates');
   for (const status of ['held', 'draft']) {
@@ -184,8 +218,9 @@ function loadSender(env) {
   h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly' });
   check('missing S3 latest skips delivery', r.reason === 'no_brief' && fetchCalls.length === 0);
   resetStore(); store.s3Error = Object.assign(new Error('denied'), { name: 'AccessDenied' });
-  h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly' });
-  check('S3 denied is a visible failure, never a DynamoDB fallback', r.ok === false && r.error === 'denied');
+  h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' });
+  let loadError; try { await h({ mode: 'weekly' }); } catch (e) { loadError = e; }
+  check('S3 denied rejects for Lambda Errors, never a DynamoDB fallback', loadError?.message === 'denied');
 
   for (const weekEnding of ['2026-06-21', '2026-07-05']) {
     resetStore(); fetchCalls = []; store.briefs[0].weekEnding = weekEnding;

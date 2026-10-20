@@ -15,6 +15,7 @@
 //
 // No bundled deps — nodejs20 runtime provides @aws-sdk; fetch is global.
 
+const { createHash } = require('node:crypto');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { sendEmail } = require('./sendEmail');
@@ -92,7 +93,7 @@ async function audience(optInField) {
   return list;
 }
 
-async function deliver(recipients, buildFor, kind) {
+async function deliver(recipients, buildFor, kind, receipt = null) {
   let sent = 0;
   const errors = [];
   for (const r of recipients) {
@@ -104,7 +105,9 @@ async function deliver(recipients, buildFor, kind) {
       continue;
     }
     try {
+      if (receipt && await receipt.alreadySent(r)) continue;
       await sendEmail({ from: FROM, to: r.email, subject: msg.subject, text: msg.text, html: msg.html, headers: unsubHeaders(uUrl) });
+      if (receipt) await receipt.markSent(r);
       sent += 1;
     } catch (err) {
       console.error(`[email] send failed → ${r.email}: ${err.message}`);
@@ -125,7 +128,7 @@ async function loadLatestBrief() {
 
 async function weeklyAlreadySent(weekOf) {
   const out = await ddb().send(new GetCommand({
-    TableName: SUMMARY_TABLE, Key: { PK: `EMAILLOG#weekly#${weekOf}`, SK: 'EMAIL_LOG' },
+    TableName: SUMMARY_TABLE, Key: { PK: `EMAILLOG#weekly#${weekOf}`, SK: 'EMAIL_LOG' }, ConsistentRead: true,
   }));
   return !!out.Item;
 }
@@ -161,8 +164,14 @@ async function runWeekly(event) {
   }
   const recipients = await audience('digestOptIn');
   console.log(`[email:weekly] week ${brief.weekEnding} · ${recipients.length} recipient(s) · DRY_RUN=${DRY_RUN} · from=${FROM}`);
-  const { sent, errors } = await deliver(recipients, (uUrl) => renderWeeklyEmail(brief, { siteUrl: SITE_URL, unsubUrl: uUrl }), 'digest');
-  if (!DRY_RUN && sent > 0) await markWeeklySent(brief.weekEnding, sent);
+  // Per-recipient receipts survive partial delivery; only complete editions get the final marker.
+  const receiptId = r => `${brief.weekEnding}#recipient#${createHash('sha256').update(r.email.trim().toLowerCase()).digest('hex')}`;
+  const { sent, errors } = await deliver(recipients, (uUrl) => renderWeeklyEmail(brief, { siteUrl: SITE_URL, unsubUrl: uUrl }), 'digest', {
+    alreadySent: r => weeklyAlreadySent(receiptId(r)),
+    markSent: r => markWeeklySent(receiptId(r), 1),
+  });
+  if (errors.length) throw new Error(`weekly delivery failed for ${errors.length} of ${recipients.length} recipients`);
+  if (!DRY_RUN && recipients.length > 0) await markWeeklySent(brief.weekEnding, recipients.length);
   return { ok: true, mode: 'weekly', weekOf: brief.weekEnding, recipients: recipients.length, sent, errors, dryRun: DRY_RUN };
 }
 
@@ -287,6 +296,10 @@ exports.handler = async (event = {}) => {
     return { ok: false, error: `unknown mode: ${mode}` };
   } catch (err) {
     console.error(`[email] ${mode} failed:`, err);
+    if (mode === 'weekly') {
+      console.error('[pipeline-status]', JSON.stringify({stage:'stage7',job:'newsEmailSender',mode,status:'failed',error:err.message}));
+      throw err;
+    }
     return { ok: false, mode, error: err.message };
   }
 };

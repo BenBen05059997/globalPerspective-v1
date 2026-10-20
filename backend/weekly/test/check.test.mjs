@@ -29,3 +29,5 @@ test('a scenario probability cannot stand in for an absent trigger probability',
  story.forks[0].branches[0].p=70;inputs.inputsHash=hashInputs(inputs);week.inputsHash=inputs.inputsHash;
  assert.equal(checkWeekly(week,inputs).ok,true,checkWeekly(week,inputs).errors.join('\n'));
 });
+
+test('legacy input artifacts fail with a readable migration error',()=>{const {week,inputs}=fixture();inputs.version=1;assert.match(checkWeekly(week,inputs).errors.join(' '),/normalized world/);});

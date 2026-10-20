@@ -16,6 +16,7 @@ const words = x => String(x).trim().split(/\s+/).filter(Boolean).length;
 function strings(x){if(typeof x==='string')return [x];if(!x||typeof x!=='object')return [];return Object.values(x).flatMap(strings);}
 export function schemaErrors(week) { return validate(week)?[]:validate.errors.map(e=>`${e.instancePath || e.dataPath || '/'}: ${e.message}`); }
 export function checkWeekly(week,inputs) {
+  if(inputs?.version!==2 || !inputs.evidence?.range)return {ok:false,errors:['inputs: expected normalized world/ input version 2; rerun pull after the shared reader migration'],reports:[]};
   const errors=[],reports=[];const fail=(p,m)=>errors.push(`${p}: ${m}`);
   errors.push(...schemaErrors(week));
   try{assertSunday(week.weekEnding);}catch(e){fail('weekEnding',e.message);}

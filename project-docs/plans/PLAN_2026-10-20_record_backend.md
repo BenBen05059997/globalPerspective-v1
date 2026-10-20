@@ -97,12 +97,17 @@ window. Enabling the sender on the new path is a user-facing send and needs a fr
 1. ✓ 2026-10-20 (e2132a75, deployed, CodeSha256 Z9D6hUJD…): `newsPredictionResolver` writes verdicts directly; corrections
    are appended `VERDICT#<n>` rows with a reason via the `correct` action / `predictions/settle-correct.js` (decision 0034).
    Smoke: dry-run tick clean, `--list` shows the one due question (FEMA, draft `not_yet`, re-draft due 2026-10-24).
-2. `newsStoryRecord`: birth + duplicate check + chapters + trigger check + corrections + index. Dry-run week first,
-   compared against the two hand drafts.
-3. `newsSystemsAnalysis`: link confirmation field.
-4. Weekly plan steps 3–6 on top of `record/` (the weekly reads `record/index.json` and the week's status rows instead
-   of raw pulls).
-5. `followedThreads` + `newsBoard` + `newsConnect` + `features/board/`: the Studio phase.
+1b. ✓ 2026-10-20: the timeline adopted as the core model (`architecture/ARCHITECTURE_TIMELINE.md`, c859c9d9); system audit
+   in its §7 (3977de08); pipeline block in every folder README from `architecture/pipeline.json` (5b6f6e06).
+1c. ✓ 2026-10-20: one world reader `backend/shared/src/world/` (a925f149), provenance + JSONL helper (41b71786);
+   `newsBoard` switched and redeployed. In progress: sampled-question and dated-web readers for lane B.
+2. `newsStoryRecord` (lane C, branch lane/record): timeline writer first, views from it, on world/. **Building**; then
+   coordinator: functions.json entry, IAM role, function, schedule 05:45Z, shadow week (operator yes for IAM).
+2b. Story pipeline fixes (lane D, branch lane/pipeline): stale-run guard, same-run joins, append-only repair policy;
+   **built, under coordinator review**; must deploy before step 2 goes live.
+3. `newsSystemsAnalysis`: link confirmation field. Not started.
+4. Weekly reads the timeline instead of world/ (after step 2's shadow week). Not started.
+5. Board slice 2 on the timeline (lines, branch status, tree, arrivals, the board's weekly). Not started.
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
 
 ## Story pipeline review (2026-10-20, read-only; proposals need operator decisions)

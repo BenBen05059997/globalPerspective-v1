@@ -151,14 +151,14 @@ trace 5, new 3; the content-v2 cap of 3 on "New this week" replaces the older "J
 real render. Example `valid-2026-10-18.json` is reshaped from draft 2; its lead and step dates are reconstructions,
 flagged in its `notes.unconfirmed`.
 
-### W1: pull (read-only, deterministic)
+### W1: pull (read-only, deterministic) — built on lane/weekly (B), switched to world/; merge pending
 - [ ] `backend/weekly/pull.mjs --week-ending YYYY-MM-DD`: reads NewsCache `archive#` (7 days + 30 for births),
       `THREAD_ANALYSIS`, `DRIFT#`/`DRIFTLOG#` (thread + country), `PRED#` scenarios with triggers, `Q#` due/verdicts,
       `web/latest.json`; applies the frozen selection rules (event-only; links or elevated risk with 2+ outlets;
       single-outlet last; "moved" = expected-path change or a 10-point move that holds, only at moderate risk or above);
       writes one inputs JSON with the candidates per section and the coverage facts. Tests on fixtures.
 
-### W2: write + check + publish
+### W2: write + check + publish — built on lane/weekly; final dry run waits for two shared readers (in progress)
 - [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure only, pointing at `backend/weekly/` (read the inputs JSON; write each section to the schema;
       honesty rules; no fact without a source; dates after the send; numbers only from the inputs).
 - [ ] `backend/weekly/check.mjs`: schema + rules (every fact sourced from the inputs, every judgment labelled,
@@ -167,7 +167,7 @@ flagged in its `notes.unconfirmed`.
       `weekly/latest.json` (via `backend/shared/src/s3json.js`); `backend/weekly/hold.mjs` sets the week to `held` (publish-unless-vetoed).
 - [ ] Dry run on the week ending 2026-10-18 (compare with draft 2), written to scratchpad, not S3.
 
-### W3: email
+### W3: email — built on lane/weekly (runtime-only `_weekly`, current-Sunday gate); deploy needs sender IAM (operator yes)
 - [ ] `newsEmailSender/src/_weekly` symlink to `backend/weekly/` (`scripts/lambda.sh` zips it like `_shared`; check the
       script handles a second symlink, extend it if not).
 - [ ] `newsEmailSender` weekly mode reads `weekly/latest.json` (skips `held`); `renderWeeklyEmail.js` rewritten for the

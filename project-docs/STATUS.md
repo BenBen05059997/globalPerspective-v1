@@ -7,11 +7,11 @@ Update a line when its source changes; delete it when its source says done. Desi
 | # | Stage | Status |
 |---|---|---|
 | 1 | Ingest | **stopped**: DeepSeek out of credit since 03:50Z (selector and map ingest fail; GDACS fine) |
-| 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; guards built on lane/pipeline (D), not deployed |
+| 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; lane D done (guards, same-run joins, append-only repair policy, design: one ingest), under review, not deployed |
 | 3 | Analysis | **stopped** (DeepSeek); forecast settling writes verdicts itself since today, first ~10-24 |
-| 4 | One reader | built (`backend/shared/src/world/`, provenance included); the board uses it; lanes B and C switching |
+| 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; lane B switched; lane C switching; two more readers in progress for lane B |
 | 5 | Timeline | building on lane/record (C); not deployed; history keeps expiring until it runs |
-| 6 | Views | pages read raw tables; board slice 1 live; weekly building on lane/weekly (B) |
+| 6 | Views | pages read raw tables; board slice 1 live; weekly W1-W3 built on lane/weekly (B), final dry run waits for two shared readers |
 | 7 | Delivery | live; the Sunday email still sends the old weekly; Worker cannot serve `weekly/` or `record/` yet |
 | 8 | Watch | live; low-balance and staleness alerts reached email; no alarm on the model failure; two alert topics |
 

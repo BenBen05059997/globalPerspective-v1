@@ -15,6 +15,13 @@ Update a line when its source changes; delete it when its source says done. Desi
 | 7 | Delivery | live; the Sunday email still sends the old weekly; Worker cannot serve `weekly/` or `record/` yet |
 | 8 | Watch | low-balance alerts live; **freshness monitor paused** 2026-10-20 ~14:40Z (rule `TriggerFreshnessMonitor` DISABLED: it re-sent "content stale" every 2 h during the DeepSeek outage; also pauses the daily settle check). Re-enable after the DeepSeek top-up or lane G's dedupe, whichever is first. No alarm on the model failure yet; two alert topics |
 
+## Deployed 2026-10-20 ~15:20Z (lanes F and G, main f03ab32b)
+- Lambdas: newsInvokeGemini-dev, NewsProjectInvokeAgentLambda-dev, newsPredictionResolver, newsSituationIngest,
+  newsSituationTracker, newsSensitiveData-dev (seven dead actions removed), newsWeeklyBrief, newsSourceAudit,
+  newsFreshnessMonitor (rule still paused). newsClientErrors Function URL CORS now allows www and localhost.
+- Smoke: every page action 200, removed `world_overview` 400, `/` and a story page 200, no Lambda errors after deploy.
+- Held for the alerts review: the alarm spec in `backend/monitoring/alarms/` (new alarms, one topic).
+
 ## Roadmap (order and dependencies, 2026-10-20)
 1. **DeepSeek top-up** (operator): every LLM Lambda fails with 402 since 2026-10-20 03:50Z; nothing new is processed.
 2. **One world reader** `backend/shared/src/world/` (coordinator, on main) → lanes B and C switch to it before DONE;

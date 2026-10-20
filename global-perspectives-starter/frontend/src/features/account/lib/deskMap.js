@@ -12,6 +12,8 @@
 // only the two pieces this file actually needs keeps /account's bundle out of the map chunk.
 import { geoEqualEarth, geoPath } from 'd3-geo';
 import { land, FRAME } from '@/shared/map/landGeometry.js';
+import { ISO3_TO_NUM } from '@/shared/map/countryGeo.js';
+import { resolveCountry } from '@/shared/lib/countries.js';
 
 export const WIDTH = 360;
 export const HEIGHT = 130;
@@ -23,43 +25,30 @@ const path = geoPath(projection);
 // since the world outline is just context for the followed-country dots.
 export const WORLD_PATH = path(land) || '';
 
-function normalize(s) {
-  return String(s || '').trim().toLowerCase();
-}
-
-// A handful of common name mismatches between our country names (as followed / shown
-// elsewhere in the app) and the 110m bundle's `properties.name`. Best-effort only — a country
-// not in this bundle or not listed here simply gets no outline; the chip still renders (see
-// DeskFollowing), so a mismatch never hides the country entirely.
-const NAME_ALIASES = {
-  'united states': 'united states of america',
-  'democratic republic of the congo': 'dem. rep. congo',
-  'czech republic': 'czechia',
-  'bosnia and herzegovina': 'bosnia and herz.',
-  'dominican republic': 'dominican rep.',
-  "cote d'ivoire": "côte d'ivoire",
-  'ivory coast': "côte d'ivoire",
-};
-
-let _index = null;
-function nameIndex() {
-  if (_index) return _index;
-  _index = new Map();
+// Followed country name -> its land feature, through the one country table: resolveCountry gives
+// the ISO3 (any alias works: "United States", "Ivory Coast", "Czech Republic"). The 110m bundle is
+// indexed by ISO3 from countryGeo's ISO3_TO_NUM, plus a by-name resolveCountry fallback for the
+// ~40 bundle countries ISO3_TO_NUM does not list yet (Burundi, Estonia, Greenland ...). A country
+// the bundle lacks gets no outline; the chip still renders (see DeskFollowing).
+let _byIso3 = null;
+function featureByIso3() {
+  if (_byIso3) return _byIso3;
+  const numToIso3 = new Map(Object.entries(ISO3_TO_NUM).map(([iso3, num]) => [num, iso3]));
+  _byIso3 = new Map();
   for (const f of land.features) {
-    const n = normalize(f.properties?.name);
-    if (n) _index.set(n, f);
+    const iso3 = numToIso3.get(String(f.id)) || resolveCountry(f.properties?.name)?.iso3;
+    if (iso3 && !_byIso3.has(iso3)) _byIso3.set(iso3, f);
   }
-  return _index;
+  return _byIso3;
 }
 
 export function matchLandFeature(countryName) {
-  const idx = nameIndex();
-  const n = normalize(countryName);
-  return idx.get(n) || idx.get(NAME_ALIASES[n]) || null;
+  const iso3 = resolveCountry(countryName)?.iso3;
+  return (iso3 && featureByIso3().get(iso3)) || null;
 }
 
 // centroidForCountry — [x, y] in the map's own viewBox for a followed country, or null when
-// the name doesn't match any feature in the bundle (see NAME_ALIASES above).
+// the country has no feature in the bundle (see matchLandFeature).
 export function centroidForCountry(countryName) {
   const feature = matchLandFeature(countryName);
   if (!feature) return null;

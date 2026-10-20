@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDERS, getProvider } from '@/features/analysis-studio/lib/llm';
-import { loadByok, saveByok, clearByok } from '@/features/analysis-studio/lib/byok';
-import '@/features/analysis-studio/components/ProviderModal.css';
+import { PROVIDERS, getProvider } from '@/shared/lib/llmProviders';
+import { loadByok, saveByok, clearByok } from '@/shared/lib/byok';
+import '@/shared/ui/ProviderModal.css';
 import Button from '@/shared/ui/Button.jsx';
 
 // BYOK chooser: pick provider → model → paste key. Stored browser-only.

@@ -23,7 +23,8 @@ import {
   buildStorySources,
   buildUserMessage,
 } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js';
-import { runChat, getProvider } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
+import { runChat } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
+import { getProvider } from '../../global-perspectives-starter/frontend/src/shared/lib/llmProviders.js';
 import { validateStruct } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisStruct.js';
 import { GOLDEN, LIVE_FIXTURES, RICHNESS_CASES, STRUCT_CASES } from './fixtures.mjs';
 

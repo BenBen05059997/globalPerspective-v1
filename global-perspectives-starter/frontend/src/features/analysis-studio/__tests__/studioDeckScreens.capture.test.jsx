@@ -115,7 +115,7 @@ vi.mock('@/features/analysis-studio/lib/llm', async () => {
 });
 
 import AnalysisStudio from '@/features/analysis-studio/AnalysisStudio.jsx';
-import { saveByok } from '@/features/analysis-studio/lib/byok';
+import { saveByok } from '@/shared/lib/byok';
 
 function writeSnapshot(name, container) {
   if (!OUT_DIR) return;

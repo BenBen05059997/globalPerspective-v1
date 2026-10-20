@@ -5,7 +5,9 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import { usePreferences } from '@/shared/hooks/usePreferences';
 import { useMembership } from '@/shared/hooks/useMembership';
-import { loadByok, clearByok, getProvider, ProviderModal } from '@/features/analysis-studio';
+import { loadByok, clearByok } from '@/shared/lib/byok';
+import { getProvider } from '@/shared/lib/llmProviders';
+import ProviderModal from '@/shared/ui/ProviderModal';
 import DeskPanel from '@/features/account/components/DeskPanel';
 import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
 import { useWeeklyBrief } from '@/features/briefings';
@@ -26,7 +28,7 @@ function maskKey(k) {
 }
 
 // Analysis Studio BYOK key management — view / change / remove the key the reader
-// stored in this browser (it never touches our servers; see utils/byok.js).
+// stored in this browser (it never touches our servers; see shared/lib/byok.js).
 function AnalysisKeyPanel() {
   const [byok, setByok] = useState(() => loadByok());
   const [modalOpen, setModalOpen] = useState(false);

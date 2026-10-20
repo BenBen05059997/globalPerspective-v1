@@ -10,7 +10,7 @@ import from here; here imports from no feature and not from `app/`.
 - `data/` - story-list loading (`contentService.js`, `useGeminiTopics.js`) and the one country table, `iso3Names.json`.
 - `hooks/` - hooks used by more than one feature: membership, saved items, preferences, daily brief, disruptions list, peek, viewport (`useIsMobile`, `useIsPhone`), `useNoIndex`.
 - `lib/` - pure helpers with no UI: links, countries, risk tiers, dates and freshness, LLM provider catalog (used by the eval client only), economy flag.
-- `map/` - the shared map kit: `RadarMap`, `SituationMap3D` (deck.gl globe), `StoryMap`, country geometry and coordinates, legend and pulse helpers.
+- `map/` - the shared map kit: `RadarMap`, `SituationMap3D` (deck.gl globe), `StoryMap`, country geometry and coordinates (`countryGeo.js` is generated: `node scripts/gen-country-geo.mjs`), legend and pulse helpers.
 - `styles/` - `tokens.css` (the one token set) and `tokens.js` (the same colors for canvas and JS).
 - `ui/` - shared building blocks (Button, Card, Chip, Tabs, SectionHeader, TierChip, PhoneTabs, StoryRow, ...), their CSS (`primitives.css`, `blocks.css`, `atoms.css`), `boot/` (loader) and `risk/` (risk badges).
 

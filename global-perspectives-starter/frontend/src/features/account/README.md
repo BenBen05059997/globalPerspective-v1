@@ -23,7 +23,7 @@ Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 - `MembershipPage.jsx` - plans, benefits, subscribe
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`); `hooks/useDeskChanges.js`;
   `lib/desk.js`, `deskMap.js`, `accountClaims.js` (`ACCOUNT_CLAIMS`: list only features that work today);
-  `deskMap.js` finds a followed country's outline through `shared/lib/countries.js` (`resolveCountry`) and `shared/map/countryGeo.js` (`ISO3_TO_NUM`), with no name table of its own
+  `deskMap.js` finds a followed country's outline through `shared/lib/countries.js` (`resolveCountry`) and `shared/map/countryGeo.js` (`ISO3_TO_NUM`, generated from the bundle), with no name table or by-name fallback of its own
 - Links: saved items, followed countries and desk rows build addresses with `@/shared/lib/links.js` or `<EntityLink>`;
   a saved or followed name that is not a country renders as plain text.
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`

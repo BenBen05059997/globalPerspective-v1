@@ -27,16 +27,16 @@ export const WORLD_PATH = path(land) || '';
 
 // Followed country name -> its land feature, through the one country table: resolveCountry gives
 // the ISO3 (any alias works: "United States", "Ivory Coast", "Czech Republic"). The 110m bundle is
-// indexed by ISO3 from countryGeo's ISO3_TO_NUM, plus a by-name resolveCountry fallback for the
-// ~40 bundle countries ISO3_TO_NUM does not list yet (Burundi, Estonia, Greenland ...). A country
-// the bundle lacks gets no outline; the chip still renders (see DeskFollowing).
+// indexed by ISO3 through countryGeo's ISO3_TO_NUM (generated from the bundle by
+// scripts/gen-country-geo.mjs, so every bundle country is in it). A country the bundle lacks gets no
+// outline; the chip still renders (see DeskFollowing).
 let _byIso3 = null;
 function featureByIso3() {
   if (_byIso3) return _byIso3;
   const numToIso3 = new Map(Object.entries(ISO3_TO_NUM).map(([iso3, num]) => [num, iso3]));
   _byIso3 = new Map();
   for (const f of land.features) {
-    const iso3 = numToIso3.get(String(f.id)) || resolveCountry(f.properties?.name)?.iso3;
+    const iso3 = numToIso3.get(String(f.id));
     if (iso3 && !_byIso3.has(iso3)) _byIso3.set(iso3, f);
   }
   return _byIso3;

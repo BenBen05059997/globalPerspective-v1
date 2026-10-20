@@ -170,7 +170,8 @@
   "name": "Bosnia",
   "iso2": "BA",
   "aliases": [
-   "Bosnia & Herzegovina"
+   "Bosnia & Herzegovina",
+   "Bosnia and Herz."
   ]
  },
  "XKX": {
@@ -328,7 +329,9 @@
  "SSD": {
   "name": "South Sudan",
   "iso2": "SS",
-  "aliases": []
+  "aliases": [
+   "S. Sudan"
+  ]
  },
  "SOM": {
   "name": "Somalia",
@@ -376,7 +379,8 @@
    "Congo - Kinshasa",
    "Democratic Republic of the Congo",
    "Democratic Republic of Congo",
-   "DRC"
+   "DRC",
+   "Dem. Rep. Congo"
   ]
  },
  "COG": {
@@ -804,7 +808,9 @@
  "ATF": {
   "name": "French Southern Territories",
   "iso2": "TF",
-  "aliases": []
+  "aliases": [
+   "Fr. S. Antarctic Lands"
+  ]
  },
  "ATG": {
   "name": "Antigua and Barbuda",
@@ -936,7 +942,9 @@
  "ESH": {
   "name": "Western Sahara",
   "iso2": "EH",
-  "aliases": []
+  "aliases": [
+   "W. Sahara"
+  ]
  },
  "EST": {
   "name": "Estonia",
@@ -946,7 +954,9 @@
  "FLK": {
   "name": "Falkland Islands",
   "iso2": "FK",
-  "aliases": []
+  "aliases": [
+   "Falkland Is."
+  ]
  },
  "FRO": {
   "name": "Faroe Islands",
@@ -996,7 +1006,9 @@
  "GNQ": {
   "name": "Equatorial Guinea",
   "iso2": "GQ",
-  "aliases": []
+  "aliases": [
+   "Eq. Guinea"
+  ]
  },
  "GRD": {
   "name": "Grenada",
@@ -1246,7 +1258,9 @@
  "SLB": {
   "name": "Solomon Islands",
   "iso2": "SB",
-  "aliases": []
+  "aliases": [
+   "Solomon Is."
+  ]
  },
  "SMR": {
   "name": "San Marino",

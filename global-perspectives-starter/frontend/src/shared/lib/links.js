@@ -107,7 +107,18 @@ function entityHref(kind, id) {
 }
 // --- end link rules core ---
 
+// The site origin, for text that leaves the page (copied sheets); the in-app links stay relative.
+const SITE_URL = 'https://globalperspective.net';
+
+/** absoluteUrl('/weekly/country/UAE') -> 'https://globalperspective.net/weekly/country/UAE'. A null path (an entity
+ *  with no page) stays null; an address that is already absolute is returned as it is. */
+function absoluteUrl(path) {
+  if (path == null) return null;
+  return /^https?:\/\//.test(path) ? path : `${SITE_URL}${path}`;
+}
+
 export {
+  SITE_URL, absoluteUrl,
   ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, breakingHref,
   entityHref,
 };

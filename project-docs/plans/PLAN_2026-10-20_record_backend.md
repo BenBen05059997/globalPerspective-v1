@@ -103,8 +103,9 @@ window. Enabling the sender on the new path is a user-facing send and needs a fr
    `newsBoard` switched and redeployed. In progress: sampled-question and dated-web readers for lane B.
 2. `newsStoryRecord` (lane C, branch lane/record): timeline writer first, views from it, on world/. **Building**; then
    coordinator: functions.json entry, IAM role, function, schedule 05:45Z, shadow week (operator yes for IAM).
-2b. Story pipeline fixes (lane D, branch lane/pipeline): stale-run guard, same-run joins, append-only repair policy;
-   **built, under coordinator review**; must deploy before step 2 goes live.
+2b. ✓ 2026-10-20 (merge 5df2a670, deployed `NewsProjectInvokeAgentLambda-dev` CodeSha256 roXZtju…): stale-run guard, same-run
+   joins, failed-run marker. Old duplicates: repaired later as alias + correction events on the timeline (operator
+   2026-10-20: wait for the record; no in-place merges). Design for one ingest: `architecture/ARCHITECTURE_INGEST_DESIGN.md`.
 3. `newsSystemsAnalysis`: link confirmation field. Not started.
 4. Weekly reads the timeline instead of world/ (after step 2's shadow week). Not started.
 5. Board slice 2 on the timeline (lines, branch status, tree, arrivals, the board's weekly). Not started.

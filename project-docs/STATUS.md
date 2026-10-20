@@ -7,7 +7,7 @@ Update a line when its source changes; delete it when its source says done. Desi
 | # | Stage | Status |
 |---|---|---|
 | 1 | Ingest | **stopped**: DeepSeek out of credit since 03:50Z (selector and map ingest fail; GDACS fine) |
-| 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; lane D done (guards, same-run joins, append-only repair policy, design: one ingest), under review, not deployed |
+| 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; guards and same-run joins deployed 2026-10-20 14:20Z (first real test: the 20:25Z run); old duplicates wait for alias repair on the timeline |
 | 3 | Analysis | **stopped** (DeepSeek); forecast settling writes verdicts itself since today, first ~10-24 |
 | 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; lane B switched; lane C switching; two more readers in progress for lane B |
 | 5 | Timeline | building on lane/record (C); not deployed; history keeps expiring until it runs |

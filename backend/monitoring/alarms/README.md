@@ -59,3 +59,23 @@ References: [Lambda invocation errors](https://docs.aws.amazon.com/lambda/latest
 [alarm evaluation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarm-evaluation.html).
 
 Offline verification: `node --test backend/monitoring/alarms/spec.test.mjs`.
+
+## Client-error Function URL CORS request (G4)
+
+Read-only get-function-url-config on 2026-10-20 found AuthType NONE, AllowMethods POST, AllowHeaders content-type,
+MaxAge3600, with only https://globalperspective.net and https://benben05059997.github.io allowed. The source handler
+emits no Access-Control-Allow-Origin, so the Function URL must remain the sole CORS owner. No handler edit is required.
+`client-errors-cors.json` preserves those settings and adds www plus localhost/127.0.0.1 on ports5173/5174, matching the
+proxy's existing development-origin list. No wildcard, credentials or new methods/headers are added.
+
+Exact **coordinator REQUEST**, not executed by lane G (run from the repo checkout after rereading current config):
+
+```sh
+aws lambda update-function-url-config --function-name newsClientErrors --cors file://backend/monitoring/alarms/client-errors-cors.json --region ap-northeast-1
+```
+
+The command updates only Cors; AuthType remains unchanged. If current config changed since inspection, preserve its
+unrelated settings and rereview the full replacement Cors object first. Coordinator can verify response headers with
+preflight requests from www and localhost after the change, a negative origin, and an actual browser error report with
+its counter effect; those are live tests/invocations and lane G did not run them. Do not add CORS headers to the handler
+while the Function URL emits them. This request does not authorize lane G to make any AWS change.

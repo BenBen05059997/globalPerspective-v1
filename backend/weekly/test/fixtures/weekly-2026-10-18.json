@@ -80,14 +80,14 @@
       ],
       "branches": [
         {
-          "text": "The Strait of Hormuz is reopened to commercial shipping with at least one tanker transiting without incident.",
+          "text": "The reopening call rests on Iran using the closure as leverage because selective disruption can extract concessions without a full war.",
           "p": 0.65,
           "trigger": "The Strait of Hormuz is reopened to commercial shipping with at least one tanker transiting without incident.",
           "by": "2026-11-15",
           "status": "not_checked"
         },
         {
-          "text": "The US Navy announces it is escorting commercial vessels through the Strait of Hormuz.",
+          "text": "The escort call rests on naval protection because outside powers can reduce the danger to commercial vessels while applying pressure on Iran.",
           "p": 0.5,
           "trigger": "The US Navy announces it is escorting commercial vessels through the Strait of Hormuz.",
           "by": "2026-11-08",
@@ -134,14 +134,14 @@
       ],
       "branches": [
         {
-          "text": "Ukraine launches another drone attack on an oil facility or data center in St. Petersburg or Leningrad Oblast",
+          "text": "The repeat-strike call rests on demonstrated drone reach because Ukraine can keep putting Russian infrastructure under pressure.",
           "p": 0.7,
           "trigger": "Ukraine launches another drone attack on an oil facility or data center in St. Petersburg or Leningrad Oblast",
           "by": "2026-11-15",
           "status": "not_checked"
         },
         {
-          "text": "Russia announces new air defense deployments around St. Petersburg in response to drone threats",
+          "text": "The air-defence call rests on Russian adaptation because repeated drone attacks give Moscow a reason to reinforce exposed infrastructure.",
           "p": 0.6,
           "trigger": "Russia announces new air defense deployments around St. Petersburg in response to drone threats",
           "by": "2026-11-30",
@@ -188,14 +188,14 @@
       ],
       "branches": [
         {
-          "text": "The Saudi-led coalition announces that its airstrikes have opened a humanitarian corridor into Taiz, allowing aid convoys to enter the city.",
+          "text": "The corridor call rests on partial relief because airstrikes can open limited access even while entrenched Houthi positions prevent a complete end to the siege.",
           "p": 0.6,
           "trigger": "The Saudi-led coalition announces that its airstrikes have opened a humanitarian corridor into Taiz, allowing aid convoys to enter the city.",
           "by": "2026-11-15",
           "status": "not_checked"
         },
         {
-          "text": "Houthi forces withdraw from at least one major checkpoint on a road leading into Taiz.",
+          "text": "The checkpoint-withdrawal call rests on local pressure because coalition airstrikes can force a limited retreat without removing the wider Houthi siege.",
           "p": 0.4,
           "trigger": "Houthi forces withdraw from at least one major checkpoint on a road leading into Taiz.",
           "by": "2026-11-30",
@@ -936,7 +936,7 @@
     "unconfirmed": [
       "The live story-web snapshot was generated after this week; its edges are used as possibly related links, not confirmed causes.",
       "No explicit logged revision or sustained ten-point movement passed the conservative moved gate; differently worded trajectories remain in inputs.pathReviewCandidates for review.",
-      "The first two trace branches per anchor are quoted from the latest dated prediction snapshot with future deadlines; no branch has been checked or settled by this procedure.",
+      "The first two trace branches per anchor retain logged probabilities, triggers and future deadlines, with mechanisms drawn from the logged rationale; none has been checked or settled by this procedure.",
       "All quantitative calls are existing logged calls; this draft creates no new prediction-log entries.",
       "The new section keeps the frozen top three; Hormuz also qualified and is retained in the lead and trace."
     ]

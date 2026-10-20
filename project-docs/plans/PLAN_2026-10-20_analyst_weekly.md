@@ -34,9 +34,13 @@ A story appears in exactly one section, by its stage:
 1. **New this week** — stories born in the last 7 days. Per story: title + first seen date + outlets; *what happened*
    (fact, sourced); *first read* (judgment, low confidence, "no forecast yet" unless one is made); *possibly connects
    to* (existing stories, "possibly related" unless the defensible-edge bar is met); *first test* (one condition with
-   a date). Cap 5, ranked by risk tier then by links to tracked stories.
-2. **Our view moved** — tracked stories whose judgment changed this week: last week's read → this week's, and the
-   mechanism. From drift notes plus the agent's comparison with last week's file. 3 lines max.
+   a date). Cap 5. **Selection (revised after draft 1):** a story must be an event (something happened on a date;
+   periodic statements and reports do not qualify); rank by links to tracked stories first, then risk tier, then
+   entry count as a tie-break only. Risk score measures severity, not consequence.
+2. **Our view moved** — tracked stories whose *read* changed this week, not whose score wobbled. **Threshold (revised
+   after draft 1):** include only a change in the trajectory label/expected path, or a risk-score move of 10 or more
+   that holds at the latest regeneration. Each line says what we now expect that we did not before, in one plain
+   sentence, with the mechanism. 3 lines max. From drift notes plus `THREAD_HISTORY` trajectory before vs after.
 3. **Forecasts** — calls that came due this week (hit / miss / unresolved, linked to the record) and calls due next
    week. Every new call made in the brief is written to the prediction log so it is scored.
 4. **Still watching** — tracked stories with no change, one line each.
@@ -51,7 +55,9 @@ Honesty rules (enforced by the check script, step 3):
 - a `connects_to` link is `possibly_related` unless it is `defensible` (temporal precedence + explicit causal signal
   + corroboration + operator sign-off);
 - a watch/test item has a date after the send date;
-- no line may claim a figure, date or name that is not in the cited source.
+- no line may claim a figure, date or name that is not in the cited source;
+- every judgment line is one plain sentence a reader outside the pipeline can follow: the mechanism spelled out, no
+  shorthand, no internal names (scenario labels, score deltas, model terms) unless explained in the line.
 Selection is never by coverage volume.
 
 ## The pipeline
@@ -72,8 +78,10 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 - [x] 1. Inputs confirmed (read-only, Sonnet agent, 2026-10-20): see "Inputs, confirmed". Findings that change the
       spec: no stored birth date (derive from the archive); 0 forecasts ever settled under the question scheme, so the
       forecasts section is honest-thin for weeks; no corrections store; archive gap on 10-14.
-- [ ] 2. First draft by hand for the week ending 2026-10-18, from those inputs, in the JSON shape below. Reviewed by
-      the operator. Nothing is sent.
+- [~] 2. First draft by hand for the week ending 2026-10-18 (Sonnet, 2026-10-20): honesty rules held (12 facts cited,
+      21 judgments with confidence, dates after the send); three rule gaps found by review: selection by risk score
+      picked non-events, "moved" reported 3-5 point score noise, judgments too compressed to read. Spec revised
+      above; draft 2 under the revised rules, reviewed by the operator. Nothing is sent.
 - [ ] 3. The skill `.claude/skills/weekly-brief/SKILL.md` (the procedure) + `scripts/weekly-brief/check.mjs`
       (schema + honesty rules) + `scripts/weekly-brief/publish.mjs` (draft → published, latest.json, prediction log).
 - [ ] 4. Readers: `newsEmailSender` weekly mode and the Briefings weekly mode read `weekly/latest.json`; new renderers

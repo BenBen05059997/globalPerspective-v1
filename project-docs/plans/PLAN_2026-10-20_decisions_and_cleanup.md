@@ -25,7 +25,9 @@ and verified, with the commit.
 - [x] `/analyze?stories=<threadId>` now preselects archive stories (2abcf134); not yet released.
 
 ## Checklist (in order)
-- [ ] 1. Phone-width click-through of production in the browser.
+- [x] 1. Phone-width click-through of production in the browser (390 px, 12 pages). Found and fixed: the signed-in
+      name overflowed the top bar on every page; weekly briefing source labels overflowed (f736a4a6, 36f2e8d3).
+      Checked on the local build at 390 px with the bell present: fits, long names end in an ellipsis.
 - [ ] 2. Breaking alerts wait for confirmation (decision 1): the site lists only `confirmed` alerts; the operator
       email stays. Backend change, Lambda deploy, guides updated.
 - [ ] 3. Membership copy and the blog tier line (decision 3): no page sells membership as Studio runs.
@@ -43,3 +45,4 @@ and verified, with the commit.
 - [ ] 10. Frontend release of items 3-5 and the Studio fix (needs a fresh yes).
 
 ## Log
+- 2026-10-20: Studio `?stories=` fix checked on the local build: the French-protests thread opens preselected (1/4).

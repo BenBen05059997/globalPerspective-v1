@@ -20,7 +20,7 @@ user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.
 - This file: decisions, stores, order of work, log. When the subsystem is live, the two architecture files stay (they
   describe what runs) and this plan's lasting decisions become records; the plan is then deleted (TASK_WORKFLOW §2).
 - Grouping (operator, 2026-10-20: three names, own folders): **record** = `backend/record/` (`newsStoryRecord`);
-  **weekly** = the weekly run + `features/weekly/`; **board** = `backend/board/` (`newsBoard`, `newsConnect`) +
+  **weekly** = `backend/weekly/` (one source of truth) + the weekly run + `features/weekly/`; **board** = `backend/board/` (`newsBoard`, `newsConnect`) +
   `features/board/`. New shared code only in `backend/shared/src/` (`record.js`, `s3json.js`); the frontend reads the
   record through a new `shared/hooks/useRecord.js`. See `ARCHITECTURE_RECORD.md` §0.
 
@@ -58,7 +58,7 @@ Derived per-user documents (the board's weekly and monthly) are computed on requ
 | `newsSystemsAnalysis` (change) | `backend/pipeline/` | daily 05:00Z (exists) | link confirmation rule: `confirmed:true` when both stories carry evidence on ≥2 days from ≥2 outlets within 14 days; else `inferred`. The weekly and the board draw only confirmed links solid |
 | `newsEmailSender` (change) | `backend/distribution/` | Sun 14:00Z (exists) | renders `weekly/latest.json`; for members with a board, prepends the board's weekly from `newsBoard`; alert digest daily from the alert rules (one email at most, nothing if nothing fired) |
 | `newsWeeklyBrief` (retire) | `backend/distribution/` | Sun 06:00Z | retired after the first weekly from the new path has sent |
-| weekly run (headless Claude Code, cloud) | `.claude/skills/weekly-brief/` | Sun 06:00Z | writes `weekly/YYYY-MM-DD.json` as published, `latest.json`; the sender publishes at 14:00Z unless vetoed |
+| weekly run (headless Claude Code, cloud) | `backend/weekly/` + `.claude/skills/weekly-brief/` | Sun 06:00Z | writes `weekly/YYYY-MM-DD.json` as published, `latest.json`; the sender publishes at 14:00Z unless vetoed |
 
 `scripts/functions.json` gains the three new Lambdas with `dir` under `backend/record/` and `backend/board/`.
 IAM: `newsStoryRecord` PutObject on `record/stories/*`, `record/index.json`, `record/corrections/*` only;

@@ -23,8 +23,8 @@ is in `backend/pipeline/README.md` and `ARCHITECTURE.md` data flow 1.
 ## The week (Sunday)
 | Time | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| 06:00 | the analyst's weekly written (planned; replaces `newsWeeklyBrief`) | headless Claude Code run following `.claude/skills/weekly-brief/SKILL.md`; `scripts/weekly-brief/check.mjs` validates, `publish.mjs` writes | `record/index.json`, this week's `record/stories/*` status rows, `record/corrections/`, `web/latest.json`, `predictions/track_record.json` | `weekly/YYYY-MM-DD.json` (`status:'published'`), `weekly/latest.json` |
-| 06:00–14:00 | veto window | operator, one command (`scripts/weekly-brief/hold.mjs`) | — | rewrites nothing; appends `status:'held'` to the week's file via a new snapshot and moves `latest.json` back |
+| 06:00 | the analyst's weekly written (planned; replaces `newsWeeklyBrief`) | headless Claude Code run following `.claude/skills/weekly-brief/SKILL.md`; `backend/weekly/pull.mjs` selects, the agent writes, `backend/weekly/check.mjs` validates, `backend/weekly/publish.mjs` writes | `record/index.json`, this week's `record/stories/*` status rows, `record/corrections/`, `web/latest.json`, `predictions/track_record.json` | `weekly/YYYY-MM-DD.json` (`status:'published'`), `weekly/latest.json` |
+| 06:00–14:00 | veto window | operator, one command (`backend/weekly/hold.mjs`) | — | rewrites nothing; appends `status:'held'` to the week's file via a new snapshot and moves `latest.json` back |
 | 14:00 | weekly email (exists; new source) | `newsEmailSender` mode `weekly` | `weekly/latest.json`, `UserPrefs digestOptIn`, `newsBoard` report for members with a board | `EMAILLOG#weekly#<weekOf>`, Resend |
 | Sun 06:00 (exists, to retire) | old weekly brief | `newsWeeklyBrief` / `TriggerWeeklyBrief` | — | `WEEKLY_BRIEF#` | retired after the first new-path send (fresh yes) |
 

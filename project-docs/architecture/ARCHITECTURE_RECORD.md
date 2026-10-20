@@ -10,7 +10,7 @@ Pipeline (step by step, with times): `ARCHITECTURE_RECORD_PIPELINE.md`.
 | Name | What it is | Who sees it | Where it lives |
 |---|---|---|---|
 | **record** | the world's memory: one dated, append-only account per story | nobody directly; every reader below | `backend/record/` (`newsStoryRecord`), S3 `record/` |
-| **weekly** | the analyst's weekly: the shared report, the same for every reader | everyone (email + `/briefings/weekly`) | weekly run (`.claude/skills/weekly-brief/`, `scripts/weekly-brief/`), S3 `weekly/`, frontend `features/weekly/` |
+| **weekly** | the analyst's weekly: the shared report, the same for every reader | everyone (email + `/briefings/weekly`) | `backend/weekly/` (schema, pull, check, publish, hold, section model; one source of truth), procedure in `.claude/skills/weekly-brief/`, S3 `weekly/`, email in `newsEmailSender` via `src/_weekly`, frontend `features/weekly/` |
 | **board** | the personal layer: pins, strings, arrivals, the board's own weekly and monthly, alerts, presets | the signed-in member who owns it | `backend/board/` (`newsBoard`, `newsConnect`), DynamoDB board items + prefs fields, S3 `record/pairs/`, frontend `features/board/` |
 An agent working on one of these does not touch the other two except through their published files and documented
 fields. "Personal digest", "Studio" and "desk" are not names of anything here; the retired Studio stays retired.
@@ -40,6 +40,7 @@ the same derived number (live branches, last moved), the writer puts it in `reco
 | `riskDimensions.js` | same | thread analysis, country intelligence | the risk tier words the weekly prints |
 | **new** `record.js` (read `record/index.json` and one story record; the fork/branch status rules; `verdictOrder`-style helpers) | `backend/shared/src/` | — | `newsStoryRecord` (writer), `newsConnect`, `newsBoard`, `newsEmailSender`, the weekly run's check script |
 | **new** `s3json.js` (get/put JSON with `If-None-Match` create-only and `latest` pointer, the snapshot+pointer rule in one place) | `backend/shared/src/` | today each S3 writer has its own copy of this logic (tracker, systems, snapshot) | every `record/` and `weekly/` writer; later the existing writers migrate to it |
+| **new** `backend/weekly/sections.js` (the weekly's section model: which sections, in what order, what each holds) | `backend/weekly/` (not `backend/shared`: it belongs to one group) | — | `newsEmailSender` via `src/_weekly`; frontend `features/weekly/` via a mirrored core block checked by `scripts/check-shared-sync.mjs` |
 | Frontend `shared/lib/links.js`, `shared/ui/ClaimTag.jsx`, `shared/lib/riskTiers.js`, `shared/styles/tokens.css` | frontend `shared/` | every feature | `features/weekly/` and `features/board/` reuse them; the claim tags FACT / JUDGMENT come from `ClaimTag` |
 | **new** frontend `shared/hooks/useRecord.js` (fetch `/data/record/index.json` and `/data/record/stories/<id>/latest.json` through `useCachedQuery`) | frontend `shared/hooks/` | — | weekly page, story page (tree), board |
 
@@ -52,7 +53,7 @@ committed `src/_shared` symlink; never copy it. The two **new** backend modules 
 | `newsStoryRecord` | `backend/record/` | `record/stories/*`, `record/index.json`, `record/corrections/*` | `NewsCache archive#*`, `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS, DRIFT#, DRIFTLOG#`, `PredictionLog PRED#*`, `web/latest.json` | any DynamoDB write; `weekly/`; user tables |
 | `newsConnect` | `backend/board/` | `record/pairs/*` | `record/index.json`, `record/stories/*`, `web/latest.json`, `SummarizeAndPredict HISTORY#/THREAD_HISTORY#` (daily scores) | user tables; `record/stories/*` |
 | `newsBoard` | `backend/board/` | `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`, `alerts`, `quietBoards` | `record/*`, `weekly/latest.json` | any S3 write |
-| weekly run (headless Claude Code) | `.claude/skills/weekly-brief/` + `scripts/weekly-brief/` | `weekly/*` | `record/*`, `web/latest.json`, `predictions/track_record.json` | DynamoDB; `record/` |
+| weekly run (headless Claude Code) | `backend/weekly/` (source of truth) + `.claude/skills/weekly-brief/` (procedure only) | `weekly/*` | `record/*`, `web/latest.json`, `predictions/track_record.json` | DynamoDB; `record/` |
 | `newsPredictionResolver` (exists) | `backend/predictions/` | `PredictionLog SEED#, SAMPLE#, Q#, SETTLE#` | `PRED#` | `record/` (the record reads the log, not the reverse) |
 | `newsSystemsAnalysis` (exists) | `backend/pipeline/` | `web/*`, `SummarizeAndPredict WEB#INDEX, SYSTEMS#, THREAD#/WEB` | archives, thread analyses | `record/` |
 | `newsEmailSender` (exists) | `backend/distribution/` | `SummarizeAndPredict EMAILLOG#`, `emailedAt` marks | `weekly/latest.json` (new), `newsBoard` report (new), `UserPrefs` | `record/`, `weekly/` writes |
@@ -190,7 +191,7 @@ in S3; the prediction log migration (DATA_STRATEGY §6, separate step).
 | `backend/shared/src/record.js`, `s3json.js` | planned |
 | `newsStoryRecord` | planned (dry-run week first) |
 | `web/` link confirmation | planned |
-| weekly run + `weekly/` | planned (weekly plan steps 3–6) |
+| `backend/weekly/` + the weekly run + `weekly/` | planned (weekly plan W0-W6) |
 | `features/weekly/` | planned |
 | Worker allowlist + reader IAM | planned, fresh yes |
 | `newsBoard` + `features/board/` (slice 1: boards, follows, presets, cheap connect) | live 2026-10-20 |

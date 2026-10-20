@@ -132,6 +132,8 @@ the agent writes, code checks: selection rules are deterministic in the pull scr
 counts. Each stage is one sequential Sonnet agent; the operator checks between stages.
 
 ### W0: content v2 frozen (from the 2026-10-20 digest discussion)
+- [ ] `backend/weekly/README.md` (the group's front door: the three-names line, what it owns (`weekly/` in S3 only),
+      what it reads, what reads it, how to run each script) and `backend/weekly/sections.js` (the section model).
 - [ ] Sections, in order: **Lead** (one paragraph: the week's most important change as an argument: what happened,
       what we now expect, what would prove us wrong); **Where our view moved** (changelog: one line per story, before →
       after with the mechanism; numbers on the page, one sentence per line in the email; "none this week" stated);
@@ -140,26 +142,28 @@ counts. Each stage is one sequential Sonnet agent; the operator checks between s
       **Next week's dates** (triggers and forecast due dates in the coming 7 days); **New this week** (2-3, the frozen
       selection rule, first read labelled low); **What we did not see** (coverage footer). No scoreboard, no Brier
       number (that stays on /track-record). "Still watching" is dropped.
-- [ ] `scripts/weekly-brief/schema.json` v2 (JSON Schema; from scratchpad `weekly/schema.json`, reshaped to the sections
+- [ ] `backend/weekly/schema/weekly.schema.json` v2 (JSON Schema; from scratchpad `weekly/schema.json`, reshaped to the sections
       above; every judgment `{text, label:'judgment', confidence}`; every fact `{text, sources[]}`).
 
 ### W1: pull (read-only, deterministic)
-- [ ] `scripts/weekly-brief/pull.mjs --week-ending YYYY-MM-DD`: reads NewsCache `archive#` (7 days + 30 for births),
+- [ ] `backend/weekly/pull.mjs --week-ending YYYY-MM-DD`: reads NewsCache `archive#` (7 days + 30 for births),
       `THREAD_ANALYSIS`, `DRIFT#`/`DRIFTLOG#` (thread + country), `PRED#` scenarios with triggers, `Q#` due/verdicts,
       `web/latest.json`; applies the frozen selection rules (event-only; links or elevated risk with 2+ outlets;
       single-outlet last; "moved" = expected-path change or a 10-point move that holds, only at moderate risk or above);
       writes one inputs JSON with the candidates per section and the coverage facts. Tests on fixtures.
 
 ### W2: write + check + publish
-- [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure (read the inputs JSON; write each section to the schema;
+- [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure only, pointing at `backend/weekly/` (read the inputs JSON; write each section to the schema;
       honesty rules; no fact without a source; dates after the send; numbers only from the inputs).
-- [ ] `scripts/weekly-brief/check.mjs`: schema + rules (every fact sourced from the inputs, every judgment labelled,
+- [ ] `backend/weekly/check.mjs`: schema + rules (every fact sourced from the inputs, every judgment labelled,
       every date after the send, every threadId in the inputs, word caps for the email rendering only).
-- [ ] `scripts/weekly-brief/publish.mjs`: writes `weekly/YYYY-MM-DD.json` create-only with `status:'published'` and
-      `weekly/latest.json` (via `backend/shared/src/s3json.js`); `hold.mjs` sets the week to `held` (publish-unless-vetoed).
+- [ ] `backend/weekly/publish.mjs`: writes `weekly/YYYY-MM-DD.json` create-only with `status:'published'` and
+      `weekly/latest.json` (via `backend/shared/src/s3json.js`); `backend/weekly/hold.mjs` sets the week to `held` (publish-unless-vetoed).
 - [ ] Dry run on the week ending 2026-10-18 (compare with draft 2), written to scratchpad, not S3.
 
 ### W3: email
+- [ ] `newsEmailSender/src/_weekly` symlink to `backend/weekly/` (`scripts/lambda.sh` zips it like `_shared`; check the
+      script handles a second symlink, extend it if not).
 - [ ] `newsEmailSender` weekly mode reads `weekly/latest.json` (skips `held`); `renderWeeklyEmail.js` rewritten for the
       v2 sections (600 px table, light, risk as number + word); links to existing story and country pages (the weekly page
       comes in W5). Tests; deploy (standing Lambda auth, diff first).
@@ -186,8 +190,15 @@ counts. Each stage is one sequential Sonnet agent; the operator checks between s
   section model shared with the email renderer; public weekly for everyone, the member layer on top from followed
   countries + that week's country drift notes). It replaces Briefings' `WeeklyMode`. Route `/briefings/weekly`
   (`?week=YYYY-MM-DD`); `/weekly/*` is taken by the countries list. Email links carry the week only, never a token.
-- Agent procedure: `.claude/skills/weekly-brief/`; check + publish scripts: `scripts/weekly-brief/`; email: the
-  existing `backend/distribution/newsEmailSender`.
+- **One backend source of truth: `backend/weekly/`** (operator, 2026-10-20). It holds the schema, the pull, check,
+  publish and hold scripts, the shared section model (`sections.js`, the one definition of what each section contains
+  and in what order) and its README. Nothing about the weekly's content is defined anywhere else.
+- The agent procedure stays in `.claude/skills/weekly-brief/SKILL.md` (where Claude Code finds skills) and holds only
+  the procedure; every rule, field and path it uses comes from `backend/weekly/`.
+- The email stays in `backend/distribution/newsEmailSender` (one Lambda owns sending); its weekly template imports the
+  section model from `backend/weekly/` through a committed `src/_weekly` symlink, zipped as real files like `_shared`.
+- The page `features/weekly/` uses a mirrored copy of the section model's core block, checked by
+  `scripts/check-shared-sync.mjs` (as links.js and board.js are).
 - Design: the Personal Weekly canvas, https://claude.ai/artifact/CTKb75Mv3fC9Y6BV46hKnK (desktop, phone, email;
   the site's tokens; risk as number + word; the digest band marks where the personal layer ends).
 
@@ -246,6 +257,7 @@ counts. Each stage is one sequential Sonnet agent; the operator checks between s
 - Working files for the week (raw pulls): scratchpad `inputs/` of this session (not in the repo).
 
 ## Log
+- 2026-10-20: one backend source of truth for the weekly: `backend/weekly/` (operator); stages W0-W3 repointed.
 - 2026-10-20: build stages W0-W6 written for a first new-path send on 2026-10-25; content v2 recorded in W0.
 - 2026-10-20: decision 3 revised to publish-unless-vetoed (no human gate, operator); the weekly will read `record/` once
   `PLAN_2026-10-20_record_backend.md` step 2 exists.

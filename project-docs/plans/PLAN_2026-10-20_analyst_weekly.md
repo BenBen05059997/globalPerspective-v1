@@ -185,6 +185,8 @@ W3 lane notes (2026-10-20): sender weekly mode and renderer prepared on lane/wee
 
 W3 audit follow-up (2026-10-20): runtime/sections.js is the single model, with sections.js as a compatibility symlink for existing guards and schema tests; sender _weekly points only at runtime/. Staging verifies that no fixtures, tools, tests or examples ship through _weekly. Sender now logs and skips snapshots not matching the current UTC Sunday, even with force, as well as missing/held/nonpublished and already-sent weeks. Hermetic sender tests cover stale and future weeks.
 
+W1–W3 final lane notes (2026-10-20): shared sampledQuestions/webAt bound and normalized dry run regenerated. Dated shared scenarios recover owned forecasts missing from current topic pointers; foreign-thread snapshots stay excluded. Final file retains 85 future occurrences including both sampled deadlines, compared with 98 before migration and three in W0. Coverage remains 88 stories / 204 entries / 21 outlets, missing 14 Oct, 11/59 new stories analysed by Sunday. Inputs and checked draft plus HTML/text previews are refreshed in the mailbox artifacts. Weekly sender now rejects required failures with a stage7 marker, preserves successful recipient receipts across retries and writes the edition marker only after complete delivery. Serial invocation and the provider-acceptance/receipt-write crash boundary are documented. No publication, AWS write, deploy or email send; final local checks and coordinator handoff follow.
+
 ### W4: first real run and the switch (operator yes)
 - [ ] Saturday 2026-10-24: pull + write + check for the week ending 2026-10-25 run from this machine (the cloud run is
       W6); operator reads the draft; publish by Sunday 13:00Z unless held.

@@ -141,8 +141,10 @@ existing weekly/ ownership, not a new store or shared writer.
 Its full inputs and rendered HTML/text are review artifacts in the lane mailbox, not production uploads.
 The frozen top three new items match W0; Hormuz remains in the lead and trace. No moved item clears
 the conservative evidence gate (the prior example’s Trump change was a human reconstruction).
-The full file includes 98 deduplicated logged future dates instead of the example’s three hand-picked
-items; it excludes the inferred FEMA grace-date because no logged future deadline supplies that date.
+The full file includes 85 deduplicated logged future dates instead of the example’s three hand-picked
+items; thirteen occurrences from snapshots explicitly naming another thread were excluded by
+world/ membership, while the dated reader retains owned forecasts with stale topic pointers.
+It excludes the inferred FEMA grace-date because no logged future deadline supplies that date.
 Coverage is 11 of 59 new stories with analysis dated by Sunday, rather than the W0 example’s 14 current
 analysis rows. Risk 78 is high under the existing shared 25/50/75 bands, correcting the example’s elevated
 word. All quantitative calls quote existing PRED# triggers; this procedure creates no new calls.

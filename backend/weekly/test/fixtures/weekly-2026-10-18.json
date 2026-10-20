@@ -1,9 +1,9 @@
 {
   "weekEnding": "2026-10-18",
   "status": "draft",
-  "generatedAt": "2026-10-20T13:01:27.984Z",
-  "producer": "codex weekly-brief v1",
-  "inputsHash": "0345df27f926f0a5263bf8bb846f53584c6fd694ee6f2b153b5d8877ec89a335",
+  "generatedAt": "2026-10-20T15:29:13.483Z",
+  "producer": "codex weekly-brief v2 (shared world readers)",
+  "inputsHash": "19450f565bf9ad4e3b4afe1645301812c532d5e307630c201815a5f665e0a84f",
   "lead": {
     "headline": "Hormuz moves from attacks to a claimed closure",
     "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
@@ -120,7 +120,7 @@
         {
           "date": "2026-10-18",
           "fact": {
-            "text": "A Ukrainian drone attack on St Petersburg killed one person and hit oil facilities and a data centre.",
+            "text": "A Ukrainian drone attack on St Petersburg killed one person and hit energy sites.",
             "sources": [
               {
                 "outlet": "aljazeera.com",
@@ -249,19 +249,7 @@
     },
     {
       "date": "2026-10-20",
-      "what": "A Republican member of Congress publicly criticizes Trump's remarks about Iran targeting US cities",
-      "kind": "trigger",
-      "threadId": "thread-trump-claims-iran-war-will-end-442c7f"
-    },
-    {
-      "date": "2026-10-20",
       "what": "Bulgaria formally requests NATO consultations under Article 4 regarding the Black Sea attack",
-      "kind": "trigger",
-      "threadId": "thread-russia-launches-largest-attack-287240"
-    },
-    {
-      "date": "2026-10-20",
-      "what": "Bulgarian authorities announce the conclusion of search-and-rescue operations for missing crew members",
       "kind": "trigger",
       "threadId": "thread-russia-launches-largest-attack-287240"
     },
@@ -303,12 +291,6 @@
     },
     {
       "date": "2026-10-20",
-      "what": "NATO issues an official statement condemning the attack on civilian shipping in Bulgaria's EEZ",
-      "kind": "trigger",
-      "threadId": "thread-russia-launches-largest-attack-287240"
-    },
-    {
-      "date": "2026-10-20",
       "what": "NYC Mayor issues a public statement condemning the ICE agent's use of force",
       "kind": "trigger",
       "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
@@ -333,33 +315,15 @@
     },
     {
       "date": "2026-10-20",
-      "what": "The National Assembly holds a no-confidence vote against the government over the crisis",
-      "kind": "trigger",
-      "threadId": "thread-french-student-protests-turn-v-68e0fb"
-    },
-    {
-      "date": "2026-10-20",
       "what": "The UN Security Council issues a statement calling for restraint and a return to negotiations regarding the Bab el-Mandeb offensive",
       "kind": "trigger",
       "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
     },
     {
       "date": "2026-10-20",
-      "what": "The White House issues a formal statement clarifying or walking back Trump's remarks about Iran targeting Los Angeles or San Diego",
-      "kind": "trigger",
-      "threadId": "thread-trump-claims-iran-war-will-end-442c7f"
-    },
-    {
-      "date": "2026-10-20",
       "what": "WHO announces deployment of experimental Bundibugyo vaccine doses to Kenya for ring vaccination of contacts",
       "kind": "trigger",
       "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
-    },
-    {
-      "date": "2026-10-20",
-      "what": "WHO issues a public statement confirming it has received an official notification from Russia under IHR regarding the lab death",
-      "kind": "trigger",
-      "threadId": "thread-us-monitoring-plague-researche-51fdb6"
     },
     {
       "date": "2026-10-21",
@@ -417,18 +381,6 @@
     },
     {
       "date": "2026-10-22",
-      "what": "The Ethiopian Ministry of Defense issues an official statement confirming the drone strike targeted Eritrean Defense Forces positions in Tigray",
-      "kind": "trigger",
-      "threadId": "thread-ethiopia-fighting-escalates-in-bdc3d4"
-    },
-    {
-      "date": "2026-10-22",
-      "what": "The Trump administration announces it is voluntarily pulling the ads in response to the lawsuit",
-      "kind": "trigger",
-      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
-    },
-    {
-      "date": "2026-10-22",
       "what": "Trump and Putin hold a phone call where biosecurity transparency is discussed",
       "kind": "trigger",
       "threadId": "thread-us-monitoring-plague-researche-51fdb6"
@@ -453,12 +405,6 @@
     },
     {
       "date": "2026-10-23",
-      "what": "Hungary or Slovakia formally vetoes or blocks the EU Ukraine support package at the October 22–23 European Council session",
-      "kind": "trigger",
-      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
-    },
-    {
-      "date": "2026-10-23",
       "what": "Kenya begins ring vaccination of contacts and healthcare workers using rVSV-ZEBOV vaccine",
       "kind": "trigger",
       "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
@@ -480,12 +426,6 @@
       "what": "The European Council conclusions of October 22-23, 2026 explicitly mandate the European Commission to explore a new partnership status for Canada",
       "kind": "trigger",
       "threadId": "thread-eu-and-canada-seek-closer-ties-2f1e5a"
-    },
-    {
-      "date": "2026-10-23",
-      "what": "The European Council issues a formal summit conclusion explicitly endorsing Ukraine's right to strike Russian oil refineries",
-      "kind": "trigger",
-      "threadId": "thread-trump-announces-us-to-import-r-8c45a3"
     },
     {
       "date": "2026-10-23",
@@ -528,12 +468,6 @@
       "what": "WHO deploys Ebola vaccine stockpile (Ervebo) to Kenya for ring vaccination of contacts",
       "kind": "trigger",
       "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
-    },
-    {
-      "date": "2026-10-24",
-      "what": "A second nationwide Saturday demonstration occurs on October 24, 2026, with reported turnout of at least 50,000 nationwide",
-      "kind": "trigger",
-      "threadId": "thread-french-student-protests-turn-v-68e0fb"
     },
     {
       "date": "2026-10-24",
@@ -618,12 +552,6 @@
       "what": "Christa Pike's legal team files an emergency motion in federal court seeking to bar any further execution attempts",
       "kind": "trigger",
       "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
-    },
-    {
-      "date": "2026-10-25",
-      "what": "Élisabeth Borne meets with representatives of UNL and FIDL for formal negotiations",
-      "kind": "trigger",
-      "threadId": "thread-french-student-protests-turn-v-68e0fb"
     },
     {
       "date": "2026-10-25",
@@ -729,12 +657,6 @@
     },
     {
       "date": "2026-10-25",
-      "what": "The French government and major student unions (UNEF, FAGE) sign a joint de-escalation agreement",
-      "kind": "trigger",
-      "threadId": "thread-french-student-protests-turn-v-68e0fb"
-    },
-    {
-      "date": "2026-10-25",
       "what": "The Interior Ministry issues a directive restricting use of tear gas and water cannons against student protesters",
       "kind": "trigger",
       "threadId": "thread-french-student-protests-turn-v-68e0fb"
@@ -771,12 +693,6 @@
     },
     {
       "date": "2026-10-25",
-      "what": "The White House announces it will restore press credentials to CNN, MS Now, and Politico",
-      "kind": "trigger",
-      "threadId": "thread-us-court-halts-execution-of-ch-ae75a8"
-    },
-    {
-      "date": "2026-10-25",
       "what": "UNL and FIDL issue a joint statement calling for an end to school blockades and vandalism",
       "kind": "trigger",
       "threadId": "thread-french-student-protests-turn-v-68e0fb"
@@ -792,6 +708,12 @@
       "what": "WHO deploys an international response team to Kenya within 7 days",
       "kind": "trigger",
       "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Élisabeth Borne meets with representatives of UNL and FIDL for formal negotiations",
+      "kind": "trigger",
+      "threadId": "thread-french-student-protests-turn-v-68e0fb"
     }
   ],
   "new": [
@@ -934,11 +856,12 @@
   },
   "notes": {
     "unconfirmed": [
-      "The live story-web snapshot was generated after this week; its edges are used as possibly related links, not confirmed causes.",
+      "The Sunday web snapshot is absent; web/latest.json was generated after this week and supplies only possibly related links, not confirmed causes.",
       "No explicit logged revision or sustained ten-point movement passed the conservative moved gate; differently worded trajectories remain in inputs.pathReviewCandidates for review.",
       "The first two trace branches per anchor retain logged probabilities, triggers and future deadlines, with mechanisms drawn from the logged rationale; none has been checked or settled by this procedure.",
       "All quantitative calls are existing logged calls; this draft creates no new prediction-log entries.",
-      "The new section keeps the frozen top three; Hormuz also qualified and is retained in the lead and trace."
+      "The new section keeps the frozen top three; Hormuz also qualified and is retained in the lead and trace.",
+      "The shared reader removes thirteen future occurrences from snapshots that explicitly name another thread; the dated scenario read restores an owned forecast absent from the current topic pointer, leaving eighty-five next-week occurrences including both sampled-question deadlines."
     ]
   }
 }

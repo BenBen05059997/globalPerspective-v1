@@ -31,9 +31,9 @@ country "sheet": each section carries its `ClaimTag` mark, plus a computed "What
   `countryTier`, `countryTriggers`, `countryWatch`; sheet: `countryUnknowns`, `countryConnections` (story-web links, "judged to feed
   into", negative lag = "order unclear"), `countryChange`, `countryText` (plain-text sheet, numbered absolute footnotes), `countryYourView`
 - Public API (`index.js`): `CountryCardV2` (used by `map`)
-- Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`, `deriveFromIndex`, `buildDeadlines`, plus a lazy
+- Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`, `deriveFromIndex`, plus a lazy
   `import()` of `threads/components/WeeklyMap` (a static import pulled it into the main chunk). Nothing from `@/features/economy`.
-- Shared: `useArchiveDayMap`, `useDisruptionsList`, `@/shared/map/countryRiskLayer.js`, `countryCoordinates.js`, `@/shared/ui/risk/*`
+- Shared: `@/shared/lib/deadlines.js` (`buildDeadlines`), `useArchiveDayMap`, `useDisruptionsList`, `@/shared/map/countryRiskLayer.js`, `countryCoordinates.js`, `@/shared/ui/risk/*`
 
 ## Backend
 - Generated row: [reference/features.md#countries](../../../../../project-docs/reference/features.md#countries)

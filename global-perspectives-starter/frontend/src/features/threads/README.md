@@ -20,7 +20,7 @@ board, timeline, map or story web, and a story page to read one arc (story mode 
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY` is set, else `WeeklyFallbackMap`
 - `components/ThreadForecast.jsx`, `ThreadIntelligence.jsx`, `FedIntoList.jsx`, `SharedActorsList.jsx` - forecast, analysis and story-link blocks
 - `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (story links)
-- Public API (`index.js`): `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines` (used by countries), `useWebIndex`,
+- Public API (`index.js`): `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`,
   `deriveFromIndex` (used by map). `WeeklyMap` is not exported: countries lazy-imports it by path.
 - Imports from other features: `@/features/economy` -> `MechanismCard`, `useEconomicImpact` (ThreadPage only; never countries).
 - Shared: `@/shared/lib/links.js` addresses, `EntityLink`, `@/shared/ui/deck.css` (deck shell shared with briefings).

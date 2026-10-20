@@ -5,4 +5,3 @@ export { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 export { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 export { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 export { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
-export { buildDeadlines } from '@/features/threads/lib/storyMode.js';

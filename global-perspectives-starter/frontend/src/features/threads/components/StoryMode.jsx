@@ -9,9 +9,10 @@ import { rootCauseSteps } from '@/shared/lib/rootCause';
 import { firstSentences } from '@/shared/lib/cardText.js';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import {
-  analysisTextState, buildChapters, buildScrubberDays, buildDeadlines, buildSlides, viewFrom,
+  analysisTextState, buildChapters, buildScrubberDays, buildSlides, viewFrom,
   scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
+import { buildDeadlines } from '@/shared/lib/deadlines.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';

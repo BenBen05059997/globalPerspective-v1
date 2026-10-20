@@ -1,5 +1,5 @@
 // countryTriggers — the card's "<=2 future dated triggers" row. Pure filter over a prediction
-// snapshot's dated triggers (features/threads/lib/storyMode.js's buildDeadlines shape), aggregated
+// snapshot's dated triggers (shared/lib/deadlines.js's buildDeadlines shape), aggregated
 // from this country's stories. Only FUTURE triggers with a real deadline are ever shown — a
 // passed trigger is never shown on the card (COUNTRY_VIEW_DISCUSSION.md: "Passed watch items are
 // never shown on the card").

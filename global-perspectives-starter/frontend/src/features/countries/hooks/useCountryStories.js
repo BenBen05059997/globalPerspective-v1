@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
-import { buildDeadlines } from '@/features/threads';
+import { buildDeadlines } from '@/shared/lib/deadlines.js';
 import { countryMatcher } from '@/features/countries/lib/countryMatch.js';
 
 /**

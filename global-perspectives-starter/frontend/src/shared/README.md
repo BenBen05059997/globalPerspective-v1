@@ -19,6 +19,7 @@ import from here; here imports from no feature and not from `app/`.
   Its rules block is kept identical to `backend/shared/src/links.js` (emails) by `scripts/check-shared-sync.mjs`.
 - Countries: `data/iso3Names.json` (copy of `backend/shared/src/iso3Names.json`) read through `lib/countries.js` (`COUNTRIES`, `resolveCountry`, `isCountry`, `normKey`, `parentCountry`). `lib/countryMapping.js` only groups countries by region.
 - Claim kind: `ui/ClaimTag.jsx` (FACT, INFERENCE, MODEL JUDGMENT). Entity links: `ui/EntityLink.jsx` (story or country link with a hover peek).
+- Deadlines: `lib/deadlines.js` (`buildDeadlines`: dated triggers of a prediction snapshot; threads and countries).
 - Freshness: `ui/AsOf.jsx` ("as of 5h ago") built on `lib/age.js`; `lib/freshness.js` (`pausedSince`) for the analysis-paused note.
 - Risk: `lib/riskTiers.js` (score to tier), `ui/TierChip.jsx`, `ui/risk/`; colors from `styles/tokens.js`.
 - Colors, type scale, radii, spacing: `styles/tokens.css`. Use `var(--token)`; JS and canvas read `styles/tokens.js`.

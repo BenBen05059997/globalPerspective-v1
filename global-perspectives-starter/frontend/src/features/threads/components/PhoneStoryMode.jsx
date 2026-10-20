@@ -7,8 +7,9 @@ import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import {
-  buildChapters, buildDeadlines, buildSlides, viewFrom,
+  buildChapters, buildSlides, viewFrom,
 } from '@/features/threads/lib/storyMode.js';
+import { buildDeadlines } from '@/shared/lib/deadlines.js';
 import { BriefSlide, ChapterSlide, FedIntoSlide, WatchSlide } from '@/features/threads/components/StoryMode.jsx';
 import StoryMap from '@/shared/map/StoryMap.jsx';
 import BottomSheet from '@/shared/ui/BottomSheet.jsx';

@@ -4,4 +4,3 @@
 export { default as InstrumentChip } from '@/features/economy/components/InstrumentChip';
 export { default as MechanismCard } from '@/features/economy/components/MechanismCard';
 export { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
-export { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry';

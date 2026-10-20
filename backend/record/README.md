@@ -19,7 +19,7 @@ An agent working on the record does not write the other groups. Design: `project
 
 ## What the group will own
 
-`newsStoryRecord` is the sole writer of `record/stories/*`, `record/index.json`, `record/corrections/*`. During the dry-run week, use `record/shadow/` instead. Dated snapshots are create-only; latest and index objects are replaceable pointers.
+`newsStoryRecord` is the sole writer of the timeline `record/timeline/*` and its views `record/stories/*`, `record/index.json`, `record/corrections/*`. During the dry-run week, use `record/shadow/` instead. Dated snapshots are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 

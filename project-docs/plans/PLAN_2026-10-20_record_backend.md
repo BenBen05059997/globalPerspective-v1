@@ -81,8 +81,9 @@ The weekly is published by the run at 06:00Z and sent at 14:00Z. The operator ma
 window. Enabling the sender on the new path is a user-facing send and needs a fresh yes when reached.
 
 ## 6. Order of work
-Started 2026-10-20: step 1 in progress (code + tests by agent; deploy after diff).
-1. `newsPredictionResolver`: write verdicts directly; `VOID#` path. (Reverses decision 0011; record it in `decisions/`.)
+1. ✓ 2026-10-20 (e2132a75, deployed, CodeSha256 Z9D6hUJD…): `newsPredictionResolver` writes verdicts directly; corrections
+   are appended `VERDICT#<n>` rows with a reason via the `correct` action / `predictions/settle-correct.js` (decision 0034).
+   Smoke: dry-run tick clean, `--list` shows the one due question (FEMA, draft `not_yet`, re-draft due 2026-10-24).
 2. `newsStoryRecord`: birth + duplicate check + chapters + trigger check + corrections + index. Dry-run week first,
    compared against the two hand drafts.
 3. `newsSystemsAnalysis`: link confirmation field.
@@ -90,6 +91,10 @@ Started 2026-10-20: step 1 in progress (code + tests by agent; deploy after diff
    of raw pulls).
 5. `followedThreads` + `newsBoard` + `newsConnect` + `features/board/`: the Studio phase.
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
+
+## Log
+- 2026-10-20: step 1 done and deployed; the first live verdicts will appear as drafts settle (next draft pass Monday
+  2026-10-26, or the FEMA re-draft on 10-24).
 
 ## Open
 - Storage review (side project, researched 2026-10-20; **decided: keep DynamoDB for the user side**, operator): replacing DynamoDB for the user side was

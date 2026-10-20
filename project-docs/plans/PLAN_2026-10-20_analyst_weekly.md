@@ -123,12 +123,63 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
       email word cap was applied to the JSON. Rules revised a second time (above) and frozen; draft 3 is produced by
       the real procedure in step 3 as its first test. Files: scratchpad `weekly/2026-10-18.draft2.{json,txt}`,
       `weekly/schema.json`. Nothing sent; calls not logged.
-- [ ] 3. The skill `.claude/skills/weekly-brief/SKILL.md` (the procedure) + `scripts/weekly-brief/check.mjs`
-      (schema + honesty rules) + `scripts/weekly-brief/publish.mjs` (draft → published, latest.json, prediction log).
-- [ ] 4. Readers: `newsEmailSender` weekly mode and the Briefings weekly mode read `weekly/latest.json`; new renderers
-      (one shared section model, two renderers). Email tested by send-to-self on a phone mail app.
-- [ ] 5. Cloud scheduled run + credential (needs yes); notification to the operator; one supervised Saturday run.
-- [ ] 6. Retire `newsWeeklyBrief` + `TriggerWeeklyBrief`; ARCHITECTURE flow, STATUS, reference regen, Atlas.
+- [ ] 3-6 replaced by the build stages below (2026-10-20).
+
+## Build stages for the first new-path send, Sunday 2026-10-25 (written 2026-10-20; nothing started)
+Target: the week ending 2026-10-25 goes out as the analyst's weekly at 14:00Z. The pipeline reads the live tables
+directly (as drafts 1-2 did); it switches to `record/` once `newsStoryRecord` exists (record plan step 2). Code selects,
+the agent writes, code checks: selection rules are deterministic in the pull script, so the agent never chooses what
+counts. Each stage is one sequential Sonnet agent; the operator checks between stages.
+
+### W0: content v2 frozen (from the 2026-10-20 digest discussion)
+- [ ] Sections, in order: **Lead** (one paragraph: the week's most important change as an argument: what happened,
+      what we now expect, what would prove us wrong); **Where our view moved** (changelog: one line per story, before →
+      after with the mechanism; numbers on the page, one sentence per line in the email; "none this week" stated);
+      **The trace** (up to 5 anchor stories: where it was, where it is (dated steps), where it goes: the branches we drew
+      with p, trigger and date; branch status shows "not yet checked" until the record's trigger check exists);
+      **Next week's dates** (triggers and forecast due dates in the coming 7 days); **New this week** (2-3, the frozen
+      selection rule, first read labelled low); **What we did not see** (coverage footer). No scoreboard, no Brier
+      number (that stays on /track-record). "Still watching" is dropped.
+- [ ] `scripts/weekly-brief/schema.json` v2 (JSON Schema; from scratchpad `weekly/schema.json`, reshaped to the sections
+      above; every judgment `{text, label:'judgment', confidence}`; every fact `{text, sources[]}`).
+
+### W1: pull (read-only, deterministic)
+- [ ] `scripts/weekly-brief/pull.mjs --week-ending YYYY-MM-DD`: reads NewsCache `archive#` (7 days + 30 for births),
+      `THREAD_ANALYSIS`, `DRIFT#`/`DRIFTLOG#` (thread + country), `PRED#` scenarios with triggers, `Q#` due/verdicts,
+      `web/latest.json`; applies the frozen selection rules (event-only; links or elevated risk with 2+ outlets;
+      single-outlet last; "moved" = expected-path change or a 10-point move that holds, only at moderate risk or above);
+      writes one inputs JSON with the candidates per section and the coverage facts. Tests on fixtures.
+
+### W2: write + check + publish
+- [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure (read the inputs JSON; write each section to the schema;
+      honesty rules; no fact without a source; dates after the send; numbers only from the inputs).
+- [ ] `scripts/weekly-brief/check.mjs`: schema + rules (every fact sourced from the inputs, every judgment labelled,
+      every date after the send, every threadId in the inputs, word caps for the email rendering only).
+- [ ] `scripts/weekly-brief/publish.mjs`: writes `weekly/YYYY-MM-DD.json` create-only with `status:'published'` and
+      `weekly/latest.json` (via `backend/shared/src/s3json.js`); `hold.mjs` sets the week to `held` (publish-unless-vetoed).
+- [ ] Dry run on the week ending 2026-10-18 (compare with draft 2), written to scratchpad, not S3.
+
+### W3: email
+- [ ] `newsEmailSender` weekly mode reads `weekly/latest.json` (skips `held`); `renderWeeklyEmail.js` rewritten for the
+      v2 sections (600 px table, light, risk as number + word); links to existing story and country pages (the weekly page
+      comes in W5). Tests; deploy (standing Lambda auth, diff first).
+- [ ] Send-to-self: one render sent only to the operator address for a phone check (operator yes for that send).
+
+### W4: first real run and the switch (operator yes)
+- [ ] Saturday 2026-10-24: pull + write + check for the week ending 2026-10-25 run from this machine (the cloud run is
+      W6); operator reads the draft; publish by Sunday 13:00Z unless held.
+- [ ] Disable `TriggerWeeklyBrief` (old Lambda stops writing) and point the 14:00Z send at the new path (fresh yes:
+      user-facing send). If W1-W3 are not ready by Saturday, the operator chooses: hold the 25 Oct send or let the old
+      digest go once more.
+
+### W5: the weekly page (after the first send)
+- [ ] `features/weekly/` at `/briefings/weekly?week=`; Briefings `WeeklyMode` deleted. Needs the Worker allowlist + its
+      reader IAM for `weekly/` (operator yes, frontend release).
+
+### W6: cloud schedule and retirement
+- [ ] Headless Claude Code run on a schedule in the cloud with a credential scoped to `weekly/*` write and the tables'
+      read (operator yes); operator notified with the draft.
+- [ ] Retire `newsWeeklyBrief` (after one new-path send); ARCHITECTURE flow 5, STATUS, reference regen, Atlas.
 
 ## Where it lives (operator, 2026-10-20)
 - Frontend: a new feature folder `features/weekly/` (page, hook reading `weekly/latest.json` and past weeks, the
@@ -195,6 +246,7 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 - Working files for the week (raw pulls): scratchpad `inputs/` of this session (not in the repo).
 
 ## Log
+- 2026-10-20: build stages W0-W6 written for a first new-path send on 2026-10-25; content v2 recorded in W0.
 - 2026-10-20: decision 3 revised to publish-unless-vetoed (no human gate, operator); the weekly will read `record/` once
   `PLAN_2026-10-20_record_backend.md` step 2 exists.
 - 2026-10-20: Studio board brainstorm recorded in `PLAN_2026-10-20_board.md`; if adopted, its board weekly replaces

@@ -60,6 +60,7 @@ function makeStore(io, {
       }));
       const missingDays = [];
       for (let d = addDays(date, -29); d <= date; d = addDays(d, 1)) if (!archiveDays.has(d)) missingDays.push(d);
+      const analysisDates = Object.values(analyses).map(a=>day(a.generatedAt || a.dateKey || String(a.SK || '').replace('THREAD_HISTORY#',''))).filter(Boolean).sort();
       return {
         entries,
         analyses,
@@ -69,6 +70,12 @@ function makeStore(io, {
         links,
         coverage: {
           missingDays,
+          sources: {
+            archives: {asOf: [...archiveDays].sort().at(-1) || null},
+            threadAnalyses: {asOf: analysisDates.at(-1) || null, oldest: analysisDates[0] || null},
+            predictions: {asOf: pred.filter(r=>r.PK.startsWith('PRED#') && day(r.SK)<=date).map(r=>day(r.SK)).sort().at(-1) || null},
+            web: {asOf: bundle?.generatedAt || null}
+          },
           missingAnalyses,
           archiveEarliest: [...archiveDays].sort()[0] || null,
           birthScope: 'earliest retained archive; deleted archive history cannot be reconstructed',

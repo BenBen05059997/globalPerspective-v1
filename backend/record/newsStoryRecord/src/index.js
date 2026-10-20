@@ -330,7 +330,7 @@ function makeHandler({
     }));
     const index = {
       date, generated_at: now(), next_expected_at: `${addDays(date, 1)}T05:45:00Z`,
-      stale: false, stories: rows, coverage: report.coverage, proposedMerges: report.proposedMerges
+      stale: (report.coverage.missingDays || []).includes(date), stories: rows, coverage: report.coverage, proposedMerges: report.proposedMerges
     };
     const indexBody = JSON.stringify(index);
     report.indexKB = Buffer.byteLength(indexBody) / 1024;

@@ -513,3 +513,8 @@ test('malformed model judgment aborts before any latest pointer moves',async()=>
   await assert.rejects(s.run({date}),/invalid chapter text/);
   assert.equal([...s.objects.keys()].some(k=>k.endsWith('latest.json')),false);
 });
+
+test('missing run-date archive is explicitly stale in index',async()=>{
+ const d=data();d.coverage.missingDays=[date];const s=setup(d);await s.run({date});
+ assert.equal(s.get('record/index.json').stale,true);
+});

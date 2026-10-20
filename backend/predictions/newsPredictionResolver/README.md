@@ -1,6 +1,6 @@
 # newsPredictionResolver
 
-Weekly prediction settle Lambda (methodology v1). `tick` (default action, idempotent) commits seed hashes for the next two weeks, draws a seeded sample (K=22, rule `v1`) from every ended week's question-schema predictions, runs the agent draft pass on Mondays, and writes a heartbeat. Other actions: `draw {weekId}`, `draft {limit}`, `status` (read-only counts), `replay {items}` (drafter only, no writes). `dryRun: true` = no LLM, no writes. Drafts are proposals only; the operator writes verdicts (`predictions/settle-review.js`). The drafter never sees a question's probability (`draft.js`).
+Daily prediction settle Lambda (drafts on Mondays) (methodology v1). `tick` (default action, idempotent) commits seed hashes for the next two weeks, draws a seeded sample (K=22, rule `v1`) from every ended week's question-schema predictions, runs the agent draft pass on Mondays, and writes a heartbeat. Other actions: `draw {weekId}`, `draft {limit}`, `status` (read-only counts), `replay {items}` (drafter only, no writes). `dryRun: true` = no LLM, no writes. Drafts are proposals only; the operator writes verdicts (`predictions/settle-review.js`). The drafter never sees a question's probability (`draft.js`).
 
 ## Deployment
 - Deployed name `newsPredictionResolver` · runtime `nodejs22.x` · group `predictions` (scripts/functions.json)

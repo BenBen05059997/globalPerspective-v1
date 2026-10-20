@@ -36,8 +36,12 @@ and verified, with the commit.
       correction history, full corrections ledger, following countries); six pages and two blog posts corrected;
       follow-button titles no longer promise emails (3d52f9d8). Not pushed: `docs/blog` is served by Pages, so it
       ships with the release (item 10).
-- [ ] 4. Country page honesty layer (decision 2): fact / judgment tags on every line, "What we don't know",
-      copy as text, print view, the reader's own view box (browser only). Built from data the page already reads.
+- [x] 4. Country page honesty layer (decision 2): fact / judgment tags on every section, "How it connects" (story
+      web, "judged to feed into"), "What we don't know", copy as text, print stylesheet, the reader's own view box
+      (browser only), footer "No AI ran when you opened this page" (69c8171c, 5d8ed9b7, 5ceb3387, plus the coverage
+      fix). Click-tested on the local build at 500 px: unknowns for Iran and Kenya, copy, view box persists. Print
+      button not pressed (a print dialog blocks browser automation). Open: two copy buttons in the header
+      ("Copy briefing" kept); print shows only the active tab.
 - [ ] 5. Retire the lens Studio screens (decision 3): `/analyze` points readers to country pages; shared-run
       pages keep working; libraries kept; Studio links removed from story and country pages.
 - [ ] 6. Small leftovers: the deadline helper countries borrows from threads; stale CLI header comments;
@@ -50,4 +54,6 @@ and verified, with the commit.
 - [ ] 10. Frontend release of items 3-5 and the Studio fix (needs a fresh yes).
 
 ## Log
+- 2026-10-20: a 23:41Z test run of newsSystemsAnalysis with no target countries left WEB#INDEX `targets` empty until
+  the 05:00Z run; the country page now reads `websUsed` instead.
 - 2026-10-20: Studio `?stories=` fix checked on the local build: the French-protests thread opens preselected (1/4).

@@ -14,9 +14,8 @@ const {
   transition,
   duplicates
 } = require('../src/rules');
-const {
-  makeStore
-} = require('../src/store');
+const {makeStore}=require('../src/store');
+const {fixtureStore}=require('./fixture-store');
 const date = '2026-10-19';
 const entry = (id = 'a', d = date) => ({
   threadId: id,
@@ -111,9 +110,7 @@ function setup(input = data(), llm = null) {
     writes,
     s3json,
     run: makeHandler({
-      store: {
-        load: async () => input
-      },
+      store: fixtureStore(input),
       s3json,
       llm,
       now: () => `${date}T05:45:00Z`
@@ -295,9 +292,7 @@ test('dead resurrection appends status and correction; verdict revisions are mir
   assert.equal(before.forks[0].branches[0].scored.verdict, 'no');
   d.entries.push(entry('a', '2026-10-20'));
   const run = makeHandler({
-    store: {
-      load: async () => d
-    },
+    store: fixtureStore(d),
     s3json: s.s3json,
     llm: async p => judgment(p.task === 'trigger' ? {
       status: 'fired',
@@ -405,9 +400,7 @@ test('line contradiction correction requires valid citation and preserves dated 
   const d = '2026-10-26';
   s.input.entries.push(entry('a', d));
   const run = makeHandler({
-    store: {
-      load: async () => s.input
-    },
+    store: fixtureStore(s.input),
     s3json: s.s3json,
     llm: async p => judgment(p.task === 'trigger' ? {status:'hold'} : {
       text: 'Revised line',
@@ -427,29 +420,12 @@ test('line contradiction correction requires valid citation and preserves dated 
   assert.equal(s.get('record/stories/a/latest.json').line.versions[0].text, 'Initial line');
   assert.equal(s.get(`record/corrections/${d}.json`).corrections[0].kind, 'line-contradicted');
 });
-test('read store uses as-of histories and retains coverage gaps', async () => {
-  const store = makeStore({
-    scan: async t => t === 'NewsCache' ? [{
-      id: `archive#${date}`,
-      entries: [entry()]
-    }] : [],
-    get: async () => ({
-      entries: [entry('stale', '2026-10-18')]
-    }),
-    query: async () => [{
-      SK: 'THREAD_ANALYSIS',
-      generatedAt: '2026-10-20',
-      riskScore: 99
-    }, {
-      SK: `THREAD_HISTORY#${date}`,
-      riskScore: 20
-    }],
-    web: async () => null
-  });
-  const d = await store.load(date);
-  assert.equal(d.analyses.a.riskScore, 20);
-  assert.equal(d.entries.length, 1);
-  assert.ok(d.coverage.missingDays.includes('2026-10-14'));
+test('read store uses as-of histories and retains coverage gaps',async()=>{
+ const d=data();d.analyses.a={generatedAt:'2026-10-20T04:40:00Z',riskScore:99};
+ d.summaryRows=[{PK:'THREAD#a',SK:`THREAD_HISTORY#${date}`,riskScore:20}];
+ const result=await fixtureStore(d).load(date);
+ assert.equal(result.analyses.a.riskScore,20);assert.equal(result.entries.length,1);
+ assert.ok(result.coverage.missingDays.includes('2026-10-14'));
 });
 test('named source matching uses boundaries and recognises named AP publisher', () => {
   const {
@@ -494,7 +470,7 @@ test('late branch can fire on later evidence and birth stays put once', async ()
   await s.run({date});
   const next = '2026-10-20';
   s.input.entries.push(entry('a', next), entry('a', '2026-09-01'));
-  const run = makeHandler({store:{load:async()=>s.input},s3json:s.s3json,
+  const run = makeHandler({store:fixtureStore(s.input),s3json:s.s3json,
     llm:async p=>judgment(p.task==='trigger'?{status:'fired',evidence:[{archive:`archive#${next}`,topicId:`t-a-${next}`,url:'https://reuters.com/a'}]}:p.task==='chapter'?{name:'New chapter',text:'Grounded chapter.'}:{text:'Grounded line.'})});
   await run({date:next});
   const record=s.get('record/stories/a/latest.json');
@@ -515,7 +491,7 @@ test('malformed model judgment aborts before any latest pointer moves',async()=>
 });
 
 test('missing run-date archive is explicitly stale in index',async()=>{
- const d=data();d.coverage.missingDays=[date];const s=setup(d);await s.run({date});
+ const d=data();d.entries=[entry('a','2026-10-18')];d.coverage.missingDays=[date];const s=setup(d);await s.run({date});
  assert.equal(s.get('record/index.json').stale,true);
 });
 

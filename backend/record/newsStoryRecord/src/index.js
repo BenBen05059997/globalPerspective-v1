@@ -11,9 +11,6 @@ const {
   citations,
   transition
 } = require('./rules');
-const {
-  keepDayZero
-} = require('./_shared/dayZero');
 const clone = x => JSON.parse(JSON.stringify(x));
 function validDate(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || day(new Date(`${date}T00:00:00Z`).toISOString()) !== date) throw Error('date must be YYYY-MM-DD');
@@ -31,7 +28,9 @@ function makeHandler({
     validDate(date);
     const prefix = shadow ? 'record/shadow/' : 'record/';
     // load(date) is a read-only, as-of-date store contract; missing archive days are explicit.
-    const input = await store.load(date);
+    const existingIndex = await s3json.getJson(`${prefix}index.json`);
+    if (existingIndex?.date > date) throw Error('refusing to rewind index');
+    const input = await store.load(date,{since:existingIndex?.date ? addDays(existingIndex.date,1) : undefined});
     const report = {
       date,
       threadsProcessed: 0,
@@ -69,10 +68,10 @@ function makeHandler({
       if (task === 'trigger' && !['fired', 'hold', 'dead'].includes(result.status)) throw Error('invalid trigger status');
       return result;
     };
-    const entries = (input.entries || []).filter(e => e.date <= date).filter(e => e.date !== date || keepDayZero([e], Date.parse(`${date}T12:00:00Z`)).length).map(e => ({
+    const entries = (input.entries || []).filter(e => e.date <= date).map(e => ({
       date: e.date,
-      archive: e.archive || `archive#${e.date}`,
-      topicId: e.topicId || e.id,
+      archive: e.archive,
+      topicId: e.topicId,
       headline: e.title || '',
       threadId: e.threadId,
       archivedAt: e.archivedAt,
@@ -83,8 +82,6 @@ function makeHandler({
     const ids = [...new Set(entries.filter(e => e.date >= addDays(date, -29)).map(e => e.threadId).filter(Boolean))].sort();
     const stories = [];
     const corrections = [];
-    const existingIndex = await s3json.getJson(`${prefix}index.json`);
-    if (existingIndex?.date > date) throw Error('refusing to rewind index');
     for (const id of ids) {
       if (!/^[A-Za-z0-9_-]+$/.test(id)) throw Error('unsafe thread id');
       const key = `${prefix}stories/${id}/`;
@@ -100,8 +97,9 @@ function makeHandler({
       const analysis = input.analyses?.[id] || {};
       const r = previous ? clone(previous) : {
         threadId: id,
-        born: own.map(e => e.date).sort()[0],
-        bornAt: own.map(e => e.archivedAt || `${e.date}T00:00:00Z`).sort()[0],
+        born: input.births[id].born,
+        bornAt: input.births[id].bornAt,
+        birthEvidence: input.births[id],
         line: {
           text: '',
           writtenAt: date,
@@ -115,10 +113,11 @@ function makeHandler({
       };
       if (!previous) report.birthsFound++;
       r.asOf = date;
-      r.actors = [...new Set(own.flatMap(e => e.actors).concat(analysis.keyActors || []))].sort();
+      r.actors = [...new Set(own.flatMap(e => e.actors).concat((analysis.keyActors || []).map(a=>a.name)))].sort();
       r.countries = [...new Set(own.flatMap(e => e.countries).concat(analysis.iso3 || []))].sort();
       r.risk = analysis.riskScore ?? previous?.risk ?? null;
-      const drift = input.drifts?.[id];
+      const driftNotes = input.drifts?.[id] || [];
+      const drift = driftNotes.at(-1);
       // Bootstrap/backfill all available events, not only today's: recovery catches missed runs.
       for (const e of own) if (!r.events.some(p => p.archive === e.archive && p.topicId === e.topicId)) r.events.push({
         ...e,
@@ -143,34 +142,17 @@ function makeHandler({
           confidence: c.confidence
         });
       }
-      for (const p of (input.predictions || []).filter(p => p.threadId === id && day(p.SK) <= date)) {
-        const forkId = `${p.PK}/${p.SK}`;
-        if (r.forks.some(f => f.forkId === forkId)) continue;
-        const branches = [];
-        (p.scenarios || []).forEach((s, si) => (s.triggers || []).forEach((t, ti) => branches.push({
-          branchId: `${forkId}/${t.id || `${si}-${ti}`}`,
-          scenarioId: String(si),
-          text: s.label || s.text || t.text,
-          p: t.p ?? null,
-          trigger: typeof t === 'string' ? t : t.text || '',
-          resolutionSource: t.resolutionSource || t.resolution_source || '',
-          due: t.deadline || t.due || null,
-          ...(t.qid ? {
-            qid: t.qid
-          } : {}),
-          status: []
-        })));
-        r.forks.push({
-          forkId,
-          drawnAt: day(p.SK),
-          atEvent: p.topicId || p.PK.replace('PRED#', ''),
-          branches
-        });
+      for (const fork of input.forks?.[id] || []) {
+        if(r.forks.some(f=>f.forkId===fork.forkId)) continue;
+        const {threadId: ignored,...fields}=fork;
+        r.forks.push({...clone(fields),branches:fork.branches.map(b=>{
+          const {qid,...rest}=b;return {...clone(rest),...(qid?{qid}:{}),status:[]};
+        })});
       }
       r.forks.sort((a,b)=>a.drawnAt.localeCompare(b.drawnAt) || a.forkId.localeCompare(b.forkId));
-      const currentLinks = (input.links || []).filter(l => l.confirmed === true && l.confirmedBy === 'rule' && (l.a === id || l.b === id)).map(l => ({
-        otherThreadId: l.a === id ? l.b : l.a,
-        strength: l.strength,
+      const currentLinks = (input.links || []).filter(l => l.confirmed === true && l.confirmedBy === 'rule' && (l.from === id || l.to === id)).map(l => ({
+        otherThreadId: l.from === id ? l.to : l.from,
+        strength: l.strength || l.confidence,
         mechanism: l.mechanism || '',
         confirmed: true,
         confirmedBy: 'rule',
@@ -242,17 +224,11 @@ function makeHandler({
           }
         }
       }
-      for (const b of r.forks.flatMap(f => f.branches)) if (b.qid) {
-        const verdict = (input.verdicts || []).filter(v => v.PK === `Q#${b.qid}` && day(v.decidedAt) <= date).sort((a, b) => verdictOrder(b.SK) - verdictOrder(a.SK))[0];
-        if (verdict && verdictOrder(verdict.SK) > verdictOrder(b.scored?.sourceSK)) {
-          b.verdicts ||= [];
-          b.verdicts.push({
-            verdict: verdict.verdict,
-            decidedAt: verdict.decidedAt,
-            sourceSK: verdict.SK
-          });
-          b.scored = b.verdicts.at(-1);
-          report.verdictsMirrored++;
+      for (const b of r.forks.flatMap(f=>f.branches)) if(b.qid) {
+        const verdict=input.verdicts?.[b.qid];
+        for(const v of verdict?.all || []) if(v.n>verdictOrder(b.scored?.sourceSK)) {
+          b.verdicts ||= [];b.verdicts.push({verdict:v.verdict,decidedAt:v.decidedAt,sourceSK:v.sk});
+          b.scored=b.verdicts.at(-1);report.verdictsMirrored++;
         }
       }
       // Weekly rewrite; a dated line is never rewritten on retry. Changes outside this cadence wait.

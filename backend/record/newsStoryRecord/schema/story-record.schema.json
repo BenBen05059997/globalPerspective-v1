@@ -383,6 +383,20 @@
                         },
                         "additionalProperties": false
                       }
+                    },
+                    "scenarioP": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "question": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -549,6 +563,14 @@
                   },
                   "additionalProperties": false
                 }
+              },
+              "eventId": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              },
+              "corrects": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
               }
             },
             "additionalProperties": false
@@ -565,6 +587,16 @@
             }
           },
           "additionalProperties": false
+        },
+        "birthEvidence": {
+          "type": "object"
+        },
+        "timelineCursor": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       },
       "additionalProperties": false

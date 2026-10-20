@@ -99,22 +99,16 @@ const webRead = async key => {
   }
 };
 const io = {
-  get: async (table, key) => {
+  getItem: async (table, key) => {
     const r = await aws('dynamodb', 'get-item', ['--table-name', table, '--key', marshal(key)]);
     return r.Item ? unmarshal({
       M: r.Item
     }) : null;
   },
-  scan: async (table, filter, values) => pages('scan', ['--table-name', table, '--filter-expression', filter, '--expression-attribute-values', marshal(values)]),
-  query: async (table, pk) => pages('query', ['--table-name', table, '--key-condition-expression', 'PK = :pk', '--expression-attribute-values', marshal({
-    ':pk': pk
-  })]),
-  web: async date => {
-    let web = await webRead(`web/${date.replaceAll('-', '/')}.json`);
-    if (web) return web;
-    web = await webRead('web/latest.json');
-    return String(web?.generatedAt || web?.index?.generatedAt || '').slice(0, 10) <= date ? web : null;
-  }
+  query: async (table, pk, prefix) => pages('query', ['--table-name', table, '--key-condition-expression', prefix?'PK = :pk AND begins_with(SK, :sk)':'PK = :pk','--expression-attribute-values', marshal({':pk':pk,...(prefix?{':sk':prefix}:{})})]),
+  batchGet: async(table,keys)=>{const rows=[];for(let i=0;i<keys.length;i+=4)rows.push(...await Promise.all(keys.slice(i,i+4).map(key=>io.getItem(table,key))));return rows.filter(Boolean);},
+  getS3Json: async key=>webRead(key)
+
 };
 // Route would-be S3 commands through the actual shared helper to a local-only fake client.
 class Get {
@@ -165,7 +159,8 @@ const s3json = makeS3Json({
 });
 console.error(`DynamoDB transport: ${ddbClient ? 'existing SDK, read-only commands' : 'AWS CLI, read-only commands'}`);
 console.error(`Reading live stores for ${date}; AWS read-only, local shadow output ${out}`);
-const input = await makeStore(io).load(date);
+const {readWebAsOf}=require('./src/runtime');
+const input = await makeStore(io,{readWeb:date=>readWebAsOf(io,date)}).load(date);
 writeFileSync(join(out, `input-${date}.json`), JSON.stringify(input)+'\n');
 console.error(`Read complete: ${input.entries.length} archive entries, ${Object.keys(input.analyses).length} active threads, ${input.predictions.length} PRED rows.`);
 const report = await makeHandler({

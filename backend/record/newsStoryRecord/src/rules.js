@@ -3,11 +3,9 @@
 const {
   normalizeActor
 } = require('./_shared/record');
-const day = s => String(s || '').slice(0, 10);
-const addDays = (d, n) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+const { day, addDays, verdictOrder } = require('./_shared/world');
 const lastStatus = b => b.status.at(-1)?.status || 'hold';
 const live = b => ['hold', 'late'].includes(lastStatus(b));
-const verdictOrder = sk => sk === 'VERDICT' ? 1 : Number(/^VERDICT#(\d+)$/.exec(sk)?.[1] || 0);
 const intersect = (a, b) => [...new Set(a)].filter(x => b.includes(x));
 function duplicates(stories, date, asOf = null) {
   const cutoff = asOf && day(asOf) === date ? Date.parse(asOf) : Date.parse(`${addDays(date, 1)}T00:00:00Z`);
@@ -37,7 +35,7 @@ function duplicates(stories, date, asOf = null) {
   return out;
 }
 function citations(evidence, entries) {
-  return (evidence || []).filter(ref => entries.some(e => e.archive === ref.archive && e.topicId === ref.topicId && e.outlets.some(o => o.url === ref.url)));
+  return (evidence || []).filter(ref => typeof ref.url==='string' && /^https?:\/\//.test(ref.url) && entries.some(e => e.archive === ref.archive && e.topicId === ref.topicId && e.outlets.some(o => o.url === ref.url)));
 }
 function namedSourceMatches(source, outlet) {
   const name = normalizeActor(source);

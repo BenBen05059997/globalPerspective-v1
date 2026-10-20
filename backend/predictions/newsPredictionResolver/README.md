@@ -20,7 +20,11 @@ Daily prediction settle Lambda (drafts on Mondays, settles daily) (methodology v
 - Settle rows carry no `methodologyVersion`, so legacy aggregators ignore them.
 - ISO-week helpers are copied in `newsPredictionsSnapshot/src/weeks.js` and `newsSensitiveData/src/lib.js`; `test/weeksParity.test.js` guards drift.
 
+## Source field contract
+
+New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows without it). `clusterKey` and sampling identity are unchanged; the sampled question still carries no probability.
+
 ## Tests
-- `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 41 passed, 1 skipped (store test needs the AWS SDK installed) 2026-10-20.
+- `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 44 passed with the existing local AWS SDK on NODE_PATH (without it, one store-interface test skips) 2026-10-20.
 
 Last verified: 2026-10-20 (code and tests only; not deployed)

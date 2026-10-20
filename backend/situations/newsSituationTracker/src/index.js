@@ -73,6 +73,11 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
   // Situations in prior state but absent from every source this sweep → cool, then maybe close.
   for (const [id, prev] of Object.entries(priorStates)) {
     if (presentIds.has(id)) continue;
+    if (opts.newsDegraded && (prev.source === 'news' || id.startsWith('news#'))) {
+      states[id] = prev;
+      counts.unchanged++;
+      continue;
+    }
     if (prev.state === 'closed') {
       // keep briefly for the map's grey-out, then drop (→ handler archives the object)
       const ageH = (new Date(nowIso) - new Date(prev.closed_at || prev.last_change_at || nowIso)) / 3.6e6;
@@ -187,7 +192,7 @@ function assembleWorld(states, nowIso, sources) {
     generated_at: nowIso,
     next_expected_at: new Date(new Date(nowIso).getTime() + SWEEP_MIN * 60000).toISOString(),
     sources,
-    stale: computeStale(sources, nowIso),
+    stale: sources.newsDegraded === true || computeStale(sources, nowIso),
     situations: all, // includes recently-closed (state:'closed') for the map's grey-out
     lede: deriveLede(ranked, all),
     systemic: [], // populated from markets/economic disruption in a later task
@@ -250,11 +255,12 @@ const CORROBORATION_CAP = process.env.CORROBORATION_CAP !== 'false'; // default 
 const RAISE_COOLDOWN_MIN = Number(process.env.RAISE_COOLDOWN_MIN) || 180;
 async function readStories() {
   const idx = await getJson('stories/index.json'); // stories are always in the live prefix (single producer)
-  const stories = (idx && idx.stories) || [];
+  const newsDegraded = !idx || idx.degraded === true || idx.ok === false || idx.status === 'failed';
+  const stories = newsDegraded ? [] : (idx.stories || []);
   const eligible = stories
     .filter((s) => s.centroid && s.axis && (s.outlets >= STORY_MAP_MIN_OUTLETS || s.max_severity >= STORY_MAP_MIN_SEVERITY))
     .slice(0, STORY_MAP_CAP);
-  return { stories: eligible, storiesAt: (idx && idx.updated_at) || null };
+  return { stories: eligible, storiesAt: (idx && idx.updated_at) || null, newsDegraded };
 }
 
 // Event-registry link map (Phase 1 "the bridge"): storyId → { threadId } written by
@@ -287,7 +293,7 @@ exports.handler = async () => {
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
-  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
+  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt, newsDegraded }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
 
   // Build news situations from stories (planNewsSituations: country + thread keys, GDACS merge rule).
   const gdacsIso = new Set();
@@ -302,7 +308,7 @@ exports.handler = async () => {
   const foldPrior = { ...priorStates };
   for (const id of absorbed) delete foldPrior[id];
 
-  const { states, changes, counts, dropped } = foldSweep(foldPrior, observations, now, ttl, { extraBuilt });
+  const { states, changes, counts, dropped } = foldSweep(foldPrior, observations, now, ttl, { extraBuilt, newsDegraded });
   dropped.push(...absorbed);
 
   // Persist changed state objects; write index; write history + world bundle.
@@ -323,7 +329,7 @@ exports.handler = async () => {
     } catch (e) { console.warn('[tracker] archive failed', id, e.message); }
   }
 
-  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt, news: storiesAt });
+  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt, news: storiesAt, newsDegraded });
   const memberWorld = { ...world, _member: true }; // same content for now; gated depth arrives with stories (S3)
   await putJson(P.world, world, 60);
   await putJson(P.worldMember, memberWorld, 0);
@@ -354,9 +360,9 @@ exports.handler = async () => {
     putMetric('Cooled', counts.cooled || 0), putMetric('Closed', counts.closed || 0),
     putMetric('Observations', observations.length), putMetric('Stale', world.stale ? 1 : 0), putMetric('LLMCallsToday', 0),
   ]);
-  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, movedInbox: moved, stale: world.stale };
+  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, movedInbox: moved, stale: world.stale, newsDegraded };
   console.log(`[tracker] ${JSON.stringify(result)}`);
   return result;
 };
 
-exports._internal = { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale, summarize, situationHref, planNewsSituations };
+exports._internal = { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale, summarize, situationHref, planNewsSituations, readStories };

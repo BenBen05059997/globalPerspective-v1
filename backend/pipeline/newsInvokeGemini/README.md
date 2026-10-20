@@ -22,6 +22,12 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - `INGEST_CAPTURE_TABLE` and `CAPTURE_TTL_DAYS` are still read but unused; capture moved to S3 in S8·T2b.
 - `max_tokens` is 12000; truncated JSON output goes through `salvageTruncatedTopics`.
 
+## Source field contract
+
+Source fields are bound to the fetched RSS URL: `publishedAt` is ISO UTC (null when missing or invalid), while `age` stays for older readers. `outlet` comes only from `src/outlet_metadata.js`; unknown domains keep null. Country codes pass the shared `resolveIso3` resolver; unknown inputs are dropped and logged with their count.
+
+Offline source-field regressions: `node --test src/source-fields.test.js` (from this folder).
+
 ## Tests
 - `cd backend/pipeline/newsInvokeGemini/src && node test_enrichment.js` (offline). Passed 23/23 on 2026-10-19.
 

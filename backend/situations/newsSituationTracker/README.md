@@ -20,7 +20,12 @@ Sole writer of situation state and the map bundle. Each sweep reads the GDACS sn
 - Each ranked situation's `href` is its story page (`storyHref`) when threaded, else the map focused on it (`mapHref`, `/?focus=<id>`); both from `src/_shared/links.js`.
 - `situations-core` comes from `backend/shared/src` through the `src/_shared` symlink (one copy, shared with newsGdacsIngest); `scripts/lambda.sh` zips it as a real file. Its tests: `backend/shared/test/situations-core.test.mjs`.
 
+## Source field contract
+
+A degraded/failed or missing news index freezes prior news situations: no cooling, closure, archival, regrouping or synthetic history transition. News resumes normal folding on a healthy index; legacy indexes without a marker remain compatible. GDACS folds independently. The world bundle exposes `sources.newsDegraded` and marks itself stale while news is degraded.
+
 ## Tests
-- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` - 12 passed 2026-10-19
+- `node --test src/degraded.test.js` (offline; fold and full handler with fake S3).
+- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` - 13 passed; degraded-input regressions: 4 passed 2026-10-20
 
 Last verified: 2026-10-19

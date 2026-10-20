@@ -134,11 +134,15 @@ async function fetchRss() {
 }
 
 // ── classify one batch via the flash model (shared llm.js; thinking off) ─────
-async function classifyBatch(articles) {
-  const { content } = await chat({ step: 'classify_batch', model: MODEL, messages: buildMessages(articles), temperature: 0, json: true, maxTokens: 8192 });
+async function classifyBatch(articles, call = chat) {
+  const { content } = await call({ step: 'classify_batch', model: MODEL, messages: buildMessages(articles), temperature: 0, json: true, maxTokens: 8192 });
   const raw = parseClassification(content);
+  const numbered = raw.some(r => Number.isInteger(Number(r.n)) && Number(r.n) > 0);
   const byN = new Map(raw.map((r) => [Number(r.n), r]));
-  return articles.map((a, i) => normalizeClassified(byN.get(i + 1) || raw[i] || {}, a)).filter(Boolean);
+  return articles.map((a, i) => {
+    const row = numbered ? byN.get(i + 1) : raw[i];
+    return row && core.AXES.has(row.axis) ? normalizeClassified(row, a) : null;
+  }).filter(Boolean);
 }
 
 // ── I/O ──────────────────────────────────────────────────────────────────────
@@ -155,38 +159,57 @@ async function putMetric(name, value) {
 }
 const storyKey = (id) => id.replace(/[^A-Za-z0-9._-]/g, '_');
 
-exports.handler = async () => {
-  if (!API_KEY) { console.error('[ingest] no XAI_API_KEY'); return { ok: false, error: 'no api key' }; }
-  const now = new Date().toISOString();
-  const [rss, gdelt] = await Promise.all([fetchRss(), fetchGdelt()]);
+function makeHandler(deps = {}) {
+ const io = { fetchRss, fetchGdelt, classifyBatch, getJson, putObj, putMetric, now: () => new Date().toISOString(), apiKey: API_KEY, ...deps };
+ return async () => {
+  const now = io.now();
+  // Failure is a source-quality observation, not an empty successful snapshot.
+  async function fail(reason, details = {}) {
+    const prior = (await io.getJson('stories/index.json')) || {};
+    const failure = { ok: false, status: 'failed', degraded: true, reason, attempted_at: now, ...details };
+    await io.putObj('stories/index.json', { ...prior, stories: prior.stories || [], degraded: true, status: 'failed', failure, attempted_at: now });
+    console.error('[pipeline-status] ' + JSON.stringify({ producer: 'newsSituationIngest', ...failure }));
+    return failure;
+  }
+  if (!io.apiKey) return fail('no-api-key', { error: 'no api key' });
+  const [rss, gdelt] = await Promise.all([io.fetchRss(), io.fetchGdelt()]);
   const seen = new Set();
   const articles = [...rss, ...gdelt].filter((a) => !seen.has(a.url) && seen.add(a.url));
   console.log(`[ingest] ${articles.length} fresh articles (${rss.length} RSS + ${gdelt.length} GDELT)`);
   // Only articles not classified in an earlier run go to the model. A cache read failure falls
   // back to classifying everything (the pre-2026-10-05 behaviour), never to an empty map.
   let cache = null;
-  try { cache = await getJson(CACHE_KEY); } catch (e) { console.warn('[ingest] cache read failed, classifying all:', e.message); }
+  try { cache = await io.getJson(CACHE_KEY); } catch (e) { console.warn('[ingest] cache read failed, classifying all:', e.message); }
   const { hits, misses } = splitByCache(articles, cache);
   console.log(`[ingest] ${hits.length} already classified, ${misses.length} new`);
   const batches = [];
   for (let i = 0; i < misses.length && batches.length < MAX_BATCHES; i += BATCH) batches.push(misses.slice(i, i + BATCH));
 
   const fresh = [];
-  let llmCalls = 0;
+  let llmCalls = 0; let failedBatches = 0;
   // Parallel LLM calls (bounded) — sequential blew the 300s timeout.
   for (let i = 0; i < batches.length; i += CONCURRENCY) {
     const wave = batches.slice(i, i + CONCURRENCY);
-    const settled = await Promise.allSettled(wave.map((b) => classifyBatch(b)));
+    const settled = await Promise.allSettled(wave.map((b) => io.classifyBatch(b)));
     for (const r of settled) {
       if (r.status === 'fulfilled') { fresh.push(...r.value); llmCalls++; }
-      else console.warn('[ingest] batch failed:', r.reason?.message);
+      else { failedBatches++; console.warn('[ingest] batch failed:', r.reason?.message); }
     }
   }
   console.log(`[ingest] classified ${fresh.length} new in ${llmCalls} LLM calls`);
   const classified = [...hits, ...fresh];
-  try { await putObj(CACHE_KEY, nextCache(cache, fresh, now, CACHE_KEEP_H)); } catch (e) { console.warn('[ingest] cache write failed:', e.message); }
+  try { await io.putObj(CACHE_KEY, nextCache(cache, fresh, now, CACHE_KEEP_H)); } catch (e) { console.warn('[ingest] cache write failed:', e.message); }
 
-  const prevIndex = (await getJson('stories/index.json')) || {};
+  const attempted = batches.reduce((n, batch) => n + batch.length, 0);
+  // More than half of attempted classifications missing means the input cannot
+  // establish that a story ended. Cache hits must not mask a fresh-model outage.
+  if (!articles.length || (attempted > 0 && fresh.length * 2 < attempted)) {
+    return fail(!articles.length ? 'no-articles' : 'classification-outage', {
+      articles: articles.length, attempted, newlyClassified: fresh.length, cached: hits.length,
+      failedBatches, attemptedCalls: batches.length, llmCalls,
+    });
+  }
+  const prevIndex = (await io.getJson('stories/index.json')) || {};
   const prevById = {};
   for (const s of prevIndex.stories || []) prevById[s.storyId] = s;
   const allStories = clusterStories(classified, now, prevById);
@@ -196,15 +219,18 @@ exports.handler = async () => {
 
   // corpus (append-only hourly), stories/state, stories/index
   const hk = now.slice(0, 13).replace(/[:T-]/g, '/');
-  await putObj(`corpus/${hk.slice(0, 10)}/${now.slice(11, 13)}.jsonl`, classified.map((c) => JSON.stringify(c)).join('\n'), 'application/x-ndjson');
-  await Promise.all(stories.map((s) => putObj(`stories/state/${storyKey(s.storyId)}.json`, s)));
-  await putObj('stories/index.json', { updated_at: now, count: stories.length, stories: stories.map((s) => ({ storyId: s.storyId, axis: s.axis, category: s.category, title: s.title, iso3: s.iso3, centroid: s.centroid, max_severity: s.max_severity, outlets: s.outlets, velocity: s.velocity, spread_new_iso3: s.spread_new_iso3, first_seen: s.first_seen, last_seen: s.last_seen, entities: s.entities, headlines: (s.headlines || []).slice(0, 3).map(({ title, url, domain }) => ({ title, url, domain })) })) });
+  await io.putObj(`corpus/${hk.slice(0, 10)}/${now.slice(11, 13)}.jsonl`, classified.map((c) => JSON.stringify(c)).join('\n'), 'application/x-ndjson');
+  await Promise.all(stories.map((s) => io.putObj(`stories/state/${storyKey(s.storyId)}.json`, s)));
+  await io.putObj('stories/index.json', { updated_at: now, degraded: false, status: 'ok', count: stories.length, stories: stories.map((s) => ({ storyId: s.storyId, axis: s.axis, category: s.category, title: s.title, iso3: s.iso3, centroid: s.centroid, max_severity: s.max_severity, outlets: s.outlets, velocity: s.velocity, spread_new_iso3: s.spread_new_iso3, first_seen: s.first_seen, last_seen: s.last_seen, entities: s.entities, headlines: (s.headlines || []).slice(0, 3).map(({ title, url, domain }) => ({ title, url, domain })) })) });
 
-  await Promise.all([putMetric('IngestArticles', classified.length), putMetric('IngestStories', stories.length), putMetric('ClassifierLLMCallsToday', llmCalls), putMetric('IngestCacheHits', hits.length)]);
+  await Promise.all([io.putMetric('IngestArticles', classified.length), io.putMetric('IngestStories', stories.length), io.putMetric('ClassifierLLMCallsToday', llmCalls), io.putMetric('IngestCacheHits', hits.length)]);
   const top = stories.slice(0, 5).map((s) => `${s.title} [${s.axis} sev${s.max_severity} ${s.outlets}o]`);
-  const result = { ok: true, articles: articles.length, classified: classified.length, cached: hits.length, newlyClassified: fresh.length, llmCalls, stories: stories.length, top };
+  const result = { ok: true, degraded: false, articles: articles.length, classified: classified.length, cached: hits.length, newlyClassified: fresh.length, llmCalls, stories: stories.length, top };
   console.log(`[ingest] ${JSON.stringify(result)}`);
   return result;
-};
+ };
+}
+exports.makeHandler = makeHandler;
+exports.handler = makeHandler();
 
-exports._internal = { parseRss, storyKey };
+exports._internal = { parseRss, storyKey, classifyBatch };

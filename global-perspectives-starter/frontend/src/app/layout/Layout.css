@@ -307,7 +307,9 @@ html:has(.gp-app-tabbar) { scroll-padding-bottom: calc(58px + 12px + env(safe-ar
   .gp-nav { padding: 0 12px; }
   .gp-nav-right { gap: 6px; flex: 0 1 auto; min-width: 0; }
   /* Signed-in name truncates instead of pushing the bar past a 360-390px viewport. */
-  .gp-btn-account { min-width: 0; max-width: 7rem; overflow: hidden; text-overflow: ellipsis; }
+  /* The button is inline-flex, which ignores text-overflow, so the name span carries the ellipsis. */
+  .gp-btn-account { min-width: 0; max-width: 7rem; }
+  .gp-btn-account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gp-footer {
     height: auto;
     flex-direction: column;

@@ -127,6 +127,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.
 - 2026-10-20: have/lack/how-to-get checklist added after checking the resolver (exists, daily, 0 verdicts because the
   operator review never ran) and preferences (countries followed, stories not).
 - 2026-10-20: brainstorm recorded; Studio Board canvas built to 12 boards (graph, map, verdict, board weekly, clue

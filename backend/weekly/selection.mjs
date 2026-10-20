@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { tierFromScore } = require('../shared/src/riskDimensions.js');
+const world = require('../shared/src/world');
 const { SECTIONS } = require('./sections.js');
 export function canonical(value) {
   if (Array.isArray(value)) return `[${value.map(v=>canonical(v) ?? 'null').join(',')}]`;
@@ -10,12 +10,11 @@ export function canonical(value) {
   return JSON.stringify(value);
 }
 export const hashInputs = ({ inputsHash, ...body }) => createHash('sha256').update(canonical(body)).digest('hex');
-export function dayPlus(day, n) { return new Date(Date.parse(`${day}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10); }
+export const dayPlus = world.addDays;
 export function assertSunday(day) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '') || dayPlus(day, 0) !== day || new Date(`${day}T00:00:00Z`).getUTCDay() !== 0) throw Error('week-ending must be a valid Sunday YYYY-MM-DD');
 }
 const sorted = xs => xs.map(value=>({value,key:canonical(value)})).sort((a,b)=>a.key.localeCompare(b.key)).map(x=>x.value);
-const dateOf = r => String(r.asOf || r.dateKey || r.date || r.generatedAt || r.SK?.split('#').slice(1).join('#') || '').slice(0,10);
 export function eventEvidence(entry) {
   // Conservative lexical gate: a dated archive entry must name a completed action.
   // Unknown/non-events are kept in excluded with a reason, never guessed into new.
@@ -36,70 +35,60 @@ export function pathChanged(before, after, notes) {
       /\b(?:expected path|expected outcome|forecast|trajectory|outlook)\b.{0,80}\b(?:changed|shifted|reversed|abandoned)\b/i.test(text);
   });
 }
-export function selectInputs(raw, weekEnding) {
+export function selectInputs(data, weekEnding) {
   assertSunday(weekEnding);
   const start = dayPlus(weekEnding,-6), birthStart = dayPlus(start,-30), nextEnd = dayPlus(weekEnding,7);
-  const archives = sorted(raw.archives.filter(a => a.id >= `archive#${birthStart}` && a.id <= `archive#${weekEnding}`));
-  const all = archives.flatMap(a => (a.entries || []).map(e => ({...e,date:a.id.slice(8),archive:a.id})));
-  const week = all.filter(e => e.date >= start);
-  const ids = [...new Set(week.map(e => e.threadId).filter(Boolean))].sort();
-  const links = sorted(raw.web?.index?.links || raw.web?.links || []);
-  const histories = sorted((raw.summary || []).filter(r => r.SK?.startsWith('THREAD_HISTORY#') && dateOf(r) <= weekEnding));
-  const drift = sorted((raw.summary || []).filter(r => /^(DRIFT|DRIFTLOG)#/.test(r.SK || '') && dateOf(r) >= start && dateOf(r) <= weekEnding));
-  const predictions = sorted((raw.predictions || []).filter(r => String(r.PK).startsWith('PRED#') && String(r.SK).slice(0,10) <= weekEnding));
-  const questions = sorted((raw.predictions || []).filter(r => String(r.PK).startsWith('Q#')));
-  const stories = ids.map(threadId => {
-    const entries = sorted(week.filter(e => e.threadId === threadId));
-    const past = all.filter(e => e.threadId === threadId).sort((a,b) => a.date.localeCompare(b.date) || String(a.topicId).localeCompare(String(b.topicId)));
-    const h = histories.filter(r => r.PK === `THREAD#${threadId}`).sort((a,b) => dateOf(a).localeCompare(dateOf(b)));
-    const analysis = (raw.summary || []).find(r => r.PK === `THREAD#${threadId}` && r.SK === 'THREAD_ANALYSIS');
-    const analysisDate = analysis && String(analysis.generatedAt || analysis.updatedAt || '').slice(0,10);
-    const current = analysisDate && analysisDate <= weekEnding ? analysis : h.at(-1);
-    const riskScore = Number.isFinite(current?.riskScore) ? current.riskScore : null;
-    const outlets = [...new Set(entries.flatMap(e => (e.sources || []).map(s => s.source).filter(Boolean)))].sort();
-    const linked = links.filter(l => (l.from === threadId && all.some(e=>e.threadId===l.to)) || (l.to === threadId && all.some(e=>e.threadId===l.from)));
-    const sources = sorted(past.flatMap(e => (e.sources || []).filter(s => s.source).map(s => ({outlet:s.source,archive:e.archive,...(e.topicId?{topicId:e.topicId}:{}),...(s.url?{url:s.url}:{})}))));
-    const before = h.filter(r => dateOf(r) < start).at(-1);
-    const during = h.filter(r => dateOf(r) >= start);
-    const notes = drift.filter(r => r.PK === `THREAD#${threadId}`);
-    const from = before?.riskScore, to = current?.riskScore;
-    // A latest reading alone is not evidence that a 10-point movement held.
-    const scoreHeld = Number.isFinite(from) && Number.isFinite(to) && Math.abs(to-from)>=10 && during.length>=2 &&
-      during.slice(-2).every(r => Number.isFinite(r.riskScore) && Math.sign(r.riskScore-from)===Math.sign(to-from) && Math.abs(r.riskScore-from)>=10);
-    const movedKind = riskScore >= 25 && before && notes.length ? (pathChanged(before.trajectory,current?.trajectory,notes)?'path':scoreHeld?'score':null) : null;
-    const topicIds = new Set(past.map(e => e.topicId));
-    const logged = predictions.filter(r => topicIds.has(String(r.PK).slice(5)) || r.threadId === threadId || r.clusterKey === threadId);
-    return {threadId,title:current?.threadTitle || current?.title || past.at(-1)?.title || threadId,firstSeen:past[0].date,
-      birthWindowLimited:past[0].date===birthStart,outlets,risk: riskScore===null?null:{score:riskScore,tier:tierFromScore(riskScore)},
+  const {range} = data;
+  const questions=sorted(data.questions || []);
+  const grouped = world.entriesByThread(range);
+  const births = world.birthByThread(range);
+  const links = sorted(data.web?.index?.links || []);
+  const activeIds = Object.keys(grouped).filter(id=>grouped[id].some(e=>e.date>=start)).sort();
+  const resolved = Object.fromEntries(activeIds.map(id=>[id,world.analysisAsOf(data.analyses[id],data.histories[id] || [],weekEnding)]));
+  const counts = world.coverage(range,{since:start,births,analyses:resolved});
+  const stories = activeIds.map(threadId => {
+    const past = grouped[threadId], entries = past.filter(e=>e.date>=start);
+    const history = data.histories[threadId] || [], current = resolved[threadId];
+    const notes = data.driftByThread[threadId] || [];
+    const riskScore = current?.riskScore ?? null;
+    const outlets = world.outletsOf(entries);
+    const linked = links.filter(l=>(l.from===threadId && grouped[l.to]) || (l.to===threadId && grouped[l.from]));
+    const sources = sorted(past.flatMap(e=>e.sources.filter(s=>s.source).map(s=>({outlet:world.outletName(s.source),archive:e.archive,...(e.topicId?{topicId:e.topicId}:{}),...(s.url?{url:s.url}:{})}))));
+    const before = history.filter(h=>h.date<start).at(-1), during = history.filter(h=>h.date>=start && h.date<=weekEnding);
+    const from=before?.score, to=riskScore;
+    const scoreHeld=Number.isFinite(from) && Number.isFinite(to) && Math.abs(to-from)>=10 && during.length>=2 &&
+      during.slice(-2).every(h=>Number.isFinite(h.score) && Math.sign(h.score-from)===Math.sign(to-from) && Math.abs(h.score-from)>=10);
+    const movedKind = riskScore>=25 && before && notes.length ? (pathChanged(before.trajectory,current?.trajectory,notes)?'path':scoreHeld?'score':null) : null;
+    const predictions=data.snapshotsByThread[threadId] || [];
+    return {threadId,title:current?.title || past.at(-1).title,firstSeen:births[threadId].born,
+      birthWindowLimited:births[threadId].windowLimited,birth:births[threadId],outlets,
+      risk:riskScore===null?null:{score:riskScore,tier:current.tier},
       pathReview:!!before && !!current?.trajectory && before.trajectory!==current.trajectory && !movedKind,
       singleOutlet:outlets.length===1,event:entries.some(eventEvidence),links:linked,sources,entries,archiveEntries:past,
-      analysis:current || null,history:h,drift:notes,predictions:logged,
-      moved: movedKind?{kind:movedKind,before:before.trajectory || '',after:current?.trajectory || '',scoreFrom:from,scoreTo:to}:null};
+      analysis:current,history,drift:notes,predictions,forks:world.branchesFromScenarios(predictions),
+      moved:movedKind?{kind:movedKind,before:before.trajectory || '',after:current?.trajectory || '',scoreFrom:from,scoreTo:to}:null};
   });
-  const tierRank = s => ({low:0,moderate:1,elevated:2,high:3}[s.risk?.tier] ?? -1);
-  const rank = (a,b) => Number(a.singleOutlet)-Number(b.singleOutlet) || b.links.length-a.links.length || tierRank(b)-tierRank(a) || a.threadId.localeCompare(b.threadId);
-  const fresh = stories.filter(s => s.firstSeen>=start);
-  const qualified = fresh.filter(s => s.event && (s.links.length || (s.risk?.score>=50 && s.outlets.length>=2))).sort(rank);
-  const moved = stories.filter(s => s.firstSeen<start && s.moved).sort(rank).slice(0,SECTIONS.find(s=>s.key==='moved').max);
-  const trace = stories.filter(s => s.predictions.length).sort(rank);
-  const dates = [];
-  for (const s of stories) for (const p of s.predictions) for (const scenario of p.scenarios || []) for (const trigger of scenario.triggers || []) {
-    const date = String(trigger.deadline || '').slice(0,10);
-    if(date>weekEnding && date<=nextEnd) dates.push({date,what:trigger.text,kind:'trigger',threadId:s.threadId,p:trigger.p ?? scenario.probability,logged:{PK:p.PK,SK:p.SK}});
+  const tierRank=s=>({low:0,moderate:1,elevated:2,high:3}[s.risk?.tier] ?? -1);
+  const rank=(a,b)=>Number(a.singleOutlet)-Number(b.singleOutlet) || b.links.length-a.links.length || tierRank(b)-tierRank(a) || a.threadId.localeCompare(b.threadId);
+  const fresh=stories.filter(s=>s.firstSeen>=start);
+  const qualified=fresh.filter(s=>s.event && (s.links.length || (s.risk?.score>=50 && s.outlets.length>=2))).sort(rank);
+  const moved=stories.filter(s=>s.firstSeen<start && s.moved).sort(rank).slice(0,SECTIONS.find(s=>s.key==='moved').max);
+  const trace=stories.filter(s=>s.forks.length).sort(rank);
+  const dates=[];
+  for(const s of stories) for(const fork of s.forks) for(const branch of fork.branches) {
+    if(branch.due>weekEnding && branch.due<=nextEnd)dates.push({date:branch.due,what:branch.trigger,kind:'trigger',threadId:s.threadId,p:branch.p,scenarioP:branch.scenarioP,forkId:fork.forkId,branchId:branch.branchId});
   }
-  for(const q of questions.filter(q=>q.SK==='SAMPLED')) {
-    const date=String(q.deadline || '').slice(0,10);
-    if(date>weekEnding && date<=nextEnd) dates.push({date,what:q.claim || q.question || q.text || q.trigger?.text || '',kind:'forecast_due',threadId:q.clusterKey,question:q});
-  }
-  const missingDays=Array.from({length:7},(_,i)=>dayPlus(start,i)).filter(d=>!archives.some(a=>a.id===`archive#${d}`));
-  const body={version:1,weekEnding,weekStart:start,birthWindowStart:birthStart,nextWeekEnd:nextEnd,
-    candidates:{lead:[...stories].sort(rank),moved:moved.map(s=>({threadId:s.threadId,title:s.title,moved:s.moved})),trace:trace.map(s=>({threadId:s.threadId,title:s.title,risk:s.risk,predictions:s.predictions})),new:qualified.slice(0,3).map(s=>({threadId:s.threadId,title:s.title,firstSeen:s.firstSeen,outlets:s.outlets,risk:s.risk,singleOutlet:s.singleOutlet,links:s.links})),dates:sorted([...new Map(dates.map(d=>[canonical({date:d.date,what:d.what,kind:d.kind,threadId:d.threadId}),d])).values()])},
-    excludedNew:fresh.filter(s=>!qualified.includes(s)).map(s=>({threadId:s.threadId,reason:!s.event?'No completed event in headline': 'No tracked links or elevated risk with two outlets'})),
+  for(const q of questions)if(q.deadline>weekEnding && q.deadline<=nextEnd)dates.push({date:q.deadline,what:q.question,kind:'forecast_due',threadId:q.threadId,question:q});
+  const body={version:2,weekEnding,weekStart:start,birthWindowStart:birthStart,nextWeekEnd:nextEnd,
+    candidates:{lead:[...stories].sort(rank),moved:moved.map(s=>({threadId:s.threadId,title:s.title,moved:s.moved})),
+      trace:trace.map(s=>({threadId:s.threadId,title:s.title,risk:s.risk,forks:s.forks})),
+      new:qualified.slice(0,3).map(s=>({threadId:s.threadId,title:s.title,firstSeen:s.firstSeen,outlets:s.outlets,risk:s.risk,singleOutlet:s.singleOutlet,links:s.links})),
+      dates:sorted([...new Map(dates.map(d=>[canonical({date:d.date,what:d.what,kind:d.kind,threadId:d.threadId}),d])).values()])},
+    excludedNew:fresh.filter(s=>!qualified.includes(s)).map(s=>({threadId:s.threadId,reason:!s.event?'No completed event in headline':'No tracked links or elevated risk with two outlets'})),
     overflowNew:qualified.slice(3).map(s=>s.threadId),
     pathReviewCandidates:stories.filter(s=>s.pathReview).map(s=>({threadId:s.threadId,reason:'Trajectory prose differs but no explicit logged revision or sustained score move establishes a changed expected path'})),
-    coverage:{stories:ids.length,entries:week.length,outlets:new Set(week.flatMap(e=>(e.sources || []).map(s=>s.source).filter(Boolean))).size,missingDays,
-      analysedNew:{analysed:fresh.filter(s=>s.analysis).length,total:fresh.length},corrections:[],
+    coverage:{stories:counts.stories,entries:counts.entries,outlets:counts.outlets,missingDays:counts.missingDays,analysedNew:counts.analysedNew,corrections:[],
       note:'Birth dates are earliest observed archive dates within the stated lookback; missing days can delay observed births. No corrections store exists.'},
-    evidence:{archives,summary:sorted((raw.summary || []).filter(r=>(ids.includes(String(r.PK).slice(7)) && dateOf(r)<=weekEnding) || drift.some(d=>d.PK===r.PK && d.SK===r.SK))),predictions:sorted([...new Map([...stories.flatMap(s=>s.predictions),...questions].map(r=>[`${r.PK}/${r.SK}`,r])).values()]),web:raw.web || {},countryDrift:drift.filter(r=>r.PK?.startsWith('COUNTRY#'))}};
+    evidence:{range,coverage:counts,births,web:data.web,webSource:data.webSource,countryDrift:sorted(data.countryDrift || []),countryHistory:data.countryHistory || {},questions,verdicts:data.verdicts || {}}};
   return {...body,inputsHash:hashInputs(body)};
 }

@@ -1,43 +1,45 @@
 #!/usr/bin/env node
-// Read-only AWS adapter. An injected client implements getArchive, summary, predictions, web.
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { writeFile } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
-import { selectInputs, assertSunday, dayPlus } from './selection.mjs';
-const exec = promisify(execFile);
-export const DEFAULT_BUCKET = 'globalperspective-world-280362093938';
-export function decode(v) {
-  if(v.S!==undefined)return v.S;if(v.N!==undefined)return Number(v.N);if(v.BOOL!==undefined)return v.BOOL;if(v.NULL)return null;
-  if(v.L)return v.L.map(decode);if(v.M)return Object.fromEntries(Object.entries(v.M).map(([k,x])=>[k,decode(x)]));
-  if(v.SS)return [...v.SS].sort();if(v.NS)return v.NS.map(Number).sort((a,b)=>a-b);throw Error('Unsupported DynamoDB attribute type');
+// Collect normalized world/ views. Raw-row parsing and common derivations live only in world/.
+import {createRequire} from 'node:module';
+import {writeFile} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+import {selectInputs,assertSunday,dayPlus} from './selection.mjs';
+const world=createRequire(import.meta.url)('../shared/src/world');
+export const DEFAULT_COUNTRIES='Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,DR Congo,South Africa'.split(',');
+async function pool(items,fn,n=4) {
+  let next=0;const out=new Array(items.length);
+  await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(next<items.length){const i=next++;out[i]=await fn(items[i]);}}));return out;
 }
-const item = x => Object.fromEntries(Object.entries(x).map(([k,v])=>[k,decode(v)]));
-export function makeReadClient({run=exec,region=process.env.AWS_REGION || 'ap-northeast-1',bucket=process.env.WORLD_BUCKET || DEFAULT_BUCKET}={}) {
-  async function aws(args) {const {stdout}=await run('aws',[...args,'--region',region,'--output','json','--no-cli-pager','--cli-connect-timeout','10','--cli-read-timeout','30'],{maxBuffer:64*1024*1024,timeout:120000});return stdout.trim()?JSON.parse(stdout):{};}
-  async function scan(table,filter,values) {
-    let key;const rows=[];
-    do {const r=await aws(['dynamodb','scan','--table-name',table,'--limit','100','--no-paginate','--filter-expression',filter,'--expression-attribute-values',JSON.stringify(values),...(key?['--exclusive-start-key',JSON.stringify(key)]:[])]);rows.push(...(r.Items || []).map(item));key=r.LastEvaluatedKey;} while(key && Object.keys(key).length);
-    return rows;
-  }
-  return {
-    async getArchive(date) {const r=await aws(['dynamodb','get-item','--table-name','NewsCache','--key',JSON.stringify({id:{S:`archive#${date}`}})]);return r.Item?item(r.Item):null;},
-    summary:()=>scan('SummarizeAndPredict','begins_with(PK, :t) OR begins_with(PK, :c)',{':t':{S:'THREAD#'},':c':{S:'COUNTRY#'}}),
-    predictions:()=>scan('GlobalPerspectivePredictionLog','begins_with(PK, :p) OR begins_with(PK, :q)',{':p':{S:'PRED#'},':q':{S:'Q#'}}),
-    async web(){const {stdout}=await run('aws',['s3','cp',`s3://${bucket}/web/latest.json`,'-','--region',region,'--no-cli-pager'],{maxBuffer:16*1024*1024,timeout:120000});return JSON.parse(stdout);},
-  };
+export async function readInputs(weekEnding,client,opts={}) {
+  assertSunday(weekEnding);
+  const readQuestions=opts.readQuestions || world.sampledQuestions;
+  const readWeb=opts.readWeb || world.webAt;
+  if(!readQuestions || !readWeb)throw Error('Weekly requires the coordinator-owned world.sampledQuestions and world.webAt readers');
+  const start=dayPlus(weekEnding,-6),from=dayPlus(weekEnding,-36),nextEnd=dayPlus(weekEnding,7);
+  const range=await world.archiveRange(client,from,weekEnding,{withAi:true});
+  const grouped=world.entriesByThread(range);
+  const ids=Object.keys(grouped).filter(id=>grouped[id].some(e=>e.date>=start)).sort();
+  const analyses=await world.threadAnalysis(client,ids);
+  const rows=await pool(ids,async threadId=>({threadId,
+    history:await world.threadHistory(client,threadId,from,weekEnding),
+    drift:await world.driftNotes(client,{threadId},start,weekEnding),
+    snapshots:await world.scenarios(client,{threadId,topicIds:[...new Set(grouped[threadId].map(e=>e.topicId).filter(Boolean))],to:weekEnding})}));
+  const countries=opts.countries || (process.env.DRIFT_COUNTRIES?process.env.DRIFT_COUNTRIES.split(',').map(s=>s.trim()).filter(Boolean):DEFAULT_COUNTRIES);
+  const countryRows=await pool(countries,async country=>({country,history:await world.countryHistory(client,country,from,weekEnding),drift:await world.driftNotes(client,{country},start,weekEnding)}));
+  const questions=await readQuestions(client,{from:start,to:nextEnd,asOf:weekEnding});
+  const verdicts=await world.verdicts(client,questions.map(q=>q.qid),{asOf:weekEnding});
+  const datedKey=`web/${weekEnding.replaceAll('-','/')}.json`;
+  let web=await readWeb(client,datedKey),webSource=datedKey;
+  if(!web){web=await world.webLatest(client);webSource='web/latest.json';}
+  return {range,analyses,histories:Object.fromEntries(rows.map(r=>[r.threadId,r.history])),driftByThread:Object.fromEntries(rows.map(r=>[r.threadId,r.drift])),
+    snapshotsByThread:Object.fromEntries(rows.map(r=>[r.threadId,r.snapshots])),questions,verdicts,web,webSource,
+    countryDrift:countryRows.flatMap(r=>r.drift),countryHistory:Object.fromEntries(countryRows.map(r=>[r.country,r.history]))};
 }
-export async function pull(weekEnding,client) {
-  assertSunday(weekEnding);const archives=[];
-  // Bound concurrency so a live pull remains a small read workload.
-  const days=Array.from({length:37},(_,i)=>dayPlus(weekEnding,i-36));
-  for(let i=0;i<days.length;i+=4) {const rows=await Promise.all(days.slice(i,i+4).map(d=>client.getArchive(d)));archives.push(...rows.filter(Boolean));}
-  const summary=await client.summary();const predictions=await client.predictions();const web=await client.web();
-  return selectInputs({archives,summary,predictions,web},weekEnding);
-}
+export async function pull(weekEnding,client,opts={}) {return selectInputs(await readInputs(weekEnding,client,opts),weekEnding);}
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
-  try {const args=process.argv.slice(2);const week=args[args.indexOf('--week-ending')+1];if(!args.includes('--week-ending'))throw Error('Usage: pull.mjs --week-ending YYYY-MM-DD [--out path]');
-    const result=await pull(week,makeReadClient());const out=args.includes('--out')?args[args.indexOf('--out')+1]:null;
+  try {const args=process.argv.slice(2);if(!args.includes('--week-ending'))throw Error('Usage: pull.mjs --week-ending YYYY-MM-DD [--out path]');
+    const {makeCliClient}=await import('./local-client.mjs');const result=await pull(args[args.indexOf('--week-ending')+1],makeCliClient());
+    const out=args.includes('--out')?args[args.indexOf('--out')+1]:null;
     if(out)await writeFile(out,JSON.stringify(result,null,2)+'\n');else process.stdout.write(JSON.stringify(result,null,2)+'\n');
   }catch(e){console.error(`pull: ${e.message}`);process.exitCode=1;}
 }

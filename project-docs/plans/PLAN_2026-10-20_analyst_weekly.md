@@ -160,6 +160,8 @@ flagged in its `notes.unconfirmed`.
 
 W1 lane notes (2026-10-20): read-only AWS CLI adapter and pure fixture-tested selection added on lane/weekly. Earliest observed birth is bounded by the 30-day pre-week lookback; conservative event and directional-path gates expose exclusions for review. Live latest web is retained as current evidence, not a historical reconstruction.
 
+W1 migration notes (2026-10-20): rebased onto coordinator world/ and provenance commits. Shared readers now supply normalized archive, analysis/history, deduplicated drift, scenario membership, births, outlets, tiers, coverage and forks; only weekly selection and hashing remain local. CLI is isolated to the local generic transport. Requested coordinator readers for sampled questions and dated S3 web provenance; final dry-run regeneration waits for those shared APIs. Sunday web/2026/10/18.json was checked read-only and is absent, so the documented latest fallback applies.
+
 ### W2: write + check + publish — built on lane/weekly; final dry run waits for two shared readers (in progress)
 - [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure only, pointing at `backend/weekly/` (read the inputs JSON; write each section to the schema;
       honesty rules; no fact without a source; dates after the send; numbers only from the inputs).
@@ -180,6 +182,8 @@ W2 lane notes (2026-10-20): skill, schema/provenance checker and create-only pub
 - [ ] Send-to-self: one render sent only to the operator address for a phone check (operator yes for that send).
 
 W3 lane notes (2026-10-20): sender weekly mode and renderer prepared on lane/weekly: S3 latest with held/already-sent gates, relative _weekly symlink, six-section light table, labels/risk words, logged-deadline wording, whole-block email budgets and structure/escaping tests. HTML/text artifacts are in gp-mailbox/artifacts. Read-only deployed diff found repo-ahead shared helpers only. IAM and zip verification requested from the coordinator; rsync -aL already follows the extra symlink. No deploy, send-to-self, live S3 write or schedule change performed. Browser inventory is empty, so visual phone review remains with the coordinator. Final DONE waits for the shared world reader integration required in coordinator.md.
+
+W3 audit follow-up (2026-10-20): runtime/sections.js is the single model, with sections.js as a compatibility symlink for existing guards and schema tests; sender _weekly points only at runtime/. Staging verifies that no fixtures, tools, tests or examples ship through _weekly. Sender now logs and skips snapshots not matching the current UTC Sunday, even with force, as well as missing/held/nonpublished and already-sent weeks. Hermetic sender tests cover stale and future weeks.
 
 ### W4: first real run and the switch (operator yes)
 - [ ] Saturday 2026-10-24: pull + write + check for the week ending 2026-10-25 run from this machine (the cloud run is

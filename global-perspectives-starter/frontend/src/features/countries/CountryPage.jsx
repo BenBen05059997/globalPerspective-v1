@@ -4,7 +4,7 @@ import { ROUTE, storyHref, countryHref, mapHref } from '@/shared/lib/links.js';
 import { parentCountry } from '@/shared/lib/countries.js';
 import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { useWeeklyArchive, useThreadAnalyses } from '@/features/threads';
+import { useWeeklyArchive, useThreadAnalyses, useWebIndex } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useMarketsCountry } from '@/features/countries/hooks/useMarketsCountry';
 import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
@@ -46,6 +46,16 @@ import { peekData } from '@/shared/lib/peekData.js';
 import '@/features/countries/CountryPage.css';
 import '@/features/countries/CountryCoverage.css';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
+import { useCountryStories } from '@/features/countries/hooks/useCountryStories.js';
+import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
+import { factRows } from '@/features/countries/lib/countryFacts.js';
+import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js';
+import { latestChange } from '@/features/countries/lib/countryChange.js';
+import { connectionRows } from '@/features/countries/lib/countryConnections.js';
+import { whatWeDontKnow } from '@/features/countries/lib/countryUnknowns.js';
+import { formatCountrySheet } from '@/features/countries/lib/countryText.js';
+import { HowItConnects, WhatWeDontKnow, YourView, CopyAsText, PrintButton, SheetFooter } from '@/features/countries/components/CountrySheet.jsx';
 
 function formatAsOf(iso) {
   if (!iso) return '';
@@ -117,7 +127,7 @@ function CoverageList({ entries, country }) {
       </button>
       {open && <>
         <div className="cp-coverage-header">
-          <div className="cp-coverage-hint">Tap an article for sources and AI analysis</div>
+          <div className="cp-coverage-hint"><ClaimTag kind="fact" /> dated headlines with outlet links. Tap an article for sources and AI analysis (model judgment).</div>
           {categories.length > 1 && (
             <div className="cp-coverage-filters">
               <Chip selected={!activeCat} onClick={() => setActiveCat(null)}>All</Chip>
@@ -202,7 +212,7 @@ function CoverageList({ entries, country }) {
                             </div>
                           )}
                           {aiOpen && (
-                            <div className="cp-ai-panel">{entry.ai[aiOpen.field]}</div>
+                            <div className="cp-ai-panel"><ClaimTag kind="judgment" />{entry.ai[aiOpen.field]}</div>
                           )}
                         </div>
                       )}
@@ -389,6 +399,9 @@ export default function CountryPage() {
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);
+  const { index: webIndex } = useWebIndex();
+  const { deadlines, topicIdToThreadId } = useCountryStories(decodedName);
+  const { facts: storedFacts } = useCountryFacts(decodedName);
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
   const { data: countryDisruptions } = useDisruptionsList(
     decodedName ? { country: decodedName, limit: 5 } : {},
@@ -433,6 +446,25 @@ export default function CountryPage() {
 
   // Sibling countries (top 6 excluding current)
   const siblings = countries.filter(c => c.name !== decodedName).slice(0, 6);
+
+  // The sheet: everything below is assembled from data this page already read (no model call, no new fetch).
+  const now = Date.now();
+  const builtOn = new Date(now).toISOString().slice(0, 10);
+  const connections = connectionRows(webIndex, allArcs, { now });
+  const unknowns = whatWeDontKnow({ archiveDates: sortedDates, entries: countryData?.entries, intel, webIndex, country: decodedName });
+  const getSheetText = () => formatCountrySheet({
+    country: decodedName,
+    builtOn,
+    intel,
+    entries: countryData?.entries,
+    totalArticles: countryData?.totalArticles,
+    dayCount: countryData?.dayCount,
+    change: latestChange(driftNotes, topicIdToThreadId),
+    connections,
+    triggers: futureDatedTriggers(deadlines, now, 3),
+    facts: factRows(storedFacts, now),
+    unknowns,
+  });
 
   // Status strip
   const statusStats = [
@@ -480,7 +512,7 @@ export default function CountryPage() {
       {/* Key actors */}
       {intel?.keyActors?.length > 0 && (
         <div className="cpg-rail-section">
-          <SectionHeader label="Key Actors" />
+          <SectionHeader label="Key Actors" hint={<ClaimTag kind="judgment" />} />
           {intel.keyActors.slice(0, 5).map((a, i) => (
             <div key={i} className="cpg-actor-row">
               <div className="cpg-actor-av">
@@ -673,6 +705,8 @@ export default function CountryPage() {
             <div className="cpg-hd-actions">
               {country && <ShareButtons path={countryHref(country.iso3)} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />}
               <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
+              <CopyAsText getText={getSheetText} />
+              <PrintButton />
               {country && <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />}
               {country && <FollowButton country={decodedName} />}
             </div>
@@ -713,6 +747,9 @@ export default function CountryPage() {
 
           {/* Risk profile — scoring-model-v2 dimension breakdown (renders only when the
               record carries a dimensions vector; scalar-only records show nothing here) */}
+          {intel?.riskScore != null && (
+            <p className="cpg-mark-note"><ClaimTag kind="judgment" /> Risk score and the four dimensions: model score, not a measurement.</p>
+          )}
           <RiskScorecard record={intel} />
 
           {/* What changed — living-analysis Phase 1a (deterministic, honest-empty if no material move) */}
@@ -737,21 +774,21 @@ export default function CountryPage() {
             <div className="cpg-view" {...tabPanelProps('country', 'situation')}>
               {intel?.bluf && (
                 <>
-                  <SectionHeader label="Bottom Line" />
+                  <SectionHeader label="Bottom Line" hint={<ClaimTag kind="judgment" />} />
                   <div className="cpg-bluf-text">{intel.bluf}</div>
                 </>
               )}
 
               {intel?.whyItMatters && (
                 <>
-                  <SectionHeader label="Why It Matters" />
+                  <SectionHeader label="Why It Matters" hint={<ClaimTag kind="judgment" />} />
                   <div className="cpg-why-text"><BoldText text={intel.whyItMatters} /></div>
                 </>
               )}
 
               {intel?.riskSignals?.length > 0 && (
                 <>
-                  <SectionHeader label="What to Watch" />
+                  <SectionHeader label="What to Watch" hint={<ClaimTag kind="judgment" />} />
                   <ul className="cpg-watch-list">
                     {intel.riskSignals.slice(0, 5).map((s, i) => (
                       <li key={i}>{s}</li>
@@ -775,6 +812,8 @@ export default function CountryPage() {
                 />
               )}
 
+              <HowItConnects rows={connections} country={decodedName} />
+
               {(intel?.trajectoryDetail || intel?.crossThreadInsight) && (
                 <div className="cp-deep">
                   {[
@@ -791,7 +830,7 @@ export default function CountryPage() {
                         <span className={`cp-deep-chevron ${activeDeepTab === tab.key ? 'open' : ''}`}>▾</span>
                       </button>
                       {activeDeepTab === tab.key && (
-                        <div className="cp-ai-panel"><BoldText text={intel[tab.key]} /></div>
+                        <div className="cp-ai-panel"><ClaimTag kind="judgment" /><BoldText text={intel[tab.key]} /></div>
                       )}
                     </div>
                   ))}
@@ -807,7 +846,7 @@ export default function CountryPage() {
           {/* Story arcs tab */}
           {mainTab === 'arcs' && (
             <div className="cpg-view" {...tabPanelProps('country', 'arcs')}>
-              <SectionHeader label="Story Arcs" count={filteredArcs.length}>
+              <SectionHeader label="Story Arcs" count={filteredArcs.length} hint={<><ClaimTag kind="fact" /> titles and counts <ClaimTag kind="judgment" /> one-line summaries</>}>
                 {(arcTypeFilter !== 'all' || catFilter || urgFilter) && (
                   <Button compact onClick={() => { setArcTypeFilter('all'); setCatFilter(null); setUrgFilter(null); }}>
                     Clear filters ×
@@ -890,6 +929,9 @@ export default function CountryPage() {
               <CoverageList entries={countryData.entries} country={decodedName} />
             </div>
           )}
+          <WhatWeDontKnow lines={unknowns} />
+          <YourView country={decodedName} />
+          <SheetFooter date={builtOn} />
         </EditorialShell>
       )}
     </>

@@ -31,7 +31,8 @@ import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';
 import '@/features/countries/components/CountryCardV2.css';
-import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
+import { latestChange as pickLatestChange } from '@/features/countries/lib/countryChange.js';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 
 function fmtShort(iso) {
   if (!iso) return null;
@@ -73,12 +74,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const macro = macroRows(markets?.macro);
   const facts = factRows(storedFacts, now);
 
-  const latestChange = useMemo(() => {
-    const note = (driftNotes || []).find((d) => safeTriggerEvent(d)?.title && safeWhy(d));
-    if (!note) return null;
-    const threadId = topicIdToThreadId.get(note.triggerEvent.topicId) || null;
-    return { asOf: note.asOf, why: safeWhy(note), eventTitle: safeTriggerEvent(note).title, threadId };
-  }, [driftNotes, topicIdToThreadId]);
+  const latestChange = useMemo(() => pickLatestChange(driftNotes, topicIdToThreadId), [driftNotes, topicIdToThreadId]);
 
   if (!name) return null;
 
@@ -113,6 +109,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <=3 years old. */}
       {(facts.length || macro.length || fx) ? (
         <div className="ccv2-facts">
+          {facts.length ? <ClaimTag kind="fact" /> : null}
           {facts.map((r) => (
             <span key={r.key} className="ccv2-fact ccv2-fact-stored">
               <b>{r.value}</b> {r.label}
@@ -139,6 +136,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <span className="ccv2-risk">
             Risk <TierChip tier={headline.tier} score={headline.score} />
           </span>
+          <span className="ccv2-note"><ClaimTag kind="judgment" /> model score, not a measurement</span>
           <span className="ccv2-direction">
             {direction.state === 'arrow' ? <DirectionArrow dir={direction.arrow} /> : direction.state === 'top' ? '◆' : ''}
             {' '}{directionLabel(direction)}
@@ -179,7 +177,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <span className="ccv2-change-date">{fmtShort(latestChange.asOf)}</span>{' '}
           {/* Drift explanations are model text and can contradict the score move (D9, not built):
               label them, never present them as fact. */}
-          <span className="ccv2-mj">model judgment</span>{' '}
+          <ClaimTag kind="judgment" />
           {latestChange.why}{' '}
           {latestChange.threadId ? (
             <EntityLink kind="story" id={latestChange.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: latestChange.eventTitle }}>{latestChange.eventTitle} →</EntityLink>
@@ -191,6 +189,8 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
 
       {/* 7. Stories */}
       {stories.length > 0 ? (
+        <div>
+        <div className="ccv2-note"><ClaimTag kind="fact" /> dated headlines</div>
         <ul className="ccv2-stories">
           {stories.map((s) => (
             <li key={s.threadId || s.topicId}>
@@ -203,16 +203,20 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
             </li>
           ))}
         </ul>
+        </div>
       ) : null}
 
       {/* 8. Future dated triggers */}
       {triggers.length > 0 ? (
+        <div>
+        <div className="ccv2-note"><ClaimTag kind="judgment" /> our forecast, not reported fact</div>
         <ul className="ccv2-triggers">
           {triggers.map((t) => (
             <li key={t.id}>{t.qid ? <EntityLink kind="forecast" id={t.qid}>{t.label}</EntityLink> : t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
           ))}
           {legacyNote(triggers) && <li className="ccv2-trigger-note">{legacyNote(triggers)}</li>}
         </ul>
+        </div>
       ) : null}
 
       <Button to={studioHref(stories.map((s) => s.threadId))} className={`ccv2-studio-btn${state === 'never_briefed' ? ' ccv2-generate' : ''}`}>

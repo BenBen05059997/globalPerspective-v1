@@ -1,0 +1,38 @@
+/* Sheet blocks on the country page: layout only; marks are ClaimTag, headers SectionHeader, buttons Button. */
+.cs-block { margin-top: var(--space-6); }
+.cs-links, .cs-unknowns, .cs-cited { list-style: none; margin: 0; padding: 0; }
+.cs-links > li { padding: var(--space-3) 0; border-bottom: 1px solid var(--hairline); font-size: var(--text-ui); color: var(--text-body); }
+.cs-feeds, .cs-meta { color: var(--text-muted); }
+.cs-mech { margin: var(--space-1) 0 0; color: var(--text-body); }
+.cs-cited { margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-muted); }
+.cs-unknowns li { padding: var(--space-1) 0; font-size: var(--text-ui); color: var(--text-body); }
+.cs-unknowns li::before { content: '- '; color: var(--text-dim); }
+
+.cs-yours { padding: var(--space-4); border: 1px solid var(--hairline); border-radius: var(--r-md); }
+.cs-label { font-size: var(--text-xs); color: var(--text-muted); }
+.cs-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
+.cs-input {
+  box-sizing: border-box; padding: var(--space-2); background: var(--panel-2); color: var(--text-body);
+  border: 1px solid var(--hairline); border-radius: var(--r-sm); font: inherit; font-size: var(--text-ui);
+}
+.cs-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+textarea.cs-input { display: block; width: 100%; margin-top: var(--space-1); resize: vertical; }
+.cs-row .cs-input { flex: 1 1 10rem; min-width: 0; }
+.cs-row .cs-input--date { flex: 0 0 auto; }
+.cs-row .cs-input--p { flex: 0 0 5rem; }
+.cs-fallback { margin-top: var(--space-2); }
+
+.cs-footer { margin: var(--space-6) 0 0; font-size: var(--text-xs); color: var(--text-dim); }
+
+/* Print: one clean column in system colours (the site tokens are dark); controls and maps stay on screen. */
+@media print {
+  html, body { background: Canvas !important; }
+  .gp-nav, .gp-footer, .gp-tabbar, .cpg-map-hero, .cpg-phonehead, .cpg-hd-actions, .cpg-views, .es-left, .es-strip,
+  .cs-noprint, .ccv2-studio-btn, .cp-coverage-toggle, .cwc-chain-toggle { display: none !important; }
+  .es-body { display: block !important; }
+  .es-center, .es-right { max-width: 100% !important; width: auto !important; overflow: visible !important; position: static !important; }
+  .cpg-page, .cpg-page * { color: CanvasText !important; background: transparent !important; box-shadow: none !important; }
+  .cpg-page .claim-tag { border-color: CanvasText !important; }
+  .cpg-page a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; }
+  .cs-yours, .cs-links > li { break-inside: avoid; }
+}

@@ -11,7 +11,11 @@ const entries = [e(['USA'], 1), e(['United States'], 2), e(['US', 'Iran'], 3), e
 vi.mock('@/features/threads', () => ({
   useWeeklyArchive: () => ({ dayMap: { '2026-10-18': { entries } }, sortedDates: ['2026-10-18'], loading: false }),
   useThreadAnalyses: () => ({ analyses: {} }),
+  useWebIndex: () => ({ index: null }),
+  deriveFromIndex: () => ({ fedInto: [] }),
 }));
+vi.mock('@/features/countries/hooks/useCountryStories', () => ({ useCountryStories: () => ({ deadlines: [], topicIdToThreadId: new Map() }) }));
+vi.mock('@/features/countries/hooks/useCountryFacts', () => ({ useCountryFacts: () => ({ facts: null }) }));
 vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => null }));
 vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
   useCountryIntelligence: (names) => { intelNames.list.push(...names); return { intelligence: {} }; },

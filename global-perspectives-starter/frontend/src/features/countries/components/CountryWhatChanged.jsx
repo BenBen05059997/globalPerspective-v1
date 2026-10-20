@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { computeCountryDrift } from '@/features/countries/lib/countryDrift';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE } from '@/shared/lib/links.js';
@@ -53,6 +54,7 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
     <div className="cwc" aria-label="What changed in this country's read">
       <div className="cwc-head">
         <span className="cwc-label">What changed</span>
+        <ClaimTag kind="judgment" />
         <span className="cwc-since">
           since {fmtDay(drift.since)}{drift.daysSince != null ? ` · ${drift.daysSince}d ago` : ''}
         </span>
@@ -81,11 +83,11 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
         <div className="cwc-why">
           {safeTriggerEvent(note)?.title && (
             <div className="cwc-because">
-              ↳ Because: <b><EntityLink kind="story" id={safeTriggerEvent(note).threadId} topic={{ title: safeTriggerEvent(note).title }}>{safeTriggerEvent(note).title}</EntityLink></b>
+              <ClaimTag kind="fact" />↳ Because: <b><EntityLink kind="story" id={safeTriggerEvent(note).threadId} topic={{ title: safeTriggerEvent(note).title }}>{safeTriggerEvent(note).title}</EntityLink></b>
               {safeTriggerEvent(note).date ? <span className="cwc-evdate"> · {fmtDay(safeTriggerEvent(note).date)}</span> : null}
             </div>
           )}
-          <div className="cwc-whytext">{cleanWhy(safeWhy(note))}</div>
+          <div className="cwc-whytext"><ClaimTag kind="judgment" />{cleanWhy(safeWhy(note))}</div>
         </div>
       )}
 

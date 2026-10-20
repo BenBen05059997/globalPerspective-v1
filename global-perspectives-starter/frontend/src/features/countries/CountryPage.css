@@ -389,3 +389,6 @@
    phone tab row + header bar get an explicit 16px gutter and the MAP tab is full width like the desktop hero. */
 .gp-main:has(.cpg-page) > .container { max-width: 100%; padding: 0; }
 .cpg-phonehead { padding: 0 var(--space-4); }
+
+/* A one-line mark note above a model-written block ("model score, not a measurement"). */
+.cpg-mark-note { margin: var(--space-3) 0; font-size: var(--text-xs); color: var(--text-muted); }

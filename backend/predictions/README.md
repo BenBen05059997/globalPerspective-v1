@@ -7,15 +7,15 @@ and publish the public track record. It serves readers of the track-record page 
 
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
-| newsPredictionResolver | Commits weekly seeds, draws the sampled questions, and on Mondays drafts proposed verdicts. | Rule `TriggerPredictionResolver`, cron(30 10 * * ? *) UTC, input action `tick`, ENABLED | PredictionLog `PRED#` rows, `Q#`/`VERDICT`; Brave Search API; DeepSeek endpoint | PredictionLog `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows, written once and never replaced | [link](newsPredictionResolver/README.md) |
+| newsPredictionResolver | Commits weekly seeds, draws the sampled questions, and on Mondays drafts verdicts and writes them itself. | Rule `TriggerPredictionResolver`, cron(30 10 * * ? *) UTC, input action `tick`, ENABLED | PredictionLog `PRED#` rows, `Q#`/`VERDICT`; Brave Search API; DeepSeek endpoint | PredictionLog `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows, written once and never replaced | [link](newsPredictionResolver/README.md) |
 | newsPredictionsSnapshot | Scans the log, computes the track record and question board, and saves one JSON file. | Rule `TriggerPredictionsSnapshot`, rate(30 minutes), ENABLED | PredictionLog `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` (seed secrets and `DRAFT#` rows filtered out) | S3 `predictions/track_record.json` | [link](newsPredictionsSnapshot/README.md) |
 
 ## Pipeline
 
 1. NewsProjectInvokeAgentLambda-dev (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle.
 2. Each day at 10:30 UTC newsPredictionResolver runs `tick`: it commits seed hashes for upcoming weeks and draws a sample from every ended week.
-3. On Mondays the same run drafts proposed verdicts using Brave Search evidence. The drafter is not shown the question's probability.
-4. Drafts are only proposals. The operator writes the verdict with `predictions/settle-review.js`, which becomes the `Q#`/`VERDICT` row.
+3. On Mondays the same run drafts verdicts using Brave Search evidence. The drafter is not shown the question's probability.
+4. A yes/no/void draft is written at once as the `Q#`/`VERDICT` row (`confirmedBy: 'resolver'`); unclear drafts are re-drafted after 5 days and become void after three. The operator disputes a verdict with `predictions/settle-correct.js --correct` (appends `VERDICT#<n>` with a reason). Decision 0034.
 5. Every 30 minutes newsPredictionsSnapshot scans the log and writes `predictions/track_record.json` to the world bucket.
 6. The browser calls the `prediction_track_record` action on `newsSensitiveData-dev`, which returns that file and falls back to a live Scan if it is missing.
 7. The `/track-record` page shows it (hook `useTrackRecord`). The corrections feed on the same page comes from the `corrections_feed` action, which reads drift notes from the pipeline group.

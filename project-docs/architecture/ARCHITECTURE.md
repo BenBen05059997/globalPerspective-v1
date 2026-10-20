@@ -189,7 +189,7 @@ other GET paths.
   `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`, `situations-log.mjs`).
 - `quality/` — the frontend verify gate (`verify_pages.sh`, ratchets such as
   `check_color_literals.mjs`, `check_shared_blocks.mjs`), eval harnesses.
-- `predictions/` — `settle-review.js` (the human confirm step for forecast verdicts), `verify-draw.mjs`.
+- `predictions/` — `settle-correct.js` (list settled/due questions; correct a verdict with a reason), `verify-draw.mjs`.
 - `backend/<group>/cli/` — operator CLIs next to their Lambdas: `distribution/cli/` (breaking and weekly
   review/send), `pipeline/cli/threads.mjs` (list-joins / merge / split thread joins; print-only without
   `--apply`), `economy-parked/cli/`.
@@ -294,8 +294,8 @@ flowchart LR
 
 Forecasts are written by the agent Lambda (step 1.2) to `GlobalPerspectivePredictionLog`.
 `newsPredictionResolver` (daily tick; unparked, decision 0027) commits a weekly random seed, draws a sample of questions, and on
-Mondays asks the LLM to draft verdicts; it never sees the forecast probability. Nothing is final until
-the operator confirms each draft with `predictions/settle-review.js`. Records are write-once
+Mondays asks the LLM to draft verdicts and writes them; it never sees the forecast probability. Yes/no/void drafts become the
+verdict at once (decision 0034); the operator can append a correction with `predictions/settle-correct.js`. Records are write-once
 (conditional puts). `newsPredictionsSnapshot` (every 30 min) scans the log into
 `predictions/track_record.json`; the proxy action `prediction_track_record` serves that file
 (falling back to a live scan only if it is missing) to `/track-record`.

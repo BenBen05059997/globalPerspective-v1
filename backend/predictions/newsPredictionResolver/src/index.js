@@ -5,11 +5,15 @@
 //   tick    daily 10:30 UTC, idempotent: commit next weeks' seeds, draw every ended week, on Mondays
 //           run the draft pass, write a heartbeat. No LLM except in the Monday draft pass.
 //   draw    {weekId, dryRun}   reveal + draw one ended week (normally done by tick)
-//   draft   {limit, dryRun}    agent drafts for sampled questions past their deadline
+//   draft   {limit, dryRun}    agent drafts for sampled questions past their deadline, then settles them
+//   correct {qid, verdict, reason, evidence?}  operator dispute: appends Q#<qid>/VERDICT#<n> (highest n wins)
 //   status  read-only counts
 //   replay  {items:[…]}        run the drafter on supplied questions, NO writes (validation only)
 // dryRun = no LLM, no writes. Records: SEED#<week>/{COMMIT,SECRET,REVEAL}, SAMPLE#<week>/DRAW,
-// Q#<qid>/{SAMPLED,DRAFT#<iso>,VERDICT}, SETTLE#<week>/TICK#<iso>; all immutable.
+// Q#<qid>/{SAMPLED,DRAFT#<iso>,VERDICT,VERDICT#<n>}, SETTLE#<week>/TICK#<iso>; all immutable.
+// No human gate (decision 0034): a yes/no/void draft becomes the VERDICT row at once (tick settles any
+// draft that is waiting); an unclear draft stays open, is re-drafted after REDRAFT_AFTER_DAYS and
+// becomes void after MAX_UNCLEAR_DRAFTS.
 // The drafter never sees a question's probability (see draft.js).
 
 const lib = require('./lib');
@@ -23,6 +27,9 @@ const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // Q6: judgmen
 const DRAFT_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
 const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
 const REDRAFT_AFTER_DAYS = 5;
+const MAX_UNCLEAR_DRAFTS = 3;
+const FINAL_DRAFT_VERDICTS = ['yes', 'no', 'void']; // anything else (not_yet, needs_human) is unclear
+const CORRECTION_VERDICTS = ['yes', 'no', 'void'];
 
 async function mapWithConcurrency(items, limit, worker) {
   const out = new Array(items.length);
@@ -98,6 +105,63 @@ async function drawWeek(deps, commit, dryRun, out) {
   out.drawn.push(summary);
 }
 
+// Verdict rows have no probability and are never replaced: VERDICT is number 1, corrections are VERDICT#2, #3, ...
+const verdictOrder = (sk) => { const m = /^VERDICT#(\d+)$/.exec(sk); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; };
+
+// An unclear draft is one the drafter judged and could not settle (not_yet, or needs_human on evidence); an LLM
+// outage (needs_human with an 'llm error' note) is not a judgment and never counts toward voiding a question.
+const isUnclearDraft = (d) => !FINAL_DRAFT_VERDICTS.includes(d.verdict) && !/^llm error/.test(String(d.note || ''));
+
+// Settle one question from its drafts (g.drafts includes any draft just written). yes/no/void in the latest
+// draft is the verdict; an unclear draft leaves it open until MAX_UNCLEAR_DRAFTS, then void.
+async function settleQuestion(deps, g, dryRun, out) {
+  if (g.verdicts.length) return;
+  const latest = g.drafts.slice().sort((a, b) => String(a.SK).localeCompare(String(b.SK))).pop();
+  if (!latest) return;
+  let row;
+  if (FINAL_DRAFT_VERDICTS.includes(latest.verdict)) {
+    row = {
+      verdict: latest.verdict,
+      evidence: latest.verdict === 'void' ? null : { url: latest.url || null, quote: latest.quote || null },
+      ...(latest.verdict === 'void' ? { voidReason: latest.voidReason } : {}),
+    };
+  } else if (g.drafts.filter(isUnclearDraft).length >= MAX_UNCLEAR_DRAFTS) {
+    row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
+  } else return;
+  if (dryRun) { out.wouldSettle.push({ qid: g.qid, verdict: row.verdict }); return; }
+  const ok = await deps.store.putOnce({
+    PK: `Q#${g.qid}`, SK: 'VERDICT', qid: g.qid, ...row, decidedAt: deps.now(),
+    decidedBy: 'resolver', confirmedBy: 'resolver', draftSk: latest.SK,
+  });
+  if (ok) { g.verdicts.push(row); out.settled.push({ qid: g.qid, verdict: row.verdict }); }
+}
+
+// Daily: settle every due question whose draft is already waiting (no LLM).
+async function settlePass(deps, today, dryRun, out) {
+  for (const g of groupQuestions(await deps.store.listQuestionRows())) {
+    if (g.sampled && lib.isDue(g.sampled.deadline, today)) await settleQuestion(deps, g, dryRun, out);
+  }
+}
+
+// Operator dispute path: append the next VERDICT#<n> with a reason; the snapshot reads the highest n.
+async function correct(deps, event, out) {
+  const { qid, verdict } = event;
+  const reason = String(event.reason || '').trim();
+  if (!qid || !CORRECTION_VERDICTS.includes(verdict) || !reason) { out.errors.push('correct needs qid, verdict (yes|no|void) and a reason'); return; }
+  if (!(await deps.store.get(`Q#${qid}`, 'SAMPLED'))) { out.errors.push(`${qid}: not a sampled question`); return; }
+  const rows = await deps.store.queryPK(`Q#${qid}`);
+  const n = Math.max(0, ...rows.map((r) => verdictOrder(r.SK))) + 1;
+  const ev = event.evidence || {};
+  const ok = await deps.store.putOnce({
+    PK: `Q#${qid}`, SK: `VERDICT#${n}`, qid, verdict,
+    evidence: verdict === 'void' ? null : { url: ev.url || null, quote: ev.quote || null },
+    ...(verdict === 'void' ? { voidReason: reason } : {}),
+    decidedAt: deps.now(), decidedBy: 'operator', confirmedBy: 'operator', reason,
+  });
+  if (ok) out.corrected = { qid, sk: `VERDICT#${n}`, verdict };
+  else out.errors.push(`${qid}: VERDICT#${n} was written by someone else just now; run the correction again`);
+}
+
 async function draftPass(deps, today, limit, dryRun, out) {
   const groups = groupQuestions(await deps.store.listQuestionRows());
   const cutoff = lib.addDays(today, -REDRAFT_AFTER_DAYS);
@@ -113,6 +177,8 @@ async function draftPass(deps, today, limit, dryRun, out) {
     const at = deps.now();
     await deps.store.putOnce({ PK: `Q#${g.qid}`, SK: `DRAFT#${at}`, qid: g.qid, ...d, model: deps.draftModel, at });
     out.drafted.push({ qid: g.qid, verdict: d.verdict });
+    g.drafts.push({ PK: `Q#${g.qid}`, SK: `DRAFT#${at}`, ...d });
+    await settleQuestion(deps, g, false, out);
   });
 }
 
@@ -121,7 +187,7 @@ async function run(event, deps) {
   const dryRun = Boolean(event && event.dryRun);
   const now = deps.now();
   const today = String(now).slice(0, 10);
-  const out = { action, dryRun, today, committed: [], wouldCommit: [], drawn: [], wouldDraw: [], drafted: [], errors: [] };
+  const out = { action, dryRun, today, committed: [], wouldCommit: [], drawn: [], wouldDraw: [], drafted: [], settled: [], wouldSettle: [], errors: [] };
 
   if (action === 'status') {
     const commits = await deps.store.listCommits();
@@ -142,6 +208,12 @@ async function run(event, deps) {
     return out;
   }
 
+  if (action === 'correct') {
+    await correct(deps, event, out);
+    if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
+    return out;
+  }
+
   if (action === 'tick' || action === 'draw') {
     if (action === 'tick') await ensureCommits(deps, today, dryRun, out);
     const commits = await deps.store.listCommits();
@@ -151,6 +223,8 @@ async function run(event, deps) {
     }
   }
 
+  if (action === 'tick' || action === 'draft') await settlePass(deps, today, dryRun, out);
+
   if (action === 'draft' || (action === 'tick' && (lib.isMonday(today) || event.draft))) {
     await draftPass(deps, today, Number(event.limit) || DEFAULT_DRAFT_LIMIT, dryRun, out);
   }
@@ -158,11 +232,11 @@ async function run(event, deps) {
   if (action === 'tick' && !dryRun) {
     await deps.store.putOnce({
       PK: `SETTLE#${lib.weekOf(today)}`, SK: `TICK#${now}`, at: now,
-      committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, errors: out.errors,
+      committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, settled: out.settled.length, errors: out.errors,
     });
   }
   if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
-  console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
+  console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
   return out;
 }
 
@@ -190,4 +264,6 @@ function defaultDeps() {
 
 exports.run = run;
 exports.groupQuestions = groupQuestions;
+exports.MAX_UNCLEAR_DRAFTS = MAX_UNCLEAR_DRAFTS;
+exports.REDRAFT_AFTER_DAYS = REDRAFT_AFTER_DAYS;
 exports.handler = async (event = {}) => run(event, defaultDeps());

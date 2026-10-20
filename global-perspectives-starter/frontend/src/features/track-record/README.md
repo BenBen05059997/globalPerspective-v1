@@ -47,8 +47,8 @@ reads (corrections). A plain-text twin at `/track-record/text` shows the same fa
 
 ## Pipeline
 1. `NewsProjectInvokeAgentLambda-dev` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
-2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts proposed verdicts
-   (Brave Search evidence); the operator confirms them with `predictions/settle-review.js`.
+2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts verdicts
+   (Brave Search evidence) and writes them itself; the operator disputes one with `predictions/settle-correct.js`.
 3. `newsPredictionsSnapshot` (every 30 min) scans the log -> S3 `predictions/track_record.json`.
 4. `newsDriftCorrector` (05:30 UTC) writes `DRIFT#` notes that become the corrections ledger.
 5. `newsSensitiveData-dev` actions `prediction_track_record` and `corrections_feed`.

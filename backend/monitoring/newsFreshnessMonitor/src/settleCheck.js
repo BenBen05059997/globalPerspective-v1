@@ -40,7 +40,7 @@ function buildMessage(evaluation, questions, { siteUrl, nowIso } = {}) {
     `Board: ${c.locked ?? 0} sampled, ${c.resolved ?? 0} resolved, ${c.void ?? 0} void, ${c.awaiting ?? 0} awaiting, ${c.pastDeadlineUnchecked ?? 0} past deadline and not checked.`,
     '',
     'What to do:',
-    '- Confirm drafted verdicts:  node predictions/settle-review.js --list   then   node predictions/settle-review.js',
+    '- See what is due or settled:  node predictions/settle-correct.js --list  (the resolver writes verdicts itself; dispute one with --correct <qid> <yes|no|void> "<reason>")',
     '- If the draw, commitment or tick is missing: check the newsPredictionResolver logs and rule TriggerPredictionResolver (ENABLED?), then run {"action":"tick"} once.',
     '',
     `Public page: ${absoluteUrl(forecastHref(), siteUrl)}`,

@@ -3,8 +3,12 @@
 Last verified: 2026-10-19 (scripts read from the repo; `verify-draw.mjs` run against live weeks 2026-W41 and 2026-W42).
 
 > **Superseded 2026-09-30 for new questions.** Resolution is now the weekly sampled flow: the
-> `newsPredictionResolver` Lambda commits a seed, draws ~22 questions a week and drafts verdicts;
-> you confirm them with `node predictions/settle-review.js` (`--list` first). Check a week's draw with
+> `newsPredictionResolver` Lambda commits a seed, draws ~22 questions a week, drafts verdicts and
+> (since 2026-10-20, decision 0034) writes them itself. Nothing waits for a human. If a verdict is wrong,
+> correct it with a reason: `node predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`
+> (appends `Q#<qid>/VERDICT#<n>`, `confirmedBy:'operator'`; the highest n is the verdict the board shows),
+> then fix the algorithm. `node predictions/settle-correct.js --list` shows what is due, drafted and settled
+> this week. An unclear draft is re-drafted after 5 days; the third unclear draft becomes void. Check a week's draw with
 > `node predictions/verify-draw.mjs --week <YYYY-Www>`: exit 0 = verified, 1 = NOT VERIFIED,
 > 3 = not revealed yet (only the commitment exists until the week ends). Runbook:
 > `project-docs/runbooks/prediction-resolver.md`.
@@ -68,4 +72,5 @@ and a snapshot flips to `status:'resolved'` only once **every** dated trigger ha
 ## Files
 - `resolve-v1-extract.js` — due-trigger worklist (read-only)
 - `resolve-v1-write.js` — agent-verdict write-back (dry-run default)
-- `review.js` — the original interactive/human write path (still valid; `confirmedBy:'human'`)
+- `review.js` — the original interactive/human write path for the July pilot records (`confirmedBy:'human'`)
+- `settle-correct.js` — list and correct sampled-question verdicts (current flow)

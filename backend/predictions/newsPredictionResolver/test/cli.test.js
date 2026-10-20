@@ -4,38 +4,39 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const fs = require('fs');
 const lib = require('../src/lib');
-const cli = require('../../../../predictions/settle-review.js');
+const cli = require('../../../../predictions/settle-correct.js');
 
 const root = path.join(__dirname, '../../../../predictions');
 
-test('settle-review: due = sampled, past deadline, no verdict; oldest first; newest draft attached', () => {
+test('settle-correct: due = sampled, past deadline, no verdict; settled = latest verdict this week', () => {
   const rows = [
     { PK: 'Q#a', SK: 'SAMPLED', deadline: '2026-11-10', question: 'A' },
     { PK: 'Q#a', SK: 'DRAFT#2026-11-11T10:00:00Z', verdict: 'not_yet' },
-    { PK: 'Q#a', SK: 'DRAFT#2026-11-18T10:00:00Z', verdict: 'yes', quote: 'q', url: 'https://x' },
     { PK: 'Q#b', SK: 'SAMPLED', deadline: '2026-11-05', question: 'B' },
-    { PK: 'Q#c', SK: 'SAMPLED', deadline: '2026-11-01' },
-    { PK: 'Q#c', SK: 'VERDICT', verdict: 'no' },
+    { PK: 'Q#c', SK: 'SAMPLED', deadline: '2026-11-01', question: 'C' },
+    { PK: 'Q#c', SK: 'VERDICT', verdict: 'no', decidedAt: '2026-11-18T10:00:00Z', confirmedBy: 'resolver' },
+    { PK: 'Q#c', SK: 'VERDICT#2', verdict: 'yes', decidedAt: '2026-11-19T10:00:00Z', confirmedBy: 'operator', reason: 'r' },
+    { PK: 'Q#c', SK: 'VERDICT#10', verdict: 'void', decidedAt: '2026-11-19T11:00:00Z', confirmedBy: 'operator', reason: 'r' },
     { PK: 'Q#d', SK: 'SAMPLED', deadline: '2026-12-31' },
+    { PK: 'Q#e', SK: 'SAMPLED', deadline: '2026-10-01' },
+    { PK: 'Q#e', SK: 'VERDICT', verdict: 'yes', decidedAt: '2026-10-05T10:00:00Z' },
   ];
-  const due = cli.dueForReview(cli.group(rows), '2026-11-20');
-  assert.deepEqual(due.map((g) => g.qid), ['b', 'a']);
-  assert.equal(due[1].latestDraft.verdict, 'yes');
+  const l = cli.listing(cli.group(rows), '2026-11-20');
+  assert.deepEqual(l.due.map((g) => g.qid), ['b', 'a']);
+  assert.deepEqual(l.settled.map((x) => x.g.qid), ['c']);
+  assert.equal(l.settled[0].v.SK, 'VERDICT#10'); // highest n wins, numerically
 });
 
-test('settle-review never touches probability: the module has no read of p, and the rows it builds carry none', () => {
-  const src = fs.readFileSync(path.join(root, 'settle-review.js'), 'utf8');
-  assert.ok(!/scenarios|probabilit|\.p\b/.test(src.replace(/no probability|carry no probability|cannot show `p`/g, '')));
-  const row = cli.verdictRow({ qid: 'a', latestDraft: { SK: 'DRAFT#x', url: 'https://x', quote: 'qq' } }, 'yes', {}, '2026-11-20T00:00:00Z');
-  assert.equal(row.PK, 'Q#a'); assert.equal(row.SK, 'VERDICT'); assert.equal(row.decidedBy, 'operator');
-  assert.deepEqual(row.evidence, { url: 'https://x', quote: 'qq' });
-  assert.equal(cli.verdictRow({ qid: 'a' }, 'void', { voidReason: 'event_moot' }, 'n').voidReason, 'event_moot');
+test('settle-correct builds the Lambda payload and rejects bad input', () => {
+  assert.deepEqual(cli.correctionPayload(['--correct', 'q1', 'no', 'source was wrong']), { action: 'correct', qid: 'q1', verdict: 'no', reason: 'source was wrong' });
+  assert.deepEqual(cli.correctionPayload(['--correct', 'q1', 'yes', 'why', '--url', 'https://x', '--quote', 'qq']).evidence, { url: 'https://x', quote: 'qq' });
+  assert.throws(() => cli.correctionPayload(['--correct', 'q1', 'maybe', 'why']));
+  assert.throws(() => cli.correctionPayload(['--correct', 'q1', 'yes']));
 });
 
-test('settle-review: NO needs deadline + 3 days, same rule as the Lambda', () => {
-  for (const [dl, today] of [['2026-11-10', '2026-11-12'], ['2026-11-10', '2026-11-13']]) {
-    assert.equal(cli.canConcludeNo(dl, today), lib.canConcludeNo(dl, today));
-  }
+test('settle-correct never touches probability', () => {
+  const src = fs.readFileSync(path.join(root, 'settle-correct.js'), 'utf8');
+  assert.ok(!/scenarios|probabilit|\.p\b/.test(src.replace(/no probability|\(no probability\)/g, '')));
 });
 
 test('verify-draw: a good draw verifies; a tampered pick, seed or late commitment does not', async () => {

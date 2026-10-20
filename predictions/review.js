@@ -3,7 +3,7 @@
 
 /**
  * predictions/review.js — LEGACY human confirmation queue (scenario-probability era). For the weekly
- * sampled questions use predictions/settle-review.js.
+ * sampled questions are settled by the newsPredictionResolver Lambda (corrections: predictions/settle-correct.js).
  *
  * Original description:
  *

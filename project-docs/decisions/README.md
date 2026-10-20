@@ -38,3 +38,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0031](0031-economy-parked-fx-box-labelled.md) | 2026-10-19 | Economy stays parked; dead links go; FX box labelled raw quotes | accepted (extends 0009) |
 | [0032](0032-signals-api-parked.md) | 2026-10-19 | The Signals API is parked | accepted (extends 0015) |
 | [0033](0033-lens-studio-retired.md) | 2026-10-20 | The lens Analysis Studio is retired | accepted (supersedes 0030) |
+| [0034](0034-auto-verdicts-no-human-gate.md) | 2026-10-20 | The resolver writes verdicts itself; no human gate | accepted (supersedes the confirm step of 0011) |

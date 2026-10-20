@@ -2,6 +2,11 @@
 
 The world's memory: one dated, append-only account per story. The weekly, story tree, board and track-record page read it.
 
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → **5 Timeline** → 6 Views → 7 Delivery → 8 Watch
+This folder is stage 5: newsStoryRecord, the only writer of the timeline and its stored views. Timeline: writes the timeline (record/timeline) and the story, index and corrections views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
+
 ## Three names, never mixed
 
 | Name | What it is | Where it lives |

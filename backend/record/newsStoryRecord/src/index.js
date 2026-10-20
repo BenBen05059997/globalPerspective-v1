@@ -1,6 +1,8 @@
 'use strict';
 
 const prompts = require('./prompts');
+const {makeEvent,cursorOf,rebuildStory}=require('./timeline');
+const {makeTimeline,rawEvents,judgmentEvents,indexView,entryView,runStamp,eventId}=require('./persistence');
 const {
   day,
   addDays,
@@ -30,10 +32,11 @@ function makeHandler({
     // load(date) is a read-only, as-of-date store contract; missing archive days are explicit.
     const existingIndex = await s3json.getJson(`${prefix}index.json`);
     if (existingIndex?.date > date) throw Error('refusing to rewind index');
-    const input = await store.load(date,{since:existingIndex?.date ? addDays(existingIndex.date,1) : undefined});
+    const input = await store.load(date,{since:existingIndex?.date ? existingIndex.date : undefined});
     const report = {
       date,
       threadsProcessed: 0,
+      threadsAttempted: 0,
       birthsFound: 0,
       proposedMerges: [],
       forks: 0,
@@ -46,6 +49,7 @@ function makeHandler({
         line: 0
       },
       skipped: [],
+      failures: [],
       coverage: input.coverage || {
         missingDays: []
       }
@@ -60,6 +64,7 @@ function makeHandler({
         });
         return null;
       }
+      try {
       const result = await llm(prompts[task](context));
       if (result.label !== 'JUDGMENT' || !Number.isFinite(result.confidence) || result.confidence < 0 || result.confidence > 1) throw Error(`invalid ${task} judgment`);
       if (task === 'chapter' && (typeof result.name !== 'string' || !result.name.trim() || typeof result.text !== 'string' || !result.text.trim())) throw Error('invalid chapter text');
@@ -67,66 +72,41 @@ function makeHandler({
       if (task === 'line' && result.contradicted && (typeof result.reason !== 'string' || !result.reason.trim())) throw Error('line contradiction needs reason');
       if (task === 'trigger' && !['fired', 'hold', 'dead'].includes(result.status)) throw Error('invalid trigger status');
       return result;
+      } catch(error) {error.recordJudgment=true;error.recordTask=task;throw error;}
     };
-    const entries = (input.entries || []).filter(e => e.date <= date).map(e => ({
-      date: e.date,
-      archive: e.archive,
-      topicId: e.topicId,
-      headline: e.title || '',
-      threadId: e.threadId,
-      archivedAt: e.archivedAt,
-      outlets: e.sources || [],
-      actors: e.actors || [],
-      countries: e.iso3 || []
-    }));
+    const at=runStamp(date,now());
+    const timeline=makeTimeline(s3json,prefix);await timeline.load(date);
+    const entries=input.entries.filter(e=>e.date<=date).map(entryView);
     const ids = [...new Set(entries.filter(e => e.date >= addDays(date, -29)).map(e => e.threadId).filter(Boolean))].sort();
+    report.threadsAttempted=ids.length;
     const stories = [];
-    const corrections = [];
     for (const id of ids) {
       if (!/^[A-Za-z0-9_-]+$/.test(id)) throw Error('unsafe thread id');
       const key = `${prefix}stories/${id}/`;
-      const snapshot = await s3json.getJson(`${key}${date}.json`);
-      const previous = await s3json.getJson(`${key}latest.json`);
-      if (previous?.asOf > date) throw Error(`refusing to rewind ${id}`);
-      if (snapshot) {
-        stories.push(snapshot);
-        continue;
+      const completion=timeline.completion(id,date);
+      const snapshot=await s3json.getJson(`${key}${date}.json`);
+      if (completion?.payload.date===date) {
+        const view=timeline.view(id,date);
+        if(snapshot && JSON.stringify(snapshot)!==JSON.stringify(view))throw Error(`snapshot disagrees with timeline: ${id}`);
+        if(!snapshot)await s3json.putOnce(`${key}${date}.json`,view);
+        stories.push(view);continue;
       }
+      const before=rebuildStory(timeline.days,id,{date});
+      const facts=rawEvents(input,id,before,at);
+      const known=new Set(timeline.events(date).map(e=>e.eventId));
+      await timeline.append(facts);
+      report.verdictsMirrored+=facts.filter(e=>e.kind==='verdict'&&!known.has(e.eventId)).length;
+      const previous=rebuildStory(timeline.days,id,{date});
+      if(!before)report.birthsFound++;
+      const storyCorrections=[];
+      try {
       const own = entries.filter(e => e.threadId === id);
       const today = own.filter(e => e.date === date);
       const analysis = input.analyses?.[id] || {};
-      const r = previous ? clone(previous) : {
-        threadId: id,
-        born: input.births[id].born,
-        bornAt: input.births[id].bornAt,
-        birthEvidence: input.births[id],
-        line: {
-          text: '',
-          writtenAt: date,
-          versions: []
-        },
-        chapters: [],
-        events: [],
-        forks: [],
-        links: [],
-        counts: {}
-      };
-      if (!previous) report.birthsFound++;
+      const r = clone(previous);
       r.asOf = date;
-      r.actors = [...new Set(own.flatMap(e => e.actors).concat((analysis.keyActors || []).map(a=>a.name)))].sort();
-      r.countries = [...new Set(own.flatMap(e => e.countries).concat(analysis.iso3 || []))].sort();
-      r.risk = analysis.riskScore ?? previous?.risk ?? null;
       const driftNotes = input.drifts?.[id] || [];
       const drift = driftNotes.at(-1);
-      // Bootstrap/backfill all available events, not only today's: recovery catches missed runs.
-      for (const e of own) if (!r.events.some(p => p.archive === e.archive && p.topicId === e.topicId)) r.events.push({
-        ...e,
-        killed: [],
-        ...(e.date === date && drift ? {
-          driftNote: drift
-        } : {})
-      });
-      r.events.sort((a, b) => a.date.localeCompare(b.date) || a.topicId.localeCompare(b.topicId));
       if (drift && (!r.chapters.length || r.chapters.at(-1).writtenAt < addDays(date, -7))) {
         const c = await ask('chapter', {
           threadId: id,
@@ -142,24 +122,6 @@ function makeHandler({
           confidence: c.confidence
         });
       }
-      for (const fork of input.forks?.[id] || []) {
-        if(r.forks.some(f=>f.forkId===fork.forkId)) continue;
-        const {threadId: ignored,...fields}=fork;
-        r.forks.push({...clone(fields),branches:fork.branches.map(b=>{
-          const {qid,...rest}=b;return {...clone(rest),...(qid?{qid}:{}),status:[]};
-        })});
-      }
-      r.forks.sort((a,b)=>a.drawnAt.localeCompare(b.drawnAt) || a.forkId.localeCompare(b.forkId));
-      const currentLinks = (input.links || []).filter(l => l.confirmed === true && l.confirmedBy === 'rule' && (l.from === id || l.to === id)).map(l => ({
-        otherThreadId: l.from === id ? l.to : l.from,
-        strength: l.strength || l.confidence,
-        mechanism: l.mechanism || '',
-        confirmed: true,
-        confirmedBy: 'rule',
-        evidence: l.evidence || [],
-        since: l.since || date
-      }));
-      r.links = [...new Map([...r.links, ...currentLinks].map(l => [l.otherThreadId, l])).values()].sort((a,b)=>a.otherThreadId.localeCompare(b.otherThreadId));
       const linked = r.links.map(l => l.otherThreadId);
       const contextEntries = entries.filter(e => e.date === date && (e.threadId === id || linked.includes(e.threadId)));
       for (const fork of r.forks) {
@@ -211,7 +173,7 @@ function makeHandler({
               label: 'JUDGMENT',
               confidence: result?.confidence ?? 1
             });
-            if (row.status === 'resurrected') corrections.push({
+            if (row.status === 'resurrected') storyCorrections.push({
               threadId: id,
               branchId: b.branchId,
               date,
@@ -222,13 +184,6 @@ function makeHandler({
             });
             if (row.status === 'dead') for (const e of r.events.filter(e => e.date === date)) if (!e.killed.includes(b.branchId)) e.killed.push(b.branchId);
           }
-        }
-      }
-      for (const b of r.forks.flatMap(f=>f.branches)) if(b.qid) {
-        const verdict=input.verdicts?.[b.qid];
-        for(const v of verdict?.all || []) if(v.n>verdictOrder(b.scored?.sourceSK)) {
-          b.verdicts ||= [];b.verdicts.push({verdict:v.verdict,decidedAt:v.decidedAt,sourceSK:v.sk});
-          b.scored=b.verdicts.at(-1);report.verdictsMirrored++;
         }
       }
       // Weekly rewrite; a dated line is never rewritten on retry. Changes outside this cadence wait.
@@ -248,8 +203,8 @@ function makeHandler({
         if (line?.text) {
           if (line.contradicted && r.line.text) {
             const evidence = citations(line.evidence, lineEntries.filter(e => e.date > r.line.writtenAt));
-            if (!evidence.length) throw Error('line contradiction needs citations');
-            corrections.push({
+            if (!evidence.length) {const error=Error('line contradiction needs citations');error.recordJudgment=true;error.recordTask='line';throw error;}
+            storyCorrections.push({
               threadId: id,
               date,
               priorDate: r.line.writtenAt,
@@ -275,17 +230,19 @@ function makeHandler({
           status: 'not run: no llm'
         };
       }
-      r.counts = {
-        events: r.events.length,
-        forks: r.forks.length,
-        liveBranches: r.forks.flatMap(f => f.branches).filter(live).length,
-        deadBranches: r.forks.flatMap(f => f.branches).filter(b => lastStatus(b) === 'dead').length,
-        corrections: (previous?.counts.corrections || 0) + corrections.filter(c => c.threadId === id).length
-      };
-      r.corrections = [...(previous?.corrections || []), ...corrections.filter(c => c.threadId === id)];
-      // Conflict winner is authoritative; never move latest to the loser's object.
-      const won = await s3json.putOnce(`${key}${date}.json`, r);
-      stories.push(won ? r : await s3json.getJson(`${key}${date}.json`));
+      await timeline.append(judgmentEvents(previous,r,storyCorrections,date,at,timeline.events(date)));
+      const view=await timeline.complete(id,date,at,r.llm);
+      // A conflict is accepted only when the winner is the same timeline view.
+      const won=await s3json.putOnce(`${key}${date}.json`,view);
+      const winner=won?view:await s3json.getJson(`${key}${date}.json`);
+      if(JSON.stringify(winner)!==JSON.stringify(view))throw Error(`snapshot disagrees with timeline: ${id}`);
+      stories.push(winner);
+      } catch(error) {
+        // Storage/projection failures must abort rather than publish a corrupt view.
+        if(!error.recordJudgment)throw error;
+        report.failures.push({threadId:id,task:error.recordTask,error:error.message});
+        const retained=timeline.view(id,date);if(retained)stories.push(retained);
+      }
     }
     report.proposedMerges = duplicates(stories, date, now());
     const branches = stories.flatMap(r => r.forks.flatMap(f => f.branches));
@@ -299,28 +256,26 @@ function makeHandler({
       missingSource: branches.filter(b => !b.resolutionSource).length,
       missingDue: branches.filter(b => !b.due).length
     };
-    const rows = stories.map(r => ({
-      id: r.threadId, line: r.line.text, risk: r.risk, born: r.born,
-      chapters: r.chapters.length, liveBranches: r.counts.liveBranches,
-      lastMoved: r.events.at(-1)?.date || r.born, actors: r.actors,
-      countries: r.countries, confirmedLinks: r.links.length
-    }));
-    const index = {
-      date, generated_at: now(), next_expected_at: `${addDays(date, 1)}T05:45:00Z`,
-      stale: (report.coverage.missingDays || []).includes(date), stories: rows, coverage: report.coverage, proposedMerges: report.proposedMerges
-    };
+    const completed=timeline.events(date).filter(e=>e.kind==='coverage'&&e.threadId&&e.payload.date===date&&e.payload.processed).map(e=>e.eventId).sort();
+    const coverageKey=`run|${date}|${eventId('coverage',JSON.stringify({completed,failures:report.failures}))}`;
+    await timeline.append([makeEvent({kind:'coverage',sourceKey:coverageKey,at,sourceRow:{store:'record',key:`${prefix}timeline/index.json`},
+      payload:{date,generatedAt:at,duplicateAsOf:at,coverage:report.coverage,failures:report.failures,processingCursor:cursorOf(timeline.days,date)}})]);
+    const index=indexView(timeline.days,date);
+    report.proposedMerges=index.proposedMerges;
     const indexBody = JSON.stringify(index);
     report.indexKB = Buffer.byteLength(indexBody) / 1024;
     report.indexGzipKB = require('node:zlib').gzipSync(indexBody).length / 1024;
     if (report.indexGzipKB > 300) throw Error('record index exceeds 300 KB gzipped');
-    const dayCorrections = stories.flatMap(r => (r.corrections || []).filter(c => c.date === date));
-    await s3json.putOnce(`${prefix}corrections/${date}.json`, {date, corrections: dayCorrections});
-    const correctionIndex = (await s3json.getJson(`${prefix}corrections/index.json`)) || {days: [], corrections: []};
-    correctionIndex.corrections ||= [];
-    const correctionKey = c => `${c.date}|${c.threadId}|${c.kind}|${c.branchId || ''}`;
-    correctionIndex.corrections = [...new Map([...correctionIndex.corrections, ...dayCorrections].map(c => [correctionKey(c), c])).values()].sort((a,b) => b.date.localeCompare(a.date) || correctionKey(a).localeCompare(correctionKey(b)));
-    if (dayCorrections.length && !correctionIndex.days.includes(date)) correctionIndex.days.push(date);
-    correctionIndex.days.sort().reverse();
+    const allCorrections=timeline.events(date).filter(e=>e.kind==='correction').map(e=>({...e.payload.correction,eventId:e.eventId,corrects:e.payload.corrects}));
+    const dayCorrections=allCorrections.filter(c=>c.date===date);
+    const correctionView={date,corrections:dayCorrections};
+    const correctionsWon=await s3json.putOnce(`${prefix}corrections/${date}.json`,correctionView);
+    if(!correctionsWon && JSON.stringify(await s3json.getJson(`${prefix}corrections/${date}.json`))!==JSON.stringify(correctionView)) {
+      // A retry may recover a failed story after other stories published. The
+      // first daily view stays immutable; the latest feed carries the later event.
+      report.correctionsSnapshotLag=true;
+    }
+    const correctionIndex={days:[...new Set(allCorrections.map(c=>c.date))].sort().reverse(),corrections:allCorrections.sort((a,b)=>b.date.localeCompare(a.date)||a.eventId.localeCompare(b.eventId))};
     // No pointers change until computation, validation, reads and immutable writes succeed.
     for (const r of stories) await s3json.putLatest(`${prefix}stories/${r.threadId}/latest.json`, r);
     await s3json.putLatest(`${prefix}corrections/index.json`, correctionIndex);

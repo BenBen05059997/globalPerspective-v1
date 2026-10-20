@@ -6,9 +6,9 @@ const producer = `newsStoryRecord@${require('./package.json').version}`;
 const LABELS = {
   entry:'fact', story_born:'fact', read_changed:'judgment', chapter:'judgment',
   forecast_drawn:'judgment', branch_status:'judgment', verdict:'fact', correction:'fact',
-  link_confirmed:'judgment', country_read_changed:'judgment', situation:'fact'
+  link_confirmed:'judgment', country_read_changed:'judgment', situation:'fact', line:'judgment', coverage:'fact'
 };
-const ORDER = {story_born:0,entry:1,read_changed:2,chapter:3,forecast_drawn:4,branch_status:5,verdict:6,correction:7,link_confirmed:8};
+const ORDER = {story_born:0,entry:1,read_changed:2,chapter:3,forecast_drawn:4,branch_status:5,verdict:6,correction:7,link_confirmed:8,line:9,coverage:10};
 const copy = value => JSON.parse(JSON.stringify(value));
 const eventId = (kind, sourceKey) => createHash('sha1').update(kind + sourceKey).digest('hex');
 
@@ -66,11 +66,11 @@ function rebuildStory(days, threadId, {date,cursor=cursorOf(days,date)}={}) {
     const p = event.payload;
     switch (event.kind) {
       case 'story_born':
-        if (!record.born) {record.born=p.born;record.bornAt=p.bornAt || event.at;}
+        if (!record.born) {record.born=p.born;record.bornAt=p.bornAt || event.at;if(p.birthEvidence)record.birthEvidence=copy(p.birthEvidence);}
         break;
       case 'entry': {
         const entry = copy(p.entry);
-        if (!record.events.some(e=>e.archive===entry.archive && e.topicId===entry.topicId)) {
+        if (!record.events.some(e=>entry.sourceKey ? e.sourceKey===entry.sourceKey : e.archive===entry.archive && e.topicId===entry.topicId)) {
           delete entry.driftNote;entry.killed=[];record.events.push(entry);
         }
         break;
@@ -78,10 +78,9 @@ function rebuildStory(days, threadId, {date,cursor=cursorOf(days,date)}={}) {
       case 'read_changed':
         if ('risk' in p) record.risk=p.risk;
         if (p.driftNote) drifts.set(p.driftDate || event.date,copy(p.driftNote));
-        // The coordinator will confirm whether the line has its own kind or is a
-        // read_changed payload; neither representation is recalculated on replay.
-        if (p.line) putLine(p.line);
         break;
+      case 'line': putLine(p.line);break;
+      case 'coverage': if(p.llm) record.llm=copy(p.llm);break;
       case 'chapter':
         if (!record.chapters.some(c=>c.startedAt===p.chapter.startedAt)) record.chapters.push(copy(p.chapter));
         break;

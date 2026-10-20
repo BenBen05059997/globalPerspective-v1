@@ -16,6 +16,7 @@ const {
 } = require('../src/rules');
 const {makeStore}=require('../src/store');
 const {fixtureStore}=require('./fixture-store');
+const etag=body=>require('node:crypto').createHash('sha256').update(body).digest('hex');
 const date = '2026-10-19';
 const entry = (id = 'a', d = date) => ({
   threadId: id,
@@ -86,6 +87,7 @@ function setup(input = data(), llm = null) {
           name: 'NoSuchKey'
         });
         return {
+          ETag: etag(objects.get(i.Key)),
           Body: {
             transformToString: async () => objects.get(i.Key)
           }
@@ -95,6 +97,7 @@ function setup(input = data(), llm = null) {
       if (i.IfNoneMatch && objects.has(i.Key)) throw Object.assign(Error(), {
         name: 'PreconditionFailed'
       });
+      if(i.IfMatch && i.IfMatch!==etag(objects.get(i.Key)||''))throw Object.assign(Error(),{name:'PreconditionFailed'});
       objects.set(i.Key, i.Body);
       return {};
     }
@@ -317,19 +320,12 @@ test('dead resurrection appends status and correction; verdict revisions are mir
   assert.equal(s.get('record/corrections/2026-10-20.json').corrections[0].kind, 'resurrected');
   assert.deepEqual(s.get(`record/stories/a/${date}.json`), before);
 });
-test('create-only conflict uses winner, never loser for latest/index/corrections', async () => {
+test('create-only conflict accepts the same authoritative timeline winner', async () => {
   const s = setup();
   const original = s.s3json.putOnce;
   s.s3json.putOnce = async (k, r) => {
     if (k.includes('/stories/')) {
-      await original(k, {
-        ...r,
-        line: {
-          text: 'winner',
-          writtenAt: date,
-          versions: []
-        }
-      });
+      await original(k,r);
       return false;
     }
     return original(k, r);
@@ -337,8 +333,8 @@ test('create-only conflict uses winner, never loser for latest/index/corrections
   await s.run({
     date
   });
-  assert.equal(s.get('record/stories/a/latest.json').line.text, 'winner');
-  assert.equal(s.get('record/index.json').stories[0].line, 'winner');
+  assert.deepEqual(s.get('record/stories/a/latest.json'),s.get(`record/stories/a/${date}.json`));
+  assert.equal(s.get('record/index.json').stories[0].line,s.get('record/stories/a/latest.json').line.text);
 });
 test('duplicate detection reports evidence and does not drop either record', async () => {
   const d = data();
@@ -484,9 +480,9 @@ test('duplicate reports require an actor, a place and an identical outlet headli
   assert.equal(duplicates([base,{...other,countries:['DEU']}],date).length,0);
   assert.equal(duplicates([base,{...other,events:[{outlets:[{...entry().sources[0],title:'Different headline'}]}]}],date).length,0);
 });
-test('malformed model judgment aborts before any latest pointer moves',async()=>{
+test('malformed model judgment is isolated before that story latest pointer moves',async()=>{
   const s=setup(data(),async()=>({label:'JUDGMENT',confidence:0.9,name:'Missing text'}));
-  await assert.rejects(s.run({date}),/invalid chapter text/);
+  const report=await s.run({date});assert.match(report.failures[0].error,/invalid chapter text/);
   assert.equal([...s.objects.keys()].some(k=>k.endsWith('latest.json')),false);
 });
 
@@ -507,4 +503,34 @@ test('duplicate proposal prefers the earlier actual birth within the same date',
  const other={...base,threadId:'a',bornAt:`${date}T12:00:00Z`};
  const [proposal]=duplicates([base,other],date,`${date}T13:00:00Z`);
  assert.equal(proposal.from,'a');assert.equal(proposal.into,'z');
+});
+
+test('one model failure retains raw facts and allows another story to complete',async()=>{
+ const d=data();d.entries.push(entry('b'));
+ const s=setup(d,async p=>{if(p.context.threadId==='a')throw Error('simulated outage');return judgment({text:'B line'});});
+ const report=await s.run({date});assert.deepEqual(report.failures.map(f=>f.threadId),['a']);
+ assert.equal(s.objects.has('record/stories/a/latest.json'),false);
+ assert.equal(s.get('record/stories/b/latest.json').line.text,'B line');
+ const events=s.objects.get(`record/timeline/${date}.jsonl`).trim().split('\n').map(JSON.parse);
+ assert.ok(events.some(e=>e.threadId==='a'&&e.kind==='entry'));
+ assert.equal(s.get('record/index.json').stale,true);
+});
+test('actual stored story, index and corrections rebuild exactly from timeline; views can be deleted',async()=>{
+ const s=setup();await s.run({date});const {makeTimeline,indexView}=require('../src/persistence');
+ const t=makeTimeline(s.s3json,'record/');await t.load(date);
+ const dated=s.get(`record/stories/a/${date}.json`);
+ assert.deepEqual(t.view('a',date),dated);assert.deepEqual(indexView(t.days,date),s.get('record/index.json'));
+ const {validate}=require('./schema.test');assert.equal(validate(dated),true,JSON.stringify(validate.errors));
+ assert.equal(validate(s.get('record/index.json')),true,JSON.stringify(validate.errors));
+ const beforeTimeline=Object.fromEntries([...s.objects].filter(([k])=>k.endsWith('.jsonl')));
+ for(const key of [...s.objects.keys()])if(!key.includes('/timeline/'))s.objects.delete(key);
+ const report=await s.run({date});assert.equal(report.llmCalls.total,0);
+ assert.deepEqual(s.get(`record/stories/a/${date}.json`),dated);
+ assert.deepEqual(Object.fromEntries([...s.objects].filter(([k])=>k.endsWith('.jsonl'))),beforeTimeline);
+});
+test('object-valued analysis actors contribute names and cannot create a false shared actor',async()=>{
+ const d=data();d.entries=[{...entry('a'),actors:[]},{...entry('b'),actors:[]}];
+ d.analyses={a:{riskScore:50,keyActors:[{name:'Actor A',role:'leader',mentionCount:2}]},b:{riskScore:50,keyActors:[{name:'Actor B',role:'leader',mentionCount:2}]}};
+ const s=setup(d);const report=await s.run({date});assert.equal(report.proposedMerges.length,0);
+ assert.deepEqual(s.get('record/stories/a/latest.json').actors,['Actor A']);
 });

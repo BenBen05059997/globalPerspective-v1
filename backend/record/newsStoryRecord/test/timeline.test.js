@@ -10,7 +10,7 @@ function fixture(){return {[date]:[
  event('chapter','chapter:a',{chapter:{startedAt:date,writtenAt:date,name:'Chapter',text:'A sentence.',label:'JUDGMENT',confidence:0.8}}),
  event('forecast_drawn','fork:a',{fork:{forkId:'fork-a',drawnAt:date,atEvent:'topic-a',branches:[{branchId:'branch-a',scenarioId:'0',text:'Outcome',p:65,trigger:'Event occurs',due:'2026-10-18',resolutionSource:'Reuters',status:[]}]}}),
  event('branch_status','status:a',{branchId:'branch-a',changed:true,row:{date,status:'dead',evidence:[],note:'Impossible',label:'JUDGMENT',confidence:0.8}}),
- event('read_changed','line:a',{line:{text:'Current line.',writtenAt:date,label:'JUDGMENT',confidence:0.8}})
+ event('line','line:a',{line:{text:'Current line.',writtenAt:date,label:'JUDGMENT',confidence:0.8}})
 ]};}
 test('event identity uses SHA1(kind + sourceKey), with canonical provenance and labels',()=>{
  const e=event('entry','entry:a',{entry:{}});assert.equal(e.eventId,createHash('sha1').update('entryentry:a').digest('hex'));assert.equal(e.label,'fact');assert.equal(e.sourceRow.key,'entry:a');

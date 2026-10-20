@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Read-only local adapter: CLI by default; optional existing SDK for pooled DynamoDB reads.
 // No LLM imports, API-key loading, or AWS mutation commands.
+import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const execFileAsync=promisify(execFile);
@@ -135,11 +136,13 @@ const s3json = makeS3Json({
           name: 'NoSuchKey'
         });
         return {
+          ETag: createHash('sha256').update(readFileSync(path)).digest('hex'),
           Body: {
             transformToString: async () => readFileSync(path, 'utf8')
           }
         };
       }
+      if(i.IfMatch && (!existsSync(path)||i.IfMatch!==createHash('sha256').update(readFileSync(path)).digest('hex')))throw Object.assign(Error('stale etag'),{name:'PreconditionFailed'});
       mkdirSync(dirname(path), {
         recursive: true
       });

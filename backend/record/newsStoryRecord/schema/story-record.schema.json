@@ -191,6 +191,9 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "sourceKey": {
+                "type": "string"
               }
             },
             "additionalProperties": false

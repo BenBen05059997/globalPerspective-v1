@@ -92,9 +92,14 @@ Started 2026-10-20: step 1 in progress (code + tests by agent; deploy after diff
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
 
 ## Open
-- Side project, parked until the research report lands (2026-10-20): replace DynamoDB for the user side (Supabase, D1,
-  Firestore, or per-user JSON in object storage) for cheaper, faster reads. The record design above does not depend on
-  the answer: `record/` is S3 either way; only the user tables would move.
+- Storage review (side project, researched 2026-10-20, decision pending): replacing DynamoDB for the user side was
+  compared against Supabase (Tokyo, Firebase JWT works with RLS, but Pro $25/mo because the free project pauses when
+  idle), Neon, Cloudflare D1/Durable Objects (fastest reads behind our Worker, but Lambdas write only via a rate-limited
+  REST API; would mean moving user Lambdas to Workers), Turso, Firestore and per-user JSON in S3. Finding: DynamoDB
+  costs under $1/mo in-region with single-digit ms reads; the saving is in the number of tables, not the engine.
+  Recommendation: keep DynamoDB for users, consolidate the 5 user tables, move the 7 world tables to S3 as DATA_STRATEGY
+  §6 says, and write the prediction log as weekly write-once JSONL + a rebuilt question index. Unverified: current
+  DynamoDB Tokyo prices, S3 compare-and-swap support. Sources in the session transcript (agent report, 2026-10-20).
 - Whether `record/` should also absorb the prediction log migration (DATA_STRATEGY §6) in step 1 or later.
 - The LLM for the trigger check: the resolver's `deepseek-v4-pro` or the headless run's model. Cost per day to be
   measured in the dry-run week.

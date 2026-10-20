@@ -159,12 +159,14 @@ summary. **Waits for a decision** = enabling alert sends (fresh yes). Pricing is
 Status: planned. Each stage is one or two sequential Sonnet agents with the operator checking in between. A box is ticked
 with its commit. Alerts and pricing are out of scope for all stages below.
 
-### Stage 0: freeze the shape (no runtime code)
-- [ ] `backend/board/schema/board.schema.json`: board `{boardId, uid, name, pins[], strings[], weights{}, dismissed[], summary{versions[]}, presetFrom?, createdAt, updatedAt}`;
+### Stage 0: freeze the shape (no runtime code) — done 2026-10-20
+- [x] `backend/board/schema/board.schema.json`: board `{boardId, uid, name, pins[], strings[], weights{}, dismissed[], summary{versions[]}, presetFrom?, createdAt, updatedAt}`;
       pin `{pinId, kind: thread|country|actor, refId, addedAt}`; string `{a, b, owner: ours|yours, strength?: weak|medium|strong|inferred, mechanism?, line?, keptAt?, cutAt?}`;
       weights `{forkId: {branchId: p}}`. Pin budget 12 as a schema constant. `a < b` lexically so one key per pair.
-- [ ] `backend/board/README.md`: the three-names table, what the group owns, what it never writes.
-- [ ] Decision: pins by `threadId` (stories), ISO3 (countries), actor name as written in `WEB#INDEX` (actors). Recorded here.
+- [x] `backend/board/README.md`: the three-names table, what the group owns, what it never writes.
+- [x] Decision: pins by `threadId` (stories), ISO3 (countries), actor name as written in `WEB#INDEX` (actors). Recorded here.
+      Found: `WEB#INDEX` carries no actor ids. Actors are free-text names from the LLM (`newsSystemsAnalysis/src/index.js` `normalizeActors`, line ~342: trimmed, whitespace collapsed, case-insensitive dedupe keeping the first display form), and shared actors are matched by `toLowerCase()` (line ~444).
+      Rule: actor `refId` = the name as stored; compare by trim + collapse whitespace + lowercase. Country pins use ISO3 from `resolveIso3`.
 
 ### Stage 1: shared code (used by board now, by record later)
 - [ ] `backend/shared/src/record.js`: pure rules with tests: `stringTexture(string)` (ours+confirmed → solid; ours inferred → dashed; yours → dashed-alt), `pinBudgetOk(board)`, `pairKey(a,b)`, `cheapGrounds(pinA, pinB, ctx)` (shared actors, shared places via `resolveIso3`, shared outlets, co-movement with lag from two daily score series) returning `{strength: none|weak|medium, grounds[]}` with the honest `none`.

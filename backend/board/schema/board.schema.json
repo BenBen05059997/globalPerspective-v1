@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schemas/board.schema.json",
+  "title": "Board",
+  "description": "A member's personal board (DynamoDB GlobalPerspectiveSavedItems item kind:'board'). Pins are things the member follows (a story thread, a country, an actor); strings are the links between two pins, drawn by us (owner ours) or by the member (owner yours). Pin budget is 12. String endpoints a and b are pinIds and MUST satisfy a < b lexically so there is one key per pair; JSON Schema cannot enforce ordering, so newsBoard normalises it with pairKey. refId by kind: thread = threadId, country = ISO3, actor = the actor name as written in WEB#INDEX (trimmed, whitespace collapsed; compared case-insensitively).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["boardId", "uid", "name", "pins", "strings", "weights", "dismissed", "summary", "createdAt", "updatedAt"],
+  "properties": {
+    "boardId": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "uid": { "type": "string", "minLength": 1, "maxLength": 128, "description": "Firebase uid of the owner." },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "pins": {
+      "type": "array",
+      "maxItems": 12,
+      "description": "Pin budget: at most 12.",
+      "items": { "$ref": "#/definitions/pin" }
+    },
+    "strings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/string" }
+    },
+    "weights": {
+      "type": "object",
+      "description": "The member's own branch weights: {forkId: {branchId: number 0..1}}.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "dismissed": {
+      "type": "array",
+      "description": "refIds the member dismissed from suggestions.",
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["versions"],
+      "properties": {
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "writtenAt"],
+            "properties": {
+              "text": { "type": "string", "maxLength": 4000 },
+              "writtenAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "presetFrom": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Preset this board was forked from." },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "definitions": {
+    "pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pinId", "kind", "refId", "addedAt"],
+      "properties": {
+        "pinId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "kind": { "enum": ["thread", "country", "actor"] },
+        "refId": { "type": "string", "minLength": 1, "maxLength": 200, "description": "threadId, ISO3, or actor name as in WEB#INDEX." },
+        "addedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "string": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["a", "b", "owner"],
+      "properties": {
+        "a": { "type": "string", "minLength": 1, "maxLength": 64, "description": "pinId; must be lexically less than b (enforced in code)." },
+        "b": { "type": "string", "minLength": 1, "maxLength": 64, "description": "pinId; must be lexically greater than a (enforced in code)." },
+        "owner": { "enum": ["ours", "yours"] },
+        "strength": { "enum": ["weak", "medium", "strong", "inferred"] },
+        "mechanism": { "type": "string", "maxLength": 280 },
+        "line": { "type": "string", "maxLength": 280, "description": "The member's own one-line claim about the link." },
+        "keptAt": { "type": "string", "format": "date-time" },
+        "cutAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

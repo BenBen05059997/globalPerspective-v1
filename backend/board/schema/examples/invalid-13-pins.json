@@ -1,0 +1,99 @@
+{
+  "boardId": "board-7f3a21",
+  "uid": "kQ2xExampleFirebaseUid",
+  "name": "Gulf shipping and US politics",
+  "pins": [
+    {
+      "pinId": "p00",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p01",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p02",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p03",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p04",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p05",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p06",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p07",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p08",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p09",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p10",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p11",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    },
+    {
+      "pinId": "p12",
+      "kind": "country",
+      "refId": "USA",
+      "addedAt": "2026-10-20T08:00:00.000Z"
+    }
+  ],
+  "strings": [],
+  "weights": {},
+  "dismissed": [],
+  "summary": {
+    "versions": [
+      {
+        "text": "Two links worth watching this week.",
+        "writtenAt": "2026-10-20T09:00:00.000Z"
+      }
+    ]
+  },
+  "presetFrom": "preset-middle-east",
+  "createdAt": "2026-10-20T08:00:00.000Z",
+  "updatedAt": "2026-10-20T09:00:00.000Z"
+}

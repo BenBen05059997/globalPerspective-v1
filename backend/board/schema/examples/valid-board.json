@@ -1,0 +1,20 @@
+{
+  "boardId": "board-7f3a21",
+  "uid": "kQ2xExampleFirebaseUid",
+  "name": "Gulf shipping and US politics",
+  "pins": [
+    { "pinId": "p-a1", "kind": "thread", "refId": "thread-hurricane-isaias-makes-landfal-21c4f2", "addedAt": "2026-10-20T08:00:00.000Z" },
+    { "pinId": "p-b2", "kind": "country", "refId": "USA", "addedAt": "2026-10-20T08:01:00.000Z" },
+    { "pinId": "p-c3", "kind": "actor", "refId": "Strait of Hormuz", "addedAt": "2026-10-20T08:02:00.000Z" }
+  ],
+  "strings": [
+    { "a": "p-a1", "b": "p-b2", "owner": "ours", "strength": "medium", "mechanism": "Both stories name the US Gulf coast as the affected place.", "keptAt": "2026-10-20T08:05:00.000Z" },
+    { "a": "p-b2", "b": "p-c3", "owner": "yours", "line": "Hormuz closures move US fuel prices within a week." }
+  ],
+  "weights": { "fork-hormuz-1": { "branch-closed": 0.2, "branch-open": 0.8 } },
+  "dismissed": ["IRN"],
+  "summary": { "versions": [ { "text": "Two links worth watching this week.", "writtenAt": "2026-10-20T09:00:00.000Z" } ] },
+  "presetFrom": "preset-middle-east",
+  "createdAt": "2026-10-20T08:00:00.000Z",
+  "updatedAt": "2026-10-20T09:00:00.000Z"
+}

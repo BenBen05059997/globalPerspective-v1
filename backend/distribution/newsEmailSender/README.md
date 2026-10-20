@@ -5,8 +5,6 @@ subscribers, once per `weekEnding`, retaining the `EMAILLOG#weekly#<week>` marke
 subscribers), `drift_alert` (fresh country `DRIFT#` notes to `driftOptIn` members who follow that
 country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 
-Timeline: writes none; reads the Week view (`weekly/`). See [ARCHITECTURE_TIMELINE.md](../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
-
 ## Deployment
 - Deployed name `newsEmailSender` · runtime `nodejs20.x` · group `distribution` (scripts/functions.json)
 - Triggers (EventBridge, UTC): `TriggerWeeklyEmailSend` `cron(0 14 ? * SUN *)` `{"mode":"weekly"}` ENABLED; `TriggerBreakingEmailSend` `rate(15 minutes)` `{"mode":"breaking"}` DISABLED; `TriggerDriftEmailSend` `cron(40 7 * * ? *)` `{"mode":"drift_alert"}` DISABLED.

@@ -16,9 +16,9 @@ is in `backend/pipeline/README.md` and `ARCHITECTURE.md` data flow 1.
 | **05:45** | **the story record (planned)** | `newsStoryRecord` | archives (today + 30 d), `THREAD_ANALYSIS`, `DRIFT#` of the day, `PRED#` scenarios, `Q#*/VERDICT*`, `web/latest.json`, own `record/` | `record/stories/<id>/{latest,YYYY-MM-DD}.json`, `record/index.json`, `record/corrections/*` | after drift (05:30) so today's chapter decision is informed; before the resolver (10:30) is fine because the record reads verdicts a day late by design |
 | 10:30 | forecast sample settled (exists; auto since 0034) | `newsPredictionResolver` | `PRED#`, `Q#`, Brave Search, LLM | `Q#*/VERDICT`, `SETTLE#` | public score |
 | every 30 min | track record snapshot (exists) | `newsPredictionsSnapshot` | PredictionLog | `predictions/track_record.json` | — |
-| on demand | pair verdict (planned, Studio) | `newsConnect` | `record/`, `web/`, daily scores | `record/pairs/*` | cached per pair per day |
-| on demand | board read/write, arrivals, reports (planned, Studio) | `newsBoard` | `record/`, `weekly/latest.json`, user tables | `SavedItems` boards, `UserPrefs` fields | — |
-| 07:40 (planned window) | alert digest (planned, Studio) | `newsEmailSender` mode `alerts` | `newsBoard` report, `UserPrefs.alerts` | `EMAILLOG#alerts#<date>`, Resend | one email at most; nothing if nothing fired |
+| on demand | pair verdict (planned, board) | `newsConnect` (`backend/board/`) | `record/`, `web/`, daily scores | `record/pairs/*` | cached per pair per day |
+| on demand | board read/write, arrivals, reports (planned, board) | `newsBoard` (`backend/board/`) | `record/`, `weekly/latest.json`, user tables | `SavedItems` boards, `UserPrefs` fields | — |
+| 07:40 (planned window) | alert digest (planned, board) | `newsEmailSender` mode `alerts` | `newsBoard` report, `UserPrefs.alerts` | `EMAILLOG#alerts#<date>`, Resend | one email at most; nothing if nothing fired |
 
 ## The week (Sunday)
 | Time | Step | Who | Reads | Writes |
@@ -31,7 +31,7 @@ is in `backend/pipeline/README.md` and `ARCHITECTURE.md` data flow 1.
 ## The month
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| the board's monthly (planned, Studio) | `newsBoard` on first request after month end | four weekly reports, `record/` | cached on the board item (`report.monthly`) |
+| the board's monthly (planned, board) | `newsBoard` on first request after month end | four weekly reports, `record/` | cached on the board item (`report.monthly`) |
 
 ## Inside `newsStoryRecord` (the heart; planned)
 For every thread with an entry in the last 30 days, in this order, idempotent per date:

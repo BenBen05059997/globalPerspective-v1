@@ -1,4 +1,6 @@
-# The Studio board: a personal connection board (brainstorm record)
+# The board: a personal connection board (brainstorm record)
+
+Name (operator, 2026-10-20): **board**. Folders `backend/board/` and `features/board/`. Not "Studio", not "personal digest".
 
 Status: ideas, not decided (2026-10-20). Nothing here is built or scheduled. The analyst's weekly
 (`PLAN_2026-10-20_analyst_weekly.md`) comes first; this records where the discussion landed so it is not lost.

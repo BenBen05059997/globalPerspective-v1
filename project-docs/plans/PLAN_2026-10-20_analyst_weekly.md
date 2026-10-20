@@ -197,7 +197,7 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 ## Log
 - 2026-10-20: decision 3 revised to publish-unless-vetoed (no human gate, operator); the weekly will read `record/` once
   `PLAN_2026-10-20_record_backend.md` step 2 exists.
-- 2026-10-20: Studio board brainstorm recorded in `PLAN_2026-10-20_studio_board.md`; if adopted, its board weekly replaces
+- 2026-10-20: Studio board brainstorm recorded in `PLAN_2026-10-20_board.md`; if adopted, its board weekly replaces
   the "your countries" half of the personal weekly.
 - 2026-10-20: "Why, and what else has to exist" recorded after the operator discussion; explainer artifact built
   from it (temporary; the Atlas stays the one living artifact).

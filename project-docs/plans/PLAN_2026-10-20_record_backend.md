@@ -1,7 +1,7 @@
 # The record backend: branches checked, chapters written, links confirmed, boards stored
 
 Status: design agreed in discussion (2026-10-20); nothing built. Serves `PLAN_2026-10-20_analyst_weekly.md` (steps 3–6)
-and `PLAN_2026-10-20_studio_board.md`. Storage follows `rules/DATA_STRATEGY.md` (S3 for the world, DynamoDB for the
+and `PLAN_2026-10-20_board.md`. Storage follows `rules/DATA_STRATEGY.md` (S3 for the world, DynamoDB for the
 user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.json` instead of listing).
 
 ## Decisions (operator, 2026-10-20)
@@ -9,8 +9,8 @@ user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.
    Lambdas. A wrong result is a bug in the algorithm: the operator reports it, the algorithm is fixed, the correction
    is appended. This reverses decision 0011's "operator confirms verdicts" and today's weekly decision 3 ("confirm
    before send"); both become "publish unless vetoed", see §5.
-2. **Own folder.** World-side code lives in a new group `backend/record/`; user-side board code in `backend/read-api/`
-   (it is per-user, like saved items). Frontend: `features/weekly/` now, `features/board/` later.
+2. **Own folders, three names.** `backend/record/` (the world's memory), the weekly run + `features/weekly/` (the shared
+   report), `backend/board/` + `features/board/` (the personal layer). Revised 2026-10-20 from "board in read-api".
 3. **The record is append-only.** A dated line, a branch status, a verdict or a correction is never rewritten; a
    change is a new dated row. Paragraph summaries are versioned. Deletion does not exist; items are greyed.
 
@@ -19,9 +19,10 @@ user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.
 - Step by step with times, reads and writes, the inside of `newsStoryRecord`, failure behaviour: `architecture/ARCHITECTURE_RECORD_PIPELINE.md`.
 - This file: decisions, stores, order of work, log. When the subsystem is live, the two architecture files stay (they
   describe what runs) and this plan's lasting decisions become records; the plan is then deleted (TASK_WORKFLOW §2).
-- Grouping: world-side Lambdas in `backend/record/` (`newsStoryRecord`, `newsConnect`); the user-side `newsBoard` in
-  `backend/read-api/`; new shared code only in `backend/shared/src/` (`record.js`, `s3json.js`); frontend `features/weekly/`
-  now and `features/board/` later, reading through a new `shared/hooks/useRecord.js`.
+- Grouping (operator, 2026-10-20: three names, own folders): **record** = `backend/record/` (`newsStoryRecord`);
+  **weekly** = the weekly run + `features/weekly/`; **board** = `backend/board/` (`newsBoard`, `newsConnect`) +
+  `features/board/`. New shared code only in `backend/shared/src/` (`record.js`, `s3json.js`); the frontend reads the
+  record through a new `shared/hooks/useRecord.js`. See `ARCHITECTURE_RECORD.md` §0.
 
 ## 1. What is stored where
 
@@ -51,15 +52,15 @@ Derived per-user documents (the board's weekly and monthly) are computed on requ
 | Lambda | Group | Schedule | Does |
 |---|---|---|---|
 | `newsStoryRecord` (new) | `backend/record/` | daily 05:30Z, after `newsSystemsAnalysis` 05:00Z | for every active story: birth from earliest `archive#`; duplicate check at birth (shared actors + place + 48h → merge via the threads CLI logic, logged); chapter row when the day's drift note changes the expected path (line written once, dated); trigger check for every live branch against the day's entries (LLM judgment, blind to `p`, writes fired/hold/dead/late, resurrected when a dead trigger later fires); corrections; `record/index.json` |
-| `newsConnect` (new) | `backend/record/` | on demand (Function URL, JWT) | pair verdict: cheap grounds from `record/index.json` + `web/latest.json` + daily scores; one LLM call for mechanism, direction, conditional, falsifier; writes `record/pairs/`; a second ask the same day returns the cache |
-| `newsBoard` (new) | `backend/read-api/` | on demand (JWT) | board CRUD; arrivals (new `record/index.json` rows tested against the board's pins, strong → pool, medium → overflow); the board's weekly and monthly; presets (read-only boards owned by the operator, forked on request) |
+| `newsConnect` (new) | `backend/board/` | on demand (Function URL, JWT) | pair verdict: cheap grounds from `record/index.json` + `web/latest.json` + daily scores; one LLM call for mechanism, direction, conditional, falsifier; writes `record/pairs/`; a second ask the same day returns the cache |
+| `newsBoard` (new) | `backend/board/` | on demand (JWT) | board CRUD; arrivals (new `record/index.json` rows tested against the board's pins, strong → pool, medium → overflow); the board's weekly and monthly; presets (read-only boards owned by the operator, forked on request) |
 | `newsPredictionResolver` (change) | `backend/predictions/` | daily 10:30Z (exists) | writes the verdict row directly from its draft; `unclear` stays excluded from the score; a `VOID#` row with reason reverses one (appended, never deleted) |
 | `newsSystemsAnalysis` (change) | `backend/pipeline/` | daily 05:00Z (exists) | link confirmation rule: `confirmed:true` when both stories carry evidence on ≥2 days from ≥2 outlets within 14 days; else `inferred`. The weekly and the board draw only confirmed links solid |
 | `newsEmailSender` (change) | `backend/distribution/` | Sun 14:00Z (exists) | renders `weekly/latest.json`; for members with a board, prepends the board's weekly from `newsBoard`; alert digest daily from the alert rules (one email at most, nothing if nothing fired) |
 | `newsWeeklyBrief` (retire) | `backend/distribution/` | Sun 06:00Z | retired after the first weekly from the new path has sent |
 | weekly run (headless Claude Code, cloud) | `.claude/skills/weekly-brief/` | Sun 06:00Z | writes `weekly/YYYY-MM-DD.json` as published, `latest.json`; the sender publishes at 14:00Z unless vetoed |
 
-`scripts/functions.json` gains the three new Lambdas with `dir` under `backend/record/` and `backend/read-api/`.
+`scripts/functions.json` gains the three new Lambdas with `dir` under `backend/record/` and `backend/board/`.
 IAM: `newsStoryRecord` PutObject on `record/stories/*`, `record/index.json`, `record/corrections/*` only;
 `newsConnect` on `record/pairs/*`; the weekly run's credential on `weekly/*` only (needs a fresh yes).
 

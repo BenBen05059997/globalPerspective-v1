@@ -6,6 +6,15 @@ target; `ARCHITECTURE.md` describes what runs. When a piece ships, its row here 
 per prefix, immutable snapshots), `rules/WORLD_MODEL.md` (the event is the entity). Plan: `plans/PLAN_2026-10-20_record_backend.md`.
 Pipeline (step by step, with times): `ARCHITECTURE_RECORD_PIPELINE.md`.
 
+## 0. Three names, never mixed
+| Name | What it is | Who sees it | Where it lives |
+|---|---|---|---|
+| **record** | the world's memory: one dated, append-only account per story | nobody directly; every reader below | `backend/record/` (`newsStoryRecord`), S3 `record/` |
+| **weekly** | the analyst's weekly: the shared report, the same for every reader | everyone (email + `/briefings/weekly`) | weekly run (`.claude/skills/weekly-brief/`, `scripts/weekly-brief/`), S3 `weekly/`, frontend `features/weekly/` |
+| **board** | the personal layer: pins, strings, arrivals, the board's own weekly and monthly, alerts, presets | the signed-in member who owns it | `backend/board/` (`newsBoard`, `newsConnect`), DynamoDB board items + prefs fields, S3 `record/pairs/`, frontend `features/board/` |
+An agent working on one of these does not touch the other two except through their published files and documented
+fields. "Personal digest", "Studio" and "desk" are not names of anything here; the retired Studio stays retired.
+
 ## 1. Purpose, in one paragraph
 The pipeline already writes stories, daily analyses, scenarios with triggers, drift notes and a story web, and then shows
 each of them on its own page. The record subsystem turns those into one dated, append-only account per story (birth,
@@ -41,8 +50,8 @@ committed `src/_shared` symlink; never copy it. The two **new** backend modules 
 | Lambda | Group (folder) | Owns (sole writer) | Reads | Never touches |
 |---|---|---|---|---|
 | `newsStoryRecord` | `backend/record/` | `record/stories/*`, `record/index.json`, `record/corrections/*` | `NewsCache archive#*`, `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS, DRIFT#, DRIFTLOG#`, `PredictionLog PRED#*`, `web/latest.json` | any DynamoDB write; `weekly/`; user tables |
-| `newsConnect` | `backend/record/` | `record/pairs/*` | `record/index.json`, `record/stories/*`, `web/latest.json`, `SummarizeAndPredict HISTORY#/THREAD_HISTORY#` (daily scores) | user tables; `record/stories/*` |
-| `newsBoard` | `backend/read-api/` | `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`, `alerts`, `quietBoards` | `record/*`, `weekly/latest.json` | any S3 write |
+| `newsConnect` | `backend/board/` | `record/pairs/*` | `record/index.json`, `record/stories/*`, `web/latest.json`, `SummarizeAndPredict HISTORY#/THREAD_HISTORY#` (daily scores) | user tables; `record/stories/*` |
+| `newsBoard` | `backend/board/` | `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`, `alerts`, `quietBoards` | `record/*`, `weekly/latest.json` | any S3 write |
 | weekly run (headless Claude Code) | `.claude/skills/weekly-brief/` + `scripts/weekly-brief/` | `weekly/*` | `record/*`, `web/latest.json`, `predictions/track_record.json` | DynamoDB; `record/` |
 | `newsPredictionResolver` (exists) | `backend/predictions/` | `PredictionLog SEED#, SAMPLE#, Q#, SETTLE#` | `PRED#` | `record/` (the record reads the log, not the reverse) |
 | `newsSystemsAnalysis` (exists) | `backend/pipeline/` | `web/*`, `SummarizeAndPredict WEB#INDEX, SYSTEMS#, THREAD#/WEB` | archives, thread analyses | `record/` |
@@ -106,10 +115,10 @@ flowchart LR
     pr[newsPredictionResolver: VERDICT]
   end
   subgraph record[backend/record]
-    sr[newsStoryRecord 05:30Z]
-    cn[newsConnect on demand]
+    sr[newsStoryRecord 05:45Z]
   end
-  subgraph readapi[backend/read-api]
+  subgraph board[backend/board]
+    cn[newsConnect on demand]
     bd[newsBoard on demand]
   end
   wk[weekly run, cloud, Sun 06:00Z]
@@ -171,7 +180,7 @@ in S3; the prediction log migration (DATA_STRATEGY §6, separate step).
 
 ## 8. Reference rows to add when live
 `DATA_STRATEGY §4`: `record/stories/*`, `record/index.json`, `record/corrections/*` → `newsStoryRecord`; `record/pairs/*` →
-`newsConnect`; `weekly/*` → the weekly run (credential scoped to that prefix). `scripts/functions.json`: three entries.
+`newsConnect`; `weekly/*` → the weekly run (credential scoped to that prefix). `scripts/functions.json`: three entries (`newsStoryRecord` group `record`; `newsBoard`, `newsConnect` group `board`).
 `project-docs/runbooks/`: one per schedule (`story-record.md`, `weekly-run.md`).
 
 ## 9. Status of pieces
@@ -184,4 +193,4 @@ in S3; the prediction log migration (DATA_STRATEGY §6, separate step).
 | weekly run + `weekly/` | planned (weekly plan steps 3–6) |
 | `features/weekly/` | planned |
 | Worker allowlist + reader IAM | planned, fresh yes |
-| `newsBoard`, `newsConnect`, `features/board/` | planned, Studio phase |
+| `backend/board/` (`newsBoard`, `newsConnect`), `features/board/` | planned, board phase |

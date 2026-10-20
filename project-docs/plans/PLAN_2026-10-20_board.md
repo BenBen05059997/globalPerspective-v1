@@ -173,15 +173,19 @@ with its commit. Alerts and pricing are out of scope for all stages below.
 - [x] `backend/shared/src/s3json.js`: `getJson`, `putOnce` (`If-None-Match: *`), `putLatest`; tests with a fake client. Unused until the record writes; written now so both sides share one implementation.
 - [x] Frontend `shared/lib/board.js` mirror of `stringTexture` and `pairKey` only (pure), guarded by `scripts/check-shared-sync.mjs` like `links.js`.
 
-### Stage 2: backend `newsBoard` (code and tests only; not created in AWS)
+### Stage 2: backend `newsBoard` (code and tests only; not created in AWS) — done 2026-10-20
 Rule from stage 1: `stringTexture` draws ours + weak|medium|strong as solid, so in slice 1 every ours-string is stored
 with `strength: 'inferred'`; the web's own strength is shown from `WEB#INDEX` at read time, never stored as confirmed.
-- [ ] `backend/board/newsBoard/src/index.js`: Function URL handler, Firebase JWT verification copied from the `newsSavedItems` pattern (no firebase-admin), CORS per the Function-URL rule in CLAUDE.md.
-- [ ] Actions: `list_boards`, `get_board`, `create_board`, `update_board` (schema-validated; pin budget; strings normalised with `pairKey`), `delete_board`, `follow_thread`, `unfollow_thread`, `follow_actor`, `unfollow_actor`, `list_presets`, `fork_preset`, `connect {a, b}`.
-- [ ] Stores: `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads[]`, `followedActors[]` only (`followedCountries` stays with `newsRecommend`).
-- [ ] Reads for presets and connect: `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS` (risk, type, iso3), `WEB#INDEX` (actors, links), `NewsCache latest` (titles), `THREAD_HISTORY#` (daily scores for lag).
-- [ ] Tests with a fake DynamoDB: every action, auth failure, budget exceeded, schema rejection, `connect` with and without grounds.
-- [ ] `scripts/functions.json` entry (`group: board`, `features: [board]`, `nodeModules: true`), README with reads/writes/env.
+- [x] `backend/board/newsBoard/src/index.js`: Function URL handler, Firebase JWT verification copied from the `newsSavedItems` pattern (no firebase-admin), CORS per the Function-URL rule in CLAUDE.md.
+- [x] Actions: `list_boards`, `get_board`, `create_board`, `update_board` (schema-validated; pin budget; strings normalised with `pairKey`), `delete_board`, `follow_thread`, `unfollow_thread`, `follow_actor`, `unfollow_actor`, `list_presets`, `fork_preset`, `connect {a, b}`.
+- [x] Stores: `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads[]`, `followedActors[]` only (`followedCountries` stays with `newsRecommend`).
+- [x] Reads for presets and connect: `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS` (risk, type, iso3), `WEB#INDEX` (actors, links), `NewsCache latest` (titles), `THREAD_HISTORY#` (daily scores for lag).
+- [x] Tests with a fake DynamoDB: every action, auth failure, budget exceeded, schema rejection, `connect` with and without grounds.
+- [x] `scripts/functions.json` entry (`group: board`, `features: [board]`, `nodeModules: true`), README with reads/writes/env.
+
+Notes from stage 2: live field names are in `backend/board/newsBoard/README.md`; thread analyses have no type field (presets carry
+`lead`), older rows lack `iso3`; regions are a backend table in `src/regions.js`. `newsSavedItems` now hides `board#` items
+(code only; deploy with stage 4). `newsRecommend` reads board items but scores only thread/country items, so no change.
 
 ### Stage 3: frontend `features/board/` (local only; no release)
 - [ ] Route `/board` in `App.jsx` (lazy), nav entry only for signed-in members; `features/board/index.js` public API; README.
@@ -193,6 +197,8 @@ with `strength: 'inferred'`; the web's own strength is shown from `WEB#INDEX` at
 - [ ] Browser click-through at desktop and phone width against a local fake endpoint (fixtures), since the Lambda is not deployed yet.
 
 ### Stage 4: deploy and wire (operator yes first)
+- [ ] Deploy the `newsSavedItems` board filter (standing Lambda auth; diff first) before the first board exists; remove the
+      `deployBlocked` note on `newsBoard` in `scripts/functions.json`.
 - [ ] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
 - [ ] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
 - [ ] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).

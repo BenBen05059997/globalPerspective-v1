@@ -201,6 +201,10 @@ async function getSavedItemsCore(uid, args) {
     if (typeErr) return { ok: false, error: typeErr, status: 400 };
     params.KeyConditionExpression += ' AND begins_with(savedKey, :prefix)';
     params.ExpressionAttributeValues[':prefix'] = `${itemType}#`;
+  } else {
+    // Boards (newsBoard, savedKey `board#<id>`) share this table but are not saved items: never list them here.
+    params.FilterExpression = 'NOT begins_with(savedKey, :boards)';
+    params.ExpressionAttributeValues[':boards'] = 'board#';
   }
 
   try {

@@ -1,0 +1,14 @@
+{
+  "name": "newsboard",
+  "version": "1.0.0",
+  "description": "Personal board API for Global Perspectives (pins, strings, follows, presets, connect)",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test ../test/*.test.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

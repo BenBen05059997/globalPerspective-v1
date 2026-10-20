@@ -19,6 +19,15 @@
       "schedules": [],
       "deployBlocked": "Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh."
     },
+    "newsBoard": {
+      "dir": "backend/board/newsBoard",
+      "runtime": "nodejs22.x",
+      "group": "board",
+      "features": ["board"],
+      "nodeModules": true,
+      "schedules": [],
+      "deployBlocked": "Not created in AWS yet (plan stage 4: operator creates the role and the function)."
+    },
     "newsBreakingAlert": {
       "dir": "backend/distribution/newsBreakingAlert",
       "runtime": "nodejs22.x",

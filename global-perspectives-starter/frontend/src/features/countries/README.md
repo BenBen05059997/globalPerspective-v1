@@ -26,8 +26,8 @@ one-screen country card the map console also mounts.
 - CSS: `CountryListPage.css`, `CountryPage.css`, `CountryCoverage.css`, `components/*.css` (no threads CSS)
 - Public API (`index.js`): `CountryCardV2` — used by `map` (gets `situations` for the watch flag there; not on CountryPage)
 - Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines`,
-  `COUNTRY_COORDINATES`, plus a lazy `import()` of `threads/components/WeeklyMap` (a static import pulled it into
-  the main chunk). Nothing from `@/features/economy` (parked)
+  plus a lazy `import()` of `threads/components/WeeklyMap` (a static import pulled it into the main chunk). Nothing
+  from `@/features/economy` (parked). Country map positions come from `@/shared/map/countryCoordinates.js`
 
 ## Backend
 - Generated row: [reference/features.md#countries](../../../../../project-docs/reference/features.md#countries)

@@ -153,11 +153,12 @@ log, daily history scores, drift notes, user prefs, saved items). "Waits" names 
 Summary: **now** = following, the store, pins with risk, inferred strings, your strings and lines, cheap-grounds connect
 with honest negatives, read-only branches, your weights, region presets, share links, pin budget. **Waits for the record**
 = lines, counts, branch status, tree, chapters, arrivals, confirmed strings, the real board weekly, monthly, alerts,
-summary. **Waits for a decision** = the paid verdict panel (pricing), enabling alert sends (fresh yes).
+summary. **Waits for a decision** = enabling alert sends (fresh yes). Pricing is deferred until the verdict panel exists; the board is free until then.
 
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
-2. What is free and what is paid: natural seam is verdict + joint trace free, the rest paid. Pricing is yours.
+2. What is free and what is paid: **deferred (operator, 2026-10-20)** until the record and the verdict panel exist. Until then
+   everything on the board is free for signed-in members. The natural seam, if and when: verdict + joint trace free, the rest paid.
 3. Strong arrivals: automatic faded pin, or always wait in the pool? (Discussion landed on the pool.)
 4. Does the board's weekly replace or sit beside the personal half of the analyst's weekly? (Landed on replace.)
 
@@ -170,6 +171,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: pricing deferred (operator); the board is free for members until the verdict panel exists.
 - 2026-10-20: now / waits checklist added per board feature.
 - 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.
 - 2026-10-20: have/lack/how-to-get checklist added after checking the resolver (exists, daily, 0 verdicts because the

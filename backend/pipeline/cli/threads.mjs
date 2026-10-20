@@ -15,7 +15,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -30,6 +30,33 @@ const PRED_TABLE = 'GlobalPerspectivePredictionLog';
 const BUCKET = 'globalperspective-world-280362093938';
 const STORY_MAP_KEY = 'threads/story-map.json';
 const SITUATION_STATE_PREFIX = 'situations/state/';
+
+// Marshal original cache lists for compare-and-swap. Group all index edits on one row in a
+// single update: checking only a threadId can hit a different topic after a concurrent reorder.
+function marshal(v) {
+  if (v === null) return { NULL: true };
+  if (typeof v === 'string') return { S: v };
+  if (typeof v === 'number') return { N: String(v) };
+  if (typeof v === 'boolean') return { BOOL: v };
+  if (Array.isArray(v)) return { L: v.map(marshal) };
+  return { M: Object.fromEntries(Object.entries(v).filter(([,x]) => x !== undefined).map(([k,x]) => [k,marshal(x)])) };
+}
+function consolidateCacheChanges(changes, snapshot) {
+  const grouped = new Map();
+  const other = [];
+  for (const c of changes) {
+    if (c.op.table !== CACHE_TABLE) { other.push(c); continue; }
+    const id = c.op.key.id.S;
+    if (!grouped.has(id)) grouped.set(id, []);
+    grouped.get(id).push(c);
+  }
+  return [...grouped.entries()].map(([id, edits]) => {
+    const row = snapshot.cache.find(c => c.id === id);
+    const items = row.items.map(it => ({ ...it }));
+    for (const c of edits) items[Number(/\[(\d+)\]/.exec(c.op.update)[1])].threadId = c.op.values[':to'].S;
+    return { desc: edits.map(c => c.desc).join(' ; '), op: { kind: 'ddb-update', table: CACHE_TABLE, key: { id: { S: id } }, update: `SET ${row.list} = :next`, cond: `${row.list} = :original`, values: { ':next': marshal(items), ':original': marshal(row.items) } } };
+  }).concat(other);
+}
 
 // ── pure: planning (exported for tests) ──────────────────────────────────────
 
@@ -85,7 +112,7 @@ function retag(snapshot, pick, to) {
       if (!pick(it.threadId, it.topicId || it.id)) return;
       changes.push({
         desc: `NewsCache ${c.id} ${c.list}[${i}].threadId ${it.threadId} -> ${to}  "${String(it.title || '').slice(0, 70)}"`,
-        op: { kind: 'ddb-update', table: CACHE_TABLE, key: { id: { S: c.id } }, update: `SET ${c.list}[${i}].threadId = :to`, cond: `${c.list}[${i}].threadId = :from`, values: { ':to': { S: to }, ':from': { S: it.threadId } } },
+        op: { kind: 'ddb-update', table: CACHE_TABLE, key: { id: { S: c.id } }, update: `SET ${c.list}[${i}].threadId = :to`, cond: `${c.list} = :original`, values: { ':to': { S: to }, ':original': marshal(c.items) } },
       });
     });
   }
@@ -108,11 +135,12 @@ function retag(snapshot, pick, to) {
       changes.push({ desc: `S3 ${STORY_MAP_KEY} pairs ${moved.map(([sid]) => sid).join(', ')} threadId -> ${to}`, op: { kind: 's3-put', key: STORY_MAP_KEY, body: next } });
     }
   }
-  return changes;
+  return consolidateCacheChanges(changes, snapshot);
 }
 
 function planMerge(snapshot, from, into) {
   if (!from || !into || from === into) throw new Error('merge needs two different thread ids');
+  if (snapshot.pointers[from]?.mergedInto || snapshot.pointers[into]?.mergedInto) throw new Error('resolve mergedInto aliases before merging');
   const changes = retag(snapshot, (tid) => tid === from, into);
   for (const s of snapshot.situations) {
     if (s.state.threadId !== from) continue;
@@ -121,11 +149,20 @@ function planMerge(snapshot, from, into) {
   const fromPtr = snapshot.pointers[from];
   const ids = fromPtr && Array.isArray(fromPtr.topicIds) ? fromPtr.topicIds : [];
   if (ids.length) {
-    changes.push({ desc: `SummarizeAndPredict THREAD#${into} / TOPICS ADD topicIds ${ids.length} from ${from}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${into}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th ADD topicIds :ids', values: { ':th': { S: into }, ':ids': { SS: ids } } } });
+    changes.push({ desc: `SummarizeAndPredict THREAD#${into} / TOPICS ADD topicIds ${ids.length} from ${from}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${into}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th ADD topicIds :ids', cond: 'attribute_not_exists(mergedInto)', values: { ':th': { S: into }, ':ids': { SS: ids } } } });
   }
   // The old pointer stays as an alias (old /weekly/thread/<from> links can resolve it).
-  changes.push({ desc: `SummarizeAndPredict THREAD#${from} / TOPICS SET mergedInto = ${into}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${from}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th, mergedInto = :into', values: { ':th': { S: from }, ':into': { S: into } } } });
+  changes.push({ desc: `SummarizeAndPredict THREAD#${from} / TOPICS SET mergedInto = ${into}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${from}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th, mergedInto = :into', cond: 'attribute_not_exists(mergedInto)', values: { ':th': { S: from }, ':into': { S: into } } } });
   return changes;
+}
+
+function repairSourcePointer(snapshot, source, moving) {
+  const ptr = snapshot.pointers[source];
+  if (!ptr?.topicId || !moving.has(ptr.topicId)) return [];
+  const remaining = snapshot.cache.flatMap(c => c.items).filter(it => it.threadId === source && !moving.has(it.topicId || it.id))
+    .sort((a,b) => String(b.archivedAt || '').localeCompare(String(a.archivedAt || '')))[0];
+  if (!remaining) throw new Error('source pointer would become empty; use merge for a whole thread');
+  return [{ desc: `SummarizeAndPredict THREAD#${source} / TOPICS replace moved current topic pointer`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${source}` }, SK: { S: 'TOPICS' } }, update: 'SET topicId = :nextTopic, title = :nextTitle', cond: 'topicId = :oldTopic', values: { ':nextTopic': { S: remaining.topicId || remaining.id }, ':nextTitle': { S: remaining.title || '' }, ':oldTopic': { S: ptr.topicId } } } }];
 }
 
 // The moved topics found a new thread, named (like any thread) from the founding title: the first
@@ -133,15 +170,34 @@ function planMerge(snapshot, from, into) {
 function planSplit(snapshot, threadId, topicIds) {
   if (!threadId || !topicIds.length) throw new Error('split needs a thread id and at least one topic id');
   const moving = new Set(topicIds);
+  if (moving.size !== topicIds.length) throw new Error('duplicate topic ids');
+  const present = new Set(snapshot.cache.flatMap(c => c.items).filter(it => it.threadId === threadId).map(it => it.topicId || it.id));
+  if (topicIds.some(id => !present.has(id))) throw new Error('none of the topic ids or some topic ids are absent from the source thread');
   const founding = snapshot.cache.flatMap((c) => c.items).filter((it) => it.threadId === threadId && moving.has(it.topicId || it.id))
     .sort((a, b) => String(a.archivedAt || '').localeCompare(String(b.archivedAt || '')))[0];
   if (!founding) throw new Error(`none of the topic ids is on ${threadId}`);
   const newId = threading.generateThreadId(founding);
   if (newId === threadId) throw new Error(`${founding.title} is the thread's founding title; split the other topics out instead`);
+  if (snapshot.cache.some(c => c.items.some(it => it.threadId === newId))) throw new Error('split destination already exists; inspect and merge explicitly');
   const changes = retag(snapshot, (tid, topicId) => tid === threadId && moving.has(topicId), newId);
-  changes.push({ desc: `SummarizeAndPredict THREAD#${threadId} / TOPICS DELETE topicIds ${topicIds.join(', ')}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${threadId}` }, SK: { S: 'TOPICS' } }, update: 'DELETE topicIds :ids', values: { ':ids': { SS: topicIds } } } });
-  changes.push({ desc: `SummarizeAndPredict THREAD#${newId} / TOPICS SET topicId ${founding.topicId || founding.id}, ADD topicIds ${topicIds.join(', ')}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${newId}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th, topicId = :t, title = :ti ADD topicIds :ids', values: { ':th': { S: newId }, ':t': { S: founding.topicId || founding.id }, ':ti': { S: founding.title || '' }, ':ids': { SS: topicIds } } } });
+  changes.push({ desc: `SummarizeAndPredict THREAD#${threadId} / TOPICS DELETE topicIds ${topicIds.join(', ')}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${threadId}` }, SK: { S: 'TOPICS' } }, update: 'DELETE topicIds :ids', cond: 'attribute_not_exists(mergedInto)', values: { ':ids': { SS: topicIds } } } });
+  changes.push({ desc: `SummarizeAndPredict THREAD#${newId} / TOPICS SET topicId ${founding.topicId || founding.id}, ADD topicIds ${topicIds.join(', ')}`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${newId}` }, SK: { S: 'TOPICS' } }, update: 'SET threadId = :th, topicId = :t, title = :ti ADD topicIds :ids', cond: 'attribute_not_exists(PK)', values: { ':th': { S: newId }, ':t': { S: founding.topicId || founding.id }, ':ti': { S: founding.title || '' }, ':ids': { SS: topicIds } } } });
+  changes.push(...repairSourcePointer(snapshot, threadId, moving));
   return { newId, changes };
+}
+
+// Move only named members into an existing clean thread; avoids merging an unrelated arc.
+function planMove(snapshot, from, into, topicIds) {
+  if (!from || !into || from === into || !topicIds.length || new Set(topicIds).size !== topicIds.length) throw new Error('move needs different threads and unique topic ids');
+  const present = new Set(snapshot.cache.flatMap(c => c.items).filter(it => it.threadId === from).map(it => it.topicId || it.id));
+  if (topicIds.some(id => !present.has(id))) throw new Error('move topic ids absent from source');
+  if (snapshot.pointers[from]?.mergedInto || snapshot.pointers[into]?.mergedInto) throw new Error('resolve mergedInto aliases first');
+  const moving = new Set(topicIds);
+  const changes = retag(snapshot, (tid,id) => tid === from && moving.has(id), into);
+  changes.push({ desc: `SummarizeAndPredict THREAD#${into} / TOPICS ADD ${topicIds.length} selected members`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${into}` }, SK: { S: 'TOPICS' } }, update: 'ADD topicIds :ids', cond: 'attribute_exists(PK) AND attribute_not_exists(mergedInto)', values: { ':ids': { SS: topicIds } } } });
+  changes.push({ desc: `SummarizeAndPredict THREAD#${from} / TOPICS remove ${topicIds.length} selected members`, op: { kind: 'ddb-update', table: SUMMARY_TABLE, key: { PK: { S: `THREAD#${from}` }, SK: { S: 'TOPICS' } }, update: 'DELETE topicIds :ids', cond: 'attribute_not_exists(mergedInto)', values: { ':ids': { SS: topicIds } } } });
+  changes.push(...repairSourcePointer(snapshot, from, moving));
+  return changes;
 }
 
 // ── I/O (AWS CLI) ────────────────────────────────────────────────────────────
@@ -174,7 +230,7 @@ function scanAll(table, filter, values, projection) {
   const out = [];
   let token = null;
   do {
-    const args = ['dynamodb', 'scan', '--table-name', table, '--filter-expression', filter, '--expression-attribute-values', JSON.stringify(values), '--projection-expression', projection];
+    const args = ['dynamodb', 'scan', '--page-size', '100', '--max-items', '100', '--table-name', table, '--filter-expression', filter, '--expression-attribute-values', JSON.stringify(values), '--projection-expression', projection];
     if (token) args.push('--starting-token', token);
     const page = aws(args);
     out.push(...(page.Items || []).map(item));
@@ -184,12 +240,22 @@ function scanAll(table, filter, values, projection) {
 }
 
 function queryPk(table, pk, projection) {
-  const page = aws(['dynamodb', 'query', '--table-name', table, '--key-condition-expression', 'PK = :p', '--expression-attribute-values', JSON.stringify({ ':p': { S: pk } }), '--projection-expression', projection]);
+  const page = aws(['dynamodb', 'query', '--page-size', '100', '--table-name', table, '--key-condition-expression', 'PK = :p', '--expression-attribute-values', JSON.stringify({ ':p': { S: pk } }), '--projection-expression', projection]);
   return (page.Items || []).map(item);
 }
 
+const objectEtags = new Map();
 function s3Json(key) {
-  try { return JSON.parse(execFileSync('aws', ['s3', 'cp', `s3://${BUCKET}/${key}`, '-', '--region', REGION], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })); } catch { return null; }
+  const dir = mkdtempSync(join(tmpdir(), 'threads-read-'));
+  const file = join(dir, 'body.json');
+  try {
+    const metadata = aws(['s3api', 'get-object', '--bucket', BUCKET, '--key', key, file]);
+    objectEtags.set(key, metadata.ETag);
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (e) {
+    if (/NoSuchKey|Not Found|404/.test(String(e.stderr || e.message))) return null;
+    throw e; // permission/transport failures must not silently omit affected stores
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
 function readArchiveDays(fromDay, toDay) {
@@ -216,7 +282,7 @@ function readSituations() {
   const keys = [];
   let token = null;
   do {
-    const args = ['s3api', 'list-objects-v2', '--bucket', BUCKET, '--prefix', SITUATION_STATE_PREFIX];
+    const args = ['s3api', 'list-objects-v2', '--page-size', '100', '--max-items', '100', '--bucket', BUCKET, '--prefix', SITUATION_STATE_PREFIX];
     if (token) args.push('--starting-token', token);
     const page = aws(args) || {};
     for (const o of page.Contents || []) if (o.Key.endsWith('.json')) keys.push(o.Key.slice(SITUATION_STATE_PREFIX.length));
@@ -225,24 +291,24 @@ function readSituations() {
   return keys.map((key) => ({ key, state: s3Json(`${SITUATION_STATE_PREFIX}${key}`) })).filter((s) => s.state);
 }
 
-function snapshotForMerge(from, daysBack) {
+function snapshotForMerge(from, daysBack, snapshotTarget) {
   const byThread = (table, prefix) => scanAll(table, 'threadId = :f' + (prefix ? ' AND begins_with(PK, :p)' : ''), { ':f': { S: from }, ...(prefix ? { ':p': { S: prefix } } : {}) }, 'PK, SK, threadId');
   return {
     cache: readCache(daysBack),
     topicRows: byThread(SUMMARY_TABLE, 'TOPIC#'),
     predRows: byThread(PRED_TABLE, null),
-    pointers: { [from]: getItem(SUMMARY_TABLE, { PK: { S: `THREAD#${from}` }, SK: { S: 'TOPICS' } }) },
+    pointers: Object.fromEntries([from, snapshotTarget].filter(Boolean).map(id => [id, getItem(SUMMARY_TABLE, { PK: { S: `THREAD#${id}` }, SK: { S: 'TOPICS' } })])),
     storyMap: s3Json(STORY_MAP_KEY),
     situations: readSituations(),
   };
 }
 
-function snapshotForSplit(topicIds, daysBack) {
+function snapshotForSplit(topicIds, daysBack, sourceThread) {
   return {
     cache: readCache(daysBack),
     topicRows: topicIds.flatMap((id) => queryPk(SUMMARY_TABLE, `TOPIC#${id}`, 'PK, SK, threadId')),
     predRows: topicIds.flatMap((id) => queryPk(PRED_TABLE, `PRED#${id}`, 'PK, SK, threadId')),
-    pointers: {},
+    pointers: sourceThread ? { [sourceThread]: getItem(SUMMARY_TABLE, { PK: { S: `THREAD#${sourceThread}` }, SK: { S: 'TOPICS' } }) } : {},
     storyMap: s3Json(STORY_MAP_KEY),
     situations: [],
   };
@@ -250,13 +316,19 @@ function snapshotForSplit(topicIds, daysBack) {
 
 function runChange({ op }) {
   if (op.kind === 'ddb-update') {
-    const args = ['dynamodb', 'update-item', '--table-name', op.table, '--key', JSON.stringify(op.key), '--update-expression', op.update, '--expression-attribute-values', JSON.stringify(op.values)];
+    const dir = mkdtempSync(join(tmpdir(), 'threads-values-'));
+    const file = join(dir, 'values.json');
+    writeFileSync(file, JSON.stringify(op.values));
+    const args = ['dynamodb', 'update-item', '--table-name', op.table, '--key', JSON.stringify(op.key), '--update-expression', op.update, '--expression-attribute-values', `file://${file}`];
     if (op.cond) args.push('--condition-expression', op.cond);
-    aws(args);
+    try { aws(args); } finally { rmSync(dir, { recursive: true, force: true }); }
   } else if (op.kind === 's3-put') {
     const file = join(mkdtempSync(join(tmpdir(), 'threads-')), 'body.json');
     writeFileSync(file, JSON.stringify(op.body));
-    aws(['s3api', 'put-object', '--bucket', BUCKET, '--key', op.key, '--body', file, '--content-type', 'application/json']);
+    const etag = objectEtags.get(op.key);
+    if (!etag) throw new Error(`No read ETag for ${op.key}; refusing write`);
+    try { aws(['s3api', 'put-object', '--bucket', BUCKET, '--key', op.key, '--body', file, '--content-type', 'application/json', '--if-match', etag]); }
+    finally { rmSync(join(file, '..'), { recursive: true, force: true }); }
   }
 }
 
@@ -266,7 +338,7 @@ function report(changes, apply) {
   if (!apply) return;
   let ok = 0;
   for (const c of changes) {
-    try { runChange(c); ok++; } catch (e) { console.error(`  FAILED ${c.desc}: ${String(e.stderr || e.message).trim()}`); }
+    try { runChange(c); ok++; } catch (e) { throw new Error(`Stopped after ${ok}/${changes.length} changes: ${c.desc}: ${String(e.stderr || e.message).trim()}. Partial application; inspect before retry.`); }
   }
   console.log(`${ok}/${changes.length} applied.`);
 }
@@ -274,8 +346,11 @@ function report(changes, apply) {
 function main(argv) {
   const [cmd, ...rest] = argv;
   const flag = (name) => { const i = rest.indexOf(name); return i >= 0 ? rest[i + 1] : null; };
-  const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--since', '--days'].includes(rest[i - 1])));
+  const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--since', '--days', '--snapshot'].includes(rest[i - 1])));
   const apply = rest.includes('--apply');
+  const snapshotFile = flag('--snapshot');
+  if (snapshotFile && apply) throw new Error('--snapshot is print-only; --apply requires a fresh live snapshot');
+  const offline = snapshotFile ? JSON.parse(readFileSync(snapshotFile, 'utf8')) : null;
   const daysBack = Number(flag('--days')) || 90;
   if (cmd === 'list-joins') {
     const since = flag('--since');
@@ -290,11 +365,21 @@ function main(argv) {
     console.log(`${rows.length} row(s); ${rows.filter((r) => !r.ruleAgrees).length} the current rule would assign differently.`);
   } else if (cmd === 'merge') {
     const [from, into] = positional;
-    report(planMerge(snapshotForMerge(from, daysBack), from, into), apply);
+    report(planMerge(offline || snapshotForMerge(from, daysBack, into), from, into), apply);
     console.log(`Left as is: derived rows under THREAD#${from} (THREAD_ANALYSIS, THREAD_HISTORY#, DRIFT#, WEB); the daily jobs rebuild ${into}.`);
+  } else if (cmd === 'move') {
+    const [from, into, ...topicIds] = positional;
+    const snap = offline || snapshotForSplit(topicIds, daysBack, from);
+    if (!offline) {
+      for (const id of [from, into]) snap.pointers[id] = getItem(SUMMARY_TABLE, { PK: { S: `THREAD#${id}` }, SK: { S: 'TOPICS' } });
+      if (!snap.pointers[into]) throw new Error('move destination pointer does not exist');
+    }
+    report(planMove(snap, from, into, topicIds), apply);
+    console.log('Situations and derived analyses require coordinator reconciliation.');
   } else if (cmd === 'split') {
     const [threadId, ...topicIds] = positional;
-    const { newId, changes } = planSplit(snapshotForSplit(topicIds, daysBack), threadId, topicIds);
+    const { newId, changes } = planSplit(offline || snapshotForSplit(topicIds, daysBack, threadId), threadId, topicIds);
+    if (!offline && getItem(SUMMARY_TABLE, { PK: { S: `THREAD#${newId}` }, SK: { S: 'TOPICS' } })) throw new Error('split destination pointer already exists');
     console.log(`New thread: ${newId}`);
     report(changes, apply);
     console.log('Situations keep their latched threadId until the next story-map match.');
@@ -308,4 +393,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try { main(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exitCode = 1; }
 }
 
-export { listJoins, planMerge, planSplit, lookbackFor };
+export { listJoins, planMerge, planSplit, planMove, lookbackFor };

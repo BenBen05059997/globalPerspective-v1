@@ -19,3 +19,10 @@ test('valid bounded dates required',()=>{
  assert.throws(()=>dayRange('2026-10-20','2026-10-01'));
  assert.equal(dayRange('2026-10-18','2026-10-19').length,2);
 });
+test('review method requires 72-hour country evidence and handles actor/ISO3 route',()=>{
+ const a=row('Alpha beta gamma delta','a',{regions:['X'],iso3:['XXX'],actors:['Named Actor']});
+ const b=row('Alpha beta gamma epsilon','b',{regions:['X'],iso3:['XXX'],actors:['Named Actor']});
+ assert.equal(audit({'2026-10-19':[a,b]},{method:'review'}).pairs.length,1);
+ assert.equal(audit({'2026-10-19':[a,{...b,regions:['Y'],iso3:['YYY']}]},{method:'review'}).pairs.length,0);
+ assert.equal(audit({'2026-10-15':[{...a,archivedAt:'2026-10-15T00:00:00Z'}],'2026-10-19':[b]},{method:'review'}).pairs.length,0);
+});

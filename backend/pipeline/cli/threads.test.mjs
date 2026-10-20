@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { listJoins, planMerge, planSplit } from './threads.mjs';
+import { listJoins, planMerge, planSplit, planMove } from './threads.mjs';
 
 const { generateThreadId } = createRequire(import.meta.url)('../NewsProjectInvokeAgentLambda/src/threading.js');
 
@@ -50,8 +50,8 @@ test('merge retags every record of the from-thread, conditionally, and leaves an
   const changes = planMerge(snapshot(), 'thread-agent', 'thread-x');
   const ddb = changes.filter((c) => c.op.kind === 'ddb-update');
   const cacheEdits = ddb.filter((c) => c.op.table === 'NewsCache');
-  assert.deepEqual(cacheEdits.map((c) => c.op.update), ['SET entries[1].threadId = :to', 'SET entries[1].threadId = :to', 'SET topics[0].threadId = :to']);
-  assert.ok(cacheEdits.every((c) => c.op.cond && c.op.values[':from'].S === 'thread-agent' && c.op.values[':to'].S === 'thread-x'));
+  assert.deepEqual(cacheEdits.map((c) => c.op.update), ['SET entries = :next', 'SET entries = :next', 'SET topics = :next']);
+  assert.ok(cacheEdits.every((c) => c.op.cond.endsWith('= :original') && c.op.values[':original'].L && c.op.values[':next'].L));
   assert.equal(ddb.filter((c) => c.op.table === 'SummarizeAndPredict' && c.op.key.PK?.S.startsWith('TOPIC#')).length, 1);
   assert.equal(ddb.filter((c) => c.op.table === 'GlobalPerspectivePredictionLog').length, 1);
   const into = ddb.find((c) => c.op.key.PK?.S === 'THREAD#thread-x');
@@ -75,7 +75,7 @@ test('split moves only the named topics to a new thread named from their foundin
   const { newId, changes } = planSplit(snapshot(), 'thread-agent', ['Tesla car-4']);
   assert.equal(newId, generateThreadId(flyingCar));
   const retagged = changes.filter((c) => c.op.values?.[':to']?.S === newId);
-  assert.equal(retagged.filter((c) => c.op.table === 'NewsCache').length, 2); // archive + latest
+  assert.equal(changes.filter(c => c.op.table === 'NewsCache' && c.op.values[':next'].L.some(it => it.M.threadId.S === newId)).length, 2); // archive + latest
   assert.equal(retagged.filter((c) => c.op.table === 'SummarizeAndPredict').length, 1);
   assert.equal(retagged.filter((c) => c.op.table === 'GlobalPerspectivePredictionLog').length, 1);
   assert.ok(!changes.some((c) => c.desc.includes('Rogue Anthropic')));
@@ -92,4 +92,38 @@ test('split refuses to move the founding title out of its own thread, or topics 
   snap.cache[0].items = [plagueUs, { ...rogueAgent, threadId: generateThreadId(rogueAgent) }];
   assert.throws(() => planSplit(snap, generateThreadId(rogueAgent), ['Rogue agent-1']), /founding title/);
   assert.throws(() => planSplit(snapshot(), 'thread-agent', ['nope']), /none of the topic ids/);
+});
+
+
+test('grouped cache CAS checks the original list and updates all matching topics together', () => {
+ const snap = snapshot();
+ snap.cache[0].items.push({ ...flyingCar, topicId: 'another' });
+ const edit = planMerge(snap, 'thread-agent', 'thread-x').find(c => c.op.key?.id?.S === snap.cache[0].id).op;
+ assert.equal(edit.values[':original'].L[1].M.topicId.S, 'Rogue agent-1');
+ assert.equal(edit.values[':original'].L[1].M.threadId.S, 'thread-agent');
+ assert.deepEqual(edit.values[':next'].L.map(it => it.M.threadId.S), ['thread-plague','thread-x','thread-x']);
+});
+test('split refuses partially missing ids, duplicates, destination collisions and merges through aliases', () => {
+ assert.throws(() => planSplit(snapshot(), 'thread-agent', ['Tesla car-4','missing']), /absent/);
+ assert.throws(() => planSplit(snapshot(), 'thread-agent', ['Tesla car-4','Tesla car-4']), /duplicate/);
+ const snap = snapshot(); snap.cache[0].items.push({ ...flyingCar, threadId: generateThreadId(flyingCar) });
+ assert.throws(() => planSplit(snap, 'thread-agent', ['Tesla car-4']), /destination/);
+ const aliases = snapshot(); aliases.pointers['thread-x'] = { mergedInto: 'thread-agent' };
+ assert.throws(() => planMerge(aliases, 'thread-agent', 'thread-x'), /aliases/);
+});
+
+test('move retags selected members into an existing thread without aliasing the mixed source', () => {
+ const changes = planMove(snapshot(), 'thread-agent', 'thread-plague', ['Tesla car-4']);
+ assert.ok(changes.some(c => c.op.key?.PK?.S === 'THREAD#thread-plague' && c.op.cond.includes('attribute_exists')));
+ assert.ok(!changes.some(c => c.op.update?.includes('mergedInto =')));
+ assert.ok(!changes.some(c => c.desc.includes('Rogue Anthropic')));
+ assert.throws(() => planMove(snapshot(), 'thread-agent', 'thread-plague', ['absent']), /absent/);
+});
+
+test('moving the current topic repoints the source to a remaining member', () => {
+ const snap = snapshot(); snap.pointers['thread-agent'].topicId = 'Tesla car-4';
+ const edits = planMove(snap, 'thread-agent', 'thread-plague', ['Tesla car-4']);
+ const ptr = edits.find(c => c.op.values?.[':nextTopic']);
+ assert.equal(ptr.op.values[':nextTopic'].S, 'Rogue agent-1');
+ assert.equal(ptr.op.values[':oldTopic'].S, 'Tesla car-4');
 });

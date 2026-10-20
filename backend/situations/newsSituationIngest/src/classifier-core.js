@@ -9,7 +9,7 @@
 // Axis is constrained to the 4 map hues; category is finer-grained. latlon is model-provided
 // (the flash model knows locations well enough to place a dot), so no iso3→centroid table is needed.
 
-const { getOutletMeta } = require('./outlet_metadata');
+const { getOutletMeta } = require('./_shared/outlets');
 
 const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
 function canonicalIso3(values, log = console.warn) {

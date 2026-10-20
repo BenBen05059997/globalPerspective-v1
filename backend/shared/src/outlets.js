@@ -2,9 +2,10 @@
 // Maps lowercased outlet domain (matches `source` field on each topic source)
 // → { outlet: display name, country: ISO-3166-1 alpha-2, type: 'wire'|'national'|'regional'|'specialist' }
 //
-// Used by:
-//   - Frontend Home.jsx to render country flags / outlet count
-//   - (future) outlet diversity scoring during enrichment
+// The one outlet table (moved to backend/shared 2026-10-20 from newsInvokeGemini). Used by:
+//   - newsInvokeGemini source_enrichment.js (outlet name on each topic source)
+//   - newsSituationIngest classifier-core.js (outlet name on corpus rows)
+// Unknown domains keep `outlet: null`; never invent a name.
 //
 // Add new outlets as Brave Search returns them. Unknown outlets degrade
 // gracefully — frontend shows count without flag.

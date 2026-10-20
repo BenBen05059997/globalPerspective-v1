@@ -1,1 +1,0 @@
-../../../pipeline/newsInvokeGemini/src/outlet_metadata.js

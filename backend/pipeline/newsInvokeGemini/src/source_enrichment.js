@@ -11,7 +11,7 @@
 //
 // See SOURCE_DIVERSITY_PLAN.md for full design.
 
-const { normalizeOutlet, getOutletMeta } = require('./outlet_metadata');
+const { normalizeOutlet, getOutletMeta } = require('./_shared/outlets');
 
 const STOPWORDS = new Set([
   'the','a','an','and','or','but','in','on','at','to','for','of','with','by','from','as','is','are',

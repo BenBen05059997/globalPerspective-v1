@@ -17,6 +17,8 @@
 
 const path = require('path');
 const Module = require('module');
+// Stable Sunday clock for weekly freshness and the existing freshness fixtures.
+Date.now = () => Date.parse('2026-06-28T14:00:00Z');
 
 // ── in-memory DDB store (mutated by fixtures per scenario) ───────────────────
 const store = { briefs: [], prefs: [], alerts: [], marker: {} };
@@ -184,6 +186,12 @@ function loadSender(env) {
   resetStore(); store.s3Error = Object.assign(new Error('denied'), { name: 'AccessDenied' });
   h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly' });
   check('S3 denied is a visible failure, never a DynamoDB fallback', r.ok === false && r.error === 'denied');
+
+  for (const weekEnding of ['2026-06-21', '2026-07-05']) {
+    resetStore(); fetchCalls = []; store.briefs[0].weekEnding = weekEnding;
+    h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly', force: true });
+    check(`${weekEnding} is not this Sunday: skip even with force`, r.reason === 'wrong_week' && r.expectedWeek === '2026-06-28' && fetchCalls.length === 0 && !Object.keys(store.marker).length);
+  }
 
   // 4) TEST_RECIPIENT override
   console.log('\n[weekly] TEST_RECIPIENT override');

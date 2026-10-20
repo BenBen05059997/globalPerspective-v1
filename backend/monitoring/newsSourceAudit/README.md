@@ -19,9 +19,9 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 ## Gotchas
 - The rule is named `...Daily` but runs Mon/Wed/Fri only.
 - With no fetchable article it audits against source snippets instead.
-- An LLM error is logged as `audit-error` and does not count as drift.
+- LLM/proxy/missing-summary/source-text failures count as `auditErrors`, never drift. Later topics still run; the result separates attempted `checked`, completed `audited`, drift and error counts. Any audit error emits a failed-run marker and an SNS failure report (when configured), independently of the drift threshold. SNS failure throws.
 
 ## Tests
-- None
+- `node --test backend/monitoring/newsSourceAudit/test/*.test.js` (mocked proxy/model/SNS; no live calls).
 
 Last verified: 2026-10-19

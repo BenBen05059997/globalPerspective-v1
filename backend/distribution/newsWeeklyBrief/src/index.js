@@ -35,7 +35,7 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), 
   marshallOptions: { removeUndefinedValues: true },
 });
 
-exports.handler = async (event = {}) => {
+const generateBrief = async (event = {}) => {
   if (!TOPICS_TABLE || !SUMMARY_TABLE) return fail('Missing table config');
   if (!LLM_KEY) return fail('Missing LLM key (XAI_API_KEY)');
 
@@ -48,7 +48,7 @@ exports.handler = async (event = {}) => {
 
   const entries = await readArchiveEntries(WEEK_DAYS);
   console.log(`[weekly] ${entries.length} archive entries over ${WEEK_DAYS}d`);
-  if (entries.length === 0) return fail('No archive entries this week — failing empty (honest).');
+  if (entries.length === 0) return { ok: true, skipped: 'no-archive-entries', weekKey };
 
   // Top threads this week (by entry count = a coverage/significance proxy).
   const threads = groupByThread(entries).slice(0, TOP_THREADS);
@@ -143,9 +143,17 @@ exports.handler = async (event = {}) => {
   return { ok: true, weekKey, status: 'published', signals: signals.length, watch: watch.length };
 };
 
+exports.handler = async (event = {}) => {
+  try { return await generateBrief(event); }
+  catch (error) {
+    console.error('[pipeline-status] ' + JSON.stringify({ status: 'failed', reason: 'weekly-brief-failed', error: error.message }));
+    throw error;
+  }
+};
+
 function fail(msg) {
   console.error('[weekly] ' + msg);
-  return { ok: false, error: msg };
+  throw new Error(msg);
 }
 
 // ── Data gather (mirrors newsThreadAnalysis) ───────────────────────────────────
@@ -178,7 +186,7 @@ async function readArchiveEntries(days) {
         }
       }
     } catch (err) {
-      console.warn(`[weekly] read ${key} failed: ${err.message}`);
+      throw new Error(`[weekly] read ${key} failed: ${err.message}`, { cause: err });
     }
   }
   return entries;
@@ -248,7 +256,7 @@ async function getRecord(pk, sk) {
   try {
     const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: sk } }));
     return Item || null;
-  } catch { return null; }
+  } catch (error) { throw new Error(`[weekly] read ${pk}/${sk} failed: ${error.message}`, { cause: error }); }
 }
 
 // ── Prompt — SIGNALS digest (not a synthesized essay) ──────────────────────────

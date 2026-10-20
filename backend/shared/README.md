@@ -18,6 +18,11 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend
   `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`,
   `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
+- `record.js`: the board's pure rules (`pairKey`, `normalizeActor`, `stringTexture`, `PIN_BUDGET`, `pinBudgetOk`,
+  `normalizeBoard`, `cheapGrounds`: shared actors/places/outlets and score co-movement, never 'strong'). Used by
+  `newsBoard` now, by the record writer later. Frontend mirror of the core block: `shared/lib/board.js`.
+- `s3json.js`: `makeS3Json({client, GetObjectCommand, PutObjectCommand, bucket})` -> `getJson`, `putOnce`
+  (`If-None-Match: *`), `putLatest`; client injected so it tests without the SDK. Unused until the record writes.
 - `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
   `placeNames.json` is still in `src/` but no backend code reads it any more.
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
@@ -27,6 +32,6 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 Who uses what: `git grep "_shared/" -- backend`.
 
 ## Checks
-- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/resolveIso3.test.js test/situations-core.test.mjs`.
-- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core) are compared
+- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/resolveIso3.test.js test/situations-core.test.mjs test/record.test.js test/s3json.test.js`.
+- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core, the board rules core) are compared
   by `node scripts/check-shared-sync.mjs`.

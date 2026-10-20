@@ -2,7 +2,7 @@
 
 Name (operator, 2026-10-20): **board**. Folders `backend/board/` and `features/board/`. Not "Studio", not "personal digest".
 
-Status: ideas, not decided (2026-10-20). Nothing here is built or scheduled. The analyst's weekly
+Status: active (2026-10-20): slice 1 is being built in the stages below; everything else here is design, not decided. The analyst's weekly
 (`PLAN_2026-10-20_analyst_weekly.md`) comes first; this records where the discussion landed so it is not lost.
 Design sketch: Studio Board canvas, https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo (12 boards, static, unchecked
 by eye). The earlier Personal Weekly canvas (https://claude.ai/artifact/CTKb75Mv3fC9Y6BV46hKnK) shows the personal
@@ -156,7 +156,7 @@ with honest negatives, read-only branches, your weights, region presets, share l
 summary. **Waits for a decision** = enabling alert sends (fresh yes). Pricing is deferred until the verdict panel exists; the board is free until then.
 
 ## Build stages and checklist (written 2026-10-20; nothing started)
-Status: planned. Each stage is one or two sequential Sonnet agents with the operator checking in between. A box is ticked
+Progress: each stage is one or two sequential Sonnet agents with the operator checking in between. A box is ticked
 with its commit. Alerts and pricing are out of scope for all stages below.
 
 ### Stage 0: freeze the shape (no runtime code) — done 2026-10-20
@@ -168,12 +168,14 @@ with its commit. Alerts and pricing are out of scope for all stages below.
       Found: `WEB#INDEX` carries no actor ids. Actors are free-text names from the LLM (`newsSystemsAnalysis/src/index.js` `normalizeActors`, line ~342: trimmed, whitespace collapsed, case-insensitive dedupe keeping the first display form), and shared actors are matched by `toLowerCase()` (line ~444).
       Rule: actor `refId` = the name as stored; compare by trim + collapse whitespace + lowercase. Country pins use ISO3 from `resolveIso3`.
 
-### Stage 1: shared code (used by board now, by record later)
-- [ ] `backend/shared/src/record.js`: pure rules with tests: `stringTexture(string)` (ours+confirmed → solid; ours inferred → dashed; yours → dashed-alt), `pinBudgetOk(board)`, `pairKey(a,b)`, `cheapGrounds(pinA, pinB, ctx)` (shared actors, shared places via `resolveIso3`, shared outlets, co-movement with lag from two daily score series) returning `{strength: none|weak|medium, grounds[]}` with the honest `none`.
-- [ ] `backend/shared/src/s3json.js`: `getJson`, `putOnce` (`If-None-Match: *`), `putLatest`; tests with a fake client. Unused until the record writes; written now so both sides share one implementation.
-- [ ] Frontend `shared/lib/board.js` mirror of `stringTexture` and `pairKey` only (pure), guarded by `scripts/check-shared-sync.mjs` like `links.js`.
+### Stage 1: shared code (used by board now, by record later) — done 2026-10-20
+- [x] `backend/shared/src/record.js`: pure rules with tests: `stringTexture(string)` (ours+confirmed → solid; ours inferred → dashed; yours → dashed-alt), `pinBudgetOk(board)`, `pairKey(a,b)`, `cheapGrounds(pinA, pinB, ctx)` (shared actors, shared places via `resolveIso3`, shared outlets, co-movement with lag from two daily score series) returning `{strength: none|weak|medium, grounds[]}` with the honest `none`.
+- [x] `backend/shared/src/s3json.js`: `getJson`, `putOnce` (`If-None-Match: *`), `putLatest`; tests with a fake client. Unused until the record writes; written now so both sides share one implementation.
+- [x] Frontend `shared/lib/board.js` mirror of `stringTexture` and `pairKey` only (pure), guarded by `scripts/check-shared-sync.mjs` like `links.js`.
 
 ### Stage 2: backend `newsBoard` (code and tests only; not created in AWS)
+Rule from stage 1: `stringTexture` draws ours + weak|medium|strong as solid, so in slice 1 every ours-string is stored
+with `strength: 'inferred'`; the web's own strength is shown from `WEB#INDEX` at read time, never stored as confirmed.
 - [ ] `backend/board/newsBoard/src/index.js`: Function URL handler, Firebase JWT verification copied from the `newsSavedItems` pattern (no firebase-admin), CORS per the Function-URL rule in CLAUDE.md.
 - [ ] Actions: `list_boards`, `get_board`, `create_board`, `update_board` (schema-validated; pin budget; strings normalised with `pairKey`), `delete_board`, `follow_thread`, `unfollow_thread`, `follow_actor`, `unfollow_actor`, `list_presets`, `fork_preset`, `connect {a, b}`.
 - [ ] Stores: `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads[]`, `followedActors[]` only (`followedCountries` stays with `newsRecommend`).

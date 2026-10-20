@@ -27,6 +27,8 @@
  *                                          frontend shared/lib/countries.js
  *   (d) link rules                      — the address-building core (between the markers) in
  *                                          backend/shared/src/links.js == frontend shared/lib/links.js
+ *   (f) board rules                     — the drawing/pairing core (between the markers) in
+ *                                          backend/shared/src/record.js == frontend shared/lib/board.js
  *   (e) Studio share modules, sampleRuleGolden.json — byte-identical frontend/Lambda copies
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
@@ -255,6 +257,10 @@ function livePairs() {
       run: () => checkMarkedCore(abs(`${SHARED}/links.js`), abs(`${FE_LIB}/links.js`), 'link rules core'),
     },
     {
+      name: 'board rules (backend/shared/src/record.js vs frontend shared/lib/board.js)',
+      run: () => checkMarkedCore(abs(`${SHARED}/record.js`), abs(`${FE_LIB}/board.js`), 'board rules core'),
+    },
+    {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
       name: 'Studio share modules (frontend + newsSharedAnalysis, 7 files + golden fixture)',
@@ -363,6 +369,18 @@ async function selfTestLinkRules() {
   return result;
 }
 
+async function selfTestBoardRules() {
+  const dir = mkTmp();
+  const b = path.join(dir, 'board.js');
+  const ref = fs.readFileSync(abs(`${FE_LIB}/board.js`), 'utf8');
+  const perturbed = ref.replace('PIN_BUDGET = 12', 'PIN_BUDGET = 13');
+  if (perturbed === ref) throw new Error('self-test fixture assumption broke: PIN_BUDGET = 12 not found');
+  fs.writeFileSync(b, perturbed);
+  const result = checkMarkedCore(abs(`${SHARED}/record.js`), b, 'board rules core');
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTestEntityNormalization() {
   const dir = mkTmp();
   const srcA = fnPath('newsSituationIngest', 'src/classifier-core.js');
@@ -406,6 +424,7 @@ async function selfTest() {
     ['country_facts.json', selfTestCountryFacts],
     ['country identity', selfTestCountryIdentity],
     ['link rules', selfTestLinkRules],
+    ['board rules', selfTestBoardRules],
     ['entity-normalization', selfTestEntityNormalization],
     ['sampleRuleGolden.json', selfTestSampleGolden],
     ['Studio share modules', selfTestShareModules],

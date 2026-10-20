@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "region": "ap-northeast-1",
   "status": "proposal-not-applied",
-  "inventorySource": "scripts/functions.json plus direct/shared LLM call sites; current repo, not deployed env verification",
+  "inventorySource": "scripts/functions.json and completion call sites at G1 baseline, with explicit G3 retirement pending deployment; not live env verification",
   "notification": {
     "survivingTopicArn": "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts",
     "retireAfterMigration": "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts",
@@ -115,7 +115,8 @@
         "backend/read-api/newsSensitiveData/src/index.js"
       ],
       "parked": false,
-      "deployBlocked": false
+      "deployBlocked": false,
+      "retirement": "G3 removes the sole dossier completion path in source; retain deployed-log coverage until coordinator deploys and verifies removal."
     },
     {
       "functionName": "newsSituationIngest",

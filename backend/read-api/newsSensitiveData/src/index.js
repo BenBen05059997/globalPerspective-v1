@@ -1,13 +1,10 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
-const { assembleDossier } = require('./dossier');
-const { isCountryName } = require('./_shared/placeFilter');
 const { iso3List } = require('./_shared/resolveIso3');
-const { chat } = require('./_shared/llm');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -33,7 +30,6 @@ const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspect
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
-const SUMMARY_PREDICT_MAX_AGE_SECONDS = Number(process.env.SUMMARY_PREDICT_MAX_AGE_SECONDS || '5400');
 
 const ENTERPRISE_MAX_DAYS = 90;
 
@@ -129,96 +125,6 @@ const allowedOrigins = [
 ];
 const allowedOriginsLower = allowedOrigins.map((o) => o.toLowerCase());
 
-const COUNTRY_NAMES = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
-  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
-  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize',
-  'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Bosnia', 'Botswana',
-  'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
-  'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Central African Republic',
-  'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
-  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Czechia',
-  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
-  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia',
-  'Eswatini', 'Ethiopia',
-  'Fiji', 'Finland', 'France',
-  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada',
-  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
-  'Haiti', 'Honduras', 'Hungary',
-  'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
-  'Jamaica', 'Japan', 'Jordan',
-  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
-  'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein',
-  'Lithuania', 'Luxembourg',
-  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands',
-  'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia',
-  'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Burma',
-  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger',
-  'Nigeria', 'North Korea', 'North Macedonia', 'Macedonia', 'Norway',
-  'Oman',
-  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
-  'Philippines', 'Poland', 'Portugal',
-  'Qatar',
-  'Romania', 'Russia', 'Rwanda',
-  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
-  'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal',
-  'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia',
-  'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan',
-  'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
-  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'East Timor',
-  'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
-  'Uganda', 'Ukraine', 'United Arab Emirates', 'UAE', 'United Kingdom', 'UK',
-  'Britain', 'England', 'Scotland', 'Wales', 'Northern Ireland',
-  'United States', 'USA', 'US', 'America', 'Uruguay', 'Uzbekistan',
-  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
-  'Yemen',
-  'Zambia', 'Zimbabwe',
-];
-
-const COUNTRY_ALIAS_TO_CODE = new Map([
-  ['united states', 'US'],
-  ['usa', 'US'],
-  ['us', 'US'],
-  ['america', 'US'],
-  ['united kingdom', 'GB'],
-  ['uk', 'GB'],
-  ['britain', 'GB'],
-  ['uae', 'AE'],
-  ['united arab emirates', 'AE'],
-  ['south sudan', 'SS'],
-  ['sudan', 'SD'],
-]);
-
-const COUNTRY_NAME_SET = new Set(
-  COUNTRY_NAMES.map((name) => normalizeCountryKey(name)),
-);
-
-function normalizeCountryKey(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function resolveCountryCode(address) {
-  const trimmed = String(address || '').trim();
-  if (/^[A-Z]{2}$/.test(trimmed.toUpperCase())) {
-    return trimmed.toUpperCase();
-  }
-  const normalized = normalizeCountryKey(trimmed);
-  return COUNTRY_ALIAS_TO_CODE.get(normalized) || null;
-}
-
-function isCountryQuery(address) {
-  if (!address) return false;
-  if (String(address).includes(',')) return false;
-  const normalized = normalizeCountryKey(address);
-  if (!normalized) return false;
-  if (COUNTRY_NAME_SET.has(normalized)) return true;
-  return COUNTRY_ALIAS_TO_CODE.has(normalized);
-}
-
 exports.handler = async (event) => {
   const originHeader = event.headers?.origin || '';
   const originLower = typeof originHeader === 'string' ? originHeader.toLowerCase() : '';
@@ -272,7 +178,7 @@ exports.handler = async (event) => {
       };
     }
 
-    if (action === 'summary' || action === 'prediction' || action === 'trace_cause' || action === 'research_briefing') {
+    if (action === 'summary' || action === 'prediction' || action === 'trace_cause') {
       const topicId = payload?.topicId || payload?.topic_id;
       if (!topicId || typeof topicId !== 'string') {
         console.warn('newsSensitiveData summary/prediction missing topicId', {
@@ -297,32 +203,6 @@ exports.handler = async (event) => {
         error: response.body?.error,
         reason: response.body?.reason,
       });
-      return {
-        statusCode: response.statusCode,
-        headers,
-        body: JSON.stringify(response.body),
-      };
-    }
-
-    if (action === 'geocode') {
-      const { address } = payload || {};
-      if (!address) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Missing address for geocoding' }),
-        };
-      }
-
-      const response = await geocodeWithMapbox(address);
-
-      console.info('newsSensitiveData geocode response', {
-        address,
-        statusCode: response.statusCode,
-        success: response.body?.success,
-        error: response.body?.error,
-      });
-
       return {
         statusCode: response.statusCode,
         headers,
@@ -881,248 +761,6 @@ exports.handler = async (event) => {
       }
     }
 
-    if (action === 'world_overview') {
-      const client = getDynamoClient();
-      try {
-        // Paginate the scan — SYSTEMS# items are spread across the table's 1MB pages.
-        const items = [];
-        let ExclusiveStartKey;
-        let pages = 0;
-        do {
-          const resp = await client.send(new ScanCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            FilterExpression: 'begins_with(PK, :p) AND SK = :sk',
-            ExpressionAttributeValues: { ':p': 'SYSTEMS#', ':sk': 'SYSTEMS_ANALYSIS' },
-            ProjectionExpression: 'countryName, nodes, edges, backbone, generatedAt',
-            ExclusiveStartKey,
-          }));
-          items.push(...(resp.Items || []));
-          ExclusiveStartKey = resp.LastEvaluatedKey;
-          pages += 1;
-        } while (ExclusiveStartKey && pages < 25);
-
-        const situations = items.map(it => {
-          const nodes = Array.isArray(it.nodes) ? it.nodes : [];
-          const dates = nodes.map(n => n.peakDate).filter(Boolean).sort();
-          const cats = {};
-          const dateCount = {};
-          for (const n of nodes) {
-            const c = n.category || 'other'; cats[c] = (cats[c] || 0) + 1;
-            if (n.peakDate) dateCount[n.peakDate] = (dateCount[n.peakDate] || 0) + 1;
-          }
-          const topCategory = Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-          const peak = Object.entries(dateCount).sort((a, b) => b[1] - a[1])[0]?.[0] || (dates[dates.length - 1] || null);
-          return {
-            country: it.countryName,
-            threadCount: nodes.length,
-            causalCount: Array.isArray(it.edges) ? it.edges.length : 0,
-            backboneCount: Array.isArray(it.backbone) ? it.backbone.length : 0,
-            topCategory,
-            earliest: dates[0] || null,
-            peak,
-            latest: dates[dates.length - 1] || null,
-            generatedAt: it.generatedAt || null,
-          };
-        }).filter(s => s.country && s.threadCount > 0)
-          // Batch 3 / F: regions (Europe, Asia, Middle East ...) are not country situations; their old SYSTEMS# rows stay in DynamoDB but are not served
-          .filter(s => isCountryName(s.country));
-
-        // Enrichment (additive, best-effort): attach the country's current risk
-        // read + its latest drift note so the world tier can color by risk tier
-        // and badge "read changed" — a failure here must never fail the action;
-        // absent fields render honestly (grey bubble / no badge), never invented.
-        try {
-          await Promise.all(situations.map(async (s) => {
-            try {
-              const [intelOut, driftOut] = await Promise.all([
-                client.send(new GetCommand({
-                  TableName: SUMMARIZE_PREDICT_TABLE,
-                  Key: { PK: `COUNTRY#${s.country}`, SK: 'COUNTRY_INTELLIGENCE' },
-                })),
-                client.send(new QueryCommand({
-                  TableName: SUMMARIZE_PREDICT_TABLE,
-                  KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-                  ExpressionAttributeValues: { ':pk': `COUNTRY#${s.country}`, ':prefix': 'DRIFT#' },
-                  ScanIndexForward: false,
-                  Limit: 1,
-                })),
-              ]);
-              if (intelOut.Item) {
-                if (intelOut.Item.riskLevel != null) s.riskLevel = intelOut.Item.riskLevel;
-                if (intelOut.Item.riskScore != null) s.riskScore = intelOut.Item.riskScore;
-                // scoring-model-v2: carry the dimension vector + lead axis so SpiderWorld
-                // can show WHICH axis drives each bubble (null on pre-v2 records).
-                if (intelOut.Item.dimensions != null) s.dimensions = intelOut.Item.dimensions;
-                if (intelOut.Item.lead != null) s.lead = intelOut.Item.lead;
-              }
-              const d = (driftOut.Items || [])[0];
-              if (d) {
-                s.latestDrift = {
-                  asOf: d.asOf,
-                  changeLevel: d.changeLevel,
-                  changeScore: d.changeScore,
-                  whyChanged: d.whyChanged,
-                  noSingleDriver: d.noSingleDriver,
-                };
-              }
-            } catch (e) {
-              console.warn('world_overview enrichment failed for', s.country, e?.message);
-            }
-          }));
-        } catch (e) {
-          console.warn('world_overview enrichment skipped', e?.message);
-        }
-
-        // Cross-country links: two countries connect if their graphs share SPECIFIC
-        // actors. Exclude ambient actors (present in ≥40% of countries — Trump, G7,
-        // big-power names) so it forms regional clusters, not a Trump/G7 hairball.
-        const actorsByCountry = {};
-        const disp = {};
-        for (const it of items) {
-          const set = new Set();
-          for (const nd of (Array.isArray(it.nodes) ? it.nodes : [])) {
-            for (const a of (Array.isArray(nd.actors) ? nd.actors : [])) {
-              const raw = String(a).trim();
-              const k = raw.toLowerCase();
-              if (!k || k === String(it.countryName || '').toLowerCase()) continue;
-              set.add(k);
-              if (!disp[k]) disp[k] = raw;
-            }
-          }
-          if (it.countryName) actorsByCountry[it.countryName] = set;
-        }
-        const df = {};
-        Object.values(actorsByCountry).forEach(set => set.forEach(a => { df[a] = (df[a] || 0) + 1; }));
-        const nCountries = Object.keys(actorsByCountry).length;
-        const ambientThresh = Math.max(4, Math.ceil(0.4 * nCountries));
-        const names = Object.keys(actorsByCountry);
-        const links = [];
-        for (let i = 0; i < names.length; i++) {
-          for (let j = i + 1; j < names.length; j++) {
-            const A = actorsByCountry[names[i]];
-            const B = actorsByCountry[names[j]];
-            const shared = [];
-            for (const a of A) if (B.has(a) && df[a] < ambientThresh) shared.push(a);
-            if (shared.length >= 2) {
-              shared.sort((x, y) => df[x] - df[y]); // most-specific first
-              links.push({ from: names[i], to: names[j], weight: shared.length, sharedActors: shared.slice(0, 6).map(k => disp[k] || k) });
-            }
-          }
-        }
-
-        console.info('newsSensitiveData world_overview response', { situations: situations.length, links: links.length, enriched: situations.filter(s => s.riskLevel != null).length });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: { situations, links } }) };
-      } catch (err) {
-        console.error('world_overview error', err);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'World overview failed' }) };
-      }
-    }
-
-    if (action === 'event_dossier' || action === 'dossier_analysis') {
-      const countryName = payload?.countryName || qs?.countryName;
-      const threadId = payload?.threadId || qs?.threadId;
-      const hops = Math.max(1, Math.min(2, parseInt(payload?.hops || 1, 10)));
-      if (!countryName || !threadId) {
-        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName or threadId' }) };
-      }
-      try {
-        const built = await buildEventDossier(countryName, threadId, hops);
-        if (!built.dossier) {
-          return { statusCode: built.statusCode || 500, headers, body: JSON.stringify({ success: false, error: built.error || 'Dossier build failed' }) };
-        }
-        const dossier = built.dossier;
-
-        if (action === 'event_dossier') {
-          console.info('newsSensitiveData event_dossier response', {
-            countryName, threadId, hops, nodes: dossier.nodes.length, edges: dossier.edges.length, backbone: dossier.backbone.length,
-          });
-          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: dossier }) };
-        }
-
-        // dossier_analysis: an AI reasons over the dossier under its own honesty contract.
-        let analysis = null;
-        let analysisError = null;
-        try {
-          analysis = await analyzeDossierWithLLM(dossier);
-        } catch (err) {
-          console.error('dossier_analysis LLM error', err.message);
-          analysisError = 'analysis_unavailable';
-        }
-        console.info('newsSensitiveData dossier_analysis response', {
-          countryName, threadId, hops, analyzed: !!analysis, err: analysisError,
-        });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: { dossier, analysis, analysisError } }) };
-      } catch (err) {
-        console.error('event_dossier/dossier_analysis error', err);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Dossier build failed' }) };
-      }
-    }
-
-    if (action === 'pair_analysis') {
-      const pairSlug = qs.pair || payload?.pair;
-      if (!pairSlug) {
-        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing pair slug' }) };
-      }
-      const client = getDynamoClient();
-      try {
-        const { Item } = await client.send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: `PAIR#${pairSlug}`, SK: 'PAIR_ANALYSIS' },
-        }));
-        if (!Item) {
-          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Pair analysis not found' }) };
-        }
-        const { PK, SK, ttl, ...rest } = Item;
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
-      } catch (e) {
-        console.error('pair_analysis error', e);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
-      }
-    }
-
-    if (action === 'pair_analyses_list') {
-      const client = getDynamoClient();
-      try {
-        // Paginate — same 1MB-page miss as weekly_brief; unpaginated this would
-        // silently drop pairs that sit past the first scan page.
-        const Items = [];
-        let ExclusiveStartKey;
-        let pages = 0;
-        do {
-          const resp = await client.send(new ScanCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
-            ExpressionAttributeValues: { ':prefix': 'PAIR#', ':sk': 'PAIR_ANALYSIS' },
-            ProjectionExpression: 'PK, pairTitle, currentState, dataQuality, countries, generatedAt',
-            ExclusiveStartKey,
-          }));
-          Items.push(...(resp.Items || []));
-          ExclusiveStartKey = resp.LastEvaluatedKey;
-          pages += 1;
-        } while (ExclusiveStartKey && pages < 25);
-        const qualityOrder = { rich: 0, moderate: 1, sparse: 2, thin: 3 };
-        const list = Items
-          .map(item => {
-            const slug = item.PK.replace('PAIR#', '');
-            const leadSentence = typeof item.currentState === 'string'
-              ? item.currentState.substring(0, 200)
-              : '';
-            return { slug, pairTitle: item.pairTitle, leadSentence, dataQuality: item.dataQuality, countries: item.countries, generatedAt: item.generatedAt };
-          })
-          .sort((a, b) => {
-            const qa = qualityOrder[a.dataQuality] ?? 4;
-            const qb = qualityOrder[b.dataQuality] ?? 4;
-            if (qa !== qb) return qa - qb;
-            return (b.generatedAt || '').localeCompare(a.generatedAt || '');
-          });
-        console.info('pair_analyses_list', { count: list.length });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: list }) };
-      } catch (e) {
-        console.error('pair_analyses_list error', e);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
-      }
-    }
-
     if (action === 'prediction_track_record') {
       // S8·T3: serve the precomputed aggregate from S3 (newsPredictionsSnapshot writes it every
       // 30 min). Only if the cache is missing/unreadable do we fall through to the live Scan below,
@@ -1660,7 +1298,6 @@ async function readSummaryPredictionCache(action, topicId) {
   const pk = `${PK_PREFIX}${topicId}`;
   const sk = action === 'prediction' ? PREDICTION_SK
            : action === 'trace_cause' ? 'TRACE_CAUSE'
-           : action === 'research_briefing' ? 'RESEARCH_BRIEFING'
            : SUMMARY_SK;
 
   try {
@@ -1905,67 +1542,6 @@ async function readArchiveRange(days) {
   }
 }
 
-// Build the event dossier for {countryName, threadId, hops}: fetch the stored
-// systems graph, assemble the k-hop subgraph, attach per-node genesis (bounded).
-// Shared by the event_dossier + dossier_analysis actions.
-async function buildEventDossier(countryName, threadId, hops) {
-  const client = getDynamoClient();
-  const { Item } = await client.send(new GetCommand({
-    TableName: SUMMARIZE_PREDICT_TABLE,
-    Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
-  }));
-  if (!Item) return { statusCode: 404, error: 'Systems analysis not found for this country' };
-  const { PK, SK, ttl, ...graph } = Item;
-
-  const base = assembleDossier(graph, threadId, { countryName, hops });
-  if (!base) return { statusCode: 404, error: 'Focal thread not found in this graph' };
-
-  const ids = base.nodes.map(n => n.id).slice(0, 10); // bound genesis reads
-  const genesisByThread = {};
-  await Promise.all(ids.map(async (id) => {
-    try {
-      const resp = await readNarrativeThread(id, ENTERPRISE_MAX_DAYS);
-      const entries = resp?.body?.data;
-      if (Array.isArray(entries) && entries.length) {
-        genesisByThread[id] = entries.slice(0, 12).map(e => ({
-          date: e.date || null,
-          event: e.title || e.summary || e.headline || null,
-          sources: e.sourceCount ?? (Array.isArray(e.sources) ? e.sources.length : (Array.isArray(e.sourceUrls) ? e.sourceUrls.length : null)),
-        }));
-      }
-    } catch { /* genesis is best-effort */ }
-  }));
-
-  const dossier = assembleDossier(graph, threadId, { countryName, hops, genesisByThread });
-  return { statusCode: 200, dossier };
-}
-
-// Reason over a dossier with the honesty contract (DeepSeek — public, ungated,
-// bounded by token cap; same engine as newsAnalyze/newsSystemsAnalysis).
-const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
-async function analyzeDossierWithLLM(dossier) {
-  if (!process.env.XAI_API_KEY) throw new Error('LLM key not configured');
-  const contract = dossier.reasoning_contract?.instructions || '';
-  const system = 'You are a geopolitical intelligence analyst. Reason ONLY over the event-dossier JSON provided. '
-    + `Grounding rules: ${contract} Cite entry titles for factual claims; label interpretation as "💭 judgment"; never invent a connection not in the dossier.`;
-  const user = `Here is an event dossier (JSON) — the neighborhood of a focal news event in a causal web, with provenance tags. Write a concise analyst read (max ~320 words) in three sections:
-1. **What formed this** — from the focal node's genesis timeline.
-2. **What it's connected to** — name the shared-actor backbone links (factual) and the causal links (model judgment), stating the mechanism for each causal link.
-3. **What it may trigger next + one counter-scenario** — labeled "💭 judgment".
-Treat any edge with flags.temporal_anomaly=true as CO-MOVEMENT, not proven causation.
-
-DOSSIER:
-${JSON.stringify(dossier)}`;
-
-  // Behind API Gateway (29 s integration limit, dossier build included): one 20 s attempt, no retry.
-  const { content } = await chat({
-    step: 'dossier_analysis', model: DOSSIER_LLM_MODEL, system, user, maxTokens: 800, temperature: 0.4, timeoutMs: 20000, retries: 0,
-  });
-  const text = content.trim();
-  if (!text) throw new Error('empty LLM response');
-  return text;
-}
-
 async function readNarrativeThread(threadId, days) {
   if (!TOPICS_TABLE) {
     return { statusCode: 500, body: { success: false, error: 'Topics table not configured' } };
@@ -2020,134 +1596,6 @@ async function readNarrativeThread(threadId, days) {
   } catch (err) {
     console.error('Narrative thread read error:', err);
     return { statusCode: 500, body: { success: false, error: 'Failed to read narrative thread' } };
-  }
-}
-
-// Mapbox geocoding helper - NEW FUNCTION
-async function geocodeWithMapbox(address) {
-  const MAPBOX_KEY = process.env.MAPBOX_GEOCODING_KEY;
-
-  if (!MAPBOX_KEY) {
-    console.error('Mapbox API key not configured');
-    return {
-      statusCode: 502,
-      body: { success: false, error: 'Mapbox API key not configured' },
-    };
-  }
-
-  try {
-    // Build Mapbox geocoding query
-    const query = encodeURIComponent(address);
-    const countryMatch = isCountryQuery(address);
-    const countryCode = countryMatch ? resolveCountryCode(address) : null;
-    const urlParams = new URLSearchParams({
-      limit: '1',
-      access_token: MAPBOX_KEY,
-    });
-    if (countryMatch) {
-      urlParams.set('types', 'country');
-      if (countryCode) {
-        urlParams.set('country', countryCode.toLowerCase());
-      }
-      console.info('Mapbox geocoding: country-only lookup enforced', {
-        address,
-        countryCode,
-      });
-    }
-    const url =
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?${urlParams.toString()}`;
-
-    console.info(`Mapbox geocoding request for: ${address}`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Mapbox HTTP error (${response.status}):`, errorText);
-      return {
-        statusCode: response.status,
-        body: { success: false, error: `Mapbox HTTP ${response.status}: ${errorText}` },
-      };
-    }
-
-    const data = await response.json();
-
-    if (!data || !data.features || data.features.length === 0) {
-      console.warn('No results found for address:', address);
-      return {
-        statusCode: 404,
-        body: { success: false, error: 'Location not found' },
-      };
-    }
-
-    const feature = data.features[0];
-    const coordinates = feature.center; // Mapbox returns [lng, lat]
-
-    if (!coordinates || coordinates.length < 2) {
-      console.error('Invalid coordinates in Mapbox response:', feature);
-      return {
-        statusCode: 502,
-        body: { success: false, error: 'Invalid coordinates received' },
-      };
-    }
-
-    // IMPORTANT: Mapbox returns coordinates in [lng, lat] order
-    const [lng, lat] = coordinates;
-
-    const latNum = parseFloat(lat);
-    const lngNum = parseFloat(lng);
-    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-      console.error('Non-finite coordinates:', { lat, lng });
-      return {
-        statusCode: 502,
-        body: { success: false, error: 'Invalid coordinate values' },
-      };
-    }
-
-    // Extract additional location context from Mapbox response
-    const context = feature.context || [];
-    let country = 'UNKNOWN';
-    let countryName = null;
-    let placeName = feature.text || address;
-    let regionName = null;
-
-    context.forEach((item) => {
-      if (item.id?.startsWith('country')) {
-        country = item.short_code?.toUpperCase() || 'UNKNOWN';
-        countryName = item.text;
-      } else if (item.id?.startsWith('region')) {
-        regionName = item.text;
-      } else if (item.id?.startsWith('place')) {
-        placeName = item.text;
-      }
-    });
-
-    const result = {
-      lat: latNum,
-      lng: lngNum,
-      country: country,
-      countryName,
-      cityName: placeName !== address ? placeName : null,
-      provinceName: regionName,
-      displayName: feature.place_name || `${placeName}, ${countryName || country}`,
-    };
-
-    console.info(`Mapbox geocoding success: ${address} -> ${country} (${latNum},${lngNum})`);
-
-    return {
-      statusCode: 200,
-      body: { success: true, data: result },
-    };
-
-  } catch (error) {
-    console.error('Mapbox geocoding error:', error);
-    return {
-      statusCode: 502,
-      body: { success: false, error: error?.message || 'Geocoding failed' },
-    };
   }
 }
 

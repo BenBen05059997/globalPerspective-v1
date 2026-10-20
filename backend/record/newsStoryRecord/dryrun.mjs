@@ -172,7 +172,7 @@ const report = await makeHandler({
   store: {load:async()=>input},
   s3json,
   llm: null,
-  now: () => `${date}T05:45:00Z`
+  now: () => new Date().toISOString()
 })({
   date,
   shadow: true

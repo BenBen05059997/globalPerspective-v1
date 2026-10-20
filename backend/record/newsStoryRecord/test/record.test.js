@@ -518,3 +518,17 @@ test('missing run-date archive is explicitly stale in index',async()=>{
  const d=data();d.coverage.missingDays=[date];const s=setup(d);await s.run({date});
  assert.equal(s.get('record/index.json').stale,true);
 });
+
+test('duplicate 48-hour cutoff uses the injected run time, not a later day boundary',()=>{
+ const base={threadId:'a',born:'2026-10-16',bornAt:'2026-10-16T00:00:00Z',actors:['Actor'],countries:['CAN'],events:[{outlets:entry().sources}]};
+ const other={...base,threadId:'b',born:'2026-10-17',bornAt:'2026-10-17T12:00:00Z'};
+ assert.equal(duplicates([base,other],date,`${date}T05:45:00Z`).length,1);
+ assert.equal(duplicates([base,other],date,`${date}T13:00:00Z`).length,0);
+});
+
+test('duplicate proposal prefers the earlier actual birth within the same date',()=>{
+ const base={threadId:'z',born:date,bornAt:`${date}T04:00:00Z`,actors:['Actor'],countries:['CAN'],events:[{outlets:entry().sources}]};
+ const other={...base,threadId:'a',bornAt:`${date}T12:00:00Z`};
+ const [proposal]=duplicates([base,other],date,`${date}T13:00:00Z`);
+ assert.equal(proposal.from,'a');assert.equal(proposal.into,'z');
+});

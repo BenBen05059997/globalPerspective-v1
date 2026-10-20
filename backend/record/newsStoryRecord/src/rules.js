@@ -9,11 +9,13 @@ const lastStatus = b => b.status.at(-1)?.status || 'hold';
 const live = b => ['hold', 'late'].includes(lastStatus(b));
 const verdictOrder = sk => sk === 'VERDICT' ? 1 : Number(/^VERDICT#(\d+)$/.exec(sk)?.[1] || 0);
 const intersect = (a, b) => [...new Set(a)].filter(x => b.includes(x));
-function duplicates(stories, date) {
+function duplicates(stories, date, asOf = null) {
+  const cutoff = asOf && day(asOf) === date ? Date.parse(asOf) : Date.parse(`${addDays(date, 1)}T00:00:00Z`);
   const out = [];
   for (let i = 0; i < stories.length; i++) for (let j = i + 1; j < stories.length; j++) {
-    const [a, b] = [stories[i], stories[j]].sort((x, y) => x.born.localeCompare(y.born) || x.threadId.localeCompare(y.threadId));
-    if (Date.parse(`${addDays(date, 1)}T00:00:00Z`) - Date.parse(b.bornAt || `${b.born}T00:00:00Z`) > 48 * 3600000) continue;
+    const [a, b] = [stories[i], stories[j]].sort((x, y) => (x.bornAt || x.born).localeCompare(y.bornAt || y.born) || x.threadId.localeCompare(y.threadId));
+    const age = cutoff - Date.parse(b.bornAt || `${b.born}T00:00:00Z`);
+      if (age < 0 || age > 48 * 3600000) continue;
     const actors = intersect(a.actors.map(normalizeActor), b.actors.map(normalizeActor));
     const places = intersect(a.countries, b.countries);
     const headlines = intersect(a.events.flatMap(e => e.outlets.map(o => `${normalizeActor(o.source)}|${normalizeActor(o.title)}`)), b.events.flatMap(e => e.outlets.map(o => `${normalizeActor(o.source)}|${normalizeActor(o.title)}`))).filter(h => h.split('|').every(Boolean));
@@ -27,7 +29,8 @@ function duplicates(stories, date) {
         headlines,
         born: b.born,
         bornAt: b.bornAt || null,
-        window: '48h before end of UTC run date'
+        window: '48h before asOf',
+            asOf: new Date(cutoff).toISOString()
       }
     });
   }

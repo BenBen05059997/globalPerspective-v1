@@ -266,7 +266,8 @@ function makeHandler({
             status: b.status.at(-1) || null
           }))),
           entries: lineEntries,
-          previousLine: r.line.text
+          previousLine: r.line.text,
+          previousWrittenAt: r.line.writtenAt
         });
         if (line?.text) {
           if (line.contradicted && r.line.text) {
@@ -310,7 +311,7 @@ function makeHandler({
       const won = await s3json.putOnce(`${key}${date}.json`, r);
       stories.push(won ? r : await s3json.getJson(`${key}${date}.json`));
     }
-    report.proposedMerges = duplicates(stories, date);
+    report.proposedMerges = duplicates(stories, date, now());
     const branches = stories.flatMap(r => r.forks.flatMap(f => f.branches));
     report.threadsProcessed = stories.length;
     report.birthsOnDate = stories.filter(r => r.born === date).length;

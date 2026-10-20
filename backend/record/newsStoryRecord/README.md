@@ -1,6 +1,6 @@
 # newsStoryRecord
 
-Builds a dated story account from retained archives, thread analyses and drift notes, prediction forks, resolver verdicts and confirmed web links. LLM dependencies are injectable; local runs use no LLM. Duplicate candidates are proposals only, with actors, place and shared outlet headline evidence.
+Builds a dated story account from retained archives, thread analyses and drift notes, prediction forks, resolver verdicts and confirmed web links. LLM dependencies are injectable; local runs use no LLM. Duplicate candidates are proposals only, with actors, place and shared outlet headline evidence. The 48-hour window uses the injected run time for the run date; historical dates use the end of that UTC day.
 
 ## Deployment
 

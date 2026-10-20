@@ -39,11 +39,14 @@ export function singleOutletCount(entries) {
   return { single, total };
 }
 
-/** The countries the story web was built for, or null when the index does not say. */
+/** The countries with a story web in the index (`websUsed`, every fresh per-country web), falling back to the
+ *  run's `targets`; null when the index says neither. `targets` alone is only the last run's list. */
 export function webCountries(webIndex) {
-  const list = webIndex?.targets?.countries;
+  const used = webIndex?.websUsed;
+  const list = Array.isArray(used) && used.length ? used.map((w) => w?.country) : webIndex?.targets?.countries;
   if (!Array.isArray(list)) return null;
-  return list.map((c) => (typeof c === 'string' ? c : c?.countryName || c?.name)).filter(Boolean);
+  const names = list.map((c) => (typeof c === 'string' ? c : c?.countryName || c?.name)).filter(Boolean);
+  return names.length ? names : null;
 }
 
 /** @returns {string[]} one plain sentence per limit; "Not graded" is always present. */

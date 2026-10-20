@@ -37,6 +37,11 @@ describe('webCountries', () => {
     expect(webCountries(null)).toBeNull();
     expect(webCountries({})).toBeNull();
   });
+  it('prefers every per-country web (websUsed) over the last run\'s targets, and treats an empty list as unknown', () => {
+    const idx = { websUsed: [{ country: 'Iran' }, { country: 'Japan' }], targets: { count: 0, countries: [] } };
+    expect(webCountries(idx)).toEqual(['Iran', 'Japan']);
+    expect(webCountries({ targets: { count: 0, countries: [] } })).toBeNull();
+  });
 });
 
 describe('whatWeDontKnow', () => {

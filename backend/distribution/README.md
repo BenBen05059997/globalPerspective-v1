@@ -18,7 +18,7 @@ is emailed each breaking alert. It reads what the pipeline group wrote and write
 
 1. The pipeline group fills NewsCache (`latest`, `today-archive`) and the thread and country analysis rows.
 2. Three times a day newsBreakingAlert scores stories and writes a `proposed` alert row. Its live `DRY_RUN` is `false`, so it emails the operator address (not subscribers) when a story clears the bar.
-3. With `DRY_RUN=false` (live) newsBreakingAlert emails the operator and marks the alert `sent` with no human step; `cli/breaking/review.js` can still set `confirmed`. Sent and confirmed alerts feed the site bell (newsRecommend `list_alerts`, see the read-api group). Subscriber breaking and drift emails are DISABLED, so they send nothing.
+3. With `DRY_RUN=false` (live) newsBreakingAlert emails the operator (the email says it is not public) and marks the alert `sent`. A `sent` alert is NOT public: it reaches the site bell and strip (newsRecommend `list_alerts`, see the read-api group) only after the operator runs `node backend/distribution/cli/breaking/review.js` and confirms it. Subscriber breaking and drift emails are DISABLED, so they send nothing.
 4. At 23:00 Tokyo time newsPostDevTo writes the daily brief. The site reads it through `daily_brief` on the `/briefings` page (`/daily` redirects there).
 5. Every three hours newsPostLinkedin posts new topics to LinkedIn and Bluesky; a platform posts only when its credentials are set.
 6. Sunday 06:00 UTC newsWeeklyBrief writes and publishes the week's brief. The site serves it through `weekly_brief` on `/briefings`.

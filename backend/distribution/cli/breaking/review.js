@@ -5,17 +5,16 @@
  * backend/distribution/cli/breaking/review.js — human confirmation queue for breaking-news alerts.
  *
  * The newsBreakingAlert Lambda detects a significant story each cycle and writes a
- * `status: 'proposed'` row to GlobalPerspectiveBreakingAlerts. It NEVER auto-sends.
- * This script lets the operator review each proposal, optionally add their own words
- * (an editor note that leads the email), and either CONFIRM it (status → 'confirmed',
- * which is what the future SES send step will pick up) or REJECT it. Mirrors
- * predictions/review.js — AWS CLI, no public auth surface, no npm deps.
- *
- * Until SES is wired (Phase 3), confirming only marks the proposal ready — nothing
- * is emailed. See BREAKING_ALERTS_PLAN.md.
+ * `status: 'proposed'` row to GlobalPerspectiveBreakingAlerts. With DRY_RUN=false (live) it
+ * also emails the operator and flips the row to `status: 'sent'`. Neither status is public:
+ * the site bell and strip (newsRecommend list_alerts) show only `confirmed` rows.
+ * This script walks every `proposed` and `sent` row (anything not yet confirmed or rejected),
+ * lets the operator optionally add their own words (an editor note that leads the stored
+ * draft), and either CONFIRM it (status → 'confirmed', which publishes it to readers) or
+ * REJECT it. Mirrors predictions/review.js — AWS CLI, no public auth surface, no npm deps.
  *
  * Usage:
- *   node backend/distribution/cli/breaking/review.js            # interactive: walk proposed alerts
+ *   node backend/distribution/cli/breaking/review.js            # interactive: walk unconfirmed (proposed/sent) alerts
  *   node backend/distribution/cli/breaking/review.js --list     # just list what's awaiting review
  */
 
@@ -68,9 +67,9 @@ function scanProposed() {
     const skArg = startKey ? `--starting-token '${startKey}'` : '';
     const out = aws(
       `dynamodb scan --table-name ${TABLE} --region ${REGION} ` +
-      `--filter-expression "#s = :p" ` +
+      `--filter-expression "#s = :p OR #s = :s" ` +
       `--expression-attribute-names '{"#s":"status"}' ` +
-      `--expression-attribute-values '{":p":{"S":"proposed"}}' ` +
+      `--expression-attribute-values '{":p":{"S":"proposed"},":s":{"S":"sent"}}' ` +
       `--output json ${skArg}`,
     );
     const page = JSON.parse(out);
@@ -106,7 +105,7 @@ function show(item) {
 async function main() {
   const queue = scanProposed();
   if (!queue.length) {
-    console.log('No proposed alerts awaiting review. ✓');
+    console.log('No unconfirmed alerts awaiting review. ✓');
     return;
   }
   console.log(`${queue.length} alert(s) awaiting review (highest-scoring first).`);
@@ -149,7 +148,7 @@ async function main() {
       item.confirmedAt = new Date().toISOString();
       item.confirmedBy = 'human';
       putItem(item);
-      console.log('  → confirmed (cleared to send once SES is wired).');
+      console.log('  → confirmed (now public on the site bell and strip).');
     } else {
       console.log('  (unrecognized — skipped)');
     }

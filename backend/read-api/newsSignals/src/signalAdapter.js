@@ -285,9 +285,9 @@ function fromCountryIntelligence(rec, { emittedAt } = {}) {
 }
 
 // Breaking-alert proposal (GlobalPerspectiveBreakingAlerts) → breaking signal. Only
-// confirmed/sent alerts are exposed (proposed/rejected stay internal).
+// operator-confirmed alerts are exposed (proposed/sent/rejected stay internal).
 function fromBreakingAlert(rec, { emittedAt } = {}) {
-  if (!rec || (rec.status !== 'confirmed' && rec.status !== 'sent')) return null;
+  if (!rec || (rec.status !== 'confirmed')) return null;
   return makeEnvelope({
     type: 'breaking',
     scopeId: rec.alertKey,

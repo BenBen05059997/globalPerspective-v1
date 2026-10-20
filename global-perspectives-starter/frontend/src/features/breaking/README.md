@@ -6,11 +6,11 @@ a hook resolves one alert id for the `/breaking/:id` redirect. Readers see a sho
 the story or the map; they never see a "breaking" page.
 
 ## Status
-- Live (bell and strip). The feed shows rows whose status is `confirmed` or `sent` (`newsRecommend` `listAlerts`).
+- Live (bell and strip). The feed shows only rows the operator has confirmed (status `confirmed`; `newsRecommend` `listAlerts`). `sent` and `proposed` rows are hidden.
 - Live config differs from the older docs: `newsBreakingAlert` runs with `DRY_RUN=false` and a mail key set, so a
-  detection is emailed to one operator address and marked `sent` with no human step, which also makes it public
-  (code: `markSent` in `backend/distribution/newsBreakingAlert/src/index.js`). The table holds one row, `sent`,
-  alerted 2026-10-09. `review.js` (`proposed` -> `confirmed`) is only used when a proposal is held back.
+  detection is emailed to one operator address and marked `sent` (code: `markSent` in
+  `backend/distribution/newsBreakingAlert/src/index.js`). `sent` is not public: the operator runs
+  `node backend/distribution/cli/breaking/review.js` (`proposed`/`sent` -> `confirmed`) to publish it to the bell and strip.
 - Subscriber breaking emails are off: `TriggerBreakingEmailSend` is DISABLED (enabling sends needs an operator yes).
 
 ## Routes
@@ -44,8 +44,8 @@ the story or the map; they never see a "breaking" page.
 ## Pipeline
 1. The pipeline writes the latest topics to `NewsCache` (key `latest`) and thread records to `SummarizeAndPredict`.
 2. `newsBreakingAlert` (every 8 hours) loads them, groups topics by story and scores each (`significance.js`).
-3. A story over the threshold is written as a `proposed` row; with `DRY_RUN=false` it is emailed and marked `sent`.
-4. The browser polls `list_alerts` every 5 minutes (`useNotifications`); `newsRecommend` scans the table for `confirmed` or `sent`.
+3. A story over the threshold is written as a `proposed` row; with `DRY_RUN=false` it is emailed to the operator and marked `sent`; neither is public.
+4. The browser polls `list_alerts` every 5 minutes (`useNotifications`); `newsRecommend` scans the table for `confirmed` only (set by the operator in `review.js`).
 5. `NotificationBell` counts alerts newer than `gp_notif_read_at`; `BreakingStrip` shows the newest one under 24 hours old.
 6. A click goes to `/breaking/:id`; `BreakingDetailRedirect` calls `get_alert` and sends the reader to the story or the map.
 

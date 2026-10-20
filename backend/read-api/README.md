@@ -32,7 +32,7 @@ Proxy actions and the feature that calls each (found by grep in `frontend/src`):
 - Map and Analysis Studio (`/analyze`) reuse `topics`, `archive_range`, `narrative_thread`, `summary`; `geocode` is called from shared frontend code.
 - No frontend reference found: `country_preview`, `thread_preview`, `dossier_analysis`, `event_dossier`, `pair_analysis`, `pair_analyses_list`, `research_briefing`, `world_overview`, `rss` (GET).
 
-Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`, `list_alerts`, `get_alert`, `unsubscribe`; newsSavedItems `save_item`, `unsave_item`, `get_saved_items`.
+Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`, `list_alerts`, `get_alert` (both serve only operator-confirmed breaking alerts), `unsubscribe`; newsSavedItems `save_item`, `unsave_item`, `get_saved_items`.
 
 ## Shared code
 

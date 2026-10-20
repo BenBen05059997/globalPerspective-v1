@@ -1,13 +1,15 @@
 'use strict';
 
 // newsBreakingAlert — detect a genuinely significant breaking story each pipeline
-// cycle and PROPOSE it for a broadcast email. It never auto-sends: it writes a
-// `status: 'proposed'` record that a human reviews/confirms (and can annotate with
-// their own words) via breaking/review.js before anything goes out — mirroring the
-// predictions/review.js + economic-quality human-review pattern.
+// cycle (at most one per run) and write it to GlobalPerspectiveBreakingAlerts as a
+// `status: 'proposed'` row. With DRY_RUN=false and RESEND_API_KEY set it ALSO emails the
+// operator (ALERT_EMAIL_TO) the rendered alert and flips the row to `status: 'sent'`.
+// That email is operator-only: neither `proposed` nor `sent` is shown to readers. The site
+// bell/strip (newsRecommend) and the signal API (newsSignals) serve only `confirmed` rows,
+// which the operator sets with breaking/review.js after reading the email.
 //
-// Pipeline:  detect (deterministic, significance.js) → propose → [LLM verify, later]
-//            → human confirm + editor note → send (SES, later).
+// Pipeline:  detect (deterministic, significance.js) → propose → verify (LLM)
+//            → email operator (live) → operator confirms via review.js → public.
 //
 // DRY_RUN (default true): logs the candidate + the full would-be email, writes the
 // proposal/dedupe row, sends nothing. See BREAKING_ALERTS_PLAN.md.
@@ -27,9 +29,8 @@ const ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBrea
 const SITE_URL = process.env.SITE_URL; // optional origin override; links.js holds the default
 
 const DRY_RUN = process.env.DRY_RUN !== 'false'; // default ON — never sends until explicitly disabled
-// Auto-send target. Audience of one for now ("send me first so I can eyeball"): each new
-// detection emails the operator directly, no human-confirm step. The recipient list
-// becomes real subscribers once the public signup + domain verification land.
+// Email target: the operator only. Each new detection emails the operator, who then confirms
+// (publishes) it with review.js; readers never receive or see it before that.
 const ALERT_EMAIL_TO = process.env.ALERT_EMAIL_TO || 'benlai310@gmail.com';
 const ALERT_EMAIL_FROM = process.env.ALERT_EMAIL_FROM || 'onboarding@resend.dev';
 const THRESHOLD = Number(process.env.SIGNIFICANCE_THRESHOLD) || SIGNIFICANCE_THRESHOLD;
@@ -253,7 +254,7 @@ async function writeProposal(group, scored, story, verify, email) {
   return item;
 }
 
-// Mark a proposal row as sent (so the in-app feed reflects it + it isn't resent).
+// Mark a proposal row as emailed to the operator (status `sent`). Still NOT public until confirmed.
 async function markSent(threadId) {
   try {
     await ddb().send(new UpdateCommand({
@@ -266,6 +267,19 @@ async function markSent(threadId) {
   } catch (err) {
     console.warn(`markSent failed for ${threadId} (non-fatal): ${err.message}`);
   }
+}
+
+// Operator-facing wording on top of the rendered alert: the email is not public until confirmed.
+// The stored `draft` stays the plain alert; only the sent copy carries this notice.
+function operatorCopy(email, threadId) {
+  const cmd = 'node backend/distribution/cli/breaking/review.js';
+  const text = `NOT PUBLIC YET. This alert is hidden from readers until you confirm it.\nTo confirm or reject: ${cmd}   (add --list to just list; alert id ${threadId})\n\n`;
+  const html = `<div style="font:14px/1.4 Arial,sans-serif;background:#fff4d6;color:#5a3d00;padding:10px 14px;border-bottom:2px solid #e0a800;"><strong>NOT PUBLIC YET.</strong> This alert is hidden from readers until you confirm it.<br>To confirm or reject: <code>${cmd}</code> (add <code>--list</code> to just list; alert id ${String(threadId).replace(/[<>&"]/g, '')})</div>`;
+  return {
+    subject: `[Unconfirmed] ${email.subject}`.slice(0, 150),
+    text: text + email.text,
+    html: email.html.replace(/(<body[^>]*>)/, `$1${html}`),
+  };
 }
 
 // ── Core ────────────────────────────────────────────────────────────────────────
@@ -342,7 +356,7 @@ async function run() {
     return { ok: true, proposed: 1, sent: false, threadId: chosen.group.threadId, score: chosen.scored.score, dryRun: true };
   }
 
-  // Auto-send (no human gate): email the operator directly, then mark sent.
+  // Live: email the operator (not readers), then mark sent. Readers see it only once confirmed.
   if (!process.env.RESEND_API_KEY) {
     console.warn('[breaking] DRY_RUN off but RESEND_API_KEY unset — wrote proposal, sent nothing.');
     return { ok: true, proposed: 1, sent: false, threadId: chosen.group.threadId, reason: 'no_key' };
@@ -350,7 +364,7 @@ async function run() {
   try {
     const r = await sendEmail({
       from: ALERT_EMAIL_FROM, to: ALERT_EMAIL_TO,
-      subject: email.subject, text: email.text, html: email.html,
+      ...operatorCopy(email, chosen.group.threadId),
     });
     await markSent(chosen.group.threadId);
     console.log(`[breaking] SENT → ${ALERT_EMAIL_TO} (id: ${r.id || 'n/a'})`);
@@ -379,3 +393,4 @@ if (require.main === module) {
   });
 }
 module.exports.maxRegionRisk = maxRegionRisk; // for tests
+module.exports.operatorCopy = operatorCopy; // for tests

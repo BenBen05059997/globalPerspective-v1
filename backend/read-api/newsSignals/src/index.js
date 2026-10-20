@@ -180,14 +180,14 @@ async function build() {
   }
   if (skippedCountries) console.info(`signals: skipped ${skippedCountries} region / stale COUNTRY# record(s)`);
 
-  // 4. Confirmed/sent breaking alerts
+  // 4. Operator-confirmed breaking alerts only
   let breaking = [];
   try {
     breaking = await scanAll({
       TableName: BREAKING_ALERTS_TABLE,
-      FilterExpression: '#s = :c OR #s = :sent',
+      FilterExpression: '#s = :c',
       ExpressionAttributeNames: { '#s': 'status' },
-      ExpressionAttributeValues: { ':c': 'confirmed', ':sent': 'sent' },
+      ExpressionAttributeValues: { ':c': 'confirmed' },
     });
   } catch (err) { console.warn('breaking scan skipped:', err.message); }
   for (const rec of breaking) collect(adapter.fromBreakingAlert(rec, { emittedAt }), 'breaking');

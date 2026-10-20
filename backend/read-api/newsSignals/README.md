@@ -9,7 +9,7 @@ PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads i
 
 ## Reads / writes
 - S3: `WORLD_BUCKET`, writes `signals/latest.json` + `signals/snapshots/<YYYY-MM-DD>.json` (prefix `SIGNALS_PREFIX`); SERVE reads latest.json, cached by ETag. Not exposed via the Worker `/data/*` route.
-- DynamoDB: `SUMMARIZE_PREDICT_TABLE` scans `ECON#THREAD#`/`ECONOMIC_IMPACT` (hasImpact) and `COUNTRY#`/`COUNTRY_INTELLIGENCE`; `PREDICTION_LOG_TABLE` full scan; `BREAKING_ALERTS_TABLE` status confirmed|sent; `API_KEYS_TABLE` (GlobalPerspectiveApiKeys) GetItem on `keyHash` plus `RL#<hash>#<minute>` rate-limit counters (TTL 120s)
+- DynamoDB: `SUMMARIZE_PREDICT_TABLE` scans `ECON#THREAD#`/`ECONOMIC_IMPACT` (hasImpact) and `COUNTRY#`/`COUNTRY_INTELLIGENCE`; `PREDICTION_LOG_TABLE` full scan; `BREAKING_ALERTS_TABLE` status confirmed only (operator-confirmed alerts); `API_KEYS_TABLE` (GlobalPerspectiveApiKeys) GetItem on `keyHash` plus `RL#<hash>#<minute>` rate-limit counters (TTL 120s)
 - Other env names: `SITE_URL`, `SIGNAL_TTL_DAYS` (default 120, event_time retention)
 
 ## Minting a key

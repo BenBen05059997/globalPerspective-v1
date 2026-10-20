@@ -5,7 +5,7 @@ breaking scripts also call Resend) and run from the repo root with the operator'
 
 ## breaking/
 
-- `review.js`: walks `proposed` rows in `GlobalPerspectiveBreakingAlerts`, lets the operator add an editor note, then confirm or reject each. `--list` only lists them. Run it after newsBreakingAlert proposes a story; only `confirmed` rows reach the site bell and subscriber breaking emails.
+- `review.js`: walks `proposed` and `sent` (emailed, not yet confirmed) rows in `GlobalPerspectiveBreakingAlerts`, lets the operator add an editor note, then confirm or reject each. `--list` only lists them. Run it after the operator email arrives; only `confirmed` rows reach the site bell, the strip, the signal API and subscriber breaking emails.
 - `send.js <alertKey> [recipient] [from]`: sends one stored alert draft through Resend to one address and marks it sent. It refuses unless the row is `confirmed`; `--force` allows a `proposed` row. Needs `RESEND_API_KEY` in the environment. Run it for a "just me first" end-to-end check.
 - `send-test.js [recipient] [from]`: renders a made-up sample alert with the Lambda's own renderer and sends it through Resend. Run it to see the email design in a real inbox. Needs `RESEND_API_KEY`.
 

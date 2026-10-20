@@ -11,7 +11,7 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - DynamoDB `TOPICS_DDB_TABLE`: reads `id = latest`
 - DynamoDB `SAVED_ITEMS_TABLE`: Query by `uid`
 - DynamoDB `USER_PREFS_TABLE` (key `uid`): caches `interestProfile`; reads/writes prefs, `followedCountries` (String Set, atomic ADD/DELETE), consent and `unsubToken`
-- DynamoDB `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`): Scan for status `confirmed`/`sent`; GetItem by `alertKey`
+- DynamoDB `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`): Scan for status `confirmed` only (`sent` and `proposed` stay hidden until the operator confirms with `cli/breaking/review.js`); GetItem by `alertKey`
 - DynamoDB `USERS_DDB_TABLE` (default `GlobalPerspectiveUserTable`): reads `tier` (written by newsPolarBilling)
 - External APIs: Google securetoken x509 certs (JWT verify, `FIREBASE_PROJECT_ID`)
 

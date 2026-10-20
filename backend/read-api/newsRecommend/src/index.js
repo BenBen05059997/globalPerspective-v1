@@ -260,17 +260,19 @@ function alertStoryUrl(it) {
 
 // ── In-app notification feed (the bell) ────────────────────────────────────────
 // PUBLIC, no auth — the breaking-alert feed is a broadcast (the same global, already-
-// public stories for everyone). Returns confirmed/sent alerts, newest first. Read-state
+// public stories for everyone). Returns ONLY operator-confirmed alerts (status `confirmed`,
+// set by cli/breaking/review.js), newest first; `proposed`, `sent` (operator emailed, not yet
+// confirmed) and `rejected` rows are never public. Read-state
 // (unread badge) is client-side (localStorage), so no per-user write is needed here.
 // Returns [] honestly if the table is absent/empty (it stays empty until the breaking
-// pipeline starts producing confirmed alerts).
+// operator has confirmed an alert).
 async function listAlerts() {
   try {
     const out = await ddb().send(new ScanCommand({
       TableName: BREAKING_ALERTS_TABLE,
-      FilterExpression: '#s = :confirmed OR #s = :sent',
+      FilterExpression: '#s = :confirmed',
       ExpressionAttributeNames: { '#s': 'status' },
-      ExpressionAttributeValues: { ':confirmed': 'confirmed', ':sent': 'sent' },
+      ExpressionAttributeValues: { ':confirmed': 'confirmed' },
     }));
     return (out.Items || [])
       .map((it) => ({
@@ -309,8 +311,8 @@ async function getAlert(alertKey) {
       Key: { alertKey },
     }));
     const it = out.Item;
-    // Only surface human-confirmed/sent alerts publicly — never raw proposals.
-    if (!it || (it.status !== 'confirmed' && it.status !== 'sent')) return null;
+    // Only operator-confirmed alerts are public — never proposed, sent-but-unconfirmed or rejected rows.
+    if (!it || it.status !== 'confirmed') return null;
     return {
       id: it.alertKey,
       title: it.title || 'Breaking story',
@@ -457,3 +459,5 @@ exports.handler = async (event = {}) => {
     return httpReply(500, { ok: false, error: 'internal_error' });
   }
 };
+module.exports.listAlerts = listAlerts; // for tests
+module.exports.getAlert = getAlert; // for tests

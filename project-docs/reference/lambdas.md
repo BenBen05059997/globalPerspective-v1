@@ -10,7 +10,7 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 |---|---|---|---|---|---|
 | `newsAnalyze` | `backend/membership-studio/newsAnalyze/src` | nodejs20.x | membership-studio | Function URL (NONE) | Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md). |
 | `newsAnalyze-sandbox` | — | nodejs20.x | membership-studio | Function URL (NONE) | Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh. |
-| `newsBoard` | `backend/board/newsBoard/src` | nodejs22.x — NOT FOUND LIVE | board | — | Not created in AWS yet (plan stage 4: operator creates the role and the function). deployed zip ships node_modules |
+| `newsBoard` | `backend/board/newsBoard/src` | nodejs22.x | board | Function URL (NONE) | deployed zip ships node_modules |
 | `newsBreakingAlert` | `backend/distribution/newsBreakingAlert/src` | nodejs22.x | distribution | TriggerBreakingAlert cron(35 4/8 * * ? *) (ENABLED) |  |
 | `newsClientErrors` | `backend/read-api/newsClientErrors/src` | nodejs24.x | read-api | Function URL (NONE) |  |
 | `newsCountryFactsUpdater` | `backend/pipeline/newsCountryFactsUpdater/src` | nodejs24.x | pipeline | Fact cron(0 5 ? * MON *) (ENABLED) |  |

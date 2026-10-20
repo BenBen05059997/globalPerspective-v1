@@ -1,0 +1,408 @@
+{
+  "weekEnding": "2026-10-18",
+  "status": "draft",
+  "generatedAt": "2026-10-20T05:00:34.897Z",
+  "producer": "claude-code weekly-brief v1 (W0 example, reshaped from the hand-run draft 2)",
+  "inputsHash": "none: hand-run draft 2, no pull output existed",
+  "lead": {
+    "headline": "Ship attacks near Hormuz keep rising, and we expect another vessel to be hit by 1 November",
+    "argument": {
+      "text": "Attacks on ships near the Strait of Hormuz reached a record this week and mines are now disabling tankers, so the risk comes from the sea itself and not from one actor, which makes a quick end to the strikes unlikely.",
+      "label": "judgment",
+      "confidence": "medium"
+    },
+    "happened": {
+      "text": "BBC Verify counted 12 vessels struck in a week, and Iran says two more tankers caught fire after hitting mines.",
+      "sources": [
+        {
+          "outlet": "bbc.com",
+          "url": "https://www.bbc.co.uk/news/articles/cmde8dpg8g0no?at_medium=RSS&amp;at_campaign=rss",
+          "archive": "archive#2026-10-16",
+          "topicId": "Ship Attacks Near Hormuz Reach Record High as Oil Exports Slow-1"
+        },
+        {
+          "outlet": "aljazeera.com",
+          "url": "https://www.aljazeera.com/news/2026/10/18/iran-says-two-tankers-catch-fire-after-hitting-mines-in-strait-of-hormuz?traffic_source=rss",
+          "archive": "archive#2026-10-18",
+          "topicId": "Iran Says Two Tankers Catch Fire After Hitting Mines in Strait of Hormuz-6"
+        }
+      ]
+    },
+    "expect": {
+      "text": "We expect another vessel to be struck or to hit a mine by 1 November, with a probability of 80%.",
+      "label": "judgment",
+      "confidence": "medium"
+    },
+    "wouldProveWrong": {
+      "condition": "No further vessel is struck or hits a mine near Hormuz, most likely because traffic through the strait has stopped.",
+      "by": "2026-11-01"
+    },
+    "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678"
+  },
+  "moved": [
+    {
+      "threadId": "thread-trump-announces-us-to-import-r-8c45a3",
+      "title": "Trump's Russia sanctions pause",
+      "kind": "path",
+      "before": "the open question was whether Russia would honour the 'energy ceasefire' Trump announced.",
+      "after": "the open question is whether Trump's pause on the new Russia sanctions package stays in force through the midterms.",
+      "mechanism": {
+        "text": "A week ago the question was whether Russia would honour Trump's 'energy ceasefire'; Ukraine declared it over on 15 October and Trump suspended new Russia sanctions on Friday, so we now expect the pause to last through the midterms, as he wants cheaper diesel and Congress has only criticised it.",
+        "label": "judgment",
+        "confidence": "medium"
+      }
+    }
+  ],
+  "trace": [
+    {
+      "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
+      "title": "Ship attacks near Hormuz reach record high",
+      "risk": {
+        "score": 78,
+        "tier": "elevated"
+      },
+      "steps": [
+        {
+          "date": "2026-10-16",
+          "fact": {
+            "text": "Ship attacks near Hormuz reached a record high as oil exports slowed.",
+            "sources": [
+              {
+                "outlet": "bbc.com",
+                "url": "https://www.bbc.co.uk/news/articles/cmde8dpg8g0no?at_medium=RSS&amp;at_campaign=rss",
+                "archive": "archive#2026-10-16",
+                "topicId": "Ship Attacks Near Hormuz Reach Record High as Oil Exports Slow-1"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-18",
+          "fact": {
+            "text": "Iran said two tankers caught fire after hitting mines in the strait.",
+            "sources": [
+              {
+                "outlet": "aljazeera.com",
+                "url": "https://www.aljazeera.com/news/2026/10/18/iran-says-two-tankers-catch-fire-after-hitting-mines-in-strait-of-hormuz?traffic_source=rss",
+                "archive": "archive#2026-10-18",
+                "topicId": "Iran Says Two Tankers Catch Fire After Hitting Mines in Strait of Hormuz-6"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "Another commercial vessel is attacked or hits a mine.",
+          "p": 0.4,
+          "trigger": "Another commercial vessel attacked or hits a mine",
+          "by": "2026-11-22",
+          "status": "not_checked"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-albanian-protests-turn-violent-ab32e1",
+      "title": "Albanian protests turn violent as PM blames 'foreign hands'",
+      "risk": {
+        "score": 72,
+        "tier": "elevated"
+      },
+      "steps": [
+        {
+          "date": "2026-10-17",
+          "fact": {
+            "text": "Albania's prime minister blamed 'foreign hands' for escalating anti-government unrest.",
+            "sources": [
+              {
+                "outlet": "france24.com",
+                "url": "https://www.france24.com/en/europe/20261016-clashes-grip-tirana-as-albanian-pm-blames-foreign-hands",
+                "archive": "archive#2026-10-17",
+                "topicId": "Albanian PM Blames 'Foreign Hands' for Escalating Anti-Government Unrest-12"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-17",
+          "fact": {
+            "text": "Albanian police fired apparent rubber bullets as the protests entered a fifth day.",
+            "sources": [
+              {
+                "outlet": "scmp.com",
+                "url": "https://www.scmp.com/news/world/europe/article/3371273/albanian-police-fire-rubber-bullets-student-protesters-call-pm-quit?utm_source=rss_feed",
+                "archive": "archive#2026-10-17",
+                "topicId": "Albanian Police Fire Rubber Bullets as Anti-Government Protests Enter Fifth Day-3"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "Rama announces early parliamentary elections.",
+          "p": 0.1,
+          "trigger": "Rama announces early parliamentary elections",
+          "by": "2026-11-10",
+          "status": "not_checked"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-israeli-settlers-attack-palest-a8e47b",
+      "title": "Israeli settlers attack West Bank harvesters, journalist, diplomats",
+      "risk": {
+        "score": 62,
+        "tier": "elevated"
+      },
+      "steps": [
+        {
+          "date": "2026-10-16",
+          "fact": {
+            "text": "Settlers attacked Palestinian olive harvesters and injured a Washington Post photojournalist.",
+            "sources": [
+              {
+                "outlet": "npr.org",
+                "url": "https://www.npr.org/2026/10/16/nx-s1-6004904/israeli-settlers-beat-us-photojournalist-washington-post-west-bank",
+                "archive": "archive#2026-10-16",
+                "topicId": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest-1"
+              },
+              {
+                "outlet": "cbc.ca",
+                "url": "https://www.cbc.ca/news/world/israeli-settlers-attack-olive-harvest-9.7383174?cmp=rss",
+                "archive": "archive#2026-10-16",
+                "topicId": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest-1"
+              }
+            ]
+          }
+        },
+        {
+          "date": "2026-10-17",
+          "fact": {
+            "text": "Settlers attacked European diplomats and beat a French mayor.",
+            "sources": [
+              {
+                "outlet": "scmp.com",
+                "url": "https://www.scmp.com/news/world/middle-east/article/3371275/israeli-settlers-attack-european-diplomats-beat-french-mayor-west-bank?utm_source=rss_feed",
+                "archive": "archive#2026-10-17",
+                "topicId": "Israeli Settlers Attack European Diplomats and French Mayor in West Bank-1"
+              }
+            ]
+          }
+        }
+      ],
+      "branches": [
+        {
+          "text": "An Israeli court indicts a settler for either attack.",
+          "p": 0.1,
+          "trigger": "An Israeli court indicts a settler for either attack",
+          "by": "2027-01-15",
+          "status": "not_checked"
+        }
+      ]
+    }
+  ],
+  "dates": [
+    {
+      "date": "2026-10-21",
+      "what": "Grace period ends on the FEMA question: aid for all affected counties within 7 days, unresolved after its 18 October deadline.",
+      "threadId": "thread-hurricane-isaias-makes-landfal-21c4f2",
+      "kind": "forecast_due"
+    },
+    {
+      "date": "2026-10-23",
+      "what": "Due: Kenya begins ring vaccination with the rVSV-ZEBOV vaccine (logged at 70%).",
+      "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9",
+      "kind": "forecast_due"
+    },
+    {
+      "date": "2026-10-25",
+      "what": "Due: Sudan's army officially denies deliberately targeting artisanal miners (logged at 80%).",
+      "threadId": "thread-sudan-airstrike-kills-72-artis-a9ec5d",
+      "kind": "forecast_due"
+    }
+  ],
+  "new": [
+    {
+      "threadId": "thread-israeli-settlers-attack-palest-a8e47b",
+      "title": "Israeli settlers attack West Bank harvesters, journalist, diplomats",
+      "firstSeen": "2026-10-16",
+      "outlets": [
+        "al-monitor.com",
+        "bbc.com",
+        "cbc.ca",
+        "channelnewsasia.com",
+        "euronews.com",
+        "france24.com",
+        "middleeasteye.net",
+        "npr.org",
+        "scmp.com"
+      ],
+      "fact": {
+        "text": "Settlers attacked Palestinian olive harvesters on Friday, injuring a Washington Post photojournalist; on Saturday they attacked European diplomats and beat a French mayor. The EU 'strongly condemns' it; the prime minister's office calls it a 'smear'.",
+        "sources": [
+          {
+            "outlet": "npr.org",
+            "url": "https://www.npr.org/2026/10/16/nx-s1-6004904/israeli-settlers-beat-us-photojournalist-washington-post-west-bank",
+            "archive": "archive#2026-10-16",
+            "topicId": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest-1"
+          },
+          {
+            "outlet": "cbc.ca",
+            "url": "https://www.cbc.ca/news/world/israeli-settlers-attack-olive-harvest-9.7383174?cmp=rss",
+            "archive": "archive#2026-10-16",
+            "topicId": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest-1"
+          },
+          {
+            "outlet": "scmp.com",
+            "url": "https://www.scmp.com/news/world/middle-east/article/3371275/israeli-settlers-attack-european-diplomats-beat-french-mayor-west-bank?utm_source=rss_feed",
+            "archive": "archive#2026-10-17",
+            "topicId": "Israeli Settlers Attack European Diplomats and French Mayor in West Bank-1"
+          },
+          {
+            "outlet": "bbc.com",
+            "url": "https://www.bbc.co.uk/news/articles/c962ydpmjm3zo?at_medium=RSS&amp;at_campaign=rss",
+            "archive": "archive#2026-10-18",
+            "topicId": "Israeli Settlers Attack European Diplomats in West Bank, Drawing International Condemnation-2"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "The victims now include Americans and Europeans, so Israel faces pressure from governments that can penalise it; we still expect condemnation but few arrests, as the government calls the reports a smear.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-israeli-settlers-attack-west-b-b4cded",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-china-tells-israel-to-stop-for-91f79d",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-britain-s-green-party-votes-to-71b793",
+          "relation": "possibly_related"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-trump-endorses-netanyahu-in-is-d70a8a",
+      "title": "Trump endorses Netanyahu before Israeli election",
+      "firstSeen": "2026-10-18",
+      "outlets": [
+        "al-monitor.com",
+        "channelnewsasia.com",
+        "middleeasteye.net",
+        "npr.org",
+        "scmp.com"
+      ],
+      "fact": {
+        "text": "On Sunday Trump endorsed Netanyahu as a 'great warrior prime minister' ahead of Israel's 27 October election; Reuters and CNA say it may not help, as Israeli support for Trump has fallen over Iran.",
+        "sources": [
+          {
+            "outlet": "scmp.com",
+            "url": "https://www.scmp.com/news/world/middle-east/article/3371326/trump-endorses-ally-netanyahu-israeli-election-praising-great-warrior-prime-minister?utm_source=rss_feed",
+            "archive": "archive#2026-10-18",
+            "topicId": "Trump Endorses Netanyahu in Israeli Election, Calling Him 'Great Warrior Prime Minister'-6"
+          },
+          {
+            "outlet": "al-monitor.com",
+            "url": "https://www.al-monitor.com/originals/2026/10/trump-endorses-netanyahu-close-israeli-election",
+            "archive": "archive#2026-10-18",
+            "topicId": "Trump Endorses Netanyahu in Israeli Election, Calling Him 'Great Warrior Prime Minister'-6"
+          },
+          {
+            "outlet": "channelnewsasia.com",
+            "url": "https://www.channelnewsasia.com/world/trump-endorses-netanyahu-in-israeli-election-6469761",
+            "archive": "archive#2026-10-18",
+            "topicId": "Trump Endorses Netanyahu in Israeli Election, Calling Him 'Great Warrior Prime Minister'-6"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "Since Trump has lost standing with Israeli voters over Iran, the endorsement may cost Netanyahu as many votes as it wins, so we expect little effect.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-trump-announces-us-to-import-r-8c45a3",
+          "relation": "possibly_related"
+        },
+        {
+          "threadId": "thread-israel-s-supreme-court-overtur-9e1284",
+          "relation": "possibly_related"
+        }
+      ]
+    },
+    {
+      "threadId": "thread-french-supermarkets-hit-by-cyb-172642",
+      "title": "Cyberattack shuts French supermarket refrigerators",
+      "firstSeen": "2026-10-12",
+      "outlets": [
+        "aljazeera.com",
+        "bbc.com",
+        "channelnewsasia.com",
+        "france24.com"
+      ],
+      "fact": {
+        "text": "French supermarkets said on Monday that a cyberattack raised refrigerator temperatures in hundreds of stores, spoiling food; the BBC puts losses at millions of euros and CNA says over 400 outlets were hit.",
+        "sources": [
+          {
+            "outlet": "france24.com",
+            "url": "https://www.france24.com/en/french-supermarkets-suffer-refrigerator-shutdown-after-unprecedented-cyberattack",
+            "archive": "archive#2026-10-13",
+            "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-2"
+          },
+          {
+            "outlet": "bbc.com",
+            "url": "https://www.bbc.co.uk/news/articles/crq5nzxv9q4yo?at_medium=RSS&amp;at_campaign=rss",
+            "archive": "archive#2026-10-13",
+            "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-2"
+          },
+          {
+            "outlet": "channelnewsasia.com",
+            "url": "https://www.channelnewsasia.com/world/french-supermarkets-suffer-refrigerator-shutdown-after-unprecedented-cyberattack-6453906",
+            "archive": "archive#2026-10-12",
+            "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-4"
+          }
+        ]
+      },
+      "firstRead": {
+        "text": "Our sources name no attacker or ransom demand, so we cannot tell extortion from sabotage; we treat it as a one-off shock, not linked to this week's French protests.",
+        "label": "judgment",
+        "confidence": "low"
+      },
+      "connectsTo": [
+        {
+          "threadId": "thread-french-student-protests-turn-v-68e0fb",
+          "relation": "possibly_related"
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "stories": 88,
+    "entries": 204,
+    "outlets": 21,
+    "missingDays": [
+      "2026-10-14"
+    ],
+    "analysedNew": {
+      "analysed": 14,
+      "total": 59
+    },
+    "corrections": [],
+    "note": "The archive for 2026-10-13 is thin: 13 entries against 35 to 41 on the other days. Of 59 threads born in the window, 38 have a single entry, so most births cannot be ranked by risk. No corrections store exists, so none are listed."
+  },
+  "notes": {
+    "unconfirmed": [
+      "Trump endorses Netanyahu is classed as an event because it is a dated political act; a strict reading of the rule that statements do not qualify could drop it.",
+      "The French navy boarding and the Pakistan school roof collapse also passed the selection rule in draft 2 but are not shown, because the new section holds three.",
+      "The lead headline and argument are newly worded from draft 2's Hormuz forecast; draft 2 had no lead.",
+      "Trace step dates are the archive dates on which the cited entries were seen."
+    ]
+  }
+}

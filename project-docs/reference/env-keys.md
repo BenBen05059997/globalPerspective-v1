@@ -23,9 +23,9 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 ## newsBoard
 
-- Live keys: —
-- Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `FIREBASE_PROJECT_ID`
+- Live keys: `FIREBASE_PROJECT_ID`, `SAVED_ITEMS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `USER_PREFS_TABLE`
+- Set live, not read in repo source: `SAVED_ITEMS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `USER_PREFS_TABLE`
+- Read in repo source, not set live (code default applies): —
 
 ## newsBreakingAlert
 

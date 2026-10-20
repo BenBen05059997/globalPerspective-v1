@@ -131,10 +131,10 @@ directly (as drafts 1-2 did); it switches to `record/` once `newsStoryRecord` ex
 the agent writes, code checks: selection rules are deterministic in the pull script, so the agent never chooses what
 counts. Each stage is one sequential Sonnet agent; the operator checks between stages.
 
-### W0: content v2 frozen (from the 2026-10-20 digest discussion)
-- [ ] `backend/weekly/README.md` (the group's front door: the three-names line, what it owns (`weekly/` in S3 only),
+### W0: content v2 frozen (from the 2026-10-20 digest discussion) — done 2026-10-20
+- [x] `backend/weekly/README.md` (the group's front door: the three-names line, what it owns (`weekly/` in S3 only),
       what it reads, what reads it, how to run each script) and `backend/weekly/sections.js` (the section model).
-- [ ] Sections, in order: **Lead** (one paragraph: the week's most important change as an argument: what happened,
+- [x] Sections, in order: **Lead** (one paragraph: the week's most important change as an argument: what happened,
       what we now expect, what would prove us wrong); **Where our view moved** (changelog: one line per story, before →
       after with the mechanism; numbers on the page, one sentence per line in the email; "none this week" stated);
       **The trace** (up to 5 anchor stories: where it was, where it is (dated steps), where it goes: the branches we drew
@@ -142,8 +142,14 @@ counts. Each stage is one sequential Sonnet agent; the operator checks between s
       **Next week's dates** (triggers and forecast due dates in the coming 7 days); **New this week** (2-3, the frozen
       selection rule, first read labelled low); **What we did not see** (coverage footer). No scoreboard, no Brier
       number (that stays on /track-record). "Still watching" is dropped.
-- [ ] `backend/weekly/schema/weekly.schema.json` v2 (JSON Schema; from scratchpad `weekly/schema.json`, reshaped to the sections
+- [x] `backend/weekly/schema/weekly.schema.json` v2 (JSON Schema; from scratchpad `weekly/schema.json`, reshaped to the sections
       above; every judgment `{text, label:'judgment', confidence}`; every fact `{text, sources[]}`).
+
+Notes from W0: required sections are lead, moved, coverage; trace, dates, new are skipped when empty. Caps: moved 6,
+trace 5, new 3; the content-v2 cap of 3 on "New this week" replaces the older "JSON complete" rule for that section
+(qualifying items beyond 3 are not stored). Email word caps (110/140/200/80/180/70) are first guesses to tune after a
+real render. Example `valid-2026-10-18.json` is reshaped from draft 2; its lead and step dates are reconstructions,
+flagged in its `notes.unconfirmed`.
 
 ### W1: pull (read-only, deterministic)
 - [ ] `backend/weekly/pull.mjs --week-ending YYYY-MM-DD`: reads NewsCache `archive#` (7 days + 30 for births),

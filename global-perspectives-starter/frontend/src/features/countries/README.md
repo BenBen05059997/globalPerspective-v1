@@ -27,7 +27,7 @@ one-screen country card the map console also mounts.
 - Public API (`index.js`): `CountryCardV2` — used by `map` (gets `situations` for the watch flag there; not on CountryPage)
 - Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines`,
   `COUNTRY_COORDINATES`, plus a lazy `import()` of `threads/components/WeeklyMap` (a static import pulled it into
-  the main chunk); `@/features/economy` -> `useMarketsCountry`
+  the main chunk). Nothing from `@/features/economy` (parked)
 
 ## Backend
 - Generated row: [reference/features.md#countries](../../../../../project-docs/reference/features.md#countries)
@@ -39,7 +39,7 @@ one-screen country card the map console also mounts.
   15-name cap (`@/shared/map/countryRiskLayer.js`); localStorage `gp_country_intel_v1`, 30 min.
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h); `useCountryFacts` ->
   `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` + `prediction_snapshot`.
-- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`;
+- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` (`hooks/`, live: `newsMarketsData` hourly) -> `markets_country`;
   `useDisruptionsList` -> `economic_impact_list` (off while parked).
 
 ## Docs

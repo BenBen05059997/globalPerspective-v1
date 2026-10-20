@@ -24,7 +24,7 @@ markets wrap. The feature also owns the economic hooks and atoms that threads, c
   (`DisruptionRow`/`DisruptionPreview` deleted 2026-10-19: only tests used them)
 - `lib/composeEconomyBriefing.js` (deterministic briefing text, loaded by `quality/briefing/verify_*.mjs`),
   `lib/disruptionGate.js` (hides unreliable FX arrows / analogs), `data/economicAnalogs.js(on)` — keep relative imports
-- Public API (`index.js`): `InstrumentChip` (daily), `MechanismCard`, `useEconomicImpact` (threads), `useMarketsCountry` (countries)
+- Public API (`index.js`): `InstrumentChip` (daily), `MechanismCard`, `useEconomicImpact` (threads)
 - Imports from other features: none. Shared: `SeverityBadge`, `DirectionArrow`, `EntityLink`, `@/shared/lib/links.js` (`storyHref`, `ROUTE`)
 
 ## Backend
@@ -35,7 +35,7 @@ markets wrap. The feature also owns the economic hooks and atoms that threads, c
 ## Data
 - `useDisruptionsList` (`@/shared/hooks`) -> restProxy `economic_impact_list`; `useEconomicImpact` -> `economic_impact`;
   `useTopMovers` -> `economic_top_movers`
-- `useMarketsGlobal` -> `markets_global`, `useMarketsHistory` -> `markets_history`, `useMarketsCountry` -> `markets_country`,
+- `useMarketsGlobal` -> `markets_global`, `useMarketsHistory` -> `markets_history`,
   `useWeeklyMarkets` -> `weekly_markets`
 - All through `useCachedQuery`; `useDisruptionsList` and `useEconomicImpact` take `{ enabled }`
 

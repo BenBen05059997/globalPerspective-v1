@@ -35,7 +35,7 @@ vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
 vi.mock('@/features/countries/hooks/useCountryHistory', () => ({
   useCountryHistory: () => ({ snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false, loading: false, error: null }),
 }));
-vi.mock('@/features/economy/hooks/useMarketsCountry', () => ({
+vi.mock('@/features/countries/hooks/useMarketsCountry', () => ({
   useMarketsCountry: () => ({ data: null, loading: false, error: null }),
 }));
 const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));

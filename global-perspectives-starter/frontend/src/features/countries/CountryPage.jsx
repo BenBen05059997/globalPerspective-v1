@@ -6,7 +6,7 @@ import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useWeeklyArchive, useThreadAnalyses } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
-import { useMarketsCountry } from '@/features/economy';
+import { useMarketsCountry } from '@/features/countries/hooks/useMarketsCountry';
 import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';

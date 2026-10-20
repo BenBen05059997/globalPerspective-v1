@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const lib = require('./lib');
 const threading = require('./threading');
+const { staleReason } = require('./run-guard');
 const { slugify } = threading;
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
@@ -125,7 +126,7 @@ exports.handler = async (event) => {
     const { topics, generationId, generatedDate, generatedYear, item: stagingItem } = await loadTopics();
 
     if (!topics.length) {
-      return http(503, { error: 'Topics cache empty or stale' });
+      return failedRun('topics-empty', generationId);
     }
 
     const filteredTopics = topicId ? topics.filter(t => topicMatches(t, topicId)) : topics;
@@ -145,6 +146,12 @@ exports.handler = async (event) => {
       return http(200, { cached: true, results });
     }
 
+    if (!dryRun) {
+      const archives = await readFreshnessArchives();
+      const reason = staleReason(stagingItem, archives);
+      if (reason) return failedRun('stale-staging', generationId, { staleReason: reason });
+    }
+
     console.log(`Starting generation for ${filteredTopics.length} topics (generationId: ${generationId})`);
 
     // v1 shared context, loaded ONCE per invocation (reused by every topic + by the later
@@ -162,9 +169,11 @@ exports.handler = async (event) => {
     // every per-story row (summary, cause chain, forecast, PRED#) carries its threadId.
     const threadIdById = {};
     if (Array.isArray(stagingItem?.topics)) {
-      stagingItem.topics.forEach((raw, idx) => {
-        try { threadIdById[buildStableTopicId(raw, idx)] = assignThreadId(raw, pastEntries); } catch (e) { console.warn('early threadId failed:', e.message); }
-      });
+      const rawTopics = stagingItem.topics.map((raw, idx) => ({ ...raw, id: buildStableTopicId(raw, idx) }));
+      for (const rec of threading.joinRun(rawTopics, pastEntries)) {
+        threadIdById[rec.topicId] = rec.threadId;
+        console.log(`[join] ${JSON.stringify(rec)}`);
+      }
     }
     const generatedAtDay = new Date().toISOString().slice(0, 10);
     const todayArchiveEntries = needsPrediction && !force ? pastEntries.filter(e => e.date === generatedAtDay) : [];
@@ -204,6 +213,12 @@ exports.handler = async (event) => {
 
     const { usable, swap } = lib.runOutcome({ generated: outputs.length, reused: reused.length });
     console.log(`Generation complete: ${outputs.length} generated, ${reused.length} reused, ${failed} failed (generationId: ${generationId})`);
+
+    // Zero generated is a failed generation, including cache-only retries after a provider
+    // outage. Do not publish or re-archive an old generation as today's fresh content.
+    if (outputs.length === 0) return failedRun('zero-generated', generationId, { generated: 0, reused: reused.length, failed });
+    const publicationReason = staleReason(stagingItem, await readFreshnessArchives());
+    if (publicationReason) return failedRun('stale-staging', generationId, { staleReason: publicationReason, generated: outputs.length, reused: reused.length, failed });
 
     // Assign threadIds from the RAW staging topics (which retain continues_topic,
     // category, and search_keywords — fields buildTopic() drops) and stamp them
@@ -261,8 +276,8 @@ exports.handler = async (event) => {
           TableName: TOPICS_TABLE,
           Key: { id: stagingItem.id },
           UpdateExpression: 'SET agentProcessedAt = :n',
-          ExpressionAttributeValues: { ':n': new Date().toISOString() },
-          ConditionExpression: 'attribute_exists(id)',
+          ExpressionAttributeValues: { ':n': new Date().toISOString(), ':g': generationId },
+          ConditionExpression: 'generationId = :g',
         }));
       } catch (markErr) {
         console.warn('Could not mark staging processed:', markErr.message);
@@ -284,6 +299,21 @@ exports.handler = async (event) => {
 };
 
 /* ------------ helpers ------------ */
+
+function failedRun(reason, generationId, detail = {}) {
+  const marker = { status: 'failed', reason, generationId, generated: 0, ...detail };
+  console.error(`[pipeline-status] ${JSON.stringify(marker)}`);
+  return http(503, { success: false, ...marker });
+}
+
+async function readFreshnessArchives() {
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return Promise.all([ARCHIVE_ITEM_ID, formatDateKey(today), formatDateKey(yesterday)].map(async id => {
+    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id }, ConsistentRead: true }));
+    return Item;
+  }));
+}
 
 function parseEvent(event) {
   if (event && typeof event === 'object' && 'body' in event) {
@@ -1196,6 +1226,8 @@ async function readPastArchiveEntries(days) {
             search_keywords: e.search_keywords || [],
             regions: e.regions || [],
             category: e.category || '',
+            archivedAt: e.archivedAt,
+            generationId: e.generationId,
             date: key.replace(/^archive#/, ''), // for the v1 arc digest (buildArcDigest)
           })));
         }

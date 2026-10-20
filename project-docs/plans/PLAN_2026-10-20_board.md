@@ -206,13 +206,17 @@ Not browser-tested: signed-out view, What is missing follow, co-movement grounds
 - [x] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
 - [x] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
 - [x] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).
-- [ ] Smoke: create a board, add two pins, connect, keep, fork a preset, on production as a member.
+- [x] Smoke: create a board, add two pins, connect, keep, fork a preset, on production as a member.
 - [ ] Docs: `ARCHITECTURE_RECORD.md` §9 status, `ARCHITECTURE.md` data flow 8, `DATA_STRATEGY` §2 field note, reference regen, Atlas.
 
 Notes from stage 4: role `newsBoard-role` (basic logs + inline least-privilege DynamoDB), function created 2026-10-20, Function
 URL with the same CORS as `newsSavedItems`; live smoke: `list_presets` returns 8 region presets from real data, `list_boards`
 without a token is 401, the site origin passes preflight. `scripts/prepare-site-assets.mjs` (Cloudflare packaging) does not
 require `BOARD_ENDPOINT`; add it to `REQUIRED_CONFIG_FIELDS` at the Cloudflare cutover.
+Released 2026-10-20 (75a5d37f, Pages). Production smoke as a signed-in member, phone-width window: Board link shown; region
+presets listed; forked East Asia (8 pins, real titles, risk + tier, ours strings INFERENCE); select two pins + Connect →
+honest none with its limits; Keep with a line drew a yours string; reload kept it (server save); `/account` saved list
+empty (board hidden); no console errors. The smoke board stays in the operator's account. Not done: Atlas update.
 
 ### Waits for the record (not in these stages)
 Pin lines and counts, branch status, tree, chapters, arrivals, confirmed strings, the board's weekly and monthly, summary,
@@ -234,6 +238,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: slice 1 live on production (stages 0-4); Atlas update outstanding.
 - 2026-10-20: build stages and checklist written; nothing started (operator: write down first).
 - 2026-10-20: pricing deferred (operator); the board is free for members until the verdict panel exists.
 - 2026-10-20: now / waits checklist added per board feature.

@@ -64,6 +64,38 @@ Honesty rules (enforced by the check script, step 3):
 Selection is never by coverage volume. The JSON is complete (every qualifying item); length caps apply to the
 rendered email only, never to the file.
 
+## Why, and what else has to exist (operator discussion, 2026-10-20)
+
+**Why a reader opens it.** Three reasons, nothing else: not to miss a change in the countries they follow; to check
+their own read against a dated, labelled view from elsewhere and later see who was right; to lift a sourced fact line
+into their own note. A recap of the news (today's brief) serves none of the three.
+
+**What we want from it.** (1) Build the record: every week adds dated judgments and scored calls to a history that
+cannot be rewritten; in six months the history is the product and the weekly is how it is built and shown. (2) Get
+ten conversations: the weekly is the cheapest thing to put in front of ten potential buyers; the personal layer is
+what makes signing in worth it.
+
+**Gaps the weekly cannot paper over** (found in step 1, in order of importance):
+1. Forecast settling has never run under the question scheme: 44 sampled questions, 0 verdicts. The Forecasts
+   section is empty until it does. The settle code exists (`SETTLE#` rows, model draft, 3-day grace) and has never
+   been completed; it needs its own check and a weekly operator confirm, like the alerts.
+2. No corrections store. The site's corrections feed is really the drift notes. A small operator-written store, read
+   by the weekly and the story page.
+3. First reads are thin: 14 of 59 stories born in the week had any analysis. Run the story analysis on the day a story
+   is born, not days later.
+4. Country drift notes are written daily and shown nowhere. The personal layer is their first outlet; the country
+   page should show them too.
+5. All 56 web links are model-inferred ("possibly related"). The "defensible" tier the spec promises needs an operator
+   review command, like the alert confirm.
+6. Duplicate stories for one event (Pakistan, Brazil, settlers) broke both drafts. The birth-of-story step should
+   check for duplicates; the threads CLI merge stays the manual fallback.
+
+**Not now:** per-user generated text, charts, more map features, more sections. Everything above is about making the
+judgment trustworthy; the design canvas already covers how it looks.
+
+**Order from here:** step 3 (skill, check, publish, first real run) → forecast settling → `features/weekly` page and
+email renderer → cloud schedule and confirm → corrections, early analysis, defensible-link review, one at a time.
+
 ## The pipeline
 1. **Saturday 00:00Z, scheduled headless run (cloud)** loads `.claude/skills/weekly-brief/`, gathers the inputs for
    the week, writes the draft JSON and its working notes (sources used, facts it could not confirm), runs the check
@@ -163,5 +195,7 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 - Working files for the week (raw pulls): scratchpad `inputs/` of this session (not in the repo).
 
 ## Log
+- 2026-10-20: "Why, and what else has to exist" recorded after the operator discussion; explainer artifact built
+  from it (temporary; the Atlas stays the one living artifact).
 - 2026-10-20: plan written after the content review of the 2026-10-18 brief (accurate, disciplined, shallow by prompt
   design; selection by volume; inputs limited to the thread analysis summary).

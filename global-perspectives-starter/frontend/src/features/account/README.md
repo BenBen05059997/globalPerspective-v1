@@ -1,14 +1,17 @@
 # account
 
-Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the membership page and
-the Studio key panel. The Save / Follow / Subscribe controls other pages embed live in `@/shared/ui`.
+Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the membership page and the
+Studio key panel. A reader signs in here, sees what changed since their last visit for the countries they
+follow, manages saved items and alert settings, and subscribes to the paid membership. The Save, Follow and
+Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 
 ## Status
-- Live. Polar membership is live; analysis credits are parked (decision 0002) and no page mentions
-  credits (removed 2026-10-19; `verify_pages.sh` guards it).
-- `BREAKING_CRON_LIVE` and `DRIFT_CRON_LIVE` are hard-coded `false` in `Account.jsx`: those alert channels
-  show paused with toggles disabled (both send rules are DISABLED live). Plan prices are hard-coded in
-  `MembershipPage.jsx` `PLANS`; changing them is a business decision.
+- Live. Polar membership is live; analysis credits are parked (decision 0002) and no page mentions credits
+  (`verify_pages.sh` guards it).
+- `BREAKING_CRON_LIVE` and `DRIFT_CRON_LIVE` are hard-coded `false` in `Account.jsx`: those alert channels show
+  paused with toggles disabled. Live: `TriggerBreakingEmailSend` and `TriggerDriftEmailSend` are DISABLED,
+  `TriggerWeeklyEmailSend` is ENABLED (Sundays 14:00 UTC).
+- Plan prices are hard-coded in `MembershipPage.jsx` `PLANS`; changing them is a business decision.
 
 ## Routes
 - `/signin` -> `SignIn`; `/auth/callback` -> `AuthCallback`; `/account` -> `Account` (`?tab=`); `/membership` -> `MembershipPage`
@@ -16,45 +19,56 @@ the Studio key panel. The Save / Follow / Subscribe controls other pages embed l
 ## Frontend
 - `SignIn.jsx` - magic link, Google, guest; stores `?returnTo=` in localStorage `gp_return_to` (default `/weekly`)
 - `AuthCallback.jsx` - finishes the magic link, then navigates to `gp_return_to` or `/weekly`
-- `Account.jsx` - five rail sections (desk, alerts, studio, plan, profile); old `?tab=` values map via
-  `TAB_TO_SECTION`, unknown -> `desk`. Signed out or anonymous shows `SignedOutDesk`, not a redirect.
+- `Account.jsx` - five rail sections (desk, alerts, studio, plan, profile); old `?tab=` values map via `TAB_TO_SECTION`,
+  unknown -> `desk`. Signed out or anonymous shows `SignedOutDesk`, not a redirect.
 - `MembershipPage.jsx` - plans, benefits, subscribe
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`); `hooks/useDeskChanges.js`;
   `lib/desk.js`, `deskMap.js`, `accountClaims.js` (`ACCOUNT_CLAIMS`: list only features that work today)
-- Links: saved items, followed countries and desk rows build addresses with `@/shared/lib/links.js`
-  (`storyHref`, `countryHref`, `briefingHref`, `ROUTE`) or `<EntityLink>`; a saved or followed name that is not
-  a country renders as plain text.
+- Links: saved items, followed countries and desk rows build addresses with `@/shared/lib/links.js` or `<EntityLink>`;
+  a saved or followed name that is not a country renders as plain text.
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`
-- Public API: none (no `index.js`; nothing outside imports this folder).
-- Imports from other features: `@/features/briefings` -> `useWeeklyBrief`. Shared: BYOK key `lib/byok.js`,
-  `lib/llmProviders.js`, `ui/ProviderModal.jsx`; hooks: `useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`.
+- Public API: none (no `index.js`); `app/App.jsx` lazy-loads the four pages by path.
+- Other features: `@/features/briefings` -> `useWeeklyBrief`. Shared: BYOK key panel uses `shared/lib/byok.js`,
+  `shared/lib/llmProviders.js`, `shared/ui/ProviderModal.jsx`; hooks `useMembership`, `useSavedItems`,
+  `usePreferences`, `useDailyBrief`; context `useAuth`.
 
 ## Backend
 - Generated row: [reference/features.md#account](../../../../../project-docs/reference/features.md#account)
+- Guides: [read-api](../../../../../backend/read-api/README.md) (`newsSavedItems`, `newsRecommend`, `newsSensitiveData-dev`),
+  [membership-studio](../../../../../backend/membership-studio/README.md) (`newsPolarBilling`),
+  [distribution](../../../../../backend/distribution/README.md) (`newsEmailSender`)
 - `newsSavedItems` (saved items), `newsRecommend` (prefs, follows, alert feed), `newsPolarBilling` (membership,
-  checkout) — each a Function URL; `newsSensitiveData-dev` serves `country_history`. `newsEmailSender` sends the
-  weekly email (drift/breaking modes disabled); `newsDriftCorrector` writes the drift notes the desk shows.
+  checkout, Polar webhook): each a Function URL with auth NONE, the Firebase token checked in code. `newsSensitiveData-dev`
+  serves `country_history`. `newsEmailSender` sends the weekly email; `newsDriftCorrector` writes the drift notes the desk shows.
 
 ## Data
-- `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT`: `save_item`, `unsave_item`, `get_saved_items` (Firebase token)
-- `usePreferences` -> `window.USER_PREFS_ENDPOINT`: `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`
-- `useMembership` -> `window.POLAR_BILLING_ENDPOINT`: `get_membership`; `createCheckout`
+- `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT`: `save_item`, `unsave_item`, `get_saved_items` (Firebase token required)
+- `usePreferences` -> `window.USER_PREFS_ENDPOINT`: `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country` (token required)
+- `useMembership` -> `window.POLAR_BILLING_ENDPOINT`: `get_membership` (token; anonymous users skipped); `createCheckout`
   -> `create_checkout`. Without the endpoint `available` is false and billing UI is hidden.
 - `useDeskChanges` -> restProxy `country_history` per followed country, 3 at a time, members only (`DeskPanel`).
 - Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief` (edition notes).
+
+## Pipeline
+1. The reader opens `/signin`; `AuthContext` (`sendSignInLink`, `signInWithGoogle` or `signInAsGuest`) talks to Firebase Auth.
+2. The magic link returns to `/auth/callback`; `completeSignIn` finishes it and the reader goes back to `gp_return_to`.
+3. `AuthBridge` in `app/App.jsx` hands `getIdToken` to `restProxy.js`, so every gated call carries the Firebase token.
+4. `/account`: `useSavedItems`, `usePreferences` and `useMembership` POST to their own Function URLs (`newsSavedItems`, `newsRecommend`, `newsPolarBilling`).
+5. Those Lambdas read and write DynamoDB: saved items, user prefs, and `GlobalPerspectiveUserTable` for membership.
+6. Subscribe: `createCheckout` returns a Polar URL, the page redirects, and Polar's webhook sets the member tier in the user table.
+7. Desk: for a member, `useDeskChanges` fetches `country_history` for each followed country through the proxy.
+8. `buildDeskRows` (`lib/desk.js`) makes the "since your last visit" rows; `DeskSinceLastVisit` and `DeskFollowing` (map from `lib/deskMap.js`) render them with `EntityLink`.
 
 ## Docs
 - Decisions: [0002](../../../../../project-docs/decisions/0002-analysis-credits-parked.md) (credits parked),
   [0003](../../../../../project-docs/decisions/0003-storage-s3-world-dynamodb-user.md) (user data in DynamoDB)
 - Rules: [DATA_STRATEGY.md](../../../../../project-docs/rules/DATA_STRATEGY.md)
-- Runbooks: [drift-email.md](../../../../../project-docs/runbooks/drift-email.md) (turning drift email on),
-  [weekly-email.md](../../../../../project-docs/runbooks/weekly-email.md)
+- Runbooks: [drift-email.md](../../../../../project-docs/runbooks/drift-email.md), [weekly-email.md](../../../../../project-docs/runbooks/weekly-email.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/account`
-- Function URLs present: `aws lambda get-function-url-config --function-name newsSavedItems --region ap-northeast-1 --query AuthType`
-  (same for `newsRecommend`, `newsPolarBilling`)
+- Function URLs exist: `aws lambda get-function-url-config --function-name newsSavedItems --region ap-northeast-1 --query AuthType` (same for `newsRecommend`, `newsPolarBilling`)
 - Saved-items traffic: `aws logs tail /aws/lambda/newsSavedItems --since 7d --region ap-northeast-1 --format short`
 - Drift email still off: `aws events describe-rule --name TriggerDriftEmailSend --region ap-northeast-1 --query State`
 
-Last verified: 2026-10-19
+Last verified: 2026-10-20

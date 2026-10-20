@@ -4,7 +4,7 @@ Polar.sh billing on one Function URL. A POST with a `webhook-signature` header i
 
 ## Deployment
 - Deployed name `newsPolarBilling` · runtime `nodejs20.x` · group `membership-studio` (scripts/functions.json)
-- Trigger: Function URL (Polar webhook + frontend via `window.POLAR_BILLING_ENDPOINT`, read in `features/account/hooks/useMembership.js` and `shared/api/restProxy.js`); no schedule
+- Trigger: Function URL (Polar webhook + frontend via `window.POLAR_BILLING_ENDPOINT`, read in `shared/hooks/useMembership.js` and `shared/api/restProxy.js`); no schedule
 - Deploy: `scripts/lambda.sh newsPolarBilling diff|package|deploy` (billing code/config needs a fresh operator "yes" per CLAUDE.md). Zip does not ship node_modules; must include `lib.js`.
 - Sandbox: `backend/membership-studio/_sandbox/deploy-sandbox.sh` stands up separate `-sandbox` copies against the Polar sandbox API.
 

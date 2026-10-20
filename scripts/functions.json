@@ -455,7 +455,7 @@
           "via": "events",
           "name": "TriggerSignalsBuild",
           "expr": "cron(0 10 * * ? *)",
-          "state": "ENABLED",
+          "state": "DISABLED",
           "input": "{\"action\":\"build\"}"
         }
       ]

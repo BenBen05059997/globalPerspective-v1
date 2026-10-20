@@ -1,10 +1,10 @@
 # newsSignals
 
-PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is to be disabled (still ENABLED when checked 2026-10-19). BUILD (`{ action: 'build' }`) maps economic-impact records, the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
+PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is DISABLED (2026-10-20). BUILD (`{ action: 'build' }`) maps economic-impact records, the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
 
 ## Deployment
 - Deployed name `newsSignals` · runtime `nodejs22.x` · group `read-api` (scripts/functions.json)
-- Trigger: `TriggerSignalsBuild` `cron(0 10 * * ? *)` UTC, ENABLED until the 0032 disable is run, EventBridge rule, input `{"action":"build"}`; SERVE via Function URL
+- Trigger: `TriggerSignalsBuild` `cron(0 10 * * ? *)` UTC, DISABLED (decision 0032), EventBridge rule, input `{"action":"build"}`; SERVE via Function URL
 - Deploy: `scripts/lambda.sh newsSignals diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes

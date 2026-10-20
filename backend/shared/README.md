@@ -19,7 +19,7 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
   `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `studioHref`,
   `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
 - `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
-  `placeNames.json` is no longer read here (only `newsCountryIntelligence/src/refreshPolicy.js` still reads it).
+  `placeNames.json` is still in `src/` but no backend code reads it any more.
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
 - `situations-core.js`: GDACS observation + situation fold (`buildSituation`, `coolSituation`,
   `buildStorySituation`; a threaded story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS.

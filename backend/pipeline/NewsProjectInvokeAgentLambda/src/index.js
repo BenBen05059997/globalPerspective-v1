@@ -1386,3 +1386,5 @@ function http(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
+
+exports._internal = { buildArchiveEntry };

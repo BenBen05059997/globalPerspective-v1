@@ -76,9 +76,9 @@ function parseRss(xml, source) {
     const dd = c.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
     let description = dd ? dd[1] : ''; description = decodeEntities(description.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').slice(0, 220).trim());
     const pd = c.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
-    let ageH = 0;
-    if (pd) { const tms = new Date(pd[1].trim()).getTime(); if (!isNaN(tms)) ageH = (Date.now() - tms) / 3.6e6; }
-    if (title && url) out.push({ title, url, description, source, ageH });
+    let ageH = 0; let publishedAt = null;
+    if (pd) { const tms = new Date(pd[1].trim()).getTime(); if (!isNaN(tms)) { ageH = (Date.now() - tms) / 3.6e6; publishedAt = new Date(tms).toISOString(); } }
+    if (title && url) out.push({ title, url, description, source, ageH, publishedAt });
   }
   return out;
 }

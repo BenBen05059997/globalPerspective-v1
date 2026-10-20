@@ -1,7 +1,7 @@
 'use strict';
 
 const { chat } = require('./_shared/llm');
-const { applyEnrichment, annotateSourcesWithMetadata } = require('./source_enrichment');
+const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -290,9 +290,11 @@ function parseRssXml(xml, sourceName) {
     // Extract pubDate and calculate age
     const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
     let age = '';
+    let publishedAt = null;
     if (pubDateMatch) {
       const pubTime = new Date(pubDateMatch[1].trim()).getTime();
       if (!isNaN(pubTime)) {
+        publishedAt = new Date(pubTime).toISOString();
         const hoursAgo = Math.floor((Date.now() - pubTime) / (1000 * 60 * 60));
         if (hoursAgo < 1) age = 'Just now';
         else if (hoursAgo < 24) age = `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
@@ -304,7 +306,7 @@ function parseRssXml(xml, sourceName) {
     }
 
     if (title && url) {
-      articles.push({ title, url, description, age, source: sourceName });
+      articles.push({ title, url, description, age, publishedAt, source: sourceName });
     }
   }
   return articles;
@@ -729,7 +731,7 @@ exports.handler = async (event) => {
         actors,
         event_type: eventType,
         sources: validatedSources.map(s => ({
-          ...s,
+          ...sourceWithPublication(s, allArticles),
           tier: s.tier === 'secondary' ? 'secondary' : 'primary',
         })),
         x_trending: Boolean(t?.x_trending),
@@ -843,3 +845,5 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err?.message || 'Unexpected error' }) };
   }
 };
+
+exports._internal = { parseRssXml };

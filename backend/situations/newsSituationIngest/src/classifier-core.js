@@ -67,6 +67,7 @@ function normalizeClassified(raw, article) {
   const snippet = String(article.description || '').trim().slice(0, 200); // B1: grounding snippet (omitted when empty)
   return {
     title: article.title, en_title: enTitle, url: article.url, domain: domainOf(article.url), source: article.source || domainOf(article.url),
+    publishedAt: article.publishedAt || null,
     iso3, latlon, axis, category: String(raw.category || 'other').toLowerCase(),
     severity, kind: ['event', 'analysis', 'commentary'].includes(raw.kind) ? raw.kind : 'event', entities,
     ...(snippet ? { snippet } : {}),
@@ -178,7 +179,7 @@ function splitByCache(articles, cache) {
   const hits = []; const misses = [];
   for (const a of articles) {
     const e = entries[cacheKey(a)];
-    if (e && e.c) hits.push(e.c); else misses.push(a);
+    if (e && e.c) hits.push({ ...e.c, publishedAt: a.publishedAt || e.c.publishedAt || null }); else misses.push(a);
   }
   return { hits, misses };
 }

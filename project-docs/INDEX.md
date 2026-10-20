@@ -30,6 +30,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Studio redesign](plans/PLAN_2026-10-19_studio_redesign.md) — bring-your-own-hypothesis tool; return-to-menu criteria (proposed).
 - [Decisions 2026-10-20 + cleanup run](plans/PLAN_2026-10-20_decisions_and_cleanup.md) — operator's four answers, the one-by-one checklist and log.
 - [The analyst's weekly](plans/PLAN_2026-10-20_analyst_weekly.md) — the weekly brief rebuilt as an agent-written, operator-confirmed JSON: content spec, pipeline, steps.
+- [The Studio board](plans/PLAN_2026-10-20_studio_board.md) — brainstorm record, not decided: personal connection board (pins, strings, branches, tree, arrivals, monthly, folding rules), with the design canvas link.
 
 ## Runbooks
 - [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;

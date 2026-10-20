@@ -1,0 +1,1785 @@
+{
+  "schemaVersion": 1,
+  "region": "ap-northeast-1",
+  "status": "proposal-not-applied",
+  "inventorySource": "scripts/functions.json plus direct/shared LLM call sites; current repo, not deployed env verification",
+  "notification": {
+    "survivingTopicArn": "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts",
+    "retireAfterMigration": "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts",
+    "note": "Keep email+chat topic; verify confirmed subscriptions and operator intent before changing sends."
+  },
+  "llmFunctions": [
+    {
+      "functionName": "newsAnalyze",
+      "logGroupName": "/aws/lambda/newsAnalyze",
+      "sources": [
+        "backend/membership-studio/newsAnalyze/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": true
+    },
+    {
+      "functionName": "newsCountryIntelligence",
+      "logGroupName": "/aws/lambda/newsCountryIntelligence",
+      "sources": [
+        "backend/pipeline/newsCountryIntelligence/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsDriftCorrector",
+      "logGroupName": "/aws/lambda/newsDriftCorrector",
+      "sources": [
+        "backend/pipeline/newsDriftCorrector/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsEconomicImpact",
+      "logGroupName": "/aws/lambda/newsEconomicImpact",
+      "sources": [
+        "backend/economy-parked/newsEconomicImpact/src/index.js"
+      ],
+      "parked": true,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsEconomicQuality",
+      "logGroupName": "/aws/lambda/newsEconomicQuality",
+      "sources": [
+        "backend/economy-parked/newsEconomicQuality/src/index.js"
+      ],
+      "parked": true,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsImpactAudit",
+      "logGroupName": "/aws/lambda/newsImpactAudit",
+      "sources": [
+        "backend/monitoring/newsImpactAudit/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsInvokeGemini-dev",
+      "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
+      "sources": [
+        "backend/pipeline/newsInvokeGemini/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsPairIntelligence",
+      "logGroupName": "/aws/lambda/newsPairIntelligence",
+      "sources": [
+        "backend/economy-parked/newsPairIntelligence/src/index.js"
+      ],
+      "parked": true,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsPostDevTo",
+      "logGroupName": "/aws/lambda/newsPostDevTo",
+      "sources": [
+        "backend/distribution/newsPostDevTo/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsPredictionResolver",
+      "logGroupName": "/aws/lambda/newsPredictionResolver",
+      "sources": [
+        "backend/predictions/newsPredictionResolver/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "NewsProjectInvokeAgentLambda-dev",
+      "logGroupName": "/aws/lambda/NewsProjectInvokeAgentLambda-dev",
+      "sources": [
+        "backend/pipeline/NewsProjectInvokeAgentLambda/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsSensitiveData-dev",
+      "logGroupName": "/aws/lambda/newsSensitiveData-dev",
+      "sources": [
+        "backend/read-api/newsSensitiveData/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsSituationIngest",
+      "logGroupName": "/aws/lambda/newsSituationIngest",
+      "sources": [
+        "backend/situations/newsSituationIngest/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsSourceAudit",
+      "logGroupName": "/aws/lambda/newsSourceAudit",
+      "sources": [
+        "backend/monitoring/newsSourceAudit/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsSystemsAnalysis",
+      "logGroupName": "/aws/lambda/newsSystemsAnalysis",
+      "sources": [
+        "backend/pipeline/newsSystemsAnalysis/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsThreadAnalysis",
+      "logGroupName": "/aws/lambda/newsThreadAnalysis",
+      "sources": [
+        "backend/pipeline/newsThreadAnalysis/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsWeeklyBrief",
+      "logGroupName": "/aws/lambda/newsWeeklyBrief",
+      "sources": [
+        "backend/distribution/newsWeeklyBrief/src/index.js"
+      ],
+      "parked": false,
+      "deployBlocked": false
+    },
+    {
+      "functionName": "newsWeeklyMarkets",
+      "logGroupName": "/aws/lambda/newsWeeklyMarkets",
+      "sources": [
+        "backend/economy-parked/newsWeeklyMarkets/src/index.js"
+      ],
+      "parked": true,
+      "deployBlocked": false
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1,
+      "name": "Ingest",
+      "functions": [
+        "newsGdacsIngest",
+        "newsGdeltConflict",
+        "newsInvokeGemini-dev",
+        "newsSituationIngest"
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "Stories",
+      "functions": [
+        "NewsProjectInvokeAgentLambda-dev",
+        "newsSituationTracker"
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "Analysis",
+      "functions": [
+        "newsCountryFactsUpdater",
+        "newsCountryIntelligence",
+        "newsDriftCorrector",
+        "newsPredictionResolver",
+        "newsPredictionsSnapshot",
+        "newsSelectionShadow",
+        "newsSystemsAnalysis",
+        "newsThreadAnalysis"
+      ]
+    },
+    {
+      "stage": 4,
+      "name": "One reader",
+      "functions": [],
+      "status": "No deployable stage-local Lambda in current inventory; shared reader errors surface in consumer stages; timeline/routine registrations require coordinator update."
+    },
+    {
+      "stage": 5,
+      "name": "Timeline",
+      "functions": [],
+      "status": "No deployable stage-local Lambda in current inventory; shared reader errors surface in consumer stages; timeline/routine registrations require coordinator update."
+    },
+    {
+      "stage": 6,
+      "name": "Views",
+      "functions": [
+        "newsBoard",
+        "newsClientErrors",
+        "newsRecommend",
+        "newsSavedItems",
+        "newsSensitiveData-dev",
+        "newsSharedAnalysis",
+        "newsSignals"
+      ]
+    },
+    {
+      "stage": 7,
+      "name": "Delivery",
+      "functions": [
+        "newsAnalyze",
+        "newsBreakingAlert",
+        "newsEmailSender",
+        "newsPolarBilling",
+        "newsPostDevTo",
+        "newsPostLinkedin",
+        "newsWeeklyBrief"
+      ]
+    },
+    {
+      "stage": 8,
+      "name": "Watch",
+      "functions": [
+        "newsErrorDigest",
+        "newsFreshnessMonitor",
+        "newsImpactAudit",
+        "newsModelGuard",
+        "newsSourceAudit"
+      ]
+    }
+  ],
+  "plannedStages": [
+    {
+      "stage": 5,
+      "functionName": "newsStoryRecord",
+      "logGroupName": "/aws/lambda/newsStoryRecord",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricName": "Stage5Failed",
+      "status": "Install filter/native Errors alarm only after coordinator registers deployed function; not in functions.json yet."
+    }
+  ],
+  "metricFilters": [
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsAnalyze",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsCountryIntelligence",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsDriftCorrector",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsEconomicImpact",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsEconomicQuality",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsImpactAudit",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsPairIntelligence",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsPostDevTo",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsPredictionResolver",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/NewsProjectInvokeAgentLambda-dev",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsSensitiveData-dev",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsSituationIngest",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsSourceAudit",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsSystemsAnalysis",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsThreadAnalysis",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsWeeklyBrief",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "LLM-insufficient-balance",
+      "logGroupName": "/aws/lambda/newsWeeklyMarkets",
+      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "LlmInsufficientBalance",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsGdacsIngest",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage1Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsGdeltConflict",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage1Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage1Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSituationIngest",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage1Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/NewsProjectInvokeAgentLambda-dev",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage2Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSituationTracker",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage2Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsCountryFactsUpdater",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsCountryIntelligence",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsDriftCorrector",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsPredictionResolver",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsPredictionsSnapshot",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSelectionShadow",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSystemsAnalysis",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsThreadAnalysis",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage3Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsBoard",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsClientErrors",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsRecommend",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSavedItems",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSensitiveData-dev",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSharedAnalysis",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSignals",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage6Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsAnalyze",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsBreakingAlert",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsEmailSender",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsPolarBilling",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsPostDevTo",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsPostLinkedin",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsWeeklyBrief",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage7Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsErrorDigest",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage8Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsFreshnessMonitor",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage8Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsImpactAudit",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage8Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsModelGuard",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage8Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Pipeline-failed-run",
+      "logGroupName": "/aws/lambda/newsSourceAudit",
+      "filterPattern": "\"[pipeline-status]\" \"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage8Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Shared-reader-stage-failed",
+      "logGroupName": "/aws/lambda/newsBoard",
+      "filterPattern": "\"[pipeline-status]\" \"failed\" \"stage4\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage4Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Shared-reader-stage-failed",
+      "logGroupName": "/aws/lambda/newsSensitiveData-dev",
+      "filterPattern": "\"[pipeline-status]\" \"failed\" \"stage4\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "Stage4Failed",
+          "metricValue": "1"
+        }
+      ]
+    },
+    {
+      "filterName": "Selector-capture-success",
+      "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
+      "filterPattern": "\"[capture]\" \"chosen topics\" -\"failed\"",
+      "metricTransformations": [
+        {
+          "metricNamespace": "GlobalPerspective/Pipeline",
+          "metricName": "SelectorCaptureSuccess",
+          "metricValue": "1"
+        }
+      ]
+    }
+  ],
+  "alarms": [
+    {
+      "AlarmName": "GP-LLM-insufficient-balance",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "LlmInsufficientBalance",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-newsGdacsIngest-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsGdacsIngest"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsGdeltConflict-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsGdeltConflict"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsInvokeGemini-dev-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsInvokeGemini-dev"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSituationIngest-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSituationIngest"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-1-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage1Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-NewsProjectInvokeAgentLambda-dev-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "NewsProjectInvokeAgentLambda-dev"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSituationTracker-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSituationTracker"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-2-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage2Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-newsCountryFactsUpdater-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsCountryFactsUpdater"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsCountryIntelligence-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsCountryIntelligence"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsDriftCorrector-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsDriftCorrector"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsPredictionResolver-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsPredictionResolver"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsPredictionsSnapshot-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsPredictionsSnapshot"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSelectionShadow-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSelectionShadow"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSystemsAnalysis-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSystemsAnalysis"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsThreadAnalysis-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsThreadAnalysis"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-3-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage3Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-4-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage4Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-5-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage5Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-newsBoard-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsBoard"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsClientErrors-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsClientErrors"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsRecommend-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsRecommend"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSavedItems-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSavedItems"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSensitiveData-dev-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSensitiveData-dev"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSharedAnalysis-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSharedAnalysis"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSignals-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSignals"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-6-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage6Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-newsAnalyze-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsAnalyze"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsBreakingAlert-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsBreakingAlert"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsEmailSender-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsEmailSender"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsPolarBilling-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsPolarBilling"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsPostDevTo-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsPostDevTo"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsPostLinkedin-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsPostLinkedin"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsWeeklyBrief-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsWeeklyBrief"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-7-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage7Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-newsErrorDigest-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsErrorDigest"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsFreshnessMonitor-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsFreshnessMonitor"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsImpactAudit-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsImpactAudit"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsModelGuard-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsModelGuard"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-newsSourceAudit-Errors",
+      "Namespace": "AWS/Lambda",
+      "MetricName": "Errors",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ],
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "newsSourceAudit"
+        }
+      ]
+    },
+    {
+      "AlarmName": "GP-stage-8-failed",
+      "Namespace": "GlobalPerspective/Pipeline",
+      "MetricName": "Stage8Failed",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "DatapointsToAlarm": 1,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "notBreaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    },
+    {
+      "AlarmName": "GP-selector-no-capture-9h",
+      "Metrics": [
+        {
+          "Id": "captures",
+          "MetricStat": {
+            "Metric": {
+              "Namespace": "GlobalPerspective/Pipeline",
+              "MetricName": "SelectorCaptureSuccess"
+            },
+            "Period": 300,
+            "Stat": "Sum"
+          },
+          "ReturnData": false
+        },
+        {
+          "Id": "missing",
+          "Expression": "IF(FILL(captures,0)>0,0,1)",
+          "ReturnData": true
+        }
+      ],
+      "EvaluationPeriods": 108,
+      "DatapointsToAlarm": 108,
+      "Threshold": 1,
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "TreatMissingData": "breaching",
+      "AlarmActions": [
+        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
+      ]
+    }
+  ],
+  "prerequisites": [
+    "Verify deployed group existence/provider without printing secrets; parked/deploy-blocked functions remain covered if group exists.",
+    "Add failed-run markers in jobs that currently swallow errors; filters do not invent markers.",
+    "A returned statusCode503 does not increment Lambda Errors; retain the agent log-marker alarm alongside native Errors.",
+    "No capture heartbeat is9h absence (8h cadence+1h grace), not an exact per-invocation completion deadline; seed with first capture before enabling actions.",
+    "Stage4 shared reader errors surface through consuming Lambdas; stage5 timeline and stage6 cloud routine need coordinator inventory/alarm registration when deployed."
+  ]
+}

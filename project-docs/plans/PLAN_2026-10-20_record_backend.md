@@ -112,9 +112,13 @@ Nothing here is changed yet; the "Proposed" section needs operator decisions.
 DeepSeek returns `402 Insufficient Balance` since about 03:50Z on 2026-10-20. Failing today: `newsSituationIngest`
 (03:50), `newsInvokeGemini-dev` (04:15, 12:15: no new topics), `NewsProjectInvokeAgentLambda-dev` (04:25: re-archived
 the 2026-10-19 20:15 topics under `archive#2026-10-20`), `newsThreadAnalysis` (04:40), `newsSystemsAnalysis` (05:00),
-`newsCountryIntelligence` (05:15). `NewsCache latest` is still gen-1792440950003 (2026-10-19 20:15Z). No alarm fired.
+`newsCountryIntelligence` (05:15). `NewsCache latest` is still gen-1792440950003 (2026-10-19 20:15Z). Alerts did fire, by
+email only: `newsModelGuard` warned at a $0.14 balance on 2026-10-19 12:00Z and again at $0; `newsFreshnessMonitor` sent
+"content stale" every 2 h from 06:30Z (threshold 9 h). What is missing is an alert on the failure itself (no metric on
+`LLM 402`; stages swallow the error and return normally, so Lambda Errors stay 0) and one alert topic (there are two:
+`GlobalPerspectiveAlerts`, email only, and `GlobalPerspectivesAlerts`, email + chat).
 The same outage caused the missing `archive#2026-10-14` and the thin 2026-10-13 (402 from 10-13 20:15 to 10-15 04:15).
-Fix: operator tops up the DeepSeek balance (billing; operator only). Follow-up: an alarm on `LLM 402` in any Lambda, and
+Fix: operator tops up the DeepSeek balance (billing; operator only). Follow-up: an alarm on `LLM 402` in any Lambda, one alert topic, and
 the agent must not re-archive stale staging as a new day.
 
 ### The four words, as the code uses them

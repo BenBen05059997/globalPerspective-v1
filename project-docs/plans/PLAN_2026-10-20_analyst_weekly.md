@@ -187,6 +187,11 @@ flagged in its `notes.unconfirmed`.
       reader IAM for `weekly/` (operator yes, frontend release).
 
 ### W6: cloud schedule and retirement
+- [ ] `backend/weekly/routine/` (lane B, after W1-W3 DONE): `routine.json` (cron Sunday 06:00Z, repo, model Sonnet, the
+      exact prompt: run pull, write per SKILL.md, check, publish; stop on a failed check), `iam-policy.json` (read
+      NewsCache, SummarizeAndPredict, GlobalPerspectivePredictionLog, s3 web/*; write s3 weekly/* only), `README.md`
+      (create/update the routine from routine.json, rotate keys, veto with hold.mjs, read a run's log). The routine and
+      the IAM user are created only by the coordinator from these files, with the operator's yes.
 - [ ] Headless Claude Code run on a schedule in the cloud with a credential scoped to `weekly/*` write and the tables'
       read (operator yes); operator notified with the draft.
 - [ ] Retire `newsWeeklyBrief` (after one new-path send); ARCHITECTURE flow 5, STATUS, reference regen, Atlas.

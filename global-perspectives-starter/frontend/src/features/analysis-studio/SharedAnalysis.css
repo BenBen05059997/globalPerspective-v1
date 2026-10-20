@@ -1,0 +1,164 @@
+/* Shared-run page (/analyze/s/:id): layout and result typography. Role tokens only; controls are
+   shared/ui blocks (Button, SectionHeader). */
+.as-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-5) var(--space-16);
+}
+
+.as-muted { color: var(--text-muted); font-size: var(--text-sm); padding: var(--space-3) 0; }
+
+.as-error {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-md);
+  background: var(--error-wash);
+  color: var(--error);
+  font-size: var(--text-sm);
+}
+
+.as-md { color: var(--text-body); line-height: var(--leading-normal); font-size: var(--text-md); }
+
+.as-md h2 { font-family: var(--serif); font-size: var(--text-xl); color: var(--text-head); margin: var(--space-5) 0 var(--space-2); }
+
+.as-md h3 { font-size: var(--text-md); color: var(--text-head); margin: var(--space-4) 0 var(--space-2); }
+
+.as-md ul { margin: var(--space-2) 0; padding-left: 1.25em; }
+
+.as-md li { margin: var(--space-1) 0; }
+
+.as-md p { margin: var(--space-3) 0; }
+
+.as-md code { font-family: var(--mono); font-size: 0.9em; background: var(--panel-2); padding: 0 var(--space-1); border-radius: var(--r-sm); }
+
+.as-cites {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
+}
+
+.as-cites ol { margin: var(--space-2) 0 0; padding-left: 1.4em; }
+
+.as-cites li { margin: var(--space-1) 0; font-size: var(--text-sm); color: var(--text-body); }
+
+.as-cite-title { color: var(--text-head); }
+
+.as-cite-meta { color: var(--text-muted); }
+
+.as-cite-links { margin-left: var(--space-2); display: inline-flex; gap: var(--space-2); }
+
+.as-cite-links a { color: var(--accent); font-size: var(--text-xs); }
+
+.as-disclaimer {
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  line-height: var(--leading-normal);
+}
+
+/* ── Typed source chips (NEWS / ANALYSIS / DRIFT / FORECAST): the word is the type ── */
+.as-kind-chip {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border-radius: var(--r-pill);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid var(--hairline);
+  color: var(--text-body);
+  background: var(--panel-2);
+  margin-right: var(--space-1);
+}
+
+.as-cite-date { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ── Web sources: own marker space, visually distinct from [n] ─────── */
+.as-web-chip {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--r-pill);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-body);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.as-cite-num {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.gp-md-cite-web {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+/* ── Guardrail check banner (a check: --ok passed, --warn flagged, --error failed) ── */
+.as-checks {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--warn);
+  background: var(--warn-wash);
+  font-size: var(--text-sm);
+  color: var(--text-head);
+}
+
+.as-checks.ok {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-color: var(--ok);
+  background: var(--ok-wash);
+  color: var(--text-body);
+}
+
+.as-check-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: var(--space-1);
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.as-checks.ok .as-check-dot { background: var(--ok); margin-top: 0; }
+
+.as-link-btn {
+  margin-left: var(--space-1);
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.as-link-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.as-shared-page { max-width: 860px; margin: 0 auto; padding: var(--space-4); }
+
+.as-shared-state { padding: var(--space-6) 0; }
+
+.as-shared-meta, .as-shared-stories { font-size: var(--text-ui); color: var(--text-body); margin: var(--space-1) 0; line-height: var(--leading-normal); }
+
+.as-shared-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin: var(--space-4) 0; font-size: var(--text-ui); }
+
+.as-shared-snippet { margin: var(--space-1) 0 0 0; padding-left: var(--space-3); border-left: 2px solid var(--hairline); font-size: var(--text-sm); color: var(--text-body); overflow-wrap: anywhere; white-space: pre-line; }
+
+.as-shared-warns { margin: var(--space-1) 0; padding-left: var(--space-4); font-size: var(--text-sm); }
+
+.as-shared-back { margin-top: var(--space-3); }
+
+@media (max-width: 640px) {
+  .as-shared-page { padding: var(--space-3); }
+}

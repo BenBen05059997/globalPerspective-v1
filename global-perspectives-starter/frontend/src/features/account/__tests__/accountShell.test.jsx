@@ -85,7 +85,7 @@ describe('Account — signed out', () => {
 });
 
 describe('Account — signed in shell', () => {
-  it('renders five rail sections with the desk active by default (no ?tab=)', async () => {
+  it('renders four rail sections with the desk active by default (no ?tab=)', async () => {
     renderAccount('/account');
     const rail = await screen.findByRole('navigation', { name: /account sections/i });
     const buttons = within(rail).getAllByRole('button');
@@ -93,12 +93,11 @@ describe('Account — signed in shell', () => {
       expect.arrayContaining([
         expect.stringContaining('Desk'),
         expect.stringContaining('Alerts & email'),
-        expect.stringContaining('Studio'),
         expect.stringContaining('Plan'),
         expect.stringContaining('Profile & sign-in'),
       ])
     );
-    expect(buttons).toHaveLength(5);
+    expect(buttons).toHaveLength(4);
     const deskBtn = buttons.find((b) => b.textContent.startsWith('Desk'));
     expect(deskBtn).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('heading', { name: 'Your desk' })).toBeInTheDocument();
@@ -107,12 +106,12 @@ describe('Account — signed in shell', () => {
   it.each([
     ['saved', 'Your desk'],
     ['notifications', 'What you will be told'],
-    ['analysis', 'Studio'],
+    ['analysis', 'Your desk'],
     ['membership', 'Plan'],
     ['profile', 'Profile'],
     ['desk', 'Your desk'],
     ['alerts', 'What you will be told'],
-    ['studio', 'Studio'],
+    ['studio', 'Your desk'],
     ['plan', 'Plan'],
     ['bogus-value', 'Your desk'],
   ])('old/new ?tab=%s resolves to the right section (%s)', async (tabValue, expectedHeading) => {
@@ -125,13 +124,12 @@ describe('Account — signed in shell', () => {
     expect(await screen.findByRole('heading', { name: 'Your desk' })).toBeInTheDocument();
   });
 
-  it('Studio only promises "your key" — no shared-analyses/receipts claim (F1.5)', async () => {
+  it('the retired Studio key panel is gone: no rail entry, no key copy', async () => {
     renderAccount('/account?tab=studio');
-    await screen.findByRole('heading', { name: 'Studio' });
+    await screen.findByRole('heading', { name: 'Your desk' });
     const body = document.body.textContent.toLowerCase();
-    expect(body).not.toMatch(/shared analyses/);
-    expect(body).not.toMatch(/receipts/);
-    expect(body).toMatch(/your key/);
+    expect(body).not.toMatch(/studio/);
+    expect(body).not.toMatch(/api key/);
   });
 });
 

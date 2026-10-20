@@ -28,7 +28,7 @@ textarea.cs-input { display: block; width: 100%; margin-top: var(--space-1); res
 @media print {
   html, body { background: Canvas !important; }
   .gp-nav, .gp-footer, .gp-tabbar, .cpg-map-hero, .cpg-phonehead, .cpg-hd-actions, .cpg-views, .es-left, .es-strip,
-  .cs-noprint, .ccv2-studio-btn, .cp-coverage-toggle, .cwc-chain-toggle { display: none !important; }
+  .cs-noprint, .cp-coverage-toggle, .cwc-chain-toggle { display: none !important; }
   .es-body { display: block !important; }
   .es-center, .es-right { max-width: 100% !important; width: auto !important; overflow: visible !important; position: static !important; }
   .cpg-page, .cpg-page * { color: CanvasText !important; background: transparent !important; box-shadow: none !important; }

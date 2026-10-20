@@ -5,7 +5,7 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 const fetchAlert = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({ fetchAlert: (...a) => fetchAlert(...a) }));
 import {
-  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute,
+  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
 } from '@/app/LegacyRedirects';
 
 function Where() {
@@ -27,6 +27,7 @@ function renderAt(path) {
         <Route path="/daily/:dateKey" element={<DailyRedirect />} />
         <Route path="/weekly-brief" element={<WeeklyBriefRedirect />} />
         <Route path="/spider-demo" element={<SpiderDemoRedirect />} />
+        <Route path="/analyze" element={<AnalyzeRedirect />} />
         <Route path="/breaking" element={<BreakingFeedRedirect />} />
         <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
       </Routes>
@@ -117,5 +118,20 @@ describe('the countries list keeps one address', () => {
   it('any other /weekly stays on the Stories page with its query', () => {
     renderAt('/weekly?view=web');
     expect(screen.getByTestId('where').textContent).toBe('/weekly?view=web');
+  });
+});
+
+describe('the retired Analysis Studio (2026-10-20)', () => {
+  it('/analyze?stories=<thread id,...> -> the first thread story', () => {
+    renderAt('/analyze?stories=thread-a-1%2Cthread-b-2');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly/thread/thread-a-1');
+  });
+
+  it('/analyze with no stories, or a topic id that is not a thread id -> the countries list', () => {
+    const first = renderAt('/analyze');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly/countries');
+    first.unmount();
+    renderAt('/analyze?stories=t1');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly/countries');
   });
 });

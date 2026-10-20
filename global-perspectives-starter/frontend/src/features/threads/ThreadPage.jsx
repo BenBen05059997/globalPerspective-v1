@@ -35,7 +35,7 @@ import '@/features/threads/ThreadPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import AsOf from '@/shared/ui/AsOf.jsx';
-import { ROUTE, mapHref, studioHref } from '@/shared/lib/links.js';
+import { ROUTE, mapHref } from '@/shared/lib/links.js';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -476,9 +476,6 @@ export default function ThreadPage() {
         <div className="tp-topbar-right">
           <Link to={mapHref({ story: threadId })} className="tp-analyze-link" title="Show this story on the map">
             Show on map
-          </Link>
-          <Link to={studioHref([threadId])} className="tp-analyze-link" title="Analyze this arc in the Analysis Studio">
-            Analyze this arc →
           </Link>
           <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
           <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />

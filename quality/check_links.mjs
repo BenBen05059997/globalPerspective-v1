@@ -50,6 +50,6 @@ if (isMain(import.meta.url)) {
     skip: skipAllowed,
     dirs: ['backend'],
     note: 'Per-file count of hand-built route strings outside shared/lib/links.js and backend/shared/src/links.js (see quality/check_links.mjs). Counts may only fall; lower them with --lower after switching a caller to links.js.',
-    advice: 'build the address with storyHref / countryHref / mapHref / briefingHref / forecastHref / studioHref / todayHref (or <EntityLink>) from shared/lib/links.js; emails use backend/shared/src/links.js',
+    advice: 'build the address with storyHref / countryHref / mapHref / briefingHref / forecastHref / todayHref (or <EntityLink>) from shared/lib/links.js; emails use backend/shared/src/links.js',
   });
 }

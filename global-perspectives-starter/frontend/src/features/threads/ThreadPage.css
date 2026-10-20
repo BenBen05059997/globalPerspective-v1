@@ -552,7 +552,7 @@
   .tp-hd-h1 { font-size: var(--text-2xl); }
   .tp-tl-row { grid-template-columns: 64px 14px 1fr; gap: var(--space-2); }
 
-  /* S2.2 phone-overflow fix: at 390px this row (breadcrumbs + Analyze/Share/Copy/Save/toggle)
+  /* S2.2 phone-overflow fix: at 390px this row (breadcrumbs + Map/Share/Copy/Save/toggle)
      used to force ~165px of horizontal scroll. Wrap the right-hand controls onto their own row
      instead of forcing one long line, and let the breadcrumb text itself wrap. */
   .tp-topbar { flex-wrap: wrap; row-gap: var(--space-1); }

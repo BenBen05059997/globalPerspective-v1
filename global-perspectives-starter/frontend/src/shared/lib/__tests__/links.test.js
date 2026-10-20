@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, breakingHref,
+  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref, breakingHref,
   entityHref,
 } from '@/shared/lib/links.js';
 
 describe('links — one address per destination', () => {
   it('ROUTE lists the reader routes', () => {
-    expect(ROUTE).toMatchObject({ map: '/', today: '/today', story: '/weekly/thread/:threadId', country: '/weekly/country/:countryName', briefings: '/briefings', trackRecord: '/track-record', studio: '/analyze' });
+    expect(ROUTE).toMatchObject({ map: '/', today: '/today', story: '/weekly/thread/:threadId', country: '/weekly/country/:countryName', briefings: '/briefings', trackRecord: '/track-record' });
   });
 
   it('storyHref encodes the id and keeps the story options (tab, from, country)', () => {
@@ -56,10 +56,7 @@ describe('links — one address per destination', () => {
     expect(forecastAnchorId('abc')).toBe('q-abc');
   });
 
-  it('studioHref takes thread ids; todayHref', () => {
-    expect(studioHref(['thread-a', 'thread-b'])).toBe('/analyze?stories=thread-a%2Cthread-b');
-    expect(studioHref('thread-a')).toBe('/analyze?stories=thread-a');
-    expect(studioHref([])).toBe('/analyze');
+  it('todayHref', () => {
     expect(todayHref()).toBe('/today');
   });
 

@@ -2,14 +2,11 @@
   "note": "Per-file count of hand-made tier chips / tab lists / section headers outside shared/ui (see quality/check_shared_blocks.mjs). Counts may only fall; lower them with --lower after moving to the shared block.",
   "totals": {
     "sectionHeader": 5,
-    "tabs": 7
+    "tabs": 5
   },
   "files": {
     "features/account/Account.css": {
       "sectionHeader": 2
-    },
-    "features/analysis-studio/components/StudioDeck.jsx": {
-      "tabs": 2
     },
     "features/briefings/components/BriefingMode.jsx": {
       "tabs": 1

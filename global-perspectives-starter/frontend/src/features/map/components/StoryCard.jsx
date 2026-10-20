@@ -1,6 +1,6 @@
 // StoryCard — the console's "click a story → its card" (M5b), per the story dossier board
 // decision: header -> WHAT IS HAPPENING (summary) -> WHAT IT MEANS (trajectory) -> WHY (root
-// cause) -> [Open full story] [Analyze in Studio]. Every block is a strict subset of the data
+// cause) -> [Open full story]. Every block is a strict subset of the data
 // already on file for this topic/thread — a block with no data is omitted, never padded with
 // placeholder text (CLAUDE.md). Data sources:
 //   - header: the topic record already loaded by the feed (no fetch)
@@ -22,7 +22,7 @@ import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { freshnessState } from '@/shared/lib/freshness.js';
-import { storyHref, studioHref as studioPath } from '@/shared/lib/links.js';
+import { storyHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 // Summary/trajectory text shaping lives in shared/lib/cardText.js (bullet-aware; see its header).
@@ -43,7 +43,7 @@ function Mentions({ text, known }) {
 }
 
 export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThreads = null, linked = null }) {
-  const { loading, summary, analysis, summaryError, analysisError, fetchError } = useStoryCardData(topic);
+  const { loading, summary, analysis, summaryError, analysisError } = useStoryCardData(topic);
   const known = useMemo(() => knownStoryTitles(webThreads, topic?.threadId || null), [webThreads, topic?.threadId]);
   if (!topic) return null;
 
@@ -73,8 +73,6 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
   // The story page only for a real thread id (a topic id is not a story address).
   const openFullStoryHref = topic.threadId ? storyHref(topic.threadId) : null;
-  const studioId = topic.topicId || topic.threadId || null;
-  const studioHref = !fetchError && studioId ? studioPath(studioId) : null;
 
   const linkedInto = linked?.into || [];
   const linkedFrom = linked?.from || [];
@@ -157,7 +155,6 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
       <div className="sh-detail-foot sc-foot">
         {openFullStoryHref ? <Link to={openFullStoryHref}>Open full story →</Link> : null}
-        {studioHref ? <Link to={studioHref}>Analyze in Studio →</Link> : null}
       </div>
     </div>
   );

@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import SharedAnalysisView from '@/features/analysis-studio/components/SharedAnalysisView.jsx';
-import { shareConfigured, fetchShare, deleteShare, forgetShare } from '@/features/analysis-studio/lib/shareApi.js';
+import { shareConfigured, fetchShare, deleteShare } from '@/features/analysis-studio/lib/shareApi.js';
 import { useNoIndex } from '@/shared/hooks/useNoIndex.js';
 import { reportFetchError } from '@/shared/api/errorSink';
-import '@/features/analysis-studio/AnalysisStudio.css';
+import '@/features/analysis-studio/SharedAnalysis.css';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
-import { ROUTE, studioHref } from '@/shared/lib/links.js';
+import { ROUTE } from '@/shared/lib/links.js';
 
-// /analyze/s/:id — a read-only, unlisted (noindex) debrief of one shared Studio run. States, all honest:
+// /analyze/s/:id — a read-only, unlisted (noindex) debrief of one shared run from the retired Analysis Studio. States, all honest:
 // loading, endpoint not configured, deleted / never existed, could not be loaded, ready.
 export default function SharedAnalysisPage() {
   const { id } = useParams();
@@ -34,7 +34,7 @@ export default function SharedAnalysisPage() {
   async function onDelete() {
     if (!window.confirm('Delete this shared analysis? Its link stops working for everyone.')) return;
     setBusy(true); setError(null);
-    try { await deleteShare(id); forgetShare(id); setState({ kind: 'gone' }); } catch (e) { setError(e.message); } finally { setBusy(false); }
+    try { await deleteShare(id); setState({ kind: 'gone' }); } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
 
   return (
@@ -43,15 +43,15 @@ export default function SharedAnalysisPage() {
       {state.kind === 'off' && (
         <div className="as-shared-state">
           <h1>Shared analyses are not available yet</h1>
-          <p>Sharing has not been switched on for this site yet. Analysis Studio itself works as usual.</p>
-          <Link to={ROUTE.studio}>Open Analysis Studio →</Link>
+          <p>Sharing has not been switched on for this site yet.</p>
+          <Link to={ROUTE.countries}>Browse the countries →</Link>
         </div>
       )}
       {state.kind === 'gone' && (
         <div className="as-shared-state">
           <h1>This shared analysis was deleted or never existed</h1>
           <p>Its link does not point to anything we hold. The person who shared it may have removed it.</p>
-          <Link to={ROUTE.studio}>Run your own analysis →</Link>
+          <Link to={ROUTE.countries}>Browse the countries →</Link>
         </div>
       )}
       {state.kind === 'failed' && (
@@ -64,7 +64,7 @@ export default function SharedAnalysisPage() {
         <>
           <SharedAnalysisView share={state.share} />
           <div className="as-shared-actions">
-            <Button variant="primary" to={studioHref((state.share.stories || []).map((s) => s.threadId))}>Run your own →</Button>
+            <Button variant="primary" to={ROUTE.countries}>Browse the countries →</Button>
             {(state.share.stories || []).some((s) => s.threadId) && (
               <span>
                 Open these stories live:{' '}

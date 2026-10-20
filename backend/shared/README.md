@@ -16,7 +16,7 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 - `resolveIso3.js`: `resolveIso3(text) -> {iso3, name}` (a place resolves to its country) / `iso3List(names)` for
   the Lambda writers; a thin wrapper over `countries.js`.
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend
-  `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `studioHref`,
+  `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`,
   `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
 - `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
   `placeNames.json` is still in `src/` but no backend code reads it any more.

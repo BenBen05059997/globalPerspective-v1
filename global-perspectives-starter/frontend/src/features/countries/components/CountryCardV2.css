@@ -121,9 +121,5 @@
 .ccv2-triggers b { color: var(--text-head); }
 .ccv2-trigger-note { font-size: var(--text-xs); color: var(--text-body); }
 
-.ccv2-studio-btn { align-self: flex-start; margin-top: var(--space-1); }
-/* no briefing yet: the dashed outline says "nothing exists until you run it" */
-.ccv2-generate { border-style: dashed; }
-
 /* Phone bottom-sheet variant — 44px targets already covered above; a bit tighter padding. */
 .ccv2-sheet { padding: var(--space-2) var(--space-3) var(--space-4); }

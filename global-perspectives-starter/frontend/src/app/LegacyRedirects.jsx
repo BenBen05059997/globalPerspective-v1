@@ -12,6 +12,9 @@
 //   /weekly-brief        -> /briefings?mode=weekly
 // The countries list keeps one address (2026-10-19):
 //   /weekly?section=countries -> /weekly/countries  (WeeklyRoute; every other /weekly renders the page)
+// The Analysis Studio retired (2026-10-20):
+//   /analyze?stories=<id,...> -> the first id's story page when it is a thread id (`thread-…`), else the
+//                                countries list. /analyze/s/:id (shared runs) stays a real page.
 // The Worker sends real 301s for these; the client redirects stay as the fallback.
 import { Navigate, useParams, useSearchParams } from 'react-router';
 import { useBreakingAlert } from '@/features/breaking';
@@ -51,4 +54,10 @@ export function BreakingDetailRedirect() {
   if (loading) return <BootLoader variant="inline" label="Opening the story" text="Opening the story" />;
   const to = alert && alert.hasArc && alert.threadId ? storyHref(alert.threadId) : ROUTE.map;
   return <Navigate replace to={to} />;
+}
+
+export function AnalyzeRedirect() {
+  const [searchParams] = useSearchParams();
+  const first = (searchParams.get('stories') || '').split(',')[0].trim();
+  return <Navigate replace to={/^thread-/.test(first) ? storyHref(first) : ROUTE.countries} />;
 }

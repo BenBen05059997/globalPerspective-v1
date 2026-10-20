@@ -50,11 +50,11 @@ must_have "$SRC/app/App.jsx" "import EconomyPage|EconomyPage = lazy" "imports Ec
 must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
 must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "economy soft-hidden from nav (2026-09-25; route stays live)"
 
-# ─── N1 site shell (2026-09-26): plain, flat menu items; Studio left the menu 2026-10-19 (decision 0030) ───
+# ─── N1 site shell (2026-09-26): plain, flat menu items; the Studio is gone from the menu and retired 2026-10-20 (decision 0030) ───
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Map'" "menu has Map"
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Stories'" "menu has Stories"
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Briefings'" "menu has Briefings"
-must_not_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "Studio out of the menu until its return criteria are met (decision 0030; /analyze stays routed)"
+must_not_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "no Studio menu item (the Studio retired 2026-10-20; /analyze redirects)"
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Track record'" "menu has Track record"
 must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/whitepaper" "white paper soft-hidden from nav (A1, 2026-09-26; route stays live)"
 
@@ -154,10 +154,7 @@ must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting thei
 must_have "$SRC/features/threads/hooks/useStoryLinks.js" "useWebIndex" "story links read the story-web index (one shared call)"
 must_have "$SRC/features/threads/lib/linkStates.js" "No linked stories found yet for this story" "an empty story web says why, honestly"
 must_have "$SRC/shared/map/storyLinkArcs.js" "strong.*medium|DRAWN" "map lines are strong + medium only"
-must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareableSections" "the share button exists only for runs that passed their checks"
-must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareConfigured" "sharing is hidden while the share endpoint is unset"
 must_have "$SRC/features/analysis-studio/SharedAnalysisPage.jsx" "useNoIndex" "the shared page is noindex"
-must_have "$SRC/features/analysis-studio/components/SignedOutExample.jsx" "not ready yet" "the signed-out example says so until a real share exists"
 must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildWeeklySquares" "settling log computed from the server's real weekly records"
 
 # ─── Boot loader (2026-10-01): shared BootLoader, honest ticks, pre-JS boot, token-only colours ───
@@ -255,8 +252,7 @@ must_have "$SRC/features/track-record/TrackRecordPage.jsx" "SectionHeader" "trac
 must_not_have "$SRC/features/threads/WeeklyPage.css" "^\\.(bgt|cp)-|^\\.(share-btn|copy-briefing-btn)" "country/share rules live with their owners, not in WeeklyPage.css"
 
 # ─── P3b (2026-10-01): analyze, today, membership, static pages, breaking, account on the dark tokens ───
-for css in features/analysis-studio/AnalysisStudio.css features/analysis-studio/components/StudioDeck.css \
-           features/analysis-studio/components/StudioPictures.css shared/ui/ProviderModal.css \
+for css in features/analysis-studio/SharedAnalysis.css features/analysis-studio/components/SharedTimeBar.css \
            features/analysis-studio/components/AnalysisVisuals.css \
            features/home/Home.css features/home/AIComponents.css features/home/components/TodayArchiveSidebar.css \
            features/home/components/TopicNav.css features/home/components/LedeBand.css \
@@ -481,8 +477,8 @@ must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.movers" "l
 must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.pulses" "legend motion budget uses MOTION_BUDGET.pulses"
 must_not_have "$SRC/shared/map/SituationMap3D.jsx" "pulseSet\\(active, Date.now\\(\\), 8\\)" "the globe uses the budget constant, not a literal 8"
 
-# 2026-10-02 operator yes: Studio credits copy removed (credits parked); Stories rail renamed
-must_not_have "$SRC/features/analysis-studio/AnalysisStudio.jsx" "Credits · |out of analysis credits|Add credits" "Studio shows no credits copy while credits are parked"
+# 2026-10-02 operator yes: credits copy removed (credits parked); Stories rail renamed
+must_not_have "$SRC/features/analysis-studio/SharedAnalysisPage.jsx" "Credits · |out of analysis credits|Add credits" "the shared-run page shows no credits copy while credits are parked"
 # 2026-10-19 operator rule (decision 0002: site copy must not promise credits): no credits copy on
 # Membership, Account or the header pill.
 for f in features/account/MembershipPage.jsx features/account/Account.jsx app/layout/Layout.jsx; do

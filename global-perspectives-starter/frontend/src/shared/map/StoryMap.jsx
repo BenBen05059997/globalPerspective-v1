@@ -3,7 +3,7 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import RadarMap from '@/shared/map/RadarMap.jsx';
 import '@/shared/map/mapKit.css';
 
-// StoryMap — the map pane of every slide deck (story mode, the Studio deck, briefing mode): the
+// StoryMap — the map pane of every slide deck (story mode, briefing mode): the
 // console's 3D globe (lazy — deck.gl is heavy, code-split so it only loads with a deck) with a
 // WebGL-less RadarMap fallback (same pattern as SituationHome.jsx's USE_3D check). Held still and
 // centred on the story's country; no selection callbacks.

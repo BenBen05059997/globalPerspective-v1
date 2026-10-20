@@ -59,7 +59,7 @@ describe('StoryCard', () => {
     expect(screen.getByText('Why')).toBeInTheDocument();
     expect(screen.getByText('Trigger')).toBeInTheDocument();
     expect(screen.getByText(/Open full story/)).toBeInTheDocument();
-    expect(screen.getByText(/Analyze in Studio/)).toBeInTheDocument();
+    expect(screen.queryByText(/Studio/)).not.toBeInTheDocument();
     expect(reportFetchError).not.toHaveBeenCalled();
     // F1.7: the header shows the topic's real category word, not a crisis-type relabel
     // ("conflict", not "Conflict"/"HUMANITARIAN") — consistent with StoryPeek.
@@ -100,8 +100,6 @@ describe('StoryCard', () => {
     expect(screen.queryByText('What is happening')).not.toBeInTheDocument();
     expect(screen.getByText('What it means')).toBeInTheDocument();
     expect(screen.getByText(/It will likely continue/)).toBeInTheDocument();
-    // Studio still isn't offered when any fetch genuinely failed.
-    expect(screen.queryByText(/Analyze in Studio/)).not.toBeInTheDocument();
   });
 
   it('shows "stories from <feed date>" when the topic carries no date of its own, and "updated <date>" when it does (F2.18)', async () => {
@@ -125,7 +123,6 @@ describe('StoryCard', () => {
     expect(screen.getByText(/Open full story/)).toBeInTheDocument();
     expect(screen.queryByText('What is happening')).not.toBeInTheDocument();
     expect(screen.queryByText('What it means')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Analyze in Studio/)).not.toBeInTheDocument();
   });
 
   // P8: WHY steps carry the story page's basis tag; in-text links only for exact real story titles.

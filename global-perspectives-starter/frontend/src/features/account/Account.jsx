@@ -5,9 +5,6 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import { usePreferences } from '@/shared/hooks/usePreferences';
 import { useMembership } from '@/shared/hooks/useMembership';
-import { loadByok, clearByok } from '@/shared/lib/byok';
-import { getProvider } from '@/shared/lib/llmProviders';
-import ProviderModal from '@/shared/ui/ProviderModal';
 import DeskPanel from '@/features/account/components/DeskPanel';
 import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
 import { useWeeklyBrief } from '@/features/briefings';
@@ -19,75 +16,6 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE } from '@/shared/lib/links.js';
 import '@/features/account/Account.css';
-
-// Mask a key for display: keep a few head/tail chars, hide the middle.
-function maskKey(k) {
-  if (!k) return '';
-  if (k.length <= 10) return `${k.slice(0, 2)}••••`;
-  return `${k.slice(0, 5)}••••${k.slice(-4)}`;
-}
-
-// Analysis Studio BYOK key management — view / change / remove the key the reader
-// stored in this browser (it never touches our servers; see shared/lib/byok.js).
-function AnalysisKeyPanel() {
-  const [byok, setByok] = useState(() => loadByok());
-  const [modalOpen, setModalOpen] = useState(false);
-  const provider = byok ? getProvider(byok.provider) : null;
-
-  function handleRemove() {
-    clearByok();
-    setByok(null);
-  }
-
-  return (
-    <Card className="acct-card">
-      <SectionHeader label="Analysis Studio API key" />
-      <p className="acct-desc">
-        Your key is stored only in this browser and is sent straight to the provider you
-        pick — never to our servers. Use this to update it if it’s wrong or expired.
-      </p>
-
-      {byok ? (
-        <Card level={2} className="account-key-card">
-          <div className="account-key-row">
-            <span className="account-key-label">Provider</span>
-            <span className="account-key-val">{provider?.label || byok.provider}</span>
-          </div>
-          <div className="account-key-row">
-            <span className="account-key-label">Model</span>
-            <span className="account-key-val">{byok.model}</span>
-          </div>
-          <div className="account-key-row">
-            <span className="account-key-label">Key</span>
-            <span className="account-key-val account-key-mono">{maskKey(byok.key)}</span>
-          </div>
-          <div className="account-key-actions">
-            <Button compact onClick={() => setModalOpen(true)}>Change key</Button>
-            <Button compact className="acct-danger" onClick={handleRemove}>Remove key</Button>
-          </div>
-        </Card>
-      ) : (
-        <Card level={2} className="account-key-card">
-          <p className="acct-desc acct-desc--flush">No API key set in this browser.</p>
-          <div className="account-key-actions">
-            <Button compact onClick={() => setModalOpen(true)}>Set up a key</Button>
-          </div>
-        </Card>
-      )}
-
-      <p className="acct-desc acct-desc--after">
-        <Link to={ROUTE.studio}>Go to Analysis Studio →</Link>
-      </p>
-
-      {modalOpen && (
-        <ProviderModal
-          onClose={() => setModalOpen(false)}
-          onSaved={() => setByok(loadByok())}
-        />
-      )}
-    </Card>
-  );
-}
 
 function formatMemberSince(isoString) {
   if (!isoString) return null;
@@ -380,15 +308,13 @@ function NotificationsPanel() {
   );
 }
 
-// K1 (AccountDesk.dc.html, approved 2026-09-26): five left-rail sections replacing the old
+// K1 (AccountDesk.dc.html, approved 2026-09-26): four left-rail sections replacing the old
 // 5-tab strip. Order and copy (label + one-line subtitle) match the design board exactly.
 const SECTIONS = [
   { id: 'desk',    label: 'Desk',              subtitle: 'what changed · following · saved', kicker: 'DESK',
     title: 'Your desk', sub: 'What changed since your last visit, what you follow, and what you saved.' },
   { id: 'alerts',  label: 'Alerts & email',    subtitle: 'what you will be told',              kicker: 'ALERTS & EMAIL',
     title: 'What you will be told', sub: 'Every email with its real state — nothing claims to be on when the thing behind it is paused.' },
-  { id: 'studio',  label: 'Studio',            subtitle: 'your key', kicker: 'STUDIO',
-    title: 'Studio', sub: 'Your AI key, stored only in this browser — analysis runs on your key.' },
   { id: 'plan',    label: 'Plan',              subtitle: 'membership · billing',                kicker: 'PLAN',
     title: 'Plan', sub: 'What you pay and what it includes today. Billing is handled by Polar.' },
   { id: 'profile', label: 'Profile & sign-in', subtitle: 'email · sign out',                    kicker: 'PROFILE & SIGN-IN',
@@ -402,13 +328,11 @@ const SECTIONS = [
 const TAB_TO_SECTION = {
   saved: 'desk',
   notifications: 'alerts',
-  analysis: 'studio',
   membership: 'plan',
   profile: 'profile',
   // new values also accepted as-is
   desk: 'desk',
   alerts: 'alerts',
-  studio: 'studio',
   plan: 'plan',
 };
 
@@ -459,7 +383,7 @@ export default function Account() {
     return <BootLoader variant="inline" label="Loading account" text="Loading account" />;
   }
 
-  // Public data (saved/follow/Studio) never gates on sign-in elsewhere in the app; the account
+  // Public data (saved/follow) never gates on sign-in elsewhere in the app; the account
   // desk itself is inherently sign-in-scoped (it's "your" saved list / plan / profile), so an
   // honest signed-out screen replaces the old silent redirect to /signin.
   if (!user || user.isAnonymous) {
@@ -507,8 +431,7 @@ export default function Account() {
 
           {section.id === 'alerts' && <NotificationsPanel />}
 
-          {section.id === 'studio' && <AnalysisKeyPanel />}
-
+          
           {section.id === 'plan' && <MembershipPanel />}
 
           {section.id === 'profile' && (

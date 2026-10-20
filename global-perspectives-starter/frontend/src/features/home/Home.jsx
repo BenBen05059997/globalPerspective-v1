@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router';
-import { ROUTE, storyHref, studioHref } from '@/shared/lib/links.js';
+import { ROUTE, storyHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import SummaryDisplay from '@/features/home/components/SummaryDisplay';
@@ -45,11 +45,6 @@ const PreIcon = () => (
 const TraIcon = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
     <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/>
-  </svg>
-);
-const AnaIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="7" cy="7" r="4.5"/><path d="M10.3 10.3L13.5 13.5"/>
   </svg>
 );
 
@@ -546,12 +541,6 @@ function Home() {
                         {label}
                       </Button>
                     ))}
-
-                    {/* Analyze (Analysis Studio) */}
-                    <Button compact className="home-ai-btn" to={studioHref(id)}>
-                      <AnaIcon />
-                      Analyze
-                    </Button>
                   </div>
 
                   <div className="home-topic-src">

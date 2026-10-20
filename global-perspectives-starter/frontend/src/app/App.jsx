@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import {
-  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute,
+  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
 } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
@@ -38,7 +38,6 @@ const Account = lazy(() => import('@/features/account/Account'));
 const WhitepaperPage = lazy(() => import('@/features/static/WhitepaperPage'));
 const SituationHome = lazy(() => import('@/features/map/SituationHome'));
 const EconomyPage = lazy(() => import('@/features/economy/EconomyPage'));
-const AnalysisStudio = lazy(() => import('@/features/analysis-studio/AnalysisStudio'));
 const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
 const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
@@ -129,7 +128,7 @@ export default function App() {
             <Route path="/daily" element={<DailyRedirect />} />
             <Route path="/daily/:dateKey" element={<DailyRedirect />} />
             <Route path="/economy" element={<EconomyPage />} />
-            <Route path="/analyze" element={<AnalysisStudio />} />
+            <Route path="/analyze" element={<AnalyzeRedirect />} />
             <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
             <Route path="/membership" element={<MembershipPage />} />
             <Route path="/track-record" element={<TrackRecordPage />} />

@@ -1,8 +1,8 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 416,
-    "fontSize": 177,
+    "spacing": 415,
+    "fontSize": 176,
     "radius": 44
   },
   "files": {
@@ -32,9 +32,9 @@
       "spacing": 26
     },
     "features/economy/EconomyPage.css": {
-      "fontSize": 76,
+      "fontSize": 75,
       "radius": 20,
-      "spacing": 158
+      "spacing": 157
     },
     "features/map/SituationHome.css": {
       "spacing": 14

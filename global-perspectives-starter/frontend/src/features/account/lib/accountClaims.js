@@ -4,7 +4,6 @@
 // and never list a membership-only feature (e.g. following countries) as free.
 export const ACCOUNT_CLAIMS = [
   'Saved stories, countries, and daily briefs, kept in one list',
-  'An Analysis Studio key, stored only in this browser',
   'Alert settings for the emails that are live today',
 ];
 

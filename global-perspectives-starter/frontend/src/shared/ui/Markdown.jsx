@@ -3,7 +3,7 @@
 // paragraphs (soft line-breaks joined). React escapes all text nodes, so this is XSS-safe.
 // Not a general Markdown engine — just the subset our prompt produces.
 //
-// Optional `links` prop (Analysis Studio, D3): a { marker: href } map, e.g.
+// Optional `links` prop (shared runs, D3): a { marker: href } map, e.g.
 // { W1: 'https://example.com' }, turning a literal "[W1]" in the text into a real
 // link to that URL. Only markers present in the map are ever linked — any other
 // bracket text (including our own [n] story citations, which link separately in the

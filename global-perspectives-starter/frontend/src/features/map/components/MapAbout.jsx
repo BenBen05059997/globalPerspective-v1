@@ -2,8 +2,7 @@
 // phones this still sits below the map (the page scrolls there); on the desktop full-bleed console
 // (R4a) the map is the whole page, so the same content opens from a small "About this map" control
 // as a drawer instead — nothing was dropped, it moved. Every date is computed by the caller.
-// "Read today's topics →" heads it so /today is reachable from the map (decision 0029); Studio's
-// teaser left with its menu item (decision 0030 — `/analyze` stays routed).
+// "Read today's topics →" heads it so /today is reachable from the map (decision 0029).
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';

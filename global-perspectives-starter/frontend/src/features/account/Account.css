@@ -88,7 +88,7 @@
 .acct-signedout-note { font-size: var(--text-ui); color: var(--text-dim); margin: var(--space-3) 0 0; }
 .acct-signin-btn { margin-top: var(--space-1); }
 
-/* ── Panels (alerts / studio / plan / profile) ── */
+/* ── Panels (alerts / plan / profile) ── */
 .acct-col { max-width: 520px; margin: 0 auto; }
 .acct-card { margin-bottom: var(--space-4); }
 .acct-card .gp-sec { margin-bottom: var(--space-3); }
@@ -96,8 +96,6 @@
 
 .acct-desc { color: var(--text-dim); font-size: var(--text-base); line-height: var(--leading-normal); margin: 0 0 var(--space-4); max-width: 60ch; }
 .acct-desc a { color: var(--accent); }
-.acct-desc--flush { margin: 0; }
-.acct-desc--after { margin: var(--space-3) 0 0; }
 .acct-muted { font-size: var(--text-base); color: var(--text-dim); line-height: var(--leading-normal); }
 .acct-fine { font-size: var(--text-ui); color: var(--text-dim); margin-top: var(--space-1); line-height: 1.45; }
 .acct-fine--lead { margin: 0 0 var(--space-3); line-height: var(--leading-normal); }
@@ -211,20 +209,3 @@
 /* status: a save persisted / failed */
 .acct-notice { margin-top: var(--space-3); font-size: var(--text-ui); color: var(--ok); line-height: var(--leading-normal); }
 .acct-error { margin-top: var(--space-3); font-size: var(--text-ui); color: var(--error); }
-
-/* Analysis Studio key */
-.account-key-card { max-width: 460px; }
-.account-key-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
-  font-size: var(--text-base);
-}
-.account-key-label { color: var(--text-dim); }
-.account-key-val { color: var(--text-head); font-weight: var(--weight-medium); }
-.account-key-mono { font-family: var(--mono); font-weight: var(--weight-regular); }
-.account-key-actions { display: flex; gap: var(--space-3); margin-top: var(--space-3); }
-.gp-btn.acct-danger { color: var(--error); border-color: var(--error); }
-.gp-btn.acct-danger:hover { background: var(--error-wash); }

@@ -20,7 +20,6 @@ test('story, country, map, briefing, forecast, studio, today and breaking addres
   assert.strictEqual(L.briefingHref({ mode: 'x', date: 'bad' }), '/briefings');
   assert.strictEqual(L.forecastHref('q1'), '/track-record?q=q1');
   assert.strictEqual(L.forecastAnchorId('q1'), 'q-q1');
-  assert.strictEqual(L.studioHref(['a', 'b']), '/analyze?stories=a%2Cb');
   assert.strictEqual(L.todayHref(), '/today');
   assert.strictEqual(L.breakingHref('alert 1/x'), '/breaking/alert%201%2Fx');
   assert.strictEqual(L.breakingHref(null), '/');

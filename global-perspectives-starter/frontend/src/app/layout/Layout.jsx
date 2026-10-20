@@ -80,8 +80,8 @@ function Layout({ children }) {
   // inline-SVG icon per item (no icon library).
   // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up
   // while analysis is paused, no "every forecast publicly scored" (only 122 resolved, one week,
-  // unscored track record). Studio left the menu 2026-10-19 (decision 0030): `/analyze` and shared
-  // analyses stay routed; it returns when its redesign plan's criteria are met.
+  // unscored track record). The Studio retired 2026-10-20: `/analyze` redirects, shared runs
+  // (`/analyze/s/:id`) stay routed.
   const navLinks = [
     { to: ROUTE.map, exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
     { to: ROUTE.stories, label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },

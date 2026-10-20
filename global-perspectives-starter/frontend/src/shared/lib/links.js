@@ -15,7 +15,6 @@ const ROUTE = {
   country: '/weekly/country/:countryName',
   briefings: '/briefings',
   trackRecord: '/track-record',
-  studio: '/analyze',
   breaking: '/breaking/:id',
 };
 
@@ -79,12 +78,6 @@ function forecastHref(qid) {
   return qid ? withQuery(ROUTE.trackRecord, { q: qid }) : ROUTE.trackRecord;
 }
 
-/** studioHref(['thread-a', 'thread-b']) -> '/analyze?stories=thread-a%2Cthread-b'. No ids -> the Studio. */
-function studioHref(threadIds) {
-  const ids = (Array.isArray(threadIds) ? threadIds : [threadIds]).filter(Boolean);
-  return ids.length ? withQuery(ROUTE.studio, { stories: ids.join(',') }) : ROUTE.studio;
-}
-
 function todayHref() {
   return ROUTE.today;
 }
@@ -119,6 +112,6 @@ function absoluteUrl(path) {
 
 export {
   SITE_URL, absoluteUrl,
-  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, breakingHref,
+  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref, breakingHref,
   entityHref,
 };

@@ -1,6 +1,6 @@
 import Markdown from '@/shared/ui/Markdown';
 import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/features/analysis-studio/components/AnalysisVisuals.jsx';
-import { StudioTimeBar } from '@/features/analysis-studio/components/StudioPictures.jsx';
+import { SharedTimeBar } from '@/features/analysis-studio/components/SharedTimeBar.jsx';
 import { webLinkMap } from '@/features/analysis-studio/lib/webCitations';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { formatCiteDate } from '@/features/analysis-studio/lib/formatDate';
@@ -43,7 +43,7 @@ export default function SharedAnalysisView({ share, compact = false }) {
               {sec.checks.warnings.map((w, k) => <li key={k} className={`sev-${w.severity}`}>{w.message}</li>)}
             </ul>
           )}
-          {i === 0 && dates.length > 0 && <StudioTimeBar dates={dates} today={String(share.sourcesFrozenAt || '').slice(0, 10)} />}
+          {i === 0 && dates.length > 0 && <SharedTimeBar dates={dates} today={String(share.sourcesFrozenAt || '').slice(0, 10)} />}
           <Markdown text={sec.prose} className="as-md" links={webLinkMap((sec.webSources || []).filter((w) => httpOnly(w.url)))} />
           {sec.struct && (
             <>

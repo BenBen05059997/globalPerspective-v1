@@ -1,4 +1,4 @@
-/* Deck shell — the slide-deck chrome shared by story mode (threads), the Studio deck (analysis-studio)
+/* Deck shell — the slide-deck chrome shared by story mode (threads)
    and briefing mode (briefings): desktop .sm-* (top bar, stage, slide card, nav, dots, scrolling body
    with a bottom fade, kicker/title/text) and phone .psm-* (root, top bar, panels, slide view, nav,
    dots). Each deck imports this file; page-specific rules stay in the page's own stylesheet.

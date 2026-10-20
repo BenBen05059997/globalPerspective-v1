@@ -293,7 +293,7 @@ export default function WhitepaperPage() {
               items: [
                 'All narrative-layer features',
                 'Story web: links between stories that the model judges to feed into one another (a judgment, never a claim of cause)',
-                'Analysis Studio: your own analysis across the stories, with your own AI key or, for members, on our servers',
+                'Country pages as a sheet: every section marked fact or judgment, what we do not know, copy as text or print, and a private note of your own view',
                 'Track record: every forecast logged with dated triggers and checked as it comes due',
               ],
             },

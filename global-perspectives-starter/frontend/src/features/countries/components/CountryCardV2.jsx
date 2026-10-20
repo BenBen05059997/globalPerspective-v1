@@ -1,7 +1,7 @@
 // CountryCardV2 — the S4 one-screen country card (COUNTRY_VIEW_DISCUSSION.md "Debate outcome":
 // state line -> verified facts only -> one-sentence summary -> RISK + DIRECTION -> 4 risk bars
 // (WHY on click) -> latest change (only with a cited event) -> <=3 stories -> <=2 future dated
-// triggers -> FX + Studio button. Stored data only — no AI run on view.
+// triggers -> FX. Stored data only — no AI run on view.
 //
 // Mounted from two places: the /map console (SituationHome, passed `situations` for the watch
 // flag) and the public /weekly/country/:name page (CountryPage, no `situations` — watch flag
@@ -10,7 +10,6 @@
 // TierChip + neutral bars, direction a DirectionArrow (no tier colour on text, fills or arrows).
 import { useMemo, useState } from 'react';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
-import { studioHref } from '@/shared/lib/links.js';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
@@ -218,10 +217,6 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
         </ul>
         </div>
       ) : null}
-
-      <Button to={studioHref(stories.map((s) => s.threadId))} className={`ccv2-studio-btn${state === 'never_briefed' ? ' ccv2-generate' : ''}`}>
-        {state === 'never_briefed' ? 'Generate a briefing in Studio →' : 'Analyze in Studio →'}
-      </Button>
     </div>
   );
 }

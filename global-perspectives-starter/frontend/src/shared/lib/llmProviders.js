@@ -1,6 +1,6 @@
 // LLM provider catalog: which providers/models a user can pick and how each is called.
-// Pure data shared by the account page, the provider picker (shared/ui/ProviderModal) and the
-// Studio client (analysis-studio/lib/llm.js, also imported by Node tooling, so no imports here).
+// Pure data used by the eval client (analysis-studio/lib/llm.js, imported by the quality/analysis Node
+// tooling, so no imports here). No page uses it since the Studio retired (2026-10-20).
 
 // `webSearch` capability per provider:
 //   'always' — every call searches the web natively (Perplexity sonar)

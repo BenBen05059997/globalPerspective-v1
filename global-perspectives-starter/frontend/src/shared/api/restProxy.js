@@ -10,7 +10,7 @@ export function setAuthProvider(getTokenFn) {
   getAuthToken = getTokenFn;
 }
 
-// The signed-in user's current ID token (or null). Used by the Studio share endpoint, which lives on its own
+// The signed-in user's current ID token (or null). Used by the shared-run endpoint, which lives on its own
 // Lambda but authenticates with the same Firebase token.
 export async function currentAuthToken() {
   try { return getAuthToken ? await getAuthToken() : null; } catch { return null; }
@@ -406,35 +406,5 @@ export async function createCheckout(plan) {
 // Current membership for the signed-in user: { tier, status, currentPeriodEnd, creditBalance }.
 export async function fetchMembership() {
   return polarRequest('get_membership');
-}
-
-// ── Member-side Analysis Studio (newsAnalyze Lambda, separate Function URL) ──────
-// Members run analyses on our compute (no BYOK). Endpoint set in docs/config.js
-// (window.NEWS_ANALYZE_ENDPOINT). A run is paid by the member monthly allowance, else a
-// purchased credit. Throws an Error with `.code` on a structured failure (out_of_credits)
-// so the UI can prompt to subscribe / buy credits.
-export function analyzeConfigured() {
-  return typeof window !== 'undefined' && !!window.NEWS_ANALYZE_ENDPOINT;
-}
-
-export async function runMemberAnalysis(userMessage) {
-  const endpoint = typeof window !== 'undefined' && window.NEWS_ANALYZE_ENDPOINT;
-  if (!endpoint) throw new Error('Missing NEWS_ANALYZE_ENDPOINT');
-  const token = getAuthToken ? await getAuthToken() : null;
-  if (!token) throw new Error('Sign in required');
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ user: userMessage }),
-  });
-  let body;
-  try { body = await res.json(); } catch { body = null; }
-  if (!res.ok) {
-    const err = new Error(body?.error || `Analyze HTTP ${res.status}`);
-    err.code = body?.error;
-    err.limit = body?.limit;
-    throw err;
-  }
-  return body; // { report, used, limit }
 }
 

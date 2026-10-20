@@ -9,6 +9,8 @@
 // Axis is constrained to the 4 map hues; category is finer-grained. latlon is model-provided
 // (the flash model knows locations well enough to place a dot), so no iso3→centroid table is needed.
 
+const { getOutletMeta } = require('./outlet_metadata');
+
 const AXES = new Set(['conflict', 'political', 'economic', 'humanitarian']);
 
 function buildMessages(articles) {
@@ -68,6 +70,7 @@ function normalizeClassified(raw, article) {
   return {
     title: article.title, en_title: enTitle, url: article.url, domain: domainOf(article.url), source: article.source || domainOf(article.url),
     publishedAt: article.publishedAt || null,
+    outlet: getOutletMeta(article.source || domainOf(article.url))?.outlet || null,
     iso3, latlon, axis, category: String(raw.category || 'other').toLowerCase(),
     severity, kind: ['event', 'analysis', 'commentary'].includes(raw.kind) ? raw.kind : 'event', entities,
     ...(snippet ? { snippet } : {}),
@@ -179,7 +182,7 @@ function splitByCache(articles, cache) {
   const hits = []; const misses = [];
   for (const a of articles) {
     const e = entries[cacheKey(a)];
-    if (e && e.c) hits.push({ ...e.c, publishedAt: a.publishedAt || e.c.publishedAt || null }); else misses.push(a);
+    if (e && e.c) hits.push({ ...e.c, publishedAt: a.publishedAt || e.c.publishedAt || null, outlet: getOutletMeta(a.source || domainOf(a.url))?.outlet || null }); else misses.push(a);
   }
   return { hits, misses };
 }

@@ -181,6 +181,7 @@ function annotateSourcesWithMetadata(topics) {
     if (!Array.isArray(t.sources)) continue;
     for (const s of t.sources) {
       const meta = getOutletMeta(s.source);
+      s.outlet = meta?.outlet || null;
       if (meta) {
         s.outletCountry = meta.country;
         s.outletType = meta.type;
@@ -191,7 +192,8 @@ function annotateSourcesWithMetadata(topics) {
 
 // Bind provenance to a fetched URL; model-provided dates are never trusted.
 function sourceWithPublication(source, articles) {
-  return { ...source, publishedAt: articles.find(a => a.url === source.url)?.publishedAt || null };
+  const article = articles.find(a => a.url === source.url);
+  return { ...source, source: article?.source || source.source || '', publishedAt: article?.publishedAt || null };
 }
 
 module.exports = {

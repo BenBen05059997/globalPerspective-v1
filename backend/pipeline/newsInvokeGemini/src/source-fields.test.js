@@ -37,3 +37,16 @@ test('map RSS timestamp survives normalization and upgrades an old cache hit',()
  assert.equal(splitByCache([a],{entries:{[cacheKey(a)]:{c:old}}}).hits[0].publishedAt,c.publishedAt);
  assert.equal(normalizeClassified({}, {title:'Old',url:'https://bbc.com/old'}).publishedAt,null);
 });
+
+test('one outlet table supplies primary, enriched and map names; unknowns stay null',()=>{
+ const {annotateSourcesWithMetadata} = require('./source_enrichment');
+ const topics=[{sources:[{source:'WWW.BBC.COM'},{source:'unknown.example'}]}];
+ annotateSourcesWithMetadata(topics);
+ assert.equal(topics[0].sources[0].outlet,'BBC');assert.equal(topics[0].sources[1].outlet,null);
+ const c=normalizeClassified({}, {title:'T',url:'https://bbc.com/a',source:'bbc.com'});
+ assert.equal(c.outlet,'BBC');
+ assert.equal(normalizeClassified({}, {title:'T',url:'https://unknown.example/a'}).outlet,null);
+ const a={title:'T',url:'https://bbc.com/a',source:'bbc.com'};
+ const old={...c,outlet:'bad'};
+ assert.equal(splitByCache([a],{entries:{[cacheKey(a)]:{c:old}}}).hits[0].outlet,'BBC');
+});

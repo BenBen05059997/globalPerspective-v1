@@ -81,6 +81,7 @@ The weekly is published by the run at 06:00Z and sent at 14:00Z. The operator ma
 window. Enabling the sender on the new path is a user-facing send and needs a fresh yes when reached.
 
 ## 6. Order of work
+Started 2026-10-20: step 1 in progress (code + tests by agent; deploy after diff).
 1. `newsPredictionResolver`: write verdicts directly; `VOID#` path. (Reverses decision 0011; record it in `decisions/`.)
 2. `newsStoryRecord`: birth + duplicate check + chapters + trigger check + corrections + index. Dry-run week first,
    compared against the two hand drafts.
@@ -91,6 +92,9 @@ window. Enabling the sender on the new path is a user-facing send and needs a fr
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
 
 ## Open
+- Side project, parked until the research report lands (2026-10-20): replace DynamoDB for the user side (Supabase, D1,
+  Firestore, or per-user JSON in object storage) for cheaper, faster reads. The record design above does not depend on
+  the answer: `record/` is S3 either way; only the user tables would move.
 - Whether `record/` should also absorb the prediction log migration (DATA_STRATEGY §6) in step 1 or later.
 - The LLM for the trigger check: the resolver's `deepseek-v4-pro` or the headless run's model. Cost per day to be
   measured in the dry-run week.

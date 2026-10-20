@@ -4,7 +4,10 @@ The content pipeline. It picks the day's news topics from RSS feeds, writes the 
 and then builds the thread, country and cause-web analyses that the site shows. It serves readers of the site pages and the
 analysts who use the Analysis Studio. Every job runs on a schedule; all model calls go to a DeepSeek endpoint set in each Lambda's live env.
 
-Timeline: writes no timeline events; its raw rows (`archive#`, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `DRIFT#`, `COUNTRY#`, `PRED#`, `web/`) are the source of `entry`, `story_born`, `read_changed`, `chapter`, `forecast_drawn`, `country_read_changed`, `link_confirmed`, read only through `backend/shared/src/world/`. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: **1 Ingest** → **2 Stories** → **3 Analysis** → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
+This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3). Timeline: writes no events; its raw rows are the source of entry, story_born, read_changed, chapter, forecast_drawn, country_read_changed, link_confirmed, read only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

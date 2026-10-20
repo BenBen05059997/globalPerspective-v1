@@ -5,7 +5,10 @@ for the day's brief or the weekly signals brief. Three modes: **read** (default,
 (the Weekly Signals Brief) and **present** (a slide deck with a map, slides and an editions strip). Every section is built only from
 fields the brief carries, and links are built only to real ids.
 
-Timeline: writes none; reads the daily and weekly briefs; target: Today and Week views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the daily and weekly briefs page. Timeline: reads the briefs; target: Today and Week views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live, public. Markets are paused with economy: `?from=markets` shows a one-line note and nothing else.

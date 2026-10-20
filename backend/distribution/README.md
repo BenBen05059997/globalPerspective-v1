@@ -4,7 +4,10 @@ This group turns the day's analysed news into things readers receive: a daily br
 subscribers, a breaking-news alert, and social posts. It serves site visitors, email subscribers and the operator, who
 is emailed each breaking alert. It reads what the pipeline group wrote and writes briefs and alert rows that the site serves.
 
-Timeline: writes no timeline events; consumers: the weekly email and posts read raw tables today and move to the Week, Today and Story views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → **7 Delivery** → 8 Watch
+This folder is stage 7: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no events; consumers moving to the Week, Today and Story views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

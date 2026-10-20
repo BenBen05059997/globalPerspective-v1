@@ -4,7 +4,10 @@ This group holds the paid side of the site: the member-only Analysis Studio run 
 makes someone a member. It serves signed-in members. Credits are parked, so the live studio and the live billing
 function run older code than the credits code in this repo.
 
-Timeline: writes no timeline events; billing and the retired Studio; reads none. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → **7 Delivery** → 8 Watch
+This folder is stage 7: billing (Polar) and the retired Studio Lambda. Timeline: writes no events; reads none. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

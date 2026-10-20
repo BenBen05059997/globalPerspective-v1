@@ -4,7 +4,10 @@ The analyst's weekly page (planned `/briefings/weekly?week=YYYY-MM-DD`): the sha
 It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the
 record or board data.
 
-Timeline: writes none; renders the Week view (`weekly/`) once the page exists. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the weekly page (planned /briefings/weekly). Timeline: will render the Week view (weekly/). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - W0 only (2026-10-20): the mirrored section model. No page, no route, no hook yet; the page is stage W5 of

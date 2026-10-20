@@ -7,13 +7,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { run as pipelineBlocks } from '../scripts/gen-pipeline-blocks.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = path.join(ROOT, 'project-docs');
 const INDEX = path.join(DOCS, 'INDEX.md');
 const FEATURES = path.join(ROOT, 'global-perspectives-starter/frontend/src/features');
 export const README_SECTIONS = ['Status', 'Routes', 'Frontend', 'Backend', 'Data', 'Pipeline', 'Docs', 'How to check it'];
-const lineCount = (file) => fs.readFileSync(file, 'utf8').replace(/\n$/, '').split('\n').length;
+const lineCount = (file) => fs.readFileSync(file, 'utf8').replace(/<!-- pipeline:begin[^>]*-->[\s\S]*?<!-- pipeline:end -->\n?/, '').replace(/\n$/, '').split('\n').length;
 
 export function checkDocs() {
   const problems = [];
@@ -48,14 +49,19 @@ export function checkDocs() {
     const missing = README_SECTIONS.filter((h) => !text.includes(`\n## ${h}\n`));
     if (missing.length) problems.push(`features/${name}/README.md lacks section(s): ${missing.join(', ')}`);
     if (!text.includes(`reference/features.md#${name})`)) problems.push(`features/${name}/README.md does not link reference/features.md#${name}`);
-    if (!text.includes('ARCHITECTURE_TIMELINE.md')) problems.push(`features/${name}/README.md has no Timeline: line linking ARCHITECTURE_TIMELINE.md`);
   }
   const BACKEND = path.join(ROOT, 'backend');
   for (const g of fs.readdirSync(BACKEND).filter((d) => fs.statSync(path.join(BACKEND, d)).isDirectory())) {
     const readme = path.join(BACKEND, g, 'README.md');
     if (!fs.existsSync(readme)) { problems.push(`backend/${g} has no README.md`); continue; }
-    if (!fs.readFileSync(readme, 'utf8').includes('ARCHITECTURE_TIMELINE.md')) problems.push(`backend/${g}/README.md has no Timeline: line linking ARCHITECTURE_TIMELINE.md`);
   }
+  const pipeline = JSON.parse(fs.readFileSync(path.join(DOCS, 'architecture/pipeline.json'), 'utf8')).folders;
+  const folders = [
+    ...fs.readdirSync(BACKEND).filter((d) => fs.statSync(path.join(BACKEND, d)).isDirectory()).map((d) => `backend/${d}`),
+    ...fs.readdirSync(FEATURES).filter((d) => fs.statSync(path.join(FEATURES, d)).isDirectory()).map((d) => `features/${d}`),
+  ];
+  for (const f of folders) if (!pipeline[f]) problems.push(`${f} is not in project-docs/architecture/pipeline.json (add its stage and part)`);
+  problems.push(...pipelineBlocks({ check: true }));
   return problems;
 }
 

@@ -4,7 +4,10 @@ This group watches the site and the pipeline and tells the operator when somethi
 every alert goes to one SNS topic, `GlobalPerspectiveAlerts`. None of these Lambdas changes site content, and a quiet
 run sends nothing.
 
-Timeline: writes no timeline events; watches the pipeline that feeds it (an `LLM 402` alarm is still missing, §7.4). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → **8 Watch**
+This folder is stage 8: model guard, freshness monitor, error digest, audits. Timeline: writes no events; must alarm when a stage fails (ARCHITECTURE_TIMELINE section 7.4). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

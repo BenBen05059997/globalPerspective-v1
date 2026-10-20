@@ -4,7 +4,10 @@ The public accountability page (`/track-record`). Readers use it to see how the 
 accuracy, this week's pre-registered question draw, a forecast board with a radar map, a settling log, and a ledger of changed
 reads (corrections). A plain-text twin at `/track-record/text` shows the same facts for print and screen readers.
 
-Timeline: writes none; reads `predictions/track_record.json`; target: Track record view (`forecast_drawn`, `branch_status`, `verdict`). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the track record page. Timeline: reads predictions/track_record.json; target: Track record view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live, public. Accuracy stays locked until 150 post-pilot questions are resolved (`ACCURACY_UNLOCK_AT` in `lib/accuracyLock.js`):

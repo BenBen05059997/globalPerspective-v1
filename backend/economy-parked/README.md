@@ -4,7 +4,10 @@ This group is PARKED: it holds the economy features (market data, economic impac
 report) that the operator switched off in September 2026. The site hides the surfaces that read them behind the
 frontend `ECONOMY_PARKED` flag. Only one Lambda still runs live: newsMarketsData keeps collecting market prices.
 
-Timeline: parked; writes no timeline events; reads none while parked. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
+This folder is outside the pipeline: parked: markets and economic impact. Timeline: parked; writes no events; reads none. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

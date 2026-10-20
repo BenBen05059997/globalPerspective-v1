@@ -4,7 +4,10 @@ The front page of the site (`/`). This folder is called `map` because the page i
 radar (d3) of tracked situations, with a status line, alert stack, intel feed, story card and legend. Visitors use it to see
 what is happening now and open a story or country from it. On phones it becomes tabs plus a bottom sheet.
 
-Timeline: writes none; reads `world/latest.json` (map pipeline); target: Map view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the home map (/). Timeline: reads world/latest.json from the map pipeline; target: Map view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live, public; map data never gates on sign-in. No feature flag and no economy gate in this folder.

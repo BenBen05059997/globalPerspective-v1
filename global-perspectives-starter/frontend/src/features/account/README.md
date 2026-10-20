@@ -4,7 +4,10 @@ Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the me
 follow, manages saved items and alert settings, and subscribes to the paid membership. The Save, Follow and
 Subscribe controls that other pages embed live in `@/shared/ui`, not here.
 
-Timeline: writes none; reads country history and the desk from raw tables today; target: Country and Board views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the account desk. Timeline: reads country history and prefs from raw tables; target: Country and Board views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live. Polar membership is live; analysis credits are parked (decision 0002) and no page mentions credits

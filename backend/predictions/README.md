@@ -3,7 +3,10 @@
 The forecast scoring group. Forecasts are written by the content pipeline; the two Lambdas here settle them under methodology v1
 and publish the public track record. It serves readers of the track-record page and the operator who writes the verdicts.
 
-Timeline: writes no timeline events; `PRED#` (written by the agent Lambda) and `Q#` verdicts are the source of `forecast_drawn`, `verdict`, `correction`; the track record is the Track record view. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → **3 Analysis** → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
+This folder is stage 3: forecast settling and the track-record snapshot. Timeline: writes no events; PRED# and Q# verdicts are the source of forecast_drawn, verdict, correction. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Architecture
 

@@ -2,7 +2,10 @@
 
 The member's personal connection board (`/board`). A signed-in reader pins stories, countries and actors, drags one pin onto another to ask whether they connect, keeps or cuts strings, and writes one line per string. It is the **board** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the record or the weekly.
 
-Timeline: writes none; reads boards via `newsBoard`; target: Index and Story views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the board page (/board). Timeline: reads boards via newsBoard; target: Index and Story views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Slice 1, live 2026-10-20: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. Without that key

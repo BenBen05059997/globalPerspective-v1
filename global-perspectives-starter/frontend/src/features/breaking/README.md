@@ -5,7 +5,10 @@ feed with a client-side unread count; the Today page strip shows the latest aler
 a hook resolves one alert id for the `/breaking/:id` redirect. Readers see a short headline that leads to
 the story or the map; they never see a "breaking" page.
 
-Timeline: writes none; reads breaking alerts; not a timeline view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: breaking-alert redirects and the bell. Timeline: reads breaking alerts; not a timeline view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live (bell and strip). The feed shows only rows the operator has confirmed (status `confirmed`; `newsRecommend` `listAlerts`). `sent` and `proposed` rows are hidden.

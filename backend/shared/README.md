@@ -5,7 +5,10 @@ these files through its committed `src/_shared -> ../../../shared/src` symlink, 
 `scripts/lambda.sh package|diff` stages `src` with links followed, so the zip carries real files
 under `_shared/`. An edit here changes every Lambda that requires the file on its next deploy.
 
-Timeline: `world/` is the only reader of the raw tables (§5); `record.js` and `s3json.js` serve the record and board; writes no events itself. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → **4 One reader** → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
+This folder is stage 4: world/, the only reader of the raw tables, plus the shared rules and the S3 helpers. Timeline: writes no events; every other stage reads raw tables only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Modules (`src/`)
 - `llm.js`: OpenAI-compatible `chat()` over fetch, no deps. Providers `deepseek` (`GROK_API_URL`,

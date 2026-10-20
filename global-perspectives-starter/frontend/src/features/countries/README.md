@@ -2,7 +2,10 @@
 
 Country views. The URLs sit under `/weekly/...` for historical reasons (the Stories page is `/weekly`). This folder holds the country list with an overview map (`/weekly/countries`), the per-country page (`/weekly/country/:countryName`: Situation, Story Arcs and Coverage tabs) and `CountryCardV2`, the one-screen country card the map console also mounts. Readers use them to see a country's risk, what changed, and which stories touch it. Nothing is generated on view; every page reads stored data. The country page doubles as the country "sheet": each section carries its `ClaimTag` mark, plus a computed "What we don't know", Copy as text, Print and a private "Your view".
 
-Timeline: writes none; reads country rows from raw tables; target: Country view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: the country pages. Timeline: reads country rows from raw tables; target: Country view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Live, public (signed-out reads work).

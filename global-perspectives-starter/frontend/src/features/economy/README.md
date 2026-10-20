@@ -5,7 +5,10 @@
 for readers who want to see price moves next to the stories behind them. The feature also owns the economic
 hooks and atoms that the story page reuses (through `index.js`); `useDisruptionsList` lives in `@/shared/hooks`.
 
-Timeline: parked; writes none; reads none while parked. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
+This folder is outside the pipeline: parked economy page. Timeline: parked; reads none. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - PARKED (decision 0009, 0031). `ECONOMY_PARKED = true` (`@/shared/lib/economyFlag.js`): the daily economic-impact

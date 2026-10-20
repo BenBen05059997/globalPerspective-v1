@@ -6,7 +6,10 @@ redirects. What stays is the read-only page for a run someone already shared (`/
 working) and the analysis libraries that the share Lambda and the offline eval harness (`quality/analysis/`) use.
 Readers of an old share link see it; nobody creates new ones from the site.
 
-Timeline: writes none; shared-run pages only (retired Studio); reads none of the timeline. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
+Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
+This folder is stage 6: shared-run pages of the retired Studio. Timeline: reads none of the timeline. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+<!-- pipeline:end -->
 
 ## Status
 - Retired 2026-10-20. Only the shared-run page is a screen. The country page (`features/countries`) is the

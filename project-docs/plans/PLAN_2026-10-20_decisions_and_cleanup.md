@@ -61,6 +61,10 @@ the folder READMEs it touches, `ARCHITECTURE.md` when a flow, route or store cha
       Landfall in Florida as Category 2 Storm, Causing Widespread Power Outages-2" "Hurricane Isaias Makes Landfall on US
       Gulf Coast as Category 2 Storm-4" "Hurricane Isaias Kills Four, Leaves Hundreds of Thousands Without Power in US-4"
       --apply`, then set `clusterKey` on `Q#33987025ca046672ecdc`/`SAMPLED` to `thread-hurricane-isaias-makes-landfal-21c4f2`.
+      Done with the operator's yes (2026-10-20): the split above was applied and the forecast's clusterKey set; a check
+      found four more misjoined entries, so two more hurricane entries were split and merged into the hurricane story,
+      and the two California wildfire entries got their own story (`thread-southern-california-wildfire-e-4f08a7`).
+      Live `narrative_thread` now shows medical plane 4 entries (3-5 Oct), hurricane 5 (9-11 Oct), wildfire 2 (17 Oct).
       Left: `newsWeeklyBrief/src/index.js:6` comment still says `draft`.
 - [ ] 7. Older backlog: Lambdas on nodejs20.x to nodejs22.x; non-secret env keys no code reads; colour items C3, C4, C7;
       regenerate `shared/map/countryGeo.js` (38 countries missing from `ISO3_TO_NUM`), then drop the desk map's name fallback.

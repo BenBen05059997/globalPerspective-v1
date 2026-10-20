@@ -1030,14 +1030,15 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     // Same id the thread-reuse lookup and the archive use (computed once per run, before generation).
     capture.dropped.push(...(ctx.groundRemoved || []));
     let threadId = (ctx.threadIdById || {})[topic.id] || null;
-    if (!threadId) { try { threadId = assignThreadId(topic, ctx.pastEntries || []) || null; } catch { /* cluster hint only */ } }
+    if (!threadId) { try { threadId = assignThreadId(topic, ctx.pastEntries || []) || null; } catch { /* deterministic founding id below remains available */ } }
+    if (!threadId) threadId = threading.generateThreadId(topic);
 
     const item = {
       PK: `PRED#${topic.id}`,
       SK: day,
       topicId: topic.id,
       title: topic.title,
-      category: topic.category || null,
+      category: (Array.isArray(topic.categories) ? topic.categories[0] : null) || topic.category || null,
       generatedAt: new Date().toISOString(),
       generationId,
       model: response.modelId,
@@ -1047,7 +1048,8 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       questionSchema: 1,
       regions: Array.isArray(topic.regions) ? topic.regions : [],
       threadId,
-      scenarios,
+      forkId: `${pk}|${day}`,
+      scenarios: scenarios.map((scenario, scenarioIndex) => ({ ...scenario, scenarioIndex })),
       capture,
       winners: Array.isArray(parsed.winners) ? parsed.winners : [],
       losers: Array.isArray(parsed.losers) ? parsed.losers : [],
@@ -1387,4 +1389,4 @@ function http(statusCode, body) {
   };
 }
 
-exports._internal = { buildArchiveEntry };
+exports._internal = { buildArchiveEntry, logPredictionSnapshot };

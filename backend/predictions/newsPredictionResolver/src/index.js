@@ -98,6 +98,7 @@ async function drawWeek(deps, commit, dryRun, out) {
     const q = byQ.get(p.qid);
     await deps.store.putOnce({
       PK: `Q#${p.qid}`, SK: 'SAMPLED', qid: p.qid, weekId: wk, hash: p.h, clusterKey: p.clusterKey,
+      threadId: q.threadId || null,
       pk: q.pk, sk: q.sk, triggerId: q.triggerId, question: q.question, deadline: q.deadline,
       resolutionSource: q.resolutionSource, storyTitle: q.storyTitle, issuedAt: q.issuedAt, drawnAt: now, // no probability, by design
     });

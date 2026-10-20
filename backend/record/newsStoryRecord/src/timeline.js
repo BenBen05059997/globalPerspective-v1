@@ -80,7 +80,7 @@ function rebuildStory(days, threadId, {date,cursor=cursorOf(days,date)}={}) {
         if (p.driftNote) drifts.set(p.driftDate || event.date,copy(p.driftNote));
         break;
       case 'line': putLine(p.line);break;
-      case 'coverage': if(p.llm) record.llm=copy(p.llm);break;
+      case 'coverage': if(p.processed){if(p.llm)record.llm=copy(p.llm);else delete record.llm;}break;
       case 'chapter':
         if (!record.chapters.some(c=>c.startedAt===p.chapter.startedAt)) record.chapters.push(copy(p.chapter));
         break;

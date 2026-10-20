@@ -471,6 +471,7 @@ test('late branch can fire on later evidence and birth stays put once', async ()
   await run({date:next});
   const record=s.get('record/stories/a/latest.json');
   assert.equal(record.born,date);
+  assert.equal(record.llm,undefined);
   assert.deepEqual(record.forks[0].branches[0].status.map(s=>s.status),['late','fired']);
 });
 test('duplicate reports require an actor, a place and an identical outlet headline',()=>{
@@ -547,4 +548,17 @@ test('verdict mirror keeps a retained branch after its PRED topic leaves current
  d.verdicts=[{PK:'Q#q1',SK:'VERDICT',verdict:'yes',decidedAt:'2026-10-20'}];
  const report=await s.run({date:'2026-10-20'});
  assert.equal(report.verdictsMirrored,1);assert.equal(s.get('record/stories/a/latest.json').forks[0].branches[0].scored.verdict,'yes');
+});
+
+test('durable unchanged trigger judgments are reused after a completion-write failure',async()=>{
+ const response=p=>judgment(p.task==='chapter'?{name:'Chapter',text:'Chapter.'}:p.task==='line'?{text:'Line.'}:{status:'hold'});
+ const s=setup(data(),async p=>response(p));await s.run({date});
+ const next='2026-10-20';s.input.entries.push(entry('a',next));
+ let calls=0;const run=makeHandler({store:fixtureStore(s.input),s3json:s.s3json,now:()=>`${next}T05:45:00Z`,llm:async p=>{calls++;return response(p);}});
+ const append=s.s3json.appendLines;s.s3json.appendLines=async(k,events)=>{if(events.some(e=>e.payload.processed))throw Error('completion failed');return append(k,events);};
+ await assert.rejects(run({date:next}),/completion failed/);const first=calls;assert.equal(first,1);
+ s.s3json.appendLines=append;await run({date:next});assert.equal(calls,first);
+ const record=s.get('record/stories/a/latest.json');assert.equal(record.line.text,'Line.');assert.equal(record.forks[0].branches[0].status.length,1);
+ const events=s.objects.get(`record/timeline/${next}.jsonl`).trim().split('\n').map(JSON.parse);
+ assert.ok(events.some(e=>e.kind==='branch_status'&&e.payload.changed===false));
 });

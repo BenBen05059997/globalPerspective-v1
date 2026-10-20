@@ -100,6 +100,8 @@ function makeHandler({
       const previous=rebuildStory(timeline.days,id,{date});
       if(!before)report.birthsFound++;
       const storyCorrections=[];
+      const checks=[];
+      const checkedBranches=new Set(timeline.events(date).filter(e=>e.threadId===id&&e.kind==='branch_status'&&e.payload.row.date===date).map(e=>e.payload.branchId));
       try {
       const own = entries.filter(e => e.threadId === id);
       const today = own.filter(e => e.date === date);
@@ -128,7 +130,7 @@ function makeHandler({
       for (const fork of r.forks) {
         const decisions = [];
         for (const b of fork.branches) {
-          if (!['hold', 'late', 'dead'].includes(lastStatus(b))) continue;
+          if (checkedBranches.has(b.branchId)||!['hold', 'late', 'dead'].includes(lastStatus(b))) continue;
           let result = null;
           if (contextEntries.length) result = await ask('trigger', {
             threadId: id,
@@ -161,12 +163,16 @@ function makeHandler({
             evidence: [],
             note: contextEntries.length ? 'not run: no llm' : 'No new entries'
           };
-          if (prior === 'dead' && row.status === 'hold') continue;
+          if (prior === 'dead' && row.status === 'hold') {
+            if(result)checks.push({branchId:b.branchId,changed:false,row:{date,...row,label:'JUDGMENT',confidence:result.confidence}});
+            continue;
+          }
           if (['hold', 'late'].includes(row.status) && b.due && day(b.due) < date) row = {
             ...row,
             status: 'late',
             note: 'Due date passed without an established trigger'
           };
+          if(result)checks.push({branchId:b.branchId,changed:row.status!==prior||!b.status.length,row:{date,...row,label:'JUDGMENT',confidence:result.confidence}});
           if (row.status !== prior || !b.status.length) {
             b.status.push({
               date,
@@ -202,6 +208,7 @@ function makeHandler({
           previousWrittenAt: r.line.writtenAt
         });
         if (line?.text) {
+          delete r.llm;
           if (line.contradicted && r.line.text) {
             const evidence = citations(line.evidence, lineEntries.filter(e => e.date > r.line.writtenAt));
             if (!evidence.length) {const error=Error('line contradiction needs citations');error.recordJudgment=true;error.recordTask='line';throw error;}
@@ -231,7 +238,7 @@ function makeHandler({
           status: 'not run: no llm'
         };
       }
-      await timeline.append(judgmentEvents(previous,r,storyCorrections,date,at,timeline.events(date)));
+      await timeline.append(judgmentEvents(previous,r,storyCorrections,date,at,timeline.events(date),checks));
       const view=await timeline.complete(id,date,at,r.llm);
       // A conflict is accepted only when the winner is the same timeline view.
       const won=await s3json.putOnce(`${key}${date}.json`,view);
@@ -242,6 +249,7 @@ function makeHandler({
         // Storage/projection failures must abort rather than publish a corrupt view.
         if(!error.recordJudgment)throw error;
         report.failures.push({threadId:id,task:error.recordTask,error:error.message});
+        console.error('[record-story-failed] '+JSON.stringify(report.failures.at(-1)));
         const retained=timeline.view(id,date);if(retained)stories.push(retained);
       }
     }

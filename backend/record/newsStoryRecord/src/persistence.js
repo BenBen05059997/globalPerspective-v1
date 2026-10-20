@@ -69,15 +69,16 @@ function rawEvents(input,id,previous,at) {
  }
  return out;
 }
-function judgmentEvents(previous,next,corrections,date,at,existing) {
+function judgmentEvents(previous,next,corrections,date,at,existing,checks=[]) {
  const id=next.threadId;const own=existing.filter(e=>e.threadId===id);
  const sourceRow=own.filter(e=>e.kind==='entry').at(-1)?.sourceRow;const out=[];
  const add=(kind,key,payload,provenance=sourceRow)=>out.push(makeEvent({kind,sourceKey:`record|${id}|${key}|${date}`,sourceRow:provenance,at,threadId:id,iso3:next.countries,actors:next.actors,
   sources:(payload.row?.evidence||payload.correction?.evidence||[]).map(ref=>({outlet:next.events.find(e=>e.archive===ref.archive&&e.topicId===ref.topicId)?.outlets.find(o=>o.url===ref.url)?.source||null,...ref})),payload}));
  for(const c of next.chapters)if(!previous.chapters.some(p=>p.startedAt===c.startedAt))add('chapter','chapter',{chapter:c},own.filter(e=>e.kind==='read_changed'&&e.payload.driftNote).at(-1)?.sourceRow||sourceRow);
+ for(const check of checks)add('branch_status',`status|${check.branchId}`,check,own.find(e=>e.kind==='forecast_drawn'&&e.payload.fork.branches.some(b=>b.branchId===check.branchId))?.sourceRow||sourceRow);
  for(const b of next.forks.flatMap(f=>f.branches)){
   const before=previous.forks.flatMap(f=>f.branches).find(p=>p.branchId===b.branchId);
-  for(const row of b.status.slice(before?.status.length||0))add('branch_status',`status|${b.branchId}`,{branchId:b.branchId,row},own.find(e=>e.kind==='forecast_drawn'&&e.payload.fork.branches.some(p=>p.branchId===b.branchId))?.sourceRow||sourceRow);
+  for(const row of b.status.slice(before?.status.length||0).filter(()=>!checks.some(c=>c.branchId===b.branchId)))add('branch_status',`status|${b.branchId}`,{branchId:b.branchId,row},own.find(e=>e.kind==='forecast_drawn'&&e.payload.fork.branches.some(p=>p.branchId===b.branchId))?.sourceRow||sourceRow);
  }
  if(next.line.text&&JSON.stringify(next.line)!==JSON.stringify(previous.line)){
   const {versions,...line}=next.line;add('line','line',{line});

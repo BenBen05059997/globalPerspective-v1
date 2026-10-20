@@ -144,8 +144,17 @@ async function markWeeklySent(weekOf, count) {
 async function runWeekly(event) {
   const brief = await loadLatestBrief();
   if (!brief) { console.log('[email:weekly] no published brief; nothing to send'); return { ok: true, mode: 'weekly', sent: 0, reason: 'no_brief' }; }
-  if (brief.status !== 'published') return { ok: true, mode: 'weekly', sent: 0, reason: brief.status === 'held' ? 'held' : 'not_published' };
+  if (brief.status !== 'published') {
+    console.log(`[email:weekly] latest status ${brief.status}; skipping`);
+    return { ok: true, mode: 'weekly', sent: 0, reason: brief.status === 'held' ? 'held' : 'not_published' };
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(brief.weekEnding || '')) throw new Error('weekly/latest.json has no valid weekEnding');
+  const now = new Date(Date.now());
+  const sunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + (7 - now.getUTCDay()) % 7)).toISOString().slice(0, 10);
+  if (brief.weekEnding !== sunday) {
+    console.log(`[email:weekly] latest week ${brief.weekEnding} is not this Sunday ${sunday}; skipping`);
+    return { ok: true, mode: 'weekly', sent: 0, reason: 'wrong_week', weekOf: brief.weekEnding, expectedWeek: sunday };
+  }
   if (await weeklyAlreadySent(brief.weekEnding)) {
     console.log(`[email:weekly] week ${brief.weekEnding} already emailed; skipping`);
     return { ok: true, mode: 'weekly', sent: 0, reason: 'already_sent', weekOf: brief.weekEnding };

@@ -169,6 +169,8 @@ W1 lane notes (2026-10-20): read-only AWS CLI adapter and pure fixture-tested se
       `weekly/latest.json` (via `backend/shared/src/s3json.js`); `backend/weekly/hold.mjs` sets the week to `held` (publish-unless-vetoed).
 - [ ] Dry run on the week ending 2026-10-18 (compare with draft 2), written to scratchpad, not S3.
 
+W2 lane notes (2026-10-20): skill, schema/provenance checker and create-only publish/append-only hold implemented with fake-client tests. Dry-run artifacts are in gp-mailbox/artifacts/weekly-2026-10-18.{inputs,v2}.json; check passes. New top three match W0. Moved is empty: score/framing language cannot establish an expected-path revision; ambiguous trajectories remain in pathReviewCandidates. Coverage is 11/59 analysed by Sunday rather than W0's 14 current analyses. The JSON retains all 98 selected future date occurrences; the example had three hand-picked dates. No publication, prediction-log write or send was performed.
+
 ### W3: email
 - [ ] `newsEmailSender/src/_weekly` symlink to `backend/weekly/` (`scripts/lambda.sh` zips it like `_shared`; check the
       script handles a second symlink, extend it if not).

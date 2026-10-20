@@ -1,0 +1,16 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync} from 'node:fs';
+import {publish} from '../publish.mjs';
+import {hold} from '../hold.mjs';
+const {makeS3Json}=createRequire(import.meta.url)('../../shared/src/s3json.js');
+function fake(){const objects=new Map(),writes=[];class Get{constructor(input){this.input=input;}}class Put extends Get{}const client={async send(c){const p=c.input;if(c instanceof Put){writes.push(p);if(p.IfNoneMatch==='*'&&objects.has(p.Key))throw Object.assign(Error('exists'),{name:'PreconditionFailed'});objects.set(p.Key,JSON.parse(p.Body));return {};}if(!objects.has(p.Key))throw Object.assign(Error('missing'),{name:'NoSuchKey'});return {Body:{transformToString:async()=>JSON.stringify(objects.get(p.Key))}};}};return {objects,writes,store:makeS3Json({client,GetObjectCommand:Get,PutObjectCommand:Put,bucket:'fake-only'})};}
+const week=(day='2026-10-18')=>({...JSON.parse(readFileSync(new URL('../schema/examples/valid-2026-10-18.json',import.meta.url))),weekEnding:day,status:'draft',inputsHash:'test'});
+test('create-only publication, latest follows snapshot, retry repairs pointer',async()=>{const f=fake();await publish(week(),f.store);assert.equal(f.writes[0].IfNoneMatch,'*');assert.equal(f.writes[0].Key,'weekly/2026-10-18.json');assert.equal(f.writes[1].Key,'weekly/latest.json');assert.equal(f.objects.get('weekly/latest.json').status,'published');f.objects.delete('weekly/latest.json');await publish(week(),f.store);assert.ok(f.objects.has('weekly/latest.json'));await assert.rejects(publish({...week(),inputsHash:'changed'},f.store),/different/);});
+test('older publication cannot replace newer latest',async()=>{const f=fake();await publish(week(),f.store);await publish(week('2026-10-11'),f.store);assert.equal(f.objects.get('weekly/latest.json').weekEnding,'2026-10-18');});
+test('hold is a new snapshot and returns latest to previous nonheld week',async()=>{const f=fake();await publish(week('2026-10-11'),f.store);await publish(week(),f.store);const original=JSON.stringify(f.objects.get('weekly/2026-10-18.json'));await hold('2026-10-18',f.store);assert.equal(JSON.stringify(f.objects.get('weekly/2026-10-18.json')),original);assert.equal(f.objects.get('weekly/2026-10-18.held.json').status,'held');assert.equal(f.objects.get('weekly/latest.json').weekEnding,'2026-10-11');await hold('2026-10-18',f.store);await assert.rejects(publish(week(),f.store),/held/);});
+test('first-week hold leaves explicit held pointer; missing week errors',async()=>{const f=fake();await publish(week(),f.store);await hold('2026-10-18',f.store);assert.equal(f.objects.get('weekly/latest.json').status,'held');await assert.rejects(hold('2026-10-25',f.store),/without/);});
+test('holding an older week leaves current latest alone',async()=>{const f=fake();await publish(week('2026-10-11'),f.store);await publish(week(),f.store);await hold('2026-10-11',f.store);assert.equal(f.objects.get('weekly/latest.json').weekEnding,'2026-10-18');});
+
+test('invalid schema is rejected before any S3 write',async()=>{const f=fake();await assert.rejects(publish({weekEnding:'2026-10-18',status:'draft'},f.store),/schema/);assert.equal(f.writes.length,0);});

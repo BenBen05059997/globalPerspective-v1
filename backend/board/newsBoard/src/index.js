@@ -13,6 +13,7 @@ const { validateBoard } = require('./validate');
 const { presetCache } = require('./presets');
 const { connect } = require('./connect');
 const { enrichBoard } = require('./recordViews');
+const { arrivals } = require('./arrivals');
 
 const MAX_FOLLOWS = 300;
 const MAX_NAME = 80;
@@ -76,6 +77,17 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       return item ? ok(await enrichBoard(publicBoard(item), records)) : fail(404, 'Board not found');
     },
 
+    async arrivals(uid, body) {
+      const item = await ownBoard(uid, body.boardId);
+      return item ? ok(await arrivals(publicBoard(item), records, iso())) : fail(404, 'Board not found');
+    },
+    async visit_board(uid, body) {
+      const item = await ownBoard(uid, body.boardId);
+      if (!item) return fail(404, 'Board not found');
+      // Store visit metadata only; it is not an editorial board change.
+      await store.putBoard({...item, lastVisitedAt: iso()});
+      return ok({lastVisitedAt: iso()});
+    },
     async story_view(uid, body) {
       if (typeof body.threadId !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(body.threadId)) return fail(400, 'A valid threadId is required');
       const story = await records.story(body.threadId);
@@ -96,6 +108,7 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       const incoming = body.board && { ...body.board };
       if (incoming) {
         delete incoming.recordAvailable;
+        delete incoming.lastVisitedAt;
         if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map(p => {
           const copy = {...p};
           for (const key of ['recordAvailable','line','risk','born','counts','lastMoved']) delete copy[key];
@@ -105,11 +118,11 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       if (!isObj(incoming)) return fail(400, 'board is required');
       if (incoming.uid !== undefined && incoming.uid !== uid) return fail(400, 'uid cannot change', { code: 'immutable_field' });
       if (incoming.boardId !== undefined && incoming.boardId !== stored.boardId) return fail(400, 'boardId cannot change', { code: 'immutable_field' });
-      const board = normalizeBoard({ ...incoming, boardId: stored.boardId, uid, createdAt: stored.createdAt, updatedAt: iso() });
+      const board = normalizeBoard({ ...incoming, ...(stored.lastVisitedAt ? {lastVisitedAt: stored.lastVisitedAt} : {}), boardId: stored.boardId, uid, createdAt: stored.createdAt, updatedAt: iso() });
       const problem = boardProblem(board);
       if (problem) return problemReply(problem);
       await store.putBoard({ ...board, savedKey: stored.savedKey, kind: 'board' });
-      return ok(board);
+      return ok(await enrichBoard(board, records));
     },
 
     async delete_board(uid, body) {

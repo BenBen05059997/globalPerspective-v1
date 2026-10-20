@@ -23,6 +23,7 @@ import { boardAvailable, callBoard } from '@/features/board/lib/boardApi.js';
 import {
   addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, MAX_NAME, KIND_WORD,
 } from '@/features/board/lib/boardOps.js';
+import ArrivalsTray from '@/features/board/components/ArrivalsTray.jsx';
 import StoryTree from '@/features/board/components/StoryTree.jsx';
 import BoardWeekly from '@/features/board/components/BoardWeekly.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
@@ -343,6 +344,16 @@ export default function BoardPage() {
             </div>
             {!isPhone ? sheet : null}
           </div>
+          <ArrivalsTray key={board.boardId} board={board}
+            onDismiss={(id) => state.edit((b) => ({...b, dismissed: [...new Set([...b.dismissed, id])]}))}
+            onKeep={(card) => {
+              state.edit((b) => {
+                const added = addPin(b, {kind: 'thread', refId: card.threadId});
+                if (added.status !== 'added') return b;
+                const pin = added.board.pins.find((p) => p.refId === card.threadId);
+                return keepString(added.board, pin.pinId, card.via[0].pinId, card.via[0].mechanism);
+              });
+            }} />
           <BoardWeekly board={board} stories={records.stories} loading={records.loading} errors={records.errors} />
           <MissingCard actors={missing} onFollow={follows.followActor} />
         </>

@@ -8,25 +8,20 @@
 // AWS calls are list/get only. Environment variable VALUES never leave the AWS CLI: the query asks for
 // keys(Environment.Variables), so only key names reach this process — except keys ending in TABLE, whose
 // values are DynamoDB table names (features.md shows which tables a feature's Lambdas write).
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REGION, aws, pool, listLambdas, liveSchedules } from './aws-inventory.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'project-docs/reference');
 const SRC = join(ROOT, 'global-perspectives-starter/frontend/src');
-const REGION = 'ap-northeast-1';
 const OFFLINE = process.argv.includes('--offline');
 const TODAY = new Date().toISOString().slice(0, 10);
 const SHARED = 'backend/shared'; // the one copy of shared Lambda code; each consumer links it as src/_shared
 const FUNCTIONS = JSON.parse(readFileSync(join(ROOT, 'scripts/functions.json'), 'utf8')).functions;
 const NAMES = Object.keys(FUNCTIONS).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
 
-const run = promisify(execFile);
-const aws = async (...args) => JSON.parse((await run('aws', [...args, '--region', REGION, '--output', 'json'], { maxBuffer: 16 << 20 })).stdout);
-const fnName = (arn) => (arn || '').match(/:function:([^:]+)/)?.[1] || null;
 const code = (s) => '`' + s + '`';
 const cell = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 const table = (head, rows) => [`| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`, ...rows.map((r) => `| ${r.map(cell).join(' | ')} |`)].join('\n');
@@ -50,52 +45,37 @@ const usesShared = (dir) => Boolean(dir) && existsSync(join(ROOT, dir, 'src/_sha
 const lambdaSources = (dir) => (dir ? walk(join(ROOT, dir, 'src'), ['.js', '.mjs', '.cjs']).filter((f) => !/\.test\.|__tests__|\/test_/.test(f)) : []);
 
 // ---------- live AWS (one place, so --offline skips all of it) ----------
-// The AWS CLI auto-paginates list calls. Calls run 8 at a time (each CLI start costs seconds).
-const pool = async (items, fn, n = 8) => {
-  const out = new Array(items.length);
-  let i = 0;
-  await Promise.all(Array.from({ length: n }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } }));
-  return out;
-};
+// The AWS CLI auto-paginates list calls. Helpers live in scripts/aws-inventory.mjs (shared with quality/check_aws_inventory.mjs).
 let live = null;
 if (!OFFLINE) {
   const known = new Set(NAMES);
-  const fns = await aws('lambda', 'list-functions', '--query', 'Functions[].[FunctionName, Runtime]');
+  const fns = await listLambdas();
   const runtime = Object.fromEntries(fns);
   const unlisted = fns.map(([n]) => n).filter((n) => /^news/i.test(n) && !known.has(n)).sort();
 
   const envKeys = {};
   const url = {};
+  const urlHost = {}; // lambda -> Function URL hosts (matched against docs/config.js endpoints; never written out)
   const tables = {}; // lambda -> { ENV_KEY_ENDING_IN_TABLE: table name }
   await pool(NAMES, async (n) => {
     envKeys[n] = (await aws('lambda', 'get-function-configuration', '--function-name', n, '--query', 'keys(Environment.Variables || `{}`)')).sort();
-    url[n] = (await aws('lambda', 'list-function-url-configs', '--function-name', n, '--query', 'FunctionUrlConfigs[].AuthType')) || [];
+    const urlCfg = (await aws('lambda', 'list-function-url-configs', '--function-name', n, '--query', 'FunctionUrlConfigs[].{a: AuthType, u: FunctionUrl}')) || [];
+    url[n] = urlCfg.map((c) => c.a);
+    urlHost[n] = urlCfg.map((c) => new URL(c.u).host);
     const tableKeys = envKeys[n].filter((k) => /^[A-Z0-9_]+TABLE$/.test(k));
     tables[n] = tableKeys.length
       ? await aws('lambda', 'get-function-configuration', '--function-name', n, '--query', `{${tableKeys.map((k) => `${k}: Environment.Variables.${k}`).join(', ')}}`)
       : {};
   });
 
-  const rules = await aws('events', 'list-rules', '--query', 'Rules[].{Name: Name, State: State, ScheduleExpression: ScheduleExpression, EventPattern: EventPattern}');
-  const ruleRows = await pool(rules, async (rule) => {
-    const targets = (await aws('events', 'list-targets-by-rule', '--rule', rule.Name, '--query', 'Targets[].Arn')).map(fnName).filter((t) => known.has(t));
-    return targets.length ? { via: 'EventBridge rule', name: rule.Name, expr: rule.ScheduleExpression || rule.EventPattern || '', tz: 'UTC', state: rule.State, targets } : null;
-  });
-  const allSched = await aws('scheduler', 'list-schedules', '--query', 'Schedules[].{Name: Name, GroupName: GroupName, Arn: Target.Arn}');
-  const sched = allSched.filter((s) => known.has(fnName(s.Arn)));
-  const schedRows = await pool(sched, async (s) => {
-    const d = await aws('scheduler', 'get-schedule', '--name', s.Name, '--group-name', s.GroupName, '--query', '{e: ScheduleExpression, tz: ScheduleExpressionTimezone, state: State}');
-    return { via: 'Scheduler', name: s.Name, expr: d.e, tz: d.tz || 'UTC', state: d.state, targets: [fnName(s.Arn)] };
-  });
-  const schedules = [...ruleRows.filter(Boolean), ...schedRows];
-  const otherRules = ruleRows.filter((r) => !r).length;
-  const otherSchedules = allSched.length - sched.length;
+  const { schedules, otherRules, otherSchedules } = await liveSchedules(known);
 
+  const tableList = (await aws('dynamodb', 'list-tables', '--query', 'TableNames')) || [];
   const bucket = (await aws('s3api', 'list-buckets', '--query', "Buckets[?starts_with(Name, 'globalperspective-world')].Name"))[0];
   const listPrefixes = async (prefix) => (await aws('s3api', 'list-objects-v2', '--bucket', bucket, '--delimiter', '/', '--prefix', prefix, '--query', 'CommonPrefixes[].Prefix')) || [];
   const tops = await listPrefixes('');
   const s3 = { bucket, tree: await pool(tops, async (top) => ({ top, children: await listPrefixes(top) })) };
-  live = { runtime, unlisted, envKeys, url, tables, schedules, otherRules, otherSchedules, s3 };
+  live = { runtime, unlisted, envKeys, url, urlHost, tables, tableList, schedules, otherRules, otherSchedules, s3 };
 }
 
 const schedules = live ? live.schedules : NAMES.flatMap((n) => (FUNCTIONS[n].schedules || []).map((s) => ({
@@ -270,46 +250,167 @@ let routes;
   files['s3-prefixes.md'] = md;
 
   // features.md: one section per feature folder, so a feature check starts in one place (its README links here).
-  // Lambdas: functions.json `features` (feature folder names). Storage: what those
-  // Lambdas write — S3 prefixes found in a source file that also puts objects, DynamoDB tables named in a
-  // write command (shared code in backend/shared is not attributed). Heuristic over repo source.
+  // Lambdas: functions.json `features` (feature folder names). Storage: what those Lambdas write (store-call scanner below).
   const featDir = join(SRC, 'features');
   const feats = readdirSync(featDir).filter((d) => statSync(join(featDir, d)).isDirectory()).sort();
   const featuresOf = (n) => (FUNCTIONS[n].features || []);
   const unknown = [...new Set(NAMES.flatMap(featuresOf))].filter((f) => f !== 'ops' && !feats.includes(f));
   const textOf = (() => { const cache = {}; return (f) => (cache[f] ??= readFileSync(f, 'utf8')); })();
-  const S3_WRITE = /PutObjectCommand|CopyObjectCommand|\bputJson\b|\bputObj\b|\bs3PutJson\b/;
-  const DDB_WRITE = /new\s+(?:Put|Update|Delete|BatchWrite|TransactWrite)(?:Item)?Command\s*\(/g;
-
-  const s3Writes = (dir) => [...new Set(hits.filter((h) => h.dir === dir.split('/').pop() && roots.has(h.lit.split('/')[0]) && S3_WRITE.test(textOf(h.file))).map((h) => normalize(h.lit)))].sort();
-  const tableWrites = (n) => {
+  // ---- store-call scanner (shared by features.md and data-links.md) ----
+  // Finds DynamoDB commands and S3 reads/writes in each Lambda's own source (never _shared; it has no store calls).
+  // Heuristic: keys are resolved through string literals and `const X = process.env.Y || 'lit'` defaults only.
+  const lineOf = (t, i) => t.slice(0, i).split('\n').length;
+  const expand = (s, consts, props, from = 0) => { // fill ${NAME} / ${obj.prop} from known literals; leave the rest
+    const m = /\$\{\s*(\w+)(?:\.(\w+))?\s*\}/g;
+    m.lastIndex = from;
+    const hit = m.exec(s);
+    if (!hit) return [s];
+    const vals = hit[2] ? (props[hit[2]] || []) : (consts[hit[1]] != null ? [consts[hit[1]]] : []);
+    if (!vals.length) return expand(s, consts, props, hit.index + hit[0].length);
+    return vals.flatMap((v) => expand(s.slice(0, hit.index) + v + s.slice(hit.index + hit[0].length), consts, props, hit.index)).slice(0, 6);
+  };
+  const lambdaCtx = (n) => {
     const srcs = lambdaSources(FUNCTIONS[n].dir);
-    const dflt = {}; // env key -> code default
-    const alias = {}; // const name -> env key
-    const keys = new Set(); // every *TABLE env key the Lambda reads
-    for (const f of srcs) {
-      for (const m of textOf(f).matchAll(/process\.env\.(\w*TABLE)\b/g)) keys.add(m[1]);
-      for (const m of textOf(f).matchAll(/process\.env\.(\w*TABLE)\s*\|\|\s*['"]([^'"]+)['"]/g)) dflt[m[1]] ??= m[2];
-      for (const m of textOf(f).matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*process\.env\.(\w*TABLE)\b/g)) alias[m[1]] = m[2];
-    }
-    const name = (key) => live?.tables[n]?.[key] || dflt[key] || `env ${key}`;
-    const out = new Set();
+    const consts = {};
+    const props = {};
+    const fns = {}; // top-level function name -> { file, s, e }
+    const dflt = {};
+    const alias = {};
+    const keys = new Set();
     for (const f of srcs) {
       const t = textOf(f);
-      for (const m of t.matchAll(DDB_WRITE)) {
-        const win = t.slice(m.index, m.index + 300);
-        const ref = win.match(/TableName:\s*(?:process\.env\.(\w+)|['"]([^'"]+)['"]|(\w+))/) || win.match(/RequestItems:\s*\{\s*\[(?:process\.env\.(\w+)|()(\w+))\]/);
+      for (const m of t.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*\(?\s*(?:process\.env\.\w+\s*(?:\|\||\?\?)\s*)?(['"`])([^'"`\n]*)\2/g)) {
+        consts[m[1]] ??= /PREFIX/.test(m[1]) && m[3] && !/[#./]/.test(m[3]) ? `${m[3]}/` : m[3]; // S3 prefix defaults ('signals') end in /
+      }
+      for (const m of t.matchAll(/\b(\w+):\s*(['"])([^'"\n]*[/.][^'"\n]*)\2/g)) (props[m[1]] ??= []).push(m[3]);
+      for (const m of t.matchAll(/process\.env\.(\w*TABLE)\b/g)) keys.add(m[1]);
+      for (const m of t.matchAll(/process\.env\.(\w*TABLE)\s*\|\|\s*['"]([^'"]+)['"]/g)) dflt[m[1]] ??= m[2];
+      for (const m of t.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*process\.env\.(\w*TABLE)\b/g)) alias[m[1]] = m[2];
+      const starts = [...t.matchAll(/^(?:async\s+function|function|const|let|var|class|module\.exports|exports\.)\b[^\n]*/gm)];
+      starts.forEach((m, i) => {
+        const nm = m[0].match(/^(?:async\s+)?function\s+(\w+)|^(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\(|function|\w+\s*=>)|^exports\.(\w+)\s*=/);
+        const name = nm && (nm[1] || nm[2] || nm[3]);
+        if (name) fns[name] ??= { file: f, s: m.index, e: i + 1 < starts.length ? starts[i + 1].index : t.length };
+      });
+    }
+    const tableName = (key) => live?.tables[n]?.[key] || dflt[key] || `env ${key}`;
+    return { n, srcs, consts, props, fns, alias, keys, tableName };
+  };
+  // Candidate string values of a JS expression: a literal, a known const, obj.prop, or a local `const x = ...`.
+  const resolveExpr = (expr, ctx, t, idx, depth = 0) => {
+    expr = (expr || '').trim().replace(/^process\.env\.\w+\s*(?:\|\||\?\?)\s*/, '');
+    let m = expr.match(/^(['"`])((?:(?!\1)[^\n])*)\1/);
+    if (m) return expand(m[2], ctx.consts, ctx.props);
+    if ((m = expr.match(/^(\w+)\.(\w+)\b(?!\()/)) && ctx.props[m[2]]) return ctx.props[m[2]];
+    if (!(m = expr.match(/^(\w+)\b/)) || depth > 3) return [];
+    const id = m[1];
+    if (ctx.consts[id] != null) return expand(ctx.consts[id], ctx.consts, ctx.props);
+    const defs = [...t.slice(0, idx).matchAll(new RegExp(`(?:const|let|var)\\s+${id}\\s*=\\s*([^;\\n]+)`, 'g'))];
+    if (defs.length) return resolveExpr(defs[defs.length - 1][1], ctx, t, defs[defs.length - 1].index, depth + 1);
+    const fn = ctx.fns[id];
+    const ret = fn && textOf(fn.file).slice(fn.s, fn.e).match(/\breturn\s+([`'"][^\n;]*)/);
+    return ret ? resolveExpr(ret[1], ctx, textOf(fn.file), fn.s, depth + 1) : [];
+  };
+  // "TOPIC#${id}" -> "TOPIC#"; "WEB#INDEX" stays whole; "latest" stays whole; null when nothing literal is known.
+  const toPrefix = (v) => {
+    const cut = v.split(/\$\{|</)[0];
+    if (!cut) return null;
+    const hash = cut.indexOf('#');
+    if (hash >= 0) return cut === v && hash < cut.length - 1 ? cut : cut.slice(0, hash + 1);
+    return cut;
+  };
+
+  const DDB_CMD = /new\s+(Get|Query|Scan|BatchGet|Put|Update|Delete|BatchWrite|TransactWrite)(?:Item)?Command\s*\(/g;
+  const DDB_OP_WRITE = new Set(['Put', 'Update', 'Delete', 'BatchWrite', 'TransactWrite']);
+  const ddbSites = (ctx) => {
+    const out = [];
+    for (const f of ctx.srcs) {
+      const t = textOf(f);
+      for (const m of t.matchAll(DDB_CMD)) {
+        const next = t.slice(m.index + 10).search(/new\s+\w+Command\s*\(/);
+        const win = t.slice(m.index, m.index + 10 + Math.min(next < 0 ? 600 : next, 600));
+        // `new QueryCommand(params)`: the table and key live in the local `const params = {...}`.
+        const paramVar = win.match(/^new\s+\w+\(\s*(\w+)\s*[,)]/)?.[1];
+        const paramDefs = paramVar ? [...t.slice(0, m.index).matchAll(new RegExp(`(?:const|let)\\s+${paramVar}\\s*=\\s*\\{`, 'g'))] : [];
+        const win2 = paramDefs.length ? t.slice(paramDefs[paramDefs.length - 1].index, paramDefs[paramDefs.length - 1].index + 600) : win;
+        const head = win2.slice(0, 300);
+        const ref = head.match(/TableName:\s*(?:process\.env\.(\w+)|['"]([^'"]+)['"]|(\w+))/) || head.match(/RequestItems:\s*\{\s*\[(?:process\.env\.(\w+)|()(\w+))\]/);
         if (!ref) continue;
-        if (ref[1]) out.add(name(ref[1]));
-        else if (ref[2]) out.add(ref[2]);
-        else if (alias[ref[3]]) out.add(name(alias[ref[3]]));
-        // A table passed in as a parameter: unambiguous only when the Lambda reads one table key.
-        else if (keys.size === 1) out.add(name([...keys][0]));
-        else out.add('(table from a variable)');
+        let table;
+        if (ref[1]) table = ctx.tableName(ref[1]);
+        else if (ref[2]) table = ref[2];
+        else if (ctx.alias[ref[3]]) table = ctx.tableName(ctx.alias[ref[3]]);
+        else if (ctx.keys.size === 1) table = ctx.tableName([...ctx.keys][0]); // table passed in as a parameter
+        else table = '(table from a variable)';
+        // Key prefix: the PK / id expression of the Key, or of the Item (inline or a local `const item = {`).
+        let kwin = win2;
+        const itemVar = win2.match(/Item:\s*(\w+)\s*[,}]/)?.[1];
+        if (itemVar && !/\b(?:PK|id)\s*:/.test(win2)) {
+          const defs = [...t.slice(0, m.index).matchAll(new RegExp(`(?:const|let)\\s+${itemVar}\\s*=\\s*\\{`, 'g'))];
+          if (defs.length) kwin = t.slice(defs[defs.length - 1].index, defs[defs.length - 1].index + 500);
+        }
+        const exprs = [kwin.match(/\bPK\s*:\s*([^,}\n]+)/)?.[1] || kwin.match(/\bid\s*:\s*([^,}\n]+)/)?.[1]];
+        for (const a of win2.matchAll(/'?:\w+'?\s*:\s*([^,}\n]+)/g)) exprs.push(a[1]);
+        const prefixes = new Set();
+        for (const l of win2.matchAll(/['"`]([A-Za-z][A-Za-z0-9_]*#[^'"`]*)['"`]/g)) prefixes.add(toPrefix(l[1]));
+        for (const e of exprs) for (const v of resolveExpr(e, ctx, t, m.index)) { const p = toPrefix(v); if (p && (p.includes('#') || e === exprs[0])) prefixes.add(p); }
+        prefixes.delete(null);
+        out.push({ n: ctx.n, kind: 'ddb', op: DDB_OP_WRITE.has(m[1]) ? 'W' : 'R', table, prefixes: prefixes.size ? [...prefixes] : [''], file: f, idx: m.index, line: lineOf(t, m.index) });
       }
     }
-    return [...out].sort();
+    return out;
   };
+
+  const S3_WRITE_TOK = ['PutObjectCommand', 'CopyObjectCommand', 'DeleteObjectCommand', 'DeleteObjectsCommand'];
+  const S3_READ_TOK = ['GetObjectCommand', 'ListObjectsV2Command', 'HeadObjectCommand'];
+  const s3Sites = (ctx) => {
+    const out = [];
+    // Local wrappers (putJson, getText, ...) are tokens too: a top-level function whose body holds the command.
+    const wrap = (cmds) => Object.entries(ctx.fns).filter(([, fn]) => {
+      const body = textOf(fn.file).slice(fn.s, fn.e);
+      return body.length < 900 && cmds.some((c) => body.includes(c)) && !(S3_WRITE_TOK.concat(S3_READ_TOK).filter((c) => !cmds.includes(c)).some((c) => body.includes(c)));
+    }).map(([name]) => name);
+    const wTok = [...S3_WRITE_TOK, ...wrap(S3_WRITE_TOK)];
+    const rTok = [...S3_READ_TOK, ...wrap(S3_READ_TOK)];
+    const has = (line, toks) => toks.some((k) => new RegExp(`\\b${k}\\b`).test(line));
+    for (const f of ctx.srcs) {
+      const lines = textOf(f).split('\n');
+      lines.forEach((line, i) => {
+        if (/^\s*(import|\/\/|\*|\/\*)/.test(line) || /^\s*(?:async\s+)?function\s|^\s*(?:const|let)\s+\w+\s*=\s*(?:async\s*)?(?:\(|function)/.test(line) && !/\bawait\b/.test(line)) return;
+        let ops = null;
+        for (let k = i; k >= Math.max(0, i - 4) && !ops; k--) {
+          const w = has(lines[k], wTok);
+          const r = has(lines[k], rTok);
+          if (w || r) ops = [...(w ? ['W'] : []), ...(r ? ['R'] : [])];
+        }
+        // `for (const Key of [`a/b.json`, ...]) await s3.send(new PutObjectCommand({ Key ...` : the command follows the literals.
+        for (let k = i + 1; k <= Math.min(lines.length - 1, i + 6) && !ops && /\bfor\s*\(\s*(?:const|let)\s+\w+\s+of\b/.test(line); k++) {
+          const w = has(lines[k], wTok);
+          const r = has(lines[k], rTok);
+          if (w || r) ops = [...(w ? ['W'] : []), ...(r ? ['R'] : [])];
+        }
+        if (!ops) return;
+        const cands = [];
+        const bare = line.replace(/(['"`])(?:(?!\1).)*\1/g, (s) => { cands.push(...expand(s.slice(1, -1), ctx.consts, ctx.props)); return ' '; });
+        for (const id of bare.matchAll(/\b([A-Za-z_]\w*)(?:\.(\w+))?/g)) {
+          if (id[2] && ctx.props[id[2]]) cands.push(...ctx.props[id[2]]);
+          else if (!id[2] && ctx.consts[id[1]] != null && /[/]/.test(ctx.consts[id[1]])) cands.push(...expand(ctx.consts[id[1]], ctx.consts, ctx.props));
+        }
+        for (const c of cands) {
+          const lit = c.replace(/\/{2,}/g, '/');
+          if (!/^[a-z][a-z0-9_-]*\//.test(lit) || NOT_S3.test(lit.split('${')[0]) || !roots.has(lit.split('/')[0])) continue;
+          for (const op of ops) out.push({ n: ctx.n, kind: 's3', op, prefix: normalize(lit), file: f, line: i + 1 });
+        }
+      });
+    }
+    return out;
+  };
+
+  const ctxs = Object.fromEntries(NAMES.filter((n) => FUNCTIONS[n].dir).map((n) => [n, lambdaCtx(n)]));
+  const sites = Object.values(ctxs).flatMap((ctx) => [...ddbSites(ctx), ...s3Sites(ctx)]);
+  const siteStores = (s) => (s.kind === 'ddb' ? s.prefixes.map((p) => ({ label: `${s.table}\u0001${p}`, table: s.table, prefix: p })) : [{ label: `s3\u0001${s.prefix}`, table: null, prefix: s.prefix }]);
+  const s3Writes = (n) => [...new Set(sites.filter((s) => s.n === n && s.kind === 's3' && s.op === 'W').map((s) => s.prefix))].sort();
+  const tableWrites = (n) => [...new Set(sites.filter((s) => s.n === n && s.kind === 'ddb' && s.op === 'W').map((s) => s.table))].sort();
 
   const runbooks = readdirSync(join(ROOT, 'project-docs/runbooks')).filter((f) => f.endsWith('.md') && f !== 'README.md').sort();
   const runbookTitle = Object.fromEntries(runbooks.map((f) => [f, (readFileSync(join(ROOT, 'project-docs/runbooks', f), 'utf8').match(/^# .*$/m) || [''])[0]]));
@@ -359,7 +460,7 @@ let routes;
       return [
         code(n), f.dir ? code(f.dir) : '— (no repo source)', sch.join('; ') || '—',
         rb.map((r) => `[${r}](../runbooks/${r})`).join(', ') || '—',
-        f.dir ? s3Writes(f.dir).map(code).join(' ') || '—' : '—',
+        f.dir ? s3Writes(n).map(code).join(' ') || '—' : '—',
         f.dir ? tableWrites(n).map(code).join(' ') || '—' : '—',
       ];
     })));
@@ -372,6 +473,181 @@ let routes;
   if (unknown.length) fmd += `functions.json names features with no folder: ${unknown.map(code).join(', ')}.\n\n`;
   fmd += sections.join('\n\n') + '\n';
   files['features.md'] = fmd;
+
+  // ---------- data-links.md: store -> writers -> readers -> read actions -> pages ----------
+  {
+    const lambdaDirs = NAMES.filter((n) => FUNCTIONS[n].dir);
+    const groupOf = (n) => FUNCTIONS[n].dir.split('/')[1];
+    const READ_API = lambdaDirs.filter((n) => groupOf(n) === 'read-api');
+    const actionOnly = (v) => [...v.matchAll(/\baction\s*===\s*'(\w+)'/g)].map((m) => m[1]);
+
+    // 1. Read actions: every `if (action === 'x')` / `case 'x':` block in a read-api Lambda, with the store calls
+    //    inside it and inside the local functions it calls (followed up to 4 levels).
+    const handlers = []; // { n, action, file, s, e }
+    for (const n of READ_API) {
+      const ctx = ctxs[n];
+      for (const f of ctx.srcs) {
+        const t = textOf(f);
+        const chunks = Object.values(ctx.fns).filter((c) => c.file === f).sort((a, b) => a.s - b.s);
+        const marks = [...t.matchAll(/^([ \t]*)(?:\}\s*else\s*)?if\s*\((.*\baction\s*===.*)\)\s*\{\s*$/gm)].map((m) => ({ s: m.index, ind: m[1].length, acts: actionOnly(m[2]) }));
+        if (/switch\s*\(\s*action\b/.test(t)) for (const m of t.matchAll(/^([ \t]*)case\s+'(\w+)'\s*:/gm)) marks.push({ s: m.index, ind: m[1].length, acts: [m[2]] });
+        marks.sort((a, b) => a.s - b.s).forEach((mk, i) => {
+          const chunkEnd = (chunks.find((c) => c.s <= mk.s && mk.s < c.e) || { e: t.length }).e;
+          const nxt = marks.slice(i + 1).find((o) => o.ind <= mk.ind && o.s < chunkEnd);
+          for (const action of mk.acts) handlers.push({ n, action, file: f, s: mk.s, e: nxt ? nxt.s : chunkEnd });
+        });
+      }
+    }
+    const storesIn = (n, file, s, e, op, seen = new Set(), depth = 0) => {
+      const ctx = ctxs[n];
+      const out = new Set(sites.filter((x) => x.n === n && x.file === file && (x.idx ?? 0) >= 0 && inRange(x, s, e) && x.op === op).flatMap(siteStores).map((x) => x.label));
+      if (depth >= 4) return out;
+      const body = textOf(file).slice(s, e);
+      for (const [name, fn] of Object.entries(ctx.fns)) {
+        if (seen.has(name) || !new RegExp(`\\b${name}\\s*\\(`).test(body)) continue;
+        seen.add(name);
+        for (const l of storesIn(n, fn.file, fn.s, fn.e, op, seen, depth + 1)) out.add(l);
+      }
+      return out;
+    };
+    // Sites carry a line (S3) or char index (DynamoDB); compare through the char offset of the line.
+    const lineStart = (f) => { const t = textOf(f); const a = [0]; for (let i = 0; i < t.length; i++) if (t[i] === '\n') a.push(i + 1); return a; };
+    const starts = {};
+    const inRange = (x, s, e) => { const at = x.idx ?? (starts[x.file] ??= lineStart(x.file))[x.line - 1]; return at >= s && at < e; };
+
+    const primary = READ_API.map((n) => [n, new Set(handlers.filter((h) => h.n === n).map((h) => h.action)).size]).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const actionLabel = (h) => (h.n === primary ? h.action : `${h.n}:${h.action}`);
+    const actionStores = new Map(); // label -> Set(store label read)
+    for (const h of handlers) {
+      const set = storesIn(h.n, h.file, h.s, h.e, 'R');
+      const k = actionLabel(h);
+      actionStores.set(k, new Set([...(actionStores.get(k) || []), ...set]));
+    }
+    const endpointLambdas = READ_API.filter((n) => !handlers.some((h) => h.n === n)); // no action names: the whole Lambda is the endpoint
+    for (const n of endpointLambdas) actionStores.set(`${n} (whole endpoint)`, new Set(sites.filter((x) => x.n === n && x.op === 'R').flatMap(siteStores).map((x) => x.label)));
+    const knownActions = new Set(handlers.map((h) => h.action));
+
+    // 2. Frontend: restProxy function -> action / endpoint; module import graph; route closures.
+    const feFiles = walk(SRC, ['.js', '.jsx']).filter((f) => !/\.test\.|__tests__/.test(f));
+    const feSet = new Set(feFiles);
+    const proxyFile = join(SRC, 'shared/api/restProxy.js');
+    const pt = textOf(proxyFile);
+    const proxyFns = {};
+    const pm = [...pt.matchAll(/^export\s+(?:async\s+)?function\s+(\w+)/gm)];
+    pm.forEach((m, i) => {
+      const body = pt.slice(m.index, i + 1 < pm.length ? pm[i + 1].index : pt.length);
+      proxyFns[m[1]] = {
+        actions: [...body.matchAll(/(?:proxyAction|proxyActionWithAuth|savedItemsRequest|prefsRequest)\(\s*'(\w+)'/g)].map((x) => x[1]),
+        endpoints: [...body.matchAll(/window\.(\w*ENDPOINT)\b/g)].map((x) => x[1]),
+      };
+    });
+    const resolveImport = (from, spec) => {
+      const base = spec.startsWith('@/') ? join(SRC, spec.slice(2)) : spec.startsWith('.') ? join(dirname(from), spec) : null;
+      if (!base) return null;
+      return [base, `${base}.js`, `${base}.jsx`, join(base, 'index.js'), join(base, 'index.jsx')].find((c) => feSet.has(c)) || null;
+    };
+    const edges = {};
+    const direct = {}; // file -> { actions, endpoints, paths }
+    for (const f of feFiles) {
+      const t = textOf(f);
+      edges[f] = [...t.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].map((m) => resolveImport(f, m[1])).filter(Boolean);
+      const d = { actions: new Set(), endpoints: new Set(), paths: new Set() };
+      if (f !== proxyFile) {
+        for (const [name, fn] of Object.entries(proxyFns)) if (new RegExp(`\\b${name}\\b`).test(t)) { fn.actions.forEach((a) => d.actions.add(a)); fn.endpoints.forEach((e) => d.endpoints.add(e)); }
+        for (const m of t.matchAll(/\baction\s*:\s*['"](\w+)['"]/g)) if (knownActions.has(m[1])) d.actions.add(m[1]);
+        for (const m of t.matchAll(/window\.(\w*ENDPOINT)\b/g)) d.endpoints.add(m[1]);
+        if (/['"`]\/data['"`]|\/data\/|VITE_WORLD_URL/.test(t)) {
+          for (const m of t.matchAll(/(['"`])((?:(?!\1).)*\.json|(?:(?!\1).)*\/state\/(?:(?!\1).)*)\1/g)) {
+            const lit = m[2].replace(/^(?:\$\{[^}]*\})?\/?/, '');
+            if (/^[a-z][a-z0-9_-]*\//.test(lit) && roots.has(lit.split('/')[0])) d.paths.add(normalize(lit));
+          }
+        }
+      }
+      direct[f] = d;
+    }
+    const closure = (starts0, blocked = new Set()) => {
+      const seen = new Set();
+      const stack = [...starts0];
+      while (stack.length) { const f = stack.pop(); if (seen.has(f) || blocked.has(f)) continue; seen.add(f); stack.push(...edges[f]); }
+      const out = { actions: new Set(), endpoints: new Set(), paths: new Set() };
+      for (const f of seen) for (const k of Object.keys(out)) direct[f][k].forEach((v) => out[k].add(v));
+      return out;
+    };
+    const routeFile = (r) => (r.file.startsWith('src/') && !r.file.includes('(inline)') ? resolveImport(join(SRC, 'x'), `@/${r.file.slice(4)}`) : null);
+    const pageRoutes = routes.filter((r) => r.kind === 'page');
+    const routeUse = pageRoutes.map((r) => ({ r, file: routeFile(r), use: null }));
+    for (const x of routeUse) x.use = x.file ? closure([x.file]) : { actions: new Set(), endpoints: new Set(), paths: new Set() };
+    const shell = closure(feFiles.filter((f) => f.startsWith(join(SRC, 'app'))), new Set(routeUse.map((x) => x.file).filter(Boolean)));
+    const pageUnits = [...routeUse.map((x) => ({ name: x.r.path, feature: x.r.feature || x.r.comp, use: x.use })), { name: '(app shell)', feature: '(app shell)', use: shell }];
+
+    // endpoint key (window.X_ENDPOINT) -> Lambda: docs/config.js host == the Lambda's live Function URL host
+    const cfg = existsSync(join(ROOT, 'docs/config.js')) ? readFileSync(join(ROOT, 'docs/config.js'), 'utf8') : '';
+    const hostOf = Object.fromEntries([...cfg.matchAll(/window\.(\w*ENDPOINT)\s*=\s*['"]https?:\/\/([^/'"]+)/g)].map((m) => [m[1], m[2]]));
+    const lambdaOfEndpoint = (key) => (live ? NAMES.find((n) => live.urlHost[n]?.includes(hostOf[key])) : null) || null;
+
+    const pagesOfAction = (label) => {
+      const m = label.match(/^(?:(\w[\w-]*):)?(\w+)$/);
+      const action = m ? m[2] : null;
+      return pageUnits.filter((p) => action && p.use.actions.has(action) && (!m[1] || [...p.use.endpoints].some((e) => lambdaOfEndpoint(e) === m[1]) || !live)).map((p) => p.name);
+    };
+    const pagesOfEndpoint = (n) => pageUnits.filter((p) => [...p.use.endpoints].some((e) => lambdaOfEndpoint(e) === n)).map((p) => p.name);
+    const pagesOfPath = (prefix) => pageUnits.filter((p) => [...p.use.paths].some((q) => q === prefix || q.startsWith(prefix) || prefix.startsWith(q))).map((p) => p.name);
+
+    // 3. Collate per store.
+    const stores = new Map();
+    const get = (label) => { if (!stores.has(label)) { const [t, p] = label.split('\u0001'); stores.set(label, { label, table: t === 's3' ? null : t, prefix: p, W: new Set(), R: new Set(), actions: new Set(), pages: new Set() }); } return stores.get(label); };
+    for (const s of sites) for (const st of siteStores(s)) get(st.label)[s.op].add(s.n);
+    for (const [k, set] of actionStores) for (const label of set) { const st = get(label); st.actions.add(k); (k.endsWith('(whole endpoint)') ? pagesOfEndpoint(k.split(' ')[0]) : pagesOfAction(k)).forEach((p) => st.pages.add(p)); }
+    for (const st of stores.values()) if (!st.table) pagesOfPath(st.prefix).forEach((p) => st.pages.add(p));
+    const liveOnly = [];
+    if (live) {
+      const seenTables = new Set([...stores.values()].map((s) => s.table));
+      const referenced = new Set(Object.values(live.tables).flatMap((o) => Object.values(o || {})));
+      for (const t of [...referenced].sort()) if (!seenTables.has(t)) liveOnly.push([`${code(t)} ${code('(any key)')}`, 'none found', 'none found', 'none found', 'none found']);
+      const seenTops = new Set([...stores.values()].filter((s) => !s.table).map((s) => s.prefix.split('/')[0]));
+      for (const top of live.s3.tree.map((x) => x.top.replace(/\/$/, ''))) if (!seenTops.has(top)) liveOnly.push([`S3 ${code(`${top}/`)}`, 'none found in repo source', 'none found', 'none found', 'none found']);
+    }
+    const list = (arr, max = 8) => { const a = [...new Set(arr)]; return a.length ? (a.length > max ? `${a.slice(0, max).map(code).join(', ')} +${a.length - max} more` : a.map(code).join(', ')) : 'none found'; };
+    const ordered = [...stores.values()].sort((a, b) => (a.table ? 0 : 1) - (b.table ? 0 : 1) || (a.table || '').localeCompare(b.table || '') || a.prefix.localeCompare(b.prefix));
+    const rows = ordered.map((s) => [
+      s.table ? `${code(s.table)} ${code(s.prefix || '(key not resolved)')}` : `S3 ${code(s.prefix)}`,
+      list([...s.W].sort()), list([...s.R].sort()), list([...s.actions].sort()), list([...s.pages].sort()),
+    ]).concat(liveOnly);
+
+    // 4. Mermaid: Lambda group -> store (per table / one S3 node) -> read API -> feature (pages).
+    const id = (s) => s.replace(/[^A-Za-z0-9]/g, '_');
+    const nodes = new Map();
+    const edgeSet = new Set();
+    const node = (key, text) => { nodes.set(key, text); return key; };
+    // Keep the diagram under 30 nodes: tables touched by the fewest groups fold into one "other tables" node.
+    const featureCount = new Set(pageUnits.filter((p) => [...stores.values()].some((s) => s.pages.has(p.name))).map((p) => p.feature)).size;
+    const groupsOf = (s) => new Set([...s.W, ...s.R].map(groupOf)).size;
+    const tableRank = [...new Set([...stores.values()].filter((s) => s.table).map((s) => s.table))]
+      .map((t) => [t, Math.max(...[...stores.values()].filter((s) => s.table === t).map(groupsOf)), [...stores.values()].filter((s) => s.table === t).length])
+      .sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+    const groupCount = new Set(sites.map((x) => groupOf(x.n))).size;
+    const keepTables = new Set(tableRank.slice(0, Math.max(3, 30 - groupCount - featureCount - 3)).map((x) => x[0]));
+    const storeNode = (s) => (!s.table ? node('S3', 'S3 world bucket') : keepTables.has(s.table) ? node(`T_${id(s.table)}`, s.table) : node('T_OTHER', `other tables (${tableRank.length - keepTables.size})`));
+    const READ_NODE = node('READ_API', 'read-api Lambdas');
+    const featureOf = new Map(pageUnits.map((p) => [p.name, p.feature]));
+    for (const s of stores.values()) {
+      const sn = storeNode(s);
+      for (const n of s.W) edgeSet.add(`${node(`G_${id(groupOf(n))}`, `backend/${groupOf(n)}`)} --> ${sn}`);
+      if ([...s.R].some((n) => READ_API.includes(n))) edgeSet.add(`${sn} -.-> ${READ_NODE}`);
+      for (const p of s.pages) {
+        const fe = node(`F_${id(featureOf.get(p))}`, featureOf.get(p));
+        edgeSet.add(s.table ? `${READ_NODE} --> ${fe}` : `${sn} -->|Worker /data| ${fe}`);
+      }
+    }
+    const mermaid = ['```mermaid', 'flowchart LR', ...[...nodes].map(([k, v]) => `  ${k}["${v}"]`), ...[...edgeSet].sort().map((e) => `  ${e}`), '```'];
+
+    let md = header('Data links', 'Lambda source (DynamoDB Put/Update/Delete vs Get/Query/Scan commands; S3 put vs get calls), `if (action === ...)` handlers in `backend/read-api/*/src`, `src/shared/api/restProxy.js` callers + `/data/` fetches, `src/app/App.jsx` routes' + (live ? ', `*TABLE` env values, Function URLs and bucket listing from live AWS' : ''));
+    md += `\nOne row per store: who writes it, who reads it, which browser read action serves it, which page shows it. **Heuristic, not proof.** It reads string literals and \`const X = process.env.Y || 'lit'\` defaults in each Lambda's own \`src\` (the shared \`_shared\` code has no store calls). Keys built only from variables are not found, so a row can miss a writer or reader; "none found" means exactly that, not "none exist". DynamoDB rows are keyed by table and the leading partition-key prefix (or \`id\`) found next to the command; \`(key not resolved)\` collects commands whose key is a variable. Read actions: the store calls inside each \`if (action === ...)\` block of a read-api Lambda and the local functions it calls (4 levels); a read-api Lambda with no action names counts as one endpoint (linked to pages through its \`window.*_ENDPOINT\` and the live Function URL in docs/config.js, so offline mode cannot link it). Pages: routes whose component, by imports, reaches a hook that calls the action (an upper bound: every module reachable from the route counts), or an S3 path fetched through the Worker \`/data/\` route; \`(app shell)\` is code outside the routes (nav, auth). Scripts under \`scripts/\`, Cloudflare Worker code and deployed zips that differ from the repo are not scanned.\n\n`;
+    md += table(['Store', 'Writers (Lambdas)', 'Readers (Lambdas)', 'Read actions', 'Pages'], rows) + '\n\n';
+    md += `${rows.length} rows (${ordered.length} found in code${liveOnly.length ? `, ${liveOnly.length} only in live AWS` : ''}). ${handlers.length} action handlers in ${READ_API.length} read-api Lambdas${endpointLambdas.length ? `; no action names in ${endpointLambdas.map(code).join(', ')}` : ''}.\n\n`;
+    md += `## Flow (Lambda groups, stores, read API, pages)\n\nDashed: read by a read-api Lambda. Lambda-to-Lambda reads are in the table above, not drawn. ${nodes.size} nodes.\n\n${mermaid.join('\n')}\n`;
+    files['data-links.md'] = md;
+  }
 }
 
 mkdirSync(OUT, { recursive: true });

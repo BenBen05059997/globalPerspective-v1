@@ -70,6 +70,10 @@ else
   run_layer "L2.5 Lambda + cron health (verify_lambdas.sh)" \
     bash quality/verify_lambdas.sh
 
+  # ─── Inventory drift — functions.json vs live Lambdas, rules, schedules ───
+  run_layer "INV  AWS inventory drift (check_aws_inventory.mjs)" \
+    node quality/check_aws_inventory.mjs
+
   # ─── M — Markets data integrity ───
   run_layer "M    Markets data integrity (verify_market.sh)" \
     bash quality/verify_market.sh

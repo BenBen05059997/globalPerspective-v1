@@ -49,7 +49,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 |---|---|---|---|---|---|
 | `newsAnalyze` | `backend/membership-studio/newsAnalyze` | Function URL | — | — | `GlobalPerspectiveUserTable` |
 | `newsDriftCorrector` | `backend/pipeline/newsDriftCorrector` | rule TriggerDriftCorrector `cron(30 5 * * ? *)` (ENABLED) | [drift-corrector.md](../runbooks/drift-corrector.md) | — | `SummarizeAndPredict` |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 | `newsSharedAnalysis` | `backend/read-api/newsSharedAnalysis` | Function URL | — | — | `GlobalPerspectiveShares` |
 | `newsThreadAnalysis` | `backend/pipeline/newsThreadAnalysis` | rule TriggerDailyAnalysis `cron(40 4 * * ? *)` (ENABLED) | [thread-analysis.md](../runbooks/thread-analysis.md) | — | `SummarizeAndPredict` |
@@ -78,7 +78,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 |---|---|---|---|---|---|
 | `newsEmailSender` | `backend/distribution/newsEmailSender` | rule TriggerBreakingEmailSend `rate(15 minutes)` (DISABLED); rule TriggerDriftEmailSend `cron(40 7 * * ? *)` (DISABLED); rule TriggerWeeklyEmailSend `cron(0 14 ? * SUN *)` (ENABLED) | [drift-email.md](../runbooks/drift-email.md), [weekly-email.md](../runbooks/weekly-email.md) | — | `GlobalPerspectiveBreakingAlerts` `SummarizeAndPredict` |
 | `newsPostDevTo` | `backend/distribution/newsPostDevTo` | Scheduler InvokeDev `cron(0 23 * * ? *)` Asia/Tokyo (ENABLED) | [daily-brief.md](../runbooks/daily-brief.md) | — | `NewsProject-linkedin-posts` `SummarizeAndPredict` |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 | `newsWeeklyBrief` | `backend/distribution/newsWeeklyBrief` | rule TriggerWeeklyBrief `cron(0 6 ? * SUN *)` (ENABLED) | [weekly-brief.md](../runbooks/weekly-brief.md) | — | `SummarizeAndPredict` |
 
@@ -94,9 +94,9 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 | `newsCountryFactsUpdater` | `backend/pipeline/newsCountryFactsUpdater` | Scheduler Fact `cron(0 5 ? * MON *)` Asia/Tokyo (ENABLED) | [country-facts.md](../runbooks/country-facts.md) | — | `SummarizeAndPredict` |
 | `newsCountryIntelligence` | `backend/pipeline/newsCountryIntelligence` | Scheduler countryIntelliegence `cron(15 5 * * ? *)` (ENABLED) | [country-intelligence.md](../runbooks/country-intelligence.md) | — | `SummarizeAndPredict` |
 | `newsDriftCorrector` | `backend/pipeline/newsDriftCorrector` | rule TriggerDriftCorrector `cron(30 5 * * ? *)` (ENABLED) | [drift-corrector.md](../runbooks/drift-corrector.md) | — | `SummarizeAndPredict` |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
-| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/` `web/latest.json` | `SummarizeAndPredict` |
+| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/latest.json` | `SummarizeAndPredict` |
 
 ## economy
 
@@ -122,9 +122,9 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
-| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` | `NewsCache` |
+| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` `audit/ingest-capture/latest.json` | `NewsCache` |
 | `newsPredictionsSnapshot` | `backend/predictions/newsPredictionsSnapshot` | rule TriggerPredictionsSnapshot `rate(30 minutes)` (ENABLED) | [predictions-snapshot.md](../runbooks/predictions-snapshot.md) | `predictions/track_record.json` | — |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 
 ## map
@@ -137,12 +137,12 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
 | `newsCountryIntelligence` | `backend/pipeline/newsCountryIntelligence` | Scheduler countryIntelliegence `cron(15 5 * * ? *)` (ENABLED) | [country-intelligence.md](../runbooks/country-intelligence.md) | — | `SummarizeAndPredict` |
-| `newsGdacsIngest` | `backend/situations/newsGdacsIngest` | rule TriggerGdacsIngest `rate(20 minutes)` (ENABLED) | [gdacs-ingest.md](../runbooks/gdacs-ingest.md) | `corpus/gdacs/` `situations/inbox/` | — |
-| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` | `NewsCache` |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `newsGdacsIngest` | `backend/situations/newsGdacsIngest` | rule TriggerGdacsIngest `rate(20 minutes)` (ENABLED) | [gdacs-ingest.md](../runbooks/gdacs-ingest.md) | `corpus/gdacs/latest.json` `situations/inbox/gdacs-latest.json` | — |
+| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` `audit/ingest-capture/latest.json` | `NewsCache` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 | `newsSituationIngest` | `backend/situations/newsSituationIngest` | rule TriggerSituationIngest `rate(1 hour)` (ENABLED) | [situation-ingest.md](../runbooks/situation-ingest.md) | `corpus/` `stories/classify-cache.json` `stories/index.json` `stories/state/` | — |
-| `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `stories/index.json` `threads/story-map.json` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
+| `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
 | `newsThreadAnalysis` | `backend/pipeline/newsThreadAnalysis` | rule TriggerDailyAnalysis `cron(40 4 * * ? *)` (ENABLED) | [thread-analysis.md](../runbooks/thread-analysis.md) | — | `SummarizeAndPredict` |
 
 ## static
@@ -163,11 +163,11 @@ No Lambda in functions.json lists this feature.
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
-| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` | `NewsCache` |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` `audit/ingest-capture/latest.json` | `NewsCache` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
-| `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `stories/index.json` `threads/story-map.json` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
-| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/` `web/latest.json` | `SummarizeAndPredict` |
+| `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
+| `newsSystemsAnalysis` | `backend/pipeline/newsSystemsAnalysis` | rule TriggerNewsSystemsAnalysis `cron(0 5 * * ? *)` (ENABLED) | [systems-analysis.md](../runbooks/systems-analysis.md) | `web/latest.json` | `SummarizeAndPredict` |
 | `newsThreadAnalysis` | `backend/pipeline/newsThreadAnalysis` | rule TriggerDailyAnalysis `cron(40 4 * * ? *)` (ENABLED) | [thread-analysis.md](../runbooks/thread-analysis.md) | — | `SummarizeAndPredict` |
 
 ## track-record
@@ -181,5 +181,5 @@ No Lambda in functions.json lists this feature.
 |---|---|---|---|---|---|
 | `newsPredictionResolver` | `backend/predictions/newsPredictionResolver` | rule TriggerPredictionResolver `cron(30 10 * * ? *)` (ENABLED) | [prediction-resolver.md](../runbooks/prediction-resolver.md) | — | `GlobalPerspectivePredictionLog` |
 | `newsPredictionsSnapshot` | `backend/predictions/newsPredictionsSnapshot` | rule TriggerPredictionsSnapshot `rate(30 minutes)` (ENABLED) | [predictions-snapshot.md](../runbooks/predictions-snapshot.md) | `predictions/track_record.json` | — |
-| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `stories/state/` `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |

@@ -200,14 +200,19 @@ Notes from stage 3: Board link in the account area, hidden when no endpoint; dev
 production chunks; strings drawn at uniform weight (no stored web strength); details in `features/board/README.md`.
 Not browser-tested: signed-out view, What is missing follow, co-movement grounds, touch drag.
 
-### Stage 4: deploy and wire (operator yes first)
-- [ ] Deploy the `newsSavedItems` board filter (standing Lambda auth; diff first) before the first board exists; remove the
+### Stage 4: deploy and wire (operator yes given 2026-10-20)
+- [x] Deploy the `newsSavedItems` board filter (standing Lambda auth; diff first) before the first board exists; remove the
       `deployBlocked` note and `"planned": true` on `newsBoard` in `scripts/functions.json` (the inventory check fails until you do).
-- [ ] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
-- [ ] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
-- [ ] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).
+- [x] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
+- [x] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
+- [x] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).
 - [ ] Smoke: create a board, add two pins, connect, keep, fork a preset, on production as a member.
 - [ ] Docs: `ARCHITECTURE_RECORD.md` §9 status, `ARCHITECTURE.md` data flow 8, `DATA_STRATEGY` §2 field note, reference regen, Atlas.
+
+Notes from stage 4: role `newsBoard-role` (basic logs + inline least-privilege DynamoDB), function created 2026-10-20, Function
+URL with the same CORS as `newsSavedItems`; live smoke: `list_presets` returns 8 region presets from real data, `list_boards`
+without a token is 401, the site origin passes preflight. `scripts/prepare-site-assets.mjs` (Cloudflare packaging) does not
+require `BOARD_ENDPOINT`; add it to `REQUIRED_CONFIG_FIELDS` at the Cloudflare cutover.
 
 ### Waits for the record (not in these stages)
 Pin lines and counts, branch status, tree, chapters, arrivals, confirmed strings, the board's weekly and monthly, summary,

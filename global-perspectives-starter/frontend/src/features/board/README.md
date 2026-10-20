@@ -5,8 +5,8 @@ onto another to ask whether they connect, keeps or cuts strings, and writes one 
 of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the record or the weekly.
 
 ## Status
-- Slice 1, local only, not released (2026-10-20). The `newsBoard` Lambda is not created in AWS; `window.BOARD_ENDPOINT`
-  is not set in `docs/config.js`, so production shows no Board link and the page says "The board is not available yet."
+- Slice 1, live 2026-10-20: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. Without that key
+  (local builds, or a config that lacks it) the page says "The board is not available yet." and shows no Board link.
 - Slice 1 uses only data that exists: thread analyses, the story web, daily scores. Every string of ours is drawn dashed
   and labelled INFERENCE; nothing is shown as confirmed. Branch status, the tree, arrivals and the board's weekly wait
   for the record (`project-docs/plans/PLAN_2026-10-20_board.md`, "Waits for the record").

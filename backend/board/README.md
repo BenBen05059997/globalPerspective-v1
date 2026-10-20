@@ -32,4 +32,4 @@ Thread pin `refId` = `threadId`; country = ISO3 (`backend/shared/src/resolveIso3
 
 ## Status
 
-Stage 2: `newsBoard` code and tests (`newsBoard/`); not created in AWS. Plan: `project-docs/plans/PLAN_2026-10-20_board.md`.
+Slice 1 live 2026-10-20: `newsBoard` deployed (Function URL, role `newsBoard-role`); `newsConnect` not built. Plan: `project-docs/plans/PLAN_2026-10-20_board.md`.

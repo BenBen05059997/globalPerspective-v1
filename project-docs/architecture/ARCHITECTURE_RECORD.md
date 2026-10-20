@@ -193,4 +193,5 @@ in S3; the prediction log migration (DATA_STRATEGY §6, separate step).
 | weekly run + `weekly/` | planned (weekly plan steps 3–6) |
 | `features/weekly/` | planned |
 | Worker allowlist + reader IAM | planned, fresh yes |
-| `backend/board/` (`newsBoard`, `newsConnect`), `features/board/` | planned, board phase |
+| `newsBoard` + `features/board/` (slice 1: boards, follows, presets, cheap connect) | live 2026-10-20 |
+| `newsConnect` (LLM grounds, `record/pairs/`) and the board features that wait for the record | planned |

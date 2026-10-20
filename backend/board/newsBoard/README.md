@@ -3,10 +3,10 @@
 The member's personal board behind one Lambda Function URL: boards (pins, strings, weights, dismissed, summary), follows, region presets and the cheap `connect` test between two pins. POST body `{action, ...}`; every action needs a Firebase JWT (`Authorization: Bearer`) except `list_presets`. Replies are `{success, data}` or `{success:false, error, code?}`. No LLM, no S3 write: `record/pairs/` caching comes later with `newsConnect`.
 
 ## Deployment
-- **Not created in AWS yet** (plan stage 4). Deployed name will be `newsBoard` · runtime `nodejs22.x` · group `board` (scripts/functions.json, `deployBlocked` until the operator creates it) · zip ships node_modules.
+- Live since 2026-10-20. Deployed name `newsBoard` · runtime `nodejs22.x` · 256 MB · 15 s · group `board` (scripts/functions.json) · zip ships node_modules. Role `newsBoard-role` (created 2026-10-20 with operator approval).
 - Trigger: Function URL (auth NONE; the JWT is checked in code). CORS belongs to the URL config and must stay populated: the code emits no `Access-Control-*` header.
 - Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `FIREBASE_PROJECT_ID`.
-- IAM it will need (least privilege, operator-created): `dynamodb:GetItem|PutItem|DeleteItem|Query` on the SavedItems table; `GetItem|UpdateItem` on UserPrefs (only `followedThreads`/`followedActors` are SET); `GetItem|BatchGetItem|Query` read-only on SummarizeAndPredict; `GetItem` read-only on NewsCache; CloudWatch Logs. Nothing else (no S3, no other tables).
+- IAM (role `newsBoard-role`: `AWSLambdaBasicExecutionRole` + inline `newsBoard-dynamodb`): `dynamodb:GetItem|PutItem|DeleteItem|Query` on the SavedItems table; `GetItem|UpdateItem` on UserPrefs (only `followedThreads`/`followedActors` are SET); `GetItem|BatchGetItem|Query` read-only on SummarizeAndPredict; `GetItem` read-only on NewsCache; CloudWatch Logs. Nothing else (no S3, no other tables).
 - Deploy: `scripts/lambda.sh newsBoard diff|package|deploy` (after creation; diff first).
 
 ## Reads / writes

@@ -58,8 +58,10 @@ For every thread with an entry in the last 30 days, in this order, idempotent pe
 10. **Write.** `record/stories/<id>/YYYY-MM-DD.json` (create-only), then `latest.json`; after all threads, `record/index.json`.
 Dry-run mode writes to `record/shadow/` for one week before the real prefix (plan step 2).
 
-Cost control: the LLM is called only in steps 4 (rare) and 6 (one call per live branch with new entries; branches with no
-new entries are `hold` without a call). Expected: tens of calls a day, measured in the dry-run week.
+Cost control: the LLM is called only in steps 4 (chapters: rare), 6 (trigger check: one call per branch with new entries,
+including `late` branches, which can still fire, and `dead` branches with new evidence, which can resurrect; branches with
+no new entries are `hold` without a call) and 9 (the line: at a story's birth and once a week, not daily). Expected: tens
+of calls a day, measured in the dry-run week.
 
 ## Failure behaviour
 - A missing archive day (as 2026-10-14) is recorded in `record/index.json.coverage.missingDays[]`; the weekly prints it.

@@ -51,7 +51,7 @@ Derived per-user documents (the board's weekly and monthly) are computed on requ
 ## 2. Lambdas
 | Lambda | Group | Schedule | Does |
 |---|---|---|---|
-| `newsStoryRecord` (new) | `backend/record/` | daily 05:30Z, after `newsSystemsAnalysis` 05:00Z | for every active story: birth from earliest `archive#`; duplicate check at birth (shared actors + place + 48h → merge via the threads CLI logic, logged); chapter row when the day's drift note changes the expected path (line written once, dated); trigger check for every live branch against the day's entries (LLM judgment, blind to `p`, writes fired/hold/dead/late, resurrected when a dead trigger later fires); corrections; `record/index.json` |
+| `newsStoryRecord` (new) | `backend/record/` | daily 05:45Z, after `newsDriftCorrector` 05:30Z | for every active story: birth from earliest `archive#`; duplicate check at birth (shared actors + place + 48h → report only, no merge: open operator decision); chapter row when the day's drift note changes the expected path (line written once, dated); trigger check for every live branch against the day's entries (LLM judgment, blind to `p`, writes fired/hold/dead/late, resurrected when a dead trigger later fires); corrections; `record/index.json` |
 | `newsConnect` (new) | `backend/board/` | on demand (Function URL, JWT) | pair verdict: cheap grounds from `record/index.json` + `web/latest.json` + daily scores; one LLM call for mechanism, direction, conditional, falsifier; writes `record/pairs/`; a second ask the same day returns the cache |
 | `newsBoard` (new) | `backend/board/` | on demand (JWT) | board CRUD; arrivals (new `record/index.json` rows tested against the board's pins, strong → pool, medium → overflow); the board's weekly and monthly; presets (read-only boards owned by the operator, forked on request) |
 | `newsPredictionResolver` (change) | `backend/predictions/` | daily 10:30Z (exists) | writes the verdict row directly from its draft; `unclear` stays excluded from the score; a `VOID#` row with reason reverses one (appended, never deleted) |
@@ -61,7 +61,9 @@ Derived per-user documents (the board's weekly and monthly) are computed on requ
 | weekly run (headless Claude Code, cloud) | `backend/weekly/` + `.claude/skills/weekly-brief/` | Sun 06:00Z | writes `weekly/YYYY-MM-DD.json` as published, `latest.json`; the sender publishes at 14:00Z unless vetoed |
 
 `scripts/functions.json` gains the three new Lambdas with `dir` under `backend/record/` and `backend/board/`.
-IAM: `newsStoryRecord` PutObject on `record/stories/*`, `record/index.json`, `record/corrections/*` only;
+IAM: `newsStoryRecord` PutObject on `record/stories/*`, `record/index.json`, `record/corrections/*` only, GetObject on
+`record/*` (append-only updates read its own state) and `web/*`, ListBucket scoped to `record/` (a missing object is a
+404, not a 403);
 `newsConnect` on `record/pairs/*`; the weekly run's credential on `weekly/*` only (needs a fresh yes).
 
 ## 3. The trigger check (the heart)

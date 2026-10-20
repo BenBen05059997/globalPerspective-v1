@@ -16,14 +16,13 @@ function makeStore(io, {
 } = {}) {
   return {
     async load(date) {
-      const archives = await io.scan(cache, 'begins_with(id, :a) AND id <= :end', {
-        ':a': 'archive#',
-        ':end': `archive#${date}`
-      });
+      const [archives, pred, today, web] = await Promise.all([
+        io.scan(cache, 'begins_with(id, :a) AND id <= :end', {':a':'archive#', ':end':`archive#${date}`}),
+        io.scan(predictions, 'begins_with(PK, :p) OR begins_with(PK, :q)', {':p':'PRED#', ':q':'Q#'}),
+        io.get(cache, {id:'today-archive'}),
+        io.web(date)
+      ]);
       const archiveDays = new Set(archives.map(r => r.id.slice(8)));
-      const today = await io.get(cache, {
-        id: 'today-archive'
-      });
       const entries = archives.flatMap(r => (r.entries || []).map(e => ({
         ...e,
         date: r.id.slice(8)
@@ -36,7 +35,8 @@ function makeStore(io, {
       const analyses = {},
         drifts = {},
         missingAnalyses = [];
-      for (const id of ids) {
+      for (let start = 0; start < ids.length; start += 4) {
+       await Promise.all(ids.slice(start,start+4).map(async id => {
         const rows = await io.query(summary, `THREAD#${id}`);
         const history = rows.filter(r => r.SK.startsWith('THREAD_HISTORY#') && r.SK.slice(15) <= date).sort((a, b) => b.SK.localeCompare(a.SK));
         const current = rows.find(r => r.SK === 'THREAD_ANALYSIS' && day(r.generatedAt) <= date);
@@ -48,12 +48,9 @@ function makeStore(io, {
           reason: hist ? 'using historical scalar analysis; actor metadata from archives' : 'no as-of analysis'
         });
         drifts[id] = rows.find(r => r.SK === `DRIFT#${date}`) || rows.find(r => r.SK === `DRIFTLOG#${date}`);
+       }));
       }
-      const pred = await io.scan(predictions, 'begins_with(PK, :p) OR begins_with(PK, :q)', {
-        ':p': 'PRED#',
-        ':q': 'Q#'
-      });
-      const web = await io.web(date);
+      missingAnalyses.sort((a,b)=>a.threadId.localeCompare(b.threadId));
       const bundle = web?.index || web;
       const links = (bundle?.links || []).map(l => ({
         ...l,

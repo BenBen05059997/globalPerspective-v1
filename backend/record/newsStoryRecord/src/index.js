@@ -115,8 +115,8 @@ function makeHandler({
       };
       if (!previous) report.birthsFound++;
       r.asOf = date;
-      r.actors = [...new Set(own.flatMap(e => e.actors).concat(analysis.keyActors || []))];
-      r.countries = [...new Set(own.flatMap(e => e.countries).concat(analysis.iso3 || []))];
+      r.actors = [...new Set(own.flatMap(e => e.actors).concat(analysis.keyActors || []))].sort();
+      r.countries = [...new Set(own.flatMap(e => e.countries).concat(analysis.iso3 || []))].sort();
       r.risk = analysis.riskScore ?? previous?.risk ?? null;
       const drift = input.drifts?.[id];
       // Bootstrap/backfill all available events, not only today's: recovery catches missed runs.
@@ -167,6 +167,7 @@ function makeHandler({
           branches
         });
       }
+      r.forks.sort((a,b)=>a.drawnAt.localeCompare(b.drawnAt) || a.forkId.localeCompare(b.forkId));
       const currentLinks = (input.links || []).filter(l => l.confirmed === true && l.confirmedBy === 'rule' && (l.a === id || l.b === id)).map(l => ({
         otherThreadId: l.a === id ? l.b : l.a,
         strength: l.strength,
@@ -176,7 +177,7 @@ function makeHandler({
         evidence: l.evidence || [],
         since: l.since || date
       }));
-      r.links = [...new Map([...r.links, ...currentLinks].map(l => [l.otherThreadId, l])).values()];
+      r.links = [...new Map([...r.links, ...currentLinks].map(l => [l.otherThreadId, l])).values()].sort((a,b)=>a.otherThreadId.localeCompare(b.otherThreadId));
       const linked = r.links.map(l => l.otherThreadId);
       const contextEntries = entries.filter(e => e.date === date && (e.threadId === id || linked.includes(e.threadId)));
       for (const fork of r.forks) {
@@ -213,7 +214,7 @@ function makeHandler({
           let row = result ? transition(b, result, contextEntries, fork.branches.some(s => s !== b && s.scenarioId !== b.scenarioId && (['fired', 'resurrected'].includes(lastStatus(s)) || fired.includes(s)))) : {
             status: prior === 'dead' ? 'dead' : 'hold',
             evidence: [],
-            note: 'No new entries'
+            note: contextEntries.length ? 'not run: no llm' : 'No new entries'
           };
           if (prior === 'dead' && row.status === 'hold') continue;
           if (['hold', 'late'].includes(row.status) && b.due && day(b.due) < date) row = {

@@ -12,7 +12,7 @@ Builds a dated story account from retained archives, thread analyses and drift n
 
 ## Reads / writes
 
-Read-only `store.load(date)` returns entries, as-of analyses, drift notes, prediction rows, verdicts, confirmed links and explicit coverage. Both runtime and local CLI paginate reads with Limit 100. The current loader scans all retained archive rows on each run to find the earliest available birth; this is not proof of the first-ever entry if history was deleted. Only stories with entries in the last 30 days enter the index. Future analysis rows never leak into historical replays; historical scalar rows may lack actors, which come from archives instead.
+Read-only `store.load(date)` returns entries, as-of analyses, drift notes, prediction rows, verdicts, confirmed links and explicit coverage. Both runtime and local CLI paginate reads with Limit 100; independent reads overlap and thread queries are bounded to four at once. The current loader scans all retained archive rows on each run to find the earliest available birth; this is not proof of the first-ever entry if history was deleted. Only stories with entries in the last 30 days enter the index. Future analysis rows never leak into historical replays; historical scalar rows may lack actors, which come from archives instead.
 
 The ten pipeline steps live in `src/index.js`: birth; duplicate report; events; drift-gated chapter (last chapter strictly older than seven days); immutable PRED forks with one branch per trigger and a scenario identifier; evidence-checked trigger statuses; corrections; read-only verdict mirror (numeric VERDICT revision order); weekly versioned line; immutable snapshot then latest/index. Bootstrap/recovery also fills missing past events. Day-zero entries use shared `dayZero.js`.
 
@@ -41,7 +41,7 @@ node backend/record/newsStoryRecord/dryrun.mjs --date 2026-10-19 --out /Users/be
 node backend/record/newsStoryRecord/dryrun.mjs --date 2026-10-20 --out /Users/benlai/Downloads/gp-mailbox/artifacts/record-dryrun/ --no-llm
 ```
 
-Use a clean output directory and ascending dates: it is the local S3 state for consecutive days. The adapter allows only DynamoDB get/query/scan and S3 get-object. All would-be puts go to local files through the real shared S3 helper; no LLM code is imported. Failed AWS reads abort rather than fabricate coverage. Date-specific web snapshots are preferred, then as-of latest; future latest is excluded. Outputs: `record/shadow/*` and `report-YYYY-MM-DD.json` (threads, births initialized (plus births on the run date), duplicate evidence, forks, branches, late, mirrored verdicts, raw and gzip index KB, coverage, planned call counts). Local reruns reuse snapshots, so work counters may be zero on retry.
+Use a clean output directory and ascending dates: it is the local S3 state for consecutive days. The adapter allows only DynamoDB get/query/scan and S3 get-object. All would-be puts go to local files through the real shared S3 helper; no LLM code is imported. Failed AWS reads abort rather than fabricate coverage. Date-specific web snapshots are preferred, then as-of latest; future latest is excluded. Outputs: `record/shadow/*`, the retained read input `input-YYYY-MM-DD.json`, and `report-YYYY-MM-DD.json` (threads, births initialized (plus births on the run date), duplicate evidence, forks, branches, late, mirrored verdicts, raw and gzip index KB, coverage, planned call counts). Local reruns reuse snapshots, so work counters may be zero on retry.
 
 ## Tests
 

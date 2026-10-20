@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Read-only AWS CLI adapter. No SDK, API keys, LLM imports, or AWS mutation commands.
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const execFileAsync=promisify(execFile);
 import { readFileSync, writeFileSync, mkdirSync, existsSync, mkdtempSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -27,12 +29,13 @@ mkdirSync(out, {
 });
 const bucket = 'globalperspective-world-280362093938';
 const region = 'ap-northeast-1';
-const aws = (service, op, values) => {
+const aws = async (service, op, values) => {
   if (!['dynamodb:get-item', 'dynamodb:query', 'dynamodb:scan', 's3api:get-object'].includes(`${service}:${op}`)) throw Error('read-only adapter rejected operation');
-  return JSON.parse(execFileSync('aws', [service, op, ...values, '--region', region, '--output', 'json', '--no-cli-pager'], {
+  const result = await execFileAsync('aws', [service, op, ...values, '--region', region, '--output', 'json', '--no-cli-pager'], {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024
-  }));
+  });
+  return JSON.parse(result.stdout);
 };
 function unmarshal(v) {
   if ('S' in v) return v.S;
@@ -48,11 +51,11 @@ function unmarshal(v) {
 const marshal = o => JSON.stringify(Object.fromEntries(Object.entries(o).map(([k, v]) => [k, {
   S: v
 }])));
-function pages(op, base) {
+async function pages(op, base) {
   let key;
   const items = [];
   do {
-    const r = aws('dynamodb', op, [...base, '--limit', '100', '--no-paginate', ...(key ? ['--exclusive-start-key', JSON.stringify(key)] : [])]);
+    const r = await aws('dynamodb', op, [...base, '--limit', '100', '--no-paginate', ...(key ? ['--exclusive-start-key', JSON.stringify(key)] : [])]);
     items.push(...(r.Items || []).map(r => unmarshal({
       M: r
     })));
@@ -61,10 +64,10 @@ function pages(op, base) {
   return items;
 }
 const temp = mkdtempSync(join(tmpdir(), 'record-read-'));
-const webRead = key => {
+const webRead = async key => {
   const file = join(temp, 'web.json');
   try {
-    aws('s3api', 'get-object', ['--bucket', bucket, '--key', key, file]);
+    await aws('s3api', 'get-object', ['--bucket', bucket, '--key', key, file]);
     return JSON.parse(readFileSync(file, 'utf8'));
   } catch (e) {
     if (/NoSuchKey|Not Found|\(404\)/.test(String(e.stderr))) return null;
@@ -73,7 +76,7 @@ const webRead = key => {
 };
 const io = {
   get: async (table, key) => {
-    const r = aws('dynamodb', 'get-item', ['--table-name', table, '--key', marshal(key)]);
+    const r = await aws('dynamodb', 'get-item', ['--table-name', table, '--key', marshal(key)]);
     return r.Item ? unmarshal({
       M: r.Item
     }) : null;
@@ -83,9 +86,9 @@ const io = {
     ':pk': pk
   })]),
   web: async date => {
-    let web = webRead(`web/${date.replaceAll('-', '/')}.json`);
+    let web = await webRead(`web/${date.replaceAll('-', '/')}.json`);
     if (web) return web;
-    web = webRead('web/latest.json');
+    web = await webRead('web/latest.json');
     return String(web?.generatedAt || web?.index?.generatedAt || '').slice(0, 10) <= date ? web : null;
   }
 };
@@ -137,8 +140,11 @@ const s3json = makeS3Json({
   }
 });
 console.error(`Reading live stores for ${date}; AWS read-only, local shadow output ${out}`);
+const input = await makeStore(io).load(date);
+writeFileSync(join(out, `input-${date}.json`), JSON.stringify(input)+'\n');
+console.error(`Read complete: ${input.entries.length} archive entries, ${Object.keys(input.analyses).length} active threads, ${input.predictions.length} PRED rows.`);
 const report = await makeHandler({
-  store: makeStore(io),
+  store: {load:async()=>input},
   s3json,
   llm: null,
   now: () => `${date}T05:45:00Z`

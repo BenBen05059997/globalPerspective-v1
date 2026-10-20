@@ -15,6 +15,25 @@ Pipeline (step by step, with times): `ARCHITECTURE_RECORD_PIPELINE.md`.
 An agent working on one of these does not touch the other two except through their published files and documented
 fields. "Personal digest", "Studio" and "desk" are not names of anything here; the retired Studio stays retired.
 
+## 0b. Glossary (one meaning per word)
+| Word | Means | Never means |
+|---|---|---|
+| topic | one item the selector picks in a run (`newsInvokeGemini`), carrying a threadId | a story |
+| thread / story | the editorial story arc (`thread-<slug>-<hash>`); "story" in every page and doc means this | a map cluster |
+| cluster | the map pipeline's internal headline group (`axis#ISO3#entity`; the code still calls it "story") | a story |
+| situation | a map pin (a GDACS event, or the clusters of one country + thread) | a story |
+| record | the dated, append-only account of one story (`record/stories/<threadId>`) | a raw table row |
+
+## 0c. One source of truth for reading (operator, 2026-10-20)
+Raw tables are written by the existing pipeline and are not changed by this subsystem. **Only `backend/shared/src/world/`
+parses them**: `archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY#/HISTORY#`, `DRIFT#`/`DRIFTLOG#`, `PRED#`
+scenarios, `Q#` verdicts, `WEB#INDEX` and `web/latest.json`. It also holds the derivations everyone needs: story birth,
+branches from scenarios, missing days and coverage, risk tier from score. Readers take an injected client, so the same
+code runs in a Lambda and in a local script. Consumers (`newsStoryRecord`, the weekly pull, `newsBoard`, `newsConnect`)
+import it through `_shared` and never parse a raw row themselves. **Only `newsStoryRecord` writes derived story history**
+(`record/`); once it is live, the weekly and the board read the record and use the world reader only for what the record
+does not hold.
+
 ## 1. Purpose, in one paragraph
 The pipeline already writes stories, daily analyses, scenarios with triggers, drift notes and a story web, and then shows
 each of them on its own page. The record subsystem turns those into one dated, append-only account per story (birth,
@@ -39,6 +58,7 @@ the same derived number (live branches, last moved), the writer puts it in `reco
 | `links.js` (the one href builder; mirrored in the frontend) | same | email, alerts, posters, read API, tracker | links inside the weekly email and the board's report |
 | `riskDimensions.js` | same | thread analysis, country intelligence | the risk tier words the weekly prints |
 | **new** `record.js` (read `record/index.json` and one story record; the fork/branch status rules; `verdictOrder`-style helpers) | `backend/shared/src/` | — | `newsStoryRecord` (writer), `newsConnect`, `newsBoard`, `newsEmailSender`, the weekly run's check script |
+| **new** `world/` (the one reader of the raw tables + shared derivations; §0c) | `backend/shared/src/world/` | — (today three copies: `newsBoard/src/world.js`, the weekly pull, the record's store) | every consumer of raw tables |
 | **new** `s3json.js` (get/put JSON with `If-None-Match` create-only and `latest` pointer, the snapshot+pointer rule in one place) | `backend/shared/src/` | today each S3 writer has its own copy of this logic (tracker, systems, snapshot) | every `record/` and `weekly/` writer; later the existing writers migrate to it |
 | **new** `backend/weekly/sections.js` (the weekly's section model: which sections, in what order, what each holds) | `backend/weekly/` (not `backend/shared`: it belongs to one group) | — | `newsEmailSender` via `src/_weekly`; frontend `features/weekly/` via a mirrored core block checked by `scripts/check-shared-sync.mjs` |
 | Frontend `shared/lib/links.js`, `shared/ui/ClaimTag.jsx`, `shared/lib/riskTiers.js`, `shared/styles/tokens.css` | frontend `shared/` | every feature | `features/weekly/` and `features/board/` reuse them; the claim tags FACT / JUDGMENT come from `ClaimTag` |

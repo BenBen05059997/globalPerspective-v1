@@ -3,6 +3,19 @@
 Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision records, read 2026-10-20.
 Update a line when its source changes; delete it when its source says done. Design: [ARCHITECTURE](architecture/ARCHITECTURE.md).
 
+## Roadmap (order and dependencies, 2026-10-20)
+1. **DeepSeek top-up** (operator): every LLM Lambda fails with 402 since 2026-10-20 03:50Z; nothing new is processed.
+2. **One world reader** `backend/shared/src/world/` (coordinator, on main) → lanes B and C switch to it before DONE;
+   `newsBoard` switches with a redeploy.
+3. **Weekly W2-W3** (lane B) → test email (operator yes) → Saturday 2026-10-24 run → Sunday switch (operator yes).
+4. **Story pipeline fixes** (lane D): verify the 2026-10-19 join fixes, merge the 18 old duplicates, close the join gaps,
+   stale-run guard, a 402 alarm (operator yes). **Must precede step 5**, or the record stores split stories as truth.
+5. **Record live** (lane C code → coordinator creates the Lambda, operator yes for IAM) → shadow week → `record/`.
+6. Weekly reads the record; weekly page; Worker access for `weekly/` and `record/` (operator yes); cloud schedule.
+7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) on top of the record.
+Plans: [record](plans/PLAN_2026-10-20_record_backend.md), [weekly](plans/PLAN_2026-10-20_analyst_weekly.md),
+[board](plans/PLAN_2026-10-20_board.md). Lanes and mailbox: `/Users/benlai/Downloads/gp-mailbox/`.
+
 ## In progress
 - Website release shipped 2026-10-20 (Pages, front Worker, situation Lambdas, smoke checks, desktop click-through).
   Left: phone-width click-through. [linking plan, section R](plans/PLAN_2026-10-19_linking_and_pages.md)
@@ -19,6 +32,8 @@ Update a line when its source changes; delete it when its source says done. Desi
   [cleanup plan](plans/PLAN_2026-10-20_decisions_and_cleanup.md)
 
 ## Done
+- 2026-10-20: board slice 1 live (`/board`, `newsBoard`); the resolver writes verdicts itself (decision 0034);
+  weekly W0 (`backend/weekly/` schema and section model).
 - Lens Analysis Studio retired 2026-10-20: `/analyze` redirects to the first thread story or the countries list,
   every link into it is removed, its screens and BYOK/provider code are deleted; shared-run pages
   (`/analyze/s/:id`), the analysis libraries and the `newsAnalyze`/`newsSharedAnalysis` Lambdas stay.

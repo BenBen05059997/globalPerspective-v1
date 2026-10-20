@@ -50,3 +50,21 @@ test('one outlet table supplies primary, enriched and map names; unknowns stay n
  const old={...c,outlet:'bad'};
  assert.equal(splitByCache([a],{entries:{[cacheKey(a)]:{c:old}}}).hits[0].outlet,'BBC');
 });
+
+test('selector and map canonicalize aliases, drop plausible unknown codes and count logs',()=>{
+ const selector=load('./index.js').canonicalIso3;
+ const ingest=require('../../../situations/newsSituationIngest/src/classifier-core').canonicalIso3;
+ for(const normalize of [selector,ingest]) {
+  const logs=[];
+  const actual=normalize([' usa ','USA','UK','ZZZ','XX','irn'],m=>logs.push(m));
+  assert.equal(JSON.stringify(actual),JSON.stringify(['USA','GBR','IRN']));
+  assert.equal(logs.length,1);assert.match(logs[0],/"count":2/);assert.match(logs[0],/ZZZ/);
+  assert.equal(normalize(null).length,0);
+ }
+ const article={title:'T',url:'https://bbc.com/a'};
+ const cached=normalizeClassified({iso3:['USA']},article);cached.iso3=['ZZZ','USA'];
+ const warn=console.warn;const logs=[];console.warn=m=>logs.push(m);
+ try {assert.deepEqual(splitByCache([article],{entries:{[cacheKey(article)]:{c:cached}}}).hits[0].iso3,['USA']);}
+ finally {console.warn=warn;}
+ assert.equal(logs.length,1);
+});

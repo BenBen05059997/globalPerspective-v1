@@ -1,5 +1,13 @@
 'use strict';
 
+const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
+function canonicalIso3(values, log = console.warn) {
+  const codes = (Array.isArray(values) ? values : []).map(c => String(c).trim().toUpperCase());
+  const unknown = codes.filter(c => !resolveIso3(c));
+  if (unknown.length) log('[selector][unknown-iso3] ' + JSON.stringify({ count: unknown.length, values: unknown }));
+  return iso3List(codes).slice(0, 4);
+}
+
 const { chat } = require('./_shared/llm');
 const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
@@ -707,8 +715,7 @@ exports.handler = async (event) => {
         : 'medium';
 
       // Phase 1b — event fingerprint (additive; validated, never trusts raw LLM output).
-      const iso3 = (Array.isArray(t?.iso3) ? t.iso3 : [])
-        .map(c => String(c).toUpperCase().trim()).filter(c => /^[A-Z]{3}$/.test(c)).slice(0, 4);
+      const iso3 = canonicalIso3(t?.iso3);
       const countryNames = new Set([
         ...(Array.isArray(t?.regions) ? t.regions : []),
         t?.primaryCountry,
@@ -846,4 +853,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._internal = { parseRssXml };
+exports._internal = { parseRssXml, canonicalIso3 };

@@ -11,6 +11,14 @@
 
 const { getOutletMeta } = require('./outlet_metadata');
 
+const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
+function canonicalIso3(values, log = console.warn) {
+  const codes = (Array.isArray(values) ? values : []).map(c => String(c).trim().toUpperCase());
+  const unknown = codes.filter(c => !resolveIso3(c));
+  if (unknown.length) log('[ingest][unknown-iso3] ' + JSON.stringify({ count: unknown.length, values: unknown }));
+  return iso3List(codes).slice(0, 4);
+}
+
 const AXES = new Set(['conflict', 'political', 'economic', 'humanitarian']);
 
 function buildMessages(articles) {
@@ -62,7 +70,7 @@ function normalizeClassified(raw, article) {
     const lat = toNum(raw.latlon[0]); const lon = toNum(raw.latlon[1]);
     if (lat != null && lon != null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) latlon = { lat, lon };
   }
-  const iso3 = Array.isArray(raw.iso3) ? raw.iso3.map((c) => String(c).toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c)).slice(0, 4) : [];
+  const iso3 = canonicalIso3(raw.iso3);
   const severity = Math.min(5, Math.max(1, Math.round(toNum(raw.severity) || 1)));
   const entities = Array.isArray(raw.entities) ? raw.entities.map((e) => String(e).trim()).filter(Boolean).slice(0, 4) : [];
   const enTitle = String(raw.en_title || article.title || '').trim().slice(0, 140) || article.title;
@@ -182,7 +190,7 @@ function splitByCache(articles, cache) {
   const hits = []; const misses = [];
   for (const a of articles) {
     const e = entries[cacheKey(a)];
-    if (e && e.c) hits.push({ ...e.c, publishedAt: a.publishedAt || e.c.publishedAt || null, outlet: getOutletMeta(a.source || domainOf(a.url))?.outlet || null }); else misses.push(a);
+    if (e && e.c) hits.push({ ...e.c, iso3: canonicalIso3(e.c.iso3), publishedAt: a.publishedAt || e.c.publishedAt || null, outlet: getOutletMeta(a.source || domainOf(a.url))?.outlet || null }); else misses.push(a);
   }
   return { hits, misses };
 }
@@ -201,4 +209,4 @@ function nextCache(cache, classified, nowIso, keepHours) {
   return { updated_at: nowIso, count: Object.keys(entries).length, entries };
 }
 
-module.exports = { AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity, cacheKey, splitByCache, nextCache };
+module.exports = { canonicalIso3, AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity, cacheKey, splitByCache, nextCache };

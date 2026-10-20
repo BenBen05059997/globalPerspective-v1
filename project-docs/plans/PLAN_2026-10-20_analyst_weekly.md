@@ -69,9 +69,9 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 
 ## Steps (in order; each ticked with its commit; docs updated in the same change)
 - [x] 0. Plan written; decisions recorded (this file).
-- [ ] 1. Confirm the inputs (read-only, Sonnet agent): exact fields and keys for story birth dates, drift notes,
-      forecasts due/resolved in a week, web links, corrections; which are in S3 and which in DynamoDB. Written into
-      this plan under "Inputs, confirmed".
+- [x] 1. Inputs confirmed (read-only, Sonnet agent, 2026-10-20): see "Inputs, confirmed". Findings that change the
+      spec: no stored birth date (derive from the archive); 0 forecasts ever settled under the question scheme, so the
+      forecasts section is honest-thin for weeks; no corrections store; archive gap on 10-14.
 - [ ] 2. First draft by hand for the week ending 2026-10-18, from those inputs, in the JSON shape below. Reviewed by
       the operator. Nothing is sent.
 - [ ] 3. The skill `.claude/skills/weekly-brief/SKILL.md` (the procedure) + `scripts/weekly-brief/check.mjs`
@@ -97,8 +97,43 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
   "notes": { "sourcesUsed": [], "unconfirmed": [] } }
 ```
 
-## Inputs, confirmed
-(filled by step 1)
+## Inputs, confirmed (step 1, read-only against live AWS, 2026-10-20; week 2026-10-12..10-18)
+- **Story birth date: not stored.** `THREAD#…/TOPICS.updatedAt` is the last regeneration; `THREAD_HISTORY#` starts at
+  the first analysis, not at birth. Reliable method: scan `NewsCache` (`archive#YYYY-MM-DD` items, `entries[].threadId`)
+  and take the earliest archive date per thread. Window: 59 threads born (7 / 1 / 0 / 24 / 13 / 10 / 4 by day), only 14
+  with a `THREAD_ANALYSIS` row, 39 with a single entry. Duplicates exist (the same event split over 2-3 threads:
+  Pakistan roof collapse, Alberta base fire, Brazil Amazon, Israeli settlers); the draft must pick one.
+- **Archive gaps:** no `archive#2026-10-14` item (and none for 09-14..09-29). A 10-14 birth shows as 10-15. The
+  coverage note states this.
+- **Drift notes:** `THREAD#<id>` and `COUNTRY#<name>` rows, SK `DRIFT#<asOf>` (60-day TTL) and `DRIFTLOG#<asOf>`
+  (kept). Thread fields: `changeScore{from,to,delta}`, `priorTitle`, `currentTitle`, `triggerEvent`, `whyChanged`,
+  `noSingleDriver`, `directionFlag`. They record a risk score moving and why, not a forecast changing. Window: 22 thread
+  notes, 6 country notes (none 10-13..10-15). "Our view moved" compares these plus `THREAD_HISTORY#<date>.trajectory`.
+- **Forecasts (`GlobalPerspectivePredictionLog`, PK/SK, no index, scan):** `PRED#<topicId>/<date>` rows carry
+  `scenarios[].probability` and `triggers[{text,deadline,p,resolutionSource}]`; trigger `status` is never updated.
+  Scored questions are `Q#<qid>/SAMPLED` (44 rows) with `deadline` and `clusterKey` (= threadId); verdicts are
+  `Q#<qid>/DRAFT#<iso>` then (none yet) `VERDICT`. **Resolved in the window: 0.** No question has ever been settled;
+  the only verdicts (137) are the legacy batch of 2026-07-24, which is what `predictions/track_record.json` (Brier
+  0.154) reports. Due 10-19..10-25: 213 triggers, of which 2 are in the scored sample (Sudan SAF statement, 10-25,
+  p 80; Kenya ring vaccination, 10-23, p 70). Hurricane question `33987025ca046672ecdc` reached its 10-18 deadline;
+  model draft `not_yet`, in the 3-day grace.
+- **Story web:** `WEB#INDEX` / SK `LATEST` equals `web/latest.json`'s `index`. `links[]` = `{from,to,confidence
+  weak|medium|strong,lagDays,mechanism,cited[],country}`, `shared[]` = `{a,b,actors[],weight}`; per thread
+  `THREAD#<id>/WEB` with `into[]`, `from[]`, `shared[]`. All LLM-inferred, so `possibly_related` by default. Window:
+  38 of 56 links touch an active thread, 11 touch a thread born in the window.
+- **Per-story analysis:** `THREAD_ANALYSIS` has `storyArc`, `trajectory` (scenario percentages as prose),
+  `rootCauseChain`, `watchQuestions[≤3]`, `riskScore`, `dimensions`, `keyActors`, `groundingSources`; no structured
+  scenarios. Archive `entries[].ai.prediction` / `trace_cause` are cut at 1500 chars; full scenarios are in the
+  `PRED#` rows (146 of the 204 window entries have one).
+- **Corrections:** no editorial-corrections store exists anywhere (no prefix, no rows, no writer). The site's
+  "corrections feed" is the `DRIFT#` rows (capped at 5 for non-members). `coverage.corrections` stays `[]` until a
+  store exists; drift is reported under "our view moved".
+- **Citations:** an archive entry has no id; cite `archive#<date>` + `topicId` + `sources[].url` (`sources[]` has
+  `source, url, title, snippet, outletCountry, tier`; no per-source date; some urls carry `&amp;`).
+- **Last two briefs:** `WEEKLY_BRIEF#2026-10-11` and `#2026-10-18`, `signals[].threadId/riskScore/soWhat`,
+  `watch[].{event,date,stake}`; one 10-18 watch item has an empty date (would fail the new rule). Three threads carry
+  over between the two weeks (Saudi/Yemen, Russia attack, US execution).
+- Working files for the week (raw pulls): scratchpad `inputs/` of this session (not in the repo).
 
 ## Log
 - 2026-10-20: plan written after the content review of the 2026-10-18 brief (accurate, disciplined, shallow by prompt

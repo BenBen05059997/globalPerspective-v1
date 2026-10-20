@@ -1,0 +1,9 @@
+{
+  "name": "news-story-record",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Append-only story record writer; planned deployment, local read-only dry run",
+  "main": "runtime.js",
+  "type": "commonjs",
+  "scripts": { "test": "node --test ../test/*.test.js" }
+}

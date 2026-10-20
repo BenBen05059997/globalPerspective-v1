@@ -103,6 +103,12 @@ window. Enabling the sender on the new path is a user-facing send and needs a fr
    `newsBoard` switched and redeployed. In progress: sampled-question and dated-web readers for lane B.
 2. `newsStoryRecord` (lane C, branch lane/record): timeline writer first, views from it, on world/. **Building**; then
    coordinator: functions.json entry, IAM role, function, schedule 05:45Z, shadow week (operator yes for IAM).
+   - Lane C implementation notes (2026-10-20, `lane/record`): injectable writer and local read-only runner in
+     `backend/record/newsStoryRecord`; schemas, fake-dependency tests and deployment/IAM notes accompany it.
+     Duplicate detection only proposes candidates; no merge/split or AWS write is performed locally.
+     Schedule follows the pipeline's 05:45Z. Chapter/trigger/line planned calls are reported separately because
+     the pipeline cost paragraph omits the required step 9 line calls; line versions are written at birth and weekly.
+     Shared rule moves and planned function registration requested in `gp-mailbox/lane-C-record.md`.
 2b. ✓ 2026-10-20 (merge 5df2a670, deployed `NewsProjectInvokeAgentLambda-dev` CodeSha256 roXZtju…): stale-run guard, same-run
    joins, failed-run marker. Old duplicates: repaired later as alias + correction events on the timeline (operator
    2026-10-20: wait for the record; no in-place merges). Design for one ingest: `architecture/ARCHITECTURE_INGEST_DESIGN.md`.

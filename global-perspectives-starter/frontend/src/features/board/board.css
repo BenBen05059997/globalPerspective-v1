@@ -83,3 +83,6 @@
   .board-main.has-sheet { grid-template-columns: minmax(0, 1fr); }
   .board-page { padding-bottom: 50vh; }
 }
+
+.board-tree { display: grid; gap: var(--space-3); }
+.board-tree__dead { opacity: 0.6; }

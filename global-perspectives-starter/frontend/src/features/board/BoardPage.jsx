@@ -23,6 +23,9 @@ import { boardAvailable, callBoard } from '@/features/board/lib/boardApi.js';
 import {
   addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, MAX_NAME, KIND_WORD,
 } from '@/features/board/lib/boardOps.js';
+import StoryTree from '@/features/board/components/StoryTree.jsx';
+import BoardWeekly from '@/features/board/components/BoardWeekly.jsx';
+import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
 import BoardGraph from '@/features/board/components/BoardGraph.jsx';
 import VerdictCard from '@/features/board/components/VerdictCard.jsx';
 import StringDetail from '@/features/board/components/StringDetail.jsx';
@@ -92,6 +95,7 @@ export default function BoardPage() {
   const board = state.board;
   const pins = useMemo(() => board?.pins || [], [board]);
   const info = usePinInfo(pins, topics);
+  const records = useStoryViews(pins);
   const full = pins.length >= PIN_BUDGET;
   const pinById = useMemo(() => Object.fromEntries(pins.map((p) => [p.pinId, p])), [pins]);
   const labelOf = (id) => info[id]?.label || pinById[id]?.refId || id;
@@ -232,6 +236,7 @@ export default function BoardPage() {
           {detailPin.kind === 'thread' ? <EntityLink kind="story" id={detailPin.refId}>{i?.label}</EntityLink>
             : detailPin.kind === 'country' ? <EntityLink kind="country" id={detailPin.refId}>{i?.label}</EntityLink> : i?.label}
         </p>
+        {detailPin.kind === 'thread' ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null}
         <div className="board-actions">
           {detailPin.kind === 'actor' && !follows.actors.some((a) => a.toLowerCase() === detailPin.refId.toLowerCase())
             ? <Button onClick={() => follows.followActor(detailPin.refId)}>Follow actor</Button> : null}
@@ -330,12 +335,15 @@ export default function BoardPage() {
                 {pins.map((p) => (
                   <li key={p.pinId}>
                     <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
+                    {p.line ? <p className="board-line"><ClaimTag kind="judgment" /> {p.line}</p> : null}
+                    {p.counts ? <p className="board-note">{p.counts.chapters} chapters · {p.counts.liveBranches} live branches · {p.counts.confirmedLinks} confirmed links</p> : null}
                   </li>
                 ))}
               </ul>
             </div>
             {!isPhone ? sheet : null}
           </div>
+          <BoardWeekly board={board} stories={records.stories} loading={records.loading} errors={records.errors} />
           <MissingCard actors={missing} onFollow={follows.followActor} />
         </>
       ) : null}

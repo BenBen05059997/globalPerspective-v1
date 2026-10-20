@@ -20,6 +20,18 @@ picture from raw tables.
                                                                        └─► consumers: today · story page · country · weekly · board · map · track record
 ```
 
+## 1b. The pipeline, stage by stage (structure; live status is in `project-docs/STATUS.md`, "Pipeline status")
+| # | Stage | What runs (folder) | Produces | Timeline role |
+|---|---|---|---|---|
+| 1 | Ingest | selector `newsInvokeGemini` 3×/day (`backend/pipeline`); map ingest `newsSituationIngest` hourly and GDACS every 20 min (`backend/situations`) | topics; map clusters; disaster alerts | raw material |
+| 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`) | threads, daily archive, forecasts (`PRED#`); map pins | source of `entry`, `story_born`, `forecast_drawn`; later `situation` |
+| 3 | Analysis | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts | source of `read_changed`, `country_read_changed`, `link_confirmed`, `verdict` |
+| 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only reader of raw tables |
+| 5 | Timeline | `newsStoryRecord` (`backend/record`) | `record/timeline/*.jsonl` + views (stories, index, corrections) | the truth |
+| 6 | Views | story, country, today pages (`features/threads`, `countries`, `home`); map (`features/map`); track record; board (`backend/board`, `features/board`); weekly (`backend/weekly`, `features/weekly`) | what readers see | read views only |
+| 7 | Delivery | site (`docs/` via the Worker), weekly email (`backend/distribution/newsEmailSender`), social posts (`backend/distribution`) | pages, emails, posts | consumers |
+| 8 | Watch | `backend/monitoring` (model guard, freshness, error digest) + CloudWatch alarms | alerts | must alarm on stage failures (§7.4) |
+
 ## 2. The event
 One JSON line per event in `record/timeline/YYYY-MM-DD.jsonl` (UTC day of `at`).
 ```

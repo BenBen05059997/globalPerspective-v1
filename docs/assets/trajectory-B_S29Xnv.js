@@ -1,0 +1,1 @@
+const a={escalating:{dir:"up",label:"Escalating"},stable:{dir:"flat",label:"Stable"},"de-escalating":{dir:"down",label:"De-escalating"}};function e(t){return t?a[String(t).toLowerCase().trim()]||a.stable:null}export{e as t};

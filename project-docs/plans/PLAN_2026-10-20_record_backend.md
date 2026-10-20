@@ -103,7 +103,61 @@ window. Enabling the sender on the new path is a user-facing send and needs a fr
 5. `followedThreads` + `newsBoard` + `newsConnect` + `features/board/`: the Studio phase.
 Each step: README in its folder, `scripts/functions.json`, ARCHITECTURE and DATA_STRATEGY §4 updated, Atlas regenerated.
 
+## Story pipeline review (2026-10-20, read-only; proposals need operator decisions)
+Nothing here is changed yet; the "Proposed" section needs operator decisions.
+
+### Live incident found by the review (2026-10-20)
+DeepSeek returns `402 Insufficient Balance` since about 03:50Z on 2026-10-20. Failing today: `newsSituationIngest`
+(03:50), `newsInvokeGemini-dev` (04:15, 12:15: no new topics), `NewsProjectInvokeAgentLambda-dev` (04:25: re-archived
+the 2026-10-19 20:15 topics under `archive#2026-10-20`), `newsThreadAnalysis` (04:40), `newsSystemsAnalysis` (05:00),
+`newsCountryIntelligence` (05:15). `NewsCache latest` is still gen-1792440950003 (2026-10-19 20:15Z). No alarm fired.
+The same outage caused the missing `archive#2026-10-14` and the thin 2026-10-13 (402 from 10-13 20:15 to 10-15 04:15).
+Fix: operator tops up the DeepSeek balance (billing; operator only). Follow-up: an alarm on `LLM 402` in any Lambda, and
+the agent must not re-archive stale staging as a new day.
+
+### The four words, as the code uses them
+| Word | What it is | Made by | Cadence | Reader sees it |
+|---|---|---|---|---|
+| topic | one item picked by the selector LLM from ~28 feeds (≤13 a run) | `newsInvokeGemini-dev` | 04:15, 12:15, 20:15 | `/today` |
+| thread | the editorial story arc a topic joins (`thread-<slug>-<hash>`), ~90 days | `NewsProjectInvokeAgentLambda-dev` (`src/threading.js`) | 10 min after each selection | as "story": `/weekly/thread/:id`, the map's "open story" |
+| story (map) | a cluster of classified headlines, id `axis#ISO3#first-entity` | `newsSituationIngest` | hourly | never directly (internal) |
+| situation | a map pin: a GDACS event or the news stories of one country + thread (`news#ISO3#threadId`, else `news#<storyId>`) | `newsSituationTracker` | 30 min | the home map |
+"Story" means a thread on every page and a map cluster in the backend: two meanings for one word.
+
+### Editorial side: findings
+1. **Same-day duplicates (cause fixed 2026-10-19, not yet proven).** The lookback skipped today (`for i = 1`), so a later
+   run could not join an earlier run's thread the same day. 18 events in 2026-10-06..10-19 got 2-3 threadIds (17 same-day),
+   e.g. Pakistan school collapse, Brazil deforestation (3 threads), Canada base fire, Trump "energy ceasefire". Fixed in
+   b198ff92 (deployed 2026-10-19 09:41Z); only two runs ran with the fix before the outage, so it is unproven.
+2. **Over-joins (cause fixed 2026-10-19; damage remains).** The old score rule joined on region + category alone, e.g. the
+   Oregon school shooting joined a court/execution thread (`...ae75a8`, now 24 mixed entries). Fixed in b8858db6
+   (keyword overlap ≥ 0.15). Mixed threads still to inspect: `ae75a8`, `287240` (28), `4e946d` (27), `68e0fb` (23).
+3. **Still open:** topics in one run are never compared with each other; `continues_topic` beats an identical title
+   (Nepal floods forked across days); the day row is capped at 50 entries; runs that generate nothing still write an archive.
+4. The 18 old duplicates are still split in every downstream store (archive, THREAD#, PRED#, analyses, web index).
+
+### Map side: findings
+1. **Weak link to threads.** Map stories link to threads only on an exact shared article URL: 17 links from 3,436 map
+   stories; 8 of 28 news situations carry a thread (2026-10-20). Big open pins have none (Putin-Trump-Xi, Sudan drone attack).
+2. **Fragmentation.** A map story's id uses the first entity the LLM lists, so one event splits when that changes:
+   Russia-Ukraine as 7 pins, French student protests as 4, Yemen as 3. Unthreaded stories never fold together.
+3. **No cleanup:** `stories/state/` holds 3,436 objects, never pruned; the matcher scans all of them every run.
+4. **Duplicated work:** 13 of ~25 feeds are fetched by both pipelines; both call an LLM to classify the same news.
+
+### Proposed (operator decisions)
+1. Now: top up DeepSeek; add an alarm on `LLM 402`; stop the agent writing a day's archive from stale staging.
+2. Watch the 2026-10-19 fixes for a clean week before any automatic merge; meanwhile merge the 18 known duplicates once
+   with `backend/pipeline/cli/threads.mjs merge --apply` (it already covers every store), and split the mixed threads.
+3. Automatic merging, if wanted after that, belongs in the agent Lambda at join time (compare same-batch topics and the
+   day's earlier runs; two agreeing signals; merge into the oldest id; log and undo), not in the record.
+4. Structure: one meaning of "story". Options to discuss: (a) keep two pipelines, rename the map's internal "story" to
+   "cluster", and link clusters to threads by country + actor + time instead of exact URL; (b) one ingest: the hourly
+   map ingest becomes the only feed reader and classifier, and the 8-hourly selector picks topics from its clusters
+   (one feed list, one classification, threads built from clusters). (b) removes the duplicated work and the weak link;
+   it is a larger change.
+
 ## Log
+- 2026-10-20: story pipeline review added (definitions, duplicate and fragmentation causes, DeepSeek 402 outage).
 - 2026-10-20: step 1 done and deployed; the first live verdicts will appear as drafts settle (next draft pass Monday
   2026-10-26, or the FEMA re-draft on 10-24).
 

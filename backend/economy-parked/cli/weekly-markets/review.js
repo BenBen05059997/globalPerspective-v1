@@ -4,9 +4,10 @@
 /**
  * backend/economy-parked/cli/weekly-markets/review.js — one-click human approval for the Weekly Markets Report.
  *
- * newsWeeklyMarkets writes a `status:'draft'` WEEKLY_MARKETS#{weekKey} record. This script
- * lets the operator review the draft and publish it (status → 'published', which is what the
- * public weekly_markets action serves), or hold/reject. No public auth surface — AWS CLI, no
+ * newsWeeklyMarkets auto-publishes (since 2026-09-11): it writes a `status:'published'`
+ * WEEKLY_MARKETS#{weekKey} record (the public weekly_markets action serves only 'published').
+ * This script is now a spot-check / retraction tool: it walks any record still at status 'draft'
+ * (e.g. one the operator held back by hand) and publishes it (status → 'published'), or holds/rejects. No public auth surface — AWS CLI, no
  * npm deps. Mirrors backend/distribution/cli/weekly/review.js + backend/distribution/cli/breaking/review.js + predictions/review.js.
  *
  * The human gate is the grounding/verification layer: attributing a weekly price move to a

@@ -4,9 +4,10 @@
 /**
  * backend/distribution/cli/weekly/review.js — one-click human approval for the Weekly Intelligence Brief.
  *
- * newsWeeklyBrief writes a `status:'draft'` WEEKLY_BRIEF#{weekKey} record. This script
- * lets the operator review the draft and publish it (status → 'published', which is what
- * the public weekly_brief action + the email will serve), or hold/reject. No public auth
+ * newsWeeklyBrief auto-publishes: it writes a `status:'published'` WEEKLY_BRIEF#{weekKey} record
+ * (the public weekly_brief action serves only 'published'). This script is now a spot-check /
+ * retraction tool: it walks any record still at status 'draft' (e.g. one the operator held back
+ * by hand) and publishes it (status → 'published'), or holds/rejects. No public auth
  * surface — AWS CLI, no npm deps. Mirrors backend/distribution/cli/breaking/review.js + predictions/review.js.
  *
  * Usage:

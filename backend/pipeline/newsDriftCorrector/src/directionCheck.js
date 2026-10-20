@@ -10,12 +10,12 @@
 //      "worsens" or "improves" that axis; that word is compared with the sign of the stored delta.
 //   2. prose (regex, per clause): a clause that states a score direction (up / down / raising /
 //      lowering ...) must not carry wording of the opposite valence. Port of the frontend's
-//      features/analysis-studio/lib/directionCheck.js `checkDirectionInText`, with the ambiguous
-//      words removed (falling / fallen / rising / risen / cooling: "the Rhine falling to a record
+//      the former frontend directionCheck.js `checkDirectionInText` (deleted with the Analysis
+//      Studio), with the ambiguous words removed (falling / fallen / rising / risen / cooling: "the Rhine falling to a record
 //      low ... economic score up" is NOT an improvement claim) and the verb forms it missed added
 //      ("lowering the economic score", "driving ... score up").
-// The regex source lines below are a manual port of the frontend copy; nothing checks them
-// automatically, so edit both together.
+// The regex source lines below were ported from that frontend copy, which no longer exists;
+// this file is the only copy.
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 

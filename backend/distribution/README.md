@@ -33,7 +33,6 @@ is emailed each breaking alert. It reads what the pipeline group wrote and write
 
 ## Known limits
 
-- Briefs are written as `published` with no human gate. The `cli/weekly/review.js` header still describes a draft flow that the code no longer uses.
 - The `newsBreakingAlert` header says it never auto-sends. The code does send to the operator when `DRY_RUN` is `false`, which it is live.
 - Subscriber breaking emails only include alerts a human set to `confirmed`.
 - The live newsPostLinkedin env carries Mastodon, Telegram, Farcaster and Nostr settings, but the code posts only to LinkedIn and Bluesky.

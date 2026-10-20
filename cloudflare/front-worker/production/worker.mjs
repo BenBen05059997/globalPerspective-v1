@@ -128,7 +128,6 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
 <h2>Markets &amp; analysis</h2>
 <ul>
 <li><a href="${SITE_URL}/economy">Economy</a> — live instrument dashboard plus which stories are repricing markets today, with a weekly what-moved-and-why wrap</li>
-<li><a href="${SITE_URL}/analyze">Analysis Studio</a> — run a cited AI deep-dive across up to 4 stories</li>
 </ul>
 <h2>Accountability</h2>
 <ul>
@@ -341,6 +340,12 @@ function legacyTarget(url) {
   if (path === '/spider-demo') return '/weekly?view=web';
   if (path === '/map') return '/';
   if (path === '/weekly' && url.searchParams.get('section') === 'countries') return '/weekly/countries';
+  if (path === '/analyze') {
+    // the retired Analysis Studio (2026-10-20): the first requested story when it is a thread id, else the
+    // countries list. /analyze/s/<id> (shared runs) is a longer path and stays the SPA.
+    const first = (url.searchParams.get('stories') || '').split(',')[0].trim();
+    return /^thread-[^/?#]+$/.test(first) ? `/weekly/thread/${encodeURIComponent(first)}` : '/weekly/countries';
+  }
   return null;
 }
 
@@ -348,9 +353,10 @@ function legacyRedirect(url) {
   const target = legacyTarget(url);
   if (!target) return null;
   const out = new URL(target, url.origin);
-  const dropSection = url.pathname.replace(/\/+$/, '') === '/weekly';
+  const path = url.pathname.replace(/\/+$/, '');
+  const dropped = path === '/weekly' ? 'section' : path === '/analyze' ? 'stories' : null;
   for (const [k, v] of url.searchParams) {
-    if (dropSection && k === 'section') continue;
+    if (k === dropped) continue;
     if (!out.searchParams.has(k)) out.searchParams.append(k, v);
   }
   return new Response(null, {

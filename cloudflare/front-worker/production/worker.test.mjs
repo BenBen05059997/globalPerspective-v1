@@ -135,6 +135,12 @@ const REDIRECTS = [
   ['/map?story=thread-a&layer=b', '/?story=thread-a&layer=b'],
   ['/weekly?section=countries', '/weekly/countries'],
   ['/weekly?section=countries&q=x', '/weekly/countries?q=x'],
+  ['/analyze', '/weekly/countries'],
+  ['/analyze/', '/weekly/countries'],
+  ['/analyze?stories=thread-us-supreme-court-c1602d', '/weekly/thread/thread-us-supreme-court-c1602d'],
+  ['/analyze?stories=thread-a,thread-b&utm_source=x', '/weekly/thread/thread-a?utm_source=x'],
+  ['/analyze?stories=t1', '/weekly/countries'],
+  ['/analyze?stories=', '/weekly/countries'],
 ];
 test(`retired addresses answer 301 with the query kept (${REDIRECTS.length} cases, human and bot)`, async () => {
   for (const [from, to] of REDIRECTS) {
@@ -147,6 +153,14 @@ test(`retired addresses answer 301 with the query kept (${REDIRECTS.length} case
   }
   const head = await run(patched, `${H}/daily`, { method: 'HEAD' });
   assert.equal(head.status, 301);
+});
+
+test('/analyze/s/:id shared runs are not redirected and never bot-rendered', async () => {
+  for (const ua of [undefined, GOOGLEBOT]) {
+    const r = await run(patched, `${H}/analyze/s/abc`, { ua });
+    assert.equal(r.status, 200);
+    assert.equal(r.headers['x-rendered-by'], 'cf-worker-spa-fallback');
+  }
 });
 
 test('/weekly without section=countries is not redirected', async () => {
@@ -215,5 +229,5 @@ test('bot root page directory links the briefings modes, not the retired address
   assert.match(r.body, /href="https:\/\/globalperspective.net\/briefings\?mode=read"/);
   assert.match(r.body, /href="https:\/\/globalperspective.net\/briefings\?mode=weekly"/);
   assert.match(r.body, /href="https:\/\/globalperspective.net\/today"/);
-  assert.doesNotMatch(r.body, /\/daily"|\/weekly-brief"/);
+  assert.doesNotMatch(r.body, /\/daily"|\/weekly-brief"|\/analyze"/);
 });

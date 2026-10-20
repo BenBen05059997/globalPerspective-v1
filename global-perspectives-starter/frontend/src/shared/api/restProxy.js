@@ -190,7 +190,7 @@ export async function fetchCountryFacts(countryNames) {
 }
 
 export async function fetchCountryHistory(countryName) {
-  return proxyAction('country_history', { countryName });
+  return proxyActionWithAuth('country_history', { countryName });
 }
 
 export async function fetchDailyBrief(dateKey) {
@@ -247,7 +247,7 @@ export async function fetchPredictionTrackRecord() {
 }
 
 export async function fetchCorrectionsFeed(limit = 40) {
-  return proxyAction('corrections_feed', { limit });
+  return proxyActionWithAuth('corrections_feed', { limit });
 }
 
 export async function fetchPredictionSnapshot(topicIds) {

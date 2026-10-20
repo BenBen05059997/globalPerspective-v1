@@ -155,6 +155,21 @@ with honest negatives, read-only branches, your weights, region presets, share l
 = lines, counts, branch status, tree, chapters, arrivals, confirmed strings, the real board weekly, monthly, alerts,
 summary. **Waits for a decision** = enabling alert sends (fresh yes). Pricing is deferred until the verdict panel exists; the board is free until then.
 
+## Slice 1: the board on data that exists (operator go, 2026-10-20; alerts and pricing later)
+Status: active. Sequential Sonnet agents; nothing user-facing is enabled; a new Lambda is created only after the operator's yes
+(creating a function needs an execution role: IAM).
+1. Backend (`backend/board/`): `schema/board.schema.json` (frozen pin/string shape), `backend/shared/src/record.js` (pure rules:
+   string texture, pin budget, cheap connect grounds) and `s3json.js` (create-only put + latest pointer; unused until the record
+   writes), `newsBoard` Lambda (Function URL, Firebase JWT like `newsSavedItems`): `list_boards`, `create_board`, `update_board`
+   (pins, strings, lines, weights, dismissed; schema-validated; pin budget 12), `delete_board`, `follow_thread`/`unfollow_thread`,
+   `follow_actor`/`unfollow_actor`, `presets` (read-only region boards computed from `THREAD#/THREAD_ANALYSIS`), `fork_preset`,
+   `connect` (cheap grounds from `WEB#INDEX` actors, places, shared outlets; honest `none`). Tests with a fake store.
+2. Frontend (`features/board/`): route `/board`, graph view (SVG), pins from followed threads via existing proxy actions
+   (`thread_analysis`, `web_index`, `latest`), our strings dashed "inferred", yours dashed in the other texture, drag-to-connect
+   calling `connect`, presets chooser, pin budget, no map view yet. Reuses `ClaimTag`, `TierChip`, `links.js`, tokens.
+3. Deploy (operator yes for the role, then standing Lambda auth), `scripts/functions.json`, `docs/config.js` endpoint
+   (operator-owned), feature README, `ARCHITECTURE_RECORD.md` §9 status, Atlas.
+
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
 2. What is free and what is paid: **deferred (operator, 2026-10-20)** until the record and the verdict panel exist. Until then
@@ -171,6 +186,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: slice 1 started (backend first).
 - 2026-10-20: pricing deferred (operator); the board is free for members until the verdict panel exists.
 - 2026-10-20: now / waits checklist added per board feature.
 - 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.

@@ -67,6 +67,7 @@ function eligibleQuestions(rows, weekId) {
           pk: row.PK, sk: row.SK, triggerId: t.id,
           question: t.text, deadline: t.deadline, resolutionSource: t.resolutionSource || null,
           storyTitle: row.title || null, issuedAt: row.generatedAt || issued,
+          threadId: row.threadId || null,
           clusterKey: row.threadId || row.topicId || row.PK,
         });
       }

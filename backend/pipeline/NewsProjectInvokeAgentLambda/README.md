@@ -26,6 +26,10 @@ Forecasts get FACTS# leaders and an arc digest as grounding (no live web search)
 - Freshness guard (`src/run-guard.js`): no generation writes from active fallback, missing/future generation time, a prior UTC day's generation, or a generation older than the latest archive write. Reads rolling/current/prior-day archives consistently before generation and again before publication. `force` cannot bypass freshness; `readOnly` cache inspection and `dryRun` planning remain available. Zero newly generated items returns HTTP 503 with `[pipeline-status] {status:"failed", reason:"zero-generated", generationId, generated, reused, failed}` and does not swap, archive, match or prune (cache reuse may already have restamped topic rows). Stale staging returns the same marker with `reason:"stale-staging"` and `staleReason`. Monitor integration is a coordinator change.
 - Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.
 
+## Source field contract
+
+Archive sources preserve selector `publishedAt`, `outlet`, and `age` unchanged. New PRED rows carry `threadId`, `category` from `categories[0]` (legacy singular category fallback), `forkId = <PK>|<SK>`, and zero-based positional `scenarioIndex` on each scenario. Older rows remain readable without these fields.
+
 ## Tests
-- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 81 pass.
+- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 83 pass.
 Last verified: 2026-10-20 (offline; lane/pipeline, not deployed)

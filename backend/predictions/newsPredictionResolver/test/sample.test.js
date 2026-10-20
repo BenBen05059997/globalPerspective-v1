@@ -103,3 +103,19 @@ test('golden fixture shared with the frontend "Verify this draw" (byte-identical
   assert.equal(r.eligible, g.eligible);
   assert.equal(r.clusters, g.clusters);
 });
+
+test('new sampled questions keep the PRED threadId, with legacy null and unchanged clusterKey',async()=>{
+ const modern=predRow('modern','2026-10-06',1);modern.threadId='thread-canonical';
+ const legacy=predRow('legacy','2026-10-06',1);delete legacy.threadId;
+ const store=fakeStore([modern,legacy]);
+ const deps=iso=>({store,now:()=>iso,search:async()=>[],llm:async()=>({}),draftModel:'m'});
+ await run({action:'tick'},deps('2026-10-01T10:30:00Z'));
+ await run({action:'draw',weekId:'2026-W41'},deps('2026-10-12T10:30:00Z'));
+ const sampled=[...store.rows.values()].filter(r=>r.SK==='SAMPLED');
+ assert.equal(sampled.length,2);
+ assert.equal(sampled.find(r=>r.pk===modern.PK).threadId,'thread-canonical');
+ assert.equal(sampled.find(r=>r.pk===modern.PK).clusterKey,'thread-canonical');
+ assert.equal(sampled.find(r=>r.pk===legacy.PK).threadId,null);
+ assert.equal(sampled.find(r=>r.pk===legacy.PK).clusterKey,legacy.topicId);
+ assert.ok(sampled.every(r=>!('p' in r)&&!('probability' in r)));
+});

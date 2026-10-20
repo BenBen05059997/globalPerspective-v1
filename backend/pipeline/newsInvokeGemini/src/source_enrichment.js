@@ -112,6 +112,7 @@ function enrichSourcesForTopic(topic, allArticles, alreadyPrimaryUrls, opts = {}
       title: c.article.title || '',
       url: c.article.url,
       source: c.article.source || '',
+      publishedAt: c.article.publishedAt || null,
       snippet: c.article.snippet || c.article.description || '',
       tier: 'secondary',
       enrichScore: Number(c.score.toFixed(3)),
@@ -180,6 +181,7 @@ function annotateSourcesWithMetadata(topics) {
     if (!Array.isArray(t.sources)) continue;
     for (const s of t.sources) {
       const meta = getOutletMeta(s.source);
+      s.outlet = meta?.outlet || null;
       if (meta) {
         s.outletCountry = meta.country;
         s.outletType = meta.type;
@@ -188,7 +190,14 @@ function annotateSourcesWithMetadata(topics) {
   }
 }
 
+// Bind provenance to a fetched URL; model-provided dates are never trusted.
+function sourceWithPublication(source, articles) {
+  const article = articles.find(a => a.url === source.url);
+  return { ...source, source: article?.source || source.source || '', publishedAt: article?.publishedAt || null };
+}
+
 module.exports = {
+  sourceWithPublication,
   tokenize,
   jaccard,
   scoreMatch,

@@ -1,7 +1,15 @@
 'use strict';
 
+const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
+function canonicalIso3(values, log = console.warn) {
+  const codes = (Array.isArray(values) ? values : []).map(c => String(c).trim().toUpperCase());
+  const unknown = codes.filter(c => !resolveIso3(c));
+  if (unknown.length) log('[selector][unknown-iso3] ' + JSON.stringify({ count: unknown.length, values: unknown }));
+  return iso3List(codes).slice(0, 4);
+}
+
 const { chat } = require('./_shared/llm');
-const { applyEnrichment, annotateSourcesWithMetadata } = require('./source_enrichment');
+const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -290,9 +298,11 @@ function parseRssXml(xml, sourceName) {
     // Extract pubDate and calculate age
     const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
     let age = '';
+    let publishedAt = null;
     if (pubDateMatch) {
       const pubTime = new Date(pubDateMatch[1].trim()).getTime();
       if (!isNaN(pubTime)) {
+        publishedAt = new Date(pubTime).toISOString();
         const hoursAgo = Math.floor((Date.now() - pubTime) / (1000 * 60 * 60));
         if (hoursAgo < 1) age = 'Just now';
         else if (hoursAgo < 24) age = `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
@@ -304,7 +314,7 @@ function parseRssXml(xml, sourceName) {
     }
 
     if (title && url) {
-      articles.push({ title, url, description, age, source: sourceName });
+      articles.push({ title, url, description, age, publishedAt, source: sourceName });
     }
   }
   return articles;
@@ -705,8 +715,7 @@ exports.handler = async (event) => {
         : 'medium';
 
       // Phase 1b — event fingerprint (additive; validated, never trusts raw LLM output).
-      const iso3 = (Array.isArray(t?.iso3) ? t.iso3 : [])
-        .map(c => String(c).toUpperCase().trim()).filter(c => /^[A-Z]{3}$/.test(c)).slice(0, 4);
+      const iso3 = canonicalIso3(t?.iso3);
       const countryNames = new Set([
         ...(Array.isArray(t?.regions) ? t.regions : []),
         t?.primaryCountry,
@@ -729,7 +738,7 @@ exports.handler = async (event) => {
         actors,
         event_type: eventType,
         sources: validatedSources.map(s => ({
-          ...s,
+          ...sourceWithPublication(s, allArticles),
           tier: s.tier === 'secondary' ? 'secondary' : 'primary',
         })),
         x_trending: Boolean(t?.x_trending),
@@ -843,3 +852,5 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err?.message || 'Unexpected error' }) };
   }
 };
+
+exports._internal = { parseRssXml, canonicalIso3 };

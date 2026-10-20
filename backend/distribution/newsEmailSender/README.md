@@ -1,7 +1,7 @@
 # newsEmailSender
 
-One email sender dispatched by `event.mode`: `weekly` (latest published `WEEKLY_BRIEF` to `digestOptIn`
-subscribers, once per `weekOf`), `breaking` (fresh `status: confirmed` alerts to `breakingOptIn`
+One email sender dispatched by `event.mode`: `weekly` (published S3 `weekly/latest.json` to `digestOptIn`
+subscribers, once per `weekEnding`, retaining the `EMAILLOG#weekly#<week>` marker), `breaking` (fresh `status: confirmed` alerts to `breakingOptIn`
 subscribers), `drift_alert` (fresh country `DRIFT#` notes to `driftOptIn` members who follow that
 country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 
@@ -12,7 +12,8 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 
 ## Reads / writes
 - DynamoDB `USER_PREFS_TABLE` (default `GlobalPerspectiveUserPrefs`): scan opt-in flags, `email`, `unsubToken`, `followedCountries`.
-- DynamoDB `SUMMARIZE_PREDICT_TABLE` (default `SummarizeAndPredict`): scan `SK = WEEKLY_BRIEF`; `COUNTRY#`/`DRIFT#` notes (sets `emailedAt`); weekly marker `EMAILLOG#weekly#<weekOf>`/`EMAIL_LOG`.
+- S3 `WORLD_BUCKET` (default `globalperspective-world-280362093938`): reads `weekly/latest.json` through `_shared/s3json.js`; skips missing, held and nonpublished snapshots. Read errors fail visibly, without a DynamoDB fallback.
+- DynamoDB `SUMMARIZE_PREDICT_TABLE` (default `SummarizeAndPredict`): `COUNTRY#`/`DRIFT#` notes (sets `emailedAt`); weekly marker `EMAILLOG#weekly#<weekOf>`/`EMAIL_LOG`.
 - DynamoDB `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`): confirmed, not-yet-emailed rows newer than `BREAKING_FRESH_HOURS` (48); sets `emailedAt`.
 - External: Resend `api.resend.com` (`RESEND_API_KEY`, `EMAIL_FROM`); site links come from `src/_shared/links.js` (weekly brief: `briefingHref`; drift: `countryHref`, no link when the name is not a country), env `SITE_URL` only overrides the origin; `UNSUB_BASE_URL` (newsRecommend Function URL).
 
@@ -25,6 +26,22 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 - `DRIFT#` prefix match excludes the permanent `DRIFTLOG#` archive; `DRIFT_FRESH_HOURS` default 36.
 
 ## Tests
-- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch): 40 pass.
+- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch): 46 pass.
 
-Last verified: 2026-10-19
+- `node --test backend/distribution/newsEmailSender/src/test-weekly-render.js`: renders the committed W2 dry-run fixture to HTML and text, checks a structure snapshot, escaping, labels and empty sections.
+
+## Weekly v2 rendering and packaging
+
+`src/_weekly` is a committed relative symlink to `backend/weekly/`. The renderer imports its section model;
+no content rules are copied into the sender. It uses a light 600 px presentation table, the canonical
+section order and required-empty wording, FACT / JUDGMENT labels, confidence words or logged probability,
+numerical risk plus tier, source citations and the existing shared link builders. Optional empty sections
+are skipped as specified by the section model. Email word budgets omit complete story groups and retain
+complete fact/judgment blocks; the stored JSON is never shortened. Unsubscribe links carry the existing
+unsubscribe token; story/weekly links never carry a sign-in token. `force:true` cannot bypass a sent marker.
+
+Before a coordinator deploys, grant the sender s3:GetObject on weekly/* and verify `_weekly/sections.js`
+is in the staged zip as a real file. scripts/lambda.sh uses rsync -aL and already follows this second
+symlink. This lane does not edit IAM, packaging scripts, schedules, or deploy/send anything.
+
+Last verified locally: 2026-10-20 (hermetic tests; no live send)

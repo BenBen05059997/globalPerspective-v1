@@ -1,0 +1,25 @@
+{
+  "sections": [
+    "lead",
+    "moved",
+    "trace",
+    "dates",
+    "new",
+    "coverage"
+  ],
+  "titles": [
+    "This week",
+    "Where our view moved",
+    "The trace",
+    "Next week&#39;s dates",
+    "New this week",
+    "What we did not see"
+  ],
+  "tableWidths": [
+    "100%",
+    "600"
+  ],
+  "presentationTables": 2,
+  "hasFooter": true,
+  "hasUnsubscribe": true
+}

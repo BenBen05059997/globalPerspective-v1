@@ -22,16 +22,7 @@ const Module = require('module');
 const store = { briefs: [], prefs: [], alerts: [], marker: {} };
 
 function resetStore() {
-  store.briefs = [{
-    PK: 'WEEKLY#2026-06-28', SK: 'WEEKLY_BRIEF', status: 'published', weekOf: '2026-06-28',
-    signals: [
-      { kind: 'threat', riskLevel: 'high', lede: 'Ebola contacts unknown in DR Congo', fact: 'Nearly 300 contacts unaccounted for.', soWhat: 'High risk of uncontrolled spread.', region: 'DR Congo' },
-      { kind: 'development', lede: 'Ceasefire talks resume', fact: 'Parties returned to the table.', soWhat: 'Tentative de-escalation.' },
-    ],
-    watch: [{ event: 'Election runoff', date: '2026-07-06', stake: 'Could shift the balance.' }],
-  }];
-  // older published brief to prove "latest weekOf" selection
-  store.briefs.push({ PK: 'WEEKLY#2026-06-21', SK: 'WEEKLY_BRIEF', status: 'published', weekOf: '2026-06-21', signals: [], watch: [] });
+  store.briefs = [{ ...require('../../../weekly/test/fixtures/weekly-2026-10-18.json'), status: 'published', weekEnding: '2026-06-28' }];
   store.prefs = [
     { uid: 'a', email: 'a@example.com', digestOptIn: true, unsubToken: 'tok-a' },              // weekly ✓
     { uid: 'b', email: 'b@example.com', digestOptIn: true, digestVerified: false, unsubToken: 'tok-b' }, // excluded (verified=false)
@@ -46,6 +37,7 @@ function resetStore() {
     { alertKey: 'sent-1', status: 'sent', alertedAt: iso(1 * 3600e3), draft: { subject: 'already', text: 'b', html: '<body>s</body>' } },                        // excluded (status)
   ];
   store.marker = {};
+  store.s3Error = null;
 }
 
 // ── fake SDK ─────────────────────────────────────────────────────────────────
@@ -61,7 +53,7 @@ function fakeSend(cmd) {
   const T = { SUMMARY: 'SummarizeAndPredict', PREFS: 'GlobalPerspectiveUserPrefs', ALERTS: 'GlobalPerspectiveBreakingAlerts' };
   if (name === 'ScanCommand') {
     if (p.TableName === T.SUMMARY && (p.ExpressionAttributeValues || {})[':sk'] === 'WEEKLY_BRIEF') {
-      return Promise.resolve({ Items: store.briefs.filter((b) => b.SK === 'WEEKLY_BRIEF' && b.status === 'published') });
+      throw new Error('Weekly mode must not scan legacy WEEKLY_BRIEF records');
     }
     if (p.TableName === T.PREFS && /unsubToken/.test(p.FilterExpression || '')) {
       const tok = p.ExpressionAttributeValues[':t'];
@@ -111,6 +103,7 @@ const fakeClient = { DynamoDBClient: class {} };
 
 const origLoad = Module._load;
 Module._load = function (request, parent, isMain) {
+  if (request === '@aws-sdk/client-s3') return { S3Client: class { async send(cmd) { if(cmd.input.Key!=='weekly/latest.json')throw Error('Unexpected S3 key');if(store.s3Error)throw store.s3Error;const brief=store.briefs[0];if(!brief)throw Object.assign(Error('missing'),{name:'NoSuchKey'});return {Body:{transformToString:async()=>JSON.stringify(brief)}}; } }, GetObjectCommand: class extends Cmd {} };
   if (request === '@aws-sdk/lib-dynamodb') return fakeLib;
   if (request === '@aws-sdk/client-dynamodb') return fakeClient;
   return origLoad.apply(this, arguments);
@@ -146,7 +139,7 @@ function loadSender(env) {
   resetStore(); fetchCalls = [];
   let h = loadSender({ EMAIL_SEND_DRY_RUN: 'true' });
   let r = await h({ mode: 'weekly' });
-  check('picks latest published weekOf (2026-06-28)', r.weekOf === '2026-06-28');
+  check('uses S3 weekEnding as the existing marker week (2026-06-28)', r.weekOf === '2026-06-28');
   check('1 recipient (a; b=unverified, c=breaking-only, d=no-email all excluded)', r.recipients === 1 && r.sent === 1);
   check('DRY_RUN sends no email (no fetch)', fetchCalls.length === 0);
   check('result flagged dryRun', r.dryRun === true);
@@ -160,7 +153,7 @@ function loadSender(env) {
   r = await h({ mode: 'weekly' });
   check('marker present → already_sent, sent 0', r.reason === 'already_sent' && r.sent === 0);
   r = await h({ mode: 'weekly', force: true });
-  check('force:true overrides marker → sends again', r.sent === 1);
+  check('force:true cannot bypass already-sent marker', r.reason === 'already_sent' && r.sent === 0);
 
   // 3) WEEKLY real send — fetch body + List-Unsubscribe header
   console.log('\n[weekly] real send path');
@@ -170,13 +163,27 @@ function loadSender(env) {
   check('fetch called once (1 subscriber)', fetchCalls.length === 1);
   check('sent to a@example.com', fetchCalls[0] && fetchCalls[0].body.to[0] === 'a@example.com');
   check('from verified domain', fetchCalls[0] && fetchCalls[0].body.from === 'brief@globalperspective.net');
-  check('subject is the weekly brief', /Weekly Signals Brief/.test(fetchCalls[0].body.subject));
+  check('subject is the weekly brief', /The analyst's weekly/.test(fetchCalls[0].body.subject));
   check('List-Unsubscribe header present', !!(fetchCalls[0].body.headers && fetchCalls[0].body.headers['List-Unsubscribe']));
   check('unsub link carries the token', /tok-a/.test(fetchCalls[0].body.headers['List-Unsubscribe']));
-  check('html body includes a signal', /Ebola contacts unknown/.test(fetchCalls[0].body.html));
-  check('high tier tag is neutral ink with the heaviest border (decision 0013)', /<span style="font-weight:700;border:2px solid #1a1a1a;[^"]*">HIGH RISK<\/span>/.test(fetchCalls[0].body.html));
+  check('html body includes the weekly lead', /Hormuz/.test(fetchCalls[0].body.html));
+  check('risk appears as number and tier word', /Risk 78 · high/.test(fetchCalls[0].body.html));
   check('no traffic-light tier colours in the weekly html', !/#b03328|#c2622a|#caa23a|#3f8f6b/i.test(fetchCalls[0].body.html));
   check('idempotency marker written after real send', !!store.marker['EMAILLOG#weekly#2026-06-28']);
+
+  // S3 gating happens before audience lookup or delivery, even with force.
+  console.log('\n[weekly] S3 status and missing-object gates');
+  for (const status of ['held', 'draft']) {
+    resetStore(); fetchCalls = []; store.briefs[0].status = status;
+    h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly', force: true });
+    check(`${status} latest skips delivery`, r.sent === 0 && fetchCalls.length === 0 && !Object.keys(store.marker).length);
+  }
+  resetStore(); store.briefs = []; fetchCalls = [];
+  h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly' });
+  check('missing S3 latest skips delivery', r.reason === 'no_brief' && fetchCalls.length === 0);
+  resetStore(); store.s3Error = Object.assign(new Error('denied'), { name: 'AccessDenied' });
+  h = loadSender({ EMAIL_SEND_DRY_RUN: 'false' }); r = await h({ mode: 'weekly' });
+  check('S3 denied is a visible failure, never a DynamoDB fallback', r.ok === false && r.error === 'denied');
 
   // 4) TEST_RECIPIENT override
   console.log('\n[weekly] TEST_RECIPIENT override');

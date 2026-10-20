@@ -179,6 +179,8 @@ W2 lane notes (2026-10-20): skill, schema/provenance checker and create-only pub
       comes in W5). Tests; deploy (standing Lambda auth, diff first).
 - [ ] Send-to-self: one render sent only to the operator address for a phone check (operator yes for that send).
 
+W3 lane notes (2026-10-20): sender weekly mode and renderer prepared on lane/weekly: S3 latest with held/already-sent gates, relative _weekly symlink, six-section light table, labels/risk words, logged-deadline wording, whole-block email budgets and structure/escaping tests. HTML/text artifacts are in gp-mailbox/artifacts. Read-only deployed diff found repo-ahead shared helpers only. IAM and zip verification requested from the coordinator; rsync -aL already follows the extra symlink. No deploy, send-to-self, live S3 write or schedule change performed. Browser inventory is empty, so visual phone review remains with the coordinator. Final DONE waits for the shared world reader integration required in coordinator.md.
+
 ### W4: first real run and the switch (operator yes)
 - [ ] Saturday 2026-10-24: pull + write + check for the week ending 2026-10-25 run from this machine (the cloud run is
       W6); operator reads the draft; publish by Sunday 13:00Z unless held.

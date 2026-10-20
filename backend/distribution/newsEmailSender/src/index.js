@@ -2,7 +2,7 @@
 
 // newsEmailSender — ONE sender for both email products, dispatched by event.mode.
 //
-//   { mode: 'weekly' }   → email the latest published WEEKLY_BRIEF to digestOptIn subscribers
+//   { mode: 'weekly' }   → email the published weekly/latest.json to digestOptIn subscribers
 //   { mode: 'breaking' } → email fresh confirmed breaking alerts to breakingOptIn subscribers
 //
 // Subscribers live in GlobalPerspectiveUserPrefs (written by newsRecommend set_prefs on
@@ -20,6 +20,9 @@ const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateComma
 const { sendEmail } = require('./sendEmail');
 const { renderWeeklyEmail } = require('./renderWeeklyEmail');
 const { renderDriftEmail } = require('./renderDriftEmail');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { makeS3Json } = require('./_shared/s3json');
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREFS_TABLE = process.env.USER_PREFS_TABLE || 'GlobalPerspectiveUserPrefs';
@@ -112,15 +115,12 @@ async function deliver(recipients, buildFor, kind) {
 }
 
 // ── WEEKLY ──────────────────────────────────────────────────────────────────
+let _weeklyStore;
 async function loadLatestBrief() {
-  const items = await scanAll({
-    TableName: SUMMARY_TABLE,
-    FilterExpression: 'SK = :sk AND #s = :pub',
-    ExpressionAttributeNames: { '#s': 'status' },
-    ExpressionAttributeValues: { ':sk': 'WEEKLY_BRIEF', ':pub': 'published' },
+  if (!_weeklyStore) _weeklyStore = makeS3Json({
+    client: new S3Client({ region: REGION }), GetObjectCommand, bucket: WORLD_BUCKET,
   });
-  if (!items.length) return null;
-  return items.sort((a, b) => String(b.weekOf).localeCompare(String(a.weekOf)))[0];
+  return _weeklyStore.getJson('weekly/latest.json');
 }
 
 async function weeklyAlreadySent(weekOf) {
@@ -144,15 +144,17 @@ async function markWeeklySent(weekOf, count) {
 async function runWeekly(event) {
   const brief = await loadLatestBrief();
   if (!brief) { console.log('[email:weekly] no published brief; nothing to send'); return { ok: true, mode: 'weekly', sent: 0, reason: 'no_brief' }; }
-  if (!event.force && await weeklyAlreadySent(brief.weekOf)) {
-    console.log(`[email:weekly] week ${brief.weekOf} already emailed; skipping (pass {force:true} to resend)`);
-    return { ok: true, mode: 'weekly', sent: 0, reason: 'already_sent', weekOf: brief.weekOf };
+  if (brief.status !== 'published') return { ok: true, mode: 'weekly', sent: 0, reason: brief.status === 'held' ? 'held' : 'not_published' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(brief.weekEnding || '')) throw new Error('weekly/latest.json has no valid weekEnding');
+  if (await weeklyAlreadySent(brief.weekEnding)) {
+    console.log(`[email:weekly] week ${brief.weekEnding} already emailed; skipping`);
+    return { ok: true, mode: 'weekly', sent: 0, reason: 'already_sent', weekOf: brief.weekEnding };
   }
   const recipients = await audience('digestOptIn');
-  console.log(`[email:weekly] week ${brief.weekOf} · ${recipients.length} recipient(s) · DRY_RUN=${DRY_RUN} · from=${FROM}`);
+  console.log(`[email:weekly] week ${brief.weekEnding} · ${recipients.length} recipient(s) · DRY_RUN=${DRY_RUN} · from=${FROM}`);
   const { sent, errors } = await deliver(recipients, (uUrl) => renderWeeklyEmail(brief, { siteUrl: SITE_URL, unsubUrl: uUrl }), 'digest');
-  if (!DRY_RUN && sent > 0) await markWeeklySent(brief.weekOf, sent);
-  return { ok: true, mode: 'weekly', weekOf: brief.weekOf, recipients: recipients.length, sent, errors, dryRun: DRY_RUN };
+  if (!DRY_RUN && sent > 0) await markWeeklySent(brief.weekEnding, sent);
+  return { ok: true, mode: 'weekly', weekOf: brief.weekEnding, recipients: recipients.length, sent, errors, dryRun: DRY_RUN };
 }
 
 // ── BREAKING ────────────────────────────────────────────────────────────────

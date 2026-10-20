@@ -1,0 +1,16 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {renderWeeklyEmail}=require('./renderWeeklyEmail');
+const {SECTIONS}=require('./_weekly/sections');
+const {storyHref,absoluteUrl}=require('./_shared/links');
+const fixture=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../../../weekly/test/fixtures/weekly-2026-10-18.json'),'utf8'));
+function structure(html){return {sections:[...html.matchAll(/data-section="([^"]+)"/g)].map(m=>m[1]),titles:[...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(m=>m[1]),tableWidths:[...html.matchAll(/<table[^>]*width="([^"]+)"/g)].map(m=>m[1]),presentationTables:(html.match(/role="presentation"/g)||[]).length,hasFooter:html.includes('The link never signs you in.'),hasUnsubscribe:html.includes('>Unsubscribe</a>')};}
+test('W2 dry-run renders to HTML and text with a stable six-section structure',()=>{const week=fixture(),before=JSON.stringify(week),out=renderWeeklyEmail(week,{unsubUrl:'https://unsubscribe.test/?token=fixture'});assert.deepEqual(structure(out.html),JSON.parse(fs.readFileSync(path.join(__dirname,'test-weekly-structure.json'),'utf8')));assert.equal(JSON.stringify(week),before);for(const key of ['FACT','JUDGMENT','CONFIDENCE']){if(key==='CONFIDENCE')assert.match(out.text,/LOW|MEDIUM|HIGH|\d+%/);else assert.ok(out.html.includes(key)&&out.text.includes(key));}assert.ok(out.text.includes(week.weekEnding));assert.ok(out.text.includes(absoluteUrl(storyHref(week.lead.threadId))));assert.ok(out.html.includes('max-width:600px'));assert.ok(!/#b03328|#c2622a|#caa23a|#3f8f6b/i.test(out.html));});
+test('required empty sections use model wording; optional empty sections are skipped',()=>{const out=renderWeeklyEmail({weekEnding:'2026-10-18',moved:[],trace:[],dates:[],new:[]});assert.deepEqual(structure(out.html).sections,['lead','moved','coverage']);for(const s of SECTIONS.filter(s=>s.required))assert.ok(out.text.includes(s.emptyText));});
+test('all inserted copy and href attributes are escaped; non-http source links are inert',()=>{const week=fixture();week.lead.headline='<script>bad</script>';week.lead.happened.text='<img src=x onerror=alert(1)>';week.lead.happened.sources=[{outlet:'"evil"',url:'javascript:alert(1)'}];const out=renderWeeklyEmail(week,{unsubUrl:'https://unsubscribe.test/?a=1&b="x"'});assert.ok(!out.html.includes('<script>'));assert.ok(!out.html.includes('<img'));assert.ok(!out.html.includes('href="javascript:'));assert.ok(out.html.includes('&lt;script&gt;'));assert.ok(out.html.includes('a=1&amp;b=&quot;x&quot;'));});
+test('trace prints numerical risk, a tier word and untested logged branches',()=>{const week=fixture();const out=renderWeeklyEmail({...week,trace:week.trace.slice(0,1)});assert.match(out.text,/Risk \d+ · (low|moderate|elevated|high)/);assert.ok(out.text.includes('Not yet checked'));assert.ok(out.html.includes('Not yet checked'));});
+
+test('deadline copy cannot present an unverified forecast as a factual outcome',()=>{const out=renderWeeklyEmail(fixture());assert.ok(out.text.includes('Forecast deadline 2026-10-23: Check whether'));assert.ok(out.html.includes('Check whether'));assert.ok(out.text.includes('Would prove us wrong by 2026-11-15'));});

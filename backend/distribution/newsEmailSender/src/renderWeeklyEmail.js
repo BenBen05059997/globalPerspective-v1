@@ -1,118 +1,72 @@
 'use strict';
 
-// Renders a published WEEKLY_BRIEF (signals format) to { subject, text, html }.
-// Mirrors what /briefings?mode=weekly shows: signals ranked by risk (fact + so-what,
-// risk/development kind marked) + a "what to watch" list. No new facts minted —
-// this only formats fields the generator already wrote.
+const { orderedSections, LABELS } = require('./_weekly/sections');
+const { storyHref, briefingHref, absoluteUrl } = require('./_shared/links');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = value => /^https?:\/\//i.test(value || '') ? String(value).replace(/&amp;/g,'&') : null;
+const wordCount = value => String(value || '').trim().split(/\s+/).filter(Boolean).length;
 
-const { briefingHref, absoluteUrl } = require('./_shared/links');
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function fmtWeekOf(weekOf) {
-  // weekOf is 'YYYY-MM-DD'; render "June 28, 2026" without Date parsing surprises.
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(weekOf || ''));
-  if (!m) return String(weekOf || '');
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December'];
-  return `${months[+m[2] - 1]} ${+m[3]}, ${m[1]}`;
-}
-
-// Decision 0013: risk tier is never a colour. One neutral ink; the tier shows as weight + border.
-const TIER_TAG_STYLE = {
-  high: 'font-weight:700;border:2px solid #1a1a1a;padding:1px 6px;border-radius:3px;',
-  elevated: 'font-weight:700;border:1px solid #1a1a1a;padding:2px 6px;border-radius:3px;',
-  moderate: 'font-weight:600;border:1px solid #b8b5ae;padding:2px 6px;border-radius:3px;',
-  low: 'font-weight:500;border:1px solid #e5e3df;padding:2px 6px;border-radius:3px;',
-};
-const DEV_TAG_STYLE = 'font-weight:600;';
-
-function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
-  const weekLabel = fmtWeekOf(brief.weekOf);
-  const signals = Array.isArray(brief.signals) ? brief.signals : [];
-  const watch = Array.isArray(brief.watch) ? brief.watch : [];
-  const threats = signals.filter((s) => s.kind !== 'development');
-  const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
-  const briefUrl = absoluteUrl(briefingHref({ mode: 'weekly', week: brief.weekOf }), siteUrl);
-
-  const subject = `Weekly Signals Brief — week of ${weekLabel}`;
-
-  // ── plain text ──
-  const tLines = [];
-  tLines.push(`WEEKLY SIGNALS BRIEF — week of ${weekLabel}`);
-  tLines.push(`${signals.length} signals · ${highRisk} at high risk · ${watch.length} to watch`);
-  tLines.push('');
-  signals.forEach((s, i) => {
-    const tag = s.kind === 'development' ? 'DEVELOPMENT' : `${String(s.riskLevel || '').toUpperCase()} RISK`;
-    tLines.push(`${i + 1}. [${tag}] ${s.lede || ''}`);
-    if (s.fact) tLines.push(`   ${s.fact}`);
-    if (s.soWhat) tLines.push(`   So what: ${s.soWhat}`);
-    if (s.region) tLines.push(`   Region: ${s.region}${s.asOf ? ` · as of ${s.asOf}` : ''}`);
-    tLines.push('');
-  });
-  if (watch.length) {
-    tLines.push('WHAT TO WATCH');
-    watch.forEach((w) => {
-      tLines.push(`- ${w.event || ''}${w.date ? ` (${w.date})` : ''}`);
-      if (w.stake) tLines.push(`  ${w.stake}`);
-    });
-    tLines.push('');
+function renderWeeklyEmail(week, {siteUrl, unsubUrl} = {}) {
+  const lines = [], rows = [];
+  const link = (text, href) => href ? `<a href="${esc(href)}" style="color:#202020;text-decoration:underline">${esc(text)}</a>` : esc(text);
+  function block(text, html) { return {text, html:html || `<p style="margin:0 0 12px">${esc(text)}</p>`}; }
+  function judgment(j) {const tag=`${LABELS.judgment} · ${String(j.confidence).toUpperCase()}`;return block(`${tag}: ${j.text}`,`<p style="margin:0 0 12px"><span style="font-size:10px;letter-spacing:.5px;font-weight:700">${esc(tag)}</span><br>${esc(j.text)}</p>`);}
+  function fact(f) {
+    const sources=f.sources || [];
+    const refs=sources.map(s=>link(s.outlet,safeUrl(s.url))).join(' · ');
+    return block(`${LABELS.fact}: ${f.text}\n${sources.map(s=>`${s.outlet}${safeUrl(s.url)?`: ${safeUrl(s.url)}`:''}`).join(' · ')}`,
+      `<p style="margin:0 0 12px"><span style="font-size:10px;letter-spacing:.5px;font-weight:700">${LABELS.fact}</span><br>${esc(f.text)}<br><span style="font-size:11px">${refs}</span></p>`);
   }
-  tLines.push(`Read on the site: ${briefUrl}`);
-  if (unsubUrl) tLines.push(`Unsubscribe: ${unsubUrl}`);
-  const text = tLines.join('\n');
-
-  // ── html ──
-  const sigHtml = signals.map((s, i) => {
-    const isDev = s.kind === 'development';
-    const tag = isDev ? 'DEVELOPMENT' : `${String(s.riskLevel || '').toUpperCase()} RISK`;
-    const tagStyle = isDev ? DEV_TAG_STYLE : (TIER_TAG_STYLE[s.riskLevel] || TIER_TAG_STYLE.low);
-    return `
-      <tr><td style="padding:16px 0;border-bottom:1px solid #ececea;">
-        <div style="font:600 11px/1.4 monospace;letter-spacing:.06em;color:#1a1a1a;text-transform:uppercase;">${i + 1} · <span style="${tagStyle}">${esc(tag)}</span></div>
-        <div style="font:600 17px/1.35 Georgia,serif;color:#1a1a1a;margin:4px 0 6px;">${esc(s.lede)}</div>
-        ${s.fact ? `<div style="font:400 14px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#333;">${esc(s.fact)}</div>` : ''}
-        ${s.soWhat ? `<div style="font:400 13px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#555;margin-top:6px;"><b>So what:</b> ${esc(s.soWhat)}</div>` : ''}
-        ${s.region ? `<div style="font:11px/1.4 monospace;color:#888;margin-top:6px;">${esc(s.region)}${s.asOf ? ` · as of ${esc(s.asOf)}` : ''}</div>` : ''}
-      </td></tr>`;
-  }).join('');
-
-  const watchHtml = watch.length ? `
-    <tr><td style="padding-top:22px;">
-      <div style="font:700 12px/1.4 monospace;letter-spacing:.08em;color:#1a1a1a;text-transform:uppercase;border-bottom:2px solid #1a1a1a;padding-bottom:6px;">What to watch</div>
-      ${watch.map((w) => `<div style="padding:10px 0;border-bottom:1px solid #ececea;">
-        <div style="font:600 14px/1.4 Georgia,serif;color:#1a1a1a;">${esc(w.event)}${w.date ? ` <span style="font:11px monospace;color:#888;">(${esc(w.date)})</span>` : ''}</div>
-        ${w.stake ? `<div style="font:400 13px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#555;margin-top:3px;">${esc(w.stake)}</div>` : ''}
-      </div>`).join('')}
-    </td></tr>` : '';
-
-  const html = `<!doctype html><html><body style="margin:0;background:#faf9f7;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f7;padding:24px 0;"><tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border:1px solid #e5e3df;border-radius:8px;padding:28px;">
-        <tr><td>
-          <div style="font:700 12px/1.4 monospace;letter-spacing:.1em;color:#888;text-transform:uppercase;">Weekly Signals Brief</div>
-          <div style="font:400 13px/1.4 monospace;color:#888;margin-top:4px;">Week of ${esc(weekLabel)} · ${signals.length} signals · ${highRisk} at high risk</div>
-          <h1 style="font:600 24px/1.3 Georgia,serif;color:#1a1a1a;margin:14px 0 4px;">The week's signals, ranked by risk</h1>
-        </td></tr>
-        <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sigHtml}${watchHtml}</table></td></tr>
-        <tr><td style="padding-top:24px;">
-          <a href="${esc(briefUrl)}" style="display:inline-block;background:#1a1a1a;color:#fff;font:600 13px/1 -apple-system,Helvetica,Arial,sans-serif;text-decoration:none;padding:11px 18px;border-radius:6px;">Read on the site →</a>
-        </td></tr>
-        <tr><td style="padding-top:22px;border-top:1px solid #ececea;margin-top:22px;">
-          <div style="font:400 11px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#999;">
-            Global Perspectives — AI news intelligence. Grounded in cited analysis; model judgment marked as judgment.
-            ${unsubUrl ? `<br><a href="${esc(unsubUrl)}" style="color:#999;">Unsubscribe from the weekly brief</a>` : ''}
-          </div>
-        </td></tr>
-      </table>
-    </td></tr></table>
-  </body></html>`;
-
-  return { subject, text, html };
+  function title(item) {const url=absoluteUrl(storyHref(item.threadId),siteUrl);return block(`${item.title}\n${url}`,`<p style="margin:16px 0 8px;font-weight:700">${link(item.title,url)}</p>`);}
+  function content(key, items) {
+    const out=[];
+    for(const item of items) {
+      if(key==='lead') {
+        out.push(title({title:item.headline,threadId:item.threadId}),fact(item.happened),judgment(item.argument),judgment(item.expect),
+          block(`JUDGMENT · ${item.expect.confidence.toUpperCase()} · Would prove us wrong by ${item.wouldProveWrong.by}: ${item.wouldProveWrong.condition}`));
+      } else if(key==='moved') {
+        out.push(title(item),judgment(item.mechanism));
+        if(item.kind==='score')out.push(block(`Risk ${item.scoreFrom} → ${item.scoreTo}`));
+      } else if(key==='trace') {
+        out.push(title(item),block(`Risk ${item.risk.score} · ${item.risk.tier}`));
+        for(const step of item.steps)out.push(block(step.date),fact(step.fact));
+        for(const branch of item.branches)out.push(block(`JUDGMENT · ${Math.round(branch.p*100)}% · ${branch.text.replace(/\.+$/, '')}. ${branch.trigger===branch.text?'':`Trigger: ${branch.trigger.replace(/\.+$/, '')}. `}By ${branch.by}. ${branch.status==='not_checked'?'Not yet checked':branch.status}.`));
+      } else if(key==='dates') {
+        const url=item.threadId?absoluteUrl(storyHref(item.threadId),siteUrl):null;
+        const deadline=item.kind==='forecast_due'?'Forecast deadline':'Logged trigger deadline';
+        out.push(block(`FACT · ${deadline} ${item.date}: Check whether ${item.what}${url?`\n${url}`:''}`,`<p style="margin:0 0 12px"><span style="font-size:10px;font-weight:700">FACT · ${esc(deadline)} ${esc(item.date)}</span><br>Check whether ${link(item.what,url)}</p>`));
+      } else if(key==='new') {
+        out.push(title(item),block(`First seen ${item.firstSeen} · ${item.outlets.length} outlets`),fact(item.fact),judgment(item.firstRead));
+        for(const edge of item.connectsTo.slice(0,1)) {
+          const url=absoluteUrl(storyHref(edge.threadId),siteUrl);
+          out.push(block(`JUDGMENT · LOW · Possibly related: ${edge.threadId}\n${url}`,`<p style="margin:0 0 12px;font-size:11px">JUDGMENT · LOW · Possibly related: ${link('story',url)}</p>`));
+        }
+      } else if(key==='coverage') {
+        const text=`FACT · ${item.stories} stories · ${item.entries} entries · ${item.outlets} outlets. ${item.analysedNew.analysed} of ${item.analysedNew.total} new stories analysed. Missing archive days: ${item.missingDays.join(', ') || 'none'}. Corrections: ${item.corrections.join('; ') || 'none recorded'}.`;
+        out.push(block(text),block(item.note));
+      }
+    }
+    return out;
+  }
+  for(const {section,items} of orderedSections(week)) {
+    const groups=items.length?items.map(item=>content(section.key,[item])):[[block(section.emptyText)]];
+    // Keep complete story groups whenever possible. A long lead/coverage may use a
+    // prefix of complete blocks, but no fact or judgment is cut mid-sentence.
+    let used=0,omitted=false;const kept=[];
+    for(const group of groups) {
+      const size=group.reduce((n,b)=>n+wordCount(b.text),0);
+      if(used+size<=section.emailWordCap){kept.push(...group);used+=size;}
+      else if(section.single){
+        for(const b of group){const n=wordCount(b.text);if(used+n<=section.emailWordCap){kept.push(b);used+=n;}else omitted=true;}
+      }else {omitted=true;break;}
+    }
+    if(omitted)kept.push(block('More detail is available through the story links.'));
+    lines.push(section.title,...kept.map(b=>b.text),'');
+    rows.push(`<tr data-section="${esc(section.key)}"><td style="padding:20px 28px;border-top:1px solid #deded9"><h2 style="font:700 17px/1.35 Georgia,serif;margin:0 0 14px">${esc(section.title)}</h2>${kept.map(b=>b.html).join('')}</td></tr>`);
+  }
+  const weeklyUrl=absoluteUrl(briefingHref({mode:'weekly',week:week.weekEnding}),siteUrl);
+  const footer=`The link never signs you in. ${unsubUrl?`Unsubscribe: ${unsubUrl}`:'Unsubscribe through your email preferences in your account.'}`;
+  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The analyst's weekly</title></head><body style="margin:0;background:#f5f5f1;color:#202020;font:14px/1.6 -apple-system,BlinkMacSystemFont,Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fff"><tr><td style="padding:28px"><p style="font-size:11px;letter-spacing:1px">GLOBAL PERSPECTIVES</p><h1 style="font:700 28px/1.2 Georgia,serif">The analyst's weekly</h1><p>Week ending ${esc(week.weekEnding)}</p></td></tr>${rows.join('')}<tr><td style="padding:24px 28px;border-top:1px solid #deded9;font-size:11px">${link('Read the weekly',weeklyUrl)}<p>The link never signs you in.</p>${unsubUrl?link('Unsubscribe',safeUrl(unsubUrl)):'Unsubscribe through your email preferences in your account.'}</td></tr></table></td></tr></table></body></html>`;
+  return {subject:`The analyst's weekly — ${week.weekEnding}`,html,text:`Global Perspectives\nThe analyst's weekly — week ending ${week.weekEnding}\n\n${lines.join('\n')}\nRead the weekly: ${weeklyUrl}\n${footer}`};
 }
-
-module.exports = { renderWeeklyEmail };
+module.exports={renderWeeklyEmail};

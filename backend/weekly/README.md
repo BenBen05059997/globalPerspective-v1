@@ -27,7 +27,7 @@ NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRI
 
 ## Read by
 
-- `newsEmailSender` (`backend/distribution/newsEmailSender`), through the `src/_weekly` symlink (W3): renders the email from `sections.js` and `weekly/latest.json`.
+- `newsEmailSender` (`backend/distribution/newsEmailSender`), through the runtime-only `src/_weekly` symlink (W3): renders the email from `sections.js` and `weekly/latest.json`.
 - `features/weekly/` (W5), through a mirrored copy of the sections core block, kept identical by `scripts/check-shared-sync.mjs`.
 - The board, later.
 
@@ -37,7 +37,7 @@ NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRI
 |---|---|---|
 | `schema/weekly.schema.json` | JSON Schema (draft-07) for one week's file; item caps equal `sections.js` | W0, frozen |
 | `schema/examples/` | one valid example (week ending 2026-10-18, reshaped from the hand-run draft 2) and four invalid ones | W0 |
-| `sections.js` | the section model: keys, order, titles, required, item caps, email word caps, empty texts, label and confidence words, `orderedSections(weekly)` | W0, frozen |
+| `sections.js` | compatibility symlink to `runtime/sections.js`, the section model: keys, order, titles, required, item caps, email word caps, empty texts, label and confidence words, `orderedSections(weekly)` | W0, frozen |
 | `test/` | section/schema, selection, checker and fake-S3 tests | W0–W2 |
 | `pull.mjs` | reads the tables, applies the frozen selection rules, writes the inputs JSON | W1 |
 | `check.mjs` | schema plus honesty rules against the inputs | W2 |
@@ -56,32 +56,43 @@ W0 schema and section model frozen; W1 pull and W2 author/check/publish/hold imp
 
 `node backend/weekly/pull.mjs --week-ending 2026-10-18 --out /tmp/weekly.inputs.json`
 
-Requires the AWS CLI with read access in ap-northeast-1; no SDK or paid dependency is installed.
-`WORLD_BUCKET` overrides the existing world bucket. `pull(weekEnding, client)` accepts an injectable
-read client (`getArchive`, `summary`, `predictions`, `web`); selection is pure in `selection.mjs`.
-Archive reads cover Monday minus 30 days through Sunday (37 days), at most four at once. Scans use
-100 evaluated items per page and follow every continuation key. Errors fail the pull rather than
-masquerading as missing coverage. Only a successful empty GetItem means a missing archive day.
+`pull(weekEnding, client)` takes the shared world/ client contract. Only
+`backend/shared/src/world/` parses source rows and derives birth, missing days, coverage, outlets,
+historical analysis, tiers and forks. `readInputs` collects its normalized views; `selection.mjs`
+contains only the weekly's event/path/held-score gates, ranking, section projection and hashing.
+The local entry point uses `local-client.mjs`: a generic AWS CLI transport behind world/'s adapters
+when the SDK is not installed. No CLI or domain-row parser lives in the readers or selector.
+Read errors propagate; only a successful missing item becomes a coverage gap. Archive reads cover
+37 days at four in parallel; analyses use batchGet, history/drift/scenarios use scoped queries.
+Archive topic ids are always passed to `scenarios` along with the story id. The default country
+read scope is the existing drift writer's twelve countries, overridden by DRIFT_COUNTRIES.
 
-The inputs retain archive citations and logged branches alongside candidates. Birth means earliest
-observed archive date within that lookback, not proof that the story did not exist before it. Coverage
-counts include every weekly entry, and explicitly report missing days, distinct stories/outlets and
-analysed/new counts. Current analysis after the requested Sunday is replaced by its latest dated
-history at or before Sunday. Question verdict rows may reflect the pull date; do not infer historical knowledge from later verdicts. Web links come from the requested live latest object, not a reconstructed
-historical web, and are always possibly related.
+The Sunday `web/YYYY/MM/DD.json` snapshot is preferred. Only its absence permits the latest-web
+fallback; errors do not. The selected key is recorded in inputs.evidence.webSource and every
+normalized row retains world/'s sourceRow/sourceKey. Fallback links remain possibly_related and
+must be disclosed as a later snapshot in working notes. Sampled questions and verdicts also use
+shared world readers; the weekly never parses Q# rows itself.
 
-New selection uses a conservative completed-action headline gate; periodic reports and statements
-without a completed event are excluded and listed with reasons. Qualified events have a link to a
-tracked archive story, or risk >=50 and two outlets. Single-outlet candidates rank after all others
-and their fact must state that it rests on one source. Remaining rank: links, risk tier, stable thread id;
-never entry count. Only the top three are stored in `candidates.new`; overflow ids remain in inputs.
-Moved excludes births this week and risk below 25. Score movement needs >=10 points from the last
-pre-week reading, sustained by the last two in-week readings. A path move needs different trajectories
-(percentage-only changes ignored) plus an explicit revision of an expectation in the logged drift text.
-Ambiguous prose is excluded and listed in pathReviewCandidates rather than silently treated as a changed expectation. Title/framing changes and directional risk justifications alone cannot pass. Logged histories
-and exclusions remain reviewable. Trace candidates retain complete logged scenario branches; due
-triggers and sampled questions cover Monday through the following Sunday. Country drift and question
-verdict rows are retained in evidence. `inputsHash` hashes canonical JSON excluding only itself.
+Inputs v2 contain normalized story candidates with exact source tuples and world-derived forks.
+The fork's p is the question trigger's percent probability or null; scenarioP is separate and
+never substitutes for missing p. When writing weekly.schema.json, convert a nonnull trigger p
+from percent to the schema's fraction at that output boundary only. Branch status remains
+not_checked until a record view supplies actual checks. Dates retain all deduplicated next-week
+occurrences; email targets never trim the stored file.
+
+Birth is earliest observed inside the lookback; windowLimited and missingBefore expose its bounds.
+Historical risk/analysis uses analysisAsOf(..., weekEnding), preventing later regenerations leaking
+backward. Coverage and analysed/new counts come directly from world.coverage.
+
+New selection conservatively requires a completed-action headline. Periodic reports, prospective
+actions and statements without an event are excluded with reasons. Qualified events have tracked
+links, or risk >=50 and two outlets. Single-outlet stories rank last and must say “one source” in
+the fact. Remaining order: links, risk tier, stable story id; never entry count. Store the top three,
+with overflow ids in the inputs. Moved excludes births this week and risk below 25; a >=10 point
+movement must hold over the last two readings and at the as-of analysis. A path move requires an
+explicit logged expectation revision plus changed trajectories, ignoring percentage-only rewrites.
+These lexical event/path gates have known false negatives while the record lacks structured kinds;
+ambiguous trajectory changes remain in pathReviewCandidates for review rather than becoming moves.
 
 ## Write and check (W2)
 
@@ -133,3 +144,12 @@ items; it excludes the inferred FEMA grace-date because no logged future deadlin
 Coverage is 11 of 59 new stories with analysis dated by Sunday, rather than the W0 example’s 14 current
 analysis rows. Risk 78 is high under the existing shared 25/50/75 bands, correcting the example’s elevated
 word. All quantitative calls quote existing PRED# triggers; this procedure creates no new calls.
+
+## Sender runtime
+
+`runtime/sections.js` is the canonical model file. `sections.js` is a relative symlink to it,
+so existing tools, schema-cap tests and the frontend sync guard keep their established path.
+The sender's `_weekly -> ../../../weekly/runtime` ships only this runtime directory: no pull,
+publish, fixtures, tests or schema examples enter the Lambda package through that symlink.
+The sender skips and logs missing, held, nonpublished and wrong-Sunday latest snapshots, then
+uses the existing EMAILLOG marker. It never sends an older week when a hold rolls latest back.

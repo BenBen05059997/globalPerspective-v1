@@ -6,6 +6,7 @@ import path from 'node:path';
 import {canonical,hashInputs,assertSunday,dayPlus} from './selection.mjs';
 const require=createRequire(import.meta.url);
 const {SECTIONS}=require('./sections.js');
+const {outletName}=require('../shared/src/world');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const Ajv=createRequire(path.join(root,'global-perspectives-starter/frontend/package.json'))('ajv');
 const validate=new Ajv({allErrors:true,strict:false}).compile(JSON.parse(readFileSync(new URL('./schema/weekly.schema.json',import.meta.url))));
@@ -25,8 +26,8 @@ export function checkWeekly(week,inputs) {
   const byId=new Map(stories.map(s=>[s.threadId,s]));
   const known=new Set(byId.keys());
   for(const l of inputs.evidence?.web?.index?.links || inputs.evidence?.web?.links || []){known.add(l.from);known.add(l.to);}
-  for(const e of inputs.evidence?.archives || [])for(const row of e.entries || [])if(row.threadId)known.add(row.threadId);
-  for(const q of inputs.evidence?.predictions || []) {if(q.threadId)known.add(q.threadId);if(q.clusterKey)known.add(q.clusterKey);}
+  for(const e of inputs.evidence?.range?.days || [])for(const row of e.entries || [])if(row.threadId)known.add(row.threadId);
+  for(const q of inputs.evidence?.questions || [])if(q.threadId)known.add(q.threadId);
   const allNumbers=nums(inputs);
   const storyNumbers=new Map(stories.map(s=>[s.threadId,nums(s)]));
   const inputDates=new Set(strings(inputs).flatMap(s=>s.match(/\d{4}-\d{2}-\d{2}/g)||[]));
@@ -38,7 +39,7 @@ export function checkWeekly(week,inputs) {
       if('sources' in x) {
         for(const source of x.sources || [])if(!story?.sources.some(s=>canonical(s)===canonical(source)))fail(`${p}.sources`,'citation is absent from this story in inputs');
         const entries=(story?.archiveEntries || story?.entries || []).filter(e=>(x.sources || []).some(s=>s.archive===e.archive && s.topicId===e.topicId));
-        const evidenceText=entries.flatMap(e=>(e.sources || []).filter(s=>(x.sources || []).some(c=>c.outlet===s.source && (!c.url || c.url===s.url))).map(s=>`${s.title || ''} ${s.snippet || ''}`)).join(' ');
+        const evidenceText=entries.flatMap(e=>(e.sources || []).filter(s=>(x.sources || []).some(c=>c.outlet===outletName(s.source) && (!c.url || c.url===s.url))).map(s=>`${s.title || ''} ${s.snippet || ''}`)).join(' ');
         for(const n of tokens(x.text))if(!nums(evidenceText).has(Number(n)))fail(`${p}.text`,`number ${n} is absent from cited entry text`);
       }
       for(const [k,v] of Object.entries(x)) {
@@ -79,9 +80,9 @@ export function checkWeekly(week,inputs) {
     const c=byId.get(t.threadId);if(!c)continue;
     if(canonical(t.risk)!==canonical(c.risk))fail('trace.risk','does not match dated risk');
     for(const b of t.branches || []) {
-      const matches=c.predictions.flatMap(p=>(p.scenarios || []).flatMap(sc=>(sc.triggers || []).map(tr=>({sc,tr}))));
-      const probability=p=>Number(p)>1?Number(p)/100:Number(p);
-      if(!matches.some(({sc,tr})=>tr.text===b.trigger && String(tr.deadline).slice(0,10)===b.by && probability(tr.p ?? sc.probability)===b.p))fail('trace.branches','trigger, deadline and probability must match one logged branch');
+      const matches=c.forks.flatMap(f=>f.branches);
+      // world/ uses percent; weekly.schema.json uses a fraction. Convert only here.
+      if(!matches.some(tr=>tr.trigger===b.trigger && tr.due===b.by && tr.p!==null && tr.p/100===b.p))fail('trace.branches','trigger, deadline and trigger probability must match one logged branch; scenario probability is never substituted');
       if(b.status!=='not_checked')fail('trace.branches.status','trigger checks do not exist yet; must be not_checked');
     }
     for(const step of t.steps || [])if(!(c.archiveEntries || c.entries).some(e=>e.date===step.date && step.fact.sources.some(s=>s.archive===e.archive && s.topicId===e.topicId)))fail('trace.steps','step date must match its archive citation');

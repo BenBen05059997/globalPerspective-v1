@@ -94,6 +94,24 @@ Forecast settling / trigger checking (never run); duplicate-story merge in the p
 chapter marks (drift notes can seed chapters); operator sign-off for links; per-reader board state (DynamoDB, per
 `rules/DATA_STRATEGY.md`); story following (today only countries are followed; to be checked).
 
+## Checklist: have, lack, how to get (verified against code and live AWS, 2026-10-20)
+
+| Need | Have today | Lack | How to get it |
+|---|---|---|---|
+| Settled forecasts (Forecasts section, dead branches, monthly) | `newsPredictionResolver` runs daily 10:30Z (`TriggerPredictionResolver` ENABLED): seeds, draws K=22 per week, drafts on Mondays. Live status: 44 sampled, 1 due, 1 draft, **0 verdicts**. Drafts are proposals; verdicts are written by the operator with `settle-review.js`. | The operator review has never been run, and the drafter works on abstract questions, not on story branches with triggers. | Run the review once on the existing draft (operator). Then add a per-story trigger check to the weekly run (fired / hold / dead, model draft, operator confirm) writing to the same log. |
+| Branches with triggers per story | `PRED#<topicId>/<date>` scenarios with probabilities and triggers for every analysed story. | Trigger status is never updated; no "dead"/"late"/"resurrected" state. | The trigger check above writes a dated status row per branch; never rewrites the original. |
+| Story birth date, chapters, dated one-line summaries | Earliest `archive#` date per threadId can be derived; daily drift notes (`THREAD#/DRIFT#`, 60-day TTL; `DRIFTLOG#` kept) say when a story changed nature. | No stored birth date, chapter mark or never-rewritten line. | Store birth date at thread creation; the weekly run writes a chapter row when a drift note changes the expected path; one line per chapter and per fork, dated, put-once. World data → S3/story rows per `rules/DATA_STRATEGY.md`. |
+| One story per event | Threads CLI `split|merge --apply`; live read API to verify. | Duplicate threads for one event (Pakistan, Brazil, settlers this week). | Duplicate check at thread birth in the pipeline (shared actors + place + 48h window); CLI merge stays the fallback. |
+| Trustworthy connections | Story web `WEB#INDEX`/`LATEST` → `web/latest.json`, links weak/medium/strong, shared actors; snapshots under `web/`. | All links model-inferred ("possibly related"); no sign-off path, no "defensible" field. | Operator review command (like the alert confirm) that sets `confirmedBy/at` on a link; the board and weekly show only confirmed links as solid OURS. |
+| Corrections | Nothing. | No corrections store. | Falls out of the trigger check: a dead branch that happens is a correction row; plus a small operator-written store read by the weekly and the story page. |
+| Following | `GlobalPerspectiveUserPrefs`: `followedCountries`, digest/breaking/drift opt-ins (`usePreferences.js`). `newsSavedItems` bookmarks per user. | No followed stories or actors; no board state. | Add `followedThreads` to prefs (user data → DynamoDB); board state as its own item set in the same table. |
+| Weekly content | `newsWeeklyBrief` (Sun 06:00Z, top-6 by volume, no judgment); `newsEmailSender` (Sun 14:00Z, live). | The analyst's weekly, the changelog digest, the lead trace. | Weekly plan steps 3–6 (skill, check, publish, page, email, cloud run, retire old Lambda). |
+| Connection tests and verdict | Shared actors, places, daily scores, entries with outlets: all stored. | The pair test, the lag/joint trace, the mechanism call, caching. | New read-API Lambda: precomputed grounds + one model call for the mechanism; cache per pair. Studio phase. |
+| Member page, alerts, presets | Account desk, membership via Polar (live), breaking/drift email code (disabled). | `features/weekly`, board UI, per-pin alert prefs, presets. | Frontend work after the weekly page; alerts reuse the sender with a per-pin rule set. Studio phase. |
+
+Order: resolver review once → trigger check in the weekly run → duplicate check → birth/chapter rows → link sign-off →
+weekly steps 3–6 → following stories → board.
+
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
 2. What is free and what is paid: natural seam is verdict + joint trace free, the rest paid. Pricing is yours.
@@ -109,5 +127,7 @@ Kialo / Arguman critique (dense trees hide what matters); i2 Analyst's Notebook 
 different charts).
 
 ## Log
+- 2026-10-20: have/lack/how-to-get checklist added after checking the resolver (exists, daily, 0 verdicts because the
+  operator review never ran) and preferences (countries followed, stories not).
 - 2026-10-20: brainstorm recorded; Studio Board canvas built to 12 boards (graph, map, verdict, board weekly, clue
   pool, tree, summary + monthly, presets, alerts, divergence, zoom ladder, folding rules).

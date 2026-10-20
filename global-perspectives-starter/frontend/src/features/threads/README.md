@@ -18,9 +18,9 @@ opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline,
 - `ThreadPage.jsx` - arc page; `components/StoryMode.jsx` (desktop) / `PhoneStoryMode.jsx` (phone)
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY`, else `WeeklyFallbackMap`
 - `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (links)
-- Public API (`index.js`): `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines`,
-  `COUNTRY_COORDINATES` (countries), `useWebIndex`, `deriveFromIndex` (map). `WeeklyMap` is not exported:
-  countries lazy-imports it by path so it keeps its own chunk.
+- Public API (`index.js`): `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines` (countries), `useWebIndex`,
+  `deriveFromIndex` (map). `WeeklyMap` is not exported: countries lazy-imports it by path (own chunk). Country
+  positions (`COUNTRY_COORDINATES`) live in `@/shared/map/countryCoordinates.js`.
 - Imports `@/features/economy` (`MechanismCard`, `useEconomicImpact`), never countries. Links: addresses from
   `@/shared/lib/links.js`; stories, countries (non-countries plain) and forecasts via `EntityLink`.
   Story page: forecast questions link to `/track-record?q=<qid>` (anchor `q-<qid>`), "Show on map" -> `/?story=`,

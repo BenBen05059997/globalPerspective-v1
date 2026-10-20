@@ -6,6 +6,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
+- [The timeline](architecture/ARCHITECTURE_TIMELINE.md) — **the core model**: one append-only event timeline is the truth; every page is a view of it.
 - [The record subsystem](architecture/ARCHITECTURE_RECORD.md) — design: one dated record per story (`record/`), who writes what, what is shared, how it touches other places; [its pipeline](architecture/ARCHITECTURE_RECORD_PIPELINE.md) — what runs when.
 - [Decision records](decisions/README.md) — 32 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.

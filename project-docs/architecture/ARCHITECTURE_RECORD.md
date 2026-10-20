@@ -1,5 +1,8 @@
 # The record subsystem: architecture
 
+The model this subsystem implements is `ARCHITECTURE_TIMELINE.md`: the timeline (`record/timeline/YYYY-MM-DD.jsonl`) is
+the stored truth; the story files, the index and corrections below are views built from it.
+
 Status: design (2026-10-20). Nothing in `backend/record/` exists yet except what §9 marks done. This file describes the
 target; `ARCHITECTURE.md` describes what runs. When a piece ships, its row here moves from "planned" to "live" and
 `ARCHITECTURE.md` data flow 8 gets the pointer. Rules it obeys: `rules/DATA_STRATEGY.md` (S3 for the world, one writer

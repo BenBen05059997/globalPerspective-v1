@@ -14,6 +14,15 @@ user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.
 3. **The record is append-only.** A dated line, a branch status, a verdict or a correction is never rewritten; a
    change is a new dated row. Paragraph summaries are versioned. Deletion does not exist; items are greyed.
 
+## 0. Documents (operator, 2026-10-20: documentation before building)
+- Structure, what is common / shared / independent, how it touches other places: `architecture/ARCHITECTURE_RECORD.md`.
+- Step by step with times, reads and writes, the inside of `newsStoryRecord`, failure behaviour: `architecture/ARCHITECTURE_RECORD_PIPELINE.md`.
+- This file: decisions, stores, order of work, log. When the subsystem is live, the two architecture files stay (they
+  describe what runs) and this plan's lasting decisions become records; the plan is then deleted (TASK_WORKFLOW §2).
+- Grouping: world-side Lambdas in `backend/record/` (`newsStoryRecord`, `newsConnect`); the user-side `newsBoard` in
+  `backend/read-api/`; new shared code only in `backend/shared/src/` (`record.js`, `s3json.js`); frontend `features/weekly/`
+  now and `features/board/` later, reading through a new `shared/hooks/useRecord.js`.
+
 ## 1. What is stored where
 
 ### S3 (world bucket), new prefixes
@@ -81,6 +90,7 @@ The weekly is published by the run at 06:00Z and sent at 14:00Z. The operator ma
 window. Enabling the sender on the new path is a user-facing send and needs a fresh yes when reached.
 
 ## 6. Order of work
+0. ✓ 2026-10-20: architecture + pipeline documents written (§0). Each later step updates them in the same commit.
 1. ✓ 2026-10-20 (e2132a75, deployed, CodeSha256 Z9D6hUJD…): `newsPredictionResolver` writes verdicts directly; corrections
    are appended `VERDICT#<n>` rows with a reason via the `correct` action / `predictions/settle-correct.js` (decision 0034).
    Smoke: dry-run tick clean, `--list` shows the one due question (FEMA, draft `not_yet`, re-draft due 2026-10-24).

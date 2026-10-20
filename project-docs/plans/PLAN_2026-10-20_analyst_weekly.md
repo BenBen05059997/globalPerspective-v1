@@ -158,6 +158,8 @@ flagged in its `notes.unconfirmed`.
       single-outlet last; "moved" = expected-path change or a 10-point move that holds, only at moderate risk or above);
       writes one inputs JSON with the candidates per section and the coverage facts. Tests on fixtures.
 
+W1 lane notes (2026-10-20): read-only AWS CLI adapter and pure fixture-tested selection added on lane/weekly. Earliest observed birth is bounded by the 30-day pre-week lookback; conservative event and directional-path gates expose exclusions for review. Live latest web is retained as current evidence, not a historical reconstruction.
+
 ### W2: write + check + publish
 - [ ] `.claude/skills/weekly-brief/SKILL.md`: the procedure only, pointing at `backend/weekly/` (read the inputs JSON; write each section to the schema;
       honesty rules; no fact without a source; dates after the send; numbers only from the inputs).

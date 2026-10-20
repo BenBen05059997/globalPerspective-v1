@@ -51,10 +51,19 @@ the folder READMEs it touches, `ARCHITECTURE.md` when a flow, route or store cha
       supersedes 0030; ARCHITECTURE flow 6 and STATUS updated (a9163a44, 62661b6f, 2c0a40b3). Click-tested locally.
       To re-check on production: the account desk showed "Following countries is part of membership" locally
       (membership check likely blocked from localhost).
-- [ ] 6. Small leftovers: the deadline helper countries borrows from threads; stale CLI header comments;
-      unused social-platform keys on `newsPostLinkedin`; the mis-joined forecast; the account desk map's own
-      country names.
-- [ ] 7. Older backlog: Lambdas on nodejs20.x to nodejs22.x; env keys no code reads; colour items C3, C4, C7.
+- [x] 6. Small leftovers (code done): deadline helper moved to `shared/lib/deadlines.js` (94582503); stale CLI/Lambda
+      comments fixed (6a057aab); account desk map resolves countries through `shared/lib/countries.js` (ac9c1c4d).
+      Kept on purpose: 7 unused secret keys on `newsPostLinkedin` (Farcaster, Neynar, Mastodon, Nostr, Telegram) and the
+      LinkedIn client id/secret (operator rule: keep unused secret keys). Waiting for the operator: the forecast
+      `33987025ca046672ecdc` fix — the hurricane topics joined to the medical-plane story; the split was blocked by the
+      permission check (command below); a clusterKey update that ran alone was reverted to the original value.
+      `node backend/pipeline/cli/threads.mjs split thread-medical-plane-with-6-onboard-m-901cd4 "Hurricane Isaias Makes
+      Landfall in Florida as Category 2 Storm, Causing Widespread Power Outages-2" "Hurricane Isaias Makes Landfall on US
+      Gulf Coast as Category 2 Storm-4" "Hurricane Isaias Kills Four, Leaves Hundreds of Thousands Without Power in US-4"
+      --apply`, then set `clusterKey` on `Q#33987025ca046672ecdc`/`SAMPLED` to `thread-hurricane-isaias-makes-landfal-21c4f2`.
+      Left: `newsWeeklyBrief/src/index.js:6` comment still says `draft`.
+- [ ] 7. Older backlog: Lambdas on nodejs20.x to nodejs22.x; non-secret env keys no code reads; colour items C3, C4, C7;
+      regenerate `shared/map/countryGeo.js` (38 countries missing from `ISO3_TO_NUM`), then drop the desk map's name fallback.
 - [ ] 8. Cloudflare cutover preparation (decision 4): read-API origin for the test host, capture of DNS/TLS/rule
       settings, the exact cutover and reversal steps written down. DNS changes go to the operator first.
 - [ ] 8b. Docs sync: ARCHITECTURE flows for breaking alerts (confirm before public) and the country page; STATUS.md;

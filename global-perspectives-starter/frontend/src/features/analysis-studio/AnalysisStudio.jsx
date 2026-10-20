@@ -135,7 +135,7 @@ export default function AnalysisStudio() {
   // actually offer stories beyond today, or D2's feed never gets exercised by a real
   // selection. `useWeeklyArchive` is the same 30-day, 30-min-cached hook /weekly already
   // uses (fetchArchiveRange, lightweight entries — no heavy AI fields, 6MB-safe).
-  const { dayMap: archiveDayMap, loading: archiveLoading, error: archiveError } = useWeeklyArchive();
+  const { dayMap: archiveDayMap, loading: archiveLoading, settled: archiveSettled, error: archiveError } = useWeeklyArchive();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   // The sign-in gate is a modal dialog: focus moves into it and Tab cycles inside it, so the studio behind it
@@ -346,22 +346,25 @@ export default function AnalysisStudio() {
 
   useEffect(() => {
     if (didSeedFromParams.current) return;
-    if (topicsLoading || archiveLoading) return;
-    didSeedFromParams.current = true;
+    // useWeeklyArchive reports loading=false (and an empty dayMap) until its first load runs, so wait
+    // for it to settle; a thread older than today's topics only resolves against the archive.
+    if (topicsLoading || archiveLoading || !archiveSettled) return;
     const raw = searchParams.get('stories');
-    if (!raw) return;
-    const requested = raw.split(',').map((s) => s.trim()).filter(Boolean);
-    if (requested.length === 0) return;
+    const requested = raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    if (requested.length === 0) { didSeedFromParams.current = true; return; }
     const { selected: valid, picked } = resolveRequestedStories(requested, {
       topics,
       earlierRows: buildEarlierStoryList(archiveDayMap, { excludeTopicIds: todayTopicIds }),
       max: MAX_STORIES,
     });
+    // Nothing matched yet: stay armed so a later archive refresh (e.g. the signed-in refetch with
+    // the full history depth) can still seed it.
     if (valid.length === 0) return;
+    didSeedFromParams.current = true;
     setPickedEarlier((p) => ({ ...p, ...picked }));
-    setSelected(valid);
+    setSelected((cur) => (cur.length ? cur : valid));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicsLoading, archiveLoading, topics, archiveDayMap]);
+  }, [topicsLoading, archiveLoading, archiveSettled, topics, archiveDayMap]);
 
   function toggle(id) {
     setSelected((cur) => {

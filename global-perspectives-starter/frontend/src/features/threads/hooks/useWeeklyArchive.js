@@ -11,6 +11,9 @@ export function useWeeklyArchive() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tier, setTier] = useState(null);
+  // true once a load attempt has finished (cache hit, fetch success or failure). `loading` is false
+  // before the first load starts, so callers that must wait for real data key on `settled`.
+  const [settled, setSettled] = useState(false);
   // When this data was actually fetched (cache write or fresh fetch completion) — an honest
   // client-side "as of" stamp, not a fabricated per-record timestamp. The archive response has
   // no genuine per-day updatedAt field to thread through, so this is the fetch-completion time,
@@ -29,6 +32,7 @@ export function useWeeklyArchive() {
           setDayMap(cached.dayMap);
           setTier(cached.tier || null);
           setFetchedAt(cached.timestamp);
+          setSettled(true);
           return;
         }
       }
@@ -57,6 +61,7 @@ export function useWeeklyArchive() {
       setError(err?.message || 'Failed to fetch archive');
     } finally {
       setLoading(false);
+      setSettled(true);
       window.dispatchEvent(new CustomEvent('gp-loading-end'));
     }
   }, [user]);
@@ -81,5 +86,5 @@ export function useWeeklyArchive() {
     return latest;
   }, [dayMap]);
 
-  return { dayMap, sortedDates, loading, error, tier, fetchedAt, dataUpdatedAt, refetch: load };
+  return { dayMap, sortedDates, loading, settled, error, tier, fetchedAt, dataUpdatedAt, refetch: load };
 }

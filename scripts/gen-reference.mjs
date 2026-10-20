@@ -58,6 +58,8 @@ if (!OFFLINE) {
   const urlHost = {}; // lambda -> Function URL hosts (matched against docs/config.js endpoints; never written out)
   const tables = {}; // lambda -> { ENV_KEY_ENDING_IN_TABLE: table name }
   await pool(NAMES, async (n) => {
+    // A functions.json entry marked planned is written but not created in AWS yet: nothing live to read.
+    if (!runtime[n]) { envKeys[n] = []; url[n] = []; urlHost[n] = []; tables[n] = {}; return; }
     envKeys[n] = (await aws('lambda', 'get-function-configuration', '--function-name', n, '--query', 'keys(Environment.Variables || `{}`)')).sort();
     const urlCfg = (await aws('lambda', 'list-function-url-configs', '--function-name', n, '--query', 'FunctionUrlConfigs[].{a: AuthType, u: FunctionUrl}')) || [];
     url[n] = urlCfg.map((c) => c.a);

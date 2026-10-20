@@ -26,6 +26,7 @@
       "features": ["board"],
       "nodeModules": true,
       "schedules": [],
+      "planned": true,
       "deployBlocked": "Not created in AWS yet (plan stage 4: operator creates the role and the function)."
     },
     "newsBreakingAlert": {

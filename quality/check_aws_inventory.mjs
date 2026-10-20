@@ -2,7 +2,7 @@
 // Drift check: scripts/functions.json vs live AWS (ap-northeast-1, read-only list calls).
 // Fails (exit 1) when
 //   - a deployed Lambda named news*/News* is missing from functions.json,
-//   - a functions.json entry has no deployed Lambda,
+//   - a functions.json entry has no deployed Lambda (unless it is marked `"planned": true`: written, not yet created),
 //   - an EventBridge rule or Scheduler schedule targets a news*/News* Lambda that is not in functions.json.
 // Needs AWS credentials, so it is NOT in the pre-commit hook. Run it by hand or from quality/verify_all.sh.
 import { readFileSync } from 'node:fs';
@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url';
 import { listLambdas, liveSchedules } from '../scripts/aws-inventory.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const known = new Set(Object.keys(JSON.parse(readFileSync(join(ROOT, 'scripts/functions.json'), 'utf8')).functions));
+const fns = JSON.parse(readFileSync(join(ROOT, 'scripts/functions.json'), 'utf8')).functions;
+const known = new Set(Object.keys(fns));
+const planned = new Set(Object.keys(fns).filter((n) => fns[n].planned === true));
 const isNews = (n) => /^news/i.test(n);
 
 let deployed;
@@ -26,8 +28,10 @@ try {
 
 const problems = [];
 for (const n of deployed.filter((n) => isNews(n) && !known.has(n)).sort()) problems.push(`deployed Lambda not in functions.json: ${n}`);
-for (const n of [...known].filter((n) => !deployed.includes(n)).sort()) problems.push(`functions.json entry with no deployed Lambda: ${n}`);
+for (const n of [...known].filter((n) => !deployed.includes(n) && !planned.has(n)).sort()) problems.push(`functions.json entry with no deployed Lambda: ${n}`);
 for (const r of refs.filter((r) => isNews(r.lambda) && !known.has(r.lambda))) problems.push(`${r.via} "${r.name}" targets ${r.lambda}, which is not in functions.json`);
+
+for (const n of [...planned].filter((n) => deployed.includes(n))) problems.push(`${n} is deployed but still marked planned in functions.json: remove "planned"`);
 
 if (problems.length) {
   console.error(`check_aws_inventory: ${problems.length} drift problem(s)\n` + problems.map((p) => `  - ${p}`).join('\n'));

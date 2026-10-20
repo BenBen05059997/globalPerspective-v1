@@ -20,6 +20,11 @@ Why: ~39 Lambdas batch-produce **immutable snapshots** (hourly / 8h / daily) tha
 | **S3** (`globalperspective-world-<account>`, private) | everything computed about the world; append-only corpora; versioned snapshots; audit/event logs | corpus, stories, situations, `world/latest.json`, prediction log, markets snapshots, GDACS/GDELT mirrors, impact audit, client-error logs, signals |
 | **DynamoDB** — target: the 5 user tables | per-user, mutable, concurrent, transactional | `GlobalPerspectiveUserTable` (tier, credits, Polar ids), `GlobalPerspectiveSavedItems`, `GlobalPerspectiveUserPrefs`, `GlobalPerspectiveApiKeys`, `GlobalPerspectiveShares` |
 
+**Board data (2026-10-20, no new table):** the member's boards live in `GlobalPerspectiveSavedItems` as items with
+`savedKey` `board#<boardId>` (shape: `backend/board/schema/board.schema.json`), and the follows of stories and actors in
+`GlobalPerspectiveUserPrefs` (`followedThreads`, `followedActors`). Sole writer of both: `newsBoard`. Both pass the sorting
+test (deleted with the account). `newsSavedItems` hides `board#` items from the saved list.
+
 Nothing else new goes in DynamoDB; a new table needs an explicit exception recorded here. Live today there are **12**
 Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6) — `NewsCache` (topics),
 `SummarizeAndPredict`, `GlobalPerspectivePredictionLog`, `GlobalPerspectiveBreakingAlerts`,

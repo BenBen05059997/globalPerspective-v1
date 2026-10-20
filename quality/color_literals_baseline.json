@@ -4,7 +4,6 @@
     "hex": 68,
     "func": 4,
     "template": 1,
-    "rgbArray": 5,
     "tokenCopy": 8
   },
   "files": {
@@ -29,9 +28,6 @@
     },
     "shared/map/legend.js": {
       "template": 1
-    },
-    "shared/map/SituationMap3D.jsx": {
-      "rgbArray": 5
     },
     "shared/ui/boot/BootLoader.css": {
       "hex": 7,

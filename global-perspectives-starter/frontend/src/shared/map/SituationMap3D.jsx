@@ -55,7 +55,10 @@ const NO_DEPTH_WRITE = { depthWriteEnabled: false };
 const ICON_PARAMS = { cullMode: 'none' };
 const BADGE_RGB = hexToRgb(TOKENS['text-head']);
 const ACCENT_RGB = hexToRgb(TOKENS.accent);
-const EDGE_RGB = [4, 7, 12];
+const EDGE_RGB = hexToRgb(TOKENS['map-edge']);
+const LAND_RGB = hexToRgb(TOKENS['map-land']);
+const LAND_LINE_RGB = hexToRgb(TOKENS['map-land-line']);
+const LAND_LINE_DIM_RGB = hexToRgb(TOKENS['map-land-line-dim']);
 const outerR = (m) => m.size.ringR || m.size.r;
 
 const landFeatures = topojson.feature(topoData, topoData.objects.countries).features;
@@ -382,8 +385,8 @@ export default function SituationMap3D({
   ), [textureReady]);
   const landLayer = useMemo(() => new GeoJsonLayer({
     id: 'land', data: landFeatures, stroked: true, filled: true, extruded: false,
-    getFillColor: landDimmed ? [24, 31, 44, 30] : [24, 31, 44, 255],
-    getLineColor: landDimmed ? [90, 105, 130, 130] : [40, 50, 68, 255],
+    getFillColor: [...LAND_RGB, landDimmed ? 30 : 255],
+    getLineColor: landDimmed ? [...LAND_LINE_DIM_RGB, 130] : [...LAND_LINE_RGB, 255],
     lineWidthMinPixels: 0.5,
   }), [landDimmed]);
 

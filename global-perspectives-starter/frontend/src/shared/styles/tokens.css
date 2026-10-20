@@ -22,6 +22,12 @@
   --hairline-strong: rgba(95, 212, 255, 0.30);/* emphasised border (hover, active panel) */
   --hairline-3:      rgba(95, 212, 255, 0.45);/* dividers that must read */
 
+  /* Globe land + marker edge (the deck.gl globe paints these from tokens.js; same values) */
+  --map-land:          #181f2c;   /* country fill */
+  --map-land-line:     #283244;   /* country border */
+  --map-land-line-dim: #5a6982;   /* country border while the land is dimmed behind a focus */
+  --map-edge:          #04070c;   /* dark keyline round markers and badges */
+
   /* Text */
   --text-head:  #eef5f9;
   --text-body:  #c9d6df;

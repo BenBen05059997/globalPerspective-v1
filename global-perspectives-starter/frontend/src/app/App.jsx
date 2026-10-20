@@ -42,6 +42,7 @@ const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
 const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
+const BoardPage = lazy(() => import('@/features/board/BoardPage'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
 // BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
@@ -135,6 +136,8 @@ export default function App() {
             <Route path="/track-record/text" element={<TrackRecordText />} />
             <Route path="/weekly-brief" element={<WeeklyBriefRedirect />} />
             <Route path="/briefings" element={<BriefingsPage />} />
+            <Route path={ROUTE.board} element={<BoardPage />} />
+            <Route path={`${ROUTE.board}/:boardId`} element={<BoardPage />} />
             <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />

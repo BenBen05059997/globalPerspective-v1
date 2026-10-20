@@ -375,6 +375,36 @@ export async function fetchAlert(id) {
   return body;
 }
 
+// ── Board (newsBoard Lambda, separate Function URL, window.BOARD_ENDPOINT) ─────
+// Flat body {action, ...}; replies {success, data} or {success:false, error, code?}. Every action needs the
+// Firebase token except list_presets (pass auth:false). Resolves `data`; a failure throws an Error carrying
+// `status`, `code` and `budget` when the server sent them.
+export function boardConfigured() {
+  return typeof window !== 'undefined' && !!window.BOARD_ENDPOINT;
+}
+
+export async function boardAction(action, body = {}, { auth = true } = {}) {
+  const endpoint = typeof window !== 'undefined' && window.BOARD_ENDPOINT;
+  if (!endpoint) throw new Error('Missing BOARD_ENDPOINT');
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) {
+    const token = getAuthToken ? await getAuthToken() : null;
+    if (!token) throw new Error('Sign in required');
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ ...body, action }) });
+  let out;
+  try { out = await res.json(); } catch { out = null; }
+  if (!res.ok || !out || out.success !== true) {
+    const err = new Error(out?.error || `Board HTTP ${res.status}`);
+    err.status = res.status;
+    if (out?.code) err.code = out.code;
+    if (out?.budget) err.budget = out.budget;
+    throw err;
+  }
+  return out.data;
+}
+
 // ── Polar billing (newsPolarBilling Lambda, separate Function URL) ──────────────
 // All membership actions require a Firebase JWT. The endpoint is set in docs/config.js
 // (window.POLAR_BILLING_ENDPOINT); when it's unset the Membership UI stays hidden.

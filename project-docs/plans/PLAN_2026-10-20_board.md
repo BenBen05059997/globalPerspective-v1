@@ -187,18 +187,22 @@ Notes from stage 2: live field names are in `backend/board/newsBoard/README.md`;
 `lead`), older rows lack `iso3`; regions are a backend table in `src/regions.js`. `newsSavedItems` now hides `board#` items
 (code only; deploy with stage 4). `newsRecommend` reads board items but scores only thread/country items, so no change.
 
-### Stage 3: frontend `features/board/` (local only; no release)
-- [ ] Route `/board` in `App.jsx` (lazy), nav entry only for signed-in members; `features/board/index.js` public API; README.
-- [ ] `BoardPage.jsx`: graph view in SVG: pins (title, risk number + tier word, type hue dot), our strings dashed "inferred", yours dashed-alt, string weight by strength, a selected-pair side sheet.
-- [ ] Drag a pin onto another → `connect` → verdict card: grounds listed or "No link found. Shared: nothing but the week." Keep draws a `yours` string with the line input.
-- [ ] Presets chooser (region) and fork; pin budget indicator; "what is missing" actor-only card.
-- [ ] Hooks: `useBoards`, `useBoard(boardId)`, `useFollows` on `restProxy` with the auth header; endpoint from `window.BOARD_ENDPOINT` (operator-owned `docs/config.js`; dev value in `frontend/public/config.js`).
-- [ ] Shared only: `ClaimTag`, `TierChip`, `EntityLink`, `links.js` (`boardHref`), tokens; no local styling of shared blocks; ratchets pass; `npm run verify` passes.
-- [ ] Browser click-through at desktop and phone width against a local fake endpoint (fixtures), since the Lambda is not deployed yet.
+### Stage 3: frontend `features/board/` (local only; no release) — done 2026-10-20
+- [x] Route `/board` in `App.jsx` (lazy), nav entry only for signed-in members; `features/board/index.js` public API; README.
+- [x] `BoardPage.jsx`: graph view in SVG: pins (title, risk number + tier word, type hue dot), our strings dashed "inferred", yours dashed-alt, string weight by strength, a selected-pair side sheet.
+- [x] Drag a pin onto another → `connect` → verdict card: grounds listed or "No link found. Shared: nothing but the week." Keep draws a `yours` string with the line input.
+- [x] Presets chooser (region) and fork; pin budget indicator; "what is missing" actor-only card.
+- [x] Hooks: `useBoards`, `useBoard(boardId)`, `useFollows` on `restProxy` with the auth header; endpoint from `window.BOARD_ENDPOINT` (operator-owned `docs/config.js`; dev value in `frontend/public/config.js`).
+- [x] Shared only: `ClaimTag`, `TierChip`, `EntityLink`, `links.js` (`boardHref`), tokens; no local styling of shared blocks; ratchets pass; `npm run verify` passes.
+- [x] Browser click-through at desktop and phone width against a local fake endpoint (fixtures), since the Lambda is not deployed yet.
+
+Notes from stage 3: Board link in the account area, hidden when no endpoint; dev-only fake (`?devBoard=1`), absent from
+production chunks; strings drawn at uniform weight (no stored web strength); details in `features/board/README.md`.
+Not browser-tested: signed-out view, What is missing follow, co-movement grounds, touch drag.
 
 ### Stage 4: deploy and wire (operator yes first)
 - [ ] Deploy the `newsSavedItems` board filter (standing Lambda auth; diff first) before the first board exists; remove the
-      `deployBlocked` note on `newsBoard` in `scripts/functions.json`.
+      `deployBlocked` note and `"planned": true` on `newsBoard` in `scripts/functions.json` (the inventory check fails until you do).
 - [ ] Operator: execution role for `newsBoard` (IAM) and `aws lambda create-function`; then standing auth covers code/config/URL updates.
 - [ ] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
 - [ ] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).

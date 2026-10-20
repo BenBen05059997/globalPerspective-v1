@@ -18,7 +18,7 @@ Paths are relative to `global-perspectives-starter/frontend/`. Lazy = its own ch
 | `/daily` | DailyRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/daily/:dateKey` | DailyRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/economy` | EconomyPage | `src/features/economy/EconomyPage` | yes | page |
-| `/analyze` | AnalysisStudio | `src/features/analysis-studio/AnalysisStudio` | yes | page |
+| `/analyze` | AnalyzeRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/analyze/s/:id` | SharedAnalysisPage | `src/features/analysis-studio/SharedAnalysisPage` | yes | page |
 | `/membership` | MembershipPage | `src/features/account/MembershipPage` | yes | page |
 | `/track-record` | TrackRecordPage | `src/features/track-record/TrackRecordPage` | yes | page |

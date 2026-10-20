@@ -24,38 +24,39 @@ One row per store: who writes it, who reads it, which browser read action serves
 | `GlobalPerspectiveMarkets` `TOPIC#` | none found | `newsSensitiveData-dev` | `markets_global`, `markets_history` | `/economy` |
 | `GlobalPerspectivePredictionLog` `(key not resolved)` | `NewsProjectInvokeAgentLambda-dev`, `newsPredictionResolver` | `newsPredictionResolver`, `newsSensitiveData-dev` | `prediction_track_record` | `/today`, `/track-record`, `/track-record/text` |
 | `GlobalPerspectivePredictionLog` `DRAFT#` | none found | `newsPredictionsSnapshot` | none found | none found |
-| `GlobalPerspectivePredictionLog` `PRED#` | none found | `NewsProjectInvokeAgentLambda-dev`, `newsPredictionResolver`, `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/analyze`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
-| `GlobalPerspectivePredictionLog` `Q#` | none found | `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/analyze`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
-| `GlobalPerspectivePredictionLog` `SAMPLE#` | none found | `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/analyze`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
-| `GlobalPerspectivePredictionLog` `SEED#` | none found | `newsPredictionResolver`, `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/analyze`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `GlobalPerspectivePredictionLog` `PRED#` | none found | `NewsProjectInvokeAgentLambda-dev`, `newsPredictionResolver`, `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `GlobalPerspectivePredictionLog` `Q#` | none found | `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `GlobalPerspectivePredictionLog` `SAMPLE#` | none found | `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `GlobalPerspectivePredictionLog` `SEED#` | none found | `newsPredictionResolver`, `newsSensitiveData-dev` | `prediction_snapshot` | `/`, `/briefings`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
 | `GlobalPerspectivePredictionLog` `TOPIC#` | none found | `NewsProjectInvokeAgentLambda-dev` | none found | none found |
-| `GlobalPerspectiveSavedItems` `(key not resolved)` | `newsSavedItems` | `newsRecommend`, `newsSavedItems` | `newsRecommend:follow_country`, `newsRecommend:unfollow_country`, `newsSavedItems:get_saved_items` | `/account`, `/briefings`, `/today`, `/track-record`, `/weekly/country/:countryName` |
-| `GlobalPerspectiveShares` `(key not resolved)` | `newsSharedAnalysis` | `newsSharedAnalysis` | `newsSharedAnalysis (whole endpoint)` | `/analyze`, `/analyze/s/:id` |
+| `GlobalPerspectiveSavedItems` `(key not resolved)` | `newsSavedItems` | `newsRecommend` | `newsRecommend:follow_country`, `newsRecommend:unfollow_country` | `/account`, `/briefings`, `/today`, `/track-record`, `/weekly/country/:countryName` |
+| `GlobalPerspectiveSavedItems` `board#` | none found | `newsSavedItems` | `newsSavedItems:get_saved_items` | none found |
+| `GlobalPerspectiveShares` `(key not resolved)` | `newsSharedAnalysis` | `newsSharedAnalysis` | `newsSharedAnalysis (whole endpoint)` | `/analyze/s/:id` |
 | `GlobalPerspectiveUserPrefs` `(key not resolved)` | `newsRecommend` | `newsRecommend` | `newsRecommend:follow_country`, `newsRecommend:get_prefs`, `newsRecommend:set_prefs`, `newsRecommend:unfollow_country`, `newsRecommend:unsubscribe` | `/account`, `/briefings`, `/today`, `/track-record`, `/weekly/country/:countryName` |
-| `GlobalPerspectiveUserTable` `(key not resolved)` | `newsAnalyze`, `newsPolarBilling` | `newsAnalyze`, `newsPolarBilling`, `newsRecommend`, `newsSensitiveData-dev` | `corrections_feed`, `country_history`, `newsRecommend:follow_country`, `newsRecommend:unfollow_country` | `/`, `/account`, `/analyze`, `/briefings`, `/today`, `/track-record`, `/track-record/text`, `/weekly/country/:countryName` |
+| `GlobalPerspectiveUserTable` `(key not resolved)` | `newsAnalyze`, `newsPolarBilling` | `newsAnalyze`, `newsPolarBilling`, `newsRecommend`, `newsSensitiveData-dev` | `corrections_feed`, `country_history`, `newsRecommend:follow_country`, `newsRecommend:unfollow_country` | `/`, `/account`, `/briefings`, `/today`, `/track-record`, `/track-record/text`, `/weekly/country/:countryName` |
 | `NewsCache` `(key not resolved)` | `NewsProjectInvokeAgentLambda-dev` | `newsCountryIntelligence`, `newsDriftCorrector`, `newsEconomicImpact`, `newsPairIntelligence`, `newsSystemsAnalysis`, `newsThreadAnalysis`, `newsWeeklyBrief` | none found | none found |
-| `NewsCache` `archive#` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsInvokeGemini-dev`, `newsSensitiveData-dev` | `archive_range`, `dossier_analysis`, `event_dossier`, `narrative_thread`, `prediction_snapshot` | `(app shell)`, `/`, `/analyze`, `/briefings`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
-| `NewsCache` `latest` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsBreakingAlert`, `newsDriftCorrector`, `newsPostLinkedin`, `newsRecommend`, `newsSensitiveData-dev` | `archive_range`, `dossier_analysis`, `event_dossier`, `narrative_thread`, `newsRecommend:follow_country`, `newsRecommend:unfollow_country`, `prediction_snapshot`, `rss` +1 more | `(app shell)`, `/`, `/account`, `/analyze`, `/briefings`, `/today`, `/track-record`, `/weekly/countries` +2 more |
+| `NewsCache` `archive#` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsInvokeGemini-dev`, `newsSensitiveData-dev` | `archive_range`, `dossier_analysis`, `event_dossier`, `narrative_thread`, `prediction_snapshot` | `(app shell)`, `/`, `/briefings`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `NewsCache` `latest` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsBreakingAlert`, `newsDriftCorrector`, `newsPostLinkedin`, `newsRecommend`, `newsSensitiveData-dev` | `archive_range`, `dossier_analysis`, `event_dossier`, `narrative_thread`, `newsRecommend:follow_country`, `newsRecommend:unfollow_country`, `prediction_snapshot`, `rss` +1 more | `(app shell)`, `/`, `/account`, `/briefings`, `/today`, `/track-record`, `/weekly/countries`, `/weekly/country/:countryName` +1 more |
 | `NewsCache` `seen-today` | `newsInvokeGemini-dev` | `newsInvokeGemini-dev` | none found | none found |
 | `NewsCache` `staging` | `newsInvokeGemini-dev` | `NewsProjectInvokeAgentLambda-dev` | none found | none found |
-| `NewsCache` `today-archive` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsPostDevTo`, `newsSensitiveData-dev` | `rss`, `today` | `/`, `/analyze`, `/today` |
+| `NewsCache` `today-archive` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsPostDevTo`, `newsSensitiveData-dev` | `rss`, `today` | `(app shell)`, `/`, `/today` |
 | `NewsProject-linkedin-posts` `(key not resolved)` | `newsPostDevTo` | `newsPostDevTo` | none found | none found |
 | `SummarizeAndPredict` `(key not resolved)` | `NewsProjectInvokeAgentLambda-dev`, `newsCountryIntelligence`, `newsEconomicImpact`, `newsEconomicQuality`, `newsEmailSender`, `newsPairIntelligence`, `newsPostDevTo`, `newsSystemsAnalysis` +3 more | `NewsProjectInvokeAgentLambda-dev`, `newsBreakingAlert`, `newsCountryIntelligence`, `newsEconomicImpact`, `newsEconomicQuality`, `newsPairIntelligence`, `newsPostLinkedin`, `newsSensitiveData-dev` +3 more | `weekly_brief`, `weekly_markets` | `/`, `/account`, `/briefings`, `/economy` |
-| `SummarizeAndPredict` `COUNTRY#` | none found | `newsPostDevTo`, `newsSensitiveData-dev` | `country_history`, `country_intelligence`, `country_preview`, `world_overview` | `/`, `/account`, `/analyze`, `/weekly/countries`, `/weekly/country/:countryName` |
+| `SummarizeAndPredict` `COUNTRY#` | none found | `newsPostDevTo`, `newsSensitiveData-dev` | `country_history`, `country_intelligence`, `country_preview`, `world_overview` | `/`, `/account`, `/weekly/countries`, `/weekly/country/:countryName` |
 | `SummarizeAndPredict` `DAILY_BRIEF#` | none found | `newsSensitiveData-dev` | `daily_brief` | `(app shell)`, `/`, `/about`, `/account`, `/briefings` |
-| `SummarizeAndPredict` `DRIFT#` | `newsDriftCorrector` | `newsCountryIntelligence`, `newsDriftCorrector`, `newsSensitiveData-dev` | `corrections_feed`, `country_history`, `thread_analysis`, `world_overview` | `(app shell)`, `/`, `/account`, `/analyze`, `/today`, `/track-record`, `/track-record/text`, `/weekly/countries` +2 more |
-| `SummarizeAndPredict` `DRIFTLOG#` | `newsDriftCorrector` | `newsSensitiveData-dev` | `country_history` | `/`, `/account`, `/analyze`, `/weekly/country/:countryName` |
+| `SummarizeAndPredict` `DRIFT#` | `newsDriftCorrector` | `newsCountryIntelligence`, `newsDriftCorrector`, `newsSensitiveData-dev` | `corrections_feed`, `country_history`, `thread_analysis`, `world_overview` | `(app shell)`, `/`, `/account`, `/today`, `/track-record`, `/track-record/text`, `/weekly/countries`, `/weekly/country/:countryName` +1 more |
+| `SummarizeAndPredict` `DRIFTLOG#` | `newsDriftCorrector` | `newsSensitiveData-dev` | `country_history` | `/`, `/account`, `/weekly/country/:countryName` |
 | `SummarizeAndPredict` `ECON#` | none found | `newsSensitiveData-dev` | `economic_impact` | `/weekly/thread/:threadId` |
 | `SummarizeAndPredict` `ECON#THREAD#` | none found | `newsEconomicQuality`, `newsSensitiveData-dev`, `newsWeeklyMarkets` | `economic_impact_list`, `economic_top_movers` | `/economy`, `/today`, `/weekly/countries`, `/weekly/country/:countryName` |
 | `SummarizeAndPredict` `EMAILLOG#` | `newsEmailSender` | `newsEmailSender` | none found | none found |
 | `SummarizeAndPredict` `FACTS#` | `newsCountryFactsUpdater` | `newsCountryFactsUpdater`, `newsCountryIntelligence`, `newsPairIntelligence`, `newsSensitiveData-dev` | `country_facts` | `/`, `/weekly/country/:countryName` |
-| `SummarizeAndPredict` `HISTORY#` | `newsCountryIntelligence` | `newsDriftCorrector`, `newsSensitiveData-dev` | `country_history` | `/`, `/account`, `/analyze`, `/weekly/country/:countryName` |
+| `SummarizeAndPredict` `HISTORY#` | `newsCountryIntelligence` | `newsDriftCorrector`, `newsSensitiveData-dev` | `country_history` | `/`, `/account`, `/weekly/country/:countryName` |
 | `SummarizeAndPredict` `PAIR#` | none found | `newsSensitiveData-dev` | `pair_analyses_list`, `pair_analysis` | none found |
 | `SummarizeAndPredict` `SYSTEMS#` | none found | `newsSensitiveData-dev`, `newsSystemsAnalysis` | `dossier_analysis`, `event_dossier`, `systems_analysis`, `world_overview` | `/weekly/thread/:threadId` |
 | `SummarizeAndPredict` `THREAD_HISTORY#` | `newsThreadAnalysis` | `newsDriftCorrector` | none found | none found |
-| `SummarizeAndPredict` `THREAD#` | `NewsProjectInvokeAgentLambda-dev` | `newsPostDevTo`, `newsSensitiveData-dev` | `thread_analysis`, `thread_preview`, `web_index` | `(app shell)`, `/`, `/analyze`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
-| `SummarizeAndPredict` `TOPIC#` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsSensitiveData-dev` | `prediction`, `research_briefing`, `summary`, `trace_cause` | `/`, `/analyze`, `/today` |
-| `SummarizeAndPredict` `WEB#INDEX` | `newsSystemsAnalysis` | `newsSensitiveData-dev` | `web_index` | `(app shell)`, `/`, `/analyze`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `SummarizeAndPredict` `THREAD#` | `NewsProjectInvokeAgentLambda-dev` | `newsPostDevTo`, `newsSensitiveData-dev` | `thread_analysis`, `thread_preview`, `web_index` | `(app shell)`, `/`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
+| `SummarizeAndPredict` `TOPIC#` | `NewsProjectInvokeAgentLambda-dev` | `NewsProjectInvokeAgentLambda-dev`, `newsSensitiveData-dev` | `prediction`, `research_briefing`, `summary`, `trace_cause` | `(app shell)`, `/`, `/today` |
+| `SummarizeAndPredict` `WEB#INDEX` | `newsSystemsAnalysis` | `newsSensitiveData-dev` | `web_index` | `(app shell)`, `/`, `/weekly/countries`, `/weekly/country/:countryName`, `/weekly/thread/:threadId` |
 | `SummarizeAndPredict` `WEEKLY_BRIEF#` | none found | `newsSensitiveData-dev` | `weekly_brief` | `/`, `/account`, `/briefings` |
 | S3 `audit/impact/` | `newsImpactAudit` | none found | none found | none found |
 | S3 `audit/impact/latest.json` | `newsImpactAudit` | none found | none found | none found |
@@ -91,7 +92,7 @@ One row per store: who writes it, who reads it, which browser read action serves
 | `GlobalPerspectiveIngestCapture` `(any key)` | none found | none found | none found | none found |
 | S3 `tags/` | none found in repo source | none found | none found | none found |
 
-82 rows (79 found in code, 3 only in live AWS). 50 action handlers in 6 read-api Lambdas; no action names in `newsClientErrors`, `newsSharedAnalysis`, `newsSignals`.
+83 rows (80 found in code, 3 only in live AWS). 50 action handlers in 6 read-api Lambdas; no action names in `newsClientErrors`, `newsSharedAnalysis`, `newsSignals`.
 
 ## Flow (Lambda groups, stores, read API, pages)
 
@@ -108,11 +109,10 @@ flowchart LR
   F_countries["countries"]
   F_account["account"]
   F_map["map"]
-  F_analysis_studio["analysis-studio"]
   T_NewsCache["NewsCache"]
   G_pipeline["backend/pipeline"]
-  F_threads["threads"]
   F__app_shell_["(app shell)"]
+  F_threads["threads"]
   T_SummarizeAndPredict["SummarizeAndPredict"]
   G_economy_parked["backend/economy-parked"]
   G_distribution["backend/distribution"]
@@ -127,8 +127,9 @@ flowchart LR
   T_OTHER["other tables (5)"]
   T_GlobalPerspectivePredictionLog["GlobalPerspectivePredictionLog"]
   G_predictions["backend/predictions"]
+  T_GlobalPerspectiveSavedItems["GlobalPerspectiveSavedItems"]
   F_static["static"]
-  T_GlobalPerspectiveApiKeys["GlobalPerspectiveApiKeys"]
+  F_analysis_studio["analysis-studio"]
   G_distribution --> T_GlobalPerspectiveBreakingAlerts
   G_distribution --> T_OTHER
   G_distribution --> T_SummarizeAndPredict
@@ -144,8 +145,8 @@ flowchart LR
   G_predictions --> S3
   G_predictions --> T_GlobalPerspectivePredictionLog
   G_read_api --> S3
-  G_read_api --> T_GlobalPerspectiveApiKeys
   G_read_api --> T_GlobalPerspectiveClientErrors
+  G_read_api --> T_GlobalPerspectiveSavedItems
   G_read_api --> T_OTHER
   G_situations --> S3
   READ_API --> F__app_shell_
@@ -164,10 +165,10 @@ flowchart LR
   S3 -->|Worker /data| F_map
   S3 -->|Worker /data| F_track_record
   S3 -.-> READ_API
-  T_GlobalPerspectiveApiKeys -.-> READ_API
   T_GlobalPerspectiveBreakingAlerts -.-> READ_API
   T_GlobalPerspectiveMarkets -.-> READ_API
   T_GlobalPerspectivePredictionLog -.-> READ_API
+  T_GlobalPerspectiveSavedItems -.-> READ_API
   T_GlobalPerspectiveUserTable -.-> READ_API
   T_NewsCache -.-> READ_API
   T_OTHER -.-> READ_API

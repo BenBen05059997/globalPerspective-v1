@@ -18,6 +18,7 @@ const ROUTE = {
   country: '/weekly/country/:countryName',
   briefings: '/briefings',
   trackRecord: '/track-record',
+  board: '/board',
   breaking: '/breaking/:id',
 };
 

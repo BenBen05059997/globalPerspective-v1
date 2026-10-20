@@ -21,6 +21,12 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 - Live keys: `FIREBASE_PROJECT_ID`, `GROK_API_URL`, `GROK_MODEL`, `MEMBER_MONTHLY_ALLOWANCE`, `USERS_DDB_TABLE`, `XAI_API_KEY`
 - No repo source dir.
 
+## newsBoard
+
+- Live keys: —
+- Set live, not read in repo source: —
+- Read in repo source, not set live (code default applies): `FIREBASE_PROJECT_ID`
+
 ## newsBreakingAlert
 
 - Live keys: `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, `BREAKING_ALERTS_TABLE`, `DRY_RUN`, `RESEND_API_KEY`, `SITE_URL`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`

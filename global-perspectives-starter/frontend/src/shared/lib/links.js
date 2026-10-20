@@ -15,6 +15,7 @@ const ROUTE = {
   country: '/weekly/country/:countryName',
   briefings: '/briefings',
   trackRecord: '/track-record',
+  board: '/board',
   breaking: '/breaking/:id',
 };
 
@@ -100,6 +101,12 @@ function entityHref(kind, id) {
 }
 // --- end link rules core ---
 
+/** boardHref('b1') -> '/board/b1'. No id -> the board page (it opens the member's boards). The board is a member
+ *  tool, so this address is for in-app links only. */
+function boardHref(boardId) {
+  return boardId ? `${ROUTE.board}/${encodeURIComponent(boardId)}` : ROUTE.board;
+}
+
 // The site origin, for text that leaves the page (copied sheets); the in-app links stay relative.
 const SITE_URL = 'https://globalperspective.net';
 
@@ -113,5 +120,5 @@ function absoluteUrl(path) {
 export {
   SITE_URL, absoluteUrl,
   ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref, breakingHref,
-  entityHref,
+  entityHref, boardHref,
 };

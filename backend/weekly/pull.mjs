@@ -26,11 +26,10 @@ export async function readInputs(weekEnding,client,opts={}) {
     snapshots:await world.scenarios(client,{threadId,topicIds:[...new Set(grouped[threadId].map(e=>e.topicId).filter(Boolean))],to:weekEnding})}));
   const countries=opts.countries || (process.env.DRIFT_COUNTRIES?process.env.DRIFT_COUNTRIES.split(',').map(s=>s.trim()).filter(Boolean):DEFAULT_COUNTRIES);
   const countryRows=await pool(countries,async country=>({country,history:await world.countryHistory(client,country,from,weekEnding),drift:await world.driftNotes(client,{country},start,weekEnding)}));
-  const questions=await readQuestions(client,{from:start,to:nextEnd,asOf:weekEnding});
+  const questions=await readQuestions(client,{from:start,to:nextEnd});
   const verdicts=await world.verdicts(client,questions.map(q=>q.qid),{asOf:weekEnding});
-  const datedKey=`web/${weekEnding.replaceAll('-','/')}.json`;
-  let web=await readWeb(client,datedKey),webSource=datedKey;
-  if(!web){web=await world.webLatest(client);webSource='web/latest.json';}
+  const web=await readWeb(client,weekEnding,{fallback:'latest'});
+  const webSource=web?.key || null;
   return {range,analyses,histories:Object.fromEntries(rows.map(r=>[r.threadId,r.history])),driftByThread:Object.fromEntries(rows.map(r=>[r.threadId,r.drift])),
     snapshotsByThread:Object.fromEntries(rows.map(r=>[r.threadId,r.snapshots])),questions,verdicts,web,webSource,
     countryDrift:countryRows.flatMap(r=>r.drift),countryHistory:Object.fromEntries(countryRows.map(r=>[r.country,r.history]))};

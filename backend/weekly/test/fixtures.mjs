@@ -11,7 +11,7 @@ export function fakeClient(raw) {
     async getS3Json(key){return raw.objects?.[key] || (key==='web/latest.json'?raw.web:null) || null;},
   };
 }
-export const readerOptions=raw=>({countries:[],readQuestions:async()=>raw.questions || [],readWeb:async()=>null});
+export const readerOptions=raw=>({countries:[],readQuestions:async()=>raw.questions || []});
 export async function normalized(raw,week='2026-10-18'){return readInputs(week,fakeClient(raw),readerOptions(raw));}
 export async function selected(raw,week='2026-10-18'){return selectInputs(await normalized(raw,week),week);}
 export const entry=(id,title='Police arrested suspects',outlets=['A','B'])=>({threadId:id,topicId:id,title,sources:outlets.map(source=>({source,url:`https://${source}.test/${id}`}))});

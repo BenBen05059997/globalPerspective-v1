@@ -54,6 +54,7 @@
     },
     "presetFrom": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Preset this board was forked from." },
     "createdAt": { "type": "string", "format": "date-time" },
+    "lastVisitedAt": { "type": "string", "format": "date-time", "description": "Server-stamped arrival watermark, advanced after the tray is read." },
     "updatedAt": { "type": "string", "format": "date-time" }
   },
   "definitions": {

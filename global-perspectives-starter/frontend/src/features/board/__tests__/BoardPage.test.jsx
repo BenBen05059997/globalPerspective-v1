@@ -24,6 +24,9 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
     calls.push([action, body]);
     switch (action) {
       case 'list_boards': return [{ boardId: 'b1', name: 'My board', pinCount: boardStore.pins.length, updatedAt: 'x' }];
+      case 'story_view': return {recordAvailable:false,story:null};
+      case 'arrivals': return {recordAvailable:false,arrivals:[]};
+      case 'visit_board': return {lastVisitedAt:'2026-10-20T12:00:00Z'};
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
       case 'update_board': boardStore = { ...body.board }; return JSON.parse(JSON.stringify(boardStore));
       case 'get_follows': return { followedThreads: ['thread-c'], followedActors: ['Oman'] };

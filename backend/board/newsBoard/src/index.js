@@ -12,6 +12,8 @@ const { pinBudgetOk, PIN_BUDGET, normalizeBoard, normalizeActor } = require('./_
 const { validateBoard } = require('./validate');
 const { presetCache } = require('./presets');
 const { connect } = require('./connect');
+const { enrichBoard } = require('./recordViews');
+const { arrivals } = require('./arrivals');
 
 const MAX_FOLLOWS = 300;
 const MAX_NAME = 80;
@@ -40,7 +42,7 @@ function boardProblem(board) {
 
 const problemReply = (p) => fail(400, p.error, { code: p.code, ...(p.budget ? { budget: p.budget } : {}) });
 
-function createHandler({ store, verify, now = () => Date.now(), env = process.env }) {
+function createHandler({ store, verify, records = {index: async () => null, story: async () => null}, now = () => Date.now(), env = process.env }) {
   const presets = presetCache(store, env, now);
   const iso = () => new Date(now()).toISOString();
 
@@ -72,7 +74,26 @@ function createHandler({ store, verify, now = () => Date.now(), env = process.en
 
     async get_board(uid, body) {
       const item = await ownBoard(uid, body.boardId);
-      return item ? ok(publicBoard(item)) : fail(404, 'Board not found');
+      return item ? ok(await enrichBoard(publicBoard(item), records)) : fail(404, 'Board not found');
+    },
+
+    async arrivals(uid, body) {
+      const item = await ownBoard(uid, body.boardId);
+      return item ? ok(await arrivals(publicBoard(item), records, iso())) : fail(404, 'Board not found');
+    },
+    async visit_board(uid, body) {
+      const item = await ownBoard(uid, body.boardId);
+      if (!item) return fail(404, 'Board not found');
+      // Store visit metadata only; it is not an editorial board change.
+      const stamp = iso();
+      try { await store.setLastVisited(uid, item.boardId, stamp); }
+      catch (e) { if (e.name === 'ConditionalCheckFailedException') return fail(404, 'Board not found'); throw e; }
+      return ok({lastVisitedAt: stamp});
+    },
+    async story_view(uid, body) {
+      if (typeof body.threadId !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(body.threadId)) return fail(400, 'A valid threadId is required');
+      const story = await records.story(body.threadId);
+      return ok({recordAvailable: !!story, story});
     },
 
     async create_board(uid, body) {
@@ -86,15 +107,24 @@ function createHandler({ store, verify, now = () => Date.now(), env = process.en
     async update_board(uid, body) {
       const stored = await ownBoard(uid, body.boardId);
       if (!stored) return fail(404, 'Board not found');
-      const incoming = body.board;
+      const incoming = body.board && { ...body.board };
+      if (incoming) {
+        delete incoming.recordAvailable;
+        delete incoming.lastVisitedAt;
+        if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map(p => {
+          const copy = {...p};
+          for (const key of ['recordAvailable','line','risk','born','counts','lastMoved']) delete copy[key];
+          return copy;
+        });
+      }
       if (!isObj(incoming)) return fail(400, 'board is required');
       if (incoming.uid !== undefined && incoming.uid !== uid) return fail(400, 'uid cannot change', { code: 'immutable_field' });
       if (incoming.boardId !== undefined && incoming.boardId !== stored.boardId) return fail(400, 'boardId cannot change', { code: 'immutable_field' });
-      const board = normalizeBoard({ ...incoming, boardId: stored.boardId, uid, createdAt: stored.createdAt, updatedAt: iso() });
+      const board = normalizeBoard({ ...incoming, ...(stored.lastVisitedAt ? {lastVisitedAt: stored.lastVisitedAt} : {}), boardId: stored.boardId, uid, createdAt: stored.createdAt, updatedAt: iso() });
       const problem = boardProblem(board);
       if (problem) return problemReply(problem);
       await store.putBoard({ ...board, savedKey: stored.savedKey, kind: 'board' });
-      return ok(board);
+      return ok(await enrichBoard(board, records));
     },
 
     async delete_board(uid, body) {
@@ -169,7 +199,7 @@ function createHandler({ store, verify, now = () => Date.now(), env = process.en
       return out.error ? fail(400, out.error) : ok(out.result);
     },
   };
-  const PUBLIC = new Set(['list_presets']);
+  const PUBLIC = new Set(['list_presets', 'story_view']);
 
   return async function handler(event) {
     try {
@@ -205,7 +235,8 @@ exports.handler = async (event) => {
   if (!_handler) {
     const { makeStore } = require('./store');
     const { verifyFirebaseToken } = require('./firebaseAuth');
-    _handler = createHandler({ store: makeStore(), verify: verifyFirebaseToken });
+    const { liveRecordViews } = require('./recordViews');
+    _handler = createHandler({ store: makeStore(), verify: verifyFirebaseToken, records: liveRecordViews() });
   }
   return _handler(event);
 };

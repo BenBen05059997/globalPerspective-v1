@@ -16,6 +16,11 @@ function fakeStore() {
     put(table, pk, sk, item) { rows.set(k(table, pk, sk), item); },
     async getBoards(uid) { return [...rows.values()].filter((i) => i.uid === uid && String(i.savedKey).startsWith('board#')); },
     async getBoard(uid, boardId) { return rows.get(k('saved', uid, `board#${boardId}`)) || null; },
+    async setLastVisited(uid, boardId, stamp) {
+      const key=k('saved',uid,`board#${boardId}`);const old=rows.get(key);
+      if (!old) throw new Error('Board missing');
+      rows.set(key,{...old,lastVisitedAt:stamp});
+    },
     async putBoard(item) { calls.push(['putBoard', item.savedKey]); rows.set(k('saved', item.uid, item.savedKey), item); },
     async deleteBoard(uid, boardId) { calls.push(['deleteBoard', boardId]); rows.delete(k('saved', uid, `board#${boardId}`)); },
     async getFollows(uid) {

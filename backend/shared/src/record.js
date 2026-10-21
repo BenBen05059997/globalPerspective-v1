@@ -1,5 +1,8 @@
 'use strict';
 
+const { createHash } = require('node:crypto');
+const { registrableDomain } = require('./outlets');
+
 // record — the board's pure rules (PLAN_2026-10-20_board.md, Stage 1). Used by newsBoard now and by the
 // record writer later. Pure: no AWS, no network, no clock. The block between the markers is kept identical to
 // the frontend's shared/lib/board.js by scripts/check-shared-sync.mjs.
@@ -144,7 +147,54 @@ function cheapGrounds(pinA, pinB, ctx) {
   return { strength, grounds, note };
 }
 
+// --- content IDs for the facts (decision 0036 section 3). Backend only: the frontend does not mint IDs, so these sit
+// outside the marked core and have no mirror in shared/lib/board.js. ---
+const sha1 = (text) => createHash('sha1').update(text).digest('hex');
+const TRACKING = /^(utm_.*|fbclid|gclid)$/i;
+
+/** The canonical form of an article url, or null when it is not an http(s) url. Lower-case scheme and host, `www.` and
+ *  default ports (80, 443) dropped, trailing `/` removed unless the path is `/`, `utm_*` / `fbclid` / `gclid` removed, the
+ *  remaining query pairs sorted by key then value, fragment dropped. */
+function canonicalUrl(url) {
+  let u;
+  try { u = new URL(String(url == null ? '' : url).trim()); } catch (e) { return null; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+  const host = u.hostname.replace(/^www\./, '');
+  const port = u.port && u.port !== '80' && u.port !== '443' ? `:${u.port}` : '';
+  const path = u.pathname.length > 1 ? u.pathname.replace(/\/$/, '') : u.pathname;
+  const pairs = u.search.slice(1).split('&').filter(Boolean).map((p) => {
+    const i = p.indexOf('=');
+    return i < 0 ? [p, null] : [p.slice(0, i), p.slice(i + 1)];
+  }).filter(([k]) => !TRACKING.test(k)).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : String(a[1]) < String(b[1]) ? -1 : String(a[1]) > String(b[1]) ? 1 : 0));
+  const query = pairs.length ? `?${pairs.map(([k, v]) => (v === null ? k : `${k}=${v}`)).join('&')}` : '';
+  return `${u.protocol}//${host}${port}${path}${query}`;
+}
+
+/** The ID of an `entry` fact: sha1('entry' + the smallest canonical url among its sources), else (no usable url)
+ *  sha1('entry' + date + normalized title) with idBasis 'title'. `date` is the archive day, which a re-run keeps. */
+function entryIdentity({ sources, date, title }) {
+  const urls = (sources || []).map((s) => canonicalUrl(s && s.url)).filter(Boolean).sort();
+  if (urls.length) return { eventId: sha1(`entry${urls[0]}`), idBasis: 'url' };
+  return { eventId: sha1(`entry${date}${normalizeActor(title)}`), idBasis: 'title' };
+}
+
+/** sha1 of the registrable domain of a url or host; null when there is none. */
+function sourceIdOf(urlOrHost) {
+  const domain = registrableDomain(urlOrHost);
+  return domain ? sha1(domain) : null;
+}
+
+/** 'name:' + the normalized name; null for an empty name. Unresolved names keep this form (no prefix yet). */
+function actorIdOf(name) {
+  const n = normalizeActor(name);
+  return n ? `name:${n}` : null;
+}
+
+/** The ID of every other fact kind: sha1(kind + sourceKey). */
+const factId = (kind, sourceKey) => sha1(kind + sourceKey);
+
 module.exports = {
+  canonicalUrl, entryIdentity, sourceIdOf, actorIdOf, factId, sha1,
   PIN_BUDGET, MOVE_MIN, LAG_MAX_DAYS, COMOVE_WINDOW_DAYS, COMOVE_MIN_PAIRS,
   pairKey, normalizeActor, stringTexture, pinBudgetOk, normalizeBoard, cheapGrounds,
 };

@@ -90,4 +90,22 @@ function getOutletMeta(source) {
   return OUTLET_METADATA[normalized] || OUTLET_METADATA[`www.${normalized}`] || null;
 }
 
-module.exports = { OUTLET_METADATA, normalizeOutlet, getOutletMeta };
+// Two-level public suffixes whose registrable domain has three labels (decision 0036 section 3). Extend with a
+// note in 0036 when an outlet needs another.
+const TWO_LEVEL_SUFFIXES = ['co.uk', 'org.uk', 'ac.uk', 'co.jp', 'co.kr', 'co.in', 'co.za', 'com.au', 'com.br', 'com.cn', 'com.mx', 'com.ar', 'com.tr'];
+const HOST_PREFIXES = ['www', 'm', 'amp'];
+
+/** 'https://m.bbc.co.uk/x' or 'm.bbc.co.uk' -> 'bbc.co.uk': lower-case host, leading www./m./amp. dropped, then the last two
+ *  labels (three after a listed two-level suffix). '' when there is no host. */
+function registrableDomain(input) {
+  let host = String(input == null ? '' : input).trim().toLowerCase();
+  if (!host) return '';
+  try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//.test(host) ? host : `//${host}`, 'http://x').hostname; } catch (e) { return ''; }
+  let labels = host.split('.').filter(Boolean);
+  while (labels.length > 2 && HOST_PREFIXES.includes(labels[0])) labels = labels.slice(1);
+  if (labels.length <= 2 || /^\d+(\.\d+){3}$/.test(host)) return labels.join('.');
+  const take = TWO_LEVEL_SUFFIXES.includes(labels.slice(-2).join('.')) ? 3 : 2;
+  return labels.slice(-take).join('.');
+}
+
+module.exports = { OUTLET_METADATA, TWO_LEVEL_SUFFIXES, normalizeOutlet, getOutletMeta, registrableDomain };

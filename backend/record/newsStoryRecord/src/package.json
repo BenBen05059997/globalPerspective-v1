@@ -1,8 +1,8 @@
 {
   "name": "news-story-record",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Append-only story record writer; planned deployment, local read-only dry run",
+  "description": "Daily facts writer: record/facts/YYYY-MM-DD.jsonl and record/runs/YYYY-MM-DD.json; no model",
   "main": "runtime.js",
   "type": "commonjs",
   "scripts": { "test": "node --test ../test/*.test.js" }

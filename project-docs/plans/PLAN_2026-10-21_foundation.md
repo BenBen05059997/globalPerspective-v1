@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-21): step 0 not started
+Status: active (2026-10-21): step 0 done; step 1 decision 0036 written, lane prompt next
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -20,9 +20,34 @@ Each step gets a written decision before code. The coordinator never builds; lan
 ### Step 0. Diagnose the missing archive days (read-only, first)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Why `archive#DATE` is missing for 28 of the last 60 days (Aug 23-Sep 2, Sep 14-29, Oct 14) | agent | no | ☐ | gaps listed in FOUNDATION.md G; Oct 14 = DeepSeek 402 outage (from the earlier review); the other two not explained |
-| Written finding: cause, whether the days can be recovered, how step 1 makes gaps visible | agent | no | ☐ | not written |
-| Oct 20 archive holds 14 entries (outage); note the thin day | agent | no | ☐ | FOUNDATION.md; not re-verified |
+| Why `archive#DATE` is missing for 28 of the last 60 days (Aug 23-Sep 2, Sep 14-29, Oct 14) | agent | no | ☑ | Step 0 finding below; coordinator re-checked CloudWatch: newsInvokeGemini-dev daily avg Duration 39-69 s → 5 s on 08-23, 25 s → 3 s on 09-14, 6 runs/day, Errors 0 |
+| Written finding: cause, whether the days can be recovered, how step 1 makes gaps visible | agent | no | ☑ | Step 0 finding below; requirements copied into decision 0036 §5 |
+| Oct 20 archive holds 14 entries (outage); note the thin day | agent | no | ☑ | 14 entries confirmed (10-19: 29, 10-10: 50); all three 10-20 model runs fast-failed ~3 s |
+
+### Step 0 finding (2026-10-21)
+
+**Cause (all 3 gaps, same signature; the cause of the failure itself is unverified).** The schedules never stopped: `InvokeGoogleGemini` and `InvokeNewsAgent` are ENABLED, last modified 2026-09-29 11:40 JST (thinned from 6 to 3 runs a day, commit 5d233f8e). CloudWatch `Invocations` show 6/day (3/day from 09-30) on every gap day and `Errors` = 0. But `Duration` collapses on exactly the gap days:
+- `newsInvokeGemini-dev` max 4 s (normal 28-60 s) and `NewsProjectInvokeAgentLambda-dev` max 2-3 s (normal 75-110 s) on 08-23..09-02, 09-14..09-29, 10-14. Boundaries are sharp: 08-22 125 s, 08-23 3 s; 09-02 2 s, 09-03 83 s; 09-13 88 s, 09-14 3 s; 09-29 3 s, 09-30 69 s; 10-13 28 s, 10-14 2 s, 10-15 111 s.
+- Code path: on a scheduled event gemini catches every failure and returns `{status:'error'}` instead of throwing (`newsInvokeGemini/src/index.js:505-506, 677-678, 847-850`), so Lambda reports success and the Errors metric stays 0. No staging is written, so the agent logs "Skipping run: staging ... already processed" (`NewsProjectInvokeAgentLambda/src/index.js:140`) and returns in 2 s. `buildAndWriteArchive` runs only after `swapped` (index.js:256-258), so no `today-archive` / `archive#DATE` write happens (and `latest` is not refreshed).
+- Not a TTL or delete problem: table TTL is DISABLED; surviving rows carry 90-day `ttl` values; no code path deletes `archive#`. Not a deploy regression (gap days predate the 2026-10-19/20 deploys; gap ends 09-29/09-30 coincident with the schedule change, but the 09-14 start has no matching change; coincidence, cause unknown).
+- Same fast-fail signature on 10-20 (gemini 3.2 s at 04Z, 12Z and 20Z), which is the known DeepSeek 402 outage.
+- **Unverified:** the actual error text for Aug 23-Sep 2 and Sep 14-29 (probably a provider/key/credit failure like the 402, but not proven). Both log groups have 7-day retention, so no log line for any gap day (and likely not 10-14) can be read.
+- Root-cause class: **outage / upstream failure swallowed (code skip on error, reported as success)**. Not "schedule disabled".
+
+**Oct 20 thin day (verified).** `archive#2026-10-20` has 14 entries (10-19: 29, 10-10: 50). All three Oct 20 gemini runs took ~3 s (fast-fail), so the 14 came from the one partial agent run (updatedAt 12:26Z; agent max 29 s). It coincides with the 402 outage (known from 03:50Z). Oct 19 at 29 is also below the 35-50 norm (cause not examined).
+
+**Recoverability.**
+- 08-23..09-02: not recoverable. S3 `corpus/` starts 2026-09-08 and holds map headlines (GDELT/GDACS), not editorial entries; `stories/` expires at 45 days; `web/` has only 10-19..10-21; `world/` snapshots are hourly map state, not entries. No pipeline output existed on those days (gemini never produced staging), so no store holds them.
+- 09-14..09-29: not recoverable as editorial entries, for the same reason (no topics were generated). `corpus/` has map headlines for these days only; usable at most for a map-level facts file, not for archive entries.
+- 10-14: not recoverable (no topics generated; record timeline mirrors the gap).
+- Earlier gaps (04-29..05-15, 07-12..07-25) from FOUNDATION.md G: same class, not re-checked.
+- Unverified: `THREAD#<id>` rows with per-day entries, DRIFT rows and `PRED#` rows were not read (get-item needs known keys, no Scan). They can only reference stories that existed, and no story was generated on the gap days.
+- `today-archive` is not a fallback: 24 h TTL, overwritten by each run, holds only the current UTC day.
+
+**Requirements for step 1 (a missing day must be visible the same day).**
+1. A Run object for every facts-writer run, written on failure and on skip too (`inputs.archiveDay`/`todayArchive` = present|missing|thin, `status`, reason); a day with no Run, or a Run stuck at `started`, is the alarm (matches decision 0036).
+2. A same-day alarm on "no `record/facts/DATE.jsonl` (or Run with count 0) by a fixed HH:MMZ", plus an alarm on upstream fast-fail: gemini/agent returning `{status:'error'}` must throw or emit a metric (today `Errors` is 0 on every gap day, so Lambda-error alarms are blind).
+3. The facts writer reads `today-archive` as well as `archive#DATE` (and `latest`) so a missing daily row does not lose the day; thin days (entry count below a floor, e.g. 20) get `thin:<count>` in the Run. Also raise log retention on the pipeline log groups above 7 days so the next failure can be diagnosed.
 
 ### Step 1. Ingest writes facts alongside today's rows
 | Item | Owner | Operator yes? | Status | Evidence |

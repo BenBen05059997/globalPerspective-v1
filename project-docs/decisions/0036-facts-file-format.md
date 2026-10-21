@@ -76,7 +76,7 @@ Not facts: `chapter`, `line`, `branch_status`, `link` are readings (step 3). `co
 Other IDs:
 | Object | ID | Rule |
 |---|---|---|
-| Source | `sourceId` | `sha1(registrable domain)`, domain lowercased, `www.` dropped, registrable part = last two labels, or last three when the host ends in a listed two-level public suffix (`co.uk org.uk ac.uk co.jp co.kr co.in co.za com.au com.br com.cn com.mx com.ar com.tr`; the list is a constant in `backend/shared/src/outlets.js`, extended with a note here); leading `www.`, `m.`, `amp.` dropped; `outlet` = `getOutletMeta(domain).outlet`, null when unknown, never invented |
+| Source | `sourceId` | `sha1(registrable domain)`, domain lowercased, `www.` dropped, registrable part = last two labels, or last three when the host ends in a listed two-level public suffix (`co.uk org.uk ac.uk co.jp co.kr co.in co.za com.au com.br com.cn com.mx com.ar com.tr net.au` (net.au added 2026-10-21: abc.net.au is in the outlet table); the list is a constant in `backend/shared/src/outlets.js`, extended with a note here); leading `www.`, `m.`, `amp.` dropped; `outlet` = `getOutletMeta(domain).outlet`, null when unknown, never invented |
 | Actor | `actorId` | `'name:' + normalizeActor(name)` from `backend/shared/src/record.js`; unresolved names keep this form, no `unresolved:` prefix yet (deferred until the actor table) |
 | Story | `threadId` | unchanged |
 | Merge | `story_merged` | points `from` to `into`; readers resolve transitively (A to B to C = A to C), reject a cycle by ignoring the later record |

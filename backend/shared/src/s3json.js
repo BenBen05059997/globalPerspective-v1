@@ -29,6 +29,33 @@ function makeS3Json({ client, GetObjectCommand, PutObjectCommand, bucket }) {
     }
   }
 
+  /** The parsed object at key with its ETag -> { obj, etag }; { obj: null, etag: null } when there is none. */
+  async function getJsonEtag(key) {
+    try {
+      const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const text = typeof res.Body.transformToString === 'function' ? await res.Body.transformToString() : String(res.Body);
+      return { obj: JSON.parse(text), etag: res.ETag || null };
+    } catch (e) {
+      if (named(e, 'NoSuchKey', 'NotFound') || status(e) === 404) return { obj: null, etag: null };
+      throw e;
+    }
+  }
+
+  /** Overwrite key only if it still has `etag` (If-Match), or only if it does not exist when etag is null (If-None-Match: *).
+   *  true when written, false on 412 (re-read with getJsonEtag and retry). */
+  async function putJsonIf(key, obj, etag) {
+    try {
+      await client.send(new PutObjectCommand({
+        Bucket: bucket, Key: key, Body: body(obj), ContentType: 'application/json', CacheControl: 'no-cache',
+        ...(etag ? { IfMatch: etag } : { IfNoneMatch: '*' }),
+      }));
+      return true;
+    } catch (e) {
+      if (named(e, 'PreconditionFailed') || status(e) === 412) return false;
+      throw e;
+    }
+  }
+
   /** Write a snapshot only if the key is free. true when written, false when it already exists (412). */
   async function putOnce(key, obj) {
     try {
@@ -97,7 +124,7 @@ function makeS3Json({ client, GetObjectCommand, PutObjectCommand, bucket }) {
     throw new Error(`s3json: appendLines(${key}) lost the write race ${retries + 1} times (412); nothing was written by this call`);
   }
 
-  return { getJson, putOnce, putLatest, getLines, appendLines };
+  return { getJson, getJsonEtag, putJsonIf, putOnce, putLatest, getLines, appendLines };
 }
 
 module.exports = { makeS3Json };

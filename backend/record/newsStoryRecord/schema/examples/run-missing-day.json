@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "2026-10-14-1",
+  "date": "2026-10-14",
+  "producer": "newsStoryRecord@0.2.0",
+  "startedAt": "2026-10-21T05:45:01.200Z",
+  "finishedAt": "2026-10-21T05:45:19.800Z",
+  "status": "failed",
+  "inputs": {
+    "archiveDay": "missing",
+    "todayArchive": "missing"
+  },
+  "counts": {
+    "entry": 0,
+    "story_born": 0,
+    "forecast_drawn": 0,
+    "verdict": 0,
+    "correction": 0,
+    "story_merged": 0,
+    "run": 1
+  },
+  "daysWritten": [
+    "2026-10-21"
+  ],
+  "failures": [
+    {
+      "stage": "inputs",
+      "message": "no archive#2026-10-14 row and no today-archive entries for the day"
+    }
+  ],
+  "notes": "backfill"
+}

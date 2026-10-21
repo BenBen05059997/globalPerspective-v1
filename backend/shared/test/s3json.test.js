@@ -138,3 +138,25 @@ test('appendLines: conflict on every attempt throws a clear error and writes not
   assert.strictEqual(f.objs.get('t').body, '{"eventId":"a"}\n');
   await assert.rejects(() => { f.client.send = async (c) => { if (c instanceof Put) throw err('InternalError', 500); return orig(c); }; return f.s3.appendLines('t', [ev('b')]); }, /InternalError/);
 });
+
+test('getJsonEtag returns the object and its ETag; missing gives nulls; other errors throw', async () => {
+  const f = fakeS3({ k: { body: '{"a":1}\n', etag: '"x"' } });
+  assert.deepStrictEqual(await f.s3.getJsonEtag('k'), { obj: { a: 1 }, etag: '"x"' });
+  assert.deepStrictEqual(await f.s3.getJsonEtag('none'), { obj: null, etag: null });
+  const { s3 } = setup(() => { throw err('AccessDenied', 403); });
+  await assert.rejects(() => s3.getJsonEtag('k'));
+});
+
+test('putJsonIf: If-None-Match * when etag is null, If-Match otherwise; false on 412, true on success', async () => {
+  const f = fakeS3();
+  assert.strictEqual(await f.s3.putJsonIf('m', { v: 1 }, null), true);
+  assert.strictEqual(f.puts[0].IfNoneMatch, '*');
+  assert.strictEqual(await f.s3.putJsonIf('m', { v: 9 }, null), false);
+  assert.strictEqual(await f.s3.putJsonIf('m', { v: 2 }, '"stale"'), false);
+  assert.strictEqual(await f.s3.putJsonIf('m', { v: 3 }, '"e1"'), true);
+  assert.strictEqual(f.puts[1].IfMatch, '"e1"');
+  assert.strictEqual(f.puts[1].Body, '{"v":3}\n');
+  assert.deepStrictEqual(JSON.parse(f.objs.get('m').body), { v: 3 });
+  const { s3 } = setup(() => { throw err('InternalError', 500); });
+  await assert.rejects(() => s3.putJsonIf('m', {}, null));
+});

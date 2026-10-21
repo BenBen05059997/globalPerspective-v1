@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "eventId": "53ed938a37b8d19fe6fc59914ca226302ccf87d1",
+  "kind": "forecast_drawn",
+  "at": "2026-10-20T05:00:00.000Z",
+  "date": "2026-10-20",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [
+    "CAN"
+  ],
+  "actorIds": [
+    "name:danielle smith"
+  ],
+  "sourceIds": [
+    "111469bab644fbb1d54259530545795ef8fc3cfd",
+    "69426f1f0b18d7daeb762f4404cf2884fdd43168"
+  ],
+  "payload": {
+    "forkId": "PRED#Alberta Votes-4/2026-10-20",
+    "topicId": "Alberta Votes-4",
+    "branches": [
+      {
+        "branchId": "PRED#Alberta Votes-4/2026-10-20/0-0",
+        "text": "Most Likely",
+        "p": 70,
+        "trigger": "Elections Alberta publishes a result",
+        "resolutionSource": "Elections Alberta",
+        "due": "2026-10-25",
+        "question": true,
+        "qid": "q-abc",
+        "scenarioP": 85
+      }
+    ]
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "PRED#Alberta Votes-4|2026-10-20",
+  "sourceRow": {
+    "store": "GlobalPerspectivePredictionLog",
+    "key": {
+      "PK": "PRED#Alberta Votes-4",
+      "SK": "2026-10-20"
+    }
+  }
+}

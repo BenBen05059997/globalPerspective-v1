@@ -17,13 +17,13 @@ This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and re
 
 An agent working on the record does not write the other groups. Design: `project-docs/architecture/ARCHITECTURE_RECORD.md`.
 
-## What the group will own
+## What the group owns
 
 Two writers, each the only writer of its files (design decided 2026-10-21):
-- `newsStoryRecord` (deployed): the facts writer. Target: appends `record/facts/YYYY-MM-DD.jsonl` and the facts-only views (active index, links, daily counts), no model. During the shadow period it writes only under `record/shadow/`. Its code still has per-day chapter, trigger and line model steps; they are to be removed in favour of the weekly review.
+- `newsStoryRecord`: the facts writer, built on `lane/facts` (not yet merged or deployed). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model, no views. During the shadow period it writes only under `record/shadow/`. Views (active index, links, daily counts) are step 2.
 - `newsRecordReview` (planned): the weekly review, Friday night. Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, actor merges) and a Run object in `record/runs/YYYY-Www.json`. Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason.
 
-Views under `record/views/` are rebuilt from facts and readings. Dated objects are create-only; latest and index objects are replaceable pointers.
+Views under `record/views/` are rebuilt from facts and readings (step 2). Dated objects are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 
@@ -31,8 +31,8 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Schema
 
-`newsStoryRecord/schema/story-record.schema.json` (draft-07) defines the 2026-10-20 story, index bundle and index row shapes; it is replaced by fact and reading schemas as the design is built. See [newsStoryRecord](newsStoryRecord/README.md) for tests and the local runner.
+`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; the old story and index schema went with the stories product. View schemas arrive with step 2. See [newsStoryRecord](newsStoryRecord/README.md) for the format, tests and the local runner.
 
 ## Status
 
-`newsStoryRecord` deployed 2026-10-21 (reserved concurrency 1, no schedule, no model key); a shadow no-LLM run for 2026-10-20 covered 267 stories. `newsRecordReview` does not exist yet. Coordinator owns AWS resources and deployment.
+2026-10-21: the facts writer is built on `lane/facts` and dry-run against live tables for 2026-09-06..2026-10-20 (see [DRYRUN.md](newsStoryRecord/DRYRUN.md)); the deployed `newsStoryRecord` is still the old code (shadow-only, no schedule, no model key). `newsRecordReview` does not exist yet. Coordinator owns AWS resources and deployment.

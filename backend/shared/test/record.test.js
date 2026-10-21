@@ -126,3 +126,46 @@ test('cheapGrounds: moves further apart than the lag do not pair', () => {
   assert.strictEqual(r.strength, 'none');
   assert.deepStrictEqual(r.grounds, []);
 });
+
+// ---- content IDs for the facts (decision 0036 section 3) ----
+test('canonicalUrl: utm/fbclid/gclid stripped, fragment dropped, trailing slash and www removed, query sorted, default port dropped', () => {
+  const c = R.canonicalUrl;
+  assert.strictEqual(c('https://www.Example.com/A/b/?utm_source=x&b=2&a=1&fbclid=z&gclid=q#frag'), 'https://example.com/A/b?a=1&b=2');
+  assert.strictEqual(c('HTTP://EXAMPLE.com:80/path/'), 'http://example.com/path');
+  assert.strictEqual(c('https://example.com:443/'), 'https://example.com/');
+  assert.strictEqual(c('https://example.com:8443/x'), 'https://example.com:8443/x');
+  assert.strictEqual(c('https://example.com'), 'https://example.com/');
+  assert.strictEqual(c('https://example.com/?UTM_Medium=a'), 'https://example.com/');
+  assert.strictEqual(c('  https://example.com/x?b=2&b=1&a  '), 'https://example.com/x?a&b=1&b=2');
+  assert.strictEqual(c('https://m.bbc.co.uk/news/a1'), 'https://m.bbc.co.uk/news/a1', 'only www. is dropped from a url host');
+  assert.strictEqual(c('not a url'), null);
+  assert.strictEqual(c('ftp://x.com/a'), null);
+  assert.strictEqual(c(undefined), null);
+});
+
+test('entryIdentity: the smallest canonical url decides, whatever the source order; no url falls back to date + title', () => {
+  const a = { url: 'https://www.zeta.com/b/?utm_source=x' };
+  const b = { url: 'https://alpha.com/a#top' };
+  const one = R.entryIdentity({ sources: [a, b], date: '2026-10-20', title: 'T' });
+  const two = R.entryIdentity({ sources: [b, a], date: '2026-10-21', title: 'Other' });
+  assert.deepStrictEqual(one, two);
+  assert.strictEqual(one.idBasis, 'url');
+  assert.strictEqual(one.eventId, R.sha1('entryhttps://alpha.com/a'));
+  const t1 = R.entryIdentity({ sources: [{ url: 'junk' }, {}], date: '2026-10-20', title: '  Big   NEWS ' });
+  assert.strictEqual(t1.idBasis, 'title');
+  assert.strictEqual(t1.eventId, R.sha1('entry2026-10-20big news'));
+  assert.notStrictEqual(t1.eventId, R.entryIdentity({ sources: [], date: '2026-10-21', title: 'big news' }).eventId);
+});
+
+test('sourceIdOf: the registrable domain, www/m/amp dropped, two-level suffixes keep three labels; actorIdOf; factId', () => {
+  const same = ['https://www.bbc.co.uk/x', 'https://m.bbc.co.uk/y', 'amp.bbc.co.uk', 'BBC.CO.UK', 'news.bbc.co.uk'].map(R.sourceIdOf);
+  assert.strictEqual(new Set(same).size, 1);
+  assert.strictEqual(same[0], R.sha1('bbc.co.uk'));
+  assert.strictEqual(R.sourceIdOf('https://www.nytimes.com/a'), R.sha1('nytimes.com'));
+  assert.strictEqual(R.sourceIdOf('asia.nikkei.com'), R.sha1('nikkei.com'));
+  assert.notStrictEqual(R.sourceIdOf('bbc.co.uk'), R.sourceIdOf('itv.co.uk'));
+  assert.strictEqual(R.sourceIdOf(''), null);
+  assert.strictEqual(R.actorIdOf('  Vladimir \t PUTIN '), 'name:vladimir putin');
+  assert.strictEqual(R.actorIdOf('  '), null);
+  assert.strictEqual(R.factId('verdict', 'Q#1|VERDICT'), R.sha1('verdictQ#1|VERDICT'));
+});

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "eventId": "8ba526db6d2e9032e9ddeebacb29d165a387160c",
+  "kind": "correction",
+  "at": "2026-10-27T09:00:00.000Z",
+  "date": "2026-10-27",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "corrects": "53ed938a37b8d19fe6fc59914ca226302ccf87d1",
+    "what": "Branch due date was read from the wrong row",
+    "reason": "operator re-read PRED row"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "correction#1",
+  "sourceRow": {
+    "store": "operator",
+    "key": "corrections/1"
+  }
+}

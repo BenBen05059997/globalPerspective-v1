@@ -4,7 +4,7 @@ The personal layer: a signed-in member's pins, strings, weights, dismissed sugge
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the board's Lambda (boards, follows, presets, connect). Timeline: writes no events; reads through world/ until the Index and Story views exist. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 6: the board's Lambda (boards, follows, presets, connect). Timeline: writes no events; reads the Index and Story views (record/), with world/ for what the views do not hold yet. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed

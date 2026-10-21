@@ -16,7 +16,7 @@
     "backend/predictions": { "stages": [3], "part": "forecast settling and the track-record snapshot", "timeline": "writes no events; PRED# and Q# verdicts are the source of forecast_drawn, verdict, correction" },
     "backend/shared": { "stages": [4], "part": "world/, the only reader of the raw tables, plus the shared rules and the S3 helpers", "timeline": "writes no events; every other stage reads raw tables only through world/" },
     "backend/record": { "stages": [5], "part": "newsStoryRecord, the only writer of the timeline and its stored views", "timeline": "writes the timeline (record/timeline) and the story, index and corrections views" },
-    "backend/board": { "stages": [6], "part": "the board's Lambda (boards, follows, presets, connect)", "timeline": "writes no events; reads through world/ until the Index and Story views exist" },
+    "backend/board": { "stages": [6], "part": "the board's Lambda (boards, follows, presets, connect)", "timeline": "writes no events; reads the Index and Story views (record/), with world/ for what the views do not hold yet" },
     "backend/weekly": { "stages": [6], "part": "the analyst's weekly: schema, section model, pull, check, publish", "timeline": "writes the Week view (weekly/); reads through world/ until the timeline exists" },
     "backend/read-api": { "stages": [6], "part": "the read proxy and the per-user endpoints that serve every page", "timeline": "writes no events; serves raw tables today; target: serve the Story, Country, Today and Index views" },
     "backend/distribution": { "stages": [7], "part": "the weekly email, the old weekly brief, breaking alerts and social posts", "timeline": "writes no events; consumers moving to the Week, Today and Story views" },

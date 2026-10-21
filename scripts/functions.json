@@ -498,6 +498,14 @@
         }
       ]
     },
+    "newsStoryRecord": {
+      "dir": "backend/record/newsStoryRecord",
+      "runtime": "nodejs22.x",
+      "group": "record",
+      "features": ["board", "threads"],
+      "nodeModules": false,
+      "schedules": []
+    },
     "newsSourceAudit": {
       "dir": "backend/monitoring/newsSourceAudit",
       "runtime": "nodejs22.x",

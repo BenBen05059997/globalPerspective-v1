@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-21): step 0 done; step 1 decision 0036 written, lane prompt next
+Status: active (2026-10-21): step 0 done; step 1 in progress (lane I, prompt `prompts/lane-I-facts-writer.md`)
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -59,6 +59,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Shared world reader `backend/shared/src/world/` | coordinator | no | ◐ | a925f149, 41b71786, 1d5a76b7; weekly `pull.mjs` not written, other Lambdas still parse raw tables |
 | Backfill from existing `archive#` rows (Sept 6 onward) | lane (record) | no | ☐ | not started; no TTL deletes (disabled), S3 `stories/` expires at 45 days |
 | Schedule on the facts writer (shadow week first) | coordinator | IAM and schedule: yes | ☐ | no schedule |
+| `newsInvokeGemini-dev`: a failed model call must fail the run (today it returns `{status:'error'}` and the day is marked processed; cause of the 28 lost days) | lane (pipeline) | no | ☐ | Step 0 finding; `backend/pipeline/newsInvokeGemini/src/index.js` ~:505, :677, :847 |
 | Stale-run guard, same-run joins, failed-run marker in the agent Lambda | lane (pipeline) | no | ☑ | merge 5df2a670, deployed `NewsProjectInvokeAgentLambda-dev` CodeSha256 roXZtju... |
 | Same-day duplicate and over-join fixes proven over a clean week | lane (pipeline) | no | ◐ | b198ff92, b8858db6 deployed 2026-10-19; only two runs before the outage; unproven |
 | Alarm on `LLM 402`; one alert topic | lane (pipeline) | yes | ☐ | alarm absent; two topics exist; DeepSeek balance is an operator top-up |

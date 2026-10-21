@@ -90,9 +90,10 @@ function getOutletMeta(source) {
   return OUTLET_METADATA[normalized] || OUTLET_METADATA[`www.${normalized}`] || null;
 }
 
-// Two-level public suffixes whose registrable domain has three labels (decision 0036 section 3). Extend with a
-// note in 0036 when an outlet needs another.
-const TWO_LEVEL_SUFFIXES = ['co.uk', 'org.uk', 'ac.uk', 'co.jp', 'co.kr', 'co.in', 'co.za', 'com.au', 'com.br', 'com.cn', 'com.mx', 'com.ar', 'com.tr'];
+// Two-level public suffixes whose registrable domain has three labels (decision 0036 section 3; net.au added 2026-10-21
+// because abc.net.au is in the outlet table: the coordinator adds the note to 0036). Extend with a note in 0036 when an
+// outlet needs another.
+const TWO_LEVEL_SUFFIXES = ['co.uk', 'org.uk', 'ac.uk', 'co.jp', 'co.kr', 'co.in', 'co.za', 'com.au', 'com.br', 'com.cn', 'com.mx', 'com.ar', 'com.tr', 'net.au'];
 const HOST_PREFIXES = ['www', 'm', 'amp'];
 
 /** 'https://m.bbc.co.uk/x' or 'm.bbc.co.uk' -> 'bbc.co.uk': lower-case host, leading www./m./amp. dropped, then the last two

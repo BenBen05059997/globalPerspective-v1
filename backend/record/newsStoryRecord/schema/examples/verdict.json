@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "eventId": "ce800f64e07afbe7a3fc91f27e585091c0f73eb8",
+  "kind": "verdict",
+  "at": "2026-10-26T06:00:00.000Z",
+  "date": "2026-10-26",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "qid": "q-abc",
+    "branchId": "PRED#Alberta Votes-4/2026-10-20/0-0",
+    "result": "yes",
+    "revision": 1,
+    "decidedBy": "agent",
+    "evidence": {
+      "url": "https://www.elections.ab.ca/r",
+      "quote": "official results"
+    },
+    "reason": null,
+    "voidReason": null
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "Q#q-abc|VERDICT",
+  "sourceRow": {
+    "store": "GlobalPerspectivePredictionLog",
+    "key": {
+      "PK": "Q#q-abc",
+      "SK": "VERDICT"
+    }
+  }
+}

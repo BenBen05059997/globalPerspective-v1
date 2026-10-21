@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "eventId": "7c4e32c8e94f25d7710667980d060821ee391ac5",
+  "kind": "entry",
+  "at": "2026-10-20T04:26:36.158Z",
+  "date": "2026-10-20",
+  "precision": "day",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [
+    "CAN"
+  ],
+  "actorIds": [
+    "name:danielle smith"
+  ],
+  "sourceIds": [
+    "111469bab644fbb1d54259530545795ef8fc3cfd",
+    "69426f1f0b18d7daeb762f4404cf2884fdd43168"
+  ],
+  "payload": {
+    "title": "Alberta votes on separation referendum",
+    "summary": null,
+    "category": "politics",
+    "eventType": "election",
+    "continuesTopic": null,
+    "topicId": "Alberta Votes-4"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "archive#2026-10-20|gen-1792383380781|Alberta Votes-4",
+  "sourceRow": {
+    "store": "NewsCache",
+    "key": {
+      "id": "archive#2026-10-20"
+    },
+    "index": 3
+  },
+  "idBasis": "url",
+  "sources": [
+    {
+      "sourceId": "69426f1f0b18d7daeb762f4404cf2884fdd43168",
+      "outlet": "BBC",
+      "url": "https://www.bbc.co.uk/news/world-us-canada-1?utm_source=rss",
+      "title": "Alberta votes"
+    },
+    {
+      "sourceId": "111469bab644fbb1d54259530545795ef8fc3cfd",
+      "outlet": "Associated Press",
+      "url": "https://apnews.com/article/alberta-1",
+      "title": "Alberta referendum"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "eventId": "c986b263cdfdfd6018053c42b7db376f6345f134",
+  "kind": "run",
+  "at": "2026-10-21T05:45:19.800Z",
+  "date": "2026-10-21",
+  "precision": "exact",
+  "threadId": null,
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "runId": "2026-10-20-1",
+    "status": "ok",
+    "counts": {
+      "entry": 41,
+      "story_born": 6,
+      "forecast_drawn": 12,
+      "verdict": 0,
+      "correction": 0,
+      "story_merged": 0,
+      "run": 1
+    }
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "run#2026-10-20-1",
+  "sourceRow": {
+    "store": "record",
+    "key": "runs/2026-10-20.json"
+  }
+}

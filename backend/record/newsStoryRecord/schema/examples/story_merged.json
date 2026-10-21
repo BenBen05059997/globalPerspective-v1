@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "eventId": "f2d82bb03163781d29ff9ff0db89106f23885bd3",
+  "kind": "story_merged",
+  "at": "2026-10-27T09:05:00.000Z",
+  "date": "2026-10-27",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "from": "thread-alberta-referendum-aaaaaa",
+    "into": "thread-alberta-votes-d3d4b4",
+    "reason": "same event, two thread ids",
+    "evidence": [
+      {
+        "eventId": "53ed938a37b8d19fe6fc59914ca226302ccf87d1"
+      }
+    ]
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "merge#1",
+  "sourceRow": {
+    "store": "operator",
+    "key": "merges/1"
+  }
+}

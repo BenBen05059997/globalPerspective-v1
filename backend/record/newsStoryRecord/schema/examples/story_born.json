@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "eventId": "e99b6688edd3861e01fcba9d447a6d05cdc68c2e",
+  "kind": "story_born",
+  "at": "2026-10-20T04:26:36.158Z",
+  "date": "2026-10-20",
+  "precision": "day",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [
+    "CAN"
+  ],
+  "actorIds": [
+    "name:danielle smith"
+  ],
+  "sourceIds": [
+    "111469bab644fbb1d54259530545795ef8fc3cfd",
+    "69426f1f0b18d7daeb762f4404cf2884fdd43168"
+  ],
+  "payload": {
+    "born": "2026-10-20",
+    "bornAtApprox": false,
+    "firstTitle": "Alberta votes on separation referendum",
+    "windowLimited": false,
+    "missingBefore": []
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-20-1"
+  },
+  "sourceKey": "birth|thread-alberta-votes-d3d4b4",
+  "sourceRow": {
+    "store": "NewsCache",
+    "key": {
+      "id": "archive#2026-10-20"
+    },
+    "index": 3
+  }
+}

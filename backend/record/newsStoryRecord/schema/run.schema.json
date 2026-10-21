@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/record-run.json",
+  "title": "Run (record/runs/YYYY-MM-DD.json), decision 0036 section 4. Written as started, overwritten at the end.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "date", "producer", "startedAt", "finishedAt", "status", "inputs", "counts", "daysWritten", "failures", "notes"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}-\\d+$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "producer": { "type": "string", "pattern": "^newsStoryRecord@" },
+    "startedAt": { "type": "string" },
+    "finishedAt": { "type": ["string", "null"], "description": "null while status is started: a Run left at started with no finishedAt is the alarm" },
+    "status": { "enum": ["started", "ok", "partial", "failed"] },
+    "inputs": {
+      "type": "object",
+      "required": ["archiveDay", "todayArchive"],
+      "properties": {
+        "archiveDay": {
+          "description": "present | missing | {thin: n} (fewer than 20 entries); null only while started",
+          "anyOf": [{ "enum": ["present", "missing", null] }, { "type": "object", "required": ["thin"], "properties": { "thin": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }]
+        },
+        "todayArchive": { "enum": ["present", "missing", null], "description": "present when today-archive contributed entries for the day" }
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": ["entry", "story_born", "forecast_drawn", "verdict", "correction", "story_merged", "run"],
+      "additionalProperties": { "type": "integer", "minimum": 0 },
+      "description": "facts newly appended by this run per kind; a re-run that finds everything known has zeros"
+    },
+    "daysWritten": { "type": "array", "items": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, "description": "the fact files this run appended to" },
+    "failures": {
+      "type": "array",
+      "items": { "type": "object", "required": ["stage", "message"], "properties": { "stage": { "type": "string" }, "message": { "type": "string" }, "ref": { "type": "string" } } }
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

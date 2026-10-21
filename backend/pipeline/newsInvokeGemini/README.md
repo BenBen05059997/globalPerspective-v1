@@ -17,6 +17,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - `GROK_MODEL` (fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
 
 ## Gotchas
+- A failed run on a scheduled event (missing key, model/upstream error, empty reply) throws, so the Lambda `Errors` metric counts it; only direct HTTP invocations get a 4xx/5xx response body. It used to return `{status:'error'}`, which reported success and hid 28 days of missing archives. Test: `node --test src/scheduled-failure.test.js`.
 - The names "Gemini" and "Grok" in the code and logs are historical.
 - It emits `Access-Control-Allow-Origin: *` on its HTTP-shaped responses. If a Function URL is ever added, its CORS config must stay empty.
 - `INGEST_CAPTURE_TABLE` and `CAPTURE_TTL_DAYS` are still read but unused; capture moved to S3 in S8·T2b.

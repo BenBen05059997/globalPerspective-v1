@@ -502,8 +502,7 @@ exports.handler = async (event) => {
     if (!apiKey) {
       const msg = 'Missing XAI_API_KEY environment variable';
       if (isScheduledEvent(event)) {
-        console.error(msg);
-        return { status: 'error', error: msg };
+        throw new Error(msg);
       }
       return { statusCode: 500, headers, body: JSON.stringify({ error: msg }) };
     }
@@ -674,8 +673,7 @@ exports.handler = async (event) => {
     if (!text) {
       const msg = 'Empty response from Grok model';
       if (isScheduledEvent(event)) {
-        console.error(msg);
-        return { status: 'error', error: msg };
+        throw new Error(msg);
       }
       return { statusCode: 502, headers, body: JSON.stringify({ error: msg }) };
     }
@@ -847,7 +845,8 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error('Lambda error:', err);
     if (isScheduledEvent(event)) {
-      return { status: 'error', error: err?.message || 'Unexpected error' };
+      // Fail the run: returning here reported success (Errors=0) and the agent marked the day processed.
+      throw err;
     }
     return { statusCode: 500, headers, body: JSON.stringify({ error: err?.message || 'Unexpected error' }) };
   }

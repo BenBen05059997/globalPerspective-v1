@@ -96,10 +96,10 @@ function mergedFact({from, into, reason, evidence = [], at, sourceKey, sourceRow
   return makeFact({kind: 'story_merged', sourceKey, at, precision: 'exact', threadId: into, sourceRow, runId, payload: {from, into, reason, evidence}});
 }
 
-/** `run` fact: the day was processed (0036 §4). */
-function runFact(run) {
+/** `run` fact: the day was processed (0036 §4). `at` defaults to finishedAt; a backfill passes the end of the replayed day so its run fact stays in that day's file. */
+function runFact(run, at = run.finishedAt) {
   return makeFact({
-    kind: 'run', sourceKey: `run#${run.runId}`, at: run.finishedAt, precision: 'exact', threadId: null, sourceRow: {store: 'record', key: `runs/${run.date}.json`}, runId: run.runId,
+    kind: 'run', sourceKey: `run#${run.runId}`, at, precision: 'exact', threadId: null, sourceRow: {store: 'record', key: `runs/${run.date}.json`}, runId: run.runId,
     payload: {runId: run.runId, status: run.status, counts: run.counts},
   });
 }

@@ -31,7 +31,7 @@ function fakeS3(initial = {}) {
   };
   const args = {client: f.client, GetObjectCommand: Get, PutObjectCommand: Put, bucket: 'bkt'};
   f.s3json = makeS3Json(args);
-  f.manifest = makeManifest(args);
+  f.manifest = makeManifest(f.s3json);
   f.json = (key) => JSON.parse(f.objs.get(key).body);
   f.lines = (key) => (f.objs.has(key) ? f.objs.get(key).body.trimEnd().split('\n').map((l) => JSON.parse(l)) : []);
   f.put = (key, obj) => { n += 1; f.objs.set(key, {body: `${JSON.stringify(obj)}\n`, etag: `"p${n}"`}); };

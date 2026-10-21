@@ -109,7 +109,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     run.status = !run.failures.length ? 'ok' : written ? 'partial' : 'failed';
     run.counts.run = 1;
     try {
-      const fact = runFact(run);
+      const fact = runFact(run, backfill ? `${date}T23:59:59.999Z` : undefined);
       await register(prefix, [fact.date], run);
       await s3json.appendLines(`${prefix}facts/${fact.date}.jsonl`, [fact]);
       run.daysWritten = [...new Set([...run.daysWritten, fact.date])].sort();
@@ -125,18 +125,23 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const shadow = event.shadow ?? true;
     const prefix = shadow ? 'record/shadow/' : 'record/';
     const bf = event.backfill;
+    const strict = event.strict ?? true;
+    const today = now().slice(0, 10);
     const dates = bf ? eachDay(bf.from, bf.to) : [event.date || now().slice(0, 10)];
     if (!dates.every(isDay)) throw new Error('date must be YYYY-MM-DD');
     const days = [];
     for (const date of dates) {
       const {run, fatal} = await runDay(date, {prefix, backfill: Boolean(bf)});
       days.push({date, runId: run.runId, status: run.status, inputs: run.inputs, counts: run.counts, failures: run.failures});
-      // A missing day is expected history in a backfill; anywhere else a run that did not finish cleanly is an error.
-      const expected = bf && run.failures.every((f) => f.stage === 'inputs');
-      if (!bf && run.status !== 'ok') throw fatal || new Error(`newsStoryRecord ${run.runId} ${run.status}: ${run.failures.map((f) => `${f.stage}: ${f.message}`).join('; ')}`);
-      if (bf && run.status !== 'ok' && !expected) days.at(-1).error = true;
+      // A missing day is an error unless the run says it is expected history (strict:false) or it is today, whose row may not exist yet.
+      const missingOnly = run.failures.length > 0 && run.failures.every((f) => f.stage === 'inputs');
+      const tolerated = missingOnly && (!strict || date === today);
+      if (run.status !== 'ok' && !tolerated) {
+        if (!bf) throw fatal || new Error(`newsStoryRecord ${run.runId} ${run.status}: ${run.failures.map((f) => `${f.stage}: ${f.message}`).join('; ')}`);
+        days.at(-1).error = true;
+      }
     }
-    if (days.some((d) => d.error)) throw Object.assign(new Error(`newsStoryRecord backfill: failed days ${days.filter((d) => d.error).map((d) => d.date).join(', ')}`), {days});
+    if (days.some((d) => d.error)) throw Object.assign(new Error(`newsStoryRecord range: failed or missing days ${days.filter((d) => d.error).map((d) => d.date).join(', ')}`), {days});
     return bf ? {backfill: bf, days} : days[0];
   };
 }

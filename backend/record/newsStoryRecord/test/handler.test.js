@@ -114,7 +114,7 @@ test('backfill replays oldest first; a day without a row gets a missing Run and 
   const load = store.load;
   store.load = async (d) => { order.push(d); return load(d); };
   const {f, handler} = make(store);
-  const r = await handler({backfill: {from: '2026-10-18', to: '2026-10-20'}});
+  const r = await handler({backfill: {from: '2026-10-18', to: '2026-10-20'}, strict: false});
   assert.deepEqual(order, ['2026-10-18', '2026-10-19', '2026-10-20']);
   assert.deepEqual(r.days.map((d) => d.status), ['ok', 'failed', 'ok']);
   assert.equal(f.json(`${P}runs/2026-10-19.json`).inputs.archiveDay, 'missing');
@@ -220,4 +220,22 @@ test('no model is wired in: no source file mentions a model or llm, and loading 
   }
   require('../src/runtime');
   assert.deepEqual(Object.keys(require.cache).filter((k) => /llm|deepseek|openai|anthropic/i.test(k)), []);
+});
+
+test('a scheduled range with yesterday missing throws after writing its Runs; today missing alone is tolerated', async () => {
+  const {f, handler} = make(scripted({'2026-10-21': twenty('2026-10-21')}));
+  await assert.rejects(() => handler({backfill: {from: '2026-10-20', to: '2026-10-21'}}), /2026-10-20/);
+  assert.equal(f.json(`${P}runs/2026-10-20.json`).inputs.archiveDay, 'missing');
+  assert.equal(f.json(`${P}runs/2026-10-21.json`).status, 'ok');
+  const today = make(scripted({'2026-10-20': twenty('2026-10-20')}));
+  const r = await today.handler({backfill: {from: '2026-10-20', to: '2026-10-21'}});
+  assert.deepEqual(r.days.map((d) => d.inputs.archiveDay), ['present', 'missing']);
+});
+
+test('a backfill keeps its run fact in the replayed day, not in today\'s file', async () => {
+  const {f, handler} = make(scripted({'2026-10-18': twenty('2026-10-18')}));
+  await handler({backfill: {from: '2026-10-18', to: '2026-10-18'}, strict: false});
+  assert.equal(f.lines(`${P}facts/2026-10-18.jsonl`).filter((x) => x.kind === 'run').length, 1);
+  assert.equal(f.objs.has(`${P}facts/2026-10-21.jsonl`), false);
+  assert.equal(f.json(`${P}runs/2026-10-18.json`).daysWritten.includes('2026-10-21'), false);
 });

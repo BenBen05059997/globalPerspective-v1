@@ -29,20 +29,31 @@ IDs: [`record.js`](../../shared/src/record.js) (`canonicalUrl`, `entryIdentity`,
 | `backfill: {from, to}` | replay those days oldest first through the same code; a day with no archive row gets a `missing` Run and no facts and does not throw |
 | `shadow` | default `true`: every key moves under `record/shadow/` (`record/shadow/facts/`, `record/shadow/runs/`, `record/shadow/facts/manifest.json`); the flip is a prefix change |
 
-A daily run at 05:45Z sees the day in progress. The planned schedule should invoke with `backfill: {from: <yesterday>, to: <today>}` so yesterday is completed once its archive row exists; both are idempotent.
+A daily run at 05:45Z sees the day in progress. The planned schedule payload is `{"backfill":{"from":"<yesterday>","to":"<today>"}}`, so yesterday is completed once its archive row exists; both days are idempotent.
+
+`strict` (default `true`): a run throws after writing its Run when any day in its range except today ends `inputs.archiveDay: missing`, so a scheduled run is never silent on a missing day. Only an explicit historical replay passes `strict:false`, which treats missing days as expected history. A backfill's `run` fact is dated the end of the replayed day, so replays do not pile run facts into today's file.
 
 ## Deployment
 
 Deployed in shadow only today, with the old code, no schedule; this version is not deployed. Planned group `record`, entry point `runtime.handler`, Node.js 22, reserved concurrency 1. The coordinator registers, provisions and deploys it; diff the deployed zip against the repo first.
 
-- Environment: `WORLD_BUCKET`, `TOPICS_DDB_TABLE` (NewsCache), `SUMMARIZE_PREDICT_TABLE` (SummarizeAndPredict), `PREDICTION_LOG_TABLE` (GlobalPerspectivePredictionLog). `RECORD_LLM_MODEL` is no longer read; no model key is needed.
+- Environment: `WORLD_BUCKET`, `TOPICS_DDB_TABLE` (NewsCache), `PREDICTION_LOG_TABLE` (GlobalPerspectivePredictionLog). `SUMMARIZE_PREDICT_TABLE` is not needed: `world/` resolves it only for the thread-analysis reader, which this writer never calls (live default table names apply anyway). `RECORD_LLM_MODEL` is no longer read; no model key is needed.
 - The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code.
 - IAM (least privilege): DynamoDB `GetItem`, `BatchGetItem`, `Query` on the three tables, no writes, no scans. S3 `GetObject` on `record/*`; `PutObject` only on `record/facts/*`, `record/runs/*` and their `record/shadow/` equivalents (for the shadow week, `record/shadow/*` only). Narrow `ListBucket` on those prefixes so a missing object is a 404, not a 403 (the code never lists).
 - Alarms (the operator's alerts review decides the topic): no `record/facts/DATE.jsonl` by a fixed UTC time; a Run left at `started`; a Run with `inputs.archiveDay` `missing`; the model Lambda's daily average Duration under 10 s (the gap-day pattern).
 
 ## Schema and local run
 
-`schema/fact.schema.json` and `schema/run.schema.json` (draft-07), with one example per fact kind and two Run examples in `schema/examples/`. `src/manifest.js` is the conditional manifest writer; it duplicates two small S3 calls until `s3json.js` gains an ETag read and a conditional JSON put (open request in the lane mailbox).
+`schema/fact.schema.json` and `schema/run.schema.json` (draft-07), with one example per fact kind and two Run examples in `schema/examples/`. `src/manifest.js` is the manifest merge, on shared `s3json.getJsonEtag` and `putJsonIf`.
+
+## Choices
+(Accepted by the coordinator 2026-10-21.)
+- A day with no archive row and no today-archive entries ends its Run `failed` with `archiveDay:"missing"` and zero facts; a daily run throws after writing the Run, a backfill does not.
+- Entry `summary` is null: the archive row has no summary field and snippets are not substituted.
+- A title-basis entry id uses the archive day, not the fact day, so a re-run keeps it.
+- `runId` suffix is the attempt number counted from the existing Run object for the date (`-1` on a fresh store, also in a backfill).
+- Verdicts are read only for sampled questions (`Q#/SAMPLED` batch read first), since only those get verdicts, and only for questions whose `forecast_drawn` fact is inside the 60-day lookback; a verdict landing on a forecast older than 60 days is missed.
+- The Run object carries two extra fields, `date` and `daysWritten`; `net.au` is added to the two-level suffix list (abc.net.au is in the outlet table).
 
 ```sh
 node backend/record/newsStoryRecord/dryrun.mjs --from 2026-09-06 --to 2026-10-20 --out /Users/benlai/Downloads/gp-mailbox/artifacts/facts-dryrun/

@@ -99,12 +99,12 @@ const localS3 = {
   },
 };
 const s3json = makeS3Json({client: localS3, GetObjectCommand: Get, PutObjectCommand: Put, bucket});
-const manifest = makeManifest({client: localS3, GetObjectCommand: Get, PutObjectCommand: Put, bucket});
+const manifest = makeManifest(s3json);
 
 console.error(`Reading live stores (read-only) for ${from}..${to}; local shadow output ${out}`);
 const handler = makeHandler({store: makeStore(io), s3json, manifest});
 let result;
-try { result = await handler({backfill: {from, to}, shadow: true}); } catch (e) { result = {error: e.message, days: e.days}; }
+try { result = await handler({backfill: {from, to}, strict: false, shadow: true}); } catch (e) { result = {error: e.message, days: e.days}; }
 
 // ---- summary from the Run objects the handler wrote ----
 const runsDir = join(out, 'record/shadow/runs');

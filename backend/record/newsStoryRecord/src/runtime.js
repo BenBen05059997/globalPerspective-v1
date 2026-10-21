@@ -13,6 +13,6 @@ exports.handler = async (event = {}) => {
   const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
   const s3json = makeS3Json({client: s3client, GetObjectCommand, PutObjectCommand, bucket: process.env.WORLD_BUCKET});
   const client = world.makeClient(world.makeDynamoClient({client: ddb, GetCommand, QueryCommand, BatchGetCommand, ScanCommand}), {getS3Json: s3json.getJson});
-  const manifest = makeManifest({client: s3client, GetObjectCommand, PutObjectCommand, bucket: process.env.WORLD_BUCKET});
+  const manifest = makeManifest(s3json);
   return makeHandler({store: makeStore(client, {env: process.env}), s3json, manifest})(event);
 };

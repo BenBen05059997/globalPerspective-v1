@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-21): step 1 code merged; IAM, deploy and shadow schedule next
+Status: active (2026-10-22): step 1 deployed and proven in shadow; live IAM, schedule, backfill and alarms wait on the operator
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -125,9 +125,8 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - `stories/state/` holds 3,436 objects never pruned; 13 of ~25 feeds are fetched by both pipelines.
 
 ## Risks
-- Setting `RECORD_LLM_MODEL` and a schedule on the current `newsStoryRecord` code would make 650-1,560 model calls a run. Do not, until step 1 removes the model steps.
 - Deployed Lambda zips can differ from the repo; diff before any deploy.
-- DeepSeek 402 stops every LLM Lambda; stages swallow the error, so Lambda Errors stay 0.
+- DeepSeek 402 stops every LLM Lambda. `newsInvokeGemini` and the agent now fail the run (50f9c645, e22e7516); other stages may still swallow it, unchecked.
 
 ## Log
 - 2026-10-21: lane I built the facts writer on `lane/facts` (not merged, not deployed; boxes above untouched). `newsStoryRecord` 0.2.0 appends `entry`, `story_born`, `forecast_drawn`, `verdict` facts (and has builders for `correction`, `story_merged`, which no input feeds yet) to `record/facts/YYYY-MM-DD.jsonl` (shadow: `record/shadow/facts/`), writes a Run per day (`record/runs/`) and a conditional `record/facts/manifest.json`; the model steps, prompts, `coverage` events and the timeline, stories and index products are gone. Entry IDs are `sha1('entry' + smallest canonical url)`. A day with no archive row ends its Run `failed` with `inputs.archiveDay:"missing"`, and a daily run throws so the schedule shows an Error. Backfill is `event.backfill = {from, to}`, oldest first. Choices to confirm: a verdict is read only for sampled questions whose forecast is in the last 60 days of facts; `net.au` added to the two-level suffix list; `summary` on entry facts is null (the archive row holds none). Needs from the coordinator: IAM `PutObject` on the facts/runs/manifest keys, the schedule, the alarms, an s3json ETag helper (lane mailbox).
@@ -135,3 +134,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-21: two clocks adopted earlier the same day (facts daily, readings weekly); see TIMELINE §1c.
 - 2026-10-20: step "resolver writes verdicts itself" done and deployed (decision 0034). Stale-run guard deployed (5df2a670). One world reader merged (a925f149).
 - 2026-10-20: DeepSeek 402 outage from about 03:50Z, caused the missing `archive#2026-10-14` and thin 10-13 and 10-20.
+- 2026-10-22: lane I closed; worktrees for lanes I, C, H, gemini-fail, agent-stale removed. Docs checked against code: newsStoryRecord README deployment note and two risks corrected.

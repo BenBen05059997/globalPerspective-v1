@@ -35,7 +35,7 @@ A daily run at 05:45Z sees the day in progress. The planned schedule payload is 
 
 ## Deployment
 
-Deployed in shadow only today, with the old code, no schedule; this version is not deployed. Planned group `record`, entry point `runtime.handler`, Node.js 22, reserved concurrency 1. The coordinator registers, provisions and deploys it; diff the deployed zip against the repo first.
+Deployed 2026-10-21 (this code), registered in `scripts/functions.json` as group `record`; entry point `runtime.handler`, Node.js 22, reserved concurrency 1, no schedule yet. Its role may write only `record/shadow/*` until the operator approves `record/facts/*` and `record/runs/*`. The coordinator deploys it; diff the deployed zip against the repo first.
 
 - Environment: `WORLD_BUCKET`, `TOPICS_DDB_TABLE` (NewsCache), `PREDICTION_LOG_TABLE` (GlobalPerspectivePredictionLog). `SUMMARIZE_PREDICT_TABLE` is not needed: `world/` resolves it only for the thread-analysis reader, which this writer never calls (live default table names apply anyway). `RECORD_LLM_MODEL` is no longer read; no model key is needed.
 - The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code.

@@ -10,8 +10,9 @@ test('arrivals require a strong confirmed link plus cheap grounds, cap five and 
  const weak={...records,story:async()=>({links:[{otherThreadId:'old',confirmed:false,strength:'strong'}]})};
  assert.equal((await arrivals(board,weak,'2026-10-20')).arrivals.length,0);
 });
-test('missing record, same-day birth, pinned and future stories never invent arrivals',async()=>{
+test('missing record, births before the visit day and future stories never invent arrivals; the visit day counts',async()=>{
  assert.deepEqual(await arrivals(board,{index:async()=>null},'2026-10-20'),{recordAvailable:false,since:board.lastVisitedAt,arrivals:[]});
- assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-19T00:00:00Z'},records,'2026-10-20')).arrivals.length,0);
+ assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-20T00:00:00Z'},records,'2026-10-20')).arrivals.length,0);
+ assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-19T23:00:00Z'},records,'2026-10-20')).arrivals.length,5);
  assert.equal((await arrivals(board,records,'2026-10-18')).arrivals.length,0);
 });

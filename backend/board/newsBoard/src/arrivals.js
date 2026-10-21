@@ -1,6 +1,7 @@
 'use strict';
 const {cheapGrounds} = require('./_shared/record');
 const {resolveIso3} = require('./_shared/resolveIso3');
+const MAX_CANDIDATES = 40;
 // The index has no title field: use its recorded line, never invent a headline.
 async function arrivals(board, records, now) {
   const index = await records.index();
@@ -8,10 +9,15 @@ async function arrivals(board, records, now) {
   if (!index) return {recordAvailable:false, since, arrivals:[]};
   const pinned = new Set(board.pins.filter(p=>p.kind==='thread').map(p=>p.refId));
   const rows = new Map(index.stories.map(r=>[r.id,r]));
-  const candidates = index.stories.filter(r=>r.born > since.slice(0,10) && r.born <= now.slice(0,10) && !pinned.has(r.id) && !board.dismissed.includes(r.id));
+  // Births are day-precise, so the visit day itself is included: a story born later that day would otherwise never show.
+  // Newest first and capped, so a long-dormant board does not fetch its whole backlog.
+  const candidates = index.stories
+    .filter(r=>r.born >= since.slice(0,10) && r.born <= now.slice(0,10) && !pinned.has(r.id) && !board.dismissed.includes(r.id))
+    .sort((a,b)=>b.born.localeCompare(a.born)||a.id.localeCompare(b.id)).slice(0, MAX_CANDIDATES);
+  const stories = await Promise.all(candidates.map(r=>records.story(r.id)));
   const cards=[];
-  for (const row of candidates) {
-    const story = await records.story(row.id);
+  for (const [i, row] of candidates.entries()) {
+    const story = stories[i];
     if (!story) continue;
     const dataOf = p => {
       if(p.kind==='thread') {const r=rows.get(p.refId);return {actors:r?.actors || [], places:r?.countries || []};}

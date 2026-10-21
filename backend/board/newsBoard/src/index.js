@@ -86,7 +86,8 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       if (!item) return fail(404, 'Board not found');
       // Store visit metadata only; it is not an editorial board change.
       const stamp = iso();
-      await store.setLastVisited(uid, item.boardId, stamp);
+      try { await store.setLastVisited(uid, item.boardId, stamp); }
+      catch (e) { if (e.name === 'ConditionalCheckFailedException') return fail(404, 'Board not found'); throw e; }
       return ok({lastVisitedAt: stamp});
     },
     async story_view(uid, body) {

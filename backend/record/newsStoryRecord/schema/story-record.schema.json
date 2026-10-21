@@ -1,0 +1,725 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Story record or record/index.json",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/storyRecord"
+    },
+    {
+      "$ref": "#/definitions/index"
+    }
+  ],
+  "definitions": {
+    "storyRecord": {
+      "type": "object",
+      "required": [
+        "threadId",
+        "born",
+        "line",
+        "chapters",
+        "events",
+        "forks",
+        "links",
+        "counts"
+      ],
+      "properties": {
+        "threadId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "born": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "bornAt": {
+          "type": "string"
+        },
+        "asOf": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "line": {
+          "type": "object",
+          "required": [
+            "text",
+            "writtenAt",
+            "versions"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "writtenAt": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "writtenAt"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "writtenAt": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "label": {
+                    "const": "JUDGMENT"
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "label": {
+              "const": "JUDGMENT"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "chapters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "startedAt",
+              "name",
+              "text",
+              "writtenAt",
+              "label",
+              "confidence"
+            ],
+            "properties": {
+              "startedAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "writtenAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "label": {
+                "const": "JUDGMENT"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "date",
+              "archive",
+              "topicId",
+              "headline",
+              "outlets",
+              "killed"
+            ],
+            "properties": {
+              "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "archive": {
+                "type": "string"
+              },
+              "topicId": {
+                "type": "string"
+              },
+              "headline": {
+                "type": "string"
+              },
+              "outlets": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "driftNote": {
+                "type": "object"
+              },
+              "killed": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "threadId": {
+                "type": "string"
+              },
+              "archivedAt": {
+                "type": "string"
+              },
+              "actors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "countries": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sourceKey": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "forks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "forkId",
+              "drawnAt",
+              "atEvent",
+              "branches"
+            ],
+            "properties": {
+              "forkId": {
+                "type": "string"
+              },
+              "drawnAt": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "atEvent": {
+                "type": "string"
+              },
+              "branches": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "branchId",
+                    "text",
+                    "p",
+                    "trigger",
+                    "resolutionSource",
+                    "due",
+                    "status"
+                  ],
+                  "properties": {
+                    "branchId": {
+                      "type": "string"
+                    },
+                    "scenarioId": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "p": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "trigger": {
+                      "type": "string"
+                    },
+                    "resolutionSource": {
+                      "type": "string"
+                    },
+                    "due": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "date",
+                          "status",
+                          "evidence",
+                          "note"
+                        ],
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "status": {
+                            "enum": [
+                              "fired",
+                              "hold",
+                              "dead",
+                              "late",
+                              "resurrected"
+                            ]
+                          },
+                          "evidence": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "archive",
+                                "topicId",
+                                "url"
+                              ],
+                              "properties": {
+                                "archive": {
+                                  "type": "string"
+                                },
+                                "topicId": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "pattern": "^https?://"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "note": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "const": "JUDGMENT"
+                          },
+                          "confidence": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "qid": {
+                      "type": "string"
+                    },
+                    "scored": {
+                      "type": "object",
+                      "required": [
+                        "verdict",
+                        "decidedAt",
+                        "sourceSK"
+                      ],
+                      "properties": {
+                        "verdict": {
+                          "enum": [
+                            "yes",
+                            "no",
+                            "void"
+                          ]
+                        },
+                        "decidedAt": {
+                          "type": "string"
+                        },
+                        "sourceSK": {
+                          "type": "string",
+                          "pattern": "^VERDICT(?:#\\d+)?$"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "verdicts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "verdict",
+                          "decidedAt",
+                          "sourceSK"
+                        ],
+                        "properties": {
+                          "verdict": {
+                            "enum": [
+                              "yes",
+                              "no",
+                              "void"
+                            ]
+                          },
+                          "decidedAt": {
+                            "type": "string"
+                          },
+                          "sourceSK": {
+                            "type": "string",
+                            "pattern": "^VERDICT(?:#\\d+)?$"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "scenarioP": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "question": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "otherThreadId",
+              "strength",
+              "mechanism",
+              "confirmed",
+              "confirmedBy",
+              "evidence",
+              "since"
+            ],
+            "properties": {
+              "otherThreadId": {
+                "type": "string"
+              },
+              "strength": {
+                "enum": [
+                  "weak",
+                  "medium",
+                  "strong"
+                ]
+              },
+              "mechanism": {
+                "type": "string"
+              },
+              "confirmed": {
+                "const": true
+              },
+              "confirmedBy": {
+                "const": "rule"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "since": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "counts": {
+          "type": "object",
+          "required": [
+            "events",
+            "forks",
+            "liveBranches",
+            "deadBranches",
+            "corrections"
+          ],
+          "properties": {
+            "events": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "forks": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "liveBranches": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "deadBranches": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "corrections": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "countries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "risk": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "corrections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "threadId",
+              "date",
+              "priorDate",
+              "kind",
+              "reason",
+              "evidence"
+            ],
+            "properties": {
+              "threadId": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "priorDate": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "branchId": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "resurrected",
+                  "line-contradicted"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "archive",
+                    "topicId",
+                    "url"
+                  ],
+                  "properties": {
+                    "archive": {
+                      "type": "string"
+                    },
+                    "topicId": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "pattern": "^https?://"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "eventId": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              },
+              "corrects": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "llm": {
+          "type": "object",
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "not run: no llm"
+            }
+          },
+          "additionalProperties": false
+        },
+        "birthEvidence": {
+          "type": "object"
+        },
+        "timelineCursor": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "index": {
+      "type": "object",
+      "required": [
+        "date",
+        "generated_at",
+        "next_expected_at",
+        "stale",
+        "stories",
+        "coverage",
+        "proposedMerges"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "generated_at": {
+          "type": "string"
+        },
+        "next_expected_at": {
+          "type": "string"
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "stories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/indexRow"
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "required": [
+            "missingDays"
+          ],
+          "properties": {
+            "missingDays": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            }
+          }
+        },
+        "proposedMerges": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "indexRow": {
+      "type": "object",
+      "required": [
+        "id",
+        "line",
+        "risk",
+        "born",
+        "chapters",
+        "liveBranches",
+        "lastMoved",
+        "actors",
+        "countries",
+        "confirmedLinks"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "line": {
+          "type": "string"
+        },
+        "risk": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "born": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "chapters": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "liveBranches": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastMoved": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "countries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confirmedLinks": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

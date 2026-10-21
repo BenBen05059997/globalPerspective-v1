@@ -1,0 +1,47 @@
+{
+  "threadId": "story-a",
+  "born": "2026-10-19",
+  "line": {
+    "text": "",
+    "writtenAt": "2026-10-19",
+    "versions": []
+  },
+  "chapters": [],
+  "events": [],
+  "forks": [
+    {
+      "forkId": "PRED#topic-a/2026-10-19",
+      "drawnAt": "2026-10-19",
+      "atEvent": "topic-a",
+      "branches": [
+        {
+          "branchId": "PRED#topic-a/2026-10-19/0-0",
+          "scenarioId": "0",
+          "text": "The named event occurs",
+          "p": 65,
+          "trigger": "The ministry publishes the named report",
+          "resolutionSource": "Ministry public record",
+          "due": "2026-10-18",
+          "status": [
+            {
+              "date": "2026-10-19",
+              "status": "late",
+              "evidence": [],
+              "note": "Due date passed without established trigger",
+              "label": "JUDGMENT",
+              "confidence": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "links": [],
+  "counts": {
+    "events": 0,
+    "forks": 1,
+    "liveBranches": 1,
+    "deadBranches": 0,
+    "corrections": 0
+  }
+}

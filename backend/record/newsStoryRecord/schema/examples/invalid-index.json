@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-19",
+  "generated_at": "2026-10-19T05:45:00Z",
+  "next_expected_at": "2026-10-20T05:45:00Z",
+  "stale": false,
+  "stories": [
+    {
+      "id": "story-a",
+      "line": "",
+      "risk": null,
+      "born": "2026-10-19",
+      "chapters": 0,
+      "liveBranches": -1,
+      "lastMoved": "2026-10-19",
+      "actors": [],
+      "countries": [],
+      "confirmedLinks": 0
+    }
+  ],
+  "coverage": {
+    "missingDays": [
+      "2026-10-14"
+    ]
+  },
+  "proposedMerges": []
+}

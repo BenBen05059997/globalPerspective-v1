@@ -5,8 +5,8 @@ and then builds the thread, country and cause-web analyses that the site shows. 
 analysts who use the Analysis Studio. Every job runs on a schedule; all model calls go to a DeepSeek endpoint set in each Lambda's live env.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: **1 Ingest** → **2 Stories** → **3 Analysis** → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
-This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3). Timeline: writes no events; its raw rows are the source of entry, story_born, read_changed, chapter, forecast_drawn, country_read_changed, link_confirmed, read only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: **1 Ingest** → **2 Stories** → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
+This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3, daily notes kept as cited input). Timeline: writes no facts or readings; its raw rows are the source of entry, story_born and forecast_drawn facts, read only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

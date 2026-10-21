@@ -5,8 +5,8 @@ subscribers, a breaking-news alert, and social posts. It serves site visitors, e
 is emailed each breaking alert. It reads what the pipeline group wrote and writes briefs and alert rows that the site serves.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → **7 Delivery** → 8 Watch
-This folder is stage 7: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no events; consumers moving to the Week, Today and Story views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no facts or readings; consumers moving to the weekly report and the record views. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

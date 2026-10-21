@@ -7,8 +7,8 @@ working) and the analysis libraries that the share Lambda and the offline eval h
 Readers of an old share link see it; nobody creates new ones from the site.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: shared-run pages of the retired Studio. Timeline: reads none of the timeline. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: shared-run pages of the retired Studio. Timeline: reads none of the record. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

@@ -1,119 +1,185 @@
-# The timeline: one source of truth, many views
+# The record: facts daily, readings weekly, many views
 
-Status: design adopted (operator, 2026-10-20). This is the system's core model. Every backend group and frontend feature
-README links here and says which events it **writes**, which **views** it reads, and nothing else about storage.
-Details of the subsystem that writes it: `ARCHITECTURE_RECORD.md`; what runs when: `ARCHITECTURE_RECORD_PIPELINE.md`;
-storage rules: `rules/DATA_STRATEGY.md`. What exists today is checked against the code in §7.
+Status: design adopted (operator, 2026-10-20); revised 2026-10-21 to two clocks (§1c, §8). This is the system's core model.
+Every backend group and frontend feature README links here and says which facts or readings it **writes**, which **views**
+it reads, and nothing else about storage. Details of the subsystem that writes it: `ARCHITECTURE_RECORD.md`; what runs when:
+`ARCHITECTURE_RECORD_PIPELINE.md`; storage rules: `rules/DATA_STRATEGY.md`; the stage list as data: `pipeline.json`.
+What exists today is checked against the code in §7.
 
 ## 1. The idea
-Everything the site knows about the world is an **event on one timeline**: dated, append-only, never rewritten. Every
-page is a **view** of that timeline, filtered by time, story, country, actor or kind. A page never stitches its own
-picture from raw tables.
+Everything the site knows about the world is **dated and append-only, never rewritten**, and is one of two things: a
+**fact** (something happened) or a **reading** (what we understand it to have meant). Every page is a **view** of facts
+and readings, filtered by time, story, country, actor or kind. A page never stitches its own picture from raw tables.
 
 ```
-  raw pipeline tables ──► world reader ──► timeline writer ──► record/timeline/YYYY-MM-DD.jsonl   (the truth)
-  (existing Lambdas)      (shared/world)    (newsStoryRecord)          │
-                                                                       ├─► story view     record/stories/<threadId>
-                                                                       ├─► index view     record/index.json
-                                                                       ├─► country view   record/countries/<ISO3>   (later)
-                                                                       ├─► corrections    record/corrections/
-                                                                       └─► consumers: today · story page · country · weekly · board · map · track record
+  raw pipeline tables --> world reader --> facts writer --> record/facts/YYYY-MM-DD.jsonl        (daily, no model)
+  (existing Lambdas)      (shared/world)   (newsStoryRecord)        |
+                                                                    v
+                          week's facts --> review (newsRecordReview, planned) --> record/readings/YYYY-Www.jsonl
+                                                                                  record/runs/YYYY-Www.json
+                                                                    |
+              views rebuilt from facts + readings: record/views/stories/{id}.json, index/active.json, index/all.json,
+              links/{threadId}.json  --> weekly report (weekly/) --> pages, board, email, map, track record
 ```
 
 ## 1b. The pipeline, stage by stage (structure; live status is in `project-docs/STATUS.md`, "Pipeline status")
-| # | Stage | What runs (folder) | Produces | Timeline role |
-|---|---|---|---|---|
-| 1 | Ingest | selector `newsInvokeGemini` 3×/day (`backend/pipeline`); map ingest `newsSituationIngest` hourly and GDACS every 20 min (`backend/situations`) | topics; map clusters; disaster alerts | raw material |
-| 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`) | threads, daily archive, forecasts (`PRED#`); map pins | source of `entry`, `story_born`, `forecast_drawn`; later `situation` |
-| 3 | Analysis | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts | source of `read_changed`, `country_read_changed`, `link_confirmed`, `verdict` |
-| 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only reader of raw tables |
-| 5 | Timeline | `newsStoryRecord` (`backend/record`) | `record/timeline/*.jsonl` + views (stories, index, corrections) | the truth |
-| 6 | Views | story, country, today pages (`features/threads`, `countries`, `home`); map (`features/map`); track record; board (`backend/board`, `features/board`); weekly (`backend/weekly`, `features/weekly`) | what readers see | read views only |
-| 7 | Delivery | site (`docs/` via the Worker), weekly email (`backend/distribution/newsEmailSender`), social posts (`backend/distribution`) | pages, emails, posts | consumers |
-| 8 | Watch | `backend/monitoring` (model guard, freshness, error digest) + CloudWatch alarms | alerts | must alarm on stage failures (§7.4) |
+Ten stages in three speeds. `pipeline.json` is the machine-readable copy and drives the block in every folder README.
 
-## 2. The event
-One JSON line per event in `record/timeline/YYYY-MM-DD.jsonl` (UTC day of `at`).
+| # | Stage | What runs (folder) | Produces | Role |
+|---|---|---|---|---|
+| | **Daily, no model** | | | |
+| 1 | Ingest | selector `newsInvokeGemini` 3x/day (`backend/pipeline`); map ingest `newsSituationIngest` hourly and GDACS every 20 min (`backend/situations`) | topics; map clusters; disaster alerts | raw tables |
+| 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`); forecasts (`PRED#`) | threads, daily archive, forecasts, map pins | raw tables |
+| 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts | raw tables, kept as cited input; revisit after two weekly runs |
+| 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only parser of raw tables |
+| 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: entries, births, forecasts, verdicts, sources, actors; facts-only views: active index, links, daily counts | the facts |
+| | **Weekly, one full analysis, Friday night, in this order** | | | |
+| 6 | Review | `newsRecordReview` (new Lambda, `backend/record`) reads the week's facts per active story | `record/readings/YYYY-Www.jsonl`: chapters, branch status, lines, typed links, actor merges; `record/runs/YYYY-Www.json` | the readings |
+| 7 | Views | rebuilt from facts + readings (`backend/record`) | `record/views/stories/{id}.json`, `index/active.json` (stories touched in 60 days), `index/all.json`, `links/{threadId}.json` | what readers fetch |
+| 8 | Weekly report | `backend/weekly` reads the week's readings | `weekly/YYYY-MM-DD.json` | a view of the readings, not a separate analysis |
+| | **Always** | | | |
+| 9 | Delivery | pages, board (`backend/board`, `features/board`), email (`backend/distribution`) read views through the Cloudflare Worker with ETag caching | what readers see | the board shows the settled past from readings and the unsettled present ("too early to call, N new entries") from daily counts |
+| 10 | Watch | `backend/monitoring` + CloudWatch alarms | alerts | Run objects are the signal: zero readings or a high rejection rate raises an alarm (§7.4) |
+
+On demand: re-run the review on a past week after an algorithm fix; the new readings supersede the old.
+
+## 1c. Two clocks
+| | Facts | Readings |
+|---|---|---|
+| What | what happened | what we understand it meant |
+| Clock | daily | weekly, with hindsight |
+| Model | none | one full analysis per week |
+| Written by | `newsStoryRecord` | `newsRecordReview` (planned) |
+| Stored in | `record/facts/YYYY-MM-DD.jsonl` | `record/readings/YYYY-Www.jsonl`, `record/runs/YYYY-Www.json` |
+| Changes | append only | append only; a reading cites facts and may supersede an earlier reading |
+
+Every dated thing carries two dates: the event date (when it happened) and the reading date (when we wrote it). Dates carry
+a precision: exact, day, week or month. Nothing is edited in place: corrections and re-runs append new readings that
+supersede old ones. User data (boards, pins, strings) lives in DynamoDB, points at record IDs and is never written into
+the record.
+
+## 2. The fact
+One JSON line per fact in `record/facts/YYYY-MM-DD.jsonl` (UTC day of `at`).
 ```
 { "eventId": "<sha1(kind + sourceKey)>",      // idempotent: the same source row always gives the same id
-  "at": "2026-10-16T12:26:00Z", "date": "2026-10-16",
+  "schemaVersion": 1,
+  "at": "2026-10-16T12:26:00Z", "date": "2026-10-16", "precision": "exact|day|week|month",
   "kind": "entry",                            // see §3
-  "threadId": "thread-…",                     // the story; null only for events with no story
-  "iso3": ["IRN"], "actors": ["IRGC"],        // canonical (resolveIso3; actor normalised as world/ does)
-  "sources": [{ "outlet": "BBC", "url": "…", "archive": "archive#2026-10-16", "topicId": "…" }],
-  "label": "fact" | "judgment", "confidence": "low|medium|high"?,   // judgments are always labelled
-  "payload": { … kind-specific … },
+  "type": "action" | "statement",             // only actions count for selection
+  "threadId": "thread-...",                   // the story; null only for facts with no story
+  "iso3": ["IRN"], "actors": ["<actorId>" | "unresolved:<name>"],
+  "sources": [{ "sourceId": "...", "outlet": "BBC", "url": "...", "archive": "archive#2026-10-16", "topicId": "..." }],
+  "payload": { ... kind-specific ... },
   "producer": "newsStoryRecord@<version>",
   "sourceRow": { "store": "NewsCache", "key": "archive#2026-10-16", "index": 7 } }   // provenance back to the raw row
 ```
-Rules: an event is never edited or deleted; a change is a new event (a correction points at the eventId it corrects);
-`eventId` makes re-runs safe; every fact names its source; every judgment carries its label.
+Rules: a fact is never edited or deleted; a change is a new fact or a reading that supersedes; `eventId` makes re-runs safe;
+every fact names its source. Facts carry no judgment label: judgments are readings.
 
-## 3. Event kinds
-| kind | label | payload (essentials) | comes from today |
-|---|---|---|---|
-| `entry` | fact | title, summary line, outlets | `NewsCache archive#` rows (agent Lambda) |
-| `story_born` | fact | first title | derived: earliest entry per threadId |
-| `read_changed` | judgment | risk from→to, expected path from→to, mechanism | `THREAD_HISTORY#`, `THREAD_ANALYSIS`, `DRIFT#`/`DRIFTLOG#` |
-| `chapter` | judgment | name, one sentence written at the time | derived when a drift note changes the expected path |
-| `forecast_drawn` | judgment | fork id, branches {text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
-| `branch_status` | judgment | branchId, fired/hold/dead/late/resurrected, evidence | trigger check (newsStoryRecord) |
-| `verdict` | fact | qid, yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` |
-| `correction` | fact | eventId corrected, what was wrong, reason | dead branch that fired; operator correction |
-| `link_confirmed` | judgment | other threadId, strength, mechanism, evidence | `web/` links with the confirmation rule |
-| `country_read_changed` | judgment | country, risk from→to, mechanism | `COUNTRY#/HISTORY#`, country `DRIFT#` |
-| `line` | judgment | the story's one-sentence line: text, writtenAt, confidence; earlier versions are earlier `line` events | written by `newsStoryRecord` (at birth, then weekly) |
-| `coverage` | fact | missingDays, source stamps, asOf / generatedAt, processing cursor | written by `newsStoryRecord` each run |
-| `situation` (later) | fact | opened/raised/closed, place, tier | `situations/` (map pipeline) |
+## 3. Kinds
+### Facts
+| kind | payload (essentials) | comes from today |
+|---|---|---|
+| `entry` | title, summary line, outlets | `NewsCache archive#` rows (agent Lambda) |
+| `story_born` | first title | derived: earliest entry per threadId |
+| `forecast_drawn` | fork id, branches {text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
+| `verdict` | qid, yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` |
+| `correction` | eventId corrected, what was wrong, reason | operator correction; legacy verdict edits |
+| `situation` (later) | opened/raised/closed, place, tier | `situations/` (map pipeline) |
 
-## 4. Views
-| View | Filter on the timeline | Stored as | Read by |
+Drift notes, story analysis, country briefings and the story web stay raw daily notes: the review may cite them as input;
+they are not facts and their old `read_changed`, `country_read_changed` and `link_confirmed` kinds no longer exist.
+
+### Readings (one kind, `reading`, five subtypes)
+| subtype | payload (essentials) | replaces |
+|---|---|---|
+| `chapter` | name, one sentence, written with hindsight | event kind `chapter` |
+| `branch_status` | branchId, fired/hold/dead/late/resurrected, evidence | event kind `branch_status` |
+| `line` | the story's one-sentence line | event kind `line` |
+| `link` | typed link between two stories (§4) | event kind `link_confirmed` |
+| `actor_merge` | two actor IDs proposed as one | new |
+
+Common fields: `readingId` = sha1(kind + threadId + period), `schemaVersion`, `cites[eventId]`, `covers{from,to,precision}`,
+`supersedes[readingId]`, `run`, `model`, `promptVersion`, `label`, `confidence`, `status` accepted|rejected (+ reason).
+Acceptance is mechanical: cites at least one fact, every cited ID exists, and the covered dates fall inside the cited
+facts. A rejected reading is kept with its reason. Coverage information (missing days, stamps) belongs in the Run, not as
+a timeline fact.
+
+## 4. Object model
+Every object has a stable ID and a `schemaVersion`.
+| Object | ID | Key fields | Links to |
 |---|---|---|---|
-| Story | `threadId = X`, all kinds, in order (the tree is this view) | `record/stories/<id>/latest.json` + daily snapshot | story page, board, weekly |
-| Index | latest state per story (line, risk, born, counts, last moved) | `record/index.json` | board pins, weekly selection |
-| Country | `iso3 ∋ X` | `record/countries/<ISO3>` (later) | country page |
-| Today | `date = today` | none: read the day file | today page (later) |
-| Week | `date ∈ week`, kinds that changed something | the weekly JSON (`weekly/`) | weekly email and page |
-| Board | events touching your pins and strings | computed on request (`newsBoard`) | board, the board's weekly |
-| Map | today's events with a place, grouped | `world/latest.json` (map pipeline; joins later) | home map |
+| Story | `threadId`; merge/alias record so a duplicate points at the surviving story (like Wikipedia redirects) | born, title, status | facts, readings, countries, actors |
+| Fact (event) | `eventId` = sha1(kind + sourceKey) | kind, type (action/statement), at, precision, payload | story, countries, actors, sources |
+| Country | `iso3` | name | facts, stories |
+| Actor | stable ID from a small actor table in `backend/shared` (name to ID, aliases), resolved at fact-write time; unknowns stored as `unresolved:<name>`; the review proposes merges as readings | name, type, aliases | facts. Start with countries and heads of government |
+| Source/outlet | stable `sourceId` | outlet, type (wire/national/state media) | facts. "Fired needs two distinct outlets" depends on it |
+| Branch | `branchId` | question, outcomes, resolution source, due date, result (Metaculus-style); status = which outcome happened | story, `forecast_drawn` fact, `branch_status` readings |
+| Reading | `readingId` = sha1(kind + threadId + period) | subtype, cites, covers, supersedes, run, model, promptVersion, label, confidence, status | facts, earlier readings, Run |
+| Typed link | readingId (subtype `link`) | type from a fixed list: causes, responds_to, same_actor, escalates, contradicts | two stories; cites facts on both sides |
+| Run | `runId` | period, inputs, model, promptVersion, counts, rejections, failures | readings, Period |
+| Period | `2026-W43`, `2026-10` | week or month | readings, the board weekly and the weekly report join on it |
+
+Later: Situation (a group above stories), Place below country (coordinates), Indicators (dated numbers with a source).
+Not needed now: country views.
+
+## 5. Views and stores
+| View | Built from | Stored as | Read by |
+|---|---|---|---|
+| Story | facts + accepted readings for one `threadId` (the tree is this view) | `record/views/stories/{id}.json` | story page, board, weekly |
+| Active index | stories touched in the last 60 days: latest line, counts, last moved | `record/views/index/active.json` | board pins, weekly selection |
+| All index | every story | `record/views/index/all.json` | search, story list |
+| Links | typed links for one story | `record/views/links/{threadId}.json` | story page, board |
+| Daily counts | facts per story per day (facts-only, no model) | in the indexes | board's unsettled zone |
+| Weekly report | the week's readings | `weekly/YYYY-MM-DD.json` | weekly page and email |
+| Board | readings and counts for your pins and strings | computed on request (`newsBoard`) | board |
 | Track record | `forecast_drawn`, `branch_status`, `verdict` | `predictions/track_record.json` (today) | track record page |
 
-## 5. Who writes, who reads (one writer)
-- **Writes the timeline and its stored views:** only `newsStoryRecord` (`backend/record/`), from raw tables through
-  `backend/shared/src/world/`. Nothing else writes `record/`.
+Stores: `record/facts/YYYY-MM-DD.jsonl` · `record/readings/YYYY-Www.jsonl` · `record/runs/YYYY-Www.json` · `record/views/...` ·
+`record/fixtures/golden-week/` (frozen facts; every prompt or rule change re-runs against it and diffs the readings) ·
+`weekly/YYYY-MM-DD.json`. A shadow week writes under `record/shadow/`.
+
+## 6. Who writes, who reads (two writers, each the only writer of its file)
+- **Facts and the facts-only views:** only `newsStoryRecord` (`backend/record/`), from raw tables through
+  `backend/shared/src/world/`. Writes `record/facts/*`.
+- **Readings and Runs:** only `newsRecordReview` (`backend/record/`, planned). Writes `record/readings/*` and `record/runs/*`.
+  It reads facts and its own earlier readings, nothing else.
+- **Views:** rebuilt from facts + readings (stage 7). Two owners, one per clock: newsStoryRecord rebuilds the facts-only views (index/active, index/all, links, daily counts) after each daily append; newsRecordReview rebuilds the story views after each weekly run. No view is written by anything else.
 - **Reads raw tables:** only `backend/shared/src/world/` (ARCHITECTURE_RECORD.md §0c).
 - **Everyone else reads views.** Until a view exists, a consumer may read through `world/` and says so in its README.
-- Later, producers may append events directly (e.g. the agent Lambda emitting `entry`); the one-writer rule then moves
-  to "one writer per event kind", recorded here before it happens.
 
-## 6. Every folder links here
-Each `backend/<group>/README.md` and `features/<name>/README.md` has a line:
-`Timeline: writes <kinds or "none">; reads <views or "world/ (until <view> exists)">. See project-docs/architecture/ARCHITECTURE_TIMELINE.md.`
-`quality/check_docs.mjs` fails a README that lacks the link.
+Each `backend/<group>/README.md` and `features/<name>/README.md` carries a generated pipeline block ending in a
+`Timeline:` line linking here; `quality/check_docs.mjs` fails a README that lacks it.
 
-## 7. What exists and what is missing (audit 2026-10-20: five read-only reviewers, code and live AWS only)
+## 7. What exists and what is missing (audit 2026-10-20: five read-only reviewers, code and live AWS only; items the 2026-10-21 design resolves are marked)
 
-### 7.1 The timeline itself
-- Nothing writes `record/timeline/*.jsonl` yet. `newsStoryRecord` (lane/record, not deployed) writes per-story files only;
-  its events lack `eventId`, `kind`, `at`, `label`, `producer`, `sourceRow`. The shared reader `backend/shared/src/world/`
-  exists (main a925f149); only `newsBoard` uses it so far.
-- No page can read a view: the Worker's `DATA_ALLOWED` lacks `record/`, and the read proxy has no record action.
+### 7.1 The record itself
+- Updated 2026-10-21: `newsStoryRecord` is deployed (reserved concurrency 1, no schedule, no model key). A shadow no-LLM
+  run for 2026-10-20 succeeded (267 stories) and wrote only under `record/shadow/`. Its code still has per-day chapter,
+  trigger and line model steps; the design removes them in favour of the weekly review (code not yet changed). It does
+  not yet write `record/facts/*`. `eventId`, `kind`, `at`, `producer`, `sourceRow` are the target fact fields (§2).
+- Resolved by design: `chapter`, `line`, `branch_status` and `coverage` as per-day events (now readings and the Run).
+- Still missing: the Worker's `DATA_ALLOWED` lacks `record/`, and the read proxy has no record action.
 
-### 7.2 Raw material, per event kind
+### 7.2 Raw material, per fact kind (and the inputs the weekly review cites)
 | kind | raw source | present | missing or unreliable |
 |---|---|---|---|
 | entry | `archive#` (agent Lambda) | threadId, archivedAt, url on every source; iso3 on 194/195 | publication time (only `archivedAt`, up to 8 h late; source `age` is relative text); outlet name on 0/514 sources (domain only); actors empty 13%; iso3 from the LLM, regex-checked only; `topicId` = `title-<rank>`, unstable across runs |
 | story_born | earliest `archive#` per thread | derivable | 43 of 84 threads are singletons; a story silent > 7 days forks |
-| read_changed | `THREAD_HISTORY#`, `DRIFT#`/`DRIFTLOG#` | drift: from/to, explaining event, reason | expected path is prose only; history only on days with new events; max 10 threads analysed per run; drift threads only from `latest` |
-| country_read_changed | `COUNTRY#/HISTORY#`, country `DRIFT#` | score, level, dimensions | keyed by name (no iso3); effectively weekly; 12 hard-coded drift countries |
+| (daily note, was `read_changed`) | `THREAD_HISTORY#`, `DRIFT#`/`DRIFTLOG#` | drift: from/to, explaining event, reason | expected path is prose only; history only on days with new events; max 10 threads analysed per run; drift threads only from `latest` |
+| (daily note, was `country_read_changed`) | `COUNTRY#/HISTORY#`, country `DRIFT#` | score, level, dimensions | keyed by name (no iso3); effectively weekly; 12 hard-coded drift countries |
 | forecast_drawn | `PRED#<topicId>/<day>` | branch text, deadline, `p` (percent, question triggers only), resolutionSource | no fork or scenario id (positional); one row per topic not per story; regions as names; `category` always null |
 | verdict / correction | `Q#/VERDICT`, `VERDICT#n` | verdict, evidence url + quote, decidedBy, reason | `Q#` has `clusterKey`, not `threadId`; legacy script still edits `PRED#` verdicts in place (122 legacy triggers): two verdict forms |
-| link_confirmed | `web/` links | from/to, confidence, mechanism, cited entries | links regenerated every run (no id, no first-seen); confidence is the model's own; the "confirmation rule" is not in code; mechanism text leaks prompt labels |
+| (input to `link` readings) | `web/` links | from/to, confidence, mechanism, cited entries | links regenerated every run (no id, no first-seen); confidence is the model's own; the "confirmation rule" is not in code (the design replaces it: a typed `link` reading must cite facts on both sides); mechanism text leaks prompt labels |
 | situation | `situations/state` history[] | at, tier, state, note | id changes when a thread is attached; `at` is the 30-min sweep time; no label; 7/30 threaded; GDACS never |
 
-### 7.3 Data that expires before the timeline can keep it
-`today-archive` 24 h, `THREAD_HISTORY#` 60 d, `DRIFT#` 60 d, `archive#` 90 d, `THREAD_ANALYSIS` 90 d, `COUNTRY#/HISTORY#`
-90 d. Only `DRIFTLOG#` is permanent. Until `newsStoryRecord` runs, history keeps falling off the end.
+### 7.3 Data that can disappear before the record keeps it
+Checked live 2026-10-21: TTL is **disabled** on NewsCache and SummarizeAndPredict, so `archive#`, `DRIFT#`, `THREAD_*` and
+`COUNTRY#` rows do not expire today; the per-row `ttl` attributes (24 h, 60 d, 90 d) would only bite if TTL were switched
+on. S3 lifecycle does expire `stories/` after 45 days. The archive gaps (Sept 14-29 and Oct 14 have no `archive#` row;
+rows exist from at least Sept 6) are **writing gaps**, not expiry: those days were never archived and cannot be backfilled.
+Oct 20 holds 14 entries against a normal 35-50, the DeepSeek outage. The facts writer should still start soon, but the
+reason is the 45-day `stories/` lifecycle and future gaps, not table TTLs.
 
 ### 7.4 Failure handling that would corrupt the timeline
 - Stale re-archive: on 2026-10-20 the agent re-saved the 10-19 topics under today (14/14 repeats; 19/176 repeated
@@ -123,7 +189,7 @@ Each `backend/<group>/README.md` and `features/<name>/README.md` has a line:
 - Stages swallow LLM errors and return normally (Lambda Errors stay 0). Alerts did fire by email (low balance at $0.14
   16 h ahead; content stale from 06:30Z), but no alarm watches `LLM 402`, and there are two alert topics
   (`GlobalPerspectiveAlerts` email; `GlobalPerspectivesAlerts` email + chat).
-- `threads.mjs merge/split` rewrites rows in place; on the timeline a merge must be an alias plus a correction event.
+- `threads.mjs merge/split` rewrites rows in place; on the record a merge is an alias (the duplicate points at the surviving story) plus a correction. Resolved by design, not yet built.
 
 ### 7.5 The same concept defined many times
 | concept | copies |
@@ -135,7 +201,7 @@ Each `backend/<group>/README.md` and `features/<name>/README.md` has a line:
 | story history | `narrative_thread`, `archive_range`, `useWeeklyArchive` |
 | outlet from host | `world/derive.js`, `outlet_metadata.js`, `signalAdapter.js`, `classifier-core.js` |
 | Firebase JWT check | 7 Lambdas; 3 skip the audience check if `FIREBASE_PROJECT_ID` were unset |
-| actor normalising | `record.js normalizeActor` vs `ACTOR_ALIASES` (entity-normalize, classifier-core) |
+| actor normalising | `record.js normalizeActor` vs `ACTOR_ALIASES` (entity-normalize, classifier-core); resolved by design: one actor table in `backend/shared`, IDs resolved at fact-write time |
 
 ### 7.6 Dead weight and wrong docs
 - Unused read actions: `event_dossier`, `dossier_analysis`, `pair_analysis`, `pair_analyses_list`, `world_overview`
@@ -149,12 +215,20 @@ Each `backend/<group>/README.md` and `features/<name>/README.md` has a line:
   runtimes (6 listed 20.x, live 22.x), `check-shared-sync.mjs` header, GDACS/GDELT headers (DynamoDB shadow), rule
   `newsSourceAuditDaily` (runs Mon/Wed/Fri).
 
-### 7.7 What to build, in order
-1. Capture first (history is expiring): `newsStoryRecord` writes the timeline with stable keys (`sourceRow` = archive
-   date + generationId + topicId; fork id = PRED# key + scenario index), switched to world/, shadow week.
-2. Stop corrupting inputs: stale-run guard, "no data" ≠ "ended" on the map, an alarm on `LLM 402`, one alert topic.
-3. Fill missing fields at the source: publication time (ingest keeps `pubDate`; selector keeps the source date), outlet
-   name, canonical iso3 via `resolveIso3`, normalised actors, `threadId` on `Q#` rows, fork ids on `PRED#`.
-4. Serve views: Worker allowlist + reader IAM for `record/`, a record action or `/data/record/*`; Story view replaces
-   `narrative_thread`/`archive_range`; one `storyTitle`, one tier, one freshness from event `at`.
-5. Retire: dead read actions, pruned S3 prefixes, legacy verdict script, in-place merge (alias events instead).
+### 7.7 What to build
+Superseded by §8 (decided 2026-10-21). The items not in §8 still stand: stop corrupting inputs (stale-run guard, "no data"
+is not "ended" on the map, an alarm on `LLM 402`, one alert topic); fill missing fields at the source (publication time,
+outlet name, canonical iso3, `threadId` on `Q#` rows, fork ids on `PRED#`); retire dead read actions, unpruned S3
+prefixes, the legacy verdict script and in-place merge.
+
+## 8. Decided 2026-10-21 (operator)
+Two clocks (§1c), ten stages (§1b), the object model (§4) and the stores (§5) are decided. Order of work:
+1. Daily facts writer on a schedule, shadow prefix first, with backfill from the archive rows that exist (Sept 6 onward, gaps noted in §7.3).
+2. Docs (this change).
+3. Golden-week fixture (`record/fixtures/golden-week/`).
+4. `newsRecordReview`, first run on the golden week.
+5. Board reads readings, the unsettled zone, and the Worker allowlist for `record/`.
+
+Current state: `newsStoryRecord` deployed and shadow-only; its per-day model steps are to be removed; board slice 2 merged
+and `newsBoard` deployed, board UI not yet released. A design discussion is not a build go-ahead: each step above waits for
+its own go.

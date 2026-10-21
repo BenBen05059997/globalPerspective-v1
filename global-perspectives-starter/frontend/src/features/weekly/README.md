@@ -5,8 +5,8 @@ It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTU
 record or board data.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the weekly page (planned /briefings/weekly). Timeline: will render the Week view (weekly/). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the weekly page (planned /briefings/weekly). Timeline: will render the weekly report (weekly/). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -29,7 +29,7 @@ This folder is stage 6: the weekly page (planned /briefings/weekly). Timeline: w
 - None yet. Planned: one public fetch of the week's JSON; no sign-in.
 
 ## Pipeline
-1. `backend/weekly/pull.mjs` selects from the live tables (W1).
+1. `backend/weekly/pull.mjs` selects from the live tables (W1); interim. Final design: the weekly is a view of the week's readings, run after the review (stage 8).
 2. The headless run writes the week to the schema; `check.mjs` validates; `publish.mjs` writes S3 `weekly/` (W2).
 3. `newsEmailSender` renders the email from the same section model (W3); this page renders the web view (W5).
 

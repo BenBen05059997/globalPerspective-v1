@@ -5,8 +5,8 @@ radar (d3) of tracked situations, with a status line, alert stack, intel feed, s
 what is happening now and open a story or country from it. On phones it becomes tabs plus a bottom sheet.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the home map (/). Timeline: reads world/latest.json from the map pipeline; target: Map view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the home map (/). Timeline: reads world/latest.json from the map pipeline; target: a map view of the facts. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

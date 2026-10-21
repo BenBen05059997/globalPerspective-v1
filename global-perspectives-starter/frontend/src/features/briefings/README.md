@@ -6,8 +6,8 @@ for the day's brief or the weekly signals brief. Three modes: **read** (default,
 fields the brief carries, and links are built only to real ids.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the daily and weekly briefs page. Timeline: reads the briefs; target: Today and Week views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the daily and weekly briefs page. Timeline: reads the briefs; target: daily facts and the weekly report. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

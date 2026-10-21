@@ -127,7 +127,7 @@ retiring `TriggerWeeklyBrief`, and pointing the sender at S3 (first live send of
 
 ## Build stages for the first new-path send, Sunday 2026-10-25 (written 2026-10-20; nothing started)
 Target: the week ending 2026-10-25 goes out as the analyst's weekly at 14:00Z. The pipeline reads the live tables
-directly (as drafts 1-2 did); it switches to `record/` once `newsStoryRecord` exists (record plan step 2). Code selects,
+directly (as drafts 1-2 did); it switches to the readings after the review exists (`newsRecordReview`, ARCHITECTURE_TIMELINE.md §8). Code selects,
 the agent writes, code checks: selection rules are deterministic in the pull script, so the agent never chooses what
 counts. Each stage is one sequential Sonnet agent; the operator checks between stages.
 

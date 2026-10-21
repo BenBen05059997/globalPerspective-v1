@@ -1,9 +1,15 @@
 # The record subsystem: architecture
 
-The model this subsystem implements is `ARCHITECTURE_TIMELINE.md`: the timeline (`record/timeline/YYYY-MM-DD.jsonl`) is
-the stored truth; the story files, the index and corrections below are views built from it.
+The model this subsystem implements is `ARCHITECTURE_TIMELINE.md`. **Revised 2026-10-21: two clocks.** Facts
+(`record/facts/YYYY-MM-DD.jsonl`, written daily, no model) and readings (`record/readings/YYYY-Www.jsonl`, written weekly
+with hindsight, each citing facts and able to supersede an earlier reading) are the stored truth; everything under
+`record/views/` is built from them. Where this file still says `record/timeline/`, `record/stories/`, `record/index.json`
+or per-day chapters, triggers and lines, TIMELINE wins: the daily model steps are superseded by the weekly review
+(`newsRecordReview`, planned) and `record/stories/*`, `record/index.json`, `record/corrections/*` become
+`record/views/stories/{id}.json`, `index/active.json`, `index/all.json`, `links/{threadId}.json`. Sections 3 and 5 below
+are the 2026-10-20 shapes and are rewritten when the views are built.
 
-Status: design (2026-10-20). Nothing in `backend/record/` exists yet except what §9 marks done. This file describes the
+Status: design (2026-10-20, revised 2026-10-21). `newsStoryRecord` is deployed shadow-only; see §9. This file describes the
 target; `ARCHITECTURE.md` describes what runs. When a piece ships, its row here moves from "planned" to "live" and
 `ARCHITECTURE.md` data flow 8 gets the pointer. Rules it obeys: `rules/DATA_STRATEGY.md` (S3 for the world, one writer
 per prefix, immutable snapshots), `rules/WORLD_MODEL.md` (the event is the entity). Plan: `plans/PLAN_2026-10-20_record_backend.md`.
@@ -12,7 +18,7 @@ Pipeline (step by step, with times): `ARCHITECTURE_RECORD_PIPELINE.md`.
 ## 0. Three names, never mixed
 | Name | What it is | Who sees it | Where it lives |
 |---|---|---|---|
-| **record** | the world's memory: one dated, append-only account per story | nobody directly; every reader below | `backend/record/` (`newsStoryRecord`), S3 `record/` |
+| **record** | the world's memory: dated, append-only facts (daily) and readings (weekly) | nobody directly; every reader below | `backend/record/` (`newsStoryRecord` writes facts, `newsRecordReview` writes readings), S3 `record/` |
 | **weekly** | the analyst's weekly: the shared report, the same for every reader | everyone (email + `/briefings/weekly`) | `backend/weekly/` (schema, pull, check, publish, hold, section model; one source of truth), procedure in `.claude/skills/weekly-brief/`, S3 `weekly/`, email in `newsEmailSender` via `src/_weekly`, frontend `features/weekly/` |
 | **board** | the personal layer: pins, strings, arrivals, the board's own weekly and monthly, alerts, presets | the signed-in member who owns it | `backend/board/` (`newsBoard`, `newsConnect`), DynamoDB board items + prefs fields, S3 `record/pairs/`, frontend `features/board/` |
 An agent working on one of these does not touch the other two except through their published files and documented
@@ -33,8 +39,8 @@ parses them**: `archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY#/
 scenarios, `Q#` verdicts, `WEB#INDEX` and `web/latest.json`. It also holds the derivations everyone needs: story birth,
 branches from scenarios, missing days and coverage, risk tier from score. Readers take an injected client, so the same
 code runs in a Lambda and in a local script. Consumers (`newsStoryRecord`, the weekly pull, `newsBoard`, `newsConnect`)
-import it through `_shared` and never parse a raw row themselves. **Only `newsStoryRecord` writes derived story history**
-(`record/`); once it is live, the weekly and the board read the record and use the world reader only for what the record
+import it through `_shared` and never parse a raw row themselves. **Two writers own the record**: `newsStoryRecord` writes facts and
+`newsRecordReview` (planned) writes readings, each the only writer of its files; once it is live, the weekly and the board read the record and use the world reader only for what the record
 does not hold.
 
 ## 1. Purpose, in one paragraph
@@ -54,7 +60,7 @@ the same derived number (live branches, last moved), the writer puts it in `reco
 ### Shared: code used by more than one Lambda (lives once)
 | Shared module | Location | Used today by | Used by the record subsystem for |
 |---|---|---|---|
-| `llm.js` (one LLM client, `[usage]` cost line) | `backend/shared/src/` via `src/_shared` symlink | 13 Lambdas | the trigger check judgment, the mechanism sentence in `newsConnect` |
+| `llm.js` (one LLM client, `[usage]` cost line) | `backend/shared/src/` via `src/_shared` symlink | 13 Lambdas | the weekly review's branch-status reading, the mechanism sentence in `newsConnect` |
 | `dayZero.js` (which archive days count) | same | thread, systems, country, drift, weekly brief, dev.to | which entries a trigger check may cite |
 | `resolveIso3.js` + `iso3Names.json` + `countries.js` (canonical country names) | same | thread, country, drift, read API, posters | place matching in the duplicate check and the pair grounds |
 | `placeFilter.js` | same | systems, breaking, signals, read API, posters | place grounds for pairs |
@@ -73,7 +79,8 @@ committed `src/_shared` symlink; never copy it. The two **new** backend modules 
 ### Independent: each Lambda owns its prefix and nothing else
 | Lambda | Group (folder) | Owns (sole writer) | Reads | Never touches |
 |---|---|---|---|---|
-| `newsStoryRecord` | `backend/record/` | `record/stories/*`, `record/index.json`, `record/corrections/*` | `NewsCache archive#*`, `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS, DRIFT#, DRIFTLOG#`, `PredictionLog PRED#*`, `web/latest.json` | any DynamoDB write; `weekly/`; user tables |
+| `newsStoryRecord` | `backend/record/` | `record/facts/*` and the facts-only views (target; today shadow-only under `record/shadow/`; 2026-10-20 shape: `record/stories/*`, `record/index.json`, `record/corrections/*`) | `NewsCache archive#*`, `SummarizeAndPredict THREAD#*/THREAD_ANALYSIS, DRIFT#, DRIFTLOG#`, `PredictionLog PRED#*`, `web/latest.json` | any DynamoDB write; `weekly/`; user tables |
+| `newsRecordReview` (planned) | `backend/record/` | `record/readings/*`, `record/runs/*` | `record/facts/*`, its own earlier readings | any other prefix; DynamoDB |
 | `newsConnect` | `backend/board/` | `record/pairs/*` | `record/index.json`, `record/stories/*`, `web/latest.json`, `SummarizeAndPredict HISTORY#/THREAD_HISTORY#` (daily scores) | user tables; `record/stories/*` |
 | `newsBoard` | `backend/board/` | `GlobalPerspectiveSavedItems` items `kind:'board'`; `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`, `alerts`, `quietBoards` | `record/*`, `weekly/latest.json` | any S3 write |
 | weekly run (headless Claude Code) | `backend/weekly/` (source of truth) + `.claude/skills/weekly-brief/` (procedure only) | `weekly/*` | `record/*`, `web/latest.json`, `predictions/track_record.json` | DynamoDB; `record/` |
@@ -189,11 +196,11 @@ flowchart LR
 
 ## 6. Invariants
 1. One writer per prefix and per table field (table in §2). A reader that needs more asks the writer.
-2. `record/` rows are dated and never rewritten; `latest.json` is a pointer; corrections are appended.
+2. `record/` rows are dated and never rewritten; `latest.json` is a pointer; corrections and re-runs are appended as new readings that supersede old ones.
 3. No human gate (decision 0034, extended by the operator to the whole record on 2026-10-20): the operator disputes by
    appending a correction with a reason; a wrong result is fixed in the algorithm.
-4. Judgments carry a label and a confidence; facts carry a source. The weekly, the tree and the board render labels from
-   the record and never infer them.
+4. Readings carry a label, a confidence and the facts they cite; facts carry a source. A reading with no valid citation is
+   rejected. The weekly, the tree and the board render labels from the record and never infer them.
 5. The browser reads world data only through the Worker's `/data/*`; member-only computation (`newsConnect`, `newsBoard`)
    is JWT-gated at the Lambda.
 6. Publish-unless-vetoed: the weekly is published by the run and sent by the sender unless the week's file says `held`.
@@ -212,7 +219,8 @@ in S3; the prediction log migration (DATA_STRATEGY §6, separate step).
 |---|---|
 | resolver auto-verdicts (0034) | live 2026-10-20 |
 | `backend/shared/src/record.js`, `s3json.js` | planned |
-| `newsStoryRecord` | planned (dry-run week first) |
+| `newsStoryRecord` | deployed 2026-10-21, shadow-only, no schedule, no model key; writes facts on a schedule next (TIMELINE §8 step 1); its old per-day model steps are to be removed |
+| `newsRecordReview` | planned (TIMELINE §8 step 4, first run on the golden week) |
 | `web/` link confirmation | planned |
 | `backend/weekly/` + the weekly run + `weekly/` | planned (weekly plan W0-W6) |
 | `features/weekly/` | planned |

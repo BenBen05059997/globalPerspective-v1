@@ -6,8 +6,8 @@ these files through its committed `src/_shared -> ../../../shared/src` symlink, 
 under `_shared/`. An edit here changes every Lambda that requires the file on its next deploy.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → **4 One reader** → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
-This folder is stage 4: world/, the only reader of the raw tables, plus the shared rules and the S3 helpers. Timeline: writes no events; every other stage reads raw tables only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → **4 One reader** → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
+This folder is stage 4: world/, the only reader of the raw tables, plus the shared rules, the actor table and the S3 helpers. Timeline: writes no facts or readings; every other stage reads raw tables only through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Modules (`src/`)
@@ -30,7 +30,7 @@ This folder is stage 4: world/, the only reader of the raw tables, plus the shar
   (`If-None-Match: *`), `putLatest`; client injected so it tests without the SDK. Unused until the record writes.
 - `world/`: the one reader of the world's raw tables (`archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`,
   `COUNTRY# HISTORY#`, `DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts, `WEB#INDEX`, `web/latest.json`, the `latest`
-  topic pool) plus the shared derivations (story birth, branches, coverage and missing days, `tierFromScore`, outlets).
+  topic pool) plus the shared derivations (story birth, branches, coverage and missing days (which days have archive data; not the Run object's coverage), `tierFromScore`, outlets).
   **Rule: nobody else parses these rows**; consumers (`newsStoryRecord`, the weekly pull, `newsBoard`, later `newsConnect`)
   require `./_shared/world` and pass an injected client (`makeDynamoClient` / `makeS3Client`, no SDK import, no aws CLI).
   Front door: `src/world/README.md` (row table, exact derivation rules, decisions).

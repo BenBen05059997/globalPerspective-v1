@@ -1,6 +1,6 @@
 # The record backend: branches checked, chapters written, links confirmed, boards stored
 
-Status: design agreed in discussion (2026-10-20); nothing built. Serves `PLAN_2026-10-20_analyst_weekly.md` (steps 3–6)
+Status: design revised 2026-10-21 (two clocks, see the note at the end); `newsStoryRecord` deployed shadow-only, the review not built. Serves `PLAN_2026-10-20_analyst_weekly.md` (steps 3–6)
 and `PLAN_2026-10-20_board.md`. Storage follows `rules/DATA_STRATEGY.md` (S3 for the world, DynamoDB for the
 user, one writer per prefix, snapshots immutable, `latest` is a pointer, `index.json` instead of listing).
 
@@ -194,3 +194,61 @@ the agent must not re-archive stale staging as a new day.
 - Whether `record/` should also absorb the prediction log migration (DATA_STRATEGY §6) in step 1 or later.
 - The LLM for the trigger check: the resolver's `deepseek-v4-pro` or the headless run's model. Cost per day to be
   measured in the dry-run week.
+
+## 2026-10-21 design change: two clocks
+Operator decision: the record separates facts (daily, no model, append-only) from readings (weekly, with hindsight,
+append-only, citing facts, superseding earlier readings). `newsStoryRecord` becomes the facts writer; chapters, branch
+status, lines, typed links and actor merges move to a new weekly `newsRecordReview` (Friday night), with a Run object per
+period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order of work: (1) daily facts writer on a
+schedule, shadow prefix, backfill from existing archive rows (table TTL is disabled; see TIMELINE §7.3); (2) docs; (3) golden-week fixture; (4) `newsRecordReview`, first run on
+the golden week; (5) board reads readings, unsettled zone, Worker allowlist for `record/`. In this plan: steps that put
+chapter, trigger-check and line model calls in the daily writer, and `record/stories/*` / `record/index.json` as written
+products, are superseded by this note; the no-human-gate decisions stand.
+
+## Checklist 2026-10-21: built, partial, missing (verified against code and live AWS, not docs)
+Status words: EXISTS · PARTIAL · MISSING · WRONG (built against the old design, must change).
+
+### Stages
+| # | Stage | Status | Where | Gap |
+|---|---|---|---|---|
+| 1 | Ingest | EXISTS | `backend/pipeline`, `backend/situations` | archive gaps Sept 14-29, Oct 14 (never written) |
+| 2 | Stories | EXISTS | `newsThreadAnalysis`, THREAD# rows | - |
+| 3 | Daily notes | EXISTS | `newsThreadAnalysis`, `newsDriftCorrector` | kept as cited input; revisit after two weekly runs |
+| 4 | One reader | PARTIAL | `backend/shared/src/world/` | weekly `pull.mjs` not written; other Lambdas still parse raw tables |
+| 5 | Facts | WRONG | `newsStoryRecord` | no facts-only mode; writes `record/timeline/` not `record/facts/`; folds model judgments into the same file |
+| 6 | Review | MISSING | - | `newsRecordReview` not started (correct for now) |
+| 7 | Views | PARTIAL | `timeline.js rebuildStory` | mixes judgments in; no `index/active`, `links/{id}`, daily counts |
+| 8 | Weekly report | PARTIAL | `backend/weekly` (sections, schema) | no pull, no readings input |
+| 9 | Delivery | PARTIAL | `newsBoard recordViews.js` | reads two record paths; Worker `DATA_ALLOWED` lacks `record/` and `weekly/`; board UI has no unsettled zone |
+| 10 | Watch | MISSING | - | no Run object, no alarm on record runs |
+
+### Objects
+| Object | Status | Where | Gap |
+|---|---|---|---|
+| Story | PARTIAL | threadId, `story_born` | no merge/alias record; duplicates report-only |
+| Fact | PARTIAL | `timeline.js makeEvent` (sha1 id, sourceKey, sourceRow) | no action/statement type |
+| Country | EXISTS | iso3, `shared/resolveIso3.js` | - |
+| Actor | MISSING | strings via `normalizeActor` | no ID table, no `unresolved:` form |
+| Source/outlet | PARTIAL | `shared/outlets.js` keyed by domain | no stable source ID on each fact |
+| Branch | PARTIAL | `forecast_drawn` forks/branches | not question + outcomes + resolution source + result |
+| Reading | MISSING | judgments are plain events | no cites/covers/supersedes/run/model/promptVersion |
+| Typed link | PARTIAL | `link_confirmed`, `shared/links.js` | no fixed type list |
+| Run | MISSING | report JSON only, not persisted | - |
+| Period | MISSING | - | - |
+| Date precision | MISSING | `world/dates.js` | - |
+| schemaVersion | MISSING | - | - |
+
+### Must change (old design)
+`backend/record/newsStoryRecord/src/{index,prompts,timeline,persistence,runtime}.js`, its README/DRYRUN/schema/tests;
+`backend/board/newsBoard/src/{recordViews,arrivals}.js` (expect `line`, `chapters`, `liveBranches` that only readings will
+fill); `features/board/components/StoryTree.jsx` and siblings (no unsettled state); `cloudflare/front-worker/production/worker.mjs:13`.
+
+### Live state
+`newsStoryRecord`: deployed, reserved concurrency 1, no schedule, no `RECORD_LLM_MODEL`; S3 `record/` holds only
+`shadow/` (558 files, Sept 30-Oct 20, from the 2026-10-21 no-LLM run). `newsBoard-role` reads `record/index.json` and
+`record/stories/*` only, so its record panels return "no record" today. Table TTL disabled; S3 `stories/` expires at 45 days.
+
+### Risks
+- Setting `RECORD_LLM_MODEL` and a schedule on the current code would make 650-1,560 model calls a run; don't, until step 1 removes the model steps.
+- Oct 20 archive holds 14 entries (outage); the facts for that day are thin.
+- Duplicate pair (Canadian base fire) stays open until the alias record exists.

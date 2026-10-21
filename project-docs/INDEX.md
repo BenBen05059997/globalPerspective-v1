@@ -6,9 +6,9 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [The timeline](architecture/ARCHITECTURE_TIMELINE.md) — **the core model**: one append-only event timeline is the truth; every page is a view of it.
+- [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the core model**: two clocks (facts daily, readings weekly), ten stages, object model, order of work; stage list as data in [pipeline.json](architecture/pipeline.json).
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D), with costs and migration.
-- [The record subsystem](architecture/ARCHITECTURE_RECORD.md) — design: one dated record per story (`record/`), who writes what, what is shared, how it touches other places; [its pipeline](architecture/ARCHITECTURE_RECORD_PIPELINE.md) — what runs when.
+- [The record subsystem](architecture/ARCHITECTURE_RECORD.md) — design: `record/`, who writes what (two writers), what is shared, how it touches other places; [its pipeline](architecture/ARCHITECTURE_RECORD_PIPELINE.md) — what runs when (short; the stages live in the record doc).
 - [Decision records](decisions/README.md) — 32 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.
 - [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`

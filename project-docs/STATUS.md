@@ -3,17 +3,19 @@
 Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision records, read 2026-10-20.
 Update a line when its source changes; delete it when its source says done. Design: [ARCHITECTURE](architecture/ARCHITECTURE.md).
 
-## Pipeline status (2026-10-20 evening; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
+## Pipeline status (2026-10-21; ten stages, two clocks; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
 | # | Stage | Status |
 |---|---|---|
 | 1 | Ingest | **stopped**: DeepSeek out of credit since 03:50Z (selector and map ingest fail; GDACS fine) |
 | 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; guards and same-run joins deployed 2026-10-20 14:20Z (first real test: the 20:25Z run); old duplicates wait for alias repair on the timeline |
-| 3 | Analysis | **stopped** (DeepSeek); forecast settling writes verdicts itself since today, first ~10-24 |
+| 3 | Daily notes | **stopped** (DeepSeek); forecast settling writes verdicts itself since today, first ~10-24 |
 | 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; lane B switched; lane C switching; two more readers in progress for lane B |
-| 5 | Timeline | building on lane/record (C); not deployed; history keeps expiring until it runs |
-| 6 | Views | pages read raw tables; board slice 1 live; weekly W1-W3 built on lane/weekly (B), final dry run waits for two shared readers |
-| 7 | Delivery | live; the Sunday email still sends the old weekly; Worker cannot serve `weekly/` or `record/` yet |
-| 8 | Watch | low-balance alerts live; **freshness monitor paused** 2026-10-20 ~14:40Z (rule `TriggerFreshnessMonitor` DISABLED: it re-sent "content stale" every 2 h during the DeepSeek outage; also pauses the daily settle check). Re-enable after the DeepSeek top-up or lane G's dedupe, whichever is first. No alarm on the model failure yet; two alert topics |
+| 5 | Facts | `newsStoryRecord` deployed in shadow only, no schedule; per-day model steps still in the code (removal is §8 step 1); history keeps expiring until a scheduled run and backfill exist |
+| 6 | Review | not started: `newsRecordReview` is planned (§8 steps 3-4: golden week, then first run) |
+| 7 | Views | pages still read raw tables; board slice 1 live; record views exist only in shadow (facts-only views from `newsStoryRecord`, story views wait for the review) |
+| 8 | Weekly report | W1-W3 built on lane/weekly (B) with an interim live-table pull; final design reads the week's readings after the review; final dry run waits for two shared readers |
+| 9 | Delivery | live; the Sunday email still sends the old weekly; Worker cannot serve `weekly/` or `record/` yet |
+| 10 | Watch | low-balance alerts live; **freshness monitor paused** 2026-10-20 ~14:40Z (rule `TriggerFreshnessMonitor` DISABLED: it re-sent "content stale" every 2 h during the DeepSeek outage; also pauses the daily settle check). Re-enable after the DeepSeek top-up or lane G's dedupe, whichever is first. No alarm on the model failure yet; two alert topics |
 
 ## Deployed 2026-10-20 ~15:20Z (lanes F and G, main f03ab32b)
 - Lambdas: newsInvokeGemini-dev, NewsProjectInvokeAgentLambda-dev, newsPredictionResolver, newsSituationIngest,
@@ -29,9 +31,12 @@ Update a line when its source changes; delete it when its source says done. Desi
 3. **Weekly W2-W3** (lane B) → test email (operator yes) → Saturday 2026-10-24 run → Sunday switch (operator yes).
 4. **Story pipeline fixes** (lane D): verify the 2026-10-19 join fixes, merge the 18 old duplicates, close the join gaps,
    stale-run guard, a 402 alarm (operator yes). **Must precede step 5**, or the record stores split stories as truth.
-5. **Record live** (lane C code → coordinator creates the Lambda, operator yes for IAM) → shadow week → `record/`.
-6. Weekly reads the record; weekly page; Worker access for `weekly/` and `record/` (operator yes); cloud schedule.
-7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) on top of the record.
+5. **Record, in the order of ARCHITECTURE_TIMELINE.md §8** (each step waits for its own go): (1) daily facts writer on a
+   schedule, shadow prefix first, with backfill before the raw TTLs erase more history; the per-day model steps are removed;
+   (2) docs; (3) golden-week fixture; (4) `newsRecordReview` (weekly readings, runs), first run on the golden week;
+   (5) board reads readings, the unsettled zone, and the Worker allowlist for `record/` (operator yes).
+6. Weekly becomes a view of the week's readings (after the review); weekly page; cloud schedule.
+7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) fills in once readings exist.
 Plans: [record](plans/PLAN_2026-10-20_record_backend.md), [weekly](plans/PLAN_2026-10-20_analyst_weekly.md),
 [board](plans/PLAN_2026-10-20_board.md). Lanes and mailbox: `/Users/benlai/Downloads/gp-mailbox/`.
 

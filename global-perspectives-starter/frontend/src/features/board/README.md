@@ -3,8 +3,8 @@
 The member's personal connection board (`/board`). A signed-in reader pins stories, countries and actors, drags one pin onto another to ask whether they connect, keeps or cuts strings, and writes one line per string. It is the **board** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the record or the weekly.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the board page (/board). Timeline: reads boards via newsBoard; target: Index and Story views. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the board page (/board). Timeline: reads boards via newsBoard; target: story views, readings for the settled past and daily counts for the unsettled present. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -76,5 +76,6 @@ Imports from other features: none.
   sheet. Not tested in a browser: signed-out and not-available views (unit-tested), the What is missing follow,
   co-movement grounds, touch drag on a device.
 ## Slice 2 (local code)
+Caveat: chapters, line and branch status come from weekly readings and stay empty ("no reading yet") until the first review run (`newsRecordReview`); today the tree shows facts only.
 Pins read recorded lines/counts from the board response. Open a thread pin for the four tree zoom levels: line, chapters, forks and events, event evidence. Status histories are shown exactly as recorded (percent probability, explicit date and state), never inferred from a passed deadline. Dead branches remain folded dated stubs; resurrected history keeps its earlier death. The board weekly projects the last seven UTC dates from pin lastMoved, dated kept/cut strings, record checks and confirmed links. No data produces a specific reason, never an example number. Arrivals require a strong confirmed record link plus cheap grounds and stay capped at five; keep adds a provisional reader string, dismiss persists the id.
 Dev fake: `?devBoard=1&devRecord=1` and `/board/dev-record` serves copied lane C schema examples, including its deliberately blank line/chapters/events; `devRecord=missing` exercises missing-record reasons. Both controls and fixtures remain within the existing development-only dynamic import. Full populated tests extend the schema example in test code only; no fixture text is used as a production fallback. `story_view` is public and its hook does not require auth; board/arrivals reads remain owner-only.

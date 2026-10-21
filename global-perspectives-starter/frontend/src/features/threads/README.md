@@ -5,8 +5,8 @@ historical) and the story page (`/weekly/thread/:threadId`). Readers use `/weekl
 board, timeline, map or story web, and a story page to read one arc (story mode first, "Read in full" for the long tabbed page).
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the story page and the stories list. Timeline: rebuilds story history from raw tables; target: Story view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the story page and the stories list. Timeline: rebuilds story history from raw tables; target: the story view (facts plus readings). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

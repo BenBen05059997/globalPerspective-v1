@@ -12,10 +12,10 @@ removal is deployed (G3). No secret values belong in this inventory.
 
 Each active stage has an aggregate failed-run metric/alarm and per-Lambda native `Errors` alarms. Stage 4 is a shared
 library, not a Lambda: explicit `stage4` failed-run attribution is REQUESTED from consumer owners, and native consumer
-Errors covers uncaught failures meanwhile. Stage 5's proposed `newsStoryRecord` filter is held until its function/log
-group is registered; the stage alarm alone cannot discover uninstrumented errors. Stage 6's cloud routine also needs
+Errors covers uncaught failures meanwhile. Stage 5's (Facts) proposed `newsStoryRecord` filter is held until its function/log
+group is registered; the stage alarm alone cannot discover uninstrumented errors. Stage 8's (Weekly report) cloud routine also needs
 its own failed-publish/check signal from its runner, REQUESTED rather than a fabricated Lambda metric. Generic markers
-use `[pipeline-status] ... failed`; add them to swallowed-error paths in other lanes before claiming full coverage.
+use `[pipeline-status] ... failed`; the planned `newsRecordReview`'s Run objects (stage 10, Watch) are its alarm signal: zero readings or a high rejection rate; add them to swallowed-error paths in other lanes before claiming full coverage.
 
 Crucially, an async handler returning `{statusCode:503}` is a successful Lambda invocation. **Agent Errors alone misses
 its empty/stale run.** Retain the marker metric on `/aws/lambda/NewsProjectInvokeAgentLambda-dev` as well as its native

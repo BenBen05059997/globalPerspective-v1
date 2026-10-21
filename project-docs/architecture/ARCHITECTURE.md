@@ -411,13 +411,19 @@ flowchart LR
 `/membership` and `/account` read it back through `get_membership`. Credit packs are parked: the code
 path exists, but the live function has no `POLAR_CREDIT_PACKS` key.
 
-### 8. The record (designed 2026-10-20, not yet built)
+### 8. The record (two clocks, decided 2026-10-21; partly built)
 
-One dated, append-only account per story (`record/` in the world bucket): birth, chapters, forks with branch status,
-corrections, confirmed links; the analyst's weekly (`weekly/`) and later the personal board read it. Design and the
-shared/independent map: `ARCHITECTURE_RECORD.md`; what runs when: `ARCHITECTURE_RECORD_PIPELINE.md`. Live today from that
-design: the resolver writes verdicts itself (decision 0034, data flow 3), and the board's slice 1 (`/board`, `newsBoard` in
-`backend/board/`, Function URL, boards in `GlobalPerspectiveSavedItems` as `board#<id>`, follows in `GlobalPerspectiveUserPrefs`).
+The site's memory is one append-only record in the world bucket (`record/`), written on two clocks. **Facts** (what
+happened) are appended daily with no model by `newsStoryRecord` (`record/facts/YYYY-MM-DD.jsonl`). **Readings** (what it
+meant) are written weekly, with hindsight, by `newsRecordReview` (planned; `record/readings/YYYY-Www.jsonl`), each reading
+citing facts and able to supersede an earlier one. Views under `record/views/` are rebuilt from both; the weekly report
+(`weekly/`) is a view of the week's readings; the board and pages read views through the Worker. Nothing is edited in place.
+Ten stages, object model and order of work: `ARCHITECTURE_TIMELINE.md` (machine-readable stage list: `pipeline.json`); the
+subsystem's structure: `ARCHITECTURE_RECORD.md`; what runs when: `ARCHITECTURE_RECORD_PIPELINE.md`. Live today: the resolver
+writes verdicts itself (decision 0034, data flow 3); the board's slice 1 and 2 (`/board`, `newsBoard` in `backend/board/`,
+boards in `GlobalPerspectiveSavedItems` as `board#<id>`, follows in `GlobalPerspectiveUserPrefs`); `newsStoryRecord`
+deployed shadow-only (no schedule, no model key, writes under `record/shadow/`). Not built: the facts schedule, the
+review, the views, the Worker allowlist for `record/`.
 
 ## Cross-cutting concerns
 

@@ -2,6 +2,13 @@
 
 AI-powered global-news intelligence platform — [globalperspective.net](https://globalperspective.net). The production frontend is currently GitHub Pages (`docs/`) behind Cloudflare's `globalperspective-rss` Worker; a Workers Static Assets migration is in progress but has not been deployed. Backend: AWS Lambdas (list: `project-docs/reference/lambdas.md`) + S3 + DynamoDB + Firebase Auth. Content is public; Polar membership buys analysis compute + depth.
 
+## Architecture
+
+One record, two clocks. Facts (what happened) are appended daily with no model; readings (what it meant) are written
+weekly with hindsight, cite the facts, and supersede earlier readings instead of editing them. Pages, the board and the
+weekly report are views of that record. The ten-stage pipeline and the object model are in
+`project-docs/architecture/ARCHITECTURE_TIMELINE.md`; the stage list as data is `project-docs/architecture/pipeline.json`.
+
 ## Where to look (start here)
 
 | You want… | Read |

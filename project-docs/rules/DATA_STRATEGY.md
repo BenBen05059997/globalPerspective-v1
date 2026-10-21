@@ -75,6 +75,12 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation (3×/day) | `newsImpactAudit` (parked), `newsSelectionShadow` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json` + `latest.json` (P7c shadow week; live 2026-10-18) | `newsSelectionShadow` | 3×/day, 5 min after selection | operator review only |
 | `predictions/track_record.json` (`questions` block added 2026-09-30) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
+| `record/facts/YYYY-MM-DD.jsonl` | `newsStoryRecord` | daily, append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
+| `record/runs/YYYY-Www.json` | `newsRecordReview` (planned) | weekly | monitoring (alarm signal), operator |
+| `record/views/…` (stories, index/active, index/all, links) | rebuilt: facts-only views by `newsStoryRecord`, story views by `newsRecordReview` | after each daily append / weekly run | board, pages, weekly |
+| `record/fixtures/golden-week/` | written by hand (operator), frozen | — | `newsRecordReview` re-runs and diffs |
+| `record/shadow/…` | mirror of the above during the shadow week | as the writers | humans, tuning |
 
 IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
 

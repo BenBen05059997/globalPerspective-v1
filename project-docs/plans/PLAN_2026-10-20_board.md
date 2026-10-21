@@ -2,7 +2,7 @@
 
 Name (operator, 2026-10-20): **board**. Folders `backend/board/` and `features/board/`. Not "Studio", not "personal digest".
 
-Status: active (2026-10-20): slice 1 is being built in the stages below; everything else here is design, not decided. The analyst's weekly
+Status: active (2026-10-21): slice 1 live, slice 2 merged and `newsBoard` deployed, UI not released; settled-past features wait for readings (see the 2026-10-21 note at the end); everything else here is design, not decided. The analyst's weekly
 (`PLAN_2026-10-20_analyst_weekly.md`) comes first; this records where the discussion landed so it is not lost.
 Design sketch: Studio Board canvas, https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo (12 boards, static, unchecked
 by eye). The earlier Personal Weekly canvas (https://claude.ai/artifact/CTKb75Mv3fC9Y6BV46hKnK) shows the personal
@@ -254,3 +254,11 @@ different charts).
 Record reads and pin enrichment are prepared on lane/board2, followed by tree zoom, a seven-day board change panel and arrivals. Consumer contract is lane/record schema at 5a5f4069; exact examples are copied into the board's development fixtures. Missing views, absent lines/chapters/events and unchecked branches each have explicit reasons; no deadline-derived status. The public story hook reads without sign-in; private board and arrivals calls retain owner checks.
 
 Arrivals require an actual strong confirmed record link plus nonempty existing cheap grounds (which alone top out at medium), cap five, exclude pinned/dismissed/future stories, and use a server-stamped optional lastVisitedAt. Day-only births include the visit day (coordinator review: excluding it lost stories born later that day for good), newest 40 candidates fetched in parallel; absent index titles use recorded line or story id. Country/actor matches alone do not become strong cards. Keep adds a provisional reader string; no timeline event is synthesized. Coordinator IAM and generated pipeline-role changes were requested in lane-H-board-slice2.md. Nothing deployed, released, merged, pushed or written to AWS.
+
+## 2026-10-21 design change: two clocks
+Operator decision: the record separates facts (daily, no model, append-only) from readings (weekly, with hindsight,
+append-only, citing facts, superseding earlier readings). `newsStoryRecord` becomes the facts writer; chapters, branch
+status, lines, typed links and actor merges move to a new weekly `newsRecordReview` (Friday night), with a Run object per
+period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order of work is in `PLAN_2026-10-20_record_backend.md`. For the board: slice 2 shows the pins' daily counts and the
+unsettled zone ("too early to call, N new entries") until readings exist; the settled past, tree zoom and board weekly read
+readings once `newsRecordReview` has run (step 5). Board UI is not yet released.

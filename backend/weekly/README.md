@@ -3,8 +3,8 @@
 The analyst's weekly: one brief per week, the same for every reader. It is the one backend source of truth for the weekly's content: schema, section model, and (later) the pull, check, publish and hold scripts. The agent procedure lives in `.claude/skills/weekly-brief/SKILL.md` and holds only the steps; every rule, field and path comes from here.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the analyst's weekly: schema, section model, pull, check, publish. Timeline: writes the Week view (weekly/); reads through world/ until the timeline exists. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → **8 Weekly report** → 9 Delivery → 10 Watch
+This folder is stage 8: the analyst's weekly: schema, section model, pull, check, publish. Timeline: writes the weekly report (weekly/), a view of the week's readings; reads through world/ until the readings exist. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed
@@ -23,7 +23,7 @@ S3 `weekly/` only: `weekly/YYYY-MM-DD.json` (week ending; status `draft`, `publi
 
 ## Reads (W1, not yet written)
 
-NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRIFT#` / `DRIFTLOG#` (thread and country), `PRED#` scenarios with triggers, `Q#` due dates and verdicts, `web/latest.json` (S3). Later `record/` replaces the direct table reads (record plan, step 2).
+NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRIFT#` / `DRIFTLOG#` (thread and country), `PRED#` scenarios with triggers, `Q#` due dates and verdicts, `web/latest.json` (S3). This live-table pull is interim; final design: the weekly is a view of the week's readings (`record/readings/`), run after the review (stage 8). It does not write `record/` or board data.
 
 ## Read by
 
@@ -39,7 +39,7 @@ NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRI
 | `schema/examples/` | one valid example (week ending 2026-10-18, reshaped from the hand-run draft 2) and four invalid ones | W0 |
 | `sections.js` | the section model: keys, order, titles, required, item caps, email word caps, empty texts, label and confidence words, `orderedSections(weekly)` | W0, frozen |
 | `test/` | `sections.test.js`, `schema.test.mjs` | W0 |
-| `pull.mjs` | reads the tables, applies the frozen selection rules, writes the inputs JSON | W1, not yet written |
+| `pull.mjs` | reads the live tables (interim; becomes a read of the week's readings after the review), applies the frozen selection rules, writes the inputs JSON | W1, not yet written |
 | `check.mjs` | schema plus honesty rules against the inputs | W2, not yet written |
 | `publish.mjs` | writes `weekly/YYYY-MM-DD.json` create-only and `weekly/latest.json` | W2, not yet written |
 | `hold.mjs` | sets a week to `held` | W2, not yet written |

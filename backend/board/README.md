@@ -3,8 +3,8 @@
 The personal layer: a signed-in member's pins, strings, weights, dismissed suggestions and summaries. It serves the member who owns the board and nobody else.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → **6 Views** → 7 Delivery → 8 Watch
-This folder is stage 6: the board's Lambda (boards, follows, presets, connect). Timeline: writes no events; reads the Index and Story views (record/), with world/ for what the views do not hold yet. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
+This folder is stage 9: the board's Lambda (boards, follows, presets, connect). Timeline: writes no facts or readings; reads the record views (settled past from readings, unsettled present from daily counts), with world/ for what the views do not hold yet. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed

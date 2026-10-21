@@ -4,8 +4,8 @@ The map's data group. It ingests disaster alerts and world news, folds them into
 for the home map. It serves readers of the home page. Two of the Lambdas also leave raw data for audits and other jobs.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: **1 Ingest** → **2 Stories** → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
-This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker (2). Timeline: writes no events yet; future source of situation events; the map becomes the Map view later. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: **1 Ingest** → **2 Stories** → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
+This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker (2). Timeline: writes no facts yet; future source of situation facts; the map becomes a view later. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

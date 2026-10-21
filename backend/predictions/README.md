@@ -4,8 +4,8 @@ The forecast scoring group. Forecasts are written by the content pipeline; the t
 and publish the public track record. It serves readers of the track-record page and the operator who writes the verdicts.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → **3 Analysis** → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → 8 Watch
-This folder is stage 3: forecast settling and the track-record snapshot. Timeline: writes no events; PRED# and Q# verdicts are the source of forecast_drawn, verdict, correction. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
+This folder is stage 3: forecast settling and the track-record snapshot. Timeline: writes no facts; PRED# and Q# verdicts are the source of forecast_drawn and verdict facts. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

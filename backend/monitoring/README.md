@@ -6,8 +6,8 @@ consolidation on `GlobalPerspectivesAlerts` (email + chat). None of these Lambda
 run sends nothing.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
-Pipeline: 1 Ingest → 2 Stories → 3 Analysis → 4 One reader → 5 Timeline → 6 Views → 7 Delivery → **8 Watch**
-This folder is stage 8: model guard, freshness monitor, error digest, audits. Timeline: writes no events; must alarm when a stage fails (ARCHITECTURE_TIMELINE section 7.4). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → **10 Watch**
+This folder is stage 10: model guard, freshness monitor, error digest, audits. Timeline: writes no facts or readings; target: alarm on Run objects (zero readings, high rejection rate) and on stage failures (ARCHITECTURE_TIMELINE section 7.4). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

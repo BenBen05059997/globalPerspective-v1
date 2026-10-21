@@ -3,7 +3,7 @@
 **Only this folder parses the raw rows.** `archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`,
 `DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts and `SAMPLED` questions, `WEB#INDEX`, `web/latest.json` and `web/YYYY/MM/DD.json` and the `latest` topic pool are read
 and normalised here, once. The derivations everyone needs (story birth, branches from scenarios, coverage and missing
-days, risk tier from score, outlets) live here too, so two consumers can never print two different numbers. The rule
+days (which days have archive data; not the Run object's coverage), risk tier from score, outlets) live here too, so two consumers can never print two different numbers. The rule
 (operator, 2026-10-20) is `project-docs/architecture/ARCHITECTURE_RECORD.md` §0c; storage rules are
 `project-docs/rules/DATA_STRATEGY.md` §3. Raw tables are written by the existing pipeline and are not changed by this
 folder. Read-only: nothing here writes.

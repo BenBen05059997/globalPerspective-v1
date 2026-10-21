@@ -7,9 +7,10 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
 - [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the core model**: two clocks (facts daily, readings weekly), ten stages, object model, order of work; stage list as data in [pipeline.json](architecture/pipeline.json).
+- [Foundation stocktake](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate, plus decision coverage (2026-10-21).
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D), with costs and migration.
 - [The record subsystem](architecture/ARCHITECTURE_RECORD.md) — design: `record/`, who writes what (two writers), what is shared, how it touches other places; [its pipeline](architecture/ARCHITECTURE_RECORD_PIPELINE.md) — what runs when (short; the stages live in the record doc).
-- [Decision records](decisions/README.md) — 32 decisions, newest last.
+- [Decision records](decisions/README.md) — 35 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.
 - [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
   (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
@@ -34,7 +35,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Decisions 2026-10-20 + cleanup run](plans/PLAN_2026-10-20_decisions_and_cleanup.md) — operator's four answers, the one-by-one checklist and log.
 - [The analyst's weekly](plans/PLAN_2026-10-20_analyst_weekly.md) — the weekly brief rebuilt as an agent-written, operator-confirmed JSON: content spec, pipeline, steps.
 - [The board](plans/PLAN_2026-10-20_board.md) — brainstorm record, not decided: personal connection board (pins, strings, branches, tree, arrivals, monthly, folding rules), with the design canvas link.
-- [The record backend](plans/PLAN_2026-10-20_record_backend.md) — design: `record/` S3 prefixes, `newsStoryRecord` / `newsConnect` / `newsBoard`, auto verdicts (no human gate), publish-unless-vetoed, order of work; the story pipeline review (topic / thread / map story / situation, duplicates, fragmentation, the 2026-10-20 DeepSeek outage).
+- [Foundation](plans/PLAN_2026-10-21_foundation.md) — facts are the system of record (decision 0035): steps 0-5 checklist, retire list, open questions, log.
 
 ## Runbooks
 - [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;

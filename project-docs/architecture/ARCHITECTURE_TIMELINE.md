@@ -223,11 +223,14 @@ prefixes, the legacy verdict script and in-place merge.
 
 ## 8. Decided 2026-10-21 (operator)
 Two clocks (§1c), ten stages (§1b), the object model (§4) and the stores (§5) are decided. Order of work:
-1. Daily facts writer on a schedule, shadow prefix first, with backfill from the archive rows that exist (Sept 6 onward, gaps noted in §7.3).
-2. Docs (this change).
-3. Golden-week fixture (`record/fixtures/golden-week/`).
-4. `newsRecordReview`, first run on the golden week.
-5. Board reads readings, the unsettled zone, and the Worker allowlist for `record/`.
+Order of work: `plans/PLAN_2026-10-21_foundation.md` (steps 0-5, checklist) and decision `0035-facts-are-the-system-of-record.md`.
+Facts are the system of record; the five-stage picture below is the top level, the ten stages stay as the detailed mapping.
+
+**Top-level picture: five stages.** Ingest, Commit, Review, Build, Serve; Watch is a rule, not a stage. Ten stages onto five:
+stages 1-2 (feeds, stories) are Ingest; stage 3 (daily notes) folds into Review; stages 4-5 (one reader, facts) are Ingest's
+write and Build's read; stage 6 (review) is Review; stage 7 (views) is Build; stage 8 (the weekly report) is Build, since the
+weekly is a view; stage 9 (delivery) is Serve; stage 10 (watch) is the Watch rule: every run writes a Run object, and a
+missing or empty Run is the alarm. Commit (forecasts, resolver verdicts) runs daily because a forecast is a dated commitment.
 
 Current state: `newsStoryRecord` deployed and shadow-only; its per-day model steps are to be removed; board slice 2 merged
 and `newsBoard` deployed, board UI not yet released. A design discussion is not a build go-ahead: each step above waits for

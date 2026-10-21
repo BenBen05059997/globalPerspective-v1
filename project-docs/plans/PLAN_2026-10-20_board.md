@@ -100,7 +100,7 @@ chapter marks (drift notes can seed chapters); operator sign-off for links; per-
 
 | Need | Have today | Lack | How to get it |
 |---|---|---|---|
-| Settled forecasts (Forecasts section, dead branches, monthly) | `newsPredictionResolver` runs daily 10:30Z (`TriggerPredictionResolver` ENABLED): seeds, draws K=22 per week, drafts on Mondays. Live status: 44 sampled, 1 due, 1 draft, **0 verdicts**. Since 2026-10-20 (decision 0034) the resolver writes verdicts itself; `predictions/settle-correct.js` appends a correction with a reason. | The drafter works on abstract questions, not on story branches with triggers. | Per-story trigger check in `newsStoryRecord` (`PLAN_2026-10-20_record_backend.md` §3) writing dated status rows. |
+| Settled forecasts (Forecasts section, dead branches, monthly) | `newsPredictionResolver` runs daily 10:30Z (`TriggerPredictionResolver` ENABLED): seeds, draws K=22 per week, drafts on Mondays. Live status: 44 sampled, 1 due, 1 draft, **0 verdicts**. Since 2026-10-20 (decision 0034) the resolver writes verdicts itself; `predictions/settle-correct.js` appends a correction with a reason. | The drafter works on abstract questions, not on story branches with triggers. | Per-story trigger check in `newsStoryRecord` (superseded by the weekly Review, `PLAN_2026-10-21_foundation.md` step 3) writing dated status rows. |
 | Branches with triggers per story | `PRED#<topicId>/<date>` scenarios with probabilities and triggers for every analysed story. | Trigger status is never updated; no "dead"/"late"/"resurrected" state. | The trigger check above writes a dated status row per branch; never rewrites the original. |
 | Story birth date, chapters, dated one-line summaries | Earliest `archive#` date per threadId can be derived; daily drift notes (`THREAD#/DRIFT#`, 60-day TTL; `DRIFTLOG#` kept) say when a story changed nature. | No stored birth date, chapter mark or never-rewritten line. | Store birth date at thread creation; the weekly run writes a chapter row when a drift note changes the expected path; one line per chapter and per fork, dated, put-once. World data → S3/story rows per `rules/DATA_STRATEGY.md`. |
 | One story per event | Threads CLI `split|merge --apply`; live read API to verify. | Duplicate threads for one event (Pakistan, Brazil, settlers this week). | Duplicate check at thread birth in the pipeline (shared actors + place + 48h window); CLI merge stays the fallback. |
@@ -243,7 +243,7 @@ different charts).
 - 2026-10-20: build stages and checklist written; nothing started (operator: write down first).
 - 2026-10-20: pricing deferred (operator); the board is free for members until the verdict panel exists.
 - 2026-10-20: now / waits checklist added per board feature.
-- 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-20_record_backend.md`.
+- 2026-10-20: human gate dropped everywhere (operator); backend design in `PLAN_2026-10-21_foundation.md`.
 - 2026-10-20: have/lack/how-to-get checklist added after checking the resolver (exists, daily, 0 verdicts because the
   operator review never ran) and preferences (countries followed, stories not).
 - 2026-10-20: brainstorm recorded; Studio Board canvas built to 12 boards (graph, map, verdict, board weekly, clue
@@ -259,6 +259,7 @@ Arrivals require an actual strong confirmed record link plus nonempty existing c
 Operator decision: the record separates facts (daily, no model, append-only) from readings (weekly, with hindsight,
 append-only, citing facts, superseding earlier readings). `newsStoryRecord` becomes the facts writer; chapters, branch
 status, lines, typed links and actor merges move to a new weekly `newsRecordReview` (Friday night), with a Run object per
-period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order of work is in `PLAN_2026-10-20_record_backend.md`. For the board: slice 2 shows the pins' daily counts and the
+period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order of work is in `PLAN_2026-10-21_foundation.md`. For the board: slice 2 shows the pins' daily counts and the
 unsettled zone ("too early to call, N new entries") until readings exist; the settled past, tree zoom and board weekly read
 readings once `newsRecordReview` has run (step 5). Board UI is not yet released.
+- 2026-10-21: board slice 3 waits on foundation steps 1-2 (`PLAN_2026-10-21_foundation.md`).

@@ -1,0 +1,108 @@
+# Foundation: facts are the system of record
+
+Status: active (2026-10-21): step 0 not started
+
+## Purpose
+Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
+same data sits in up to four stores, IDs change between runs, and 28 of the last 60 archive days are missing.
+This plan is the order of work and the checklist; the stocktake is `architecture/FOUNDATION.md`.
+
+## The design (operator, 2026-10-21; decision 0035, not re-decided here)
+- Rule: world data lives in `record/facts/` (S3, append-only); user data in DynamoDB; readers see static JSON views through the Worker. Rebuild test: delete every view and every world table row, and the site rebuilds from `record/facts/` + `record/readings/`. The DynamoDB world rows (`archive#`, `THREAD#`, `DRIFT#`, ...) become a working cache until nothing reads them.
+- Five stages: Ingest (several times a day), Commit (forecasts, daily), Review (weekly), Build (after each ingest and review, no model), Serve. Watch is a rule: every run writes a Run object; a missing or empty Run is the alarm. The ten stages stay as the detailed mapping: `architecture/ARCHITECTURE_TIMELINE.md` §1b, §8.
+- IDs by content: entry `sha1(canonical url)`, source `sha1(domain)`, actor `name:<normalized>`, story keeps `threadId` plus a merge record; `schemaVersion` on every object.
+- Kept from the earlier record plan (no human gate, 2026-10-20): verdicts, branch status, chapters and links are written by Lambdas; a wrong result is an algorithm bug, fixed and appended as a correction (decision 0034). Own folders `backend/record/`, `backend/weekly/`, `backend/board/`. The record is append-only; deletion does not exist, items are greyed. Publish-unless-vetoed for the weekly (a veto writes `status:'held'`; enabling the sender on the new path is a user-facing send and needs a fresh yes).
+
+## Checklist by step
+Rule: only the coordinator ticks a box, after reviewing the evidence. Status: ☐ not started, ◐ partial, ☑ done.
+Each step gets a written decision before code. The coordinator never builds; lanes and agents do.
+
+### Step 0. Diagnose the missing archive days (read-only, first)
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Why `archive#DATE` is missing for 28 of the last 60 days (Aug 23-Sep 2, Sep 14-29, Oct 14) | agent | no | ☐ | gaps listed in FOUNDATION.md G; Oct 14 = DeepSeek 402 outage (from the earlier review); the other two not explained |
+| Written finding: cause, whether the days can be recovered, how step 1 makes gaps visible | agent | no | ☐ | not written |
+| Oct 20 archive holds 14 entries (outage); note the thin day | agent | no | ☐ | FOUNDATION.md; not re-verified |
+
+### Step 1. Ingest writes facts alongside today's rows
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Decision written (facts format, content IDs, schemaVersion, Run object) | coordinator | no | ☐ | ADR 0035 sets the rule only |
+| Facts writer: `record/facts/`, entry ID `sha1(canonical url)`, `schemaVersion`, no model steps | lane (record) | no | ◐ | `newsStoryRecord` deployed, reserved concurrency 1, no schedule, shadow-only (`record/shadow/`, 558 files, Sept 30-Oct 20); writes `record/timeline/`-style files with model judgments folded in; no facts-only mode |
+| Remove the per-day model steps (650-1,560 calls a run if `RECORD_LLM_MODEL` and a schedule were set) | lane (record) | no | ☐ | not verified |
+| Run object per run; empty or missing Run alarms | lane (record) | alarm topic: yes | ☐ | no Run object exists |
+| Shared world reader `backend/shared/src/world/` | coordinator | no | ◐ | a925f149, 41b71786, 1d5a76b7; weekly `pull.mjs` not written, other Lambdas still parse raw tables |
+| Backfill from existing `archive#` rows (Sept 6 onward) | lane (record) | no | ☐ | not started; no TTL deletes (disabled), S3 `stories/` expires at 45 days |
+| Schedule on the facts writer (shadow week first) | coordinator | IAM and schedule: yes | ☐ | no schedule |
+| Stale-run guard, same-run joins, failed-run marker in the agent Lambda | lane (pipeline) | no | ☑ | merge 5df2a670, deployed `NewsProjectInvokeAgentLambda-dev` CodeSha256 roXZtju... |
+| Same-day duplicate and over-join fixes proven over a clean week | lane (pipeline) | no | ◐ | b198ff92, b8858db6 deployed 2026-10-19; only two runs before the outage; unproven |
+| Alarm on `LLM 402`; one alert topic | lane (pipeline) | yes | ☐ | alarm absent; two topics exist; DeepSeek balance is an operator top-up |
+| Duplicate-story alias record (survivor + merge record, never edited) | lane (record) | no | ☐ | 18 known same-day duplicates still split in every store; Canadian base fire pair open |
+
+### Step 2. Board and story page read views
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Decision written (view paths, `index/active`, `links/{id}`, daily counts) | coordinator | no | ☐ | none |
+| Views builder from facts (no model) | lane (record) | no | ☐ | `timeline.js rebuildStory` mixes judgments in |
+| `newsBoard` reads the new view paths | lane (board) | no | ◐ | `newsBoard` deployed, reads `record/index.json` and `record/stories/*`; its role has nothing under those, so record panels return "no record" |
+| `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☐ | `newsBoard-role` reads the old two paths only |
+| Worker `DATA_ALLOWED` allowlist gains `record/` (and `weekly/`) | coordinator | Worker upload and reader IAM: yes | ☐ | worker.mjs line 13 allows `world/`, `situations/state/`, `stories/state/` only |
+| Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ☐ | slice 2 merged, UI not released; `StoryTree.jsx` has no unsettled state |
+| Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
+
+### Step 3. Review Lambda `newsRecordReview` (weekly)
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Decision written (reading object: cites, covers, supersedes, run, model, promptVersion) | coordinator | no | ☐ | object model in TIMELINE §4 |
+| Golden-week fixture `record/fixtures/golden-week/` | lane (record) | no | ☐ | not built |
+| `newsRecordReview`: chapters, lines, branch status, typed links, merges; one call per active story; daily analysis and drift notes folded in | lane (record) | IAM, schedule, model key: yes | ☐ | not started |
+| Weekly report reads its readings (`pull.mjs`) | lane (weekly) | email send: yes | ◐ | `backend/weekly` has sections and schema; no pull, no readings input |
+| Resolver verdicts (Commit stage) | lane (predictions) | no | ☑ | e2132a75, deployed CodeSha256 Z9D6hUJD...; decision 0034; 0 verdicts so far, first expected FEMA re-draft 2026-10-24 |
+| `newsSystemsAnalysis` link-confirmation field (typed links) | lane (pipeline) | no | ☐ | not started |
+| Retire `newsWeeklyBrief` after the first weekly from the new path sends | coordinator | yes | ☐ | still Sun 06:00Z |
+
+### Step 4. Retire duplicates and per-Lambda parsers
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Move each remaining raw-row parser to `world/` or to a view (FOUNDATION.md D), one at a time | lane | no | ☐ | no reader in `world/` for TOPIC#, FACTS#, COUNTRY_INTELLIGENCE, DAILY_BRIEF#, WEEKLY_BRIEF#, `THREAD#/WEB` |
+| Delete each store in the retire list below once nothing reads it | coordinator | yes, each | ☐ | see table |
+| Decisions 0010 and 0011 marked superseded | coordinator | no | ☑ | ADR 0035; README index updated |
+
+### Step 5. Remove the world DynamoDB rows
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Rebuild test passes (delete all views and world rows in a copy; site rebuilds from facts + readings) | coordinator | no | ☐ | not run |
+| Remove `archive#`, `THREAD#`, `DRIFT#`, ... rows | coordinator | yes (destructive) | ☐ | not started |
+
+## Retire list
+Each item needs a separate operator yes before deletion. Sizes and readers are from `architecture/FOUNDATION.md`; "reads it today" not re-verified unless stated.
+| Item | Size / evidence | Reads it today? | Operator yes |
+|---|---|---|---|
+| `DRIFTLOG#` rows | permanent copy of `DRIFT#`, written field for field (index.js 121-122) | `world/` driftNotes, `newsSensitiveData` member history | pending |
+| `situations/history` | mirror of `world/` snapshots, 2,081 objects | not verified | pending |
+| `WEB#INDEX/LATEST` | same content as S3 `web/latest.json` | world `webIndex`, `newsSensitiveData`, `newsWeeklyBrief` | pending |
+| `tags/backfill` | writer not in repo, nothing reads it | none known | pending |
+| `world/shadow` | `DRY_RUN=false`, not written | none known | pending |
+| `signals/snapshots` | 1.03 GB, build disabled (decision 0032) | none | pending |
+| The 8 Scans in `newsSensitiveData` | replaced by views | itself | pending |
+| Decisions 0010 and 0011 (Studio half) | lean on the retired Studio (0033) | n/a: marked superseded in ADR 0035 | not a deletion |
+
+## Open questions
+- Does the daily story analysis and drift note fold into the weekly Review cleanly, or does the board need a daily note kept as cited input (revisit after two weekly runs)?
+- Which model runs the Review: `deepseek-v4-pro` as the resolver, or the headless run's model? Cost per run to be measured on the golden week.
+- Does the prediction log (DATA_STRATEGY §6) migrate to `record/` in step 1 or later?
+- One ingest or two (`architecture/ARCHITECTURE_INGEST_DESIGN.md`): the hourly map ingest versus the 3x/day selector. Still proposed. The map has weak thread links (17 of 3,436 map stories) and fragmented ids (Russia-Ukraine as 7 pins).
+- The `ae75a8`, `287240`, `4e946d`, `68e0fb` threads are over-joined (mixed entries): split before they become facts?
+- Storage review result stands: keep DynamoDB for users, consolidate the 5 user tables. Unverified: Tokyo prices, S3 compare-and-swap.
+- `stories/state/` holds 3,436 objects never pruned; 13 of ~25 feeds are fetched by both pipelines.
+
+## Risks
+- Setting `RECORD_LLM_MODEL` and a schedule on the current `newsStoryRecord` code would make 650-1,560 model calls a run. Do not, until step 1 removes the model steps.
+- Deployed Lambda zips can differ from the repo; diff before any deploy.
+- DeepSeek 402 stops every LLM Lambda; stages swallow the error, so Lambda Errors stay 0.
+
+## Log
+- 2026-10-21: operator approved the design (facts as system of record, five stages, content IDs, retire list, migration order). Written as ADR 0035 and this plan; replaces `PLAN_2026-10-20_record_backend.md`.
+- 2026-10-21: two clocks adopted earlier the same day (facts daily, readings weekly); see TIMELINE §1c.
+- 2026-10-20: step "resolver writes verdicts itself" done and deployed (decision 0034). Stale-run guard deployed (5df2a670). One world reader merged (a925f149).
+- 2026-10-20: DeepSeek 402 outage from about 03:50Z, caused the missing `archive#2026-10-14` and thin 10-13 and 10-20.

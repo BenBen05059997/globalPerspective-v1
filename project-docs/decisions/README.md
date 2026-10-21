@@ -14,8 +14,8 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0007](0007-pair-arcs-relocation-cancelled.md) | 2026-09-24 | Pair arcs are not moved onto the live map | accepted |
 | [0008](0008-design-discussion-is-not-build.md) | 2026-09-25 | A design discussion is not a build go-ahead | accepted |
 | [0009](0009-economy-parked.md) | 2026-09-25 | Economy is parked | accepted |
-| [0010](0010-country-view-split.md) | 2026-09-25 | The country view is split by job | accepted |
-| [0011](0011-track-record-and-studio.md) | 2026-09-25 | Track record lean and sampled; Studio stays a page | accepted |
+| [0010](0010-country-view-split.md) | 2026-09-25 | The country view is split by job | superseded by 0035 (Studio half already gone in 0033) |
+| [0011](0011-track-record-and-studio.md) | 2026-09-25 | Track record lean and sampled; Studio stays a page | superseded by 0035 (confirm step by 0034, Studio by 0033) |
 | [0012](0012-story-web-is-news-based.md) | 2026-09-25 | A story's web is its own news; "judged to feed into", never "caused" | accepted |
 | [0013](0013-ds1-design-system-tier-never-a-colour.md) | 2026-09-26 | DS1: hue = crisis type; risk tier is never a colour | accepted (hues amended by 0022) |
 | [0014](0014-deepseek-replaces-gemini-no-fallback.md) | 2026-09-27 | DeepSeek replaces Gemini; no fallback provider | accepted |
@@ -39,3 +39,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0032](0032-signals-api-parked.md) | 2026-10-19 | The Signals API is parked | accepted (extends 0015) |
 | [0033](0033-lens-studio-retired.md) | 2026-10-20 | The lens Analysis Studio is retired | accepted (supersedes 0030) |
 | [0034](0034-auto-verdicts-no-human-gate.md) | 2026-10-20 | The resolver writes verdicts itself; no human gate | accepted (supersedes the confirm step of 0011) |
+| [0035](0035-facts-are-the-system-of-record.md) | 2026-10-21 | Facts are the system of record; five stages; IDs by content | accepted (supersedes 0010, 0011) |

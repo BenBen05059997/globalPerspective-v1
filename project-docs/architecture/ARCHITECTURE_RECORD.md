@@ -12,7 +12,7 @@ are the 2026-10-20 shapes and are rewritten when the views are built.
 Status: design (2026-10-20, revised 2026-10-21). `newsStoryRecord` is deployed shadow-only; see §9. This file describes the
 target; `ARCHITECTURE.md` describes what runs. When a piece ships, its row here moves from "planned" to "live" and
 `ARCHITECTURE.md` data flow 8 gets the pointer. Rules it obeys: `rules/DATA_STRATEGY.md` (S3 for the world, one writer
-per prefix, immutable snapshots), `rules/WORLD_MODEL.md` (the event is the entity). Plan: `plans/PLAN_2026-10-20_record_backend.md`.
+per prefix, immutable snapshots), `rules/WORLD_MODEL.md` (the event is the entity). Plan: `plans/PLAN_2026-10-21_foundation.md`.
 Pipeline (step by step, with times): `ARCHITECTURE_RECORD_PIPELINE.md`.
 
 ## 0. Three names, never mixed
@@ -93,33 +93,10 @@ record, the fix is in the writer, not a second writer.
 
 ## 3. Stores
 
-### S3 world bucket, prefix `record/` (new) and `weekly/` (new)
-```
-record/
-  index.json                         one row per active story: id, line, risk, born, chapters, liveBranches, lastMoved,
-                                     actors[], countries[], confirmedLinks   (the board's pin source; ≤300 KB gzipped)
-  stories/<threadId>/latest.json     the story record (pointer; overwritten)
-  stories/<threadId>/YYYY-MM-DD.json daily snapshot (create-only; never rewritten)
-  corrections/index.json             list of corrections, newest first
-  corrections/YYYY-MM-DD.json        the day's corrections (create-only)
-  pairs/<a>__<b>/latest.json         the pair verdict (pointer)   (a < b lexically, so one key per pair)
-  pairs/<a>__<b>/YYYY-MM-DD.json     snapshot (create-only)
-weekly/
-  latest.json                        the newest published weekly (pointer)
-  YYYY-MM-DD.json                    one per week ending (create-only; status draft|published|held carried inside)
-```
-Story record shape (abridged; full JSON Schema in `backend/record/newsStoryRecord/schema/story-record.schema.json` when built):
-```
-{ threadId, born, line: {text, writtenAt, versions:[…]},                       // line rewritten weekly, versioned
-  chapters: [{startedAt, name, text, writtenAt}],                             // put-once; never rewritten
-  events:   [{date, archive, topicId, headline, outlets[], driftNote?, killed:[branchId]}],
-  forks:    [{forkId, drawnAt, atEvent, branches:[{branchId, text, p, trigger, resolutionSource, due,
-               status:[{date, status: fired|hold|dead|late|resurrected, evidence:[{archive, topicId, url}], note}]}]}],
-  links:    [{otherThreadId, strength, mechanism, confirmed, confirmedBy:'rule', evidence:[…], since}],
-  counts:   {events, forks, liveBranches, deadBranches, corrections} }
-```
-Lifecycle: `record/stories/*/YYYY-MM-DD.json` and `record/pairs/*/YYYY-MM-DD.json` → Infrequent Access at 30 d, never
-expire. `latest.json` and `index.json` never expire. `weekly/` never expires.
+### S3 world bucket, prefix `record/` and `weekly/`
+The `record/` layout (`facts/`, `readings/`, `runs/`, `views/`, `fixtures/`) is in `ARCHITECTURE_TIMELINE.md` §5; the old
+`record/index.json` and `record/stories/` layout is superseded (decision 0035). `weekly/latest.json` and
+`weekly/YYYY-MM-DD.json` (create-only; `status` draft|published|held inside) are the weekly report, a view of the week's readings.
 
 ### DynamoDB (user tables only; no new table, per DATA_STRATEGY §2)
 | Table | Items / fields added | Writer |

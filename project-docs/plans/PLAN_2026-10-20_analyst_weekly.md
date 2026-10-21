@@ -271,7 +271,7 @@ flagged in its `notes.unconfirmed`.
 - 2026-10-20: one backend source of truth for the weekly: `backend/weekly/` (operator); stages W0-W3 repointed.
 - 2026-10-20: build stages W0-W6 written for a first new-path send on 2026-10-25; content v2 recorded in W0.
 - 2026-10-20: decision 3 revised to publish-unless-vetoed (no human gate, operator); the weekly will read `record/` once
-  `PLAN_2026-10-20_record_backend.md` step 2 exists.
+  `PLAN_2026-10-21_foundation.md` step 2 exists.
 - 2026-10-20: Studio board brainstorm recorded in `PLAN_2026-10-20_board.md`; if adopted, its board weekly replaces
   the "your countries" half of the personal weekly.
 - 2026-10-20: "Why, and what else has to exist" recorded after the operator discussion; explainer artifact built

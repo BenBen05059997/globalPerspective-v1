@@ -1,7 +1,7 @@
 # The record pipeline: what runs when, what each step reads and writes
 
 Status: design (2026-10-20); revised 2026-10-21 for two clocks (facts daily, readings weekly): the stage list and the
-object model are in `ARCHITECTURE_TIMELINE.md` (§1b, §4, §8), which wins on any difference. Companion to `ARCHITECTURE_RECORD.md` (structure) and `plans/PLAN_2026-10-20_record_backend.md`
+object model are in `ARCHITECTURE_TIMELINE.md` (§1b, §4, §8), which wins on any difference. Companion to `ARCHITECTURE_RECORD.md` (structure) and `plans/PLAN_2026-10-21_foundation.md`
 (order of work). Times are UTC. Existing steps are marked (exists); the rest is planned. The existing content pipeline
 is in `backend/pipeline/README.md` and `ARCHITECTURE.md` data flow 1.
 

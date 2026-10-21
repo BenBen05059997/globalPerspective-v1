@@ -31,13 +31,13 @@ Update a line when its source changes; delete it when its source says done. Desi
 3. **Weekly W2-W3** (lane B) → test email (operator yes) → Saturday 2026-10-24 run → Sunday switch (operator yes).
 4. **Story pipeline fixes** (lane D): verify the 2026-10-19 join fixes, merge the 18 old duplicates, close the join gaps,
    stale-run guard, a 402 alarm (operator yes). **Must precede step 5**, or the record stores split stories as truth.
-5. **Record, in the order of ARCHITECTURE_TIMELINE.md §8** (each step waits for its own go): (1) daily facts writer on a
-   schedule, shadow prefix first, with backfill before the raw TTLs erase more history; the per-day model steps are removed;
-   (2) docs; (3) golden-week fixture; (4) `newsRecordReview` (weekly readings, runs), first run on the golden week;
-   (5) board reads readings, the unsettled zone, and the Worker allowlist for `record/` (operator yes).
+5. **Foundation, steps 0-5 of [the plan](plans/PLAN_2026-10-21_foundation.md)** (decision 0035; each step waits for its own go): (0) diagnose the
+   missing archive days; (1) Ingest writes facts alongside today's rows; (2) board and story page read views, Worker allowlist
+   for `record/` (operator yes); (3) `newsRecordReview` weekly, golden-week fixture first; (4) retire duplicates and parsers
+   (operator yes each); (5) remove the world DynamoDB rows after the rebuild test.
 6. Weekly becomes a view of the week's readings (after the review); weekly page; cloud schedule.
 7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) fills in once readings exist.
-Plans: [record](plans/PLAN_2026-10-20_record_backend.md), [weekly](plans/PLAN_2026-10-20_analyst_weekly.md),
+Plans: [foundation](plans/PLAN_2026-10-21_foundation.md), [weekly](plans/PLAN_2026-10-20_analyst_weekly.md),
 [board](plans/PLAN_2026-10-20_board.md). Lanes and mailbox: `/Users/benlai/Downloads/gp-mailbox/`.
 
 ## In progress

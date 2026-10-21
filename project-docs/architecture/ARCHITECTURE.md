@@ -424,6 +424,7 @@ writes verdicts itself (decision 0034, data flow 3); the board's slice 1 and 2 (
 boards in `GlobalPerspectiveSavedItems` as `board#<id>`, follows in `GlobalPerspectiveUserPrefs`); `newsStoryRecord`
 deployed shadow-only (no schedule, no model key, writes under `record/shadow/`). Not built: the facts schedule, the
 review, the views, the Worker allowlist for `record/`.
+Facts are the system of record, five stages, content IDs, rebuild test: decision `0035-facts-are-the-system-of-record.md`; order of work: `plans/PLAN_2026-10-21_foundation.md`.
 
 ## Cross-cutting concerns
 

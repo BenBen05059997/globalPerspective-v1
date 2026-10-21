@@ -1,66 +1,38 @@
 #!/usr/bin/env node
-// Read-only local adapter: CLI by default; optional existing SDK for pooled DynamoDB reads.
-// No LLM imports, API-key loading, or AWS mutation commands.
-import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-const execFileAsync=promisify(execFile);
-import { readFileSync, writeFileSync, mkdirSync, existsSync, mkdtempSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { createRequire } from 'node:module';
+// Local dry run of the facts writer against live tables: AWS reads only (dynamodb get-item, query, batch-get-item).
+// Would-be S3 writes go to local files through the real shared helpers with local ETags. No model, no AWS mutation.
+//   node dryrun.mjs --from 2026-09-06 --to 2026-10-20 --out <dir>
+import {createHash} from 'node:crypto';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync} from 'node:fs';
+import {resolve, dirname, join} from 'node:path';
+import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
-const {
-  makeHandler,
-  validDate
-} = require('./src/index');
-const {
-  makeStore
-} = require('./src/store');
-const {
-  makeS3Json
-} = require('./src/_shared/s3json');
+const {makeHandler} = require('./src/index');
+const {makeStore} = require('./src/store');
+const {makeManifest} = require('./src/manifest');
+const {makeS3Json} = require('./src/_shared/s3json');
+const world = require('./src/_shared/world');
+const run = promisify(execFile);
+
 const args = process.argv.slice(2);
-const flag = n => args[args.indexOf(n) + 1];
-if (!args.includes('--date') || !args.includes('--out') || !args.includes('--no-llm')) throw Error('usage: dryrun.mjs --date YYYY-MM-DD --out <dir> --no-llm');
-const date = flag('--date');
-validDate(date);
+const flag = (n) => args[args.indexOf(n) + 1];
+if (!['--from', '--to', '--out'].every((f) => args.includes(f))) throw new Error('usage: dryrun.mjs --from YYYY-MM-DD --to YYYY-MM-DD --out <dir>');
+const {from, to} = {from: flag('--from'), to: flag('--to')};
 const out = resolve(flag('--out'));
-mkdirSync(out, {
-  recursive: true
-});
-const bucket = 'globalperspective-world-280362093938';
+mkdirSync(out, {recursive: true});
 const region = 'ap-northeast-1';
-let sdk = null;
-let ddbClient = null;
-if (process.env.RECORD_AWS_MODULES) {
-  const installed = createRequire(resolve(process.env.RECORD_AWS_MODULES, '@aws-sdk/client-dynamodb/package.json'));
-  sdk = installed('@aws-sdk/client-dynamodb');
-  ddbClient = new sdk.DynamoDBClient({region});
-}
-const sdkRead = async (op, values) => {
-  const keys = {'--table-name':'TableName','--key':'Key','--filter-expression':'FilterExpression','--key-condition-expression':'KeyConditionExpression','--expression-attribute-values':'ExpressionAttributeValues','--exclusive-start-key':'ExclusiveStartKey','--limit':'Limit'};
-  const json = new Set(['Key','ExpressionAttributeValues','ExclusiveStartKey']);
-  const input = {};
-  for (let i=0; i<values.length; i++) {
-    if (values[i] === '--no-paginate') continue;
-    const key = keys[values[i]];
-    if (!key) throw Error('unsupported SDK read argument');
-    const value = values[++i];
-    input[key] = json.has(key) ? JSON.parse(value) : key==='Limit' ? Number(value) : value;
-  }
-  const Command = {'get-item':sdk.GetItemCommand,query:sdk.QueryCommand,scan:sdk.ScanCommand}[op];
-  if (!Command) throw Error('read-only SDK rejected operation');
-  return ddbClient.send(new Command(input));
-};
-const aws = async (service, op, values) => {
-  if (!['dynamodb:get-item', 'dynamodb:query', 'dynamodb:scan', 's3api:get-object'].includes(`${service}:${op}`)) throw Error('read-only adapter rejected operation');
-  if (service === 'dynamodb' && ddbClient) return sdkRead(op, values);
-  const result = await execFileAsync('aws', [service, op, ...values, '--region', region, '--output', 'json', '--no-cli-pager'], {
-    encoding: 'utf8',
-    maxBuffer: 256 * 1024 * 1024
-  });
-  return JSON.parse(result.stdout);
+const bucket = 'globalperspective-world-280362093938';
+const ALLOWED = new Set(['get-item', 'query', 'batch-get-item']);
+
+// ---- read-only DynamoDB over the aws CLI, cached for the life of the run ----
+const cache = new Map();
+const cached = async (key, fn) => { if (!cache.has(key)) cache.set(key, fn()); return cache.get(key); };
+const aws = async (op, values) => {
+  if (!ALLOWED.has(op)) throw new Error(`read-only adapter rejected dynamodb ${op}`);
+  const {stdout} = await run('aws', ['dynamodb', op, ...values, '--region', region, '--output', 'json', '--no-cli-pager'], {maxBuffer: 256 * 1024 * 1024});
+  return stdout.trim() ? JSON.parse(stdout) : {};
 };
 function unmarshal(v) {
   if ('S' in v) return v.S;
@@ -70,114 +42,79 @@ function unmarshal(v) {
   if ('SS' in v) return v.SS;
   if ('NS' in v) return v.NS.map(Number);
   if ('L' in v) return v.L.map(unmarshal);
-  if ('M' in v) return Object.fromEntries(Object.entries(v.M).map(([k, v]) => [k, unmarshal(v)]));
-  throw Error('unsupported DynamoDB value');
+  if ('M' in v) return Object.fromEntries(Object.entries(v.M).map(([k, x]) => [k, unmarshal(x)]));
+  throw new Error('unsupported DynamoDB value');
 }
-const marshal = o => JSON.stringify(Object.fromEntries(Object.entries(o).map(([k, v]) => [k, {
-  S: v
-}])));
-async function pages(op, base) {
-  let key;
-  const items = [];
-  do {
-    const r = await aws('dynamodb', op, [...base, '--limit', '100', '--no-paginate', ...(key ? ['--exclusive-start-key', JSON.stringify(key)] : [])]);
-    items.push(...(r.Items || []).map(r => unmarshal({
-      M: r
-    })));
-    key = r.LastEvaluatedKey;
-  } while (key);
-  return items;
-}
-const temp = mkdtempSync(join(tmpdir(), 'record-read-'));
-const webRead = async key => {
-  const file = join(temp, 'web.json');
-  try {
-    await aws('s3api', 'get-object', ['--bucket', bucket, '--key', key, file]);
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch (e) {
-    if (/NoSuchKey|Not Found|\(404\)/.test(String(e.stderr))) return null;
-    throw e;
-  }
-};
+const item = (m) => unmarshal({M: m});
+const key = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, {S: v}]));
 const io = {
-  getItem: async (table, key) => {
-    const r = await aws('dynamodb', 'get-item', ['--table-name', table, '--key', marshal(key)]);
-    return r.Item ? unmarshal({
-      M: r.Item
-    }) : null;
-  },
-  query: async (table, pk, prefix) => pages('query', ['--table-name', table, '--key-condition-expression', prefix?'PK = :pk AND begins_with(SK, :sk)':'PK = :pk','--expression-attribute-values', marshal({':pk':pk,...(prefix?{':sk':prefix}:{})})]),
-  batchGet: async(table,keys)=>{const rows=[];for(let i=0;i<keys.length;i+=4)rows.push(...await Promise.all(keys.slice(i,i+4).map(key=>io.getItem(table,key))));return rows.filter(Boolean);},
-  getS3Json: async key=>webRead(key)
-
-};
-// Route would-be S3 commands through the actual shared helper to a local-only fake client.
-class Get {
-  constructor(input) {
-    this.input = input;
-  }
-}
-class Put {
-  constructor(input) {
-    this.input = input;
-  }
-}
-const s3json = makeS3Json({
-  bucket,
-  GetObjectCommand: Get,
-  PutObjectCommand: Put,
-  client: {
-    async send(command) {
-      const i = command.input;
-      const path = resolve(out, i.Key);
-      if (!path.startsWith(`${out}/`)) throw Error('unsafe object key');
-      if (command instanceof Get) {
-        if (!existsSync(path)) throw Object.assign(Error('missing'), {
-          name: 'NoSuchKey'
-        });
-        return {
-          ETag: createHash('sha256').update(readFileSync(path)).digest('hex'),
-          Body: {
-            transformToString: async () => readFileSync(path, 'utf8')
-          }
-        };
+  getItem: (table, k) => cached(`g|${table}|${JSON.stringify(k)}`, async () => {
+    const r = await aws('get-item', ['--table-name', table, '--key', JSON.stringify(key(k))]);
+    return r.Item ? item(r.Item) : null;
+  }),
+  query: (table, pk, prefix) => cached(`q|${table}|${pk}|${prefix || ''}`, async () => {
+    const rows = [];
+    let start;
+    do {
+      const r = await aws('query', ['--table-name', table, '--key-condition-expression', prefix ? 'PK = :pk AND begins_with(SK, :sk)' : 'PK = :pk',
+        '--expression-attribute-values', JSON.stringify(key(prefix ? {':pk': pk, ':sk': prefix} : {':pk': pk})), '--no-paginate', ...(start ? ['--exclusive-start-key', JSON.stringify(start)] : [])]);
+      rows.push(...(r.Items || []).map(item));
+      start = r.LastEvaluatedKey;
+    } while (start);
+    return rows;
+  }),
+  batchGet: async (table, keys) => {
+    const rows = [];
+    for (let i = 0; i < keys.length; i += 100) {
+      let pending = {[table]: {Keys: keys.slice(i, i + 100).map(key)}};
+      while (pending && Object.keys(pending).length) {
+        const r = await aws('batch-get-item', ['--request-items', JSON.stringify(pending)]);
+        rows.push(...((r.Responses || {})[table] || []).map(item));
+        pending = r.UnprocessedKeys && Object.keys(r.UnprocessedKeys).length ? r.UnprocessedKeys : null;
       }
-      if(i.IfMatch && (!existsSync(path)||i.IfMatch!==createHash('sha256').update(readFileSync(path)).digest('hex')))throw Object.assign(Error('stale etag'),{name:'PreconditionFailed'});
-      mkdirSync(dirname(path), {
-        recursive: true
-      });
-      try {
-        writeFileSync(path, i.Body, {
-          flag: i.IfNoneMatch ? 'wx' : 'w'
-        });
-      } catch (e) {
-        if (e.code === 'EEXIST') throw Object.assign(e, {
-          name: 'PreconditionFailed'
-        });
-        throw e;
-      }
-      return {};
     }
-  }
-});
-console.error(`DynamoDB transport: ${ddbClient ? 'existing SDK, read-only commands' : 'AWS CLI, read-only commands'}`);
-console.error(`Reading live stores for ${date}; AWS read-only, local shadow output ${out}`);
-const {readWebAsOf}=require('./src/runtime');
-const sourceStore=makeStore(io,{readWeb:date=>readWebAsOf(io,date)});
-const report = await makeHandler({
-  store: {async load(date,options){
-    const input=await sourceStore.load(date,options);
-    writeFileSync(join(out, `input-${date}.json`),JSON.stringify(input)+'\n');
-    console.error(`Read complete: ${input.entries.length} archive entries, ${Object.keys(input.analyses).length} active threads, ${input.predictions.length} PRED rows.`);
-    return input;
-  }},
-  s3json,
-  llm: null,
-  now: () => new Date().toISOString()
-})({
-  date,
-  shadow: true
-});
-writeFileSync(join(out, `index-${date}.json`),JSON.stringify(await s3json.getJson('record/shadow/index.json'),null,2)+'\n');
-writeFileSync(join(out, `report-${date}.json`), JSON.stringify(report, null, 2) + '\n');
-console.log(JSON.stringify(report, null, 2));
+    return rows;
+  },
+  getS3Json: async () => null,
+};
+
+// ---- would-be S3 writes: local files with local ETags through the real helpers ----
+class Get { constructor(input) { this.input = input; } }
+class Put { constructor(input) { this.input = input; } }
+const etagOf = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
+const localS3 = {
+  async send(command) {
+    const i = command.input;
+    const path = resolve(out, i.Key);
+    if (!path.startsWith(`${out}/`)) throw new Error('unsafe object key');
+    if (command instanceof Get) {
+      if (!existsSync(path)) throw Object.assign(new Error('missing'), {name: 'NoSuchKey'});
+      return {ETag: etagOf(path), Body: {transformToString: async () => readFileSync(path, 'utf8')}};
+    }
+    if (i.IfMatch && (!existsSync(path) || i.IfMatch !== etagOf(path))) throw Object.assign(new Error('stale etag'), {name: 'PreconditionFailed'});
+    if (i.IfNoneMatch && existsSync(path)) throw Object.assign(new Error('exists'), {name: 'PreconditionFailed'});
+    mkdirSync(dirname(path), {recursive: true});
+    writeFileSync(path, i.Body);
+    return {};
+  },
+};
+const s3json = makeS3Json({client: localS3, GetObjectCommand: Get, PutObjectCommand: Put, bucket});
+const manifest = makeManifest({client: localS3, GetObjectCommand: Get, PutObjectCommand: Put, bucket});
+
+console.error(`Reading live stores (read-only) for ${from}..${to}; local shadow output ${out}`);
+const handler = makeHandler({store: makeStore(io), s3json, manifest});
+let result;
+try { result = await handler({backfill: {from, to}, shadow: true}); } catch (e) { result = {error: e.message, days: e.days}; }
+
+// ---- summary from the Run objects the handler wrote ----
+const runsDir = join(out, 'record/shadow/runs');
+const days = readdirSync(runsDir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().map((f) => JSON.parse(readFileSync(join(runsDir, f), 'utf8')));
+const summary = {
+  from, to, error: result.error || null,
+  days: days.map((r) => ({date: r.date, runId: r.runId, status: r.status, inputs: r.inputs, counts: r.counts, failures: r.failures.length})),
+  missingDays: days.filter((r) => r.inputs.archiveDay === 'missing').map((r) => r.date),
+  thinDays: days.filter((r) => r.inputs.archiveDay && r.inputs.archiveDay.thin !== undefined).map((r) => ({date: r.date, entries: r.inputs.archiveDay.thin})),
+  totals: Object.fromEntries(Object.keys(days[0]?.counts || {}).map((k) => [k, days.reduce((n, r) => n + r.counts[k], 0)])),
+};
+writeFileSync(join(out, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+console.log(JSON.stringify(summary.totals), `missing ${summary.missingDays.length}`, `thin ${summary.thinDays.length}`, summary.error || '');

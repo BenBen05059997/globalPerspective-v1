@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 const lib = require('./lib');
 const threading = require('./threading');
-const { staleReason } = require('./run-guard');
+const { staleReason, staleProcessedRun } = require('./run-guard');
 const { slugify } = threading;
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
@@ -137,6 +137,15 @@ exports.handler = async (event) => {
     // R2 run guard: this staging was already fully processed (agentProcessedAt is set only when every
     // story succeeded; Gemini rewrites `staging` with a full Put, so a new staging clears it).
     if (!force && !topicId && !readOnly && !dryRun && stagingItem?.agentProcessedAt) {
+      // Processed but generated before this slot: gemini produced nothing new, so today's archive is
+      // never written. Fail loudly (rethrown below) so Errors fires lambda-errors-*.
+      const stale = staleProcessedRun(stagingItem, new Date());
+      if (stale) {
+        console.error(`[pipeline-status] ${JSON.stringify({ status: 'failed', reason: 'stale-processed-staging', ...stale, agentProcessedAt: stagingItem.agentProcessedAt })}`);
+        const e = new Error(`stale-processed-staging: no fresh gemini output (generationId ${stale.generationId}, age ${stale.ageMinutes}m, slot ${stale.slotStart})`);
+        e.rethrow = true;
+        throw e;
+      }
       console.log(`Skipping run: staging ${generationId} already processed at ${stagingItem.agentProcessedAt}`);
       return http(200, { success: true, skipped: 'staging-already-processed', generationId });
     }
@@ -294,6 +303,7 @@ exports.handler = async (event) => {
     });
   } catch (err) {
     console.error('NewsProjectInvokeAgentLambda error:', err);
+    if (err.rethrow) throw err;
     return http(500, { error: err.message || String(err) });
   }
 };

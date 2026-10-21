@@ -60,3 +60,21 @@ test('cache-only run emits zero-generated failure without latest/archive writes'
  assert.equal(body.reason,'zero-generated');assert.equal(body.reused,1);
  assert.ok(h.calls.every(c=>c.kind==='GetCommand'||(c.kind==='UpdateCommand'&&c.input.TableName==='SummarizeAndPredict')));
 });
+
+test('processed staging from before the current slot throws a structured stale error',async()=>{
+ const h=harness({...staging('2026-10-19T20:15:00Z'),agentProcessedAt:'2026-10-19T20:40:00Z'});
+ await assert.rejects(h.handler({}),/stale-processed-staging.*gen-\d+.*age 490m/);
+ assert.ok(h.logs.some(l=>l.includes('[pipeline-status]')&&l.includes('stale-processed-staging')&&l.includes('ageMinutes')));
+ assert.ok(h.calls.every(c=>c.kind==='GetCommand'));
+});
+test('processed staging from the current slot is a quiet skip',async()=>{
+ const h=harness({...staging('2026-10-20T04:16:00Z'),agentProcessedAt:'2026-10-20T04:26:00Z'});
+ const r=await h.handler({});
+ assert.equal(r.statusCode,200);assert.equal(JSON.parse(r.body).skipped,'staging-already-processed');
+});
+test('staleProcessedRun slot boundaries',()=>{
+ const {staleProcessedRun}=require('../src/run-guard');
+ assert.equal(staleProcessedRun(staging('2026-10-20T04:14:00Z'),now).ageMinutes,11);
+ assert.equal(staleProcessedRun(staging('2026-10-20T04:15:00Z'),now),null);
+ assert.equal(staleProcessedRun(staging('2026-10-20T03:00:00Z'),new Date('2026-10-20T12:25:00Z')).slotStart,'2026-10-20T12:15:00.000Z');
+});

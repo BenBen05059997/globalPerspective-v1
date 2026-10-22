@@ -71,11 +71,11 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
 | Decision written (view paths, `index/active`, `links/{id}`, daily counts) | coordinator | no | ☑ | decision 0037 (2026-10-21) |
-| Views builder from facts (no model) | lane (record) | no | ☐ | `timeline.js rebuildStory` mixes judgments in |
-| `newsBoard` reads the new view paths | lane (board) | no | ◐ | `newsBoard` deployed, reads `record/index.json` and `record/stories/*`; its role has nothing under those, so record panels return "no record" |
+| Views builder from facts (no model) | lane (record) | no | ◐ | lane J merged ad243954 (67 tests); dry run on live facts: 519 stories, all.json 203 KB, build 1.2 s; not deployed: role lacks PutObject `record/views/*` |
+| `newsBoard` reads the new view paths | lane (board) | no | ◐ | lane K merged 9717b849 (44 tests; `story_view` removed); not deployed: waits on its IAM |
 | `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☐ | `newsBoard-role` reads the old two paths only |
 | Worker `DATA_ALLOWED` allowlist gains `record/` (and `weekly/`) | coordinator | Worker upload and reader IAM: yes | ☐ | worker.mjs line 13 allows `world/`, `situations/state/`, `stories/state/` only |
-| Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ☐ | slice 2 merged, UI not released; `StoryTree.jsx` has no unsettled state |
+| Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | lane K merged 9717b849 (verify passes, unsettled zone, 0037 empty texts); not clicked in a browser, not released |
 | Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
 
 ### Step 3. Review Lambda `newsRecordReview` (weekly)
@@ -138,3 +138,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: operator yes; `newsStoryRecord-role` statement `RecordWrites` adds PutObject `record/facts/*`, `record/runs/*` (DynamoDB stays read-only). Live backfill 09-06..10-22 with `strict:false`. A day's archive facts are filed under their publish date (Oct 20 archive lands in 10-19), so a day's Run counts the facts dated that day.
 - 2026-10-22: schedule `TriggerStoryRecord` created (EventBridge rule, not Scheduler: the existing Scheduler roles may only invoke the agent, and a new role is an IAM change). Alarms parked by the operator. Docs consolidated: ARCHITECTURE_TIMELINE.md is the single record doc (0d850be5).
 - 2026-10-22: operator go for all of step 2. Lanes J (`lane/views`, backend/record views builder) and K (`lane/board3`, newsBoard + board UI + Worker allowlist line) opened in parallel on Sonnet; briefs in the mailbox prompts. IAM, Worker upload, deploys and the frontend release stay with the coordinator.
+- 2026-10-22: lanes J and K merged. Lane J notes for the operator: 499 of 519 stories hit the 50-link cap and 61% of link rows rest on one shared ground (a shared country or big outlet), so `links/` is mostly weak signal; survivors take merged entries but not forks (0037 says entries). Live steps wait on three IAM changes the session classifier blocks.

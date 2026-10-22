@@ -115,6 +115,25 @@ test(`baseline vs patched identical for ${SAME.length} non-blog requests`, async
   }
 });
 
+// Record views (0037) are public through /data/*; facts, runs, readings and shadow views are not.
+test('/data/record/views/* is served with the shared cache rule; other record prefixes are 404 without an S3 call', async () => {
+  for (const key of ['index/active.json', 'stories/story-a.json', 'links/story-a.json', 'counts/2026-10-21.json', 'manifest.json']) {
+    const r = await run(patched, `${H}/data/record/views/${key}`);
+    assert.equal(r.status, 200, key);
+    assert.equal(r.headers['cache-control'], 'public, s-maxage=300, stale-while-revalidate=600', key);
+    assert.equal(r.headers.etag, '"e1"', key);
+    assert.equal(r.log.filter((l) => l.includes('amazonaws.com')).length, 1, key);
+  }
+  const absent = await run(patched, `${H}/data/record/views/stories/missing.json`);
+  assert.equal(absent.status, 404);
+  assert.equal(JSON.parse(absent.body).error, 'not generated yet');
+  for (const key of ['record/facts/2026-10-21.jsonl', 'record/facts/x.json', 'record/runs/x.json', 'record/readings/x.json', 'record/shadow/views/index/active.json', 'record/index.json', 'record/views/x.txt']) {
+    const r = await run(patched, `${H}/data/${key}`);
+    assert.equal(r.status, 404, key);
+    assert.deepEqual(r.log, [], key);
+  }
+});
+
 test('baseline really did shadow /blog/ (regression proof)', async () => {
   const a = await run(baseline, `${H}/blog/`);
   assert.equal(a.body, '<title>SHELL</title>');

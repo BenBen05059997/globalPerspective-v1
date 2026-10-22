@@ -1,65 +1,128 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import RecordPinDetails from '../components/RecordPinDetails.jsx';
 import StoryTree from '../components/StoryTree.jsx';
 import BoardWeekly from '../components/BoardWeekly.jsx';
-import story from '../dev/recordExamples/valid-story.json';
-import { boardWeek } from '../lib/recordProjection.js';
-afterEach(cleanup);
-describe('record views', () => {
+import UnsettledZone from '../components/UnsettledZone.jsx';
+import story from '../dev/recordViews/story-a.json';
+import counts from '../dev/recordViews/counts.json';
+import { boardWeek, sumCounts } from '../lib/recordProjection.js';
+import { fetchStoryView, fetchCounts, isoWeekStart, datesBetween } from '../lib/recordViews.js';
+import { countDates } from '../hooks/useWeekCounts.js';
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+const NO_READING = 'no reading yet · first weekly review pending';
+const res = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
+
+describe('story tree on the 0037 story view', () => {
   it('missing tree renders only its documented empty line', () => {
     const { container } = render(<StoryTree />);
     expect(container.textContent).toBe('Branch status starts when the story record goes live.');
     expect(screen.queryByRole('button')).toBeNull();
   });
-  it('schema example exposes its logged late branch and no invented line', () => {
+  it('line and chapters say no reading yet; entries, verdicts and sources are facts', () => {
     render(<StoryTree story={story} />);
-    expect(screen.getByText('No dated one-line read has been written for this story.')).toBeInTheDocument();
+    expect(screen.getByText(NO_READING)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'chapters' }));
-    expect(screen.getByText('No chapter has been recorded for this story.')).toBeInTheDocument();
+    expect(screen.getByText(NO_READING)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
-    expect(screen.getByText(/The named event occurs · 65% · late 2026-10-19/)).toBeInTheDocument();
-    expect(screen.getByText(/Due date passed without established trigger/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'event' }));
-    expect(screen.getByText('Choose a dated event from the trunk to read its evidence.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tankers reroute around the strait' })).toBeInTheDocument();
+    expect(screen.getByText(/Premiums rise again · 65% · verdict yes 2026-10-20/)).toBeInTheDocument();
+    expect(screen.getByText(/Shipping resumes the old route · 20% · not checked/)).toBeInTheDocument();
+    expect(screen.getByText('This branch has not been checked yet.')).toBeInTheDocument();
+    expect(screen.getAllByText(`Status history: ${NO_READING}`)).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Insurers raise war-risk premiums' }));
+    expect(screen.getByRole('link', { name: 'BBC' })).toHaveAttribute('href', 'https://example.org/b');
+    expect(screen.queryByText(/Branches killed/)).toBeNull();
   });
-  it('weekly absent records never invent changes or counts', () => {
-    render(<BoardWeekly board={{pins: [], strings: [], recordAvailable: false}} stories={{}} />);
+  it('no entries and no forks use their documented texts', () => {
+    render(<StoryTree story={{ ...story, entries: [], forks: [] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
+    expect(screen.getByText('No dated event has been recorded for this story.')).toBeInTheDocument();
+    expect(screen.getByText('No forecast branch has been recorded for this story.')).toBeInTheDocument();
+  });
+  it('a later reading is shown when the view carries one', () => {
+    render(<StoryTree story={{ ...story, line: { text: 'The strait stays the test', writtenAt: '2026-10-25', confidence: 0.7 }, chapters: [{ startedAt: '2026-10-19', name: 'Reroute', text: 'Operators change course', confidence: 0.7 }] }} />);
+    expect(screen.getByText(/The strait stays the test/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'chapters' }));
+    expect(screen.getByText(/Reroute/)).toBeInTheDocument();
+  });
+});
+
+describe('weekly', () => {
+  it('absent records never invent changes or counts', () => {
+    render(<BoardWeekly board={{ pins: [], strings: [], recordAvailable: false }} stories={{}} />);
     expect(screen.getByText('Pin changes start when the story record goes live.')).toBeInTheDocument();
     expect(screen.getByText('Branch status starts when the story record goes live.')).toBeInTheDocument();
-    expect(screen.queryByText(/65%/)).toBeNull();
+    expect(screen.getByText('No confirmed link has been recorded this week.')).toBeInTheDocument();
   });
-  it('weekly uses dated changes within its seven-day window only', () => {
-    const board = {pins: [{pinId: 'p1', line: 'A dated move', lastMoved: '2026-10-19'}], strings: [{a:'p1', b:'p2', keptAt:'2026-10-19', cutAt:'2026-09-01'}]};
-    const week = boardWeek(board, {a:story}, new Date('2026-10-20T12:00:00Z'));
-    expect(week.moved).toHaveLength(1); expect(week.strings).toHaveLength(1); expect(week.branches).toHaveLength(0);
+  it('uses dated changes within its seven-day window only; verdicts need a verdict date', () => {
+    const board = { pins: [{ pinId: 'p1', lastMoved: '2026-10-19' }], strings: [{ a: 'p1', b: 'p2', keptAt: '2026-10-19', cutAt: '2026-09-01' }] };
+    const week = boardWeek(board, { a: story }, {}, new Date('2026-10-21T12:00:00Z'));
+    expect(week.moved).toHaveLength(1); expect(week.strings).toHaveLength(1);
+    expect(week.branches).toEqual([{ branchId: 'f1-0', text: 'Premiums rise again', threadId: 'story-a', date: '2026-10-20', result: 'yes' }]);
+    expect(boardWeek(board, { a: story }, {}, new Date('2026-11-30T12:00:00Z')).branches).toHaveLength(0);
+  });
+  it('renders recorded verdicts and confirmed links', () => {
+    render(<BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
+      links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', strength: 'strong', mechanism: 'Recorded transmission', since: '2026-10-20' }] } }} now={new Date('2026-10-21T12:00:00Z')} />);
+    expect(screen.getByText(/Premiums rise again: verdict yes/)).toBeInTheDocument();
+    expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();
   });
 });
 
-it('populated schema-compatible tree keeps dated lines, chapters, event sources and dead/resurrected history', () => {
-  const populated = structuredClone(story);
-  populated.line = {text:'The named event remains the test',writtenAt:'2026-10-19',label:'JUDGMENT',confidence:0.7,versions:[]};
-  populated.chapters = [{startedAt:'2026-10-19',name:'Report phase',text:'The ministry report becomes the test',writtenAt:'2026-10-19',label:'JUDGMENT',confidence:0.7}];
-  populated.events = [{date:'2026-10-19',archive:'archive#2026-10-19',topicId:'topic-a',headline:'The named report appears',outlets:[{outlet:'Ministry',url:'https://example.org/report'}],killed:[]}];
-  populated.forks[0].branches[0].status = ['hold','dead','resurrected','fired'].map((status,i)=>({date:`2026-10-${16+i}`,status,evidence:[],note:`Recorded ${status}`,label:'JUDGMENT',confidence:0.8}));
-  render(<StoryTree story={populated}/>);
-  expect(screen.getByText(/The named event remains the test/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'chapters'}));expect(screen.getByText(/Report phase/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'forks and events'}));
-  for(const status of ['hold','dead','resurrected','fired'])expect(screen.getByText(new RegExp(`Recorded ${status}`))).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'The named report appears'}));
-  expect(screen.getByRole('link',{name:'Ministry'})).toHaveAttribute('href','https://example.org/report');
-});
-it('populated weekly shows only recorded changes', () => {
-  const populated=structuredClone(story);populated.forks[0].branches[0].status[0].status='dead';
-  populated.links=[{otherThreadId:'story-b',confirmed:true,strength:'strong',mechanism:'Recorded transmission',since:'2026-10-19'}];
-  render(<BoardWeekly board={{recordAvailable:true,pins:[{pinId:'p1',line:'Recorded move',lastMoved:'2026-10-19'}],strings:[{a:'p1',b:'p2',owner:'yours',line:'My line',keptAt:'2026-10-19'}]}} stories={{a:populated}} now={new Date('2026-10-20T12:00:00Z')}/>);
-  expect(screen.getByText('Recorded move')).toBeInTheDocument();expect(screen.getByText(/My line/)).toBeInTheDocument();expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();expect(screen.getByText(/The named event occurs: dead/)).toBeInTheDocument();
+describe('pin details', () => {
+  it('render nothing without a record, and say no reading yet for null readings while keeping zero counts', () => {
+    const { container, rerender } = render(<RecordPinDetails pin={{ counts: { chapters: 0 } }} />);
+    expect(container.textContent).toBe('');
+    rerender(<RecordPinDetails pin={{ recordAvailable: true, line: null, counts: { chapters: null, liveBranches: 0, confirmedLinks: null } }} />);
+    expect(screen.getByText(NO_READING)).toBeInTheDocument();
+    expect(container.textContent).toContain(`chapters: ${NO_READING} · 0 live branches · confirmed links: ${NO_READING}`);
+  });
 });
 
-it('pin details render no text for absent or partial unknown data, while retaining actual zero counts', () => {
-  const {container,rerender}=render(<RecordPinDetails pin={{counts:{}}}/>);
-  expect(container.textContent).toBe('');
-  rerender(<RecordPinDetails pin={{counts:{chapters:0}}}/>);
-  expect(container.textContent).toBe('0 chapters');
+describe('unsettled zone', () => {
+  const week = ['2026-10-19', '2026-10-20', '2026-10-21'];
+  const zone = (byDate, extra = {}) => render(<UnsettledZone ids={['story-a']} counts={{ byDate, loading: false, error: false, week, since: null, visit: null, ...extra }} />);
+  it('sums the week for the pinned stories only, with the exact label', () => {
+    zone({ '2026-10-20': { byStory: { 'story-a': { newEntries: 2, branchesDue: 1, verdicts: 1 }, other: { newEntries: 9, branchesDue: 9, verdicts: 9 } } }, '2026-10-21': counts });
+    expect(screen.getByText('this week, unsettled: 3 new entries, 1 branches due, 1 verdicts')).toBeInTheDocument();
+  });
+  it('all zero says nothing new; no files at all says not generated yet; failures say so', () => {
+    zone({ '2026-10-21': { byStory: {} } });
+    expect(screen.getByText('Nothing new this week.')).toBeInTheDocument();
+    cleanup(); zone({ '2026-10-21': null });
+    expect(screen.getByText('This week’s counts are not generated yet.')).toBeInTheDocument();
+    cleanup(); zone({}, { error: true });
+    expect(screen.getByText('This week’s counts could not be read.')).toBeInTheDocument();
+  });
+  it('new entries since the last visit appear only when there are some', () => {
+    zone({ '2026-10-21': counts }, { since: ['2026-10-21'], visit: '2026-10-20' });
+    expect(screen.getByText('1 new entries since 2026-10-20')).toBeInTheDocument();
+    cleanup(); zone({ '2026-10-21': { byStory: {} } }, { since: ['2026-10-21'], visit: '2026-10-20' });
+    expect(screen.queryByText(/since/)).toBeNull();
+  });
+  it('sums, weeks and the visit window', () => {
+    expect(sumCounts({ a: { byStory: { x: { newEntries: 1, branchesDue: 2, verdicts: 3 } } } }, ['a', 'b'], ['x'])).toEqual({ newEntries: 1, branchesDue: 2, verdicts: 3 });
+    expect(isoWeekStart('2026-10-21')).toBe('2026-10-19'); expect(isoWeekStart('2026-10-25')).toBe('2026-10-19'); expect(isoWeekStart('2026-10-26')).toBe('2026-10-26');
+    expect(datesBetween('2026-10-19', '2026-10-21')).toEqual(week);
+    expect(countDates('2026-10-21', '2026-10-20T09:00:00Z')).toMatchObject({ week, since: ['2026-10-21'], visit: '2026-10-20' });
+    expect(countDates('2026-10-21', '2026-10-21T01:00:00Z').since).toEqual([]);
+    expect(countDates('2026-10-21', '2026-01-01T00:00:00Z').since).toBeNull();
+    expect(countDates('2026-10-21', undefined).since).toEqual([]);
+  });
+});
+
+describe('record view fetches', () => {
+  it('404 is null, other failures throw, an alias fetches the survivor', async () => {
+    const fetchMock = vi.fn(async (url) => url.endsWith('stories/gone.json') ? res(404)
+      : url.endsWith('stories/merged.json') ? res(200, { threadId: 'merged', aliasOf: 'story-a' })
+        : url.endsWith('stories/story-a.json') ? res(200, story) : res(500));
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await fetchStoryView('gone')).toBeNull();
+    expect(await fetchStoryView('merged')).toEqual(story);
+    expect(fetchMock).toHaveBeenCalledWith('/data/record/views/stories/story-a.json', expect.anything());
+    await expect(fetchCounts('2026-10-21')).rejects.toThrow(/500/);
+    expect(await fetchStoryView('../bad')).toBeNull();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+  });
 });

@@ -15,6 +15,7 @@ vi.mock('@/shared/data/useGeminiTopics', () => ({
   ] }),
 }));
 vi.mock('@/shared/api/restProxy', () => ({ fetchThreadAnalyses: vi.fn(() => Promise.resolve({ data: { 'thread-a': { threadTitle: 'Hormuz shipping', riskScore: 62 } } })), boardConfigured: () => true }));
+vi.mock('@/features/board/lib/recordViews.js', async (orig) => ({ ...(await orig()), fetchStoryView: vi.fn(async () => null), fetchLinksView: vi.fn(async () => null), fetchCounts: vi.fn(async () => null) }));
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({ useIsPhone: () => false }));
 vi.mock('@/features/board/lib/boardApi.js', () => ({
@@ -24,7 +25,6 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
     calls.push([action, body]);
     switch (action) {
       case 'list_boards': return [{ boardId: 'b1', name: 'My board', pinCount: boardStore.pins.length, updatedAt: 'x' }];
-      case 'story_view': return {recordAvailable:false,story:null};
       case 'arrivals': return {recordAvailable:false,arrivals:[]};
       case 'visit_board': return {lastVisitedAt:'2026-10-20T12:00:00Z'};
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
@@ -71,6 +71,19 @@ async function selectBoth() {
   fireEvent.click(pinEl(/Hormuz shipping/));
   fireEvent.click(pinEl(/Gulf talks/));
 }
+
+describe('record views', () => {
+  it('shows pin readings as absent and the unsettled counts of the pinned story', async () => {
+    const views = await import('@/features/board/lib/recordViews.js');
+    const today = new Date().toISOString().slice(0, 10);
+    views.fetchCounts.mockImplementation(async (d) => (d === today ? { date: d, byStory: { 'thread-a': { newEntries: 2, branchesDue: 0, verdicts: 1 } } } : null));
+    boardStore = { ...baseBoard(), recordAvailable: true, pins: baseBoard().pins.map((p) => ({ ...p, recordAvailable: true, line: null, counts: { chapters: null, liveBranches: 1, confirmedLinks: null } })) };
+    renderPage();
+    expect(await screen.findByText('this week, unsettled: 2 new entries, 0 branches due, 1 verdicts')).toBeInTheDocument();
+    expect(screen.getAllByText('no reading yet · first weekly review pending').length).toBeGreaterThan(0);
+    views.fetchCounts.mockImplementation(async () => null);
+  });
+});
 
 describe('signed out', () => {
   it('shows one honest line with a sign-in link, and calls no member action', async () => {

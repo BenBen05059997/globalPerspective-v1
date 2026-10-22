@@ -42,7 +42,7 @@ function boardProblem(board) {
 
 const problemReply = (p) => fail(400, p.error, { code: p.code, ...(p.budget ? { budget: p.budget } : {}) });
 
-function createHandler({ store, verify, records = {index: async () => null, story: async () => null}, now = () => Date.now(), env = process.env }) {
+function createHandler({ store, verify, records = {active: async () => null, all: async () => null, links: async () => null}, now = () => Date.now(), env = process.env }) {
   const presets = presetCache(store, env, now);
   const iso = () => new Date(now()).toISOString();
 
@@ -90,11 +90,6 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       catch (e) { if (e.name === 'ConditionalCheckFailedException') return fail(404, 'Board not found'); throw e; }
       return ok({lastVisitedAt: stamp});
     },
-    async story_view(uid, body) {
-      if (typeof body.threadId !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(body.threadId)) return fail(400, 'A valid threadId is required');
-      const story = await records.story(body.threadId);
-      return ok({recordAvailable: !!story, story});
-    },
 
     async create_board(uid, body) {
       const name = str(body.name);
@@ -113,7 +108,7 @@ function createHandler({ store, verify, records = {index: async () => null, stor
         delete incoming.lastVisitedAt;
         if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map(p => {
           const copy = {...p};
-          for (const key of ['recordAvailable','line','risk','born','counts','lastMoved']) delete copy[key];
+          for (const key of ['recordAvailable','line','risk','born','entryCount','counts','lastMoved']) delete copy[key];
           return copy;
         });
       }
@@ -199,7 +194,7 @@ function createHandler({ store, verify, records = {index: async () => null, stor
       return out.error ? fail(400, out.error) : ok(out.result);
     },
   };
-  const PUBLIC = new Set(['list_presets', 'story_view']);
+  const PUBLIC = new Set(['list_presets']);
 
   return async function handler(event) {
     try {

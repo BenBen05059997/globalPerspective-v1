@@ -1,7 +1,7 @@
 'use strict';
 
 // newsBoard's view of the world's data for presets and connect. It parses nothing: every raw row is read and
-// normalised by `_shared/world/` (the one reader, ARCHITECTURE_RECORD.md §0c; row shapes are documented in its
+// normalised by `_shared/world/` (the one reader, ARCHITECTURE_TIMELINE.md; row shapes are documented in its
 // README). The `store` passed in is the world client (store.js has getItem / batchGet / query); `env` names the
 // tables (SUMMARIZE_PREDICT_TABLE, TOPICS_DDB_TABLE). What stays here is board logic over normalised objects:
 // which ISO3 codes and actor names a thread has.

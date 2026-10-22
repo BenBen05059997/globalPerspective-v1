@@ -78,9 +78,9 @@ One row per store: who writes it, who reads it, which browser read action serves
 | S3 `situations/inbox/gdacs-latest.json` | `newsGdacsIngest` | `newsSituationTracker` | none found | none found |
 | S3 `situations/index.json` | `newsSituationTracker` | `newsSituationTracker` | none found | none found |
 | S3 `situations/state/` | `newsSituationTracker` | `newsSelectionShadow`, `newsSituationTracker` | none found | `(app shell)`, `/` |
-| S3 `stories/classify-cache.json` | `newsSituationIngest` | `newsSituationIngest` | none found | none found |
-| S3 `stories/index.json` | `newsSituationIngest` | `newsSituationIngest`, `newsSituationTracker` | none found | none found |
-| S3 `stories/state/` | `newsSituationIngest` | `NewsProjectInvokeAgentLambda-dev` | none found | none found |
+| S3 `stories/classify-cache.json` | `newsSituationIngest` | `newsSituationIngest` | none found | `(app shell)` |
+| S3 `stories/index.json` | `newsSituationIngest` | `newsSituationIngest`, `newsSituationTracker` | none found | `(app shell)` |
+| S3 `stories/state/` | `newsSituationIngest` | `NewsProjectInvokeAgentLambda-dev` | none found | `(app shell)` |
 | S3 `threads/story-map.json` | `NewsProjectInvokeAgentLambda-dev` | `newsSituationTracker` | none found | none found |
 | S3 `web/latest.json` | `newsSystemsAnalysis` | none found | none found | none found |
 | S3 `world/latest.json` | `newsSituationTracker` | none found | none found | `(app shell)`, `/` |

@@ -46,7 +46,7 @@ Errors: 401 no/invalid token; 400 validation with a message (`code` `pin_budget_
 
 Last verified: 2026-10-20
 
-## Record views (decision 0037, code only until deployed)
+## Record views (decision 0037, merged 2026-10-22, not deployed)
 
 newsBoard reads three kinds of view file from S3, server-side only, through `src/recordViews.js`: `record/views/index/active.json` (every `get_board` and `update_board` response), `record/views/index/all.json` (only when a pinned thread is not in the active index; a merged story shows its survivor's row) and `record/views/links/<id>.json` (arrivals candidates). It no longer reads `record/index.json` or `record/stories/*`, and `story_view` is gone: the browser fetches `stories/<id>.json`, `links/<id>.json` and `counts/<date>.json` itself through the Worker's `/data/record/views/`. Missing files answer `recordAvailable:false`; access or parse failures propagate. No record write. `WORLD_BUCKET` defaults to `globalperspective-world-280362093938`. Needed before deployment (coordinator, not done here): `s3:GetObject` for `newsBoard-role` on `record/views/index/active.json`, `record/views/index/all.json` and `record/views/links/*`.
 

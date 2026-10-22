@@ -19,12 +19,13 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `corpus/gdacs/` | newsGdacsIngest | yes |
 | `corpus/gdacs/latest.json` | newsImpactAudit | yes |
 | `corpus/gdelt/` | newsGdeltConflict, newsImpactAudit | yes |
+| `index/active.json` | newsStoryRecord | no |
+| `index/all.json` | newsStoryRecord | no |
 | `monitoring/freshness/state.json` | newsFreshnessMonitor | no |
 | `predictions/track_record.json` | newsPredictionsSnapshot, newsSensitiveData | yes |
 | `record/` | newsStoryRecord | yes |
-| `record/index.json` | newsBoard | no |
 | `record/shadow/` | newsStoryRecord | yes |
-| `record/stories/` | newsBoard | no |
+| `record/views/` | newsBoard | yes |
 | `runs/` | newsStoryRecord | no |
 | `shadow/situations/` | newsSituationTracker | yes |
 | `shadow/situations/index.json` | newsSituationTracker | yes |
@@ -53,7 +54,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `audit/` | `impact/` `ingest-capture/` `selection-shadow/` | yes |
 | `corpus/` | `2026/` `gdacs/` `gdelt/` | yes |
 | `predictions/` | — (objects only) | yes |
-| `record/` | `facts/` `runs/` `shadow/` | yes |
+| `record/` | `facts/` `runs/` `shadow/` `views/` | yes |
 | `signals/` | `snapshots/` | yes |
 | `situations/` | `archive/` `history/` `inbox/` `state/` | yes |
 | `stories/` | `state/` | yes |
@@ -87,9 +88,10 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation (3×/day) | `newsImpactAudit` (parked), `newsSelectionShadow` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json`, `latest.json` | `newsSelectionShadow` | 3×/day, 5 min after selection | operator review only |
 | `predictions/track_record.json` | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
-| `record/facts/YYYY-MM-DD.jsonl` | `newsStoryRecord` | daily, append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`, live since 2026-10-22), append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
 | `record/runs/YYYY-Www.json` | `newsRecordReview` (planned) | weekly | monitoring (alarm signal), operator |
-| `record/views/…` | rebuilt: facts-only views by `newsStoryRecord`, story views by `newsRecordReview` | after each daily append / weekly run | board, pages, weekly |
+| `record/views/…` | rebuilt: facts-only views by `newsStoryRecord` (builder merged 2026-10-22, not deployed; the role cannot write here yet and the prefix is empty), story readings by `newsRecordReview` (planned) | after each daily append / weekly run | board, pages, weekly |
 | `record/fixtures/golden-week/` | written by hand (operator), frozen | — | `newsRecordReview` re-runs and diffs |
-| `record/shadow/…` | mirror of the above during the shadow week | as the writers | humans, tuning |
+| `record/shadow/…` | `newsStoryRecord` on a manual `shadow:true` invoke (its default); also holds the retired old dry-run output (`index.json`, `stories/`, `timeline/`, `corrections/`) | manual only, no schedule | humans, tuning |

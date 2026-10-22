@@ -32,4 +32,4 @@ Archive sources preserve selector `publishedAt`, `outlet`, and `age` unchanged. 
 
 ## Tests
 - `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 83 pass.
-Last verified: 2026-10-20 (offline; lane/pipeline, not deployed)
+Last verified: 2026-10-22 (the guards and same-run joins are deployed: `NewsProjectInvokeAgentLambda-dev` last modified 2026-10-21 12:54Z; tests last run 2026-10-20)

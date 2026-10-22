@@ -1,6 +1,6 @@
 # Ingest design: one ingest vs two (lane D, proposed)
 
-Status: proposed (2026-10-20, lane D). Operator decision pending; recommended to revisit after the record and the weekly are live.
+Status: proposed (2026-10-20, lane D). Operator decision pending; recommended to revisit after the record and the weekly are live. Update 2026-10-22: the narrow D3 guards (stale-run, same-run joins, failed-run marker) are deployed in `NewsProjectInvokeAgentLambda-dev` and `newsInvokeGemini-dev` now fails the run on a failed model call (plan step 1); the one-ingest decision itself is still open, and the selector still fails with LLM 402.
 Source: lane D design note, copied from the lane mailbox; cleanup proposals and the append-only repair policy are in
 `backend/pipeline/cli/README.md`.
 
@@ -11,7 +11,7 @@ Recommendation: converge on **(b) one ingest**, in stages, after the outage and 
 
 A topic is one editorial selection; a story is an editorial thread (`threadId`); a cluster is a grouping of classified headlines; a situation is a map pin. Existing wire fields `storyId` and S3 `stories/` are legacy cluster names, not another meaning of story. Rename internal variables first; compatibility readers/writers keep legacy wire names until migration is verified.
 
-Follow the coordinator's adopted ARCHITECTURE_TIMELINE.md: newsStoryRecord writes the facts (`record/facts/YYYY-MM-DD.jsonl`), the planned newsRecordReview writes the weekly readings (`record/readings/`), and the views are rebuilt from both. Existing producers remain raw-source writers for now. The agent supplies source rows for `entry`; it must not start a second timeline writer. Consumers read views, or the shared `backend/shared/src/world/` reader until the relevant view exists. Proposed future situation integration uses the existing `situation` kind. Repairing an already published entry needs an appended `correction` referencing its eventId; never rewrite the old fact.
+Follow the coordinator's adopted ARCHITECTURE_TIMELINE.md: newsStoryRecord writes the facts (`record/facts/YYYY-MM-DD.jsonl`), the planned newsRecordReview writes the weekly readings (`record/readings/`), and the views are rebuilt from both. Existing producers remain raw-source writers for now. The agent supplies source rows for `entry`; it must not start a second timeline writer. Consumers read views, or the shared `backend/shared/src/world/` reader until the relevant view exists. A `situation` kind does not exist yet: it is deferred (ARCHITECTURE_TIMELINE §3), as are coverage events (coverage is Run data, not a fact). Repairing an already published entry needs an appended `correction` referencing its eventId; never rewrite the old fact.
 
 Lane D owns only agent threading/guard and CLI code. Situations, shared readers, monitoring, schedules/IAM, worker/frontend, timeline schema and repository architecture docs are coordinator work. Neither option changes the user-side DynamoDB stores as part of ingest restructuring.
 

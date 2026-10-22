@@ -20,10 +20,10 @@ An agent working on the record does not write the other groups. Design: `project
 ## What the group owns
 
 Two writers, each the only writer of its files (design decided 2026-10-21):
-- `newsStoryRecord`: the facts writer, built on `lane/facts` (not yet merged or deployed). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model, no views. During the shadow period it writes only under `record/shadow/`. Views (active index, links, daily counts) are step 2.
+- `newsStoryRecord`: the facts writer, merged and deployed (2026-10-21), scheduled daily since 2026-10-22 (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. The views builder (0037; active index, links, daily counts) is merged in the repo (2026-10-22) but not deployed: the deployed zip is the facts writer without views, and its role may write only `record/shadow/*`, `record/facts/*` and `record/runs/*`.
 - `newsRecordReview` (planned): the weekly review, Friday night. Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, actor merges) and a Run object in `record/runs/YYYY-Www.json`. Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason.
 
-Views under `record/views/` are rebuilt from facts and readings (step 2). Dated objects are create-only; latest and index objects are replaceable pointers.
+Views under `record/views/` are rebuilt from facts and readings (step 2; `record/views/` is empty until the builder is deployed and its role may write there). Dated objects are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 
@@ -31,8 +31,8 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Schema
 
-`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; the old story and index schema went with the stories product. View schemas arrive with step 2. See [newsStoryRecord](newsStoryRecord/README.md) for the format, tests and the local runner.
+`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; the old story and index schema went with the stories product. View schemas are in `newsStoryRecord/schema/views/`. See [newsStoryRecord](newsStoryRecord/README.md) for the format, tests and the local runner.
 
 ## Status
 
-2026-10-21: the facts writer is built on `lane/facts` and dry-run against live tables for 2026-09-06..2026-10-20 (see [DRYRUN.md](newsStoryRecord/DRYRUN.md)); the deployed `newsStoryRecord` is still the old code (shadow-only, no schedule, no model key). `newsRecordReview` does not exist yet. Coordinator owns AWS resources and deployment.
+2026-10-22: the facts writer is deployed and live (CodeSha256 from 2026-10-21), scheduled daily at 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing; first dry run: [DRYRUN.md](newsStoryRecord/DRYRUN.md)). The views builder is merged, not deployed (waits on `PutObject` for `record/views/*`). `newsRecordReview` does not exist yet. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.

@@ -39,7 +39,7 @@ This folder is stage 9: the track record page. Timeline: reads predictions/track
 - Group guides: [predictions](../../../../../backend/predictions/README.md); the forecasts and drift notes come from [pipeline](../../../../../backend/pipeline/README.md)
 - `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
 - `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily, input `tick`): commits seeds for upcoming weeks, draws the
-  sample for each ended week, drafts verdicts on Mondays. The operator writes the verdicts.
+  sample for each ended week, drafts verdicts on Mondays and writes them itself (decision 0034; none written as of 2026-10-22). The operator only corrects.
 - `newsPredictionsSnapshot` (rule `TriggerPredictionsSnapshot`, every 30 min) writes `predictions/track_record.json`;
   `newsSensitiveData-dev` serves it and the corrections feed.
 

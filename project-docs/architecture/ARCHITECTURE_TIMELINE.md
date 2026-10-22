@@ -32,16 +32,16 @@ Ten stages in three speeds. `pipeline.json` is the machine-readable copy and dri
 | | **Daily, no model** | | | |
 | 1 | Ingest | selector `newsInvokeGemini` 3x/day (`backend/pipeline`); map ingest `newsSituationIngest` hourly and GDACS every 20 min (`backend/situations`) | topics; map clusters; disaster alerts | raw tables |
 | 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`); forecasts (`PRED#`) | threads, daily archive, forecasts, map pins | raw tables |
-| 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts | raw tables, kept as cited input; revisit after two weekly runs |
+| 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts (none written as of 2026-10-22) | raw tables, kept as cited input; revisit after two weekly runs |
 | 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only parser of raw tables |
-| 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder not built) | the facts |
+| 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder merged 2026-10-22 in `newsStoryRecord`, not deployed) | the facts |
 | | **Weekly, one full analysis, Friday night, in this order** | | | |
 | 6 | Review | `newsRecordReview` (new Lambda, `backend/record`) reads the week's facts per active story | `record/readings/YYYY-Www.jsonl`: chapters, branch status, lines, typed links, actor merges; `record/runs/YYYY-Www.json` | the readings |
 | 7 | Views | rebuilt from facts + readings (`backend/record`) | `record/views/stories/{id}.json`, `index/active.json` (any fact in 60 days), `index/all.json`, `links/{threadId}.json`, `counts/{date}.json`, `manifest.json` | what readers fetch |
 | 8 | Weekly report | `backend/weekly` reads the week's readings | `weekly/YYYY-MM-DD.json` | a view of the readings, not a separate analysis |
 | | **Always** | | | |
 | 9 | Delivery | pages, board (`backend/board`, `features/board`), email (`backend/distribution`) read views through the Cloudflare Worker with ETag caching | what readers see | the board shows the settled past from readings and the unsettled present ("too early to call, N new entries") from daily counts |
-| 10 | Watch | `backend/monitoring` + CloudWatch alarms | alerts | Run objects are the signal: a missing or `started` Run, `archiveDay: missing`, zero readings or a high rejection rate is the alarm (0036 §5); alarms not built (§7) |
+| 10 | Watch | `backend/monitoring` + CloudWatch alarms | alerts | Run objects are the signal: a missing or `started` Run, `archiveDay: missing`, zero readings or a high rejection rate is the alarm (0036 §5); no Run alarm built, parked by the operator 2026-10-22 (§7) |
 
 On demand: re-run the review on a past week after an algorithm fix; the new readings supersede the old.
 
@@ -88,7 +88,7 @@ missing archive day gets a Run and no facts; the 28 missing days before 2026-09-
 | `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID) | `NewsCache archive#` rows (agent Lambda) |
 | `story_born` | first title | derived: earliest `entry` per threadId |
 | `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
-| `verdict` | qid, result yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` |
+| `verdict` | qid, result yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` (the table holds zero such rows as of 2026-10-22, so none exist yet) |
 | `correction` | `corrects` (eventId), what was wrong, reason | builder exists; no input feeds it yet |
 | `story_merged` | from, into (threadIds), reason, evidence; readers resolve transitively | builder exists; no input feeds it yet |
 | `run` | runId, status, counts: the day was processed | the writer itself |
@@ -132,7 +132,7 @@ Later: Situation (a group above stories), Place below country (coordinates), Ind
 Not needed now: country views.
 
 ## 5. Views and stores
-Views (0037) live under `record/views/` (shadow: `record/shadow/views/`), each with `schemaVersion: 1` and
+Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; `record/views/` is empty today: the builder is merged, not deployed), each with `schemaVersion: 1` and
 `builtFrom: {factsThrough, readingsThrough}`; reading-derived fields are `null` with a reason until the review exists.
 | View | Built from | Stored as | Read by |
 |---|---|---|---|
@@ -148,8 +148,8 @@ Views (0037) live under `record/views/` (shadow: `record/shadow/views/`), each w
 
 Stores: `record/facts/YYYY-MM-DD.jsonl` and `record/facts/manifest.json` (days present) · `record/runs/` · `record/readings/YYYY-Www.jsonl` ·
 `record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
-diffs the readings) · `weekly/YYYY-MM-DD.json`. Until the flip, `newsStoryRecord` writes the same bytes under `record/shadow/`
-(a prefix change, not a code change). Views are rebuilt in full from the facts manifest every time (plain PutObject; derived,
+diffs the readings) · `weekly/YYYY-MM-DD.json`. The scheduled run writes live (`{"shadow":false}`, flipped 2026-10-22); a manual invoke
+defaults to `shadow:true` and writes the same bytes under `record/shadow/` (a prefix change, not a code change). Views are rebuilt in full from the facts manifest every time (plain PutObject; derived,
 replaceable). The Worker serves only `record/views/` (0037 §4), never facts, runs or readings.
 
 ## 6. Who writes, who reads (two writers, each the only writer of its file)
@@ -193,14 +193,17 @@ next run catches up (idempotent per date and per period).
 ## 7. Open items
 Pointers are to `plans/PLAN_2026-10-21_foundation.md`. Everything not listed here is either done (see the plan's ticked rows)
 or a design, not an open defect.
-- **Facts writer not scheduled; alarms not built** (step 1): schedule and the Run alarms (no `record/facts/DATE.jsonl` by a
-  fixed UTC time, a `started` or `archiveDay: missing` Run, fast-fail Duration of the model Lambda) wait on the operator.
+- **Run alarms not built** (step 1): the facts writer is scheduled (`TriggerStoryRecord`, cron(45 23 * * ? *), live since 2026-10-22). The
+  alarms (no `record/facts/DATE.jsonl` by a fixed UTC time, a `started` or `archiveDay: missing` Run, fast-fail Duration of the model
+  Lambda) are parked by the operator; `backend/monitoring/alarms/spec.json` is a proposal, none of its alarms exist.
   No alarm watches `LLM 402`; there are two alert topics (`GlobalPerspectiveAlerts`, `GlobalPerspectivesAlerts`).
 - **Other stages still swallow model errors** (plan Risks): only `newsInvokeGemini` and the agent now fail the run.
 - **Map ingest drops unclassified articles silently** and the tracker then closes pins for lack of data, so "no data" reads
   as "ended" (2026-10-20 audit; not re-checked; not in the plan's rows).
-- **Views, Worker and review not built** (steps 2-3): views builder, `DATA_ALLOWED` + reader IAM + `newsBoard` IAM for
-  `record/views/`, board UI release, `newsRecordReview`, golden-week fixture, `newsSystemsAnalysis` link field.
+- **Views, Worker and review: merged or not built** (steps 2-3). Merged 2026-10-22, not deployed: the views builder (`newsStoryRecord`;
+  its role cannot write `record/views/*`), `newsBoard` reading the views, the board UI, the `DATA_ALLOWED` line in the repo Worker.
+  Waiting on IAM and uploads: `newsStoryRecord-role` PutObject and `newsBoard-role` GetObject on `record/views/`, the Worker upload
+  and its reader IAM, the frontend release. Not built: `newsRecordReview`, golden-week fixture, `newsSystemsAnalysis` link field.
 - **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
   several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
 - **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
@@ -222,7 +225,8 @@ write and Build's read; stage 6 (review) is Review; stage 7 (views) is Build; st
 weekly is a view; stage 9 (delivery) is Serve; stage 10 (watch) is the Watch rule: every run writes a Run object, and a
 missing or empty Run is the alarm. Commit (forecasts, resolver verdicts) runs daily because a forecast is a dated commitment.
 
-Current state (2026-10-22): `newsStoryRecord` is the facts writer (deployed, no schedule, no model key) and `record/facts` is
-backfilled from 2026-09-06; the per-day model steps are removed. Views, the Worker allowlist and `newsRecordReview` are not
-built; board slice 2 and `newsBoard` are deployed, board UI not yet released. Live checklist: the plan. A design discussion
+Current state (2026-10-22): `newsStoryRecord` is the facts writer (deployed without the views builder, no model key), scheduled daily
+(`TriggerStoryRecord`, 23:45Z, live), and `record/facts` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing);
+the per-day model steps are removed. The views builder, `newsBoard`'s view reader and the Worker allowlist line are merged, not
+deployed; `newsRecordReview` is not built; board slice 1 and the old `newsBoard` are deployed, the new board UI is not released. Live checklist: the plan. A design discussion
 is not a build go-ahead: each step waits for its own go.

@@ -1,6 +1,8 @@
 # Pipeline alarm proposal
 
-`spec.json` is a reviewable configuration proposal, not an installer. Lane G never creates filters, alarms, topics,
+`spec.json` is a reviewable configuration proposal, not an installer. None of its `GP-stage-*` alarms or metric filters exist in CloudWatch (checked 2026-10-22; the operator parked alarms the same day).
+
+Stage numbers: the spec uses an 8-stage scheme (1 Ingest, 2 Stories, 3 Daily notes, 4 One reader, 5 Facts, 6 read APIs, 7 Delivery, 8 Watch), not the ten stages of `ARCHITECTURE_TIMELINE.md` §1b. Spec 1-5 are pipeline stages 1-5; spec 6 and 7 (read APIs, delivery) are pipeline stage 9; spec 8 (monitors) is pipeline stage 10. Pipeline stages 6 (Review), 7 (Views) and 8 (Weekly report) have no spec stage yet. Lane G never creates filters, alarms, topics,
 roles or subscriptions. Coordinator applies it after verifying deployed log groups/providers and notification routing.
 
 The inventory maps `scripts/functions.json` deployed names to source imports of `_shared/llm` and direct completion
@@ -12,10 +14,9 @@ removal is deployed (G3). No secret values belong in this inventory.
 
 Each active stage has an aggregate failed-run metric/alarm and per-Lambda native `Errors` alarms. Stage 4 is a shared
 library, not a Lambda: explicit `stage4` failed-run attribution is REQUESTED from consumer owners, and native consumer
-Errors covers uncaught failures meanwhile. Stage 5's (Facts) proposed `newsStoryRecord` filter is held until its function/log
-group is registered; the stage alarm alone cannot discover uninstrumented errors. Stage 8's (Weekly report) cloud routine also needs
+Errors covers uncaught failures meanwhile. Stage 5's (Facts) proposed `newsStoryRecord` filter is held until the operator lifts the alarm park (the function is registered and live); the stage alarm alone cannot discover uninstrumented errors. Stage 8's (Weekly report) cloud routine also needs
 its own failed-publish/check signal from its runner, REQUESTED rather than a fabricated Lambda metric. Generic markers
-use `[pipeline-status] ... failed`; the planned `newsRecordReview`'s Run objects (stage 10, Watch) are its alarm signal: zero readings or a high rejection rate; add them to swallowed-error paths in other lanes before claiming full coverage.
+use `[pipeline-status] ... failed`; the planned `newsRecordReview`'s Run objects (pipeline stage 10, Watch) are its alarm signal: zero readings or a high rejection rate; add them to swallowed-error paths in other lanes before claiming full coverage.
 
 Crucially, an async handler returning `{statusCode:503}` is a successful Lambda invocation. **Agent Errors alone misses
 its empty/stale run.** Retain the marker metric on `/aws/lambda/NewsProjectInvokeAgentLambda-dev` as well as its native

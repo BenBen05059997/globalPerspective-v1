@@ -1,7 +1,7 @@
 # Data Strategy — S3 for the world, DynamoDB for the user
 
 **Status:** binding rule (decisions/0003, adopted 2026-09-08); applies to every new subsystem, to existing tables incrementally (§6).
-Last verified: 2026-10-19 (tables, prefixes, lifecycle rules and schedules read from live AWS; writers from the repo source).
+Last verified: 2026-10-19 (tables, prefixes, lifecycle rules and schedules read from live AWS; writers from the repo source); the `record/` rows, the PredictionLog row in §6 and the Worker IAM sentence re-checked 2026-10-22.
 Live inventories are generated: `project-docs/reference/s3-prefixes.md`, `schedules.md`, `lambdas.md`.
 
 ## 1. The principle
@@ -17,7 +17,7 @@ Why: ~39 Lambdas batch-produce **immutable snapshots** (hourly / 8h / daily) tha
 
 | Store | Holds | Examples |
 |---|---|---|
-| **S3** (`globalperspective-world-<account>`, private) | everything computed about the world; append-only corpora; versioned snapshots; audit/event logs | corpus, stories, situations, `world/latest.json`, prediction log, markets snapshots, GDACS/GDELT mirrors, impact audit, client-error logs, signals |
+| **S3** (`globalperspective-world-<account>`, private) | everything computed about the world; append-only corpora; versioned snapshots; audit/event logs | corpus, stories, situations, `world/latest.json`, the track-record snapshot, markets snapshots, GDACS/GDELT mirrors, impact audit, client-error logs, signals |
 | **DynamoDB** — target: the 5 user tables | per-user, mutable, concurrent, transactional | `GlobalPerspectiveUserTable` (tier, credits, Polar ids), `GlobalPerspectiveSavedItems`, `GlobalPerspectiveUserPrefs`, `GlobalPerspectiveApiKeys`, `GlobalPerspectiveShares` |
 
 **Board data (2026-10-20, no new table):** the member's boards live in `GlobalPerspectiveSavedItems` as items with
@@ -75,14 +75,15 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation (3×/day) | `newsImpactAudit` (parked), `newsSelectionShadow` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json` + `latest.json` (P7c shadow week; live 2026-10-18) | `newsSelectionShadow` | 3×/day, 5 min after selection | operator review only |
 | `predictions/track_record.json` (`questions` block added 2026-09-30) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
-| `record/facts/YYYY-MM-DD.jsonl` | `newsStoryRecord` | daily, append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`, live since 2026-10-22), append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
 | `record/runs/YYYY-Www.json` | `newsRecordReview` (planned) | weekly | monitoring (alarm signal), operator |
-| `record/views/…` (stories, index/active, index/all, links) | rebuilt: facts-only views by `newsStoryRecord`, story views by `newsRecordReview` | after each daily append / weekly run | board, pages, weekly |
+| `record/views/…` (stories, index/active, index/all, links, counts, manifest) | rebuilt: facts-only views by `newsStoryRecord` (builder merged 2026-10-22, not deployed; the role cannot write here yet and the prefix is empty), story readings by `newsRecordReview` (planned) | after each daily append / weekly run | board, pages, weekly |
 | `record/fixtures/golden-week/` | written by hand (operator), frozen | — | `newsRecordReview` re-runs and diffs |
-| `record/shadow/…` | mirror of the above during the shadow week | as the writers | humans, tuning |
+| `record/shadow/…` | `newsStoryRecord` on a manual `shadow:true` invoke (its default); also holds the retired old dry-run output (`index.json`, `stories/`, `timeline/`, `corrections/`) | manual only, no schedule | humans, tuning |
 
-IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
+IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*` (`record/views/*` is allowed in the repo Worker since 2026-10-22 but neither the Worker upload nor its reader IAM is done). `newsStoryRecord-role` may write `record/shadow/*`, `record/facts/*`, `record/runs/*`, not yet `record/views/*`.
 
 Lifecycle additions: `signals/snapshots/` → Glacier IR 30d, expire 365d (`signals/latest.json` never expires); `audit/impact/` → expire 400d; `corpus/*` covered by `corpus-history-IA-then-expire`. Live rules also cover `situations/history/`, `situations/archive/`, `situations/inbox/processed/`, `world/` and `stories/`.
 
@@ -125,7 +126,7 @@ Measured 2026-09-09 (7-day CloudWatch, reads/writes per day): `SummarizeAndPredi
 |---|---|
 | `UserTable`, `SavedItems`, `UserPrefs`, `ApiKeys`, `Shares` | stay DynamoDB |
 | `GlobalPerspectiveSituations`, `Signals`, `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | done — moved to S3 (§4), tables dropped |
-| `GlobalPerspectivePredictionLog` | stays DynamoDB: a mutable per-record store (settling updates verdicts in place). Only the `/track-record` aggregate moved to `predictions/track_record.json` (`newsPredictionsSnapshot`, 30 min) |
+| `GlobalPerspectivePredictionLog` | stays DynamoDB: the per-record store (the resolver appends write-once `Q#` rows; a correction appends `VERDICT#<n>`; no verdict row exists yet as of 2026-10-22). Only the `/track-record` aggregate moved to `predictions/track_record.json` (`newsPredictionsSnapshot`, 30 min) |
 | `GlobalPerspectiveMarkets` | not started (target `markets/YYYY/MM/DD/HH.json`); economy parked, `newsMarketsData` still writes hourly |
 | `GlobalPerspectiveClientErrors` | not started (target append-only `logs/errors/YYYY/MM/DD.jsonl`) |
 | `GlobalPerspectiveBreakingAlerts` | not started; `review.js` mutates rows, so it waits for an inbox-event review flow |

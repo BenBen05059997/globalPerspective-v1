@@ -27,4 +27,4 @@ New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows w
 ## Tests
 - `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 44 passed with the existing local AWS SDK on NODE_PATH (without it, one store-interface test skips) 2026-10-20.
 
-Last verified: 2026-10-20 (code and tests only; not deployed)
+Last verified: 2026-10-22 (deployed 2026-10-20 15:24Z per `get-function-configuration`; the table holds zero `VERDICT` rows so far; tests last run 2026-10-20)

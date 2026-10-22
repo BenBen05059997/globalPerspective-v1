@@ -37,6 +37,6 @@ Thread pin `refId` = `threadId`; country = ISO3 (`backend/shared/src/resolveIso3
 
 ## Status
 
-Slice 1 live 2026-10-20: `newsBoard` deployed (Function URL, role `newsBoard-role`); `newsConnect` not built. Plan: `project-docs/plans/PLAN_2026-10-20_board.md`.
+Slice 1 live 2026-10-20: `newsBoard` deployed (Function URL, role `newsBoard-role`; deployed zip last updated 2026-10-21, before the view-reading change below); `newsConnect` not built. Plan: `project-docs/plans/PLAN_2026-10-20_board.md`.
 
-Record views (0037): `newsBoard` reads `record/views/index/active.json` (fallback `index/all.json`) and `record/views/links/*` only; story views, links and daily counts reach the browser through the Worker's `/data/record/views/`. `record/index.json` and `record/stories/*` are no longer read, and the `story_view` action is removed. Readings (line, chapters, confirmed links, risk) are `null` until the weekly review.
+Record views (0037, merged 2026-10-22 in the repo, not deployed: the live `newsBoard` still reads the old paths, `newsBoard-role` has no `GetObject` on `record/views/*` yet, and `record/views/` is empty; the Worker allow-list line is not uploaded): `newsBoard` reads `record/views/index/active.json` (fallback `index/all.json`) and `record/views/links/*` only; story views, links and daily counts reach the browser through the Worker's `/data/record/views/`. `record/index.json` and `record/stories/*` are no longer read, and the `story_view` action is removed. Readings (line, chapters, confirmed links, risk) are `null` until the weekly review.

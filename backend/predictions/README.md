@@ -1,7 +1,7 @@
 # predictions
 
 The forecast scoring group. Forecasts are written by the content pipeline; the two Lambdas here settle them under methodology v1
-and publish the public track record. It serves readers of the track-record page and the operator who writes the verdicts.
+and publish the public track record. It serves readers of the track-record page and the operator who may correct a verdict.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
@@ -34,7 +34,7 @@ This folder is stage 3: forecast settling and the track-record snapshot. Timelin
 ## Known limits
 
 - A missing seed secret or a commit-hash mismatch blocks that week's draw. A new seed is never invented.
-- Verdicts are written by the operator, not by a Lambda. The drafts are model-written.
+- The resolver writes verdicts itself from model drafts (decision 0034, deployed 2026-10-20); the operator only corrects. No verdict row had been written as of 2026-10-22 (zero in `GlobalPerspectivePredictionLog`).
 - Resolver rows are conditional put-once; nothing is overwritten.
 - A question is re-drafted only after 5 days without a verdict.
 - Live TTL on the PredictionLog table is DISABLED, so rows do not expire.

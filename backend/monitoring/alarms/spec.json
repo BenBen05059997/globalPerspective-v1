@@ -194,7 +194,7 @@
     },
     {
       "stage": 3,
-      "name": "Analysis",
+      "name": "Daily notes",
       "functions": [
         "newsCountryFactsUpdater",
         "newsCountryIntelligence",
@@ -210,13 +210,13 @@
       "stage": 4,
       "name": "One reader",
       "functions": [],
-      "status": "No deployable stage-local Lambda in current inventory; shared reader errors surface in consumer stages; timeline/routine registrations require coordinator update."
+      "status": "No deployable stage-local Lambda in current inventory; shared reader errors surface in consumer stages."
     },
     {
       "stage": 5,
-      "name": "Timeline",
+      "name": "Facts",
       "functions": [],
-      "status": "No deployable stage-local Lambda in current inventory; shared reader errors surface in consumer stages; timeline/routine registrations require coordinator update."
+      "status": "newsStoryRecord is registered in scripts/functions.json (group record) and scheduled by TriggerStoryRecord, but is not yet listed here and has no alarm; see plannedStages."
     },
     {
       "stage": 6,
@@ -263,7 +263,7 @@
       "logGroupName": "/aws/lambda/newsStoryRecord",
       "filterPattern": "\"[pipeline-status]\" \"failed\"",
       "metricName": "Stage5Failed",
-      "status": "Install filter/native Errors alarm only after coordinator registers deployed function; not in functions.json yet."
+      "status": "newsStoryRecord is in scripts/functions.json and live (TriggerStoryRecord). Install the filter/native Errors alarm only when the operator lifts the alarm park (2026-10-22); it throws on a non-ok Run, so native Errors also covers a failed day."
     }
   ],
   "metricFilters": [
@@ -1781,6 +1781,6 @@
     "Add failed-run markers in jobs that currently swallow errors; filters do not invent markers.",
     "A returned statusCode503 does not increment Lambda Errors; retain the agent log-marker alarm alongside native Errors.",
     "No capture heartbeat is9h absence (8h cadence+1h grace), not an exact per-invocation completion deadline; seed with first capture before enabling actions.",
-    "Stage4 shared reader errors surface through consuming Lambdas; stage5 timeline and stage6 cloud routine need coordinator inventory/alarm registration when deployed."
+    "Stage4 shared reader errors surface through consuming Lambdas; stage5 facts (newsStoryRecord) and the weekly cloud routine need coordinator alarm registration; spec stage numbers are this proposal's 8-stage scheme, mapped to the ten pipeline stages in README.md."
   ]
 }

@@ -1,10 +1,11 @@
 'use strict';
 
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
-// (decision 0036). No model, no views. Every run writes a Run, including a failed or empty one, and a run that did
+// (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
 const {entryFact, bornFact, forecastFact, verdictFact, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
+const {makePublisher} = require('./publish');
 
 const producer = `newsStoryRecord@${require('./package.json').version}`;
 const LOOKBACK_DAYS = 60; // fact days read back to skip known facts and to find forecast questions awaiting a verdict
@@ -14,6 +15,7 @@ const zeroCounts = () => Object.fromEntries(KINDS.map((k) => [k, 0]));
 const messageOf = (e) => (e && e.message) || String(e);
 
 function makeHandler({store, s3json, manifest, now = () => new Date().toISOString()}) {
+  const publisher = makePublisher({s3json});
   async function knownFacts(prefix, date) {
     const days = await Promise.all(eachDay(addDays(date, -LOOKBACK_DAYS), addDays(date, 1)).map((d) => s3json.getLines(`${prefix}facts/${d}.jsonl`)));
     return days.flatMap((d) => d.lines);
@@ -92,7 +94,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     try { await manifest.addDays(`${prefix}facts/manifest.json`, dates); } catch (e) { run.failures.push({stage: 'manifest', message: messageOf(e)}); }
   }
 
-  async function runDay(date, {prefix, backfill}) {
+  async function runDay(date, {prefix, backfill, views}) {
     const runKey = `${prefix}runs/${date}.json`;
     const previous = await s3json.getJson(runKey);
     const attempt = (previous ? Number(/-(\d+)$/.exec(String(previous.runId))?.[1]) || 0 : 0) + 1;
@@ -103,10 +105,16 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     await s3json.putLatest(runKey, run);
     let fatal = null;
     try { await stages(date, {prefix, run}); } catch (e) { fatal = e; run.failures.push({stage: 'fatal', message: messageOf(e)}); }
+    // Views are rebuilt in full from every facts day, once per invocation (a backfill: after its last day). A view failure
+    // leaves the facts as written and marks the Run partial.
+    if (views) {
+      try { await publisher.publish({prefix, today: now().slice(0, 10), builtAt: now(), runId: run.runId, changedDays: views.changedDays.concat(run.daysWritten)}); } catch (e) { run.failures.push({stage: 'views', message: messageOf(e)}); }
+    }
 
     run.finishedAt = now();
     const written = run.daysWritten.length > 0;
-    run.status = !run.failures.length ? 'ok' : written ? 'partial' : 'failed';
+    const viewsOnly = run.failures.every((f) => f.stage === 'views');
+    run.status = !run.failures.length ? 'ok' : written || viewsOnly ? 'partial' : 'failed';
     run.counts.run = 1;
     try {
       const fact = runFact(run, backfill ? `${date}T23:59:59.999Z` : undefined);
@@ -130,8 +138,10 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const dates = bf ? eachDay(bf.from, bf.to) : [event.date || now().slice(0, 10)];
     if (!dates.every(isDay)) throw new Error('date must be YYYY-MM-DD');
     const days = [];
-    for (const date of dates) {
-      const {run, fatal} = await runDay(date, {prefix, backfill: Boolean(bf)});
+    const changedDays = [];
+    for (const [i, date] of dates.entries()) {
+      const {run, fatal} = await runDay(date, {prefix, backfill: Boolean(bf), views: i === dates.length - 1 ? {changedDays} : null});
+      changedDays.push(...run.daysWritten);
       days.push({date, runId: run.runId, status: run.status, inputs: run.inputs, counts: run.counts, failures: run.failures});
       // A missing day is an error unless the run says it is expected history (strict:false) or it is today, whose row may not exist yet.
       const missingOnly = run.failures.length > 0 && run.failures.every((f) => f.stage === 'inputs');

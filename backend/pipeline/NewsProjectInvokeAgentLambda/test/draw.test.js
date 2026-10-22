@@ -142,3 +142,35 @@ test('non-outcome content passes through the adapter unchanged', () => {
   const legacy = { scenarios: [{ label: 'Most Likely' }] };
   assert.equal(draw.outcomesToScenarios(legacy), legacy);
 });
+
+// ---------- G15 already true at the draw, G16 vague actor (lane Q) ----------
+
+test('G15: an outcome matching an entry of the story dated on or before the draw is dropped; a later or unrelated entry is not', () => {
+  const entries = [
+    { date: '2026-10-20', title: 'Parliament passes the port labour bill', summary: 'Lawmakers voted on Tuesday.' },
+    { date: '2026-10-23', title: 'EU opens an inquiry into port subsidies', summary: '' }, // after the draw: cannot make it true at the draw
+    { date: '2026-10-21', title: 'Weather turns mild in Hamburg', summary: '' },
+  ];
+  const r = run([out({ text: 'Parliament passes the port labour bill' }), out({ text: 'EU opens an inquiry into port subsidies' }), out({ text: 'Court suspends the dockworkers strike' })], { priorEntries: entries });
+  assert.deepEqual(keptTexts(r), ['EU opens an inquiry into port subsidies', 'Court suspends the dockworkers strike']);
+  assert.equal(r.capture.dropped[0].gate, 'G15');
+  assert.equal(run([out()], { priorEntries: [{ date: TODAY, title: 'Parliament passes the port labour bill', summary: '' }] }).capture.dropped[0].gate, 'G15'); // the draw day itself counts
+  assert.equal(keptTexts(run([out()], { priorEntries: [] })).length, 1);
+});
+
+test('G16: generic actors are dropped; named institutions are kept', () => {
+  const vague = ['The government passes the port labour bill', 'Authorities arrest the union leader', 'Officials impose a back-to-work order', 'The EU imposes sanctions on the shipping firm', 'The UN deploys observers to the port', 'Port staff end the strike and officials sign a deal'];
+  for (const text of vague) {
+    const r = run([out({ text })]);
+    assert.equal(keptTexts(r).length, 0, text);
+    assert.equal(r.capture.dropped[0].gate, 'G16', text);
+  }
+  const named = ['The European Commission imposes sanctions on the shipping firm', 'The EU Commission opens an inquiry into port subsidies', 'The UN Security Council adopts a resolution on the port', 'The German government signs the port labour bill', 'The government of Germany signs the port labour bill', 'Hamburg port authorities impose a back-to-work order', 'Parliament passes the port labour bill'];
+  for (const text of named) assert.equal(keptTexts(run([out({ text })])).length, 1, text);
+});
+
+test('the prompt carries one line for each new gate', () => {
+  const p = draw.buildPredictionPrompt(topic, 'October 22, 2026', 2026, {}, TODAY);
+  assert.match(p, /already reports as done/);
+  assert.match(p, /Name the exact institution/);
+});

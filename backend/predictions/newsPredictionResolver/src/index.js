@@ -116,8 +116,8 @@ async function drawWeek(deps, commit, dryRun, out) {
 const verdictOrder = (sk) => { const m = /^VERDICT#(\d+)$/.exec(sk); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; };
 
 // An unclear draft is one the drafter judged and could not settle (not_yet, or needs_human on evidence); an LLM
-// outage (needs_human with an 'llm error' note) is not a judgment and never counts toward voiding a question.
-const isUnclearDraft = (d) => !FINAL_DRAFT_VERDICTS.includes(d.verdict) && !/^llm error/.test(String(d.note || ''));
+// outage (needs_human with an 'llm error' note) or a coverage gap (our record has holes) is not a judgment and never counts toward voiding a question.
+const isUnclearDraft = (d) => !FINAL_DRAFT_VERDICTS.includes(d.verdict) && !/^llm error/.test(String(d.note || '')) && d.reason !== lib.COVERAGE_GAP;
 
 // Unclear drafts that count toward a void: made once `no` was allowed (deadline + GRACE_DAYS) and at least
 // REDRAFT_AFTER_DAYS apart, so a story that moves every night cannot void a question in three days.
@@ -239,6 +239,7 @@ async function checkPass(deps, today, limit, dryRun, out) {
     g.q = q;
     await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: d.model || deps.draftModel, at });
     out.drafted.push({ qid: q.qid, verdict: d.verdict });
+    if (d.reason === lib.COVERAGE_GAP) { (out.coverageGaps = out.coverageGaps || []).push({ qid: q.qid, days: d.gapDays }); console.log('coverage_gap', q.qid, JSON.stringify((bundle.coverageGaps || []).map((x) => `${x.day} ${x.why}`))); }
     g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: d.model || deps.draftModel });
     await settleQuestion(deps, g, false, out);
   });

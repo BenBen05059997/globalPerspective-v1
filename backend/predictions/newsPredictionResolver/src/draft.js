@@ -45,22 +45,23 @@ const bundleOf = (q) => (Array.isArray(q.bundle) ? { entries: q.bundle, complete
  */
 async function draftQuestion(q, deps) {
   const today = String(deps.now()).slice(0, 10);
-  const { entries, complete } = bundleOf(q);
+  const { entries, complete, coverageGaps = [] } = bundleOf(q);
   const base = { nEntries: entries.length, eventIds: entries.map((e) => e.eventId) };
   if (!entries.length) {
     // nothing to judge: after due + GRACE_DAYS on a complete bundle that is a `no` decided by rule (no model call)
-    const d = lib.validateDraft({ verdict: 'no', why: 'no entry of the story after the draw' }, entries, today, q.deadline, { complete });
+    const d = lib.validateDraft({ verdict: 'no', why: 'no entry of the story after the draw' }, entries, today, q.deadline, { complete, coverageGaps });
+    if (d.reason === lib.COVERAGE_GAP) return { ...d, ...base };
     return d.verdict === 'no' ? { ...d, model: NO_ENTRIES_MODEL, ...base } : { verdict: 'not_yet', why: 'no entry of the story after the draw', ...base };
   }
   let raw1;
   try { raw1 = await deps.llm(buildPrompt(q, entries, today)); } catch (e) { return { verdict: 'needs_human', note: `llm error: ${String(e.message).slice(0, 120)}`, ...base }; }
-  const d1 = lib.validateDraft(raw1, entries, today, q.deadline, { complete });
+  const d1 = lib.validateDraft(raw1, entries, today, q.deadline, { complete, coverageGaps });
   let final = d1;
   if (d1.verdict === 'yes') {
     // second independent pass: the same bundle in the opposite order
     const rev = entries.slice().reverse();
     let d2 = null;
-    try { d2 = lib.validateDraft(await deps.llm(buildPrompt(q, rev, today)), rev, today, q.deadline, { complete }); } catch { d2 = null; }
+    try { d2 = lib.validateDraft(await deps.llm(buildPrompt(q, rev, today)), rev, today, q.deadline, { complete, coverageGaps }); } catch { d2 = null; }
     final = lib.combinePasses(d1, d2);
   }
   // the cited entry, kept as the verdict's evidence (looked up by eventId in what the judge was shown)

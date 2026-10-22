@@ -20,6 +20,12 @@ const STOP = new Set(['the', 'and', 'for', 'that', 'with', 'from', 'will', 'has'
 const SAID = /\b(?:says?|said|announces?|announced|denies|denied|deny|states?|stated|claims?|claimed|declares?|declared|pledges?|pledged|vows?|vowed|promises?|promised|warns?|warned|threatens?|threatened|urges?|urged|calls? (?:for|on)|condemns?|condemned|comments?|commented|suggests?|suggested|reiterates?|reaffirms?|insists?|insisted|issues? (?:a |an )?(?:statement|warning|denial)|(?:public|official) statement)\b/i;
 const DONE = /\b(?:signs?|signed|passes|passed|approves?|approved|votes?|voted|adopts?|adopted|enacts?|enacted|ratif\w+|imposes?|imposed|lifts?|lifted|bans?|banned|expels?|expelled|deploys?|deployed|launch\w*|struck|seizes?|seized|arrests?|arrested|releases?|released|withdraws?|withdrew|raises?|raised|cut|ordered|filed|sanctioned|resigns?|resigned|dismisses|dismissed|appoints?|appointed|elects?|elected|suspends?|suspended|closes?|closed|reopens?|opens?|opened|invades?|invaded|captures?|captured|detonates?|detonated|default\w*|devalues?|devalued|cancels?|cancelled|canceled|delays|delayed|extends?|extended|ended|resumes?|resumed|halts?|halted|exceeds?|falls? (?:below|to)|rises? (?:above|to)|reaches|reached|meets?|met|holds?|held|convenes?|convened|publishes?|published|delivers?|delivered|completes?|completed|takes? effect|enters? into force)\b/i;
 
+// G16 (lane Q): the acting institution must be named. Only generic labels are flagged: "the government" (not "of X"),
+// bare "authorities" / "officials", and "the EU" / "the UN" with no named body after them ("the EU Commission",
+// "the UN Security Council" and "the German government" are exact enough).
+const VAGUE_ACTORS = [/\b[Tt]he government\b(?! of [A-Z])/, /(?:^|\b(?:[Tt]he|and|or|by|that)\s+)(?:[Aa]uthorities|[Oo]fficials)\b/, /\b[Tt]he (?:EU|UN)\b(?!\s+[A-Z])/];
+const vagueActor = (text) => VAGUE_ACTORS.some((re) => re.test(String(text || '')));
+
 // Stable id of a question: sha256(pk|sk|triggerId), first 20 hex chars.
 function qidFor(pk, sk, triggerId) {
   return crypto.createHash('sha256').update(`${pk}|${sk}|${triggerId}`).digest('hex').slice(0, 20);
@@ -72,6 +78,13 @@ function questionGate(t, ctx) {
   for (const s of ctx.snippets || []) {
     if (jaccard(tt, s) >= 0.6) return { action: 'drop', gate: 'G10', reason: 'restates already-reported news (criterion met at issue)' };
   }
+  // G15: the outcome is already true at the draw if it closely matches an entry of the same story dated on or before the draw
+  for (const e of ctx.priorEntries || []) {
+    if (e && (!e.date || String(e.date).slice(0, 10) <= String(ctx.generatedAtDay).slice(0, 10)) && jaccard(tt, `${e.title || ''} ${e.summary || ''}`) >= 0.6) {
+      return { action: 'drop', gate: 'G15', reason: 'already true at the draw (matches an entry of the story dated on or before it)' };
+    }
+  }
+  if (vagueActor(text)) return { action: 'drop', gate: 'G16', reason: 'vague actor (name the exact institution)' };
   if (p >= 95 && FORMALITY.test(t.text)) return { action: 'demote', gate: 'G11', reason: 'formality' };
   for (const prior of ctx.priorTexts || []) {
     if (jaccard(tt, prior) >= 0.7) return { action: 'demote', gate: 'G12', reason: 'near_duplicate' };
@@ -84,4 +97,4 @@ function clusterKeyFor(row) {
   return (row && (row.threadId || row.topicId)) || null;
 }
 
-module.exports = { SAID, DONE, qidFor, tokens, jaccard, parseP, questionGate, clusterKeyFor, MIN_LEAD_DAYS, P_MIN, P_MAX };
+module.exports = { vagueActor, SAID, DONE, qidFor, tokens, jaccard, parseP, questionGate, clusterKeyFor, MIN_LEAD_DAYS, P_MIN, P_MAX };

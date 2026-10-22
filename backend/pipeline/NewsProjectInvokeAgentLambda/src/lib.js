@@ -362,7 +362,7 @@ function buildGatedScenarios(rawScenarios, ctx) {
         }
       }
       if (qMode) {
-        const g = questions.questionGate(norm, { generatedAtDay, snippets: ctx.snippets || [], priorTexts });
+        const g = questions.questionGate(norm, { generatedAtDay, snippets: ctx.snippets || [], priorTexts, priorEntries: ctx.priorEntries || [] });
         if (g.action === 'drop') {
           dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: g.gate, why: g.reason });
           return;

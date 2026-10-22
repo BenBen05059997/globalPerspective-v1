@@ -14,6 +14,7 @@ const LEAD_MIN = 7;
 const LEAD_MAX = 90;
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
 const NO_REASON = 'not_reported_by_due'; // the reason recorded on every `no`
+const COVERAGE_GAP = 'coverage_gap'; // a `no` blocked because our own record has holes in the window (not a judgment)
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
 const sha256hex = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -114,7 +115,7 @@ function quoteInEntry(quote, entries, eventId) {
  * Turn a raw model answer into a draft verdict, enforcing the rules.
  * @returns {{verdict:'yes'|'no'|'void'|'not_yet'|'needs_human', voidReason?, quote?, url?, why?, note?}}
  */
-function validateDraft(raw, entries, today, deadline, { complete = true } = {}) {
+function validateDraft(raw, entries, today, deadline, { complete = true, coverageGaps = [] } = {}) {
   const v = raw && typeof raw === 'object' ? raw : {};
   const verdict = String(v.verdict || '').toLowerCase();
   const why = String(v.why || '').slice(0, 300);
@@ -124,6 +125,7 @@ function validateDraft(raw, entries, today, deadline, { complete = true } = {}) 
   }
   if (verdict === 'no') {
     if (!canConcludeNo(deadline, today)) return { verdict: 'not_yet', why, note: 'NO not allowed before deadline + 3 days' };
+    if (coverageGaps.length) return { verdict: 'not_yet', why, reason: COVERAGE_GAP, gapDays: coverageGaps.map((g) => g.day), note: 'NO needs a healthy Run on every day from the draw to the due day' };
     if (!complete) return { verdict: 'not_yet', why, note: 'NO needs the bundle computed from all entries since the draw' };
     return { verdict: 'no', why, reason: NO_REASON };
   }
@@ -144,7 +146,7 @@ function combinePasses(a, b) {
 }
 
 module.exports = {
-  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, NO_REASON, VOID_REASONS,
+  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, NO_REASON, COVERAGE_GAP, VOID_REASONS,
   sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks, isMonday,
   newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
   quoteInEntry, validateDraft, combinePasses,

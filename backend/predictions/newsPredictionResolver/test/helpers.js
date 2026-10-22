@@ -43,8 +43,18 @@ function predRow(topic, sk, n, { lead = 30, thread } = {}) {
 
 
 // An injected record/facts reader: files = { 'YYYY-MM-DD': [fact, ...] }.
-function fakeFacts(files = {}) {
-  return { async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; } };
+// runs = { 'YYYY-MM-DD': runObject|null|Error } for record/runs; omitted = every day has a healthy Run.
+const okRun = (extra = {}) => ({ status: 'ok', inputs: { archiveDay: 'present', todayArchive: 'present' }, ...extra });
+function fakeFacts(files = {}, runs) {
+  return {
+    async getJson(key) {
+      const m = /record\/runs\/(\d{4}-\d{2}-\d{2})\.json$/.exec(key);
+      const r = runs === undefined ? okRun() : runs[m && m[1]];
+      if (r instanceof Error) throw r;
+      return { obj: r || null, etag: null };
+    },
+    async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; },
+  };
 }
 let evN = 0;
 const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, eventId: `ev${threadId}${date}${++evN}`, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
@@ -73,4 +83,4 @@ function fakeS3() {
   return { s3json, objects, lines };
 }
 
-module.exports = { fakeStore, predRow, fakeFacts, entryFact, fakeS3 };
+module.exports = { okRun, fakeStore, predRow, fakeFacts, entryFact, fakeS3 };

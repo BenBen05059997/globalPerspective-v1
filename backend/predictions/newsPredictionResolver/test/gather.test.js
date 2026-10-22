@@ -61,3 +61,59 @@ test('no network module is imported anywhere in src (no search, fetch, http)', (
     assert.doesNotMatch(text, /require\(['"](https?|node:https?|node-fetch|axios|undici)['"]\)|\bfetch\(|BRAVE|brave/i, f);
   }
 });
+
+// ---- COVERAGE GUARD: a `no` needs a healthy Run on every day from the draw+1 to the due day ----
+const { okRun } = require('./helpers');
+const { draftQuestion } = require('../src/draft');
+const CQ = { ...Q, issuedAt: '2026-10-30T05:00:00.000Z', deadline: '2026-11-02', storyTitle: 's', question: 'x' }; // coverage days 10-31, 11-01, 11-02
+const NOW_NO = '2026-11-10T10:30:00.000Z';
+const covBundle = async (runs, q = CQ) => {
+  const loaded = await gather.loadEntries(fakeFacts({}, runs), [q], TODAY);
+  return gather.buildBundle(q, loaded, TODAY);
+};
+const noOf = async (runs) => draftQuestion({ ...CQ, bundle: await covBundle(runs) }, { now: () => NOW_NO, llm: async () => { throw new Error('no model'); } });
+
+test('coverage: every day ok or partial with archiveDay present allows the no', async () => {
+  const b = await covBundle({ '2026-10-31': okRun(), '2026-11-01': okRun({ status: 'partial' }), '2026-11-02': okRun() });
+  assert.deepEqual(b.coverageGaps, []);
+  const d = await noOf({ '2026-10-31': okRun(), '2026-11-01': okRun({ status: 'partial' }), '2026-11-02': okRun() });
+  assert.deepEqual([d.verdict, d.reason, d.model], ['no', 'not_reported_by_due', 'rule:no_entries_after_draw']);
+});
+
+test('coverage: one missing day, a thin day, a missing archive, a failed run and an unreadable run are each a gap', async () => {
+  const good = { '2026-10-31': okRun(), '2026-11-01': okRun(), '2026-11-02': okRun() };
+  const cases = [
+    ['no run', { ...good, '2026-11-01': null }],
+    ['thin', { ...good, '2026-11-01': okRun({ inputs: { archiveDay: { thin: 13 } } }) }],
+    ['archive missing', { ...good, '2026-11-02': okRun({ inputs: { archiveDay: 'missing' } }) }],
+    ['failed', { ...good, '2026-10-31': okRun({ status: 'failed' }) }],
+    ['started', { ...good, '2026-10-31': okRun({ status: 'started' }) }],
+    ['unreadable', { ...good, '2026-11-01': new Error('AccessDenied') }],
+  ];
+  for (const [name, runs] of cases) {
+    const b = await covBundle(runs);
+    assert.equal(b.coverageGaps.length, 1, name);
+    const d = await noOf(runs);
+    assert.deepEqual([d.verdict, d.reason], ['not_yet', 'coverage_gap'], name);
+    assert.equal(d.gapDays.length, 1, name);
+  }
+  const unreadable = await covBundle({ ...good, '2026-11-01': new Error('AccessDenied') });
+  assert.match(unreadable.coverageGaps[0].why, /unreadable/);
+});
+
+test('coverage: a model no on entries is blocked by a gap; a yes is unaffected', async () => {
+  const entries = [{ eventId: 'e1', title: 'Parliament ratifies the treaty today', summary: 'Lawmakers voted 200-10 on Tuesday.', date: '2026-11-01', url: null }];
+  const gap = { ...CQ, bundle: { entries, complete: true, coverageGaps: [{ day: '2026-11-01', why: 'no run' }] } };
+  const no = await draftQuestion(gap, { now: () => NOW_NO, llm: async () => ({ verdict: 'no', why: 'w' }) });
+  assert.deepEqual([no.verdict, no.reason], ['not_yet', 'coverage_gap']);
+  const yes = await draftQuestion(gap, { now: () => NOW_NO, llm: async () => ({ verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', event_id: 'e1' }) });
+  assert.equal(yes.verdict, 'yes');
+});
+
+test('coverage: runs are read once per day for many questions, and never for days after today', async () => {
+  const keys = [];
+  const facts = { async getLines() { return { lines: [] }; }, async getJson(k) { keys.push(k); return { obj: okRun() }; } };
+  await gather.loadEntries(facts, [CQ, { ...CQ, qid: 'q2' }, { ...CQ, qid: 'late', deadline: '2026-12-31' }], TODAY);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.ok(keys.every((k) => k.slice(-15, -5) <= TODAY));
+});

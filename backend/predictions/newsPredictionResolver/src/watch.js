@@ -1,34 +1,16 @@
 'use strict';
 
 // WATCH (decision 0038, stage 2): no model. Which open question branches deserve a check tonight?
-//   - the story moved: a new `entry` fact for its threadId in yesterday's or today's record/facts file, or
+//   - the story moved: a new `entry` fact for its threadId in yesterday's or today's record/facts file (read by
+//     gather.loadEntries), or
 //   - the branch is old: its due date passed GRACE_DAYS ago (the first day a `no` is allowed).
+// A moved branch whose story has no entry dated after the forecast's draw (and is not yet past due + GRACE_DAYS)
+// is skipped: there is nothing to judge.
 // Nothing else is checked. Oldest due first; a per-run cap with the overflow logged.
 
 const lib = require('./lib');
 
 const MAX_CANDIDATES = 60;
-
-const factsKey = (day) => `record/facts/${day}.jsonl`;
-
-/**
- * Entry facts of yesterday and today -> Map(threadId -> [entry fact]). deps.facts = { getLines(key) -> {lines} }
- * (s3json.getLines, injected so tests run offline). A missing file is an empty day, not an error.
- */
-async function movedThreads(facts, today) {
-  const moved = new Map();
-  if (!facts) return moved;
-  for (const d of [lib.addDays(today, -1), today]) {
-    const { lines } = await facts.getLines(factsKey(d));
-    for (const f of lines) {
-      if (!f || f.kind !== 'entry' || !f.threadId) continue;
-      const list = moved.get(f.threadId) || [];
-      list.push(f);
-      moved.set(f.threadId, list);
-    }
-  }
-  return moved;
-}
 
 /** Every question branch (question:true, qid, deadline) in the PRED rows, once per qid. */
 function questionsFromPreds(rows) {
@@ -63,25 +45,29 @@ const draftDay = (d) => String(d.SK).slice(6, 16);
  * Pick tonight's candidates. groups: Map(qid -> {sampled, drafts, verdicts}) from the Q# rows.
  * A question with a verdict row is never a candidate. A question already checked today is skipped; one whose
  * only reason is its age is re-checked only after redraftAfterDays (the old 5-day rule).
- * -> { candidates:[{...question, reason:'moved'|'grace', entries}], total, overflow }
+ * moved = Set of threadIds with a new entry fact; bundles = Map(qid -> gather.buildBundle result).
+ * -> { candidates:[{...question, reason:'moved'|'grace', bundle}], total, overflow, unreadable }
  */
-function selectCandidates({ questions, groups, moved, today, redraftAfterDays, cap = MAX_CANDIDATES }) {
+function selectCandidates({ questions, groups, moved, bundles = new Map(), today, redraftAfterDays, cap = MAX_CANDIDATES }) {
   const cutoff = lib.addDays(today, -redraftAfterDays);
   const picked = [];
+  let unreadable = 0;
   for (const q of questions) {
     const g = groups.get(q.qid);
     if (g && g.verdicts.length) continue;
-    const entries = q.threadId ? moved.get(q.threadId) : null;
-    const isMoved = Boolean(entries && entries.length);
+    const isMoved = Boolean(q.threadId && moved.has(q.threadId));
     const isOld = q.deadline <= lib.addDays(today, -lib.GRACE_DAYS);
     if (!isMoved && !isOld) continue;
     const days = (g ? g.drafts : []).map(draftDay);
     if (days.includes(today)) continue;
     if (!isMoved && days.some((d) => d > cutoff)) continue;
-    picked.push({ ...q, reason: isMoved ? 'moved' : 'grace', entries: isMoved ? entries : [], sampled: Boolean(g && g.sampled) });
+    const bundle = bundles.get(q.qid) || { entries: [], complete: false, failed: false };
+    if (!isOld && !bundle.entries.length) continue; // moved, but nothing of the story after the draw: nothing to judge yet
+    if (bundle.failed) { unreadable++; continue; } // a facts day in its window was unreadable: not judged on a partial bundle
+    picked.push({ ...q, reason: isMoved ? 'moved' : 'grace', bundle, sampled: Boolean(g && g.sampled) });
   }
   picked.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || String(a.qid).localeCompare(String(b.qid)));
-  return { candidates: picked.slice(0, cap), total: picked.length, overflow: Math.max(0, picked.length - cap) };
+  return { candidates: picked.slice(0, cap), total: picked.length, overflow: Math.max(0, picked.length - cap), unreadable };
 }
 
-module.exports = { MAX_CANDIDATES, factsKey, movedThreads, questionsFromPreds, questionFromSampled, selectCandidates };
+module.exports = { MAX_CANDIDATES, questionsFromPreds, questionFromSampled, selectCandidates };

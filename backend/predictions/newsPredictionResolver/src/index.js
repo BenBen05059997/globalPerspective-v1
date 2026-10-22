@@ -21,6 +21,7 @@
 const lib = require('./lib');
 const { draftQuestion } = require('./draft');
 const watch = require('./watch');
+const gather = require('./gather');
 const inbox = require('./inbox');
 const { chat, parseJsonContent } = require('./_shared/llm');
 
@@ -144,9 +145,9 @@ async function settleQuestion(deps, g, dryRun, out) {
   if (FINAL_DRAFT_VERDICTS.includes(latest.verdict)) {
     row = {
       verdict: latest.verdict,
-      evidence: latest.verdict === 'void' ? null : (latest.evidence || { url: latest.url || null, quote: latest.quote || null }),
+      evidence: latest.verdict === 'void' ? null : (latest.evidence || { eventId: latest.eventId || null, quote: latest.quote || null, date: null }),
       ...(latest.verdict === 'void' ? { voidReason: latest.voidReason } : {}),
-      ...(latest.why ? { reason: latest.why } : {}),
+      ...(latest.reason || latest.why ? { reason: latest.reason || latest.why } : {}),
     };
   } else if (countUnclear(g.drafts, (g.q || g.sampled).deadline) >= MAX_UNCLEAR_DRAFTS) {
     row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts`, reason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
@@ -204,22 +205,26 @@ async function correct(deps, event, out) {
 // role lacks s3:GetObject on record/facts/*) is reported and the pass goes on with the age rule alone.
 async function watchSelect(deps, today, limit, out) {
   const [preds, qrows] = await Promise.all([deps.store.allQuestionPreds(), deps.store.listQuestionRows()]);
-  let moved = new Map();
-  try { moved = await watch.movedThreads(deps.facts, today); } catch (e) { out.errors.push(`watch: facts unreadable, only the age rule applies (${String(e.message).slice(0, 120)})`); }
   const groups = new Map(groupQuestions(qrows).map((g) => [g.qid, g]));
   const questions = watch.questionsFromPreds(preds);
   const known = new Set(questions.map((q) => q.qid));
   for (const g of groups.values()) if (g.sampled && !known.has(g.qid)) questions.push({ ...watch.questionFromSampled(g.sampled), qid: g.qid });
-  const sel = watch.selectCandidates({ questions, groups, moved, today, redraftAfterDays: REDRAFT_AFTER_DAYS, cap: limit });
+  // GATHER's reader: the story's entry facts since each open question's draw (one read per facts day, shared)
+  const open = questions.filter((q) => !(groups.get(q.qid) || { verdicts: [] }).verdicts.length);
+  const loaded = await gather.loadEntries(deps.facts, open, today);
+  if (loaded.failed.size) out.errors.push(`watch: facts unreadable on ${loaded.failed.size} day(s), questions whose window holds them are not judged tonight (${[...loaded.failed.values()][0]})`);
+  const moved = gather.movedThreads(loaded, today);
+  const bundles = new Map(open.map((q) => [q.qid, gather.buildBundle(q, loaded, today)]));
+  const sel = watch.selectCandidates({ questions, groups, moved, bundles, today, redraftAfterDays: REDRAFT_AFTER_DAYS, cap: limit });
   out.watch = {
-    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, overflow: sel.overflow,
+    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, overflow: sel.overflow, unreadable: sel.unreadable,
     moved: sel.candidates.filter((c) => c.reason === 'moved').length, grace: sel.candidates.filter((c) => c.reason === 'grace').length,
   };
   console.log('watch', JSON.stringify(out.watch));
   return { sel, groups };
 }
 
-// GATHER + JUDGE + RECORD for tonight's candidates. Entry facts ride along as evidence; the judge never sees p.
+// GATHER + JUDGE + RECORD for tonight's candidates. The evidence bundle (own-story entries after the draw) rides along; the judge never sees p.
 async function checkPass(deps, today, limit, dryRun, out) {
   const { sel, groups } = await watchSelect(deps, today, limit, out);
   out.dueForDraft = sel.candidates.length;
@@ -227,14 +232,14 @@ async function checkPass(deps, today, limit, dryRun, out) {
   const started = Date.now();
   await mapWithConcurrency(sel.candidates, DRAFT_CONCURRENCY, async (c) => {
     if (Date.now() - started > (deps.budgetMs || CHECK_BUDGET_MS)) { out.skippedForTime = (out.skippedForTime || 0) + 1; return; }
-    const { entries, reason, sampled, ...q } = c;
-    const d = await draftQuestion({ ...q, entries }, deps);
+    const { bundle, reason, sampled, ...q } = c;
+    const d = await draftQuestion({ ...q, bundle }, deps);
     const at = deps.now();
     const g = groups.get(q.qid) || { qid: q.qid, sampled: null, drafts: [], verdicts: [] };
     g.q = q;
-    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: deps.draftModel, at });
+    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: d.model || deps.draftModel, at });
     out.drafted.push({ qid: q.qid, verdict: d.verdict });
-    g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: deps.draftModel });
+    g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: d.model || deps.draftModel });
     await settleQuestion(deps, g, false, out);
   });
 }
@@ -313,9 +318,7 @@ function makeFacts() {
 function defaultDeps() {
   const s3 = makeFacts();
   const { makeStore } = require('./store');
-  const { makeSearch } = require('./search');
-  const search0 = makeSearch(process.env.BRAVE_SEARCH_API_KEY || '');
-  const usage = { llmCalls: 0, searches: 0, promptTokens: 0, completionTokens: 0 };
+  const usage = { llmCalls: 0, promptTokens: 0, completionTokens: 0 };
   return {
     now: () => new Date().toISOString(),
     store: makeStore(LOG_TABLE, REGION),
@@ -323,7 +326,6 @@ function defaultDeps() {
     inbox: s3,
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
-    search: async (q) => { usage.searches++; return search0(q); },
     async llm(prompt) {
       if (!LLM_KEY) throw new Error('LLM key is not configured');
       const r = await chat({ step: 'settle_draft', model: DRAFT_MODEL, user: prompt, temperature: 0.1, maxTokens: 500, json: true });

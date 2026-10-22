@@ -203,10 +203,10 @@ or a design, not an open defect.
   `record/views/`, board UI release, `newsRecordReview`, golden-week fixture, `newsSystemsAnalysis` link field.
 - **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
   several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
-- **Source gaps the facts inherit** (2026-10-20 audit; not re-checked): entries have only `archivedAt` (up to 8 h late) and no outlet name
-  beyond domain; `topicId` is unstable across runs; `Q#` rows carry `clusterKey`, not `threadId`; `PRED#` has no fork id and
-  one row per topic; a legacy script still edits verdicts in place; `threads.mjs merge/split` rewrites rows in place (a merge on
-  the record is a `story_merged` fact, not yet fed).
+- **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
+  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact, not yet fed). Fixed by
+  lane F (f03ab32b, 2026-10-20) and no longer gaps: sources carry `publishedAt` and `outlet`; `PRED#` rows carry `threadId`,
+  `forkId`, `scenarioIndex`; `Q#` rows carry `threadId`. Entries before 2026-09-12 keep `iso3:[]`/`actorIds:[]` (recorded as missing).
 - **Dead weight**: the plan's Retire list, plus `stories/state/` (3,436 objects, never pruned) and unused read actions in
   `newsSensitiveData` (2026-10-20 audit; not re-checked). Also from that audit: `newsClientErrors` CORS lacked
   `www.globalperspective.net`, and several headers and `scripts/functions.json` runtimes were stale.

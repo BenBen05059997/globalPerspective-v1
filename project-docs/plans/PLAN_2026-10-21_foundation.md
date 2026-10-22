@@ -52,7 +52,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 ### Step 1. Ingest writes facts alongside today's rows
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Decision written (facts format, content IDs, schemaVersion, Run object) | coordinator | no | ☐ | ADR 0035 sets the rule only |
+| Decision written (facts format, content IDs, schemaVersion, Run object) | coordinator | no | ☑ | decision 0036 (2026-10-21) |
 | Facts writer: `record/facts/`, entry ID `sha1(canonical url)`, `schemaVersion`, no model steps | lane (record) | no | ☑ | lane I merged (8098c5d3..d2492a6a): facts only, `record/facts/`, content IDs, schemaVersion; dry run 09-06..10-20: 929 entry, 401 story_born, 994 forecast_drawn, 17 missing days; deployed 2026-10-21 CodeSha256 tAf4hSEa... |
 | Remove the per-day model steps (650-1,560 calls a run if `RECORD_LLM_MODEL` and a schedule were set) | lane (record) | no | ☑ | 8098c5d3: prompts.js and the chapter/trigger/line steps deleted; no model module imported (reviewer grep) |
 | Run object per run; empty or missing Run alarms | lane (record) | alarm topic: yes | ◐ | 357fd2e7: Run written at start and end, `strict` run throws on a missing day; alarms not built |

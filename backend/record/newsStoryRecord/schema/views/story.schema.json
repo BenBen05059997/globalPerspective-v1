@@ -45,8 +45,16 @@
           ]
         },
         "readingsThrough": {
-          "type": "null",
-          "description": "null until step 3 (readings exist)"
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-W\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "newest ISO week among the readings the build used; null when there are none"
         }
       }
     },
@@ -172,30 +180,154 @@
           }
         },
         "line": {
-          "type": "null"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "text",
+                "week",
+                "cites"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "week": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-W\\d{2}$"
+                },
+                "cites": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  "minItems": 1
+                }
+              }
+            }
+          ]
         },
         "chapters": {
           "type": "array",
-          "maxItems": 0
-        },
-        "branchStatus": {
-          "type": "null"
-        },
-        "reading": {
-          "type": "object",
-          "required": [
-            "state",
-            "reason"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "state": {
-              "const": "none"
-            },
-            "reason": {
-              "const": "no reading yet"
+          "items": {
+            "type": "object",
+            "required": [
+              "title",
+              "from",
+              "to",
+              "summary",
+              "cites"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "from": {
+                "$ref": "#/definitions/day"
+              },
+              "to": {
+                "$ref": "#/definitions/day"
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "cites": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "minItems": 1
+              }
             }
           }
+        },
+        "branchStatus": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "description": "branchId -> status of an open branch; a branch with a verdict is never here",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "status",
+                  "why",
+                  "week"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "fired",
+                      "dead",
+                      "holding",
+                      "late"
+                    ]
+                  },
+                  "why": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "week": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-W\\d{2}$"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "reading": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "state",
+                "reason"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "const": "none"
+                },
+                "reason": {
+                  "const": "no reading yet"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "state",
+                "week"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "const": "read"
+                },
+                "week": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-W\\d{2}$"
+                }
+              }
+            }
+          ]
         }
       }
     },

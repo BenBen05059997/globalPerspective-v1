@@ -20,6 +20,11 @@ const forecast = (threadId, at, forkId, branches) => fact('forecast_drawn', thre
 const verdict = (threadId, at, branchId, result = 'yes', revision = 1) => fact('verdict', threadId, at, {payload: {qid: `q-${branchId}`, branchId, result, revision, decidedBy: 'agent', evidence: {url: 'https://e.test'}, reason: null, voidReason: null}});
 const correction = (threadId, at, corrects) => fact('correction', threadId, at, {payload: {corrects, what: 'wrong date', reason: 'operator'}});
 const merged = (into, at, from, reason = 'same event') => fact('story_merged', into, at, {payload: {from, into, reason, evidence: []}});
+/** A reading line (record/readings/YYYY-Www.jsonl). `key` makes readingId unique per (week, thread, subtype, key). */
+const reading = (week, threadId, subtype, payload, o = {}) => ({
+  schemaVersion: 1, readingId: o.readingId || `r-${week}-${threadId}-${subtype}-${o.key ?? ''}`, week, threadId, subtype, payload, cites: o.cites || ['a'.repeat(40)],
+  covers: {from: '2026-10-12', to: '2026-10-18'}, supersedes: o.supersedes || null, run: o.run || `review-${week}`, model: 'stub', promptVersion: 'v1', confidence: o.confidence || 'high',
+});
 const run = (at) => fact('run', null, at, {payload: {runId: 'r', status: 'ok', counts: {}}});
 
 /** The golden set: thread-a (forecast, verdict, correction), thread-b (+ merged thread-c, chain thread-d), thread-old (inactive). */
@@ -44,4 +49,4 @@ function golden() {
     run('2026-10-21T05:45:00.000Z'),
   ];
 }
-module.exports = {fact, entry, born, branch, forecast, verdict, correction, merged, run, golden, src};
+module.exports = {reading, fact, entry, born, branch, forecast, verdict, correction, merged, run, golden, src};

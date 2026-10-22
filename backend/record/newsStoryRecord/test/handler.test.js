@@ -453,3 +453,21 @@ test('O3: the job is only reachable by the explicit event; a nightly event never
   assert.equal(f.lines(`${P}facts/2026-10-20.jsonl`).concat(f.lines(`${P}facts/2026-10-21.jsonl`)).some((x) => x.kind === 'verdict'), false);
   await assert.doesNotReject(() => make(scripted({}), f).handler({legacyVoid: false, date: '2026-10-20'}).catch((e) => { if (!/partial|failed/.test(e.message)) throw e; }));
 });
+
+// Step 3 (T1): the build reads record/readings/YYYY-Www.jsonl for every ISO week from the first facts day to today; a missing week is empty.
+const putLines = (f, key, lines) => f.objs.set(key, {body: lines.map((l) => `${JSON.stringify(l)}\n`).join(''), etag: `"l${key}"`});
+const reading = (week, threadId, subtype, payload, o = {}) => ({schemaVersion: 1, readingId: `r-${week}-${threadId}-${subtype}`, week, threadId, subtype, payload, cites: ['a'.repeat(40)], covers: {from: '2026-10-12', to: '2026-10-18'}, supersedes: null, run: `review-${week}`, model: 'stub', promptVersion: 'v1', confidence: 'high', ...o});
+
+test('T1: readings written by the review reach the story view and the index; the views name the prefix they read', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}readings/2026-W43.jsonl`, [reading('2026-W43', 'thread-1', 'line', {text: 'Thread one holds'})]);
+  putLines(f, 'record/readings/2026-W43.jsonl', [reading('2026-W43', 'thread-1', 'line', {text: 'live, not shadow'})]);
+  const gets = [];
+  const original = f.client.send;
+  f.client.send = async (c) => { if (c.input.Key.includes('readings/') && !c.input.Body) gets.push(c.input.Key); return original(c); };
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(f.json(`${P}views/stories/thread-1.json`).line.text, 'Thread one holds');
+  assert.equal(f.json(`${P}views/index/active.json`).stories.find((r) => r.threadId === 'thread-1').line, 'Thread one holds');
+  assert.equal(f.json(`${P}views/manifest.json`).readingsThrough, '2026-W43');
+  assert.deepEqual([...new Set(gets)], [`${P}readings/2026-W43.jsonl`]); // facts 10-19..10-20 and today 10-21 are all in W43
+});

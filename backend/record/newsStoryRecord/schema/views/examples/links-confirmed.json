@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": "2026-W43"
+  },
+  "threadId": "thread-a",
+  "links": [
+    {
+      "otherThreadId": "thread-b",
+      "sharedActorIds": [],
+      "sharedIso3": [
+        "FRA"
+      ],
+      "sharedSourceIds": [
+        "s1"
+      ],
+      "grounds": 1,
+      "daysApart": 3
+    }
+  ],
+  "confirmedLinks": [
+    {
+      "otherThreadId": "thread-b",
+      "mechanism": "Both turn on the same Assembly vote.",
+      "direction": "shared_cause",
+      "week": "2026-W43",
+      "cites": [
+        "1111111111111111111111111111111111111111"
+      ]
+    }
+  ],
+  "confirmedLinksReason": null
+}

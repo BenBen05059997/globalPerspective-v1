@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": { "const": 1 },
     "eventId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "kind": { "enum": ["entry", "story_born", "forecast_drawn", "verdict", "correction", "story_merged", "run"] },
+    "kind": { "enum": ["entry", "story_born", "forecast_drawn", "verdict", "correction", "story_merged", "story_split", "run"] },
     "at": { "type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[0-9:.]+Z$" },
     "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
     "precision": { "enum": ["exact", "day"] },
@@ -122,6 +122,18 @@
           "payload": {
             "required": ["from", "into", "reason", "evidence"],
             "properties": { "from": { "type": "string" }, "into": { "type": "string" }, "reason": { "type": "string", "minLength": 1 }, "evidence": { "type": "array" } }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "story_split" } } },
+      "then": {
+        "properties": {
+          "threadId": { "type": "string" },
+          "payload": {
+            "required": ["from", "into", "reason"],
+            "properties": { "from": { "type": "string" }, "into": { "type": "string" }, "reason": { "type": "string", "minLength": 1 } }
           }
         }
       }

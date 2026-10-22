@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "eventId": "d7f678f34661a9e43f9df7c3aa3ccaa02a707c5a",
+  "kind": "story_split",
+  "at": "2026-10-28T08:00:00.000Z",
+  "date": "2026-10-28",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "from": "thread-alberta-referendum-aaaaaa",
+    "into": "thread-alberta-votes-d3d4b4",
+    "reason": "two separate votes, merged by mistake"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-28-1"
+  },
+  "sourceKey": "inbox:splits/thread-alberta-referendum-aaaaaa|thread-alberta-votes-d3d4b4|2026-10-28T08:00:00.000Z",
+  "sourceRow": {
+    "store": "record",
+    "key": "inbox:splits/thread-alberta-referendum-aaaaaa|thread-alberta-votes-d3d4b4|2026-10-28T08:00:00.000Z"
+  }
+}

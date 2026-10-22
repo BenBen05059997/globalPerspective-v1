@@ -9,7 +9,7 @@ const world = require('./_shared/world');
 const SCHEMA_VERSION = 1;
 const MAX_PUBLISHED_AGE_DAYS = 30;
 const producerName = `newsStoryRecord@${require('./package.json').version}`;
-const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'run'];
+const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'run'];
 const VERDICTS = ['yes', 'no', 'void'];
 const uniqueSorted = (xs) => [...new Set(xs.filter((x) => typeof x === 'string' && x))].sort();
 const isoOrNull = (s) => (s && Number.isFinite(Date.parse(s)) ? new Date(s).toISOString() : null);
@@ -134,9 +134,42 @@ function correctionFact({corrects, what, reason, threadId, at, sourceKey, source
 }
 
 /** `story_merged`: `from` is folded into `into` (threadId = into). Readers resolve chains and ignore a cycle. */
-function mergedFact({from, into, reason, evidence = [], at, sourceKey, sourceRow, runId}) {
+function mergedFact({from, into, reason, evidence = [], at, sourceKey, sourceRow, runId, eventId, extra = {}}) {
   if (!from || !into || from === into || !reason) throw new Error('facts: a merge needs two different threads and a reason');
-  return makeFact({kind: 'story_merged', sourceKey, at, precision: 'exact', threadId: into, sourceRow, runId, payload: {from, into, reason, evidence}});
+  return makeFact({kind: 'story_merged', eventId, sourceKey, at, precision: 'exact', threadId: into, sourceRow, runId, payload: {from, into, reason, evidence, ...extra}});
+}
+
+/** `story_split`: undoes the merge of `from` into `into` (threadId = into). Operator only, through record/inbox/splits/. */
+function splitFact({from, into, reason, at, sourceKey, sourceRow, runId, eventId}) {
+  if (!from || !into || from === into || !reason) throw new Error('facts: a split needs two different threads and a reason');
+  return makeFact({kind: 'story_split', eventId, sourceKey, at, precision: 'exact', threadId: into, sourceRow, runId, payload: {from, into, reason}});
+}
+
+const inboxLine = (line, what) => {
+  const l = line && typeof line === 'object' ? line : {};
+  if (typeof l.from !== 'string' || typeof l.into !== 'string' || typeof l.at !== 'string' || !isoOrNull(l.at)) throw new Error(`facts: inbox ${what} needs from, into and a valid at`);
+  return l;
+};
+
+/**
+ * One line of the review's merge inbox (record/inbox/merges/DAY.jsonl: {from, into, at, reason, cites, readingId}) -> `story_merged`.
+ * eventId = sha1('story_merged' + from + into + at), so a re-read is the same fact.
+ */
+function inboxMergeFact(line, runId) {
+  const l = inboxLine(line, 'merge');
+  const sourceKey = `inbox:merges/${l.from}|${l.into}|${l.at}`;
+  const cites = Array.isArray(l.cites) ? l.cites.filter((c) => typeof c === 'string' && c) : [];
+  return mergedFact({
+    from: l.from, into: l.into, reason: l.reason, evidence: cites.map((eventId) => ({eventId})), at: l.at, sourceKey, sourceRow: {store: 'record', key: sourceKey}, runId,
+    eventId: R.sha1(`story_merged${l.from}${l.into}${l.at}`), extra: l.readingId ? {readingId: l.readingId} : {},
+  });
+}
+
+/** One line of the operator's split inbox (record/inbox/splits/DAY.jsonl: {from, into, at, reason}) -> `story_split`. eventId = sha1('story_split' + from + into + at). */
+function inboxSplitFact(line, runId) {
+  const l = inboxLine(line, 'split');
+  const sourceKey = `inbox:splits/${l.from}|${l.into}|${l.at}`;
+  return splitFact({from: l.from, into: l.into, reason: l.reason, at: l.at, sourceKey, sourceRow: {store: 'record', key: sourceKey}, runId, eventId: R.sha1(`story_split${l.from}${l.into}${l.at}`)});
 }
 
 /** `run` fact: the day was processed (0036 §4). `at` defaults to finishedAt; a backfill passes the end of the replayed day so its run fact stays in that day's file. */
@@ -147,4 +180,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, runFact, uniqueSorted};

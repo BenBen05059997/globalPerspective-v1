@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": "2026-W43"
+  },
+  "threadId": "thread-a",
+  "born": "2026-10-18",
+  "aliasOf": null,
+  "iso3": [
+    "DEU",
+    "FRA"
+  ],
+  "actorIds": [
+    "name:macron"
+  ],
+  "sourceIds": [
+    "s1",
+    "s2"
+  ],
+  "entries": [
+    {
+      "eventId": "ea1",
+      "date": "2026-10-18",
+      "at": "2026-10-18T04:00:00.000Z",
+      "precision": "exact",
+      "title": "A first",
+      "summary": null,
+      "category": "conflict",
+      "eventType": "unrest",
+      "sources": [
+        {
+          "sourceId": "s1",
+          "outlet": "S1",
+          "url": "https://s1.test/a",
+          "title": "t"
+        },
+        {
+          "sourceId": "s2",
+          "outlet": "S2",
+          "url": "https://s2.test/a",
+          "title": "t"
+        }
+      ],
+      "corrected": true
+    },
+    {
+      "eventId": "ea2",
+      "date": "2026-10-20",
+      "at": "2026-10-20T04:00:00.000Z",
+      "precision": "exact",
+      "title": "A second",
+      "summary": null,
+      "category": "conflict",
+      "eventType": "unrest",
+      "sources": [
+        {
+          "sourceId": "s1",
+          "outlet": "S1",
+          "url": "https://s1.test/a",
+          "title": "t"
+        }
+      ]
+    }
+  ],
+  "entriesOmitted": 0,
+  "forks": [
+    {
+      "forkId": "PRED#A/2026-10-20",
+      "drawnAt": "2026-10-20T05:00:00.000Z",
+      "branches": [
+        {
+          "branchId": "a-0",
+          "text": "text a-0",
+          "p": 40,
+          "trigger": "trigger a-0",
+          "resolutionSource": "Reuters",
+          "due": "2026-10-25",
+          "verdict": null
+        },
+        {
+          "branchId": "a-1",
+          "text": "text a-1",
+          "p": 40,
+          "trigger": "trigger a-1",
+          "resolutionSource": "Reuters",
+          "due": "2026-10-21",
+          "verdict": null
+        },
+        {
+          "branchId": "a-2",
+          "text": "text a-2",
+          "p": 40,
+          "trigger": "trigger a-2",
+          "resolutionSource": "Reuters",
+          "due": "2026-10-22",
+          "verdict": {
+            "at": "2026-10-22T06:00:00.000Z",
+            "result": "yes",
+            "decidedBy": "agent",
+            "evidence": {
+              "url": "https://e.test"
+            },
+            "voidReason": null
+          }
+        },
+        {
+          "branchId": "a-3",
+          "text": "text a-3",
+          "p": 40,
+          "trigger": "trigger a-3",
+          "resolutionSource": "Reuters",
+          "due": "2026-10-20",
+          "verdict": {
+            "at": "2026-10-20T09:00:00.000Z",
+            "result": "no",
+            "decidedBy": "agent",
+            "evidence": {
+              "url": "https://e.test"
+            },
+            "voidReason": null
+          }
+        }
+      ]
+    }
+  ],
+  "merges": [],
+  "corrections": [
+    {
+      "corrects": "ea1",
+      "at": "2026-10-21T08:00:00.000Z",
+      "reason": "operator"
+    }
+  ],
+  "line": {
+    "text": "Macron holds the line on the budget as the Assembly votes.",
+    "week": "2026-W43",
+    "cites": [
+      "1111111111111111111111111111111111111111"
+    ]
+  },
+  "chapters": [
+    {
+      "title": "Budget fight opens",
+      "from": "2026-10-18",
+      "to": "2026-10-20",
+      "summary": "The budget reaches the Assembly and the government faces a confidence vote.",
+      "cites": [
+        "1111111111111111111111111111111111111111"
+      ]
+    }
+  ],
+  "branchStatus": {
+    "a-0": {
+      "status": "holding",
+      "why": "No vote scheduled yet; due 2026-10-25.",
+      "week": "2026-W43"
+    }
+  },
+  "reading": {
+    "state": "read",
+    "week": "2026-W43"
+  }
+}

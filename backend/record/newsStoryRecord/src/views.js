@@ -4,6 +4,7 @@
 // (`today` and `builtAt` come in), no model. The same facts give the same objects except manifest.builtAt/runId.
 const {addDays} = require('./_shared/world');
 const {isResolvable: resolvable} = require('./facts'); // a question with a question id (0038); anything else is legacy
+const Rd = require('./readings');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -29,13 +30,15 @@ function ordered(facts) {
 /**
  * story_merged facts -> {aliases: Map(from -> survivor), applied: [the merge facts that took effect]}. Transitive (A to B to C
  * gives A to C). Oldest merge first; a merge that would close a cycle, or that moves a story already merged, is ignored
- * (0036 section 3).
+ * (0036 section 3). A `story_split` for the same (from, into) at or after a merge cancels that merge (the story is its own again).
  */
 function resolveAliases(facts) {
   const direct = new Map();
   const applied = [];
   const root = (id) => { const seen = new Set(); let at = id; while (direct.has(at) && !seen.has(at)) { seen.add(at); at = direct.get(at); } return at; };
-  for (const f of ordered(facts).filter((x) => x.kind === 'story_merged')) {
+  const splits = facts.filter((x) => x.kind === 'story_split');
+  const split = (m) => splits.some((x) => x.payload.from === m.payload.from && x.payload.into === m.payload.into && x.at >= m.at);
+  for (const f of ordered(facts).filter((x) => x.kind === 'story_merged' && !split(x))) {
     const {from, into} = f.payload;
     if (!from || !into || from === into || direct.has(from) || root(into) === from) continue;
     direct.set(from, into);
@@ -90,7 +93,7 @@ function groupStories(facts, aliases) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom}) {
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon}) {
   const {own, merged} = groupStories(facts, aliases);
   const stories = new Map();
   const rows = new Map();
@@ -124,7 +127,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom}) {
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));
     const iso3 = unique(group.flatMap((g) => g.facts.flatMap((f) => f.iso3)));
-    const actorIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.actorIds)));
+    const actorIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.actorIds.map(canon))));
     const verdictAts = mine.filter((f) => f.kind === 'verdict').map((f) => f.at);
     const born = minOf(group.map((g) => bornOf(g.facts)).filter(Boolean));
     stories.set(threadId, {
@@ -132,16 +135,38 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom}) {
       entries: kept, entriesOmitted: entries.length - kept.length, forks,
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
-      line: null, chapters: [], branchStatus: null, reading: {state: 'none', reason: NO_READING},
+      ...readingFields(readings.get(threadId), branches),
     });
     rows.set(threadId, {
       threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
       forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.legacy && !b.verdict && b.due && b.due >= today).length,
       latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds, title: titleOf(entries),
+      ...(readings.get(threadId) && readings.get(threadId).line ? {line: readings.get(threadId).line.payload.text} : {}),
     });
     survivors.set(threadId, {iso3, actorIds, sourceIds});
   }
   return {stories, rows, survivors};
+}
+
+/**
+ * line, chapters, branchStatus and reading of a story view from its standing readings (`t`, may be undefined). A branch status
+ * is kept only for an open branch of this story: a branch with any verdict is decided by the verdict fact, never by a reading.
+ */
+function readingFields(t, branches) {
+  if (!t) return {line: null, chapters: [], branchStatus: null, reading: {state: 'none', reason: NO_READING}};
+  const open = new Set(branches.filter((b) => !b.verdict).map((b) => b.branchId));
+  const status = {};
+  for (const id of [...t.branchStatus.keys()].sort()) {
+    const r = t.branchStatus.get(id);
+    if (open.has(id)) status[id] = {status: r.payload.status, why: r.payload.why ?? null, week: r.week};
+  }
+  return {
+    line: t.line ? {text: t.line.payload.text, week: t.line.week, cites: Rd.cites(t.line)} : null,
+    chapters: t.chapters.map((r) => ({title: r.payload.title, from: r.payload.from, to: r.payload.to, summary: r.payload.summary, cites: Rd.cites(r)}))
+      .sort(byKey((c) => c.from, (c) => c.to, (c) => c.title)),
+    branchStatus: Object.keys(status).length ? status : null,
+    reading: {state: 'read', week: t.week},
+  };
 }
 
 const bornOf = (facts) => minOf([...facts.filter((f) => f.kind === 'story_born').map((f) => f.payload.born || f.date), ...facts.filter((f) => f.kind === 'entry').map((f) => f.date)]);
@@ -154,7 +179,7 @@ const rowOrder = byKey((r) => -Date.parse(r.lastFactAt || 0), (r) => r.threadId)
  * grounds, and only when fewer than SPECIFIC_SHARE of the active stories carry them; sources are listed, never counted. Both
  * stories need a fact within LINK_WINDOW_DAYS of each other (lastFactAt dates). `rows` are the active index rows.
  */
-function buildLinks(rows, survivors, builtFrom) {
+function buildLinks(rows, survivors, builtFrom, readings, aliases) {
   const lastDay = new Map(rows.map((r) => [r.threadId, r.lastFactAt.slice(0, 10)]));
   const ids = rows.map((r) => r.threadId);
   const index = {actorIds: new Map(), iso3: new Map(), sourceIds: new Map()};
@@ -186,9 +211,21 @@ function buildLinks(rows, survivors, builtFrom) {
       links.push({otherThreadId: r.otherThreadId, sharedActorIds: actors, sharedIso3: iso3, sharedSourceIds: r.sharedSourceIds.sort(), grounds, daysApart, rarest: r.rarest});
     }
     links.sort(byKey((r) => r.rarest, (r) => r.otherThreadId));
-    out.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: links.slice(0, LINKS_MAX).map(({rarest, ...row}) => row), confirmedLinks: [], confirmedLinksReason: NO_READING});
+    const confirmed = confirmedLinks(readings.get(id), aliases, id);
+    out.set(id, {
+      schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: links.slice(0, LINKS_MAX).map(({rarest, ...row}) => row),
+      confirmedLinks: confirmed, confirmedLinksReason: confirmed.length ? null : NO_READING,
+    });
   }
   return out;
+}
+
+/** The review's confirmed links of one story: the other story is the survivor when it was merged; a link to itself is dropped. */
+function confirmedLinks(t, aliases, self) {
+  if (!t) return [];
+  return t.links.map((r) => ({otherThreadId: aliases.get(r.payload.otherThreadId) || r.payload.otherThreadId, mechanism: r.payload.mechanism, direction: r.payload.direction, week: r.week, cites: Rd.cites(r)}))
+    .filter((l) => l.otherThreadId !== self)
+    .sort(byKey((l) => l.otherThreadId, (l) => l.week, (l) => l.direction));
 }
 
 /** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date). */
@@ -221,27 +258,32 @@ function countDaysFor(today, changedDays = []) {
 }
 
 /**
- * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count), countDays (default
- * countDaysFor(today)). Throws when all.json is over its hard cap.
+ * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count),  countDays (default
+ * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
+ * (record/operator/aliases.json or null). Throws when all.json is over its hard cap.
  */
-function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today)}) {
+function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null}) {
   const facts = ordered(allFacts);
   const factsThrough = maxOf(facts.filter((f) => f.kind !== 'run').map((f) => f.date));
-  const builtFrom = {factsThrough, readingsThrough: null};
+  const standingReadings = Rd.standing(readingLines);
+  const readingsThrough = Rd.maxWeek(standingReadings);
+  const builtFrom = {factsThrough, readingsThrough};
+  const readings = Rd.byThread(standingReadings);
+  const {canon} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
   const activeRows = all.filter((r) => !r.aliasOf && r.lastFactAt && r.lastFactAt.slice(0, 10) >= cutoff);
-  const links = buildLinks(activeRows, survivors, builtFrom);
+  const links = buildLinks(activeRows, survivors, builtFrom, readings, aliases);
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
-  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough: null};
+  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
   return {stories, links, counts, active, all: everything, manifest};
 }
 

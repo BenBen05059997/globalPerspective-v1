@@ -1,0 +1,556 @@
+{
+  "stories": {
+    "thread-a": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-a",
+      "born": "2026-10-18",
+      "aliasOf": null,
+      "iso3": [
+        "DEU",
+        "FRA"
+      ],
+      "actorIds": [
+        "name:macron"
+      ],
+      "sourceIds": [
+        "s1",
+        "s2"
+      ],
+      "entries": [
+        {
+          "eventId": "ea1",
+          "date": "2026-10-18",
+          "at": "2026-10-18T04:00:00.000Z",
+          "precision": "exact",
+          "title": "A first",
+          "summary": null,
+          "category": "conflict",
+          "eventType": "unrest",
+          "sources": [
+            {
+              "sourceId": "s1",
+              "outlet": "S1",
+              "url": "https://s1.test/a",
+              "title": "t"
+            },
+            {
+              "sourceId": "s2",
+              "outlet": "S2",
+              "url": "https://s2.test/a",
+              "title": "t"
+            }
+          ],
+          "corrected": true
+        },
+        {
+          "eventId": "ea2",
+          "date": "2026-10-20",
+          "at": "2026-10-20T04:00:00.000Z",
+          "precision": "exact",
+          "title": "A second",
+          "summary": null,
+          "category": "conflict",
+          "eventType": "unrest",
+          "sources": [
+            {
+              "sourceId": "s1",
+              "outlet": "S1",
+              "url": "https://s1.test/a",
+              "title": "t"
+            }
+          ]
+        }
+      ],
+      "entriesOmitted": 0,
+      "forks": [
+        {
+          "forkId": "PRED#A/2026-10-20",
+          "drawnAt": "2026-10-20T05:00:00.000Z",
+          "branches": [
+            {
+              "branchId": "a-0",
+              "text": "text a-0",
+              "p": 40,
+              "trigger": "trigger a-0",
+              "resolutionSource": "Reuters",
+              "due": "2026-10-25",
+              "verdict": null
+            },
+            {
+              "branchId": "a-1",
+              "text": "text a-1",
+              "p": 40,
+              "trigger": "trigger a-1",
+              "resolutionSource": "Reuters",
+              "due": "2026-10-21",
+              "verdict": null
+            },
+            {
+              "branchId": "a-2",
+              "text": "text a-2",
+              "p": 40,
+              "trigger": "trigger a-2",
+              "resolutionSource": "Reuters",
+              "due": "2026-10-22",
+              "verdict": {
+                "at": "2026-10-22T06:00:00.000Z",
+                "result": "yes",
+                "decidedBy": "agent",
+                "evidence": {
+                  "url": "https://e.test"
+                }
+              }
+            },
+            {
+              "branchId": "a-3",
+              "text": "text a-3",
+              "p": 40,
+              "trigger": "trigger a-3",
+              "resolutionSource": "Reuters",
+              "due": "2026-10-20",
+              "verdict": {
+                "at": "2026-10-20T09:00:00.000Z",
+                "result": "no",
+                "decidedBy": "agent",
+                "evidence": {
+                  "url": "https://e.test"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "merges": [],
+      "corrections": [
+        {
+          "corrects": "ea1",
+          "at": "2026-10-21T08:00:00.000Z",
+          "reason": "operator"
+        }
+      ],
+      "line": null,
+      "chapters": [],
+      "branchStatus": null,
+      "reading": {
+        "state": "none",
+        "reason": "no reading yet"
+      }
+    },
+    "thread-b": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-b",
+      "born": "2026-10-17",
+      "aliasOf": null,
+      "iso3": [
+        "FRA",
+        "UKR"
+      ],
+      "actorIds": [
+        "name:putin"
+      ],
+      "sourceIds": [
+        "s1",
+        "s3"
+      ],
+      "entries": [
+        {
+          "eventId": "ec1",
+          "date": "2026-10-17",
+          "at": "2026-10-17T04:00:00.000Z",
+          "precision": "exact",
+          "title": "C first",
+          "summary": null,
+          "category": "conflict",
+          "eventType": "unrest",
+          "sources": [
+            {
+              "sourceId": "s3",
+              "outlet": "S3",
+              "url": "https://s3.test/a",
+              "title": "t"
+            }
+          ],
+          "fromThreadId": "thread-c"
+        },
+        {
+          "eventId": "eb1",
+          "date": "2026-10-19",
+          "at": "2026-10-19T04:00:00.000Z",
+          "precision": "exact",
+          "title": "B first",
+          "summary": null,
+          "category": "conflict",
+          "eventType": "unrest",
+          "sources": [
+            {
+              "sourceId": "s1",
+              "outlet": "S1",
+              "url": "https://s1.test/a",
+              "title": "t"
+            }
+          ]
+        }
+      ],
+      "entriesOmitted": 0,
+      "forks": [],
+      "merges": [
+        {
+          "from": "thread-c",
+          "into": "thread-b",
+          "at": "2026-10-21T09:05:00.000Z",
+          "reason": "same event"
+        }
+      ],
+      "corrections": [],
+      "line": null,
+      "chapters": [],
+      "branchStatus": null,
+      "reading": {
+        "state": "none",
+        "reason": "no reading yet"
+      }
+    },
+    "thread-c": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-c",
+      "aliasOf": "thread-b"
+    },
+    "thread-old": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-old",
+      "born": "2026-07-01",
+      "aliasOf": null,
+      "iso3": [
+        "FRA"
+      ],
+      "actorIds": [],
+      "sourceIds": [
+        "s1"
+      ],
+      "entries": [
+        {
+          "eventId": "eo1",
+          "date": "2026-07-01",
+          "at": "2026-07-01T04:00:00.000Z",
+          "precision": "exact",
+          "title": "Old first",
+          "summary": null,
+          "category": "conflict",
+          "eventType": "unrest",
+          "sources": [
+            {
+              "sourceId": "s1",
+              "outlet": "S1",
+              "url": "https://s1.test/a",
+              "title": "t"
+            }
+          ]
+        }
+      ],
+      "entriesOmitted": 0,
+      "forks": [],
+      "merges": [],
+      "corrections": [],
+      "line": null,
+      "chapters": [],
+      "branchStatus": null,
+      "reading": {
+        "state": "none",
+        "reason": "no reading yet"
+      }
+    }
+  },
+  "links": {
+    "thread-a": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-a",
+      "links": [
+        {
+          "otherThreadId": "thread-b",
+          "sharedActorIds": [],
+          "sharedIso3": [
+            "FRA"
+          ],
+          "sharedSourceIds": [
+            "s1"
+          ],
+          "grounds": 2
+        }
+      ],
+      "confirmedLinks": [],
+      "confirmedLinksReason": "no reading yet"
+    },
+    "thread-b": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "threadId": "thread-b",
+      "links": [
+        {
+          "otherThreadId": "thread-a",
+          "sharedActorIds": [],
+          "sharedIso3": [
+            "FRA"
+          ],
+          "sharedSourceIds": [
+            "s1"
+          ],
+          "grounds": 2
+        }
+      ],
+      "confirmedLinks": [],
+      "confirmedLinksReason": "no reading yet"
+    }
+  },
+  "counts": {
+    "2026-10-19": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "date": "2026-10-19",
+      "byStory": {
+        "thread-b": {
+          "newEntries": 1,
+          "branchesDue": 0,
+          "verdicts": 0
+        }
+      },
+      "total": {
+        "newEntries": 1,
+        "branchesDue": 0,
+        "verdicts": 0
+      }
+    },
+    "2026-10-20": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "date": "2026-10-20",
+      "byStory": {
+        "thread-a": {
+          "newEntries": 1,
+          "branchesDue": 1,
+          "verdicts": 1
+        }
+      },
+      "total": {
+        "newEntries": 1,
+        "branchesDue": 1,
+        "verdicts": 1
+      }
+    },
+    "2026-10-21": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "date": "2026-10-21",
+      "byStory": {
+        "thread-a": {
+          "newEntries": 0,
+          "branchesDue": 1,
+          "verdicts": 0
+        }
+      },
+      "total": {
+        "newEntries": 0,
+        "branchesDue": 1,
+        "verdicts": 0
+      }
+    },
+    "2026-10-22": {
+      "schemaVersion": 1,
+      "builtFrom": {
+        "factsThrough": "2026-10-22",
+        "readingsThrough": null
+      },
+      "date": "2026-10-22",
+      "byStory": {
+        "thread-a": {
+          "newEntries": 0,
+          "branchesDue": 1,
+          "verdicts": 1
+        }
+      },
+      "total": {
+        "newEntries": 0,
+        "branchesDue": 1,
+        "verdicts": 1
+      }
+    }
+  },
+  "active": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "stories": [
+      {
+        "threadId": "thread-a",
+        "born": "2026-10-18",
+        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "iso3": [
+          "DEU",
+          "FRA"
+        ],
+        "actorIds": [
+          "name:macron"
+        ],
+        "sourceCount": 2,
+        "entryCount": 2,
+        "forkCount": 1,
+        "branchCount": 4,
+        "liveBranchCount": 1,
+        "latestVerdictAt": "2026-10-22T06:00:00.000Z",
+        "aliasOf": null,
+        "aliases": [],
+        "title": "A first"
+      },
+      {
+        "threadId": "thread-b",
+        "born": "2026-10-17",
+        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "iso3": [
+          "FRA",
+          "UKR"
+        ],
+        "actorIds": [
+          "name:putin"
+        ],
+        "sourceCount": 2,
+        "entryCount": 2,
+        "forkCount": 0,
+        "branchCount": 0,
+        "liveBranchCount": 0,
+        "latestVerdictAt": null,
+        "aliasOf": null,
+        "aliases": [
+          "thread-c"
+        ],
+        "title": "C first"
+      }
+    ]
+  },
+  "all": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "stories": [
+      {
+        "threadId": "thread-a",
+        "born": "2026-10-18",
+        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "iso3": [
+          "DEU",
+          "FRA"
+        ],
+        "actorIds": [
+          "name:macron"
+        ],
+        "sourceCount": 2,
+        "entryCount": 2,
+        "forkCount": 1,
+        "branchCount": 4,
+        "liveBranchCount": 1,
+        "latestVerdictAt": "2026-10-22T06:00:00.000Z",
+        "aliasOf": null,
+        "aliases": [],
+        "title": "A first"
+      },
+      {
+        "threadId": "thread-b",
+        "born": "2026-10-17",
+        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "iso3": [
+          "FRA",
+          "UKR"
+        ],
+        "actorIds": [
+          "name:putin"
+        ],
+        "sourceCount": 2,
+        "entryCount": 2,
+        "forkCount": 0,
+        "branchCount": 0,
+        "liveBranchCount": 0,
+        "latestVerdictAt": null,
+        "aliasOf": null,
+        "aliases": [
+          "thread-c"
+        ],
+        "title": "C first"
+      },
+      {
+        "threadId": "thread-c",
+        "born": "2026-10-17",
+        "lastFactAt": "2026-10-17T05:00:00.000Z",
+        "iso3": [],
+        "actorIds": [],
+        "sourceCount": 0,
+        "entryCount": 0,
+        "forkCount": 0,
+        "branchCount": 0,
+        "liveBranchCount": 0,
+        "latestVerdictAt": null,
+        "aliasOf": "thread-b",
+        "aliases": []
+      },
+      {
+        "threadId": "thread-old",
+        "born": "2026-07-01",
+        "lastFactAt": "2026-07-01T04:00:00.000Z",
+        "iso3": [
+          "FRA"
+        ],
+        "actorIds": [],
+        "sourceCount": 1,
+        "entryCount": 1,
+        "forkCount": 0,
+        "branchCount": 0,
+        "liveBranchCount": 0,
+        "latestVerdictAt": null,
+        "aliasOf": null,
+        "aliases": [],
+        "title": "Old first"
+      }
+    ]
+  },
+  "manifest": {
+    "schemaVersion": 1,
+    "builtAt": "2026-10-22T05:45:00.000Z",
+    "runId": "2026-10-22-1",
+    "factsManifestDays": 7,
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  }
+}

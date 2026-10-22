@@ -239,3 +239,84 @@ test('a backfill keeps its run fact in the replayed day, not in today\'s file', 
   assert.equal(f.objs.has(`${P}facts/2026-10-21.jsonl`), false);
   assert.equal(f.json(`${P}runs/2026-10-18.json`).daysWritten.includes('2026-10-21'), false);
 });
+
+// Views (0037): rebuilt from every facts day in the manifest, after the facts append, in one write order.
+const viewKeys = (f) => f.puts.map((p) => p.Key).filter((k) => k.startsWith(`${P}views/`)).map((k) => k.slice(`${P}views/`.length));
+// Distinct articles per day: the same url listed on a later day is not a second fact.
+const fresh = (date, from) => Array.from({length: 20}, (_, n) => entry(date, n + from));
+const dayStore = () => scripted({'2026-10-19': fresh('2026-10-19', 0), '2026-10-20': fresh('2026-10-20', 100)});
+
+test('views are written after the facts, in order: stories, links, counts, then active, all, and the manifest last', async () => {
+  const {f, handler} = make(dayStore());
+  await handler({date: '2026-10-20'});
+  const keys = viewKeys(f);
+  const at = (k) => keys.indexOf(k);
+  assert.deepEqual(keys.slice(-3), ['index/active.json', 'index/all.json', 'manifest.json']);
+  const groups = keys.slice(0, -3).map((k) => k.split('/')[0]);
+  assert.deepEqual([...new Set(groups)], ['stories', 'links', 'counts']);
+  assert.ok(groups.lastIndexOf('stories') < groups.indexOf('links') && groups.lastIndexOf('links') < groups.indexOf('counts'));
+  assert.ok(f.puts.findIndex((p) => p.Key === `${P}facts/2026-10-20.jsonl`) < f.puts.findIndex((p) => p.Key === `${P}views/${keys[0]}`));
+  assert.ok(at('manifest.json') === keys.length - 1);
+  const m = f.json(`${P}views/manifest.json`);
+  assert.deepEqual([m.runId, m.factsThrough, m.readingsThrough, m.builtAt], ['2026-10-20-1', '2026-10-20', null, '2026-10-21T05:45:00.000Z']);
+  assert.equal(f.json(`${P}views/index/active.json`).stories.length, 3);
+  assert.equal(f.json(`${P}views/stories/thread-1.json`).entries.length, 7);
+  assert.ok(f.objs.has(`${P}views/counts/2026-10-20.json`) && f.objs.has(`${P}views/counts/2026-10-15.json`)); // current and previous ISO week
+});
+
+test('views read every facts day in the manifest, not only the day just written', async () => {
+  const {f, handler} = make(dayStore());
+  await handler({date: '2026-10-19'});
+  await handler({date: '2026-10-20'});
+  const story = f.json(`${P}views/stories/thread-1.json`);
+  assert.deepEqual([...new Set(story.entries.map((e) => e.date))], ['2026-10-19', '2026-10-20']);
+});
+
+test('shadow:false writes the views under record/views/', async () => {
+  const {f, handler} = make(dayStore());
+  await handler({date: '2026-10-20', shadow: false});
+  assert.ok(f.objs.has('record/views/manifest.json'));
+  assert.equal(f.objs.has(`${P}views/manifest.json`), false);
+});
+
+test('a re-run rewrites the same view bytes; only the manifest builtAt and runId change', async () => {
+  const f = fakeS3();
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  const first = new Map([...f.objs].filter(([k]) => k.includes('/views/')).map(([k, v]) => [k, v.body]));
+  await make(dayStore(), f, () => '2026-10-21T09:00:00.000Z').handler({date: '2026-10-20'});
+  for (const [k, body] of first) {
+    if (k.endsWith('/manifest.json')) continue;
+    assert.equal(f.objs.get(k).body, body, k);
+  }
+  assert.deepEqual(f.json(`${P}views/manifest.json`), {...JSON.parse(first.get(`${P}views/manifest.json`)), builtAt: '2026-10-21T09:00:00.000Z', runId: '2026-10-20-2', factsManifestDays: 2});
+});
+
+test('a view failure marks the Run partial with stage views; facts stay and the old manifest stays', async () => {
+  const f = fakeS3();
+  await make(dayStore(), f).handler({date: '2026-10-19'});
+  const oldManifest = f.objs.get(`${P}views/manifest.json`).body;
+  f.failPut = (i) => i.Key === `${P}views/index/all.json`;
+  await assert.rejects(() => make(dayStore(), f).handler({date: '2026-10-20'}), /partial/);
+  const run = f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.status, run.failures.map((x) => x.stage)], ['partial', ['views']]);
+  assert.equal(f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'entry').length, 20);
+  assert.equal(f.objs.get(`${P}views/manifest.json`).body, oldManifest);
+  assert.equal(f.lines(`${P}facts/2026-10-21.jsonl`).filter((x) => x.kind === 'run').at(-1).payload.status, 'partial');
+});
+
+test('a view failure on a re-run that writes no new facts is still partial, not failed', async () => {
+  const f = fakeS3();
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  f.failPut = (i) => i.Key === `${P}views/index/active.json`;
+  await assert.rejects(() => make(dayStore(), f).handler({date: '2026-10-20'}), /partial/);
+  assert.equal(f.json(`${P}runs/2026-10-20.json`).status, 'partial');
+});
+
+test('a backfill builds the views once, after its last day', async () => {
+  const {f, handler} = make(scripted({'2026-10-18': fresh('2026-10-18', 0), '2026-10-19': fresh('2026-10-19', 100), '2026-10-20': fresh('2026-10-20', 200)}));
+  await handler({backfill: {from: '2026-10-18', to: '2026-10-20'}, strict: false});
+  assert.equal(viewKeys(f).filter((k) => k === 'index/active.json').length, 1);
+  assert.equal(viewKeys(f).filter((k) => k === 'manifest.json').length, 1);
+  assert.deepEqual([...new Set(f.json(`${P}views/stories/thread-1.json`).entries.map((e) => e.date))], ['2026-10-18', '2026-10-19', '2026-10-20']);
+  assert.ok(f.objs.has(`${P}views/counts/2026-10-18.json`));
+});

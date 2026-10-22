@@ -99,7 +99,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Run alarm for a missing raw day | coordinator | yes | ☐ | |
 | Recovery of 2026-09-14..29, 10-14, 10-20+ from GDELT DOC + GKG, Wayback backstop, before 2026-12-14 | lane (recovery) | run: yes | ☐ | articles only, labelled "recovered from public records", no forecasts |
 | `assignment` facts, review proposal subtype, operator approval path | lane (record/review) | no | ☑ | lane Y merged (132 + 51 tests); deployed 2026-10-23 (CodeSha256 Qd/VAeiP…); backfill wrote 929 ingest assignments (re-run 0); views byte-identical; review proposes assignments (readings only); operator applies via `record/inbox/assignments/` |
-| Canonical actor ids `wd:Q...`, `generic` flag in views | lane (record) | no | ☐ | |
+| Canonical actor ids `wd:Q...`, `generic` flag in views | lane (record) | no | ◐ | lane AA merged (138 tests); deployed 2026-10-23; views map aliases to `wd:Q…`, generic actors never ground a link. Reconcile dry run on the top 100: 72 accepted (67 distinct QIDs), 24 unresolved, 4 generic (`gp-mailbox/artifacts/actor-reconcile/`). Waits on the operator: review `aliases.proposals.json` and write `record/operator/aliases.json` (operator-owned file) |
 | Feeds for Latin America and Southeast Asia | operator | URLs: yes | ☐ | waits on operator URLs |
 
 ### Step 3. Review Lambda `newsRecordReview` (weekly)

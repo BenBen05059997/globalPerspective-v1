@@ -177,3 +177,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: decision 0040 written (raw capture before the model, recovery of missed days, assignments, canonical actors); step 2c added; operator answered the review's 8 questions.
 - 2026-10-22: lane W (selector) merged. Foundation review correction: captured articles do carry a snippet (168 of 176 on 10-19). Deploy order: IAM → shadow capture run → live.
 - 2026-10-22: raw capture live. Found: the facts writer skipped article facts on a missing-archive day (lane X choice), so an outage would never land them; fix lane opened.
+- 2026-10-22: article landing fix merged and deployed (CodeSha256 5wb+yzNz…); replay 10-19..22 wrote 527 article facts (8, 55, 176, 288); served at /data/record/views/counts/*.json `articles`.

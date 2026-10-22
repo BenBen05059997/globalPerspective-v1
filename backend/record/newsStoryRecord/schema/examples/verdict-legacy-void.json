@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "eventId": "30ed120e712e3bdd47bd39dca7cdfa223b1cff41",
+  "kind": "verdict",
+  "at": "2026-10-27T06:00:00.000Z",
+  "date": "2026-10-27",
+  "precision": "exact",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "qid": null,
+    "branchId": "PRED#Alberta Votes-4/2026-09-01/1-0",
+    "result": "void",
+    "revision": 1,
+    "decidedBy": "operator-job",
+    "evidence": null,
+    "reason": null,
+    "voidReason": "issued_before_method"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "legacy-void-2026-10-27"
+  },
+  "sourceKey": "legacy-void|PRED#Alberta Votes-4/2026-09-01/1-0",
+  "sourceRow": {
+    "store": "record",
+    "key": "legacy-void|PRED#Alberta Votes-4/2026-09-01/1-0"
+  }
+}

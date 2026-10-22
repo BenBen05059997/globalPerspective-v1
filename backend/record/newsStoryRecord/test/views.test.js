@@ -45,7 +45,7 @@ test('liveBranchCount counts branches due today or later with no verdict; latest
 test('the newest revision of a verdict wins for a branch', () => {
   const f = [X.entry('t', '2026-10-20T00:00:00.000Z', 'x'), X.forecast('t', '2026-10-20T01:00:00.000Z', 'F', [X.branch('b', '2026-10-30')]),
     X.verdict('t', '2026-10-21T00:00:00.000Z', 'b', 'yes', 1), X.verdict('t', '2026-10-23T00:00:00.000Z', 'b', 'void', 2)];
-  assert.deepEqual(build(f).stories.get('t').forks[0].branches[0].verdict, {at: '2026-10-23T00:00:00.000Z', result: 'void', decidedBy: 'agent', evidence: {url: 'https://e.test'}});
+  assert.deepEqual(build(f).stories.get('t').forks[0].branches[0].verdict, {at: '2026-10-23T00:00:00.000Z', result: 'void', decidedBy: 'agent', evidence: {url: 'https://e.test'}, voidReason: null});
 });
 
 test('a correction marks the corrected entry and is listed; other entries are untouched', () => {
@@ -174,4 +174,15 @@ test('writeGroups orders stories, links and counts, then active, then all, then 
   const groups = V.writeGroups(build(X.golden()));
   assert.deepEqual(groups.slice(1).map((g) => g.map(([k]) => k)), [['index/active.json'], ['index/all.json'], ['manifest.json']]);
   assert.deepEqual([...new Set(groups[0].map(([k]) => k.split('/')[0]))], ['stories', 'links', 'counts']);
+});
+
+test('O2: legacy branches (no question or no qid) carry legacy:true and count neither as due nor as live', () => {
+  const f = [X.entry('t', '2026-10-20T00:00:00.000Z', 'x'),
+    X.forecast('t', '2026-10-20T01:00:00.000Z', 'F', [X.branch('r', '2026-10-25'), X.branch('old', '2026-10-25', {question: false, qid: null}), X.branch('noq', '2026-10-25', {qid: undefined})])];
+  const v = build(f);
+  const b = v.stories.get('t').forks[0].branches;
+  assert.deepEqual(b.map((x) => [x.branchId, x.legacy]), [['r', undefined], ['old', true], ['noq', true]]);
+  const row = rowOf(v, 't');
+  assert.deepEqual([row.branchCount, row.liveBranchCount], [3, 1]);
+  assert.deepEqual(build(f, {countDays: ['2026-10-25']}).counts.get('2026-10-25').byStory, {t: {newEntries: 0, branchesDue: 1, verdicts: 0}});
 });

@@ -23,13 +23,6 @@ function makeStore(client, {env = {}, tables} = {}) {
       const snapshots = topicIds.length ? await world.scenarios(client, {topicIds, from, to: date}, opts) : [];
       return {date, from, range, dayRow, entries, births: world.birthByThread(range), snapshots};
     },
-
-    /** Verdict rows for the given questions decided on or before `date`. Only sampled questions can have one. */
-    async verdicts(qids, date) {
-      if (!qids.length) return {};
-      const sampled = await world.sampledQuestions(client, {qids}, opts);
-      return world.verdicts(client, sampled.map((q) => q.qid), {...opts, asOf: date});
-    },
   };
 }
 

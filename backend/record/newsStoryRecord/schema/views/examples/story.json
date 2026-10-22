@@ -100,7 +100,8 @@
             "decidedBy": "agent",
             "evidence": {
               "url": "https://e.test"
-            }
+            },
+            "voidReason": null
           }
         },
         {
@@ -116,7 +117,8 @@
             "decidedBy": "agent",
             "evidence": {
               "url": "https://e.test"
-            }
+            },
+            "voidReason": null
           }
         }
       ]

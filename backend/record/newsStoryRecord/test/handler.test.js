@@ -22,14 +22,13 @@ const births = (entries) => {
   return out;
 };
 // A scripted store: days = {date: [entries]}; a date not in the map is a missing day.
-function scripted(days, {snapshots = {}, verdicts = {}, fail = {}} = {}) {
+function scripted(days, {snapshots = {}, fail = {}} = {}) {
   return {
     async load(date) {
       if (fail[date]) throw new Error(fail[date]);
       const entries = days[date];
       return {date, dayRow: entries ? {date, source: 'archive', entries} : null, entries: entries || [], births: births(entries || []), snapshots: snapshots[date] || []};
     },
-    async verdicts() { return verdicts; },
   };
 }
 const make = (store, f = fakeS3(), now = () => '2026-10-21T05:45:00.000Z') => ({f, handler: makeHandler({store, s3json: f.s3json, manifest: f.manifest, now})});
@@ -135,15 +134,15 @@ test('forecast_drawn and verdict facts: threads from the topic, verdict from a q
   const snap = {pk: 'PRED#Topic 1-1', topicId: 'Topic 1-1', date: '2026-10-20', threadId: null, generatedAt: '2026-10-20T05:00:00.000Z', title: 't',
     sourceRow: {store: 'GlobalPerspectivePredictionLog', key: {PK: 'PRED#Topic 1-1', SK: '2026-10-20'}}, sourceKey: 'PRED#Topic 1-1|2026-10-20',
     scenarios: [{index: 0, label: 'Most likely', probability: 60, triggers: [{id: '0-0', trigger: 'X happens', due: '2026-10-22', p: 40, resolutionSource: 'Reuters', question: true, qid: 'q1', status: ''}]}]};
-  const v = {qid: 'q1', n: 1, sk: 'VERDICT', verdict: 'yes', decidedAt: '2026-10-23T00:00:00.000Z', decidedBy: 'agent', reason: null, voidReason: null, evidence: {url: 'https://x.test', quote: 'q'},
-    sourceKey: 'Q#q1|VERDICT', sourceRow: {store: 'GlobalPerspectivePredictionLog', key: {PK: 'Q#q1', SK: 'VERDICT'}}};
-  const {f, handler} = make(scripted({'2026-10-20': e, '2026-10-24': e.map((x) => ({...x, date: '2026-10-24'}))}, {snapshots: {'2026-10-20': [snap]}, verdicts: {}}));
+  const v = {schemaVersion: 1, qid: 'q1', threadId: null, branchId: null, result: 'yes', voidReason: null, decidedAt: '2026-10-23T00:00:00.000Z', decidedBy: 'agent', evidence: {quote: 'q', url: 'https://x.test', title: 't', date: '2026-10-23'}, reason: null, revision: 1, sourceKey: 'inbox:verdicts/2026-10-23#0'};
+  const {f, handler} = make(scripted({'2026-10-20': e, '2026-10-24': e.map((x) => ({...x, date: '2026-10-24'}))}, {snapshots: {'2026-10-20': [snap]}}));
   await handler({date: '2026-10-20'});
   const fc = f.lines(`${P}facts/2026-10-20.jsonl`).find((x) => x.kind === 'forecast_drawn');
   assert.deepEqual([fc.threadId, fc.precision, fc.payload.branches[0].branchId, fc.payload.branches[0].p], ['thread-1', 'exact', 'PRED#Topic 1-1/2026-10-20/0-0', 40]);
   assert.deepEqual(fc.iso3, ['FRA']);
-  // The question is remembered from the facts, not re-read from the table.
-  const later = make(scripted({'2026-10-24': e.map((x) => ({...x, date: '2026-10-24'}))}, {verdicts: {q1: {...v, all: [v]}}}), f, () => '2026-10-25T05:45:00.000Z');
+  // The thread and branch are taken from the forecast_drawn fact when the inbox line lacks them.
+  f.objs.set(`${P}inbox/verdicts/2026-10-23.jsonl`, {body: `${JSON.stringify(v)}\n`, etag: '"i"'});
+  const later = make(scripted({'2026-10-24': e.map((x) => ({...x, date: '2026-10-24'}))}), f, () => '2026-10-25T05:45:00.000Z');
   await later.handler({date: '2026-10-24'});
   const verdict = f.lines(`${P}facts/2026-10-23.jsonl`).find((x) => x.kind === 'verdict');
   assert.deepEqual([verdict.threadId, verdict.payload.result, verdict.payload.branchId, verdict.at], ['thread-1', 'yes', 'PRED#Topic 1-1/2026-10-20/0-0', '2026-10-23T00:00:00.000Z']);
@@ -153,8 +152,10 @@ test('a verdict with an unknown result is recorded as a failure, the rest of the
   const e = twenty('2026-10-20');
   const snap = {pk: 'PRED#Topic 1-1', topicId: 'Topic 1-1', date: '2026-10-20', threadId: 'thread-1', generatedAt: null, title: 't',
     sourceRow: {store: 'G', key: {PK: 'a', SK: 'b'}}, sourceKey: 'k1', scenarios: [{index: 0, label: 'L', probability: 1, triggers: [{id: '0-0', trigger: 't', due: null, p: null, resolutionSource: '', question: true, qid: 'q9', status: ''}]}]};
-  const bad = {qid: 'q9', n: 1, sk: 'VERDICT', verdict: 'maybe', decidedAt: '2026-10-20T08:00:00.000Z', sourceKey: 'Q#q9|VERDICT', sourceRow: {store: 'G', key: {PK: 'Q#q9', SK: 'VERDICT'}}};
-  const {f, handler} = make(scripted({'2026-10-20': e}, {snapshots: {'2026-10-20': [snap]}, verdicts: {q9: {...bad, all: [bad]}}}));
+  const bad = {schemaVersion: 1, qid: 'q9', result: 'maybe', decidedAt: '2026-10-20T08:00:00.000Z', revision: 1};
+  const f0 = fakeS3();
+  f0.objs.set(`${P}inbox/verdicts/2026-10-20.jsonl`, {body: `${JSON.stringify(bad)}\n`, etag: '"i"'});
+  const {f, handler} = make(scripted({'2026-10-20': e}, {snapshots: {'2026-10-20': [snap]}}), f0);
   await assert.rejects(() => handler({date: '2026-10-20'}), /partial/);
   const run = f.json(`${P}runs/2026-10-20.json`);
   assert.deepEqual([run.status, run.failures[0].stage, run.counts.entry, run.counts.verdict], ['partial', 'verdict', 20, 0]);
@@ -319,4 +320,136 @@ test('a backfill builds the views once, after its last day', async () => {
   assert.equal(viewKeys(f).filter((k) => k === 'manifest.json').length, 1);
   assert.deepEqual([...new Set(f.json(`${P}views/stories/thread-1.json`).entries.map((e) => e.date))], ['2026-10-18', '2026-10-19', '2026-10-20']);
   assert.ok(f.objs.has(`${P}views/counts/2026-10-18.json`));
+});
+
+// O5 (revised): verdicts come from the resolver's inbox, never from a table.
+const inboxLine = (qid, o = {}) => ({schemaVersion: 1, qid, threadId: 'thread-1', branchId: `B-${qid}`, forkId: 'F', result: 'yes', voidReason: null, decidedAt: '2026-10-20T08:00:00.000Z', decidedBy: 'resolver',
+  evidence: {quote: 'twelve chars or more', url: 'https://x.test', title: 't', date: '2026-10-20'}, reason: null, revision: 1, sourceKey: `inbox:verdicts/2026-10-20#${qid}`, ...o});
+const putInbox = (f, prefix, day, lines) => f.objs.set(`${prefix}inbox/verdicts/${day}.jsonl`, {body: lines.map((l) => `${JSON.stringify(l)}\n`).join(''), etag: `"i${day}"`});
+const verdictsOf = (f, prefix = P) => [...f.objs.keys()].filter((k) => k.startsWith(`${prefix}facts/2`)).flatMap((k) => f.lines(k)).filter((x) => x.kind === 'verdict');
+
+test('O5: the run reads the inbox for the run day and the 6 days before (7 reads), missing days are empty, and no table is asked', async () => {
+  const f = fakeS3();
+  putInbox(f, P, '2026-10-14', [inboxLine('q-edge', {decidedAt: '2026-10-14T08:00:00.000Z'})]);
+  putInbox(f, P, '2026-10-13', [inboxLine('q-too-old', {decidedAt: '2026-10-13T08:00:00.000Z'})]); // 8 days back: not read
+  putInbox(f, P, '2026-10-20', [inboxLine('q-today')]);
+  const gets = [];
+  const original = f.client.send;
+  f.client.send = async (c) => { if (c.input.Key.includes('inbox/verdicts/') && !c.input.Body) gets.push(c.input.Key.slice(-16, -6)); return original(c); };
+  const store = scripted({'2026-10-20': twenty('2026-10-20')});
+  assert.equal(store.verdicts, undefined);
+  const r = await make(store, f).handler({date: '2026-10-20'});
+  assert.deepEqual(gets.sort(), ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20']);
+  assert.deepEqual(verdictsOf(f).map((v) => v.payload.qid).sort(), ['q-edge', 'q-today']);
+  assert.equal(r.counts.verdict, 2);
+  const v = verdictsOf(f).find((x) => x.payload.qid === 'q-today');
+  assert.deepEqual([v.threadId, v.payload.branchId, v.payload.result, v.payload.revision, v.at, v.eventId], ['thread-1', 'B-q-today', 'yes', 1, '2026-10-20T08:00:00.000Z', require('../src/_shared/record').sha1('verdictq-today1')]);
+  assert.deepEqual(v.sourceRow, {store: 'record', key: 'inbox:verdicts/2026-10-20#q-today'});
+});
+
+test('O5: a line is one fact however often it is read; a correction line (revision 2) is a second verdict fact and wins in the view', async () => {
+  const f = fakeS3();
+  putInbox(f, P, '2026-10-20', [inboxLine('q1')]);
+  const store = scripted({'2026-10-20': twenty('2026-10-20'), '2026-10-21': twenty('2026-10-21')});
+  const nightly = (d, at) => make(store, f, () => at).handler({date: d});
+  await nightly('2026-10-20', '2026-10-21T05:45:00.000Z');
+  assert.equal((await nightly('2026-10-20', '2026-10-21T05:45:00.000Z')).counts.verdict, 0);
+  putInbox(f, P, '2026-10-21', [inboxLine('q1', {result: 'void', voidReason: 'event_moot', evidence: null, revision: 2, decidedAt: '2026-10-21T08:00:00.000Z'})]);
+  assert.equal((await nightly('2026-10-21', '2026-10-22T05:45:00.000Z')).counts.verdict, 1);
+  assert.deepEqual(verdictsOf(f).map((v) => [v.payload.revision, v.payload.result, v.payload.voidReason]).sort(), [[1, 'yes', null], [2, 'void', 'event_moot']]);
+});
+
+test('O5: a line without thread or branch takes them from the forecast_drawn fact; with neither it is a verdict failure and the day is kept', async () => {
+  const f = fakeS3();
+  const fc = {schemaVersion: 1, eventId: 'fc', kind: 'forecast_drawn', at: '2026-10-01T05:00:00.000Z', date: '2026-10-01', precision: 'exact', threadId: 'thread-9', iso3: [], actorIds: [], sourceIds: [],
+    payload: {forkId: 'F', topicId: 't', branches: [{branchId: 'B9', text: 'x', p: 40, trigger: 'x', resolutionSource: 'R', due: '2026-10-10', question: true, qid: 'q9', scenarioP: 50}]}, producer: {lambda: 'x', runId: 'r'}, sourceKey: 'k', sourceRow: {store: 's', key: 'k'}};
+  f.put(`${P}facts/2026-10-01.jsonl`, fc);
+  putInbox(f, P, '2026-10-20', [inboxLine('q9', {threadId: null, branchId: null}), inboxLine('q-nowhere', {threadId: null, branchId: null})]);
+  await assert.rejects(() => make(scripted({'2026-10-20': twenty('2026-10-20')}), f).handler({date: '2026-10-20'}), /partial/);
+  const v = verdictsOf(f);
+  assert.deepEqual(v.map((x) => [x.payload.qid, x.threadId, x.payload.branchId]), [['q9', 'thread-9', 'B9']]);
+  assert.equal(f.json(`${P}runs/2026-10-20.json`).failures[0].stage, 'verdict');
+});
+
+test('O5: {inboxFrom} reads the inbox from that day to the run day; the shadow prefix reads its own inbox', async () => {
+  const f = fakeS3();
+  putInbox(f, P, '2026-10-05', [inboxLine('q-early', {decidedAt: '2026-10-05T08:00:00.000Z'})]);
+  putInbox(f, 'record/', '2026-10-06', [inboxLine('q-live', {decidedAt: '2026-10-06T08:00:00.000Z'})]);
+  const store = scripted({'2026-10-20': twenty('2026-10-20')});
+  const plain = await make(store, f).handler({date: '2026-10-20'});
+  assert.equal(plain.counts.verdict, 0);
+  const r = await make(store, f).handler({date: '2026-10-20', inboxFrom: '2026-10-01'});
+  assert.equal(r.counts.verdict, 1);
+  assert.deepEqual(verdictsOf(f).map((v) => v.payload.qid), ['q-early']);
+  await assert.rejects(() => make(store, f).handler({date: '2026-10-20', inboxFrom: 'last week'}), /inboxFrom/);
+  const live = await make(store, f).handler({date: '2026-10-20', inboxFrom: '2026-10-01', shadow: false});
+  assert.equal(live.counts.verdict, 1);
+  assert.deepEqual(verdictsOf(f, 'record/').map((v) => v.payload.qid), ['q-live']);
+});
+
+// O3: the legacy void job. Facts are seeded straight into a fake bucket so the job reads them as the nightly run would.
+const seedForecast = (f, prefix, date, threadId, branches) => {
+  const fact = {schemaVersion: 1, eventId: `fc-${threadId}-${date}`, kind: 'forecast_drawn', at: `${date}T05:00:00.000Z`, date, precision: 'exact', threadId, iso3: [], actorIds: [], sourceIds: [],
+    payload: {forkId: `F-${threadId}`, topicId: 't', branches}, producer: {lambda: 'x', runId: 'r'}, sourceKey: `k-${threadId}`, sourceRow: {store: 's', key: 'k'}};
+  f.put(`${prefix}facts/${date}.jsonl`, fact);
+  f.put(`${prefix}facts/manifest.json`, {schemaVersion: 1, days: [date]});
+};
+const br = (id, extra = {}) => ({branchId: id, text: id, p: 40, trigger: id, resolutionSource: 'Reuters', due: '2026-10-27', question: true, qid: `q-${id}`, scenarioP: 50, ...extra});
+const legacyScript = () => {
+  const f = fakeS3();
+  seedForecast(f, P, '2026-09-01', 'thread-1', [br('ok'), br('old1', {question: false, qid: null}), br('old2', {qid: null})]);
+  return f;
+};
+
+test('O3: the legacy void job writes one void verdict per branch without a question id, and a re-run appends nothing', async () => {
+  const f = legacyScript();
+  const {handler} = make(scripted({}), f, () => '2026-10-27T06:00:00.000Z');
+  const r = await handler({legacyVoid: true});
+  assert.deepEqual([r.prefix, r.legacyBranches, r.written, r.alreadyVoid], [P, 2, 2, 0]);
+  const verdicts = f.lines(`${P}facts/2026-10-27.jsonl`).filter((x) => x.kind === 'verdict');
+  assert.deepEqual(verdicts.map((v) => v.payload.branchId).sort(), ['old1', 'old2']);
+  for (const v of verdicts) {
+    assert.deepEqual([v.threadId, v.payload.qid, v.payload.result, v.payload.voidReason, v.payload.decidedBy, v.at], ['thread-1', null, 'void', 'issued_before_method', 'operator-job', '2026-10-27T06:00:00.000Z']);
+  }
+  assert.ok(f.json(`${P}facts/manifest.json`).days.includes('2026-10-27'));
+  const before = f.objs.get(`${P}facts/2026-10-27.jsonl`).body;
+  // a later re-run, a different day: same eventIds, nothing appended, no new day file
+  const again = await make(scripted({}), f, () => '2026-10-29T06:00:00.000Z').handler({legacyVoid: true});
+  assert.deepEqual([again.written, again.alreadyVoid, again.days], [0, 2, []]);
+  assert.equal(f.objs.get(`${P}facts/2026-10-27.jsonl`).body, before);
+  assert.equal(f.objs.has(`${P}facts/2026-10-29.jsonl`), false);
+});
+
+test('O3: shadow is the default; shadow:false writes the live prefix and never touches the shadow one', async () => {
+  const f = fakeS3();
+  seedForecast(f, 'record/', '2026-09-01', 'thread-1', [br('old1', {qid: null})]);
+  seedForecast(f, P, '2026-09-01', 'thread-1', [br('old1', {qid: null})]);
+  const shadowBody = f.objs.get(`${P}facts/2026-09-01.jsonl`).body;
+  const live = await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true, shadow: false});
+  assert.deepEqual([live.prefix, live.written], ['record/', 1]);
+  assert.equal(f.objs.has(`${P}facts/2026-10-27.jsonl`), false);
+  assert.equal(f.objs.has('record/facts/2026-10-27.jsonl'), true);
+  assert.equal(f.objs.get(`${P}facts/2026-09-01.jsonl`).body, shadowBody);
+  const sh = await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true});
+  assert.deepEqual([sh.prefix, sh.written], [P, 1]);
+  assert.equal(f.objs.has('record/shadow/views/manifest.json'), true);
+});
+
+test('O3: after the job the views show the legacy branches as void and legacy, counts see the verdicts, branchesDue stays resolvable only', async () => {
+  const f = legacyScript();
+  await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true});
+  const story = f.json(`${P}views/stories/thread-1.json`);
+  const branches = story.forks[0].branches;
+  assert.deepEqual(branches.map((b) => [b.branchId, b.legacy, b.verdict && b.verdict.result]), [['ok', undefined, null], ['old1', true, 'void'], ['old2', true, 'void']]);
+  assert.deepEqual(story.forks[0].branches[1].verdict.decidedBy, 'operator-job');
+  assert.deepEqual(f.json(`${P}views/counts/2026-10-27.json`).total, {newEntries: 0, branchesDue: 1, verdicts: 2});
+  const row = f.json(`${P}views/index/all.json`).stories.find((r) => r.threadId === 'thread-1');
+  assert.deepEqual([row.branchCount, row.liveBranchCount], [3, 1]);
+});
+
+test('O3: the job is only reachable by the explicit event; a nightly event never voids anything', async () => {
+  const f = legacyScript();
+  await make(scripted({'2026-10-20': twenty('2026-10-20')}), f).handler({date: '2026-10-20'});
+  assert.equal(f.lines(`${P}facts/2026-10-20.jsonl`).concat(f.lines(`${P}facts/2026-10-21.jsonl`)).some((x) => x.kind === 'verdict'), false);
+  await assert.doesNotReject(() => make(scripted({}), f).handler({legacyVoid: false, date: '2026-10-20'}).catch((e) => { if (!/partial|failed/.test(e.message)) throw e; }));
 });

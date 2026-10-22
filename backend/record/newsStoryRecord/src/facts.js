@@ -90,12 +90,40 @@ function forecastFact(snap, threadId, ctx, runId) {
   });
 }
 
-/** One verdict row (world.verdicts()[qid].all[i]) -> `verdict`. `forecast` = {threadId, branchId} from the forecast_drawn fact. */
-function verdictFact(v, forecast, runId) {
-  if (!VERDICTS.includes(v.verdict)) throw new Error(`facts: verdict ${v.sk} has result ${v.verdict}`);
+/**
+ * One line of the resolver's inbox (record/inbox/verdicts/DAY.jsonl) -> `verdict`. `forecast` = {threadId, branchId} from the
+ * forecast_drawn fact, used only when the line lacks them. eventId = sha1('verdict' + qid + revision), so a re-read is the same
+ * fact and a correction (revision 2) is a second one.
+ */
+function inboxVerdictFact(line, forecast, runId) {
+  const l = line && typeof line === 'object' ? line : {};
+  if (typeof l.qid !== 'string' || !l.qid) throw new Error('facts: inbox verdict needs a qid');
+  if (!VERDICTS.includes(l.result)) throw new Error(`facts: inbox verdict ${l.qid} has result ${l.result}`);
+  const revision = Number.isInteger(l.revision) && l.revision >= 1 ? l.revision : 1;
+  const threadId = l.threadId || (forecast && forecast.threadId);
+  const branchId = l.branchId || (forecast && forecast.branchId);
+  if (!threadId || !branchId) throw new Error(`facts: inbox verdict ${l.qid} has no thread or branch and no forecast fact to take them from`);
+  const sourceKey = l.sourceKey || `inbox:verdicts/${l.qid}#${revision}`;
   return makeFact({
-    kind: 'verdict', sourceKey: v.sourceKey, at: v.decidedAt, precision: 'exact', threadId: forecast.threadId, sourceRow: v.sourceRow, runId,
-    payload: {qid: v.qid, branchId: forecast.branchId, result: v.verdict, revision: v.n, decidedBy: v.decidedBy, evidence: v.evidence, reason: v.reason, voidReason: v.voidReason},
+    kind: 'verdict', eventId: R.sha1(`verdict${l.qid}${revision}`), sourceKey, at: l.decidedAt, precision: 'exact', threadId, sourceRow: {store: 'record', key: sourceKey}, runId,
+    payload: {qid: l.qid, branchId, result: l.result, revision, decidedBy: l.decidedBy ?? null, evidence: l.evidence ?? null, reason: l.reason ?? null, voidReason: l.voidReason ?? null},
+  });
+}
+
+const LEGACY_VOID_REASON = 'issued_before_method';
+const LEGACY_VOID_DECIDER = 'operator-job';
+/** The branch can receive a verdict: a question with a question id (0038). The rest was recorded before scoring began. */
+const isResolvable = (b) => b.question === true && Boolean(b.qid);
+
+/**
+ * `verdict` void for a branch that has no question id (0038 Legacy). Keyed by branchId alone, so a re-run produces the same eventId.
+ * `at` is the time of the job; `qid` is null because the branch never had one.
+ */
+function legacyVoidFact({threadId, branchId, at, runId}) {
+  const sourceKey = `legacy-void|${branchId}`;
+  return makeFact({
+    kind: 'verdict', sourceKey, at, precision: 'exact', threadId, sourceRow: {store: 'record', key: sourceKey}, runId,
+    payload: {qid: null, branchId, result: 'void', revision: 1, decidedBy: LEGACY_VOID_DECIDER, evidence: null, reason: null, voidReason: LEGACY_VOID_REASON},
   });
 }
 
@@ -119,4 +147,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, verdictFact, correctionFact, mergedFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, runFact, uniqueSorted};

@@ -429,6 +429,9 @@
             }
           ]
         },
+        "legacy": {
+          "const": true
+        },
         "verdict": {
           "anyOf": [
             {
@@ -447,7 +450,8 @@
         "at",
         "result",
         "decidedBy",
-        "evidence"
+        "evidence",
+        "voidReason"
       ],
       "additionalProperties": false,
       "properties": {
@@ -471,7 +475,17 @@
             }
           ]
         },
-        "evidence": {}
+        "evidence": {},
+        "voidReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
       }
     }
   }

@@ -20,11 +20,16 @@ for (const [kind, file] of Object.entries(facts)) {
     assert.equal(validFact(example), true, JSON.stringify(validFact.errors));
   });
 }
+test('example verdict-legacy-void.json is a valid verdict fact for a branch without a question id', () => {
+  const example = load('examples', 'verdict-legacy-void.json');
+  assert.deepEqual([example.kind, example.payload.qid, example.payload.voidReason, example.payload.decidedBy], ['verdict', null, 'issued_before_method', 'operator-job']);
+  assert.equal(validFact(example), true, JSON.stringify(validFact.errors));
+});
 for (const file of ['run', 'run-missing-day']) {
   test(`example ${file}.json is a valid Run`, () => assert.equal(validRun(load('examples', `${file}.json`)), true, JSON.stringify(validRun.errors)));
 }
 test('every example file is covered above', () => {
-  assert.deepEqual(readdirSync(resolve(__dirname, '../schema/examples')).sort(), [...Object.values(facts), 'run', 'run-missing-day'].map((n) => `${n}.json`).sort());
+  assert.deepEqual(readdirSync(resolve(__dirname, '../schema/examples')).sort(), [...Object.values(facts), 'verdict-legacy-void', 'run', 'run-missing-day'].map((n) => `${n}.json`).sort());
 });
 test('the schema rejects what 0036 forbids', () => {
   const entry = load('examples', 'entry.json');

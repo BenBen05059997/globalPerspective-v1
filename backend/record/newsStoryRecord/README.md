@@ -1,11 +1,11 @@
 # newsStoryRecord
 
-The facts writer. Each run appends one UTC day's facts, with no model, to `record/facts/YYYY-MM-DD.jsonl` and writes that day's Run object to `record/runs/YYYY-MM-DD.json`. After the append it rebuilds the views under `record/views/` from every facts day ([decision 0037](../../../project-docs/decisions/0037-views-from-facts.md)). Format and rules: [decision 0036](../../../project-docs/decisions/0036-facts-file-format.md); design: [ARCHITECTURE_TIMELINE.md](../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md) (§1c two clocks, §6 writers). Chapters, branch status and lines are readings written weekly by the planned `newsRecordReview`.
+The facts writer. Each run appends one UTC day's facts, with no model, to `record/facts/YYYY-MM-DD.jsonl` and writes that day's Run object to `record/runs/YYYY-MM-DD.json`. After the append it rebuilds the views under `record/views/` from every facts day ([decision 0037](../../../project-docs/decisions/0037-views-from-facts.md)). Format and rules: [decision 0036](../../../project-docs/decisions/0036-facts-file-format.md); design: [ARCHITECTURE_TIMELINE.md](../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md) (§1c two clocks, §6 writers). Lines, chapters, branch status and confirmed links are readings written weekly by `newsRecordReview` (step 3); this Lambda is the only view builder and reads them (below).
 
 ## What a run does
 
 1. Writes `runs/DATE.json` with `status:"started"` (a Run left at `started` with no `finishedAt` is the alarm).
-2. Reads through shared `world/` only: `archive#` rows for the 30 days to DATE, the `today-archive` entries archived on DATE, `PRED#` snapshots of the day's topics, and the resolver's verdict inbox (`inbox/verdicts/`, run day and 6 days before). No table is read for verdicts, no scan, no listing.
+2. Reads through shared `world/` only: `archive#` rows for the 30 days to DATE, the `today-archive` entries archived on DATE, `PRED#` snapshots of the day's topics, the resolver's verdict inbox (`inbox/verdicts/`) and the merge and split inboxes (`inbox/merges/`, `inbox/splits/`), each the run day and 6 days before. No table is read for verdicts, no scan, no listing.
 3. Builds facts and drops those already stored (it reads the last 100 days of fact files, so a re-run is a no-op and the same article listed again on a later day is not a second fact).
 4. Appends each fact to the file of its own day (the UTC date of `at`), registers the days in `facts/manifest.json`, appends a `run` fact, and overwrites the Run with `ok`, `partial` or `failed`.
 5. Throws when the Run is not `ok` (daily mode), so the schedule's Errors metric moves. A missing archive day is a `failed` Run with `inputs.archiveDay:"missing"`, never `ok`.
@@ -16,7 +16,9 @@ The facts writer. Each run appends one UTC day's facts, with no model, to `recor
 | `story_born` | the first entry of a thread in the window, on its birth day | `windowLimited` and `missingBefore` say what the window could not see |
 | `forecast_drawn` | one `PRED#` snapshot | branches with `branchId`, `p` (percent), `trigger`, `resolutionSource`, `due`, `qid` |
 | `verdict` | each line of `record/inbox/verdicts/YYYY-MM-DD.jsonl` written by the resolver (`yes`, `no`, `void`) | `eventId = sha1('verdict' + qid + revision)`, `at = decidedAt`; thread and branch come from the line, else from the question's `forecast_drawn` fact (100-day lookback); revision 2 or more is a correction and a second fact. `voidReason` `issued_before_method` with `decidedBy:"operator-job"` and `qid:null` marks the legacy void (below) |
-| `correction`, `story_merged` | nothing yet | builders in `src/facts.js`; written when an operator or review input exists |
+| `story_merged` | each line of `record/inbox/merges/YYYY-MM-DD.jsonl` (the review's auto-merges: `{from, into, at, reason, cites, readingId}`) | `eventId = sha1('story_merged' + from + into + at)`; `threadId = into`; `evidence = cites` as `[{eventId}]`; `readingId` kept in the payload |
+| `story_split` | each line of `record/inbox/splits/YYYY-MM-DD.jsonl` (operator only: `{from, into, at, reason}`) | `eventId = sha1('story_split' + from + into + at)`; `threadId = into`; undoes the matching merge in the views |
+| `correction` | nothing yet | builder in `src/facts.js`; written when an operator input exists |
 | `run` | the Run | appended every run, failures included |
 
 IDs: [`record.js`](../../shared/src/record.js) (`canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`) and [`outlets.js`](../../shared/src/outlets.js) (`registrableDomain`, `TWO_LEVEL_SUFFIXES`). Missing inputs are recorded as missing: `iso3:[]` and `actorIds:[]` before about 2026-09-12, `summary:null`, `outlet:null` for an unknown outlet.
@@ -27,13 +29,26 @@ After the facts and before the Run is finalised, `src/publish.js` reads every da
 
 | View | Content |
 |---|---|
-| `index/active.json`, `index/all.json` | `{schemaVersion, builtFrom, stories:[row]}`; row = `threadId, born, lastFactAt, iso3, actorIds, sourceCount, entryCount, forkCount, branchCount, liveBranchCount, latestVerdictAt, aliasOf, aliases, title`, ordered by `lastFactAt` desc then `threadId`. Active = a fact of its own in the last 60 UTC days (today and the 59 before), never an alias. `all.json` over 5 MB fails the build |
-| `stories/{threadId}.json` | facts projection: `entries` (date ascending, newest 400 kept, `entriesOmitted`), `forks` with each branch's latest verdict, `merges`, `corrections`; `line`, `chapters`, `branchStatus` null/empty and `reading:{state:"none", reason:"no reading yet"}`. A merged story is `{schemaVersion, builtFrom, threadId, aliasOf}` only |
-| `links/{threadId}.json` | for each active story: shared actor, iso3 and source IDs with other active stories, `grounds` 1 to 3, sorted by grounds (desc) then id, max 50; `confirmedLinks: []` |
+| `index/active.json`, `index/all.json` | `{schemaVersion, builtFrom, stories:[row]}`; row = `threadId, born, lastFactAt, iso3, actorIds, sourceCount, entryCount, forkCount, branchCount, liveBranchCount, latestVerdictAt, aliasOf, aliases, title` and, only when the story has a line reading, `line` (the text), ordered by `lastFactAt` desc then `threadId`. Active = a fact of its own in the last 60 UTC days (today and the 59 before), never an alias. `all.json` over 5 MB fails the build |
+| `stories/{threadId}.json` | facts projection: `entries` (date ascending, newest 400 kept, `entriesOmitted`), `forks` with each branch's latest verdict, `merges`, `corrections`; `line` `{text, week, cites}`, `chapters` `[{title, from, to, summary, cites}]` (by `from`), `branchStatus` `{branchId: {status, why, week}}` and `reading:{state:"read", week}` from the readings; with none of those: `line` null, `chapters` empty, `branchStatus` null, `reading:{state:"none", reason:"no reading yet"}`. A merged story is `{schemaVersion, builtFrom, threadId, aliasOf}` only |
+| `links/{threadId}.json` | for each active story: shared actor, iso3 and source IDs with other active stories, `grounds` 1 to 3, sorted by grounds (desc) then id, max 50; `confirmedLinks` `[{otherThreadId, mechanism, direction, week, cites}]` from link readings (`confirmedLinksReason` null; with none: `[]` and `"no reading yet"`) |
 | `counts/{date}.json` | `byStory` (stories with a nonzero count) and `total` of `newEntries`, `branchesDue`, `verdicts`; written for the previous and current ISO week up to today and for every day whose facts changed in the invocation |
-| `manifest.json` | `{schemaVersion, builtAt, runId, factsManifestDays, factsThrough, readingsThrough:null}` |
+| `manifest.json` | `{schemaVersion, builtAt, runId, factsManifestDays, factsThrough, readingsThrough}` (`readingsThrough` = newest ISO week among the readings used, else null) |
 
 `liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) now includes `record/views/*`. First live build 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files.
+
+## Readings, merges and aliases in the build (step 3, BUILD node of the weekly loop)
+
+```text
++- 6 BUILD      no model            [newsStoryRecord, nightly]
+|  +- reads readings + inbox merges + operator aliases; fills line, chapters, branchStatus, confirmedLinks in the views;
+|  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
+```
+
+- Readings: `record/readings/YYYY-Www.jsonl` for every ISO week from the first facts day to today (no listing; a missing week is empty). Per `(threadId, subtype, key)` the latest non-superseded reading wins (key: `line` none, `chapter` `from`, `branch_status` `branchId`, `link` and `merge_proposal` `otherThreadId`, `alias` `canonical`); a reading whose `readingId` another reading names in `supersedes` is dropped; ties on the week go to the later `run`, then `readingId`. Malformed lines are skipped. `merge_proposal` and `alias` readings are not story content (aliases below).
+- Verdict facts decide yes and no: a `branchStatus` entry is kept only for a branch of that story that has no verdict at all, so a reading never overrides one.
+- Aliases: `record/operator/aliases.json` (operator only; missing = none) maps variant actorIds to a canonical one; accepted alias readings (a Wikidata Q-number, no conflict) add to it, the operator file always wins. The map is applied to `actorIds` in story views, index rows and the links specificity count. Facts keep the ids they were written with.
+- Merges and splits: see the fact table. A `story_split` cancels every `story_merged` of the same `(from, into)` dated at or before it; a merge dated after the split stands.
 
 ## Event
 
@@ -134,3 +149,13 @@ The RECORD node of the stack tree in [ARCHITECTURE_FORECAST_LOOP.md](../../../pr
 |  +- output : verdict fact; views and counts rebuild from it
 |  +- cost   : none
 ```
+
+Step 3 choices (lane T, views read the weekly readings; the spec left these open, narrowest reading):
+- Readings, the merge and split inboxes and the operator alias file all follow the run's prefix: the shadow run reads `record/shadow/readings/`, `record/shadow/inbox/merges/` and `splits/`, `record/shadow/operator/aliases.json`; the flip is the same prefix change as for facts.
+- `builtFrom.readingsThrough` and the manifest's are ISO week labels (`2026-W43`), the newest week among the readings the build used (any subtype), null with none. Reading weeks before the week of the first fact day are not read.
+- The reading key for a chapter is its `from`, so a re-read chapter with a changed span must name the old one in `supersedes`; otherwise both stand.
+- `reading` is `{state:"read", week}` when the story has a line, chapter, branch-status or link reading, `week` = the newest of them. A merged story's own readings are not shown (its view is an alias); a confirmed link to a merged story points at the survivor, and a link to itself is dropped.
+- `branchStatus` skips any branch with a verdict (void included) and any branch id that is not in the story's forks. `confirmedLinks` are shown on the story the reading names, not mirrored on the other; they exist only in `links/` files, which exist for active stories.
+- `story_split` payload is `{from, into, reason}` with the time in the envelope `at`, like `story_merged`. A malformed merge or split line is a `merge` or `split` failure on the Run (partial), the rest kept.
+- Alias conflicts: a reading is rejected as a whole when a variant is already mapped to a different canonical, its canonical is itself a variant, or a variant is another entry's canonical. Among readings and inside the operator file the earlier entry wins. A malformed operator file fails the views stage (Run partial), it is not silently ignored.
+- IAM (read 2026-10-22, role `newsStoryRecord-role`, policy `newsStoryRecord-access`): `s3:GetObject` on `web/*` and `record/*` already covers `record/readings/*`, `record/inbox/merges/*`, `record/inbox/splits/*` and `record/operator/*` (and the shadow equivalents); `s3:ListBucket` on the bucket turns a missing object into a 404. No IAM change is needed.

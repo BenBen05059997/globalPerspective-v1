@@ -320,3 +320,30 @@ test('a backfill builds the views once, after its last day', async () => {
   assert.deepEqual([...new Set(f.json(`${P}views/stories/thread-1.json`).entries.map((e) => e.date))], ['2026-10-18', '2026-10-19', '2026-10-20']);
   assert.ok(f.objs.has(`${P}views/counts/2026-10-18.json`));
 });
+
+test('O1: a forecast drawn 80 days ago still gets its verdict (lookback covers due + grace); the verdict is not appended twice', async () => {
+  const day = '2026-10-20';
+  const f = fakeS3();
+  const drawn = {schemaVersion: 1, eventId: 'old-fc', kind: 'forecast_drawn', at: '2026-08-01T05:00:00.000Z', date: '2026-08-01', precision: 'exact', threadId: 'thread-1', iso3: [], actorIds: [], sourceIds: [],
+    payload: {forkId: 'F', topicId: 't', branches: [{branchId: 'B1', text: 'x', p: 40, trigger: 'x', resolutionSource: 'Reuters', due: '2026-10-15', question: true, qid: 'q-old', scenarioP: 50}]},
+    producer: {lambda: 'x', runId: 'r'}, sourceKey: 'k', sourceRow: {store: 's', key: 'k'}};
+  f.put(`${P}facts/2026-08-01.jsonl`, drawn);
+  const v = {qid: 'q-old', n: 1, sk: 'VERDICT', verdict: 'void', decidedAt: '2026-10-19T00:00:00.000Z', decidedBy: 'resolver', reason: null, voidReason: 'event_moot', evidence: null,
+    sourceKey: 'Q#q-old|VERDICT', sourceRow: {store: 'G', key: {PK: 'Q#q-old', SK: 'VERDICT'}}};
+  const store = scripted({[day]: twenty(day)}, {verdicts: {'q-old': {...v, all: [v]}}});
+  const {handler} = make(store, f, () => '2026-10-21T05:45:00.000Z');
+  const r = await handler({date: day});
+  assert.equal(r.counts.verdict, 1);
+  const fact = f.lines(`${P}facts/2026-10-19.jsonl`).find((x) => x.kind === 'verdict');
+  assert.deepEqual([fact.threadId, fact.payload.result, fact.payload.voidReason, fact.payload.branchId], ['thread-1', 'void', 'event_moot', 'B1']);
+  assert.equal((await handler({date: day})).counts.verdict, 0);
+});
+
+test('O1: the store asks for verdicts of any question, sampled or not', async () => {
+  const c = fakeClient();
+  c.put('GlobalPerspectivePredictionLog', {PK: 'Q#q-unsampled', SK: 'VERDICT', qid: 'q-unsampled', verdict: 'yes', decidedAt: '2026-10-19T00:00:00.000Z', decidedBy: 'resolver', evidence: {url: 'https://x.test', quote: 'twelve chars or more'}});
+  const got = await makeStore(c).verdicts(['q-unsampled', 'q-none'], '2026-10-20');
+  assert.deepEqual(Object.keys(got), ['q-unsampled']);
+  assert.equal(got['q-unsampled'].verdict, 'yes');
+  assert.ok(!c.calls.some((x) => x[0] === 'batchGet'));
+});

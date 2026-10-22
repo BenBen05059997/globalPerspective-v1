@@ -24,11 +24,11 @@ function makeStore(client, {env = {}, tables} = {}) {
       return {date, from, range, dayRow, entries, births: world.birthByThread(range), snapshots};
     },
 
-    /** Verdict rows for the given questions decided on or before `date`. Only sampled questions can have one. */
+    /** Verdict rows for the given questions decided on or before `date`. Any question can have one (0038: the resolver judges
+     *  every resolvable branch, not only the weekly sample), so the qids are queried directly. */
     async verdicts(qids, date) {
       if (!qids.length) return {};
-      const sampled = await world.sampledQuestions(client, {qids}, opts);
-      return world.verdicts(client, sampled.map((q) => q.qid), {...opts, asOf: date});
+      return world.verdicts(client, qids, {...opts, asOf: date});
     },
   };
 }

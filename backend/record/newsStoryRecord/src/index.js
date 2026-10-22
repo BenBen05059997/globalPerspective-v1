@@ -8,7 +8,7 @@ const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
 const producer = `newsStoryRecord@${require('./package.json').version}`;
-const LOOKBACK_DAYS = 60; // fact days read back to skip known facts and to find forecast questions awaiting a verdict
+const LOOKBACK_DAYS = 100; // fact days read back to skip known facts and to find forecast questions awaiting a verdict: due (7-90 days out) + grace (0038)
 const THIN_ENTRIES = 20; // fewer entries than this and the day is recorded as thin (normal days hold 35-50)
 
 const zeroCounts = () => Object.fromEntries(KINDS.map((k) => [k, 0]));

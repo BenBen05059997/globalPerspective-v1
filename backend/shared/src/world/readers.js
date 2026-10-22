@@ -51,12 +51,14 @@ async function pool(items, n, fn) {
 
 // ---- archive#<date> ----------------------------------------------------------------------------------------------
 // NewsCache { id:'archive#YYYY-MM-DD', entries:[{topicId, threadId, title, category, regions[], iso3[], actors[],
-//   event_type, sources:[{source,title,url,tier,outletCountry,outletType,snippet,age}], archivedAt, generationId,
+//   event_type, sources:[{source,title,url,tier,outletCountry,outletType,snippet,age,publishedAt?,outlet?}], archivedAt, generationId,
 //   continues_topic?, ai:{...}}], updatedAt, ttl }. Writer: NewsProjectInvokeAgentLambda (buildArchiveEntry).
 
 const source = (s) => ({
   source: str(s && s.source) || '', title: str(s && s.title), url: str(s && s.url), tier: str(s && s.tier),
   outletCountry: str(s && s.outletCountry), outletType: str(s && s.outletType), snippet: str(s && s.snippet),
+  // Written by newsInvokeGemini since f03ab32b (2026-10-20): the feed's publication time (raw string, not validated here) and the outlet display name.
+  publishedAt: str(s && s.publishedAt), outlet: str(s && s.outlet),
 });
 
 function entry(e, date, withAi, rowId, index) {

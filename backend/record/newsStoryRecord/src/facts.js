@@ -7,6 +7,7 @@ const {registrableDomain, getOutletMeta} = require('./_shared/outlets');
 const world = require('./_shared/world');
 
 const SCHEMA_VERSION = 1;
+const MAX_PUBLISHED_AGE_DAYS = 30;
 const producerName = `newsStoryRecord@${require('./package.json').version}`;
 const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'run'];
 const VERDICTS = ['yes', 'no', 'void'];
@@ -43,12 +44,26 @@ function entrySources(e) {
 }
 const sourceIdsOf = (e) => entrySources(e).map((s) => s.sourceId);
 
+/**
+ * The exact time of an entry (0036 amendment 2026-10-22): the earliest valid `sources[].publishedAt`, as an ISO string, or null.
+ * Valid = parses, is not after the time the entry was archived (a story cannot be published after we archived it), and is at most
+ * MAX_PUBLISHED_AGE_DAYS before the archive day (a stale feed date would put the fact outside the re-run window).
+ */
+function exactTimeOf(e) {
+  const archivedMs = Date.parse(e.archivedAt || `${e.date}T23:59:59.999Z`);
+  const floor = Date.parse(`${e.date}T00:00:00Z`) - MAX_PUBLISHED_AGE_DAYS * 86400000;
+  const times = (e.sources || []).map((s) => (typeof s.publishedAt === 'string' ? Date.parse(s.publishedAt) : NaN))
+    .filter((t) => Number.isFinite(t) && t <= archivedMs && t >= floor);
+  return times.length ? new Date(Math.min(...times)).toISOString() : null;
+}
+
 /** One archive entry -> an `entry` fact. */
 function entryFact(e, runId) {
+  const exact = exactTimeOf(e);
   const sources = entrySources(e);
   const identity = R.entryIdentity({sources: e.sources, date: e.date, title: e.title});
   return makeFact({
-    kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: e.archivedAt || `${e.date}T00:00:00Z`, precision: 'day', threadId: e.threadId,
+    kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: exact || e.archivedAt || `${e.date}T00:00:00Z`, precision: exact ? 'exact' : 'day', threadId: e.threadId,
     iso3: e.iso3, actorIds: actorIdsOf(e.actors), sourceIds: sources.map((s) => s.sourceId), sourceRow: e.sourceRow, runId,
     payload: {title: e.title, summary: null, category: e.category, eventType: e.eventType, continuesTopic: e.continuesTopic, topicId: e.topicId},
     extra: {idBasis: identity.idBasis, sources},
@@ -104,4 +119,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, KINDS, makeFact, entryFact, bornFact, forecastFact, verdictFact, correctionFact, mergedFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, verdictFact, correctionFact, mergedFact, runFact, uniqueSorted};

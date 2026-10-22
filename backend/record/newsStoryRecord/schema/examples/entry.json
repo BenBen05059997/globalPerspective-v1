@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "eventId": "7c4e32c8e94f25d7710667980d060821ee391ac5",
   "kind": "entry",
-  "at": "2026-10-20T04:26:36.158Z",
+  "at": "2026-10-20T03:58:12.000Z",
   "date": "2026-10-20",
-  "precision": "day",
+  "precision": "exact",
   "threadId": "thread-alberta-votes-d3d4b4",
   "iso3": [
     "CAN"

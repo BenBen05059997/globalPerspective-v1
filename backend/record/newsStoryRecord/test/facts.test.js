@@ -34,6 +34,24 @@ test('entry without a usable url uses title basis; without archivedAt the day is
   assert.deepEqual(f.sources, []);
 });
 
+test('entry time: the earliest valid publishedAt is the exact time; eventId and archive date are unchanged', () => {
+  const src = (publishedAt) => ({source: 'bbc.com', title: 't', url: `https://bbc.com/${publishedAt}`, publishedAt});
+  const base = F.entryFact(entry, 'r');
+  const f = F.entryFact({...entry, sources: [src('2026-10-20T03:00:00+00:00'), src('2026-10-19T22:30:00Z'), {...src('x'), publishedAt: null}]}, 'r');
+  assert.deepEqual([f.at, f.precision, f.date], ['2026-10-19T22:30:00.000Z', 'exact', '2026-10-19']);
+  assert.equal(F.entryFact({...entry, sources: [{...entry.sources[0], publishedAt: '2026-10-20T03:00:00Z'}]}, 'r').eventId, base.eventId);
+  assert.equal(base.precision, 'day');
+});
+
+test('entry time: malformed, future or stale publishedAt falls back to the archive time at day precision', () => {
+  for (const publishedAt of ['not a date', '', '2026-10-20T05:00:00Z', '2026-09-01T00:00:00Z', 12345]) {
+    const f = F.entryFact({...entry, sources: [{...entry.sources[0], publishedAt}]}, 'r');
+    assert.deepEqual([f.at, f.precision], ['2026-10-20T04:00:00.000Z', 'day'], String(publishedAt));
+  }
+  const f = F.entryFact({...entry, sources: [{...entry.sources[0], publishedAt: 'bad'}, {...entry.sources[1], publishedAt: '2026-10-20T01:15:00Z'}]}, 'r');
+  assert.deepEqual([f.at, f.precision], ['2026-10-20T01:15:00.000Z', 'exact'], 'one bad source does not hide a good one');
+});
+
 test('makeFact rejects malformed facts', () => {
   const ok = {kind: 'entry', sourceKey: 'k', at: '2026-10-20T00:00:00Z', precision: 'day', payload: {}, sourceRow: {store: 's', key: 'k'}, runId: 'r'};
   assert.doesNotThrow(() => F.makeFact(ok));

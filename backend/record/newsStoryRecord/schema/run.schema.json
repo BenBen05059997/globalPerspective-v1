@@ -20,7 +20,11 @@
           "description": "present | missing | {thin: n} (fewer than 20 entries); null only while started",
           "anyOf": [{ "enum": ["present", "missing", null] }, { "type": "object", "required": ["thin"], "properties": { "thin": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }]
         },
-        "todayArchive": { "enum": ["present", "missing", null], "description": "present when today-archive contributed entries for the day" }
+        "todayArchive": { "enum": ["present", "missing", null], "description": "present when today-archive contributed entries for the day" },
+        "rawDay": {
+          "description": "the run day's article inbox (record/inbox/articles/DAY.jsonl): present | missing | {thin: n} (fewer than 50 articles); null while started or when the file could not be read",
+          "anyOf": [{ "enum": ["present", "missing", null] }, { "type": "object", "required": ["thin"], "properties": { "thin": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }]
+        }
       },
       "additionalProperties": false
     },

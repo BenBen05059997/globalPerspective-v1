@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -11,6 +11,7 @@ const producer = `newsStoryRecord@${require('./package.json').version}`;
 const LOOKBACK_DAYS = 100; // fact days read back to skip known facts and to find forecast questions awaiting a verdict: due (7-90 days out) + grace (0038)
 const INBOX_DAYS = 7; // verdict inbox days read each night: the run day and the 6 before
 const THIN_ENTRIES = 20; // fewer entries than this and the day is recorded as thin (normal days hold 35-50)
+const THIN_ARTICLES = 50; // fewer raw articles than this in the run day's article inbox and rawDay is {thin: n}
 
 const zeroCounts = () => Object.fromEntries(KINDS.map((k) => [k, 0]));
 const messageOf = (e) => (e && e.message) || String(e);
@@ -49,17 +50,42 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     return facts;
   }
 
+  // The article inbox (record/inbox/articles/DAY.jsonl): the run day and the 6 days before (or from `inboxFrom`). One unreadable day or
+  // line is an `article` failure on the Run and the rest is kept. Sets inputs.rawDay from the run day's file (null when it cannot be read).
+  async function articleFacts(date, {prefix, run, inboxFrom}) {
+    const out = [];
+    const days = eachDay(inboxFrom || addDays(date, -(INBOX_DAYS - 1)), date);
+    const parts = await Promise.all(days.map(async (d) => {
+      try { return await s3json.getLines(`${prefix}inbox/articles/${d}.jsonl`); } catch (e) { run.failures.push({stage: 'article', message: messageOf(e), ref: d}); return null; }
+    }));
+    for (const [i, part] of parts.entries()) {
+      if (days[i] === date) run.inputs.rawDay = !part ? null : part.lines.length === 0 ? 'missing' : part.lines.length < THIN_ARTICLES ? {thin: part.lines.length} : 'present';
+      for (const [n, line] of (part ? part.lines : []).entries()) {
+        try { out.push(inboxArticleFact(line, run.runId)); } catch (e) { run.failures.push({stage: 'article', message: messageOf(e), ref: `${days[i]}#${n}`}); }
+      }
+    }
+    return out;
+  }
+
   // The stages of one day. Each failure is recorded on the Run; the run goes on where the next stage does not depend on it.
-  async function stages(date, {prefix, run, inboxFrom}) {
+  async function stages(date, {prefix, run, inboxFrom, recovery}) {
     const input = await store.load(date);
     Object.assign(run.inputs, inputsOf(input));
+    const articles = await articleFacts(date, {prefix, run, inboxFrom});
     if (!input.dayRow) {
       run.failures.push({stage: 'inputs', message: `no archive#${date} row and no today-archive entries for the day`});
       return;
     }
     const known = await knownFacts(prefix, date);
     const knownIds = new Set(known.map((f) => f.eventId));
-    const facts = buildFacts(input, known, run.runId);
+    let facts = buildFacts(input, known, run.runId);
+    // A day rebuilt by recovery may not draw forecasts: its snapshots would be dated after the fact (0036 recovery rule).
+    if (recovery) {
+      const refused = facts.filter((f) => f.kind === 'forecast_drawn').length;
+      facts = facts.filter((f) => f.kind !== 'forecast_drawn');
+      if (refused) run.notes = `${run.notes} refused forecast_drawn: ${refused}`;
+    }
+    facts.push(...articles);
 
     // Forecast questions from the lookback window (facts already written plus this run's): the fallback for an inbox line that lacks its thread or branch.
     const questions = new Map();
@@ -109,17 +135,17 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     try { await manifest.addDays(`${prefix}facts/manifest.json`, dates); } catch (e) { run.failures.push({stage: 'manifest', message: messageOf(e)}); }
   }
 
-  async function runDay(date, {prefix, backfill, views, inboxFrom}) {
+  async function runDay(date, {prefix, backfill, views, inboxFrom, recovery}) {
     const runKey = `${prefix}runs/${date}.json`;
     const previous = await s3json.getJson(runKey);
     const attempt = (previous ? Number(/-(\d+)$/.exec(String(previous.runId))?.[1]) || 0 : 0) + 1;
     const run = {
       schemaVersion: 1, runId: `${date}-${attempt}`, date, producer, startedAt: now(), finishedAt: null, status: 'started',
-      inputs: {archiveDay: null, todayArchive: null}, counts: zeroCounts(), daysWritten: [], failures: [], notes: backfill ? 'backfill' : '',
+      inputs: {archiveDay: null, todayArchive: null, rawDay: null}, counts: zeroCounts(), daysWritten: [], failures: [], notes: [backfill && 'backfill', recovery && 'recovery'].filter(Boolean).join(' '),
     };
     await s3json.putLatest(runKey, run);
     let fatal = null;
-    try { await stages(date, {prefix, run, inboxFrom}); } catch (e) { fatal = e; run.failures.push({stage: 'fatal', message: messageOf(e)}); }
+    try { await stages(date, {prefix, run, inboxFrom, recovery}); } catch (e) { fatal = e; run.failures.push({stage: 'fatal', message: messageOf(e)}); }
     // Views are rebuilt in full from every facts day, once per invocation (a backfill: after its last day). A view failure
     // leaves the facts as written and marks the Run partial.
     if (views) {
@@ -187,7 +213,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const days = [];
     const changedDays = [];
     for (const [i, date] of dates.entries()) {
-      const {run, fatal} = await runDay(date, {prefix, backfill: Boolean(bf), inboxFrom: event.inboxFrom, views: i === dates.length - 1 ? {changedDays} : null});
+      const {run, fatal} = await runDay(date, {prefix, backfill: Boolean(bf), inboxFrom: event.inboxFrom, recovery: event.recovery === true, views: i === dates.length - 1 ? {changedDays} : null});
       changedDays.push(...run.daysWritten);
       days.push({date, runId: run.runId, status: run.status, inputs: run.inputs, counts: run.counts, failures: run.failures});
       // A missing day is an error unless the run says it is expected history (strict:false) or it is today, whose row may not exist yet.

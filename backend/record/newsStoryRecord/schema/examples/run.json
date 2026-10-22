@@ -8,7 +8,8 @@
   "status": "ok",
   "inputs": {
     "archiveDay": "present",
-    "todayArchive": "missing"
+    "todayArchive": "missing",
+    "rawDay": "present"
   },
   "counts": {
     "entry": 41,

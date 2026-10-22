@@ -186,3 +186,12 @@ test('O2: legacy branches (no question or no qid) carry legacy:true and count ne
   assert.deepEqual([row.branchCount, row.liveBranchCount], [3, 1]);
   assert.deepEqual(build(f, {countDays: ['2026-10-25']}).counts.get('2026-10-25').byStory, {t: {newEntries: 0, branchesDue: 1, verdicts: 0}});
 });
+
+test('X3: counts.articles is the article facts of that day; articles are not entries, not in stories, and the index is unchanged', () => {
+  const art = (id, at) => X.fact('article', null, at, {id, payload: {url: `https://x.test/${id}`, canonicalUrl: `https://x.test/${id}`, title: id, outlet: null, feed: null, snippet: null, lang: null, recoveredAt: null, recoveredFrom: null}});
+  const base = build(X.golden());
+  const v = build([...X.golden(), art('a1', '2026-10-20T03:00:00.000Z'), art('a2', '2026-10-20T09:00:00.000Z'), art('a3', '2026-10-21T00:00:00.000Z')]);
+  assert.deepEqual([v.counts.get('2026-10-20').articles, v.counts.get('2026-10-21').articles, v.counts.get('2026-10-22').articles], [2, 1, 0]);
+  assert.deepEqual(v.counts.get('2026-10-20').total, base.counts.get('2026-10-20').total);
+  assert.deepEqual(JSONIFY([v.stories, v.all, v.active, v.manifest.factsThrough]), JSONIFY([base.stories, base.all, base.active, base.manifest.factsThrough]));
+});

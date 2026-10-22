@@ -21,6 +21,13 @@ test('archiveDay: normalised entries, missing day is null, ai only on request', 
   await assert.rejects(() => w.archiveDay(c, '2026-13-40'));
 });
 
+test('archiveDay: sources expose publishedAt and outlet when the row has them, else null', async () => {
+  const c = fresh();
+  c.put('NewsCache', {id: 'archive#2026-10-21', entries: [{topicId: 'p1', threadId: 'thread-p', sources: [{source: 'bbc.com', publishedAt: '2026-10-21T01:02:03Z', outlet: 'BBC'}, {source: 'a.com'}]}]});
+  const s = (await w.archiveDay(c, '2026-10-21')).entries[0].sources;
+  assert.deepStrictEqual(s.map((x) => [x.publishedAt, x.outlet]), [['2026-10-21T01:02:03Z', 'BBC'], [null, null]]);
+});
+
 test('archiveDay: an entry with only `id` and no sources still normalises', async () => {
   const d = await w.archiveDay(fresh(), '2026-10-16');
   const legacy = d.entries.find((x) => x.title === 'no thread');

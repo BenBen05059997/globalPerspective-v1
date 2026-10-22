@@ -284,19 +284,7 @@
         "readingsThrough": null
       },
       "threadId": "thread-a",
-      "links": [
-        {
-          "otherThreadId": "thread-b",
-          "sharedActorIds": [],
-          "sharedIso3": [
-            "FRA"
-          ],
-          "sharedSourceIds": [
-            "s1"
-          ],
-          "grounds": 2
-        }
-      ],
+      "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet"
     },
@@ -307,19 +295,7 @@
         "readingsThrough": null
       },
       "threadId": "thread-b",
-      "links": [
-        {
-          "otherThreadId": "thread-a",
-          "sharedActorIds": [],
-          "sharedIso3": [
-            "FRA"
-          ],
-          "sharedSourceIds": [
-            "s1"
-          ],
-          "grounds": 2
-        }
-      ],
+      "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet"
     }

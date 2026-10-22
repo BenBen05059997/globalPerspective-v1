@@ -84,7 +84,8 @@
         "sharedActorIds",
         "sharedIso3",
         "sharedSourceIds",
-        "grounds"
+        "grounds",
+        "daysApart"
       ],
       "additionalProperties": false,
       "properties": {
@@ -103,7 +104,13 @@
         "grounds": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 3
+          "maximum": 2,
+          "description": "count of non-empty sharedActorIds and sharedIso3 (sources never count)"
+        },
+        "daysApart": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 14
         }
       }
     }

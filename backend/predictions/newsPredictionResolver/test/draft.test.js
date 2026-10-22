@@ -56,14 +56,14 @@ test('draft pass: only sampled questions past their deadline, no verdict yet; DR
   await store.putOnce({ PK: 'Q#done', SK: 'VERDICT', verdict: 'yes' });
   const deps = { store, now: () => NOW, search: async () => RESULTS, llm: async () => ({ verdict: 'not_yet', why: 'unclear' }), draftModel: 'm' };
   const dry = await run({ action: 'draft', dryRun: true }, deps);
-  assert.deepEqual(dry.wouldDraft.map((x) => x.qid), ['due']);
+  assert.deepEqual(dry.wouldCheck.map((x) => x.qid), ['due']);
   assert.equal([...store.rows.values()].filter((r) => r.SK.startsWith('DRAFT#')).length, 0);
   const out = await run({ action: 'draft' }, deps);
   assert.deepEqual(out.drafted, [{ qid: 'due', verdict: 'not_yet' }]);
   assert.equal([...store.rows.values()].filter((r) => r.SK.startsWith('VERDICT')).length, 1); // only the pre-existing one
   // not redrafted the next day
   const again = await run({ action: 'draft', dryRun: true }, { ...deps, now: () => '2026-11-21T10:30:00.000Z' });
-  assert.equal(again.wouldDraft.length, 0);
+  assert.equal(again.wouldCheck.length, 0);
 });
 
 test('replay writes nothing and returns usage', async () => {
@@ -93,10 +93,10 @@ test('draft pass writes the verdict at once: confirmedBy resolver, draftSk, evid
   assert.equal(v.verdict, 'yes');
   assert.equal(v.confirmedBy, 'resolver');
   assert.equal(v.draftSk, draft.SK);
-  assert.deepEqual(v.evidence, { url: 'https://ex.com/a', quote: 'Lawmakers voted 200-10 on Tuesday.' });
+  assert.deepEqual(v.evidence, { quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a', title: 'Country A ratifies the trade treaty in parliament vote', date: null });
   assert.equal(v.p, undefined);
   // settled questions are not drafted again
-  assert.equal((await run({ action: 'draft', dryRun: true }, { store, now: () => '2026-11-30T10:30:00.000Z' })).wouldDraft.length, 0);
+  assert.equal((await run({ action: 'draft', dryRun: true }, { store, now: () => '2026-11-30T10:30:00.000Z' })).wouldCheck.length, 0);
 });
 
 test('void draft becomes a void verdict with its reason; a NO draft has no quote', async () => {
@@ -116,8 +116,8 @@ test('unclear drafts stay open, are re-drafted after 5 days, and the third makes
   await run({ action: 'draft' }, at('2026-11-20T10:30:00.000Z'));
   assert.equal(verdictRows(store, 'due').length, 0);
   // not re-drafted before the threshold, drafted again on day 5
-  assert.equal((await run({ action: 'draft', dryRun: true }, at('2026-11-24T10:30:00.000Z'))).wouldDraft.length, 0);
-  assert.equal((await run({ action: 'draft', dryRun: true }, at('2026-11-25T10:30:00.000Z'))).wouldDraft.length, 1);
+  assert.equal((await run({ action: 'draft', dryRun: true }, at('2026-11-24T10:30:00.000Z'))).wouldCheck.length, 0);
+  assert.equal((await run({ action: 'draft', dryRun: true }, at('2026-11-25T10:30:00.000Z'))).wouldCheck.length, 1);
   await run({ action: 'draft' }, at('2026-11-25T10:30:00.000Z'));
   assert.equal(verdictRows(store, 'due').length, 0); // two unclear drafts: still open
   const out = await run({ action: 'draft' }, at('2026-11-30T10:30:00.000Z'));

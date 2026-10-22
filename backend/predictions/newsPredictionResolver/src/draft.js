@@ -8,7 +8,7 @@ const lib = require('./lib');
 
 function buildPrompt(q, results, today) {
   const ctx = results.length
-    ? results.map((r, i) => `[${i + 1}] ${r.title} (${r.source}${r.age ? ', ' + r.age : ''})\nURL: ${r.url}\n${r.snippet}`).join('\n\n')
+    ? results.map((r, i) => `[${i + 1}] ${r.title} (${r.source}${r.date ? ', ' + r.date : r.age ? ', ' + r.age : ''})\nURL: ${r.url}\n${r.snippet}`).join('\n\n')
     : '(no search results)';
   return [
     'You verify whether a specific forecast question came true, using ONLY the search results below. Respond with ONLY valid JSON, no markdown.',
@@ -87,7 +87,10 @@ async function draftQuestion(q, deps) {
     final = lib.combinePasses(d1, d2);
     queries = [...qs.pass1, ...qs.pass2];
   }
-  return { ...final, queries, nResults: results1.length };
+  // the cited result, kept as the verdict's evidence (looked up by url in what the judge was shown)
+  const cited = final.verdict === 'yes' ? results1.find((r) => r.url === final.url) : null;
+  const evidence = cited ? { quote: final.quote, url: cited.url, title: cited.title || null, date: cited.date || null } : undefined;
+  return { ...final, ...(evidence ? { evidence } : {}), queries, nResults: results1.length };
 }
 
 module.exports = { buildPrompt, queriesFor, gather, entryResults, draftQuestion };

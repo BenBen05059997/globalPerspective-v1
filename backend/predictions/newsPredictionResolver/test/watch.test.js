@@ -10,8 +10,8 @@ const NOW = `${TODAY}T10:30:00.000Z`;
 
 // one PRED row per story; each has one question due `lead` days after its issue day
 const pred = (topic, thread, issue, lead) => predRow(topic, issue, 1, { lead, thread });
-const watchOut = async (preds, files, store = fakeStore(preds), extra = {}) =>
-  run({ action: 'watch' }, { store, facts: fakeFacts(files), now: () => NOW, ...extra });
+const watchOut = async (preds, files, store = fakeStore(preds), limit) =>
+  run({ action: 'watch', limit }, { store, facts: fakeFacts(files), now: () => NOW });
 
 test('a question on a thread that moved today is a candidate; an unmoved thread is not', async () => {
   const preds = [pred('a', 'tA', '2026-10-20', 40), pred('b', 'tB', '2026-10-20', 40)]; // both due 11-29, far in the future
@@ -62,7 +62,7 @@ test('non-question triggers and rows without a qid or deadline are ignored', () 
 test('cap: oldest due first, overflow counted', async () => {
   const preds = [];
   for (let i = 0; i < 5; i++) preds.push(pred(`s${i}`, `t${i}`, '2026-09-01', 30 + i * 2)); // all past due+3, due dates ascending with i
-  const out = await watchOut(preds, {}, fakeStore(preds), { maxCandidates: 3 });
+  const out = await watchOut(preds, {}, fakeStore(preds), 3);
   assert.deepEqual(out.wouldCheck.map((c) => c.qid), ['s0-2026-09-01-0', 's1-2026-09-01-0', 's2-2026-09-01-0']);
   assert.equal(out.watch.total, 5);
   assert.equal(out.watch.overflow, 2);

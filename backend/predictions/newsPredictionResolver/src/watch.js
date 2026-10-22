@@ -17,6 +17,7 @@ const factsKey = (day) => `record/facts/${day}.jsonl`;
  */
 async function movedThreads(facts, today) {
   const moved = new Map();
+  if (!facts) return moved;
   for (const d of [lib.addDays(today, -1), today]) {
     const { lines } = await facts.getLines(factsKey(d));
     for (const f of lines) {
@@ -50,6 +51,12 @@ function questionsFromPreds(rows) {
   return out;
 }
 
+/** A SAMPLED row already holds the question fields (no probability). */
+const questionFromSampled = (r) => ({
+  qid: r.qid, pk: r.pk, sk: r.sk, triggerId: r.triggerId, question: r.question, deadline: r.deadline, resolutionSource: r.resolutionSource || null,
+  storyTitle: r.storyTitle || null, issuedAt: r.issuedAt, threadId: r.threadId || null,
+});
+
 const draftDay = (d) => String(d.SK).slice(6, 16);
 
 /**
@@ -77,4 +84,4 @@ function selectCandidates({ questions, groups, moved, today, redraftAfterDays, c
   return { candidates: picked.slice(0, cap), total: picked.length, overflow: Math.max(0, picked.length - cap) };
 }
 
-module.exports = { MAX_CANDIDATES, factsKey, movedThreads, questionsFromPreds, selectCandidates };
+module.exports = { MAX_CANDIDATES, factsKey, movedThreads, questionsFromPreds, questionFromSampled, selectCandidates };

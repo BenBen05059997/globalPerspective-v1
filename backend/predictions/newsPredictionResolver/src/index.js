@@ -21,6 +21,7 @@
 const lib = require('./lib');
 const { draftQuestion } = require('./draft');
 const watch = require('./watch');
+const inbox = require('./inbox');
 const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -155,7 +156,14 @@ async function settleQuestion(deps, g, dryRun, out) {
     PK: `Q#${g.qid}`, SK: 'VERDICT', qid: g.qid, ...row, decidedAt: deps.now(),
     decidedBy: latest.model || 'resolver', confirmedBy: 'resolver', draftSk: latest.SK, sampled: Boolean(g.sampled),
   });
-  if (ok) { g.verdicts.push(row); out.settled.push({ qid: g.qid, verdict: row.verdict }); }
+  if (ok) {
+    g.verdicts.push(row);
+    out.settled.push({ qid: g.qid, verdict: row.verdict });
+    await inbox.appendVerdict(deps, out, {
+      q: g.q || g.sampled, qid: g.qid, result: row.verdict, voidReason: row.voidReason || null, decidedAt: deps.now(),
+      decidedBy: latest.model || 'resolver', evidence: row.verdict === 'void' ? null : row.evidence, reason: row.reason || null, revision: 1,
+    });
+  }
 }
 
 // Daily: settle every due question whose draft is already waiting (no LLM).
@@ -180,7 +188,14 @@ async function correct(deps, event, out) {
     ...(verdict === 'void' ? { voidReason: reason } : {}),
     decidedAt: deps.now(), decidedBy: 'operator', confirmedBy: 'operator', reason,
   });
-  if (ok) out.corrected = { qid, sk: `VERDICT#${n}`, verdict };
+  if (ok) {
+    out.corrected = { qid, sk: `VERDICT#${n}`, verdict };
+    const q = rows.find((r) => r.pk && r.sk) || {}; // SAMPLED or a DRAFT row carries the PRED key
+    await inbox.appendVerdict(deps, out, {
+      q, qid, result: verdict, voidReason: verdict === 'void' ? reason : null, decidedAt: deps.now(), decidedBy: 'operator',
+      evidence: verdict === 'void' ? null : { quote: ev.quote || null, url: ev.url || null, title: ev.title || null, date: ev.date || null }, reason, revision: n,
+    });
+  }
   else out.errors.push(`${qid}: VERDICT#${n} was written by someone else just now; run the correction again`);
 }
 
@@ -217,7 +232,7 @@ async function checkPass(deps, today, limit, dryRun, out) {
     const at = deps.now();
     const g = groups.get(q.qid) || { qid: q.qid, sampled: null, drafts: [], verdicts: [] };
     g.q = q;
-    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, trigger: reason, model: deps.draftModel, at });
+    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: deps.draftModel, at });
     out.drafted.push({ qid: q.qid, verdict: d.verdict });
     g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: deps.draftModel });
     await settleQuestion(deps, g, false, out);
@@ -229,6 +244,7 @@ async function run(event, deps) {
   const dryRun = Boolean(event && event.dryRun);
   const now = deps.now();
   const today = String(now).slice(0, 10);
+  if (event && event.shadow) deps = { ...deps, shadow: true };
   const out = { action, dryRun, today, committed: [], wouldCommit: [], drawn: [], wouldDraw: [], drafted: [], settled: [], wouldSettle: [], errors: [] };
 
   if (action === 'status') {
@@ -287,7 +303,7 @@ async function run(event, deps) {
   return out;
 }
 
-// record/facts reader: s3json over the world bucket (the SDK ships with the Lambda runtime; the role needs s3:GetObject on record/facts/*).
+// s3json over the world bucket (the SDK ships with the Lambda runtime): reads record/facts/* (WATCH) and appends to record/inbox/verdicts/* (RECORD).
 function makeFacts() {
   const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
   const { makeS3Json } = require('./_shared/s3json');
@@ -295,6 +311,7 @@ function makeFacts() {
 }
 
 function defaultDeps() {
+  const s3 = makeFacts();
   const { makeStore } = require('./store');
   const { makeSearch } = require('./search');
   const search0 = makeSearch(process.env.BRAVE_SEARCH_API_KEY || '');
@@ -302,7 +319,8 @@ function defaultDeps() {
   return {
     now: () => new Date().toISOString(),
     store: makeStore(LOG_TABLE, REGION),
-    facts: makeFacts(),
+    facts: s3,
+    inbox: s3,
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
     search: async (q) => { usage.searches++; return search0(q); },

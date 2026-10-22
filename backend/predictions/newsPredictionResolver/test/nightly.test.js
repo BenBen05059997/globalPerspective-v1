@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { run } = require('../src/index');
-const { fakeStore, predRow, fakeFacts, entryFact } = require('./helpers');
+const { fakeStore, predRow, fakeFacts, entryFact, fakeS3 } = require('./helpers');
 
 const TODAY = '2026-11-10';
 const NOW = `${TODAY}T10:30:00.000Z`;
@@ -125,4 +125,60 @@ test('tonight again: a question settled or already checked today is not checked 
   await run({ action: 'tick' }, deps(store, async () => ({ verdict: 'not_yet' })));
   const again = await run({ action: 'tick', dryRun: true }, deps(store, async () => ({ verdict: 'not_yet' })));
   assert.deepEqual(again.wouldCheck, []);
+});
+
+// ---- record/inbox/verdicts (coordinator addition to N4) ----
+test('a verdict produces one inbox line with ids, evidence and revision 1', async () => {
+  const store = fakeStore([PRED]);
+  const s3 = fakeS3();
+  await run({ action: 'tick' }, deps(store, async () => YES, { inbox: s3.s3json }));
+  assert.deepEqual([...s3.objects.keys()], [`record/inbox/verdicts/${TODAY}.jsonl`]);
+  const [l] = s3.lines(`record/inbox/verdicts/${TODAY}.jsonl`);
+  assert.deepEqual(l, {
+    schemaVersion: 1, qid: QID, threadId: 'tA', forkId: `PRED#a/2026-10-20`, branchId: 'PRED#a/2026-10-20/0-0',
+    result: 'yes', voidReason: null, decidedAt: NOW, decidedBy: 'deepseek-test',
+    evidence: { quote: YES.quote, url: RESULT.url, title: RESULT.title, date: '2026-11-09' }, reason: 'reported', revision: 1,
+    sourceKey: `inbox:verdicts/${TODAY}#1`,
+  });
+});
+
+test('a second verdict the same day is line 2; an unclear check writes no line', async () => {
+  const other = predRow('b', '2026-10-20', 1, { lead: 40, thread: 'tB' });
+  const store = fakeStore([PRED, other]);
+  const s3 = fakeS3();
+  const facts = fakeFacts({ [TODAY]: [entryFact('tA', TODAY), entryFact('tB', TODAY)] });
+  let n = 0;
+  await run({ action: 'tick' }, deps(store, async () => (n++ < 2 ? { verdict: 'not_yet' } : { verdict: 'not_yet' }), { inbox: s3.s3json, facts }));
+  assert.equal(s3.objects.size, 0);
+  const s4 = fakeS3();
+  await run({ action: 'tick' }, deps(fakeStore([PRED, other]), async () => YES, { inbox: s4.s3json, facts }));
+  assert.deepEqual(s4.lines(`record/inbox/verdicts/${TODAY}.jsonl`).map((l) => l.sourceKey), [`inbox:verdicts/${TODAY}#1`, `inbox:verdicts/${TODAY}#2`]);
+});
+
+test('a correction appends a line with revision 2 and decidedBy operator', async () => {
+  const store = fakeStore([PRED]);
+  const s3 = fakeS3();
+  await store.putOnce({ PK: `Q#${QID}`, SK: 'SAMPLED', qid: QID, pk: 'PRED#a', sk: '2026-10-20', triggerId: '0-0', threadId: 'tA', question: 'q', deadline: '2026-11-29' });
+  await store.putOnce({ PK: `Q#${QID}`, SK: 'VERDICT', qid: QID, verdict: 'yes' });
+  const out = await run({ action: 'correct', qid: QID, verdict: 'no', reason: 'wrong treaty' }, { store, inbox: s3.s3json, now: () => NOW });
+  assert.equal(out.corrected.sk, 'VERDICT#2');
+  const [l] = s3.lines(`record/inbox/verdicts/${TODAY}.jsonl`);
+  assert.equal(l.revision, 2); assert.equal(l.decidedBy, 'operator'); assert.equal(l.result, 'no'); assert.equal(l.branchId, 'PRED#a/2026-10-20/0-0');
+});
+
+test('shadow run writes under record/shadow/inbox/verdicts/; dry run writes no line', async () => {
+  const s3 = fakeS3();
+  await run({ action: 'tick', shadow: true }, deps(fakeStore([PRED]), async () => YES, { inbox: s3.s3json }));
+  assert.deepEqual([...s3.objects.keys()], [`record/shadow/inbox/verdicts/${TODAY}.jsonl`]);
+  const dry = fakeS3();
+  await run({ action: 'tick', dryRun: true }, deps(fakeStore([PRED]), async () => YES, { inbox: dry.s3json }));
+  assert.equal(dry.objects.size, 0);
+});
+
+test('an inbox failure is reported; the Q# verdict row stays', async () => {
+  const store = fakeStore([PRED]);
+  const inbox = { async getLines() { throw new Error('AccessDenied'); } };
+  const out = await run({ action: 'tick' }, deps(store, async () => YES, { inbox }));
+  assert.equal(rows(store, 'VERDICT').length, 1);
+  assert.match(out.errors[0], /inbox line not written/);
 });

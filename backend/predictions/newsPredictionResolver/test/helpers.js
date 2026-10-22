@@ -48,4 +48,28 @@ function fakeFacts(files = {}) {
 }
 const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
 
-module.exports = { fakeStore, predRow, fakeFacts, entryFact };
+// The real s3json helper over an in-memory S3 client (offline). objects: Map(key -> text).
+function fakeS3() {
+  const { makeS3Json } = require('../src/_shared/s3json');
+  const objects = new Map();
+  class GetObjectCommand { constructor(input) { this.input = input; } }
+  class PutObjectCommand { constructor(input) { this.input = input; } }
+  const client = {
+    async send(cmd) {
+      const { Key, Body, IfNoneMatch, IfMatch } = cmd.input;
+      if (cmd instanceof GetObjectCommand) {
+        if (!objects.has(Key)) { const e = new Error('NoSuchKey'); e.name = 'NoSuchKey'; throw e; }
+        return { Body: String(objects.get(Key)), ETag: `"${objects.get(Key).length}"` };
+      }
+      if (IfNoneMatch && objects.has(Key)) { const e = new Error('412'); e.name = 'PreconditionFailed'; throw e; }
+      if (IfMatch && (!objects.has(Key) || `"${objects.get(Key).length}"` !== IfMatch)) { const e = new Error('412'); e.name = 'PreconditionFailed'; throw e; }
+      objects.set(Key, Body);
+      return {};
+    },
+  };
+  const s3json = makeS3Json({ client, GetObjectCommand, PutObjectCommand, bucket: 'b' });
+  const lines = (key) => (objects.get(key) || '').split('\n').filter(Boolean).map(JSON.parse);
+  return { s3json, objects, lines };
+}
+
+module.exports = { fakeStore, predRow, fakeFacts, entryFact, fakeS3 };

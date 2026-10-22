@@ -64,6 +64,8 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}, tod
     `- deadline MUST be an absolute date in YYYY-MM-DD form, on or after ${minDeadline} (events resolving sooner are not scored) and on/before ${lib.addDays(today, 90)}: every outcome is due 7 to 90 days from today.`,
     '- The outcome is something DONE, not something SAID: a law signed, a vote held, sanctions imposed, a strike carried out, a rate changed, a person removed. "X says / announces / denies / warns / calls for / pledges" is a statement, not an outcome, and is dropped. Write the action that follows or replaces the statement.',
     '- The outcome must describe a FUTURE event that has NOT happened yet — never restate something already reported in the snippets or digest (that is not a prediction).',
+    '- Do not write an outcome that an entry in the dated archive digest above (dated on or before today) already reports as done: it is already true, not a forecast.',
+    '- Name the exact institution that acts (for example "the German Bundestag", "the European Commission", "the UN Security Council"); never "the government", "authorities", "officials", "the EU" or "the UN" on their own.',
     '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
     '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise"). Do not put a date or named scheduled event in the text unless it is in the input.',
     '- Each outcome is a standalone yes/no question judged ALONE, with its own "p". Outcomes are different events, not the same event worded twice.',

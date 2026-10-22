@@ -978,6 +978,8 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     // Near-duplicates are checked against every OPEN branch of the story's thread, not just the last rows.
     const forks = ctx.forks || await readThreadForks(topic, (ctx.threadIdById || {})[topic.id], day);
     const priorTexts = draw.openBranchTexts(forks, day);
+    // G15: this story's own archive entries dated on or before the draw (the digest's source, with summaries)
+    const priorEntries = threading.relatedEntries(topic, ctx.pastEntries || []).filter((e) => e.title);
     const { scenarios, capture } = lib.buildGatedScenarios(parsed.scenarios, {
       generatedAtDay: (ctx.generatedAtDay || day),
       fallbackYear: generatedYear,
@@ -986,6 +988,7 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       sk: day,
       snippets,
       priorTexts,
+      priorEntries,
       inputText: ctx.inputText, // G13 grounded-date gate (undefined => gate off)
       outcomeMode: parsed.unit === 'outcome',
     });
@@ -1187,6 +1190,7 @@ async function readPastArchiveEntries(days) {
             topicId: e.topicId,
             threadId: e.threadId,
             title: e.title,
+            summary: e.summary || '',
             search_keywords: e.search_keywords || [],
             regions: e.regions || [],
             category: e.category || '',

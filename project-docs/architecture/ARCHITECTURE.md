@@ -178,7 +178,7 @@ header comment saying so.
 `production/worker.mjs` is the repo copy of the `globalperspective-rss` Worker that fronts production;
 `baseline/worker2.mjs` is the captured deployed source; `candidate.mjs` wraps it for
 `next.globalperspective.net`. The Worker: SigV4-signs GETs to the private S3 world bucket for
-`/data/*` (only `world/`, `situations/state/`, `stories/state/` JSON keys deployed; the repo copy also allows `record/views/`, merged 2026-10-22 and not uploaded yet), proxies `/rss` to the
+`/data/*` (only `world/`, `situations/state/`, `stories/state/` JSON keys deployed; the repo copy also allows `record/views/` but is not uploaded; live Worker version cc57a42f), proxies `/rss` to the
 proxy's `rss` action, pre-renders pages for bot user-agents, and returns the SPA shell with a 200 for
 other GET paths.
 
@@ -424,9 +424,7 @@ subsystem's structure and who writes what are in the same doc. Live today (2026-
 `record/facts/` (2026-09-05..2026-10-22; 19 of those days hold only a Run because the archive row is missing), `record/runs/`;
 the board's slice 1 (`/board`, `newsBoard` in `backend/board/`, boards in `GlobalPerspectiveSavedItems` as `board#<id>`,
 follows in `GlobalPerspectiveUserPrefs`); the resolver is deployed with auto verdicts (decision 0034, data flow 3) but has
-written none yet. Merged, not deployed: the views builder in `newsStoryRecord` (its role cannot write `record/views/*` yet;
-`record/views/` is empty), the `newsBoard` change that reads the views (`story_view` removed), the board UI, and the Worker
-allow-list line for `record/views/` (not uploaded). Not built: `newsRecordReview`, alarms on the Run objects.
+written none yet (the resolver settles a weekly sample of 22, drafts on Mondays; first possible verdict 2026-10-26). Deployed 2026-10-22: the views builder in `newsStoryRecord` (`record/views/` built: 519 stories, `factsThrough` 2026-10-19) and `newsBoard` reading the views (`story_view` removed), IAM applied. Not done: the Worker upload (the live Worker cannot serve `record/views/`, so no reader sees the views) and the board UI release (merged, not clicked in a browser). Not built: `newsRecordReview`, alarms on the Run objects.
 Facts are the system of record, five stages, content IDs, rebuild test: decision `0035-facts-are-the-system-of-record.md`; order of work: `plans/PLAN_2026-10-21_foundation.md`.
 
 #### Foundation: facts are the system of record
@@ -437,8 +435,8 @@ Review · Build · Serve**; Watch is a rule (every run writes a Run object). Ing
 Build follows each ingest and review, with no model. Design and the ten-stage mapping: `ARCHITECTURE_TIMELINE.md`; facts
 format `decisions/0036-facts-file-format.md`; views and serving `decisions/0037-views-from-facts.md`; order of work and
 live status `plans/PLAN_2026-10-21_foundation.md`. State on 2026-10-22: Ingest and Commit's facts are live; the views are built
-by `newsStoryRecord` (merged, not deployed, waits on IAM) and the Serve step (Worker allow-list, `newsBoard` reading the views,
-board UI) is merged but not deployed or released.
+by `newsStoryRecord` (deployed, `record/views/` built) and `newsBoard` reads them; the rest of Serve (Worker upload, board UI release)
+is not done.
 
 ## Cross-cutting concerns
 

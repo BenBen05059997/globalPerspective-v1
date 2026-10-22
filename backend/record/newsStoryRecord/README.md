@@ -33,7 +33,7 @@ After the facts and before the Run is finalised, `src/publish.js` reads every da
 | `counts/{date}.json` | `byStory` (stories with a nonzero count) and `total` of `newEntries`, `branchesDue`, `verdicts`; written for the previous and current ISO week up to today and for every day whose facts changed in the invocation |
 | `manifest.json` | `{schemaVersion, builtAt, runId, factsManifestDays, factsThrough, readingsThrough:null}` |
 
-`liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) has `record/shadow/*`, `record/facts/*` and `record/runs/*` only, and the deployed zip is the facts writer without this views step, so `record/views/` is empty. Deploying the views code before the IAM change would mark every Run `partial` (the view write fails after the facts).
+`liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) now includes `record/views/*`. First live build 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files.
 
 ## Event
 
@@ -49,11 +49,11 @@ The live schedule (rule `TriggerStoryRecord`, cron(45 23 * * ? *), i.e. 23:45Z) 
 
 ## Deployment
 
-Deployed 2026-10-21 (the facts writer, without the views step), registered in `scripts/functions.json` as group `record`; entry point `runtime.handler`, Node.js 22, reserved concurrency 1, scheduled by EventBridge rule `TriggerStoryRecord` cron(45 23 * * ? *), input `{"shadow":false}` (live since 2026-10-22; first run 2026-10-22 23:45Z). Its role may write `record/shadow/*`, `record/facts/*` and `record/runs/*`, not `record/views/*`. The coordinator deploys it; diff the deployed zip against the repo first (the repo now carries the views builder, merged 2026-10-22, not deployed).
+Deployed 2026-10-21 as the facts writer and redeployed 2026-10-22 with the views builder, links rule and exact entry time (CodeSha256 rAU3n3xPPkSDH9/pqjSXiET7YrLdUZxdteF3y2GUNZs=), registered in `scripts/functions.json` as group `record`; entry point `runtime.handler`, Node.js 22, reserved concurrency 1, scheduled by EventBridge rule `TriggerStoryRecord` cron(45 23 * * ? *), input `{"shadow":false}` (live since 2026-10-22; first run 2026-10-22 23:45Z). Its role may write `record/shadow/*`, `record/facts/*`, `record/runs/*` and `record/views/*`. The coordinator deploys it; diff the deployed zip against the repo first.
 
 - Environment: `WORLD_BUCKET`, `TOPICS_DDB_TABLE` (NewsCache), `PREDICTION_LOG_TABLE` (GlobalPerspectivePredictionLog). `SUMMARIZE_PREDICT_TABLE` is not needed: `world/` resolves it only for the thread-analysis reader, which this writer never calls (live default table names apply anyway). `RECORD_LLM_MODEL` is no longer read; no model key is needed.
 - The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code.
-- IAM (least privilege): DynamoDB `GetItem`, `BatchGetItem`, `Query` on the three tables, no writes, no scans. S3 `GetObject` on `record/*`; `PutObject` target: `record/facts/*`, `record/runs/*`, `record/views/*` and their `record/shadow/` equivalents. Live today: `record/shadow/*`, `record/facts/*`, `record/runs/*` (no `record/views/*` yet). Narrow `ListBucket` on those prefixes so a missing object is a 404, not a 403 (the code never lists).
+- IAM (least privilege): DynamoDB `GetItem`, `BatchGetItem`, `Query` on the three tables, no writes, no scans. S3 `GetObject` on `record/*`; `PutObject` target: `record/facts/*`, `record/runs/*`, `record/views/*` and their `record/shadow/` equivalents. Live today: `record/shadow/*`, `record/facts/*`, `record/runs/*`, `record/views/*`. Narrow `ListBucket` on those prefixes so a missing object is a 404, not a 403 (the code never lists).
 - Alarms (none built; parked by the operator 2026-10-22): no `record/facts/DATE.jsonl` by a fixed UTC time; a Run left at `started`; a Run with `inputs.archiveDay` `missing`; the model Lambda's daily average Duration under 10 s (the gap-day pattern).
 
 ## Schema and local run
@@ -109,4 +109,4 @@ node quality/check_docs.mjs
 
 Tests use scripted stores, a fake ETag-aware S3 and, for the `today-archive` cases, the real world readers over `world.fake.js`. `FRONTEND_NODE_MODULES` is needed only for the schema test (the frontend's Ajv).
 
-Last verified: 2026-10-22 (offline tests and local read-only dry runs for the views code, not deployed; schedule, role, environment and `record/facts/` read from live AWS the same day)
+Last verified: 2026-10-22 (deployed code hash, schedule, role, environment, `record/facts/` and `record/views/` read from live AWS; tests and dry runs offline). Live entries stay `precision: day`: archive rows since 2026-10-20 lack `publishedAt` (the DeepSeek outage), so the exact-time path has not had input yet

@@ -6,7 +6,7 @@ The member's personal board behind one Lambda Function URL: boards (pins, string
 - Live since 2026-10-20. Deployed name `newsBoard` · runtime `nodejs22.x` · 256 MB · 15 s · group `board` (scripts/functions.json) · zip ships node_modules. Role `newsBoard-role` (created 2026-10-20 with operator approval).
 - Trigger: Function URL (auth NONE; the JWT is checked in code). CORS belongs to the URL config and must stay populated: the code emits no `Access-Control-*` header.
 - Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `FIREBASE_PROJECT_ID`.
-- IAM (role `newsBoard-role`: `AWSLambdaBasicExecutionRole` + inline `newsBoard-dynamodb`): `dynamodb:GetItem|PutItem|DeleteItem|Query` on the SavedItems table; `GetItem|UpdateItem` on UserPrefs (only `followedThreads`/`followedActors` are SET); `GetItem|BatchGetItem|Query` read-only on SummarizeAndPredict; `GetItem` read-only on NewsCache; CloudWatch Logs. Nothing else (no S3, no other tables).
+- IAM (role `newsBoard-role`: `AWSLambdaBasicExecutionRole` + inline `newsBoard-dynamodb`): `dynamodb:GetItem|PutItem|DeleteItem|Query` on the SavedItems table; `GetItem|UpdateItem` on UserPrefs (only `followedThreads`/`followedActors` are SET); `GetItem|BatchGetItem|Query` read-only on SummarizeAndPredict; `GetItem` read-only on NewsCache; CloudWatch Logs. S3 read-only on the three `record/views/` keys above (policy `newsBoard-record`). Nothing else (no S3 write, no other tables).
 - Deploy: `scripts/lambda.sh newsBoard diff|package|deploy` (after creation; diff first).
 
 ## Reads / writes
@@ -46,9 +46,9 @@ Errors: 401 no/invalid token; 400 validation with a message (`code` `pin_budget_
 
 Last verified: 2026-10-20
 
-## Record views (decision 0037, merged 2026-10-22, not deployed)
+## Record views (decision 0037, deployed 2026-10-22)
 
-newsBoard reads three kinds of view file from S3, server-side only, through `src/recordViews.js`: `record/views/index/active.json` (every `get_board` and `update_board` response), `record/views/index/all.json` (only when a pinned thread is not in the active index; a merged story shows its survivor's row) and `record/views/links/<id>.json` (arrivals candidates). It no longer reads `record/index.json` or `record/stories/*`, and `story_view` is gone: the browser fetches `stories/<id>.json`, `links/<id>.json` and `counts/<date>.json` itself through the Worker's `/data/record/views/`. Missing files answer `recordAvailable:false`; access or parse failures propagate. No record write. `WORLD_BUCKET` defaults to `globalperspective-world-280362093938`. Needed before deployment (coordinator, not done here): `s3:GetObject` for `newsBoard-role` on `record/views/index/active.json`, `record/views/index/all.json` and `record/views/links/*`.
+newsBoard reads three kinds of view file from S3, server-side only, through `src/recordViews.js`: `record/views/index/active.json` (every `get_board` and `update_board` response), `record/views/index/all.json` (only when a pinned thread is not in the active index; a merged story shows its survivor's row) and `record/views/links/<id>.json` (arrivals candidates). It no longer reads `record/index.json` or `record/stories/*`, and `story_view` is gone: the browser fetches `stories/<id>.json`, `links/<id>.json` and `counts/<date>.json` itself through the Worker's `/data/record/views/`. Missing files answer `recordAvailable:false`; access or parse failures propagate. No record write. `WORLD_BUCKET` defaults to `globalperspective-world-280362093938`. Deployed 2026-10-22 (CodeSha256 5ZfOxSsi...) with `s3:GetObject` for `newsBoard-role` (policy `newsBoard-record`) on `record/views/index/active.json`, `record/views/index/all.json` and `record/views/links/*`.
 
 An index file is `{stories:[row]}` (a bare array is also accepted). Pin enrichment is response-only and facts only: `recordAvailable`, `born`, `lastMoved` (= row `lastFactAt`), `entryCount`, `counts.liveBranches` (= `liveBranchCount`), and `line: null`, `counts.chapters: null`, `counts.confirmedLinks: null`; `risk` is omitted until a dated reading exists. `update_board` strips all of these before validation and storage.
 

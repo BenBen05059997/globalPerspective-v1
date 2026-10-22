@@ -20,10 +20,10 @@ An agent working on the record does not write the other groups. Design: `project
 ## What the group owns
 
 Two writers, each the only writer of its files (design decided 2026-10-21):
-- `newsStoryRecord`: the facts writer, merged and deployed (2026-10-21), scheduled daily since 2026-10-22 (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. The views builder (0037; active index, links, daily counts) is merged in the repo (2026-10-22) but not deployed: the deployed zip is the facts writer without views, and its role may write only `record/shadow/*`, `record/facts/*` and `record/runs/*`.
+- `newsStoryRecord`: the facts writer, merged and deployed (2026-10-21), scheduled daily since 2026-10-22 (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. The views builder (0037; active index, links, daily counts, links rule and exact entry time) is deployed (2026-10-22, CodeSha256 rAU3n3xP...), and its role may write `record/shadow/*`, `record/facts/*`, `record/runs/*` and `record/views/*`.
 - `newsRecordReview` (planned): the weekly review, Friday night. Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, actor merges) and a Run object in `record/runs/YYYY-Www.json`. Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason.
 
-Views under `record/views/` are rebuilt from facts and readings (step 2; `record/views/` is empty until the builder is deployed and its role may write there). Dated objects are create-only; latest and index objects are replaceable pointers.
+Views under `record/views/` are rebuilt from facts and readings (step 2; built 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files). Dated objects are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 
@@ -35,4 +35,4 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Status
 
-2026-10-22: the facts writer is deployed and live (CodeSha256 from 2026-10-21), scheduled daily at 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing; first dry run: [DRYRUN.md](newsStoryRecord/DRYRUN.md)). The views builder is merged, not deployed (waits on `PutObject` for `record/views/*`). `newsRecordReview` does not exist yet. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.
+2026-10-22: the facts writer is deployed and live (redeployed 2026-10-22 with the views builder), scheduled daily at 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing; first dry run: [DRYRUN.md](newsStoryRecord/DRYRUN.md)). The views are built and live in S3 (`record/views/`), but no reader serves them yet: the Worker upload is still open. `newsRecordReview` does not exist yet. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.

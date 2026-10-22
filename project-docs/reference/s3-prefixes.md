@@ -92,6 +92,6 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
 | `record/runs/YYYY-Www.json` | `newsRecordReview` (planned) | weekly | monitoring (alarm signal), operator |
-| `record/views/…` | rebuilt: facts-only views by `newsStoryRecord` (builder merged 2026-10-22, not deployed; the role cannot write here yet and the prefix is empty), story readings by `newsRecordReview` (planned) | after each daily append / weekly run | board, pages, weekly |
+| `record/views/…` | rebuilt: facts-only views by `newsStoryRecord` (builder deployed 2026-10-22, role `record/views/*` granted; built that day: 519 stories), story readings by `newsRecordReview` (planned) | after each daily append / weekly run | board, pages, weekly |
 | `record/fixtures/golden-week/` | written by hand (operator), frozen | — | `newsRecordReview` re-runs and diffs |
 | `record/shadow/…` | `newsStoryRecord` on a manual `shadow:true` invoke (its default); also holds the retired old dry-run output (`index.json`, `stories/`, `timeline/`, `corrections/`) | manual only, no schedule | humans, tuning |

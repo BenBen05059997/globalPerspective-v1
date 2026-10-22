@@ -34,7 +34,7 @@ Ten stages in three speeds. `pipeline.json` is the machine-readable copy and dri
 | 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`); forecasts (`PRED#`) | threads, daily archive, forecasts, map pins | raw tables |
 | 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts (none written as of 2026-10-22) | raw tables, kept as cited input; revisit after two weekly runs |
 | 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only parser of raw tables |
-| 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder merged 2026-10-22 in `newsStoryRecord`, not deployed) | the facts |
+| 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder deployed 2026-10-22 in `newsStoryRecord`) | the facts |
 | | **Weekly, one full analysis, Friday night, in this order** | | | |
 | 6 | Review | `newsRecordReview` (new Lambda, `backend/record`) reads the week's facts per active story | `record/readings/YYYY-Www.jsonl`: chapters, branch status, lines, typed links, actor merges; `record/runs/YYYY-Www.json` | the readings |
 | 7 | Views | rebuilt from facts + readings (`backend/record`) | `record/views/stories/{id}.json`, `index/active.json` (any fact in 60 days), `index/all.json`, `links/{threadId}.json`, `counts/{date}.json`, `manifest.json` | what readers fetch |
@@ -132,7 +132,7 @@ Later: Situation (a group above stories), Place below country (coordinates), Ind
 Not needed now: country views.
 
 ## 5. Views and stores
-Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; `record/views/` is empty today: the builder is merged, not deployed), each with `schemaVersion: 1` and
+Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; built 2026-10-22 by the deployed builder: runId `2026-10-22-3`, 519 stories, `factsThrough` 2026-10-19), each with `schemaVersion: 1` and
 `builtFrom: {factsThrough, readingsThrough}`; reading-derived fields are `null` with a reason until the review exists.
 | View | Built from | Stored as | Read by |
 |---|---|---|---|
@@ -200,10 +200,7 @@ or a design, not an open defect.
 - **Other stages still swallow model errors** (plan Risks): only `newsInvokeGemini` and the agent now fail the run.
 - **Map ingest drops unclassified articles silently** and the tracker then closes pins for lack of data, so "no data" reads
   as "ended" (2026-10-20 audit; not re-checked; not in the plan's rows).
-- **Views, Worker and review: merged or not built** (steps 2-3). Merged 2026-10-22, not deployed: the views builder (`newsStoryRecord`;
-  its role cannot write `record/views/*`), `newsBoard` reading the views, the board UI, the `DATA_ALLOWED` line in the repo Worker.
-  Waiting on IAM and uploads: `newsStoryRecord-role` PutObject and `newsBoard-role` GetObject on `record/views/`, the Worker upload
-  and its reader IAM, the frontend release. Not built: `newsRecordReview`, golden-week fixture, `newsSystemsAnalysis` link field.
+- **Views deployed; Worker and review open** (steps 2-3). Deployed 2026-10-22 with IAM applied: the views builder (`newsStoryRecord`, with the links rule and exact entry time) and `newsBoard` reading the views. Not done: the Worker upload (live version cc57a42f cannot serve `record/views/`; the repo `worker.mjs` also carries an unreleased `/analyze` redirect that is not part of the planned upload) and the board UI release (not clicked in a browser). Live entries stay day precision because archive rows since 2026-10-20 lack `publishedAt`. Not built: `newsRecordReview`, golden-week fixture, `newsSystemsAnalysis` link field.
 - **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
   several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
 - **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
@@ -225,8 +222,8 @@ write and Build's read; stage 6 (review) is Review; stage 7 (views) is Build; st
 weekly is a view; stage 9 (delivery) is Serve; stage 10 (watch) is the Watch rule: every run writes a Run object, and a
 missing or empty Run is the alarm. Commit (forecasts, resolver verdicts) runs daily because a forecast is a dated commitment.
 
-Current state (2026-10-22): `newsStoryRecord` is the facts writer (deployed without the views builder, no model key), scheduled daily
+Current state (2026-10-22): `newsStoryRecord` is the facts writer (no model key), scheduled daily
 (`TriggerStoryRecord`, 23:45Z, live), and `record/facts` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing);
-the per-day model steps are removed. The views builder, `newsBoard`'s view reader and the Worker allowlist line are merged, not
-deployed; `newsRecordReview` is not built; board slice 1 and the old `newsBoard` are deployed, the new board UI is not released. Live checklist: the plan. A design discussion
+the per-day model steps are removed. `newsStoryRecord` was redeployed 2026-10-22 with the views builder (`record/views/` is built) and `newsBoard` with its view reader; the Worker
+upload (allowlist line) and the new board UI are not done; `newsRecordReview` is not built. Live checklist: the plan. A design discussion
 is not a build go-ahead: each step waits for its own go.

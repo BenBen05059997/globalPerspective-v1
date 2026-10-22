@@ -22,13 +22,18 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 |  +- inputs : candidate branch; record/facts days from the draw day + 1 to min(today, due + 3), read once each per run
 |  +- rule   : the forecast's own story's `entry` facts dated AFTER the draw day and up to due + 3 days; nothing before the draw,
 |  |           no other story, no web search. A facts day that fails to read means the question is not judged tonight
-|  +- output : evidence bundle, oldest first: [{eventId, title, summary, date, url}] (+ complete flag: every day read, story known)
+|  +- coverage: also reads record/runs/DAY.json for every day from the draw day + 1 to the due day (once each per run); a day
+|  |           without a Run of status ok|partial AND inputs.archiveDay present (missing, thin, started, failed, no Run, or an
+|  |           unreadable Run) is a coverage gap, logged by day
+|  +- output : evidence bundle, oldest first: [{eventId, title, summary, date, url}] (+ complete flag: every day read, story known;
+|  |           + coverageGaps [{day, why}])
 |
 +- 4 JUDGE       boxed model                         [newsPredictionResolver]   src/draft.js, src/lib.js
 |  +- inputs : branch event text + evidence bundle (never p)
 |  +- rule   : yes = verbatim quote >= 12 chars found by code in the title/summary of the entry it cites (eventId), then a 2nd
 |  |           independent pass (bundle in reverse order) also yes
-|  |           no = only after due + 3 days and only on a complete bundle; recorded with reason `not_reported_by_due`;
+|  |           no = only after due + 3 days, only on a complete bundle, and only with NO coverage gap (else not_yet, reason
+|  |           `coverage_gap`: our outage is not silence in the world); recorded with reason `not_reported_by_due`;
 |  |           void = only a VOID_REASONS entry; else not_yet (stays open)
 |  |           zero entries after the draw: not_yet before due + 3; after it a `no` made by rule, no model call
 |  +- model  : yes, at most 2 calls per check
@@ -69,6 +74,7 @@ New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows w
 - One path for all: the Monday-only draft pass is gone. `tick` runs WATCH -> RECORD every night; `draft` and `watch` (read-only) are the same pass on demand. A sampled question is just a flagged candidate (`sampled:true` on its verdict row); a SAMPLED row also feeds the pass when its PRED row is missing.
 - Own-entry evidence (operator decision 2026-10-22): the only evidence is the forecast's own story's `entry` facts, dated after the draw day (the PRED issue day) and up to due + 3 days. No web search, no Brave, no page fetching, nothing before the draw, no other story. `BRAVE_SEARCH_API_KEY` is no longer read: the operator can remove it from the Lambda env (not touched here).
 - A `no` is judged on a complete bundle only (every facts day in the window read, story identified by `threadId`); a sampled row without `threadId` can never be a `no`. A question with zero post-draw entries is `not_yet` until due + 3, then a `no` made by rule (`decidedBy: rule:no_entries_after_draw`, no model call). Choices of mine where the decision is silent: the draw day is the PRED issue day; the second pass shows the same bundle in reverse order; the judge cites an entry by `eventId`.
+- Coverage guard (lane Q, 2026-10-22): a `no`, rule-made or by the model, is allowed only if every day from the draw day + 1 to the due day has `record/runs/DAY.json` with `status` ok or partial and `inputs.archiveDay` `present`. Otherwise the draft is `not_yet` with `reason: 'coverage_gap'` and `gapDays`, and the gap days are logged (`coverage_gap` line, `out.coverageGaps`). An unreadable Run (for example no IAM grant) counts as a gap, so nothing is lost by the missing grant but no `no` can be made until it exists. A `yes` is unaffected (it needs a verified quote). A `coverage_gap` draft is not an unclear draft: it never counts toward voiding a question. The window ends at the due day (not due + 3) by the lane brief.
 - `issued_before_method` is not added to `VOID_REASONS`: the brief says "void only with VOID_REASONS" and nothing in the nightly path assigns it.
 - Void after unclear drafts: only drafts made at or after due + 3 days, at least 5 days apart, count toward `MAX_UNCLEAR_DRAFTS` (3). Without this, a story that moves nightly would void a question in three days.
 - A question is checked at most once per UTC day; an age-only candidate waits 5 days (`REDRAFT_AFTER_DAYS`) between checks, a moved one does not.
@@ -85,10 +91,12 @@ New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows w
 - Alarms: verdicts per day, void share, two-pass disagreement (`needs_human` drafts), `settle errors` log lines, candidates `overflow` > 0 for several nights, candidates past due + 3 with no draft.
 - Lane O: `newsStoryRecord` reads `record/inbox/verdicts/` (or widens its verdict reader to non-sampled questions) and uses `decidedBy`, `reason`, `evidence {eventId, quote, date}` (the entry's eventId resolves to its url in the facts).
 
+- IAM (lane Q, needs the operator): `s3:GetObject` on `arn:aws:s3:::globalperspective-world-280362093938/record/runs/*` for the resolver role. Until then every Run is unreadable, so every `no` is held as `coverage_gap` (honest, but no `no` is made).
+
 ## Judge benchmark
 Any change to the judge model, prompt or rules must pass the judge benchmark described in `project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md` (Verification, Judge benchmark) before deploy; the runner is planned under `bench/` and reuses this judge code unchanged.
 
 ## Tests
-- `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 78 passed, 1 skipped (store-interface test skips without the AWS SDK on NODE_PATH), 2026-10-22.
+- `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 85 passed, 1 skipped (store-interface test skips without the AWS SDK on NODE_PATH), 2026-10-22.
 
 Last verified: 2026-10-22 against code on branch lane/resolve (not deployed; live deployed 2026-10-20 15:24Z still runs the Monday draft pass; zero `VERDICT` rows so far)

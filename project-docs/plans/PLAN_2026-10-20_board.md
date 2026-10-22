@@ -258,7 +258,7 @@ Arrivals require an actual strong confirmed record link plus nonempty existing c
 ## 2026-10-21 design change: two clocks
 Operator decision: the record separates facts (daily, no model, append-only) from readings (weekly, with hindsight,
 append-only, citing facts, superseding earlier readings). `newsStoryRecord` becomes the facts writer; chapters, branch
-status, lines, typed links and actor merges move to a new weekly `newsRecordReview` (Friday night), with a Run object per
+status, lines, typed links and actor merges move to a new weekly `newsRecordReview` (Monday 01:00 UTC, after the week ends), with a Run object per
 period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order of work is in `PLAN_2026-10-21_foundation.md`. For the board: slice 2 shows the pins' daily counts and the
 unsettled zone ("too early to call, N new entries") until readings exist; the settled past, tree zoom and board weekly read
 readings once `newsRecordReview` has run (step 5). Board UI is not yet released.

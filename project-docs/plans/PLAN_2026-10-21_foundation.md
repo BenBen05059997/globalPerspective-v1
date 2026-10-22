@@ -95,7 +95,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 |---|---|---|---|---|
 | Decision written (reading object, merges, aliases, golden week) | coordinator | no | ☑ | decision 0039; `architecture/ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Golden-week fixture `backend/record/newsRecordReview/fixtures/golden-week/` (facts 2026-10-13..19) | lane U | no | ☑ | lane U merged: `backend/record/newsRecordReview/fixtures/golden-week/`, 29 of 103 active stories, 462 facts, 1.36 MB, seed 20261019; 12 duplicate-candidate pairs (clearest: three Amazon-deforestation stories, two Canadian base-fire stories); expected readings not yet drafted |
-| `newsRecordReview` SELECT..WRITE: readings, review Run, inbox merges; one call per active story | lane S | IAM, schedule, model key: yes | ☐ | not started |
+| `newsRecordReview` SELECT..WRITE: readings, review Run, inbox merges; one call per active story | lane S | IAM, schedule, model key: yes | ◐ | lane S merged (46 tests, stub model): select, assemble, boxed read, citation check, readings + review Run + merge inbox; NOT deployed: needs functions.json entry, role (GetObject record/*, PutObject record/readings/*, record/runs/review-*, record/inbox/merges/* + shadow), env REVIEW_MODEL, schedule Monday 01:00 UTC, DeepSeek, golden-week score |
 | `newsStoryRecord` reads readings, inbox merges, `story_split`, aliases | lane T | no | ☐ | not started |
 | Golden-week expected readings by two Opus agents + operator check | coordinator | operator check | ☐ | not started |
 | First live review run | coordinator | no | ☐ | waits on DeepSeek top-up and golden-week score |
@@ -160,3 +160,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: frontend released (legacy Pages, e6b70aa9). Brave key removal deferred: the deployed resolver still uses it; remove it in the same step as deploying the new resolver.
 - 2026-10-22: decision 0039 written (weekly review: model, merges, aliases, golden week); step 3 rows split into lanes S, T, U; `ARCHITECTURE_WEEKLY_REVIEW.md` added.
 - 2026-10-22: golden week fixture merged (lane U). Found 14 forecast-only stories (no entry, no birth): a record gap to diagnose.
+- 2026-10-22: lanes S (weekly reader) and T (views from readings) merged; golden-week expected readings drafted by two Opus reviewers (same 3 merges, same split candidates; disagree on one link direction and one shared-cause link). Review schedule moved to Monday 01:00 UTC (spec error: a Friday run reads the previous week).

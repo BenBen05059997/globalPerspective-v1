@@ -76,7 +76,7 @@ Ten stages in three speeds. `pipeline.json` is the machine-readable copy and dri
 | 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts (none written as of 2026-10-22); forecast loop design: [ARCHITECTURE_FORECAST_LOOP.md](ARCHITECTURE_FORECAST_LOOP.md) | raw tables, kept as cited input; revisit after two weekly runs |
 | 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only parser of raw tables |
 | 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder deployed 2026-10-22 in `newsStoryRecord`) | the facts |
-| | **Weekly, one full analysis, Friday night, in this order** | | | |
+| | **Weekly, one full analysis, Monday 01:00 UTC after the ISO week ends, in this order** | | | |
 | 6 | Review | `newsRecordReview` (new Lambda, `backend/record`) reads the week's facts per active story | `record/readings/YYYY-Www.jsonl`: chapters, branch status, lines, typed links, actor merges; `record/runs/YYYY-Www.json` | the readings |
 | 7 | Views | rebuilt from facts + readings (`backend/record`) | `record/views/stories/{id}.json`, `index/active.json` (any fact in 60 days), `index/all.json`, `links/{threadId}.json`, `counts/{date}.json`, `manifest.json` | what readers fetch |
 | 8 | Weekly report | `backend/weekly` reads the week's readings | `weekly/YYYY-MM-DD.json` | a view of the readings, not a separate analysis |

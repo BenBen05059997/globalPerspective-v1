@@ -5,7 +5,7 @@ The weekly review. For the ISO week that ended, every active story gets one boxe
 ## The loop
 
 ```text
-WEEKLY REVIEW LOOP  (Friday 22:00 UTC · one call per active story · decision 0039)
+WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per active story · decision 0039)
 |
 +- 1 SELECT     no model            [newsRecordReview]
 |  +- inputs : record/views/index/active.json, record/views/manifest.json (must be built for the week's last day)
@@ -75,7 +75,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 
 ## Choices
 
-- Default week is the ISO week that ended before now, as the spec says. Run on Friday 22:00 UTC this is the week before the current one, so a reading lands about 5 days after its week ends. Run it with `week` set to the current week for a same-day review of an unfinished week; the manifest check then fails until the facts reach Sunday.
+- Default week is the ISO week that ended before now. The schedule is Monday 01:00 UTC so that is the week that just ended (coordinator, 2026-10-22: the Friday slot in the first spec read the previous week).
 - Readings of earlier weeks are found by reading the 8 previous weekly files (there is no listing and no readings manifest). A thing last read more than 8 weeks ago has no `supersedes` link.
 - A story skipped for no new fact keeps its older readings; a re-run of a week replaces only the stories it read. `covers.to` is the week's Sunday, and "since the last reading" means entry or verdict facts dated after that Sunday.
 - The skip rule counts `entry` and `verdict` facts only; a verdict on a branch is the exception to "no new fact" and always brings a story back.
@@ -90,7 +90,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 
 - `scripts/functions.json` entry: `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record`, Node runtime, timeout 900 s, memory 512 MB.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
-- Schedule: Friday 22:00 UTC, `cron(0 22 ? * FRI *)`, payload `{"shadow":false}` once the golden-week score passes.
+- Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` once the golden-week score passes.
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.
 - Deploy with `scripts/lambda.sh` (diff first). Needs the DeepSeek top-up and the golden-week score before the first live run.
 - `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. 900 s may not fit 100+ stories at 6 in flight; watch the first live Run's `notReached` and raise concurrency or split the run by `threadIds`.

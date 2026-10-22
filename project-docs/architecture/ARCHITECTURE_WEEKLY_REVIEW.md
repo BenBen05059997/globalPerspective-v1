@@ -7,7 +7,7 @@ Facts say what happened each day. They do not say what a story means, which chap
 
 ## 2. The loop
 ```text
-WEEKLY REVIEW LOOP  (Friday 22:00 UTC · one call per active story · decision 0039)
+WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per active story · decision 0039)
 |
 +- 1 SELECT     no model            [newsRecordReview]
 |  +- inputs : record/views/index/active.json, record/views/manifest.json (must be built for the week's last day)

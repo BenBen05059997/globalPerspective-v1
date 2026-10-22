@@ -23,7 +23,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - `WeeklyPage.jsx` - Stories page; `components/Stories*.jsx` are its header, filters and the views (feed, board, timeline, web, changed-since-visit)
 - `ThreadPage.jsx` - arc page; `components/StoryMode.jsx` (desktop) and `PhoneStoryMode.jsx` (phone); tabs Overview, Timeline, Actors, Sources
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY` is set, else `WeeklyFallbackMap`
-- `components/ThreadForecast.jsx`, `ThreadIntelligence.jsx`, `FedIntoList.jsx`, `SharedActorsList.jsx` - forecast, analysis and story-link blocks
+- `components/ThreadForecast.jsx` (outcome wording: open / happened / not reported / awaiting check; the intro promises no check by a deadline, 0038), `ThreadIntelligence.jsx`, `FedIntoList.jsx`, `SharedActorsList.jsx` - forecast, analysis and story-link blocks
 - `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (story links)
 - Public API (`index.js`): `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`,
   `deriveFromIndex` (used by map). `WeeklyMap` is not exported: countries lazy-imports it by path.

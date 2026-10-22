@@ -186,7 +186,7 @@ export default function TrackRecordPage() {
             [counts.resolved, `Resolved (${counts.yes} happened, ${counts.no} didn't)`],
             [counts.void, 'Void'],
             [counts.awaiting, 'Open, deadline still ahead'],
-            [counts.pastDeadlineUnchecked, 'Past deadline, not checked'],
+            [counts.pastDeadlineUnchecked, 'Awaiting check'],
             [view.pilotCount, 'July pilot (archived; method flawed)'],
           ].map(([num, label]) => (
             <Card key={label} className="tr-stat"><span className="tr-stat-num">{num}</span><span className="tr-stat-label">{label}</span></Card>
@@ -229,7 +229,7 @@ export default function TrackRecordPage() {
             <ul className="tr-pilot-list">
               {view.pilot.map((r, i) => (
                 <li key={i}>
-                  <b>{r.verdict === 'fired' ? '✓ happened' : '✗ didn’t happen'}:</b> {r.trigger}
+                  <b>{r.verdict === 'fired' ? '✓ happened' : '✗ not reported'}:</b> {r.trigger}
                   {r.citation && /^https?:\/\//.test(r.citation) && <> (<a href={r.citation} target="_blank" rel="noreferrer">source</a>)</>}
                 </li>
               ))}

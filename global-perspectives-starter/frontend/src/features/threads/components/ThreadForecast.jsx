@@ -28,9 +28,9 @@ function triggerState(t) {
 const MARK = { fired: '✓', notfired: '✗', unclear: '–', awaiting: '⌛', pending: '☐' };
 const TAG = {
   fired: 'happened',
-  notfired: "didn't happen",
+  notfired: 'not reported',
   unclear: 'unclear',
-  awaiting: 'past deadline, not checked',
+  awaiting: 'awaiting check',
   pending: null,
 };
 
@@ -53,10 +53,10 @@ export default function ThreadForecast({ snapshot }) {
     <div className="tp-ai-block tp-fc">
       <SectionHeader as="h3" label={`Living forecast${snapshot.generatedAt ? ` · as of ${fcDay(snapshot.generatedAt.slice(0, 10))}` : ''}`} />
       <p className="tp-fc-intro">
-        Dated, falsifiable triggers logged when the forecast was made. Each is checked as its
-        deadline passes — <span className="tp-fc-k pending">☐ open</span>,{' '}
+        Dated, falsifiable triggers logged when the forecast was made. Each outcome is checked
+        against our own reporting on this story after it is drawn — <span className="tp-fc-k pending">☐ open</span>,{' '}
         <span className="tp-fc-k fired">✓ happened</span>,{' '}
-        <span className="tp-fc-k notfired">✗ didn&apos;t</span>.
+        <span className="tp-fc-k notfired">✗ not reported</span>.
         {total > 0 && <> {resolved}/{total} resolved so far.</>}
       </p>
 

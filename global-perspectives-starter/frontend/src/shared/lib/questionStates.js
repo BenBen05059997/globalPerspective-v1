@@ -2,23 +2,19 @@
 // panel, the text page and the story chips. The states come from the server (`questions.sampled[]`
 // and `prediction_snapshot`): yes / no / void once a person confirmed it, else awaiting, or
 // past_deadline_unchecked once the deadline has passed with no verdict.
-// A passed deadline is NEVER "awaiting" and NEVER inferred as a miss.
+// A passed deadline is NEVER "awaiting" and NEVER inferred as a miss; it reads "awaiting check".
+// A "no" is a claim about our own coverage ("not reported"), never "didn't happen".
 
 export const STATE_META = {
   yes: { glyph: '✓', label: 'Happened', short: 'happened', kind: 'yes' },
-  no: { glyph: '✗', label: 'Didn’t happen', short: 'didn’t happen', kind: 'no' },
-  void: { glyph: '◌', label: 'Void', short: 'void', kind: 'void' },
+  no: { glyph: '✗', label: 'Not reported', short: 'not reported', kind: 'no' },
+  void: { glyph: '◌', label: 'Could not be checked', short: 'could not be checked', kind: 'void' },
   awaiting: { glyph: '▢', label: 'Awaiting', short: 'awaiting', kind: 'awaiting' },
-  past_deadline_unchecked: { glyph: '▢', label: 'Past deadline, not checked', short: 'past deadline, not checked', kind: 'past' },
+  past_deadline_unchecked: { glyph: '▢', label: 'Awaiting check', short: 'awaiting check', kind: 'past' },
 };
 
-export const VOID_REASON_LABEL = {
-  ambiguous_criterion: 'the question could not be judged as worded',
-  source_unavailable: 'the named source was unavailable',
-  event_moot: 'the situation changed so the question no longer applied',
-  duplicate: 'a duplicate of another question',
-  criterion_met_at_issue: 'the criterion was already met when it was issued',
-};
+// Void reasons are worded once, in branchWording (0038); re-exported so question surfaces share them.
+export { VOID_REASON_WORDS as VOID_REASON_LABEL } from '@/shared/lib/branchWording.js';
 
 export function stateMeta(state) {
   return STATE_META[state] || null;

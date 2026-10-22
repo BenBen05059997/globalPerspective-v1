@@ -41,7 +41,7 @@ function QuestionDetail({ item }) {
         {item.resolutionSource ? ` · source: ${item.resolutionSource}` : ''}
         {item.deadline ? ` · by ${fmtDay(item.deadline)}` : ''}
       </span>
-      {st === 'void' && item.voidReason && <span className="tr-fb-meta">Void: {VOID_REASON_LABEL[item.voidReason] || item.voidReason}.</span>}
+      {st === 'void' && item.voidReason && <span className="tr-fb-meta">Could not be checked{VOID_REASON_LABEL[item.voidReason] ? ` · ${VOID_REASON_LABEL[item.voidReason]}` : ''}.</span>}
       {quote && <span className="tr-fb-quote">&ldquo;{quote}&rdquo;</span>}
       {url && /^https?:\/\//.test(url) && <a href={url} target="_blank" rel="noreferrer" className="tr-fb-cite">source →</a>}
       <ForecastLinks item={item} className="tr-fb-links" />

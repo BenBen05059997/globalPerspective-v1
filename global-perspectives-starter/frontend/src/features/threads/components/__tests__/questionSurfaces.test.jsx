@@ -34,13 +34,18 @@ describe('WATCH slide', () => {
 
 describe('ThreadForecast (story page)', () => {
   const snapshot = (triggers) => ({ generatedAt: '2026-10-06T05:00:00Z', scenarios: [{ label: 'Most Likely', probability: 0.6, triggers }] });
-  it('shows a chip per question and states past-deadline in words', () => {
+  it('intro promises no check by a deadline', () => {
+    render(<MemoryRouter><ThreadForecast snapshot={snapshot([{ id: '0-0', text: 'Q', deadline: '2026-10-20', verdict: null }])} /></MemoryRouter>);
+    expect(screen.getByText(/Each outcome is checked against our own reporting on this story after it is drawn/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/checked as its|didn.t/);
+  });
+  it('shows a chip per question and states a passed deadline as awaiting check', () => {
     const t1 = { id: '0-0', text: 'Q one', deadline: '2026-10-20', question: true, qid: 'a', p: 62, source: 'AP', scoring: 'sampled', state: 'past_deadline_unchecked', verdict: null };
     const t2 = { id: '0-1', text: 'Q two', deadline: '2026-11-20', question: true, qid: 'b', p: 30, source: 'Reuters', scoring: 'not_sampled', state: null, verdict: null };
     render(<MemoryRouter><ThreadForecast snapshot={snapshot([t1, t2])} /></MemoryRouter>);
     const chips = screen.getAllByTestId('question-chip').map((c) => c.textContent);
-    expect(chips).toEqual(['62% · source: AP · past deadline, not checked', '30% · source: Reuters · not in a scored sample']);
-    expect(screen.getAllByText(/past deadline, not checked/).length).toBeGreaterThan(0);
+    expect(chips).toEqual(['62% · source: AP · awaiting check', '30% · source: Reuters · not in a scored sample']);
+    expect(screen.getAllByText(/awaiting check/).length).toBeGreaterThan(0);
     // each question links to its track-record entry and carries its anchor id
     expect(screen.getByRole('link', { name: 'Q one' })).toHaveAttribute('href', '/track-record?q=a');
     expect(screen.getByRole('link', { name: 'Q two' }).closest('li')).toHaveAttribute('id', 'q-b');

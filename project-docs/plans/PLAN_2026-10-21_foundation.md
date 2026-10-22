@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): step 1 live and scheduled; step 2 building in lanes J (views builder) and K (board reads views)
+Status: active (2026-10-22): step 1 live and scheduled; step 2 merged, deploy waits on IAM; step 2b quality gaps opened (lane L building the links rule and exact times)
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -78,6 +78,17 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | lane K merged 9717b849 (verify passes, unsettled zone, 0037 empty texts); not clicked in a browser, not released |
 | Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
 
+### Step 2b. Record quality gaps found 2026-10-22 (live facts and tables)
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Links rule: sources never count, 5% specificity, 14-day window, `daysApart`, "shares" label (0037 amendment) | lane (record) | no | ☐ | dry run: 25,615 rows, 14,655 outlet-only, USA in 5,873 pairs |
+| Entry `at` = earliest source `publishedAt`, precision exact (0036 amendment); world reader exposes `publishedAt`/`outlet` | lane (record) | no | ☐ | all 929 entries are day precision |
+| **Forecast loop is open**: 7,440 branches drawn, 870 past due, 45 questions committed, 0 verdict rows in GlobalPerspectivePredictionLog ever; resolver ticks commit nothing | design (pipeline + record) | decision | ☐ | scan 2026-10-22; resolver log 2026-10-15 `committed:[] drawn:0` |
+| Story continuity: median story has 1 entry (140 of 401 have 2+); merges never fed | design (review, step 3) | decision | ☐ | live facts 2026-10-22 |
+| Actor identity: 498 name IDs, 355 singletons, spelling variants; alias table (operator JSON > Wikidata) applied in views | lane (record) after decision | no | ☐ | e.g. `lula da silva` ×2, `klitschko` ×2 |
+| Place below country not recorded; eventType missing on 23% of entries, `other` on 11% | pipeline | no | ☐ | live facts 2026-10-22 |
+| Actor and place backfill for pre-2026-09-12 stories as readings with citations (first job of the review) | lane (review, step 3) | model key: yes | ☐ | 159 stories without actors, 106 without a country |
+
 ### Step 3. Review Lambda `newsRecordReview` (weekly)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
@@ -139,3 +150,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: schedule `TriggerStoryRecord` created (EventBridge rule, not Scheduler: the existing Scheduler roles may only invoke the agent, and a new role is an IAM change). Alarms parked by the operator. Docs consolidated: ARCHITECTURE_TIMELINE.md is the single record doc (0d850be5).
 - 2026-10-22: operator go for all of step 2. Lanes J (`lane/views`, backend/record views builder) and K (`lane/board3`, newsBoard + board UI + Worker allowlist line) opened in parallel on Sonnet; briefs in the mailbox prompts. IAM, Worker upload, deploys and the frontend release stay with the coordinator.
 - 2026-10-22: lanes J and K merged. Lane J notes for the operator: 499 of 519 stories hit the 50-link cap and 61% of link rows rest on one shared ground (a shared country or big outlet), so `links/` is mostly weak signal; survivors take merged entries but not forks (0037 says entries). Live steps wait on three IAM changes the session classifier blocks.
+- 2026-10-22: record profiled against live data (step 2b rows). Biggest finding: no verdict has ever been written, so the forecast loop is open; needs a design decision before step 3's branch status. Lane L opened (links rule, exact times); docs audit and forecast design research run in parallel on Sonnet.

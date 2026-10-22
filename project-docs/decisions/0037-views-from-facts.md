@@ -1,6 +1,6 @@
 # 0037. Views rebuilt from facts: files, builder, serving, contract
 
-Status: accepted (implements step 2 of 0035; `ARCHITECTURE_TIMELINE.md` §5 and §6 are narrowed by this record where they differ)
+Status: accepted, links rule amended 2026-10-22 (implements step 2 of 0035; `ARCHITECTURE_TIMELINE.md` §5 and §6 are narrowed by this record where they differ)
 Date: 2026-10-21
 
 ## Context
@@ -29,7 +29,13 @@ All under `record/views/` (shadow: `record/shadow/views/`, same names). Every vi
 - Row order: `lastFactAt` descending, then `threadId`.
 - **Size.** `active.json` is small by construction (60 days). `all.json` target under 2 MB; hard cap 5 MB. Over 5 MB the builder fails the run (`failures:[{stage:'views'}]`) rather than truncate. The fix, when it is needed, is a decision: shard to `index/all-YYYY.json` by year of `born` and make `all.json` a list of shard keys. Not built now.
 
-**Links view** `{threadId, links:[{otherThreadId, sharedActorIds[], sharedIso3[], sharedSourceIds[], grounds}], confirmedLinks:[], confirmedLinksReason:"no reading yet"}`. `grounds` = the count of the three shared lists that are non-empty (0 to 3); rows with 0 are dropped; sorted by `grounds` then `otherThreadId`; max 50 per story. Pairs are formed within the active index only (one pass over an inverted index of actor, iso3 and source IDs). These are shared facts, not judged links, and the page must not call them links of cause (0012).
+**Links view** `{threadId, links:[{otherThreadId, sharedActorIds[], sharedIso3[], sharedSourceIds[], grounds, daysApart}], confirmedLinks:[], confirmedLinksReason:"no reading yet"}`.
+Amended 2026-10-22 (operator) after the first dry run over 519 stories produced 25,615 rows, 57% of them resting only on a shared outlet (23 outlets exist) and the USA alone in 5,873 pairs:
+- **Sources never count.** `sharedSourceIds` is kept for information; `grounds` counts only actors and countries.
+- **Specificity.** A shared actor or iso3 counts as a ground only if fewer than 5% of the stories in `index/active.json` carry it (computed per build from the active index; the threshold is a constant in `views.js`). Background IDs such as `USA` or `name:donald trump` therefore never link two stories on their own.
+- **Near in time.** Both stories must have a fact within 14 days of each other (`|lastFactAt(a) - lastFactAt(b)| <= 14 days`, by `date`); `daysApart` records the gap. Long-range connections are readings (step 3, `confirmedLinks`), not cheap links.
+- **Order and cap.** Rows with `grounds` 0 are dropped; sort by the rarest shared ID (lowest share of active stories) then `otherThreadId`; max 50 per story. Pairs are formed within the active index only (one pass over an inverted index of actor and iso3 IDs).
+These are shared facts, not judged links. The UI labels them "shares: <names>, N days apart" and must not call them links (0012).
 
 **Story view** (facts projection):
 ```

@@ -70,4 +70,20 @@ function dropRepeatTopics(topics, earlierTitles) {
   return { topics: keptTopics, dropped };
 }
 
-module.exports = { collapseSameEvent, dropRepeatTopics, titleTokens, jaccard, titleNumbers, PRE_JACCARD, POST_JACCARD };
+/** Keep the newest `n` items of each feed (by publishedAt, items without a date after dated ones, feed order breaks ties).
+ *  The input order is kept. Items without a feed name share one group. */
+function newestPerFeed(articles, n) {
+  const byFeed = new Map();
+  (articles || []).forEach((a, i) => {
+    const k = a.feed || a.source || '';
+    if (!byFeed.has(k)) byFeed.set(k, []);
+    byFeed.get(k).push({ a, i, t: a.publishedAt ? Date.parse(a.publishedAt) : -Infinity });
+  });
+  const keep = new Set();
+  for (const rows of byFeed.values()) {
+    rows.sort((x, y) => (y.t - x.t) || (x.i - y.i)).slice(0, n).forEach((r) => keep.add(r.i));
+  }
+  return (articles || []).filter((_, i) => keep.has(i));
+}
+
+module.exports = { newestPerFeed, collapseSameEvent, dropRepeatTopics, titleTokens, jaccard, titleNumbers, PRE_JACCARD, POST_JACCARD };

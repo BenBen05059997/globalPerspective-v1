@@ -37,7 +37,7 @@ const FIXTURES = path.join(__dirname, 'fixtures', 'feeds');
 const NOW = '2026-10-22T12:00:00.000Z';
 
 /** Runs the handler once. opts: env, s3 (FakeS3), failPuts, topics(urls) -> model topics, archive: {[date]: [titles]}, seen: [titles]. */
-async function runHandler({ env = {}, s3 = new FakeS3(), topics, archive = {}, seen = [], modelError } = {}) {
+async function runHandler({ feedXml, env = {}, s3 = new FakeS3(), topics, archive = {}, seen = [], modelError } = {}) {
   const events = s3.events;
   const { client, GetObjectCommand, PutObjectCommand } = s3.makeClient();
   const prompts = [];
@@ -55,7 +55,7 @@ async function runHandler({ env = {}, s3 = new FakeS3(), topics, archive = {}, s
   const fetchMock = async (url) => {
     const { RSS_FEEDS } = mod._internal;
     const feed = RSS_FEEDS.find((f) => f.url === url);
-    const xml = fs.readFileSync(path.join(FIXTURES, `${feed.name.replace(/\W+/g, '_')}.xml`), 'utf8');
+    const xml = feedXml ? feedXml(feed) : fs.readFileSync(path.join(FIXTURES, `${feed.name.replace(/\W+/g, '_')}.xml`), 'utf8');
     return { ok: true, status: 200, text: async () => xml };
   };
   const mod = loadIndex({

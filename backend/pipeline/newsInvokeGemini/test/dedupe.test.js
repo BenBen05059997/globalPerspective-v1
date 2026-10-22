@@ -63,3 +63,10 @@ test('post: no earlier titles keeps everything', () => {
   const t = [{ title: 'Anything' }];
   assert.deepEqual(dropRepeatTopics(t, []).topics, t);
 });
+
+test('newestPerFeed: keeps the newest n per feed, input order kept, undated items last', () => {
+  const { newestPerFeed } = require('../src/dedupe');
+  const mk = (feed, n, publishedAt) => ({ feed, title: `${feed}${n}`, publishedAt });
+  const list = [mk('A', 1, '2026-10-22T01:00:00Z'), mk('A', 2, '2026-10-22T03:00:00Z'), mk('A', 3, null), mk('A', 4, '2026-10-22T02:00:00Z'), mk('B', 1, null)];
+  assert.deepEqual([...newestPerFeed(list, 2)].map((x) => x.title), ['A2', 'A4', 'B1']);
+});

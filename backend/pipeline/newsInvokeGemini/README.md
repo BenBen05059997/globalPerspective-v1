@@ -45,11 +45,12 @@ Before any model call the run appends every fetched item (the url-deduped pool, 
 - Collapse uses the 0.6 Jaccard from the brief; the post-model drop uses 0.5 (the audit's method) because topic titles are model-written paraphrases. Both ignore a short stop-word list and thousands separators.
 - The post-model check reads `seen-today` (24 h) plus archive rows dated yesterday or today, so a topic from an earlier run today is caught before the analysis agent has archived it.
 - The "fill the limit" sentence in the 24h dedup block of the prompt was removed with the quota; a previously covered topic is allowed only for a significant new development.
-- Entity decoding applies to titles and snippets, not to `url`: the `&amp;` inside BBC links is kept as fetched so entry ids (sha1 of the canonical url) do not change across the deploy.
+- Known wart: entity decoding applies to titles and snippets, not to `url`. BBC links keep a literal `&amp;` as fetched, so their canonical urls contain `amp;at_campaign`; kept on purpose so entry ids (sha1 of the canonical url) do not change across the deploy.
+- Fetch cap vs prompt pool (decision 0040 answer 2): `FEED_FETCH_CAP = 25` items per feed are fetched and captured; after collapse, `PROMPT_POOL_PER_FEED = 8` (newest by publishedAt, undated last) per feed go to the model. The full fetched pool still serves source validation and enrichment.
 - The inbox write uses `process.env.WORLD_BUCKET`, falling back to the bucket name already hard-coded for `audit/ingest-capture`.
 
 ## Tests
-- `cd backend/pipeline/newsInvokeGemini && node --test` (offline, no AWS SDK needed): `src/*.test.js` (source fields, scheduled failure) and `test/` (parser on a 26-feed fixture set in `test/fixtures/feeds/`, prompt text, dedupe, raw capture and the whole handler with a fake S3, model and DynamoDB). 42 pass on 2026-10-22.
+- `cd backend/pipeline/newsInvokeGemini && node --test` (offline, no AWS SDK needed): `src/*.test.js` (source fields, scheduled failure) and `test/` (parser on a 26-feed fixture set in `test/fixtures/feeds/`, prompt text, dedupe, raw capture and the whole handler with a fake S3, model and DynamoDB). 44 pass on 2026-10-22.
 - `cd src && node test_enrichment.js` (offline). Passed 23/23 on 2026-10-19.
 
 Last verified: 2026-10-22

@@ -9,7 +9,7 @@ function canonicalIso3(values, log = console.warn) {
 }
 
 const { chat } = require('./_shared/llm');
-const { collapseSameEvent, dropRepeatTopics } = require('./dedupe');
+const { collapseSameEvent, dropRepeatTopics, newestPerFeed } = require('./dedupe');
 const { captureRawArticles } = require('./rawCapture');
 const { makeS3Json } = require('./_shared/s3json');
 const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
@@ -122,7 +122,10 @@ async function readPastArchiveTitles(days) {
 // ============================================================
 // RSS FEEDS - Free, fast, no rate limits
 // ============================================================
-const MAX_ARTICLES_PER_FEED = 8;
+// Fetch up to 25 items per feed so raw capture sees them all (decision 0040 answer 2); the model's candidate pool
+// stays at the previous size: the newest 8 per feed (PROMPT_POOL_PER_FEED), chosen after dedupe.
+const FEED_FETCH_CAP = 25;
+const PROMPT_POOL_PER_FEED = 8;
 
 const RSS_FEEDS = [
   // --- Existing (global / Asia / South Asia) ---
@@ -376,7 +379,7 @@ async function fetchRssFeeds() {
         }
 
         const xml = await response.text();
-        const articles = parseRssXml(xml, feed.source).slice(0, MAX_ARTICLES_PER_FEED).map((a) => ({ ...a, feed: feed.name }));
+        const articles = parseRssXml(xml, feed.source).slice(0, FEED_FETCH_CAP).map((a) => ({ ...a, feed: feed.name }));
         console.log(`RSS ${feed.name}: ${articles.length} articles`);
         return articles;
       } catch (err) {
@@ -684,8 +687,9 @@ exports.handler = async (event) => {
     let prompt;
     if (allArticles && allArticles.length > 0) {
       // One prompt row per event; the full pool stays for URL validation and source enrichment.
-      const { items: promptArticles, collapsed } = collapseSameEvent(allArticles);
-      if (collapsed) console.log(`DEDUPE: ${collapsed} feed items collapsed into the same event (${promptArticles.length} rows to the model)`);
+      const { items: collapsedArticles, collapsed } = collapseSameEvent(allArticles);
+      const promptArticles = newestPerFeed(collapsedArticles, PROMPT_POOL_PER_FEED);
+      console.log(`DEDUPE: ${collapsed} feed items collapsed into the same event; ${promptArticles.length} of ${allArticles.length} fetched items go to the model (newest ${PROMPT_POOL_PER_FEED} per feed)`);
       prompt = buildSelectionPrompt({ articles: promptArticles, limit, seenEntries, pastArchiveTitles });
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');

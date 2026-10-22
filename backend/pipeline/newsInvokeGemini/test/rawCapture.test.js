@@ -112,3 +112,16 @@ test('handler (W3): a topic repeating an entry of yesterday is dropped; one with
   const titles = written.find((i) => i.id === 'staging').topics.map((t) => t.title);
   assert.deepEqual(titles, ['Boat capsizes off Djibouti killing 139', 'Totally fresh event in Chile']);
 });
+
+test('W7: 25 items per feed are fetched and captured; the model sees the newest 8 per feed', async () => {
+  const feedXml = (feed) => {
+    const items = Array.from({ length: 25 }, (_, i) => `<item><title>${feed.name.replace(/\W/g, '')}${i}a ${feed.name.replace(/\W/g, '')}${i}b ${feed.name.replace(/\W/g, '')}${i}c ${feed.name.replace(/\W/g, '')}${i}d</title><link>https://${feed.source}/a/${i}</link><pubDate>Thu, 22 Oct 2026 ${String(10 - Math.floor(i / 3)).padStart(2, '0')}:${String(59 - i).padStart(2, '0')}:00 +0000</pubDate></item>`);
+    return `<rss><channel>${items.join('')}</channel></rss>`;
+  };
+  const { prompts, s3 } = await runHandler({ feedXml });
+  const captured = s3.keys().filter((k) => k.startsWith('record/inbox/articles/')).flatMap((k) => s3.lines(k));
+  assert.equal(captured.length, 26 * 25);
+  const rows = [...prompts[0].matchAll(/URL: https:\/\/(\S+?)\/a\/(\d+)/g)];
+  assert.equal(rows.length, 26 * 8);
+  assert.ok(rows.every((m) => Number(m[2]) < 8), 'the newest 8 of each feed (items 0-7 are the newest here)');
+});

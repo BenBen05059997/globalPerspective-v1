@@ -93,7 +93,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 ### Step 2c. Raw before model (decision 0040)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ☐ | decision 0040; selection audit 2026-10-22 |
+| Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ◐ | lane W merged (44 tests; all 26 feeds parse incl. Dawn, DW, Nikkei; fetch 25/feed, prompt pool 8/feed; capture before the model call, never blocks the run); NOT deployed: needs IAM on the selector role and the operator's yes (shadow run first) |
 | `newsStoryRecord`: `article` facts from the inbox, `inputs.rawDay`, `counts.articles` | lane X | no | ☑ | merged 23e889d2 (115 tests); deployed 2026-10-22 (CodeSha256 2HsdSf0oV…); inbox empty so views unchanged; the Run now reports `rawDay: missing` until the selector writes the inbox |
 | IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☐ | |
 | Run alarm for a missing raw day | coordinator | yes | ☐ | |
@@ -175,3 +175,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: lanes S (weekly reader) and T (views from readings) merged; golden-week expected readings drafted by two Opus reviewers (same 3 merges, same split candidates; disagree on one link direction and one shared-cause link). Review schedule moved to Monday 01:00 UTC (spec error: a Friday run reads the previous week).
 - 2026-10-22: newsStoryRecord (reading fields, merge/split inboxes, aliases) and newsBoard (reads line/confirmedLinks) deployed; lane V (board UI reads the reading fields) merged, not released. Operator agenda for a foundation review (draft 0040): raw article capture with no model, recovery of missed days from public archives (no retroactive forecasts), re-assignable entry→story facts, Wikidata-backed actor ids. Research running; building paused on new features until the review is discussed.
 - 2026-10-22: decision 0040 written (raw capture before the model, recovery of missed days, assignments, canonical actors); step 2c added; operator answered the review's 8 questions.
+- 2026-10-22: lane W (selector) merged. Foundation review correction: captured articles do carry a snippet (168 of 176 on 10-19). Deploy order: IAM → shadow capture run → live.

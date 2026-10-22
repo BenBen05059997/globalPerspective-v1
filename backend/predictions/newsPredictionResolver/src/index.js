@@ -7,6 +7,7 @@
 //   draw    {weekId, dryRun}   reveal + draw one ended week (normally done by tick)
 //   draft   {limit, dryRun}    agent drafts for sampled questions past their deadline, then settles them
 //   correct {qid, verdict, reason, evidence?}  operator dispute: appends Q#<qid>/VERDICT#<n> (highest n wins)
+//   watch   {dryRun}           nightly WATCH: list tonight's candidates (no model, no writes)
 //   status  read-only counts
 //   replay  {items:[…]}        run the drafter on supplied questions, NO writes (validation only)
 // dryRun = no LLM, no writes. Records: SEED#<week>/{COMMIT,SECRET,REVEAL}, SAMPLE#<week>/DRAW,
@@ -18,6 +19,7 @@
 
 const lib = require('./lib');
 const { draftQuestion } = require('./draft');
+const watch = require('./watch');
 const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -183,6 +185,20 @@ async function draftPass(deps, today, limit, dryRun, out) {
   });
 }
 
+// Nightly WATCH: which open question branches get a check tonight (no model). Returns the selection.
+async function watchSelect(deps, today, out) {
+  const [preds, qrows, moved] = await Promise.all([deps.store.allQuestionPreds(), deps.store.listQuestionRows(), watch.movedThreads(deps.facts, today)]);
+  const groups = new Map(groupQuestions(qrows).map((g) => [g.qid, g]));
+  const questions = watch.questionsFromPreds(preds);
+  const sel = watch.selectCandidates({ questions, groups, moved, today, redraftAfterDays: REDRAFT_AFTER_DAYS, cap: deps.maxCandidates || watch.MAX_CANDIDATES });
+  out.watch = {
+    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, overflow: sel.overflow,
+    moved: sel.candidates.filter((c) => c.reason === 'moved').length, grace: sel.candidates.filter((c) => c.reason === 'grace').length,
+  };
+  console.log('watch', JSON.stringify(out.watch));
+  return { sel, groups };
+}
+
 async function run(event, deps) {
   const action = (event && event.action) || 'tick';
   const dryRun = Boolean(event && event.dryRun);
@@ -200,6 +216,12 @@ async function run(event, deps) {
       drafted: groups.filter((g) => g.drafts.length).length,
       verdicts: groups.filter((g) => g.verdicts.length).length,
     };
+  }
+
+  if (action === 'watch') {
+    const { sel } = await watchSelect(deps, today, out);
+    out.wouldCheck = sel.candidates.map((c) => ({ qid: c.qid, deadline: c.deadline, reason: c.reason }));
+    return out;
   }
 
   if (action === 'replay') {
@@ -241,6 +263,13 @@ async function run(event, deps) {
   return out;
 }
 
+// record/facts reader: s3json over the world bucket (the SDK ships with the Lambda runtime; the role needs s3:GetObject on record/facts/*).
+function makeFacts() {
+  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  const { makeS3Json } = require('./_shared/s3json');
+  return makeS3Json({ client: new S3Client({ region: REGION }), GetObjectCommand, PutObjectCommand, bucket: process.env.WORLD_BUCKET });
+}
+
 function defaultDeps() {
   const { makeStore } = require('./store');
   const { makeSearch } = require('./search');
@@ -249,6 +278,7 @@ function defaultDeps() {
   return {
     now: () => new Date().toISOString(),
     store: makeStore(LOG_TABLE, REGION),
+    facts: makeFacts(),
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
     search: async (q) => { usage.searches++; return search0(q); },

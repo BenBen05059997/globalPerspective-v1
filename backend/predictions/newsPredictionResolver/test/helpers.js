@@ -17,6 +17,7 @@ function fakeStore(preds = []) {
     async get(PK, SK) { return rows.get(key(PK, SK)) || null; },
     async listCommits() { return [...rows.values()].filter((r) => r.PK.startsWith('SEED#') && r.SK === 'COMMIT'); },
     async predRows(a, b) { return preds.filter((r) => r.SK >= a && r.SK <= b && r.questionSchema); },
+    async allQuestionPreds() { return preds.filter((r) => r.questionSchema); },
     async listQuestionRows() { return [...rows.values()].filter((r) => r.PK.startsWith('Q#')); },
     async queryPK(PK) { return [...rows.values()].filter((r) => r.PK === PK); },
   };
@@ -39,4 +40,12 @@ function predRow(topic, sk, n, { lead = 30, thread } = {}) {
   };
 }
 
-module.exports = { fakeStore, predRow };
+
+
+// An injected record/facts reader: files = { 'YYYY-MM-DD': [fact, ...] }.
+function fakeFacts(files = {}) {
+  return { async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; } };
+}
+const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
+
+module.exports = { fakeStore, predRow, fakeFacts, entryFact };

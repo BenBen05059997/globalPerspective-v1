@@ -3,6 +3,7 @@
 // Views rebuilt from facts (decision 0037 sections 1 and 3). Pure: an array of facts in, view objects out. No I/O, no clock
 // (`today` and `builtAt` come in), no model. The same facts give the same objects except manifest.builtAt/runId.
 const {addDays} = require('./_shared/world');
+const {isResolvable: resolvable} = require('./facts'); // a question with a question id (0038); anything else is legacy
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -53,9 +54,6 @@ function entryRows(group, corrected) {
     ...(own ? {} : {fromThreadId: threadId}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
-
-/** A resolvable branch is a question with a question id (0038); anything else was recorded before scoring began (legacy). */
-const resolvable = (b) => b.question === true && Boolean(b.qid);
 
 /** forecast_drawn facts of one thread -> forks with each branch's latest verdict attached (null when none). */
 function forkRows(facts) {

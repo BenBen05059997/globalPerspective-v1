@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, verdictFact, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, verdictFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -129,9 +129,40 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     return {run, fatal};
   }
 
+  // The one-time job of 0038 (Legacy): every branch without a question id gets a void verdict, once. Built here, run only by an
+  // explicit event {legacyVoid:true, shadow}. A re-run finds the facts already written and appends nothing.
+  async function legacyVoid({prefix}) {
+    const at = now();
+    const runId = `legacy-void-${at.slice(0, 10)}`;
+    const {facts} = await publisher.readFacts(prefix, []);
+    const have = new Set(facts.map((f) => f.eventId));
+    const voided = new Set(facts.filter((f) => f.kind === 'verdict').map((f) => f.payload.branchId));
+    const fresh = [];
+    let legacy = 0;
+    for (const f of facts.filter((x) => x.kind === 'forecast_drawn')) {
+      for (const b of f.payload.branches) {
+        if (isResolvable(b)) continue;
+        legacy += 1;
+        if (voided.has(b.branchId)) continue;
+        voided.add(b.branchId);
+        const fact = legacyVoidFact({threadId: f.threadId, branchId: b.branchId, at, runId});
+        if (!have.has(fact.eventId)) fresh.push(fact);
+      }
+    }
+    const result = {legacyVoid: true, prefix, legacyBranches: legacy, written: fresh.length, alreadyVoid: legacy - fresh.length, days: []};
+    if (!fresh.length) return result;
+    const date = at.slice(0, 10);
+    await manifest.addDays(`${prefix}facts/manifest.json`, [date]);
+    await s3json.appendLines(`${prefix}facts/${date}.jsonl`, fresh);
+    result.days.push(date);
+    await publisher.publish({prefix, today: date, builtAt: at, runId, changedDays: [date]});
+    return result;
+  }
+
   return async function handler(event = {}) {
     const shadow = event.shadow ?? true;
     const prefix = shadow ? 'record/shadow/' : 'record/';
+    if (event.legacyVoid === true) return legacyVoid({prefix});
     const bf = event.backfill;
     const strict = event.strict ?? true;
     const today = now().slice(0, 10);

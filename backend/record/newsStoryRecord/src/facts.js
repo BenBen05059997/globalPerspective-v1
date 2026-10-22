@@ -99,6 +99,23 @@ function verdictFact(v, forecast, runId) {
   });
 }
 
+const LEGACY_VOID_REASON = 'issued_before_method';
+const LEGACY_VOID_DECIDER = 'operator-job';
+/** The branch can receive a verdict: a question with a question id (0038). The rest was recorded before scoring began. */
+const isResolvable = (b) => b.question === true && Boolean(b.qid);
+
+/**
+ * `verdict` void for a branch that has no question id (0038 Legacy). Keyed by branchId alone, so a re-run produces the same eventId.
+ * `at` is the time of the job; `qid` is null because the branch never had one.
+ */
+function legacyVoidFact({threadId, branchId, at, runId}) {
+  const sourceKey = `legacy-void|${branchId}`;
+  return makeFact({
+    kind: 'verdict', sourceKey, at, precision: 'exact', threadId, sourceRow: {store: 'record', key: sourceKey}, runId,
+    payload: {qid: null, branchId, result: 'void', revision: 1, decidedBy: LEGACY_VOID_DECIDER, evidence: null, reason: null, voidReason: LEGACY_VOID_REASON},
+  });
+}
+
 /** `correction`: an earlier fact was wrong. No input produces one yet; the builder is here so the kind has one shape. */
 function correctionFact({corrects, what, reason, threadId, at, sourceKey, sourceRow, runId}) {
   if (!corrects || !what || !reason) throw new Error('facts: a correction needs corrects, what and reason');
@@ -119,4 +136,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, verdictFact, correctionFact, mergedFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, verdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, runFact, uniqueSorted};

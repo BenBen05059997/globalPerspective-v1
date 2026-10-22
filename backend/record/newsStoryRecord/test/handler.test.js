@@ -347,3 +347,70 @@ test('O1: the store asks for verdicts of any question, sampled or not', async ()
   assert.equal(got['q-unsampled'].verdict, 'yes');
   assert.ok(!c.calls.some((x) => x[0] === 'batchGet'));
 });
+
+// O3: the legacy void job. Facts are seeded straight into a fake bucket so the job reads them as the nightly run would.
+const seedForecast = (f, prefix, date, threadId, branches) => {
+  const fact = {schemaVersion: 1, eventId: `fc-${threadId}-${date}`, kind: 'forecast_drawn', at: `${date}T05:00:00.000Z`, date, precision: 'exact', threadId, iso3: [], actorIds: [], sourceIds: [],
+    payload: {forkId: `F-${threadId}`, topicId: 't', branches}, producer: {lambda: 'x', runId: 'r'}, sourceKey: `k-${threadId}`, sourceRow: {store: 's', key: 'k'}};
+  f.put(`${prefix}facts/${date}.jsonl`, fact);
+  f.put(`${prefix}facts/manifest.json`, {schemaVersion: 1, days: [date]});
+};
+const br = (id, extra = {}) => ({branchId: id, text: id, p: 40, trigger: id, resolutionSource: 'Reuters', due: '2026-10-27', question: true, qid: `q-${id}`, scenarioP: 50, ...extra});
+const legacyScript = () => {
+  const f = fakeS3();
+  seedForecast(f, P, '2026-09-01', 'thread-1', [br('ok'), br('old1', {question: false, qid: null}), br('old2', {qid: null})]);
+  return f;
+};
+
+test('O3: the legacy void job writes one void verdict per branch without a question id, and a re-run appends nothing', async () => {
+  const f = legacyScript();
+  const {handler} = make(scripted({}), f, () => '2026-10-27T06:00:00.000Z');
+  const r = await handler({legacyVoid: true});
+  assert.deepEqual([r.prefix, r.legacyBranches, r.written, r.alreadyVoid], [P, 2, 2, 0]);
+  const verdicts = f.lines(`${P}facts/2026-10-27.jsonl`).filter((x) => x.kind === 'verdict');
+  assert.deepEqual(verdicts.map((v) => v.payload.branchId).sort(), ['old1', 'old2']);
+  for (const v of verdicts) {
+    assert.deepEqual([v.threadId, v.payload.qid, v.payload.result, v.payload.voidReason, v.payload.decidedBy, v.at], ['thread-1', null, 'void', 'issued_before_method', 'operator-job', '2026-10-27T06:00:00.000Z']);
+  }
+  assert.ok(f.json(`${P}facts/manifest.json`).days.includes('2026-10-27'));
+  const before = f.objs.get(`${P}facts/2026-10-27.jsonl`).body;
+  // a later re-run, a different day: same eventIds, nothing appended, no new day file
+  const again = await make(scripted({}), f, () => '2026-10-29T06:00:00.000Z').handler({legacyVoid: true});
+  assert.deepEqual([again.written, again.alreadyVoid, again.days], [0, 2, []]);
+  assert.equal(f.objs.get(`${P}facts/2026-10-27.jsonl`).body, before);
+  assert.equal(f.objs.has(`${P}facts/2026-10-29.jsonl`), false);
+});
+
+test('O3: shadow is the default; shadow:false writes the live prefix and never touches the shadow one', async () => {
+  const f = fakeS3();
+  seedForecast(f, 'record/', '2026-09-01', 'thread-1', [br('old1', {qid: null})]);
+  seedForecast(f, P, '2026-09-01', 'thread-1', [br('old1', {qid: null})]);
+  const shadowBody = f.objs.get(`${P}facts/2026-09-01.jsonl`).body;
+  const live = await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true, shadow: false});
+  assert.deepEqual([live.prefix, live.written], ['record/', 1]);
+  assert.equal(f.objs.has(`${P}facts/2026-10-27.jsonl`), false);
+  assert.equal(f.objs.has('record/facts/2026-10-27.jsonl'), true);
+  assert.equal(f.objs.get(`${P}facts/2026-09-01.jsonl`).body, shadowBody);
+  const sh = await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true});
+  assert.deepEqual([sh.prefix, sh.written], [P, 1]);
+  assert.equal(f.objs.has('record/shadow/views/manifest.json'), true);
+});
+
+test('O3: after the job the views show the legacy branches as void and legacy, counts see the verdicts, branchesDue stays resolvable only', async () => {
+  const f = legacyScript();
+  await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({legacyVoid: true});
+  const story = f.json(`${P}views/stories/thread-1.json`);
+  const branches = story.forks[0].branches;
+  assert.deepEqual(branches.map((b) => [b.branchId, b.legacy, b.verdict && b.verdict.result]), [['ok', undefined, null], ['old1', true, 'void'], ['old2', true, 'void']]);
+  assert.deepEqual(story.forks[0].branches[1].verdict.decidedBy, 'operator-job');
+  assert.deepEqual(f.json(`${P}views/counts/2026-10-27.json`).total, {newEntries: 0, branchesDue: 1, verdicts: 2});
+  const row = f.json(`${P}views/index/all.json`).stories.find((r) => r.threadId === 'thread-1');
+  assert.deepEqual([row.branchCount, row.liveBranchCount], [3, 1]);
+});
+
+test('O3: the job is only reachable by the explicit event; a nightly event never voids anything', async () => {
+  const f = legacyScript();
+  await make(scripted({'2026-10-20': twenty('2026-10-20')}), f).handler({date: '2026-10-20'});
+  assert.equal(f.lines(`${P}facts/2026-10-20.jsonl`).concat(f.lines(`${P}facts/2026-10-21.jsonl`)).some((x) => x.kind === 'verdict'), false);
+  await assert.doesNotReject(() => make(scripted({}), f).handler({legacyVoid: false, date: '2026-10-20'}).catch((e) => { if (!/partial|failed/.test(e.message)) throw e; }));
+});

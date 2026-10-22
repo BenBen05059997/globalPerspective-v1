@@ -12,7 +12,7 @@ The facts writer. Each run appends one UTC day's facts, with no model, to `recor
 
 | Fact kind | From | Notes |
 |---|---|---|
-| `entry` | one archive entry | `eventId = sha1('entry' + smallest canonical source url)`; `summary` is null (the row has none); `precision` is `day` |
+| `entry` | one archive entry | `eventId = sha1('entry' + smallest canonical source url)`; `summary` is null (the row has none); `at` is the earliest valid `sources[].publishedAt` with `precision: exact`, else `archivedAt` with `precision: day` (see Choices) |
 | `story_born` | the first entry of a thread in the window, on its birth day | `windowLimited` and `missingBefore` say what the window could not see |
 | `forecast_drawn` | one `PRED#` snapshot | branches with `branchId`, `p` (percent), `trigger`, `resolutionSource`, `due`, `qid` |
 | `verdict` | each `Q#` verdict row (`yes`, `no`, `void`) | only for questions whose forecast is in the facts of the last 60 days; only sampled questions are asked |
@@ -68,6 +68,7 @@ Deployed 2026-10-21 (this code), registered in `scripts/functions.json` as group
 - `runId` suffix is the attempt number counted from the existing Run object for the date (`-1` on a fresh store, also in a backfill).
 - Verdicts are read only for sampled questions (`Q#/SAMPLED` batch read first), since only those get verdicts, and only for questions whose `forecast_drawn` fact is inside the 60-day lookback; a verdict landing on a forecast older than 60 days is missed.
 - The Run object carries two extra fields, `date` and `daysWritten`; `net.au` is added to the two-level suffix list (abc.net.au is in the outlet table).
+- Entry time (0036 amendment 2026-10-22, step 2b): a `publishedAt` is valid when it parses, is not after the entry's `archivedAt` (end of the archive day when absent) and is at most 30 days (`MAX_PUBLISHED_AGE_DAYS`) before the archive day. The spec said only "valid"; the two bounds are mine: a future time is a feed error, and a stale one would put the fact's day outside the 60-day re-run window so every run would append it again. Invalid sources are skipped, the others still count. `eventId` is unchanged. An exact `at` can fall on an earlier UTC day than the archive day, so that fact lands in the earlier day's file. Archive rows written before 2026-10-20 (and, as of 2026-10-22, every row checked: 10-19 to 10-21) carry no `publishedAt`, so they stay `day`; facts already written are not rewritten.
 
 Views choices (step 2, 0037 left these open; narrowest reading):
 - The two index files are `{schemaVersion, builtFrom, stories:[row]}` (0037 names no wrapper key).
@@ -78,6 +79,7 @@ Views choices (step 2, 0037 left these open; narrowest reading):
 - `counts` attribute a merged story's days to the survivor, for all days (a rebuild applies the alias to the past). `branchesDue` counts every branch whose `due` is the day, verdict or not.
 - A branch's `verdict` is the newest verdict fact for its `branchId` (by `at`, then revision), any result (`yes`, `no`, `void`) ends it being live.
 - A repeated `eventId` across facts days keeps the earliest by `at`; facts are read in `(at, eventId)` order so file order never matters.
+- Links rule (0037 amendment 2026-10-22): grounds are actors and countries only, each counted only if fewer than 5% of the active stories carry it (`SPECIFIC_SHARE`, share = carriers / active stories, so with fewer than 41 active stories no shared ID can be specific and every links file is empty); both stories' `lastFactAt` dates at most 14 days apart (`LINK_WINDOW_DAYS`), gap in `daysApart`. `sharedActorIds` and `sharedIso3` list only the specific IDs, `sharedSourceIds` lists every shared source for information. Sort: rarest shared specific ID (lowest share), then `otherThreadId`; cap 50. The golden set has 3 active stories, so its links are empty; the links tests pad the active index.
 - `links/` files exist for active stories only; a story that goes idle keeps its last file until a later cleanup (nothing deletes views).
 - `entriesOmitted` is always present (0 when nothing was cut). Entries carry `fromThreadId` only when merged in, and `corrected: true` only when a correction names them.
 

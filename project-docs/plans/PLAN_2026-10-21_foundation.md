@@ -88,12 +88,13 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Actor identity: 498 name IDs, 355 singletons, spelling variants; alias table (operator JSON > Wikidata) applied in views | lane (record) after decision | no | ☐ | e.g. `lula da silva` ×2, `klitschko` ×2 |
 | Place below country not recorded; eventType missing on 23% of entries, `other` on 11% | pipeline | no | ☐ | live facts 2026-10-22 |
 | Actor and place backfill for pre-2026-09-12 stories as readings with citations (first job of the review) | lane (review, step 3) | model key: yes | ☐ | 159 stories without actors, 106 without a country |
+| Forecast-only stories: 14 of 103 stories active 10-13..19 have `forecast_drawn` facts but no `entry` or `story_born` anywhere (e.g. `thread-north-korea-tests-ai-powered-t-2ab29b`); either the forecast's threadId differs from the archive's, or the story was never archived | lane (record) to diagnose | no | ☐ | found by lane U 2026-10-22; they cannot appear on the board or be reviewed |
 
 ### Step 3. Review Lambda `newsRecordReview` (weekly)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
 | Decision written (reading object, merges, aliases, golden week) | coordinator | no | ☑ | decision 0039; `architecture/ARCHITECTURE_WEEKLY_REVIEW.md` |
-| Golden-week fixture `backend/record/newsRecordReview/fixtures/golden-week/` (facts 2026-10-13..19) | lane U | no | ☐ | not built |
+| Golden-week fixture `backend/record/newsRecordReview/fixtures/golden-week/` (facts 2026-10-13..19) | lane U | no | ☑ | lane U merged: `backend/record/newsRecordReview/fixtures/golden-week/`, 29 of 103 active stories, 462 facts, 1.36 MB, seed 20261019; 12 duplicate-candidate pairs (clearest: three Amazon-deforestation stories, two Canadian base-fire stories); expected readings not yet drafted |
 | `newsRecordReview` SELECT..WRITE: readings, review Run, inbox merges; one call per active story | lane S | IAM, schedule, model key: yes | ☐ | not started |
 | `newsStoryRecord` reads readings, inbox merges, `story_split`, aliases | lane T | no | ☐ | not started |
 | Golden-week expected readings by two Opus agents + operator check | coordinator | operator check | ☐ | not started |
@@ -158,3 +159,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22 06:12Z: Worker uploaded (operator yes), version 1e17cf9a; views reachable at /data/record/views/. Next: board UI click-through and release.
 - 2026-10-22: frontend released (legacy Pages, e6b70aa9). Brave key removal deferred: the deployed resolver still uses it; remove it in the same step as deploying the new resolver.
 - 2026-10-22: decision 0039 written (weekly review: model, merges, aliases, golden week); step 3 rows split into lanes S, T, U; `ARCHITECTURE_WEEKLY_REVIEW.md` added.
+- 2026-10-22: golden week fixture merged (lane U). Found 14 forecast-only stories (no entry, no birth): a record gap to diagnose.

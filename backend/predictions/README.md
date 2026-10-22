@@ -92,6 +92,7 @@ Last verified: 2026-10-20 against code @14dd450d and live AWS.
 - `decidedBy` on the verdict row is the model id (was the word `resolver`); `confirmedBy: 'resolver'` is unchanged. `evidence` gains `title` and `date`. `correct` now accepts any question that has Q# rows (was: sampled only).
 - Cap: `MAX_RESOLVE_PER_RUN` (env, default now 60) is the candidate cap per run; checks stop starting after 7 minutes.
 - Inbox line (coordinator addition, operator decision): every final verdict and operator correction is also appended to `record/inbox/verdicts/<decision day UTC>.jsonl` via `_shared/s3json.js` appendLines: {schemaVersion:1, qid, threadId, forkId, branchId, result, voidReason, decidedAt, decidedBy, evidence, reason, revision, sourceKey `inbox:verdicts/DATE#n`}. forkId/branchId follow derive.js (`<PRED pk>/<issue day>[/<trigger id>]`). One nightly writer, so no cross-run If-Match protocol; within a run the appends are serialised and a repeated qid+revision is skipped. `shadow:true` in the event writes under `record/shadow/inbox/verdicts/` (Q# rows are still written); `dryRun` writes nothing. A failed append is reported in `errors`; the Q# row is stored and the line must be re-sent by hand.
+- Sample window: `LEAD_MAX` is 90 (was 84, lane M request approved by the coordinator, decision 0038: due 7-90 days); `LEAD_MIN` stays 7. Weeks already drawn are unchanged.
 - An unreadable `record/facts` is reported in `errors` and the pass continues on the age rule alone.
 
 ## Coordinator follow-ups (not done by this lane)

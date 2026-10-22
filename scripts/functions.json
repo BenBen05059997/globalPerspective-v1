@@ -504,7 +504,14 @@
       "group": "record",
       "features": ["board", "threads"],
       "nodeModules": false,
-      "schedules": []
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerStoryRecord",
+          "expr": "cron(45 23 * * ? *)",
+          "state": "ENABLED"
+        }
+      ]
     },
     "newsSourceAudit": {
       "dir": "backend/monitoring/newsSourceAudit",

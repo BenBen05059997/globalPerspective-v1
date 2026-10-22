@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): step 1 live; record/facts backfilled from 09-06; schedule and alarms wait on the operator
+Status: active (2026-10-22): step 1 live and scheduled (TriggerStoryRecord 23:45Z); alarms parked by the operator; step 2 not started
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -58,7 +58,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Run object per run; empty or missing Run alarms | lane (record) | alarm topic: yes | ◐ | 357fd2e7: Run written at start and end, `strict` run throws on a missing day; alarms not built |
 | Shared world reader `backend/shared/src/world/` | coordinator | no | ◐ | a925f149, 41b71786, 1d5a76b7; weekly `pull.mjs` not written, other Lambdas still parse raw tables |
 | Backfill from existing `archive#` rows (Sept 6 onward) | lane (record) | no | ☑ | e191f1c1; live run 2026-10-22 over 09-06..10-22: 47 Runs (28 ok, 19 failed: archive missing), 929 entry, 401 story_born, 994 forecast_drawn, 0 duplicate eventIds; matches DRYRUN.md |
-| Schedule on the facts writer (shadow week first) | coordinator | IAM and schedule: yes | ☐ | no schedule |
+| Schedule on the facts writer | coordinator | IAM and schedule: yes | ☑ | operator yes 2026-10-22, straight to live (shadow run had proven the path): EventBridge rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`; first run 2026-10-22 23:45Z |
 | `newsInvokeGemini-dev`: a failed model call must fail the run (today it returns `{status:'error'}` and the day is marked processed; cause of the 28 lost days) | lane (pipeline) | no | ☑ | 50f9c645 merged; live alarm `lambda-errors-newsInvokeGemini-dev` now fires on a failed run; deployed 2026-10-21 CodeSha256 tXJSYjtU... |
 | `NewsProjectInvokeAgentLambda`: a stale-run skip (`staging-already-processed`, index.js:139) must count as a failed day, not success | lane (pipeline) | no | ☑ | e22e7516 merged: staging generated before the current 04:15/12:15/20:15 slot throws `stale-processed-staging`; deployed 2026-10-21 CodeSha256 LH7/a6s6... |
 | `NewsProjectInvokeAgentLambda` tests: 2 of 83 fail on main ("zero generated" harness tests 61, 63), unrelated to the fixes above | lane (pipeline) | no | ☐ | seen 2026-10-21 on main and lane/agent-stale; not investigated |
@@ -136,3 +136,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-20: DeepSeek 402 outage from about 03:50Z, caused the missing `archive#2026-10-14` and thin 10-13 and 10-20.
 - 2026-10-22: lane I closed; worktrees for lanes I, C, H, gemini-fail, agent-stale removed. Docs checked against code: newsStoryRecord README deployment note and two risks corrected.
 - 2026-10-22: operator yes; `newsStoryRecord-role` statement `RecordWrites` adds PutObject `record/facts/*`, `record/runs/*` (DynamoDB stays read-only). Live backfill 09-06..10-22 with `strict:false`. A day's archive facts are filed under their publish date (Oct 20 archive lands in 10-19), so a day's Run counts the facts dated that day.
+- 2026-10-22: schedule `TriggerStoryRecord` created (EventBridge rule, not Scheduler: the existing Scheduler roles may only invoke the agent, and a new role is an IAM change). Alarms parked by the operator. Docs consolidated: ARCHITECTURE_TIMELINE.md is the single record doc (0d850be5).

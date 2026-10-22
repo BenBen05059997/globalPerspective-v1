@@ -80,6 +80,9 @@ New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows w
 - Alarms: verdicts per day, void share, two-pass disagreement (`needs_human` drafts), `settle errors` log lines, candidates `overflow` > 0 for several nights, candidates past due + 3 with no draft.
 - Lane O: `newsStoryRecord` reads `record/inbox/verdicts/` (or widens its verdict reader to non-sampled questions) and uses `decidedBy`, `reason`, `evidence {quote,url,title,date}`.
 
+## Judge benchmark
+Any change to the judge model, prompt or rules must pass the judge benchmark described in `project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md` (Verification, Judge benchmark) before deploy; the runner is planned under `bench/` and reuses this judge code unchanged.
+
 ## Tests
 - `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 69 passed, 1 skipped (store-interface test skips without the AWS SDK on NODE_PATH), 2026-10-22.
 

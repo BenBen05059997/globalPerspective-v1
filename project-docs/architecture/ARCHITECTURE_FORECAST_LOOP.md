@@ -128,11 +128,35 @@ This doc is linked from `backend/predictions/README.md`, the resolver README and
 
 ## 6. Verification (how we know it works)
 1. Unit/golden tests: a fixed branch plus a fixed search fixture gives the expected verdict. Pass: a non-verbatim quote is rejected; no `no` before due + 3 days; an invalid void reason is rejected.
-2. Replay: run the resolver in dry run over the 44 sampled questions and over 20 branches whose outcome is already known from later entry facts in `record/facts`. Pass: agreement reported per set (threshold set by the operator before the run).
+2. Replay: run the resolver in dry run over the 44 sampled questions and over 20 branches whose outcome is already known from later entry facts in `record/facts`. This is done by the judge benchmark below; agreement is reported per set (threshold set by the operator before the run).
 3. Shadow fortnight: the new resolver writes verdicts to `record/shadow/` only, side by side with the Monday sampler. Pass: agreement on the shared 22.
 4. Operator spot-check: each week 10 random verdicts with quote and URL; disagreements are appended as corrections. Pass: at least 90% agreement over two weeks before the "did not happen" wording goes live.
 5. Watch metrics and alarms: verdicts per day, void share, two-pass disagreement, branches past due + 3 with no check, model errors.
 6. Cost line: checks per night is about stories moved x open branches on them + due branches; expected a few dozen; at most 2 model calls per check.
+
+### Judge benchmark
+Purpose: a fixed gold set with known answers, frozen evidence and a runner that scores any model. Every judge prompt, model or rule change passes it before deploy, like tests.
+
+Requirements:
+1. Gold set of about 100 questions labelled by the operator. Pool: the 96 overdue question branches of 2026-10-22, the 44 sampled questions, and about 20 branches whose outcome later entry facts show. Stratified: clear yes, clear no, void, boundary. Kept out of judge-prompt tuning.
+2. Humans first: the operator labels a blind subset of 50 before seeing any model answer. Where the operator hesitates, the question is badly drawn; that goes back to the draw gates as feedback.
+3. Frozen evidence: the search runs once per question and its results are stored with the gold set, so every model sees identical text. Location (proposed): S3 `bench/judge/YYYY-MM-DD/`, not under `record/` because it is not a world fact; gold labels as JSONL.
+4. A reference model of a different family than DeepSeek labels the full set; the operator reviews it on the other 50.
+5. The runner reuses the resolver's judge code unchanged (verified quote, two passes for yes, no before due + grace, VOID_REASONS). The model is a parameter. It never writes live tables.
+
+| Metric | Pass |
+|---|---|
+| Cohen's kappa vs operator | at least 0.6 |
+| False "happened" (yes when truth is no/not_yet) | under 5% |
+| Quote-check pass rate, two-pass disagreement, cost and time per question | reported, read with the confusion matrix |
+
+Outputs: the judge model choice with evidence, cost per check, and a list of failure classes.
+
+Maintenance: rerun on every judge change. The weekly spot-check and every correction add gold cases. Quarterly refresh. The nightly void-share and two-pass-disagreement alarms trigger a rerun.
+
+Roles: a Sonnet lane builds the runner and evidence capture under `backend/predictions/newsPredictionResolver/bench/` (proposed path); an Opus agent runs the benchmark and writes the analysis; the operator names the reference model, sets its API key, approves it as a paid API, and labels the blind 50.
+
+Sources: practitioner guidance on LLM-as-judge calibration with Cohen's kappa (oneuptime.com/blog/post/2026-08-31-calibrate-llm-judge-cohens-kappa, mlflow.org/articles/tags/llm-as-a-judge); "Judging the Judges" arxiv.org/abs/2406.12624; ForecastBench arxiv.org/abs/2409.19839; Metaculus tournament rules, where annulled or ambiguous questions drop out of scoring (metaculus.com/tournament-rules/).
 
 ## 7. Limits (honest)
 - `yes` depends on search coverage and language; a true event the search does not surface stays `not_yet` or goes late.

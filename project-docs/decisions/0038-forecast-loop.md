@@ -28,6 +28,7 @@ The product is an analyst tool; a forecast with a verdict separates it from a fe
 - The Monday-only draft rule and the one-per-story sample cap no longer limit which verdicts exist; they only define what is scored.
 - Limits: `yes` depends on search coverage; `no` is inference from silence (a late report becomes a correction fact); badly written outcomes cannot be judged.
 - Needs: generator change, resolver change, the verdict inbox below, a one-time legacy job, a frontend release for wording.
+- Any change to the judge (model, prompt, rules) passes the judge benchmark (ARCHITECTURE_FORECAST_LOOP.md) before deploy.
 
 ## Amendment 2026-10-22: the verdict hand-off is an S3 inbox
 Problem: the first hand-off (the facts writer queries DynamoDB `Q#/VERDICT` per question) would be about 4,989 queries a night (lane O measured 4,989 distinct qids in the live facts, 4,832 still due), rising with every forecast. The operator rejected it: "I don't want 5,000 queries; they are all static anyway, store this in S3."

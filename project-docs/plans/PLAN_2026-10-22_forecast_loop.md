@@ -21,10 +21,15 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 | Page wording: board StoryTree and BoardWeekly, thread ThreadForecast, track-record copy ("open · due DATE", "happened · DATE", "did not happen", "could not be checked · reason"; no "not checked yet") | frontend lane | yes (frontend release) | ☐ | |
 | `counts.branchesDue` counts resolvable branches only | record lane (`newsStoryRecord`) | no | ☑ | lane O 1ff0bf8d: `isResolvable` = question:true + qid; legacy branches flagged, excluded from due/live counts; deployed |
 | Verification 1: unit/golden tests (fixed branch + fixture; non-verbatim quote, no before due + 3, invalid void reason rejected) | resolver lane | no | ☑ | lanes M/N/O: draw.test.js (13), resolver judge/watch tests, inbox tests; all merged |
-| Verification 2: dry-run replay over the 44 sampled questions and 20 branches with a known outcome; agreement reported | resolver lane | no | ☐ | |
+| Verification 2: dry-run replay over the 44 sampled questions and 20 branches with a known outcome; done by the judge benchmark (ARCHITECTURE_FORECAST_LOOP.md, Judge benchmark) | resolver lane | no | ☐ | |
 | Verification 3: shadow fortnight to `record/shadow/`, agreement on the shared 22 | resolver lane | no | ☐ | |
 | Verification 4: operator spot-check, 10 random verdicts a week, at least 90% agreement over two weeks before "did not happen" goes live | operator | yes | ☐ | |
 | Verification 5: metrics and alarms (verdicts/day, void share, two-pass disagreement, branches past due + 3 unchecked, model errors) | monitoring lane | yes (alarms) | ☐ | |
+| Judge benchmark: gold set (~100, operator labels blind 50) | operator + Opus agent | yes: operator time | ☐ | |
+| Judge benchmark runner + frozen evidence capture | Sonnet lane | no | ☐ | |
+| Reference model provider + key | operator | yes: paid API + secret | ☐ | |
+| Benchmark run and analysis | Opus agent | no (needs the rows above and the DeepSeek top-up for the DeepSeek arm) | ☐ | |
+| Judge model chosen from benchmark (kappa ≥0.6, false happened <5%) | operator | decision | ☐ | |
 | Weekly review writes readings citing verdicts (foundation step 3) | review lane (`newsRecordReview`) | review model open in foundation plan | ☐ | |
 | Carried over, selection: P7c shadow week (`newsSelectionShadow`, from 2026-10-18 20:20 run to about 10-25) then P7d switch to the layered selector; P6 blind review | selection lane | yes (P7d switch) | ◐ | `runbooks/selection-shadow.md` |
 | Carried over, cost: P4 measured token counts replace estimates in `runbooks/DEEPSEEK_COST_ESTIMATE.md`; P5 low-balance alert in `newsModelGuard` | cost lane | no | ◐ | task rows said deployed 2026-10-17; recheck live |
@@ -37,3 +42,4 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 - 2026-10-22: verdict hand-off decided by the operator: an S3 inbox (`record/inbox/verdicts/`), not a DynamoDB lookup (about 4,989 queries a night) and not a resolver write to `record/facts/`; 0038 amendment; IAM yes still needed.
 - 2026-10-22: lanes M (draw), N (resolver), O (record) merged. newsStoryRecord deployed with the inbox reader and legacy flags. Next: resolver IAM (GetObject record/facts/*, Put/GetObject record/inbox/verdicts/* and shadow), resolver shadow run, generator dryRun; both deploys need the operator's yes.
 - 2026-10-22: resolver IAM applied (operator yes). Shadow run and resolver deploy blocked by DeepSeek 402 (still failing 04:18Z): the judge uses DeepSeek (`GROK_MODEL` deepseek-flash). Deploying before the top-up would make the 10:30 tick fail nightly. The resolver also needs env `WORLD_BUCKET` at deploy.
+- 2026-10-22: judge benchmark agreed by the operator (gold set of about 100, frozen evidence, reference model of another family, kappa and false-happened gates); design in ARCHITECTURE_FORECAST_LOOP.md, rows added above.

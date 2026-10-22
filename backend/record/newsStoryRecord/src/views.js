@@ -93,7 +93,7 @@ function groupStories(facts, aliases) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom, readings}) {
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon}) {
   const {own, merged} = groupStories(facts, aliases);
   const stories = new Map();
   const rows = new Map();
@@ -127,7 +127,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings})
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));
     const iso3 = unique(group.flatMap((g) => g.facts.flatMap((f) => f.iso3)));
-    const actorIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.actorIds)));
+    const actorIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.actorIds.map(canon))));
     const verdictAts = mine.filter((f) => f.kind === 'verdict').map((f) => f.at);
     const born = minOf(group.map((g) => bornOf(g.facts)).filter(Boolean));
     stories.set(threadId, {
@@ -259,18 +259,20 @@ function countDaysFor(today, changedDays = []) {
 
 /**
  * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count),  countDays (default
- * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order). Throws when all.json is over its hard cap.
+ * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
+ * (record/operator/aliases.json or null). Throws when all.json is over its hard cap.
  */
-function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = []}) {
+function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null}) {
   const facts = ordered(allFacts);
   const factsThrough = maxOf(facts.filter((f) => f.kind !== 'run').map((f) => f.date));
   const standingReadings = Rd.standing(readingLines);
   const readingsThrough = Rd.maxWeek(standingReadings);
   const builtFrom = {factsThrough, readingsThrough};
   const readings = Rd.byThread(standingReadings);
+  const {canon} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);

@@ -88,4 +88,31 @@ function byThread(rs) {
 
 const cites = (r) => (Array.isArray(r.cites) ? r.cites.filter(text) : []);
 
-module.exports = {SUBTYPES, WIKIDATA, isoWeekOf, weeksBetween, standing, maxWeek, byThread, cites, text};
+/**
+ * actorId -> canonical actorId. The operator file (record/operator/aliases.json: {aliases:[{canonical, variants, wikidataId}]}) is
+ * applied first and always wins. Then the review's alias readings, oldest first, each only if it carries a Wikidata Q-number and
+ * does not conflict with what is already mapped (a variant already mapped to another canonical, or a canonical that is itself a
+ * variant, or a variant that is another entry's canonical). A conflicting reading is a proposal and changes nothing.
+ * Returns {map, canon(id)}. Facts are never rewritten; this is applied to the views only.
+ */
+function actorAliases(operator, rs) {
+  const map = new Map();
+  const canonicals = new Set();
+  const add = (canonical, variants) => { canonicals.add(canonical); for (const v of variants) if (v !== canonical) map.set(v, canonical); };
+  const entries = operator && Array.isArray(operator.aliases) ? operator.aliases : [];
+  for (const a of entries) {
+    if (!a || !text(a.canonical) || !Array.isArray(a.variants)) continue;
+    const variants = a.variants.filter(text);
+    if (map.has(a.canonical) || variants.some((v) => canonicals.has(v) || (map.has(v) && map.get(v) !== a.canonical))) continue; // inside the operator file, the first entry wins
+    add(a.canonical, variants);
+  }
+  for (const r of rs.filter((x) => x.subtype === 'alias')) {
+    const {canonical, variants, wikidataId} = r.payload;
+    if (!WIKIDATA.test(wikidataId || '')) continue;
+    if (map.has(canonical) || variants.some((v) => v !== canonical && (canonicals.has(v) || (map.has(v) && map.get(v) !== canonical)))) continue;
+    add(canonical, variants);
+  }
+  return {map, canon: (id) => map.get(id) ?? id};
+}
+
+module.exports = {actorAliases, SUBTYPES, WIKIDATA, isoWeekOf, weeksBetween, standing, maxWeek, byThread, cites, text};

@@ -39,7 +39,8 @@ function makePublisher({s3json}) {
   async function publish({prefix, today, builtAt, runId, changedDays = []}) {
     const {facts, manifestDays} = await readFacts(prefix, changedDays);
     const readings = await readReadings(prefix, facts, today);
-    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings});
+    const operatorAliases = await s3json.getJson(`${prefix}operator/aliases.json`); // null when the operator wrote none
+    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases});
     let written = 0;
     for (const group of writeGroups(views)) {
       for (let i = 0; i < group.length; i += WRITE_BATCH) {

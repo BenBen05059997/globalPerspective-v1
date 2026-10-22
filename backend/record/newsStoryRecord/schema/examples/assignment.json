@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "eventId": "ca3cf0ba21cf355bd9acd8d4718225c0f63ddb85",
+  "kind": "assignment",
+  "at": "2026-10-24T08:00:00.000Z",
+  "date": "2026-10-24",
+  "precision": "exact",
+  "threadId": "thread-alberta-referendum-aaaaaa",
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "entryId": "7c4e32c8e94f25d7710667980d060821ee391ac5",
+    "threadId": "thread-alberta-referendum-aaaaaa",
+    "by": "operator",
+    "supersedes": null,
+    "reason": "the vote count belongs to the referendum story"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-24-1"
+  },
+  "sourceKey": "inbox:assignments/7c4e32c8e94f25d7710667980d060821ee391ac5|thread-alberta-referendum-aaaaaa|operator|2026-10-24T08:00:00.000Z",
+  "sourceRow": {
+    "store": "record",
+    "key": "inbox:assignments/7c4e32c8e94f25d7710667980d060821ee391ac5|thread-alberta-referendum-aaaaaa|operator|2026-10-24T08:00:00.000Z"
+  }
+}

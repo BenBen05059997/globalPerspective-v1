@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": { "const": 1 },
     "eventId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "kind": { "enum": ["entry", "story_born", "forecast_drawn", "verdict", "correction", "story_merged", "story_split", "article", "run"] },
+    "kind": { "enum": ["entry", "story_born", "forecast_drawn", "verdict", "correction", "story_merged", "story_split", "article", "assignment", "run"] },
     "at": { "type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[0-9:.]+Z$" },
     "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
     "precision": { "enum": ["exact", "day"] },
@@ -19,7 +19,7 @@
     "producer": {
       "type": "object",
       "required": ["lambda", "runId"],
-      "properties": { "lambda": { "type": "string", "pattern": "^newsStoryRecord@" }, "runId": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2}-\\d+|legacy-void-\\d{4}-\\d{2}-\\d{2})$" } },
+      "properties": { "lambda": { "type": "string", "pattern": "^newsStoryRecord@" }, "runId": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2}-\\d+|legacy-void-\\d{4}-\\d{2}-\\d{2}|assignments-backfill-\\d{4}-\\d{2}-\\d{2})$" } },
       "additionalProperties": false
     },
     "sourceKey": { "type": "string", "minLength": 1 },
@@ -151,6 +151,25 @@
               "url": { "type": "string", "minLength": 1 }, "canonicalUrl": { "type": "string", "pattern": "^https?://" }, "title": { "type": "string", "minLength": 1 },
               "outlet": { "type": ["string", "null"] }, "feed": { "type": ["string", "null"] }, "snippet": { "type": ["string", "null"] }, "lang": { "type": ["string", "null"] },
               "recoveredAt": { "type": ["string", "null"] }, "recoveredFrom": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "assignment" } } },
+      "then": {
+        "properties": {
+          "threadId": { "type": "string" },
+          "payload": {
+            "required": ["entryId", "threadId", "by", "supersedes", "reason"],
+            "properties": {
+              "entryId": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "the eventId of the entry" },
+              "threadId": { "type": "string", "description": "the story the entry is assigned to; equals the envelope threadId" },
+              "by": { "enum": ["ingest", "review", "operator"] },
+              "supersedes": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$", "description": "the assignment eventId this replaces; informational, the views take the latest by at" },
+              "reason": { "type": ["string", "null"] }
             },
             "additionalProperties": false
           }

@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -36,8 +36,14 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const facts = [];
     const threadOfTopic = new Map(input.entries.filter((e) => e.threadId).map((e) => [e.topicId, e.threadId]));
     const firstOf = new Map();
+    const entered = new Set(known.filter((f) => f.kind === 'entry').map((f) => f.eventId));
     for (const e of input.entries) {
-      facts.push(entryFact(e, runId));
+      const fact = entryFact(e, runId);
+      facts.push(fact);
+      // The ingest claim (0040 rule 3): a fresh entry also writes its assignment to the archive thread. A known entry already has it (or the backfill writes it).
+      const claim = !entered.has(fact.eventId) && ingestAssignmentFor(fact, runId);
+      if (claim) facts.push(claim);
+      entered.add(fact.eventId);
       if (e.threadId && !firstOf.has(e.threadId)) firstOf.set(e.threadId, e);
     }
     for (const [threadId, birth] of Object.entries(input.births)) {
@@ -101,8 +107,8 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
         }
       }
     } catch (e) { run.failures.push({stage: 'verdict', message: messageOf(e)}); }
-    // Merges (the weekly review's auto-merges) and splits (operator only) come the same way: inbox/merges/ and inbox/splits/, same days.
-    for (const [dir, stage, build] of [['merges', 'merge', inboxMergeFact], ['splits', 'split', inboxSplitFact]]) {
+    // Merges (the weekly review's auto-merges), splits (operator only) and assignments (operator, or the review's applied proposals) come the same way: inbox/merges/, inbox/splits/, inbox/assignments/, same days.
+    for (const [dir, stage, build] of [['merges', 'merge', inboxMergeFact], ['splits', 'split', inboxSplitFact], ['assignments', 'assignment', inboxAssignmentFact]]) {
       try {
         const days = eachDay(inboxFrom || addDays(date, -(INBOX_DAYS - 1)), date);
         const parts = await Promise.all(days.map((d) => s3json.getLines(`${prefix}inbox/${dir}/${d}.jsonl`)));
@@ -200,10 +206,37 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     return result;
   }
 
+  // The one-time job of 0040 rule 3: every entry fact already written gets its ingest assignment (its archive thread, at the entry's time), once.
+  // Run only by an explicit event {assignmentsBackfill:true, shadow}. A re-run finds the facts already written and appends nothing.
+  async function assignmentsBackfill({prefix}) {
+    const at = now();
+    const runId = `assignments-backfill-${at.slice(0, 10)}`;
+    const {facts} = await publisher.readFacts(prefix, []);
+    const have = new Set(facts.map((f) => f.eventId));
+    const fresh = [];
+    let entries = 0;
+    for (const f of facts.filter((x) => x.kind === 'entry')) {
+      const fact = ingestAssignmentFor(f, runId);
+      if (!fact) continue;
+      entries += 1;
+      if (!have.has(fact.eventId) && !fresh.some((x) => x.eventId === fact.eventId)) fresh.push(fact);
+    }
+    const byDate = {};
+    for (const f of fresh) (byDate[f.date] ||= []).push(f);
+    const dates = Object.keys(byDate).sort();
+    const result = {assignmentsBackfill: true, prefix, entries, written: fresh.length, alreadyAssigned: entries - fresh.length, days: dates};
+    if (!fresh.length) return result;
+    await manifest.addDays(`${prefix}facts/manifest.json`, dates);
+    for (const d of dates) await s3json.appendLines(`${prefix}facts/${d}.jsonl`, byDate[d]);
+    await publisher.publish({prefix, today: at.slice(0, 10), builtAt: at, runId, changedDays: dates});
+    return result;
+  }
+
   return async function handler(event = {}) {
     const shadow = event.shadow ?? true;
     const prefix = shadow ? 'record/shadow/' : 'record/';
     if (event.legacyVoid === true) return legacyVoid({prefix});
+    if (event.assignmentsBackfill === true) return assignmentsBackfill({prefix});
     const bf = event.backfill;
     const strict = event.strict ?? true;
     const today = now().slice(0, 10);

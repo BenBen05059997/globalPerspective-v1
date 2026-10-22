@@ -32,7 +32,7 @@ Ten stages in three speeds. `pipeline.json` is the machine-readable copy and dri
 | | **Daily, no model** | | | |
 | 1 | Ingest | selector `newsInvokeGemini` 3x/day (`backend/pipeline`); map ingest `newsSituationIngest` hourly and GDACS every 20 min (`backend/situations`) | topics; map clusters; disaster alerts | raw tables |
 | 2 | Stories | story writer `NewsProjectInvokeAgentLambda` (`backend/pipeline`); map tracker `newsSituationTracker` (`backend/situations`); forecasts (`PRED#`) | threads, daily archive, forecasts, map pins | raw tables |
-| 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts (none written as of 2026-10-22) | raw tables, kept as cited input; revisit after two weekly runs |
+| 3 | Daily notes | story analysis, country briefings, drift notes, story web (`backend/pipeline`); forecast settling (`backend/predictions`) | `THREAD_ANALYSIS`, `COUNTRY#`, `DRIFT#`, `web/`, verdicts (none written as of 2026-10-22); forecast loop design: [ARCHITECTURE_FORECAST_LOOP.md](ARCHITECTURE_FORECAST_LOOP.md) | raw tables, kept as cited input; revisit after two weekly runs |
 | 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance | the only parser of raw tables |
 | 5 | Facts | `newsStoryRecord` (`backend/record`) | `record/facts/YYYY-MM-DD.jsonl`: `entry`, `story_born`, `forecast_drawn`, `verdict` (plus `correction`, `story_merged`, `run`); the daily Run; then the facts-only views (0037; builder deployed 2026-10-22 in `newsStoryRecord`) | the facts |
 | | **Weekly, one full analysis, Friday night, in this order** | | | |
@@ -88,7 +88,7 @@ missing archive day gets a Run and no facts; the 28 missing days before 2026-09-
 | `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID) | `NewsCache archive#` rows (agent Lambda) |
 | `story_born` | first title | derived: earliest `entry` per threadId |
 | `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
-| `verdict` | qid, result yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` (the table holds zero such rows as of 2026-10-22, so none exist yet) |
+| `verdict` | qid, result yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` (the table holds zero such rows as of 2026-10-22, so none exist yet); the loop that produces them: [ARCHITECTURE_FORECAST_LOOP.md](ARCHITECTURE_FORECAST_LOOP.md) |
 | `correction` | `corrects` (eventId), what was wrong, reason | builder exists; no input feeds it yet |
 | `story_merged` | from, into (threadIds), reason, evidence; readers resolve transitively | builder exists; no input feeds it yet |
 | `run` | runId, status, counts: the day was processed | the writer itself |

@@ -2,6 +2,8 @@
 
 Daily prediction settle Lambda (drafts on Mondays, settles daily) (methodology v1). `tick` (default action, idempotent) commits seed hashes for the next two weeks, draws a seeded sample (K=22, rule `v1`) from every ended week's question-schema predictions, runs the agent draft pass on Mondays, settles every due question whose draft is waiting, and writes a heartbeat. Other actions: `draw {weekId}`, `draft {limit}` (draft then settle), `status` (read-only counts), `replay {items}` (drafter only, no writes), `correct {qid, verdict, reason, evidence?}` (operator dispute). `dryRun: true` = no LLM, no writes. Nothing waits for a human (decision 0034): a `yes`/`no`/`void` draft is written as the `Q#<qid>`/`VERDICT` row at once (`decidedBy`/`confirmedBy: 'resolver'`, `draftSk`, `evidence {url, quote}`, `voidReason` for void). An unclear draft (`not_yet`, `needs_human`) is not written; it is re-drafted after 5 days (`REDRAFT_AFTER_DAYS`) and the third unclear draft (`MAX_UNCLEAR_DRAFTS`) writes `void` with reason `unclear after 3 drafts`. A wrong verdict is corrected with `correct` (appends `VERDICT#<n>`, `confirmedBy: 'operator'`, `reason`; CLI `predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`); the snapshot reads the highest n. The drafter never sees a question's probability (`draft.js`).
 
+Design of the loop this Lambda implements (watch, gather, judge, record): [ARCHITECTURE_FORECAST_LOOP.md](../../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md).
+
 ## Deployment
 - Deployed name `newsPredictionResolver` · runtime `nodejs22.x` · group `predictions` (scripts/functions.json)
 - Trigger: EventBridge rule `TriggerPredictionResolver` `cron(30 10 * * ? *)` (UTC, ENABLED), input `{"action":"tick"}`

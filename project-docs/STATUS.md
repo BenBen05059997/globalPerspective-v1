@@ -49,7 +49,7 @@ Plans: [foundation](plans/PLAN_2026-10-21_foundation.md), [weekly](plans/PLAN_20
   [migration plan](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)
 - Layered story selection (P7): `newsSelectionShadow` has run since 2026-10-18; shadow week ends about
   2026-10-25, then the operator decides. P1 prompt v2b is prepared and awaits a yes.
-  [grounded forecast plan](plans/TASK_2026-10-17_grounded_forecast_and_cost.md)
+  [grounded forecast plan](plans/PLAN_2026-10-22_forecast_loop.md)
 - Map colour consistency: C3, C4, C7 done; four unverified small bugs left.
   [colour plan](plans/PLAN_2026-10-19_colour_consistency.md)
 - Back-end hygiene: 4 Lambdas stay on `nodejs20.x` on purpose (newsAnalyze and newsPolarBilling, each with its
@@ -83,4 +83,4 @@ Plans: [foundation](plans/PLAN_2026-10-21_foundation.md), [weekly](plans/PLAN_20
 - Hosting: finish the Cloudflare cutover (retire the GitHub Pages release path) or keep Pages for now.
   [migration plan](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)
 - Selection go after the shadow week (Combined 11, ours 7, 2 split in the blind review).
-  [grounded forecast plan](plans/TASK_2026-10-17_grounded_forecast_and_cost.md)
+  [grounded forecast plan](plans/PLAN_2026-10-22_forecast_loop.md)

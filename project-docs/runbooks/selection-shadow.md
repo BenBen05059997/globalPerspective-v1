@@ -7,7 +7,7 @@ EventBridge rule `TriggerSelectionShadow`, `cron(20 4,12,20 * * ? *)` UTC, no in
 Repo source: `backend/pipeline/newsSelectionShadow/src/`.
 
 ## What it means
-Shadow run of the layered story selector (plans/TASK_2026-10-17_grounded_forecast_and_cost.md P7c): reads the latest ingest capture (skips if older than 30 min), 8 h of corpus and GDACS state, asks Jev (`JEV_API_KEY`, paid) per story/headline, and writes S3 `audit/selection-shadow/<date>/<HHMM>.json` + `latest.json`. Nothing on the site reads it.
+Shadow run of the layered story selector (plans/PLAN_2026-10-22_forecast_loop.md P7c): reads the latest ingest capture (skips if older than 30 min), 8 h of corpus and GDACS state, asks Jev (`JEV_API_KEY`, paid) per story/headline, and writes S3 `audit/selection-shadow/<date>/<HHMM>.json` + `latest.json`. Nothing on the site reads it.
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerSelectionShadow --region ap-northeast-1`

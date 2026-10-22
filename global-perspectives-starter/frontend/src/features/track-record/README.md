@@ -62,7 +62,7 @@ This folder is stage 9: the track record page. Timeline: reads predictions/track
 ## Docs
 - Decisions: [0011](../../../../../project-docs/decisions/0011-track-record-and-studio.md) (lean and sampled),
   [0027](../../../../../project-docs/decisions/0027-forecast-resolver-unparked-as-weekly-settle.md) (resolver as weekly settle)
-- Live plan: [TASK_2026-10-17_grounded_forecast_and_cost.md](../../../../../project-docs/plans/TASK_2026-10-17_grounded_forecast_and_cost.md)
+- Live plan: [PLAN_2026-10-22_forecast_loop.md](../../../../../project-docs/plans/PLAN_2026-10-22_forecast_loop.md)
 - Runbooks: [prediction-resolver.md](../../../../../project-docs/runbooks/prediction-resolver.md),
   [predictions-snapshot.md](../../../../../project-docs/runbooks/predictions-snapshot.md)
 

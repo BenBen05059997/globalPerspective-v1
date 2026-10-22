@@ -8,8 +8,9 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
 - [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the one record design doc**: two clocks, ten stages, facts, views, writers, open items; stage list as data in [pipeline.json](architecture/pipeline.json).
 - [Foundation stocktake (dated)](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate (2026-10-21); live state is in the plan.
+- [Forecast loop](architecture/ARCHITECTURE_FORECAST_LOOP.md) — draw, watch, gather, judge, record, review; verification (decision 0038).
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D), with costs and migration.
-- [Decision records](decisions/README.md) — 37 decisions, newest last.
+- [Decision records](decisions/README.md) — 38 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.
 - Reference, generated from code and live AWS by `scripts/gen-reference.mjs`; never hand-edited:
   [lambdas](reference/lambdas.md) · [env-keys](reference/env-keys.md) names only · [features](reference/features.md) ·
@@ -28,7 +29,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 ## Plans (live, at most 10)
 - [Consistency and modernisation](plans/PLAN_2026-10-19_consistency_and_modernisation.md) — waves 1–3, backlog.
 - [Colour consistency](plans/PLAN_2026-10-19_colour_consistency.md) — map colours, radar C6.
-- [Grounded forecasts + cost](plans/TASK_2026-10-17_grounded_forecast_and_cost.md) — layered selector P7, shadow week.
+- [Forecast loop](plans/PLAN_2026-10-22_forecast_loop.md) — proposed: draw/watch/judge/record checklist; carries selector P7 and cost rows.
 - [Cloudflare migration](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) — local build done; candidate and cutover gated.
 - [One link system + leaner pages](plans/PLAN_2026-10-19_linking_and_pages.md) — global links, Briefings merge, Studio out of nav; checklist.
 - [Studio redesign](plans/PLAN_2026-10-19_studio_redesign.md) — bring-your-own-hypothesis tool; return-to-menu criteria (proposed).

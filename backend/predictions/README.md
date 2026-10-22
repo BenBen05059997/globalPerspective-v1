@@ -17,6 +17,8 @@ This folder is stage 3: forecast settling and the track-record snapshot. Timelin
 
 ## Pipeline
 
+Design of the forecast loop (draw, watch, gather, judge, record, review) and how it is verified: [ARCHITECTURE_FORECAST_LOOP.md](../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md) (decision 0038).
+
 1. NewsProjectInvokeAgentLambda-dev (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle.
 2. Each day at 10:30 UTC newsPredictionResolver runs `tick`: it commits seed hashes for upcoming weeks and draws a sample from every ended week.
 3. On Mondays the same run drafts verdicts using Brave Search evidence. The drafter is not shown the question's probability.

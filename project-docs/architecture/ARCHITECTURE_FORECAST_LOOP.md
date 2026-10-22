@@ -1,0 +1,141 @@
+# The forecast loop
+
+Status: design agreed by the operator 2026-10-22; not built. Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
+
+## 1. Why
+The product is an analyst tool. A forecast with a verdict is what separates it from a feed and what turns a timeline into a narrative.
+Today the loop is open:
+- 7,440 branches in `forecast_drawn` facts (994 forks, 2026-09-05..10-19); only 44 can ever get a verdict (the weekly sample of 22, two weeks drawn).
+- 2,451 branches have no question id, no p and no source, so nothing can resolve them.
+- No verdict row exists. Pages say "not checked yet" for every branch, which promises a check that never comes.
+- `branch.text` is the scenario label ("Most Likely"); the event is in `trigger`. A story gets a new fork almost every day (max 31 for one story).
+
+## 2. The loop (tree)
+```text
+FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
+|
++- 1 DRAW        weekly, model                       [NewsProjectInvokeAgentLambda]
+|  +- inputs : story entry facts of the week + FACTS# premise block + arc digest
+|  +- rule   : only if the story moved this week (new entry facts); at most 3 outcomes per story per week
+|  |           each = an event DONE (not said), due 7-90 days out, own p, a named source that would report it
+|  |           gates drop: no p, vague source, lead outside 7-90, restatement, near-duplicate of an open branch on the story
+|  +- model  : yes (writes the outcomes)
+|  +- output : forecast_drawn fact (never changed); branch.text = the event text
+|  +- cost   : about $0.003-0.005 per story forecast (A/B report 2026-10-17)
+|
++- 2 WATCH       nightly, no model                   [newsPredictionResolver]
+|  +- inputs : record/facts (today's entries), open branches
+|  +- rule   : candidates = open branches on stories with a new entry fact today
+|  |                       + open branches whose due date passed 3 days ago (GRACE_DAYS)
+|  |           nothing else is checked
+|  +- model  : no
+|  +- output : list of (branch, trigger)
+|  +- cost   : zero model calls; this is what keeps the loop cheap
+|
++- 3 GATHER      no model                            [newsPredictionResolver]
+|  +- inputs : candidate branch; the new entry's title/summary
+|  +- rule   : news search for the branch event text, results dated before due; the branch's own source named
+|  +- model  : no (the model never searches by itself)
+|  +- output : evidence bundle (results with title, snippet, url, date)
+|  +- cost   : searches only (2 per check in the old drafter)
+|
++- 4 JUDGE       boxed model                         [newsPredictionResolver]
+|  +- inputs : branch event text + evidence bundle (never p)
+|  +- rule   : answers yes | no | void | not_yet
+|  |           yes  = verbatim quote >= 12 chars found by code in a cited title/snippet, then a 2nd independent pass also yes
+|  |           no   = only after due + 3 days (code-enforced)
+|  |           void = only one of the VOID_REASONS (lib.js)
+|  |           else not_yet: branch stays open, no cost until the next trigger
+|  +- model  : yes, at most 2 calls per check
+|  +- output : yes | no | void | not_yet
+|  +- cost   : about 1.4k tokens per call (old drafter)
+|
++- 5 RECORD      no model                            [newsPredictionResolver -> record/facts]
+|  +- inputs : final answers (yes | no | void)
+|  +- rule   : write a verdict fact {result, quote, url, at, decidedBy: model, evidence}; put-once; corrections append
+|  |           the pre-registered weekly sample of 22 (0011) is what the public track record scores; other verdicts are shown, not scored
+|  +- model  : no
+|  +- output : verdict fact; views and counts rebuild from it
+|  +- cost   : none
+|
++- 6 REVIEW      weekly (plan step 3), model          [newsRecordReview]
+|  +- inputs : the week's verdict facts + entry facts per active story
+|  +- rule   : writes readings fired | dead | hold | line, each citing verdict facts
+|  +- output : record/readings/YYYY-Www.jsonl
+|
++- LOOP BACK : 6 REVIEW -> new entry facts arrive -> 1 DRAW (the story moved) -> ... -> 2 WATCH (every night) -> 3 -> 4 -> 5
+```
+
+## 3. Stages in detail
+
+### Draw (weekly, model)
+- Cadence: weekly per story, and only when the story has new entry facts that week. Today the generator forks a story up to daily.
+- Count: at most 3 outcomes per story per week (today 3 scenarios x up to 3 triggers = 3-9 triggers, about 8 per fork).
+- Outcome: a concrete event that gets DONE, not said (operator editorial rule, decision 0020, applied to branches). Due 7-90 days out (the prompt says 90, the existing gate 180; the sample window is 7-84). Own p. A named source that would report it.
+- Gates: the existing G-gates in `lib.js` and `questions.js` keep their names. G7 no p, G8 generic source, G9 lead under 7 days, G10 restatement, G12 near-duplicate; this design adds: lead over 90 days dropped, near-duplicate checked against open branches on the same story (today the last 14 prior rows).
+- Written as `forecast_drawn` facts and never changed. `branch.text` becomes the event text; the scenario label is not the branch text any more.
+- Draw quality is the largest lever (Section 7). Invented calendar facts and templated probabilities (older plan, P1/P2) belong here.
+
+### Watch (nightly, no model)
+Candidates only: open branches on stories with a new entry fact that day (from `record/facts`), plus open branches whose due date passed 3 days ago. This replaces "all branches are due" and the Monday-only draft.
+
+### Gather (no model)
+The new entry's title and summary, and a news search for the branch's event text with results dated before the due date; the branch's own source is named in the query. The model never searches by itself.
+
+### Judge (boxed model)
+The existing rules of `newsPredictionResolver/src/lib.js` stay: the quote is verified by code, `yes` needs a second independent pass, `no` waits for due + 3 days (`GRACE_DAYS`), `void` takes one of `VOID_REASONS` (`ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`) plus `issued_before_method` (decision 0038). The judge is blind to p.
+
+### Record (no model)
+Verdicts become `verdict` facts for every judged branch, not only the sample. The 22-per-week pre-registered sample (0011) stays and is what the public track record scores (Brier skill stays null below 150 resolved). All other verdicts are shown on pages, not scored. Operator corrections are appended (0034).
+
+### Review (weekly, step 3)
+`newsRecordReview` reads the week's verdicts and writes readings (fired/dead/hold/line) that cite verdict facts.
+
+### Pages (wording)
+| Branch state | Words |
+|---|---|
+| open | "open · due DATE" |
+| yes | "happened · DATE" |
+| no | "did not happen" |
+| void | "could not be checked · reason" |
+| before scoring began | "recorded before scoring began" |
+
+Never "not checked yet". `counts.branchesDue` counts resolvable branches only.
+
+## 4. Objects and where they live
+| Object | Where | Notes |
+|---|---|---|
+| `forecast_drawn` fact | `record/facts/YYYY-MM-DD.jsonl` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} (0036); written by `newsStoryRecord` from `PRED#` rows today |
+| `verdict` fact | `record/facts/` | qid, result, quote, url, at, decidedBy, evidence; zero exist as of 2026-10-22 |
+| `Q#<qid>/SAMPLED, DRAFT#, VERDICT, VERDICT#<n>` | DynamoDB `GlobalPerspectivePredictionLog` | resolver's working rows, put-once; 44 SAMPLED live |
+| `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its commit |
+| `record/views/` (stories, counts, index) | S3 | rebuilt from facts; the board and thread pages read these |
+| `predictions/track_record.json` | S3 | the scored sample only |
+| `record/shadow/` | S3 | shadow fortnight output (Section 6) |
+
+How a verdict reaches `record/facts/` (the resolver writes the fact itself, or hands it to `newsStoryRecord`) is an open decision: see the plan.
+
+## 5. Ownership
+The code lives in two groups only, so nobody hunts for it:
+- Draw: `backend/pipeline/NewsProjectInvokeAgentLambda` (generator: prompt, `lib.js`, `questions.js`).
+- Watch, Gather, Judge, Record: `backend/predictions/newsPredictionResolver`.
+- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan).
+This doc is linked from `backend/predictions/README.md`, the resolver README and `ARCHITECTURE_TIMELINE.md` §1b row 3 and §3.
+
+## 6. Verification (how we know it works)
+1. Unit/golden tests: a fixed branch plus a fixed search fixture gives the expected verdict. Pass: a non-verbatim quote is rejected; no `no` before due + 3 days; an invalid void reason is rejected.
+2. Replay: run the resolver in dry run over the 44 sampled questions and over 20 branches whose outcome is already known from later entry facts in `record/facts`. Pass: agreement reported per set (threshold set by the operator before the run).
+3. Shadow fortnight: the new resolver writes verdicts to `record/shadow/` only, side by side with the Monday sampler. Pass: agreement on the shared 22.
+4. Operator spot-check: each week 10 random verdicts with quote and URL; disagreements are appended as corrections. Pass: at least 90% agreement over two weeks before the "did not happen" wording goes live.
+5. Watch metrics and alarms: verdicts per day, void share, two-pass disagreement, branches past due + 3 with no check, model errors.
+6. Cost line: checks per night is about stories moved x open branches on them + due branches; expected a few dozen; at most 2 model calls per check.
+
+## 7. Limits (honest)
+- `yes` depends on search coverage and language; a true event the search does not surface stays `not_yet` or goes late.
+- `no` is inference from silence; a late report becomes a correction fact.
+- A badly written outcome cannot be judged. Draw quality matters most.
+- A Brave-snippet search is the only evidence source today; its price and quota are not in the repo.
+
+## 8. Decisions
+[0038](../decisions/0038-forecast-loop.md) (this loop) · [0011](../decisions/0011-track-record-and-studio.md) (sampled track record, kept) · [0034](../decisions/0034-auto-verdicts-no-human-gate.md) (resolver writes verdicts) · [0036](../decisions/0036-facts-file-format.md) (`forecast_drawn`, `verdict` format).

@@ -436,7 +436,7 @@ Build follows each ingest and review, with no model. Design and the ten-stage ma
 format `decisions/0036-facts-file-format.md`; views and serving `decisions/0037-views-from-facts.md`; order of work and
 live status `plans/PLAN_2026-10-21_foundation.md`. State on 2026-10-22: Ingest and Commit's facts are live; the views are built
 by `newsStoryRecord` (deployed, `record/views/` built) and `newsBoard` reads them; the rest of Serve (Worker upload, board UI release)
-is not done.
+is not done. The forecast loop (draw, watch, gather, judge, record, review; agreed 2026-10-22, not built): `ARCHITECTURE_FORECAST_LOOP.md`, decision 0038.
 
 ## Cross-cutting concerns
 

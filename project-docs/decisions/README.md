@@ -42,3 +42,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0035](0035-facts-are-the-system-of-record.md) | 2026-10-21 | Facts are the system of record; five stages; IDs by content | accepted (supersedes 0010, 0011) |
 | [0036](0036-facts-file-format.md) | 2026-10-21 | Facts file format: layout, fact object, content IDs, Run, backfill | accepted (implements step 1 of 0035) |
 | [0037](0037-views-from-facts.md) | 2026-10-21 | Views rebuilt from facts: files, builder, serving, board contract | accepted (implements step 2 of 0035) |
+| [0038](0038-forecast-loop.md) | 2026-10-22 | Forecast loop: few resolvable outcomes, nightly watch, verdict facts | accepted (refines 0034 and 0036, keeps 0011's sample) |

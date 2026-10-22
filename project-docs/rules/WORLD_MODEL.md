@@ -207,7 +207,7 @@ which this doc does not touch (`rules/DATA_STRATEGY.md`).
 5. **Editorial-selects-from-registry** = `EVENT_REGISTRY_PLAN.md` Phase 2 ≡ `IMPACT_FIRST` P3 —
    the single point where the two pipelines' identity roots become one by construction. **Shadow-
    gated**: `newsSelectionShadow` runs the layered selector 3×/day since 2026-10-18 and writes
-   `audit/selection-shadow/` (plans/TASK_2026-10-17_grounded_forecast_and_cost.md P7c); flip only
+   `audit/selection-shadow/` (plans/PLAN_2026-10-22_forecast_loop.md P7c); flip only
    on quality parity after the shadow week.
 6. **Surfaces render canonical marks on next touch** — no big-bang UI migration; each surface
    adopts tier/evidence/fingerprint fields the next time it's touched for another reason.

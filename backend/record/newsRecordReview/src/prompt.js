@@ -4,7 +4,7 @@
 // with any wording change: readings carry it, and a changed prompt must pass the golden-week score before it runs live.
 const {parseJsonContent} = require('./_shared/llm');
 
-const PROMPT_VERSION = 'review-1';
+const PROMPT_VERSION = 'review-2';
 const MAX_TOKENS = 3000; // per call; the answer is a few short items
 
 const SYSTEM = `You are the weekly reviewer of a news record. You read ONE story's recorded facts and write short, checkable readings about it for the ISO week given. You may use only the facts in the bundle. Never invent facts, dates, names or links.
@@ -16,6 +16,7 @@ Return ONE JSON object and nothing else, with exactly these keys (use [] or null
  "branchStatus": [{"branchId": "...", "status": "fired|dead|holding|late", "why": "...", "cites": [eventId], "confidence": "..."}],
  "links": [{"otherThreadId": "...", "mechanism": "<=200 chars", "direction": "drives|driven_by|shared_cause", "cites": [eventId], "confidence": "..."}],
  "mergeProposals": [{"otherThreadId": "...", "why": "...", "cites": [eventId], "confidence": "..."}],
+ "assignments": [{"entryId": "...", "threadId": "<an active story id, or new>", "why": "<=300 chars", "cites": [eventId], "confidence": "..."}],
  "aliases": [{"variants": ["name:..."], "canonical": "name:...", "wikidataId": "Q123", "cites": [eventId], "confidence": "..."}]
 }
 
@@ -24,6 +25,7 @@ Rules:
 - Chapters: "from" and "to" must lie inside the dates of the facts you cite for that chapter.
 - Branch status: a branch whose verdict is yes is "fired"; a branch whose verdict is no is "dead"; for a branch with no verdict use only "holding" (still open, on track) or "late" (past its due date with no verdict). Do not write a status for a branch with a void verdict.
 - Links and merge proposals: otherThreadId must be one of the "neighbours"; cite at least one eventId from THIS story and at least one from the neighbour. Propose a merge only when both are the same event under two thread ids. Propose a link only when one story causes or shares a cause with the other, and say how.
+- Assignments: flag an entry that does not belong to the story you are reading because it is about a different event, and name the story it belongs to (a neighbour's threadId, or "new" when it starts a story of its own). The entryId must be an entry of this story, or an entry of a neighbour that you also cite. Propose it only when the entry's title and outlets clearly describe another event; a proposal is only a flag, nothing moves until the operator approves. Most weeks you flag none.
 - Aliases: only actor ids that appear in this bundle, and only with a wikidataId you are certain of (a Q-number). Otherwise omit.
 - Prefer fewer, sure items over many. Do not repeat a previous reading unless the new facts change it.`;
 

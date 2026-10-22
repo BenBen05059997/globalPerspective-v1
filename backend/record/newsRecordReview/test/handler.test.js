@@ -54,7 +54,7 @@ test('end to end with a stub model: readings, Run and the merge inbox are writte
   assert.deepEqual([run.status, run.counts.read, run.counts.failed, run.counts.autoMerges, run.counts.rejected], ['ok', 3, 0, 1, 3]);
   assert.deepEqual(run.rejections.map((r) => `${r.threadId}:${r.subtype}:${r.reason}`).sort(), [
     'thread-a:alias:alias_no_wikidata', 'thread-a:branch_status:status_not_allowed_for_open_branch', 'thread-c:line:unknown_eventId']);
-  assert.deepEqual(run.counts.readings, {line: 2, chapter: 1, branch_status: 1, link: 0, merge_proposal: 2, alias: 0});
+  assert.deepEqual(run.counts.readings, {line: 2, chapter: 1, branch_status: 1, link: 0, merge_proposal: 2, alias: 0, assignment: 0});
   assert.deepEqual(run.skipped, []);
   // both stories proposed the same merge: one inbox line, the older story (thread-a, born first) survives
   const inbox = f.lines(`${P}inbox/merges/2026-10-23.jsonl`);
@@ -199,4 +199,24 @@ test('a second run on the same day keeps the stored inbox lines and adds only ne
   const before = f.lines(`${P}inbox/merges/2026-10-23.jsonl`);
   await make(f)({...only});
   assert.deepEqual(f.lines(`${P}inbox/merges/2026-10-23.jsonl`), before);
+});
+
+test('Y3: an accepted assignment proposal is a reading (subtype assignment) and nothing else: no inbox line, no fact, no view; a rejected one is a rejection', async () => {
+  const f = mkWorld();
+  const map = {'thread-a': {assignments: [
+    {entryId: 'a2', threadId: 'thread-b', why: 'about the other event', cites: ['a2', 'b1e'], confidence: 'medium'},
+    {entryId: 'a1', threadId: 'thread-zz', why: 'no such story', cites: ['a1'], confidence: 'high'},
+  ]}};
+  const before = [...f.objs.keys()].sort();
+  const out = await make(f, stub(map))({threadIds: ['thread-a']});
+  assert.equal(out.status, 'ok');
+  const lines = f.lines(`${P}readings/${WEEK}.jsonl`);
+  assert.deepEqual(lines.map((l) => [l.subtype, l.payload]), [['assignment', {entryId: 'a2', threadId: 'thread-b', why: 'about the other event'}]]);
+  assert.ok(lines.every((l) => validReading(l)), JSON.stringify(validReading.errors));
+  const run = f.json(`${P}runs/review-${WEEK}.json`);
+  assert.equal(run.counts.readings.assignment, 1);
+  assert.deepEqual(run.rejections.map((r) => `${r.subtype}:${r.reason}`), ['assignment:unknown_story']);
+  assert.ok(validRun(run), JSON.stringify(validRun.errors));
+  const written = [...f.objs.keys()].filter((k) => !before.includes(k)).sort();
+  assert.deepEqual(written, [`${P}readings/${WEEK}.jsonl`, `${P}runs/review-${WEEK}.json`]);
 });

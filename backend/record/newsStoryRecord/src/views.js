@@ -47,14 +47,54 @@ function resolveAliases(facts) {
   return {aliases: new Map([...direct.keys()].map((from) => [from, root(from)])), applied};
 }
 
+const ASSIGNER_RANK = {ingest: 0, review: 1, operator: 2};
+
+/**
+ * assignment facts -> Map(entryId -> the current assignment fact). Latest `at` wins; at a tie operator beats review beats ingest,
+ * then the larger eventId (0040 rule 3). `supersedes` is informational and not read here.
+ */
+function currentAssignments(facts) {
+  const rank = byKey((f) => f.at, (f) => ASSIGNER_RANK[f.payload.by] ?? -1, (f) => f.eventId);
+  const cur = new Map();
+  for (const f of facts) {
+    if (f.kind !== 'assignment') continue;
+    const had = cur.get(f.payload.entryId);
+    if (!had || rank(had, f) < 0) cur.set(f.payload.entryId, f);
+  }
+  return cur;
+}
+
+/**
+ * Facts -> {placed, reassigned, keep}. `placed` has no assignment facts, and each entry (and any correction of it) sits on the thread of its
+ * current assignment instead of its archive thread. `reassigned` = Map(entryId -> the archive thread it left); `keep` = those archive threads,
+ * which stay stories even when nothing else is left in them. An assignment for an entry that has no entry fact does nothing. With no
+ * assignment but the ingest ones nothing moves and `placed` is the facts unchanged.
+ */
+function placeEntries(facts) {
+  const cur = currentAssignments(facts);
+  const home = new Map();
+  const reassigned = new Map();
+  for (const f of facts) {
+    const a = f.kind === 'entry' && cur.get(f.eventId);
+    if (!a || a.payload.threadId === f.threadId) continue;
+    home.set(f.eventId, a.payload.threadId);
+    if (f.threadId) reassigned.set(f.eventId, f.threadId);
+  }
+  const placed = facts.filter((f) => f.kind !== 'assignment').map((f) => {
+    const to = f.kind === 'entry' ? home.get(f.eventId) : f.kind === 'correction' ? home.get(f.payload.corrects) : undefined;
+    return to ? {...f, threadId: to} : f;
+  });
+  return {placed, reassigned, keep: new Set(reassigned.values())};
+}
+
 const sourcesOf = (f) => (f.sources || []).map((s) => ({sourceId: s.sourceId, outlet: s.outlet, url: s.url, title: s.title}));
 
 /** The entry rows of one story: its own entry facts plus those of stories merged into it (tagged), date ascending. */
-function entryRows(group, corrected) {
+function entryRows(group, corrected, reassigned = new Map()) {
   return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry').map((f) => ({
     eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: f.payload.title, summary: f.payload.summary ?? null,
     category: f.payload.category ?? null, eventType: f.payload.eventType ?? null, sources: sourcesOf(f),
-    ...(own ? {} : {fromThreadId: threadId}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
+    ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
 
@@ -80,8 +120,9 @@ function forkRows(facts) {
 }
 
 /** Facts -> one record per thread: its survivor, own facts, and (for a survivor) the facts of the stories merged into it. */
-function groupStories(facts, aliases) {
+function groupStories(facts, aliases, keep = new Set()) {
   const own = new Map();
+  for (const id of keep) own.set(id, []);
   for (const f of facts) if (f.threadId && f.kind !== 'run') (own.get(f.threadId) || own.set(f.threadId, []).get(f.threadId)).push(f);
   for (const [from, into] of aliases) { if (!own.has(from)) own.set(from, []); if (!own.has(into)) own.set(into, []); }
   const merged = new Map();
@@ -93,8 +134,8 @@ function groupStories(facts, aliases) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon}) {
-  const {own, merged} = groupStories(facts, aliases);
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep}) {
+  const {own, merged} = groupStories(facts, aliases, keep);
   const stories = new Map();
   const rows = new Map();
   const survivors = new Map();
@@ -121,7 +162,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const mergeFacts = applied.filter((f) => ids.has(f.payload.into));
     const corrections = allFacts.filter((f) => f.kind === 'correction');
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
-    const entries = entryRows(group, corrected);
+    const entries = entryRows(group, corrected, reassigned);
     const kept = entries.slice(-ENTRY_CAP);
     const forks = forkRows(mine);
     const branches = forks.flatMap((k) => k.branches);
@@ -265,8 +306,9 @@ function countDaysFor(today, changedDays = []) {
  * (record/operator/aliases.json or null). Throws when all.json is over its hard cap.
  */
 function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null}) {
-  const facts = ordered(allFacts);
-  const factsThrough = maxOf(facts.filter((f) => f.kind !== 'run').map((f) => f.date));
+  const sorted = ordered(allFacts);
+  const {placed: facts, reassigned, keep} = placeEntries(sorted);
+  const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run').map((f) => f.date));
   const standingReadings = Rd.standing(readingLines);
   const readingsThrough = Rd.maxWeek(standingReadings);
   const builtFrom = {factsThrough, readingsThrough};
@@ -274,7 +316,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const {canon} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
@@ -300,4 +342,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, buildViews, countDaysFor, writeGroups, bytesOf};
+module.exports = {SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};

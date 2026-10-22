@@ -195,3 +195,78 @@ test('X3: counts.articles is the article facts of that day; articles are not ent
   assert.deepEqual(v.counts.get('2026-10-20').total, base.counts.get('2026-10-20').total);
   assert.deepEqual(JSONIFY([v.stories, v.all, v.active, v.manifest.factsThrough]), JSONIFY([base.stories, base.all, base.active, base.manifest.factsThrough]));
 });
+
+// Y2: views follow the latest assignment per entry (0040 rule 3).
+const T1 = '2026-10-18T04:00:00.000Z';
+const ingestAll = (facts) => facts.filter((f) => f.kind === 'entry' && f.threadId).map((e) => X.assignment(e.eventId, e.threadId, e.at, 'ingest'));
+const stripIds = (v) => JSONIFY({stories: [...v.stories], links: [...v.links], counts: [...v.counts], active: v.active, all: v.all});
+
+test('Y2: ingest assignments alone change nothing: the views are byte-identical to the views without them', () => {
+  const plain = X.golden();
+  const withIngest = [...X.golden(), ...ingestAll(X.golden())];
+  assert.deepEqual(stripIds(build(withIngest)), stripIds(build(plain)));
+  // an ingest assignment to a merged-away thread behaves like the entry's own thread
+  assert.equal(JSON.stringify(build(withIngest).manifest), JSON.stringify(build(plain).manifest));
+});
+
+test('Y2: an assignment is a no-op for an entry that does not exist, and assignment facts are not stories', () => {
+  const f = [...X.golden(), X.assignment('nope', 'thread-zzz', '2026-10-21T00:00:00.000Z')];
+  const v = build(f);
+  assert.equal(v.stories.has('thread-zzz'), false);
+  assert.deepEqual(stripIds(v), stripIds(build(X.golden())));
+});
+
+test('Y2: a reassigned entry leaves the old story and joins the new one tagged reassignedFrom; rows, counts and links follow', () => {
+  const f = [...X.golden(), X.assignment('ea2', 'thread-b', '2026-10-21T10:00:00.000Z', 'operator', {reason: 'about the other story'})];
+  const v = build(f);
+  const a = v.stories.get('thread-a');
+  const b = v.stories.get('thread-b');
+  assert.deepEqual(a.entries.map((e) => e.eventId), ['ea1']);
+  assert.deepEqual(b.entries.map((e) => [e.eventId, e.reassignedFrom, e.fromThreadId]), [['ec1', undefined, 'thread-c'], ['eb1', undefined, undefined], ['ea2', 'thread-a', undefined]]);
+  assert.deepEqual([rowOf(v, 'thread-a').entryCount, rowOf(v, 'thread-b').entryCount], [1, 3]);
+  assert.deepEqual(rowOf(v, 'thread-b').title, 'C first');
+  assert.deepEqual(v.counts.get('2026-10-20').byStory, {'thread-b': {newEntries: 1, branchesDue: 0, verdicts: 0}, 'thread-a': {newEntries: 0, branchesDue: 1, verdicts: 1}});
+  assert.deepEqual(a.iso3, ['FRA']); // DEU came with ea2
+  assert.deepEqual(b.iso3, ['DEU', 'FRA', 'UKR']);
+  // the old story keeps its forecasts and verdicts
+  assert.equal(a.forks.length, 1);
+});
+
+test('Y2: link specificity uses current membership: an actor that moved with its entry now links the new pair', () => {
+  const day = '2026-10-20T10:00:00.000Z';
+  const pad = Array.from({length: 40}, (_, i) => X.entry(`pad${i}`, day, 'x', {sources: [`p${i}`], actorIds: [`name:pad${i}`]}));
+  const base = [X.entry('s-a', day, 'A', {id: 'x1', actorIds: ['name:rare']}), X.entry('s-b', day, 'B', {id: 'x2'}), ...pad];
+  assert.equal(build(base).links.get('s-b').links.length, 0);
+  const moved = build([...base, X.assignment('x1', 's-b', '2026-10-21T00:00:00.000Z')]);
+  assert.deepEqual(moved.stories.get('s-b').actorIds, ['name:rare']);
+  assert.deepEqual(moved.stories.get('s-a').entries, []);
+});
+
+test('Y2: precedence: latest at wins; at a tie operator beats review beats ingest; back-assigning to the original thread clears the tag', () => {
+  const at = '2026-10-21T10:00:00.000Z';
+  const who = (...as) => { const v = build([...X.golden(), ...as]); return v.stories.get('thread-b').entries.some((e) => e.eventId === 'ea2') ? 'b' : v.stories.get('thread-d')?.entries?.some((e) => e.eventId === 'ea2') ? 'd' : 'a'; };
+  const to = (thread, by, when = at) => X.assignment('ea2', thread, when, by);
+  assert.equal(who(to('thread-b', 'review'), to('thread-d', 'ingest')), 'b', 'review beats ingest at a tie');
+  assert.equal(who(to('thread-d', 'operator'), to('thread-b', 'review')), 'd', 'operator beats review at a tie');
+  assert.equal(who(to('thread-d', 'operator', '2026-10-21T09:00:00.000Z'), to('thread-b', 'review')), 'b', 'a later review beats an earlier operator');
+  assert.equal(who(to('thread-b', 'operator'), to('thread-a', 'operator', '2026-10-22T00:00:00.000Z')), 'a', 'the operator can send it back');
+  const back = build([...X.golden(), to('thread-b', 'operator'), to('thread-a', 'operator', '2026-10-22T00:00:00.000Z')]);
+  assert.deepEqual(back.stories.get('thread-a').entries.map((e) => [e.eventId, e.reassignedFrom]), [['ea1', undefined], ['ea2', undefined]]);
+  assert.deepEqual(stripIds(back).stories, stripIds(build(X.golden())).stories.map(([id, s]) => [id, id === 'thread-a' || id === 'thread-b' ? back.stories.get(id) : s]));
+});
+
+test('Y2: reassigning to a merged-away story lands on the survivor tagged fromThreadId; reassigning out of an emptied story keeps the story', () => {
+  const v = build([...X.golden(), X.assignment('eb1', 'thread-c', '2026-10-22T00:00:00.000Z')]);
+  assert.deepEqual(v.stories.get('thread-b').entries.map((e) => [e.eventId, e.fromThreadId, e.reassignedFrom]), [['ec1', 'thread-c', undefined], ['eb1', 'thread-c', 'thread-b']]);
+  const e = build([...X.golden(), X.assignment('eo1', 'thread-a', '2026-10-22T00:00:00.000Z')]);
+  assert.deepEqual(e.stories.get('thread-old').entries, []);
+  assert.equal(rowOf(e, 'thread-old').entryCount, 0);
+  assert.equal(e.stories.get('thread-a').entries.find((x) => x.eventId === 'eo1').reassignedFrom, 'thread-old');
+});
+
+test('Y2: a correction follows its entry, and factsThrough counts an assignment day', () => {
+  const v = build([...X.golden(), X.assignment('ea1', 'thread-b', '2026-10-23T00:00:00.000Z')]);
+  assert.equal(v.stories.get('thread-b').entries.find((e) => e.eventId === 'ea1').corrected, true);
+  assert.equal(v.stories.get('thread-a').corrections.length, 0);
+  assert.equal(v.manifest.factsThrough, '2026-10-23');
+});

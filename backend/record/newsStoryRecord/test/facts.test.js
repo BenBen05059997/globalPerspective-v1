@@ -93,3 +93,18 @@ test('X1: precision is exact with publishedAt, day (fetch day) without it or whe
   for (const o of [{url: ''}, {url: 'ftp://x.test/a', canonicalUrl: null}, {title: ''}, {fetchedAt: 'nope'}]) assert.throws(() => inboxArticleFact(rawArticle(o), 'r'), /inbox article/, JSON.stringify(o));
   assert.throws(() => inboxArticleFact(null, 'r'), /inbox article/);
 });
+
+test('Y1: assignment fact: eventId sha1(assignment+entryId+threadId+by+at), threadId is the assigned story, ingest derives from the entry fact', () => {
+  const e = F.entryFact(entry, 'r');
+  const a = F.ingestAssignmentFor(e, 'r');
+  assert.equal(a.eventId, R.sha1(`assignment${e.eventId}thread-aingest${e.at}`));
+  assert.deepEqual([a.kind, a.threadId, a.at, a.precision, a.payload], ['assignment', 'thread-a', e.at, e.precision, {entryId: e.eventId, threadId: 'thread-a', by: 'ingest', supersedes: null, reason: null}]);
+  assert.deepEqual(F.ingestAssignmentFor(e, 'r2').eventId, a.eventId, 'the run id does not enter the id');
+  assert.equal(F.ingestAssignmentFor({...e, threadId: null}, 'r'), null);
+});
+
+test('Y1: assignment fact refuses a missing entry or story, an unknown assigner and a bad time', () => {
+  const ok = {entryId: 'a'.repeat(40), threadId: 'thread-x', by: 'operator', at: '2026-10-24T08:00:00Z', sourceKey: 'k', sourceRow: {store: 'record', key: 'k'}, runId: 'r'};
+  assert.equal(F.assignmentFact(ok).at, '2026-10-24T08:00:00.000Z');
+  for (const bad of [{entryId: ''}, {threadId: null}, {by: 'model'}, {at: 'soon'}]) assert.throws(() => F.assignmentFact({...ok, ...bad}), /facts:/);
+});

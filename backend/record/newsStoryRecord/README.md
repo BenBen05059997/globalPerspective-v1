@@ -5,7 +5,7 @@ The facts writer. Each run appends one UTC day's facts, with no model, to `recor
 ## What a run does
 
 1. Writes `runs/DATE.json` with `status:"started"` (a Run left at `started` with no `finishedAt` is the alarm).
-2. Reads through shared `world/` only: `archive#` rows for the 30 days to DATE, the `today-archive` entries archived on DATE, `PRED#` snapshots of the day's topics, the resolver's verdict inbox (`inbox/verdicts/`) and the merge and split inboxes (`inbox/merges/`, `inbox/splits/`) and the selector's article inbox (`inbox/articles/`), each the run day and 6 days before. No table is read for verdicts, no scan, no listing.
+2. Reads through shared `world/` only: `archive#` rows for the 30 days to DATE, the `today-archive` entries archived on DATE, `PRED#` snapshots of the day's topics, the resolver's verdict inbox (`inbox/verdicts/`) and the merge and split inboxes (`inbox/merges/`, `inbox/splits/`) and the selector's article inbox (`inbox/articles/`) and the assignment inbox (`inbox/assignments/`), each the run day and 6 days before. No table is read for verdicts, no scan, no listing.
 3. Builds facts and drops those already stored (it reads the last 100 days of fact files, so a re-run is a no-op and the same article listed again on a later day is not a second fact).
 4. Appends each fact to the file of its own day (the UTC date of `at`), registers the days in `facts/manifest.json`, appends a `run` fact, and overwrites the Run with `ok`, `partial` or `failed`.
 5. Throws when the Run is not `ok` (daily mode), so the schedule's Errors metric moves. A missing archive day is a `failed` Run with `inputs.archiveDay:"missing"`, never `ok`.
@@ -18,6 +18,7 @@ The facts writer. Each run appends one UTC day's facts, with no model, to `recor
 | `verdict` | each line of `record/inbox/verdicts/YYYY-MM-DD.jsonl` written by the resolver (`yes`, `no`, `void`) | `eventId = sha1('verdict' + qid + revision)`, `at = decidedAt`; thread and branch come from the line, else from the question's `forecast_drawn` fact (100-day lookback); revision 2 or more is a correction and a second fact. `voidReason` `issued_before_method` with `decidedBy:"operator-job"` and `qid:null` marks the legacy void (below) |
 | `story_merged` | each line of `record/inbox/merges/YYYY-MM-DD.jsonl` (the review's auto-merges: `{from, into, at, reason, cites, readingId}`) | `eventId = sha1('story_merged' + from + into + at)`; `threadId = into`; `evidence = cites` as `[{eventId}]`; `readingId` kept in the payload |
 | `story_split` | each line of `record/inbox/splits/YYYY-MM-DD.jsonl` (operator only: `{from, into, at, reason}`) | `eventId = sha1('story_split' + from + into + at)`; `threadId = into`; undoes the matching merge in the views |
+| `assignment` | (a) every fresh `entry` fact, derived in the same run: `{entryId, threadId, by:'ingest', supersedes:null, reason:null}` to the entry's archive thread, `at` and `precision` = the entry's; (b) each line of `record/inbox/assignments/YYYY-MM-DD.jsonl` (`{entryId, threadId, by:'operator'\|'review', at, reason, supersedes?}`) | `eventId = sha1('assignment' + entryId + threadId + by + at)`; envelope `threadId` = the assigned story; `entryId` is the entry's `eventId`; `sourceIds`, `iso3`, `actorIds` empty. The latest assignment of an entry decides its story in the views (Views) |
 | `article` | each line of `record/inbox/articles/YYYY-MM-DD.jsonl` (the selector's raw articles: `{schemaVersion, rawId, url, canonicalUrl, title, outlet, feed, publishedAt, fetchedAt, snippet, lang}`, recovered ones also `recoveredAt`, `recoveredFrom`) | `eventId = sha1('article' + canonicalUrl)` (a live and a recovered copy are one fact); `at = publishedAt` (`exact`) else the start of the `fetchedAt` day (`day`); `sourceIds` from the url's registrable domain; `threadId` null, `iso3` and `actorIds` empty; payload `{url, canonicalUrl, title, outlet, feed, snippet, lang, recoveredAt, recoveredFrom}`. Not an entry: it is in no story and no index |
 | `correction` | nothing yet | builder in `src/facts.js`; written when an operator input exists |
 | `run` | the Run | appended every run, failures included |
@@ -35,6 +36,8 @@ After the facts and before the Run is finalised, `src/publish.js` reads every da
 | `links/{threadId}.json` | for each active story: shared actor, iso3 and source IDs with other active stories, `grounds` 1 to 3, sorted by grounds (desc) then id, max 50; `confirmedLinks` `[{otherThreadId, mechanism, direction, week, cites}]` from link readings (`confirmedLinksReason` null; with none: `[]` and `"no reading yet"`) |
 | `counts/{date}.json` | `articles` (article facts dated that day), `byStory` (stories with a nonzero count) and `total` of `newEntries`, `branchesDue`, `verdicts`; written for the previous and current ISO week up to today and for every day whose facts changed in the invocation |
 | `manifest.json` | `{schemaVersion, builtAt, runId, factsManifestDays, factsThrough, readingsThrough}` (`readingsThrough` = newest ISO week among the readings used, else null) |
+
+Assignments (0040 rule 3): an entry belongs to the story of its current assignment, the one with the latest `at` (ties: operator, then review, then ingest, then larger `eventId`); an entry with no assignment fact stays on its archive thread. A reassigned entry leaves the old story's `entries`, row counts, `iso3`/`actorIds`/`sourceIds`, `counts/` `newEntries` and link grounds, and appears in the new story's, carrying `reassignedFrom` (the archive thread it left). Corrections follow their entry. With only ingest assignments the views are byte-identical to the views without any (golden test). An assignment for an entry that has no `entry` fact does nothing.
 
 `liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) now includes `record/views/*`. First live build 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files.
 
@@ -57,6 +60,7 @@ After the facts and before the Run is finalised, `src/publish.js` reads every da
 |---|---|
 | `date` | the UTC day to process (default today) |
 | `backfill: {from, to}` | replay those days oldest first through the same code; a day with no archive row gets a `missing` Run and no facts and does not throw |
+| `assignmentsBackfill: true` | one-time job: every `entry` fact already written gets its ingest assignment (below, Choices); not a nightly run |
 | `shadow` | default `true`: every key moves under `record/shadow/` (`record/shadow/facts/`, `record/shadow/runs/`, `record/shadow/facts/manifest.json`); the flip is a prefix change |
 
 The live schedule (rule `TriggerStoryRecord`, cron(45 23 * * ? *), i.e. 23:45Z) has input `{"shadow":false}`: one run for the current UTC day, written live. A backfill payload (`{"backfill":{"from":"<yesterday>","to":"<today>"}}`, so yesterday is completed once its archive row exists) is not what runs; both shapes are idempotent.
@@ -145,13 +149,24 @@ Verdict facts come from the inbox `record/inbox/verdicts/` (run day plus six day
 
 Last verified: 2026-10-22 (deployed code hash, schedule, role, environment, `record/facts/` and `record/views/` read from live AWS; tests and dry runs offline). Live entries stay `precision: day`: archive rows since 2026-10-20 lack `publishedAt` (the DeepSeek outage), so the exact-time path has not had input yet
 
+## Choices: assignments (Y lane, 0040 rule 3)
+
+- Ingest assignments are written only for a fresh entry fact (its `eventId` not in the 100-day known facts and not earlier in the same run) and only when the entry has an archive thread. The same url on a later day under another thread therefore does not pull the entry: one article is one fact, the first thread claims it. Reassigning is the operator's or the review's act.
+- Inbox lines need `at` (the other inbox lines do): the latest `at` decides, and it is part of the `eventId`. `by:'ingest'` is refused in the inbox (ingest assignments are derived). A bad line is an `assignment` failure on the Run (partial) and the rest is kept. Same window as the other inboxes (run day plus 6 days, or `inboxFrom`).
+- `supersedes` is stored and shown nowhere: precedence is by `at` and `by` only, so a stale `supersedes` link cannot change a view.
+- An emptied story stays a story (an empty `entries` list, `entryCount` 0, null `lastFactAt` when nothing else is left), not a deleted view. Assignment facts never bump `lastFactAt`: the entry's own time does, in the story it now belongs to. `builtFrom.factsThrough` does count the day of an assignment.
+- A reassignment onto a merged-away story lands on the survivor, tagged `fromThreadId` as any merged entry. Assigning to `new` is not an inbox value: the operator names the new thread id.
+- `assignmentsBackfill`: reads every facts day of the prefix, derives one ingest assignment per `entry` fact (`at` = the entry's `at`, so it lands in the entry's own day file), skips ids already present, registers the days, rebuilds the views, and returns `{assignmentsBackfill, prefix, entries, written, alreadyAssigned, days}`. `producer.runId` is `assignments-backfill-DATE`; no Run object, no `run` fact. It has NOT been run; the coordinator runs it (shadow first) so existing entries have their ingest claim. Until then the views are still correct: an entry without an assignment stays on its archive thread.
+- A reading of subtype `assignment` (the review's proposal) is not read here: the build skips it like any unknown subtype. A proposal changes nothing until the operator writes the inbox line.
+
 ## Where this sits in the forecast loop
 
 The RECORD node of the stack tree in [ARCHITECTURE_FORECAST_LOOP.md](../../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md) (copied; the nightly pickup in this Lambda is how a verdict row becomes a fact until the resolver writes facts itself):
 
 ```
 +- 5 RECORD      no model                            [newsPredictionResolver -> record/facts]
-|  +- COMMIT : reads the article inbox record/inbox/articles/ (run day + 6 days) -> article facts
+|  +- COMMIT : reads the article inbox record/inbox/articles/ (run day + 6 days) -> article facts; each fresh entry -> its ingest assignment;
+|  |          record/inbox/assignments/ (operator, review) -> assignment facts
 |  +- inputs : final answers (yes | no | void)
 |  +- rule   : write a verdict fact {result, quote, url, at, decidedBy: model, evidence}; put-once; corrections append
 |  |           the pre-registered weekly sample of 22 (0011) is what the public track record scores; other verdicts are shown, not scored

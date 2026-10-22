@@ -20,6 +20,11 @@ test('every example file is covered', () => {
   assert.deepEqual(readdirSync(resolve(__dirname, '../schema/examples')).sort(), ['model-output.json', 'reading.json', 'review-run.json']);
 });
 
+test('an assignment proposal reading is valid', () => {
+  const r = load('examples', 'reading.json');
+  assert.equal(validReading({...r, subtype: 'assignment', payload: {entryId: '7c4e32c8e94f25d7710667980d060821ee391ac5', threadId: 'new', why: 'a different event'}}), true, JSON.stringify(validReading.errors));
+});
+
 test('the reading schema rejects what the spec forbids', () => {
   const r = load('examples', 'reading.json');
   const bad = [
@@ -28,6 +33,8 @@ test('the reading schema rejects what the spec forbids', () => {
     {...r, subtype: 'branch_status', payload: {branchId: 'b', status: 'resurrected', why: 'x'}},
     {...r, subtype: 'alias', payload: {variants: ['name:a'], canonical: 'name:b', wikidataId: 'not-a-q'}},
     {...r, subtype: 'link', payload: {otherThreadId: 't', mechanism: 'm', direction: 'causes'}},
+    {...r, subtype: 'assignment', payload: {entryId: 'e', threadId: 't'}},
+    {...r, subtype: 'assignment', payload: {entryId: 'e', threadId: 't', why: 'w', by: 'review'}},
   ];
   bad.forEach((b, i) => assert.equal(validReading(b), false, `case ${i}`));
   assert.equal(validRun({...load('examples', 'review-run.json'), status: 'done'}), false);

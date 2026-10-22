@@ -631,3 +631,98 @@ test('X2: a day whose Run notes recovery refuses forecast_drawn (hook); a normal
   assert.match(run.notes, /^recovery refused forecast_drawn: 1$/);
   assert.equal(rec.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'forecast_drawn').length, 0);
 });
+
+// Y1: assignments (0040 rule 3). The entry fact is the ingest claim; the inbox carries the operator's and the review's.
+const assignLine = (o = {}) => ({entryId: 'a'.repeat(40), threadId: 'thread-9', by: 'operator', at: '2026-10-20T12:00:00.000Z', reason: 'belongs here', ...o});
+
+test('Y1: a fresh entry also writes an ingest assignment to its archive thread at the entry time; a re-run appends nothing', async () => {
+  const f = fakeS3();
+  const {handler} = make(scripted({'2026-10-20': twenty('2026-10-20')}), f);
+  const r = await handler({date: '2026-10-20'});
+  assert.equal(r.counts.assignment, 20);
+  const facts = f.lines(`${P}facts/2026-10-20.jsonl`);
+  const entries = facts.filter((x) => x.kind === 'entry');
+  const a = facts.filter((x) => x.kind === 'assignment');
+  assert.equal(a.length, 20);
+  for (const e of entries) {
+    const x = a.find((y) => y.payload.entryId === e.eventId);
+    assert.deepEqual([x.eventId, x.threadId, x.at, x.payload], [sha1('assignment' + e.eventId + e.threadId + 'ingest' + e.at), e.threadId, e.at, {entryId: e.eventId, threadId: e.threadId, by: 'ingest', supersedes: null, reason: null}]);
+  }
+  const body = f.objs.get(`${P}facts/2026-10-20.jsonl`).body;
+  const again = await make(scripted({'2026-10-20': twenty('2026-10-20')}), f).handler({date: '2026-10-20'});
+  assert.deepEqual([again.counts.entry, again.counts.assignment], [0, 0]);
+  assert.equal(f.objs.get(`${P}facts/2026-10-20.jsonl`).body, body);
+});
+
+test('Y1: the same url on a later day (a known entry) writes no second ingest assignment; a threadless entry writes none', async () => {
+  const f = fakeS3();
+  const day1 = [entry('2026-10-19', 1), entry('2026-10-19', 2, {threadId: null})];
+  const day2 = [entry('2026-10-20', 1, {threadId: 'thread-other', sources: day1[0].sources})];
+  await make(scripted({'2026-10-19': day1}), f).handler({date: '2026-10-19'}).catch(() => null);
+  await make(scripted({'2026-10-20': day2}), f).handler({date: '2026-10-20'}).catch(() => null);
+  const all = [...f.lines(`${P}facts/2026-10-19.jsonl`), ...f.lines(`${P}facts/2026-10-20.jsonl`)].filter((x) => x.kind === 'assignment');
+  assert.equal(all.length, 1);
+  assert.equal(all[0].threadId, 'thread-1');
+});
+
+test('Y1: inbox assignment lines become assignment facts with eventId sha1(assignment+entryId+threadId+by+at); a re-run adds nothing', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/assignments/2026-10-20.jsonl`, [assignLine(), assignLine({by: 'review', supersedes: 'b'.repeat(40), reason: null, at: '2026-10-20T13:00:00.000Z'})]);
+  const r = await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(r.counts.assignment >= 2, true);
+  const mine = f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'assignment' && x.payload.by !== 'ingest');
+  assert.deepEqual(mine.map((x) => [x.eventId, x.threadId, x.payload.by, x.payload.supersedes, x.payload.reason]), [
+    [sha1('assignment' + 'a'.repeat(40) + 'thread-9' + 'operator' + '2026-10-20T12:00:00.000Z'), 'thread-9', 'operator', null, 'belongs here'],
+    [sha1('assignment' + 'a'.repeat(40) + 'thread-9' + 'review' + '2026-10-20T13:00:00.000Z'), 'thread-9', 'review', 'b'.repeat(40), null],
+  ]);
+  const body = f.objs.get(`${P}facts/2026-10-20.jsonl`).body;
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(f.objs.get(`${P}facts/2026-10-20.jsonl`).body, body);
+});
+
+test('Y1: a bad assignment line (by ingest, no at, no entryId) is an assignment failure on the Run and the good line is kept; the inbox reaches back 7 days', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/assignments/2026-10-19.jsonl`, [assignLine({by: 'ingest'}), assignLine({at: undefined}), assignLine({entryId: undefined}), assignLine({at: '2026-10-19T12:00:00.000Z'})]);
+  putLines(f, `${P}inbox/assignments/2026-10-13.jsonl`, [assignLine({at: '2026-10-13T12:00:00.000Z'})]); // 7 days back, outside the window
+  await assert.rejects(() => make(dayStore(), f).handler({date: '2026-10-20'}), /assignment/);
+  const run = f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.status, run.failures.map((x) => x.stage), run.counts.assignment >= 1], ['partial', ['assignment', 'assignment', 'assignment'], true]);
+  assert.equal(f.lines(`${P}facts/2026-10-19.jsonl`).filter((x) => x.kind === 'assignment' && x.payload.by === 'operator').length, 1);
+  assert.equal(f.objs.has(`${P}facts/2026-10-13.jsonl`), false);
+  await make(dayStore(), f).handler({date: '2026-10-20', inboxFrom: '2026-10-01'}).catch(() => null);
+  assert.equal(f.lines(`${P}facts/2026-10-13.jsonl`).filter((x) => x.kind === 'assignment').length, 1);
+});
+
+test('Y1: assignmentsBackfill derives one ingest assignment per existing entry fact at the entry time, under the run prefix, and a re-run appends nothing', async () => {
+  const f = fakeS3();
+  await make(scripted({'2026-10-20': twenty('2026-10-20')}), f).handler({date: '2026-10-20'});
+  // simulate facts written before this feature: strip the assignments
+  const stripped = f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind !== 'assignment');
+  putLines(f, `${P}facts/2026-10-20.jsonl`, stripped);
+  const r = await make(scripted({}), f, () => '2026-10-27T06:00:00.000Z').handler({assignmentsBackfill: true});
+  assert.deepEqual([r.prefix, r.entries, r.written, r.alreadyAssigned, r.days], [P, 20, 20, 0, ['2026-10-20']]);
+  const a = f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'assignment');
+  const e = f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'entry');
+  assert.equal(a.length, 20);
+  for (const x of a) assert.equal(x.at, e.find((y) => y.eventId === x.payload.entryId).at);
+  assert.ok(a.every((x) => x.producer.runId === 'assignments-backfill-2026-10-27'));
+  assert.equal(f.objs.has('record/facts/2026-10-20.jsonl'), false);
+  const body = f.objs.get(`${P}facts/2026-10-20.jsonl`).body;
+  const again = await make(scripted({}), f, () => '2026-10-29T06:00:00.000Z').handler({assignmentsBackfill: true});
+  assert.deepEqual([again.written, again.alreadyAssigned, again.days], [0, 20, []]);
+  assert.equal(f.objs.get(`${P}facts/2026-10-20.jsonl`).body, body);
+});
+
+test('Y2: an operator inbox line moves an entry between story views on the next run; the ingest assignments alone leave the views as they were', async () => {
+  const f = fakeS3();
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  const before = f.json(`${P}views/stories/thread-1.json`);
+  const moved = before.entries[0];
+  const other = f.json(`${P}views/index/all.json`).stories.find((s) => s.threadId !== 'thread-1').threadId;
+  putLines(f, `${P}inbox/assignments/2026-10-20.jsonl`, [assignLine({entryId: moved.eventId, threadId: other, at: '2026-10-20T20:00:00.000Z'})]);
+  await make(dayStore(), f, () => '2026-10-21T06:45:00.000Z').handler({date: '2026-10-20'});
+  assert.equal(f.json(`${P}views/stories/thread-1.json`).entries.some((e) => e.eventId === moved.eventId), false);
+  const to = f.json(`${P}views/stories/${other}.json`).entries.find((e) => e.eventId === moved.eventId);
+  assert.equal(to.reassignedFrom, 'thread-1');
+  assert.equal(f.json(`${P}views/index/all.json`).stories.find((s) => s.threadId === 'thread-1').entryCount, before.entries.length - 1);
+});

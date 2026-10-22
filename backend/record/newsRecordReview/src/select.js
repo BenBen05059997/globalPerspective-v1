@@ -60,6 +60,7 @@ function keyOf(subtype, payload) {
   if (subtype === 'branch_status') return payload.branchId;
   if (subtype === 'link' || subtype === 'merge_proposal') return payload.otherThreadId;
   if (subtype === 'alias') return payload.canonical;
+  if (subtype === 'assignment') return payload.entryId;
   throw new Error(`unknown reading subtype ${subtype}`);
 }
 
@@ -151,7 +152,9 @@ function assemble(world, row, {withNeighbours = true} = {}) {
     ...corrections.map((c) => c.eventId), ...merges.map((m) => m.eventId)]);
   const dates = new Map([...shown, ...facts.filter((f) => f.kind !== 'entry')].map((f) => [f.eventId, f.date]));
   const covers = {from: facts[0].date, to: world.range.to};
-  return {bundle, citable, dates, covers, actorIds, iso3, lastEntry: entries.length ? entries[entries.length - 1].date : null, branches: branchIndex(forks)};
+  const entryIds = new Set(bundle.entries.map((e) => e.eventId));
+  const neighbourEntries = new Map(bundle.neighbours.flatMap((n) => n.entries.map((e) => [e.eventId, n.threadId])));
+  return {bundle, citable, entryIds, neighbourEntries, dates, covers, actorIds, iso3, lastEntry: entries.length ? entries[entries.length - 1].date : null, branches: branchIndex(forks)};
 }
 
 /** branchId -> {verdict: result|null, due} for the branches in the bundle. */

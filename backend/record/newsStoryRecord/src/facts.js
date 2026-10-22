@@ -9,7 +9,8 @@ const world = require('./_shared/world');
 const SCHEMA_VERSION = 1;
 const MAX_PUBLISHED_AGE_DAYS = 30;
 const producerName = `newsStoryRecord@${require('./package.json').version}`;
-const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'article', 'run'];
+const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'article', 'assignment', 'run'];
+const ASSIGNERS = ['ingest', 'review', 'operator'];
 const VERDICTS = ['yes', 'no', 'void'];
 const uniqueSorted = (xs) => [...new Set(xs.filter((x) => typeof x === 'string' && x))].sort();
 const isoOrNull = (s) => (s && Number.isFinite(Date.parse(s)) ? new Date(s).toISOString() : null);
@@ -195,6 +196,44 @@ function inboxArticleFact(line, runId) {
   });
 }
 
+/**
+ * `assignment` (0040 rule 3): entry `entryId` (the entry's eventId) belongs to story `threadId`. threadId on the envelope is the
+ * assigned story. eventId = sha1('assignment' + entryId + threadId + by + at), so a re-read is the same fact. `supersedes` names the
+ * assignment eventId this one replaces (informational: the views take the latest by `at`, not by this link).
+ */
+function assignmentFact({entryId, threadId, by, supersedes = null, reason = null, at, precision = 'exact', sourceKey, sourceRow, runId, iso3 = [], actorIds = [], sourceIds = []}) {
+  if (typeof entryId !== 'string' || !entryId) throw new Error('facts: an assignment needs an entryId');
+  if (typeof threadId !== 'string' || !threadId) throw new Error('facts: an assignment needs a threadId');
+  if (!ASSIGNERS.includes(by)) throw new Error(`facts: assignment by ${by}`);
+  const when = isoOrNull(at);
+  if (!when) throw new Error('facts: an assignment needs a valid at');
+  return makeFact({
+    kind: 'assignment', eventId: R.sha1(`assignment${entryId}${threadId}${by}${when}`), sourceKey, at: when, precision, threadId, iso3, actorIds, sourceIds, sourceRow, runId,
+    payload: {entryId, threadId, by, supersedes: supersedes || null, reason: reason || null},
+  });
+}
+
+/** The ingest assignment of an entry fact: the entry's archive thread, at the entry's own time (the entry fact is the ingest claim). Null for a threadless entry. */
+function ingestAssignmentFor(entry, runId) {
+  if (!entry.threadId) return null;
+  return assignmentFact({
+    entryId: entry.eventId, threadId: entry.threadId, by: 'ingest', at: entry.at, precision: entry.precision, sourceKey: `ingest:assignments/${entry.eventId}|${entry.threadId}`,
+    sourceRow: {store: 'record', key: `ingest:assignments/${entry.eventId}`}, runId,
+  });
+}
+
+/**
+ * One line of the assignment inbox (record/inbox/assignments/DAY.jsonl: {entryId, threadId, by: 'operator'|'review', at, reason, supersedes?}) -> `assignment`.
+ * `at` is required (the latest assignment wins by `at`). `by` ingest is refused: ingest assignments are derived, never inboxed.
+ */
+function inboxAssignmentFact(line, runId) {
+  const l = line && typeof line === 'object' ? line : {};
+  if (!['operator', 'review'].includes(l.by)) throw new Error(`facts: inbox assignment by must be operator or review, got ${l.by}`);
+  if (typeof l.at !== 'string' || !isoOrNull(l.at)) throw new Error('facts: inbox assignment needs a valid at');
+  const sourceKey = `inbox:assignments/${l.entryId}|${l.threadId}|${l.by}|${l.at}`;
+  return assignmentFact({entryId: l.entryId, threadId: l.threadId, by: l.by, supersedes: l.supersedes, reason: l.reason, at: l.at, sourceKey, sourceRow: {store: 'record', key: sourceKey}, runId});
+}
+
 /** `run` fact: the day was processed (0036 §4). `at` defaults to finishedAt; a backfill passes the end of the replayed day so its run fact stays in that day's file. */
 function runFact(run, at = run.finishedAt) {
   return makeFact({
@@ -203,4 +242,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};

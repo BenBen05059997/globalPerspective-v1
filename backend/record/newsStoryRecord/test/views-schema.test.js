@@ -54,3 +54,12 @@ test('the schemas reject what 0037 forbids', () => {
   assert.equal(validate.links({...links, links: [{...links.links[0], grounds: 0}]}), false);
   assert.equal(validate.index({...load('examples', 'index-active.json'), stories: [{threadId: 'x'}]}), false);
 });
+test('Y2: views with a reassigned entry (and an emptied story) satisfy the schemas', () => {
+  const X = require('./views-fixture');
+  const V = require('../src/views');
+  const f = [...X.golden(), X.assignment('ea2', 'thread-b', '2026-10-21T10:00:00.000Z'), X.assignment('eo1', 'thread-a', '2026-10-22T00:00:00.000Z')];
+  const v = V.buildViews(f, {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1});
+  for (const id of ['thread-a', 'thread-b', 'thread-old']) assert.equal(validate.story(v.stories.get(id)), true, JSON.stringify(validate.story.errors));
+  assert.ok(v.stories.get('thread-b').entries.some((e) => e.reassignedFrom === 'thread-a'));
+  for (const s of [v.active, v.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
+});

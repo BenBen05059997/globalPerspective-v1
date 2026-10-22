@@ -25,6 +25,7 @@ const reading = (week, threadId, subtype, payload, o = {}) => ({
   schemaVersion: 1, readingId: o.readingId || `r-${week}-${threadId}-${subtype}-${o.key ?? ''}`, week, threadId, subtype, payload, cites: o.cites || ['a'.repeat(40)],
   covers: {from: '2026-10-12', to: '2026-10-18'}, supersedes: o.supersedes || null, run: o.run || `review-${week}`, model: 'stub', promptVersion: 'v1', confidence: o.confidence || 'high',
 });
+const assignment = (entryId, threadId, at, by = 'operator', o = {}) => fact('assignment', threadId, at, {payload: {entryId, threadId, by, supersedes: o.supersedes || null, reason: o.reason ?? null}, id: o.id});
 const run = (at) => fact('run', null, at, {payload: {runId: 'r', status: 'ok', counts: {}}});
 
 /** The golden set: thread-a (forecast, verdict, correction), thread-b (+ merged thread-c, chain thread-d), thread-old (inactive). */
@@ -49,4 +50,4 @@ function golden() {
     run('2026-10-21T05:45:00.000Z'),
   ];
 }
-module.exports = {reading, fact, entry, born, branch, forecast, verdict, correction, merged, run, golden, src};
+module.exports = {reading, fact, entry, born, branch, forecast, verdict, correction, merged, assignment, run, golden, src};

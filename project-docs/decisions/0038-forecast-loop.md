@@ -30,4 +30,16 @@ The product is an analyst tool; a forecast with a verdict separates it from a fe
 - Needs: generator change, resolver change, the verdict inbox below, a one-time legacy job, a frontend release for wording.
 
 ## Amendment 2026-10-22: the verdict hand-off is an S3 inbox
-The resolver never writes `record/facts/` and the facts writer never queries DynamoDB for verdicts (a per-question lookup would be about 5,000 queries a night). Instead the resolver appends each final verdict as one JSON line to `record/inbox/verdicts/YYYY-MM-DD.jsonl` (decision day, UTC; shadow under `record/shadow/inbox/verdicts/`), a prefix only the resolver writes. The nightly facts run reads the inbox for the run day and the six days before (seven GetObjects) and appends one `verdict` fact per line (`eventId = sha1('verdict' + qid + revision)`); a correction is a new line with `revision` 2 or more. The `Q#<qid>/VERDICT` rows stay for the sampled track record. IAM: the resolver role gets `s3:PutObject` on the inbox prefixes and `s3:GetObject` on `record/facts/*` (for WATCH); the facts writer needs no change.
+Problem: the first hand-off (the facts writer queries DynamoDB `Q#/VERDICT` per question) would be about 4,989 queries a night (lane O measured 4,989 distinct qids in the live facts, 4,832 still due), rising with every forecast. The operator rejected it: "I don't want 5,000 queries; they are all static anyway, store this in S3."
+
+Decision: a verdict inbox.
+- The resolver appends each final verdict (`yes|no|void`) as one JSON line to `record/inbox/verdicts/YYYY-MM-DD.jsonl` (decision day, UTC; shadow under `record/shadow/inbox/verdicts/`). Only the resolver writes that prefix.
+- The nightly facts run reads the inbox for the run day and the six days before (seven GetObjects, a missing day is empty) and appends one `verdict` fact per line, `eventId = sha1('verdict' + qid + revision)`. A correction is a new line with `revision` 2 or more.
+- The resolver never writes `record/facts/`; the facts writer never queries DynamoDB for verdicts. The `Q#<qid>/VERDICT` rows stay in DynamoDB only for the sampled track record (0011).
+- Backfill: event `{inboxFrom:'YYYY-MM-DD'}` on the facts writer reads every inbox day from that date.
+
+Why: (1) verdicts are static once decided, so they belong in S3 like every other world fact (0035: world = S3, DynamoDB = user data); (2) one writer per file holds: the resolver owns the inbox, the facts writer owns the facts, the record stays append-only; (3) cost is bounded by days, not questions: seven small reads a night whatever the forecast volume; (4) it is replayable: delete the facts, re-read the inbox from day one, get the same verdict facts; (5) it is a general pattern, the "inbox": any producer that is not the facts writer (future: operator corrections, story merges from the review) hands facts to the record through `record/inbox/<kind>/DAY.jsonl`, and the facts writer is the only one that turns inbox lines into facts.
+
+Rejected: a direct DynamoDB lookup (cost grows with questions; ties the record to a table); the resolver writing `record/facts/` itself (two writers of one file, manifest races, breaks 0036 section 1); the resolver invoking `newsStoryRecord` synchronously (coupling, retries, double runs).
+
+IAM (operator yes needed, not done): resolver role `s3:PutObject` on the two inbox prefixes and `s3:GetObject` on `record/facts/*` (for WATCH). The facts writer role is unchanged (it already reads and writes `record/*`).

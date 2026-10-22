@@ -39,6 +39,7 @@ WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCR
 ├─ 2 COMMIT   backend/record/newsStoryRecord · no model · daily 23:45Z
 │    record/facts/DAY.jsonl   entry · story_born · forecast_drawn · verdict · story_merged · correction · run
 │    record/runs/DAY.json     ok | partial | failed  (a missing input is recorded, never filled)
+│    record/inbox/<kind>/DAY.jsonl  hand-off from other writers (verdicts from the resolver); read nightly, turned into facts
 │    IDs by content: entry = sha1(canonical url) · story = threadId · actor = name: · source = sha1(domain) · country = iso3
 │    └─ FORECAST LOOP (0038, ARCHITECTURE_FORECAST_LOOP.md)
 │         draw ≤3 outcomes/story/week (pipeline agent) → watch stories that moved or fell due (predictions resolver)
@@ -186,14 +187,15 @@ Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; built 2
 | Track record | `forecast_drawn`, `branch_status`, `verdict` | `predictions/track_record.json` (today) | track record page |
 
 Stores: `record/facts/YYYY-MM-DD.jsonl` and `record/facts/manifest.json` (days present) · `record/runs/` · `record/readings/YYYY-Www.jsonl` ·
-`record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
+`record/inbox/<kind>/YYYY-MM-DD.jsonl` (written by the resolver for `verdicts` (0038 amendment), read by `newsStoryRecord` for the run day and six days before; kept, it is replay input) · `record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
 diffs the readings) · `weekly/YYYY-MM-DD.json`. The scheduled run writes live (`{"shadow":false}`, flipped 2026-10-22); a manual invoke
 defaults to `shadow:true` and writes the same bytes under `record/shadow/` (a prefix change, not a code change). Views are rebuilt in full from the facts manifest every time (plain PutObject; derived,
 replaceable). The Worker serves only `record/views/` (0037 §4), never facts, runs or readings.
 
 ## 6. Who writes, who reads (two writers, each the only writer of its file)
 - **Facts and the daily Run:** only `newsStoryRecord` (`backend/record/`), from raw tables through `backend/shared/src/world/`.
-  No model, no DynamoDB write.
+  No model, no DynamoDB write. The one exception to "only `newsStoryRecord` writes facts" is the **inbox rule** (0038 amendment): any other
+  producer (today the resolver, for verdicts) appends lines to `record/inbox/<kind>/DAY.jsonl`, and `newsStoryRecord` is the only one that converts inbox lines into facts.
 - **Readings and review Runs:** only `newsRecordReview` (`backend/record/`, planned). Writes `record/readings/*` and the weekly
   Run. It reads facts and its own earlier readings, nothing else.
 - **Views (0037):** `newsStoryRecord` builds all of them after each daily append, in the same invocation; from step 3

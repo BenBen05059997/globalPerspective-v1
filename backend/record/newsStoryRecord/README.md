@@ -109,4 +109,6 @@ node quality/check_docs.mjs
 
 Tests use scripted stores, a fake ETag-aware S3 and, for the `today-archive` cases, the real world readers over `world.fake.js`. `FRONTEND_NODE_MODULES` is needed only for the schema test (the frontend's Ajv).
 
+Verdict facts come from the inbox `record/inbox/verdicts/` (run day plus six days before; `{inboxFrom}` backfills), written by the resolver; see decision 0038 amendment.
+
 Last verified: 2026-10-22 (deployed code hash, schedule, role, environment, `record/facts/` and `record/views/` read from live AWS; tests and dry runs offline). Live entries stay `precision: day`: archive rows since 2026-10-20 lack `publishedAt` (the DeepSeek outage), so the exact-time path has not had input yet

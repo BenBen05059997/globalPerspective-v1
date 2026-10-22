@@ -78,6 +78,7 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`, live since 2026-10-22), append-only, no model | `newsRecordReview`, view rebuilds |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
+| `record/inbox/<kind>/YYYY-MM-DD.jsonl` (`verdicts` first; shadow `record/shadow/inbox/`) | the producer of that kind: `newsPredictionResolver` for `verdicts` (0038 amendment; IAM grant pending) | on each decision, append-only, kept (replay input) | `newsStoryRecord` (run day + 6 days before; `{inboxFrom}` backfills) |
 | `record/runs/YYYY-Www.json` | `newsRecordReview` (planned) | weekly | monitoring (alarm signal), operator |
 | `record/views/…` (stories, index/active, index/all, links, counts, manifest) | rebuilt: facts-only views by `newsStoryRecord` (builder deployed 2026-10-22, role `record/views/*` granted; built that day: 519 stories), story readings by `newsRecordReview` (planned) | after each daily append / weekly run | board, pages, weekly |
 | `record/fixtures/golden-week/` | written by hand (operator), frozen | — | `newsRecordReview` re-runs and diffs |

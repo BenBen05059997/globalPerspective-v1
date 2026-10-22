@@ -16,7 +16,7 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 | Draw quality: no invented calendar facts (grounded-date gate), no templated probabilities, drop example numbers from the schema; the 5-precedent prompt v2b awaits an operator yes | draw lane | yes for prompt v2b | ☐ | older plan P1/P2; A/B harness `predictions/forecast-ab/` |
 | Resolver: watch triggers from `record/facts` (new entry that day, due + 3 days) | resolver lane (`newsPredictionResolver`) | no | ☐ | |
 | Resolver: gather (search for the event text, results dated before due) and judge (existing lib.js rules, `issued_before_method` reason) | resolver lane | no | ☐ | |
-| Resolver: verdict facts into `record/facts/`. DECISION: (a) grant the resolver role PutObject `record/facts/*` (IAM change), or (b) the resolver hands verdicts to `newsStoryRecord`, which already holds that grant | operator | yes (IAM, if option a) | ☐ decision | |
+| Verdict inbox `record/inbox/verdicts/` (0038 amendment): resolver writes, facts writer reads 7 days | lanes N + O | IAM: yes (resolver PutObject inbox, GetObject record/facts) | ◐ | lanes building |
 | Legacy void job: the 2,451 branches without a question id voided once with `issued_before_method` | resolver lane | yes (one-time bulk write) | ☐ | |
 | Page wording: board StoryTree and BoardWeekly, thread ThreadForecast, track-record copy ("open · due DATE", "happened · DATE", "did not happen", "could not be checked · reason"; no "not checked yet") | frontend lane | yes (frontend release) | ☐ | |
 | `counts.branchesDue` counts resolvable branches only | record lane (`newsStoryRecord`) | no | ☐ | |
@@ -30,8 +30,8 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 | Carried over, cost: P4 measured token counts replace estimates in `runbooks/DEEPSEEK_COST_ESTIMATE.md`; P5 low-balance alert in `newsModelGuard` | cost lane | no | ◐ | task rows said deployed 2026-10-17; recheck live |
 
 ## Open questions
-- Verdict path into `record/facts/` (row above).
 - Brave quota and price are not in the repo; the watch's volume (a few dozen checks a night expected) must be measured in the shadow fortnight.
 
 ## Log
 - 2026-10-22: design agreed by the operator after the forecast-loop research brief; this plan replaces the 2026-10-17 grounded-forecast task.
+- 2026-10-22: verdict hand-off decided by the operator: an S3 inbox (`record/inbox/verdicts/`), not a DynamoDB lookup (about 4,989 queries a night) and not a resolver write to `record/facts/`; 0038 amendment; IAM yes still needed.

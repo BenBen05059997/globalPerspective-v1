@@ -48,4 +48,6 @@ Design of the forecast loop (draw, watch, gather, judge, record, review) and how
     aws s3 ls s3://globalperspective-world-280362093938/predictions/
     aws lambda get-function-configuration --region ap-northeast-1 --function-name newsPredictionResolver --query '[Runtime,Timeout,LastModified]'
 
+Verdicts reach the record through the inbox `record/inbox/verdicts/` (decision 0038 amendment; the resolver writes it, `newsStoryRecord` turns it into facts).
+
 Last verified: 2026-10-20 against code @14dd450d and live AWS.

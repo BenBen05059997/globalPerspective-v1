@@ -108,19 +108,21 @@ Never "not checked yet". `counts.branchesDue` counts resolvable branches only.
 | Object | Where | Notes |
 |---|---|---|
 | `forecast_drawn` fact | `record/facts/YYYY-MM-DD.jsonl` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} (0036); written by `newsStoryRecord` from `PRED#` rows today |
-| `verdict` fact | `record/facts/` | qid, result, quote, url, at, decidedBy, evidence; zero exist as of 2026-10-22 |
+| `verdict` fact | `record/facts/` | qid, result, quote, url, at, decidedBy, evidence; zero exist as of 2026-10-22; written only by `newsStoryRecord` from the inbox, `eventId = sha1('verdict' + qid + revision)`, a correction is a line with revision 2 or more |
+| verdict inbox | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`) | S3 | one line per final verdict (`yes|no|void`), decision day UTC, written only by the resolver; the facts run reads the run day and six days before |
 | `Q#<qid>/SAMPLED, DRAFT#, VERDICT, VERDICT#<n>` | DynamoDB `GlobalPerspectivePredictionLog` | resolver's working rows, put-once; 44 SAMPLED live |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its commit |
 | `record/views/` (stories, counts, index) | S3 | rebuilt from facts; the board and thread pages read these |
 | `predictions/track_record.json` | S3 | the scored sample only |
 | `record/shadow/` | S3 | shadow fortnight output (Section 6) |
 
-How a verdict reaches `record/facts/` (the resolver writes the fact itself, or hands it to `newsStoryRecord`) is an open decision: see the plan.
+A verdict reaches `record/facts/` through the inbox (decision 0038 amendment): the resolver appends to `record/inbox/verdicts/`, `newsStoryRecord` turns the lines into facts. The `Q#<qid>/VERDICT` rows stay only for the sampled track record.
 
 ## 5. Ownership
 The code lives in two groups only, so nobody hunts for it:
 - Draw: `backend/pipeline/NewsProjectInvokeAgentLambda` (generator: prompt, `lib.js`, `questions.js`).
 - Watch, Gather, Judge, Record: `backend/predictions/newsPredictionResolver`.
+- Prefixes: the resolver writes `record/inbox/verdicts/` and `record/shadow/inbox/verdicts/` and nothing else in `record/`; it never writes `record/facts/`. `newsStoryRecord` writes `record/facts/`.
 - Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan).
 This doc is linked from `backend/predictions/README.md`, the resolver README and `ARCHITECTURE_TIMELINE.md` §1b row 3 and §3.
 

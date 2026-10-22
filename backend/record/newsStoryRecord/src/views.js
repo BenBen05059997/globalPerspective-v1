@@ -179,13 +179,13 @@ const rowOrder = byKey((r) => -Date.parse(r.lastFactAt || 0), (r) => r.threadId)
  * grounds, and only when fewer than SPECIFIC_SHARE of the active stories carry them; sources are listed, never counted. Both
  * stories need a fact within LINK_WINDOW_DAYS of each other (lastFactAt dates). `rows` are the active index rows.
  */
-function buildLinks(rows, survivors, builtFrom, readings, aliases) {
+function buildLinks(rows, survivors, builtFrom, readings, aliases, isGeneric = () => false) {
   const lastDay = new Map(rows.map((r) => [r.threadId, r.lastFactAt.slice(0, 10)]));
   const ids = rows.map((r) => r.threadId);
   const index = {actorIds: new Map(), iso3: new Map(), sourceIds: new Map()};
   for (const id of ids) for (const kind of Object.keys(index)) for (const v of survivors.get(id)[kind]) (index[kind].get(v) || index[kind].set(v, []).get(v)).push(id);
   const shareOf = (kind, v) => index[kind].get(v).length / ids.length;
-  const specific = (kind, v) => shareOf(kind, v) < SPECIFIC_SHARE;
+  const specific = (kind, v) => !(kind === 'actorIds' && isGeneric(v)) && shareOf(kind, v) < SPECIFIC_SHARE; // a generic group (0040 answer 7) is never a ground
   const out = new Map();
   for (const id of ids) {
     const shared = new Map();
@@ -271,7 +271,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const readingsThrough = Rd.maxWeek(standingReadings);
   const builtFrom = {factsThrough, readingsThrough};
   const readings = Rd.byThread(standingReadings);
-  const {canon} = Rd.actorAliases(operatorAliases, standingReadings);
+  const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
   const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon});
@@ -279,7 +279,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
   const activeRows = all.filter((r) => !r.aliasOf && r.lastFactAt && r.lastFactAt.slice(0, 10) >= cutoff);
-  const links = buildLinks(activeRows, survivors, builtFrom, readings, aliases);
+  const links = buildLinks(activeRows, survivors, builtFrom, readings, aliases, isGeneric);
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};

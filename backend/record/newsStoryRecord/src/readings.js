@@ -89,30 +89,38 @@ function byThread(rs) {
 const cites = (r) => (Array.isArray(r.cites) ? r.cites.filter(text) : []);
 
 /**
- * actorId -> canonical actorId. The operator file (record/operator/aliases.json: {aliases:[{canonical, variants, wikidataId}]}) is
- * applied first and always wins. Then the review's alias readings, oldest first, each only if it carries a Wikidata Q-number and
+ * actorId -> canonical actorId. The operator file (record/operator/aliases.json: {aliases:[{canonical, variants, wikidataId, generic}]})
+ * is applied first and always wins. Then the review's alias readings, oldest first, each only if it carries a Wikidata Q-number and
  * does not conflict with what is already mapped (a variant already mapped to another canonical, or a canonical that is itself a
  * variant, or a variant that is another entry's canonical). A conflicting reading is a proposal and changes nothing.
- * Returns {map, canon(id)}. Facts are never rewritten; this is applied to the views only.
+ * Canonical id form (0040 answer 7): an entry with a wikidataId canonicalises to `wd:Q...` (its `canonical` name and variants all map
+ * to it), else to `canonical` itself (`name:...`). An entry with `generic:true` (protesters, the government) is not an entity: it
+ * never takes a wd: id, its variants map to its canonical, and that canonical is in `generic`, which the links rule excludes.
+ * Returns {map, canon(id), generic: Set, isGeneric(id)}. Facts are never rewritten; this is applied to the views only.
  */
 function actorAliases(operator, rs) {
   const map = new Map();
   const canonicals = new Set();
-  const add = (canonical, variants) => { canonicals.add(canonical); for (const v of variants) if (v !== canonical) map.set(v, canonical); };
+  const generic = new Set();
+  const add = (target, names, isGeneric) => { canonicals.add(target); if (isGeneric) generic.add(target); for (const v of names) if (v !== target) map.set(v, target); };
+  const targetOf = (canonical, wikidataId, isGeneric) => (!isGeneric && WIKIDATA.test(wikidataId || '') ? `wd:${wikidataId}` : canonical);
   const entries = operator && Array.isArray(operator.aliases) ? operator.aliases : [];
   for (const a of entries) {
-    if (!a || !text(a.canonical) || !Array.isArray(a.variants)) continue;
-    const variants = a.variants.filter(text);
-    if (map.has(a.canonical) || variants.some((v) => canonicals.has(v) || (map.has(v) && map.get(v) !== a.canonical))) continue; // inside the operator file, the first entry wins
-    add(a.canonical, variants);
+    if (!a || !text(a.canonical) || (a.variants !== undefined && !Array.isArray(a.variants))) continue;
+    const variants = (a.variants || []).filter(text);
+    const isGeneric = a.generic === true;
+    const target = targetOf(a.canonical, a.wikidataId, isGeneric);
+    if (map.has(a.canonical) || variants.some((v) => canonicals.has(v) || (map.has(v) && map.get(v) !== target))) continue; // inside the operator file, the first entry wins
+    add(target, [a.canonical, ...variants], isGeneric);
   }
   for (const r of rs.filter((x) => x.subtype === 'alias')) {
     const {canonical, variants, wikidataId} = r.payload;
     if (!WIKIDATA.test(wikidataId || '')) continue;
-    if (map.has(canonical) || variants.some((v) => v !== canonical && (canonicals.has(v) || (map.has(v) && map.get(v) !== canonical)))) continue;
-    add(canonical, variants);
+    const target = targetOf(canonical, wikidataId, false);
+    if (map.has(canonical) || variants.some((v) => v !== canonical && (canonicals.has(v) || (map.has(v) && map.get(v) !== target)))) continue;
+    add(target, [canonical, ...variants], false);
   }
-  return {map, canon: (id) => map.get(id) ?? id};
+  return {map, canon: (id) => map.get(id) ?? id, generic, isGeneric: (id) => generic.has(id)};
 }
 
 module.exports = {actorAliases, SUBTYPES, WIKIDATA, isoWeekOf, weeksBetween, standing, maxWeek, byThread, cites, text};

@@ -36,3 +36,6 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 ## Status
 
 2026-10-22: the facts writer is deployed and live (redeployed 2026-10-22 with the views builder), scheduled daily at 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing; first dry run: [DRYRUN.md](newsStoryRecord/DRYRUN.md)). The views are built and live in S3 (`record/views/`), but no reader serves them yet: the Worker upload is still open. `newsRecordReview` does not exist yet. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.
+
+## cli/reconcile-actors.mjs
+Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata `wbsearchentities` (1 request/second) for the top N, and keeps only an exact label or alias match whose description names an allowed class (person, organisation, party, armed group, agency, country/region). Dry run by default; `--write --out DIR` writes `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`. It never writes `record/operator/aliases.json`; the operator copies accepted lines. Tests: `node --test cli/test/*.test.mjs` (no network).

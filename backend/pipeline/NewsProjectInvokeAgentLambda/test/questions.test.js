@@ -11,7 +11,7 @@ const pre = require('./fixtures/pre-m2-output.json');
 const m2 = require('./fixtures/m2-output.json');
 
 const CTX = { generatedAtDay: '2026-10-01', snippets: [], priorTexts: [] };
-const base = { text: 'Ministry X announces a new rule', deadline: '2026-11-15', p: 40, resolutionSource: 'Official Gazette of Japan' };
+const base = { text: 'Ministry X imposes a new rule', deadline: '2026-11-15', p: 40, resolutionSource: 'Official Gazette of Japan' };
 
 test('parseP: integers, percent strings, rounding, garbage', () => {
   assert.equal(q.parseP(64), 64);
@@ -57,7 +57,7 @@ test('G11 certain formality only when p >= 95 and scheduled wording', () => {
 });
 
 test('G12 near-duplicate of a recent question is demoted', () => {
-  const g = q.questionGate(base, { ...CTX, priorTexts: ['Ministry X announces a new rule now'] });
+  const g = q.questionGate(base, { ...CTX, priorTexts: ['Ministry X imposes a new rule now'] });
   assert.equal(g.gate, 'G12');
 });
 
@@ -75,12 +75,12 @@ test('M2 fixture: real-shaped output is gated as designed', () => {
   });
   const all = scenarios.flatMap(s => s.triggers);
   const qs = all.filter(t => t.question === true);
-  assert.deepEqual(qs.map(t => t.p), [62, 35, 60]);
+  assert.deepEqual(qs.map(t => t.p), [62, 60]);
   assert.ok(qs.every(t => /^[0-9a-f]{20}$/.test(t.qid) && t.resolutionSource && t.resolver === 'human'));
   const reasons = capture.questions.demoted.map(d => d.reason).sort();
   assert.deepEqual(reasons, ['generic_source', 'near_duplicate', 'no_p', 'no_p']);
-  assert.deepEqual(capture.dropped.map(d => d.gate).sort(), ['G10', 'G9']);
-  assert.equal(capture.questions.kept, 3);
+  assert.deepEqual(capture.dropped.map(d => d.gate).sort(), ['G10', 'G14', 'G9']);
+  assert.equal(capture.questions.kept, 2);
   assert.equal(new Set(qs.map(t => t.qid)).size, qs.length);
 });
 

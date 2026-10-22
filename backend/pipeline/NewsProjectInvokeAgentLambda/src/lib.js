@@ -22,7 +22,7 @@ const METHODOLOGY_VERSION = 1;
 //   1 = research briefing + forecast (two calls); 2 = single grounded call + G13;
 //   3 = outcomes (decision 0038): at most 3 events DONE per story, due 7-90 days, own p and source.
 const PROMPT_VERSION = 3;
-const HORIZON_DAYS = 180;
+const HORIZON_DAYS = 90;
 const MAX_OUTCOMES = 3;
 
 const MONTHS = {

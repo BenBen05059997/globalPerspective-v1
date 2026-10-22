@@ -15,6 +15,11 @@ const GENERIC_SOURCES = new Set(['news', 'media', 'reports', 'report', 'sources'
 const FORMALITY = /\bwill hold its (?:regular|scheduled)\b|\bis scheduled to\b|\bas planned\b/i;
 const STOP = new Set(['the', 'and', 'for', 'that', 'with', 'from', 'will', 'has', 'have', 'its', 'are', 'was', 'were', 'this', 'than', 'into', 'over', 'new', 'not', 'any', 'more', 'their', 'after', 'before', 'by', 'to', 'of', 'in', 'on', 'at', 'a', 'an', 'is', 'be', 'or']);
 
+// G14 (decision 0038): an outcome is something DONE, not said (decision 0020). A statement verb with no
+// action verb alongside it is a said-not-done event and is dropped; "announces" with "signs/imposes/..." stays.
+const SAID = /\b(?:says?|said|announces?|announced|denies|denied|deny|states?|stated|claims?|claimed|declares?|declared|pledges?|pledged|vows?|vowed|promises?|promised|warns?|warned|threatens?|threatened|urges?|urged|calls? (?:for|on)|condemns?|condemned|comments?|commented|suggests?|suggested|reiterates?|reaffirms?|insists?|insisted|issues? (?:a |an )?(?:statement|warning|denial)|(?:public|official) statement)\b/i;
+const DONE = /\b(?:signs?|signed|passes|passed|approves?|approved|votes?|voted|adopts?|adopted|enacts?|enacted|ratif\w+|imposes?|imposed|lifts?|lifted|bans?|banned|expels?|expelled|deploys?|deployed|launch\w*|strikes?|struck|seizes?|seized|arrests?|arrested|releases?|released|withdraws?|withdrew|raises?|raised|cuts?|orders?|ordered|files?|filed|sanctioned|resigns?|resigned|dismisses|dismissed|appoints?|appointed|elects?|elected|suspends?|suspended|closes?|closed|reopens?|opens?|opened|invades?|invaded|captures?|captured|detonates?|detonated|default\w*|devalues?|devalued|cancels?|cancelled|canceled|delays?|delayed|extends?|extended|ended|resumes?|resumed|halts?|halted|exceeds?|falls? (?:below|to)|rises? (?:above|to)|reaches|reached|meets?|met|holds?|held|convenes?|convened|publishes?|published|delivers?|delivered|completes?|completed|takes? effect|enters? into force)\b/i;
+
 // Stable id of a question: sha256(pk|sk|triggerId), first 20 hex chars.
 function qidFor(pk, sk, triggerId) {
   return crypto.createHash('sha256').update(`${pk}|${sk}|${triggerId}`).digest('hex').slice(0, 20);
@@ -61,6 +66,8 @@ function questionGate(t, ctx) {
   if (source.length < 8 || GENERIC_SOURCES.has(source.toLowerCase())) return { action: 'demote', gate: 'G8', reason: 'generic_source' };
   const lead = daysBetween(String(ctx.generatedAtDay).slice(0, 10), t.deadline);
   if (lead < MIN_LEAD_DAYS) return { action: 'drop', gate: 'G9', reason: `lead time ${lead}d is under ${MIN_LEAD_DAYS} days` };
+  const text = String(t.text || '');
+  if (SAID.test(text) && !DONE.test(text)) return { action: 'drop', gate: 'G14', reason: 'said, not done (a statement is not an outcome)' };
   const tt = tokens(t.text);
   for (const s of ctx.snippets || []) {
     if (jaccard(tt, s) >= 0.6) return { action: 'drop', gate: 'G10', reason: 'restates already-reported news (criterion met at issue)' };
@@ -77,4 +84,4 @@ function clusterKeyFor(row) {
   return (row && (row.threadId || row.topicId)) || null;
 }
 
-module.exports = { qidFor, tokens, jaccard, parseP, questionGate, clusterKeyFor, MIN_LEAD_DAYS, P_MIN, P_MAX };
+module.exports = { SAID, DONE, qidFor, tokens, jaccard, parseP, questionGate, clusterKeyFor, MIN_LEAD_DAYS, P_MIN, P_MAX };

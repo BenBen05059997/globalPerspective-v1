@@ -26,7 +26,7 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}, tod
     ? `\nArticle Snippets:\n${snippets}\n`
     : '';
 
-  const minDeadline = lib.addDays(today, 8);
+  const minDeadline = lib.addDays(today, 7);
 
   return [
     `You are a geopolitical forecasting analyst. Today is ${today} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
@@ -49,7 +49,7 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}, tod
   ],
   "outcomes": [
     {
-      "text": "string — one specific, falsifiable FUTURE event (who does what)",
+      "text": "string — the event itself: one specific, falsifiable FUTURE thing that gets DONE (who does what)",
       "deadline": "YYYY-MM-DD",
       "p": "integer 2-98 — YOUR probability that this exact event happens by the deadline",
       "resolution_source": "string — the specific public record that will settle it",
@@ -61,7 +61,8 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}, tod
 }`,
     '',
     'OUTCOME RULES (an outcome we cannot score is worthless — follow exactly):',
-    `- deadline MUST be an absolute date in YYYY-MM-DD form, on or after ${minDeadline} (events resolving sooner are not scored) and on/before ${lib.addDays(today, 90)} (we keep questions within 90 days).`,
+    `- deadline MUST be an absolute date in YYYY-MM-DD form, on or after ${minDeadline} (events resolving sooner are not scored) and on/before ${lib.addDays(today, 90)}: every outcome is due 7 to 90 days from today.`,
+    '- The outcome is something DONE, not something SAID: a law signed, a vote held, sanctions imposed, a strike carried out, a rate changed, a person removed. "X says / announces / denies / warns / calls for / pledges" is a statement, not an outcome, and is dropped. Write the action that follows or replaces the statement.',
     '- The outcome must describe a FUTURE event that has NOT happened yet — never restate something already reported in the snippets or digest (that is not a prediction).',
     '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
     '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise"). Do not put a date or named scheduled event in the text unless it is in the input.',

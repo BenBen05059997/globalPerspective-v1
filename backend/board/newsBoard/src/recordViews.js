@@ -22,7 +22,8 @@ function liveRecordViews(env = process.env) {
   return makeRecordViews({ client: new S3Client({region: env.AWS_REGION || 'ap-northeast-1'}), GetObjectCommand,
     bucket: env.WORLD_BUCKET || 'globalperspective-world-280362093938' });
 }
-// Pins get facts only: line, chapters and confirmedLinks are readings (null until step 3), risk is omitted.
+// Pins get the index row: facts, plus the weekly reading's one-line `line` when the row has one (else null, the 0037 s6
+// empty text). Chapters and confirmedLinks counts stay null: the index carries neither and pins add no per-story GETs. Risk is omitted.
 async function enrichBoard(board, records) {
   const rows = rowsOf(await records.active());
   if (!rows) return { ...board, recordAvailable: false, pins: board.pins.map(pin => ({...pin, recordAvailable: false})) };
@@ -37,7 +38,7 @@ async function enrichBoard(board, records) {
   };
   return { ...board, recordAvailable: true, pins: board.pins.map(pin => {
     const row = pin.kind === 'thread' ? rowOf(pin.refId) : null;
-    return row ? {...pin, recordAvailable: true, line: null, born: row.born, entryCount: row.entryCount,
+    return row ? {...pin, recordAvailable: true, line: typeof row.line==='string'&&row.line?row.line:null, born: row.born, entryCount: row.entryCount,
       counts: {chapters: null, liveBranches: row.liveBranchCount, confirmedLinks: null}, lastMoved: row.lastFactAt}
       : {...pin, recordAvailable: false};
   }) };

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {arrivals}=require('../src/arrivals');
 const board={createdAt:'2026-10-10T12:00:00Z',lastVisitedAt:'2026-10-18T08:00:00Z',dismissed:[],pins:[{pinId:'p1',kind:'thread',refId:'old'},{pinId:'p2',kind:'actor',refId:'Iran'}]};
 const row=(threadId,extra={})=>({threadId,born:'2026-10-19',lastFactAt:'2026-10-19',title:`Title ${threadId}`,aliasOf:null,...extra});
-const strong={otherThreadId:'old',strength:'strong',mechanism:'Recorded mechanism'};
+const strong={otherThreadId:'old',direction:'drives',week:'2026-W43',cites:[],mechanism:'Recorded mechanism'};
 const shared={otherThreadId:'old',sharedActorIds:['a1'],sharedIso3:['IRN'],sharedSourceIds:[],grounds:2};
 function fakeRecords(linksOf){const calls=[];return {calls,records:{active:async()=>({stories:[row('old'),...Array.from({length:8},(_,i)=>row(`new-${i}`))]}),
   links:async id=>{calls.push(id);return linksOf(id);}}};}
@@ -12,7 +12,7 @@ test('arrivals need a confirmed strong link plus shared grounds, cap five, remem
  const {records,calls}=fakeRecords(withLinks);
  const out=await arrivals({...board,dismissed:['new-0']},records,'2026-10-20');
  assert.equal(out.arrivals.length,5);assert.equal(out.arrivals[0].threadId,'new-1');assert.equal(out.arrivals[0].title,'Title new-1');
- assert.deepEqual(out.arrivals[0].via,[{pinId:'p1',threadId:'old',mechanism:'Recorded mechanism',grounds:['actors','places']}]);
+ assert.deepEqual(out.arrivals[0].via,[{pinId:'p1',threadId:'old',mechanism:'Recorded mechanism',direction:'drives',grounds:['actors','places']}]);
  assert.ok(!calls.includes('old')&&!calls.includes('new-0'));
 });
 test('step 2 links views have no confirmedLinks: no cards, and no per-story record GETs beyond links',async()=>{

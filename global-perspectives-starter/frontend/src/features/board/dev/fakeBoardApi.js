@@ -138,7 +138,7 @@ export async function fakeBoardAction(action, body = {}) {
   const mode = new URLSearchParams(window.location.search).get('devRecord');
   const available = mode === '1';
   if (mode && !db.boards['dev-record']) {
-    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record views example', pins:[{pinId:'p1',kind:'thread',refId:devRecordIndex[0].threadId,addedAt:now}], strings:[], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
+    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record views example', pins:[{pinId:'p1',kind:'thread',refId:devRecordIndex[0].threadId,addedAt:now},{pinId:'p2',kind:'thread',refId:devRecordIndex[1].threadId,addedAt:now}], strings:[], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
     persist();
   }
   switch (action) {
@@ -147,8 +147,7 @@ export async function fakeBoardAction(action, body = {}) {
         .sort((x, y) => String(y.updatedAt).localeCompare(String(x.updatedAt)));
     case 'get_board': {
       const board = own(boardOf(body.boardId));
-      const row = devRecordIndex[0];
-      return { ...board, recordAvailable:available, pins:board.pins.map((p) => available && p.refId === row.threadId ? {...p,recordAvailable:true,line:null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:row.lastFactAt} : p) };
+      return { ...board, recordAvailable:available, pins:board.pins.map((p) => { const row = devRecordIndex.find((r) => r.threadId === p.refId); return available && row ? {...p,recordAvailable:true,line:row.line ?? null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:row.lastFactAt} : p; }) };
     }
     case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:[]};
     case 'visit_board': {const b=boardOf(body.boardId);b.lastVisitedAt=now;persist();return {lastVisitedAt:now};}

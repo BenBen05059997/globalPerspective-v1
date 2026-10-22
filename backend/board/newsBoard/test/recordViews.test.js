@@ -29,6 +29,15 @@ test('enrichment copies facts only: line null, risk omitted, chapters/links null
   assert.equal(out.pins[1].recordAvailable,false);assert.equal(board.pins[0].line,undefined);
   assert.deepEqual(keys,[V+'index/active.json']);
 });
+test('pin.line is the index row line string when read, null when absent or empty',async()=>{
+  const board=validBoardBody();
+  const read=fake({[V+'index/active.json']:{stories:[row('thread-hormuz',{line:'Talks stall over transit rights.'})]}});
+  assert.equal((await enrichBoard(board,read.records)).pins[0].line,'Talks stall over transit rights.');
+  for(const line of [undefined,'',null,5]){
+    const f=fake({[V+'index/active.json']:{stories:[row('thread-hormuz',{line})]}});
+    const pin=(await enrichBoard(board,f.records)).pins[0];assert.equal(pin.line,null);assert.deepEqual(pin.counts,{chapters:null,liveBranches:1,confirmedLinks:null});
+  }
+});
 test('a pinned story that is not active falls back to all.json once; an alias shows its survivor; active only when enough',async()=>{
   const board=validBoardBody();
   const {records,keys}=fake({[V+'index/active.json']:{stories:[row('other')]},[V+'index/all.json']:{stories:[row('other'),row('thread-hormuz',{lastFactAt:'2026-05-01',aliasOf:'other'})]}});

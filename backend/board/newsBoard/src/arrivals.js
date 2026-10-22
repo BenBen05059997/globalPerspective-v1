@@ -2,7 +2,7 @@
 const {rowsOf} = require('./recordViews');
 const MAX_CANDIDATES = 40;
 // Candidates come from the active index rows (title is a fact, the first entry's title); grounds and confirmed links
-// from links/{id}.json. No per-story GETs. Until the weekly review writes confirmedLinks there are no cards.
+// from links/{id}.json. No per-story GETs. Cards come only from the weekly reading's confirmedLinks (none until it runs).
 async function arrivals(board, records, now) {
   const rows = rowsOf(await records.active());
   const since = board.lastVisitedAt || board.createdAt;
@@ -21,9 +21,9 @@ async function arrivals(board, records, now) {
     if (!view) continue;
     const via=[];
     for(const pin of threadPins) {
-      const confirmed=view.confirmedLinks?.find(l=>l.otherThreadId===pin.refId && l.strength==='strong');
+      const confirmed=view.confirmedLinks?.find(l=>l.otherThreadId===pin.refId);
       const shared=view.links?.find(l=>l.otherThreadId===pin.refId);
-      if(confirmed && shared?.grounds>0)via.push({pinId:pin.pinId,threadId:pin.refId,mechanism:confirmed.mechanism,
+      if(confirmed && shared?.grounds>0)via.push({pinId:pin.pinId,threadId:pin.refId,mechanism:confirmed.mechanism,direction:confirmed.direction,
         grounds:[['actors',shared.sharedActorIds],['places',shared.sharedIso3],['sources',shared.sharedSourceIds]].filter(([,l])=>l?.length).map(([k])=>k)});
     }
     if(via.length)cards.push({threadId:row.threadId,title:row.title || null,date:row.born,strength:'strong',via});

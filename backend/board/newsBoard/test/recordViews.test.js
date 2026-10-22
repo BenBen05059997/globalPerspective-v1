@@ -36,13 +36,10 @@ test('a pinned story that is not active falls back to all.json once; an alias sh
   const only=fake({[V+'index/active.json']:{stories:[row('thread-hormuz')]}});
   await enrichBoard({...board,pins:[board.pins[0]]},only.records);assert.deepEqual(only.keys,[V+'index/active.json']);
 });
-test('story_view (transitional) reads the new stories key',async()=>{
-  const story={threadId:'story-a',entries:[]};const {records}=fake({[V+'stories/story-a.json']:story});
-  const handler=createHandler({store:fakeStore(),verify:async()=>null,records,env:ENV});
-  const call=async body=>JSON.parse((await handler({body,headers:{}})).body);
-  assert.deepEqual((await call({action:'story_view',threadId:'story-a'})).data,{recordAvailable:true,story});
-  assert.deepEqual((await call({action:'story_view',threadId:'missing'})).data,{recordAvailable:false,story:null});
-  assert.equal((await call({action:'story_view',threadId:'../bad'})).success,false);
+test('story_view is gone: the board fetches stories/{id}.json directly',async()=>{
+  const handler=createHandler({store:fakeStore(),verify:async()=>null,records:fake().records,env:ENV});
+  const r=JSON.parse((await handler({body:{action:'story_view',threadId:'story-a'},headers:{}})).body);
+  assert.equal(r.success,false);assert.equal(r.error,'Unsupported action');
 });
 test('get_board enriches owned pins only and update strips derived fields before storage',async()=>{
   const store=fakeStore();const {records}=fake({[V+'index/active.json']:{stories:[row('thread-hormuz')]}});

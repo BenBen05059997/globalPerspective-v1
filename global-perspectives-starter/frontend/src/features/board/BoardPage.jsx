@@ -27,7 +27,9 @@ import RecordPinDetails from '@/features/board/components/RecordPinDetails.jsx';
 import ArrivalsTray from '@/features/board/components/ArrivalsTray.jsx';
 import StoryTree from '@/features/board/components/StoryTree.jsx';
 import BoardWeekly from '@/features/board/components/BoardWeekly.jsx';
+import UnsettledZone from '@/features/board/components/UnsettledZone.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
+import { useWeekCounts } from '@/features/board/hooks/useWeekCounts.js';
 import BoardGraph from '@/features/board/components/BoardGraph.jsx';
 import VerdictCard from '@/features/board/components/VerdictCard.jsx';
 import StringDetail from '@/features/board/components/StringDetail.jsx';
@@ -98,6 +100,8 @@ export default function BoardPage() {
   const pins = useMemo(() => board?.pins || [], [board]);
   const info = usePinInfo(pins, topics);
   const records = useStoryViews(pins);
+  const counts = useWeekCounts(new Date().toISOString().slice(0, 10), board?.lastVisitedAt, !!board?.recordAvailable);
+  const countIds = useMemo(() => [...new Set([...pins.filter((p) => p.kind === 'thread').map((p) => p.refId), ...Object.values(records.stories).map((s) => s?.threadId).filter(Boolean)])], [pins, records.stories]);
   const full = pins.length >= PIN_BUDGET;
   const pinById = useMemo(() => Object.fromEntries(pins.map((p) => [p.pinId, p])), [pins]);
   const labelOf = (id) => info[id]?.label || pinById[id]?.refId || id;
@@ -355,7 +359,8 @@ export default function BoardPage() {
                 return keepString(added.board, pin.pinId, card.via[0].pinId, card.via[0].mechanism);
               });
             }} />
-          <BoardWeekly board={board} info={info} stories={records.stories} loading={records.loading} errors={records.errors} />
+          {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
+          <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors} />
           <MissingCard actors={missing} onFollow={follows.followActor} />
         </>
       ) : null}

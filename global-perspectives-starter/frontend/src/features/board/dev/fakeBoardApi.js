@@ -5,8 +5,7 @@
 // with plausible ids that the live site does not know (titles then come from the preset's own pins). Connect
 // grounds are computed from the topics' actors, places and outlets; there is no score history here, so no
 // co-movement ground ever appears. State lives in this tab's sessionStorage.
-import recordStory from './recordExamples/valid-story.json';
-import recordIndex from './recordExamples/valid-index.json';
+import { devRecordIndex } from './fakeRecordViews.js';
 import { contentService } from '@/shared/data/contentService';
 import { pairKey, normalizeActor, PIN_BUDGET } from '@/shared/lib/board.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
@@ -137,16 +136,9 @@ export async function fakeBoardAction(action, body = {}) {
   const now = new Date().toISOString();
   const boardOf = (id) => { const b = db.boards[id]; if (!b) throw fail(404, 'Board not found'); return b; };
   const mode = new URLSearchParams(window.location.search).get('devRecord');
-  const available = mode === '1' || mode === 'populated';
-  const demo = structuredClone(recordStory);
-  if (mode === 'populated') {
-    demo.line = {text:'The named report remains the test',writtenAt:'2026-10-19',label:'JUDGMENT',confidence:0.7,versions:[]};
-    demo.chapters = [{startedAt:'2026-10-19',name:'Report phase',text:'The ministry report becomes the test',writtenAt:'2026-10-19',label:'JUDGMENT',confidence:0.7}];
-    demo.events = [{date:'2026-10-19',archive:'archive#2026-10-19',topicId:'topic-a',headline:'The named report appears',outlets:[],killed:[]}];
-    demo.forks[0].branches[0].status = [{date:'2026-10-19',status:'dead',note:'Recorded test death',evidence:[],label:'JUDGMENT',confidence:0.8},{date:'2026-10-20',status:'resurrected',note:'Recorded test resurrection',evidence:[],label:'JUDGMENT',confidence:0.8}];
-  }
+  const available = mode === '1';
   if (mode && !db.boards['dev-record']) {
-    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record schema example', pins:[{pinId:'p1',kind:'thread',refId:recordStory.threadId,addedAt:now}], strings:[], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
+    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record views example', pins:[{pinId:'p1',kind:'thread',refId:devRecordIndex[0].threadId,addedAt:now}], strings:[], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
     persist();
   }
   switch (action) {
@@ -155,11 +147,10 @@ export async function fakeBoardAction(action, body = {}) {
         .sort((x, y) => String(y.updatedAt).localeCompare(String(x.updatedAt)));
     case 'get_board': {
       const board = own(boardOf(body.boardId));
-      const row = recordIndex.stories[0];
-      return { ...board, recordAvailable:available, pins:board.pins.map((p) => available && p.refId === row.id ? {...p,recordAvailable:true,line:mode === 'populated' ? demo.line.text : row.line,risk:row.risk,born:row.born,counts:{chapters:row.chapters,liveBranches:row.liveBranches,confirmedLinks:row.confirmedLinks},lastMoved:row.lastMoved} : p) };
+      const row = devRecordIndex[0];
+      return { ...board, recordAvailable:available, pins:board.pins.map((p) => available && p.refId === row.threadId ? {...p,recordAvailable:true,line:null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:row.lastFactAt} : p) };
     }
-    case 'story_view': return {recordAvailable: available && body.threadId === recordStory.threadId, story: available && body.threadId === recordStory.threadId ? demo : null};
-    case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:mode === 'populated' ? [{threadId:'story-arrival',title:'The named event arrives',date:'2026-10-20',strength:'strong',via:[{pinId:'p1',threadId:recordStory.threadId,mechanism:'Recorded test connection'}]}] : []};
+    case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:[]};
     case 'visit_board': {const b=boardOf(body.boardId);b.lastVisitedAt=now;persist();return {lastVisitedAt:now};}
     case 'create_board': {
       const name = String(body.name || '').trim();

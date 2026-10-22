@@ -42,7 +42,7 @@ function boardProblem(board) {
 
 const problemReply = (p) => fail(400, p.error, { code: p.code, ...(p.budget ? { budget: p.budget } : {}) });
 
-function createHandler({ store, verify, records = {active: async () => null, all: async () => null, links: async () => null, story: async () => null}, now = () => Date.now(), env = process.env }) {
+function createHandler({ store, verify, records = {active: async () => null, all: async () => null, links: async () => null}, now = () => Date.now(), env = process.env }) {
   const presets = presetCache(store, env, now);
   const iso = () => new Date(now()).toISOString();
 
@@ -89,11 +89,6 @@ function createHandler({ store, verify, records = {active: async () => null, all
       try { await store.setLastVisited(uid, item.boardId, stamp); }
       catch (e) { if (e.name === 'ConditionalCheckFailedException') return fail(404, 'Board not found'); throw e; }
       return ok({lastVisitedAt: stamp});
-    },
-    async story_view(uid, body) {
-      if (typeof body.threadId !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(body.threadId)) return fail(400, 'A valid threadId is required');
-      const story = await records.story(body.threadId);
-      return ok({recordAvailable: !!story, story});
     },
 
     async create_board(uid, body) {
@@ -199,7 +194,7 @@ function createHandler({ store, verify, records = {active: async () => null, all
       return out.error ? fail(400, out.error) : ok(out.result);
     },
   };
-  const PUBLIC = new Set(['list_presets', 'story_view']);
+  const PUBLIC = new Set(['list_presets']);
 
   return async function handler(event) {
     try {

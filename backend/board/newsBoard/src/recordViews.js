@@ -15,11 +15,6 @@ function makeRecordViews(options) {
       if (!ID.test(id)) throw new Error('Invalid threadId');
       return getJson(`${VIEWS}/links/${id}.json`);
     },
-    // Transitional: removed with story_view once the board fetches stories/{id}.json directly.
-    story: (id) => {
-      if (!ID.test(id)) throw new Error('Invalid threadId');
-      return getJson(`${VIEWS}/stories/${id}.json`);
-    },
   };
 }
 function liveRecordViews(env = process.env) {

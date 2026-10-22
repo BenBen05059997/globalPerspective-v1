@@ -1,0 +1,8 @@
+{"schemaVersion":1,"builtFrom":{"factsThrough":"2026-10-21","readingsThrough":null},"threadId":"story-a","born":"2026-10-19","aliasOf":null,"iso3":["IRN"],"actorIds":["a1"],"sourceIds":["s1","s2"],
+"entries":[
+{"eventId":"e1","date":"2026-10-19","at":"2026-10-19T08:00:00Z","precision":"day","title":"Tankers reroute around the strait","summary":"Two operators changed course.","category":"economy","eventType":"report","sources":[{"sourceId":"s1","outlet":"Reuters","url":"https://example.org/a","title":"Tankers reroute"}]},
+{"eventId":"e2","date":"2026-10-21","at":"2026-10-21T09:00:00Z","precision":"day","title":"Insurers raise war-risk premiums","summary":"","category":"economy","eventType":"report","sources":[{"sourceId":"s2","outlet":"BBC","url":"https://example.org/b","title":"Premiums rise"}]}],
+"forks":[{"forkId":"f1","drawnAt":"2026-10-19","branches":[
+{"branchId":"f1-0","text":"Premiums rise again","p":65,"trigger":"A second insurer announces an increase","resolutionSource":"Insurer notices","due":"2026-10-20","verdict":{"at":"2026-10-20","result":"yes","decidedBy":"facts","evidence":"Second insurer notice, 2026-10-20"}},
+{"branchId":"f1-1","text":"Shipping resumes the old route","p":20,"trigger":"Tanker traffic returns to the strait","resolutionSource":"AIS data","due":"2026-11-30","verdict":null}]}],
+"merges":[],"corrections":[],"line":null,"chapters":[],"branchStatus":null,"reading":{"state":"none","reason":"no reading yet"}}

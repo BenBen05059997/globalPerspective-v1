@@ -51,9 +51,10 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  +- output : yes | no | void | not_yet
 |  +- cost   : about 1.4k tokens per call (old drafter)
 |
-+- 5 RECORD      no model                            [newsPredictionResolver -> record/facts]
++- 5 RECORD      no model                            [newsPredictionResolver -> record/inbox/verdicts/ -> newsStoryRecord -> record/facts]
 |  +- inputs : final answers (yes | no | void)
-|  +- rule   : write a verdict fact {result, quote, url, at, decidedBy: model, evidence}; put-once; corrections append
+|  +- rule   : append one line to record/inbox/verdicts/DAY.jsonl (resolver's prefix); the nightly facts run reads 7 inbox days and writes
+|  |           the verdict fact {result, voidReason, quote, url, at, decidedBy, evidence, revision}; no DynamoDB lookups; corrections = revision n
 |  |           the pre-registered weekly sample of 22 (0011) is what the public track record scores; other verdicts are shown, not scored
 |  +- model  : no
 |  +- output : verdict fact; views and counts rebuild from it

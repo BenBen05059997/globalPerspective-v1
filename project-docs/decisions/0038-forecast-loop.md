@@ -27,4 +27,7 @@ The product is an analyst tool; a forecast with a verdict separates it from a fe
 - Fewer, checkable branches; every open branch shows a due date; the loop closes with verdict facts.
 - The Monday-only draft rule and the one-per-story sample cap no longer limit which verdicts exist; they only define what is scored.
 - Limits: `yes` depends on search coverage; `no` is inference from silence (a late report becomes a correction fact); badly written outcomes cannot be judged.
-- Needs: generator change, resolver change, a path for verdicts into `record/facts/` (IAM yes or hand-off to `newsStoryRecord`), a one-time legacy job, a frontend release for wording.
+- Needs: generator change, resolver change, the verdict inbox below, a one-time legacy job, a frontend release for wording.
+
+## Amendment 2026-10-22: the verdict hand-off is an S3 inbox
+The resolver never writes `record/facts/` and the facts writer never queries DynamoDB for verdicts (a per-question lookup would be about 5,000 queries a night). Instead the resolver appends each final verdict as one JSON line to `record/inbox/verdicts/YYYY-MM-DD.jsonl` (decision day, UTC; shadow under `record/shadow/inbox/verdicts/`), a prefix only the resolver writes. The nightly facts run reads the inbox for the run day and the six days before (seven GetObjects) and appends one `verdict` fact per line (`eventId = sha1('verdict' + qid + revision)`); a correction is a new line with `revision` 2 or more. The `Q#<qid>/VERDICT` rows stay for the sampled track record. IAM: the resolver role gets `s3:PutObject` on the inbox prefixes and `s3:GetObject` on `record/facts/*` (for WATCH); the facts writer needs no change.

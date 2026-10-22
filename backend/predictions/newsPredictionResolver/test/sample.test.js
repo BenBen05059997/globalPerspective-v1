@@ -46,7 +46,7 @@ test('the commitment is sha256(seed)', () => {
   assert.equal(lib.commitOf(SEED), crypto.createHash('sha256').update(SEED).digest('hex'));
 });
 
-test('eligibility: question rows in the week, lead 7-84 days, no p is copied', () => {
+test('eligibility: question rows in the week, lead 7-90 days, no p is copied', () => {
   const rows = [
     predRow('a', '2026-10-06', 2, { lead: 30 }),
     predRow('b', '2026-10-06', 1, { lead: 5 }),   // too short
@@ -56,6 +56,8 @@ test('eligibility: question rows in the week, lead 7-84 days, no p is copied', (
   const el = lib.eligibleQuestions(rows, '2026-W41');
   assert.deepEqual(el.map((q) => q.qid), ['a-2026-10-06-0', 'a-2026-10-06-1']);
   assert.ok(el.every((q) => !('p' in q)));
+  const edge = lib.eligibleQuestions([predRow('e', '2026-10-06', 1, { lead: 90 }), predRow('f', '2026-10-06', 1, { lead: 91 })], '2026-W41');
+  assert.deepEqual(edge.map((q) => q.qid), ['e-2026-10-06-0']); // 0038: due 7-90 days
 });
 
 test('end to end: tick commits, then the Monday tick reveals and draws; SAMPLED rows carry no probability', async () => {

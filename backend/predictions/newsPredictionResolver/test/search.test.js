@@ -33,3 +33,17 @@ test('a persistent failure returns empty (never throws)', async () => {
   const s = makeSearch('k', { fetchImpl: async () => ({ ok: false, status: 500 }), gapMs: 0, retryMs: 0, sleep: async () => {} });
   assert.deepEqual(await s('q'), []);
 });
+
+test('gather: entry facts come first, results dated after due are dropped, undated are kept', async () => {
+  const { gather } = require('../src/draft');
+  const entries = [{ date: '2026-11-09', payload: { title: 'Talks resume', summary: 'Delegates met on Monday.' }, sources: [{ outlet: 'ex.com', url: 'https://ex.com/e', title: 'Talks resume' }] }];
+  const search = async () => [
+    { title: 'before', snippet: 's', url: 'https://a.com/1', date: '2026-11-01' },
+    { title: 'after', snippet: 's', url: 'https://a.com/2', date: '2026-11-12' },
+    { title: 'undated', snippet: 's', url: 'https://a.com/3', date: '' },
+    { title: 'dup of entry', snippet: 's', url: 'https://ex.com/e', date: '2026-11-09' },
+  ];
+  const out = await gather(['q'], search, { due: '2026-11-10', entries });
+  assert.deepEqual(out.map((r) => r.url), ['https://ex.com/e', 'https://a.com/1', 'https://a.com/3']);
+  assert.equal(out[0].snippet, 'Delegates met on Monday.');
+});

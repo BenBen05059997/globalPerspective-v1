@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const RULE = 'v1';
 const SAMPLE_K = 22;
 const LEAD_MIN = 7;
-const LEAD_MAX = 84;
+const LEAD_MAX = 90;
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
@@ -48,7 +48,7 @@ const rankKey = (seedHex, qid) => sha256hex(`${seedHex}|${qid}`);
 
 /**
  * Questions eligible for a week's sample, from PRED rows (never reads or copies `p`).
- * Eligible: question:true, issued (row SK day) inside the week, lead 7-84 days.
+ * Eligible: question:true, issued (row SK day) inside the week, lead 7-90 days.
  */
 function eligibleQuestions(rows, weekId) {
   const a = weekStart(weekId);

@@ -17,6 +17,7 @@ function fakeStore(preds = []) {
     async get(PK, SK) { return rows.get(key(PK, SK)) || null; },
     async listCommits() { return [...rows.values()].filter((r) => r.PK.startsWith('SEED#') && r.SK === 'COMMIT'); },
     async predRows(a, b) { return preds.filter((r) => r.SK >= a && r.SK <= b && r.questionSchema); },
+    async allQuestionPreds() { return preds.filter((r) => r.questionSchema); },
     async listQuestionRows() { return [...rows.values()].filter((r) => r.PK.startsWith('Q#')); },
     async queryPK(PK) { return [...rows.values()].filter((r) => r.PK === PK); },
   };
@@ -39,4 +40,36 @@ function predRow(topic, sk, n, { lead = 30, thread } = {}) {
   };
 }
 
-module.exports = { fakeStore, predRow };
+
+
+// An injected record/facts reader: files = { 'YYYY-MM-DD': [fact, ...] }.
+function fakeFacts(files = {}) {
+  return { async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; } };
+}
+const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
+
+// The real s3json helper over an in-memory S3 client (offline). objects: Map(key -> text).
+function fakeS3() {
+  const { makeS3Json } = require('../src/_shared/s3json');
+  const objects = new Map();
+  class GetObjectCommand { constructor(input) { this.input = input; } }
+  class PutObjectCommand { constructor(input) { this.input = input; } }
+  const client = {
+    async send(cmd) {
+      const { Key, Body, IfNoneMatch, IfMatch } = cmd.input;
+      if (cmd instanceof GetObjectCommand) {
+        if (!objects.has(Key)) { const e = new Error('NoSuchKey'); e.name = 'NoSuchKey'; throw e; }
+        return { Body: String(objects.get(Key)), ETag: `"${objects.get(Key).length}"` };
+      }
+      if (IfNoneMatch && objects.has(Key)) { const e = new Error('412'); e.name = 'PreconditionFailed'; throw e; }
+      if (IfMatch && (!objects.has(Key) || `"${objects.get(Key).length}"` !== IfMatch)) { const e = new Error('412'); e.name = 'PreconditionFailed'; throw e; }
+      objects.set(Key, Body);
+      return {};
+    },
+  };
+  const s3json = makeS3Json({ client, GetObjectCommand, PutObjectCommand, bucket: 'b' });
+  const lines = (key) => (objects.get(key) || '').split('\n').filter(Boolean).map(JSON.parse);
+  return { s3json, objects, lines };
+}
+
+module.exports = { fakeStore, predRow, fakeFacts, entryFact, fakeS3 };

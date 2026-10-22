@@ -46,6 +46,10 @@ function makeStore(table, region) {
         ExpressionAttributeValues: { ':p': 'PRED#', ':a': fromDay, ':b': toDay },
       });
     },
+    // every PRED# row that uses the question schema (the open question branches live in these)
+    allQuestionPreds() {
+      return scan({ FilterExpression: 'begins_with(PK, :p) AND attribute_exists(questionSchema)', ExpressionAttributeValues: { ':p': 'PRED#' } });
+    },
     // every Q# row (SAMPLED / DRAFT# / VERDICT), grouped by the caller
     listQuestionRows() {
       return scan({ FilterExpression: 'begins_with(PK, :p)', ExpressionAttributeValues: { ':p': 'Q#' } });

@@ -2,11 +2,13 @@
 
 // newsPredictionResolver — the weekly prediction SETTLE Lambda (Batch 4 phase B).
 // It replaced the legacy proposer (which scored at scenario probability). Actions:
-//   tick    daily 10:30 UTC, idempotent: commit next weeks' seeds, draw every ended week, on Mondays
-//           run the draft pass, write a heartbeat. No LLM except in the Monday draft pass.
+//   tick    daily 10:30 UTC, idempotent: commit next weeks' seeds, draw every ended week, settle waiting drafts,
+//           then the nightly WATCH -> GATHER -> JUDGE -> RECORD pass (decision 0038), write a heartbeat.
+//           The only LLM calls are the judge's, for tonight's candidates (src/watch.js).
 //   draw    {weekId, dryRun}   reveal + draw one ended week (normally done by tick)
-//   draft   {limit, dryRun}    agent drafts for sampled questions past their deadline, then settles them
+//   draft   {limit, dryRun}    the same check pass on demand (cap = limit)
 //   correct {qid, verdict, reason, evidence?}  operator dispute: appends Q#<qid>/VERDICT#<n> (highest n wins)
+//   watch   list tonight's candidates only (no model, no writes)
 //   status  read-only counts
 //   replay  {items:[…]}        run the drafter on supplied questions, NO writes (validation only)
 // dryRun = no LLM, no writes. Records: SEED#<week>/{COMMIT,SECRET,REVEAL}, SAMPLE#<week>/DRAW,
@@ -18,6 +20,8 @@
 
 const lib = require('./lib');
 const { draftQuestion } = require('./draft');
+const watch = require('./watch');
+const inbox = require('./inbox');
 const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -25,7 +29,8 @@ const LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredicti
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // Q6: judgment on evidence; not the GROK_MODEL (flash)
 const DRAFT_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
-const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
+const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || String(watch.MAX_CANDIDATES), 10); // candidates per run
+const CHECK_BUDGET_MS = 420000; // stop starting checks after 7 minutes (Lambda timeout is 10)
 const REDRAFT_AFTER_DAYS = 5;
 const MAX_UNCLEAR_DRAFTS = 3;
 const FINAL_DRAFT_VERDICTS = ['yes', 'no', 'void']; // anything else (not_yet, needs_human) is unclear
@@ -113,8 +118,24 @@ const verdictOrder = (sk) => { const m = /^VERDICT#(\d+)$/.exec(sk); return sk =
 // outage (needs_human with an 'llm error' note) is not a judgment and never counts toward voiding a question.
 const isUnclearDraft = (d) => !FINAL_DRAFT_VERDICTS.includes(d.verdict) && !/^llm error/.test(String(d.note || ''));
 
-// Settle one question from its drafts (g.drafts includes any draft just written). yes/no/void in the latest
-// draft is the verdict; an unclear draft leaves it open until MAX_UNCLEAR_DRAFTS, then void.
+// Unclear drafts that count toward a void: made once `no` was allowed (deadline + GRACE_DAYS) and at least
+// REDRAFT_AFTER_DAYS apart, so a story that moves every night cannot void a question in three days.
+function countUnclear(drafts, deadline) {
+  const from = lib.addDays(deadline, lib.GRACE_DAYS);
+  let n = 0;
+  let last = null;
+  for (const d of drafts.filter(isUnclearDraft).sort((a, b) => String(a.SK).localeCompare(String(b.SK)))) {
+    const day = String(d.SK).slice(6, 16);
+    if (day < from || (last && day < lib.addDays(last, REDRAFT_AFTER_DAYS))) continue;
+    n++;
+    last = day;
+  }
+  return n;
+}
+
+// RECORD: settle one question from its drafts (g.drafts includes any draft just written; g.q is the question).
+// yes/no/void in the latest draft is the verdict; unclear drafts leave it open until MAX_UNCLEAR_DRAFTS, then void.
+// The row is the same for any question; `sampled` marks the pre-registered weekly sample.
 async function settleQuestion(deps, g, dryRun, out) {
   if (g.verdicts.length) return;
   const latest = g.drafts.slice().sort((a, b) => String(a.SK).localeCompare(String(b.SK))).pop();
@@ -123,24 +144,32 @@ async function settleQuestion(deps, g, dryRun, out) {
   if (FINAL_DRAFT_VERDICTS.includes(latest.verdict)) {
     row = {
       verdict: latest.verdict,
-      evidence: latest.verdict === 'void' ? null : { url: latest.url || null, quote: latest.quote || null },
+      evidence: latest.verdict === 'void' ? null : (latest.evidence || { url: latest.url || null, quote: latest.quote || null }),
       ...(latest.verdict === 'void' ? { voidReason: latest.voidReason } : {}),
+      ...(latest.why ? { reason: latest.why } : {}),
     };
-  } else if (g.drafts.filter(isUnclearDraft).length >= MAX_UNCLEAR_DRAFTS) {
-    row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
+  } else if (countUnclear(g.drafts, (g.q || g.sampled).deadline) >= MAX_UNCLEAR_DRAFTS) {
+    row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts`, reason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
   } else return;
   if (dryRun) { out.wouldSettle.push({ qid: g.qid, verdict: row.verdict }); return; }
   const ok = await deps.store.putOnce({
     PK: `Q#${g.qid}`, SK: 'VERDICT', qid: g.qid, ...row, decidedAt: deps.now(),
-    decidedBy: 'resolver', confirmedBy: 'resolver', draftSk: latest.SK,
+    decidedBy: latest.model || 'resolver', confirmedBy: 'resolver', draftSk: latest.SK, sampled: Boolean(g.sampled),
   });
-  if (ok) { g.verdicts.push(row); out.settled.push({ qid: g.qid, verdict: row.verdict }); }
+  if (ok) {
+    g.verdicts.push(row);
+    out.settled.push({ qid: g.qid, verdict: row.verdict });
+    await inbox.appendVerdict(deps, out, {
+      q: g.q || g.sampled, qid: g.qid, result: row.verdict, voidReason: row.voidReason || null, decidedAt: deps.now(),
+      decidedBy: latest.model || 'resolver', evidence: row.verdict === 'void' ? null : row.evidence, reason: row.reason || null, revision: 1,
+    });
+  }
 }
 
 // Daily: settle every due question whose draft is already waiting (no LLM).
 async function settlePass(deps, today, dryRun, out) {
   for (const g of groupQuestions(await deps.store.listQuestionRows())) {
-    if (g.sampled && lib.isDue(g.sampled.deadline, today)) await settleQuestion(deps, g, dryRun, out);
+    if (g.sampled && lib.isDue(g.sampled.deadline, today)) { g.q = g.sampled; await settleQuestion(deps, g, dryRun, out); }
   }
 }
 
@@ -149,8 +178,8 @@ async function correct(deps, event, out) {
   const { qid, verdict } = event;
   const reason = String(event.reason || '').trim();
   if (!qid || !CORRECTION_VERDICTS.includes(verdict) || !reason) { out.errors.push('correct needs qid, verdict (yes|no|void) and a reason'); return; }
-  if (!(await deps.store.get(`Q#${qid}`, 'SAMPLED'))) { out.errors.push(`${qid}: not a sampled question`); return; }
   const rows = await deps.store.queryPK(`Q#${qid}`);
+  if (!rows.length) { out.errors.push(`${qid}: no such question (no Q# rows)`); return; }
   const n = Math.max(0, ...rows.map((r) => verdictOrder(r.SK))) + 1;
   const ev = event.evidence || {};
   const ok = await deps.store.putOnce({
@@ -159,26 +188,53 @@ async function correct(deps, event, out) {
     ...(verdict === 'void' ? { voidReason: reason } : {}),
     decidedAt: deps.now(), decidedBy: 'operator', confirmedBy: 'operator', reason,
   });
-  if (ok) out.corrected = { qid, sk: `VERDICT#${n}`, verdict };
+  if (ok) {
+    out.corrected = { qid, sk: `VERDICT#${n}`, verdict };
+    const q = rows.find((r) => r.pk && r.sk) || {}; // SAMPLED or a DRAFT row carries the PRED key
+    await inbox.appendVerdict(deps, out, {
+      q, qid, result: verdict, voidReason: verdict === 'void' ? reason : null, decidedAt: deps.now(), decidedBy: 'operator',
+      evidence: verdict === 'void' ? null : { quote: ev.quote || null, url: ev.url || null, title: ev.title || null, date: ev.date || null }, reason, revision: n,
+    });
+  }
   else out.errors.push(`${qid}: VERDICT#${n} was written by someone else just now; run the correction again`);
 }
 
-async function draftPass(deps, today, limit, dryRun, out) {
-  const groups = groupQuestions(await deps.store.listQuestionRows());
-  const cutoff = lib.addDays(today, -REDRAFT_AFTER_DAYS);
-  const due = groups
-    .filter((g) => g.sampled && g.verdicts.length === 0 && lib.isDue(g.sampled.deadline, today))
-    .filter((g) => !g.drafts.some((d) => String(d.SK).slice(6, 16) > cutoff))
-    .sort((a, b) => String(a.sampled.deadline).localeCompare(String(b.sampled.deadline)))
-    .slice(0, limit);
-  out.dueForDraft = due.length;
-  if (dryRun) { out.wouldDraft = due.map((g) => ({ qid: g.qid, deadline: g.sampled.deadline })); return; }
-  await mapWithConcurrency(due, DRAFT_CONCURRENCY, async (g) => {
-    const d = await draftQuestion(g.sampled, deps);
+// WATCH (no model): which open question branches get a check tonight. Questions come from the PRED rows and from
+// the SAMPLED rows (same fields; a sampled question is just a flagged one). A failing facts read (for example the
+// role lacks s3:GetObject on record/facts/*) is reported and the pass goes on with the age rule alone.
+async function watchSelect(deps, today, limit, out) {
+  const [preds, qrows] = await Promise.all([deps.store.allQuestionPreds(), deps.store.listQuestionRows()]);
+  let moved = new Map();
+  try { moved = await watch.movedThreads(deps.facts, today); } catch (e) { out.errors.push(`watch: facts unreadable, only the age rule applies (${String(e.message).slice(0, 120)})`); }
+  const groups = new Map(groupQuestions(qrows).map((g) => [g.qid, g]));
+  const questions = watch.questionsFromPreds(preds);
+  const known = new Set(questions.map((q) => q.qid));
+  for (const g of groups.values()) if (g.sampled && !known.has(g.qid)) questions.push({ ...watch.questionFromSampled(g.sampled), qid: g.qid });
+  const sel = watch.selectCandidates({ questions, groups, moved, today, redraftAfterDays: REDRAFT_AFTER_DAYS, cap: limit });
+  out.watch = {
+    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, overflow: sel.overflow,
+    moved: sel.candidates.filter((c) => c.reason === 'moved').length, grace: sel.candidates.filter((c) => c.reason === 'grace').length,
+  };
+  console.log('watch', JSON.stringify(out.watch));
+  return { sel, groups };
+}
+
+// GATHER + JUDGE + RECORD for tonight's candidates. Entry facts ride along as evidence; the judge never sees p.
+async function checkPass(deps, today, limit, dryRun, out) {
+  const { sel, groups } = await watchSelect(deps, today, limit, out);
+  out.dueForDraft = sel.candidates.length;
+  if (dryRun) { out.wouldCheck = sel.candidates.map((c) => ({ qid: c.qid, deadline: c.deadline, reason: c.reason, sampled: c.sampled })); return; }
+  const started = Date.now();
+  await mapWithConcurrency(sel.candidates, DRAFT_CONCURRENCY, async (c) => {
+    if (Date.now() - started > (deps.budgetMs || CHECK_BUDGET_MS)) { out.skippedForTime = (out.skippedForTime || 0) + 1; return; }
+    const { entries, reason, sampled, ...q } = c;
+    const d = await draftQuestion({ ...q, entries }, deps);
     const at = deps.now();
-    await deps.store.putOnce({ PK: `Q#${g.qid}`, SK: `DRAFT#${at}`, qid: g.qid, ...d, model: deps.draftModel, at });
-    out.drafted.push({ qid: g.qid, verdict: d.verdict });
-    g.drafts.push({ PK: `Q#${g.qid}`, SK: `DRAFT#${at}`, ...d });
+    const g = groups.get(q.qid) || { qid: q.qid, sampled: null, drafts: [], verdicts: [] };
+    g.q = q;
+    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: deps.draftModel, at });
+    out.drafted.push({ qid: q.qid, verdict: d.verdict });
+    g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: deps.draftModel });
     await settleQuestion(deps, g, false, out);
   });
 }
@@ -188,6 +244,7 @@ async function run(event, deps) {
   const dryRun = Boolean(event && event.dryRun);
   const now = deps.now();
   const today = String(now).slice(0, 10);
+  if (event && event.shadow) deps = { ...deps, shadow: true };
   const out = { action, dryRun, today, committed: [], wouldCommit: [], drawn: [], wouldDraw: [], drafted: [], settled: [], wouldSettle: [], errors: [] };
 
   if (action === 'status') {
@@ -200,6 +257,11 @@ async function run(event, deps) {
       drafted: groups.filter((g) => g.drafts.length).length,
       verdicts: groups.filter((g) => g.verdicts.length).length,
     };
+  }
+
+  if (action === 'watch') {
+    await checkPass(deps, today, Number(event.limit) || DEFAULT_DRAFT_LIMIT, true, out);
+    return out;
   }
 
   if (action === 'replay') {
@@ -226,22 +288,30 @@ async function run(event, deps) {
 
   if (action === 'tick' || action === 'draft') await settlePass(deps, today, dryRun, out);
 
-  if (action === 'draft' || (action === 'tick' && (lib.isMonday(today) || event.draft))) {
-    await draftPass(deps, today, Number(event.limit) || DEFAULT_DRAFT_LIMIT, dryRun, out);
+  if (action === 'draft' || action === 'tick') {
+    await checkPass(deps, today, Number(event.limit) || DEFAULT_DRAFT_LIMIT, dryRun, out);
   }
 
   if (action === 'tick' && !dryRun) {
     await deps.store.putOnce({
       PK: `SETTLE#${lib.weekOf(today)}`, SK: `TICK#${now}`, at: now,
-      committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, settled: out.settled.length, errors: out.errors,
+      committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, settled: out.settled.length, watch: out.watch || null, errors: out.errors,
     });
   }
   if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
-  console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
+  console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, candidates: out.watch ? out.watch.total : 0, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
   return out;
 }
 
+// s3json over the world bucket (the SDK ships with the Lambda runtime): reads record/facts/* (WATCH) and appends to record/inbox/verdicts/* (RECORD).
+function makeFacts() {
+  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  const { makeS3Json } = require('./_shared/s3json');
+  return makeS3Json({ client: new S3Client({ region: REGION }), GetObjectCommand, PutObjectCommand, bucket: process.env.WORLD_BUCKET });
+}
+
 function defaultDeps() {
+  const s3 = makeFacts();
   const { makeStore } = require('./store');
   const { makeSearch } = require('./search');
   const search0 = makeSearch(process.env.BRAVE_SEARCH_API_KEY || '');
@@ -249,6 +319,8 @@ function defaultDeps() {
   return {
     now: () => new Date().toISOString(),
     store: makeStore(LOG_TABLE, REGION),
+    facts: s3,
+    inbox: s3,
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
     search: async (q) => { usage.searches++; return search0(q); },

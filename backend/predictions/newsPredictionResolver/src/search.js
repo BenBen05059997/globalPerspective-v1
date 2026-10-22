@@ -11,6 +11,7 @@ const WEB = 'https://api.search.brave.com/res/v1/web/search';
 function makeSearch(apiKey, { fetchImpl = fetch, gapMs = 1100, retryMs = 2200, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const headers = { Accept: 'application/json', 'X-Subscription-Token': apiKey };
   const host = (r) => r.meta_url?.hostname || (r.url || '').split('/')[2] || 'unknown';
+  const dayOf = (v) => (/^\d{4}-\d{2}-\d{2}/.test(String(v || '')) ? String(v).slice(0, 10) : ''); // Brave page_age is ISO when known
   let gate = Promise.resolve();
 
   // one request at a time, at least gapMs between starts
@@ -37,14 +38,14 @@ function makeSearch(apiKey, { fetchImpl = fetch, gapMs = 1100, retryMs = 2200, s
     const out = [];
     try {
       const data = await limited(`${NEWS}?q=${encodeURIComponent(query)}&count=6&search_lang=en`);
-      for (const r of (data?.results || []).slice(0, 6)) out.push({ title: r.title || '', snippet: r.description || '', source: host(r), url: r.url || '', age: r.age || '' });
+      for (const r of (data?.results || []).slice(0, 6)) out.push({ title: r.title || '', snippet: r.description || '', source: host(r), url: r.url || '', age: r.age || '', date: dayOf(r.page_age) });
     } catch (e) { console.warn('brave news failed:', e.message); }
     if (out.length < 3) {
       try {
         const data = await limited(`${WEB}?q=${encodeURIComponent(query)}&count=5&search_lang=en&text_decorations=false`);
         for (const r of (data?.web?.results || []).slice(0, 5)) {
           if (out.some((x) => x.url === r.url)) continue;
-          out.push({ title: r.title || '', snippet: r.description || (r.extra_snippets || [])[0] || '', source: host(r), url: r.url || '', age: r.age || '' });
+          out.push({ title: r.title || '', snippet: r.description || (r.extra_snippets || [])[0] || '', source: host(r), url: r.url || '', age: r.age || '', date: dayOf(r.page_age) });
         }
       } catch (e) { console.warn('brave web failed:', e.message); }
     }

@@ -70,3 +70,26 @@ test('verdict fact accepts yes, no, void only', () => {
   for (const v of ['yes', 'no', 'void']) assert.equal(F.inboxVerdictFact(row(v), {threadId: 't', branchId: 'b'}, 'r').payload.result, v);
   assert.throws(() => F.inboxVerdictFact(row('not_yet'), {threadId: 't', branchId: 'b'}, 'r'));
 });
+
+// X1: the article kind
+const {inboxArticleFact} = require('../src/facts');
+const rawArticle = (o = {}) => ({schemaVersion: 1, rawId: 'r1', url: 'https://www.bbc.co.uk/news/a1?utm_source=rss', canonicalUrl: 'https://bbc.co.uk/news/a1', title: 'T', outlet: 'BBC', feed: 'bbc-world', publishedAt: '2026-10-20T03:58:12.000Z', fetchedAt: '2026-10-20T04:10:00.000Z', snippet: null, lang: null, ...o});
+test('X1: article id is sha1("article"+canonicalUrl): a live and a recovered copy are one fact, and the url spelling does not matter', () => {
+  const live = inboxArticleFact(rawArticle(), '2026-10-20-1');
+  const rec = inboxArticleFact(rawArticle({publishedAt: null, fetchedAt: '2026-10-20T00:00:00.000Z', recoveredAt: '2026-10-25T09:00:00.000Z', recoveredFrom: 'wayback'}), '2026-10-26-1');
+  const spelled = inboxArticleFact(rawArticle({canonicalUrl: undefined, url: 'HTTPS://www.bbc.co.uk/news/a1/#x'}), '2026-10-20-1');
+  assert.equal(live.eventId, require('../src/_shared/record').sha1('articlehttps://bbc.co.uk/news/a1'));
+  assert.deepEqual([rec.eventId, spelled.eventId], [live.eventId, live.eventId]);
+  assert.deepEqual([live.threadId, live.iso3, live.actorIds, live.sourceIds], [null, [], [], ['69426f1f0b18d7daeb762f4404cf2884fdd43168']]);
+  assert.deepEqual([live.payload.recoveredAt, live.payload.recoveredFrom, rec.payload.recoveredFrom, rec.payload.recoveredAt], [null, null, 'wayback', '2026-10-25T09:00:00.000Z']);
+});
+test('X1: precision is exact with publishedAt, day (fetch day) without it or when it is after fetchedAt; a bad line throws', () => {
+  const exact = inboxArticleFact(rawArticle(), 'r');
+  assert.deepEqual([exact.precision, exact.at, exact.date], ['exact', '2026-10-20T03:58:12.000Z', '2026-10-20']);
+  for (const o of [{publishedAt: null}, {publishedAt: 'garbage'}, {publishedAt: '2026-10-21T00:00:00.000Z'}]) {
+    const f = inboxArticleFact(rawArticle(o), 'r');
+    assert.deepEqual([f.precision, f.at], ['day', '2026-10-20T00:00:00.000Z'], JSON.stringify(o));
+  }
+  for (const o of [{url: ''}, {url: 'ftp://x.test/a', canonicalUrl: null}, {title: ''}, {fetchedAt: 'nope'}]) assert.throws(() => inboxArticleFact(rawArticle(o), 'r'), /inbox article/, JSON.stringify(o));
+  assert.throws(() => inboxArticleFact(null, 'r'), /inbox article/);
+});

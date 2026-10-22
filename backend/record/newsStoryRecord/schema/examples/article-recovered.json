@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "eventId": "081f79f990223f111a2d9c6aa796fa65ae22d117",
+  "kind": "article",
+  "at": "2026-10-20T00:00:00.000Z",
+  "date": "2026-10-20",
+  "precision": "day",
+  "threadId": null,
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [
+    "69426f1f0b18d7daeb762f4404cf2884fdd43168"
+  ],
+  "payload": {
+    "url": "https://www.bbc.co.uk/news/world-europe-1?utm_source=rss",
+    "canonicalUrl": "https://bbc.co.uk/news/world-europe-1",
+    "title": "Alberta votes on separation referendum",
+    "outlet": "BBC",
+    "feed": "bbc-world",
+    "snippet": "Voters in Alberta head to the polls.",
+    "lang": "en",
+    "recoveredAt": "2026-10-25T09:00:00.000Z",
+    "recoveredFrom": "wayback"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.3.0",
+    "runId": "2026-10-26-1"
+  },
+  "sourceKey": "inbox:articles/https://bbc.co.uk/news/world-europe-1",
+  "sourceRow": {
+    "store": "record",
+    "key": "inbox:articles/https://bbc.co.uk/news/world-europe-1"
+  }
+}

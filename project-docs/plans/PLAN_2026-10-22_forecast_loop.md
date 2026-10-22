@@ -12,7 +12,7 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
 | Decision 0038 written | coordinator | no | ☑ | 0038 + inbox amendment d3219d4b |
-| Generator: at most 3 outcomes/story/week, event text as `branch.text`, gates (lead 7-90, near-duplicate of open branch), draw only when the story moved | draw lane (`NewsProjectInvokeAgentLambda`) | Lambda deploy under standing authorization | ◐ | lane M merged c003abca (97 tests pass, 2 pre-existing failures); PROMPT_VERSION 3, G14 said-not-done gate, HORIZON 90; NOT deployed: needs dryRun + operator yes |
+| Generator: at most 3 outcomes/story/week, event text as `branch.text`, gates (lead 7-90, near-duplicate of open branch), draw only when the story moved | draw lane (`NewsProjectInvokeAgentLambda`) | Lambda deploy under standing authorization | ☑ | lane M merged; deployed 2026-10-23 with lane AB (CodeSha256 aXHKCkI9…): the first run after the DeepSeek top-up draws under the new rules; a dryRun can still be invoked by event |
 | Draw quality: no invented calendar facts (grounded-date gate), no templated probabilities, drop example numbers from the schema; the 5-precedent prompt v2b awaits an operator yes | draw lane | yes for prompt v2b | ☐ | older plan P1/P2; A/B harness `predictions/forecast-ab/` |
 | Resolver: watch triggers from `record/facts` (new entry that day, due + 3 days) | resolver lane (`newsPredictionResolver`) | no | ◐ | lane N merged 1dea6b38 (70 tests); dry run 2026-10-22: 96 candidates by age, cap 60; NOT deployed: needs IAM (GetObject record/facts/*, PutObject inbox) and a shadow run |
 | Resolver: gather (superseded: web search dropped, see next row) and judge (existing lib.js rules, `issued_before_method` reason) | resolver lane | no | ◐ | lane N merged with web search, results on or before due; NOT deployed; gather changes to own entries after the draw (0038 amendment 2) |
@@ -55,3 +55,4 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 - 2026-10-22: `BRAVE_SEARCH_API_KEY` removal is tied to the resolver deploy (the live resolver's Monday drafts still search with it).
 - 2026-10-22: operator: finish the rest before deploying the resolver. Lanes Q (coverage guard, draw gates) and R (page wording) opened. The resolver deploy now waits on lane Q as well as DeepSeek.
 - 2026-10-22: lane Q merged. Resolver deploy prerequisites now: DeepSeek top-up, IAM GetObject record/runs/*, shadow review.
+- 2026-10-23: NewsProjectInvokeAgentLambda deployed (draw rules + PRED# thread reconciliation). Takes effect at the first funded run.

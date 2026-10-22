@@ -19,12 +19,14 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 3 READ       model, boxed        [newsRecordReview]
 |  +- rule   : returns JSON only: line, chapters, branch status, links, merge proposal, alias proposals
+|  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
 |  +- model  : DeepSeek larger model (env); a stub model in tests and in the golden-week run
 |
 +- 4 CHECK      no model            [newsRecordReview]
 |  +- rule   : citations exist and belong to the story (or both stories for a link); dates inside the chapter span;
-|  |           branch status only for branches of the story; merge auto-allowed only under the merge rule below
+|  |           branch status only for branches of the story; merge auto-allowed only under the merge rule below;
+|  |           assignment: entry of this story, or a cited neighbour entry; target an active story or new; written as a reading, never applied
 |  +- output : accepted readings, rejected items with reason (kept in the review Run)
 |
 +- 5 WRITE      no model            [newsRecordReview -> record/readings/ ; merges -> record/inbox/merges/]
@@ -54,9 +56,12 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 | chapter `from`/`to` outside the dates of the cited facts | `dates_outside_cited_facts` |
 | branch status vs verdict facts (yes = fired, no = dead; open branch takes holding/late only; void takes none) | `status_contradicts_verdict`, `status_not_allowed_for_open_branch`, `branch_void`, `unknown_branch` |
 | alias without a Q-number, with an actor not in the bundle, or conflicting with the operator file | `alias_no_wikidata`, `alias_unknown_actor`, `alias_conflicts_operator` |
+| assignment proposal: entry neither shown in this story nor a cited neighbour entry, a target that is not an active story (or `new`), or the entry's own story | `entry_not_in_scope`, `unknown_story`, `already_assigned` (and `unknown_eventId` for any cite the model was not shown) |
 | wrong shape or length (line 200, chapter summary 300, mechanism 200), repeat of the same item, over the per-story cap | `bad_shape`, `duplicate`, `over_cap` |
 
 Merge rule (the 5% rule of 0037): a `merge_proposal` is always a reading; it also goes to the inbox only if the two stories share a specific actor (fewer than 5% of active stories carry it) and a country, their last entries are within 14 days, the reading cites both stories, and confidence is `high`. The older story (earlier `born`) survives. One inbox line per pair and per `from` story.
+
+Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-2`; run the golden-week score again before the first live run with it.
 
 Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, covers:{from,to}, supersedes, run, model, promptVersion, confidence}` ([schema](schema/reading.schema.json)). `readingId = sha1(week + threadId + subtype + key)` with key = chapter `from`, `branchId`, `otherThreadId`, alias `canonical`, empty for a line. `supersedes` is the `readingId` of the newest earlier-week reading of the same story, subtype and key, else null. `covers` is the first fact date of the bundle to the week's Sunday.
 
@@ -79,6 +84,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Readings of earlier weeks are found by reading the 8 previous weekly files (there is no listing and no readings manifest). A thing last read more than 8 weeks ago has no `supersedes` link.
 - A story skipped for no new fact keeps its older readings; a re-run of a week replaces only the stories it read. `covers.to` is the week's Sunday, and "since the last reading" means entry or verdict facts dated after that Sunday.
 - The skip rule counts `entry` and `verdict` facts only; a verdict on a branch is the exception to "no new fact" and always brings a story back.
+- Assignment: the model sees this story's newest 60 entries and each neighbour's 3 newest; an entry outside those is out of scope even when it exists. A neighbour's entry must also appear in `cites`. `new` is accepted as a target without a thread id; applying it needs the operator to pick one.
 - Alias readings that fail the rule (no Q-number, conflict) are not written as readings; they appear as rejections in the Run, which is where the operator sees the proposals.
 - The merge rule's country condition is any shared country (not 5%-specific): the specific actor carries the specificity.
 - Links and merges: the prompt shows the model up to 5 neighbours (cheap, no extra reads); the check accepts any active story the model cites correctly, and assembles that story's citable ids from the facts already in memory.

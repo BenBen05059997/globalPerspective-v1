@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): step 1 live and scheduled; step 2 merged, deploy waits on IAM; step 2b quality gaps opened (lane L building the links rule and exact times)
+Status: active (2026-10-22): steps 1 and 2 backend live (facts, views, newsBoard); Worker upload and board UI release pending; forecast design open
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -71,19 +71,19 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
 | Decision written (view paths, `index/active`, `links/{id}`, daily counts) | coordinator | no | ☑ | decision 0037 (2026-10-21) |
-| Views builder from facts (no model) | lane (record) | no | ◐ | lane J merged ad243954 (67 tests); dry run on live facts: 519 stories, all.json 203 KB, build 1.2 s; not deployed: role lacks PutObject `record/views/*` |
-| `newsBoard` reads the new view paths | lane (board) | no | ◐ | lane K merged 9717b849 (44 tests; `story_view` removed); not deployed: waits on its IAM |
-| `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☐ | `newsBoard-role` reads the old two paths only |
-| Worker `DATA_ALLOWED` allowlist gains `record/` (and `weekly/`) | coordinator | Worker upload and reader IAM: yes | ☐ | worker.mjs line 13 allows `world/`, `situations/state/`, `stories/state/` only |
+| Views builder from facts (no model) | lane (record) | no | ☑ | lanes J+L merged; deployed 2026-10-22 (CodeSha256 rAU3n3xP…); `record/views/` built: 519 stories, 1,052 files, manifest runId 2026-10-22-3 |
+| `newsBoard` reads the new view paths | lane (board) | no | ☑ | lane K merged 9717b849; deployed 2026-10-22 (CodeSha256 5ZfOxSsi…), no errors in logs |
+| `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☑ | 2026-10-22: `newsBoard-record` reads `record/views/index/{active,all}.json`, `record/views/links/*`; old paths removed |
+| Worker `DATA_ALLOWED` allowlist gains `record/views/` | coordinator | Worker upload and reader IAM: yes | ◐ | reader IAM done 2026-10-22 (`gp-worker-s3-reader` GetObject `record/views/*`); upload blocked by the session classifier: operator runs it. Upload = live code `cc57a42f` + the one line, not repo `worker.mjs` (repo also carries an unreleased `/analyze` redirect) |
 | Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | lane K merged 9717b849 (verify passes, unsettled zone, 0037 empty texts); not clicked in a browser, not released |
 | Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
 
 ### Step 2b. Record quality gaps found 2026-10-22 (live facts and tables)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Links rule: sources never count, 5% specificity, 14-day window, `daysApart`, "shares" label (0037 amendment) | lane (record) | no | ☐ | dry run: 25,615 rows, 14,655 outlet-only, USA in 5,873 pairs |
-| Entry `at` = earliest source `publishedAt`, precision exact (0036 amendment); world reader exposes `publishedAt`/`outlet` | lane (record) | no | ☐ | all 929 entries are day precision |
-| **Forecast loop is open**: 7,440 branches drawn, 870 past due, 45 questions committed, 0 verdict rows in GlobalPerspectivePredictionLog ever; resolver ticks commit nothing | design (pipeline + record) | decision | ☐ | scan 2026-10-22; resolver log 2026-10-15 `committed:[] drawn:0` |
+| Links rule: sources never count, 5% specificity, 14-day window, `daysApart`, "shares" label (0037 amendment) | lane (record) | no | ☑ | lane L 58841add, deployed; rows 25,615 -> 2,494, median 2 per story, 329 of 519 stories have a link. The board does not show cheap links yet (0037 §6: arrivals show confirmed links only) |
+| Entry `at` = earliest source `publishedAt`, precision exact (0036 amendment) | lane (record) | no | ☑ | lane L 12625849, deployed; live archive rows since 10-20 carry no publishedAt (outage), so live entries stay day precision until the pipeline runs again |
+| **Forecast loop: volume vs sample** (corrected 2026-10-22 after research): the resolver is not broken; by design (0011) it resolves a weekly sample of 22, one per story; first sampled deadline 10-18, first possible verdict Monday 10-26. The record stores 7,440 branches as forecasts, of which 44 can ever get a verdict; 2,451 have no question id. Board text "not checked yet" and `counts.branchesDue` treat all branches as due | design (operator) | decision | ☐ | `gp-mailbox/artifacts/forecast-loop-brief.md` (options a-d, 9 questions) |
 | Story continuity: median story has 1 entry (140 of 401 have 2+); merges never fed | design (review, step 3) | decision | ☐ | live facts 2026-10-22 |
 | Actor identity: 498 name IDs, 355 singletons, spelling variants; alias table (operator JSON > Wikidata) applied in views | lane (record) after decision | no | ☐ | e.g. `lula da silva` ×2, `klitschko` ×2 |
 | Place below country not recorded; eventType missing on 23% of entries, `other` on 11% | pipeline | no | ☐ | live facts 2026-10-22 |
@@ -151,3 +151,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: operator go for all of step 2. Lanes J (`lane/views`, backend/record views builder) and K (`lane/board3`, newsBoard + board UI + Worker allowlist line) opened in parallel on Sonnet; briefs in the mailbox prompts. IAM, Worker upload, deploys and the frontend release stay with the coordinator.
 - 2026-10-22: lanes J and K merged. Lane J notes for the operator: 499 of 519 stories hit the 50-link cap and 61% of link rows rest on one shared ground (a shared country or big outlet), so `links/` is mostly weak signal; survivors take merged entries but not forks (0037 says entries). Live steps wait on three IAM changes the session classifier blocks.
 - 2026-10-22: record profiled against live data (step 2b rows). Biggest finding: no verdict has ever been written, so the forecast loop is open; needs a design decision before step 3's branch status. Lane L opened (links rule, exact times); docs audit and forecast design research run in parallel on Sonnet.
+- 2026-10-22: operator yes; three IAM changes applied (newsStoryRecord views write, newsBoard views read, Worker reader views read). newsStoryRecord (J+L) and newsBoard (K) deployed; views built. Worker upload blocked by the classifier. Forecast research: the earlier "resolver commits nothing" reading was wrong; it is a sample by design (brief in mailbox artifacts).

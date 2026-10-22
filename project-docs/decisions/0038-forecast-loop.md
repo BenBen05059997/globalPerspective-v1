@@ -9,14 +9,14 @@ The product is an analyst tool; a forecast with a verdict separates it from a fe
 ## Decision
 - Draw: weekly per story, only when the story has new entry facts that week; at most 3 outcomes per story per week. Each outcome is an event that gets done (not said), due 7-90 days out, with the model's own p and a named source. Mechanical gates drop missing p, vague source, lead outside 7-90, restatement, and near-duplicates of an open branch on the same story. `branch.text` is the event text. Written as `forecast_drawn` facts, never changed.
 - Watch: nightly, no model. Candidates are open branches on stories with a new entry fact that day, and open branches whose due date passed 3 days ago (`GRACE_DAYS`). Nothing else is checked.
-- Gather: no model. New entry title/summary plus a news search for the branch event text, results dated before due, the branch's source named.
-- Judge: boxed model answers yes | no | void | not_yet. `yes` needs a verbatim quote of at least 12 characters verified by code in a cited result, and a second independent pass that also says yes. `no` only after due + 3 days. `void` only with one of `ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`, or the new `issued_before_method`. Otherwise `not_yet`.
+- Gather (superseded by Amendment 2026-10-22 (2)): no model. New entry title/summary plus a news search for the branch event text, results dated before due, the branch's source named.
+- Judge (evidence and `no` wording changed by Amendment 2026-10-22 (2)): boxed model answers yes | no | void | not_yet. `yes` needs a verbatim quote of at least 12 characters verified by code in a cited result, and a second independent pass that also says yes. `no` only after due + 3 days. `void` only with one of `ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`, or the new `issued_before_method`. Otherwise `not_yet`.
 - Record: final answers become `verdict` facts {result, quote, url, at, decidedBy, evidence}. The pre-registered weekly sample of 22 (0011) stays and is what the public track record scores; all other verdicts are shown, not scored.
 - Legacy: the 2,451 branches without a question id are voided once in bulk with `issued_before_method` (a one-time job, operator-approved), shown as "recorded before scoring began".
-- Wording: "open · due DATE"; "happened · DATE"; "did not happen"; "could not be checked · reason"; never "not checked yet". `counts.branchesDue` counts resolvable branches only.
+- Wording: "open · due DATE"; "happened · DATE"; "not reported by DATE" (amendment 2 replaces "did not happen"); "could not be checked · reason"; never "not checked yet". `counts.branchesDue` counts resolvable branches only.
 - Review: `newsRecordReview` reads the week's verdicts and writes readings citing verdict facts.
 - Ownership: draw in `backend/pipeline/NewsProjectInvokeAgentLambda`; everything else in `backend/predictions/newsPredictionResolver`.
-- Going live of "did not happen" wording needs at least 90% operator spot-check agreement over two weeks.
+- Going live of the "not reported by" wording (first written as "did not happen") needs at least 90% operator spot-check agreement over two weeks.
 
 ## Rejected
 - (a) Fix the gate and keep volume: resolving 150-250 questions a day costs more model and search calls and leaves correlated near-duplicate questions.
@@ -44,3 +44,19 @@ Why: (1) verdicts are static once decided, so they belong in S3 like every other
 Rejected: a direct DynamoDB lookup (cost grows with questions; ties the record to a table); the resolver writing `record/facts/` itself (two writers of one file, manifest races, breaks 0036 section 1); the resolver invoking `newsStoryRecord` synchronously (coupling, retries, double runs).
 
 IAM (operator yes needed, not done): resolver role `s3:PutObject` on the two inbox prefixes and `s3:GetObject` on `record/facts/*` (for WATCH). The facts writer role is unchanged (it already reads and writes `record/*`).
+
+## Amendment 2026-10-22 (2): evidence is our own entries after the draw
+Problem: the judge benchmark of 2026-10-22 (`gp-mailbox/artifacts/judge-bench/README.md`) showed web evidence is the bottleneck: 38 of 47 due questions stayed undecided on years-old pages, fetch failures and unsearched questions. Its hard cases were events that were already true before the draw.
+
+Decision (operator, 2026-10-22):
+- Evidence is only our own record: `entry` facts on the forecast's own story (threadId) dated after the forecast's draw date. No web search, no news API, no page fetching. Nothing dated before the draw counts.
+- happened (`yes`): an entry on that story after the draw shows the event. The quote must be verbatim from that entry's title or summary (code-verified, at least 12 characters), plus the second independent pass.
+- not reported by the due date (`no`): due + 3 days (`GRACE_DAYS`) passed and no entry on that story since the draw shows it. Pages say "not reported by DATE" (replaces "did not happen"). It is a claim about our coverage, not about the world.
+- void: as before, but `criterion_met_at_issue` can no longer arise from evidence (pre-draw evidence is never read); it stays only for the draw gate. The other reasons stay.
+- Cross-story matches are not checked nightly. If another story carries the outcome, that is a confirmed link written by the weekly review (step 3) with hindsight.
+
+Why: (1) web gathering was the bottleneck, own dated entries remove it; (2) the hard benchmark cases were pre-draw events, and an entry dated after the draw cannot be one; (3) it costs zero searches; (4) it follows the operator rule "use what we have".
+
+Consequences: gather becomes a read of `record/facts` (no search, no Brave quota); a true event our feed never covered stays "not reported", so silence in our feed is not proof (stated in Limits); the resolver loses its search code (a Sonnet lane); the judge benchmark is re-cut as questions plus the entry facts written after each draw and can run once the pipeline writes entries again (DeepSeek top-up); the 2026-10-22 web-evidence run stays as a recorded first attempt.
+
+Rejected: web search per question (stale pages, fetch failures, cost, pre-draw leakage).

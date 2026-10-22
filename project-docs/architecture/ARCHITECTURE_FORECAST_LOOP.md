@@ -1,6 +1,6 @@
 # The forecast loop
 
-Status: design agreed by the operator 2026-10-22; not built. Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only); not built. Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
 Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
 
 ## 1. Why
@@ -19,7 +19,8 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  +- inputs : story entry facts of the week + FACTS# premise block + arc digest
 |  +- rule   : only if the story moved this week (new entry facts); at most 3 outcomes per story per week
 |  |           each = an event DONE (not said), due 7-90 days out, own p, a named source that would report it
-|  |           gates drop: no p, vague source, lead outside 7-90, restatement, near-duplicate of an open branch on the story
+|  |           gates drop: no p, vague source, lead outside 7-90, restatement, near-duplicate of an open branch on the story,
+|  |           an outcome already true at the draw, and institution names that are not exact
 |  +- model  : yes (writes the outcomes)
 |  +- output : forecast_drawn fact (never changed); branch.text = the event text
 |  +- cost   : about $0.003-0.005 per story forecast (A/B report 2026-10-17)
@@ -33,19 +34,19 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  +- output : list of (branch, trigger)
 |  +- cost   : zero model calls; this is what keeps the loop cheap
 |
-+- 3 GATHER      no model                            [newsPredictionResolver]
-|  +- inputs : candidate branch; the new entry's title/summary
-|  +- rule   : news search for the branch event text, results dated before due; the branch's own source named
-|  +- model  : no (the model never searches by itself)
-|  +- output : evidence bundle (results with title, snippet, url, date)
-|  +- cost   : searches only (2 per check in the old drafter)
++- 3 GATHER      no model, no search                 [newsPredictionResolver]
+|  +- inputs : the story's own entry facts dated after the draw date (read from record/facts)
+|  +- rule   : nothing dated before the draw; nothing from other stories; no web, no news API, no page fetching
+|  +- model  : no
+|  +- output : evidence bundle (entry title, summary, url, date)
+|  +- cost   : zero searches
 |
 +- 4 JUDGE       boxed model                         [newsPredictionResolver]
-|  +- inputs : branch event text + evidence bundle (never p)
+|  +- inputs : branch event text + the evidence bundle (never p)
 |  +- rule   : answers yes | no | void | not_yet
-|  |           yes  = verbatim quote >= 12 chars found by code in a cited title/snippet, then a 2nd independent pass also yes
-|  |           no   = only after due + 3 days (code-enforced)
-|  |           void = only one of the VOID_REASONS (lib.js)
+|  |           yes  = verbatim quote >= 12 chars found by code in the title/summary of an entry dated after the draw, then a 2nd independent pass also yes
+|  |           no   = "not reported by DUE": due + 3 days passed and no entry on the story since the draw shows it (code-enforced)
+|  |           void = only one of the VOID_REASONS (lib.js); criterion_met_at_issue stays for the draw gate only, never from evidence
 |  |           else not_yet: branch stays open, no cost until the next trigger
 |  +- model  : yes, at most 2 calls per check
 |  +- output : yes | no | void | not_yet
@@ -63,6 +64,7 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 +- 6 REVIEW      weekly (plan step 3), model          [newsRecordReview]
 |  +- inputs : the week's verdict facts + entry facts per active story
 |  +- rule   : writes readings fired | dead | hold | line, each citing verdict facts
+|  |           cross-story confirmed links: if another story carries a branch's outcome, the review writes a confirmed link (with hindsight)
 |  +- output : record/readings/YYYY-Www.jsonl
 |
 +- LOOP BACK : 6 REVIEW -> new entry facts arrive -> 1 DRAW (the story moved) -> ... -> 2 WATCH (every night) -> 3 -> 4 -> 5
@@ -81,11 +83,11 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 ### Watch (nightly, no model)
 Candidates only: open branches on stories with a new entry fact that day (from `record/facts`), plus open branches whose due date passed 3 days ago. This replaces "all branches are due" and the Monday-only draft.
 
-### Gather (no model)
-The new entry's title and summary, and a news search for the branch's event text with results dated before the due date; the branch's own source is named in the query. The model never searches by itself.
+### Gather (no model, no search)
+Amendment 2026-10-22 (2): the evidence is the story's own `entry` facts dated after the draw date, read from `record/facts`. Nothing dated before the draw counts, other stories are not checked, and there is no web search, news API or page fetching. If another story carries the outcome, the weekly review writes a confirmed link with hindsight.
 
 ### Judge (boxed model)
-The existing rules of `newsPredictionResolver/src/lib.js` stay: the quote is verified by code, `yes` needs a second independent pass, `no` waits for due + 3 days (`GRACE_DAYS`), `void` takes one of `VOID_REASONS` (`ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`) plus `issued_before_method` (decision 0038). The judge is blind to p.
+The rules of `newsPredictionResolver/src/lib.js` stay: the quote is verified by code against the title or summary of an entry dated after the draw, `yes` needs a second independent pass, `no` ("not reported by DUE") waits for due + 3 days (`GRACE_DAYS`) and means no entry since the draw shows the event, `void` takes one of `VOID_REASONS` (`ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`) plus `issued_before_method` (decision 0038). `criterion_met_at_issue` applies at the draw gate only, since evidence before the draw is never read. The judge is blind to p.
 
 ### Record (no model)
 Verdicts become `verdict` facts for every judged branch, not only the sample. The 22-per-week pre-registered sample (0011) stays and is what the public track record scores (Brier skill stays null below 150 resolved). All other verdicts are shown on pages, not scored. Operator corrections are appended (0034).
@@ -98,7 +100,7 @@ Verdicts become `verdict` facts for every judged branch, not only the sample. Th
 |---|---|
 | open | "open · due DATE" |
 | yes | "happened · DATE" |
-| no | "did not happen" |
+| no | "not reported by DATE" (a claim about our coverage, not the world) |
 | void | "could not be checked · reason" |
 | before scoring began | "recorded before scoring began" |
 
@@ -130,7 +132,7 @@ This doc is linked from `backend/predictions/README.md`, the resolver README and
 1. Unit/golden tests: a fixed branch plus a fixed search fixture gives the expected verdict. Pass: a non-verbatim quote is rejected; no `no` before due + 3 days; an invalid void reason is rejected.
 2. Replay: run the resolver in dry run over the 44 sampled questions and over 20 branches whose outcome is already known from later entry facts in `record/facts`. This is done by the judge benchmark below; agreement is reported per set (threshold set by the operator before the run).
 3. Shadow fortnight: the new resolver writes verdicts to `record/shadow/` only, side by side with the Monday sampler. Pass: agreement on the shared 22.
-4. Operator spot-check: each week 10 random verdicts with quote and URL; disagreements are appended as corrections. Pass: at least 90% agreement over two weeks before the "did not happen" wording goes live.
+4. Operator spot-check: each week 10 random verdicts with quote and URL; disagreements are appended as corrections. Pass: at least 90% agreement over two weeks before the "not reported by" wording goes live.
 5. Watch metrics and alarms: verdicts per day, void share, two-pass disagreement, branches past due + 3 with no check, model errors.
 6. Cost line: checks per night is about stories moved x open branches on them + due branches; expected a few dozen; at most 2 model calls per check.
 
@@ -138,9 +140,10 @@ This doc is linked from `backend/predictions/README.md`, the resolver README and
 Purpose: a fixed gold set with known answers, frozen evidence and a runner that scores any model. Every judge prompt, model or rule change passes it before deploy, like tests.
 
 Requirements:
+0. Evidence rule (amendment 2026-10-22 (2)): the evidence is the story's own entry facts written after each draw, not web search. The benchmark is re-cut as questions plus those entry facts; the re-run is pending until the pipeline writes entries again (DeepSeek top-up). The 2026-10-22 web-evidence run (110 questions, 47 due, 38 undecided on weak pages, 47/47 agreement between two Claude sub-agents) stays as a recorded first attempt; its frozen web results are no longer the evidence.
 1. Gold set of about 100 questions labelled by the operator. Pool: the 96 overdue question branches of 2026-10-22, the 44 sampled questions, and about 20 branches whose outcome later entry facts show. Stratified: clear yes, clear no, void, boundary. Kept out of judge-prompt tuning.
 2. Humans first: the operator labels a blind subset of 50 before seeing any model answer. Where the operator hesitates, the question is badly drawn; that goes back to the draw gates as feedback.
-3. Frozen evidence: the search runs once per question and its results are stored with the gold set, so every model sees identical text. Location (proposed): S3 `bench/judge/YYYY-MM-DD/`, not under `record/` because it is not a world fact; gold labels as JSONL.
+3. Frozen evidence: the story's entry facts dated after the draw are copied once per question and stored with the gold set, so every model sees identical text. Location (proposed): S3 `bench/judge/YYYY-MM-DD/`, not under `record/` because it is not a world fact; gold labels as JSONL.
 4. A reference model of a different family than DeepSeek labels the full set; the operator reviews it on the other 50.
 5. The runner reuses the resolver's judge code unchanged (verified quote, two passes for yes, no before due + grace, VOID_REASONS). The model is a parameter. It never writes live tables.
 
@@ -159,10 +162,10 @@ Roles: a Sonnet lane builds the runner and evidence capture under `backend/predi
 Sources: practitioner guidance on LLM-as-judge calibration with Cohen's kappa (oneuptime.com/blog/post/2026-08-31-calibrate-llm-judge-cohens-kappa, mlflow.org/articles/tags/llm-as-a-judge); "Judging the Judges" arxiv.org/abs/2406.12624; ForecastBench arxiv.org/abs/2409.19839; Metaculus tournament rules, where annulled or ambiguous questions drop out of scoring (metaculus.com/tournament-rules/).
 
 ## 7. Limits (honest)
-- `yes` depends on search coverage and language; a true event the search does not surface stays `not_yet` or goes late.
-- `no` is inference from silence; a late report becomes a correction fact.
+- Coverage: `yes` and "not reported" depend on what our own feed carried. Silence in our feed is not proof the event did not happen; a true event we never covered reads "not reported by DATE", and a late entry becomes a correction fact.
+- Another story may carry the outcome; only the weekly review's confirmed links catch that.
 - A badly written outcome cannot be judged. Draw quality matters most.
-- A Brave-snippet search is the only evidence source today; its price and quota are not in the repo.
+- The loop needs the pipeline to keep writing entries: while it is down (DeepSeek top-up) nothing can be judged `yes`.
 
 ## 8. Decisions
 [0038](../decisions/0038-forecast-loop.md) (this loop) · [0011](../decisions/0011-track-record-and-studio.md) (sampled track record, kept) · [0034](../decisions/0034-auto-verdicts-no-human-gate.md) (resolver writes verdicts) · [0036](../decisions/0036-facts-file-format.md) (`forecast_drawn`, `verdict` format).

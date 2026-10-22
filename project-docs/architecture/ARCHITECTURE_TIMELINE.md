@@ -43,7 +43,7 @@ WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCR
 │    IDs by content: entry = sha1(canonical url) · story = threadId · actor = name: · source = sha1(domain) · country = iso3
 │    └─ FORECAST LOOP (0038, ARCHITECTURE_FORECAST_LOOP.md)
 │         draw ≤3 outcomes/story/week (pipeline agent) → watch stories that moved or fell due (predictions resolver)
-│         → gather → judge (boxed model: yes needs a verified quote) → verdict rows → verdict facts (this writer)
+│         → gather (our entries after the draw only) → judge (boxed model: yes needs a verified quote) → verdict rows → verdict facts (this writer)
 │
 ├─ 3 REVIEW   backend/record/newsRecordReview (planned) · model · weekly, with hindsight
 │    record/readings/WEEK.jsonl  line · chapters · branch status · confirmed links · merges · aliases

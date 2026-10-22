@@ -9,6 +9,7 @@ function canonicalIso3(values, log = console.warn) {
 }
 
 const { chat } = require('./_shared/llm');
+const { collapseSameEvent, dropRepeatTopics } = require('./dedupe');
 const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
@@ -659,7 +660,10 @@ exports.handler = async (event) => {
 
     let prompt;
     if (allArticles && allArticles.length > 0) {
-      prompt = buildSelectionPrompt({ articles: allArticles, limit, seenEntries, pastArchiveTitles });
+      // One prompt row per event; the full pool stays for URL validation and source enrichment.
+      const { items: promptArticles, collapsed } = collapseSameEvent(allArticles);
+      if (collapsed) console.log(`DEDUPE: ${collapsed} feed items collapsed into the same event (${promptArticles.length} rows to the model)`);
+      prompt = buildSelectionPrompt({ articles: promptArticles, limit, seenEntries, pastArchiveTitles });
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');
       prompt = [
@@ -811,7 +815,7 @@ exports.handler = async (event) => {
     }
 
     // TOPIC FILTERING: Category + source validation
-    const filtered = normalized.filter(t => {
+    let filtered = normalized.filter(t => {
       const categoryValid = VALID_CATEGORIES.includes(t.category);
       if (!categoryValid) {
         console.warn(`FILTERED: Invalid category "${t.category}" for: ${t.title?.substring(0, 40)}`);
@@ -824,6 +828,17 @@ exports.handler = async (event) => {
       }
       return true;
     });
+
+    // DEDUPE (code, not prompt): drop a topic that repeats an entry of the last 24h runs, today or yesterday,
+    // unless its title carries a number the earlier title lacks.
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const earlierTitles = [
+      ...seenEntries.map(e => e.title),
+      ...pastArchiveTitles.filter(e => e.date >= yesterday).map(e => e.title),
+    ];
+    const repeats = dropRepeatTopics(filtered, earlierTitles);
+    for (const d of repeats.dropped) console.warn(`DEDUPE: dropped repeat "${d.title?.substring(0, 60)}" (repeats "${d.repeats?.substring(0, 60)}")`);
+    filtered = repeats.topics;
 
     console.log(`TOPIC FILTER: ${filtered.length} topics passed (${normalized.length - filtered.length} filtered)`);
 

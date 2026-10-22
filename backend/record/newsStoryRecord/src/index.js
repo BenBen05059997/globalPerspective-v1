@@ -72,13 +72,12 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const input = await store.load(date);
     Object.assign(run.inputs, inputsOf(input));
     const articles = await articleFacts(date, {prefix, run, inboxFrom});
-    if (!input.dayRow) {
-      run.failures.push({stage: 'inputs', message: `no archive#${date} row and no today-archive entries for the day`});
-      return;
-    }
+    // A missing archive fails the Run for inputs but only the archive-derived kinds (entry, story_born, forecast_drawn) depend on it:
+    // articles, verdicts, merges and splits come from their own inboxes and are appended regardless (0040 rule 1, a model outage cannot lose the news).
+    if (!input.dayRow) run.failures.push({stage: 'inputs', message: `no archive#${date} row and no today-archive entries for the day`});
     const known = await knownFacts(prefix, date);
     const knownIds = new Set(known.map((f) => f.eventId));
-    let facts = buildFacts(input, known, run.runId);
+    let facts = input.dayRow ? buildFacts(input, known, run.runId) : [];
     // A day rebuilt by recovery may not draw forecasts: its snapshots would be dated after the fact (0036 recovery rule).
     if (recovery) {
       const refused = facts.filter((f) => f.kind === 'forecast_drawn').length;
@@ -155,7 +154,8 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     run.finishedAt = now();
     const written = run.daysWritten.length > 0;
     const viewsOnly = run.failures.every((f) => f.stage === 'views');
-    run.status = !run.failures.length ? 'ok' : written || viewsOnly ? 'partial' : 'failed';
+    const noInputs = run.failures.some((f) => f.stage === 'inputs');
+    run.status = !run.failures.length ? 'ok' : !noInputs && (written || viewsOnly) ? 'partial' : 'failed';
     run.counts.run = 1;
     try {
       const fact = runFact(run, backfill ? `${date}T23:59:59.999Z` : undefined);

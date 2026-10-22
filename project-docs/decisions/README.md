@@ -44,3 +44,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0037](0037-views-from-facts.md) | 2026-10-21 | Views rebuilt from facts: files, builder, serving, board contract | accepted (implements step 2 of 0035) |
 | [0038](0038-forecast-loop.md) | 2026-10-22 | Forecast loop: few resolvable outcomes, nightly watch, verdict facts | accepted (refines 0034 and 0036, keeps 0011's sample) |
 | [0039](0039-weekly-review.md) | 2026-10-22 | Weekly review: DeepSeek per story, narrow auto-merge, operator aliases, golden week | accepted (implements step 3 of 0035; amends 0036 kinds and 0037 §2) |
+| [0040](0040-raw-before-model.md) | 2026-10-22 | Raw before model, recovered days, re-assignable stories, canonical actors | accepted (amends 0036, 0037, 0038, 0039) |

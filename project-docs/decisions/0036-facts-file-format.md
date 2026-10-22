@@ -153,3 +153,6 @@ Deferred, not dropped: the action-vs-statement `type` on facts (operator 2026-10
 
 ## Amendment 2026-10-22: entry time
 An `entry` fact's `at` is the earliest `publishedAt` among its sources when the archive row carries one (sources carry `publishedAt` and `outlet` since f03ab32b, 2026-10-20), with `precision: "exact"`; otherwise `archivedAt` with `precision: "day"` as before. The eventId does not change (it is the canonical url). Facts already written are not rewritten; a re-run of a day appends nothing new for the same eventId.
+
+## Amended by 0040 (2026-10-22)
+kinds `article` and `assignment`, `rawId`, Run `inputs.rawDay`, recovery of gap days.

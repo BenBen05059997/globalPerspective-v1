@@ -29,3 +29,6 @@ Changes to earlier decisions:
 - Needs: Lambda `newsRecordReview` (IAM, Monday 01:00Z schedule (amended 2026-10-22: the review reads the ISO week that just ended, so it runs after Sunday; a Friday run would read the previous week), model key, each an operator yes), the golden-week fixture, builder changes in `newsStoryRecord` (readings, inbox merges, `story_split`, aliases).
 - The review's typed links replace the planned `newsSystemsAnalysis` typed-links field (dropped).
 - Limits: a reading is a model judgment checked for citations and dates, not for truth; quality is measured on the golden week and by operator spot check.
+
+## Amended by 0040 (2026-10-22)
+`assignment` proposal subtype; recovered articles used when re-running a week.

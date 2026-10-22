@@ -126,3 +126,6 @@ A fact in the current ISO week is unsettled because the weekly review has not ye
 - Open for step 3: the review adds `line`, `chapters`, `branchStatus` to the story view and `confirmedLinks` to `links/`; it then also writes `risk` as `tierFromScore(score)` from a dated reading (see `backend/shared/src/world/tier.js`), never from the old THREAD_ANALYSIS score.
 
 Source: `architecture/ARCHITECTURE_TIMELINE.md` §4 to §6; `plans/PLAN_2026-10-21_foundation.md` step 2; `backend/board/newsBoard/src/{recordViews,arrivals,index}.js`; `cloudflare/front-worker/production/worker.mjs`; `features/board/components/{StoryTree,ArrivalsTray,BoardWeekly}.jsx`.
+
+## Amended by 0040 (2026-10-22)
+views follow the latest `assignment`, canonical actor ids, `counts.articles`.

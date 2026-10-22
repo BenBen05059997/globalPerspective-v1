@@ -10,7 +10,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Foundation stocktake (dated)](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate (2026-10-21); live state is in the plan.
 - [Forecast loop](architecture/ARCHITECTURE_FORECAST_LOOP.md) — draw, watch, gather, judge, record, review; verification (decision 0038).
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D) · [Weekly review](architecture/ARCHITECTURE_WEEKLY_REVIEW.md) — weekly readings, golden week (0039).
-- [Decision records](decisions/README.md) — 39 decisions, newest last.
+- [Decision records](decisions/README.md) — 40 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.
 - Reference, generated from code and live AWS by `scripts/gen-reference.mjs`; never hand-edited:
   [lambdas](reference/lambdas.md) · [env-keys](reference/env-keys.md) names only · [features](reference/features.md) ·

@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): steps 1 and 2 live end to end (board UI released, signed-in click-through by the operator pending); forecast loop built, deploy waits on DeepSeek
+Status: active (2026-10-22; step 2c raw-before-model decided, 0040): steps 1 and 2 live end to end (board UI released, signed-in click-through by the operator pending); forecast loop built, deploy waits on DeepSeek
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -90,6 +90,18 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Actor and place backfill for pre-2026-09-12 stories as readings with citations (first job of the review) | lane (review, step 3) | model key: yes | ☐ | 159 stories without actors, 106 without a country |
 | Forecast-only stories: 14 of 103 stories active 10-13..19 have `forecast_drawn` facts but no `entry` or `story_born` anywhere (e.g. `thread-north-korea-tests-ai-powered-t-2ab29b`); either the forecast's threadId differs from the archive's, or the story was never archived | lane (record) to diagnose | no | ☐ | found by lane U 2026-10-22; they cannot appear on the board or be reviewed |
 
+### Step 2c. Raw before model (decision 0040)
+| Item | Owner | Operator yes? | Status | Evidence |
+|---|---|---|---|---|
+| Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ☐ | decision 0040; selection audit 2026-10-22 |
+| `newsStoryRecord`: `article` facts from the inbox, `inputs.rawDay`, `counts.articles` | lane X | no | ☐ | |
+| IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☐ | |
+| Run alarm for a missing raw day | coordinator | yes | ☐ | |
+| Recovery of 2026-09-14..29, 10-14, 10-20+ from GDELT DOC + GKG, Wayback backstop, before 2026-12-14 | lane (recovery) | run: yes | ☐ | articles only, labelled "recovered from public records", no forecasts |
+| `assignment` facts, review proposal subtype, operator approval path | lane (record/review) | no | ☐ | |
+| Canonical actor ids `wd:Q...`, `generic` flag in views | lane (record) | no | ☐ | |
+| Feeds for Latin America and Southeast Asia | operator | URLs: yes | ☐ | waits on operator URLs |
+
 ### Step 3. Review Lambda `newsRecordReview` (weekly)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
@@ -162,3 +174,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: golden week fixture merged (lane U). Found 14 forecast-only stories (no entry, no birth): a record gap to diagnose.
 - 2026-10-22: lanes S (weekly reader) and T (views from readings) merged; golden-week expected readings drafted by two Opus reviewers (same 3 merges, same split candidates; disagree on one link direction and one shared-cause link). Review schedule moved to Monday 01:00 UTC (spec error: a Friday run reads the previous week).
 - 2026-10-22: newsStoryRecord (reading fields, merge/split inboxes, aliases) and newsBoard (reads line/confirmedLinks) deployed; lane V (board UI reads the reading fields) merged, not released. Operator agenda for a foundation review (draft 0040): raw article capture with no model, recovery of missed days from public archives (no retroactive forecasts), re-assignable entry→story facts, Wikidata-backed actor ids. Research running; building paused on new features until the review is discussed.
+- 2026-10-22: decision 0040 written (raw capture before the model, recovery of missed days, assignments, canonical actors); step 2c added; operator answered the review's 8 questions.

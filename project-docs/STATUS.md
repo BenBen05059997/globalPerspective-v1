@@ -6,7 +6,7 @@ Update a line when its source changes; delete it when its source says done. Desi
 ## Pipeline status (2026-10-22; ten stages, two clocks; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
 | # | Stage | Status |
 |---|---|---|
-| 1 | Ingest | **stopped**: DeepSeek out of credit since 2026-10-20 03:50Z (selector and map ingest fail; GDACS fine; the selector logged LLM 402 within the last 24 h on 2026-10-22) |
+| 1 | Ingest | **stopped**: DeepSeek out of credit since 2026-10-20 03:50Z (selector and map ingest fail; GDACS fine; the selector logged LLM 402 within the last 24 h on 2026-10-22); raw capture, RSS parser fix and selection rules in lane W (decision 0040), not deployed |
 | 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; guards and same-run joins deployed 2026-10-20 14:20Z (first real test: the 20:25Z run); old duplicates wait for alias repair on the timeline |
 | 3 | Daily notes | **stopped** (DeepSeek); forecast settling writes verdicts itself (resolver deployed 2026-10-20, decision 0034), but no verdict row has been written as of 2026-10-22 (zero in `GlobalPerspectivePredictionLog`), the resolver is not broken: it settles a weekly sample of 22 by design (0011) and drafts on Mondays, so the first possible verdict is Monday 2026-10-26 |
 | 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; lane B switched; lane C switching; two more readers in progress for lane B |

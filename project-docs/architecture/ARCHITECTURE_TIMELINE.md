@@ -35,9 +35,11 @@ WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCR
 │                                                  (board pins, visits,       (pages, board, weekly email)
 ├─ 1 INGEST   backend/pipeline, backend/situations · model · daily    prefs, membership)
 │    articles → stories → archive rows (raw tables, read only through backend/shared/src/world/)
+│    every fetched article → record/inbox/articles/ (no model) → `article` facts; a model outage cannot lose the news
 │
 ├─ 2 COMMIT   backend/record/newsStoryRecord · no model · daily 23:45Z
-│    record/facts/DAY.jsonl   entry · story_born · forecast_drawn · verdict · story_merged · correction · run
+│    record/facts/DAY.jsonl   entry · article · assignment · story_born · forecast_drawn · verdict · story_merged · correction · run
+│    recovery: a missed day is rebuilt from public records (GDELT, Wayback) into the same facts, labelled, no forecasts (0040)
 │    record/runs/DAY.json     ok | partial | failed  (a missing input is recorded, never filled)
 │    record/inbox/<kind>/DAY.jsonl  hand-off from other writers (verdicts from the resolver); read nightly, turned into facts
 │    IDs by content: entry = sha1(canonical url) · story = threadId · actor = name: · source = sha1(domain) · country = iso3
@@ -127,6 +129,8 @@ missing archive day gets a Run and no facts; the 28 missing days before 2026-09-
 | kind | payload (essentials) | comes from today |
 |---|---|---|
 | `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID) | `NewsCache archive#` rows (agent Lambda) |
+| `article` | rawId = sha1(url), url, outlet, title, publishedAt, feed; recovered ones carry `recoveredAt`, `recoveredFrom` (0040) | selector inbox `record/inbox/articles/`; recovery script |
+| `assignment` | entry eventId, threadId, by (ingest, review, operator) (0040); views follow the latest | ingest; review proposals approved by the operator; inbox `record/inbox/assignments/` |
 | `story_born` | first title | derived: earliest `entry` per threadId |
 | `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
 | `verdict` | qid, result yes/no/void, decidedBy, evidence | `PredictionLog Q#/VERDICT*` (the table holds zero such rows as of 2026-10-22, so none exist yet); the loop that produces them: [ARCHITECTURE_FORECAST_LOOP.md](ARCHITECTURE_FORECAST_LOOP.md) |
@@ -188,7 +192,7 @@ Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; built 2
 | Track record | `forecast_drawn`, `branch_status`, `verdict` | `predictions/track_record.json` (today) | track record page |
 
 Stores: `record/facts/YYYY-MM-DD.jsonl` and `record/facts/manifest.json` (days present) · `record/runs/` · `record/readings/YYYY-Www.jsonl` · `record/runs/review-YYYY-Www.json` · `record/inbox/merges/YYYY-MM-DD.jsonl` (review auto-merges, read by `newsStoryRecord`) · `record/operator/aliases.json` (operator only) ·
-`record/inbox/<kind>/YYYY-MM-DD.jsonl` (written by the resolver for `verdicts` (0038 amendment), read by `newsStoryRecord` for the run day and six days before; kept, it is replay input) · `record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
+`record/inbox/articles/YYYY-MM-DD.jsonl` (selector, raw capture, 0040; also the recovery script) · `record/inbox/assignments/YYYY-MM-DD.jsonl` (ingest, operator, approved review proposals; 0040) · `record/inbox/<kind>/YYYY-MM-DD.jsonl` (written by the resolver for `verdicts` (0038 amendment), read by `newsStoryRecord` for the run day and six days before; kept, it is replay input) · `record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
 diffs the readings) · `weekly/YYYY-MM-DD.json`. The scheduled run writes live (`{"shadow":false}`, flipped 2026-10-22); a manual invoke
 defaults to `shadow:true` and writes the same bytes under `record/shadow/` (a prefix change, not a code change). Views are rebuilt in full from the facts manifest every time (plain PutObject; derived,
 replaceable). The Worker serves only `record/views/` (0037 §4), never facts, runs or readings.
@@ -196,7 +200,7 @@ replaceable). The Worker serves only `record/views/` (0037 §4), never facts, ru
 ## 6. Who writes, who reads (two writers, each the only writer of its file)
 - **Facts and the daily Run:** only `newsStoryRecord` (`backend/record/`), from raw tables through `backend/shared/src/world/`.
   No model, no DynamoDB write. The one exception to "only `newsStoryRecord` writes facts" is the **inbox rule** (0038 amendment): any other
-  producer (today the resolver, for verdicts) appends lines to `record/inbox/<kind>/DAY.jsonl`, and `newsStoryRecord` is the only one that converts inbox lines into facts.
+  producer (the resolver for verdicts; the selector writes the article inbox only, 0040) appends lines to `record/inbox/<kind>/DAY.jsonl`, and `newsStoryRecord` is the only one that converts inbox lines into facts.
 - **Readings and review Runs:** only `newsRecordReview` (`backend/record/`, planned). Writes `record/readings/*`, the weekly
   Run (`record/runs/review-*`) and `record/inbox/merges/*`. It reads facts and its own earlier readings, nothing else (0039).
 - **Views (0037):** `newsStoryRecord` builds all of them after each daily append, in the same invocation; from step 3 it also

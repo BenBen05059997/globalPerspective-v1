@@ -78,6 +78,8 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`, live since 2026-10-22), append-only, no model | `newsRecordReview`, view rebuilds |
 | `record/readings/YYYY-Www.jsonl`, `record/runs/review-YYYY-Www.json` | `newsRecordReview` (planned, 0039) | weekly, Fri 22:00Z, append-only, model | `newsStoryRecord` view builds |
 | `record/inbox/merges/YYYY-MM-DD.jsonl` | `newsRecordReview` (planned, 0039) | weekly | `newsStoryRecord` (turns lines into `story_merged` facts) |
+| `record/inbox/articles/YYYY-MM-DD.jsonl` (decisions/0040) | selector `newsInvokeGemini` (raw capture before the model; planned, lane W) and the recovery script | each generation | `newsStoryRecord` (converts to `article` facts) |
+| `record/inbox/assignments/YYYY-MM-DD.jsonl` (decisions/0040) | ingest, operator, approved review proposals (planned) | on change | `newsStoryRecord` (converts to `assignment` facts) |
 | `record/operator/aliases.json` | operator only | on demand | `newsStoryRecord` view builds |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |

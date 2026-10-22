@@ -60,3 +60,6 @@ Why: (1) web gathering was the bottleneck, own dated entries remove it; (2) the 
 Consequences: gather becomes a read of `record/facts` (no search, no Brave quota); a true event our feed never covered stays "not reported", so silence in our feed is not proof (stated in Limits); the resolver loses its search code (a Sonnet lane); the judge benchmark is re-cut as questions plus the entry facts written after each draw and can run once the pipeline writes entries again (DeepSeek top-up); the 2026-10-22 web-evidence run stays as a recorded first attempt.
 
 Rejected: web search per question (stale pages, fetch failures, cost, pre-draw leakage).
+
+## Amended by 0040 (2026-10-22)
+evidence includes recovered `article` facts; no forecast on a recovered day.

@@ -69,13 +69,15 @@ Imports from other features: none.
 - Backend: [newsBoard README](../../../../../backend/board/newsBoard/README.md), [schema](../../../../../backend/board/schema/board.schema.json)
 
 ## How to check it
-- `npx vitest run src/features/board` — `boardOps.test.js`, `BoardGraph.test.jsx`, `BoardPage.test.jsx` (29 tests).
+- `npx vitest run src/features/board` — `boardOps.test.js`, `BoardGraph.test.jsx`, `BoardPage.test.jsx`, `recordViews.test.jsx`, `ArrivalsTray.test.jsx`.
 - Browser (2026-10-20, dev fake, 1440 wide): presets and fork, drag-connect, keyboard connect, keep with and without a
   line, dismiss, cut, rename, add pin (actor, country, story) up to 12 / 12, switch boards, delete board; no console
   errors. Phone (390 wide, in an iframe): no sideways scroll, graph scrolls in its container, connect opens the bottom
   sheet. Not tested in a browser: signed-out and not-available views (unit-tested), the What is missing follow,
   co-movement grounds, touch drag on a device.
-## Slice 2 (local code)
-Caveat: chapters, line and branch status come from weekly readings and stay empty ("no reading yet") until the first review run (`newsRecordReview`); today the tree shows facts only.
-Pins read recorded lines/counts from the board response. Open a thread pin for the four tree zoom levels: line, chapters, forks and events, event evidence. Status histories are shown exactly as recorded (percent probability, explicit date and state), never inferred from a passed deadline. Dead branches remain folded dated stubs; resurrected history keeps its earlier death. The board weekly projects the last seven UTC dates from pin lastMoved, dated kept/cut strings, record checks and confirmed links. No data produces a specific reason, never an example number. Arrivals require a strong confirmed record link plus cheap grounds and stay capped at five; keep adds a provisional reader string, dismiss persists the id.
-Dev fake: `?devBoard=1&devRecord=1` and `/board/dev-record` serves copied lane C schema examples, including its deliberately blank line/chapters/events; `devRecord=missing` exercises missing-record reasons. Both controls and fixtures remain within the existing development-only dynamic import. Full populated tests extend the schema example in test code only; no fixture text is used as a production fallback. `story_view` is public and its hook does not require auth; board/arrivals reads remain owner-only.
+## Record views (decision 0037)
+Facts come from the record views; every reading field (pin line, chapters, confirmed links, branch status history) reads "no reading yet · first weekly review pending", and `risk` shows no badge. Pins come from `get_board` (index row facts). `ArrivalsTray` still calls `arrivals`; until confirmed links exist it says "No new story touches your board since DATE."
+- `lib/recordViews.js` fetches `/data/record/views/{stories,links,counts}/...` directly, no sign-in; an alias story view fetches its survivor. 404 = "not generated yet" (honest empty text, not reported); other failures go to the error sink with a specific line.
+- `useStoryViews` feeds `StoryTree` (entries as events, verdicts) and `BoardWeekly` (`yes`/`no` verdicts and confirmed links, last 7 days). `UnsettledZone` + `useWeekCounts`: current ISO week (UTC) counts for the pinned stories, "this week, unsettled: N new entries, N branches due, N verdicts"; "N new entries since DATE" only when some (gap at most 31 days).
+- Dev fake: `?devBoard=1&devRecord=1` and `/board/dev-record` serve `dev/recordViews/`; `devRecord=missing` shows the not-generated paths.
+- Choices: index container `{stories:[rows]}` keyed `threadId`; a confirmed link needs `strength:'strong'` (entry shape carried from the old links); BoardWeekly header and empty text unchanged.

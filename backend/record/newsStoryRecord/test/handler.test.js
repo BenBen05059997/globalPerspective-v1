@@ -43,7 +43,7 @@ test('a day writes entry and story_born facts, the Run, a run fact and the manif
   assert.equal(facts.filter((x) => x.kind === 'story_born').length, 3);
   assert.ok(facts.every((x) => x.schemaVersion === 1 && x.producer.runId === '2026-10-20-1'));
   const run = f.json(`${P}runs/2026-10-20.json`);
-  assert.deepEqual([run.status, run.runId, run.inputs, run.counts.entry, run.counts.run], ['ok', '2026-10-20-1', {archiveDay: 'present', todayArchive: 'missing'}, 20, 1]);
+  assert.deepEqual([run.status, run.runId, run.inputs, run.counts.entry, run.counts.run], ['ok', '2026-10-20-1', {archiveDay: 'present', todayArchive: 'missing', rawDay: 'missing'}, 20, 1]);
   assert.ok(run.finishedAt && run.schemaVersion === 1);
   assert.equal(f.lines(`${P}facts/2026-10-21.jsonl`)[0].kind, 'run');
   assert.deepEqual(f.json(`${P}facts/manifest.json`), {schemaVersion: 1, days: ['2026-10-20', '2026-10-21']});
@@ -538,4 +538,93 @@ test('T3: record/operator/aliases.json is read under the prefix of the run (miss
   const g = fakeS3();
   await make(dayStore(), g).handler({date: '2026-10-20'});
   assert.deepEqual(g.json(`${P}views/stories/thread-1.json`).actorIds, ['name:emmanuel macron']);
+});
+
+// X2: the article inbox
+const rawLine = (n, o = {}) => ({schemaVersion: 1, rawId: `r${n}`, url: `https://www.bbc.co.uk/news/raw${n}?utm_source=rss`, canonicalUrl: `https://bbc.co.uk/news/raw${n}`, title: `Raw ${n}`, outlet: 'BBC', feed: 'bbc-world',
+  publishedAt: '2026-10-20T03:00:00.000Z', fetchedAt: '2026-10-20T04:00:00.000Z', snippet: null, lang: 'en', ...o});
+const putArticles = (f, day, lines) => f.objs.set(`${P}inbox/articles/${day}.jsonl`, {body: lines.map((l) => `${JSON.stringify(l)}\n`).join(''), etag: `"a${day}"`});
+const day20 = () => scripted({'2026-10-20': twenty('2026-10-20')});
+
+test('X2: articles are appended under their own date, once; a re-run and an overlapping inbox day add nothing; counts.article', async () => {
+  const f0 = fakeS3();
+  putArticles(f0, '2026-10-20', [rawLine(1), rawLine(2, {publishedAt: null}), rawLine(1, {rawId: 'dup'})]);
+  putArticles(f0, '2026-10-19', [rawLine(3, {publishedAt: '2026-10-19T22:00:00.000Z', fetchedAt: '2026-10-19T23:00:00.000Z'})]);
+  const {f, handler} = make(day20(), f0);
+  const r = await handler({date: '2026-10-20'});
+  assert.deepEqual([r.status, r.counts.article], ['ok', 3]);
+  assert.deepEqual(f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'article').map((x) => [x.payload.title, x.precision]).sort(), [['Raw 1', 'exact'], ['Raw 2', 'day']]);
+  assert.deepEqual(f.lines(`${P}facts/2026-10-19.jsonl`).map((x) => x.kind), ['article']);
+  const again = await handler({date: '2026-10-20'});
+  assert.equal(again.counts.article, 0);
+});
+
+test('X2: the article inbox window is the run day and 6 days back; {inboxFrom} widens it', async () => {
+  const f0 = fakeS3();
+  putArticles(f0, '2026-10-14', [rawLine(1, {publishedAt: null, fetchedAt: '2026-10-14T05:00:00.000Z'})]);
+  putArticles(f0, '2026-10-13', [rawLine(2, {publishedAt: null, fetchedAt: '2026-10-13T05:00:00.000Z'})]);
+  const a = make(day20(), f0);
+  await a.handler({date: '2026-10-20'});
+  assert.deepEqual(a.f.lines(`${P}facts/2026-10-14.jsonl`).map((x) => x.kind), ['article']);
+  assert.equal(a.f.lines(`${P}facts/2026-10-13.jsonl`).length, 0);
+  const b = make(day20(), f0);
+  await b.handler({date: '2026-10-20', inboxFrom: '2026-10-13'});
+  assert.deepEqual(b.f.lines(`${P}facts/2026-10-13.jsonl`).map((x) => x.kind), ['article']);
+});
+
+test('X2: a malformed article line is an article failure (partial), the other lines are kept', async () => {
+  const f0 = fakeS3();
+  putArticles(f0, '2026-10-20', [rawLine(1), {schemaVersion: 1, url: 'https://x.test/a', title: ''}, rawLine(2, {fetchedAt: 'nope'})]);
+  const {f, handler} = make(day20(), f0);
+  await assert.rejects(() => handler({date: '2026-10-20'}), /partial/);
+  const run = f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.status, run.counts.article, run.failures.map((x) => [x.stage, x.ref])], ['partial', 1, [['article', '2026-10-20#1'], ['article', '2026-10-20#2']]]);
+});
+
+test('X2: an unparseable article file is an article failure for that day only', async () => {
+  const f0 = fakeS3();
+  putArticles(f0, '2026-10-20', [rawLine(1)]);
+  f0.objs.set(`${P}inbox/articles/2026-10-19.jsonl`, {body: 'not json\n', etag: '"x"'});
+  const {f, handler} = make(day20(), f0);
+  await assert.rejects(() => handler({date: '2026-10-20'}), /partial/);
+  const run = f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.counts.article, run.failures.map((x) => [x.stage, x.ref])], [1, [['article', '2026-10-19']]]);
+});
+
+test('X2: inputs.rawDay is missing, {thin:n} under 50 and present from 50; null when the file cannot be read', async () => {
+  const run = async (lines, raw) => {
+    const f0 = fakeS3();
+    if (lines) putArticles(f0, '2026-10-20', lines);
+    if (raw) f0.objs.set(`${P}inbox/articles/2026-10-20.jsonl`, {body: raw, etag: '"x"'});
+    const {f, handler} = make(day20(), f0);
+    await handler({date: '2026-10-20'}).catch(() => {});
+    return f.json(`${P}runs/2026-10-20.json`).inputs.rawDay;
+  };
+  const n = (k) => Array.from({length: k}, (_, i) => rawLine(i));
+  assert.deepEqual([await run(null), await run(n(7)), await run(n(49)), await run(n(50)), await run(null, 'bad\n')], ['missing', {thin: 7}, {thin: 49}, 'present', null]);
+});
+
+test('X2: a missing archive day still records rawDay, writes no article facts, and the next night reads the articles', async () => {
+  const f0 = fakeS3();
+  putArticles(f0, '2026-10-20', [rawLine(1)]);
+  const a = make(scripted({}), f0);
+  await a.handler({date: '2026-10-20', strict: false});
+  assert.deepEqual([a.f.json(`${P}runs/2026-10-20.json`).inputs.rawDay, a.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'article').length], [{thin: 1}, 0]);
+  const b = make(scripted({'2026-10-21': twenty('2026-10-21')}), f0, () => '2026-10-22T05:45:00.000Z');
+  const r = await b.handler({date: '2026-10-21'});
+  assert.equal(r.counts.article, 1);
+});
+
+test('X2: a day whose Run notes recovery refuses forecast_drawn (hook); a normal day keeps them', async () => {
+  const snap = {pk: 'PRED#Topic 1-1', topicId: 'Topic 1-1', date: '2026-10-20', threadId: 'thread-1', generatedAt: null, title: 't',
+    sourceRow: {store: 'G', key: {PK: 'a', SK: 'b'}}, sourceKey: 'k1', scenarios: [{index: 0, label: 'L', probability: 1, triggers: [{id: '0-0', trigger: 't', due: null, p: null, resolutionSource: '', question: true, qid: 'q1', status: ''}]}]};
+  const mk = () => make(scripted({'2026-10-20': twenty('2026-10-20')}, {snapshots: {'2026-10-20': [snap]}}));
+  const normal = mk();
+  assert.equal((await normal.handler({date: '2026-10-20'})).counts.forecast_drawn, 1);
+  const rec = mk();
+  const r = await rec.handler({date: '2026-10-20', recovery: true});
+  assert.deepEqual([r.status, r.counts.forecast_drawn, r.counts.entry], ['ok', 0, 20]);
+  const run = rec.f.json(`${P}runs/2026-10-20.json`);
+  assert.match(run.notes, /^recovery refused forecast_drawn: 1$/);
+  assert.equal(rec.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'forecast_drawn').length, 0);
 });

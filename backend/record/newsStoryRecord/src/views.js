@@ -228,7 +228,7 @@ function confirmedLinks(t, aliases, self) {
     .sort(byKey((l) => l.otherThreadId, (l) => l.week, (l) => l.direction));
 }
 
-/** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date). */
+/** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date); `articles` = article facts of that day (raw, not stories). */
 function buildCount(date, facts, aliases, builtFrom) {
   const byStory = {};
   const bump = (threadId, field, n = 1) => {
@@ -236,7 +236,9 @@ function buildCount(date, facts, aliases, builtFrom) {
     const row = byStory[id] || (byStory[id] = {newEntries: 0, branchesDue: 0, verdicts: 0});
     row[field] += n;
   };
+  let articles = 0;
   for (const f of facts) {
+    if (f.kind === 'article' && f.date === date) articles += 1;
     if (!f.threadId) continue;
     if (f.kind === 'entry' && f.date === date) bump(f.threadId, 'newEntries');
     else if (f.kind === 'verdict' && f.date === date) bump(f.threadId, 'verdicts');
@@ -245,7 +247,7 @@ function buildCount(date, facts, aliases, builtFrom) {
   const sorted = Object.fromEntries(Object.keys(byStory).sort().map((k) => [k, byStory[k]]));
   const total = {newEntries: 0, branchesDue: 0, verdicts: 0};
   for (const r of Object.values(sorted)) for (const k of Object.keys(total)) total[k] += r[k];
-  return {schemaVersion: SCHEMA_VERSION, builtFrom, date, byStory: sorted, total};
+  return {schemaVersion: SCHEMA_VERSION, builtFrom, date, articles, byStory: sorted, total};
 }
 
 /** Days whose counts file is written: the previous and current ISO week up to today, plus days whose facts changed this run. */

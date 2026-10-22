@@ -310,6 +310,7 @@
         "readingsThrough": null
       },
       "date": "2026-10-19",
+      "articles": 0,
       "byStory": {
         "thread-b": {
           "newEntries": 1,
@@ -330,6 +331,7 @@
         "readingsThrough": null
       },
       "date": "2026-10-20",
+      "articles": 0,
       "byStory": {
         "thread-a": {
           "newEntries": 1,
@@ -350,6 +352,7 @@
         "readingsThrough": null
       },
       "date": "2026-10-21",
+      "articles": 0,
       "byStory": {
         "thread-a": {
           "newEntries": 0,
@@ -370,6 +373,7 @@
         "readingsThrough": null
       },
       "date": "2026-10-22",
+      "articles": 0,
       "byStory": {
         "thread-a": {
           "newEntries": 0,

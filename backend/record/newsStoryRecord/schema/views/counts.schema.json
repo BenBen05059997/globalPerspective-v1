@@ -7,6 +7,7 @@
     "schemaVersion",
     "builtFrom",
     "date",
+    "articles",
     "byStory",
     "total"
   ],
@@ -20,6 +21,11 @@
     },
     "date": {
       "$ref": "#/definitions/day"
+    },
+    "articles": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "article facts dated that day (the raw articles fetched; stories are chosen from them)"
     },
     "byStory": {
       "type": "object",

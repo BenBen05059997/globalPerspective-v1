@@ -9,7 +9,7 @@ const world = require('./_shared/world');
 const SCHEMA_VERSION = 1;
 const MAX_PUBLISHED_AGE_DAYS = 30;
 const producerName = `newsStoryRecord@${require('./package.json').version}`;
-const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'run'];
+const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'article', 'run'];
 const VERDICTS = ['yes', 'no', 'void'];
 const uniqueSorted = (xs) => [...new Set(xs.filter((x) => typeof x === 'string' && x))].sort();
 const isoOrNull = (s) => (s && Number.isFinite(Date.parse(s)) ? new Date(s).toISOString() : null);
@@ -23,7 +23,7 @@ function makeFact({kind, eventId, sourceKey, at, precision, threadId = null, iso
   if (!when) throw new Error(`facts: ${kind} needs a valid at`);
   if (!['exact', 'day'].includes(precision)) throw new Error('facts: precision must be exact or day');
   if (!sourceRow || !sourceRow.store || sourceRow.key == null) throw new Error(`facts: ${kind} needs a sourceRow`);
-  if (kind !== 'run' && threadId === null && kind !== 'entry') throw new Error(`facts: ${kind} needs a threadId`);
+  if (!['run', 'entry', 'article'].includes(kind) && threadId === null) throw new Error(`facts: ${kind} needs a threadId`);
   return {
     schemaVersion: SCHEMA_VERSION,
     eventId: eventId || R.factId(kind, sourceKey),
@@ -172,6 +172,29 @@ function inboxSplitFact(line, runId) {
   return splitFact({from: l.from, into: l.into, reason: l.reason, at: l.at, sourceKey, sourceRow: {store: 'record', key: sourceKey}, runId, eventId: R.sha1(`story_split${l.from}${l.into}${l.at}`)});
 }
 
+/**
+ * One line of the selector's article inbox (record/inbox/articles/DAY.jsonl) -> `article`. eventId = sha1('article' + canonicalUrl),
+ * so a live copy and a recovered copy of the same url are one fact. `at` is publishedAt (precision exact) when it parses and is not
+ * after fetchedAt, else the start of the fetch day (precision day). threadId is null: an article is not yet a story.
+ */
+function inboxArticleFact(line, runId) {
+  const l = line && typeof line === 'object' ? line : {};
+  if (typeof l.url !== 'string' || !l.url) throw new Error('facts: inbox article needs a url');
+  const canonicalUrl = R.canonicalUrl(l.canonicalUrl) || R.canonicalUrl(l.url);
+  if (!canonicalUrl) throw new Error(`facts: inbox article ${l.url} has no usable url`);
+  if (typeof l.title !== 'string' || !l.title) throw new Error(`facts: inbox article ${canonicalUrl} needs a title`);
+  const fetched = isoOrNull(l.fetchedAt);
+  if (!fetched) throw new Error(`facts: inbox article ${canonicalUrl} needs a valid fetchedAt`);
+  const published = isoOrNull(l.publishedAt);
+  const exact = published && Date.parse(published) <= Date.parse(fetched) ? published : null;
+  const sourceKey = `inbox:articles/${canonicalUrl}`;
+  return makeFact({
+    kind: 'article', eventId: R.sha1(`article${canonicalUrl}`), sourceKey, at: exact || `${fetched.slice(0, 10)}T00:00:00.000Z`, precision: exact ? 'exact' : 'day', threadId: null,
+    sourceIds: [R.sourceIdOf(canonicalUrl)], sourceRow: {store: 'record', key: sourceKey}, runId,
+    payload: {url: l.url, canonicalUrl, title: l.title, outlet: l.outlet ?? null, feed: l.feed ?? null, snippet: l.snippet ?? null, lang: l.lang ?? null, recoveredAt: isoOrNull(l.recoveredAt), recoveredFrom: l.recoveredFrom ?? null},
+  });
+}
+
 /** `run` fact: the day was processed (0036 §4). `at` defaults to finishedAt; a backfill passes the end of the replayed day so its run fact stays in that day's file. */
 function runFact(run, at = run.finishedAt) {
   return makeFact({
@@ -180,4 +203,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, runFact, uniqueSorted};

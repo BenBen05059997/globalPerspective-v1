@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <channel rdf:about="https://asia.nikkei.com/rss/feed/nar" xml:lang="en-GB">
+    <title>Nikkei Asia</title>
+    <link>https://asia.nikkei.com/</link>
+    <description/>
+    <items>
+      <rdf:Seq/>
+    </items>
+  </channel>
+  <item rdf:about="https://asia.nikkei.com/economy/bank-of-japan/boj-to-hold-rate-at-1.25-at-meeting-next-week">
+    <title><![CDATA[BOJ to hold rate at 1.25% at meeting next week]]></title>
+    <link>https://asia.nikkei.com/economy/bank-of-japan/boj-to-hold-rate-at-1.25-at-meeting-next-week</link>
+  </item>
+<item rdf:about="https://asia.nikkei.com/business/companies/japan-s-daiichi-life-turns-to-gold-as-market-risks-rise">
+    <title><![CDATA[Japan's Daiichi Life turns to gold as market risks rise]]></title>
+    <link>https://asia.nikkei.com/business/companies/japan-s-daiichi-life-turns-to-gold-as-market-risks-rise</link>
+  </item>
+<item rdf:about="https://asia.nikkei.com/business/tech/semiconductors/malaysia-s-skyechip-joins-softbank-backed-ai-memory-project-in-japan">
+    <title><![CDATA[Malaysia's SkyeChip joins SoftBank-backed AI memory project in Japan]]></title>
+    <link>https://asia.nikkei.com/business/tech/semiconductors/malaysia-s-skyechip-joins-softbank-backed-ai-memory-project-in-japan</link>
+  </item>
+</channel></rss>

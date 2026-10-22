@@ -1,0 +1,44 @@
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/"
+	>
+	<channel>
+		<atom:link href="https://www.aljazeera.com/xml/rss/all.xml" rel="self" type="application/rss+xml"/>
+		<title>Al Jazeera &#8211; Breaking News, World News and Video from Al Jazeera</title>
+		<link>https://www.aljazeera.com</link>
+		<managingEditor>apps.support@aljazeera.net (Apps Support)</managingEditor>
+		<webMaster>apps.support@aljazeera.net (Apps Support)</webMaster>
+		<description>Breaking News, World News and Video from Al Jazeera</description>
+		<copyright>© 2026 Al Jazeera Media Network</copyright>
+		<lastBuildDate>Thu, 22 Oct 2026 08:27:49 +0000</lastBuildDate>
+		<language>en</language>
+		<image>
+			<url>https://www.aljazeera.com/images/logo_aje.png</url>
+			<title>Al Jazeera &#8211; Breaking News, World News and Video from Al Jazeera</title>
+			<link>https://www.aljazeera.com</link>
+			<description>Breaking News, World News and Video from Al Jazeera</description>
+		</image>
+		<generator>https://wordpress.org/?v=7.0.7</generator>
+<site xmlns="com-wordpress:feed-additions:1">213497099</site>			<item>
+				<link>https://www.aljazeera.com/video/newsfeed/2026/10/22/bill-clinton-quotes-quran-and-condemns-anti-muslim-rhetoric?traffic_source=rss</link>
+				<title>Bill Clinton quotes Quran and condemns anti-Muslim rhetoric</title>
+				<description><![CDATA[Former US President Bill Clinton quoted the Quran during a speech in Florida condemning discrimination against Muslims. ]]></description>
+				<pubDate>Thu, 22 Oct 2026 08:33:01 +0000</pubDate>
+				<category>Show Types</category>
+				<guid isPermaLink="false">https://www.aljazeera.com/?t=1792657873</guid>
+				<post-id xmlns="com-wordpress:feed-additions:1">5072604</post-id>			</item>
+<item>
+				<link>https://www.aljazeera.com/news/2026/10/22/russian-strikes-hit-kyiv-after-witkoff-meets-putin?traffic_source=rss</link>
+				<title>Russian strikes hit Kyiv after Witkoff meets Putin</title>
+				<description><![CDATA[Ukraine says &#039;appeasement&#039; will not end war as Russian attacks kill 1, injure 22 in its capital. ]]></description>
+				<pubDate>Thu, 22 Oct 2026 08:18:39 +0000</pubDate>
+				<category>News</category>
+				<guid isPermaLink="false">https://www.aljazeera.com/?t=1792650360</guid>
+				<post-id xmlns="com-wordpress:feed-additions:1">5072604</post-id>			</item>
+<item>
+				<link>https://www.aljazeera.com/opinions/2026/10/22/can-russia-broker-a-new-us-iran-deal?traffic_source=rss</link>
+				<title>Can Russia broker a new US-Iran deal?</title>
+				<description><![CDATA[Russia’s nuclear expertise, close ties with Tehran and negotiation experience could give Moscow an edge as a mediator.]]></description>
+				<pubDate>Thu, 22 Oct 2026 08:00:48 +0000</pubDate>
+				<category>Opinions</category>
+				<guid isPermaLink="false">https://www.aljazeera.com/?t=1792650594</guid>
+				<post-id xmlns="com-wordpress:feed-additions:1">5072604</post-id>			</item>
+</channel></rss>

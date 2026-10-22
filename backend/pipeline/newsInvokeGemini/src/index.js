@@ -9,6 +9,9 @@ function canonicalIso3(values, log = console.warn) {
 }
 
 const { chat } = require('./_shared/llm');
+const { collapseSameEvent, dropRepeatTopics, newestPerFeed } = require('./dedupe');
+const { captureRawArticles } = require('./rawCapture');
+const { makeS3Json } = require('./_shared/s3json');
 const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
@@ -25,6 +28,7 @@ const VALID_CATEGORIES = [
   'climate', 'science', 'business', 'society', 'energy',
 ];
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 // Capture harness (foundation of IMPACT_VALIDATION_METHODOLOGY.md): log what the selector SAW vs
 // what it CHOSE each cycle, so an auditor can later check for missed high-impact events and a human
@@ -118,7 +122,10 @@ async function readPastArchiveTitles(days) {
 // ============================================================
 // RSS FEEDS - Free, fast, no rate limits
 // ============================================================
-const MAX_ARTICLES_PER_FEED = 8;
+// Fetch up to 25 items per feed so raw capture sees them all (decision 0040 answer 2); the model's candidate pool
+// stays at the previous size: the newest 8 per feed (PROMPT_POOL_PER_FEED), chosen after dedupe.
+const FEED_FETCH_CAP = 25;
+const PROMPT_POOL_PER_FEED = 8;
 
 const RSS_FEEDS = [
   // --- Existing (global / Asia / South Asia) ---
@@ -272,35 +279,61 @@ function shouldFilterArticle(article) {
 // RSS FEED FETCHING
 // ============================================================
 
+// Tag helpers. Feeds differ in markup: `<item xmlns:...>` (Dawn), `<item rdf:about=...>` (DW, Nikkei, RDF/RSS 1.0),
+// Atom `<entry>` with `<link href=.../>`, and `<dc:date>` instead of `<pubDate>`. Every opening tag may carry attributes.
+// Text of a feed field: CDATA removed, entities decoded (Dawn and CNA escape their HTML), tags dropped, spaces collapsed.
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '\u2019', lsquo: '\u2018', rdquo: '\u201d', ldquo: '\u201c', ndash: '\u2013', mdash: '\u2014' };
+const decodeEntities = (s) => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+  if (e[0] === '#') {
+    const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+    return n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+  }
+  return ENTITIES[e.toLowerCase()] ?? m;
+});
+const stripMarkup = (s) => {
+  const once = decodeEntities(String(s || '').replace(/<!\[CDATA\[|\]\]>/g, ''));
+  return decodeEntities(once.replace(/<\/?[a-z!][^>]*>/gi, ' ')).replace(/\s+/g, ' ').trim();
+};
+function tagText(block, name) {
+  const m = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, 'i'));
+  return m ? m[1] : null;
+}
+function itemLink(block) {
+  const text = tagText(block, 'link');
+  if (text && text.replace(/<!\[CDATA\[|\]\]>/g, '').trim()) return text.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+  // Atom: <link href="..." rel="alternate"/>; prefer alternate (or no rel) over self/enclosure.
+  const tags = block.match(/<link\s[^>]*>/gi) || [];
+  const href = (t) => { const m = t.match(/\shref\s*=\s*["']([^"']+)["']/i); return m ? m[1].trim() : ''; };
+  const rel = (t) => { const m = t.match(/\srel\s*=\s*["']([^"']+)["']/i); return m ? m[1].toLowerCase() : 'alternate'; };
+  const best = tags.find((t) => rel(t) === 'alternate' && href(t)) || tags.find((t) => href(t));
+  return best ? href(best) : '';
+}
+
 function parseRssXml(xml, sourceName) {
   const articles = [];
-  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  const firstItem = xml.search(/<(item|entry)[\s>]/i);
+  const channelLang = stripMarkup(tagText(firstItem < 0 ? xml : xml.slice(0, firstItem), 'language') ?? tagText(firstItem < 0 ? xml : xml.slice(0, firstItem), 'dc:language')) || null;
+  const itemRegex = /<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
   let match;
 
   while ((match = itemRegex.exec(xml)) !== null) {
-    const itemContent = match[1];
+    const itemContent = match[2];
 
-    // Extract title (handle CDATA)
-    const titleMatch = itemContent.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
-    let title = titleMatch ? titleMatch[1].trim() : '';
-    title = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').trim();
+    const title = stripMarkup(tagText(itemContent, 'title'));
+    const url = itemLink(itemContent);
 
-    // Extract link
-    const linkMatch = itemContent.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
-    let url = linkMatch ? linkMatch[1].trim() : '';
-    url = url.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+    // Summary: RSS description, Atom summary, then content:encoded / Atom content as a last resort.
+    const rawDesc = tagText(itemContent, 'description') ?? tagText(itemContent, 'summary')
+      ?? tagText(itemContent, 'content:encoded') ?? tagText(itemContent, 'content');
+    const description = stripMarkup(rawDesc).substring(0, 300).trim();
 
-    // Extract description
-    const descMatch = itemContent.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
-    let description = descMatch ? descMatch[1].trim() : '';
-    description = description.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').substring(0, 300).trim();
-
-    // Extract pubDate and calculate age
-    const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
+    // Date: pubDate, then dc:date (RSS 1.0), then Atom published / updated.
+    const rawDate = tagText(itemContent, 'pubDate') ?? tagText(itemContent, 'dc:date')
+      ?? tagText(itemContent, 'published') ?? tagText(itemContent, 'updated');
     let age = '';
     let publishedAt = null;
-    if (pubDateMatch) {
-      const pubTime = new Date(pubDateMatch[1].trim()).getTime();
+    if (rawDate) {
+      const pubTime = new Date(stripMarkup(rawDate)).getTime();
       if (!isNaN(pubTime)) {
         publishedAt = new Date(pubTime).toISOString();
         const hoursAgo = Math.floor((Date.now() - pubTime) / (1000 * 60 * 60));
@@ -313,8 +346,10 @@ function parseRssXml(xml, sourceName) {
       }
     }
 
+    const lang = stripMarkup(tagText(itemContent, 'dc:language')) || channelLang;
+
     if (title && url) {
-      articles.push({ title, url, description, age, publishedAt, source: sourceName });
+      articles.push({ title, url, description, age, publishedAt, lang, source: sourceName });
     }
   }
   return articles;
@@ -344,7 +379,7 @@ async function fetchRssFeeds() {
         }
 
         const xml = await response.text();
-        const articles = parseRssXml(xml, feed.source).slice(0, MAX_ARTICLES_PER_FEED);
+        const articles = parseRssXml(xml, feed.source).slice(0, FEED_FETCH_CAP).map((a) => ({ ...a, feed: feed.name }));
         console.log(`RSS ${feed.name}: ${articles.length} articles`);
         return articles;
       } catch (err) {
@@ -437,6 +472,116 @@ async function writeCache({ topics, model, limit }) {
   }
 }
 
+// The selection prompt for one run. Pure: all inputs are arguments, so tests can read the text.
+function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTitles = [] }) {
+  const articlesText = articles
+    .map((a, i) => `${i + 1}. ${a.title}\n   Source: ${a.source}\n   Published: ${a.age}\n   URL: ${a.url}\n   ${a.description}`)
+    .join('\n\n');
+
+  // Build soft dedup prompt section
+  const seenTopicsPromptLines = [];
+  if (seenEntries.length > 0) {
+    seenTopicsPromptLines.push(
+      'DEDUPLICATION - PREVIOUSLY COVERED TODAY:',
+      'These topics were already covered in earlier runs today.',
+      'PRIORITIZE genuinely NEW events not in this list.',
+      'Only include a previously-covered topic if there is a significant new development with fresh sources.',
+      ...seenEntries.map(e => `  - ${e.title}`),
+      '',
+    );
+  }
+
+  // Build narrative continuity prompt section
+  const narrativeContinuityLines = [];
+  if (pastArchiveTitles.length > 0) {
+    narrativeContinuityLines.push(
+      'NARRATIVE CONTINUITY:',
+      'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
+      'or development of one of these stories, add "continues_topic" with the exact previous title.',
+      'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
+      'Previous topics:',
+      ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
+      '',
+    );
+  }
+
+  return [
+    'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
+    '',
+    '=== NEWS ARTICLES ===',
+    articlesText,
+    '=== END OF ARTICLES ===',
+    '',
+    `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
+    '',
+    'ALLOWED CATEGORIES (use ONLY these):',
+    '- politics (elections, policy changes, diplomatic relations, government actions)',
+    '- economy (macroeconomics, trade deals, sanctions, currency, central bank policy)',
+    '- military (defense spending, troop movements, arms deals, military exercises)',
+    '- conflict (wars, battles, peace talks, territorial disputes, organized violence)',
+    '- disaster (natural disasters, industrial accidents, humanitarian crises)',
+    '- technology (tech breakthroughs, AI, cybersecurity, major platform/product news)',
+    '- health (disease outbreaks, epidemics, pandemics, major drug approvals, healthcare policy)',
+    '- climate (climate impacts, emissions data, extreme weather attribution, climate policy, environmental treaties)',
+    '- science (research breakthroughs, space, biology, physics, geology, published findings with global implications)',
+    '- business (corporate M&A, major layoffs, supply chain disruptions, major industry shifts, labor disputes)',
+    '- society (migration, demographics, social movements, protests, education, human rights, inequality)',
+    '- energy (oil, gas, renewables, grid infrastructure, energy security, transition policy)',
+    '',
+    'REJECT these categories: entertainment, sports, celebrity, lifestyle',
+    '',
+    'CRITICAL RULES:',
+    '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
+    '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
+    '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
+    '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
+    '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
+    '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
+    `7. SIGNIFICANCE FLOOR, NOT A QUOTA: Select EVERY event that clears the floor below, then fill any remaining slots by significance, never more than ${limit} topics in total. Fewer than ${limit} is correct when fewer events matter. There are no category minimums and no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough.`,
+    '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
+    '9. DONE, NOT SAID (editorial rule, decision 0020): select only things that were DONE. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is NOT a topic, judged on the headline\'s main clause ("X blasts Y as strikes kill 78" is said). The one exception is a statement that is itself the event: a declaration of war, a formal resignation, a signed decree.',
+    '   - REJECT (said): "UN official warns Ukraine faces its toughest winter"',
+    '   - REJECT (said): "G7 plans to release emergency fuel stocks"',
+    '   - SELECT (the statement is the act): "Prime Minister resigns after losing confidence vote"',
+    '',
+    'BAD EXAMPLES (too vague):',
+    '- "East Asian Economy and Geopolitical Relations"',
+    '- "Middle East Conflict Updates"',
+    '',
+    'GOOD EXAMPLES (specific, diverse):',
+    '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
+    '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
+    '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
+    '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
+    '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
+    '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
+    '',
+    'REGIONAL DIVERSITY (soft note):',
+    '- Among events of similar significance, prefer a spread across Americas, Europe, Asia, Middle East, Africa',
+    '- Do NOT let one story dominate all topics',
+    '- Never skip an event that clears the floor to improve the spread, and never pad with weak items to cover a region',
+    '',
+    ...seenTopicsPromptLines,
+    ...narrativeContinuityLines,
+    'Each topic object MUST have:',
+    '- title: string (SPECIFIC event with key details)',
+    '- category: string (one of the 12 allowed categories)',
+    '- search_keywords: array of 3-6 keywords',
+    '- regions: array of country names involved',
+    '- sources: array of source objects (each with {title, url, source, age, snippet, tier}) where tier is "primary" (article is directly about this event) or "secondary" (related/background)',
+    '- x_trending: boolean (true if trending on X)',
+    '- significance: string ("high", "medium", or "low")',
+    '- urgency: string ("high" = breaking/escalating in last 24h, "medium" = developing story, "low" = background/slow-moving)',
+    '- urgencyReason: string (one sentence explaining the urgency classification)',
+    '- primaryCountry: string (the single country most central to this event — the anchor)',
+    '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
+    '- continues_topic: string (optional — exact title of a previous topic this story continues)',
+    '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
+    '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
+    '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
+  ].join('\n');
+}
+
 // ============================================================
 // MAIN HANDLER
 // ============================================================
@@ -479,7 +624,7 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
     const prefix = process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture';
     for (const Key of [`${prefix}/latest.json`, `${prefix}/${runId.slice(0, 10)}/${runId.slice(11, 16).replace(':', '')}.json`]) {
       await s3.send(new PutObjectCommand({
-        Bucket: process.env.WORLD_BUCKET || 'globalperspective-world-280362093938',
+        Bucket: WORLD_BUCKET,
         Key,
         Body: body,
         ContentType: 'application/json',
@@ -489,6 +634,15 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
   } catch (e) {
     console.warn('[capture] failed (non-fatal):', e.message);
   }
+}
+
+// The inbox writer over the real S3 client (tests inject their own into captureRawArticles).
+function realS3Json() {
+  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  return makeS3Json({
+    client: new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' }),
+    GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET,
+  });
 }
 
 exports.handler = async (event) => {
@@ -519,114 +673,24 @@ exports.handler = async (event) => {
       readSeenTopics(),
       readPastArchiveTitles(7),
     ]);
+    // RAW CAPTURE (0040 rule 1): everything fetched is stored before the model sees it. Fenced; never blocks the run.
+    await captureRawArticles({
+      articles: allArticles,
+      now: new Date(),
+      s3json: { appendLines: (...a) => realS3Json().appendLines(...a) },
+      shadow: process.env.RAW_CAPTURE_SHADOW === '1',
+    });
+
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
     console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
 
     let prompt;
     if (allArticles && allArticles.length > 0) {
-      const articlesText = allArticles
-        .map((a, i) => `${i + 1}. ${a.title}\n   Source: ${a.source}\n   Published: ${a.age}\n   URL: ${a.url}\n   ${a.description}`)
-        .join('\n\n');
-
-      // Build soft dedup prompt section
-      const seenTopicsPromptLines = [];
-      if (seenEntries.length > 0) {
-        seenTopicsPromptLines.push(
-          'DEDUPLICATION - PREVIOUSLY COVERED TODAY:',
-          'These topics were already covered in earlier runs today.',
-          'PRIORITIZE genuinely NEW events not in this list.',
-          'Only include a previously-covered topic if there are not enough new events to fill the limit,',
-          'or if there is a significant new development with fresh sources.',
-          ...seenEntries.map(e => `  - ${e.title}`),
-          '',
-        );
-      }
-
-      // Build narrative continuity prompt section
-      const narrativeContinuityLines = [];
-      if (pastArchiveTitles.length > 0) {
-        narrativeContinuityLines.push(
-          'NARRATIVE CONTINUITY:',
-          'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
-          'or development of one of these stories, add "continues_topic" with the exact previous title.',
-          'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
-          'Previous topics:',
-          ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
-          '',
-        );
-      }
-
-      prompt = [
-        'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
-        '',
-        '=== NEWS ARTICLES ===',
-        articlesText,
-        '=== END OF ARTICLES ===',
-        '',
-        `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
-        '',
-        'ALLOWED CATEGORIES (use ONLY these):',
-        '- politics (elections, policy changes, diplomatic relations, government actions)',
-        '- economy (macroeconomics, trade deals, sanctions, currency, central bank policy)',
-        '- military (defense spending, troop movements, arms deals, military exercises)',
-        '- conflict (wars, battles, peace talks, territorial disputes, organized violence)',
-        '- disaster (natural disasters, industrial accidents, humanitarian crises)',
-        '- technology (tech breakthroughs, AI, cybersecurity, major platform/product news)',
-        '- health (disease outbreaks, epidemics, pandemics, major drug approvals, healthcare policy)',
-        '- climate (climate impacts, emissions data, extreme weather attribution, climate policy, environmental treaties)',
-        '- science (research breakthroughs, space, biology, physics, geology, published findings with global implications)',
-        '- business (corporate M&A, major layoffs, supply chain disruptions, major industry shifts, labor disputes)',
-        '- society (migration, demographics, social movements, protests, education, human rights, inequality)',
-        '- energy (oil, gas, renewables, grid infrastructure, energy security, transition policy)',
-        '',
-        'REJECT these categories: entertainment, sports, celebrity, lifestyle',
-        '',
-        'CRITICAL RULES:',
-        '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
-        '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
-        '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
-        '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
-        '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
-        '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
-        '7. CATEGORY BALANCE: No single category may exceed 25% of topics. You MUST include at least one topic from each of these when relevant articles exist: climate, science, society, energy, business. Do NOT invent topics — only include a category if a real article covers it.',
-        '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
-        '',
-        'BAD EXAMPLES (too vague):',
-        '- "East Asian Economy and Geopolitical Relations"',
-        '- "Middle East Conflict Updates"',
-        '',
-        'GOOD EXAMPLES (specific, diverse):',
-        '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
-        '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
-        '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
-        '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
-        '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
-        '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
-        '',
-        'REGIONAL DIVERSITY:',
-        `- Generate ${limit} topics covering diverse regions`,
-        '- Include: Americas, Europe, Asia, Middle East, Africa',
-        '- Do NOT let one story dominate all topics',
-        '',
-        ...seenTopicsPromptLines,
-        ...narrativeContinuityLines,
-        'Each topic object MUST have:',
-        '- title: string (SPECIFIC event with key details)',
-        '- category: string (one of the 12 allowed categories)',
-        '- search_keywords: array of 3-6 keywords',
-        '- regions: array of country names involved',
-        '- sources: array of source objects (each with {title, url, source, age, snippet, tier}) where tier is "primary" (article is directly about this event) or "secondary" (related/background)',
-        '- x_trending: boolean (true if trending on X)',
-        '- significance: string ("high", "medium", or "low")',
-        '- urgency: string ("high" = breaking/escalating in last 24h, "medium" = developing story, "low" = background/slow-moving)',
-        '- urgencyReason: string (one sentence explaining the urgency classification)',
-        '- primaryCountry: string (the single country most central to this event — the anchor)',
-        '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
-        '- continues_topic: string (optional — exact title of a previous topic this story continues)',
-        '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
-        '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
-        '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
-      ].join('\n');
+      // One prompt row per event; the full pool stays for URL validation and source enrichment.
+      const { items: collapsedArticles, collapsed } = collapseSameEvent(allArticles);
+      const promptArticles = newestPerFeed(collapsedArticles, PROMPT_POOL_PER_FEED);
+      console.log(`DEDUPE: ${collapsed} feed items collapsed into the same event; ${promptArticles.length} of ${allArticles.length} fetched items go to the model (newest ${PROMPT_POOL_PER_FEED} per feed)`);
+      prompt = buildSelectionPrompt({ articles: promptArticles, limit, seenEntries, pastArchiveTitles });
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');
       prompt = [
@@ -637,11 +701,11 @@ exports.handler = async (event) => {
         '',
         'ALLOWED CATEGORIES: politics, economy, military, conflict, disaster, technology, health, climate, science, business, society, energy',
         'REJECT: entertainment, sports, celebrity, lifestyle',
-        'CATEGORY BALANCE: No single category may exceed 25% of topics. Include climate, science, society, energy, business when relevant.',
+        'SELECTION: choose events by significance, not to fill categories; no category minimums or caps.',
         '',
         'Each topic must have: title, category, search_keywords, regions, x_trending, significance, urgency ("high"/"medium"/"low"), urgencyReason (one sentence), primaryCountry (single anchor country), mentionedCountries (array)',
         '',
-        `Limit to ${limit} items covering diverse global regions.`,
+        `Return up to ${limit} items; fewer is correct when fewer events matter.`,
       ].join('\n');
     }
 
@@ -778,7 +842,7 @@ exports.handler = async (event) => {
     }
 
     // TOPIC FILTERING: Category + source validation
-    const filtered = normalized.filter(t => {
+    let filtered = normalized.filter(t => {
       const categoryValid = VALID_CATEGORIES.includes(t.category);
       if (!categoryValid) {
         console.warn(`FILTERED: Invalid category "${t.category}" for: ${t.title?.substring(0, 40)}`);
@@ -791,6 +855,17 @@ exports.handler = async (event) => {
       }
       return true;
     });
+
+    // DEDUPE (code, not prompt): drop a topic that repeats an entry of the last 24h runs, today or yesterday,
+    // unless its title carries a number the earlier title lacks.
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const earlierTitles = [
+      ...seenEntries.map(e => e.title),
+      ...pastArchiveTitles.filter(e => e.date >= yesterday).map(e => e.title),
+    ];
+    const repeats = dropRepeatTopics(filtered, earlierTitles);
+    for (const d of repeats.dropped) console.warn(`DEDUPE: dropped repeat "${d.title?.substring(0, 60)}" (repeats "${d.repeats?.substring(0, 60)}")`);
+    filtered = repeats.topics;
 
     console.log(`TOPIC FILTER: ${filtered.length} topics passed (${normalized.length - filtered.length} filtered)`);
 
@@ -852,4 +927,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._internal = { parseRssXml, canonicalIso3 };
+exports._internal = { parseRssXml, canonicalIso3, RSS_FEEDS, buildSelectionPrompt };

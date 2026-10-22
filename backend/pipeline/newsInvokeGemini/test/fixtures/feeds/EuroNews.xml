@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+ <channel>
+  <title>Latest News From Euronews | Euronews RSS</title>
+  <link>https://www.euronews.com</link>
+  <language>en</language>
+  <description>Latest news from Euronews</description>
+  <copyright>Euronews 2026</copyright>
+  <lastBuildDate>Thu, 22 Oct 2026 11:00:37 +0200</lastBuildDate>
+  <pubDate>Thu, 22 Oct 2026 11:00:37 +0200</pubDate>
+  <ttl>30</ttl>
+  <atom:link href="https://www.euronews.com/rss" rel="self" type="application/rss+xml"/>
+  <image>
+   <url>https://static.euronews.com/website/images/euronews_flatblue.png</url>
+   <title>Latest News From Euronews | Euronews RSS</title>
+   <link>https://www.euronews.com</link>
+  </image>
+  <item>
+   <title>EU planned to scrap clock changes. Why are they still happening?</title>
+   <link>https://www.euronews.com/2026/10/22/eu-planned-to-scrap-clock-changes-why-are-they-still-happening</link>
+   <guid>https://www.euronews.com/2026/10/22/eu-planned-to-scrap-clock-changes-why-are-they-still-happening</guid>
+   <pubDate>Thu, 22 Oct 2026 11:00:37 +0200</pubDate>
+   <description>This Sunday the clocks will be turned back again, even though the EU Parliament set abolition in motion at the end of 2019. Why?</description>
+  </item>
+<item>
+   <title>Websites go dark after AI exposes major programming language security flaw</title>
+   <link>https://www.euronews.com/2026/10/22/websites-go-dark-after-ai-exposes-major-programming-language-security-flaw</link>
+   <guid>https://www.euronews.com/2026/10/22/websites-go-dark-after-ai-exposes-major-programming-language-security-flaw</guid>
+   <pubDate>Thu, 22 Oct 2026 10:47:45 +0200</pubDate>
+   <description>Government agencies and companies around the world shut down websites Wednesday after two critical flaws came to light involving PHP, a programming language that is the basis for a large share of the internet.</description>
+  </item>
+<item>
+   <title>Did Slow Horses' season finale cliffhanger give us a major James Bond casting clue?</title>
+   <link>https://www.euronews.com/2026/10/22/did-slow-horses-season-finale-cliffhanger-give-us-a-major-james-bond-casting-clue</link>
+   <guid>https://www.euronews.com/2026/10/22/did-slow-horses-season-finale-cliffhanger-give-us-a-major-james-bond-casting-clue</guid>
+   <pubDate>Thu, 22 Oct 2026 10:39:54 +0200</pubDate>
+   <description>The sixth season of the hit TV show Slow Horses has come to an end, and with it a cliffhanger that could have major casting implications when it comes to the identity of the next James Bond...</description>
+  </item>
+</channel></rss>

@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<rss version="2.0" xml:base="link" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:fb="http://www.facebook.com/2008/fbml" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:media="http://www.rssboard.org/media-rss" xmlns:og="http://ogp.me/ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:schema="http://schema.org/" xmlns:sioc="http://rdfs.org/sioc/ns#" xmlns:sioct="http://rdfs.org/sioc/types#" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <channel>
+    <title>News - South China Morning Post</title>
+    <link>https://www.scmp.com/rss/91/feed</link>
+    <description>All the latest breaking news from Hong Kong, China and around the world</description>
+    <language>en</language>
+    <image>
+      <url>https://assets-v2.i-scmp.com/production/static/img/icons/scmp-meta-1200x630.png</url>
+      <title>News - South China Morning Post</title>
+      <link>https://www.scmp.com</link>
+    </image>
+    <atom:link href="https://www.scmp.com/rss/91/feed" rel="self" type="application/rss+xml"/>
+    <item>
+      <author>Junaid Kathju</author>
+      <dc:creator>Junaid Kathju</dc:creator>
+      <description>India’s planned acquisition of four large amphibious warships would strengthen its ability to support naval logistics and humanitarian missions across the Indian Ocean, with security experts saying their value depends on how the navy could effectively utilise them during a crisis.
+The Indian Navy has invited bids for four landing platform docks (LPDs), each with a displacement of more than 30,000 tonnes. Indian Navy Vice Chief Vice Admiral Ajay Kochhar said at a media briefing on Monday that a...</description>
+      <guid isPermaLink="true">https://www.scmp.com/week-asia/politics/article/3371775/india-seeks-expand-navys-reach-4-amphibious-warships</guid>
+      <link>https://www.scmp.com/week-asia/politics/article/3371775/india-seeks-expand-navys-reach-4-amphibious-warships</link>
+      <pubDate>Thu, 22 Oct 2026 09:00:12 +0000</pubDate>
+      <title>India seeks to expand navy’s reach with 4 amphibious warships</title>
+      <enclosure length="1640" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/b1bcc58f-f129-4d55-8ea3-62a2c461bea7_b861c1b7.jpg?itok=m_4bqWjR&amp;v=1792657416"/>
+      <media:content height="949" medium="image" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/b1bcc58f-f129-4d55-8ea3-62a2c461bea7_b861c1b7.jpg?itok=m_4bqWjR&amp;v=1792657416" width="1640"/>
+    </item>
+<item>
+      <author>Wynna Wong</author>
+      <dc:creator>Wynna Wong</dc:creator>
+      <description>Airlines in Hong Kong have cancelled or rescheduled more than a dozen flights to and from Taiwan and Japan due to Super Typhoon Champi, with further disruption expected in the coming days.
+Budget carrier HK Express announced it would cancel 10 flights between Hong Kong and Taiwan on Friday, with six serving Taipei and two each serving Taichung and Kaohsiung.
+Four other flights serving Taichung and Kaohsiung have been postponed until Saturday. The airline said it was notifying affected passengers...</description>
+      <guid isPermaLink="true">https://www.scmp.com/news/hong-kong/transport/article/3371776/super-typhoon-champi-hong-kong-airlines-cancel-least-12-taiwan-japan-flights</guid>
+      <link>https://www.scmp.com/news/hong-kong/transport/article/3371776/super-typhoon-champi-hong-kong-airlines-cancel-least-12-taiwan-japan-flights</link>
+      <pubDate>Thu, 22 Oct 2026 08:42:48 +0000</pubDate>
+      <title>Super Typhoon Champi: Hong Kong airlines cancel at least 12 Taiwan, Japan flights</title>
+      <enclosure length="4095" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/cc3597cd-64bc-49c2-a45e-afdc6e2f5d05_ec79b686.jpg?itok=D8nDpRnI&amp;v=1792658265"/>
+      <media:content height="2730" medium="image" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/cc3597cd-64bc-49c2-a45e-afdc6e2f5d05_ec79b686.jpg?itok=D8nDpRnI&amp;v=1792658265" width="4095"/>
+    </item>
+<item>
+      <author>Ryan Ip,David Yu Chak-wai</author>
+      <dc:creator>Ryan Ip,David Yu Chak-wai</dc:creator>
+      <description>Hong Kong’s surging exports amid recent global trade shifts and tariff measures are reason to celebrate. However, they have not reversed the decline in the city’s port’s container throughput, which hit 12.99 million 20-foot equivalent units in 2025, down 5.1 per cent year on year.
+To address public doubts over the city’s standing as an international shipping centre, Hong Kong’s first five-year plan seeks to transform the maritime hub from being throughput-driven to value-driven. The policy...</description>
+      <guid isPermaLink="true">https://www.scmp.com/opinion/hong-kong-opinion/article/3371747/hong-kong-port-needs-new-lease-life-value-driven-era</guid>
+      <link>https://www.scmp.com/opinion/hong-kong-opinion/article/3371747/hong-kong-port-needs-new-lease-life-value-driven-era</link>
+      <pubDate>Thu, 22 Oct 2026 08:30:09 +0000</pubDate>
+      <title>Hong Kong port needs a new lease of life in value-driven era</title>
+      <enclosure length="4095" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/4bb1a7a3-a197-4a51-931a-5853aee67747_6df90964.jpg?itok=se_QDpXx&amp;v=1792647038"/>
+      <media:content height="2730" medium="image" type="image/jpeg" url="https://cdn.i-scmp.com/sites/default/files/styles/1280x720/public/d8/images/canvas/2026/10/22/4bb1a7a3-a197-4a51-931a-5853aee67747_6df90964.jpg?itok=se_QDpXx&amp;v=1792647038" width="4095"/>
+    </item>
+</channel></rss>

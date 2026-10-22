@@ -1,0 +1,9 @@
+{
+  "name": "news-record-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Weekly review: one boxed model call per active story; writes record/readings, record/runs/review-*, record/inbox/merges",
+  "main": "runtime.js",
+  "type": "commonjs",
+  "scripts": { "test": "node --test ../test/*.test.js" }
+}

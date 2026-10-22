@@ -131,7 +131,7 @@ test('P3 + PRED gap: a forecast stored today (original or copy) is reused once p
   assert.deepEqual(lib.decideReuse({ kind: 'prediction', existing: copy, fingerprint: 'new', predictionLoggedToday: lib.forecastedOn(copy, TODAY) }), { reuse: true, reason: 'once-per-day' });
 });
 
-test('PROMPT_VERSION is 2 and methodology stays 1 (the study splits on promptVersion)', () => {
-  assert.equal(lib.PROMPT_VERSION, 2);
+test('PROMPT_VERSION is 3 and methodology stays 1 (the study splits on promptVersion)', () => {
+  assert.equal(lib.PROMPT_VERSION, 3);
   assert.equal(lib.METHODOLOGY_VERSION, 1);
 });

@@ -19,9 +19,11 @@ const METHODOLOGY_VERSION = 1;
 // Prompt identity, stamped on every new PRED# row and TOPIC# PREDICTION item as `promptVersion`
 // (methodologyVersion stays 1: the question schema / gates G1-G12 are unchanged, so scoring keeps
 // one methodology; promptVersion lets the study split pre/post the 2026-10-17 grounded-forecast change).
-//   1 = research briefing + forecast (two calls); 2 = single grounded call + G13.
-const PROMPT_VERSION = 2;
-const HORIZON_DAYS = 180;
+//   1 = research briefing + forecast (two calls); 2 = single grounded call + G13;
+//   3 = outcomes (decision 0038): at most 3 events DONE per story, due 7-90 days, own p and source.
+const PROMPT_VERSION = 3;
+const HORIZON_DAYS = 90;
+const MAX_OUTCOMES = 3;
 
 const MONTHS = {
   january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
@@ -319,6 +321,9 @@ function buildGatedScenarios(rawScenarios, ctx) {
   const { generatedAtDay, fallbackYear, facts = [] } = ctx;
   // M2 question mode: only when the caller supplies the row key (pk/sk), so old callers/tests behave as before.
   const qMode = Boolean(ctx.pk && ctx.sk);
+  // Outcome mode (decision 0038): the unit is the outcome, so a trigger that is not a scored question is dropped
+  // (not kept as narrative), and at most MAX_OUTCOMES are kept per draw.
+  const outcomeMode = Boolean(ctx.outcomeMode);
   const dropped = [];
   const demoted = [];
   const priorTexts = [...(ctx.priorTexts || [])];
@@ -334,6 +339,10 @@ function buildGatedScenarios(rawScenarios, ctx) {
     const scenarioProb = probabilityMidpoint(s.probability_range);
     rawTriggers.forEach((rt, ti) => {
       const norm = normalizeTrigger(rt, fallbackYear);
+      if (outcomeMode && questionCount >= MAX_OUTCOMES) {
+        dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: 'CAP', why: `more than ${MAX_OUTCOMES} outcomes in one draw` });
+        return;
+      }
       const verdict = validateTrigger(norm, generatedAtDay, facts);
       if (!verdict.ok) {
         dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: verdict.gate, why: verdict.why });
@@ -345,6 +354,7 @@ function buildGatedScenarios(rawScenarios, ctx) {
         if (claims.length) {
           // Kept as narrative (like G7-G12 demotions), never a scored question.
           dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: 'G13', why: `ungrounded in input: ${claims.map((c) => c.text).join('; ')}` });
+          if (outcomeMode) return;
           trig.question = false;
           triggers.push(trig);
           kept++;
@@ -354,6 +364,10 @@ function buildGatedScenarios(rawScenarios, ctx) {
       if (qMode) {
         const g = questions.questionGate(norm, { generatedAtDay, snippets: ctx.snippets || [], priorTexts });
         if (g.action === 'drop') {
+          dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: g.gate, why: g.reason });
+          return;
+        }
+        if (g.action === 'demote' && outcomeMode) {
           dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: g.gate, why: g.reason });
           return;
         }
@@ -368,7 +382,7 @@ function buildGatedScenarios(rawScenarios, ctx) {
           trig.resolver = 'human';
           priorTexts.push(norm.text);
           questionCount++;
-          if (scenarioProb != null && Math.abs(g.p - scenarioProb * 100) <= 1) echo++;
+          if (!outcomeMode && scenarioProb != null && Math.abs(g.p - scenarioProb * 100) <= 1) echo++;
         }
       }
       triggers.push(trig);
@@ -387,6 +401,12 @@ function buildGatedScenarios(rawScenarios, ctx) {
   });
 
   const capture = { methodologyVersion: METHODOLOGY_VERSION, kept, dropped };
+  if (outcomeMode) {
+    // An outcome whose only trigger was gated out is not an outcome.
+    const outcomes = scenarios.filter((sc) => sc.triggers.length);
+    scenarios.length = 0;
+    scenarios.push(...outcomes);
+  }
   if (qMode) capture.questions = { kept: questionCount, demoted, pEcho: questionCount ? Math.round((echo / questionCount) * 1000) / 1000 : 0 };
   return { scenarios, capture };
 }
@@ -547,6 +567,7 @@ module.exports = {
   restampFields,
   METHODOLOGY_VERSION,
   HORIZON_DAYS,
+  MAX_OUTCOMES,
   MONTHS,
   lastDayOfMonth,
   isoDate,

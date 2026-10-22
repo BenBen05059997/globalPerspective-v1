@@ -62,7 +62,7 @@ test('G1 rejects a malformed deadline string', () => {
 
 // ---------- G3: horizon ----------
 
-test('G3 rejects a deadline beyond the 180-day horizon', () => {
+test('G3 rejects a deadline beyond the 90-day horizon', () => {
   const r = validateTrigger({ text: 'far-future junk', deadline: '2027-06-01' }, '2026-07-04');
   assert.equal(r.ok, false);
   assert.equal(r.gate, 'G3');

@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const lib = require('./lib');
 const threading = require('./threading');
+const draw = require('./forecast-draw');
 const { staleReason, staleProcessedRun } = require('./run-guard');
 const { slugify } = threading;
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -504,87 +505,6 @@ function buildTraceCausePrompt(topic, generatedDate) {
 
 // ── Grounded single-call forecast (2026-10-17, replaces the research briefing + forecast pair) ──
 
-// The text the forecast model is shown. G13 (lib.buildGatedScenarios) checks every date / named
-// scheduled event in the model's output against exactly this, so build it in one place.
-function forecastInputText(topic, v1 = {}) {
-  const snippets = (topic.sources || []).map(s => `${s.source || ''} ${s.snippet || ''}`);
-  return [topic.title, topic.description, ...snippets, v1.arcDigest, v1.premiseBlock].filter(Boolean).join('\n');
-}
-
-function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
-  const snippets = topic.sources
-    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
-    : '';
-
-  const snippetBlock = snippets
-    ? `\nArticle Snippets:\n${snippets}\n`
-    : '';
-
-  // generatedDate is a human string ("July 4, 2026"); use UTC today for date math.
-  const today = new Date().toISOString().slice(0, 10);
-  const minDeadline = lib.addDays(today, 8);
-
-  return [
-    `You are a geopolitical forecasting analyst. Today is ${today} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
-    '',
-    `Topic: ${topic.title}`,
-    `Description: ${topic.description}`,
-    `Regions: ${(topic.regions || []).join(', ') || 'Unknown'}`,
-    v1.premiseBlock || '',
-    v1.arcDigest ? `\nHow this story has evolved (our archive, dated — use to ground trajectory, do not restate):\n${v1.arcDigest}\n` : '',
-    snippetBlock,
-    'CALENDAR RULE (strict): your training data ends before today, so you do NOT know the calendar ahead. Use a specific date, or the name of a scheduled event (summit, session, meeting, election, treaty expiry, review), ONLY if it appears in the Article Snippets, the dated archive digest or the verified facts above. If no scheduled date is known, say "no scheduled date known" — that is a correct, useful answer. Never fill a gap with a plausible date from memory. The "deadline" of a trigger is your own forecast window, not a claim, so you may choose it freely.',
-    '',
-    'Work in this order and WRITE each step into the JSON (nothing is done silently):',
-    '1. precedents: 5 closest past cases (different years/places). For each, which of the three scenarios below it ended like, and how long it took.',
-    '2. Scenario probabilities START from that count: the share of your precedents that ended like each scenario. Then adjust for today\'s specifics, and state the adjustment and why in the rationale. Equal counts must not all become 55-65%. "Most Likely" is by definition the scenario with the highest probability: if your count points elsewhere, rewrite the scenarios so the most common precedent outcome becomes "Most Likely".',
-    '3. Then the actors, the rationale and the triggers. Return this JSON structure (all fields required):',
-    `{
-  "precedents": [
-    { "case": "string — past event, place and year", "ended_like": "Most Likely | Optimistic | Pessimistic", "took": "string — how long it took to resolve" }
-  ],
-  "scenarios": [
-    {
-      "label": "Most Likely",
-      "probability_range": "string — from the precedent count, adjusted (step 2)",
-      "horizon": "string — your own estimate in days, weeks or months",
-      "rationale": "string — 2-4 sentences naming specific actors, mechanisms and the precedent base rate; no date or scheduled event that is not in the input",
-      "triggers": [
-        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "the specific public record that will settle it" }
-      ]
-    },
-    {
-      "label": "Optimistic",
-      "probability_range": "string",
-      "horizon": "string",
-      "rationale": "string — name which actors would need to act differently",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "..." } ]
-    },
-    {
-      "label": "Pessimistic",
-      "probability_range": "string",
-      "horizon": "string",
-      "rationale": "string — name the specific miscalculation or trigger",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "..." } ]
-    }
-  ],
-  "winners": ["string — country, industry, or leader name"],
-  "losers": ["string — population, economy, or alliance name"]
-}`,
-    '',
-    'TRIGGER RULES (a trigger we cannot score is worthless — follow exactly):',
-    `- deadline MUST be an absolute date in YYYY-MM-DD form, on or after ${minDeadline} (events resolving sooner are not scored) and on/before ${lib.addDays(today, 90)} (we keep questions within 90 days; scenario horizons must fit inside that window too).`,
-    '- The trigger must describe a FUTURE event that has NOT happened yet — never restate something already reported in the snippets or digest (that is not a prediction).',
-    '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
-    '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise"). Do not put a date or named scheduled event in the text unless it is in the input.',
-    '- Each trigger is a standalone yes/no question judged ALONE: "p" is YOUR probability (an integer from 2 to 98) that THIS exact event happens by its deadline. It is NOT the scenario probability: a trigger under "Optimistic" may have p 70, one under "Most Likely" may have p 25.',
-    '- Give 3 distinct triggers per scenario when three different checkable events exist; at most 3.',
-    '- "resolution_source" must NAME the publisher or record that will exist after the deadline and settle the question (for example "Reuters or AP wire report", "Official Gazette of Japan", "UN Security Council press release", "IAEA Board report"). Never "news", "media", "reports" or "sources".',
-    '- Only name a person in an office if the VERIFIED FACTS above or the snippets support it.',
-    'probability_range: the three scenario ranges must sum to about 100%. Output only the JSON object.',
-  ].join('\n');
-}
-
 const KIND_SK = (kind) => (kind === 'prediction' ? PREDICTION_SK : kind === 'trace_cause' ? 'TRACE_CAUSE' : SUMMARY_SK);
 
 // R2: reuse a stored item when the story's article set is unchanged (see lib.decideReuse), else generate.
@@ -621,12 +541,22 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
       predictionLoggedToday = Boolean(logged.Item) || lib.forecastedOn(existing, today);
     }
   }
-  const decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
+  let decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
   const threadAttr = lib.threadAttr((ctx.threadIdById || {})[topic.id]);
-  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), threadId: threadAttr.threadId || null });
-  if (ctx.dryRun) return null;
+  let forks;
+  if (kind === 'prediction') {
+    // Draw cadence (decision 0038): a forecast is drawn only when the story moved (decideReuse says
+    // generate) and its thread has no fork in the last 7 days; otherwise keep the stored forecast, if any.
+    if (!decision.reuse && !ctx.force) forks = await readThreadForks(topic, threadAttr.threadId, today);
+    const d = draw.drawDecision({ decision, existing, lastForkDay: forks ? draw.latestForkDay(forks) : null, today, force: ctx.force });
+    if (!d.draw) {
+      decision = d.reuse ? { reuse: true, reason: d.reason } : { reuse: false, skip: true, reason: d.reason };
+    }
+  }
+  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.skip ? 'skip' : decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), threadId: threadAttr.threadId || null });
+  if (ctx.dryRun || decision.skip) return null;
   if (!decision.reuse) {
-    const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint });
+    const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint, forks });
     return { item, reused: false };
   }
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
@@ -664,6 +594,34 @@ async function writeThreadPointers(topics, threadIdById, generationId) {
     }
   });
   console.log(`Thread pointers written: ${written}/${byThread.size}`);
+}
+
+// The PRED# rows of a story's thread from the last 90 days (every topicId the thread has had, from the
+// THREAD# pointer, plus this topic): the draw cadence reads the newest fork day, the near-duplicate gate
+// reads the open branches. Best-effort: a failed read returns [] (draw proceeds, gates see no prior).
+async function readThreadForks(topic, threadId, today) {
+  const ids = new Set([topic.id]);
+  if (threadId && SUMMARY_TABLE) {
+    try {
+      const got = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: `THREAD#${threadId}`, SK: lib.THREAD_POINTER_SK } }));
+      const set = got.Item && got.Item.topicIds;
+      for (const id of set ? [...set] : []) ids.add(id);
+    } catch (e) { console.warn(`thread pointer read failed for ${threadId}: ${e.message}`); }
+  }
+  const from = lib.addDays(today, -draw.OPEN_LOOKBACK_DAYS);
+  const rows = [];
+  for (const id of ids) {
+    try {
+      const r = await ddb.send(new QueryCommand({
+        TableName: PREDICTION_LOG_TABLE,
+        KeyConditionExpression: 'PK = :pk AND SK >= :from',
+        ExpressionAttributeValues: { ':pk': `PRED#${id}`, ':from': from },
+        ProjectionExpression: 'SK, scenarios',
+      }));
+      rows.push(...(r.Items || []));
+    } catch (e) { console.warn(`thread forks read failed for ${id}: ${e.message}`); }
+  }
+  return rows;
 }
 
 // Newest stored item of this kind for the same title at another list position (see
@@ -714,8 +672,8 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
       premiseBlock: buildPremiseBlock(topic, ctx.factsByCountry),
       arcDigest: buildArcDigest(topic, ctx.pastEntries),
     };
-    inputText = forecastInputText(topic, v1);
-    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, v1);
+    inputText = draw.forecastInputText(topic, v1);
+    prompt = draw.buildPredictionPrompt(topic, generatedDate, generatedYear, v1);
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
@@ -723,6 +681,10 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
 
   if (kind === 'prediction' || kind === 'trace_cause') {
     response.content = normalizeJsonResponse(response.content, kind);
+  }
+  if (kind === 'prediction') {
+    // Outcomes -> the stored scenario shape readers use (one outcome per scenario, label = the event).
+    try { response.content = JSON.stringify(draw.outcomesToScenarios(JSON.parse(response.content))); } catch { /* non-JSON content is stored as-is */ }
   }
 
   // Ground once: rationale sentences carrying a date / scheduled event the model was never shown are
@@ -740,7 +702,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId, ctx.fingerprint, (ctx.threadIdById || {})[topic.id]);
 
   if (kind === 'prediction') {
-    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, { ...ctx, inputText, groundRemoved });
+    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, { ...ctx, inputText, groundRemoved, forks: ctx.forks });
   }
 
   return item;
@@ -1013,20 +975,9 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     // restates it is already met) and this story's recent question texts (near-duplicates).
     const pk = `PRED#${topic.id}`;
     const snippets = [topic.title, topic.description, ...((topic.sources || []).map(s => s && s.snippet))].filter(Boolean).map(String);
-    let priorTexts = [];
-    try {
-      const prior = await ddb.send(new QueryCommand({
-        TableName: PREDICTION_LOG_TABLE,
-        KeyConditionExpression: 'PK = :pk',
-        ExpressionAttributeValues: { ':pk': pk },
-        ScanIndexForward: false,
-        Limit: 14,
-        ProjectionExpression: 'SK, scenarios',
-      }));
-      for (const it of prior.Items || []) {
-        for (const sc of it.scenarios || []) for (const tr of sc.triggers || []) if (tr && tr.question === true && tr.text) priorTexts.push(String(tr.text));
-      }
-    } catch (e) { console.warn(`prior questions read failed for ${topic.id}: ${e.message}`); }
+    // Near-duplicates are checked against every OPEN branch of the story's thread, not just the last rows.
+    const forks = ctx.forks || await readThreadForks(topic, (ctx.threadIdById || {})[topic.id], day);
+    const priorTexts = draw.openBranchTexts(forks, day);
     const { scenarios, capture } = lib.buildGatedScenarios(parsed.scenarios, {
       generatedAtDay: (ctx.generatedAtDay || day),
       fallbackYear: generatedYear,
@@ -1036,6 +987,7 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       snippets,
       priorTexts,
       inputText: ctx.inputText, // G13 grounded-date gate (undefined => gate off)
+      outcomeMode: parsed.unit === 'outcome',
     });
     // Same id the thread-reuse lookup and the archive use (computed once per run, before generation).
     capture.dropped.push(...(ctx.groundRemoved || []));

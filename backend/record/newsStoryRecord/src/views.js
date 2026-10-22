@@ -8,6 +8,8 @@ const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
 const ENTRY_CAP = 400; // entries kept per story view (newest); more needs a shard decision
 const LINKS_MAX = 50;
+const SPECIFIC_SHARE = 0.05; // an actor or country links two stories only when fewer than this share of active stories carry it
+const LINK_WINDOW_DAYS = 14; // and both stories' lastFactAt dates are at most this far apart
 const ALL_INDEX_MAX_BYTES = 5 * 1024 * 1024; // over this the run fails rather than truncate (0037 section 1)
 const NO_READING = 'no reading yet';
 
@@ -145,28 +147,44 @@ const titleOf = (entries) => (entries.length ? entries[0].title : null);
 
 const rowOrder = byKey((r) => -Date.parse(r.lastFactAt || 0), (r) => r.threadId);
 
-/** Cheap grounds between active stories only: shared actor, iso3 and source IDs (0037 section 1). Not judged links. */
-function buildLinks(activeIds, survivors, builtFrom) {
+/**
+ * Shared facts between active stories (0037 section 1, amended 2026-10-22). Not judged links. Only actors and countries count as
+ * grounds, and only when fewer than SPECIFIC_SHARE of the active stories carry them; sources are listed, never counted. Both
+ * stories need a fact within LINK_WINDOW_DAYS of each other (lastFactAt dates). `rows` are the active index rows.
+ */
+function buildLinks(rows, survivors, builtFrom) {
+  const lastDay = new Map(rows.map((r) => [r.threadId, r.lastFactAt.slice(0, 10)]));
+  const ids = rows.map((r) => r.threadId);
   const index = {actorIds: new Map(), iso3: new Map(), sourceIds: new Map()};
-  for (const id of activeIds) for (const kind of Object.keys(index)) for (const v of survivors.get(id)[kind]) (index[kind].get(v) || index[kind].set(v, []).get(v)).push(id);
+  for (const id of ids) for (const kind of Object.keys(index)) for (const v of survivors.get(id)[kind]) (index[kind].get(v) || index[kind].set(v, []).get(v)).push(id);
+  const shareOf = (kind, v) => index[kind].get(v).length / ids.length;
+  const specific = (kind, v) => shareOf(kind, v) < SPECIFIC_SHARE;
   const out = new Map();
-  for (const id of activeIds) {
+  for (const id of ids) {
     const shared = new Map();
     for (const [kind, field] of [['actorIds', 'sharedActorIds'], ['iso3', 'sharedIso3'], ['sourceIds', 'sharedSourceIds']]) {
       for (const v of survivors.get(id)[kind]) {
         for (const other of index[kind].get(v)) {
           if (other === id) continue;
-          const row = shared.get(other) || shared.set(other, {otherThreadId: other, sharedActorIds: [], sharedIso3: [], sharedSourceIds: []}).get(other);
+          const row = shared.get(other) || shared.set(other, {otherThreadId: other, sharedActorIds: [], sharedIso3: [], sharedSourceIds: [], rarest: 1}).get(other);
           row[field].push(v);
+          if (kind !== 'sourceIds' && specific(kind, v)) row.rarest = Math.min(row.rarest, shareOf(kind, v));
         }
       }
     }
-    const links = [...shared.values()].map((r) => {
-      const row = {otherThreadId: r.otherThreadId, sharedActorIds: r.sharedActorIds.sort(), sharedIso3: r.sharedIso3.sort(), sharedSourceIds: r.sharedSourceIds.sort()};
-      row.grounds = [row.sharedActorIds, row.sharedIso3, row.sharedSourceIds].filter((l) => l.length).length;
-      return row;
-    }).filter((r) => r.grounds > 0).sort(byKey((r) => -r.grounds, (r) => r.otherThreadId)).slice(0, LINKS_MAX);
-    out.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links, confirmedLinks: [], confirmedLinksReason: NO_READING});
+    const links = [];
+    for (const r of shared.values()) {
+      const daysApart = Math.abs(Date.parse(lastDay.get(id)) - Date.parse(lastDay.get(r.otherThreadId))) / 86400000;
+      if (daysApart > LINK_WINDOW_DAYS) continue;
+      // Only the specific actors and countries are shared grounds; a background ID (USA) never links on its own.
+      const actors = r.sharedActorIds.filter((v) => specific('actorIds', v)).sort();
+      const iso3 = r.sharedIso3.filter((v) => specific('iso3', v)).sort();
+      const grounds = (actors.length ? 1 : 0) + (iso3.length ? 1 : 0);
+      if (!grounds) continue;
+      links.push({otherThreadId: r.otherThreadId, sharedActorIds: actors, sharedIso3: iso3, sharedSourceIds: r.sharedSourceIds.sort(), grounds, daysApart, rarest: r.rarest});
+    }
+    links.sort(byKey((r) => r.rarest, (r) => r.otherThreadId));
+    out.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: links.slice(0, LINKS_MAX).map(({rarest, ...row}) => row), confirmedLinks: [], confirmedLinksReason: NO_READING});
   }
   return out;
 }
@@ -215,7 +233,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
   const activeRows = all.filter((r) => !r.aliasOf && r.lastFactAt && r.lastFactAt.slice(0, 10) >= cutoff);
-  const links = buildLinks(activeRows.map((r) => r.threadId), survivors, builtFrom);
+  const links = buildLinks(activeRows, survivors, builtFrom);
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
@@ -236,4 +254,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, ALL_INDEX_MAX_BYTES, resolveAliases, buildViews, countDaysFor, writeGroups, bytesOf};
+module.exports = {SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, buildViews, countDaysFor, writeGroups, bytesOf};

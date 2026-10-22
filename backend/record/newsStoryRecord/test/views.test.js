@@ -84,24 +84,53 @@ test('active index: a fact 59 days back is active, 60 days back is only in all.j
   assert.equal(v.links.has('out'), false);
 });
 
-test('links: grounds count the non-empty shared lists, zero rows drop, sort by grounds then id, max 50, inactive stories excluded', () => {
-  const at = '2026-10-20T00:00:00.000Z';
-  const e = (id, o) => X.entry(id, at, id, o);
+// Links need 5% specificity, so these tests pad the active index with unrelated stories: 100 fillers make one carrier 1% and two 2%.
+const pad = (at, n = 100) => Array.from({length: n}, (_, i) => X.entry(`pad${String(i).padStart(3, '0')}`, at, 'x', {sources: [`p${i}`]}));
+const day = (d) => `${d}T10:00:00.000Z`;
+
+test('links: sources never count; an outlet-only pair has no row', () => {
+  const f = [X.entry('me', day('2026-10-20'), 'x', {sources: ['s1']}), X.entry('twin', day('2026-10-20'), 'x', {sources: ['s1']}), ...pad(day('2026-10-20'))];
+  assert.deepEqual(build(f).links.get('me').links, []);
+});
+
+test('links: a background country carried by 5% or more of active stories never links on its own', () => {
+  const at = day('2026-10-20');
+  const bg = Array.from({length: 6}, (_, i) => X.entry(`bg${i}`, at, 'x', {iso3: ['USA'], sources: [`b${i}`]}));
+  const f = [...bg, ...pad(at, 94)]; // 6 of 100 = 6%
+  assert.deepEqual(build(f).links.get('bg0').links, []);
+  const rare = [...bg.slice(0, 4), ...pad(at, 96)]; // 4 of 100 = 4%
+  assert.deepEqual(build(rare).links.get('bg0').links.map((l) => l.otherThreadId), ['bg1', 'bg2', 'bg3']);
+});
+
+test('links: a rare shared actor gives a row with grounds and daysApart; sources are listed but not counted', () => {
+  const f = [X.entry('me', day('2026-10-20'), 'x', {actorIds: ['name:x'], sources: ['s1']}), X.entry('near', day('2026-10-17'), 'x', {actorIds: ['name:x'], sources: ['s1']}), ...pad(day('2026-10-20'))];
+  assert.deepEqual(build(f).links.get('me').links, [{otherThreadId: 'near', sharedActorIds: ['name:x'], sharedIso3: [], sharedSourceIds: ['s1'], grounds: 1, daysApart: 3}]);
+  assert.deepEqual(build(f).links.get('near').links.map((l) => [l.otherThreadId, l.daysApart]), [['me', 3]]);
+});
+
+test('links: 14 days apart links, 15 days apart does not', () => {
+  const mk = (gap) => [X.entry('me', day('2026-10-21'), 'x', {actorIds: ['name:x']}), X.entry('far', day(`2026-10-${String(21 - gap).padStart(2, '0')}`), 'x', {actorIds: ['name:x']}), ...pad(day('2026-10-21'))];
+  assert.deepEqual(build(mk(14)).links.get('me').links.map((l) => l.daysApart), [14]);
+  assert.deepEqual(build(mk(15)).links.get('me').links, []);
+});
+
+test('links: sorted by the rarest shared ID then otherThreadId; max 50; inactive stories excluded', () => {
+  const at = day('2026-10-20');
   const f = [
-    e('me', {iso3: ['FRA'], actorIds: ['name:x'], sources: ['s1']}),
-    e('three', {iso3: ['FRA'], actorIds: ['name:x'], sources: ['s1']}),
-    e('two', {iso3: ['FRA'], actorIds: ['name:x'], sources: ['s9']}),
-    e('one-b', {iso3: ['FRA'], sources: ['s8']}),
-    e('one-a', {iso3: ['FRA'], sources: ['s7']}),
-    e('none', {iso3: ['DEU'], actorIds: ['name:q'], sources: ['s5']}),
-    X.entry('stale', '2026-01-01T00:00:00.000Z', 's', {iso3: ['FRA'], actorIds: ['name:x'], sources: ['s1']}),
+    X.entry('me', at, 'x', {actorIds: ['name:rare', 'name:less'], iso3: ['FRA']}),
+    X.entry('z-rare', at, 'x', {actorIds: ['name:rare']}),
+    X.entry('a-less', at, 'x', {actorIds: ['name:less']}),
+    X.entry('b-less', at, 'x', {actorIds: ['name:less']}),
+    X.entry('c-both', at, 'x', {actorIds: ['name:less'], iso3: ['FRA']}),
+    X.entry('stale', '2026-01-01T00:00:00.000Z', 's', {actorIds: ['name:rare']}),
+    ...pad(at, 150),
   ];
   const links = build(f).links.get('me');
-  assert.deepEqual(links.links.map((l) => [l.otherThreadId, l.grounds]), [['three', 3], ['two', 2], ['one-a', 1], ['one-b', 1]]);
-  assert.deepEqual(links.links[0], {otherThreadId: 'three', sharedActorIds: ['name:x'], sharedIso3: ['FRA'], sharedSourceIds: ['s1'], grounds: 3});
+  // name:rare is carried by 2 of 156 active stories; FRA by 2; name:less by 4 -> rare and FRA before less
+  assert.deepEqual(links.links.map((l) => [l.otherThreadId, l.grounds]), [['c-both', 2], ['z-rare', 1], ['a-less', 1], ['b-less', 1]]);
   assert.deepEqual([links.confirmedLinks, links.confirmedLinksReason], [[], 'no reading yet']);
-  const many = Array.from({length: 70}, (_, i) => X.entry(`t${String(i).padStart(2, '0')}`, at, 'x', {iso3: ['FRA']}));
-  const capped = build(many).links.get('t00').links;
+  const many = Array.from({length: 60}, (_, i) => X.entry(`t${String(i).padStart(2, '0')}`, at, 'x', {actorIds: ['name:m']}));
+  const capped = build([...many, ...pad(at, 1500)]).links.get('t00').links;
   assert.equal(capped.length, 50);
   assert.deepEqual(capped.slice(0, 2).map((l) => l.otherThreadId), ['t01', 't02']);
 });

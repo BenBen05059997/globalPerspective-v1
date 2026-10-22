@@ -15,7 +15,8 @@
       "sharedSourceIds": [
         "s1"
       ],
-      "grounds": 2
+      "grounds": 1,
+      "daysApart": 3
     }
   ],
   "confirmedLinks": [],

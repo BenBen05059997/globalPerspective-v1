@@ -534,7 +534,7 @@ test('T3: record/operator/aliases.json is read under the prefix of the run (miss
   f.put(`${P}operator/aliases.json`, {schemaVersion: 1, aliases: [{canonical: 'name:macron', variants: ['name:emmanuel macron'], wikidataId: 'Q3052772'}]});
   f.put('record/operator/aliases.json', {schemaVersion: 1, aliases: [{canonical: 'name:wrong', variants: ['name:emmanuel macron'], wikidataId: null}]});
   await make(dayStore(), f).handler({date: '2026-10-20'});
-  assert.deepEqual(f.json(`${P}views/stories/thread-1.json`).actorIds, ['name:macron']);
+  assert.deepEqual(f.json(`${P}views/stories/thread-1.json`).actorIds, ['wd:Q3052772']);
   const g = fakeS3();
   await make(dayStore(), g).handler({date: '2026-10-20'});
   assert.deepEqual(g.json(`${P}views/stories/thread-1.json`).actorIds, ['name:emmanuel macron']);

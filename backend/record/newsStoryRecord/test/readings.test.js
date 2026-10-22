@@ -115,8 +115,8 @@ const opFile = (...aliases) => ({schemaVersion: 1, aliases});
 test('T3: the operator file maps actorIds in story views and index rows; facts keep their own ids', () => {
   const facts = X.golden();
   const v = build(facts, [], {operatorAliases: opFile({canonical: 'name:emmanuel macron', variants: ['name:macron'], wikidataId: 'Q3052772'})});
-  assert.deepEqual(v.stories.get('thread-a').actorIds, ['name:emmanuel macron']);
-  assert.deepEqual(rowOf(v, 'thread-a').actorIds, ['name:emmanuel macron']);
+  assert.deepEqual(v.stories.get('thread-a').actorIds, ['wd:Q3052772']);
+  assert.deepEqual(rowOf(v, 'thread-a').actorIds, ['wd:Q3052772']);
   assert.deepEqual(v.stories.get('thread-b').actorIds, ['name:putin']);
   assert.equal(facts.find((f) => f.eventId === 'ea1').actorIds[0], 'name:macron');
   // a missing or empty file is no aliases
@@ -126,7 +126,7 @@ test('T3: the operator file maps actorIds in story views and index rows; facts k
 
 test('T3: an alias reading applies only with a Wikidata Q-number; without one it is a proposal', () => {
   const withQ = build(X.golden(), [alias('name:emmanuel macron', ['name:macron'], 'Q3052772')]);
-  assert.deepEqual(withQ.stories.get('thread-a').actorIds, ['name:emmanuel macron']);
+  assert.deepEqual(withQ.stories.get('thread-a').actorIds, ['wd:Q3052772']);
   for (const q of [null, undefined, '', 'macron', 'q1', 'Q']) {
     assert.deepEqual(build(X.golden(), [alias('name:emmanuel macron', ['name:macron'], q)]).stories.get('thread-a').actorIds, ['name:macron'], String(q));
   }
@@ -135,20 +135,20 @@ test('T3: an alias reading applies only with a Wikidata Q-number; without one it
 test('T3: when a reading conflicts with the operator file the operator wins; a non-conflicting one still applies; two readings that disagree keep the older', () => {
   const op = opFile({canonical: 'name:macron', variants: ['name:emmanuel macron'], wikidataId: 'Q3052772'});
   // the reading would map the operator's canonical away: rejected as a whole
-  const flip = alias('name:emmanuel macron', ['name:macron'], 'Q3052772');
-  assert.deepEqual(build(X.golden(), [flip], {operatorAliases: op}).stories.get('thread-a').actorIds, ['name:macron']);
+  const flip = alias('name:emmanuel macron', ['name:macron'], 'Q99');
+  assert.deepEqual(build(X.golden(), [flip], {operatorAliases: op}).stories.get('thread-a').actorIds, ['wd:Q3052772']);
   // the reading maps an operator variant to a different canonical: rejected
-  const other = alias('name:e. macron', ['name:emmanuel macron'], 'Q3052772');
+  const other = alias('name:e. macron', ['name:emmanuel macron'], 'Q98');
   const rowsV = build([...X.golden(), X.entry('thread-z', '2026-10-21T04:00:00.000Z', 'z', {actorIds: ['name:emmanuel macron']})], [other], {operatorAliases: op});
-  assert.deepEqual(rowsV.stories.get('thread-z').actorIds, ['name:macron']);
+  assert.deepEqual(rowsV.stories.get('thread-z').actorIds, ['wd:Q3052772']);
   // a reading about another person is fine alongside the operator file
   const fine = alias('name:vladimir putin', ['name:putin'], 'Q7747');
   const ok = build(X.golden(), [flip, fine], {operatorAliases: op});
-  assert.deepEqual([ok.stories.get('thread-a').actorIds, ok.stories.get('thread-b').actorIds], [['name:macron'], ['name:vladimir putin']]);
+  assert.deepEqual([ok.stories.get('thread-a').actorIds, ok.stories.get('thread-b').actorIds], [['wd:Q3052772'], ['wd:Q7747']]);
   // two readings disagree about one variant: the older week wins
   const early = alias('name:v. putin', ['name:putin'], 'Q7747', {key: 'early', readingId: 'e1'});
-  const late = X.reading('2026-W44', 'thread-a', 'alias', {canonical: 'name:vladimir putin', variants: ['name:putin'], wikidataId: 'Q7747'}, {key: 'late'});
-  assert.deepEqual(build(X.golden(), [late, early]).stories.get('thread-b').actorIds, ['name:v. putin']);
+  const late = X.reading('2026-W44', 'thread-a', 'alias', {canonical: 'name:vladimir putin', variants: ['name:putin'], wikidataId: 'Q8000'}, {key: 'late'});
+  assert.deepEqual(build(X.golden(), [late, early]).stories.get('thread-b').actorIds, ['wd:Q7747']);
 });
 
 test('T3: the links specificity rule counts canonical ids, so variants of one actor share a link and are rare together', () => {
@@ -156,7 +156,7 @@ test('T3: the links specificity rule counts canonical ids, so variants of one ac
   const f = [X.entry('me', at, 'x', {actorIds: ['name:macron']}), X.entry('you', at, 'x', {actorIds: ['name:emmanuel macron']}), ...pad(at)];
   assert.deepEqual(build(f).links.get('me').links, []);
   const l = build(f, [], {operatorAliases: opFile({canonical: 'name:emmanuel macron', variants: ['name:macron'], wikidataId: 'Q3052772'})}).links.get('me').links;
-  assert.deepEqual(l.map((x) => [x.otherThreadId, x.sharedActorIds]), [['you', ['name:emmanuel macron']]]);
+  assert.deepEqual(l.map((x) => [x.otherThreadId, x.sharedActorIds]), [['you', ['wd:Q3052772']]]);
   // the same through an accepted reading
   assert.equal(build(f, [alias('name:emmanuel macron', ['name:macron'], 'Q3052772')]).links.get('me').links.length, 1);
   // and a canonical carried by 5% or more is no longer specific once variants are pooled

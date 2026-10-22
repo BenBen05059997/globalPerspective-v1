@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "stories": [
+    {
+      "threadId": "thread-a",
+      "born": "2026-10-18",
+      "lastFactAt": "2026-10-22T06:00:00.000Z",
+      "iso3": [
+        "DEU",
+        "FRA"
+      ],
+      "actorIds": [
+        "name:macron"
+      ],
+      "sourceCount": 2,
+      "entryCount": 2,
+      "forkCount": 1,
+      "branchCount": 4,
+      "liveBranchCount": 1,
+      "latestVerdictAt": "2026-10-22T06:00:00.000Z",
+      "aliasOf": null,
+      "aliases": [],
+      "title": "A first"
+    },
+    {
+      "threadId": "thread-b",
+      "born": "2026-10-17",
+      "lastFactAt": "2026-10-21T09:05:00.000Z",
+      "iso3": [
+        "FRA",
+        "UKR"
+      ],
+      "actorIds": [
+        "name:putin"
+      ],
+      "sourceCount": 2,
+      "entryCount": 2,
+      "forkCount": 0,
+      "branchCount": 0,
+      "liveBranchCount": 0,
+      "latestVerdictAt": null,
+      "aliasOf": null,
+      "aliases": [
+        "thread-c"
+      ],
+      "title": "C first"
+    },
+    {
+      "threadId": "thread-c",
+      "born": "2026-10-17",
+      "lastFactAt": "2026-10-17T05:00:00.000Z",
+      "iso3": [],
+      "actorIds": [],
+      "sourceCount": 0,
+      "entryCount": 0,
+      "forkCount": 0,
+      "branchCount": 0,
+      "liveBranchCount": 0,
+      "latestVerdictAt": null,
+      "aliasOf": "thread-b",
+      "aliases": [],
+      "title": "C first"
+    },
+    {
+      "threadId": "thread-old",
+      "born": "2026-07-01",
+      "lastFactAt": "2026-07-01T04:00:00.000Z",
+      "iso3": [
+        "FRA"
+      ],
+      "actorIds": [],
+      "sourceCount": 1,
+      "entryCount": 1,
+      "forkCount": 0,
+      "branchCount": 0,
+      "liveBranchCount": 0,
+      "latestVerdictAt": null,
+      "aliasOf": null,
+      "aliases": [],
+      "title": "Old first"
+    }
+  ]
+}

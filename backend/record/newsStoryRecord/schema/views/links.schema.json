@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Links view",
+  "description": "record/views/links/{threadId}.json: shared facts between active stories, not judged links (0037 section 1)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "builtFrom",
+    "threadId",
+    "links",
+    "confirmedLinks",
+    "confirmedLinksReason"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "builtFrom": {
+      "$ref": "#/definitions/builtFrom"
+    },
+    "threadId": {
+      "type": "string"
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/link"
+      }
+    },
+    "confirmedLinks": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "confirmedLinksReason": {
+      "const": "no reading yet"
+    }
+  },
+  "definitions": {
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"
+    },
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "builtFrom": {
+      "type": "object",
+      "required": [
+        "factsThrough",
+        "readingsThrough"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "factsThrough": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "readingsThrough": {
+          "type": "null",
+          "description": "null until step 3 (readings exist)"
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "required": [
+        "otherThreadId",
+        "sharedActorIds",
+        "sharedIso3",
+        "sharedSourceIds",
+        "grounds"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "otherThreadId": {
+          "type": "string"
+        },
+        "sharedActorIds": {
+          "$ref": "#/definitions/strings"
+        },
+        "sharedIso3": {
+          "$ref": "#/definitions/strings"
+        },
+        "sharedSourceIds": {
+          "$ref": "#/definitions/strings"
+        },
+        "grounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        }
+      }
+    }
+  }
+}

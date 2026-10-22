@@ -1,8 +1,8 @@
 {
   "name": "news-story-record",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Daily facts writer: record/facts/YYYY-MM-DD.jsonl and record/runs/YYYY-MM-DD.json; no model",
+  "description": "Daily facts writer and views builder: record/facts, record/runs, record/views; no model",
   "main": "runtime.js",
   "type": "commonjs",
   "scripts": { "test": "node --test ../test/*.test.js" }

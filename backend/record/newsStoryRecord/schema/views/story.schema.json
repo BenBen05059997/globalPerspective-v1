@@ -1,0 +1,478 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Story view",
+  "description": "record/views/stories/{threadId}.json: facts projection, or an alias view for a merged story (0037 sections 1 and 3)",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/story"
+    },
+    {
+      "$ref": "#/definitions/alias"
+    }
+  ],
+  "definitions": {
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"
+    },
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "builtFrom": {
+      "type": "object",
+      "required": [
+        "factsThrough",
+        "readingsThrough"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "factsThrough": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "readingsThrough": {
+          "type": "null",
+          "description": "null until step 3 (readings exist)"
+        }
+      }
+    },
+    "story": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "builtFrom",
+        "threadId",
+        "born",
+        "aliasOf",
+        "iso3",
+        "actorIds",
+        "sourceIds",
+        "entries",
+        "entriesOmitted",
+        "forks",
+        "merges",
+        "corrections",
+        "line",
+        "chapters",
+        "branchStatus",
+        "reading"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "builtFrom": {
+          "$ref": "#/definitions/builtFrom"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "born": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/day"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliasOf": {
+          "type": "null"
+        },
+        "iso3": {
+          "$ref": "#/definitions/strings"
+        },
+        "actorIds": {
+          "$ref": "#/definitions/strings"
+        },
+        "sourceIds": {
+          "$ref": "#/definitions/strings"
+        },
+        "entries": {
+          "type": "array",
+          "maxItems": 400,
+          "items": {
+            "$ref": "#/definitions/entry"
+          }
+        },
+        "entriesOmitted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "forks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/fork"
+          }
+        },
+        "merges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "into",
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "into": {
+                "type": "string"
+              },
+              "at": {
+                "$ref": "#/definitions/iso"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "corrections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "corrects",
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "corrects": {
+                "type": "string"
+              },
+              "at": {
+                "$ref": "#/definitions/iso"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "line": {
+          "type": "null"
+        },
+        "chapters": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "branchStatus": {
+          "type": "null"
+        },
+        "reading": {
+          "type": "object",
+          "required": [
+            "state",
+            "reason"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "none"
+            },
+            "reason": {
+              "const": "no reading yet"
+            }
+          }
+        }
+      }
+    },
+    "alias": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "builtFrom",
+        "threadId",
+        "aliasOf"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "builtFrom": {
+          "$ref": "#/definitions/builtFrom"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "aliasOf": {
+          "type": "string"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "date",
+        "at",
+        "precision",
+        "title",
+        "summary",
+        "category",
+        "eventType",
+        "sources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "eventId": {
+          "type": "string"
+        },
+        "date": {
+          "$ref": "#/definitions/day"
+        },
+        "at": {
+          "$ref": "#/definitions/iso"
+        },
+        "precision": {
+          "enum": [
+            "exact",
+            "day"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "eventType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/source"
+          }
+        },
+        "fromThreadId": {
+          "type": "string",
+          "description": "present on an entry that came from a story merged into this one"
+        },
+        "corrected": {
+          "const": true,
+          "description": "present when a correction fact names this entry"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "sourceId",
+        "outlet",
+        "url",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": {
+          "type": "string"
+        },
+        "outlet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "fork": {
+      "type": "object",
+      "required": [
+        "forkId",
+        "drawnAt",
+        "branches"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "forkId": {
+          "type": "string"
+        },
+        "drawnAt": {
+          "$ref": "#/definitions/iso"
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/branch"
+          }
+        }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "required": [
+        "branchId",
+        "text",
+        "p",
+        "trigger",
+        "resolutionSource",
+        "due",
+        "verdict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "branchId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trigger": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolutionSource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/day"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/verdict"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": [
+        "at",
+        "result",
+        "decidedBy",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/definitions/iso"
+        },
+        "result": {
+          "enum": [
+            "yes",
+            "no",
+            "void"
+          ]
+        },
+        "decidedBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {}
+      }
+    }
+  }
+}

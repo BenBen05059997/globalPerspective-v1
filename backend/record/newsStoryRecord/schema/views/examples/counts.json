@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "date": "2026-10-20",
+  "byStory": {
+    "thread-a": {
+      "newEntries": 1,
+      "branchesDue": 1,
+      "verdicts": 1
+    }
+  },
+  "total": {
+    "newEntries": 1,
+    "branchesDue": 1,
+    "verdicts": 1
+  }
+}

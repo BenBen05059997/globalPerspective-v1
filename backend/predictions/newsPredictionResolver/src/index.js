@@ -145,9 +145,9 @@ async function settleQuestion(deps, g, dryRun, out) {
   if (FINAL_DRAFT_VERDICTS.includes(latest.verdict)) {
     row = {
       verdict: latest.verdict,
-      evidence: latest.verdict === 'void' ? null : (latest.evidence || { url: latest.url || null, quote: latest.quote || null }),
+      evidence: latest.verdict === 'void' ? null : (latest.evidence || { eventId: latest.eventId || null, quote: latest.quote || null, date: null }),
       ...(latest.verdict === 'void' ? { voidReason: latest.voidReason } : {}),
-      ...(latest.why ? { reason: latest.why } : {}),
+      ...(latest.reason || latest.why ? { reason: latest.reason || latest.why } : {}),
     };
   } else if (countUnclear(g.drafts, (g.q || g.sampled).deadline) >= MAX_UNCLEAR_DRAFTS) {
     row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts`, reason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
@@ -237,9 +237,9 @@ async function checkPass(deps, today, limit, dryRun, out) {
     const at = deps.now();
     const g = groups.get(q.qid) || { qid: q.qid, sampled: null, drafts: [], verdicts: [] };
     g.q = q;
-    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: deps.draftModel, at });
+    await deps.store.putOnce({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, qid: q.qid, ...d, deadline: q.deadline, pk: q.pk, sk: q.sk, triggerId: q.triggerId, threadId: q.threadId, trigger: reason, model: d.model || deps.draftModel, at });
     out.drafted.push({ qid: q.qid, verdict: d.verdict });
-    g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: deps.draftModel });
+    g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: d.model || deps.draftModel });
     await settleQuestion(deps, g, false, out);
   });
 }

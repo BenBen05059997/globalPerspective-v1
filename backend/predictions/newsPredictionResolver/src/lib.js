@@ -13,6 +13,7 @@ const SAMPLE_K = 22;
 const LEAD_MIN = 7;
 const LEAD_MAX = 90;
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
+const NO_REASON = 'not_reported_by_due'; // the reason recorded on every `no`
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
 const sha256hex = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -113,7 +114,7 @@ function quoteInEntry(quote, entries, eventId) {
  * Turn a raw model answer into a draft verdict, enforcing the rules.
  * @returns {{verdict:'yes'|'no'|'void'|'not_yet'|'needs_human', voidReason?, quote?, url?, why?, note?}}
  */
-function validateDraft(raw, entries, today, deadline) {
+function validateDraft(raw, entries, today, deadline, { complete = true } = {}) {
   const v = raw && typeof raw === 'object' ? raw : {};
   const verdict = String(v.verdict || '').toLowerCase();
   const why = String(v.why || '').slice(0, 300);
@@ -123,7 +124,8 @@ function validateDraft(raw, entries, today, deadline) {
   }
   if (verdict === 'no') {
     if (!canConcludeNo(deadline, today)) return { verdict: 'not_yet', why, note: 'NO not allowed before deadline + 3 days' };
-    return { verdict: 'no', why };
+    if (!complete) return { verdict: 'not_yet', why, note: 'NO needs the bundle computed from all entries since the draw' };
+    return { verdict: 'no', why, reason: NO_REASON };
   }
   if (verdict === 'void') {
     const reason = VOID_REASONS.includes(v.void_reason) ? v.void_reason : null;
@@ -142,7 +144,7 @@ function combinePasses(a, b) {
 }
 
 module.exports = {
-  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, VOID_REASONS,
+  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, NO_REASON, VOID_REASONS,
   sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks, isMonday,
   newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
   quoteInEntry, validateDraft, combinePasses,

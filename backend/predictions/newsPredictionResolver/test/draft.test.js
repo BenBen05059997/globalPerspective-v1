@@ -204,3 +204,51 @@ test('correct handles a put-once rejection (a racing writer took the number)', a
   assert.match(r.errors[0], /written by someone else/);
   assert.equal(verdictRows(store, 'due')[0].verdict, 'no');
 });
+
+// ---- own-entry judge rules (operator decision 2026-10-22) ----
+test('a quote under 12 characters is rejected even when it is in the entry', () => {
+  const short = lib.validateDraft({ verdict: 'yes', quote: 'voted 200-10', event_id: 'e1' }, ENTRIES, NOW, Q.deadline); // 12 chars
+  assert.equal(short.verdict, 'yes');
+  assert.equal(lib.validateDraft({ verdict: 'yes', quote: 'voted 200-1', event_id: 'e1' }, ENTRIES, NOW, Q.deadline).verdict, 'needs_human'); // 11 chars
+});
+
+test('no is allowed only after due + 3 days and only on a complete bundle; it carries not_reported_by_due', () => {
+  assert.equal(lib.validateDraft({ verdict: 'no' }, ENTRIES, '2026-11-12', Q.deadline).verdict, 'not_yet');
+  const incomplete = lib.validateDraft({ verdict: 'no' }, ENTRIES, '2026-11-13', Q.deadline, { complete: false });
+  assert.equal(incomplete.verdict, 'not_yet');
+  const ok = lib.validateDraft({ verdict: 'no' }, ENTRIES, '2026-11-13', Q.deadline, { complete: true });
+  assert.deepEqual([ok.verdict, ok.reason], ['no', 'not_reported_by_due']);
+});
+
+test('no entry after the draw: not_yet before grace (no model call), a rule-made no with the reason after grace', async () => {
+  const boom = async () => { throw new Error('the model must not be called'); };
+  const empty = { ...Q, bundle: { entries: [], complete: true } };
+  const early = await draftQuestion(empty, { now: () => '2026-11-12T10:30:00.000Z', llm: boom });
+  assert.equal(early.verdict, 'not_yet');
+  const late = await draftQuestion(empty, { now: () => '2026-11-13T10:30:00.000Z', llm: boom });
+  assert.deepEqual([late.verdict, late.reason, late.model], ['no', 'not_reported_by_due', 'rule:no_entries_after_draw']);
+  const unsure = await draftQuestion({ ...Q, bundle: { entries: [], complete: false } }, { now: () => '2026-11-13T10:30:00.000Z', llm: boom });
+  assert.equal(unsure.verdict, 'not_yet'); // a story we cannot identify is never a no
+});
+
+test('a no verdict row records reason not_reported_by_due and decidedBy the model that said it', async () => {
+  const store = await sampledStore();
+  await run({ action: 'draft' }, { store, now: () => NOW, facts: FACTS, llm: async () => ({ verdict: 'no', why: 'nothing about it' }), draftModel: 'm' });
+  const [v] = verdictRows(store, 'due');
+  assert.deepEqual([v.verdict, v.reason, v.decidedBy], ['no', 'not_reported_by_due', 'm']);
+});
+
+test('after grace with zero post-draw entries the pass writes a no (reason not_reported_by_due) without a model', async () => {
+  const store = await sampledStore();
+  const out = await run({ action: 'draft' }, { store, now: () => NOW, facts: fakeFacts({ '2026-10-01': [entryFact('tQ', '2026-10-01')] }), llm: async () => { throw new Error('no llm'); }, draftModel: 'm' });
+  assert.deepEqual(out.settled, [{ qid: 'due', verdict: 'no' }]);
+  const [v] = verdictRows(store, 'due');
+  assert.deepEqual([v.reason, v.decidedBy, v.evidence.quote], ['not_reported_by_due', 'rule:no_entries_after_draw', null]);
+});
+
+test('before grace the same question stays open', async () => {
+  const store = await sampledStore('2026-11-19'); // due 11-19, grace ends 11-22; NOW is 11-20
+  const out = await run({ action: 'draft' }, { store, now: () => NOW, facts: fakeFacts({}), llm: async () => { throw new Error('no llm'); }, draftModel: 'm' });
+  assert.equal(out.settled.length, 0);
+  assert.equal(out.drafted.length, 0); // not a candidate: its story has not moved and it is not past due + 3
+});

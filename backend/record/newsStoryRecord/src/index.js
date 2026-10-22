@@ -65,8 +65,12 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     for (const f of [...known, ...facts].filter((x) => x.kind === 'forecast_drawn')) {
       for (const b of f.payload.branches) if (b.qid) questions.set(b.qid, {threadId: f.threadId, branchId: b.branchId});
     }
+    // Only questions without a final verdict fact are asked; on a Monday all are asked again, which picks up a VERDICT#n revision.
+    const final = new Set([...known, ...facts].filter((x) => x.kind === 'verdict' && x.payload.qid).map((x) => x.payload.qid));
+    const monday = new Date(`${date}T00:00:00Z`).getUTCDay() === 1;
+    const ask = [...questions.keys()].filter((q) => monday || !final.has(q));
     try {
-      const verdicts = await store.verdicts([...questions.keys()], date);
+      const verdicts = await store.verdicts(ask, date);
       for (const [qid, v] of Object.entries(verdicts)) {
         for (const row of v.all) {
           try { facts.push(verdictFact(row, questions.get(qid), run.runId)); } catch (e) { run.failures.push({stage: 'verdict', message: messageOf(e), ref: row.sk}); }

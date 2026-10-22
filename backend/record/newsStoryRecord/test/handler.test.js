@@ -414,3 +414,20 @@ test('O3: the job is only reachable by the explicit event; a nightly event never
   assert.equal(f.lines(`${P}facts/2026-10-20.jsonl`).concat(f.lines(`${P}facts/2026-10-21.jsonl`)).some((x) => x.kind === 'verdict'), false);
   await assert.doesNotReject(() => make(scripted({}), f).handler({legacyVoid: false, date: '2026-10-20'}).catch((e) => { if (!/partial|failed/.test(e.message)) throw e; }));
 });
+
+test('O5: a qid with a final verdict fact is not re-queried, except on a Monday; one without is asked every night', async () => {
+  const f = fakeS3();
+  const fc = (qid, b) => ({schemaVersion: 1, eventId: `fc-${qid}`, kind: 'forecast_drawn', at: '2026-10-01T05:00:00.000Z', date: '2026-10-01', precision: 'exact', threadId: 'thread-1', iso3: [], actorIds: [], sourceIds: [],
+    payload: {forkId: 'F', topicId: 't', branches: [{branchId: b, text: 'x', p: 40, trigger: 'x', resolutionSource: 'R', due: '2026-10-10', question: true, qid, scenarioP: 50}]}, producer: {lambda: 'x', runId: 'r'}, sourceKey: `k${qid}`, sourceRow: {store: 's', key: 'k'}});
+  const vf = {schemaVersion: 1, eventId: 'v-done', kind: 'verdict', at: '2026-10-12T00:00:00.000Z', date: '2026-10-12', precision: 'exact', threadId: 'thread-1', iso3: [], actorIds: [], sourceIds: [],
+    payload: {qid: 'q-done', branchId: 'B-done', result: 'yes', revision: 1, decidedBy: 'resolver', evidence: null, reason: null, voidReason: null}, producer: {lambda: 'x', runId: 'r'}, sourceKey: 'kv', sourceRow: {store: 's', key: 'kv'}};
+  f.put(`${P}facts/2026-10-01.jsonl`, fc('q-done', 'B-done'));
+  f.objs.set(`${P}facts/2026-10-01.jsonl`, {body: `${JSON.stringify(fc('q-done', 'B-done'))}\n${JSON.stringify(fc('q-open', 'B-open'))}\n`, etag: '"x"'});
+  f.put(`${P}facts/2026-10-12.jsonl`, vf);
+  const asked = [];
+  const store = scripted({'2026-10-20': twenty('2026-10-20'), '2026-10-26': twenty('2026-10-26')});
+  store.verdicts = async (qids) => { asked.push([...qids].sort()); return {}; };
+  await make(store, f, () => '2026-10-21T05:45:00.000Z').handler({date: '2026-10-20'}); // Tuesday
+  await make(store, f, () => '2026-10-27T05:45:00.000Z').handler({date: '2026-10-26'}); // Monday
+  assert.deepEqual(asked, [['q-open'], ['q-done', 'q-open']]);
+});

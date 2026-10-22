@@ -15,7 +15,7 @@ This folder is stage 8: the analyst's weekly: schema, section model, pull, check
 | weekly | the analyst's weekly, the same for every reader | `backend/weekly/`, S3 `weekly/`, `features/weekly/` |
 | board | the personal layer owned by one member | `backend/board/`, DynamoDB board items + prefs fields, `features/board/` |
 
-An agent working on the weekly does not write `record/` or board data. See `project-docs/architecture/ARCHITECTURE_RECORD.md` §0.
+An agent working on the weekly does not write `record/` or board data. See `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6.
 
 ## Owns
 

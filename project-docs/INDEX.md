@@ -6,14 +6,14 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the core model**: two clocks (facts daily, readings weekly), ten stages, object model, order of work; stage list as data in [pipeline.json](architecture/pipeline.json).
-- [Foundation stocktake](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate, plus decision coverage (2026-10-21).
+- [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the one record design doc**: two clocks, ten stages, facts, views, writers, open items; stage list as data in [pipeline.json](architecture/pipeline.json).
+- [Foundation stocktake (dated)](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate (2026-10-21); live state is in the plan.
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D), with costs and migration.
-- [The record subsystem](architecture/ARCHITECTURE_RECORD.md) — design: `record/`, who writes what (two writers), what is shared, how it touches other places; [its pipeline](architecture/ARCHITECTURE_RECORD_PIPELINE.md) — what runs when (short; the stages live in the record doc).
 - [Decision records](decisions/README.md) — 35 decisions, newest last.
 - [STATUS.md](STATUS.md) — in progress, parked, open decisions.
-- [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
-  (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
+- Reference, generated from code and live AWS by `scripts/gen-reference.mjs`; never hand-edited:
+  [lambdas](reference/lambdas.md) · [env-keys](reference/env-keys.md) names only · [features](reference/features.md) ·
+  [routes](reference/routes.md) · [s3-prefixes](reference/s3-prefixes.md) · [schedules](reference/schedules.md).
 - [data-links.md](reference/data-links.md) — every store: writers, readers, read actions, pages (heuristic table + flow diagram);
   `quality/check_aws_inventory.mjs` fails when functions.json drifts from live AWS.
 - Start a feature check at its `global-perspectives-starter/frontend/src/features/<name>/README.md`
@@ -38,12 +38,19 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Foundation](plans/PLAN_2026-10-21_foundation.md) — facts are the system of record (decision 0035): steps 0-5 checklist, retire list, open questions, log.
 
 ## Runbooks
-- [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;
-  [drift email](runbooks/drift-email.md) — how to turn it on at the first follower.
-- [DEPLOYMENT_NOTES.md](runbooks/DEPLOYMENT_NOTES.md) — frontend release (targets need a fresh yes).
-- [DOMAIN_SETUP.md](runbooks/DOMAIN_SETUP.md) · [BUG_PLAYBOOK.md](runbooks/BUG_PLAYBOOK.md) ·
-  [AGENT_REVIEW_METHOD.md](runbooks/AGENT_REVIEW_METHOD.md) · [ANALYTICS_GUIDE.md](runbooks/ANALYTICS_GUIDE.md) ·
-  [DEEPSEEK_COST_ESTIMATE.md](runbooks/DEEPSEEK_COST_ESTIMATE.md)
+[Index](runbooks/README.md) (one per scheduled job and alert) · [parked jobs](runbooks/parked-jobs.md) · [alarms](runbooks/alarms.md). Jobs:
+[topic selection](runbooks/topic-selection.md) · [news agent](runbooks/news-agent.md) · [thread analysis](runbooks/thread-analysis.md) ·
+[systems analysis](runbooks/systems-analysis.md) · [country briefings](runbooks/country-intelligence.md) · [country facts](runbooks/country-facts.md) ·
+[drift notes](runbooks/drift-corrector.md) · [drift email](runbooks/drift-email.md) · [situation ingest](runbooks/situation-ingest.md) ·
+[situation tracker](runbooks/situation-tracker.md) · [GDACS](runbooks/gdacs-ingest.md) · [GDELT](runbooks/gdelt-conflict.md) ·
+[prediction resolver](runbooks/prediction-resolver.md) · [track record](runbooks/predictions-snapshot.md) · [selection shadow](runbooks/selection-shadow.md) ·
+[signals](runbooks/signals-build.md) · [markets](runbooks/markets-data.md) · [breaking alert](runbooks/breaking-alert.md) ·
+[daily brief](runbooks/daily-brief.md) · [weekly brief](runbooks/weekly-brief.md) · [weekly email](runbooks/weekly-email.md) ·
+[social posts](runbooks/social-posts.md) · [source audit](runbooks/source-audit.md) · [freshness](runbooks/freshness-monitor.md) ·
+[model guard](runbooks/model-guard.md) · [error digest](runbooks/error-digest.md). Procedures:
+[DEPLOYMENT_NOTES](runbooks/DEPLOYMENT_NOTES.md) (frontend release; targets need a fresh yes) · [DOMAIN_SETUP](runbooks/DOMAIN_SETUP.md) ·
+[BUG_PLAYBOOK](runbooks/BUG_PLAYBOOK.md) · [AGENT_REVIEW_METHOD](runbooks/AGENT_REVIEW_METHOD.md) · [ANALYTICS_GUIDE](runbooks/ANALYTICS_GUIDE.md) ·
+[DEEPSEEK_COST_ESTIMATE](runbooks/DEEPSEEK_COST_ESTIMATE.md)
 
 ## Elsewhere
 - `CLAUDE.md` — agent rules and authorization.

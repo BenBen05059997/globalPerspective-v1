@@ -15,7 +15,7 @@ This folder is stage 9: the board's Lambda (boards, follows, presets, connect). 
 | weekly | the analyst's weekly, the same for every reader | weekly run, S3 `weekly/`, `features/weekly/` |
 | board | the personal layer owned by one member | `backend/board/`, DynamoDB board items + prefs fields, `features/board/` |
 
-An agent working on the board does not write `record/` or `weekly/`. See `project-docs/architecture/ARCHITECTURE_RECORD.md` §0.
+An agent working on the board does not write `record/` or `weekly/`. See `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6.
 
 ## What the group will own
 

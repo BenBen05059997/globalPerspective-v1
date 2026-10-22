@@ -1,6 +1,6 @@
 # board
 
-The member's personal connection board (`/board`). A signed-in reader pins stories, countries and actors, drags one pin onto another to ask whether they connect, keeps or cuts strings, and writes one line per string. It is the **board** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the record or the weekly.
+The member's personal connection board (`/board`). A signed-in reader pins stories, countries and actors, drags one pin onto another to ask whether they connect, keeps or cuts strings, and writes one line per string. It is the **board** of the three names in `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6; it never writes the record or the weekly.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch

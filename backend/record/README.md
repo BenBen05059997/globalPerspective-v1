@@ -15,7 +15,7 @@ This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and re
 | weekly | the analyst's weekly, the same for every reader | `backend/weekly/`, S3 `weekly/`, `features/weekly/` |
 | board | the personal layer owned by one member | `backend/board/`, user DynamoDB items, `features/board/` |
 
-An agent working on the record does not write the other groups. Design: `project-docs/architecture/ARCHITECTURE_RECORD.md`.
+An agent working on the record does not write the other groups. Design: `project-docs/architecture/ARCHITECTURE_TIMELINE.md`.
 
 ## What the group owns
 

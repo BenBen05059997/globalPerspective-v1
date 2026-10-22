@@ -419,12 +419,21 @@ meant) are written weekly, with hindsight, by `newsRecordReview` (planned; `reco
 citing facts and able to supersede an earlier one. Views under `record/views/` are rebuilt from both; the weekly report
 (`weekly/`) is a view of the week's readings; the board and pages read views through the Worker. Nothing is edited in place.
 Ten stages, object model and order of work: `ARCHITECTURE_TIMELINE.md` (machine-readable stage list: `pipeline.json`); the
-subsystem's structure: `ARCHITECTURE_RECORD.md`; what runs when: `ARCHITECTURE_RECORD_PIPELINE.md`. Live today: the resolver
+subsystem's structure and who writes what are in the same doc. Live today: the resolver
 writes verdicts itself (decision 0034, data flow 3); the board's slice 1 and 2 (`/board`, `newsBoard` in `backend/board/`,
 boards in `GlobalPerspectiveSavedItems` as `board#<id>`, follows in `GlobalPerspectiveUserPrefs`); `newsStoryRecord`
 deployed shadow-only (no schedule, no model key, writes under `record/shadow/`). Not built: the facts schedule, the
 review, the views, the Worker allowlist for `record/`.
 Facts are the system of record, five stages, content IDs, rebuild test: decision `0035-facts-are-the-system-of-record.md`; order of work: `plans/PLAN_2026-10-21_foundation.md`.
+
+#### Foundation: facts are the system of record
+Decision 0035: world data lives in `record/facts/` (S3, append-only); user data stays in DynamoDB; everything readers see
+is a view rebuilt from facts and readings and served as static JSON through the Worker. Rebuild test: delete every view and
+world row and the site rebuilds from `record/facts/` + `record/readings/`. Top-level stages, in order: **Ingest · Commit ·
+Review · Build · Serve**; Watch is a rule (every run writes a Run object). Ingest and Commit are daily, Review is weekly,
+Build follows each ingest and review, with no model. Design and the ten-stage mapping: `ARCHITECTURE_TIMELINE.md`; facts
+format `decisions/0036-facts-file-format.md`; views and serving `decisions/0037-views-from-facts.md`; order of work and
+live status `plans/PLAN_2026-10-21_foundation.md`.
 
 ## Cross-cutting concerns
 

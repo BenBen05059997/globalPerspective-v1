@@ -1,7 +1,7 @@
 # weekly
 
 The analyst's weekly page (planned `/briefings/weekly?week=YYYY-MM-DD`): the shared report, the same for every reader.
-It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTURE_RECORD.md` §0; it never writes the
+It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6; it never writes the
 record or board data.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->

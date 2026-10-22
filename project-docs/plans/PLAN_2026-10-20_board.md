@@ -207,7 +207,7 @@ Not browser-tested: signed-out view, What is missing follow, co-movement grounds
 - [x] Env: `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, Firebase project id; IAM read on the two world tables, read/write on the two user tables only.
 - [x] `docs/config.js` `BOARD_ENDPOINT` (operator-owned); frontend release (fresh yes).
 - [x] Smoke: create a board, add two pins, connect, keep, fork a preset, on production as a member.
-- [x] Docs: `ARCHITECTURE_RECORD.md` §9 status, `ARCHITECTURE.md` data flow 8, `DATA_STRATEGY` §2 field note, reference regen.
+- [x] Docs: `ARCHITECTURE_TIMELINE.md` status, `ARCHITECTURE.md` data flow 8, `DATA_STRATEGY` §2 field note, reference regen.
 - [ ] Atlas: add the board (and the record and the new weekly) to the living Atlas artifact.
 
 Notes from stage 4: role `newsBoard-role` (basic logs + inline least-privilege DynamoDB), function created 2026-10-20, Function

@@ -4,13 +4,13 @@
 `DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts and `SAMPLED` questions, `WEB#INDEX`, `web/latest.json` and `web/YYYY/MM/DD.json` and the `latest` topic pool are read
 and normalised here, once. The derivations everyone needs (story birth, branches from scenarios, coverage and missing
 days (which days have archive data; not the Run object's coverage), risk tier from score, outlets) live here too, so two consumers can never print two different numbers. The rule
-(operator, 2026-10-20) is `project-docs/architecture/ARCHITECTURE_RECORD.md` §0c; storage rules are
+(operator, 2026-10-20) is `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6; storage rules are
 `project-docs/rules/DATA_STRATEGY.md` §3. Raw tables are written by the existing pipeline and are not changed by this
 folder. Read-only: nothing here writes.
 
-Glossary (ARCHITECTURE_RECORD §0b): **topic** = one item the selector picks in a run; **thread / story** = the editorial
+Glossary (ARCHITECTURE_TIMELINE §6): **topic** = one item the selector picks in a run; **thread / story** = the editorial
 story arc (`thread-<slug>-<hash>`); **cluster** = the map pipeline's internal headline group (not a story); **situation**
-= a map pin; **record** = the dated account of one story (`record/stories/<threadId>`, written only by `newsStoryRecord`).
+= a map pin; **record** = the dated, append-only facts and readings (`record/`; facts written only by `newsStoryRecord`).
 
 ## Files
 | File | Holds |
@@ -115,7 +115,7 @@ dropped entry never shifts the next one's index.
 (`src/world.js`, live), later `newsConnect`. Each Lambda reaches it as `require('./_shared/world')` through its committed
 `src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The weekly runs from the repo
 and requires it with a relative path. Once the record is live, the weekly and the board read `record/*` and use this
-reader only for what the record does not hold (ARCHITECTURE_RECORD §0c).
+reader only for what the record does not hold (ARCHITECTURE_TIMELINE §6).
 
 ## Test
 `cd backend/shared && node --test test/world.*.test.js` (fixtures in `test/world.fake.js` are shaped like the live rows).

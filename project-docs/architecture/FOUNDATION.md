@@ -1,5 +1,7 @@
 # Foundation stocktake (draft)
 
+A dated stocktake (2026-10-21), read for the plan; live state is in [the plan](../plans/PLAN_2026-10-21_foundation.md) and in `reference/*.md`.
+
 Date: 2026-10-21. Purpose: before building more on the target in [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md), record exactly what data we hold, what it is for, what duplicates what and which IDs it carries. Read-only: facts come from code (grep) and live AWS (ap-northeast-1, `get-item`/`query`/`s3 ls`, never Scan). Anything not checked says "not verified" or "not probed". Vocabulary: facts, readings, views, one reader (`backend/shared/src/world/`, here "world/"). NSD = `newsSensitiveData` (deployed as `newsSensitiveData-dev`), the read-api Lambda the frontend calls through `restProxy.js`. Table TTL is DISABLED on all five tables (`describe-time-to-live`); a `ttl` attribute is written but nothing deletes by it (the one exception is TOPIC# pruning by generation, `lib.js` ~445).
 
 Live sizes (`describe-table`): NewsCache 174 items / 40.3 MB; SummarizeAndPredict 3,334 / 6.7 MB; GlobalPerspectivePredictionLog 6,580 / 23.5 MB; GlobalPerspectiveSavedItems 1 / 2 KB; GlobalPerspectiveUserPrefs 2 / 387 B.
@@ -214,8 +216,8 @@ Undocumented or contradicted items:
 | `monitoring/freshness/state.json` | UNDOCUMENTED | `newsFreshnessMonitor` | not in DATA_STRATEGY |
 | Worker SPA-shell fallback (200 for unknown paths), root `/` static copy, `/track-record/text`, `/signin`, `/auth/callback`, `/about /contact /privacy /disclosures /whitepaper`, `/__boom` | UNDOCUMENTED | `worker.mjs`, `App.jsx` | rationale in comments only |
 | Worker member gate | CONTRADICTED | `isMemberAuthorized` returns false (stub) vs DATA_STRATEGY §4 "JWT-gated at the Worker" | |
-| Record layout | CONTRADICTED | ARCHITECTURE_RECORD §3 (`record/index.json`, `stories/`) vs TIMELINE §5 (`facts`, `readings`, `views`) | newsBoard reads the old layout |
-| Board storage shape | CONTRADICTED | DATA_STRATEGY §2 `board#<id>` vs ARCHITECTURE_RECORD `kind:'board'` | |
+| Record layout | CONTRADICTED | the old record doc §3 (`record/index.json`, `stories/`; doc since folded into TIMELINE) vs TIMELINE §5 (`facts`, `readings`, `views`) | newsBoard reads the old layout |
+| Board storage shape | CONTRADICTED | DATA_STRATEGY §2 `board#<id>` vs the old record doc `kind:'board'` | |
 | Resolver cadence | CONTRADICTED | decision 0027 "weekly settle" vs schedule daily `tick` | may be fine if tick no-ops |
 | Story pages under `/weekly` vs planned `/briefings/weekly` | CONTRADICTED | analyst_weekly plan, pipeline.json vs `App.jsx` | name collision |
 | Raw `archive#`/`THREAD#`/`DRIFT#` rows stay in DynamoDB while the record is S3 | no ADR | | the bridge decision is ADR 0035 |

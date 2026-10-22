@@ -5,7 +5,7 @@ Status: active (2026-10-22): step 1 live; record/facts backfilled from 09-06; sc
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
 same data sits in up to four stores, IDs change between runs, and 28 of the last 60 archive days are missing.
-This plan is the order of work and the checklist; the stocktake is `architecture/FOUNDATION.md`.
+This plan is the order of work and the checklist; the stocktake (dated 2026-10-21) is [FOUNDATION.md](../architecture/FOUNDATION.md).
 
 ## The design (operator, 2026-10-21; decision 0035, not re-decided here)
 - Rule: world data lives in `record/facts/` (S3, append-only); user data in DynamoDB; readers see static JSON views through the Worker. Rebuild test: delete every view and every world table row, and the site rebuilds from `record/facts/` + `record/readings/`. The DynamoDB world rows (`archive#`, `THREAD#`, `DRIFT#`, ...) become a working cache until nothing reads them.

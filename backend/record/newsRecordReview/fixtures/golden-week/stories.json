@@ -15,7 +15,7 @@
    ]
   },
   {
-   "threadId": "thread-anthropic-commits-5-of-shares--9a1c52",
+   "threadId": "thread-bomb-threat-forces-austrian-ai-64f64b",
    "born": "2026-10-19",
    "factsInFixture": 3,
    "entriesInWeek": 1,
@@ -60,6 +60,15 @@
    ]
   },
   {
+   "threadId": "thread-china-invites-trump-press-secr-1d576b",
+   "born": "2026-10-16",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
    "threadId": "thread-deadly-fire-at-canadian-milita-6822c0",
    "born": "2026-10-18",
    "factsInFixture": 5,
@@ -88,6 +97,15 @@
    ]
   },
   {
+   "threadId": "thread-dr-congo-protests-formula-1-s--e8d33f",
+   "born": "2026-10-15",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
    "threadId": "thread-eu-china-trade-tensions-escala-16cf3f",
    "born": "2026-10-06",
    "factsInFixture": 10,
@@ -97,10 +115,10 @@
    ]
   },
   {
-   "threadId": "thread-eu-open-to-creating-kill-switc-c806a2",
-   "born": "2026-10-15",
-   "factsInFixture": 1,
-   "entriesInWeek": 0,
+   "threadId": "thread-florida-issues-arrest-warrant--a72c88",
+   "born": "2026-10-19",
+   "factsInFixture": 2,
+   "entriesInWeek": 1,
    "why": [
     "random (seed 20261019)"
    ]
@@ -116,6 +134,15 @@
    ]
   },
   {
+   "threadId": "thread-hong-kong-public-universities--99cfb6",
+   "born": "2026-10-03",
+   "factsInFixture": 9,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
    "threadId": "thread-india-election-chief-faces-cal-6a2810",
    "born": "2026-10-04",
    "factsInFixture": 30,
@@ -126,30 +153,21 @@
    ]
   },
   {
-   "threadId": "thread-kenyan-cult-leader-paul-macken-18a6d5",
-   "born": "2026-10-19",
+   "threadId": "thread-israeli-settlers-attack-palest-a8e47b",
+   "born": "2026-10-16",
+   "factsInFixture": 8,
+   "entriesInWeek": 3,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-istanbul-hit-by-heaviest-rainf-a2ef31",
+   "born": "2026-10-15",
    "factsInFixture": 3,
    "entriesInWeek": 1,
    "why": [
     "random (seed 20261019)"
-   ]
-  },
-  {
-   "threadId": "thread-netanyahu-unveils-new-security-f9f10c",
-   "born": "2026-10-19",
-   "factsInFixture": 2,
-   "entriesInWeek": 1,
-   "why": [
-    "random (seed 20261019)"
-   ]
-  },
-  {
-   "threadId": "thread-north-korea-tests-ai-powered-t-2ab29b",
-   "born": "2026-10-17",
-   "factsInFixture": 1,
-   "entriesInWeek": 0,
-   "why": [
-    "duplicate candidate (1 pair(s), 0037 5% rule)"
    ]
   },
   {
@@ -183,30 +201,12 @@
    ]
   },
   {
-   "threadId": "thread-seven-missing-after-drone-atta-f13804",
-   "born": "2026-10-15",
-   "factsInFixture": 1,
-   "entriesInWeek": 0,
-   "why": [
-    "duplicate candidate (1 pair(s), 0037 5% rule)"
-   ]
-  },
-  {
    "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
    "born": "2026-10-16",
    "factsInFixture": 9,
    "entriesInWeek": 4,
    "why": [
     "top10 by entries in week (4 entries)"
-   ]
-  },
-  {
-   "threadId": "thread-somalia-sets-parliamentary-and-1ad6bc",
-   "born": "2026-10-15",
-   "factsInFixture": 4,
-   "entriesInWeek": 1,
-   "why": [
-    "random (seed 20261019)"
    ]
   },
   {
@@ -229,8 +229,17 @@
    ]
   },
   {
-   "threadId": "thread-syria-arrests-mihrac-ural-ex-a-06498c",
-   "born": "2026-10-15",
+   "threadId": "thread-southern-california-wildfire-e-4f08a7",
+   "born": "2026-10-17",
+   "factsInFixture": 4,
+   "entriesInWeek": 2,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-sri-lanka-suffers-nationwide-e-0ba671",
+   "born": "2026-10-17",
    "factsInFixture": 3,
    "entriesInWeek": 1,
    "why": [
@@ -257,48 +266,12 @@
    ]
   },
   {
-   "threadId": "thread-trump-waives-russia-sanctions--5e560c",
-   "born": "2026-10-17",
-   "factsInFixture": 1,
-   "entriesInWeek": 0,
-   "why": [
-    "random (seed 20261019)"
-   ]
-  },
-  {
    "threadId": "thread-us-court-halts-execution-of-ch-ae75a8",
    "born": "2026-09-30",
    "factsInFixture": 55,
    "entriesInWeek": 5,
    "why": [
     "top10 by entries in week (5 entries)"
-   ]
-  },
-  {
-   "threadId": "thread-us-extends-sanctions-waiver-fo-96e718",
-   "born": "2026-10-15",
-   "factsInFixture": 1,
-   "entriesInWeek": 0,
-   "why": [
-    "duplicate candidate (1 pair(s), 0037 5% rule)"
-   ]
-  },
-  {
-   "threadId": "thread-us-military-disables-cargo-ves-df1889",
-   "born": "2026-10-11",
-   "factsInFixture": 4,
-   "entriesInWeek": 1,
-   "why": [
-    "random (seed 20261019)"
-   ]
-  },
-  {
-   "threadId": "thread-us-records-4-410-measles-cases-a1fdfd",
-   "born": "2026-10-16",
-   "factsInFixture": 3,
-   "entriesInWeek": 1,
-   "why": [
-    "random (seed 20261019)"
    ]
   }
  ]

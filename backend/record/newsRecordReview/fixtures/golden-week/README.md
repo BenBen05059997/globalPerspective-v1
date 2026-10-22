@@ -14,15 +14,17 @@ compares a real model's readings to the expected ones (spec: step 3, "Testing: t
   (same method as the judge benchmark); they are not written by hand here.
 
 ## Selection rule
-Active story = a story with any fact dated in the week (103 stories). Target 40; groups may overlap, so fewer are kept (32).
+Active story = a story with any fact dated in the week (103 stories). Target 40; groups overlap and some groups are short, so 29 are kept.
+Only stories with a `story_born` or `entry` fact are eligible: 14 of the 103 are forecast-only in the facts (a forecast_drawn with
+no entry anywhere) and were left out; that is a data finding, not a fixture choice.
 1. Top 10 by `entry` facts in the week (ties by threadId).
 2. Forecasts with a branch `due` in the week: only 7 stories qualify, all kept. The week holds no `verdict` facts.
 3. Duplicate candidates: pairs sharing a specific actor and a specific country, last facts within 14 days. Specific = carried by
-   fewer than 5% of the 103 active stories (decision 0037 rule). 12 pairs, 13 stories kept (the pairs are listed in the lane report).
+   fewer than 5% of the 103 active stories (decision 0037 rule). 12 pairs found, 10 eligible stories kept.
 4. 10 at random from the remaining active stories: mulberry32, seed 20261019, over the sorted threadId list, Fisher-Yates shuffle.
 
 ## Counts
-32 stories, 451 fact lines, 19 day files. Size is under 2 MB (see the lane report).
+29 stories, 462 fact lines, 19 day files, about 1.36 MB.
 
 ## Plan for expected readings
 Two independent Claude Opus agents each draft readings for every story (line, chapter, links, branch status) from `facts/` only,

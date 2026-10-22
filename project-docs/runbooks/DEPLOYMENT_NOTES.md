@@ -87,7 +87,9 @@ default frontend deployment workflow. Use them only for an explicitly authorized
 
 ## Existing front Worker (`globalperspective-rss`): live baseline and regression checks
 
-Live since 2026-10-20: `cloudflare/front-worker/production/worker.mjs`, version `cc57a42f-feb4-4607-9646-5ed2cd03d43f`
+Live since 2026-10-22 06:12Z: version `1e17cf9a-3dc6-4bce-bdaf-b5a7812d2f0a` = the 2026-10-20 code plus `DATA_ALLOWED` `record/views/` (code-only API upload as module `worker2.js`; settings unchanged; rollback target `cc57a42f-feb4-4607-9646-5ed2cd03d43f`). The repo `production/worker.mjs` additionally carries an `/analyze` redirect that has never been uploaded.
+
+Before that, live since 2026-10-20: `cloudflare/front-worker/production/worker.mjs`, version `cc57a42f-feb4-4607-9646-5ed2cd03d43f`
 (code-only API upload as module `worker2.js`; settings and secrets unchanged). Rollback target: `91ba1e98-0959-4387-84f3-10a0d5790ad8`.
 Check 2 below changed by design: `/map` now returns 301 to `/` (`x-rendered-by: cf-worker-redirect`).
 

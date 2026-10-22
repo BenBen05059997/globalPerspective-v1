@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): steps 1 and 2 backend live (facts, views, newsBoard); Worker upload and board UI release pending; forecast design open
+Status: active (2026-10-22): steps 1 and 2 live through the Worker; board UI release next; forecast loop built (deploy waits on DeepSeek)
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -74,7 +74,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Views builder from facts (no model) | lane (record) | no | ☑ | lanes J+L merged; deployed 2026-10-22 (CodeSha256 rAU3n3xP…); `record/views/` built: 519 stories, 1,052 files, manifest runId 2026-10-22-3 |
 | `newsBoard` reads the new view paths | lane (board) | no | ☑ | lane K merged 9717b849; deployed 2026-10-22 (CodeSha256 5ZfOxSsi…), no errors in logs |
 | `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☑ | 2026-10-22: `newsBoard-record` reads `record/views/index/{active,all}.json`, `record/views/links/*`; old paths removed |
-| Worker `DATA_ALLOWED` allowlist gains `record/views/` | coordinator | Worker upload and reader IAM: yes | ◐ | reader IAM done 2026-10-22 (`gp-worker-s3-reader` GetObject `record/views/*`); upload blocked by the session classifier: operator runs it. Upload = live code `cc57a42f` + the one line, not repo `worker.mjs` (repo also carries an unreleased `/analyze` redirect) |
+| Worker `DATA_ALLOWED` allowlist gains `record/views/` | coordinator | Worker upload and reader IAM: yes | ☑ | 2026-10-22 06:12Z: code-only API upload, version `1e17cf9a-3dc6-4bce-bdaf-b5a7812d2f0a` (rollback `cc57a42f`), live code + the one line (repo's unreleased `/analyze` redirect NOT included); settings identical before/after; `/data/record/views/{manifest,index/active,links/*}` 200 with the shared cache header, `record/facts`/`runs` 404, site routes unchanged |
 | Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | lane K merged 9717b849 (verify passes, unsettled zone, 0037 empty texts); not clicked in a browser, not released |
 | Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
 
@@ -152,3 +152,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: lanes J and K merged. Lane J notes for the operator: 499 of 519 stories hit the 50-link cap and 61% of link rows rest on one shared ground (a shared country or big outlet), so `links/` is mostly weak signal; survivors take merged entries but not forks (0037 says entries). Live steps wait on three IAM changes the session classifier blocks.
 - 2026-10-22: record profiled against live data (step 2b rows). Biggest finding: no verdict has ever been written, so the forecast loop is open; needs a design decision before step 3's branch status. Lane L opened (links rule, exact times); docs audit and forecast design research run in parallel on Sonnet.
 - 2026-10-22: operator yes; three IAM changes applied (newsStoryRecord views write, newsBoard views read, Worker reader views read). newsStoryRecord (J+L) and newsBoard (K) deployed; views built. Worker upload blocked by the classifier. Forecast research: the earlier "resolver commits nothing" reading was wrong; it is a sample by design (brief in mailbox artifacts).
+- 2026-10-22 06:12Z: Worker uploaded (operator yes), version 1e17cf9a; views reachable at /data/record/views/. Next: board UI click-through and release.

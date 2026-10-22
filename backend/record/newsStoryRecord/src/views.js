@@ -69,7 +69,7 @@ function forkRows(facts) {
       const v = verdicts.get(b.branchId);
       return {
         branchId: b.branchId, text: b.text, p: b.p, trigger: b.trigger, resolutionSource: b.resolutionSource, due: b.due,
-        verdict: v ? {at: v.at, result: v.payload.result, decidedBy: v.payload.decidedBy, evidence: v.payload.evidence ?? null} : null,
+        verdict: v ? {at: v.at, result: v.payload.result, decidedBy: v.payload.decidedBy, evidence: v.payload.evidence ?? null, voidReason: v.payload.voidReason ?? null} : null,
         ...(resolvable(b) ? {} : {legacy: true}),
       };
     }),

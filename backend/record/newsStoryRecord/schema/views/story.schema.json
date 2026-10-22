@@ -450,7 +450,8 @@
         "at",
         "result",
         "decidedBy",
-        "evidence"
+        "evidence",
+        "voidReason"
       ],
       "additionalProperties": false,
       "properties": {
@@ -474,7 +475,17 @@
             }
           ]
         },
-        "evidence": {}
+        "evidence": {},
+        "voidReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
       }
     }
   }

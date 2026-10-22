@@ -45,7 +45,7 @@ test('liveBranchCount counts branches due today or later with no verdict; latest
 test('the newest revision of a verdict wins for a branch', () => {
   const f = [X.entry('t', '2026-10-20T00:00:00.000Z', 'x'), X.forecast('t', '2026-10-20T01:00:00.000Z', 'F', [X.branch('b', '2026-10-30')]),
     X.verdict('t', '2026-10-21T00:00:00.000Z', 'b', 'yes', 1), X.verdict('t', '2026-10-23T00:00:00.000Z', 'b', 'void', 2)];
-  assert.deepEqual(build(f).stories.get('t').forks[0].branches[0].verdict, {at: '2026-10-23T00:00:00.000Z', result: 'void', decidedBy: 'agent', evidence: {url: 'https://e.test'}});
+  assert.deepEqual(build(f).stories.get('t').forks[0].branches[0].verdict, {at: '2026-10-23T00:00:00.000Z', result: 'void', decidedBy: 'agent', evidence: {url: 'https://e.test'}, voidReason: null});
 });
 
 test('a correction marks the corrected entry and is listed; other entries are untouched', () => {

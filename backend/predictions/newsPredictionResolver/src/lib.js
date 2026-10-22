@@ -100,26 +100,26 @@ const isDue = (deadline, today) => day(deadline) <= day(today);
 // ---- drafter validation ----
 const norm = (s) => String(s || '').toLowerCase().replace(/[‘’“”"']/g, '').replace(/\s+/g, ' ').trim();
 
-// A quote is valid only if it occurs in the title or snippet of the result it cites.
-function quoteInResult(quote, results, url) {
+// A quote is valid only if it occurs in the title or summary of the entry it cites (by eventId).
+function quoteInEntry(quote, entries, eventId) {
   const q = norm(quote);
   if (q.length < 12) return false;
-  const r = (results || []).find((x) => x.url === url);
-  if (!r) return false;
-  return norm(`${r.title} ${r.snippet}`).includes(q);
+  const e = (entries || []).find((x) => x.eventId && x.eventId === eventId);
+  if (!e) return false;
+  return norm(`${e.title} ${e.summary}`).includes(q);
 }
 
 /**
  * Turn a raw model answer into a draft verdict, enforcing the rules.
  * @returns {{verdict:'yes'|'no'|'void'|'not_yet'|'needs_human', voidReason?, quote?, url?, why?, note?}}
  */
-function validateDraft(raw, results, today, deadline) {
+function validateDraft(raw, entries, today, deadline) {
   const v = raw && typeof raw === 'object' ? raw : {};
   const verdict = String(v.verdict || '').toLowerCase();
   const why = String(v.why || '').slice(0, 300);
   if (verdict === 'yes') {
-    if (!quoteInResult(v.quote, results, v.url)) return { verdict: 'needs_human', why, note: 'yes without a quote found in a returned result' };
-    return { verdict: 'yes', quote: String(v.quote).trim(), url: v.url, why };
+    if (!quoteInEntry(v.quote, entries, v.event_id)) return { verdict: 'needs_human', why, note: 'yes without a quote found in a cited entry' };
+    return { verdict: 'yes', quote: String(v.quote).trim(), eventId: v.event_id, why };
   }
   if (verdict === 'no') {
     if (!canConcludeNo(deadline, today)) return { verdict: 'not_yet', why, note: 'NO not allowed before deadline + 3 days' };
@@ -137,13 +137,13 @@ function validateDraft(raw, results, today, deadline) {
 // yes needs two independent agreeing passes; anything else with a disagreement is a human call.
 function combinePasses(a, b) {
   if (a.verdict !== 'yes') return a;
-  if (b && b.verdict === 'yes') return { ...a, pass2: { url: b.url, quote: b.quote } };
-  return { verdict: 'needs_human', why: a.why, note: 'second pass did not confirm yes', pass1: { url: a.url, quote: a.quote } };
+  if (b && b.verdict === 'yes') return { ...a, pass2: { eventId: b.eventId, quote: b.quote } };
+  return { verdict: 'needs_human', why: a.why, note: 'second pass did not confirm yes', pass1: { eventId: a.eventId, quote: a.quote } };
 }
 
 module.exports = {
   RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, VOID_REASONS,
   sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks, isMonday,
   newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
-  quoteInResult, validateDraft, combinePasses,
+  quoteInEntry, validateDraft, combinePasses,
 };

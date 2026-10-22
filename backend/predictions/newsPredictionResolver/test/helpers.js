@@ -46,7 +46,8 @@ function predRow(topic, sk, n, { lead = 30, thread } = {}) {
 function fakeFacts(files = {}) {
   return { async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; } };
 }
-const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
+let evN = 0;
+const entryFact = (threadId, date, extra = {}) => ({ kind: 'entry', threadId, date, eventId: `ev${threadId}${date}${++evN}`, at: `${date}T08:00:00.000Z`, payload: { title: `Update ${threadId}`, summary: `New development for ${threadId}` }, sources: [{ outlet: 'ex.com', url: `https://ex.com/${threadId}`, title: `Update ${threadId}` }], ...extra });
 
 // The real s3json helper over an in-memory S3 client (offline). objects: Map(key -> text).
 function fakeS3() {

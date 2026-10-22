@@ -64,7 +64,7 @@ test('end to end: tick commits, then the Monday tick reveals and draws; SAMPLED 
   const preds = [];
   for (let i = 0; i < 40; i++) preds.push(predRow(`t${i}`, `2026-10-0${5 + (i % 5)}`, 3));
   const store = fakeStore(preds);
-  const mk = (iso) => ({ store, now: () => iso, search: async () => [], llm: async () => ({}), draftModel: 'm' });
+  const mk = (iso) => ({ store, now: () => iso, llm: async () => ({}), draftModel: 'm' });
   await run({ action: 'tick' }, mk('2026-10-01T10:30:00.000Z'));
   const out = await run({ action: 'tick' }, mk('2026-10-12T10:30:00.000Z'));
   assert.equal(out.drawn.length, 1);
@@ -88,7 +88,7 @@ test('end to end: tick commits, then the Monday tick reveals and draws; SAMPLED 
 
 test('a missing seed secret is reported, and a new seed is never invented for a committed week', async () => {
   const store = fakeStore([predRow('t', '2026-10-06', 1)]);
-  const mk = (iso) => ({ store, now: () => iso, search: async () => [], llm: async () => ({}), draftModel: 'm' });
+  const mk = (iso) => ({ store, now: () => iso, llm: async () => ({}), draftModel: 'm' });
   await run({ action: 'tick' }, mk('2026-10-01T10:30:00.000Z'));
   store.rows.delete('SEED#2026-W41\u0000SECRET');
   const out = await run({ action: 'draw', weekId: '2026-W41' }, mk('2026-10-13T10:30:00.000Z'));
@@ -110,7 +110,7 @@ test('new sampled questions keep the PRED threadId, with legacy null and unchang
  const modern=predRow('modern','2026-10-06',1);modern.threadId='thread-canonical';
  const legacy=predRow('legacy','2026-10-06',1);delete legacy.threadId;
  const store=fakeStore([modern,legacy]);
- const deps=iso=>({store,now:()=>iso,search:async()=>[],llm:async()=>({}),draftModel:'m'});
+ const deps=iso=>({store,now:()=>iso,llm:async()=>({}),draftModel:'m'});
  await run({action:'tick'},deps('2026-10-01T10:30:00Z'));
  await run({action:'draw',weekId:'2026-W41'},deps('2026-10-12T10:30:00Z'));
  const sampled=[...store.rows.values()].filter(r=>r.SK==='SAMPLED');

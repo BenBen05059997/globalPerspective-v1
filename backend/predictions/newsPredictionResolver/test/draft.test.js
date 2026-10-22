@@ -4,24 +4,26 @@ const assert = require('node:assert/strict');
 const lib = require('../src/lib');
 const { buildPrompt, draftQuestion } = require('../src/draft');
 const { run } = require('../src/index');
-const { fakeStore } = require('./helpers');
+const { fakeStore, fakeFacts, entryFact } = require('./helpers');
 
-const Q = { qid: 'x', question: 'Country A ratifies the trade treaty', deadline: '2026-11-10', issuedAt: '2026-10-01T05:00:00Z', storyTitle: 'Trade talks', resolutionSource: 'Official Gazette of Country A' };
-const RESULTS = [{ title: 'Country A ratifies the trade treaty in parliament vote', snippet: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a', source: 'ex.com', age: '2 days ago' }];
+const Q = { qid: 'x', threadId: 'tQ', question: 'Country A ratifies the trade treaty', deadline: '2026-11-10', issuedAt: '2026-10-01T05:00:00Z', storyTitle: 'Trade talks', resolutionSource: 'Official Gazette of Country A' };
+const ENTRIES = [{ eventId: 'e1', title: 'Country A ratifies the trade treaty in parliament vote', summary: 'Lawmakers voted 200-10 on Tuesday.', date: '2026-11-05', url: 'https://ex.com/a' }];
+const FACTS = fakeFacts({ '2026-11-05': [entryFact('tQ', '2026-11-05', { eventId: 'e1', payload: { title: ENTRIES[0].title, summary: ENTRIES[0].summary } })] });
+const QB = { ...Q, bundle: { entries: ENTRIES, complete: true } };
 const NOW = '2026-11-20T10:30:00.000Z';
 
 test('p never appears in a prompt, even if the object carries it', () => {
-  const p = buildPrompt({ ...Q, p: 73, probability: 0.61, scenarioProbability: 0.4 }, RESULTS, '2026-11-20');
+  const p = buildPrompt({ ...Q, p: 73, probability: 0.61, scenarioProbability: 0.4 }, ENTRIES, '2026-11-20');
   assert.ok(!/\b73\b/.test(p) && !/0\.61/.test(p) && !/probab/i.test(p.replace(/never guess/gi, '')) );
 });
 
-test('quote must occur in the cited result; otherwise yes becomes needs_human', () => {
-  const ok = lib.validateDraft({ verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a' }, RESULTS, NOW, Q.deadline);
+test('quote must occur in the cited entry; otherwise yes becomes needs_human', () => {
+  const ok = lib.validateDraft({ verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', event_id: 'e1' }, ENTRIES, NOW, Q.deadline);
   assert.equal(ok.verdict, 'yes');
-  const bad = lib.validateDraft({ verdict: 'yes', quote: 'The treaty was signed by the president', url: 'https://ex.com/a' }, RESULTS, NOW, Q.deadline);
+  const bad = lib.validateDraft({ verdict: 'yes', quote: 'The treaty was signed by the president', event_id: 'e1' }, ENTRIES, NOW, Q.deadline);
   assert.equal(bad.verdict, 'needs_human');
-  const wrongUrl = lib.validateDraft({ verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://other.com' }, RESULTS, NOW, Q.deadline);
-  assert.equal(wrongUrl.verdict, 'needs_human');
+  const wrongEntry = lib.validateDraft({ verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', event_id: 'nope' }, ENTRIES, NOW, Q.deadline);
+  assert.equal(wrongEntry.verdict, 'needs_human');
 });
 
 test('NO before deadline + 3 days becomes not_yet; after it, no', () => {
@@ -36,15 +38,15 @@ test('void needs a valid reason', () => {
 
 test('yes needs two agreeing passes', async () => {
   let call = 0;
-  const yes = { verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a' };
-  const both = await draftQuestion(Q, { now: () => NOW, search: async () => RESULTS, llm: async () => yes });
+  const yes = { verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', event_id: 'e1' };
+  const both = await draftQuestion(QB, { now: () => NOW, facts: FACTS, llm: async () => yes });
   assert.equal(both.verdict, 'yes');
-  const disagree = await draftQuestion(Q, { now: () => NOW, search: async () => RESULTS, llm: async () => (call++ === 0 ? yes : { verdict: 'not_yet' }) });
+  const disagree = await draftQuestion(QB, { now: () => NOW, facts: FACTS, llm: async () => (call++ === 0 ? yes : { verdict: 'not_yet' }) });
   assert.equal(disagree.verdict, 'needs_human');
 });
 
 test('an LLM failure becomes needs_human, never a verdict', async () => {
-  const d = await draftQuestion(Q, { now: () => NOW, search: async () => RESULTS, llm: async () => { throw new Error('402'); } });
+  const d = await draftQuestion(QB, { now: () => NOW, facts: FACTS, llm: async () => { throw new Error('402'); } });
   assert.equal(d.verdict, 'needs_human');
 });
 
@@ -54,7 +56,7 @@ test('draft pass: only sampled questions past their deadline, no verdict yet; DR
   await store.putOnce({ PK: 'Q#future', SK: 'SAMPLED', qid: 'future', ...Q, deadline: '2026-12-31' });
   await store.putOnce({ PK: 'Q#done', SK: 'SAMPLED', qid: 'done', ...Q });
   await store.putOnce({ PK: 'Q#done', SK: 'VERDICT', verdict: 'yes' });
-  const deps = { store, now: () => NOW, search: async () => RESULTS, llm: async () => ({ verdict: 'not_yet', why: 'unclear' }), draftModel: 'm' };
+  const deps = { store, now: () => NOW, facts: FACTS, llm: async () => ({ verdict: 'not_yet', why: 'unclear' }), draftModel: 'm' };
   const dry = await run({ action: 'draft', dryRun: true }, deps);
   assert.deepEqual(dry.wouldCheck.map((x) => x.qid), ['due']);
   assert.equal([...store.rows.values()].filter((r) => r.SK.startsWith('DRAFT#')).length, 0);
@@ -68,14 +70,14 @@ test('draft pass: only sampled questions past their deadline, no verdict yet; DR
 
 test('replay writes nothing and returns usage', async () => {
   const store = fakeStore();
-  const out = await run({ action: 'replay', items: [Q] }, { store, now: () => NOW, search: async () => RESULTS, llm: async () => ({ verdict: 'not_yet' }), usage: () => ({ llmCalls: 1 }) });
+  const out = await run({ action: 'replay', items: [QB] }, { store, now: () => NOW, facts: FACTS, llm: async () => ({ verdict: 'not_yet' }), usage: () => ({ llmCalls: 1 }) });
   assert.equal(out.results.length, 1);
   assert.equal(store.rows.size, 0);
   assert.deepEqual(out.usage, { llmCalls: 1 });
 });
 
 // ---- auto verdicts (decision 0034) ----
-const YES = { verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a', why: 'w' };
+const YES = { verdict: 'yes', quote: 'Lawmakers voted 200-10 on Tuesday.', event_id: 'e1', why: 'w' };
 const verdictRows = (store, qid) => [...store.rows.values()].filter((r) => r.PK === `Q#${qid}` && r.SK.startsWith('VERDICT')).sort((a, b) => a.SK.localeCompare(b.SK));
 async function sampledStore(deadline = '2026-11-10') {
   const store = fakeStore();
@@ -85,7 +87,7 @@ async function sampledStore(deadline = '2026-11-10') {
 
 test('draft pass writes the verdict at once: confirmedBy resolver, draftSk, evidence', async () => {
   const store = await sampledStore();
-  const out = await run({ action: 'draft' }, { store, now: () => NOW, search: async () => RESULTS, llm: async () => YES, draftModel: 'm' });
+  const out = await run({ action: 'draft' }, { store, now: () => NOW, facts: FACTS, llm: async () => YES, draftModel: 'm' });
   assert.deepEqual(out.settled, [{ qid: 'due', verdict: 'yes' }]);
   const [v] = verdictRows(store, 'due');
   const draft = [...store.rows.values()].find((r) => r.SK.startsWith('DRAFT#'));
@@ -93,7 +95,7 @@ test('draft pass writes the verdict at once: confirmedBy resolver, draftSk, evid
   assert.equal(v.verdict, 'yes');
   assert.equal(v.confirmedBy, 'resolver');
   assert.equal(v.draftSk, draft.SK);
-  assert.deepEqual(v.evidence, { quote: 'Lawmakers voted 200-10 on Tuesday.', url: 'https://ex.com/a', title: 'Country A ratifies the trade treaty in parliament vote', date: null });
+  assert.deepEqual(v.evidence, { eventId: 'e1', quote: 'Lawmakers voted 200-10 on Tuesday.', date: '2026-11-05' });
   assert.equal(v.p, undefined);
   // settled questions are not drafted again
   assert.equal((await run({ action: 'draft', dryRun: true }, { store, now: () => '2026-11-30T10:30:00.000Z' })).wouldCheck.length, 0);
@@ -101,18 +103,18 @@ test('draft pass writes the verdict at once: confirmedBy resolver, draftSk, evid
 
 test('void draft becomes a void verdict with its reason; a NO draft has no quote', async () => {
   const store = await sampledStore();
-  await run({ action: 'draft' }, { store, now: () => NOW, search: async () => RESULTS, llm: async () => ({ verdict: 'void', void_reason: 'event_moot' }), draftModel: 'm' });
+  await run({ action: 'draft' }, { store, now: () => NOW, facts: FACTS, llm: async () => ({ verdict: 'void', void_reason: 'event_moot' }), draftModel: 'm' });
   const [v] = verdictRows(store, 'due');
   assert.equal(v.verdict, 'void'); assert.equal(v.voidReason, 'event_moot'); assert.equal(v.evidence, null);
   const s2 = await sampledStore();
-  await run({ action: 'draft' }, { store: s2, now: () => NOW, search: async () => RESULTS, llm: async () => ({ verdict: 'no' }), draftModel: 'm' });
+  await run({ action: 'draft' }, { store: s2, now: () => NOW, facts: FACTS, llm: async () => ({ verdict: 'no' }), draftModel: 'm' });
   assert.equal(verdictRows(s2, 'due')[0].verdict, 'no');
 });
 
 test('unclear drafts stay open, are re-drafted after 5 days, and the third makes a void', async () => {
   const store = await sampledStore();
   const unclear = async () => ({ verdict: 'not_yet', why: 'unclear' });
-  const at = (iso) => ({ store, now: () => iso, search: async () => RESULTS, llm: unclear, draftModel: 'm' });
+  const at = (iso) => ({ store, now: () => iso, facts: FACTS, llm: unclear, draftModel: 'm' });
   await run({ action: 'draft' }, at('2026-11-20T10:30:00.000Z'));
   assert.equal(verdictRows(store, 'due').length, 0);
   // not re-drafted before the threshold, drafted again on day 5
@@ -131,7 +133,7 @@ test('unclear drafts stay open, are re-drafted after 5 days, and the third makes
 test('LLM outages never count toward voiding a question', async () => {
   const store = await sampledStore();
   const failing = async () => { throw new Error('502 upstream'); };
-  const at = (iso) => ({ store, now: () => iso, search: async () => RESULTS, llm: failing, draftModel: 'm' });
+  const at = (iso) => ({ store, now: () => iso, facts: FACTS, llm: failing, draftModel: 'm' });
   await run({ action: 'draft' }, at('2026-11-20T10:30:00.000Z'));
   await run({ action: 'draft' }, at('2026-11-25T10:30:00.000Z'));
   const out = await run({ action: 'draft' }, at('2026-11-30T10:30:00.000Z'));
@@ -143,7 +145,7 @@ test('LLM outages never count toward voiding a question', async () => {
 test('tick settles a draft that is already waiting, without calling the LLM, and is idempotent', async () => {
   const store = await sampledStore();
   await store.putOnce({ PK: 'Q#due', SK: 'DRAFT#2026-11-16T10:30:00.000Z', qid: 'due', verdict: 'no', why: 'w' });
-  const deps = { store, now: () => '2026-11-21T10:30:00.000Z', search: async () => { throw new Error('no search'); }, llm: async () => { throw new Error('no llm'); } };
+  const deps = { store, now: () => '2026-11-21T10:30:00.000Z', llm: async () => { throw new Error('no llm'); } };
   const dry = await run({ action: 'tick', dryRun: true }, deps);
   assert.deepEqual(dry.wouldSettle, [{ qid: 'due', verdict: 'no' }]);
   assert.equal(verdictRows(store, 'due').length, 0);

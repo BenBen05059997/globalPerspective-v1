@@ -27,7 +27,7 @@ test('verdict windows: NO only after deadline + 3 days', () => {
 });
 
 const clock = (iso) => () => iso;
-const deps = (store, iso) => ({ store, now: clock(iso), search: async () => [], llm: async () => ({}), draftModel: 'm' });
+const deps = (store, iso) => ({ store, now: clock(iso), llm: async () => ({}), draftModel: 'm' });
 
 test('bootstrap tick on a Thursday commits the next TWO weeks, never the current one', async () => {
   const store = fakeStore();

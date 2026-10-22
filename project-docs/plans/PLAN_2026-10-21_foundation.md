@@ -94,7 +94,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
 | Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ☐ | decision 0040; selection audit 2026-10-22 |
-| `newsStoryRecord`: `article` facts from the inbox, `inputs.rawDay`, `counts.articles` | lane X | no | ☐ | |
+| `newsStoryRecord`: `article` facts from the inbox, `inputs.rawDay`, `counts.articles` | lane X | no | ☑ | merged 23e889d2 (115 tests); deployed 2026-10-22 (CodeSha256 2HsdSf0oV…); inbox empty so views unchanged; the Run now reports `rawDay: missing` until the selector writes the inbox |
 | IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☐ | |
 | Run alarm for a missing raw day | coordinator | yes | ☐ | |
 | Recovery of 2026-09-14..29, 10-14, 10-20+ from GDELT DOC + GKG, Wayback backstop, before 2026-12-14 | lane (recovery) | run: yes | ☐ | articles only, labelled "recovered from public records", no forecasts |

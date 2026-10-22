@@ -712,3 +712,17 @@ test('Y1: assignmentsBackfill derives one ingest assignment per existing entry f
   assert.deepEqual([again.written, again.alreadyAssigned, again.days], [0, 20, []]);
   assert.equal(f.objs.get(`${P}facts/2026-10-20.jsonl`).body, body);
 });
+
+test('Y2: an operator inbox line moves an entry between story views on the next run; the ingest assignments alone leave the views as they were', async () => {
+  const f = fakeS3();
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  const before = f.json(`${P}views/stories/thread-1.json`);
+  const moved = before.entries[0];
+  const other = f.json(`${P}views/index/all.json`).stories.find((s) => s.threadId !== 'thread-1').threadId;
+  putLines(f, `${P}inbox/assignments/2026-10-20.jsonl`, [assignLine({entryId: moved.eventId, threadId: other, at: '2026-10-20T20:00:00.000Z'})]);
+  await make(dayStore(), f, () => '2026-10-21T06:45:00.000Z').handler({date: '2026-10-20'});
+  assert.equal(f.json(`${P}views/stories/thread-1.json`).entries.some((e) => e.eventId === moved.eventId), false);
+  const to = f.json(`${P}views/stories/${other}.json`).entries.find((e) => e.eventId === moved.eventId);
+  assert.equal(to.reassignedFrom, 'thread-1');
+  assert.equal(f.json(`${P}views/index/all.json`).stories.find((s) => s.threadId === 'thread-1').entryCount, before.entries.length - 1);
+});

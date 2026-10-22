@@ -428,6 +428,10 @@
           "type": "string",
           "description": "present on an entry that came from a story merged into this one"
         },
+        "reassignedFrom": {
+          "type": "string",
+          "description": "present on an entry whose current assignment (0040 rule 3) moved it here from the archive thread named"
+        },
         "corrected": {
           "const": true,
           "description": "present when a correction fact names this entry"

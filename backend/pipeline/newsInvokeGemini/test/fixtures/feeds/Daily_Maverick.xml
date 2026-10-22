@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/">
+  <channel>
+    <title><![CDATA[Daily Maverick - Latest News]]></title>
+    <atom:link href="https://www.dailymaverick.co.za/rss/" rel="self" type="application/rss+xml" />
+    <link>https://www.dailymaverick.co.za</link>
+    <description><![CDATA[Latest news and analysis from Daily Maverick]]></description>
+    <language>en-ZA</language>
+    <pubDate>Thu, 22 Oct 2026 09:06:14 GMT</pubDate>
+    <lastBuildDate>Thu, 22 Oct 2026 09:06:14 GMT</lastBuildDate>
+    <managingEditor>no-reply@dailymaverick.co.za (Editor)</managingEditor>
+    <webMaster>no-reply@dailymaverick.co.za (Webmaster)</webMaster>
+    
+    <sy:updatePeriod>hourly</sy:updatePeriod>
+    <sy:updateFrequency>1</sy:updateFrequency>
+    
+    <image>
+      <url>https://www.dailymaverick.co.za/images/logos/dailymaverick/masthead.svg</url>
+      <title>Daily Maverick</title>
+      <link>https://www.dailymaverick.co.za</link>
+    </image>
+    
+    
+      <item>
+        <title><![CDATA[Beatings, cyberattacks and threats darken Vucic’s Serbia ahead of elections]]></title>
+        <description><![CDATA[Serbian activist Marko Marjanovic was on his way back from the supermarket in Belgrade when masked officers bundled him into a car and took him to a police station basement where he was held in solitary confinement for two days under bright lights.]]></description>
+        
+        <author><![CDATA[Reuters]]></author>
+        <link>https://www.dailymaverick.co.za/article/2026-10-22-beatings-cyberattacks-and-threats-darken-vucics-serbia-ahead-of-elections/</link>
+        <guid>https://www.dailymaverick.co.za/article/2026-10-22-beatings-cyberattacks-and-threats-darken-vucics-serbia-ahead-of-elections/</guid>
+        <pubDate>Thu, 22 Oct 2026 10:45:54 GMT</pubDate>
+        <category>World</category>
+        <enclosure url="https://cdn.dailymaverick.co.za/i/ig_m80y1IT6VNZfStgt9XuWpjl8=/800x0/smart/filters:strip_exif()/file/attachments/2999/14336453_148889.jpg" type="image/jpeg" />
+      </item>
+<item>
+        <title><![CDATA[Taiwan probes organised crime links to China’s ‘transnational repression’]]></title>
+        <description><![CDATA[Taiwan is probing organised crime's links to Chinese efforts to carry out "transnational repression", a security official said on Thursday, after Taipei's government said Beijing was behind an attack on a comedian who mocked President Xi Jinping.]]></description>
+        
+        <author><![CDATA[Reuters]]></author>
+        <link>https://www.dailymaverick.co.za/article/2026-10-22-taiwan-probes-organised-crime-links-to-chinas-transnational-repression/</link>
+        <guid>https://www.dailymaverick.co.za/article/2026-10-22-taiwan-probes-organised-crime-links-to-chinas-transnational-repression/</guid>
+        <pubDate>Thu, 22 Oct 2026 10:40:49 GMT</pubDate>
+        <category>World</category>
+        <enclosure url="https://cdn.dailymaverick.co.za/i/2iR-dNXSE4-ZL0DZxvlYZTJDf8M=/800x0/smart/filters:strip_exif()/file/attachments/2999/14356793_331178.jpg" type="image/jpeg" />
+      </item>
+<item>
+        <title><![CDATA[Two killed, 8 injured in attack on airport in Saudi oil city Dammam]]></title>
+        <description><![CDATA[Two people were killed and eight were injured in an attack on Wednesday evening on King Fahd International Airport in Saudi Arabia's eastern oil city of Dammam, Saudi Arabia's General Authority of Civil Aviation said on Thursday.]]></description>
+        
+        <author><![CDATA[Reuters]]></author>
+        <link>https://www.dailymaverick.co.za/article/2026-10-22-two-killed-8-injured-in-attack-on-airport-in-saudi-oil-city-dammam/</link>
+        <guid>https://www.dailymaverick.co.za/article/2026-10-22-two-killed-8-injured-in-attack-on-airport-in-saudi-oil-city-dammam/</guid>
+        <pubDate>Thu, 22 Oct 2026 10:40:44 GMT</pubDate>
+        <category>World</category>
+        <enclosure url="https://cdn.dailymaverick.co.za/i/aqCKVKwCU0f8VuN4ylL06ZKGwWM=/800x0/smart/filters:strip_exif()/file/attachments/2999/14237139_154299.jpg" type="image/jpeg" />
+      </item>
+</channel></rss>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+   <channel>
+      <title><![CDATA[CBC | World News]]></title>
+      <description><![CDATA[FOR PERSONAL USE ONLY]]></description>
+      <link>https://www.cbc.ca/news/world/?cmp=rss</link>
+      <copyright><![CDATA[Copyright: (C) Canadian Broadcasting Corporation, http://www.cbc.ca/aboutcbc/discover/termsofuse.html#Rss]]></copyright>
+      <docs><![CDATA[https://www.cbc.ca/rss]]></docs>
+      <lastBuildDate>Thu, 22 Oct 2026 04:16:34 EDT</lastBuildDate>
+      <atom:link href="https://www.cbc.ca/webfeed/rss/rss-world" rel="self" type="application/rss+xml"/>
+      <image>
+         <title><![CDATA[CBC | World News]]></title>
+         <url>https://www.cbc.ca/rss/image/cbc_144.gif</url>
+         <link>https://www.cbc.ca/news/world/?cmp=rss</link>
+      </image>
+      <item>
+         <title><![CDATA[Canadians caught up in Trump voter fraud crackdown as U.S. accuses Canada of election interference]]></title>
+         <link>https://www.cbc.ca/news/canada/canadians-caught-up-in-trump-crackdown-on-noncitizen-voting-midterms-9.7390326?cmp=rss</link>
+         <description><img src='https://i.cbc.ca/ais/f5a568dc-f71a-47d3-b5a7-ee3918707fdf,1792610956695/full/max/0/default.jpg?im=Crop%2Crect%3D%280%2C16%2C5806%2C3265%29%3B' alt='People vote in the U.S.' width='620' height='349' title='People vote during early voting at the Hamilton County Board of Elections on Oct. 9, 2026 in Norwood, Ohio.'/><p>Since late last year, federal prosecutors have charged dozens of non-citizens, many of them longtime U.S. permanent residents, with illegally voting in federal elections. At least 11 Canadians have been caught up in the crackdown ahead of the Nov. 3 midterm elect</description>
+         <pubDate>Thu, 22 Oct 2026 04:00:00 EDT</pubDate>
+         <category>News/Canada</category>
+         <guid isPermaLink="false">9.7390326</guid>
+         <dc:creator>Verity Stevenson, Thomas Daigle</dc:creator>
+         <dc:type>story</dc:type>
+         <dc:rights>Syndication Allowed</dc:rights>
+      </item>
+<item>
+         <title><![CDATA[Australian MP loses both legs after alleged vehicle attack as suspect appears in court]]></title>
+         <link>https://www.cbc.ca/news/world/australian-politician-car-9.7389606?cmp=rss</link>
+         <description><img src='https://i.cbc.ca/ais/8ec431c8-308e-44e2-b37c-aece36b75f14,1792569638724/full/max/0/default.jpg?im=Crop%2Crect%3D%280%2C0%2C7184%2C4041%29%3B' alt='A woman with grey hair and wearing a white blazer stands to speak in a legislature.' width='620' height='349' title='Independent Member for Indi Helen Haines arrives for Question Time in the House of Representatives at Parliament House in Canberra, Australia, October 25, 2022.  AAP/Mick Tsikas via REUTERS    ATTENTION EDITORS - THIS IMAGE WAS PROVIDED BY A THIRD PARTY. NO RESALES. NO ARCHIVE. AUSTRALIA OUT. NEW ZEALAND OUT. NO COM</description>
+         <pubDate>Wed, 21 Oct 2026 06:15:16 EDT</pubDate>
+         <category>News/World</category>
+         <guid isPermaLink="false">9.7389606</guid>
+         <dc:type>story</dc:type>
+         <dc:rights>Syndication Allowed</dc:rights>
+      </item>
+<item>
+         <title><![CDATA[U.S. Embassy says Carney government brushing off 'potential interference' in midterms]]></title>
+         <link>https://www.cbc.ca/news/politics/canada-us-embassy-alleged-election-interference-9.7390549?cmp=rss</link>
+         <description><img src='https://i.cbc.ca/ais/40e3b883-674d-4613-8bcc-6244e025773f,1792614371245/full/max/0/default.jpg?im=Crop%2Crect%3D%280%2C0%2C5105%2C2871%29%3B' alt='A man in a suit gestures with his hands as he speaks on a stage.' width='620' height='349' title='U.S. Ambassador to Canada Pete Hoekstra speaks during a fireside chat at the SpaceBound 2026 Conference in Gatineau, Que., on Tuesday, Oct. 20, 2026.'/><p>The U.S. Embassy in Ottawa says the federal government is brushing off concerns about "potential interference in U.S. elections" after Prime Minister Mark Carney insisted that Canad</description>
+         <pubDate>Wed, 21 Oct 2026 17:03:27 EDT</pubDate>
+         <category>News/Politics</category>
+         <guid isPermaLink="false">9.7390549</guid>
+         <dc:creator>Darren Major</dc:creator>
+         <dc:type>story</dc:type>
+         <dc:rights>Syndication Allowed</dc:rights>
+      </item>
+</channel></rss>

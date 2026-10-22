@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	xmlns:media="http://search.yahoo.com/mrss/"
+        xmlns:jto="http://www.japantimes.co.jp/rss/1.0/jto">
+        
+    <channel>
+        <title>Latest articles - The Japan Times</title>
+	<link>https://www.japantimes.co.jp/</link>
+	<atom:link href="https://www.japantimes.co.jp/feed/" rel="self" type="application/rss+xml" />
+	<description>News on Japan, Business News, Opinion, Sports, Entertainment and More</description>
+	<category>Newspaper</category>
+	<language>en-US</language>
+	<sy:updatePeriod>hourly</sy:updatePeriod>
+	<sy:updateFrequency>1</sy:updateFrequency>
+	<pubDate>Thu, 22 Oct 2026 18:03:27 +0900</pubDate>
+	<lastBuildDate>Thu, 22 Oct 2026 18:03:27 +0900</lastBuildDate>
+	<managingEditor>webmaster@japantimes.co.jp (Web Master)</managingEditor>
+        
+        <item>
+            <title><![CDATA[ ‘In my DNA’: Why Osaka’s high-risk <i>danjiri</i> festivals refuse to slow down ]]></title>
+            <link>https://www.japantimes.co.jp/news/2026/10/22/japan/society/danjiri-festival-safety-concerns/</link>
+            <category>JAPAN</category>
+            <pubDate>Thu, 22 Oct 2026 18:00:00 +0900</pubDate>
+                        
+            <jto:credit><![CDATA[ Staff writer ]]></jto:credit>
+                        
+            <jto:tag><![CDATA[ Osaka, shinto, festivals, shrines ]]></jto:tag>
+                
+            <jto:author>Mai Yoshikawa</jto:author>
+            <guid isPermaLink="false">https://www.japantimes.co.jp/article/648114/</guid>
+            <description><![CDATA[A pair of fatal incidents this month has revived a long-running debate: Does Osaka's high-risk danjiri festival still have a place in modern society?]]></description>
+                
+            <media:thumbnail url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/thumbs/400x400/569972.jpg" />
+            <media:content url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/569972.jpg" medium="image">
+                <media:credit><![CDATA[AFLO]]></media:credit>
+            </media:content>
+        </item>
+<item>
+            <title><![CDATA[ Japan’s biggest labor union federation calls for 6% wage hike in 2027 ]]></title>
+            <link>https://www.japantimes.co.jp/business/2026/10/22/economy/japan-rengo-union-wage-hike-demand/</link>
+            <category>BUSINESS</category>
+            <pubDate>Thu, 22 Oct 2026 17:31:00 +0900</pubDate>
+                        
+            <jto:credit><![CDATA[ Bloomberg ]]></jto:credit>
+                        
+            <jto:tag><![CDATA[ Rengo, wages, inflation, unions ]]></jto:tag>
+                
+            <jto:author>Erica Yokoyama</jto:author>
+            <guid isPermaLink="false">https://www.japantimes.co.jp/article/648119/</guid>
+            <description><![CDATA[Member unions typically submit their wage demands by around February, with companies responding from March onward.]]></description>
+                
+            <media:thumbnail url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/thumbs/400x400/570001.jpg" />
+            <media:content url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/570001.jpg" medium="image">
+                <media:credit><![CDATA[BLOOMBERG]]></media:credit>
+            </media:content>
+        </item>
+<item>
+            <title><![CDATA[ NPA suspects police in Kanagawa used old drivers’ licenses illegally ]]></title>
+            <link>https://www.japantimes.co.jp/news/2026/10/22/japan/crime-legal/kanagawa-police-drivers-license/</link>
+            <category>JAPAN</category>
+            <pubDate>Thu, 22 Oct 2026 17:08:00 +0900</pubDate>
+                        
+            <jto:credit><![CDATA[ Jiji ]]></jto:credit>
+                        
+            <jto:tag><![CDATA[ Kanagawa, Japanese police, privacy ]]></jto:tag>
+                
+            <jto:author></jto:author>
+            <guid isPermaLink="false">https://www.japantimes.co.jp/article/648117/</guid>
+            <description><![CDATA[The national police agency has instructed Kanagawa police to confirm the facts in full detail, and has set up a team to conduct a probe nationwide.]]></description>
+                
+            <media:thumbnail url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/thumbs/400x400/569957.jpg" />
+            <media:content url="https://www.japantimes.co.jp/japantimes/uploads/images/2026/10/22/569957.jpg" medium="image">
+                <media:credit><![CDATA[JOHAN BROOKS]]></media:credit>
+            </media:content>
+        </item>
+</channel></rss>

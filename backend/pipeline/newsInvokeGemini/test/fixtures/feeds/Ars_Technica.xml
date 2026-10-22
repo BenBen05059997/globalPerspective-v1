@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" version="2.0">
+    <channel>
+        <title>Ars Technica - All content</title>
+        <atom:link href="https://arstechnica.com/feed/" rel="self" type="application/rss+xml"/>
+        <link>https://arstechnica.com</link>
+        <description>All Ars Technica stories</description>
+        <lastBuildDate>Wed, 21 Oct 2026 22:17:50 +0000</lastBuildDate>
+        <language>en-US</language>
+        <sy:updatePeriod>
+            hourly        </sy:updatePeriod>
+        <sy:updateFrequency>
+            1        </sy:updateFrequency>
+        
+<image>
+	<url>https://cdn.arstechnica.net/wp-content/uploads/2016/10/cropped-ars-logo-512_480-60x60.png</url>
+	<title>Ars Technica</title>
+	<link>https://arstechnica.com</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+            <item>
+                <title>FCC chair warns media not to run the "fake polls" Trump keeps complaining about</title>
+                <link>https://arstechnica.com/tech-policy/2026/10/fcc-chair-warns-media-not-to-run-the-fake-polls-trump-keeps-complaining-about/</link>
+                                    <comments>https://arstechnica.com/tech-policy/2026/10/fcc-chair-warns-media-not-to-run-the-fake-polls-trump-keeps-complaining-about/#comments</comments>
+                
+                <dc:creator>
+                    <![CDATA[Jon Brodkin]]>
+                </dc:creator>
+                <pubDate>Wed, 21 Oct 2026 22:17:50 +0000</pubDate>
+                		<category><![CDATA[Policy]]></category>
+		<category><![CDATA[brendan carr]]></category>
+		<category><![CDATA[fake polls]]></category>
+		<category><![CDATA[FCC]]></category>
+		<category><![CDATA[Trump]]></category>
+                <guid isPermaLink="true">https://arstechnica.com/tech-policy/2026/10/fcc-chair-warns-media-not-to-run-the-fake-polls-trump-keeps-complaining-about/</guid>
+
+                                    <description>
+                        <![CDATA[Ex-FCC chairs say Brendan Carr aims to scare broadcasters into self-censorship.]]>
+                    </description>
+                                                                <content:encoded>
+                            <![CDATA[<p>Federal Communications Commission Chairman Brendan Carr today warned broadcasters about airing "fake polls," amplifying one of the many complaints that President Trump has regularly made about the news media.</p>
+<p>Carr's <a href="https://x.com/brendancarrfcc/status/2112913475705934326">post on X</a> said, "Many journalists and broadcasters have been amplifying or airing these Polls without regard to basic journalistic ethics and without informing the public that those Polls lack a scientific, accurate, or even real basis... Broadcasters are advised to avoid engaging in News Distortions or running Broadcast Hoaxes by airing Polls that would violate their regulatory obligations."</p>
+<p>Carr urged broadcasters to "provide their viewers with additional context and information about Polls they have covered." In fact, one small polling outfit was exposed as a hoax this week, and a similar incident occurred in August. News outlets have reported on these hoaxes, providing the very "context" that Carr said is needed.</p><p><a href="https://arstechnica.com/tech-policy/2026/10/fcc-chair-warns-media-not-to-run-the-fake-polls-trump-keeps-complaining-about/">Read full article</a></p>
+<p><a href="https://arstechnica.com/tech-policy/2026/10/fcc-chair-warns-media-not-to-run-the-fake-polls-trump-keeps-complaining-about/#comments">Comments</a></p>
+]]>
+                        </content:encoded>
+                                    
+                                    <slash:comments>62</slash:comments>
+                
+                
+                <media:content height="648" medium="image" type="image/jpeg" url="https://cdn.arstechnica.net/wp-content/uploads/2024/12/trump-carr-1152x648-1734382746.jpg" width="1152">
+<media:thumbnail height="500" url="https://cdn.arstechnica.net/wp-content/uploads/2024/12/trump-carr-500x500-1734382753.jpg" width="500"/>
+<media:credit>Getty Images | Brandon Bell </media:credit><media:text>President-elect Donald Trump speaks to Brendan Carr, his intended pick for Chairman of the Federal Communications Commission, as he attends a SpaceX Starship rocket launch on November 19, 2024 in Brownsville, Texas.</media:text></media:content>
+            </item>
+<item>
+                <title>Xbox wants you to pay 24 to 40 cents per hour to stream games you already bought</title>
+                <link>https://arstechnica.com/gaming/2026/10/xbox-wants-you-to-pay-24-to-40-cents-per-hour-to-stream-games-you-already-bought/</link>
+                                    <comments>https://arstechnica.com/gaming/2026/10/xbox-wants-you-to-pay-24-to-40-cents-per-hour-to-stream-games-you-already-bought/#comments</comments>
+                
+                <dc:creator>
+                    <![CDATA[Kyle Orland]]>
+                </dc:creator>
+                <pubDate>Wed, 21 Oct 2026 22:06:07 +0000</pubDate>
+                		<category><![CDATA[Gaming]]></category>
+		<category><![CDATA[cloud gaming]]></category>
+		<category><![CDATA[microsoft]]></category>
+		<category><![CDATA[streaming]]></category>
+		<category><![CDATA[XBox]]></category>
+                <guid isPermaLink="true">https://arstechnica.com/gaming/2026/10/xbox-wants-you-to-pay-24-to-40-cents-per-hour-to-stream-games-you-already-bought/</guid>
+
+                                    <description>
+                        <![CDATA[Time-based a la carte charges come on top of the purchase price for the games themselves.]]>
+                    </description>
+                                                                <content:encoded>
+                            <![CDATA[<p>In September, when Microsoft <a href="https://arstechnica.com/gaming/2026/09/xbox-imposes-harsh-new-time-limits-for-game-pass-game-streaming/">severely limited the game-streaming buffet available to Game Pass subscribers</a>, the company said non-subscribers would soon be able to "purchase cloud playtime hours through the Xbox Store and stream eligible games they own on supported devices." Today, Microsoft <a href="https://news.xbox.com/en-us/2026/10/21/cloud-playtime-now-available-to-test-with-xbox-insiders/">rolled out those a la carte Cloud Playtime purchases</a> to Xbox Insiders, with prices that might be a bit galling for players who have already purchased these streamable games.</p>
+<p>The "introductory launch pricing" for Xbox's Cloud Playtime purchases is as follows:</p>
+<ul>
+<li>10 hours for $4 (~$0.40/hour)</li>
+<li>25 hours for $8 (~$0.32/hour)</li>
+<li>50 hours for $12 (~$0.24/hour)</li>
+</ul>
+<p>Purchased playtime "remains available until it’s used," Microsoft writes, so you don't have to worry about your 50-hour purchase expiring before you can use it fully.</p><p><a href="https://arstechnica.com/gaming/2026/10/xbox-wants-you-to-pay-24-to-40-cents-per-hour-to-stream-games-you-already-bought/">Read full article</a></p>
+<p><a href="https://arstechnica.com/gaming/2026/10/xbox-wants-you-to-pay-24-to-40-cents-per-hour-to-stream-games-you-already-bought/#comments">Comments</a></p>
+]]>
+                        </content:encoded>
+                                    
+                                    <slash:comments>49</slash:comments>
+                
+                
+                <media:content height="648" medium="image" type="image/jpeg" url="https://cdn.arstechnica.net/wp-content/uploads/2026/10/xcloud3-1152x648.jpg" width="1152">
+<media:thumbnail height="500" url="https://cdn.arstechnica.net/wp-content/uploads/2026/10/xcloud3-500x500.jpg" width="500"/>
+<media:credit>Microsoft</media:credit><media:text>Would you pay a quarter for an hour of access to your Xbox library on the phone?</media:text></media:content>
+            </item>
+<item>
+                <title>Enterprises keep buying software upgrades that IT thinks will make things worse</title>
+                <link>https://arstechnica.com/information-technology/2026/10/survey-enterprises-waste-28-percent-of-software-budgets-on-unwanted-upgrades/</link>
+                                    <comments>https://arstechnica.com/information-technology/2026/10/survey-enterprises-waste-28-percent-of-software-budgets-on-unwanted-upgrades/#comments</comments>
+                
+                <dc:creator>
+                    <![CDATA[Scharon Harding]]>
+                </dc:creator>
+                <pubDate>Wed, 21 Oct 2026 21:48:52 +0000</pubDate>
+                		<category><![CDATA[Biz & IT]]></category>
+		<category><![CDATA[IT]]></category>
+		<category><![CDATA[software]]></category>
+                <guid isPermaLink="true">https://arstechnica.com/information-technology/2026/10/survey-enterprises-waste-28-percent-of-software-budgets-on-unwanted-upgrades/</guid>
+
+                                    <description>
+                        <![CDATA[Survey of 2,018 IT heads at big firms points to a lack of leverage. ]]>
+                    </description>
+                                                                <content:encoded>
+                            <![CDATA[<p>Enterprise-sized businesses spend, on average, 28 percent of their software budgets on unwanted upgrades, migrations, and licensing changes. Often, those firms' IT heads think those changes are detrimental.</p>
+<p>Those results are according to a survey of 2,018 chief information officers and senior IT decision-makers at companies with at least 10,000 employees that Origina commissioned for its report, “<a href="https://www.origina.com/guides-and-reports/software-tax-enterprise-software-costs?utm_source=software+tax&amp;utm_medium=media&amp;utm_campaign=press-release">The Software Tax</a>.” About half of the respondents (1,011) are from the US, and the rest are from the United Kingdom. All respondents worked at companies with at least $1 billion in annual revenue.</p>
+<p>Keep in mind that Origina provides maintenance for various enterprise software. Its report points to independent software maintenance as a way for IT leaders to regain control over software budgets, illustrating its potential bias. A third-party research consultancy, <a href="https://censuswide.com/who-we-are/">Censuswide</a>, conducted the survey.</p><p><a href="https://arstechnica.com/information-technology/2026/10/survey-enterprises-waste-28-percent-of-software-budgets-on-unwanted-upgrades/">Read full article</a></p>
+<p><a href="https://arstechnica.com/information-technology/2026/10/survey-enterprises-waste-28-percent-of-software-budgets-on-unwanted-upgrades/#comments">Comments</a></p>
+]]>
+                        </content:encoded>
+                                    
+                                    <slash:comments>14</slash:comments>
+                
+                
+                <media:content height="648" medium="image" type="image/jpeg" url="https://cdn.arstechnica.net/wp-content/uploads/2026/10/GettyImages-832621336-1024x648.jpg" width="1024">
+<media:thumbnail height="500" url="https://cdn.arstechnica.net/wp-content/uploads/2026/10/GettyImages-832621336-500x500.jpg" width="500"/>
+<media:credit>Clara Molden/PA Images via Getty Images</media:credit></media:content>
+            </item>
+</channel></rss>

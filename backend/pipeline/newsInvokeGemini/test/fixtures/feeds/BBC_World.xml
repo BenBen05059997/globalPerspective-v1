@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <title><![CDATA[BBC News]]></title>
+        <description><![CDATA[BBC News - World]]></description>
+        <link>https://www.bbc.co.uk/news/world</link>
+        <image>
+            <url>https://news.bbcimg.co.uk/nol/shared/img/bbc_news_120x60.gif</url>
+            <title>BBC News</title>
+            <link>https://www.bbc.co.uk/news/world</link>
+        </image>
+        <generator>RSS for Node</generator>
+        <lastBuildDate>Thu, 22 Oct 2026 09:06:02 GMT</lastBuildDate>
+        <atom:link href="https://feeds.bbci.co.uk/news/world/rss.xml" rel="self" type="application/rss+xml"/>
+        <copyright><![CDATA[Copyright: (C) British Broadcasting Corporation, see https://www.bbc.co.uk/usingthebbc/terms-of-use/#15metadataandrssfeeds for terms and conditions of reuse.]]></copyright>
+        <language><![CDATA[en-gb]]></language>
+        <ttl>15</ttl>
+        <item>
+            <title><![CDATA[What is PHP and why did it spark a global cyber-security scramble?]]></title>
+            <description><![CDATA[AI uncovered long-hidden programming flaws, triggering a rare global cyber-security response.]]></description>
+            <link>https://www.bbc.co.uk/news/articles/c3qjnwye0ep5o?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/articles/c3qjnwye0ep5o#0</guid>
+            <pubDate>Thu, 22 Oct 2026 06:24:59 GMT</pubDate>
+            <media:thumbnail width="240" height="134" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/15df/live/bbb61e90-cddc-11f1-bc2e-018d645d8d21.jpg"/>
+        </item>
+<item>
+            <title><![CDATA[How Arab parties could hold critical balance of power in Israeli election]]></title>
+            <description><![CDATA[Disaffection has often driven down turnout among Arab Israelis, but there is a strong push to get rid of the right-wing governing coalition.]]></description>
+            <link>https://www.bbc.co.uk/news/articles/cx8dzrp768j8o?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/articles/cx8dzrp768j8o#0</guid>
+            <pubDate>Thu, 22 Oct 2026 05:30:22 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/9938/live/80172d90-cd26-11f1-bc2e-018d645d8d21.jpg"/>
+        </item>
+<item>
+            <title><![CDATA[Missiles hit Kyiv after Russia agrees to US call to resume Ukraine peace talks]]></title>
+            <description><![CDATA[Moscow says it is "ready in principle" to resume peace talks and US President Donald Trump says the world is "the closest we've been" to ending the war.]]></description>
+            <link>https://www.bbc.co.uk/news/articles/cq3djn5nxx12o?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/articles/cq3djn5nxx12o#0</guid>
+            <pubDate>Wed, 21 Oct 2026 21:27:41 GMT</pubDate>
+            <media:thumbnail width="240" height="134" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/abac/live/5ed152f0-cd8f-11f1-b1e7-39558e114359.jpg"/>
+        </item>
+</channel></rss>

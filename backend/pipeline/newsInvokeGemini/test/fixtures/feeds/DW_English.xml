@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:sy="http://purl.org/rss/modules/syndication/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dwsyn="http://rss.dw.com/syndication/dwsyn/">
+ <channel rdf:about="https://rss.dw.com/syndication/feeds/rss-en-all.1573.rdf">
+  <description>Deutsche Welle</description>
+  <link>https://www.dw.com/english/?maca=en-rss-en-all-1573-rdf</link>
+  <title>Deutsche Welle</title>
+  <sy:updatePeriod>hourly</sy:updatePeriod>
+  <sy:updateFequency>4</sy:updateFequency>
+  <sy:updateBase>2002-05-01T00:00:00Z</sy:updateBase>
+  <dc:date>2026-10-22T09:05:42Z</dc:date>
+  <image rdf:resource="https://rss.dw.com/images/DW-L-RGB_whitebg.png"/>
+  <items>
+   <rdf:Seq/>
+  </items>
+ </channel>
+ <image rdf:about="https://rss.dw.com/images/DW-L-RGB_whitebg.png">
+  <url>https://rss.dw.com/images/DW-L-RGB_whitebg.png</url>
+  <link>https://www.dw.com/english/?maca=en-rss-en-all-1573-rdf</link>
+  <title>DW</title>
+  <description>News, Analysis and Service from Germany and Europe - in 30 Languages</description>
+ </image>
+ <item rdf:about="https://www.dw.com/en/germany-news-many-sites-back-online-after-php-security-fix/live-79728628?maca=en-rss-en-all-1573-rdf">
+  <title>Germany news: Many sites back online after PHP security fix</title>
+  <link>https://www.dw.com/en/germany-news-many-sites-back-online-after-php-security-fix/live-79728628?maca=en-rss-en-all-1573-rdf</link>
+  <description>Online security officials have warned that it will take time to ascertain extent of any possible hacks. Meanwhile, far-right martial arts clubs are on the rise. DW has more.</description>
+  <dc:date>2026-10-22T08:40:00Z</dc:date>
+  <dc:subject>News</dc:subject>
+  <dc:language>en</dc:language>
+  <dwsyn:contentID>79728628</dwsyn:contentID>
+ </item>
+<item rdf:about="https://www.dw.com/en/harry-kane-ballon-d-or-for-bayern-munich-striker/a-79723299?maca=en-rss-en-all-1573-rdf">
+  <title>Harry Kane: Ballon d’Or for Bayern Munich striker?</title>
+  <link>https://www.dw.com/en/harry-kane-ballon-d-or-for-bayern-munich-striker/a-79723299?maca=en-rss-en-all-1573-rdf</link>
+  <description>The most prestigious individual prize in football will be awarded on Monday, with Bayern Munich&apos;s English striker Harry Kane the front runner. Kane has developed even more in the Bundesliga despite an uneven league.</description>
+  <dc:date>2026-10-22T08:33:00Z</dc:date>
+  <dc:subject>Sports</dc:subject>
+  <dc:language>en</dc:language>
+  <dwsyn:contentID>79723299</dwsyn:contentID>
+ </item>
+<item rdf:about="https://www.dw.com/en/bulgaria-concerns-about-security-in-the-black-sea-dominate-presidential-election-campaign/a-79729094?maca=en-rss-en-all-1573-rdf">
+  <title>Bulgaria: Concerns about security in the Black Sea dominate presidential election campaign</title>
+  <link>https://www.dw.com/en/bulgaria-concerns-about-security-in-the-black-sea-dominate-presidential-election-campaign/a-79729094?maca=en-rss-en-all-1573-rdf</link>
+  <description>Bulgaria&apos;s presidential election campaign has been shaped by recent drone attacks on ships in the Black Sea and the government&apos;s lack of support for Ukraine, making foreign policy a key factor in the first round.</description>
+  <dc:date>2026-10-22T08:31:00Z</dc:date>
+  <dc:subject>World</dc:subject>
+  <dc:language>en</dc:language>
+  <dwsyn:contentID>79729094</dwsyn:contentID>
+ </item>
+</channel></rss>

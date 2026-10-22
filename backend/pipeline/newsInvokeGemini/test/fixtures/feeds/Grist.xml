@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	xmlns:media="http://search.yahoo.com/mrss/">
+
+<channel>
+	<title>Grist</title>
+	<atom:link href="https://grist.org/feed/" rel="self" type="application/rss+xml" />
+	<link>https://grist.org/</link>
+	<description>25 Years on the Climate Beat</description>
+	<lastBuildDate>Thu, 22 Oct 2026 05:32:54 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=7.1.3</generator>
+
+<image>
+	<url>https://grist.org/wp-content/uploads/2021/03/cropped-Grist-Favicon.png?quality=75&#038;strip=all&#038;w=32</url>
+	<title>Grist</title>
+	<link>https://grist.org/</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+<site xmlns="com-wordpress:feed-additions:1">184496365</site>	<item>
+		<title>The hidden history of how Big Oil invented the American Dream</title>
+		<link>https://grist.org/culture/hidden-history-american-dream-oil-gas-investigation/</link>
+		
+		<dc:creator><![CDATA[Kate Yoder]]></dc:creator>
+		<pubDate>Thu, 22 Oct 2026 08:45:00 +0000</pubDate>
+				<category><![CDATA[Culture]]></category>
+		<category><![CDATA[Energy]]></category>
+		<category><![CDATA[Language]]></category>
+		<category><![CDATA[Politics]]></category>
+		<guid isPermaLink="false">https://grist.org/?p=758252</guid>
+
+					<description><![CDATA[From the family car to the dream kitchen, fossil fuel companies sold a vision of prosperity that depended on their own products. Grist dug up a century of evidence that shows how they did it.]]></description>
+										<content:encoded><![CDATA[
+<p class="has-drop-cap has-default-font-family wp-block-paragraph">What does going on a date have to do with fossil fuels? Everything, according to the petroleum industry.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">One advertisement from the pipeline company Energy Transfer follows two people getting ready for a date, the man primping with hair gel, the woman applying lipstick, before meeting at a bar. “That connection was brought to you by petroleum products,” the narrator says. “But what if we lived in a world without oil and natural gas?”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The story rewinds to the beginning, except this time, the woman looks bewildered as her phone with the dating app evaporates in her hands. She gets lipstick all over her cheek when the car she’s riding in hits the pavement without its tires. As his hair gel disappears, the man looks into the mirror, baffled. When they sit down across from each other, makeup, hair dye, and glasses fade away. In the game playing on a TV in the bar, a football disintegrates a second before the kicker swings his leg at empty air.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The <a href="https://www.youtube.com/watch?v=EOURX29-eFQ">commercial</a>, which has racked up 7.4 million views since it appeared four years ago, taps into the fact that fossil fuels have become embedded in American life (what’s more American than football?). Oil and gas not only influence how people get around town, but also where they live, how they dress, and how they cook food in their kitchens. This all feels so ordinary that most people don’t notice how pervasive petroleum is, powering our lives while hiding in plain sight. Though it might seem inevitable that we live this way, a Grist investigation found that this idea of what’s “normal” was shaped by decades of advertising, public relations propaganda, and broader efforts to sway American culture, from radio programs to Hollywood films.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“Our dependence on oil didn’t just happen,” said Robert Brulle, an environmental sociologist at Brown University.</p>
+
+
+<div class="wp-block-in-article-recirc">
+  <article class="in-article-recirc">
+    <span class="in-article-recirc__label">More in this series</span>
+    <div class="in-article-recirc__content">
+
+      
+      
+                    
+            <a class="in-article-recirc__art" href="https://grist.org/culture/where-fossil-fuels-are-lurking-in-your-home-room-by-room/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">
+        <figure>
+          <img src="https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?quality=75&#038;strip=all&#038;w=768" alt="A&#x20;miniature&#x20;house&#x20;made&#x20;of&#x20;wood&#x20;with&#x20;a&#x20;cutaway&#x20;to&#x20;rooms&#x20;like&#x20;a&#x20;dollhouse.&#x20;The&#x20;cutaway&#x20;shows&#x20;an&#x20;attitc&#x20;with&#x20;insulation,&#x20;a&#x20;bedroom,&#x20;a&#x20;kitchen,&#x20;a&#x20;living&#x20;room,&#x20;and&#x20;a&#x20;bathroom.&#x20;The&#x20;house&#x20;sits&#x20;on&#x20;a&#x20;green&#x20;screen&#x20;replaced&#x20;background&#x20;with&#x20;blue&#x20;skies&#x20;and&#x20;clouds." class="js-modal-gallery__hidden" srcset="https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?quality=75&#038;strip=all 2200w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=1200%2C675&#038;quality=75&#038;strip=all 1200w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=330%2C186&#038;quality=75&#038;strip=all 330w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=768%2C432&#038;quality=75&#038;strip=all 768w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=1536%2C864&#038;quality=75&#038;strip=all 1536w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=2048%2C1152&#038;quality=75&#038;strip=all 2048w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=160%2C90&#038;quality=75&#038;strip=all 160w, https://grist.org/wp-content/uploads/2026/10/DreamHouse.jpg?resize=150%2C84&#038;quality=75&#038;strip=all 150w" sizes="auto, (max-width: 600px) 100vw, 300px" height="1237" width="2200" loading="lazy" decoding="async">
+        </figure>
+      </a>
+            <div class="in-article-recirc__body">
+        <div class="in-article-recirc__title">
+                    <a class="in-article-recirc__title-link" href="https://grist.org/culture/where-fossil-fuels-are-lurking-in-your-home-room-by-room/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">Where fossil fuels are lurking in your home — room by room</a>
+        </div>
+        <div class="in-article-recirc__meta">
+          
+	
+  <div class="tease-meta">
+                            <a class="byline-link" href=https://grist.org/author/kate-yoder/>Kate Yoder</a>              </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">This campaign started about a century ago, when companies began strategizing how to create long-term demand for fossil fuels and the products that ran on them. Billboards showcased happy families on the road in their cars, films showed stylish women cooking over the flame of a gas stove, and magazines featured men pushing their gas-powered mowers across soon-to-be perfectly manicured lawns. The message was often left unsaid: The American way of life runs on fossil fuels.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">There’s a well-documented <a href="https://insideclimatenews.org/project/exxon-the-road-not-taken/">history showing that Exxon</a> and other oil giants understood the dangers of global warming by the 1970s based on their own research and still spent decades publicly downplaying, or outright denying, the science. But the story of how oil and gas companies coaxed Americans into accepting — even desiring — a life built on fossil fuels has largely escaped attention, buried in the pages of obscure trade journals.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">In the 1940s and 1950s, the oil industry spent millions of dollars a year on campaigns to “educate” the public about the wonders of petroleum and how it advanced the “American way.” The natural gas industry promoted all-gas “dream kitchens” and <a href="https://archive.org/details/sim_pipeline-gas-journal_1955-10_42/page/48/mode/2up?q=model+kitchen">paraded them</a> in front of the editors of Better Homes and Gardens, Good Housekeeping, and The Ladies’ Home Journal. They sold a vision of the American Dream that required their products — a cultural legacy that has been devastating for efforts to rein in climate change and shift to a cleaner future.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">This history offers an explanation for why Americans have had such a strong reaction to the idea of banning polluting gas ranges (“<a href="https://www.washingtonpost.com/climate-environment/2023/01/26/meet-man-who-unwittingly-triggered-war-over-gas-stoves/">they can pry it from my cold dead hands</a>”) or requiring more sales of electric vehicles over gas-powered cars. Is this debate really just about technology, or about what the burning of fossil fuels represents — freedom and a sense of identity? President Donald Trump’s Make America Great Again agenda is deeply nostalgic for what oil once promised: economic might, a higher standard of living, the chance to rise above your station and maybe make a fortune. In his inauguration speech last year, Trump promised a return to these ideals. “We will be a rich nation again, and it is that liquid gold under our feet that will help to do it,” he said.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As the world <a href="https://grist.org/energy/renewable-energy-2025-reports-ember-iea/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">enters an “age of electricity”</a> powered increasingly by solar, wind, and other low-carbon energy sources, the United States often appears to be stuck in the past. The Trump administration has prolonged the life of coal plants and opened up new areas to oil drilling, while paying companies billions of dollars to stop offshore wind projects. The explanation, when it’s offered, often returns to the same theme. Earlier this year, when the Trump administration <a href="https://grist.org/politics/trump-epa-endangerment-finding-greenhouse-gases/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">scrapped Biden-era rules to cut emissions from cars</a>, along with the Environmental Protection Agency’s authority to regulate climate change, it touted the effort as “<a href="https://www.epa.gov/newsreleases/president-trump-and-administrator-zeldin-deliver-single-largest-deregulatory-action-us">restoring the American Dream</a>.” White House spokesperson Taylor Rogers <a href="https://www.nytimes.com/2026/08/25/climate/climate-maha-moms-coal.html">summed up</a> the sentiment this summer: “President Trump was given a mandate to roll back the radical climate policies that are burning a hole through taxpayers’ wallets and jeopardizing the American Dream for future generations.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph" id="h-the-words-echo-what-the-oil-industry-has-been-telling-americans-for-a-century-without-fossil-fuels-there-is-no-good-life-only-sacrifice">The words echo what the oil industry has been telling Americans for a century: Without fossil fuels, there is no “good life,” only sacrifice.</p>
+
+
+
+<h2 id="h-how-oil-became-the-american-way" class="wp-block-heading">How oil became the ‘American way’</h2>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Before highways, parking lots, and suburban sprawl took over the United States, people moved about very differently. Americans traveled between cities by railroad; towns bustled with horses, buses, bicycles, and trolleys. Then the automobile rolled in, and forests, meadows, and swampland became pavement, changing the scenery forever.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It wasn’t a sure bet that automobiles would run on gasoline. At the turn of the 20th century, electric vehicles were quieter and easier to drive, and they quickly became <a href="https://www.energy.gov/timeline-history-electric-car">a popular choice</a>, making up a third of vehicles on the road. But Henry Ford’s cheaper, mass-produced Model T, unveiled in 1908, was the vehicle that took off, powered by gasoline.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Up to that point, gasoline was basically a useless byproduct of kerosene, but the new automobile industry gave it a market. Automakers promoted their vehicles as superior to public transit, offering a step up in social status. In an advertisement that appeared in The Ladies’ Home Journal in 1917, the Willys-Overland Company, an Ohio automaker, sold its automobiles as “chock full of healthy activity, wholesome fun, and lots of fresh air” — which would make for “a bigger life.” That was supposedly in contrast to the “wrong way,” where families were subjected to suffering through “long rides in hot trolley cars and listless conversation.”</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter three-fourth-width"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png" sizes="(max-width: 1716px) 100vw, 1716px" srcset="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=768 768w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=1536 1536w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=640&amp;h=853&amp;crop=1 640w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-1_ae134d.png 1716w" alt="Ad comparing driving in a car versus riding a trolley" data-caption="An ad from the Willys-Overland Company portraying cars as superior to crowded trolleys appeared in The Ladies’ Home Journal in 1917.
+" data-credit="Internet Archive"/><figcaption>An ad from the Willys-Overland Company portraying cars as superior to crowded trolleys appeared in The Ladies’ Home Journal in 1917.
+ <cite>Internet Archive</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It was a preview of a major shift in marketing leading up to the 1930s. Previously, advertisements for cars had touted their features: the “favorable” ratio of their light weight to their horsepower, their seats upholstered with “fine, long-grain French leather.” But companies began marketing the benefits of <em>using</em> their products instead, painting situations in which a car could improve your life and status. Selling the American Dream meant selling leisure, enjoyment, beauty, good taste, and popularity along with the “mundane product,” as Roland Marchand, a cultural historian, once wrote.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Most advertisers were aiming to reach Americans with means, and the everyday luxuries they depicted clashed with reality as the Great Depression set in. The photographer Margaret Bourke-White captured that sort of contrast after the Ohio River flood in Louisville, Kentucky, in 1937. A billboard ad from the National Association of Manufacturers shows a white family smiling as they drive through the countryside, while Black people waited for Red Cross relief under a sign proclaiming “There’s no way like the American way.”</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png" sizes="(max-width: 577px) 100vw, 577px" srcset="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-2.png 577w" alt="Page from Life magazine featuring photo of Black refugees standing in front of a billboard advertising car ownership" data-caption="A 1937 photograph in Life magazine shows Black refugees from the Ohio River flood waiting for Red Cross relief. An advertisement behind them broadcasts the “world’s highest standard of living,” exemplified by car ownership." data-credit="Margaret Bourke-White / Life"/><figcaption>A 1937 photograph in Life magazine shows Black refugees from the Ohio River flood waiting for Red Cross relief. An advertisement behind them broadcasts the “world’s highest standard of living,” exemplified by car ownership. <cite>Margaret Bourke-White / Life</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As the Great Depression began to recede, automakers saw an opportunity to pitch Americans on a brighter future — one that relied, of course, on cars. At the 1939-1940 World’s Fair in New York City, where the theme was “The World of Tomorrow,” General Motors had the most popular exhibit, seen by millions of people: the seven-acre “Highways and Horizons.” Its centerpiece, “<a href="https://www.worldsfairphotos.com/nywf39/booklets/futurama-booklet-1940.pdf">Futurama</a>,” was a sprawling diorama of a futuristic city in far-off 1960, covering 35,000 square feet, complete with skyscrapers and 14-lane highways. People looked down on the display from moving chairs on a conveyor-belt ride, as if they were viewing it from an airplane. It was the visual representation of a new American mindset — a <a href="https://www.worldsfairphotos.com/nywf39/booklets/futurama-booklet-1940.pdf">Futurama booklet</a> promised that highways would “set the pace for advancing civilization” and improve “welfare and happiness.” Afterward, visitors were <a href="https://americanhistory.si.edu/collections/object/nmah_1129256">handed pins</a> saying, “I Have Seen the Future.”&nbsp;</p>
+
+
+
+<div class="wp-block-ups-mosaic rt-mosaic-block image-single align-right">
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+</div>
+
+
+
+  
+
+
+<div class="ups-block__row ups-block__photo_layout photo_full_width  ">
+  <div class="assets asset-count--2">
+                  <figure class="asset-aspect-ratio">
+        
+<div class="article-asset-mod">
+      <img
+      class="article-asset "
+      src="https://grist.org/wp-content/uploads/2026/10/futurama-test.png"
+      alt="Photo&#x20;of&#x20;people&#x20;peering&#x20;over&#x20;at&#x20;a&#x20;futuristic&#x20;model&#x20;city&#x20;below"
+      data-caption="Visitors tour General Motors’ Futurama exhibit in 1939. Futurama was the largest scale model ever built at the time, including more than 500,000 buildings and 50,000 motor vehicles, many of them in motion."
+      data-credit="Bettmann / Getty Images"
+      srcset="https://grist.org/wp-content/uploads/2026/10/futurama-test.png?quality=75&#038;strip=all 1666w, https://grist.org/wp-content/uploads/2026/10/futurama-test.png?resize=1200%2C927&#038;quality=75&#038;strip=all 1200w, https://grist.org/wp-content/uploads/2026/10/futurama-test.png?resize=330%2C255&#038;quality=75&#038;strip=all 330w, https://grist.org/wp-content/uploads/2026/10/futurama-test.png?resize=768%2C593&#038;quality=75&#038;strip=all 768w, https://grist.org/wp-content/uploads/2026/10/futurama-test.png?resize=1536%2C1187&#038;quality=75&#038;strip=all 1536w, https://grist.org/wp-content/uploads/2026/10/futurama-test.png?resize=150%2C116&#038;quality=75&#038;strip=all 150w"
+      sizes="auto, (max-width: 1666px) 100vw, 1666px"
+      height="1287"
+      width="1666"
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+                  
+    <figcaption class="article-caption">
+        <div class="article-caption-width">
+                            <span class="article-caption__description">Visitors tour General Motors’ Futurama exhibit in 1939. Futurama was the largest scale model ever built at the time, including more than 500,000 buildings and 50,000 motor vehicles, many of them in motion.</span>
+                                        <span class="article-caption__credit"><strong></strong><cite>Bettmann / Getty Images</cite></span>
+                    </div>
+    </figcaption>
+              </figure>
+                  <figure class="asset-aspect-ratio">
+        
+<div class="article-asset-mod">
+      <img
+      class="article-asset "
+      src="https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png"
+      alt="Photo&#x20;of&#x20;futuristic&#x20;model&#x20;city,&#x20;featuring&#x20;tiny&#x20;cars&#x20;and&#x20;skyscrapers"
+      data-caption="The Futurama display at the 1939 World&#039;s Fair in New York depicts a futuristic American city in 1960. The model was designed by Norman Bel Geddes for General Motors."
+      data-credit="Library of Congress / Corbis / VCG via Getty Images"
+      srcset="https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?quality=75&#038;strip=all 1517w, https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?resize=1200%2C1569&#038;quality=75&#038;strip=all 1200w, https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?resize=330%2C432&#038;quality=75&#038;strip=all 330w, https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?resize=768%2C1004&#038;quality=75&#038;strip=all 768w, https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?resize=1174%2C1536&#038;quality=75&#038;strip=all 1174w, https://grist.org/wp-content/uploads/2026/10/futurama-detail_1731eb.png?resize=150%2C196&#038;quality=75&#038;strip=all 150w"
+      sizes="auto, (max-width: 1517px) 100vw, 1517px"
+      height="1984"
+      width="1517"
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+                  
+    <figcaption class="article-caption">
+        <div class="article-caption-width">
+                            <span class="article-caption__description">The Futurama display at the 1939 World&#8217;s Fair in New York depicts a futuristic American city in 1960. The model was designed by Norman Bel Geddes for General Motors.</span>
+                                        <span class="article-caption__credit"><strong></strong><cite>Library of Congress / Corbis / VCG via Getty Images</cite></span>
+                    </div>
+    </figcaption>
+              </figure>
+      </div>
+  </div>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">From automobiles to oil, industry leaders grasped that appealing to a sense of national identity could legitimize their business. When the United States entered World War II in 1941, the oil industry boomed, producing fuel for planes and explosives. The wider public had been deeply suspicious of big corporations ever since the Depression, but the oil industry had a new way to defend itself, painting itself as patriotic and essential to the success of the broader American project.&nbsp;&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">&#8220;The petroleum industry deserves a better public opinion,&#8221; James H. Tanham, an executive at the Texas Company (now known as Texaco), wrote to a member of the Petroleum Industry War Council in 1943. “If properly handled, there probably never was a better time to undertake this work. There is nothing inimical about the prosecution of this war and this job. Both have to do with protection of a way of life, wholly American, against enemies without and within the country.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">That same year, the Union Oil Company of California (later part of Chevron) launched an initiative specifically to “sell [the] public on [the] American way of life,” according to <a href="https://archive.org/details/sim_npn-national-petroleum-news_1947-05-07_39_19/page/30/mode/2up">the trade journal National Petroleum News</a>. Within five years, it was spending 30 percent of its advertising budget on the effort, promoting how a “free enterprise” economic system contributed to a higher standard of living. A Union Oil advertisement in Central Oregon’s <a href="https://oregonnews.uoregon.edu/lccn/sn90051770/1944-02-21/ed-1/seq-6.pdf">Bend Bulletin</a> in 1944 celebrated how American factory workers could afford more cigarettes and bread with an hour’s wages than those in Germany, Great Britain, or Russia. This success, the ad claimed, came down to “two fundamental principles: PROFIT and COMPETITION.” Provided that Americans didn’t tamper with these principles, it promised, a man might someday be “working only <em>half</em> as long to earn a radio, a house, a hat, a vacation, or anything else he needs.”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">After the war ended, the “American way” increasingly required a car. Suburbanization started taking off in earnest after 1946, when the Levitt family began acquiring 4,000 acres of potato farms outside Long Island, 25 miles east of New York City. They leveled the land, had trucks drop building materials every 60 feet, and eventually built <a href="https://www.history.com/articles/levittown-suburbs-tract-housing">more than 17,000</a> cookie-cutter homes. Other “Levittowns” soon followed suit, built across the country as developers converted apple orchards, garbage dumps, and barren desert into neat subdivisions. They proved to be model neighborhoods for the entire country. From the end of World War II to 1954, some 9 million people settled into suburbs. As Americans moved far away from where they worked and ran errands, they became locked into a car-dependent lifestyle that consumed vast amounts of petroleum.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“Oil is basically the fuel that allows this dispersal of the population,” said Matthew Huber, a professor of geography and the environment at Syracuse University.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Yet oil companies worried that the public still didn’t properly appreciate how the fuel had transformed their lives. In response to <a href="https://archive.org/details/sim_npn-national-petroleum-news_1946-11-13_38_46/page/26/mode/2up?q=housewives">a survey</a> finding an “opinion vacuum” on the oil business, the American Petroleum Institute, the industry’s biggest lobbying group, formed the Oil Industry Information Committee in 1948, intending to <a href="https://read.dukeupress.edu/environmental-humanities/article/15/2/85/380188/Snake-Oil-and-GaslightHow-the-Petroleum-Industry">fill the void</a>. “There is a great vacuum represented by men’s minds,” George H. Freyermuth, who led the public relations department for Standard Oil Company of New Jersey (later Exxon), said at the time. “We can’t let others fill the vacuum. We have got to create the knowledge to fill people’s minds.”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It was much more than an advertising campaign: The group built the infrastructure for promoting petroleum through schools, community parades, and exhibits, carried out by local industry ambassadors who could give the effort a friendly face. The committee produced pamphlets, sponsored films, radio programming, and educational materials for classrooms, but its signature initiative was Oil Progress Week: a national ad blitz that encouraged local events celebrating how oil fueled innovation and everything people loved about modern life.</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png" sizes="(max-width: 934px) 100vw, 934px" srcset="https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=768 768w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=640&amp;h=853&amp;crop=1 640w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/american-dream-inline-3.png 934w" alt="Ad for Oil Progress Week featuring illustrations of a horse-drawn carriage, a couple crossing a muddy road, and smiling people driving a car" data-caption="In 1950, an advertisement in Life magazine as part of Oil Progress Week attributed the marvels of daily life to the advent of oil drilling.
+" data-credit="Internet Archive"/><figcaption>In 1950, an advertisement in Life magazine as part of Oil Progress Week attributed the marvels of daily life to the advent of oil drilling.
+ <cite>Internet Archive</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It was part of a trend toward what’s called institutional advertising — promoting industries and brands themselves, rather than products. Fortune <em></em>magazine surveyed this growing field in 1950 and found that the oil industry was pouring <a href="https://archive.org/details/empireofoil0000ocon/page/134/mode/2up">$10 million</a> a year into these programs — roughly $142 million in today’s dollars. Executives insisted that such messaging was just telling the facts to the American public. But Fortune pushed back. Not since wartime ads, <a href="https://archive.org/details/sim_advertising-age_1950-09-04_21_36/mode/2up?q=%22american+dream%22">the magazine wrote</a>, “have we been insulted with such noxious interpretations of the American Dream.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As much as Americans were already driving, they <em>could</em> be driving more. Automakers and oil companies had been working together to <a href="https://highways.dot.gov/highway-history/interstate-system/promoting-highway-improvement-project-adequate-roads-gms-better">promote highway construction</a> <a href="https://www.ftc.gov/system/files/documents/reports/report-mobile-vehicle-industry/390605motorvehicleindustry.pdf">for decades</a>. In the 1950s, advertisements urged families to see the U.S. by car, framing the road trip as a matter of national pride. In the iconic jingle “See the USA in a Chevrolet,” the TV star Dinah Shore urges viewers to get on the road to take in everything America has to offer, from the “fields of golden wheat” to the “Rockies way out West.” Anyone who isn’t doing so is missing out, the lyrics imply: “Life is complete-r in a Chevy,” Shore sings.</p>
+
+
+
+<figure class="wp-block-video" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)"><video autoplay="" controls="" muted="" src="https://grist.org/wp-content/uploads/2026/10/Chevrolet.mp4" playsinline=""></video><center><figcaption class="wp-element-caption">The singer Dinah Shore closed her weekly TV variety show, sponsored by Chevrolet, with the jingle “See the USA in a Chevrolet.” <a href="https://www.youtube.com/@ChevyPH"><em><strong>Chevrolet Philippines</strong></em></a></figcaption></center></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">After the success of freeways in Los Angeles and a “miracle turnpike” in New Jersey that became the busiest toll road in the country, President Dwight D. Eisenhower signed the Federal-Aid Highway Act in 1956, calling for a 41,000-mile superhighway system across the country. Futurama was becoming reality, roughly on schedule.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The Oil Industry Information Committee, meanwhile, had been busy <a href="https://www.google.com/books/edition/Petrocinema/fkUSEAAAQBAJ?hl=en&amp;gbpv=1&amp;dq=%22oil+industry+information+committee%22&amp;pg=PA145&amp;printsec=frontcover">making sponsored films</a> glorifying oil’s contributions to American prosperity. The films were shown all over the country, from small-town Michigan to the heart of Texas oil country, at Rotary Club luncheons, at meetings of religious organizations, in high school classrooms, and eventually on TV. The committee claimed that its films had been screened 92,500 times and <a href="https://www.google.com/books/edition/Petrocinema/fkUSEAAAQBAJ?hl=en&amp;gbpv=1&amp;dq=%22oil+industry+information+committee%22&amp;pg=PA145&amp;printsec=frontcover">seen by more than 12 million people in 1955 alone — about 7 percent of the U.S. population</a>.&nbsp;&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Its 1956 film, <a href="https://archive.org/details/4050_Destination_Earth_01_47_33_28"><em>Destination Earth</em></a>, follows a cartoon Martian who visits the United States and is amazed by how powerful and efficient cars are. After doing research in the local library, he concludes that “the big secret is, of course, oil!” and that this miracle substance has provided “a whole galaxy of things to make a better life on Earth.” The result, the film’s narrator declares: “a higher standard of living in the USA than in any other country on the whole planet.”</p>
+
+
+
+<figure style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)" class="wp-block-video"><video height="480" style="aspect-ratio: 640 / 480;" width="640" autoplay controls muted src="https://grist.org/wp-content/uploads/2026/10/DestinationEarth-Excerpt1.mp4" playsinline></video><center><figcaption class="wp-element-caption"><em>Destination Earth</em>, a film sponsored by the American Petroleum Institute, tells the story of an alien who visits Earth, learns how oil powers cars, and brings that knowledge back to Mars. <a href="https://www.youtube.com/@shaggylocks"><em><strong>shaggylocks</strong></em></a></figcaption></center></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">During the postwar boom, profits from 14 big petroleum companies tracked by the Federal Reserve more than tripled during the postwar boom, rising from <a href="https://fraser.stlouisfed.org/files/docs/publications/FRB/1950s/frb_011953.pdf">$269 million</a> in 1946 to <a href="https://fraser.stlouisfed.org/files/docs/publications/FRB/1950s/frb_021959.pdf">$917 million</a> in 1956. All that money brought scrutiny. Critics in Congress and the media wondered if the Oil Industry Information Committee’s so-called “education” efforts, especially the <a href="https://read.dukeupress.edu/environmental-humanities/article/13/1/45/173442/Oil-as-Solution-to-the-Problems-of-OilThe-American">pamphlets</a> distributed to schoolchildren, should be considered propaganda, or even indoctrination. Henry Stewart McKenzie Burns, president of Shell Oil Company, admitted there was “a little ulterior motive” to the committee’s work when a congressman grilled him about it in 1956.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“I have had a good deal of experience in public relations,” Burns said <a href="https://www.google.com/books/edition/Oil_and_Gas_Lobby_Investigation/18tFAQAAMAAJ?hl=en&amp;gbpv=1&amp;dq=oil+and+gas+lobbying+investigation+1956&amp;printsec=frontcover">during questioning</a>, “and you never can stop telling people that you are good. They might forget.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">But oil companies had done more than simply tell people they were good. They had helped define <em>what kind of life</em> was good, steeping the American Dream in oil.</p>
+
+
+
+<h2 id="h-a-word-to-the-wives-fossil-fuels-invade-the-home" class="wp-block-heading">‘A Word to the Wives’: Fossil fuels invade the home</h2>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">An unusual performance took place on Atlantic City’s Steel Pier in 1923, during an American Gas Association convention in New Jersey. The wives and sisters of the assembled industry delegates settled in to watch “Progress,” a play that <a href="https://archive.org/details/sim_pipeline-gas-journal_1923-10-17_119_17/page/366/mode/2up?q=swann">pitted an old-fashioned kitchen against a modern one</a>, starring “Miss Polly Old Time” and “Miss Mary Modern Way.” As charming as the old ways were, there was no doubt whose vision would win.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Miss Mary was played by Ada Bessie Swann, home services director for the Public Service Electric &amp; Gas Company of New Jersey. She led the industry’s push to introduce women to appliances powered by manufactured gas, the predecessor to natural gas. In the early 20th century, most women weren’t familiar with all the expensive stoves, refrigerators, and washing machines that had come onto the market. They were used to cooking on wood or coal stoves and doing laundry by hand. So gas and electric utilities performed a &#8220;service,&#8221; as they called it: extensive efforts, led by women, to show homemakers how these appliances worked and convince them of their benefits. For years, Swann had been running the New Jersey utility’s experiment to foster “‘better, happier homes’ with the help of gas,” according to <a href="https://www.google.com/books/edition/American_Gas_Journal/_8NEAQAAIAAJ?hl=en&amp;gbpv=1&amp;dq=%22Ada+Bessie+Swann%22&amp;pg=PA335&amp;printsec=frontcover">an industry publication</a>. (It openly called the effort propaganda.) She was soon <a href="https://archive.org/details/sim_pipeline-gas-journal_1924-10-17_121_19/page/1050/mode/2up?q=swann">heralded</a> as “an apostle of home service,” spreading the mission of gas appliances far and wide.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">By 1925, these kinds of industry-sponsored lectures, demonstrations, and classes were reaching thousands of women every day. In Connecticut, New Haven Gas Light Company’s domestic experts visited nearly <a href="https://archive.org/details/sim_pipeline-gas-journal_1924-04-19_120_16/page/n3/mode/2up?q=swann">13,400 homes</a> that year to instruct residents on the “proper use” of gas ranges. A <a href="https://archive.org/details/sim_pipeline-gas-journal_1926-05-08_124_19/page/406/mode/2up?q=model+kitchen">daily radio show</a> from the Laclede Gas Light Company in St. Louis aided the “home manager” with recipes and cooking advice; the company also held free cooking classes every day to show off its model gas-powered kitchen.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It was a clever strategy to speed up adoption and lock in future demand for gas — a parallel track to how selling cars as a cornerstone of American life led to increasing gasoline consumption. “Teaching [women] the art of home management as it has become today, is a duty of the gas company,” <a href="https://archive.org/details/sim_pipeline-gas-journal_1925-10-10_123_15/page/324/mode/2up?q=%22National+Advertising+Program%22">Swann wrote in a trade journal</a>, pondering the industry’s future in 1925, “because by so doing it must reap for itself the profit of such service — Profits in goodwill. Profits in increased gas consumption. Profits in increased sales of gas heating equipment.” The industry also had to convince people to install the lines to deliver gas. In California, workers would <a href="https://archive.org/details/sim_pipeline-gas-journal_1937-05_146_5/page/20/mode/2up?q=model+kitchen">track local building permits</a> and talk homeowners and contractors into connecting gas lines to new construction.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It wasn’t inevitable that so many Americans would switch to gas appliances. Electric competitors were selling their “flameless fuel” as superior, and gas companies saw this competition as an existential threat. By 1930, gas executives were aggressively promoting their stoves, the core of their business. “The public mind has been inculcated with the gas cooking idea, but just as no business is secure, no idea is secure nowadays,” Rodger K. Tenney of Chicago’s North Shore Gas Company wrote in <a href="https://archive.org/details/sim_pipeline-gas-journal_1930-03_132_3/page/70/mode/2up?q=%22home+service+department%22">American Gas Journal</a> that year. “Constant pressure brought to bear on the public mind will make that mind thoroughly gas cooking conscious,” he concluded.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">To do so, gas companies embarked on a decades-long campaign to influence the influential. In 1934, Swann’s utility in New Jersey <a href="https://archive.org/details/sim_advertising-age_1934-11-03_5_44/page/n3/mode/2up?q=hollywood+%22american+gas+association%22">recruited</a> newspaper staff and heads of home economics departments of colleges to advertise the modern gas kitchen. The industry also worked to <a href="https://archive.org/details/sim_pipeline-gas-journal_1937-06_146_6/mode/2up?q=model+kitchen">get favorable coverage</a> in The Ladies’ Home Journal, McCall’s, The American Home, and other women’s magazines; Swann soon <a href="https://www.newspapers.com/article/the-buffalo-news-home-service-expert-com/186070613/">got a job</a> working for Woman’s Home Companion.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Gas executives also sought to bring gas propaganda to the radio and Hollywood films.&nbsp;When the phrase “now you’re cooking with gas” started taking off on radio routines in 1939, the industry <a href="https://arnoldzwicky.org/2021/11/21/cooking-with-gas-a-guest-posting/">quickly capitalized on the free advertising</a>, recruiting radio stars such as Jack Benny and Fred Allen to use the phrase. C. E. “Deke” Houlgate, a representative of the American Gas Association, also launched an effort to establish gas appliances as standard props in Hollywood films. By 1941, motion pictures had featured 202 all-gas kitchens, along with 360 gas ranges and 238 gas-powered refrigerators, according to Houlgate. &#8220;Today, Hollywood uses gas appliances 100 percent in its outstanding pictures,&#8221; he told the audience at a gas appliance and equipment convention in Los Angeles.</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png" sizes="(max-width: 918px) 100vw, 918px" srcset="https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=768 768w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=640&amp;h=853&amp;crop=1 640w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/american-dream-women_d793be.png 918w" alt="Ad showing a woman checking the timer on her gas range" data-caption="A 1939 advertisement from the American Gas Association in the Ladies' Home Journal promises to make cooking easier: “‘Why, they do the cooking almost by themselves!’ women exclaim when they see the remarkable things an Automatic Gas Range can do.”&lt;br&gt;" data-credit="Ladies' Home Journal"/><figcaption>A 1939 advertisement from the American Gas Association in the Ladies&#8217; Home Journal promises to make cooking easier: “‘Why, they do the cooking almost by themselves!’ women exclaim when they see the remarkable things an Automatic Gas Range can do.”<br /> <cite>Ladies&#8217; Home Journal</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As World War II came to a close, the gas industry latched onto the patriotic mood and promised to take the “‘irk’ out of work” with its “<a href="https://texashistory.unt.edu/ark:/67531/metapth416928/m1/1/">New Freedom Gas Kitchen</a>” campaign. Freedom, that is, from the drudgery of cooking. The actual model kitchens varied, but they had streamlined, step-saving layouts built around gas-powered ranges, fridges, and automatic water heaters that could “<a href="https://gahistoricnewspapers.galileo.usg.edu/lccn/sn88054115/1946-04-18/ed-1/seq-8/">speed up clean-up</a>” by providing endless hot water.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It was the perfect time to market new gadgets, because mass consumption had rapidly taken hold of American culture. Economic growth after the Great Depression and World War II relied on an expanding middle class buying more, more, and more: A Bride’s Magazine handbook from the postwar era <a href="https://archive.org/details/fiftieswomensora0000harv/page/110/mode/2up">urged newlyweds</a> to keep an eye out for brand names when buying “dozens of things you never bought or even thought of before,” for the purpose of “greater security” for the country’s industries. “[W]hat you buy and how you buy it is very vital for your new life — and to our whole American way of living,” it read.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"><em>A Word to the Wives</em>, a short film sponsored by the American Gas Association in 1955, showcased a modern home equipped with gas appliances, such as refrigerators and dryers. When a busy homemaker, Jane, visits her friend Alice’s home filled with this technology, she has to decline Alice’s offer of a shopping trip because she’s too busy with chores at home. “Remember, I haven’t got your dream kitchen to make things easier. Mine’s strictly the nightmare type,” Jane says, sighing. Alice sells her on how gas appliances can provide “freedom from unnecessary drudgery,” and they plot to leave Jane’s husband to suffer through chores without her for the weekend, so that he’ll want to buy a “dream kitchen,” too.</p>
+
+
+
+<figure style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)" class="wp-block-video"><video height="240" style="aspect-ratio: 320 / 240;" width="320" autoplay controls muted src="https://grist.org/wp-content/uploads/2026/10/WordToTheWives-FullExcerpt.mp4" playsinline></video><center><figcaption class="wp-element-caption">The American Gas Association’s 1955 film <em>A Word to the Wives</em> follows a woman’s scheme to convince her husband they need modern gas appliances. <em><strong>Internet Archive</strong></em></figcaption></center></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The battle over what would power American homes — gas or electricity — would continue to play out over decades. But petroleum had quietly found a way into households, too. In 1957, the Shell Oil Company celebrated women’s work as part of an ad campaign, “From A to Z: An Alphabet of Good Things about Petroleum.” M was for Mother: “Housewife, cook, chauffeur, hostess, teacher, glamor girl — she does dozens of jobs well … who’s responsible for so many of these new time-saving products? Mother’s little helper — Oil,” the advertisement says.&nbsp;</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter three-fourth-width"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/mother.png" sizes="(max-width: 1791px) 100vw, 1791px" srcset="https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=768 768w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=1536 1536w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=640&amp;h=853&amp;crop=1 640w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/mother.png?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/mother.png 1791w" alt="Ad featuring illustrations of a mother doing various tasks alongside oil facts and benefits" data-caption="A 1957 advertisement from Shell promises that oil will make life easier for women. 
+" data-credit="Lifeblood"/><figcaption>A 1957 advertisement from Shell promises that oil will make life easier for women. 
+ <cite>Lifeblood</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Soon, it seemed like almost everything in the American dream house was made from petrochemicals, which some oil executives <a href="https://archive.org/details/sim_npn-national-petroleum-news_1946-10-30_38_44/page/30/mode/2up?q=%22american+way+of+life%22">had predicted would be</a> “the most dramatic future field of development.” As chemists experimented with petroleum derivatives, plastics began taking off, and Tupperware containers, polyester clothes, and synthetic carpets arrived in households. Shell’s alphabetical ad campaign pointed out that “oil research helps with quick-drying paints, no-polish floor tiles, durable plastic table tops, weather-defying asphalt-shingled roofs.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“In many ways,” the ad says, “your home is a house that oil built.”</p>
+
+
+
+<h2 id="h-the-american-lifestyle-is-not-up-for-negotiation" class="wp-block-heading">‘The American lifestyle is not up for negotiation’</h2>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As the years passed, people forgot where this version of the fossil-fueled American Dream had come from. Like most successful propaganda, it simply became taken for granted. The country’s growing reliance on petroleum was seen as a sign of progress for much of the 20th century, an article of faith in the American project.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">In the 1960s, however, the pollution from fossil fuels and all the products companies were pumping out was increasingly visible. Smog blanketed Los Angeles on more days than not; an oil spill off the California coast washed sludge onto beaches; the polluted Cuyahoga River in Ohio caught on fire, again. The decade saw the federal government’s first serious effort to crack down on pollution, starting with the passage of the Clean Air Act in 1963, followed by the Motor Vehicle Air Pollution Act in 1965. The environmental movement was born on <a href="https://grist.org/article/love-it-or-hate-it-earth-days-just-not-what-it-used-to-be-what-happened/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">Earth Day in April 1970</a>, when an estimated 10 percent of the country’s population joined in demonstrations demanding that political leaders do more to clean up the environment.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Then, the cheap, plentiful fuel that had enabled the American “way of life” was suddenly no longer cheap and plentiful. In 1973, oil-producing Arab countries <a href="https://history.state.gov/milestones/1969-1976/oil-embargo">stopped exporting petroleum</a> to the United States because of its support for Israel during the Yom Kippur War, and oil prices <a href="https://www.federalreservehistory.org/essays/oil-shock-of-1973-74">nearly quadrupled</a>. President Richard Nixon <a href="https://energyhistory.yale.edu/the-oil-shocks-of-the-1970s/">instituted a rationing program</a>, and gas stations started running out of fuel.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The oil crisis threatened the car-powered American way of life that people had come to rely on, and as if on cue, “freedom” became a hot talking point. “For many the ‘energy crisis’ was seen as a contrived threat to justify more government control of everyday life,” Matthew Huber writes in <em>Lifeblood: Oil, Freedom, and the Forces of Capital</em>. One advertisement from the New Car and Truck Dealers of America in 1979 asked readers to “Help us protect your freedom to drive.” From whom? The people who cared about the environment. “There are people in government, and others, whose <em>only</em> answer to our environmental and energy problems is to restrict the use of the automobile.” Businesses that relied on fossil fuels were now on the defensive.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Another challenge for the oil and gas industry arrived when the American public grew concerned over global warming. During an unusually hot summer in 1988, James Hansen, director of NASA’s Goddard Institute for Space Studies at the time, warned Congress that the greenhouse effect had already been detected. Global warming became front-page news around the country, climate bills proliferated in Congress, and the United Nations created the building blocks for global climate policy. President George H.W. Bush went into office declaring himself “the environmental president” and promising to counter the “greenhouse effect” with the “<a href="https://www.theguardian.com/film/2025/nov/04/the-white-house-effect-netflix-documentary-climate">White House effect</a>,” but as soon as it became clear that doing something about climate change meant curbing the use of fossil fuels, his administration <a href="https://www.nytimes.com/interactive/2018/08/01/magazine/climate-change-losing-earth.html">reversed course</a>. By 1992, when countries met to sign a global climate treaty at the Earth Summit in Rio de Janeiro, Bush refused to commit to targets for emissions reductions. U.S. delegates <a href="https://time.com/archive/6598112/summit-to-save-the-earth-rich-vs-poor/">insisted over and over</a> that “the American lifestyle is not up for negotiation.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The idea that addressing climate change required a sacrifice of American values — and the lifestyles and products that supported them — came up whenever the country was seriously considering limits on fossil fuels. In 1997, President Bill Clinton stood prepared to sign the Kyoto Protocol, which required countries to cut carbon emissions to 5 percent below 1990 levels by 2012. But the oil company Mobil responded with alarm: “Committing to binding targets and timetables <em>now</em> will alter today’s lifestyles and tomorrow’s living standards,” it <a href="https://embed.documentcloud.org/documents/705561-mob-nyt-1997-oct-30-resetalarm/">warned in an ad</a> in The New York Times. “Flexibility will be constrained. Carpooling in; sport utility vehicles out. High fuel and electric bills. Factory closures. Job displacement.”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">A pattern was established: Oil companies ramped up their PR campaigns whenever there was a push <a href="https://cssn.org/wp-content/uploads/2020/12/Brulle2020_Article_CorporatePromotionAndClimateCh.pdf">for climate action</a> in Congress, helping to thwart efforts to limit emissions or negotiate binding treaties. They poured money into political campaigns and lobbying, played up doubts about the science of global warming, and <a href="https://grist.org/economics/climate-legislation-costs-economics-oil-industry/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">commissioned studies</a> showing that climate policies would hurt the economy. They also argued that cutting fossil fuels would threaten the American way of life — the one they had spent so many decades championing.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">But as fossil fuel emissions continued to rise, and hurricanes and wildfires grew more severe, Americans became <a href="https://climatecommunication.yale.edu/publications/climate-change-in-the-american-mind-beliefs-attitudes-fall-2025/toc/5/">increasingly worried</a> about climate change. In the late 2010s, progressives channeled their energy into proposals for a Green New Deal, calling for bold investment in a clean economy that would tackle climate change and inequality at the same time. By tapping into nostalgia for the New Deal, one of the most ambitious political projects in U.S. history, they were articulating a competing vision of the “good life,” divorced from fossil fuels.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The ascendant right wing of the Republican Party had a ready-made response: The Green New Deal was an attack on freedom. When Representative Alexandria Ocasio-Cortez&#8217;s office released a fact sheet that mentioned the difficulty of eliminating emissions from “farting cows and airplanes” in 2019, critics seized on it as evidence of climate activists trying to control their choices. At the Conservative Political Action Conference that year, Sebastian Gorka, a Trump administration official, <a href="https://www.washingtonpost.com/nation/2019/03/01/latest-right-wing-attack-democrats-they-want-take-away-your-hamburgers/">said</a>, “They want to take your pickup truck. They want to rebuild your home. They want to take away your hamburgers.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">After years of failed climate proposals, politicians knew that mandates and regulations would be politically tricky. When President Joe Biden took office in 2021, promising to tackle climate change, the energy behind the Green New Deal was whittled down into a less ambitious, more politically palatable project. In 2022, Congress passed the only comprehensive climate law in American history, the Inflation Reduction Act, full of tax credits and incentives to switch to clean energy and green technologies. The Biden administration instituted many regulations that mandated more efficient technology, including for household appliances, and conservatives keyed in on the upfront costs. In 2023, The Alliance for Consumers, a <a href="https://jacobin.com/2022/11/leonard-leo-concord-fund-iowa-attorney-general-race-2022">conservative advocacy group</a>, posted a visual of “Biden’s Dream House,” purporting to reveal how the Biden administration’s policies would force Americans to pay for costly remodeling jobs.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“Welcome to Biden&#8217;s Dream House, where the American dream just got significantly more expensive …” Alliance for Consumers posted on X in 2023. The campaign focused on the cost of upgraded appliances and the idea that the government was trying to control household decisions. “If you like your living room and kitchen, you can keep your living room and kitchen &#8230; just with a few additional ‘upgrades’ to comply with Progressive Lifestyle Choices™.”</p>
+
+
+
+<figure class="wp-block-embed is-type-rich is-provider-x wp-block-embed-x"><div class="wp-block-embed__wrapper">
+<blockquote class="twitter-tweet" data-width="500" data-dnt="true"><p lang="en" dir="ltr">Welcome to Biden&#39;s Dream House, where the American dream just got significantly more expensive&#8230; <br><br>Join us on a tour and see the green &quot;upgrades&quot; that the Biden Administration wants to bring (by mandate) to a home near you, very soon. <a href="https://t.co/7cg7yMRCXZ">pic.twitter.com/7cg7yMRCXZ</a></p>&mdash; Alliance For Consumers (@for_consumers) <a href="https://x.com/for_consumers/status/1717545440600621271?ref_src=twsrc%5Etfw">October 26, 2023</a></blockquote><script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
+</div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The clear message was that “elitist climate liberals” wanted to force people “to have a worse life and sacrifice to solve this,” said Huber, the author of <em>Lifeblood</em>.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">As Republicans geared up for Trump’s presidential run in 2024, they leaned into this narrative. That September, Kevin Roberts, president of The Heritage Foundation, the think tank behind the far-right policy playbook Project 2025, <a href="https://www.motherjones.com/environment/2024/09/project-2025-kevin-roberts-climate-ira/">told the audience</a> at a New York Times climate event: “I’ll go anywhere to talk about how the climate agenda is ending the American Dream.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Another way of looking at it, though, is that climate change itself is threatening the American Dream. Global warming <a href="https://grist.org/economics/5-ways-climate-change-made-life-more-expensive-in-2022/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">pushes up the cost of food and energy</a>, causing <a href="https://www.propublica.org/article/climate-change-homes-insurance-housing-rent-mortgage">spikes in home insurance rates</a> that can price people out of owning a home, and destroys homes with floods and fires. Fossil fuels, long sold as the key to achieving comfort and prosperity, have now begun pushing those goals further out of reach.</p>
+
+
+
+<h2 id="h-can-a-petroculture-dream-up-something-new" class="wp-block-heading">Can a ‘petroculture’ dream up something new?</h2>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The idea that sinister, left-wing climate killjoys want to get rid of hamburgers, pickup trucks, and other iconic American standbys is often dismissed as culture war nonsense. But it begins to make sense if you see it as the result of a century-long campaign tying fossil fuels to the “good life.”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">From the cars we drive to the plastics that surround us, oil has become part of daily life. Brulle, the sociologist at Brown, says the MAGA movement that has captured the Republican Party taps into a “cultural belief in the rightness of petroleum” in the American imagination more broadly.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The rise of MAGA Republicans has coincided with a sharp shift among members of the party toward embracing fossil fuels. In 2020, 65 percent of Republicans supported the U.S. prioritizing wind and solar development over oil, coal, and gas, according to polling from Pew Research Center. Today, that picture has completely flipped, with <a href="https://www.pewresearch.org/science/2026/04/03/americans-shifting-views-on-energy-issues/">71 percent</a> preferring fossil fuels. Across party lines, the idea of moving on from oil and gas has lost some of its appeal. Less than half of Democrats polled by Pew in 2024 said the U.S. should completely phase fossil fuels out of the energy supply. Scholars call the United States a “<a href="https://petrofictionary.wordpress.com/portfolio/petroculture/">petroculture</a>” — an “oil society through and through.”&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It can be difficult to peer beyond the rumbling of an engine, even when stuck in stop-and-go traffic, to a different way of life. In the U.S., our lives are so saturated with oil, it’s hard to know where to begin untangling our connection with petroleum, said Stephanie LeMenager, an English professor at the University of Oregon who wrote a book about oil’s cultural resonance. “There&#8217;s a sense of despair, paralysis, and also just not really being able to clearly see a path forward, because of how embedded oil is in everything that we do,” LeMenager said.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">So how does a country begin to rid itself of a century’s worth of oil and gas propaganda? It might start with understanding that none of this was predestined, as much as it might feel like it. The early 20th century began with electric cars and electric stoves; things might have stayed that way, with a push or pull one way or the other, and the same sort of PR campaign that put petroleum at the center of American life.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">From the Green New Deal to the more recent focus on “abundance,” parts of the left have tried to move past the narrative that tackling global warming requires sacrifice. But it will take more than catchy slogans to convince people that a comfortable life is possible without fossil fuels. Oil helped deliver a higher standard of living — the stretch was that people needed to consume ever more of it to live their best lives. The fossil fuel industry spent decades reaching ordinary Americans with that message, broadcasting it over the airwaves and across movie screens, and carrying it into towns around the country through schools and public events. Now, there are cleaner, safer options to power the world.&nbsp;&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Petroleum runs so deep in American culture that building another, cleaner version of the good life will take time — and probably a lot of money. “Crafting the American Dream is the thing that advertisers have been doing for decades,” said Duncan Meisel, the former executive director of Clean Creatives, an initiative pressuring PR companies and advertisers to stop working with fossil fuel clients.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">The American Dream was invented, so maybe we can invent it again.</p>
+<p class="grist-story-credit">This story was originally published by <a href="https://grist.org">Grist</a> with the headline <a href="https://grist.org/culture/hidden-history-american-dream-oil-gas-investigation/">The hidden history of how Big Oil invented the American Dream</a> on Oct 22, 2026.</p>]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">758252</post-id><timeToRead>30</timeToRead><imageCaption><![CDATA[Collage of smokestacks, ad snippets, family beside a car, and woman pulling a pan out of the oven]]></imageCaption><summary><![CDATA[]]></summary>	</item>
+<item>
+		<title>Where fossil fuels are lurking in your home — room by room</title>
+		<link>https://grist.org/culture/where-fossil-fuels-are-lurking-in-your-home-room-by-room/</link>
+		
+		<dc:creator><![CDATA[Kate Yoder]]></dc:creator>
+		<pubDate>Thu, 22 Oct 2026 08:40:00 +0000</pubDate>
+				<category><![CDATA[Culture]]></category>
+		<guid isPermaLink="false">https://grist.org/?p=758157</guid>
+
+					<description><![CDATA[Tour our miniature dream house to see how oil and gas became part of everyday products.]]></description>
+										<content:encoded><![CDATA[
+<p class="has-drop-cap has-default-font-family wp-block-paragraph">Freeing yourself from oil is a downright impossible task in modern America. You could put solar panels on your roof, bring tote bags to the grocery store, and drive an electric vehicle, but try as you might, your home would still be brimming with products derived from fossil fuels.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Roughly 9 out of every 10 things in a typical home have some kind of chemical basis in petroleum, according to John Warner, an inventor who co-founded the field of “<a href="https://www.epa.gov/greenchemistry/basics-green-chemistry">green chemistry</a>.” It’s easy to miss all these innocent-looking items, because they’re hiding in plain sight.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">After World War II, a budding industry fueled by petroleum rapidly expanded — and the products hardly resembled crude oil. They were Tupperware containers, nylon stockings, and Tide laundry detergent. Chemical companies called these synthetic items “miracle” products that would revolutionize home living, promising comfort and convenience.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">For oil companies, the home was a new frontier. In an alphabet-themed advertising campaign from Shell in 1956, “H” was for Home; the company pointed out that oil research helped with everything from quick-drying paints and no-polish floor tiles to weather-defying asphalt-shingled roofs.</p>
+
+
+<div class="wp-block-in-article-recirc">
+  <article class="in-article-recirc">
+    <span class="in-article-recirc__label">More in this series</span>
+    <div class="in-article-recirc__content">
+
+      
+      
+                    
+            <a class="in-article-recirc__art" href="https://grist.org/culture/hidden-history-american-dream-oil-gas-investigation/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">
+        <figure>
+          <img src="https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?quality=75&#038;strip=all&#038;w=768" alt="Collage&#x20;of&#x20;smokestacks,&#x20;ad&#x20;snippets,&#x20;family&#x20;beside&#x20;a&#x20;car,&#x20;and&#x20;woman&#x20;pulling&#x20;a&#x20;pan&#x20;out&#x20;of&#x20;the&#x20;oven" class="js-modal-gallery__hidden" srcset="https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?quality=75&#038;strip=all 2000w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=1200%2C675&#038;quality=75&#038;strip=all 1200w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=330%2C186&#038;quality=75&#038;strip=all 330w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=768%2C432&#038;quality=75&#038;strip=all 768w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=1536%2C864&#038;quality=75&#038;strip=all 1536w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=160%2C90&#038;quality=75&#038;strip=all 160w, https://grist.org/wp-content/uploads/2026/10/fossil-fuel-oil-american-dream.jpg?resize=150%2C84&#038;quality=75&#038;strip=all 150w" sizes="auto, (max-width: 600px) 100vw, 300px" height="1125" width="2000" loading="lazy" decoding="async">
+        </figure>
+      </a>
+            <div class="in-article-recirc__body">
+        <div class="in-article-recirc__title">
+                    <a class="in-article-recirc__title-link" href="https://grist.org/culture/hidden-history-american-dream-oil-gas-investigation/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">The hidden history of how Big Oil invented the American Dream</a>
+        </div>
+        <div class="in-article-recirc__meta">
+          
+	
+  <div class="tease-meta">
+                            <a class="byline-link" href=https://grist.org/author/kate-yoder/>Kate Yoder</a>              </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">People usually think that dependence on fossil fuels is about what we burn: the gasoline that makes cars hum, the gas flame beneath a pot of stew. But it’s also about the less obvious petrochemical products originally made from what’s left after gasoline and diesel are separated out. Even as clean energy takes off, oil majors are planning to pump more oil than ever, driven by demand for petrochemicals and plastic. As the International Energy Agency <a href="https://www.iea.org/reports/oil-2023">explained in 2023</a>, “the steady pace of growth for petrochemicals will not relent.”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Take a tour of our model home to learn how fossil fuels have taken over our living spaces. It’s unsettling evidence that what Shell said in that ad 70 years ago still holds true: “In many ways, your home is a house that oil built.”</p>
+
+
+<div class="wp-block-dil-interactive-container" id="" style="background-color: #a6cdf7">
+  <div class="wp-block-dil-interactive-template">
+    <div class="interactive-content">
+              <div class="interactive-content-image">
+          <img src="https://grist.org/wp-content/uploads/2026/10/LivingRoom-1.jpg" alt="The&#x20;Living&#x20;Room" class="js-modal-gallery__hidden"
+               srcset="" sizes=""
+               height="2000" width="2000" loading="eager"
+               fetchpriority="high" decoding="async">
+        </div>
+            <div class="interactive-content-text"  style="background-color: #a6cdf7">
+         <h2 class="interactive-title">The Living Room</h2>                          <div class="interactive-content-item"><label>The Couch: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">The cushy </span><b data-mce-fragment="1">polyurethane foam</b><span style="font-weight: 400;" data-mce-fragment="1"> that fills couches is made from two main ingredients typically derived from fossil fuels — polyols and isocyanates. Invented in Germany in 1937, polyurethane foam came to the United States in the 1950s, and it quickly spread from sofas to car seats. Couches are also often also wrapped in </span><b data-mce-fragment="1">polyester</b><span style="font-weight: 400;" data-mce-fragment="1">, a fabric made from plastic (either from crude oil or PET bottles) that&#8217;s been extruded into tiny threads.</span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Just hope they don’t catch fire. “Most modern couches are basically blocks of gasoline,” the journalist Zoë Schlanger wrote during the Los Angeles fires in 2025. Polyurethane foam releases potentially deadly hydrogen-cyanide gas when it burns, and during those blazes, the smoke from smoldering homes was so toxic that firefighters had to stay back. </span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Early on, it became clear that fire safety was one of the major problems of filling homes with products made of hydrocarbons. In the 1970s, manufacturers began adding flame retardants into furniture foam, children’s pajamas, and other items to slow ignition. But those flame retardants caused a </span><a href="https://greensciencepolicy.org/harmful-chemicals/flame-retardants/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">health hazard</span></a><span style="font-weight: 400;" data-mce-fragment="1"> as they crept into house dust and into our bodies, raising risks of cancer and exposing us to endocrine disruptors.</span>​</p>
+</div>
+                  <div class="interactive-content-item"><label>The Floor: </label><p data-mce-fragment="1"><b data-mce-fragment="1">Vinyl</b><span style="font-weight: 400;" data-mce-fragment="1"> isn’t just for record collectors; it might also be on your floor. Vinyl flooring took off in the 1950s and ’60s, overtaking linoleum flooring, and became wildly popular in the form of planks that mimicked wood floors but didn’t require all the maintenance. The problem is, vinyl can emit harmful compounds such as phthalates, which </span><a href="https://www.theatlantic.com/health/archive/2024/09/avoiding-microplastics-luxury/679939/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">experts warn</span></a><span style="font-weight: 400;" data-mce-fragment="1"> are linked to conditions like asthma and can harm reproductive health and child development.</span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Often called PVC, short for </span><a href="https://www.vinylinfo.org/production/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">polyvinyl chloride</span></a><span style="font-weight: 400;" data-mce-fragment="1">, vinyl is made from processing natural gas or petroleum to make ethylene, then combining that with the element chlorine. The vinyl chloride used to produce PVC is </span><a href="https://www.epa.gov/assessing-and-managing-chemicals-under-tsca/risk-evaluation-vinyl-chloride" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">a known human carcinogen</span></a><span style="font-weight: 400;" data-mce-fragment="1">, and workers who are exposed can develop liver cancer and other health problems.</span>​</p>
+</div>
+              </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wp-block-dil-interactive-container" id="" style="background-color: #a6cdf7">
+  <div class="wp-block-dil-interactive-template">
+    <div class="interactive-content">
+              <div class="interactive-content-image">
+          <img src="https://grist.org/wp-content/uploads/2026/10/Bathroom-1.jpg" alt="The&#x20;Bathroom" class="js-modal-gallery__hidden"
+               srcset="" sizes=""
+               height="2000" width="2000" loading="eager"
+               fetchpriority="high" decoding="async">
+        </div>
+            <div class="interactive-content-text"  style="background-color: #a6cdf7">
+         <h2 class="interactive-title">The Bathroom</h2>                          <div class="interactive-content-item"><label>The Tub: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Until the 1960s, a typical bathroom featured an enameled cast iron bathtub surrounded by ceramic tiles. And then tubs made of fiberglass — glass strands embedded in a plastic resin — showed up. Ceramic tiles were soon </span><a href="https://www.usmodernist.org/HH/HH-1969-04.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">replaced by plastic laminates</span></a><span style="font-weight: 400;" data-mce-fragment="1">, also derived from petrochemicals. In the 1980s, tubs made of </span><b data-mce-fragment="1">acrylic</b><span style="font-weight: 400;" data-mce-fragment="1"> — a type of plastic made from fossil fuels — became popular, and it remains the top tub material today. </span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">After stepping into that tub, you’re basically bathing in petroleum. In the shower, you might use a loofah made from plastics (like </span><b data-mce-fragment="1">polyethylene</b><span style="font-weight: 400;" data-mce-fragment="1">) and lather up with shampoo and soap containing ingredients fashioned from fossil fuels. Push aside a polyester shower curtain and step onto a plush microfiber bathmat, made from a blend of polyester and other plastics. </span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Oh, and don’t forget toothbrushes have plastic handles and </span><b data-mce-fragment="1">nylon </b><span style="font-weight: 400;" data-mce-fragment="1">bristles, contact lenses are made of plastic polymers, and many types of </span><a href="https://www.safecosmetics.org/chemicals/petrolatum/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">makeup</span></a><span style="font-weight: 400;" data-mce-fragment="1"> contain products derived from petroleum.</span>​</p>
+</div>
+              </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wp-block-dil-interactive-container" id="" style="background-color: #a6cdf7">
+  <div class="wp-block-dil-interactive-template">
+    <div class="interactive-content">
+              <div class="interactive-content-image">
+          <img src="https://grist.org/wp-content/uploads/2026/10/Kitcehn-1.jpg" alt="The&#x20;Kitchen" class="js-modal-gallery__hidden"
+               srcset="" sizes=""
+               height="2000" width="2000" loading="eager"
+               fetchpriority="high" decoding="async">
+        </div>
+            <div class="interactive-content-text"  style="background-color: #a6cdf7">
+         <h2 class="interactive-title">The Kitchen</h2>                          <div class="interactive-content-item"><label>The Fridge: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Early refrigerators were so dangerous — cooling foods with toxic and flammable gases like ammonia, methyl chloride, and sulfur dioxide — some people had to </span><a href="https://gml.noaa.gov/outreach/info_activities/pdfs/TBI_the_chlorofluorocarbons.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">put them in their backyards</span></a><span style="font-weight: 400;" data-mce-fragment="1">. (And let’s not even talk about those gas-powered fridges). Frigidaire, General Motors, and DuPont worked to find a safer method, and in 1930, the “miracle compound” Freon was introduced commercially. It was the name for </span><b data-mce-fragment="1">chlorofluorocarbon</b><span style="font-weight: 400;" data-mce-fragment="1"> refrigerants, called CFCs, another class of compound made from hydrocarbons. Almost half a century later, scientists discovered CFCs were </span><a href="https://www.epa.gov/snap/refrigerant-safety" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">destroying the ozone layer</span></a><span style="font-weight: 400;" data-mce-fragment="1">, and manufacturers in the 1990s switched to </span><b data-mce-fragment="1">hydrofluorocarbons</b><span style="font-weight: 400;" data-mce-fragment="1"> — which turned out to be a more potent greenhouse gas than carbon dioxide. Countries have been </span><a href="https://www.nytimes.com/2026/10/15/climate/hfc-kigali-greenhouse-gases.html" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">successfully phasing it out</span></a><span style="font-weight: 400;" data-mce-fragment="1"> over the past decade.</span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Fridges are often filled with rigid polyurethane foam, lined with </span><b data-mce-fragment="1">polystyrene</b><span style="font-weight: 400;" data-mce-fragment="1"> plastic (a stiff resin made from liquid hydrocarbons), and painted with polyester coatings. Thermoplastic polyurethane, which is heat-resistant, is wrapped around wiring and tubing. And then there’s the food </span><i data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">inside</span></i><span style="font-weight: 400;" data-mce-fragment="1"> the fridge: Common food dyes are </span><a href="https://advocacy.consumerreports.org/wp-content/uploads/2021/06/FACT-SHEET_-Synthetic-Food-Dyes.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">petroleum-based</span></a><span style="font-weight: 400;" data-mce-fragment="1">, along with many preservatives. Chemicals from your plastic-wrapped cheese and ground beef </span><a href="https://www.fda.gov/food/food-packaging-other-substances-come-contact-food-information-consumers/understanding-how-fda-regulates-substances-come-contact-food" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">can also migrate into</span></a><span style="font-weight: 400;" data-mce-fragment="1"> your dinner.</span>​</p>
+</div>
+                  <div class="interactive-content-item"><label>The Countertop: </label><p><b data-mce-fragment="1">Laminate</b><span style="font-weight: 400;" data-mce-fragment="1"> countertops weren’t originally invented for kitchens, but to replace the mineral mica in electrical insulation — that’s how the company Formica got its name. Formica shifted from making industrial products to household ones </span><a href="https://www.formica.com/en-us/about-us" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">by 1930</span></a><span style="font-weight: 400;" data-mce-fragment="1">. Made of layers of synthetic resins fused with paper, laminate countertops were marketed as colorful, durable, and “</span><a href="https://www.ebay.com/itm/298071022331" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">cigarette-proof</span></a><span style="font-weight: 400;" data-mce-fragment="1">” once the company added a layer of metal foil. But, like other </span><a href="https://www.epa.gov/formaldehyde/formaldehyde-emission-standards-composite-wood-products" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">composite wood products</span></a><span style="font-weight: 400;" data-mce-fragment="1">, they expose people to </span><a href="https://www.epa.gov/chemicals-under-tsca/epa-finalizes-tsca-risk-evaluation-formaldehyde" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">formaldehyde</span></a><span style="font-weight: 400;" data-mce-fragment="1">, a known carcinogen. Enormously popular in midcentury kitchens, laminate countertops have faded in popularity, though they are still common in older homes. Today, the </span><a href="https://st.hzcdn.com/static/econ/2025_Houzz_US_Kitchen_Trends_Study.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">most common countertop material</span></a><span style="font-weight: 400;" data-mce-fragment="1"> is engineered quartz — “engineered” with crushed quartz and </span><a href="https://www.worksafe.vic.gov.au/interpreting-data-sheets-identify-engineered-stone" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">resins such as polyester</span></a><span style="font-weight: 400;" data-mce-fragment="1">.</span>​</p>
+</div>
+              </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wp-block-dil-interactive-container" id="" style="background-color: #a6cdf7">
+  <div class="wp-block-dil-interactive-template">
+    <div class="interactive-content">
+              <div class="interactive-content-image">
+          <img src="https://grist.org/wp-content/uploads/2026/10/Bedroom-1.jpg" alt="The&#x20;Bedroom" class="js-modal-gallery__hidden"
+               srcset="" sizes=""
+               height="2000" width="2000" loading="eager"
+               fetchpriority="high" decoding="async">
+        </div>
+            <div class="interactive-content-text"  style="background-color: #a6cdf7">
+         <h2 class="interactive-title">The Bedroom</h2>                          <div class="interactive-content-item"><label>The Mattress: </label><p><span style="font-weight: 400;" data-mce-fragment="1">Before they were filled with polyurethane foam — the same plush material inside couches — mattresses were stuffed with materials like </span><a href="https://www.historicnewengland.org/explore/collections-access/gusn/18782" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">horsehair and cotton</span></a><span style="font-weight: 400;" data-mce-fragment="1"> or </span><a href="https://dunlopillointernational.com/about-latex/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">natural latex foam</span></a><span style="font-weight: 400;" data-mce-fragment="1"> made from sap harvested from rubber trees. Polyurethane mattresses turned </span><a href="https://www.newyorker.com/magazine/1963/10/26/about-the-house" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">popular in the 1960s</span></a><span style="font-weight: 400;" data-mce-fragment="1">, offering improved comfort and cheaper prices. Memory foam, another type of polyurethane foam invented by a NASA scientist for </span><a href="https://spinoff.nasa.gov/node/10408" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">airplane seats in the 1960s</span></a><span style="font-weight: 400;" data-mce-fragment="1"> to improve crash protection, didn’t start taking off in mattresses and pillows until the 1990s. More than </span><a href="https://mattressrecyclingcouncil.org/why-recycle/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">50,000 mattresses</span></a><span style="font-weight: 400;" data-mce-fragment="1"> are tossed in the United States every day — you’ve probably seen some dumped in parks and street corners — and because they are made from so many different materials, they can be difficult to recycle.</span>​</p>
+</div>
+                  <div class="interactive-content-item"><label>The Clothing: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">In 1938, DuPont introduced nylon, which it stressed was derived solely from </span><a href="https://www.sciencehistory.org/stories/magazine/nylon-a-revolution-in-textiles/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">air, water, and … coal</span></a><span style="font-weight: 400;" data-mce-fragment="1">. All natural! (It can be made from other fossil fuels today.) DuPont promised that nylon would have many “uses in the world of tomorrow,” including </span><a href="https://digital.hagley.org/DuPont_Announces_Nylon?search_api_fulltext=dupont" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">nylon yarn</span></a><span style="font-weight: 400;" data-mce-fragment="1"> that could make “fine hosiery of extreme sheerness.” Polyester, also touted as a “miracle” fiber, didn’t take off until the 1960s, but it </span><a href="https://www.tandfonline.com/doi/full/10.1080/17569370.2023.2196158#d1e436" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">flooded the market</span></a><span style="font-weight: 400;" data-mce-fragment="1"> so quickly that one anthropologist wrote it turned from “treasure to trash.” </span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Synthetic fibers like polyester and nylon make up nearly 70 percent of all textile production today. They break down very slowly in the environment, fragmenting into microplastics that can persist for generations. A single load of laundry filled with polyester clothes can release </span><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8270180/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">several million microfibers</span></a><span style="font-weight: 400;" data-mce-fragment="1">, making laundry </span><a href="https://www.pbs.org/newshour/science/laundry-is-a-top-source-of-microplastic-pollution-heres-how-to-clean-your-clothes-more-sustainably" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">one of the top sources of microplastic pollution</span></a><span style="font-weight: 400;" data-mce-fragment="1">.</span>​</p>
+</div>
+                  <div class="interactive-content-item"><label>The Carpet: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Carpet has been made from </span><a href="https://www.candrmagazine.com/a-history-of-carpet/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">many materials</span></a><span style="font-weight: 400;" data-mce-fragment="1">, including acrylic, nylon, and polyester. Synthetic carpets were sold as inexpensive, durable, and easy to maintain — phrases that should begin to sound familiar by now. The backing and adhesive used to attach the fiber are, of course, also often </span><a href="https://nepis.epa.gov/Exe/ZyNET.exe/P100Y4LD.txt?ZyActionD=ZyDocument&amp;Client=EPA&amp;Index=2016%20Thru%202020&amp;Docs=&amp;Query=&amp;Time=&amp;EndTime=&amp;SearchMethod=1&amp;TocRestrict=n&amp;Toc=&amp;TocEntry=&amp;QField=&amp;QFieldYear=&amp;QFieldMonth=&amp;QFieldDay=&amp;UseQField=&amp;IntQFieldOp=0&amp;ExtQFieldOp=0&amp;XmlQuery=&amp;File=D%3A%5CZYFILES%5CINDEX%20DATA%5C16THRU20%5CTXT%5C00000016%5CP100Y4LD.txt&amp;User=ANONYMOUS&amp;Password=anonymous&amp;SortMethod=h%7C-&amp;MaximumDocuments=1&amp;FuzzyDegree=0&amp;ImageQuality=r75g8/r75g8/x150y150g16/i425&amp;Display=hpfr&amp;DefSeekPage=&amp;SearchBack=ZyActionL&amp;Back=ZyActionS&amp;BackDesc=Results%20page&amp;MaximumPages=1&amp;ZyEntry=29" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">manufactured with crude oil and gas</span></a><span style="font-weight: 400;" data-mce-fragment="1">.</span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Carpets are also a surprising source of microplastic pollution in homes, though perhaps less surprising once you realize we’re stomping around on synthetic fibers all the time. Carpeted spaces have been found to have higher levels of microplastics in </span><a href="https://www.sciencedirect.com/science/article/abs/pii/S0269749121006461?via%3Dihub" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">house dust</span></a><span style="font-weight: 400;" data-mce-fragment="1"> and </span><a href="https://www.sciencedirect.com/science/article/pii/S0269749124016750?via%3Dihub" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">in the air</span></a><span style="font-weight: 400;" data-mce-fragment="1"> compared to ones without. Microplastics slough off from all the various plastic things around us into </span><a href="https://www.washingtonpost.com/climate-environment/interactive/2024/microplastics-air-human-body-organs-spread/" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">the air we breathe</span></a><span style="font-weight: 400;" data-mce-fragment="1">, and have been found in almost every major organ. The long-term health consequences of this exposure are not yet well understood, but concerns are rising, especially as these particles can be laced with flame retardants and other classes of plastics additives that may be more harmful than the plastic itself.</span>​</p>
+</div>
+              </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wp-block-dil-interactive-container" id="" style="background-color: #a6cdf7">
+  <div class="wp-block-dil-interactive-template">
+    <div class="interactive-content">
+              <div class="interactive-content-image">
+          <img src="https://grist.org/wp-content/uploads/2026/10/WholeHouse-6.jpg" alt="The&#x20;Structure" class="js-modal-gallery__hidden"
+               srcset="" sizes=""
+               height="2000" width="2000" loading="eager"
+               fetchpriority="high" decoding="async">
+        </div>
+            <div class="interactive-content-text"  style="background-color: #a6cdf7">
+         <h2 class="interactive-title">The Structure</h2>                          <div class="interactive-content-item"><label>The Building Materials: </label><p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">You’re not just sitting on, bathing in, and wearing products derived from oil and gas — your house is also coated in them. Take paint: The chemical company Rohm and Haas had churned out Plexiglas for airplanes and military vehicles during World War II, but it needed to find a new outlet for acrylics once the war ended. It landed on </span><a href="https://www.acs.org/content/dam/acsorg/education/whatischemistry/landmarks/acrylicemulsion/acrylic-emulsion-technology-commemorative-booklet.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">acrylic emulsion paints</span></a><span style="font-weight: 400;" data-mce-fragment="1"> — containing solvents, additives, and fossil fuel-derived acrylic binders that hold the pigment together. Wallpaper is commonly coated in PVC; the walls of homes are filled with insulation, often made from fiberglass or petroleum-derived foams.</span></p>
+<p data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Shingles are typically fiberglass mats coated in asphalt (which contains </span><b data-mce-fragment="1">bitumen</b><span style="font-weight: 400;" data-mce-fragment="1">, a petroleum byproduct). Vinyl siding, which emerged in the 1950s, promised homeowners easy maintenance, eliminating the need to paint or stain their wood siding. In 2002, it became the subject of the documentary </span><i data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">Blue Vinyl</span></i><span style="font-weight: 400;" data-mce-fragment="1">, in which the filmmaker Judith Helfand followed the PVC supply chain all around the world after her parents put blue vinyl siding on their house. &#8220;Vinyl,&#8221; </span><a href="https://www.loe.org/shows/segments.html?programID=02-P13-00017&amp;segmentID=2&amp;" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">she says in the film</span></a><span style="font-weight: 400;" data-mce-fragment="1">, &#8220;turns out to be one of the most environmentally hazardous consumer products on Earth.&#8221; Her parents tore off the vinyl siding and replaced it with expensive reclaimed wood; then they </span><a href="https://judithhelfand.com/wp-content/uploads/2018/08/LS_IP3.pdf" data-mce-fragment="1"><span style="font-weight: 400;" data-mce-fragment="1">moved into a retirement community</span></a><span style="font-weight: 400;" data-mce-fragment="1"> with vinyl siding.</span>​</p>
+</div>
+              </div>
+    </div>
+  </div>
+</div>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+
+
+
+<p class="has-drop-cap has-default-font-family wp-block-paragraph">Fossil fuels became part of our homes, then they became part of us: The <a href="https://www.atsdr.cdc.gov/toxfaqs/tfacts207.pdf">flame retardants</a> in couches and the hormone-disrupting <a href="https://stacks.cdc.gov/view/cdc/3849">phthalates</a> in vinyl floors have been found in most Americans’ blood and urine.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Beyond the health risks in homes, there are other reasons to stop using fossil fuels as the basis of everything. Petrochemical production is dangerous for the people who live near these operations, such as in Louisiana’s Cancer Alley. The process of “steam cracking” — turning petroleum and natural gas liquids into ethylene, propylene, and other chemical building blocks — accounts for almost <a href="https://www.ipcc.ch/report/ar6/wg3/chapter/chapter-11/">a fifth of the carbon dioxide emissions</a> from the chemical industry. And scientists are still learning about the consequences of all these synthetic chemicals mixing in the environment.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“We don&#8217;t understand all the combined risks yet,” said Rebecca Altman, an environmental sociologist at Brown University who studies plastics and petrochemistry.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Those who have tried to rid their lives of plastic <a href="https://www.theatlantic.com/magazine/archive/2025/08/microplastics-exposure-health-risks/683249/">have failed</a>, and they’re usually not even considering the broader array of petroleum products. “This is beyond the capacity of any one individual to buy their way out of,” Altman said. Similar to how living in most parts of the U.S. means you need a car to get around, the proliferation of petroleum products requires big-picture changes. Countries have been working to negotiate a global plastics treaty that could begin to address some of these problems, restricting plastic production and the use of hazardous chemicals.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Just because something is fashioned out of fossil fuels doesn’t mean it’s automatically dangerous for your health; everything, after all, is made of chemicals. What people should be calling for is not plastic-free or chemical-free, but hazardous-free, said John Warner, the co-founder of the field of green chemistry, which is focused on designing products that reduce or eliminate hazardous substances.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">It’s certainly possible to build a modern world from different materials. “For every product made from petroleum, something can be made from a bio-based material that is renewable, low energy, nontoxic,” Warner said. The solution isn’t just making products out of natural materials, but making the chemical building blocks for safer substances. For example, the company <a href="https://tidalvision.com/">Tidal Vision</a> uses chitin from seashells to form <a href="https://tidalvision.com/chitosan/">chitosan</a>, an ingredient in many industrial products that are traditionally made from petroleum, from water treatment and agriculture chemicals to replacements for <a href="https://tidalvision.com/chitosan/">flame retardants in textiles</a>.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Regulations could also help keep people safe, but sometimes one class of chemicals gets banned, only for another class to come in that’s just as harmful, a phenomenon known as “regrettable substitution.” Warner thinks regulators should instead focus on making products pass tests for toxicity.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">A world built on greener materials also requires chemists to consider toxics as part of their education. “The field of chemistry and material science never took this as part of our job,” he said. Only a small percentage of chemists are focused on making things nonhazardous. Warner offered a comparison: Imagine if a baker made beautiful cakes that just happened to kill someone every once in a while. Logically, we should expect <em>every</em> baker — and chemist — to make “cakes” that won’t poison us, not just some of them.</p>
+
+
+<div class="credits-block" style="background-color: #a6cdf7"><div class="credits-block-inner"><p style="text-align: center;">Photography and prop design by Jesse Nichols.​</p>
+</div></div>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+<p class="grist-story-credit">This story was originally published by <a href="https://grist.org">Grist</a> with the headline <a href="https://grist.org/culture/where-fossil-fuels-are-lurking-in-your-home-room-by-room/">Where fossil fuels are lurking in your home — room by room</a> on Oct 22, 2026.</p>]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">758157</post-id><timeToRead>5</timeToRead><imageCaption><![CDATA[A miniature house made of wood with a cutaway to rooms like a dollhouse. The cutaway shows an attitc with insulation, a bedroom, a kitchen, a living room, and a bathroom. The house sits on a green screen replaced background with blue skies and clouds.]]></imageCaption><summary><![CDATA[]]></summary>	</item>
+<item>
+		<title>Soaring oil prices underscore the need to help poor countries adopt renewables</title>
+		<link>https://grist.org/international/oil-prices-developing-countries-energy-transition-iran-war/</link>
+		
+		<dc:creator><![CDATA[Austin Corona]]></dc:creator>
+		<pubDate>Thu, 22 Oct 2026 08:30:00 +0000</pubDate>
+				<category><![CDATA[Economics]]></category>
+		<category><![CDATA[Energy]]></category>
+		<category><![CDATA[Equity]]></category>
+		<category><![CDATA[International]]></category>
+		<guid isPermaLink="false">https://grist.org/?p=758720</guid>
+
+					<description><![CDATA[Without central planning or public resources, people in developing countries are pursuing an ad hoc energy transition.]]></description>
+										<content:encoded><![CDATA[
+<p class="has-default-font-family wp-block-paragraph">War-induced spikes in oil prices and the arrival of artificial intelligence are widening the economic gap between rich and poor countries, according to <a href="https://www.imf.org/-/media/files/publications/weo/2026/october/english/text.pdf">the International Monetary Fund&#8217;s October report on the world economy</a>. Poorer countries that import most of their fossil fuels have suffered the worst consequences of the United States’ and Israel’s war on Iran, while wealthier countries have better withstood war-related shocks thanks to AI-related economic growth and diversified energy systems, the report said. </p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Renewable and clean energy could help poorer countries strengthen their economies against future economic turbulence, but a well-planned energy transition requires resources these countries don’t have. Instead, families and companies in developing countries are pursuing their own ad hoc energy transitions with cheap electric motorbikes and rooftop solar panels. Demand for an energy transition in poor economies is here, experts say, but no one is providing the planning and money to make it orderly or equitable.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“Getting off oil is the only solution to this long-standing, but currently very acute, economic vulnerability,” said Rebecca Ray, an economist studying global sustainable development at Boston University. “The question is, who&#8217;s going to pay for it?”</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Oil and gas prices, which have soared as wars in the Middle East and Ukraine have destroyed refineries and closed shipping routes, have made all kinds of products more expensive, including fertilizer and goods that must be shipped with fossil fuel-burning engines. Those high prices hit hardest in poor countries, where people and governments already <a href="https://apnews.com/projects/days-disrupted-after-iran-war/">struggle to afford necessities</a>.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">High fossil fuel prices can also have unwelcome knock-on effects in poor countries, like making it harder for the governments to borrow money. Rising fuel prices slow down an economy, meaning governments take in less tax money. Investors then get skittish about lending to those governments because of their weakened incomes. Governments must then take on riskier loans with steeper interest rates to stay afloat, adding to already <a href="https://www.pbs.org/newshour/world/imf-chief-urges-wealthy-nations-to-rein-in-debt-to-ease-global-economic-pressure">high costs of borrowing</a>. That can lock them into financial trouble and make it harder for them to spend on their people.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“The world’s poorest countries are likely to see their productivity and growth momentum decelerate and the gap in their per capita incomes relative to those in advanced economies widen” through the early 2030s, the IMF report states. The report echoes repeated <a href="https://www.usnews.com/news/world/articles/2026-04-08/imf-world-bank-and-uns-world-food-program-say-war-is-increasing-food-insecurity">warnings about the global impacts of the war in Iran</a> from international organizations since early in the year.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Still, residents of low-income countries are responding to the crisis by seeking opportunities for resilience. Even before fuel prices spiked from war in the Middle East, private citizens and companies in poor countries were investing in their own renewable energy. The war seems to have accelerated those trends or demonstrated their value.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">For instance, electric mopeds and motorcycles now zip through crowded intersections in Vietnam, where their sales nearly <a href="https://www.motorcyclesdata.com/2026/08/19/vietnam-motorcycles/">doubled after the outbreak of the war</a>, now representing 28 percent of new two-wheel vehicles sold. In Pakistani cities, rooftop solar had effectively <a href="https://ember-energy.org/latest-insights/the-solarisation-of-pakistans-energy-economy/">doubled the country’s electricity capacity</a> in two years leading up to the war. After the war began, <a href="https://www.sciencedirect.com/science/article/pii/S0301421526005963?dgcid=rss_sd_all&amp;__cf_chl_tk=mJGh2Djr4GWued1tALeXd87bCKSuVRTvxf3GfhQB6kI-1792524543-1.0.1.1-Vrg6JZMgU7MntPpSlRg5viavWOJxarYSX9zWgqtXjJw">all those solar panels kept the country’s electricity prices fairly stable</a>, shielding the country from the same economic shocks it experienced following Russia’s invasion of Ukraine in 2022.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">An energy transition is happening, but it’s not a systematic change. And it’s not equally distributed among the people of poor countries. Installing so much unplanned rooftop solar takes wealthier households off power grids, leaving poorer households to pay for the grids’ improvements. EV growth can strain grids without the appropriate planning and infrastructure improvements. And the organization and expense required for a wholesale energy transition just aren’t feasible for many governments.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Ethiopia, for instance, has rocketed ahead of other African countries to become a global leader in electric vehicle adoption, but the country still only has <a href="https://energyforgrowth.org/article/new-data-puts-ethiopia-among-global-ev-leaders/">13 public charging stations</a> and suffers regular blackouts, making its EV rollout potentially precarious. The country has doubled its national electricity generation with the Grand Ethiopian Renaissance Dam hydropower project, which <a href="https://www.yahoo.com/news/articles/ethiopia-inaugurates-africas-largest-hydroelectric-174421583.html">came online last year</a>, but it still needs a reliable grid to make that power boost meaningful. Nepal, which is also leveraging hydropower to support massive EV adoption — over 70 percent of new vehicles sold — is similarly watching its electric vehicle stock grow faster than the <a href="https://nepalautomart.com/news/nepal-records-over-63-000-evs-ranks-second-globally-for-new-electric-vehicle-sal">chargers and grid technology</a> needed to support it.</p>
+
+
+
+<figure class="wp-block-ups-image aligncenter"><div class="wp-block-ups-image-inner"><img decoding="async" src="https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg" sizes="(max-width: 1600px) 100vw, 1600px" srcset="https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=330 330w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=768 768w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=1200 1200w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=1536 1536w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=160&amp;h=90&amp;crop=1 160w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=640&amp;h=853&amp;crop=1 640w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=96&amp;h=96&amp;crop=1 96w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg?quality=75&amp;strip=all&amp;w=150 150w, https://grist.org/wp-content/uploads/2026/10/Nepal-electric-tuktuk-1.jpg 1600w" alt="An electric tuktuk sits beside its battery at a trade show" data-caption="Visitors examine a battery-powered rickshaw during the NAIMA Nepal Mobility Expo 2025 in Kathmandu, Nepal.
+" data-credit="Cui Nan / China News Service / VCG via Getty Images"/><figcaption>Visitors examine a battery-powered rickshaw during the NAIMA Nepal Mobility Expo 2025 in Kathmandu, Nepal.
+ <cite>Cui Nan / China News Service / VCG via Getty Images</cite></figcaption></div></figure>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Building out essential infrastructure like power grids is exactly the kind of project that international development institutions like the IMF are supposed to invest in. The IMF and World Bank, both headquartered in Washington, D.C., <a href="https://www.worldbank.org/en/about/history/the-world-bank-group-and-the-imf">were founded</a> by over 40 allied nations in 1944. Both organizations, along with a series of regional development institutions like the Asian Development Bank, constitute a system whose public goal is to provide loans, research capabilities, and financial advice to developing countries so they can build projects needed to grow their economies. However, throughout their history, both organizations have received criticism for prioritizing debt repayment over well-being within borrower countries, potentially worsening inequality and corporate profiteering.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Today, the largest of these organizations aren’t stepping up to overhaul energy systems in developing countries — in fact, the World Bank abandoned its ambitious climate-related lending goal in June, following the Trump administration’s <a href="https://www.reuters.com/sustainability/cop/world-bank-abandon-goal-devote-45-lending-resources-climate-change-projects-2026-06-29/">calls for it and the IMF to refocus away from climate issues</a>. And the large countries that help fund those organizations, like the United States, European nations, and <a href="https://www.cgdev.org/publication/beyond-belt-and-road-responding-evolution-chinas-financing-infrastructure">China</a>, have recently reduced their funding for infrastructure development in poor countries.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">&#8220;Developing countries have been caught in a downward spiral of decelerating growth and increased vulnerability,” said Shekhar Aiyar, director of the Indian Council for Research on International Economic Relations, at an event hosted by the <a href="https://www.cgdev.org/event/future-mdbs-more-critical-ever">Center for Global Development</a> this month. “At the same time, there has been a vast scaling back of bilateral aid” — that is, aid from rich countries to poorer ones.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">Wealthy countries have <a href="https://grist.org/cop30/cop30-brazil-adaptation-finance/?utm_source=syndication&utm_medium=rss&utm_campaign=grist">promised over a trillion dollars</a> to help fund climate-related projects in developing nations by 2035, but annual payments are meant to ramp up and aren’t fully available yet. Plus, wealthy countries have historically <a href="https://www.washingtonpost.com/climate-environment/2023/10/09/rich-nations-pledged-poor-ones-billions-climate-damages-they-arent-paying/">failed to meet similar promises</a>.</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">If there’s a silver lining, it’s that the economic fallout from the Iran war has made the economic importance of transitioning poor countries away from fossil fuels undeniable.&nbsp;</p>
+
+
+
+<p class="has-default-font-family wp-block-paragraph">“It’s now more widely understood that <span class='tooltipsall tooltipsincontent classtoolTips4'>decarbonization</span> is a critical goal for macroeconomic stability, and just that recognition is a really encouraging step,” Ray said.</p>
+
+
+
+
+
+<p class="has-default-font-family wp-block-paragraph"></p>
+<script type="text/javascript"> toolTips('.classtoolTips4','The process of reducing the emission of carbon dioxide and other greenhouse gases that drive climate change, most often by deprioritizing the use of fossil fuels like oil and gas in favor of renewable sources of energy.'); </script><p class="grist-story-credit">This story was originally published by <a href="https://grist.org">Grist</a> with the headline <a href="https://grist.org/international/oil-prices-developing-countries-energy-transition-iran-war/">Soaring oil prices underscore the need to help poor countries adopt renewables</a> on Oct 22, 2026.</p>]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">758720</post-id><timeToRead>6</timeToRead><imageCaption><![CDATA[A technician installs solar panels in South Africa]]></imageCaption><summary><![CDATA[]]></summary>	</item>
+</channel></rss>

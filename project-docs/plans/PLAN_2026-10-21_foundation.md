@@ -1,6 +1,6 @@
 # Foundation: facts are the system of record
 
-Status: active (2026-10-22): steps 1 and 2 live through the Worker; board UI release next; forecast loop built (deploy waits on DeepSeek)
+Status: active (2026-10-22): steps 1 and 2 live end to end (board UI released, signed-in click-through by the operator pending); forecast loop built, deploy waits on DeepSeek
 
 ## Purpose
 Make `record/facts/` the one place world data is true, and everything readers see a view rebuilt from it. Today the
@@ -75,7 +75,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | `newsBoard` reads the new view paths | lane (board) | no | ☑ | lane K merged 9717b849; deployed 2026-10-22 (CodeSha256 5ZfOxSsi…), no errors in logs |
 | `newsBoard` IAM on the new paths | coordinator | IAM: yes | ☑ | 2026-10-22: `newsBoard-record` reads `record/views/index/{active,all}.json`, `record/views/links/*`; old paths removed |
 | Worker `DATA_ALLOWED` allowlist gains `record/views/` | coordinator | Worker upload and reader IAM: yes | ☑ | 2026-10-22 06:12Z: code-only API upload, version `1e17cf9a-3dc6-4bce-bdaf-b5a7812d2f0a` (rollback `cc57a42f`), live code + the one line (repo's unreleased `/analyze` redirect NOT included); settings identical before/after; `/data/record/views/{manifest,index/active,links/*}` 200 with the shared cache header, `record/facts`/`runs` 404, site routes unchanged |
-| Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | lane K merged 9717b849 (verify passes, unsettled zone, 0037 empty texts); not clicked in a browser, not released |
+| Board UI with the unsettled zone, released | lane (board) | frontend release: yes | ◐ | released 2026-10-22 (e6b70aa9, bundle `index-CWK5qz3j.js`; rollback = previous docs/ commit 75a5d37f, bundle `index-Bajm3ZhW.js`); smoke checks 200 on /, /today, /briefings, /board, /weekly, /track-record, /blog/, /data/record/views; signed-out /board renders presets, no console errors. NOT clicked signed in: the operator clicks the 7-step list in features/board/README.md |
 | Story page reads views | lane (frontend) | frontend release: yes | ☐ | not started |
 
 ### Step 2b. Record quality gaps found 2026-10-22 (live facts and tables)
@@ -153,3 +153,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: record profiled against live data (step 2b rows). Biggest finding: no verdict has ever been written, so the forecast loop is open; needs a design decision before step 3's branch status. Lane L opened (links rule, exact times); docs audit and forecast design research run in parallel on Sonnet.
 - 2026-10-22: operator yes; three IAM changes applied (newsStoryRecord views write, newsBoard views read, Worker reader views read). newsStoryRecord (J+L) and newsBoard (K) deployed; views built. Worker upload blocked by the classifier. Forecast research: the earlier "resolver commits nothing" reading was wrong; it is a sample by design (brief in mailbox artifacts).
 - 2026-10-22 06:12Z: Worker uploaded (operator yes), version 1e17cf9a; views reachable at /data/record/views/. Next: board UI click-through and release.
+- 2026-10-22: frontend released (legacy Pages, e6b70aa9). Brave key removal deferred: the deployed resolver still uses it; remove it in the same step as deploying the new resolver.

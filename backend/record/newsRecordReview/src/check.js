@@ -5,12 +5,13 @@
 const {isSpecific, shareIndex, NEAR_DAYS} = require('./select');
 const {daysBetween} = require('./week');
 
-const CAPS = {chapter: 8, branch_status: 20, link: 5, merge_proposal: 3, alias: 5};
+const CAPS = {chapter: 8, branch_status: 20, link: 5, merge_proposal: 3, alias: 5, assignment: 5};
 const LIMITS = {line: 200, chapter: 300, mechanism: 200};
 const CONFIDENCE = ['high', 'medium', 'low'];
 const DIRECTIONS = ['drives', 'driven_by', 'shared_cause'];
 const STATUSES = ['fired', 'dead', 'holding', 'late'];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const NEW_STORY = 'new';
 const QNUM = /^Q[1-9]\d*$/;
 
 const str = (v, max) => typeof v === 'string' && v.trim().length > 0 && (max === undefined || v.length <= max);
@@ -146,6 +147,21 @@ function checkAnswer(answer, ctx) {
         autoMerge = {into: older.threadId, from: older === row ? rowB.threadId : row.threadId};
       }
       return {payload: {otherThreadId: it.otherThreadId, why: it.why.trim()}, autoMerge, autoBlocked: rule.failed};
+    });
+  });
+
+  // assignment proposals (0040 rule 3, answer 6): written as readings, never applied. The entry is one of this story's shown entries, or
+  // a neighbour's entry the model cites; every cite is an eventId the model was shown (this story's, or a neighbour's entry).
+  each('assignments', 'assignment', (it) => {
+    if (!str(it.entryId) || !str(it.threadId) || !str(it.why, 300)) return reject('assignment', 'bad_shape', it.entryId);
+    return take('assignment', it.entryId, it, ({cites}) => {
+      const foreign = cites.filter((c) => !mine.citable.has(c) && !mine.neighbourEntries.has(c));
+      if (foreign.length) { reject('assignment', 'unknown_eventId', foreign.join(',')); return null; }
+      const owner = mine.entryIds.has(it.entryId) ? row.threadId : cites.includes(it.entryId) ? mine.neighbourEntries.get(it.entryId) : undefined;
+      if (!owner) { reject('assignment', 'entry_not_in_scope', it.entryId); return null; }
+      if (it.threadId !== NEW_STORY && !world.rows.some((r) => r.threadId === it.threadId)) { reject('assignment', 'unknown_story', it.threadId); return null; }
+      if (it.threadId === owner) { reject('assignment', 'already_assigned', it.threadId); return null; }
+      return {payload: {entryId: it.entryId, threadId: it.threadId, why: it.why.trim()}};
     });
   });
 

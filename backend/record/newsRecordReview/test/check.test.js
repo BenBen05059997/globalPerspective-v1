@@ -132,3 +132,31 @@ test('a missing or malformed answer part is rejected, not thrown; a repeated ite
   assert.deepEqual(reasons(dup), ['link:duplicate']);
   assert.equal((await run({})).accepted.length, 0);
 });
+
+// Y3: assignment proposals (0040 rule 3, answer 6)
+const assign = (over = {}) => ({assignments: [{entryId: 'a2', threadId: 'thread-b', why: 'about the other event', cites: ['a2', 'b1e'], confidence: 'medium', ...over}]});
+
+test('Y3: an entry of the story being read can be proposed to an active story, or to new', async () => {
+  const r = await run(assign());
+  assert.deepEqual(r.accepted.map((a) => [a.subtype, a.payload, a.cites]), [['assignment', {entryId: 'a2', threadId: 'thread-b', why: 'about the other event'}, ['a2', 'b1e']]]);
+  assert.equal(r.accepted[0].autoMerge, undefined);
+  const fresh = await run(assign({threadId: 'new', cites: ['a2']}));
+  assert.deepEqual(fresh.accepted.map((a) => a.payload.threadId), ['new']);
+});
+
+test('Y3: a neighbour entry is accepted only when cited; an entry the model was never shown is not', async () => {
+  const cited = await run(assign({entryId: 'b1e', threadId: 'thread-a', cites: ['b1e', 'a1']}));
+  assert.equal(cited.accepted.length, 1);
+  assert.deepEqual(reasons(await run(assign({entryId: 'b1e', threadId: 'thread-a', cites: ['a1']}))), ['assignment:entry_not_in_scope']);
+  assert.deepEqual(reasons(await run(assign({entryId: 'c1', threadId: 'thread-b', cites: ['a1', 'c1']}))), ['assignment:unknown_eventId']);
+  assert.deepEqual(reasons(await run(assign({entryId: 'zzz', cites: ['a1']}))), ['assignment:entry_not_in_scope']);
+});
+
+test('Y3: the target must be an active story other than the one the entry is in; cites must be shown ids; no cite is no proposal', async () => {
+  assert.deepEqual(reasons(await run(assign({threadId: 'thread-zz'}))), ['assignment:unknown_story']);
+  assert.deepEqual(reasons(await run(assign({threadId: 'thread-a'}))), ['assignment:already_assigned']);
+  assert.deepEqual(reasons(await run(assign({cites: ['a2', 'nope']}))), ['assignment:unknown_eventId']);
+  assert.deepEqual(reasons(await run(assign({cites: []}))), ['assignment:no_citation']);
+  assert.deepEqual(reasons(await run(assign({why: ''}))), ['assignment:bad_shape']);
+  assert.deepEqual(reasons(await run({assignments: [assign().assignments[0], assign().assignments[0]]})), ['assignment:duplicate']);
+});

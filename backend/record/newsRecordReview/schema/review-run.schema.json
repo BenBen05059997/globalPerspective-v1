@@ -26,7 +26,7 @@
         "selected": { "type": "integer", "minimum": 0 }, "skipped": { "type": "integer", "minimum": 0 }, "read": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 }, "notReached": { "type": "integer", "minimum": 0 }, "rejected": { "type": "integer", "minimum": 0 }, "autoMerges": { "type": "integer", "minimum": 0 },
         "readings": {
-          "type": "object", "required": ["line", "chapter", "branch_status", "link", "merge_proposal", "alias"], "additionalProperties": { "type": "integer", "minimum": 0 }
+          "type": "object", "required": ["line", "chapter", "branch_status", "link", "merge_proposal", "alias", "assignment"], "additionalProperties": { "type": "integer", "minimum": 0 }
         }
       }
     },

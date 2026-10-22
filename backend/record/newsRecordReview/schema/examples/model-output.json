@@ -4,5 +4,6 @@
   "branchStatus": [{ "branchId": "b1", "status": "fired", "why": "The verdict is yes.", "cites": ["va1"], "confidence": "high" }],
   "links": [{ "otherThreadId": "thread-b", "mechanism": "The closure drove the diplomatic exchange covered in thread-b.", "direction": "drives", "cites": ["a1", "b1e"], "confidence": "medium" }],
   "mergeProposals": [],
+  "assignments": [{ "entryId": "a2", "threadId": "thread-b", "why": "The entry describes the diplomatic exchange, not the border dispute.", "cites": ["a2", "b1e"], "confidence": "medium" }],
   "aliases": [{ "variants": ["name:tusk"], "canonical": "name:donald tusk", "wikidataId": "Q946", "cites": ["a1"], "confidence": "high" }]
 }

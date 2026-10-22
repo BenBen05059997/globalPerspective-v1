@@ -17,7 +17,7 @@ const load = (...p) => JSON.parse(readFileSync(resolve(__dirname, '../schema', .
 test('the prompt has a version and a token cap, and tells the model to return JSON with the cite rule', () => {
   assert.match(PROMPT_VERSION, /^review-\d+$/);
   assert.ok(MAX_TOKENS > 0 && MAX_TOKENS <= 4000);
-  for (const needle of ['JSON', 'eventId', 'fired', 'holding', 'neighbours', 'wikidataId']) assert.ok(SYSTEM.includes(needle), needle);
+  for (const needle of ['JSON', 'eventId', 'fired', 'holding', 'neighbours', 'wikidataId', 'assignments', 'does not belong']) assert.ok(SYSTEM.includes(needle), needle);
 });
 
 test('buildMessages puts the week and the bundle, with every eventId, in the user message', async () => {

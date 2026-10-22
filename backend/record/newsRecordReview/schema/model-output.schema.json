@@ -10,6 +10,7 @@
     "branchStatus": { "type": "array", "items": { "$ref": "#/definitions/branchStatus" } },
     "links": { "type": "array", "items": { "$ref": "#/definitions/link" } },
     "mergeProposals": { "type": "array", "items": { "$ref": "#/definitions/mergeProposal" } },
+    "assignments": { "type": "array", "items": { "$ref": "#/definitions/assignment" } },
     "aliases": { "type": "array", "items": { "$ref": "#/definitions/alias" } }
   },
   "definitions": {
@@ -21,6 +22,7 @@
     "branchStatus": { "type": "object", "required": ["branchId", "status", "why", "cites", "confidence"], "properties": { "branchId": { "type": "string" }, "status": { "enum": ["fired", "dead", "holding", "late"] }, "why": { "type": "string" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "link": { "type": "object", "required": ["otherThreadId", "mechanism", "direction", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "mechanism": { "type": "string", "maxLength": 200 }, "direction": { "enum": ["drives", "driven_by", "shared_cause"] }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "mergeProposal": { "type": "object", "required": ["otherThreadId", "why", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "why": { "type": "string" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "assignment": { "type": "object", "required": ["entryId", "threadId", "why", "cites", "confidence"], "properties": { "entryId": { "type": "string" }, "threadId": { "type": "string", "description": "an active story id, or 'new'" }, "why": { "type": "string", "maxLength": 300 }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "alias": { "type": "object", "required": ["variants", "canonical", "wikidataId", "cites", "confidence"], "properties": { "variants": { "type": "array", "items": { "type": "string", "pattern": "^name:" }, "minItems": 1 }, "canonical": { "type": "string", "pattern": "^name:" }, "wikidataId": { "type": ["string", "null"], "pattern": "^Q[1-9]\\d*$" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false }
   }
 }

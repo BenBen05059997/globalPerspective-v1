@@ -197,3 +197,16 @@ test('an inbox failure is reported; the Q# verdict row stays', async () => {
   assert.equal(rows(store, 'VERDICT').length, 1);
   assert.match(out.errors[0], /inbox line not written/);
 });
+
+test('coverage_gap drafts never void a question, however many there are', async () => {
+  const store = fakeStore();
+  const Q2 = { qid: 'g', threadId: 'tG', question: 'x happens', deadline: '2026-10-25', issuedAt: '2026-10-19T05:00:00Z', storyTitle: 's', resolutionSource: 'r' };
+  await store.putOnce({ PK: 'Q#g', SK: 'SAMPLED', ...Q2 });
+  const facts = fakeFacts({}, {}); // no runs at all: every day is a gap
+  for (const day of ['2026-11-01', '2026-11-07', '2026-11-13', '2026-11-19']) {
+    await run({ action: 'draft' }, { store, now: () => `${day}T10:30:00.000Z`, facts, llm: async () => { throw new Error('none'); }, draftModel: 'm' });
+  }
+  const rows = [...store.rows.values()].filter((r) => r.PK === 'Q#g');
+  assert.equal(rows.filter((r) => r.SK.startsWith('DRAFT#') && r.reason === 'coverage_gap').length, 4);
+  assert.equal(rows.filter((r) => r.SK.startsWith('VERDICT')).length, 0);
+});

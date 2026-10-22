@@ -1,0 +1,278 @@
+{
+ "range": [
+  "2026-10-13",
+  "2026-10-19"
+ ],
+ "seed": 20261019,
+ "stories": [
+  {
+   "threadId": "thread-albanian-protests-turn-violent-ab32e1",
+   "born": "2026-10-16",
+   "factsInFixture": 9,
+   "entriesInWeek": 4,
+   "why": [
+    "top10 by entries in week (4 entries)"
+   ]
+  },
+  {
+   "threadId": "thread-bomb-threat-forces-austrian-ai-64f64b",
+   "born": "2026-10-19",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-brazil-s-congress-approves-sho-1fc611",
+   "born": "2026-10-15",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "duplicate candidate (3 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-brazilian-amazon-deforestation-35a31e",
+   "born": "2026-10-17",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "duplicate candidate (3 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-brazilian-amazon-deforestation-c5bce9",
+   "born": "2026-10-17",
+   "factsInFixture": 7,
+   "entriesInWeek": 3,
+   "why": [
+    "duplicate candidate (3 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-brazilian-amazon-deforestation-da86ee",
+   "born": "2026-10-17",
+   "factsInFixture": 2,
+   "entriesInWeek": 0,
+   "why": [
+    "duplicate candidate (3 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-china-invites-trump-press-secr-1d576b",
+   "born": "2026-10-16",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-deadly-fire-at-canadian-milita-6822c0",
+   "born": "2026-10-18",
+   "factsInFixture": 5,
+   "entriesInWeek": 2,
+   "why": [
+    "duplicate candidate (1 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-deadly-fire-at-canadian-milita-bf3dd0",
+   "born": "2026-10-18",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "duplicate candidate (1 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-dr-congo-ebola-outbreak-surpas-d5acb9",
+   "born": "2026-10-02",
+   "factsInFixture": 38,
+   "entriesInWeek": 7,
+   "why": [
+    "top10 by entries in week (7 entries)",
+    "forecast branch(es) due in week (2)"
+   ]
+  },
+  {
+   "threadId": "thread-dr-congo-protests-formula-1-s--e8d33f",
+   "born": "2026-10-15",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-eu-china-trade-tensions-escala-16cf3f",
+   "born": "2026-10-06",
+   "factsInFixture": 10,
+   "entriesInWeek": 1,
+   "why": [
+    "forecast branch(es) due in week (1)"
+   ]
+  },
+  {
+   "threadId": "thread-florida-issues-arrest-warrant--a72c88",
+   "born": "2026-10-19",
+   "factsInFixture": 2,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-french-student-protests-turn-v-68e0fb",
+   "born": "2026-09-30",
+   "factsInFixture": 52,
+   "entriesInWeek": 9,
+   "why": [
+    "top10 by entries in week (9 entries)",
+    "forecast branch(es) due in week (1)"
+   ]
+  },
+  {
+   "threadId": "thread-hong-kong-public-universities--99cfb6",
+   "born": "2026-10-03",
+   "factsInFixture": 9,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-india-election-chief-faces-cal-6a2810",
+   "born": "2026-10-04",
+   "factsInFixture": 30,
+   "entriesInWeek": 5,
+   "why": [
+    "top10 by entries in week (5 entries)",
+    "forecast branch(es) due in week (1)"
+   ]
+  },
+  {
+   "threadId": "thread-israeli-settlers-attack-palest-a8e47b",
+   "born": "2026-10-16",
+   "factsInFixture": 8,
+   "entriesInWeek": 3,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-istanbul-hit-by-heaviest-rainf-a2ef31",
+   "born": "2026-10-15",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-pope-leo-to-undergo-surgery-fo-a06c81",
+   "born": "2026-10-11",
+   "factsInFixture": 18,
+   "entriesInWeek": 6,
+   "why": [
+    "top10 by entries in week (6 entries)",
+    "forecast branch(es) due in week (1)"
+   ]
+  },
+  {
+   "threadId": "thread-russia-launches-largest-attack-287240",
+   "born": "2026-09-30",
+   "factsInFixture": 65,
+   "entriesInWeek": 11,
+   "why": [
+    "top10 by entries in week (11 entries)",
+    "forecast branch(es) due in week (16)",
+    "duplicate candidate (2 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d",
+   "born": "2026-09-30",
+   "factsInFixture": 59,
+   "entriesInWeek": 7,
+   "why": [
+    "top10 by entries in week (7 entries)"
+   ]
+  },
+  {
+   "threadId": "thread-ship-attacks-near-hormuz-reach-8c0678",
+   "born": "2026-10-16",
+   "factsInFixture": 9,
+   "entriesInWeek": 4,
+   "why": [
+    "top10 by entries in week (4 entries)"
+   ]
+  },
+  {
+   "threadId": "thread-south-korea-test-flies-first-d-1811b9",
+   "born": "2026-10-08",
+   "factsInFixture": 9,
+   "entriesInWeek": 2,
+   "why": [
+    "duplicate candidate (2 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-south-korea-warns-ukraine-over-aef176",
+   "born": "2026-10-02",
+   "factsInFixture": 8,
+   "entriesInWeek": 1,
+   "why": [
+    "forecast branch(es) due in week (1)",
+    "duplicate candidate (1 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-southern-california-wildfire-e-4f08a7",
+   "born": "2026-10-17",
+   "factsInFixture": 4,
+   "entriesInWeek": 2,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-sri-lanka-suffers-nationwide-e-0ba671",
+   "born": "2026-10-17",
+   "factsInFixture": 3,
+   "entriesInWeek": 1,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-trump-announces-us-to-import-r-8c45a3",
+   "born": "2026-10-09",
+   "factsInFixture": 30,
+   "entriesInWeek": 8,
+   "why": [
+    "top10 by entries in week (8 entries)",
+    "duplicate candidate (2 pair(s), 0037 5% rule)"
+   ]
+  },
+  {
+   "threadId": "thread-trump-claims-iran-war-will-end-442c7f",
+   "born": "2026-09-30",
+   "factsInFixture": 9,
+   "entriesInWeek": 2,
+   "why": [
+    "random (seed 20261019)"
+   ]
+  },
+  {
+   "threadId": "thread-us-court-halts-execution-of-ch-ae75a8",
+   "born": "2026-09-30",
+   "factsInFixture": 55,
+   "entriesInWeek": 5,
+   "why": [
+    "top10 by entries in week (5 entries)"
+   ]
+  }
+ ]
+}

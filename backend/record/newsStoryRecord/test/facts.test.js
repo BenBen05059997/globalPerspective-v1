@@ -66,7 +66,7 @@ test('correction and story_merged builders enforce their required fields', () =>
 });
 
 test('verdict fact accepts yes, no, void only', () => {
-  const row = (verdict) => ({qid: 'q', n: 1, sk: 'VERDICT', verdict, decidedAt: '2026-10-26T06:00:00Z', sourceKey: 'Q#q|VERDICT', sourceRow: {store: 's', key: 'k'}});
-  for (const v of ['yes', 'no', 'void']) assert.equal(F.verdictFact(row(v), {threadId: 't', branchId: 'b'}, 'r').payload.result, v);
-  assert.throws(() => F.verdictFact(row('not_yet'), {threadId: 't', branchId: 'b'}, 'r'));
+  const row = (result) => ({qid: 'q', result, decidedAt: '2026-10-26T06:00:00Z', revision: 1});
+  for (const v of ['yes', 'no', 'void']) assert.equal(F.inboxVerdictFact(row(v), {threadId: 't', branchId: 'b'}, 'r').payload.result, v);
+  assert.throws(() => F.inboxVerdictFact(row('not_yet'), {threadId: 't', branchId: 'b'}, 'r'));
 });

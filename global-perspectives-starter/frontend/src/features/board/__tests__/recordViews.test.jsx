@@ -5,8 +5,9 @@ import StoryTree from '../components/StoryTree.jsx';
 import BoardWeekly from '../components/BoardWeekly.jsx';
 import UnsettledZone from '../components/UnsettledZone.jsx';
 import story from '../dev/recordViews/story-a.json';
+import storyB from '../dev/recordViews/story-b.json';
 import counts from '../dev/recordViews/counts.json';
-import { boardWeek, sumCounts } from '../lib/recordProjection.js';
+import { boardWeek, sumCounts, isoWeekOf } from '../lib/recordProjection.js';
 import { fetchStoryView, fetchCounts, isoWeekStart, datesBetween } from '../lib/recordViews.js';
 import { countDates } from '../hooks/useWeekCounts.js';
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -44,11 +45,25 @@ describe('story tree on the 0037 story view', () => {
     expect(screen.getByText('No dated event has been recorded for this story.')).toBeInTheDocument();
     expect(screen.getByText('No forecast branch has been recorded for this story.')).toBeInTheDocument();
   });
-  it('a later reading is shown when the view carries one', () => {
-    render(<StoryTree story={{ ...story, line: { text: 'The strait stays the test', writtenAt: '2026-10-25', confidence: 0.7 }, chapters: [{ startedAt: '2026-10-19', name: 'Reroute', text: 'Operators change course', confidence: 0.7 }] }} />);
-    expect(screen.getByText(/The strait stays the test/)).toBeInTheDocument();
+  it('a read story shows its line, chapters (from – to · title, summary) and branch status words', () => {
+    render(<StoryTree story={storyB} />);
+    expect(screen.getByText(/Shipping adapts around the strait/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'chapters' }));
-    expect(screen.getByText(/Reroute/)).toBeInTheDocument();
+    expect(screen.getByText(/Operators reroute/)).toBeInTheDocument();
+    expect(screen.getByText('Tanker operators change course as premiums climb.')).toBeInTheDocument();
+    expect(document.querySelectorAll('li time')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
+    expect(screen.getByText(/holding · No insurer has moved/)).toBeInTheDocument();
+    expect(screen.getByText(/late · No convoy announced/)).toBeInTheDocument();
+    expect(screen.queryByText(/Status history/)).toBeNull();
+  });
+  it('verdict wording wins over a branch status word; unread stories show the status-history line', () => {
+    const withStatus = { ...story, reading: { state: 'read', week: '2026-W43' }, branchStatus: { 'f1-0': { status: 'fired', why: 'x', week: '2026-W43' }, 'f1-1': { status: 'holding', why: 'waiting', week: '2026-W43' } } };
+    render(<StoryTree story={withStatus} />);
+    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
+    expect(screen.queryByText(/fired/)).toBeNull();
+    expect(screen.getByText(/holding · waiting/)).toBeInTheDocument();
+    expect(screen.queryByText(/Status history/)).toBeNull();
   });
 });
 
@@ -68,9 +83,16 @@ describe('weekly', () => {
   });
   it('renders recorded verdicts and confirmed links', () => {
     render(<BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
-      links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', strength: 'strong', mechanism: 'Recorded transmission', since: '2026-10-20' }] } }} now={new Date('2026-10-21T12:00:00Z')} />);
+      links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', direction: 'drives', mechanism: 'Recorded transmission', week: '2026-W43', cites: [] }] } }} now={new Date('2026-10-21T12:00:00Z')} />);
     expect(screen.getByText(/Premiums rise again: happened · 20 Oct/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();
+  });
+  it('a confirmed link counts only in the current ISO week', () => {
+    const link = (week) => ({ otherThreadId: 'b', direction: 'shared_cause', mechanism: 'm', week, cites: [] });
+    const now = new Date('2026-10-21T12:00:00Z');
+    expect(isoWeekOf(now)).toBe('2026-W43'); expect(isoWeekOf(new Date('2027-01-03T00:00:00Z'))).toBe('2026-W53');
+    const out = boardWeek({ pins: [], strings: [] }, {}, { a: { confirmedLinks: [link('2026-W43'), link('2026-W42')] } }, now);
+    expect(out.links.map((l) => l.week)).toEqual(['2026-W43']);
   });
 });
 

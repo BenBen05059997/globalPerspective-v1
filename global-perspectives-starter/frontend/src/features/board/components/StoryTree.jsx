@@ -3,9 +3,8 @@ import Button from '@/shared/ui/Button.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import { NO_READING } from '@/features/board/lib/recordText.js';
 import { branchStatus } from '@/shared/lib/branchWording.js';
-const confidence = (n) => n == null ? null : `Confidence ${Math.round(n * 100)}%`;
 const evidenceOf = (v) => Array.isArray(v) ? v.map((e, n) => (e?.url ? <a className="board-link" key={n} href={e.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a> : null)) : v ? <span> · {String(v)}</span> : null;
-// Facts view of one story (0037 story view). line, chapters and branch status are readings: empty until step 3.
+// Facts view of one story (0037 story view). line, chapters and branch status are the weekly reading's; empty until the story has one.
 export default function StoryTree({ story, loading, error }) {
   const [level, setLevel] = useState('line');
   const [event, setEvent] = useState(null);
@@ -16,8 +15,8 @@ export default function StoryTree({ story, loading, error }) {
     <div className="board-actions" role="group" aria-label="Tree zoom">
       {['line', 'chapters', 'forks and events', 'event'].map((name) => <Button compact key={name} selected={level === name} onClick={() => setLevel(name)}>{name}</Button>)}
     </div>
-    {level === 'line' ? (story.line?.text ? <p className="board-line"><ClaimTag kind="judgment" /> {story.line.text} <time>{story.line.writtenAt}</time> {confidence(story.line.confidence)}</p> : <p className="board-line">{NO_READING}</p>) : null}
-    {level === 'chapters' ? (story.chapters?.length ? <ol>{story.chapters.map((c) => <li key={c.startedAt}><ClaimTag kind="judgment" /> <time>{c.startedAt}</time> {c.name}: {c.text} {confidence(c.confidence)}</li>)}</ol> : <p className="board-line">{NO_READING}</p>) : null}
+    {level === 'line' ? (story.line?.text ? <p className="board-line"><ClaimTag kind="judgment" /> {story.line.text} <time>{story.line.week}</time></p> : <p className="board-line">{NO_READING}</p>) : null}
+    {level === 'chapters' ? (story.chapters?.length ? <ol>{story.chapters.map((c) => <li key={`${c.from}:${c.title}`}><ClaimTag kind="judgment" /> <time>{c.from}</time> – <time>{c.to}</time> · {c.title}{c.summary ? <p className="board-line">{c.summary}</p> : null}</li>)}</ol> : <p className="board-line">{NO_READING}</p>) : null}
     {level === 'forks and events' ? <>
       <h3>Trunk</h3>
       {story.entries?.length ? <ol>{story.entries.map((e) => <li key={e.eventId}><time>{e.date}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => { setEvent(e); setLevel('event'); }}>{e.title}</button></li>)}</ol> : <p className="board-line">No dated event has been recorded for this story.</p>}
@@ -26,7 +25,8 @@ export default function StoryTree({ story, loading, error }) {
         {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</summary>
           <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${b.due}` : ''}</p>
           {b.verdict ? <p className="board-line"><time>{b.verdict.at.slice(0, 10)}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
-          {story.branchStatus ? null : <p className="board-line">Status history: {NO_READING}</p>}
+          {!b.verdict && story.branchStatus?.[b.branchId] ? <p className="board-line"><ClaimTag kind="judgment" /> {story.branchStatus[b.branchId].status}{story.branchStatus[b.branchId].why ? ` · ${story.branchStatus[b.branchId].why}` : ''}</p> : null}
+          {story.reading?.state === 'none' ? <p className="board-line">Status history: {NO_READING}</p> : null}
         </details>; })}
       </details>)}
     </> : null}

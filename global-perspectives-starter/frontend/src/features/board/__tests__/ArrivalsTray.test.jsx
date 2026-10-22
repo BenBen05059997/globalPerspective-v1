@@ -16,7 +16,7 @@ it('empty record shows the actual prior visit',async()=>{
  expect(await screen.findByText('No new story touches your board since 2026-10-18.')).toBeInTheDocument();
 });
 it('cards show recorded grounds and dismiss action',async()=>{
- const dismiss=vi.fn();call.mockResolvedValue({recordAvailable:true,since:'2026-10-18',arrivals:[{threadId:'story-a',title:'Recorded line',date:'2026-10-19',strength:'strong',via:[{pinId:'p1',threadId:'old',mechanism:'Recorded mechanism'}]}]});
+ const dismiss=vi.fn();call.mockResolvedValue({recordAvailable:true,since:'2026-10-18',arrivals:[{threadId:'story-a',title:'Recorded line',date:'2026-10-19',strength:'strong',via:[{pinId:'p1',threadId:'old',mechanism:'Recorded mechanism',direction:'driven_by'}]}]});
  render(<MemoryRouter><ArrivalsTray board={board} onDismiss={dismiss}/></MemoryRouter>);
- expect(await screen.findByText('Recorded line')).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Dismiss arrival'}));expect(dismiss).toHaveBeenCalledWith('story-a');
+ expect(await screen.findByText('Recorded line')).toBeInTheDocument();expect(screen.getByText(/Recorded mechanism \(driven by\)/)).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Dismiss arrival'}));expect(dismiss).toHaveBeenCalledWith('story-a');
 });

@@ -94,3 +94,17 @@ test('T1: confirmedLinks come from link readings of the story, point at the surv
   assert.deepEqual([l.confirmedLinks[1].cites, l.confirmedLinksReason], [[C1], null]);
   assert.deepEqual([build(f, rs).links.get('you').confirmedLinks, build(f, rs).links.get('you').confirmedLinksReason], [[], 'no reading yet']);
 });
+
+test('T2: a split cancels the matching merge only when it is at or after it; other pairs are untouched', () => {
+  const split = (at, from = 'thread-c', into = 'thread-b') => X.fact('story_split', into, at, {payload: {from, into, reason: 'operator'}});
+  const base = X.golden();
+  const v = build([...base, split('2026-10-21T10:00:00.000Z')]);
+  assert.equal(v.stories.get('thread-c').aliasOf, null);
+  assert.deepEqual(v.stories.get('thread-b').merges, []);
+  assert.equal(rowOf(v, 'thread-c').entryCount, 1);
+  // a split dated before the merge does not cancel it; a split of another pair does not either
+  assert.equal(build([...base, split('2026-10-21T08:00:00.000Z')]).stories.get('thread-c').aliasOf, 'thread-b');
+  assert.equal(build([...base, split('2026-10-21T10:00:00.000Z', 'thread-d')]).stories.get('thread-c').aliasOf, 'thread-b');
+  // facts order does not matter
+  assert.deepEqual(build([split('2026-10-21T10:00:00.000Z'), ...base]).stories.get('thread-c'), v.stories.get('thread-c'));
+});

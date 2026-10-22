@@ -471,3 +471,60 @@ test('T1: readings written by the review reach the story view and the index; the
   assert.equal(f.json(`${P}views/manifest.json`).readingsThrough, '2026-W43');
   assert.deepEqual([...new Set(gets)], [`${P}readings/2026-W43.jsonl`]); // facts 10-19..10-20 and today 10-21 are all in W43
 });
+
+// T2: merges from the review's inbox become story_merged facts; the operator's splits become story_split facts.
+const mergeLine = (o = {}) => ({from: 'thread-2', into: 'thread-1', at: '2026-10-20T12:00:00.000Z', reason: 'same event, two thread ids', cites: ['b'.repeat(40), 'c'.repeat(40)], readingId: 'rid-1', ...o});
+const sha1 = (t) => require('node:crypto').createHash('sha1').update(t).digest('hex');
+
+test('T2: a merge line in the inbox becomes one story_merged fact with eventId sha1(story_merged+from+into+at); a re-run adds nothing', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/merges/2026-10-20.jsonl`, [mergeLine()]);
+  const {handler} = make(dayStore(), f);
+  const r = await handler({date: '2026-10-20'});
+  assert.equal(r.counts.story_merged, 1);
+  const m = f.lines(`${P}facts/2026-10-20.jsonl`).find((x) => x.kind === 'story_merged');
+  assert.deepEqual([m.eventId, m.threadId, m.at, m.precision], [sha1('story_merged' + 'thread-2' + 'thread-1' + '2026-10-20T12:00:00.000Z'), 'thread-1', '2026-10-20T12:00:00.000Z', 'exact']);
+  assert.deepEqual(m.payload, {from: 'thread-2', into: 'thread-1', reason: 'same event, two thread ids', evidence: [{eventId: 'b'.repeat(40)}, {eventId: 'c'.repeat(40)}], readingId: 'rid-1'});
+  assert.deepEqual(f.json(`${P}views/stories/thread-2.json`).aliasOf, 'thread-1');
+  const body = f.objs.get(`${P}facts/2026-10-20.jsonl`).body;
+  const again = await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(again.counts.story_merged, 0);
+  assert.equal(f.objs.get(`${P}facts/2026-10-20.jsonl`).body, body);
+});
+
+test('T2: a malformed merge line is a merge failure on the Run (partial) and the good line is kept; self merge is malformed', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/merges/2026-10-19.jsonl`, [{from: 'thread-2'}, mergeLine({from: 'thread-1'}), mergeLine({reason: ''}), mergeLine({at: '2026-10-19T12:00:00.000Z'})]);
+  await assert.rejects(() => make(dayStore(), f).handler({date: '2026-10-20'}), /merge/);
+  const run = f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.status, run.failures.map((x) => x.stage), run.counts.story_merged], ['partial', ['merge', 'merge', 'merge'], 1]);
+});
+
+test('T2: the merge inbox is read for the run day and 6 days back, {inboxFrom} reaches further, and the live prefix has its own', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/merges/2026-10-14.jsonl`, [mergeLine({at: '2026-10-14T12:00:00.000Z'})]);
+  putLines(f, `${P}inbox/merges/2026-10-13.jsonl`, [mergeLine({at: '2026-10-13T12:00:00.000Z', from: 'thread-0'})]); // 8 days back
+  const r = await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(r.counts.story_merged, 1);
+  const wide = await make(dayStore(), f).handler({date: '2026-10-20', inboxFrom: '2026-10-01'});
+  assert.equal(wide.counts.story_merged, 1);
+});
+
+test('T2: a split line becomes a story_split fact, the views cancel the matching merge, and a later merge of the same pair holds again', async () => {
+  const f = fakeS3();
+  putLines(f, `${P}inbox/merges/2026-10-20.jsonl`, [mergeLine()]);
+  await make(dayStore(), f).handler({date: '2026-10-20'});
+  assert.equal(f.json(`${P}views/stories/thread-2.json`).aliasOf, 'thread-1');
+  putLines(f, `${P}inbox/splits/2026-10-20.jsonl`, [{from: 'thread-2', into: 'thread-1', at: '2026-10-20T15:00:00.000Z', reason: 'two separate events'}]);
+  const r = await make(dayStore(), f, () => '2026-10-21T05:45:00.000Z').handler({date: '2026-10-20'});
+  assert.deepEqual([r.counts.story_split, r.counts.story_merged], [1, 0]);
+  const s = f.lines(`${P}facts/2026-10-20.jsonl`).find((x) => x.kind === 'story_split');
+  assert.deepEqual([s.eventId, s.threadId, s.payload], [sha1('story_split' + 'thread-2' + 'thread-1' + '2026-10-20T15:00:00.000Z'), 'thread-1', {from: 'thread-2', into: 'thread-1', reason: 'two separate events'}]);
+  assert.equal(f.json(`${P}views/stories/thread-2.json`).aliasOf, null);
+  assert.equal(f.json(`${P}views/stories/thread-1.json`).merges.length, 0);
+  assert.deepEqual(f.json(`${P}views/index/all.json`).stories.find((x) => x.threadId === 'thread-2').aliasOf, null);
+  // the pair merged again after the split
+  putLines(f, `${P}inbox/merges/2026-10-20.jsonl`, [mergeLine(), mergeLine({at: '2026-10-21T08:00:00.000Z'})]);
+  await make(dayStore(), f, () => '2026-10-21T06:45:00.000Z').handler({date: '2026-10-20'});
+  assert.equal(f.json(`${P}views/stories/thread-2.json`).aliasOf, 'thread-1');
+});

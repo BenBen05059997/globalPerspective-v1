@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -76,6 +76,18 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
         }
       }
     } catch (e) { run.failures.push({stage: 'verdict', message: messageOf(e)}); }
+    // Merges (the weekly review's auto-merges) and splits (operator only) come the same way: inbox/merges/ and inbox/splits/, same days.
+    for (const [dir, stage, build] of [['merges', 'merge', inboxMergeFact], ['splits', 'split', inboxSplitFact]]) {
+      try {
+        const days = eachDay(inboxFrom || addDays(date, -(INBOX_DAYS - 1)), date);
+        const parts = await Promise.all(days.map((d) => s3json.getLines(`${prefix}inbox/${dir}/${d}.jsonl`)));
+        for (const [i, part] of parts.entries()) {
+          for (const [n, line] of part.lines.entries()) {
+            try { facts.push(build(line, run.runId)); } catch (e) { run.failures.push({stage, message: messageOf(e), ref: `${days[i]}#${n}`}); }
+          }
+        }
+      } catch (e) { run.failures.push({stage, message: messageOf(e)}); }
+    }
 
     const seen = new Set(knownIds);
     const fresh = facts.filter((f) => !seen.has(f.eventId) && seen.add(f.eventId));

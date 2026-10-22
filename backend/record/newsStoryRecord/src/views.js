@@ -30,13 +30,15 @@ function ordered(facts) {
 /**
  * story_merged facts -> {aliases: Map(from -> survivor), applied: [the merge facts that took effect]}. Transitive (A to B to C
  * gives A to C). Oldest merge first; a merge that would close a cycle, or that moves a story already merged, is ignored
- * (0036 section 3).
+ * (0036 section 3). A `story_split` for the same (from, into) at or after a merge cancels that merge (the story is its own again).
  */
 function resolveAliases(facts) {
   const direct = new Map();
   const applied = [];
   const root = (id) => { const seen = new Set(); let at = id; while (direct.has(at) && !seen.has(at)) { seen.add(at); at = direct.get(at); } return at; };
-  for (const f of ordered(facts).filter((x) => x.kind === 'story_merged')) {
+  const splits = facts.filter((x) => x.kind === 'story_split');
+  const split = (m) => splits.some((x) => x.payload.from === m.payload.from && x.payload.into === m.payload.into && x.at >= m.at);
+  for (const f of ordered(facts).filter((x) => x.kind === 'story_merged' && !split(x))) {
     const {from, into} = f.payload;
     if (!from || !into || from === into || direct.has(from) || root(into) === from) continue;
     direct.set(from, into);

@@ -1,37 +1,32 @@
 'use strict';
-const {cheapGrounds} = require('./_shared/record');
-const {resolveIso3} = require('./_shared/resolveIso3');
+const {rowsOf} = require('./recordViews');
 const MAX_CANDIDATES = 40;
-// The index has no title field: use its recorded line, never invent a headline.
+// Candidates come from the active index rows (title is a fact, the first entry's title); grounds and confirmed links
+// from links/{id}.json. No per-story GETs. Until the weekly review writes confirmedLinks there are no cards.
 async function arrivals(board, records, now) {
-  const index = await records.index();
+  const rows = rowsOf(await records.active());
   const since = board.lastVisitedAt || board.createdAt;
-  if (!index) return {recordAvailable:false, since, arrivals:[]};
-  const pinned = new Set(board.pins.filter(p=>p.kind==='thread').map(p=>p.refId));
-  const rows = new Map(index.stories.map(r=>[r.id,r]));
+  if (!rows) return {recordAvailable:false, since, arrivals:[]};
+  const threadPins = board.pins.filter(p=>p.kind==='thread');
+  const pinned = new Set(threadPins.map(p=>p.refId));
   // Births are day-precise, so the visit day itself is included: a story born later that day would otherwise never show.
   // Newest first and capped, so a long-dormant board does not fetch its whole backlog.
-  const candidates = index.stories
-    .filter(r=>r.born >= since.slice(0,10) && r.born <= now.slice(0,10) && !pinned.has(r.id) && !board.dismissed.includes(r.id))
-    .sort((a,b)=>b.born.localeCompare(a.born)||a.id.localeCompare(b.id)).slice(0, MAX_CANDIDATES);
-  const stories = await Promise.all(candidates.map(r=>records.story(r.id)));
+  const candidates = rows
+    .filter(r=>!r.aliasOf && r.born >= since.slice(0,10) && r.born <= now.slice(0,10) && !pinned.has(r.threadId) && !board.dismissed.includes(r.threadId))
+    .sort((a,b)=>b.born.localeCompare(a.born)||a.threadId.localeCompare(b.threadId)).slice(0, MAX_CANDIDATES);
+  const views = await Promise.all(candidates.map(r=>records.links(r.threadId)));
   const cards=[];
   for (const [i, row] of candidates.entries()) {
-    const story = stories[i];
-    if (!story) continue;
-    const dataOf = p => {
-      if(p.kind==='thread') {const r=rows.get(p.refId);return {actors:r?.actors || [], places:r?.countries || []};}
-      if(p.kind==='actor')return {actors:[p.refId],places:[]};
-      const c=resolveIso3(p.refId);return {actors:c?[c.name]:[],places:c?[c.iso3]:[]};
-    };
-    const ctx={actorsOf:p=>dataOf(p).actors,placesOf:p=>dataOf(p).places,outletsOf:()=>[],scoresOf:()=>[]};
+    const view = views[i];
+    if (!view) continue;
     const via=[];
-    for(const pin of board.pins) {
-      const grounds=cheapGrounds({kind:'thread',refId:row.id},pin,ctx);
-      const link=pin.kind==='thread' && story.links?.find(l=>l.otherThreadId===pin.refId && l.confirmed===true && l.strength==='strong');
-      if(link && grounds.strength!=='none')via.push({pinId:pin.pinId,threadId:pin.refId,mechanism:link.mechanism,grounds:grounds.grounds});
+    for(const pin of threadPins) {
+      const confirmed=view.confirmedLinks?.find(l=>l.otherThreadId===pin.refId && l.strength==='strong');
+      const shared=view.links?.find(l=>l.otherThreadId===pin.refId);
+      if(confirmed && shared?.grounds>0)via.push({pinId:pin.pinId,threadId:pin.refId,mechanism:confirmed.mechanism,
+        grounds:[['actors',shared.sharedActorIds],['places',shared.sharedIso3],['sources',shared.sharedSourceIds]].filter(([,l])=>l?.length).map(([k])=>k)});
     }
-    if(via.length)cards.push({threadId:row.id,title:row.line || null,date:row.born,strength:'strong',via});
+    if(via.length)cards.push({threadId:row.threadId,title:row.title || null,date:row.born,strength:'strong',via});
   }
   return {recordAvailable:true,since,arrivals:cards.sort((a,b)=>b.date.localeCompare(a.date)||a.threadId.localeCompare(b.threadId)).slice(0,5)};
 }

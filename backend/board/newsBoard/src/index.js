@@ -42,7 +42,7 @@ function boardProblem(board) {
 
 const problemReply = (p) => fail(400, p.error, { code: p.code, ...(p.budget ? { budget: p.budget } : {}) });
 
-function createHandler({ store, verify, records = {index: async () => null, story: async () => null}, now = () => Date.now(), env = process.env }) {
+function createHandler({ store, verify, records = {active: async () => null, all: async () => null, links: async () => null, story: async () => null}, now = () => Date.now(), env = process.env }) {
   const presets = presetCache(store, env, now);
   const iso = () => new Date(now()).toISOString();
 
@@ -113,7 +113,7 @@ function createHandler({ store, verify, records = {index: async () => null, stor
         delete incoming.lastVisitedAt;
         if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map(p => {
           const copy = {...p};
-          for (const key of ['recordAvailable','line','risk','born','counts','lastMoved']) delete copy[key];
+          for (const key of ['recordAvailable','line','risk','born','entryCount','counts','lastMoved']) delete copy[key];
           return copy;
         });
       }

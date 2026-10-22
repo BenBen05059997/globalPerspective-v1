@@ -1,25 +1,50 @@
 'use strict';
+// newsBoard's server-side reads of the record views (decision 0037 section 4): the active index for pin enrichment,
+// the all index for a pinned story that is no longer active, and links/{id} for arrivals candidates. Nothing else.
 const { makeS3Json } = require('./_shared/s3json');
+const ID = /^[A-Za-z0-9_-]{1,200}$/;
+const VIEWS = 'record/views';
+// An index file is {stories:[rows]} (the old index's container); a bare array is accepted too.
+const rowsOf = (index) => (Array.isArray(index) ? index : Array.isArray(index?.stories) ? index.stories : null);
 function makeRecordViews(options) {
   const { getJson } = makeS3Json(options);
-  return { index: () => getJson('record/index.json'), story: (id) => {
-    if (!/^[A-Za-z0-9_-]{1,200}$/.test(id)) throw new Error('Invalid threadId');
-    return getJson(`record/stories/${id}/latest.json`);
-  }};
+  return {
+    active: () => getJson(`${VIEWS}/index/active.json`),
+    all: () => getJson(`${VIEWS}/index/all.json`),
+    links: (id) => {
+      if (!ID.test(id)) throw new Error('Invalid threadId');
+      return getJson(`${VIEWS}/links/${id}.json`);
+    },
+    // Transitional: removed with story_view once the board fetches stories/{id}.json directly.
+    story: (id) => {
+      if (!ID.test(id)) throw new Error('Invalid threadId');
+      return getJson(`${VIEWS}/stories/${id}.json`);
+    },
+  };
 }
 function liveRecordViews(env = process.env) {
   const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
   return makeRecordViews({ client: new S3Client({region: env.AWS_REGION || 'ap-northeast-1'}), GetObjectCommand,
     bucket: env.WORLD_BUCKET || 'globalperspective-world-280362093938' });
 }
+// Pins get facts only: line, chapters and confirmedLinks are readings (null until step 3), risk is omitted.
 async function enrichBoard(board, records) {
-  const index = await records.index();
-  const rows = new Map((index?.stories || []).map(r => [r.id,r]));
-  return { ...board, recordAvailable: !!index, pins: board.pins.map(pin => {
-    const row = pin.kind === 'thread' ? rows.get(pin.refId) : null;
-    return row ? {...pin, recordAvailable: true, line: row.line, risk: row.risk, born: row.born,
-      counts: {chapters: row.chapters, liveBranches: row.liveBranches, confirmedLinks: row.confirmedLinks}, lastMoved: row.lastMoved}
+  const rows = rowsOf(await records.active());
+  if (!rows) return { ...board, recordAvailable: false, pins: board.pins.map(pin => ({...pin, recordAvailable: false})) };
+  const byId = new Map(rows.map(r => [r.threadId, r]));
+  let allRows = null;
+  const needAll = board.pins.some(p => p.kind === 'thread' && !byId.has(p.refId));
+  if (needAll) for (const r of rowsOf(await records.all()) || []) if (!byId.has(r.threadId)) byId.set(r.threadId, r);
+  const rowOf = (id) => { // a merged story shows its survivor's row
+    let row = byId.get(id);
+    for (let hop = 0; row?.aliasOf && hop < 5; hop++) row = byId.get(row.aliasOf);
+    return row && !row.aliasOf ? row : null;
+  };
+  return { ...board, recordAvailable: true, pins: board.pins.map(pin => {
+    const row = pin.kind === 'thread' ? rowOf(pin.refId) : null;
+    return row ? {...pin, recordAvailable: true, line: null, born: row.born, entryCount: row.entryCount,
+      counts: {chapters: null, liveBranches: row.liveBranchCount, confirmedLinks: null}, lastMoved: row.lastFactAt}
       : {...pin, recordAvailable: false};
   }) };
 }
-module.exports = {makeRecordViews, liveRecordViews, enrichBoard};
+module.exports = {makeRecordViews, liveRecordViews, enrichBoard, rowsOf};

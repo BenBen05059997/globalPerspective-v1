@@ -81,7 +81,7 @@ export default function TrackRecordText() {
         <ul>
           <li>{counts.locked} questions locked in weekly samples</li>
           <li>{counts.resolved} resolved ({counts.yes} happened, {counts.no} didn&apos;t); {counts.void} void</li>
-          <li>{counts.awaiting} awaiting their deadline; {counts.pastDeadlineUnchecked} past deadline, not checked</li>
+          <li>{counts.awaiting} awaiting their deadline; {counts.pastDeadlineUnchecked} awaiting check</li>
           {q && <li>{q.issued} questions issued with their own probability; {q.sampledTotal} in samples{q.warmUp ? `; ${q.warmUp} warm-up (before the first sample week, never scored)` : ''}</li>}
           <li>{view.pilotCount} from the July pilot (archived; method flawed)</li>
           {data.totalDatedTriggers ? <li>{data.totalDatedTriggers} earlier dated triggers (issued without a probability of their own) were never scored</li> : null}
@@ -135,7 +135,7 @@ export default function TrackRecordText() {
             <ol>
               {view.pilot.map((r, i) => (
                 <li key={i}>
-                  <strong>{r.verdict === 'fired' ? 'Happened' : 'Didn’t happen'}:</strong> {r.trigger}
+                  <strong>{r.verdict === 'fired' ? 'Happened' : 'Not reported'}:</strong> {r.trigger}
                   {' — '}{r.title}{r.deadline ? `, due ${r.deadline}` : ''}
                 </li>
               ))}

@@ -1,6 +1,6 @@
 .qchip { display: inline-block; font-size: var(--text-xs); line-height: 1.4; color: var(--text-dim); overflow-wrap: anywhere; }
 .qchip .qchip-pct { color: var(--text-head); font-family: var(--mono); font-size: var(--text-sm); }
-/* outcome state = status colour: yes = check passed, no = check failed, past deadline = needs attention */
+/* outcome state = status colour: yes = check passed, no = not reported, awaiting check = needs attention */
 .qchip.yes .qchip-state { color: var(--ok); }
 .qchip.no .qchip-state { color: var(--error); }
 .qchip.past .qchip-state { color: var(--warn); }

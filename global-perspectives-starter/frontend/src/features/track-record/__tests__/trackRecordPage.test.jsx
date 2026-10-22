@@ -74,13 +74,13 @@ describe('a drawn week with open, past-deadline and resolved questions', () => {
     { qid: 'b', weekId: '2026-W41', question: 'Country B holds the election', deadline: '2026-10-22', p: 30, state: 'past_deadline_unchecked', storyTitle: 'Vote' },
     { qid: 'c', weekId: '2026-W41', question: 'Country C signs a pact', deadline: '2026-12-01', p: 45, state: 'awaiting', storyTitle: 'Pact' },
   ];
-  it('shows counts that add up, "past deadline, not checked" as its own tile, and the verify control', () => {
+  it('shows counts that add up, "awaiting check" as its own tile, and the verify control', () => {
     trackRecordValue = { data: legacy({ questions: questions({
       sampledTotal: 3, counts: { locked: 3, yes: 1, no: 0, void: 0, awaiting: 1, pastDeadlineUnchecked: 1, resolved: 1 }, sampled,
       weeks: [{ weekId: '2026-W41', weekStart: '2026-10-05', commit: { hash: 'ab'.repeat(32), committedAt: '2026-10-01T10:30:00Z' }, reveal: { seedHex: 'cd'.repeat(32), revealedAt: '2026-10-12T10:30:00Z' }, drawn: true, eligible: 9, clusters: 3, picked: 3, due: 2, settled: 1, draw: { K: 22, pool: [], picked: [] } }],
     }) }), loading: false, error: null };
     renderPage();
-    expect(screen.getByText('Past deadline, not checked')).toBeInTheDocument();
+    expect(screen.getByText('Awaiting check')).toBeInTheDocument();
     expect(screen.queryByText(/^awaiting$/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Verify this draw/ })).toBeInTheDocument();
     expect(screen.getByText(/Only 3 stories had an eligible question/)).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('a drawn week with open, past-deadline and resolved questions', () => {
     trackRecordValue = { data: legacy({ questions: questions({ sampledTotal: 3, counts: { locked: 3, yes: 1, no: 0, void: 0, awaiting: 1, pastDeadlineUnchecked: 1, resolved: 1 }, sampled }) }), loading: false, error: null };
     renderPage(TrackRecordText);
     expect(screen.getByText(/3 questions locked in weekly samples/)).toBeInTheDocument();
-    expect(screen.getByText(/1 awaiting their deadline; 1 past deadline, not checked/)).toBeInTheDocument();
+    expect(screen.getByText(/1 awaiting their deadline; 1 awaiting check/)).toBeInTheDocument();
     expect(screen.getByText(/Country A ratifies the treaty/)).toBeInTheDocument();
     expect(screen.getByText(/62% when locked/)).toBeInTheDocument();
   });

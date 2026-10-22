@@ -26,10 +26,14 @@ describe('story tree on the 0037 story view', () => {
     expect(screen.getByText(NO_READING)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
     expect(screen.getByRole('button', { name: 'Tankers reroute around the strait' })).toBeInTheDocument();
-    expect(screen.getByText(/Premiums rise again · 65% · verdict yes 2026-10-20/)).toBeInTheDocument();
-    expect(screen.getByText(/Shipping resumes the old route · 20% · not checked/)).toBeInTheDocument();
-    expect(screen.getByText('This branch has not been checked yet.')).toBeInTheDocument();
-    expect(screen.getAllByText(`Status history: ${NO_READING}`)).toHaveLength(2);
+    expect(screen.getByText('Premiums rise again · 65% · happened · 20 Oct')).toBeInTheDocument();
+    expect(screen.getByText(/“Second insurer raises premiums”/)).toBeInTheDocument();
+    expect(screen.getByText('Shipping resumes the old route · 20% · open · due 30 Nov')).toBeInTheDocument();
+    expect(screen.getByText('Talks restart · 10% · not reported by 12 Oct')).toBeInTheDocument();
+    expect(screen.getByText('Sanctions eased · 5% · could not be checked · the source was unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Old question · recorded before scoring began')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/not checked yet|has not been checked|did not happen|failed/);
+    expect(screen.getAllByText(`Status history: ${NO_READING}`)).toHaveLength(5);
     fireEvent.click(screen.getByRole('button', { name: 'Insurers raise war-risk premiums' }));
     expect(screen.getByRole('link', { name: 'BBC' })).toHaveAttribute('href', 'https://example.org/b');
     expect(screen.queryByText(/Branches killed/)).toBeNull();
@@ -59,13 +63,13 @@ describe('weekly', () => {
     const board = { pins: [{ pinId: 'p1', lastMoved: '2026-10-19' }], strings: [{ a: 'p1', b: 'p2', keptAt: '2026-10-19', cutAt: '2026-09-01' }] };
     const week = boardWeek(board, { a: story }, {}, new Date('2026-10-21T12:00:00Z'));
     expect(week.moved).toHaveLength(1); expect(week.strings).toHaveLength(1);
-    expect(week.branches).toEqual([{ branchId: 'f1-0', text: 'Premiums rise again', threadId: 'story-a', date: '2026-10-20', result: 'yes' }]);
+    expect(week.branches).toEqual([{ branchId: 'f1-0', text: 'Premiums rise again', threadId: 'story-a', date: '2026-10-20', result: 'yes', status: 'happened · 20 Oct' }]);
     expect(boardWeek(board, { a: story }, {}, new Date('2026-11-30T12:00:00Z')).branches).toHaveLength(0);
   });
   it('renders recorded verdicts and confirmed links', () => {
     render(<BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
       links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', strength: 'strong', mechanism: 'Recorded transmission', since: '2026-10-20' }] } }} now={new Date('2026-10-21T12:00:00Z')} />);
-    expect(screen.getByText(/Premiums rise again: verdict yes/)).toBeInTheDocument();
+    expect(screen.getByText(/Premiums rise again: happened · 20 Oct/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();
   });
 });

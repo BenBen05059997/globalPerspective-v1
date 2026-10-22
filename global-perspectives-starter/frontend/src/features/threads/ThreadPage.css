@@ -325,7 +325,7 @@
 .tp-fc-foot { margin-top: var(--space-3); }
 .tp-fc-foot a { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--accent); text-decoration: none; }
 .tp-fc-foot a:hover { text-decoration: underline; text-underline-offset: 2px; }
-/* trigger states: happened = a passed check, past deadline unchecked = needs attention */
+/* trigger states: happened = a passed check, awaiting check = needs attention */
 .tp-fc-item.fired .tp-fc-mark { color: var(--ok); }
 .tp-fc-item.notfired .tp-fc-mark { color: var(--text-muted); }
 .tp-fc-item.notfired .tp-fc-text { color: var(--text-muted); text-decoration: line-through; }

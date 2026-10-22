@@ -1,3 +1,4 @@
+import { branchStatus } from '@/shared/lib/branchWording.js';
 // Projections over the record views (0037). Facts only: verdicts are decisions on dated branches, never inferred
 // from a deadline.
 export function boardWeek(board, stories, links = {}, now = new Date()) {
@@ -7,7 +8,7 @@ export function boardWeek(board, stories, links = {}, now = new Date()) {
   return {
     moved: board.pins.filter((p) => inWeek(p.lastMoved)),
     strings: board.strings.flatMap((s) => ['keptAt', 'cutAt'].filter((k) => inWeek(s[k])).map((k) => ({ ...s, change: k === 'cutAt' ? 'cut' : 'kept', date: s[k] }))),
-    branches: Object.values(stories).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches.filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, text: b.text, threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result })))),
+    branches: Object.values(stories).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches.filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, text: b.text, threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result, status: branchStatus(b).text })))),
     links: Object.entries(links).flatMap(([threadId, v]) => (v?.confirmedLinks || []).filter((l) => inWeek(l.since)).map((l) => ({ ...l, threadId }))),
   };
 }

@@ -31,7 +31,7 @@ This folder is stage 9: the track record page. Timeline: reads predictions/track
 - `lib/sampleRule.js` - browser re-check of the weekly draw (`verifyDraw`, WebCrypto sha256); mirrors
   `backend/predictions/newsPredictionResolver/src/lib.js`; parity through `sampleRuleGolden.json`, guarded by `scripts/check-shared-sync.mjs`
 - Public API (`index.js`): `useTrackRecord`, `useCorrectionsFeed` (used by `home` for the trust strip)
-- Imports from other features: none. Shared: `FollowButton`, `EntityLink`, `RadarMap`, `@/shared/lib/links.js`, `questionStates.js`,
+- Imports from other features: none. Shared: `FollowButton`, `EntityLink`, `RadarMap`, `@/shared/lib/links.js`, `questionStates.js` (state words: happened / not reported / could not be checked / awaiting check; void reasons come from `branchWording.js`),
   `trFormatDate.js`, `driftNote.js`
 
 ## Backend

@@ -3,8 +3,8 @@ import { itemState, stateMeta } from '@/shared/lib/questionStates.js';
 
 describe('questionStates', () => {
   it('a past deadline is its own state: never "awaiting", never a miss', () => {
-    expect(stateMeta('past_deadline_unchecked').label).toBe('Past deadline, not checked');
-    expect(stateMeta('past_deadline_unchecked').label).not.toMatch(/await|miss/i);
+    expect(stateMeta('past_deadline_unchecked').label).toBe('Awaiting check');
+    expect(stateMeta('past_deadline_unchecked').label).not.toMatch(/miss|fail|didn/i);
     expect(stateMeta('awaiting').label).toBe('Awaiting');
   });
   it('maps archived pilot verdicts and server states to one vocabulary', () => {

@@ -8,8 +8,8 @@ describe('chipFor', () => {
   it('a question with its own probability gets the % first, then the source and the state', () => {
     expect(chipFor(q())).toEqual({ pct: '64%', source: 'Reuters or AP wire report', text: 'awaiting', kind: 'awaiting' });
   });
-  it('past deadline is worded as such, never as a miss', () => {
-    expect(chipFor(q({ state: 'past_deadline_unchecked' })).text).toBe('past deadline, not checked');
+  it('a passed deadline reads awaiting check, never as a miss', () => {
+    expect(chipFor(q({ state: 'past_deadline_unchecked' })).text).toBe('awaiting check');
   });
   it('not sampled / warm-up / not eligible / awaiting draw are each named honestly', () => {
     expect(chipFor(q({ state: null, scoring: 'warm_up' })).text).toMatch(/before scoring began; not scored/);
@@ -19,8 +19,8 @@ describe('chipFor', () => {
   });
   it('resolved states carry their verdict', () => {
     expect(chipFor(q({ state: 'yes' })).text).toBe('happened');
-    expect(chipFor(q({ state: 'no' })).text).toBe('didn’t happen');
-    expect(chipFor(q({ state: 'void' })).text).toBe('void');
+    expect(chipFor(q({ state: 'no' })).text).toBe('not reported');
+    expect(chipFor(q({ state: 'void' })).text).toBe('could not be checked');
   });
   it('NO chip without a probability of its own: legacy trigger, demoted trigger, or missing p', () => {
     expect(chipFor({ id: 'a', text: 't', deadline: '2026-11-15' })).toBeNull();

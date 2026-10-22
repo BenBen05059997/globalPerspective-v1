@@ -48,6 +48,8 @@ It does not fix the file format. FOUNDATION.md (A, C, E, G) found the inputs a l
 | `idBasis` | `'url'` or `'title'` | entry only | how `eventId` was formed |
 | `sources` | `[{sourceId, outlet, url, title}]` | entry only | evidence list; `outlet` from `outlets.js`, null when unknown |
 
+Amended by 0039: new fact kind `story_split` {from, into, at, reason} (operator only, via the inbox); inbox kinds gain `merges`.
+
 Fact kinds written in step 1:
 | kind | payload essentials |
 |---|---|

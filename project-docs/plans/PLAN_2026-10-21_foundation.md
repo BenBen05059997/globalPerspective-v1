@@ -92,12 +92,15 @@ Each step gets a written decision before code. The coordinator never builds; lan
 ### Step 3. Review Lambda `newsRecordReview` (weekly)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Decision written (reading object: cites, covers, supersedes, run, model, promptVersion) | coordinator | no | ☐ | object model in TIMELINE §4 |
-| Golden-week fixture `record/fixtures/golden-week/` | lane (record) | no | ☐ | not built |
-| `newsRecordReview`: chapters, lines, branch status, typed links, merges; one call per active story; daily analysis and drift notes folded in | lane (record) | IAM, schedule, model key: yes | ☐ | not started |
+| Decision written (reading object, merges, aliases, golden week) | coordinator | no | ☑ | decision 0039; `architecture/ARCHITECTURE_WEEKLY_REVIEW.md` |
+| Golden-week fixture `backend/record/newsRecordReview/fixtures/golden-week/` (facts 2026-10-13..19) | lane U | no | ☐ | not built |
+| `newsRecordReview` SELECT..WRITE: readings, review Run, inbox merges; one call per active story | lane S | IAM, schedule, model key: yes | ☐ | not started |
+| `newsStoryRecord` reads readings, inbox merges, `story_split`, aliases | lane T | no | ☐ | not started |
+| Golden-week expected readings by two Opus agents + operator check | coordinator | operator check | ☐ | not started |
+| First live review run | coordinator | no | ☐ | waits on DeepSeek top-up and golden-week score |
 | Weekly report reads its readings (`pull.mjs`) | lane (weekly) | email send: yes | ◐ | `backend/weekly` has sections and schema; no pull, no readings input |
 | Resolver verdicts (Commit stage) | lane (predictions) | no | ☑ | e2132a75, deployed CodeSha256 Z9D6hUJD...; decision 0034; 0 verdicts so far, first expected FEMA re-draft 2026-10-24 |
-| `newsSystemsAnalysis` link-confirmation field (typed links) | lane (pipeline) | no | ☐ | not started |
+| `newsSystemsAnalysis` link-confirmation field (typed links) | lane (pipeline) | no | dropped | the review writes links (0039) |
 | Retire `newsWeeklyBrief` after the first weekly from the new path sends | coordinator | yes | ☐ | still Sun 06:00Z |
 
 ### Step 4. Retire duplicates and per-Lambda parsers
@@ -154,3 +157,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: operator yes; three IAM changes applied (newsStoryRecord views write, newsBoard views read, Worker reader views read). newsStoryRecord (J+L) and newsBoard (K) deployed; views built. Worker upload blocked by the classifier. Forecast research: the earlier "resolver commits nothing" reading was wrong; it is a sample by design (brief in mailbox artifacts).
 - 2026-10-22 06:12Z: Worker uploaded (operator yes), version 1e17cf9a; views reachable at /data/record/views/. Next: board UI click-through and release.
 - 2026-10-22: frontend released (legacy Pages, e6b70aa9). Brave key removal deferred: the deployed resolver still uses it; remove it in the same step as deploying the new resolver.
+- 2026-10-22: decision 0039 written (weekly review: model, merges, aliases, golden week); step 3 rows split into lanes S, T, U; `ARCHITECTURE_WEEKLY_REVIEW.md` added.

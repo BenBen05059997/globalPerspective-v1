@@ -76,6 +76,9 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json` + `latest.json` (P7c shadow week; live 2026-10-18) | `newsSelectionShadow` | 3×/day, 5 min after selection | operator review only |
 | `predictions/track_record.json` (`questions` block added 2026-09-30) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord` cron(45 23 * * ? *), payload `{"shadow":false}`, live since 2026-10-22), append-only, no model | `newsRecordReview`, view rebuilds |
+| `record/readings/YYYY-Www.jsonl`, `record/runs/review-YYYY-Www.json` | `newsRecordReview` (planned, 0039) | weekly, Fri 22:00Z, append-only, model | `newsStoryRecord` view builds |
+| `record/inbox/merges/YYYY-MM-DD.jsonl` | `newsRecordReview` (planned, 0039) | weekly | `newsStoryRecord` (turns lines into `story_merged` facts) |
+| `record/operator/aliases.json` | operator only | on demand | `newsStoryRecord` view builds |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | monitoring (alarm signal, no alarm built), operator |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` (planned) | weekly, append-only | view rebuilds, weekly report |
 | `record/inbox/<kind>/YYYY-MM-DD.jsonl` (`verdicts` first; shadow `record/shadow/inbox/`) | the producer of that kind: `newsPredictionResolver` for `verdicts` (0038 amendment; IAM grant pending) | on each decision, append-only, kept (replay input) | `newsStoryRecord` (run day + 6 days before; `{inboxFrom}` backfills) |

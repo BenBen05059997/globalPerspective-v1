@@ -53,6 +53,8 @@ These are shared facts, not judged links. The UI labels them "shares: <names>, N
 **Counts view** `{date, byStory:{threadId:{newEntries, branchesDue, verdicts}}, total:{...}}`. `branchesDue` = branches whose `due` is that date. Written for each day of the current and previous ISO week and for any day whose facts changed; older files are not rewritten.
 
 ### 2. Who builds, how
+Amended by 0039: `newsStoryRecord` stays the only view builder and reads readings; the review does not own `stories/*`.
+
 | Rule | Value |
 |---|---|
 | Builder | `newsStoryRecord`, after each daily facts append, in the same invocation (TIMELINE §6). In step 2 it builds all views above. From step 3, `newsRecordReview` owns the story views and adds readings fields. Then `stories/{id}` is written by the review only |

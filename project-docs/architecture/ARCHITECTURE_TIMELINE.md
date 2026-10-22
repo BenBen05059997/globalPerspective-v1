@@ -48,8 +48,9 @@ WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCR
 ├─ 3 REVIEW   backend/record/newsRecordReview (planned) · model · weekly, with hindsight
 │    record/readings/WEEK.jsonl  line · chapters · branch status · confirmed links · merges · aliases
 │    every reading cites facts; a reading with no valid citation is rejected; re-runs supersede
+│    loop: ARCHITECTURE_WEEKLY_REVIEW.md (0039)
 │
-├─ 4 BUILD    newsStoryRecord (facts views) → later newsRecordReview (reading fields) · no model · after each run
+├─ 4 BUILD    newsStoryRecord stays the only view builder and reads readings (0039) · no model · after each run
 │    record/views/  index/active · index/all · stories/{id} · links/{id} (shared facts, specific and near in time) · counts/DAY · manifest
 │    full rebuild from all facts every time; manifest written last; views are derived and replaceable
 │
@@ -186,7 +187,7 @@ Views (0037) live under `record/views/` (shadow: `record/shadow/views/`; built 2
 | Board | readings and counts for your pins and strings | computed on request (`newsBoard`) | board |
 | Track record | `forecast_drawn`, `branch_status`, `verdict` | `predictions/track_record.json` (today) | track record page |
 
-Stores: `record/facts/YYYY-MM-DD.jsonl` and `record/facts/manifest.json` (days present) · `record/runs/` · `record/readings/YYYY-Www.jsonl` ·
+Stores: `record/facts/YYYY-MM-DD.jsonl` and `record/facts/manifest.json` (days present) · `record/runs/` · `record/readings/YYYY-Www.jsonl` · `record/runs/review-YYYY-Www.json` · `record/inbox/merges/YYYY-MM-DD.jsonl` (review auto-merges, read by `newsStoryRecord`) · `record/operator/aliases.json` (operator only) ·
 `record/inbox/<kind>/YYYY-MM-DD.jsonl` (written by the resolver for `verdicts` (0038 amendment), read by `newsStoryRecord` for the run day and six days before; kept, it is replay input) · `record/views/...` · `record/fixtures/golden-week/` (planned: frozen facts; every prompt or rule change re-runs against it and
 diffs the readings) · `weekly/YYYY-MM-DD.json`. The scheduled run writes live (`{"shadow":false}`, flipped 2026-10-22); a manual invoke
 defaults to `shadow:true` and writes the same bytes under `record/shadow/` (a prefix change, not a code change). Views are rebuilt in full from the facts manifest every time (plain PutObject; derived,
@@ -196,10 +197,10 @@ replaceable). The Worker serves only `record/views/` (0037 §4), never facts, ru
 - **Facts and the daily Run:** only `newsStoryRecord` (`backend/record/`), from raw tables through `backend/shared/src/world/`.
   No model, no DynamoDB write. The one exception to "only `newsStoryRecord` writes facts" is the **inbox rule** (0038 amendment): any other
   producer (today the resolver, for verdicts) appends lines to `record/inbox/<kind>/DAY.jsonl`, and `newsStoryRecord` is the only one that converts inbox lines into facts.
-- **Readings and review Runs:** only `newsRecordReview` (`backend/record/`, planned). Writes `record/readings/*` and the weekly
-  Run. It reads facts and its own earlier readings, nothing else.
-- **Views (0037):** `newsStoryRecord` builds all of them after each daily append, in the same invocation; from step 3
-  `newsRecordReview` owns `stories/*` and adds readings fields. No view is written by anything else.
+- **Readings and review Runs:** only `newsRecordReview` (`backend/record/`, planned). Writes `record/readings/*`, the weekly
+  Run (`record/runs/review-*`) and `record/inbox/merges/*`. It reads facts and its own earlier readings, nothing else (0039).
+- **Views (0037):** `newsStoryRecord` builds all of them after each daily append, in the same invocation; from step 3 it also
+  reads readings, inbox merges and operator aliases (0039); the review writes readings only. No view is written by anything else.
 - **Reads raw tables:** only `backend/shared/src/world/` (injected client, so the same code runs in a Lambda and a local
   script). Consumers import it through `_shared` and never parse a raw row themselves; until a view exists a consumer may read
   through `world/` and says so in its README.

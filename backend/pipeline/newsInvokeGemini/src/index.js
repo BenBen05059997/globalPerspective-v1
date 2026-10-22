@@ -10,6 +10,8 @@ function canonicalIso3(values, log = console.warn) {
 
 const { chat } = require('./_shared/llm');
 const { collapseSameEvent, dropRepeatTopics } = require('./dedupe');
+const { captureRawArticles } = require('./rawCapture');
+const { makeS3Json } = require('./_shared/s3json');
 const { applyEnrichment, annotateSourcesWithMetadata, sourceWithPublication } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
@@ -26,6 +28,7 @@ const VALID_CATEGORIES = [
   'climate', 'science', 'business', 'society', 'energy',
 ];
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 // Capture harness (foundation of IMPACT_VALIDATION_METHODOLOGY.md): log what the selector SAW vs
 // what it CHOSE each cycle, so an auditor can later check for missed high-impact events and a human
@@ -305,6 +308,8 @@ function itemLink(block) {
 
 function parseRssXml(xml, sourceName) {
   const articles = [];
+  const firstItem = xml.search(/<(item|entry)[\s>]/i);
+  const channelLang = stripMarkup(tagText(firstItem < 0 ? xml : xml.slice(0, firstItem), 'language') ?? tagText(firstItem < 0 ? xml : xml.slice(0, firstItem), 'dc:language')) || null;
   const itemRegex = /<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
   let match;
 
@@ -338,8 +343,10 @@ function parseRssXml(xml, sourceName) {
       }
     }
 
+    const lang = stripMarkup(tagText(itemContent, 'dc:language')) || channelLang;
+
     if (title && url) {
-      articles.push({ title, url, description, age, publishedAt, source: sourceName });
+      articles.push({ title, url, description, age, publishedAt, lang, source: sourceName });
     }
   }
   return articles;
@@ -369,7 +376,7 @@ async function fetchRssFeeds() {
         }
 
         const xml = await response.text();
-        const articles = parseRssXml(xml, feed.source).slice(0, MAX_ARTICLES_PER_FEED);
+        const articles = parseRssXml(xml, feed.source).slice(0, MAX_ARTICLES_PER_FEED).map((a) => ({ ...a, feed: feed.name }));
         console.log(`RSS ${feed.name}: ${articles.length} articles`);
         return articles;
       } catch (err) {
@@ -614,7 +621,7 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
     const prefix = process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture';
     for (const Key of [`${prefix}/latest.json`, `${prefix}/${runId.slice(0, 10)}/${runId.slice(11, 16).replace(':', '')}.json`]) {
       await s3.send(new PutObjectCommand({
-        Bucket: process.env.WORLD_BUCKET || 'globalperspective-world-280362093938',
+        Bucket: WORLD_BUCKET,
         Key,
         Body: body,
         ContentType: 'application/json',
@@ -624,6 +631,15 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
   } catch (e) {
     console.warn('[capture] failed (non-fatal):', e.message);
   }
+}
+
+// The inbox writer over the real S3 client (tests inject their own into captureRawArticles).
+function realS3Json() {
+  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  return makeS3Json({
+    client: new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' }),
+    GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET,
+  });
 }
 
 exports.handler = async (event) => {
@@ -654,6 +670,14 @@ exports.handler = async (event) => {
       readSeenTopics(),
       readPastArchiveTitles(7),
     ]);
+    // RAW CAPTURE (0040 rule 1): everything fetched is stored before the model sees it. Fenced; never blocks the run.
+    await captureRawArticles({
+      articles: allArticles,
+      now: new Date(),
+      s3json: { appendLines: (...a) => realS3Json().appendLines(...a) },
+      shadow: process.env.RAW_CAPTURE_SHADOW === '1',
+    });
+
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
     console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
 

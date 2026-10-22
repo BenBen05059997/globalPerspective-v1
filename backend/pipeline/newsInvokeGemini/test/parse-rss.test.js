@@ -86,3 +86,10 @@ test('the three feeds the old parser dropped (Dawn, DW English, Nikkei Asia) now
     assert.equal(parseRssXml(xml, feed.source).length, 3);
   }
 });
+
+test('lang: item dc:language wins, else the channel <language>, else null', () => {
+  const xml = `<rss><channel><language>en-gb</language><item><title>A</title><link>https://a.example/1</link></item>
+    <item><title>B</title><link>https://a.example/2</link><dc:language>fr</dc:language></item></channel></rss>`;
+  assert.deepEqual([...parseRssXml(xml, 'a')].map((i) => i.lang), ['en-gb', 'fr']);
+  assert.equal(parseRssXml('<rss><channel><item><title>A</title><link>https://a.example/1</link></item></channel></rss>', 'a')[0].lang, null);
+});

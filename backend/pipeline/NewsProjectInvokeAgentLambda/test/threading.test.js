@@ -146,3 +146,32 @@ test('same-run comparison keeps unrelated US technology topics apart', () => {
  const rows = joinRun([{...flyingCar,id:'a'},{...rogueAgent,id:'b'}]);
  assert.notEqual(rows[0].threadId, rows[1].threadId);
 });
+
+// AB: the forecast and the entry carry one final threadId.
+const lib = require('../src/lib');
+
+test('a topic without continues_topic threads differently from the raw topic (golden-week PRED# vs archive mismatch)', () => {
+  const glued = { ...past({ title: 'Ahead of US Midterms, Voters Frustrated with Trump', category: 'politics', regions: ['United States'], search_keywords: ['midterms'] }, 'thread-old-glued') };
+  const raw = { id: 't1', title: 'Voter anger builds as midterms near', category: 'politics', regions: ['United States'], search_keywords: ['anger'], continues_topic: 'Ahead of US Midterms, Voters Frustrated with Trump' };
+  const { continues_topic, category, search_keywords, ...built } = raw; // buildTopic() drops these
+  assert.equal(joinRecord(raw, [glued]).threadId, 'thread-old-glued');
+  assert.notEqual(joinRecord(built, [glued]).threadId, 'thread-old-glued');
+});
+
+test('predThreadFix moves a PRED# row onto the final archive thread and remembers the drawn one', () => {
+  const row = { PK: 'PRED#a-1', SK: '2026-10-16', threadId: 'thread-a-111111' };
+  const fix = lib.predThreadFix(row, 'thread-old-glued');
+  assert.deepEqual(fix.Key, { PK: 'PRED#a-1', SK: '2026-10-16' });
+  assert.equal(fix.ExpressionAttributeValues[':t'], 'thread-old-glued');
+  assert.equal(fix.ExpressionAttributeValues[':old'], 'thread-a-111111');
+  assert.match(fix.UpdateExpression, /if_not_exists\(drawnThreadId/);
+  assert.equal(fix.ConditionExpression, 'attribute_exists(PK)');
+});
+
+test('predThreadFix does nothing when the row is missing, agrees, or no final id exists', () => {
+  const row = { PK: 'PRED#a-1', SK: '2026-10-16', threadId: 'thread-x' };
+  assert.equal(lib.predThreadFix(undefined, 'thread-x'), null);
+  assert.equal(lib.predThreadFix(row, 'thread-x'), null);
+  assert.equal(lib.predThreadFix(row, null), null);
+  assert.equal(lib.predThreadFix({ PK: 'PRED#b', SK: 'd' }, 'thread-y').ExpressionAttributeValues[':old'], 'none');
+});

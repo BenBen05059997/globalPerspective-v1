@@ -270,6 +270,7 @@ exports.handler = async (event) => {
         console.warn('Archive write encountered an issue:', archiveErr);
       }
       await writeThreadPointers(filteredTopics, threadIdById, generationId);
+      await reconcilePredictionThreads(filteredTopics, threadIdById, generatedAtDay);
     }
 
     if (!readOnly && CACHE_CLEANUP_ENABLED && swapped) {
@@ -571,6 +572,23 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
   }
   await touchItem(pk, KIND_SK(kind), generationId, ttlSeconds, threadAttr.threadId);
   return { item: { ...lib.restampFields(existing, generationId, ttlSeconds), ...threadAttr }, reused: true };
+}
+
+// The archive entry's threadId is final; today's PRED# row (written during generation, first of the
+// day stands) follows it, so the forecast and the entry never sit under different threads.
+async function reconcilePredictionThreads(topics, threadIdById, day) {
+  let fixed = 0;
+  await mapWithConcurrency(topics, 8, async (topic) => {
+    try {
+      const { Item } = await ddb.send(new GetCommand({ TableName: PREDICTION_LOG_TABLE, Key: { PK: `PRED#${topic.id}`, SK: day } }));
+      const fix = lib.predThreadFix(Item, threadIdById[topic.id]);
+      if (!fix) return;
+      await ddb.send(new UpdateCommand({ TableName: PREDICTION_LOG_TABLE, ...fix }));
+      fixed++;
+      console.log(`[pred-thread] ${topic.id} ${Item.threadId} -> ${threadIdById[topic.id]}`);
+    } catch (e) { console.warn(`PRED# thread reconcile failed for ${topic.id}: ${e.message}`); }
+  });
+  if (fixed) console.log(`PRED# rows moved to the archive thread: ${fixed}`);
 }
 
 // threadId -> topic lookup: one `THREAD#<threadId>` / `TOPICS` row per thread (lib.threadPointerUpdate)

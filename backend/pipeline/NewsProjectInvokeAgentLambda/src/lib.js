@@ -527,6 +527,21 @@ function threadAttr(threadId) {
   return threadId ? { threadId: String(threadId) } : {};
 }
 
+// A PRED# row is written during generation, before the archive; a later run of the same day can
+// re-thread the same topic (the PRED# row of the day stands, the archive entry is replaced), and a
+// run can fail after the draw. The archive entry's threadId is final, so the forecast follows it.
+// Returns the UpdateCommand params (minus TableName) that set the row's threadId, or null when the
+// row is missing, already agrees, or there is no final id. `drawnThreadId` keeps the first value.
+function predThreadFix(row, finalThreadId) {
+  if (!row || !row.PK || !row.SK || !finalThreadId || row.threadId === finalThreadId) return null;
+  return {
+    Key: { PK: row.PK, SK: row.SK },
+    UpdateExpression: 'SET threadId = :t, drawnThreadId = if_not_exists(drawnThreadId, :old)',
+    ConditionExpression: 'attribute_exists(PK)',
+    ExpressionAttributeValues: { ':t': String(finalThreadId), ':old': row.threadId || 'none' },
+  };
+}
+
 // UpdateCommand params (minus TableName) for the thread's pointer row `THREAD#<threadId>` / `TOPICS`.
 // topics = this run's topics on the thread, in list (rank) order: the first is the current topicId
 // (+ title, generation), and `topicIds` (a string set) accumulates every topicId the thread has had,
@@ -545,6 +560,7 @@ function threadPointerUpdate(threadId, topics, generationId, nowIso) {
 
 module.exports = {
   threadAttr,
+  predThreadFix,
   threadPointerUpdate,
   THREAD_POINTER_SK,
   PROMPT_VERSION,

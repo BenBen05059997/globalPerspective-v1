@@ -24,6 +24,45 @@ and readings, filtered by time, story, country, actor or kind. A page never stit
               links/{threadId}.json, counts/{date}.json, manifest.json  --> weekly report (weekly/) --> pages, board, email, map, track record
 ```
 
+## 1a. The foundation at a glance
+Structure only; live state per stage is `project-docs/STATUS.md` ("Pipeline status"), order of work is
+`plans/PLAN_2026-10-21_foundation.md`. One story = one thread. Readers never touch a table: they read views through the Worker.
+
+```text
+FOUNDATION  (decision 0035: facts are the system of record · two clocks: facts daily, readings weekly)
+
+WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCREEN  Worker /data/*
+│                                                  (board pins, visits,       (pages, board, weekly email)
+├─ 1 INGEST   backend/pipeline, backend/situations · model · daily    prefs, membership)
+│    articles → stories → archive rows (raw tables, read only through backend/shared/src/world/)
+│
+├─ 2 COMMIT   backend/record/newsStoryRecord · no model · daily 23:45Z
+│    record/facts/DAY.jsonl   entry · story_born · forecast_drawn · verdict · story_merged · correction · run
+│    record/runs/DAY.json     ok | partial | failed  (a missing input is recorded, never filled)
+│    IDs by content: entry = sha1(canonical url) · story = threadId · actor = name: · source = sha1(domain) · country = iso3
+│    └─ FORECAST LOOP (0038, ARCHITECTURE_FORECAST_LOOP.md)
+│         draw ≤3 outcomes/story/week (pipeline agent) → watch stories that moved or fell due (predictions resolver)
+│         → gather → judge (boxed model: yes needs a verified quote) → verdict rows → verdict facts (this writer)
+│
+├─ 3 REVIEW   backend/record/newsRecordReview (planned) · model · weekly, with hindsight
+│    record/readings/WEEK.jsonl  line · chapters · branch status · confirmed links · merges · aliases
+│    every reading cites facts; a reading with no valid citation is rejected; re-runs supersede
+│
+├─ 4 BUILD    newsStoryRecord (facts views) → later newsRecordReview (reading fields) · no model · after each run
+│    record/views/  index/active · index/all · stories/{id} · links/{id} (shared facts, specific and near in time) · counts/DAY · manifest
+│    full rebuild from all facts every time; manifest written last; views are derived and replaceable
+│
+└─ 5 SERVE    Cloudflare Worker DATA_ALLOWED record/views/* (ETag, 5 min cache) → board, story page, weekly
+     backend/board/newsBoard: pin enrichment and arrivals from the index and links views; owns only user items
+
+WATCH  (a rule, not a stage)  every run writes a Run object; alarms on a missing or `started` Run, `archiveDay: missing`,
+       a stale views manifest, model Lambdas finishing too fast           backend/monitoring
+RETIRE (steps 4-5 of the plan)  each old table, prefix and parser deleted once nothing reads it, one operator yes each
+REBUILD TEST  delete every view and world row in a copy; the site rebuilds from record/facts + record/readings
+```
+
+Mapping to the ten detailed stages below: Ingest = 1-3, Commit = 4-5, Review = 6, Build = 7-8, Serve = 9, Watch = 10.
+
 ## 1b. The pipeline, stage by stage (structure; live status is in `project-docs/STATUS.md`, "Pipeline status")
 Ten stages in three speeds. `pipeline.json` is the machine-readable copy and drives the block in every folder README.
 

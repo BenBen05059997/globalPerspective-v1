@@ -604,15 +604,18 @@ test('X2: inputs.rawDay is missing, {thin:n} under 50 and present from 50; null 
   assert.deepEqual([await run(null), await run(n(7)), await run(n(49)), await run(n(50)), await run(null, 'bad\n')], ['missing', {thin: 7}, {thin: 49}, 'present', null]);
 });
 
-test('X2: a missing archive day still records rawDay, writes no article facts, and the next night reads the articles', async () => {
+test('X2: a missing archive day (model outage) still lands the article facts: Run failed for inputs, counts and views carry them, a re-run appends nothing', async () => {
   const f0 = fakeS3();
-  putArticles(f0, '2026-10-20', [rawLine(1)]);
+  putArticles(f0, '2026-10-20', [rawLine(1), rawLine(2)]);
   const a = make(scripted({}), f0);
+  const r = await a.handler({date: '2026-10-20', strict: false});
+  const arts = () => a.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'article').length;
+  const run = a.f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([run.status, run.inputs.archiveDay, run.inputs.rawDay, run.failures.map((x) => x.stage), r.counts.article, arts()], ['failed', 'missing', {thin: 2}, ['inputs'], 2, 2]);
+  assert.ok(run.daysWritten.includes('2026-10-20'));
+  assert.equal(a.f.json(`${P}views/counts/2026-10-20.json`).articles, 2);
   await a.handler({date: '2026-10-20', strict: false});
-  assert.deepEqual([a.f.json(`${P}runs/2026-10-20.json`).inputs.rawDay, a.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'article').length], [{thin: 1}, 0]);
-  const b = make(scripted({'2026-10-21': twenty('2026-10-21')}), f0, () => '2026-10-22T05:45:00.000Z');
-  const r = await b.handler({date: '2026-10-21'});
-  assert.equal(r.counts.article, 1);
+  assert.equal(arts(), 2);
 });
 
 test('X2: a day whose Run notes recovery refuses forecast_drawn (hook); a normal day keeps them', async () => {

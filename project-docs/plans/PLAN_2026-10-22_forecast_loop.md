@@ -25,10 +25,10 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 | Verification 3: shadow fortnight to `record/shadow/`, agreement on the shared 22 | resolver lane | no | ☐ | |
 | Verification 4: operator spot-check, 10 random verdicts a week, at least 90% agreement over two weeks before "did not happen" goes live | operator | yes | ☐ | |
 | Verification 5: metrics and alarms (verdicts/day, void share, two-pass disagreement, branches past due + 3 unchecked, model errors) | monitoring lane | yes (alarms) | ☐ | |
-| Judge benchmark: gold set (~100, operator labels blind 50) | operator + Opus agent | yes: operator time | ☐ | |
-| Judge benchmark runner + frozen evidence capture | Sonnet lane | no | ☐ | |
-| Reference model provider + key | operator | yes: paid API + secret | ☐ | |
-| Benchmark run and analysis | Opus agent | no (needs the rows above and the DeepSeek top-up for the DeepSeek arm) | ☐ | |
+| Judge benchmark: gold set (~100 questions: 44 sampled + past-due + ~20 with a later entry), frozen evidence once per question | Sonnet agent (read-only) | no | ◐ | running 2026-10-22; output `gp-mailbox/artifacts/judge-bench/{questions,evidence}.json` |
+| Reference labels: two Claude Opus sub-agents judge independently under the resolver's rules (verified quote, grace, void reasons); agreed = `reference.json`, disagreed = `disputed.json` for the operator | coordinator + 2 Opus agents | no | ☐ | no external model API (operator 2026-10-22: use what we have) |
+| Operator decides `disputed.json` and labels a blind 50 | operator | time | ☐ | |
+| Score candidate judges against `reference.json` (DeepSeek flash/pro, then others): kappa, false-happened, quote pass, cost | Opus agent | no | ☐ | runner script in `newsPredictionResolver/bench/` (Sonnet lane, not opened); DeepSeek arm waits on the top-up |
 | Judge model chosen from benchmark (kappa ≥0.6, false happened <5%) | operator | decision | ☐ | |
 | Weekly review writes readings citing verdicts (foundation step 3) | review lane (`newsRecordReview`) | review model open in foundation plan | ☐ | |
 | Carried over, selection: P7c shadow week (`newsSelectionShadow`, from 2026-10-18 20:20 run to about 10-25) then P7d switch to the layered selector; P6 blind review | selection lane | yes (P7d switch) | ◐ | `runbooks/selection-shadow.md` |
@@ -43,3 +43,4 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 - 2026-10-22: lanes M (draw), N (resolver), O (record) merged. newsStoryRecord deployed with the inbox reader and legacy flags. Next: resolver IAM (GetObject record/facts/*, Put/GetObject record/inbox/verdicts/* and shadow), resolver shadow run, generator dryRun; both deploys need the operator's yes.
 - 2026-10-22: resolver IAM applied (operator yes). Shadow run and resolver deploy blocked by DeepSeek 402 (still failing 04:18Z): the judge uses DeepSeek (`GROK_MODEL` deepseek-flash). Deploying before the top-up would make the 10:30 tick fail nightly. The resolver also needs env `WORLD_BUCKET` at deploy.
 - 2026-10-22: judge benchmark agreed by the operator (gold set of about 100, frozen evidence, reference model of another family, kappa and false-happened gates); design in ARCHITECTURE_FORECAST_LOOP.md, rows added above.
+- 2026-10-22: benchmark method fixed by the operator: no OpenRouter or new provider; reference labels come from two independent Claude sub-agents in this session, results kept as JSON in the mailbox artifacts; the operator settles disagreements. Questions+evidence collection running.

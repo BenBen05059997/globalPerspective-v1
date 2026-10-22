@@ -93,9 +93,9 @@ Each step gets a written decision before code. The coordinator never builds; lan
 ### Step 2c. Raw before model (decision 0040)
 | Item | Owner | Operator yes? | Status | Evidence |
 |---|---|---|---|---|
-| Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ◐ | lane W merged (44 tests; all 26 feeds parse incl. Dawn, DW, Nikkei; fetch 25/feed, prompt pool 8/feed; capture before the model call, never blocks the run); NOT deployed: needs IAM on the selector role and the operator's yes (shadow run first) |
+| Selector: RSS parser fix, done-not-said, dedupe, significance floor, raw capture to `record/inbox/articles/` (per-feed cap 25 for capture) | lane W (pipeline group) | deploy: yes | ☑ | lane W deployed 2026-10-22 (CodeSha256 /BcGsvdi…); shadow run captured 528 articles from all 26 outlets (491 with a snippet, 503 with a publish time); switched to live the same hour: `record/inbox/articles/` holds 10-19..10-22. Selection changes apply once DeepSeek is funded |
 | `newsStoryRecord`: `article` facts from the inbox, `inputs.rawDay`, `counts.articles` | lane X | no | ☑ | merged 23e889d2 (115 tests); deployed 2026-10-22 (CodeSha256 2HsdSf0oV…); inbox empty so views unchanged; the Run now reports `rawDay: missing` until the selector writes the inbox |
-| IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☐ | |
+| IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☑ | 2026-10-22: inline `newsInvokeGemini-article-inbox` on `newsprojectLambdaRoleeb3cdefb-dev` (Get/PutObject inbox + shadow, ListBucket for 404s) |
 | Run alarm for a missing raw day | coordinator | yes | ☐ | |
 | Recovery of 2026-09-14..29, 10-14, 10-20+ from GDELT DOC + GKG, Wayback backstop, before 2026-12-14 | lane (recovery) | run: yes | ☐ | articles only, labelled "recovered from public records", no forecasts |
 | `assignment` facts, review proposal subtype, operator approval path | lane (record/review) | no | ☐ | |
@@ -176,3 +176,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: newsStoryRecord (reading fields, merge/split inboxes, aliases) and newsBoard (reads line/confirmedLinks) deployed; lane V (board UI reads the reading fields) merged, not released. Operator agenda for a foundation review (draft 0040): raw article capture with no model, recovery of missed days from public archives (no retroactive forecasts), re-assignable entry→story facts, Wikidata-backed actor ids. Research running; building paused on new features until the review is discussed.
 - 2026-10-22: decision 0040 written (raw capture before the model, recovery of missed days, assignments, canonical actors); step 2c added; operator answered the review's 8 questions.
 - 2026-10-22: lane W (selector) merged. Foundation review correction: captured articles do carry a snippet (168 of 176 on 10-19). Deploy order: IAM → shadow capture run → live.
+- 2026-10-22: raw capture live. Found: the facts writer skipped article facts on a missing-archive day (lane X choice), so an outage would never land them; fix lane opened.

@@ -98,7 +98,7 @@ Each step gets a written decision before code. The coordinator never builds; lan
 | IAM: selector role Put/GetObject `record/inbox/articles/*` | coordinator | yes | ☑ | 2026-10-22: inline `newsInvokeGemini-article-inbox` on `newsprojectLambdaRoleeb3cdefb-dev` (Get/PutObject inbox + shadow, ListBucket for 404s) |
 | Run alarm for a missing raw day | coordinator | yes | ☐ | |
 | Recovery of 2026-09-14..29, 10-14, 10-20+ from GDELT DOC + GKG, Wayback backstop, before 2026-12-14 | lane (recovery) | run: yes | ☐ | articles only, labelled "recovered from public records", no forecasts |
-| `assignment` facts, review proposal subtype, operator approval path | lane (record/review) | no | ☐ | |
+| `assignment` facts, review proposal subtype, operator approval path | lane (record/review) | no | ☑ | lane Y merged (132 + 51 tests); deployed 2026-10-23 (CodeSha256 Qd/VAeiP…); backfill wrote 929 ingest assignments (re-run 0); views byte-identical; review proposes assignments (readings only); operator applies via `record/inbox/assignments/` |
 | Canonical actor ids `wd:Q...`, `generic` flag in views | lane (record) | no | ☐ | |
 | Feeds for Latin America and Southeast Asia | operator | URLs: yes | ☐ | waits on operator URLs |
 
@@ -178,3 +178,4 @@ Each item needs a separate operator yes before deletion. Sizes and readers are f
 - 2026-10-22: lane W (selector) merged. Foundation review correction: captured articles do carry a snippet (168 of 176 on 10-19). Deploy order: IAM → shadow capture run → live.
 - 2026-10-22: raw capture live. Found: the facts writer skipped article facts on a missing-archive day (lane X choice), so an outage would never land them; fix lane opened.
 - 2026-10-22: article landing fix merged and deployed (CodeSha256 5wb+yzNz…); replay 10-19..22 wrote 527 article facts (8, 55, 176, 288); served at /data/record/views/counts/*.json `articles`.
+- 2026-10-23: assignment facts live; every existing entry carries its ingest claim. Entry eventId stays url-only (answer 5): the Brazil collision is handled by assignments, not by changing ids.

@@ -4,6 +4,8 @@
 //   - the story moved: a new `entry` fact for its threadId in yesterday's or today's record/facts file (read by
 //     gather.loadEntries), or
 //   - the branch is old: its due date passed GRACE_DAYS ago (the first day a `no` is allowed).
+// A moved branch whose story has no entry dated after the forecast's draw (and is not yet past due + GRACE_DAYS)
+// is skipped: there is nothing to judge.
 // Nothing else is checked. Oldest due first; a per-run cap with the overflow logged.
 
 const lib = require('./lib');
@@ -60,6 +62,7 @@ function selectCandidates({ questions, groups, moved, bundles = new Map(), today
     if (days.includes(today)) continue;
     if (!isMoved && days.some((d) => d > cutoff)) continue;
     const bundle = bundles.get(q.qid) || { entries: [], complete: false, failed: false };
+    if (!isOld && !bundle.entries.length) continue; // moved, but nothing of the story after the draw: nothing to judge yet
     if (bundle.failed) { unreadable++; continue; } // a facts day in its window was unreadable: not judged on a partial bundle
     picked.push({ ...q, reason: isMoved ? 'moved' : 'grace', bundle, sampled: Boolean(g && g.sampled) });
   }

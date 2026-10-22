@@ -86,3 +86,19 @@ test('watch writes nothing', async () => {
   await watchOut(preds, { [TODAY]: [entryFact('tA', TODAY)] }, store);
   assert.equal(store.rows.size, 0);
 });
+
+test('a moved story with no entry dated after the draw is skipped; past due + 3 it is still a candidate', async () => {
+  const preds = [pred('a', 'tA', '2026-10-20', 40), pred('o', 'tO', '2026-10-01', 30)]; // a due 11-29; o due 10-31 (past grace)
+  const files = { [TODAY]: [entryFact('tA', '2026-10-20'), entryFact('tO', '2026-10-01')] }; // both dated on/before their draw day
+  const out = await watchOut(preds, files);
+  assert.deepEqual(out.wouldCheck.map((c) => c.qid), ['o-2026-10-01-0']); // old enough to be judged by rule
+  assert.equal(out.watch.movedThreads, 2);
+  // the same story with an entry after the draw is a candidate
+  const out2 = await watchOut(preds, { [TODAY]: [entryFact('tA', '2026-10-21')] });
+  assert.ok(out2.wouldCheck.some((c) => c.qid === 'a-2026-10-20-0' && c.reason === 'moved'));
+});
+
+test('an entry of another thread does not make a story a candidate', async () => {
+  const out = await watchOut([pred('a', 'tA', '2026-10-20', 40)], { [TODAY]: [entryFact('tB', TODAY)] });
+  assert.deepEqual(out.wouldCheck, []);
+});

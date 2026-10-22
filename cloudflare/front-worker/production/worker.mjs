@@ -10,7 +10,7 @@ const SITE_URL = 'https://globalperspective.net';
 const S3_BUCKET = 'globalperspective-world-280362093938';
 const S3_REGION = 'ap-northeast-1';
 // Only these prefixes may be fetched through /data/* (defence in depth on top of IAM):
-const DATA_ALLOWED = [/^world\/[\w./-]+\.json$/, /^situations\/state\/[\w.#:@+-]+\.json$/, /^stories\/state\/[\w.#:@+-]+\.json$/];
+const DATA_ALLOWED = [/^world\/[\w./-]+\.json$/, /^situations\/state\/[\w.#:@+-]+\.json$/, /^stories\/state\/[\w.#:@+-]+\.json$/, /^record\/views\/[\w./-]+\.json$/];
 
 const _enc = new TextEncoder();
 const _hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');

@@ -461,6 +461,117 @@ async function writeCache({ topics, model, limit }) {
   }
 }
 
+// The selection prompt for one run. Pure: all inputs are arguments, so tests can read the text.
+function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTitles = [] }) {
+  const articlesText = articles
+    .map((a, i) => `${i + 1}. ${a.title}\n   Source: ${a.source}\n   Published: ${a.age}\n   URL: ${a.url}\n   ${a.description}`)
+    .join('\n\n');
+
+  // Build soft dedup prompt section
+  const seenTopicsPromptLines = [];
+  if (seenEntries.length > 0) {
+    seenTopicsPromptLines.push(
+      'DEDUPLICATION - PREVIOUSLY COVERED TODAY:',
+      'These topics were already covered in earlier runs today.',
+      'PRIORITIZE genuinely NEW events not in this list.',
+      'Only include a previously-covered topic if there are not enough new events to fill the limit,',
+      'or if there is a significant new development with fresh sources.',
+      ...seenEntries.map(e => `  - ${e.title}`),
+      '',
+    );
+  }
+
+  // Build narrative continuity prompt section
+  const narrativeContinuityLines = [];
+  if (pastArchiveTitles.length > 0) {
+    narrativeContinuityLines.push(
+      'NARRATIVE CONTINUITY:',
+      'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
+      'or development of one of these stories, add "continues_topic" with the exact previous title.',
+      'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
+      'Previous topics:',
+      ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
+      '',
+    );
+  }
+
+  return [
+    'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
+    '',
+    '=== NEWS ARTICLES ===',
+    articlesText,
+    '=== END OF ARTICLES ===',
+    '',
+    `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
+    '',
+    'ALLOWED CATEGORIES (use ONLY these):',
+    '- politics (elections, policy changes, diplomatic relations, government actions)',
+    '- economy (macroeconomics, trade deals, sanctions, currency, central bank policy)',
+    '- military (defense spending, troop movements, arms deals, military exercises)',
+    '- conflict (wars, battles, peace talks, territorial disputes, organized violence)',
+    '- disaster (natural disasters, industrial accidents, humanitarian crises)',
+    '- technology (tech breakthroughs, AI, cybersecurity, major platform/product news)',
+    '- health (disease outbreaks, epidemics, pandemics, major drug approvals, healthcare policy)',
+    '- climate (climate impacts, emissions data, extreme weather attribution, climate policy, environmental treaties)',
+    '- science (research breakthroughs, space, biology, physics, geology, published findings with global implications)',
+    '- business (corporate M&A, major layoffs, supply chain disruptions, major industry shifts, labor disputes)',
+    '- society (migration, demographics, social movements, protests, education, human rights, inequality)',
+    '- energy (oil, gas, renewables, grid infrastructure, energy security, transition policy)',
+    '',
+    'REJECT these categories: entertainment, sports, celebrity, lifestyle',
+    '',
+    'CRITICAL RULES:',
+    '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
+    '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
+    '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
+    '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
+    '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
+    '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
+    '7. CATEGORY BALANCE: No single category may exceed 25% of topics. You MUST include at least one topic from each of these when relevant articles exist: climate, science, society, energy, business. Do NOT invent topics — only include a category if a real article covers it.',
+    '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
+    '9. DONE, NOT SAID (editorial rule, decision 0020): select only things that were DONE. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is NOT a topic, judged on the headline\'s main clause ("X blasts Y as strikes kill 78" is said). The one exception is a statement that is itself the event: a declaration of war, a formal resignation, a signed decree.',
+    '   - REJECT (said): "UN official warns Ukraine faces its toughest winter"',
+    '   - REJECT (said): "G7 plans to release emergency fuel stocks"',
+    '   - SELECT (the statement is the act): "Prime Minister resigns after losing confidence vote"',
+    '',
+    'BAD EXAMPLES (too vague):',
+    '- "East Asian Economy and Geopolitical Relations"',
+    '- "Middle East Conflict Updates"',
+    '',
+    'GOOD EXAMPLES (specific, diverse):',
+    '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
+    '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
+    '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
+    '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
+    '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
+    '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
+    '',
+    'REGIONAL DIVERSITY:',
+    `- Generate ${limit} topics covering diverse regions`,
+    '- Include: Americas, Europe, Asia, Middle East, Africa',
+    '- Do NOT let one story dominate all topics',
+    '',
+    ...seenTopicsPromptLines,
+    ...narrativeContinuityLines,
+    'Each topic object MUST have:',
+    '- title: string (SPECIFIC event with key details)',
+    '- category: string (one of the 12 allowed categories)',
+    '- search_keywords: array of 3-6 keywords',
+    '- regions: array of country names involved',
+    '- sources: array of source objects (each with {title, url, source, age, snippet, tier}) where tier is "primary" (article is directly about this event) or "secondary" (related/background)',
+    '- x_trending: boolean (true if trending on X)',
+    '- significance: string ("high", "medium", or "low")',
+    '- urgency: string ("high" = breaking/escalating in last 24h, "medium" = developing story, "low" = background/slow-moving)',
+    '- urgencyReason: string (one sentence explaining the urgency classification)',
+    '- primaryCountry: string (the single country most central to this event — the anchor)',
+    '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
+    '- continues_topic: string (optional — exact title of a previous topic this story continues)',
+    '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
+    '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
+    '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
+  ].join('\n');
+}
+
 // ============================================================
 // MAIN HANDLER
 // ============================================================
@@ -548,109 +659,7 @@ exports.handler = async (event) => {
 
     let prompt;
     if (allArticles && allArticles.length > 0) {
-      const articlesText = allArticles
-        .map((a, i) => `${i + 1}. ${a.title}\n   Source: ${a.source}\n   Published: ${a.age}\n   URL: ${a.url}\n   ${a.description}`)
-        .join('\n\n');
-
-      // Build soft dedup prompt section
-      const seenTopicsPromptLines = [];
-      if (seenEntries.length > 0) {
-        seenTopicsPromptLines.push(
-          'DEDUPLICATION - PREVIOUSLY COVERED TODAY:',
-          'These topics were already covered in earlier runs today.',
-          'PRIORITIZE genuinely NEW events not in this list.',
-          'Only include a previously-covered topic if there are not enough new events to fill the limit,',
-          'or if there is a significant new development with fresh sources.',
-          ...seenEntries.map(e => `  - ${e.title}`),
-          '',
-        );
-      }
-
-      // Build narrative continuity prompt section
-      const narrativeContinuityLines = [];
-      if (pastArchiveTitles.length > 0) {
-        narrativeContinuityLines.push(
-          'NARRATIVE CONTINUITY:',
-          'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
-          'or development of one of these stories, add "continues_topic" with the exact previous title.',
-          'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
-          'Previous topics:',
-          ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
-          '',
-        );
-      }
-
-      prompt = [
-        'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
-        '',
-        '=== NEWS ARTICLES ===',
-        articlesText,
-        '=== END OF ARTICLES ===',
-        '',
-        `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
-        '',
-        'ALLOWED CATEGORIES (use ONLY these):',
-        '- politics (elections, policy changes, diplomatic relations, government actions)',
-        '- economy (macroeconomics, trade deals, sanctions, currency, central bank policy)',
-        '- military (defense spending, troop movements, arms deals, military exercises)',
-        '- conflict (wars, battles, peace talks, territorial disputes, organized violence)',
-        '- disaster (natural disasters, industrial accidents, humanitarian crises)',
-        '- technology (tech breakthroughs, AI, cybersecurity, major platform/product news)',
-        '- health (disease outbreaks, epidemics, pandemics, major drug approvals, healthcare policy)',
-        '- climate (climate impacts, emissions data, extreme weather attribution, climate policy, environmental treaties)',
-        '- science (research breakthroughs, space, biology, physics, geology, published findings with global implications)',
-        '- business (corporate M&A, major layoffs, supply chain disruptions, major industry shifts, labor disputes)',
-        '- society (migration, demographics, social movements, protests, education, human rights, inequality)',
-        '- energy (oil, gas, renewables, grid infrastructure, energy security, transition policy)',
-        '',
-        'REJECT these categories: entertainment, sports, celebrity, lifestyle',
-        '',
-        'CRITICAL RULES:',
-        '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
-        '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
-        '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
-        '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
-        '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
-        '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
-        '7. CATEGORY BALANCE: No single category may exceed 25% of topics. You MUST include at least one topic from each of these when relevant articles exist: climate, science, society, energy, business. Do NOT invent topics — only include a category if a real article covers it.',
-        '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
-        '',
-        'BAD EXAMPLES (too vague):',
-        '- "East Asian Economy and Geopolitical Relations"',
-        '- "Middle East Conflict Updates"',
-        '',
-        'GOOD EXAMPLES (specific, diverse):',
-        '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
-        '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
-        '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
-        '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
-        '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
-        '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
-        '',
-        'REGIONAL DIVERSITY:',
-        `- Generate ${limit} topics covering diverse regions`,
-        '- Include: Americas, Europe, Asia, Middle East, Africa',
-        '- Do NOT let one story dominate all topics',
-        '',
-        ...seenTopicsPromptLines,
-        ...narrativeContinuityLines,
-        'Each topic object MUST have:',
-        '- title: string (SPECIFIC event with key details)',
-        '- category: string (one of the 12 allowed categories)',
-        '- search_keywords: array of 3-6 keywords',
-        '- regions: array of country names involved',
-        '- sources: array of source objects (each with {title, url, source, age, snippet, tier}) where tier is "primary" (article is directly about this event) or "secondary" (related/background)',
-        '- x_trending: boolean (true if trending on X)',
-        '- significance: string ("high", "medium", or "low")',
-        '- urgency: string ("high" = breaking/escalating in last 24h, "medium" = developing story, "low" = background/slow-moving)',
-        '- urgencyReason: string (one sentence explaining the urgency classification)',
-        '- primaryCountry: string (the single country most central to this event — the anchor)',
-        '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
-        '- continues_topic: string (optional — exact title of a previous topic this story continues)',
-        '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
-        '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
-        '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
-      ].join('\n');
+      prompt = buildSelectionPrompt({ articles: allArticles, limit, seenEntries, pastArchiveTitles });
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');
       prompt = [
@@ -876,4 +885,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._internal = { parseRssXml, canonicalIso3, RSS_FEEDS };
+exports._internal = { parseRssXml, canonicalIso3, RSS_FEEDS, buildSelectionPrompt };

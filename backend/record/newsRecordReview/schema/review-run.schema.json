@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/review-run.json",
+  "title": "Review Run (record/runs/review-YYYY-Www.json). Written as started, overwritten at the end (like the facts Run, 0036 section 4).",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "week", "producer", "model", "promptVersion", "shadow", "startedAt", "finishedAt", "status", "inputs", "counts", "skipped", "rejections", "rejectionsOmitted", "failures", "notes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "pattern": "^review-\\d{4}-W\\d{2}-(\\d+|dry)$" },
+    "week": { "type": "string", "pattern": "^\\d{4}-W\\d{2}$" },
+    "producer": { "type": "string", "pattern": "^newsRecordReview@" },
+    "model": { "type": ["string", "null"] },
+    "promptVersion": { "type": "string" },
+    "shadow": { "type": "boolean" },
+    "startedAt": { "type": "string" },
+    "finishedAt": { "type": ["string", "null"], "description": "null while status is started: a review Run left at started is the alarm" },
+    "status": { "enum": ["started", "ok", "partial", "failed"] },
+    "inputs": {
+      "type": "object", "required": ["factsThrough", "activeStories", "threadIds"], "additionalProperties": false,
+      "properties": { "factsThrough": { "type": ["string", "null"] }, "activeStories": { "type": "integer", "minimum": 0 }, "threadIds": { "anyOf": [{ "type": "null" }, { "type": "array", "items": { "type": "string" } }] } }
+    },
+    "counts": {
+      "type": "object", "required": ["selected", "skipped", "read", "failed", "notReached", "readings", "rejected", "autoMerges"], "additionalProperties": false,
+      "properties": {
+        "selected": { "type": "integer", "minimum": 0 }, "skipped": { "type": "integer", "minimum": 0 }, "read": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 }, "notReached": { "type": "integer", "minimum": 0 }, "rejected": { "type": "integer", "minimum": 0 }, "autoMerges": { "type": "integer", "minimum": 0 },
+        "readings": {
+          "type": "object", "required": ["line", "chapter", "branch_status", "link", "merge_proposal", "alias"], "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "skipped": { "type": "array", "items": { "type": "object", "required": ["threadId", "reason"], "properties": { "threadId": { "type": "string" }, "reason": { "enum": ["no_new_fact", "no_facts_by_week_end"] }, "since": { "type": "string" } }, "additionalProperties": false } },
+    "rejections": { "type": "array", "items": { "type": "object", "required": ["threadId", "subtype", "reason"], "properties": { "threadId": { "type": "string" }, "subtype": { "type": "string" }, "reason": { "type": "string" }, "detail": { "type": "string" } }, "additionalProperties": false } },
+    "rejectionsOmitted": { "type": "integer", "minimum": 0, "description": "rejections beyond the first 500 are counted, not listed" },
+    "failures": { "type": "array", "items": { "type": "object", "required": ["stage", "message"], "properties": { "stage": { "enum": ["read", "timeout", "fatal"] }, "message": { "type": "string" }, "threadId": { "type": "string" } }, "additionalProperties": false } },
+    "notes": { "type": "string" }
+  }
+}

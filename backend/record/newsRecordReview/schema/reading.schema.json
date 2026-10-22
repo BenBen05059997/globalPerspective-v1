@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/record-reading.json",
+  "title": "Reading (one line of record/readings/YYYY-Www.jsonl), spec step3-spec.md",
+  "type": "object",
+  "required": ["schemaVersion", "readingId", "week", "threadId", "subtype", "payload", "cites", "covers", "supersedes", "run", "model", "promptVersion", "confidence"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "readingId": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "sha1(week + threadId + subtype + key); key = chapter from, branchId, otherThreadId, canonical, '' for a line" },
+    "week": { "type": "string", "pattern": "^\\d{4}-W\\d{2}$" },
+    "threadId": { "type": "string" },
+    "subtype": { "enum": ["line", "chapter", "branch_status", "link", "merge_proposal", "alias"] },
+    "payload": { "type": "object" },
+    "cites": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "covers": { "type": "object", "required": ["from", "to"], "additionalProperties": false, "properties": { "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" } } },
+    "supersedes": { "type": ["string", "null"], "description": "readingId of the earlier-week reading of the same thing this one replaces" },
+    "run": { "type": "string" },
+    "model": { "type": "string" },
+    "promptVersion": { "type": "string" },
+    "confidence": { "enum": ["high", "medium", "low"] }
+  },
+  "allOf": [
+    { "if": { "properties": { "subtype": { "const": "line" } } }, "then": { "properties": { "payload": { "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string", "maxLength": 200 } } } } } },
+    { "if": { "properties": { "subtype": { "const": "chapter" } } }, "then": { "properties": { "payload": { "required": ["title", "from", "to", "summary"], "additionalProperties": false, "properties": { "title": { "type": "string" }, "from": { "type": "string" }, "to": { "type": "string" }, "summary": { "type": "string", "maxLength": 300 } } } } } },
+    { "if": { "properties": { "subtype": { "const": "branch_status" } } }, "then": { "properties": { "payload": { "required": ["branchId", "status", "why"], "additionalProperties": false, "properties": { "branchId": { "type": "string" }, "status": { "enum": ["fired", "dead", "holding", "late"] }, "why": { "type": "string" } } } } } },
+    { "if": { "properties": { "subtype": { "const": "link" } } }, "then": { "properties": { "payload": { "required": ["otherThreadId", "mechanism", "direction"], "additionalProperties": false, "properties": { "otherThreadId": { "type": "string" }, "mechanism": { "type": "string", "maxLength": 200 }, "direction": { "enum": ["drives", "driven_by", "shared_cause"] } } } } } },
+    { "if": { "properties": { "subtype": { "const": "merge_proposal" } } }, "then": { "properties": { "payload": { "required": ["otherThreadId", "why"], "additionalProperties": false, "properties": { "otherThreadId": { "type": "string" }, "why": { "type": "string" } } } } } },
+    { "if": { "properties": { "subtype": { "const": "alias" } } }, "then": { "properties": { "payload": { "required": ["variants", "canonical", "wikidataId"], "additionalProperties": false, "properties": { "variants": { "type": "array", "items": { "type": "string" }, "minItems": 1 }, "canonical": { "type": "string" }, "wikidataId": { "type": "string", "pattern": "^Q[1-9]\\d*$" } } } } } }
+  ]
+}

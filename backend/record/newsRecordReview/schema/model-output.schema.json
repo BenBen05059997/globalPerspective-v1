@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/review-model-output.json",
+  "title": "The model's answer for one story (S2 READ). Shape only; the citations and rules are checked in code (S3).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "line": { "anyOf": [{ "type": "null" }, { "$ref": "#/definitions/line" }] },
+    "chapters": { "type": "array", "items": { "$ref": "#/definitions/chapter" } },
+    "branchStatus": { "type": "array", "items": { "$ref": "#/definitions/branchStatus" } },
+    "links": { "type": "array", "items": { "$ref": "#/definitions/link" } },
+    "mergeProposals": { "type": "array", "items": { "$ref": "#/definitions/mergeProposal" } },
+    "aliases": { "type": "array", "items": { "$ref": "#/definitions/alias" } }
+  },
+  "definitions": {
+    "cites": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "day": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "line": { "type": "object", "required": ["text", "cites", "confidence"], "properties": { "text": { "type": "string", "maxLength": 200 }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "chapter": { "type": "object", "required": ["title", "from", "to", "summary", "cites", "confidence"], "properties": { "title": { "type": "string" }, "from": { "$ref": "#/definitions/day" }, "to": { "$ref": "#/definitions/day" }, "summary": { "type": "string", "maxLength": 300 }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "branchStatus": { "type": "object", "required": ["branchId", "status", "why", "cites", "confidence"], "properties": { "branchId": { "type": "string" }, "status": { "enum": ["fired", "dead", "holding", "late"] }, "why": { "type": "string" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "link": { "type": "object", "required": ["otherThreadId", "mechanism", "direction", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "mechanism": { "type": "string", "maxLength": 200 }, "direction": { "enum": ["drives", "driven_by", "shared_cause"] }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "mergeProposal": { "type": "object", "required": ["otherThreadId", "why", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "why": { "type": "string" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "alias": { "type": "object", "required": ["variants", "canonical", "wikidataId", "cites", "confidence"], "properties": { "variants": { "type": "array", "items": { "type": "string", "pattern": "^name:" }, "minItems": 1 }, "canonical": { "type": "string", "pattern": "^name:" }, "wikidataId": { "type": ["string", "null"], "pattern": "^Q[1-9]\\d*$" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false }
+  }
+}

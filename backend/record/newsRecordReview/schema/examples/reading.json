@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "readingId": "5b0a6d7c1a2f4b43f8d24f1a2b6a6c3e0c0f7a11",
+  "week": "2026-W42",
+  "threadId": "thread-alberta-votes-d3d4b4",
+  "subtype": "chapter",
+  "payload": { "title": "The vote", "from": "2026-10-13", "to": "2026-10-15", "summary": "Alberta voted on the separation referendum and the result was published." },
+  "cites": ["7c4e32c8e94f25d7710667980d060821ee391ac5", "53ed938a37b8d19fe6fc59914ca226302ccf87d1"],
+  "covers": { "from": "2026-10-05", "to": "2026-10-18" },
+  "supersedes": null,
+  "run": "review-2026-W42-1",
+  "model": "deepseek-v4-pro",
+  "promptVersion": "review-1",
+  "confidence": "medium"
+}

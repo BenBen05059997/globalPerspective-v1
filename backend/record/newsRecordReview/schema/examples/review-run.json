@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "runId": "review-2026-W42-1",
+  "week": "2026-W42",
+  "producer": "newsRecordReview@0.1.0",
+  "model": "deepseek-v4-pro",
+  "promptVersion": "review-1",
+  "shadow": true,
+  "startedAt": "2026-10-23T22:00:00.000Z",
+  "finishedAt": "2026-10-23T22:41:10.000Z",
+  "status": "ok",
+  "inputs": { "factsThrough": "2026-10-22", "activeStories": 519, "threadIds": null },
+  "counts": { "selected": 120, "skipped": 399, "read": 120, "failed": 0, "notReached": 0, "rejected": 1, "autoMerges": 0, "readings": { "line": 118, "chapter": 240, "branch_status": 31, "link": 14, "merge_proposal": 2, "alias": 0 } },
+  "skipped": [{ "threadId": "thread-old", "reason": "no_new_fact", "since": "2026-10-11" }],
+  "rejections": [{ "threadId": "thread-alberta-votes-d3d4b4", "subtype": "alias", "reason": "alias_no_wikidata", "detail": "name:donald tusk" }],
+  "rejectionsOmitted": 0,
+  "failures": [],
+  "notes": ""
+}

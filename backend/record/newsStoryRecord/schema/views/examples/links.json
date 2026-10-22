@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "threadId": "thread-a",
+  "links": [
+    {
+      "otherThreadId": "thread-b",
+      "sharedActorIds": [],
+      "sharedIso3": [
+        "FRA"
+      ],
+      "sharedSourceIds": [
+        "s1"
+      ],
+      "grounds": 2
+    }
+  ],
+  "confirmedLinks": [],
+  "confirmedLinksReason": "no reading yet"
+}

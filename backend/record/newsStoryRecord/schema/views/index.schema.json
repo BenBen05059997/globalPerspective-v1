@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Story index",
+  "description": "record/views/index/active.json and index/all.json (0037 section 1); same shape, active excludes aliases and stories idle for 60 days",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "builtFrom",
+    "stories"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "builtFrom": {
+      "$ref": "#/definitions/builtFrom"
+    },
+    "stories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/row"
+      }
+    }
+  },
+  "definitions": {
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"
+    },
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "builtFrom": {
+      "type": "object",
+      "required": [
+        "factsThrough",
+        "readingsThrough"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "factsThrough": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "readingsThrough": {
+          "type": "null",
+          "description": "null until step 3 (readings exist)"
+        }
+      }
+    },
+    "row": {
+      "type": "object",
+      "required": [
+        "threadId",
+        "born",
+        "lastFactAt",
+        "iso3",
+        "actorIds",
+        "sourceCount",
+        "entryCount",
+        "forkCount",
+        "branchCount",
+        "liveBranchCount",
+        "latestVerdictAt",
+        "aliasOf",
+        "aliases",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "threadId": {
+          "type": "string"
+        },
+        "born": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/day"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastFactAt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/iso"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "iso3": {
+          "$ref": "#/definitions/strings"
+        },
+        "actorIds": {
+          "$ref": "#/definitions/strings"
+        },
+        "sourceCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "forkCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "branchCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "liveBranchCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latestVerdictAt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/iso"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliasOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliases": {
+          "$ref": "#/definitions/strings"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

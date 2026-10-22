@@ -95,11 +95,10 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom}) {
     const aliasOf = aliases.get(threadId) || null;
     if (aliasOf) {
       const facts0 = own.get(threadId);
-      const entries0 = facts0.filter((f) => f.kind === 'entry');
       stories.set(threadId, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId, aliasOf});
       rows.set(threadId, {
         threadId, born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), iso3: [], actorIds: [], sourceCount: 0, entryCount: 0,
-        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entries0),
+        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set())),
       });
       continue;
     }

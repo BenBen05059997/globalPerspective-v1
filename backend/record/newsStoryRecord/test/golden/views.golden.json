@@ -523,7 +523,8 @@
         "liveBranchCount": 0,
         "latestVerdictAt": null,
         "aliasOf": "thread-b",
-        "aliases": []
+        "aliases": [],
+        "title": "C first"
       },
       {
         "threadId": "thread-old",

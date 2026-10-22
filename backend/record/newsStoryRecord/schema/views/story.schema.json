@@ -429,6 +429,9 @@
             }
           ]
         },
+        "legacy": {
+          "const": true
+        },
         "verdict": {
           "anyOf": [
             {

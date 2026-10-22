@@ -54,6 +54,9 @@ function entryRows(group, corrected) {
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
 
+/** A resolvable branch is a question with a question id (0038); anything else was recorded before scoring began (legacy). */
+const resolvable = (b) => b.question === true && Boolean(b.qid);
+
 /** forecast_drawn facts of one thread -> forks with each branch's latest verdict attached (null when none). */
 function forkRows(facts) {
   const verdicts = new Map();
@@ -69,6 +72,7 @@ function forkRows(facts) {
       return {
         branchId: b.branchId, text: b.text, p: b.p, trigger: b.trigger, resolutionSource: b.resolutionSource, due: b.due,
         verdict: v ? {at: v.at, result: v.payload.result, decidedBy: v.payload.decidedBy, evidence: v.payload.evidence ?? null} : null,
+        ...(resolvable(b) ? {} : {legacy: true}),
       };
     }),
   }));
@@ -134,7 +138,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom}) {
     });
     rows.set(threadId, {
       threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
-      forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.verdict && b.due && b.due >= today).length,
+      forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.legacy && !b.verdict && b.due && b.due >= today).length,
       latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds, title: titleOf(entries),
     });
     survivors.set(threadId, {iso3, actorIds, sourceIds});
@@ -189,7 +193,7 @@ function buildLinks(rows, survivors, builtFrom) {
   return out;
 }
 
-/** counts/{date}.json: per story, entries added that day, branches due that day, verdicts that day (by fact date). */
+/** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date). */
 function buildCount(date, facts, aliases, builtFrom) {
   const byStory = {};
   const bump = (threadId, field, n = 1) => {
@@ -201,7 +205,7 @@ function buildCount(date, facts, aliases, builtFrom) {
     if (!f.threadId) continue;
     if (f.kind === 'entry' && f.date === date) bump(f.threadId, 'newEntries');
     else if (f.kind === 'verdict' && f.date === date) bump(f.threadId, 'verdicts');
-    else if (f.kind === 'forecast_drawn') { const n = f.payload.branches.filter((b) => b.due === date).length; if (n) bump(f.threadId, 'branchesDue', n); }
+    else if (f.kind === 'forecast_drawn') { const n = f.payload.branches.filter((b) => resolvable(b) && b.due === date).length; if (n) bump(f.threadId, 'branchesDue', n); }
   }
   const sorted = Object.fromEntries(Object.keys(byStory).sort().map((k) => [k, byStory[k]]));
   const total = {newEntries: 0, branchesDue: 0, verdicts: 0};

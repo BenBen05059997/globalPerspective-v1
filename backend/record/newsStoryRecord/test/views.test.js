@@ -175,3 +175,14 @@ test('writeGroups orders stories, links and counts, then active, then all, then 
   assert.deepEqual(groups.slice(1).map((g) => g.map(([k]) => k)), [['index/active.json'], ['index/all.json'], ['manifest.json']]);
   assert.deepEqual([...new Set(groups[0].map(([k]) => k.split('/')[0]))], ['stories', 'links', 'counts']);
 });
+
+test('O2: legacy branches (no question or no qid) carry legacy:true and count neither as due nor as live', () => {
+  const f = [X.entry('t', '2026-10-20T00:00:00.000Z', 'x'),
+    X.forecast('t', '2026-10-20T01:00:00.000Z', 'F', [X.branch('r', '2026-10-25'), X.branch('old', '2026-10-25', {question: false, qid: null}), X.branch('noq', '2026-10-25', {qid: undefined})])];
+  const v = build(f);
+  const b = v.stories.get('t').forks[0].branches;
+  assert.deepEqual(b.map((x) => [x.branchId, x.legacy]), [['r', undefined], ['old', true], ['noq', true]]);
+  const row = rowOf(v, 't');
+  assert.deepEqual([row.branchCount, row.liveBranchCount], [3, 1]);
+  assert.deepEqual(build(f, {countDays: ['2026-10-25']}).counts.get('2026-10-25').byStory, {t: {newEntries: 0, branchesDue: 1, verdicts: 0}});
+});

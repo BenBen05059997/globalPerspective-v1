@@ -1,0 +1,4 @@
+[["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
+ ["uk,co,bbci,feeds)/news/world/rss.xml","20260920031500","http://feeds.bbci.co.uk/news/world/rss.xml","application/rss+xml","200","AAA","1000"],
+ ["uk,co,bbci,feeds)/news/world/rss.xml","20260920091500","http://feeds.bbci.co.uk/news/world/rss.xml","application/rss+xml","200","AAA","1000"],
+ ["uk,co,bbci,feeds)/news/world/rss.xml","20260920151500","http://feeds.bbci.co.uk/news/world/rss.xml","application/rss+xml","200","BBB","1100"]]

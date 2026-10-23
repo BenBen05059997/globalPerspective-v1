@@ -1,0 +1,6 @@
+{ "articles": [
+ { "url": "https://www.bbc.com/news/articles/c1?utm_source=x", "url_mobile": "", "title": "  Floods hit  northern region ", "seendate": "20260920T063000Z", "socialimage": "", "domain": "bbc.com", "language": "English", "sourcecountry": "United Kingdom" },
+ { "url": "https://asia.nikkei.com/Politics/a2", "title": "Talks resume", "seendate": "20260920T101500Z", "domain": "asia.nikkei.com", "language": "English", "sourcecountry": "Japan" },
+ { "url": "https://www.bbc.co.uk/news/articles/c1", "title": "Floods hit northern region", "seendate": "20260920T070000Z", "domain": "bbc.co.uk", "language": "English", "sourcecountry": "United Kingdom" },
+ { "url": "https://example.org/x", "title": "", "seendate": "20260920T070000Z", "domain": "example.org", "language": "French" }
+] }

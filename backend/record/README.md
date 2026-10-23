@@ -20,14 +20,14 @@ An agent working on the record does not write the other groups. Design: `project
 ## What the group owns
 
 Two writers, each the only writer of its files (design decided 2026-10-21):
-- `newsStoryRecord`: the facts writer, merged and deployed (2026-10-21), scheduled daily since 2026-10-22 (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. The views builder (0037; active index, links, daily counts, links rule and exact entry time) is deployed (2026-10-22, CodeSha256 rAU3n3xP...), and its role may write `record/shadow/*`, `record/facts/*`, `record/runs/*` and `record/views/*`.
-- `newsRecordReview` (planned): the weekly review, Friday night. Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, actor merges) and a Run object in `record/runs/YYYY-Www.json`. Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason.
+- `newsStoryRecord`: the facts writer and the only view builder, deployed, scheduled daily (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. It turns the inboxes into facts: `record/inbox/articles/` (raw capture by the selector, 0040) into `article` facts, `record/inbox/assignments/` into `assignment` facts (the views follow the latest assignment per entry), `record/inbox/verdicts/` (the resolver) into `verdict` facts, and `record/inbox/merges/` (the review) into `story_merged` facts. It also reads `record/readings/` and the who's who file (`record/operator/aliases.json`, operator-owned, applied to actor ids in the views only; canonical ids are `wd:Q...`, entries marked generic never ground a link). On a missing archive day it still converts the articles; the Run reports `inputs.rawDay` and `counts.articles`.
+- `newsRecordReview`: the weekly review (Monday 01:00 UTC, decision 0039). Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, merge and alias proposals), a review Run in `record/runs/review-YYYY-Www.json` and `record/inbox/merges/`; it may also propose assignments (readings only). Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason. Merged in the repo; not created in AWS.
 
-Views under `record/views/` are rebuilt from facts and readings (step 2; built 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files). Dated objects are create-only; latest and index objects are replaceable pointers.
+Views under `record/views/` are rebuilt in full from facts and readings after each daily append; the manifest is written last. Dated objects are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 
-DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports proposals; it never merges or splits threads (a merge is an alias reading).
+DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports proposals; it never merges or splits threads (a merge is a review proposal, applied through the inbox).
 
 ## Schema
 
@@ -35,7 +35,7 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Status
 
-2026-10-22: the facts writer is deployed and live (redeployed 2026-10-22 with the views builder), scheduled daily at 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22 (19 days hold only a Run: archive row missing; first dry run: [DRYRUN.md](newsStoryRecord/DRYRUN.md)). The views are built and live in S3 (`record/views/`), but no reader serves them yet: the Worker upload is still open. `newsRecordReview` does not exist yet. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.
+Live state per stage: `project-docs/STATUS.md`. `newsRecordReview` is merged but not deployed (no function, role or schedule). No Run alarm exists (parked). Coordinator owns AWS resources and deployment. First dry run of the facts writer: [DRYRUN.md](newsStoryRecord/DRYRUN.md).
 
 ## cli/reconcile-actors.mjs
 Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata `wbsearchentities` (1 request/second) for the top N, and keeps only an exact label or alias match whose description names an allowed class (person, organisation, party, armed group, agency, country/region). Dry run by default; `--write --out DIR` writes `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`. It never writes `record/operator/aliases.json`; the operator copies accepted lines. Tests: `node --test cli/test/*.test.mjs` (no network).

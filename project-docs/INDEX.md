@@ -6,12 +6,12 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the one record design doc**: two clocks, ten stages, facts, views, writers, open items; stage list as data in [pipeline.json](architecture/pipeline.json).
+- [The record](architecture/ARCHITECTURE_TIMELINE.md) — **the one record design doc**: two clocks, ten stages, kinds, stores, writers, open items; stage list as data in [pipeline.json](architecture/pipeline.json).
 - [Foundation stocktake (dated)](architecture/FOUNDATION.md) — every store, writer, reader, ID and duplicate (2026-10-21); live state is in the plan.
-- [Forecast loop](architecture/ARCHITECTURE_FORECAST_LOOP.md) — draw, watch, gather, judge, record, review; verification (decision 0038).
+- [Forecast loop](architecture/ARCHITECTURE_FORECAST_LOOP.md) — draw, watch, gather (own entries only), judge, record, review; verification (decision 0038).
 - [Ingest design](architecture/ARCHITECTURE_INGEST_DESIGN.md) — proposed: one ingest vs two (lane D) · [Weekly review](architecture/ARCHITECTURE_WEEKLY_REVIEW.md) — weekly readings, golden week (0039).
 - [Decision records](decisions/README.md) — 40 decisions, newest last.
-- [STATUS.md](STATUS.md) — in progress, parked, open decisions.
+- [STATUS.md](STATUS.md) — pipeline status (deployed vs merged), in progress, parked, open decisions.
 - Reference, generated from code and live AWS by `scripts/gen-reference.mjs`; never hand-edited:
   [lambdas](reference/lambdas.md) · [env-keys](reference/env-keys.md) names only · [features](reference/features.md) ·
   [routes](reference/routes.md) · [s3-prefixes](reference/s3-prefixes.md) · [schedules](reference/schedules.md).
@@ -29,14 +29,14 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 ## Plans (live, at most 10)
 - [Consistency and modernisation](plans/PLAN_2026-10-19_consistency_and_modernisation.md) — waves 1–3, backlog.
 - [Colour consistency](plans/PLAN_2026-10-19_colour_consistency.md) — map colours, radar C6.
-- [Forecast loop](plans/PLAN_2026-10-22_forecast_loop.md) — proposed: draw/watch/judge/record checklist; carries selector P7 and cost rows.
+- [Forecast loop](plans/PLAN_2026-10-22_forecast_loop.md) — draw side deployed, resolver side merged: draw/watch/judge/record checklist; carries selector P7 and cost rows.
 - [Cloudflare migration](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) — local build done; candidate and cutover gated.
 - [One link system + leaner pages](plans/PLAN_2026-10-19_linking_and_pages.md) — global links, Briefings merge, Studio out of nav; checklist.
 - [Studio redesign](plans/PLAN_2026-10-19_studio_redesign.md) — bring-your-own-hypothesis tool; return-to-menu criteria (proposed).
 - [Decisions 2026-10-20 + cleanup run](plans/PLAN_2026-10-20_decisions_and_cleanup.md) — operator's four answers, the one-by-one checklist and log.
 - [The analyst's weekly](plans/PLAN_2026-10-20_analyst_weekly.md) — the weekly brief rebuilt as an agent-written, operator-confirmed JSON: content spec, pipeline, steps.
 - [The board](plans/PLAN_2026-10-20_board.md) — brainstorm record, not decided: personal connection board (pins, strings, branches, tree, arrivals, monthly, folding rules), with the design canvas link.
-- [Foundation](plans/PLAN_2026-10-21_foundation.md) — facts are the system of record (decision 0035): steps 0-5 checklist, retire list, open questions, log.
+- [Foundation](plans/PLAN_2026-10-21_foundation.md) — facts are the system of record (decision 0035): steps 0-5 checklist (2c raw before model, 0040), retire list, open questions, log.
 
 ## Runbooks
 [Index](runbooks/README.md) (one per scheduled job and alert) · [parked jobs](runbooks/parked-jobs.md) · [alarms](runbooks/alarms.md). Jobs:

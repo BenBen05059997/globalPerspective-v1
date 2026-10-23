@@ -39,7 +39,7 @@ After the facts and before the Run is finalised, `src/publish.js` reads every da
 
 Assignments (0040 rule 3): an entry belongs to the story of its current assignment, the one with the latest `at` (ties: operator, then review, then ingest, then larger `eventId`); an entry with no assignment fact stays on its archive thread. A reassigned entry leaves the old story's `entries`, row counts, `iso3`/`actorIds`/`sourceIds`, `counts/` `newEntries` and link grounds, and appears in the new story's, carrying `reassignedFrom` (the archive thread it left). Corrections follow their entry. With only ingest assignments the views are byte-identical to the views without any (golden test). An assignment for an entry that has no `entry` fact does nothing.
 
-`liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) now includes `record/views/*`. First live build 2026-10-22: manifest runId `2026-10-22-3`, `factsThrough` 2026-10-19, 519 stories, 519 `links/` files.
+`liveBranchCount` = branches of any `forecast_drawn` with `due >= today` and no verdict. `today` is the UTC day of the invocation. Rebuilds are idempotent: the same facts give the same bytes, except `builtAt` and `runId` in the manifest. Schemas and one example per view type: `schema/views/`. The IAM role needs `s3:PutObject` on `record/views/*` (shadow: `record/shadow/views/*`) before views can be written live; the live role (`newsStoryRecord-access`, read 2026-10-22) now includes `record/views/*`.
 
 ## Readings, merges and aliases in the build (step 3, BUILD node of the weekly loop)
 
@@ -69,7 +69,7 @@ The live schedule (rule `TriggerStoryRecord`, cron(45 23 * * ? *), i.e. 23:45Z) 
 
 ## Deployment
 
-Deployed 2026-10-21 as the facts writer and redeployed 2026-10-22 with the views builder, links rule and exact entry time (CodeSha256 rAU3n3xPPkSDH9/pqjSXiET7YrLdUZxdteF3y2GUNZs=), registered in `scripts/functions.json` as group `record`; entry point `runtime.handler`, Node.js 22, reserved concurrency 1, scheduled by EventBridge rule `TriggerStoryRecord` cron(45 23 * * ? *), input `{"shadow":false}` (live since 2026-10-22; first run 2026-10-22 23:45Z). Its role may write `record/shadow/*`, `record/facts/*`, `record/runs/*` and `record/views/*`. The coordinator deploys it; diff the deployed zip against the repo first.
+Deployed 2026-10-21 as the facts writer; current code deployed 2026-10-22 23:54Z with the views builder, article and assignment facts, canonical actor ids and the inboxes (CodeSha256 3otTVOfYsPJOoYJAUWwWEBU2vdHdl92pUW1Fu6gmPXI=), registered in `scripts/functions.json` as group `record`; entry point `runtime.handler`, Node.js 22, reserved concurrency 1, scheduled by EventBridge rule `TriggerStoryRecord` cron(45 23 * * ? *), input `{"shadow":false}` (live since 2026-10-22; first run 2026-10-22 23:45Z). Its role may write `record/shadow/*`, `record/facts/*`, `record/runs/*` and `record/views/*`. The coordinator deploys it; diff the deployed zip against the repo first.
 
 - Environment: `WORLD_BUCKET`, `TOPICS_DDB_TABLE` (NewsCache), `PREDICTION_LOG_TABLE` (GlobalPerspectivePredictionLog). `SUMMARIZE_PREDICT_TABLE` is not needed: `world/` resolves it only for the thread-analysis reader, which this writer never calls (live default table names apply anyway). `RECORD_LLM_MODEL` is no longer read; no model key is needed.
 - The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code.
@@ -147,7 +147,7 @@ Tests use scripted stores, a fake ETag-aware S3 and, for the `today-archive` cas
 
 Verdict facts come from the inbox `record/inbox/verdicts/` (run day plus six days before; `{inboxFrom}` backfills), written by the resolver; see decision 0038 amendment.
 
-Last verified: 2026-10-22 (deployed code hash, schedule, role, environment, `record/facts/` and `record/views/` read from live AWS; tests and dry runs offline). Live entries stay `precision: day`: archive rows since 2026-10-20 lack `publishedAt` (the DeepSeek outage), so the exact-time path has not had input yet
+Last verified: 2026-10-23 (deployed code hash, schedule, role, environment, `record/facts/` and `record/views/` read from live AWS; tests and dry runs offline). Live entries stay `precision: day`: archive rows since 2026-10-20 lack `publishedAt` (the DeepSeek outage), so the exact-time path has not had input yet
 
 ## Choices: assignments (Y lane, 0040 rule 3)
 

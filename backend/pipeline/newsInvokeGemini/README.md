@@ -31,7 +31,7 @@ Offline source-field regressions: `node --test src/source-fields.test.js` (from 
 
 ## Raw capture (inbox)
 
-Before any model call the run appends every fetched item (the url-deduped pool, not the collapsed prompt rows) to `record/inbox/articles/YYYY-MM-DD.jsonl`, so a model outage never loses the day (foundation review rule 1, draft decision 0040; inbox pattern of the 0038 amendment). The selector is the only writer of that prefix; the facts writer turns lines into facts later. Line: `{schemaVersion:1, rawId, url, canonicalUrl, title, outlet, feed, publishedAt|null, fetchedAt, snippet|null, lang|null}`; `rawId = sha1(canonicalUrl)` (`_shared/record.js`), so an item seen again by a later run is skipped and the first line stays. Day = UTC day of `publishedAt`, else of `fetchedAt`. Each day file is read-modify-written with `appendLines` (conditional write, retried on a lost race); a run touches up to three day files (48 h window). A failed or slow (30 s) write is logged `[raw-capture] failed (non-fatal ...)` and the run continues.
+Before any model call the run appends every fetched item (the url-deduped pool, not the collapsed prompt rows) to `record/inbox/articles/YYYY-MM-DD.jsonl`, so a model outage never loses the day (foundation review rule 1, decision 0040; inbox pattern of the 0038 amendment). The selector is the only writer of that prefix; the facts writer turns lines into facts later. Line: `{schemaVersion:1, rawId, url, canonicalUrl, title, outlet, feed, publishedAt|null, fetchedAt, snippet|null, lang|null}`; `rawId = sha1(canonicalUrl)` (`_shared/record.js`), so an item seen again by a later run is skipped and the first line stays. Day = UTC day of `publishedAt`, else of `fetchedAt`. Each day file is read-modify-written with `appendLines` (conditional write, retried on a lost race); a run touches up to three day files (48 h window). A failed or slow (30 s) write is logged `[raw-capture] failed (non-fatal ...)` and the run continues.
 
 ## Selection rules in code
 
@@ -53,4 +53,4 @@ Before any model call the run appends every fetched item (the url-deduped pool, 
 - `cd backend/pipeline/newsInvokeGemini && node --test` (offline, no AWS SDK needed): `src/*.test.js` (source fields, scheduled failure) and `test/` (parser on a 26-feed fixture set in `test/fixtures/feeds/`, prompt text, dedupe, raw capture and the whole handler with a fake S3, model and DynamoDB). 44 pass on 2026-10-22.
 - `cd src && node test_enrichment.js` (offline). Passed 23/23 on 2026-10-19.
 
-Last verified: 2026-10-22
+Last verified: 2026-10-23 (deployed 2026-10-22 09:26Z, CodeSha256 /BcGsvdi...; raw capture live, the model still fails on the DeepSeek 402)

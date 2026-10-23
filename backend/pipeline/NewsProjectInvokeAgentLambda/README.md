@@ -61,4 +61,4 @@ Archive sources preserve selector `publishedAt`, `outlet`, and `age` unchanged. 
 
 ## Tests
 - `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 102 tests, 100 pass; 2 fail on main already and unchanged: `handler with zero generated returns failure marker...` and `cache-only run emits zero-generated failure...` (date-mocked run-guard harness reports `stale-staging`).
-Last verified: 2026-10-22 (draw changes are tests-only, not deployed; the guards and same-run joins are deployed: `NewsProjectInvokeAgentLambda-dev` last modified 2026-10-21 12:54Z; tests last run 2026-10-20)
+Last verified: 2026-10-23 (deployed 2026-10-22 23:51Z, CodeSha256 aXHKCkI9...: the draw rules and the PRED# thread reconciliation run from the first funded run; the 2 failing tests above are unchanged)

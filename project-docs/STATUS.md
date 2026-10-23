@@ -1,21 +1,22 @@
 # Status: in progress, parked, open decisions
 
-Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision records, read 2026-10-20; the pipeline table, the foundation roadmap line and the Done list re-checked 2026-10-22.
+Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision records, read 2026-10-20; the pipeline table, the foundation roadmap line and the Done list re-checked 2026-10-23.
 Update a line when its source changes; delete it when its source says done. Design: [ARCHITECTURE](architecture/ARCHITECTURE.md).
 
-## Pipeline status (2026-10-22; ten stages, two clocks; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
+## Pipeline status (2026-10-23; ten stages, two clocks; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
+Deployed = running in AWS (CodeSha256 read 2026-10-23); merged = on main, not in AWS.
 | # | Stage | Status |
 |---|---|---|
-| 1 | Ingest | **stopped**: DeepSeek out of credit since 2026-10-20 03:50Z (selector and map ingest fail; GDACS fine; the selector logged LLM 402 within the last 24 h on 2026-10-22); raw capture, RSS parser fix and selection rules in lane W (decision 0040), not deployed |
-| 2 | Stories | live; join fixes deployed 2026-10-19; 18 old duplicate stories and a stale re-save of 10-19 under 10-20 remain; guards and same-run joins deployed 2026-10-20 14:20Z (first real test: the 20:25Z run); old duplicates wait for alias repair on the timeline |
-| 3 | Daily notes | **stopped** (DeepSeek); forecast settling writes verdicts itself (resolver deployed 2026-10-20, decision 0034), but no verdict row has been written as of 2026-10-22 (zero in `GlobalPerspectivePredictionLog`), the resolver is not broken: it settles a weekly sample of 22 by design (0011) and drafts on Mondays, so the first possible verdict is Monday 2026-10-26 |
-| 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; lane B switched; lane C switching; two more readers in progress for lane B |
-| 5 | Facts | `newsStoryRecord` facts writer live: rule `TriggerStoryRecord` cron(45 23 * * ? *), first run 2026-10-22 23:45Z; `record/facts/` holds 2026-09-05..2026-10-22, 19 days hold only a Run (archive row missing, not reconstructable); no model steps; no Run alarm (parked) |
-| 6 | Review | not started: `newsRecordReview` is planned (§8 steps 3-4: golden week, then first run) |
-| 7 | Views | pages still read raw tables; board slice 1 live; `record/views/` is built (2026-10-22: 519 stories, `factsThrough` 2026-10-19; `newsStoryRecord` with links rule and exact entry time, `newsBoard` reading the views, both deployed, IAM applied); the Worker upload (live Worker cc57a42f cannot serve `record/views/`) and the board UI release are not done, so no reader sees them yet; story-view readings wait for the review |
-| 8 | Weekly report | W1-W3 built on lane/weekly (B) with an interim live-table pull; final design reads the week's readings after the review; final dry run waits for two shared readers |
-| 9 | Delivery | live; the Sunday email still sends the old weekly; the deployed Worker (cc57a42f) cannot serve `weekly/` or `record/` (the repo copy allows `record/views/` and also carries an unreleased `/analyze` redirect; upload not done) |
-| 10 | Watch | low-balance alerts live; **freshness monitor paused** 2026-10-20 ~14:40Z (rule `TriggerFreshnessMonitor` DISABLED: it re-sent "content stale" every 2 h during the DeepSeek outage; also pauses the daily settle check). Re-enable after the DeepSeek top-up or lane G's dedupe, whichever is first. No alarm on the model failure yet; two alert topics |
+| 1 | Ingest | **model stopped**: DeepSeek out of credit since 2026-10-20 03:50Z (the selector last logged `LLM 402` at 2026-10-22 20:18Z). Raw capture is deployed and live (`newsInvokeGemini-dev` 2026-10-22 09:26Z, 25 items fetched and 8 in the prompt per feed, done-not-said, code dedupe, significance floor; 0040): `record/inbox/articles/` holds 2026-10-19..10-22 whatever the model does; the selection rules take effect once DeepSeek is funded. GDACS fine |
+| 2 | Stories | draw rules and `PRED#` thread reconciliation deployed (`NewsProjectInvokeAgentLambda-dev` 2026-10-22 23:51Z): at most 3 outcomes per story per week, gates, forecasts reconciled to the entry's final thread; they apply from the first funded run. Join fixes and guards deployed earlier; 18 old duplicate stories wait for merges; 93 historical orphan forecasts wait for the operator's redirect |
+| 3 | Daily notes | **stopped** (DeepSeek). The forecast loop's resolver half is **merged, not deployed** (`newsPredictionResolver` last deployed 2026-10-20): watch from the record, own-entry evidence (no web search), coverage guard, verdict inbox `record/inbox/verdicts/`; needs IAM `record/runs/*` read, a shadow run and DeepSeek. The deployed resolver still samples 22 a week and drafts on Mondays (first possible verdict Monday 2026-10-26) |
+| 4 | One reader | built (`backend/shared/src/world/`, provenance, JSONL helper); board uses it; other readers still parse raw rows |
+| 5 | Facts | deployed and live: `newsStoryRecord` (2026-10-22 23:54Z) via rule `TriggerStoryRecord` cron(45 23 * * ? *); `record/facts/` holds 48 days, 2026-09-05..2026-10-22 (19 hold only a Run: archive row missing). Kinds: entry, article (converted even when the archive day is missing; the Run carries `inputs.rawDay`, `counts.articles`), assignment (929 ingest assignments backfilled; operator and review assignments through `record/inbox/assignments/`), story_born, forecast_drawn, verdict (from the inbox), story_merged, story_split, correction, run. No Run alarm (parked) |
+| 6 | Review | **merged, not deployed**: `newsRecordReview` is not created in AWS (no function, role, schedule or model key); schedule decided Monday 01:00 UTC; golden-week scoring and the expected readings come first |
+| 7 | Views | deployed and live: `record/views/` rebuilt by every facts run (manifest runId 2026-10-22-9, `factsThrough` 2026-10-22); follows the latest assignment per entry; maps aliases to canonical `wd:Q...` ids and keeps generic actors out of links. The who's who file `record/operator/aliases.json` is still empty (operator-owned; `cli/reconcile-actors.mjs` proposes entries), so actors keep `name:` ids. Reading fields stay `null` until the review runs |
+| 8 | Weekly report | W1-W3 built on lane/weekly with an interim live-table pull; the final design reads the week's readings after the review; final dry run waits for two shared readers |
+| 9 | Delivery | live; the Worker serves `record/views/` (version `1e17cf9a`, uploaded 2026-10-22; the repo copy's `/analyze` redirect is not uploaded); `newsBoard` (2026-10-22 07:04Z) reads the views and the board UI is released (bundle `index-CWK5qz3j.js`, 2026-10-22); not yet clicked signed in by the operator. The Sunday email still sends the old weekly |
+| 10 | Watch | low-balance alerts live; **freshness monitor paused** (rule `TriggerFreshnessMonitor` DISABLED since 2026-10-20: it re-sent "content stale" every 2 h during the DeepSeek outage). Re-enable after the DeepSeek top-up or the alert dedupe. No alarm on the model failure or the Run objects; two alert topics |
 
 ## Deployed 2026-10-20 ~15:20Z (lanes F and G, main f03ab32b)
 - Lambdas: newsInvokeGemini-dev, NewsProjectInvokeAgentLambda-dev, newsPredictionResolver, newsSituationIngest,
@@ -32,9 +33,10 @@ Update a line when its source changes; delete it when its source says done. Desi
 4. **Story pipeline fixes** (lane D): verify the 2026-10-19 join fixes, merge the 18 old duplicates, close the join gaps,
    stale-run guard, a 402 alarm (operator yes). **Must precede step 5**, or the record stores split stories as truth.
 5. **Foundation, steps 0-5 of [the plan](plans/PLAN_2026-10-21_foundation.md)** (decision 0035; each step waits for its own go): (0) done: missing
-   archive days diagnosed; (1) done: Ingest writes facts, scheduled daily; (2) views builder and `newsBoard` reader deployed with IAM applied (2026-10-22); still open: Worker
-   upload and the board UI release (operator yes each); (2b) record quality gaps (links rule,
-   exact times, the open forecast loop); (3) `newsRecordReview` weekly, golden-week fixture first; (4) retire duplicates and parsers
+   archive days diagnosed; (1) done: Ingest writes facts, scheduled daily; (2) done: views builder, `newsBoard` reader, Worker allowlist and board UI released
+   (2026-10-22); (2b) record quality gaps: links rule and exact times done, the forecast loop's resolver half merged and not deployed, actor identity
+   waits on the who's who file; (2c) raw before model (0040): capture, article and assignment facts deployed, recovery of lost days and the Run alarm open;
+   (3) `newsRecordReview` weekly, merged, golden-week scoring first, then deploy; (4) retire duplicates and parsers
    (operator yes each); (5) remove the world DynamoDB rows after the rebuild test.
 6. Weekly becomes a view of the week's readings (after the review); weekly page; cloud schedule.
 7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) fills in once readings exist.
@@ -59,7 +61,8 @@ Plans: [foundation](plans/PLAN_2026-10-21_foundation.md), [weekly](plans/PLAN_20
 ## Done
 - 2026-10-20: board slice 1 live (`/board`, `newsBoard`); the resolver deployed to write verdicts itself (decision 0034; none written yet);
   weekly W0 (`backend/weekly/` schema and section model).
-- 2026-10-22: facts writer scheduled and live (`TriggerStoryRecord`); `record/facts/` filled from 2026-09-05; `record/views/` built and `newsBoard` reading it.
+- 2026-10-22: facts writer scheduled and live (`TriggerStoryRecord`); `record/facts/` filled from 2026-09-05; `record/views/` built, `newsBoard` reading it, Worker serving it, board UI released.
+- 2026-10-22/23: raw capture (selector to `record/inbox/articles/`, `article` facts), assignment facts (929 backfilled), canonical actor ids in the views, `PRED#` thread reconciliation, draw rules: deployed (decision 0040, 0038 draw half).
 - Lens Analysis Studio retired 2026-10-20: `/analyze` redirects to the first thread story or the countries list,
   every link into it is removed, its screens and BYOK/provider code are deleted; shared-run pages
   (`/analyze/s/:id`), the analysis libraries and the `newsAnalyze`/`newsSharedAnalysis` Lambdas stay.

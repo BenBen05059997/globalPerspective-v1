@@ -1,14 +1,14 @@
 # The forecast loop
 
-Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only); not built. Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side deployed; resolver side merged, not deployed (state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
 Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
 
 ## 1. Why
 The product is an analyst tool. A forecast with a verdict is what separates it from a feed and what turns a timeline into a narrative.
-Today the loop is open:
-- 7,440 branches in `forecast_drawn` facts (994 forks, 2026-09-05..10-19); only 44 can ever get a verdict (the weekly sample of 22, two weeks drawn).
+The loop was open when this design was agreed:
+- 7,440 branches in `forecast_drawn` facts (counted 2026-10-22) (994 forks, 2026-09-05..10-19); only 44 can ever get a verdict (the weekly sample of 22, two weeks drawn).
 - 2,451 branches have no question id, no p and no source, so nothing can resolve them.
-- No verdict row exists. Pages say "not checked yet" for every branch, which promises a check that never comes.
+- No verdict has been written. Pages said "not checked yet" for every branch, which promises a check that never comes.
 - `branch.text` is the scenario label ("Most Likely"); the event is in `trigger`. A story gets a new fork almost every day (max 31 for one story).
 
 ## 2. The loop (tree)
@@ -73,10 +73,10 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 ## 3. Stages in detail
 
 ### Draw (weekly, model)
-- Cadence: weekly per story, and only when the story has new entry facts that week. Today the generator forks a story up to daily.
-- Count: at most 3 outcomes per story per week (today 3 scenarios x up to 3 triggers = 3-9 triggers, about 8 per fork).
+- Cadence: weekly per story, and only when the story has new entry facts that week. The deployed generator follows this; before it, a story forked up to daily.
+- Count: at most 3 outcomes per story per week (before: 3 scenarios x up to 3 triggers, about 8 per fork).
 - Outcome: a concrete event that gets DONE, not said (operator editorial rule, decision 0020, applied to branches). Due 7-90 days out (the prompt says 90, the existing gate 180; the sample window is 7-84). Own p. A named source that would report it.
-- Gates: the existing G-gates in `lib.js` and `questions.js` keep their names. G7 no p, G8 generic source, G9 lead under 7 days, G10 restatement, G12 near-duplicate; this design adds: lead over 90 days dropped, near-duplicate checked against open branches on the same story (today the last 14 prior rows).
+- Gates: the existing G-gates in `lib.js` and `questions.js` keep their names. G7 no p, G8 generic source, G9 lead under 7 days, G10 restatement, G12 near-duplicate; this design adds: lead over 90 days dropped, near-duplicate checked against open branches on the same story (before: the last 14 prior rows).
 - Written as `forecast_drawn` facts and never changed. `branch.text` becomes the event text; the scenario label is not the branch text any more.
 - Draw quality is the largest lever (Section 7). Invented calendar facts and templated probabilities (older plan, P1/P2) belong here.
 
@@ -110,9 +110,9 @@ Never "not checked yet". `counts.branchesDue` counts resolvable branches only.
 | Object | Where | Notes |
 |---|---|---|
 | `forecast_drawn` fact | `record/facts/YYYY-MM-DD.jsonl` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} (0036); written by `newsStoryRecord` from `PRED#` rows today |
-| `verdict` fact | `record/facts/` | qid, result, quote, url, at, decidedBy, evidence; zero exist as of 2026-10-22; written only by `newsStoryRecord` from the inbox, `eventId = sha1('verdict' + qid + revision)`, a correction is a line with revision 2 or more |
-| verdict inbox | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`) | S3 | one line per final verdict (`yes|no|void`), decision day UTC, written only by the resolver; the facts run reads the run day and six days before |
-| `Q#<qid>/SAMPLED, DRAFT#, VERDICT, VERDICT#<n>` | DynamoDB `GlobalPerspectivePredictionLog` | resolver's working rows, put-once; 44 SAMPLED live |
+| `verdict` fact | `record/facts/` | qid, result, quote, url, at, decidedBy, evidence; written only by `newsStoryRecord` from the inbox, `eventId = sha1('verdict' + qid + revision)`, a correction is a line with revision 2 or more |
+| verdict inbox | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`) | one line per final verdict (`yes|no|void`), decision day UTC, written only by the resolver; the facts run reads the run day and six days before |
+| `Q#<qid>/SAMPLED, DRAFT#, VERDICT, VERDICT#<n>` | DynamoDB `GlobalPerspectivePredictionLog` | resolver's working rows, put-once |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its commit |
 | `record/views/` (stories, counts, index) | S3 | rebuilt from facts; the board and thread pages read these |
 | `predictions/track_record.json` | S3 | the scored sample only |
@@ -124,8 +124,9 @@ A verdict reaches `record/facts/` through the inbox (decision 0038 amendment): t
 The code lives in two groups only, so nobody hunts for it:
 - Draw: `backend/pipeline/NewsProjectInvokeAgentLambda` (generator: prompt, `lib.js`, `questions.js`).
 - Watch, Gather, Judge, Record: `backend/predictions/newsPredictionResolver`.
-- Prefixes: the resolver writes `record/inbox/verdicts/` and `record/shadow/inbox/verdicts/` and nothing else in `record/`; it never writes `record/facts/`. `newsStoryRecord` writes `record/facts/`.
-- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan).
+- Prefixes: the resolver writes `record/inbox/verdicts/` and `record/shadow/inbox/verdicts/` and nothing else in `record/`; it reads `record/facts/` (and `record/runs/` for the coverage guard) and never writes it. `newsStoryRecord` writes `record/facts/`, converting the inbox lines into `verdict` facts.
+- Evidence is our own entries only, so the resolver needs no search key and no web access.
+- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan; merged, not created in AWS).
 This doc is linked from `backend/predictions/README.md`, the resolver README and `ARCHITECTURE_TIMELINE.md` §1b row 3 and §3.
 
 ## 6. Verification (how we know it works)

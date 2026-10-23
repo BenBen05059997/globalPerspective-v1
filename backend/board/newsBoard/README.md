@@ -44,7 +44,7 @@ Errors: 401 no/invalid token; 400 validation with a message (`code` `pin_budget_
 ## Tests
 - `cd backend/board/newsBoard/src && npm install && npm test` (`node --test ../test/*.test.js`): 35 pass. Fake in-memory store (`test/helpers.js`); `store.test.js` drives the real store over a fake `send`; `validate.test.js` checks the hand-written validator against ajv (the frontend's copy) on the schema examples and mutated boards, and skips the ajv comparison if the frontend `node_modules` are missing.
 
-Last verified: 2026-10-20
+Last verified: 2026-10-23 (deployed 2026-10-22 07:04Z, CodeSha256 0aVv97o4...; reads the views, no errors known)
 
 ## Record views (decision 0037, deployed 2026-10-22)
 

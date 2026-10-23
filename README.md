@@ -4,10 +4,12 @@ AI-powered global-news intelligence platform — [globalperspective.net](https:/
 
 ## Architecture
 
-One record, two clocks. Facts (what happened) are appended daily with no model; readings (what it meant) are written
+One record, two clocks. Facts (what happened) are appended daily with no model: raw articles are captured before the
+model runs, entries are assigned to stories, and verdicts come back through inboxes. Readings (what it meant) are written
 weekly with hindsight, cite the facts, and supersede earlier readings instead of editing them. Pages, the board and the
-weekly report are views of that record. The ten-stage pipeline and the object model are in
-`project-docs/architecture/ARCHITECTURE_TIMELINE.md`; the stage list as data is `project-docs/architecture/pipeline.json`.
+weekly report are views of that record, served as static JSON through the Worker. The ten-stage pipeline and the object model are in
+`project-docs/architecture/ARCHITECTURE_TIMELINE.md`; the stage list as data is `project-docs/architecture/pipeline.json`;
+what is deployed versus merged is in `project-docs/STATUS.md`.
 
 ## Where to look (start here)
 

@@ -73,7 +73,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 ## Known limits
 
 - A missing seed secret or a commit-hash mismatch blocks that week's draw. A new seed is never invented.
-- The resolver writes verdicts itself from model drafts (decision 0034, deployed 2026-10-20); the operator only corrects. No verdict row had been written as of 2026-10-22 (zero in `GlobalPerspectivePredictionLog`).
+- The resolver writes verdicts itself from model drafts (decision 0034, deployed 2026-10-20); the operator only corrects. The loop code in this folder (watch, own-entry judge, coverage guard, verdict inbox) is merged and not deployed.
 - Resolver rows are conditional put-once; nothing is overwritten.
 - A question is checked at most once a day; an age-only candidate waits 5 days between checks.
 - Live TTL on the PredictionLog table is DISABLED, so rows do not expire.
@@ -87,7 +87,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 
 Verdicts reach the record through the inbox `record/inbox/verdicts/` (decision 0038 amendment; the resolver writes it, `newsStoryRecord` turns it into facts).
 
-Last verified: 2026-10-20 against code @14dd450d and live AWS.
+Last verified: 2026-10-23 against code on main and live AWS (resolver deployed 2026-10-20, unchanged since).
 
 ## Choices (lane N, 2026-10-22; narrowest reading where the decision is silent)
 - One path for all: the Monday-only draft pass is gone. `tick` runs WATCH -> RECORD every night; `draft` and `watch` (read-only) are the same pass on demand. A sampled question is just a flagged candidate (`sampled:true` on its verdict row); a SAMPLED row also feeds the pass when its PRED row is missing.

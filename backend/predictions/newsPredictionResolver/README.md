@@ -99,4 +99,4 @@ Any change to the judge model, prompt or rules must pass the judge benchmark des
 ## Tests
 - `cd backend/predictions/newsPredictionResolver/src && npm test` (`node --test ../test/*.test.js`, offline; also loads `predictions/settle-correct.js`): 85 passed, 1 skipped (store-interface test skips without the AWS SDK on NODE_PATH), 2026-10-22.
 
-Last verified: 2026-10-22 against code on branch lane/resolve (not deployed; live deployed 2026-10-20 15:24Z still runs the Monday draft pass; zero `VERDICT` rows so far)
+Last verified: 2026-10-23 against code on main: merged, not deployed. The live function (deployed 2026-10-20 15:24Z, CodeSha256 /tQ+fBwq...) still runs the Monday draft pass with web search; its role already holds `record/facts/*` read and `record/inbox/verdicts/*` (and shadow) read/write, and still lacks `record/runs/*` read for the coverage guard.

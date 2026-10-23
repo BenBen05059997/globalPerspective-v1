@@ -1,6 +1,6 @@
 # newsRecordReview
 
-The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: built and tested offline with a stub model; not deployed, not run live (waits for the DeepSeek top-up and the golden-week score).
+The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: built and tested offline with a stub model; not created in AWS as of 2026-10-23 (no function, role, schedule or `functions.json` entry), not run live (waits for the DeepSeek top-up and the golden-week score).
 
 ## The loop
 
@@ -38,7 +38,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- reads readings + inbox merges + operator aliases; fills line, chapters, branchStatus, confirmedLinks in the views;
 |  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
 |
-+- LOOP BACK : new entries all week -> nightly facts and views -> Friday review reads them with hindsight -> views show it
++- LOOP BACK : new entries all week -> nightly facts and views -> Monday review reads them with hindsight -> views show it
 ```
 
 ## What a run does

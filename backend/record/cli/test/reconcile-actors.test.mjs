@@ -18,7 +18,9 @@ test('accept: only the top hit counts; a label miss, a wrong class or no hit is 
   assert.ok(accept('name:ice', [hit('Q1', 'Intercity Express', 'high-speed train', {type: 'alias', text: 'ICE'})]).unresolved);
   assert.match(accept('name:ice', [hit('Q1', 'ICE', 'high-speed train of Deutsche Bahn')]).unresolved, /not an allowed class/);
   assert.match(accept('name:protesters', [hit('Q2', 'protesters', 'Wikinews article')]).unresolved, /allowed class/);
-  assert.equal(accept('name:x', [hit('Q3', 'Y', 'politician'), hit('Q4', 'x', 'politician')]).proposal.confidence, 'near', 'a second hit can only ever be near, never exact');
+  assert.ok(accept('name:x', [hit('Q3', 'Y', 'politician'), hit('Q4', 'x', 'politician')]).unresolved, 'a lower hit with the same name is a namesake, not a rescue');
+  assert.equal(accept('name:david ellison', [hit('Q1', 'David Ellison', 'American film producer (born 1983)'), hit('Q2', 'David Ellison', 'researcher')]).proposal.wikidataId, 'Q1');
+  assert.ok(accept('name:chinese government', [hit('Q9', 'Chinese Government', 'mining company in the United States')]).unresolved);
   assert.equal(accept('name:nobody', []).unresolved, 'no hit');
   assert.ok(accept('name:x', [{id: 'not-a-q', label: 'x', description: 'politician', match: {type: 'label'}}]).unresolved);
 });
@@ -77,8 +79,11 @@ test('matchTier / accept: spelling variants and word-order variants are near; un
 
 test('rewrites: demonym + org or role becomes the entity title', () => {
   assert.deepEqual(rewrites('south korean government'), ['Government of south korea']);
-  assert.deepEqual(rewrites('ukrainian military'), ['Armed Forces of ukraine']);
+  assert.deepEqual(rewrites('ukrainian military'), ['Armed Forces of ukraine', 'Military of ukraine']);
   assert.deepEqual(rewrites('russian foreign ministry'), ['Ministry of Foreign Affairs of russia']);
+  assert.deepEqual(rewrites("qatar's prime minister"), ['Prime Minister of qatar']);
+  assert.deepEqual(rewrites('panama president'), ['President of panama']);
+  assert.deepEqual(rewrites('president of pakistan'), ['President of pakistan']);
   assert.deepEqual(rewrites('donald trump'), []);
 });
 
@@ -97,7 +102,10 @@ test('holdersInWindow: overlap with the window, open end, undated only as a fall
   assert.deepEqual(holdersInWindow(holders, '2019-01-01', '2019-02-01').map((h) => h.id), ['Q12']);
   assert.deepEqual(holdersInWindow(holders, '2018-07-01', '2018-09-01').map((h) => h.id), ['Q11', 'Q12']);
   assert.deepEqual(holdersInWindow([holders[3]], '2019-01-01', '2019-02-01').map((h) => h.id), ['Q13']);
-  assert.deepEqual(holdersInWindow(holders, '1990-01-01', '1990-02-01').map((h) => h.id), ['Q13']);
+  assert.deepEqual(holdersInWindow(holders, '1990-01-01', '1990-02-01').map((h) => h.id), ['Q13'], 'before every dated holder: the undated fallback');
+  const open = [{id: 'A', start: '2019-07-01', end: null}, {id: 'B', start: '2024-07-01', end: null}];
+  assert.deepEqual(holdersInWindow(open, '2024-08-01', '2024-09-01').map((h) => h.id), ['B'], 'a missing end is the next holder start');
+  assert.deepEqual(holdersInWindow(open, '2024-06-01', '2024-09-01').map((h) => h.id), ['A', 'B']);
 });
 
 const officeHit = hit('Q99', 'President of Pakistan', 'head of state of Pakistan');
@@ -152,4 +160,18 @@ test('makeClient.probe: one SPARQL request sharing the rate gap; parseOffice rea
   assert.deepEqual(info, {isHuman: false, isPosition: true, holders: [{id: 'Q5', label: 'P', description: '', start: '2020-01-01T00:00:00Z', end: null}]});
   assert.deepEqual(parseOffice({}), {isHuman: false, isPosition: false, holders: []});
   assert.throws(() => officeQuery('Q1; DROP'));
+});
+
+test('office detection by label, holders without a position class, and label-only organisation classes', async () => {
+  const mayor = hit('Q785304', 'Mayor of New York City', 'head of the executive branch of New York City');
+  const out = await resolveActor('name:new york mayor', {search: async () => [mayor], probe: async () => ({isHuman: false, isPosition: false, holders: [{id: 'Q1', label: 'Eric Adams', start: '2022-01-01', end: null}]}), window: {from: '2026-10-01', to: '2026-10-20'}});
+  assert.deepEqual([out.proposals[0].wikidataId, out.proposals[0].title, out.proposals[0].via, out.proposals[0].confidence], ['Q1', 'Mayor of New York City', 'office→holder', 'near']);
+  assert.equal(classOf('', 'Armed Forces of Mali'), 'organization');
+  assert.equal(classOf('', 'Iraqi government to investigate Saddam video'), null);
+  assert.equal(accept('name:malian military', [hit('Q9', 'Armed Forces of Mali', '')]).proposal.via, 'near');
+});
+
+test('near: possessive names and legal suffixes', () => {
+  assert.equal(accept("name:qatar's prime minister", [hit('Q1', 'Prime Minister of Qatar', 'head of government of Qatar')]).proposal.confidence, 'near');
+  assert.equal(accept('name:commerzbank', [hit('Q2', 'Commerzbank AG', 'German bank')]).proposal.confidence, 'near');
 });

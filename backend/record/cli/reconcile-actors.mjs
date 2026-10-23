@@ -27,7 +27,7 @@ const GENERIC_NOUNS = new Set(['protesters', 'protestors', 'demonstrators', 'stu
 
 // Description classes (Wikidata descriptions are short English phrases): a hit is acceptable only when its description names one.
 const CLASSES = [
-  ['human', /\b(politician|president|prime minister|minister|chancellor|monarch|king|queen|emperor|pope|bishop|leader|head of state|head of government|governor|mayor|senator|diplomat|ambassador|general|admiral|officer|commander|activist|journalist|lawyer|judge|economist|businessperson|businessman|businesswoman|entrepreneur|billionaire|investor|executive|ceo|chief|spokesperson|official|scientist|physician|professor|writer|actor|actress|singer|footballer|athlete|player|coach|astronaut|philanthropist|revolutionary|dissident|militant|cleric|ayatollah|imam|sultan|emir|prince|princess|chairman|chairwoman|speaker|secretary|attorney|prosecutor|politicia)\b/],
+  ['human', /\b(politician|president|prime minister|minister|chancellor|monarch|king|queen|emperor|pope|bishop|leader|head of state|head of government|governor|mayor|senator|diplomat|ambassador|general|admiral|officer|commander|activist|journalist|lawyer|judge|economist|businessperson|businessman|businesswoman|entrepreneur|billionaire|investor|executive|ceo|chief|spokesperson|official|scientist|physician|professor|writer|actor|actress|singer|footballer|athlete|player|coach|producer|filmmaker|director|astronaut|philanthropist|revolutionary|dissident|militant|cleric|ayatollah|imam|sultan|emir|prince|princess|chairman|chairwoman|speaker|secretary|attorney|prosecutor|politicia)\b/],
   ['organization', /\b(organi[sz]ation|company|corporation|agency|institution|association|union|alliance|bank|party|council|committee|commission|court|army|armed forces|military|navy|air force|police|ministry|department|government|parliament|congress|senate|assembly|movement|group|coalition|network|foundation|university|newspaper|broadcaster|network|cartel|militia|brigade|front|force|forces|treaty organi[sz]ation|intergovernmental|non-governmental|ngo|bureau|service|authority|administration|cabinet|executive branch|legislature|judiciary|intelligence|programme|program|news channel|broadcaster|airline|enterprise|firm)\b/],
   ['political party', /\bpolitical party\b/],
   ['armed group', /\b(armed group|rebel group|militant|paramilitary|terrorist|insurgent|militia|guerrilla|rebel)\b/],
@@ -36,7 +36,7 @@ const CLASSES = [
   ['country/region', /\b(country|sovereign state|state in|republic|kingdom|territory|region|province|federal state|autonomous|continent|supranational|union of)\b/],
 ];
 // Never an entity we mean, whatever else the description says.
-const REJECT = /\b(wikimedia|wikinews|disambiguation|news article|episode|album|song|film|television|tv series|scientific article|scholarly|paper|novel|video game|musical|band|train|railway|surname|given name|family name|website|district of|inner city|neighbou?rhood|sanatorium|asteroid|species|genus)\b/;
+const REJECT = /\b(wikimedia|wikinews|disambiguation|news article|episode|album|song|film(?! (producer|director|maker|actor|actress|critic|executive))|television(?! (presenter|host|personality|journalist|producer|executive|network|channel))|tv series|scientific article|scholarly|paper|novel|video game|musical|band|train|railway|surname|given name|family name|website|district of|inner city|neighbou?rhood|sanatorium|asteroid|species|genus)\b/;
 
 export const nameOf = (id) => String(id).replace(/^name:/, '');
 const fold = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -48,11 +48,13 @@ export function isGenericName(name) {
   return GENERIC_NOUNS.has(last);
 }
 
-export function classOf(description) {
+// Wikidata often has no usable description for a government or armed force; its label then names the class.
+const LABEL_ORG = /^(government|cabinet|armed forces|ministry|parliament|national assembly|supreme court|central bank|police|army|navy|air force|security forces|national police)\b.* of |\b(armed forces|defen[sc]e forces|ministry of [a-z ]+|national police|police force|central bank)$/i;
+export function classOf(description, label = '') {
   const d = String(description || '').toLowerCase();
-  if (!d || REJECT.test(d)) return null;
-  for (const [cls, re] of CLASSES) if (re.test(d)) return cls;
-  return null;
+  if (REJECT.test(d)) return null;
+  for (const [cls, re] of CLASSES) if (d && re.test(d)) return cls;
+  return LABEL_ORG.test(String(label)) ? 'organization' : null;
 }
 
 // ---- name comparison: word order, "of"/"the", demonyms and "military" are not differences ----
@@ -62,15 +64,25 @@ const DEMONYMS = {korean: 'korea', ukrainian: 'ukraine', russian: 'russia', chin
   brazilian: 'brazil', argentine: 'argentina', mexican: 'mexico', venezuelan: 'venezuela', colombian: 'colombia', peruvian: 'peru', chilean: 'chile', cuban: 'cuba', canadian: 'canada', australian: 'australia',
   italian: 'italy', spanish: 'spain', polish: 'poland', dutch: 'netherlands', belgian: 'belgium', swedish: 'sweden', norwegian: 'norway', danish: 'denmark', finnish: 'finland', greek: 'greece', hungarian: 'hungary',
   serbian: 'serbia', georgian: 'georgia', armenian: 'armenia', azerbaijani: 'azerbaijan', kazakh: 'kazakhstan', nigerian: 'nigeria', ethiopian: 'ethiopia', kenyan: 'kenya', sudanese: 'sudan', somali: 'somalia',
-  libyan: 'libya', tunisian: 'tunisia', algerian: 'algeria', moroccan: 'morocco', congolese: 'congo', ugandan: 'uganda', ghanaian: 'ghana', palestinian: 'palestine', jordanian: 'jordan', qatari: 'qatar', emirati: 'united arab emirates'};
+  libyan: 'libya', tunisian: 'tunisia', algerian: 'algeria', moroccan: 'morocco', congolese: 'congo', ugandan: 'uganda', ghanaian: 'ghana', palestinian: 'palestine', jordanian: 'jordan', qatari: 'qatar', emirati: 'united arab emirates', malian: 'mali', uzbek: 'uzbekistan', albanian: 'albania', austrian: 'austria', swiss: 'switzerland', irish: 'ireland', portuguese: 'portugal', czech: 'czechia', slovak: 'slovakia', romanian: 'romania', bulgarian: 'bulgaria',
+  croatian: 'croatia', bosnian: 'bosnia', kosovar: 'kosovo', belarusian: 'belarus', lithuanian: 'lithuania', latvian: 'latvia', estonian: 'estonia', moldovan: 'moldova', mongolian: 'mongolia', cambodian: 'cambodia', laotian: 'laos', malaysian: 'malaysia',
+  singaporean: 'singapore', eritrean: 'eritrea', rwandan: 'rwanda', angolan: 'angola', mozambican: 'mozambique', zimbabwean: 'zimbabwe', zambian: 'zambia', tanzanian: 'tanzania', cameroonian: 'cameroon', senegalese: 'senegal',
+  ivorian: 'ivory coast', haitian: 'haiti', jamaican: 'jamaica', bolivian: 'bolivia', ecuadorian: 'ecuador', paraguayan: 'paraguay', uruguayan: 'uruguay', panamanian: 'panama', nicaraguan: 'nicaragua', honduran: 'honduras', guatemalan: 'guatemala', salvadoran: 'el salvador',
+  us: 'united states', uk: 'united kingdom', drc: 'democratic republic of the congo', uae: 'united arab emirates', kuwaiti: 'kuwait', omani: 'oman', bahraini: 'bahrain', turkmen: 'turkmenistan', tajik: 'tajikistan', kyrgyz: 'kyrgyzstan', maltese: 'malta', icelandic: 'iceland',
+  bhutanese: 'bhutan', maldivian: 'maldives', 'new zealand': 'new zealand'};
+// a bare country name works like its demonym ("panama president")
+const PLACES = new Set([...Object.values(DEMONYMS), 'turkey', 'iran', 'iraq', 'syria', 'china', 'russia', 'ukraine', 'israel', 'japan', 'india', 'pakistan', 'egypt', 'cuba', 'peru', 'chile', 'brazil', 'mexico', 'canada', 'france', 'germany', 'italy', 'spain', 'poland', 'greece', 'qatar', 'jordan', 'lebanon', 'libya', 'sudan', 'somalia', 'ethiopia', 'kenya', 'nigeria', 'ghana', 'morocco', 'algeria', 'tunisia', 'yemen', 'afghanistan', 'syria', 'taiwan', 'thailand', 'vietnam', 'myanmar', 'nepal', 'bangladesh', 'argentina', 'venezuela', 'colombia', 'australia', 'sweden', 'norway', 'denmark', 'finland', 'hungary', 'serbia', 'georgia', 'armenia', 'azerbaijan', 'kazakhstan', 'uganda', 'congo', 'palestine']);
+const placeOf = (w) => DEMONYMS[w] || (PLACES.has(w) ? w : null);
 const STOP = new Set(['of', 'the', 'and', 'in', 'a']);
-const ORG_NOUNS = {government: 'Government', military: 'Armed Forces', army: 'Armed Forces', parliament: 'Parliament', police: 'Police', president: 'President', 'prime minister': 'Prime Minister', 'foreign ministry': 'Ministry of Foreign Affairs', 'defense ministry': 'Ministry of Defense', 'central bank': 'Central Bank'};
+const LEGAL = new Set(['ag', 'inc', 'ltd', 'plc', 'corp', 'corporation', 'co', 'sa', 'gmbh', 'llc', 'nv', 'se', 'limited', 'company']);
+const ORG_NOUNS = {government: ['Government'], military: ['Armed Forces', 'Military'], army: ['Army', 'Armed Forces'], parliament: ['Parliament'], police: ['Police', 'National Police'], president: ['President'], 'prime minister': ['Prime Minister'], 'foreign ministry': ['Ministry of Foreign Affairs'],
+  'defense ministry': ['Ministry of Defense'], 'defence ministry': ['Ministry of Defense'], 'central bank': ['Central Bank'], 'security forces': ['Security Forces'], 'foreign minister': ['Minister of Foreign Affairs']};
 
 /** A comparable key: folded, demonyms to their country, "military" to "armed forces", stop words dropped, words sorted. */
 export function canonKey(s) {
   const out = [];
-  for (const w of fold(s).split(' ').filter(Boolean)) {
-    if (STOP.has(w)) continue;
+  for (const w of fold(String(s).replace(/[’']s\b/g, '')).split(' ').filter(Boolean)) {
+    if (STOP.has(w) || LEGAL.has(w)) continue;
     const t = w === 'military' ? 'armed forces' : w === 'defence' ? 'defense' : (DEMONYMS[w] || w);
     out.push(...t.split(' '));
   }
@@ -79,14 +91,14 @@ export function canonKey(s) {
 
 /** Extra queries for a "<demonym> <org/role>" title: "south korean government" -> "Government of South Korea". */
 export function rewrites(name) {
-  const ws = fold(name).split(' ');
-  const i = ws.findIndex((w) => DEMONYMS[w]);
+  const ws = fold(String(name).replace(/[’']s\b/g, '')).split(' ').filter((w) => !STOP.has(w));
+  const i = ws.findIndex((w) => placeOf(w));
   if (i < 0) return [];
   const dir = i > 0 && ['north', 'south', 'east', 'west', 'new'].includes(ws[i - 1]) ? ws[i - 1] : null;
-  const country = (dir ? `${dir} ` : '') + DEMONYMS[ws[i]];
+  const country = (dir ? `${dir} ` : '') + placeOf(ws[i]);
   const rest = ws.filter((_, j) => j !== i && !(dir && j === i - 1)).join(' ');
-  const noun = ORG_NOUNS[rest];
-  if (noun) return [`${noun} of ${country}`];
+  const nouns = ORG_NOUNS[rest];
+  if (nouns) return nouns.map((n) => `${n} of ${country}`);
   return rest && rest.split(' ').length <= 2 ? [`${rest} of ${country}`] : [];
 }
 
@@ -103,12 +115,13 @@ export function levenshtein(a, b) {
 }
 
 // A description that may name a position/office (or a person who holds one: the entity probe tells them apart).
-const OFFICEISH = /\b(position|office|post|title|role|head of state|head of government|head of the government)\b|^(the )?(president|prime minister|mayor|governor|minister|chancellor|speaker|secretary|leader|chief|commander)\b/i;
-export const isOfficeish = (description) => OFFICEISH.test(String(description || '')) && !REJECT.test(String(description || '').toLowerCase());
+const OFFICEISH = /\b(position|office|post|title|role|head of state|head of government|head of the government)\b|^(the )?(head of|president|prime minister|mayor|governor|minister|chancellor|speaker|secretary|leader|chief|commander)\b/i;
+const OFFICE_LABEL = /\b(president|prime minister|mayor|governor|minister|chancellor|speaker|secretary|premier|commissioner|ambassador|king|queen|chief of staff)\b/i;
+export const isOfficeish = (description, label = '') => !REJECT.test(String(description || '').toLowerCase()) && (OFFICEISH.test(String(description || '')) || OFFICE_LABEL.test(String(label || '')));
 
 /** How a hit's text relates to the actor name: exact | alias | near | null. `texts` = [label, ...matched alias text]. */
 export function matchTier(name, hit, {top = true, office = false} = {}) {
-  const n = fold(name);
+  const n = fold(String(name).replace(/[’']s\b/g, ''));
   const type = hit.match && hit.match.type;
   const label = fold(hit.label || ''), matched = fold((hit.match && hit.match.text) || '');
   if (top) {
@@ -116,6 +129,7 @@ export function matchTier(name, hit, {top = true, office = false} = {}) {
     if (type === 'alias' && matched === n) return 'alias';
     if (type === 'label' && matched === n) return 'exact';
   }
+  if (!top && (label === n || matched === n)) return null; // a lower hit sharing the exact name is a namesake, not a variant
   const texts = [label, type === 'alias' ? matched : ''].filter(Boolean);
   for (const t of texts) {
     if (n.length >= 6 && t.length >= 6 && levenshtein(n, t) <= 2) return 'near';
@@ -144,8 +158,9 @@ export function accept(id, hits) {
   for (let i = 0; i < list.length; i++) {
     const h = list[i];
     if (!WIKIDATA_ID.test(h.id || '')) continue;
-    const cls = classOf(h.description);
-    const tier = matchTier(name, h, {top: i === 0, office: isOfficeish(h.description)});
+    const cls = classOf(h.description, h.label);
+    if (GOVERNMENTISH.test(name) && /\b(company|firm|corporation|manufacturer)\b/i.test(h.description || '')) continue;
+    const tier = matchTier(name, h, {top: i === 0, office: isOfficeish(h.description, h.label)});
     if (!tier) continue;
     if (!cls) { if (i === 0) why = `description "${h.description || ''}" is not an allowed class`; continue; }
     return {proposal: {canonical: id, wikidataId: h.id, label: h.label, description: h.description || '', confidence: tier, via: tier}};
@@ -153,6 +168,7 @@ export function accept(id, hits) {
   return {unresolved: why};
 }
 
+const GOVERNMENTISH = /\b(government|military|army|police|ministry|parliament|armed forces|president|minister)\b/i;
 const day = (t) => (t ? String(t).slice(0, 10) : null);
 /** Holders of an office that overlap [from, to] (ISO dates). A holder with no dates counts only when no dated holder overlaps. */
 export function holdersInWindow(holders, from, to) {
@@ -160,10 +176,14 @@ export function holdersInWindow(holders, from, to) {
   for (const h of holders || []) {
     const s = day(h.start), e = day(h.end);
     if (!s && !e) { undated.push(h); continue; }
-    if ((s && to && s > to) || (e && from && e < from)) continue;
+    if (s && to && s > to) continue;
     dated.push({...h, start: s, end: e});
   }
-  const out = dated.length ? dated : undated;
+  dated.sort((x, y) => String(x.start || '').localeCompare(String(y.start || '')));
+  // an office is held by one person at a time: a missing end means "until the next holder started"
+  const clamped = dated.map((h, i) => { const next = dated.slice(i + 1).find((o) => o.start && h.start && o.start > h.start); return !h.end && next ? {...h, end: next.start} : h; });
+  const live = clamped.filter((h) => !(h.end && from && h.end < from));
+  const out = live.length ? live : undated.length ? undated : [];
   const seen = new Set();
   return out.filter((h) => { const k = `${h.id}|${h.start}`; if (seen.has(k)) return false; seen.add(k); return true; }).sort((x, y) => String(x.start || '').localeCompare(String(y.start || '')));
 }
@@ -175,12 +195,12 @@ export function holdersInWindow(holders, from, to) {
 export async function resolveActor(id, {search, probe, window = {}}) {
   const name = nameOf(id);
   let r = accept(id, await search(name));
-  if (!r.proposal) for (const q of rewrites(name)) { const r2 = accept(id, await search(q)); if (r2.proposal) { r = r2; break; } }
+  if (!r.proposal) for (const q of rewrites(name)) { const r2 = accept(id, await search(q)); if (r2.proposal) { r = r2; break; } if (r.unresolved === 'no hit') r = r2; }
   if (!r.proposal) return {unresolved: r.unresolved};
   const p = r.proposal;
-  if (!probe || !(isOfficeish(p.description) || classOf(p.description) === 'office')) return {proposals: [p]};
+  if (!probe || !(isOfficeish(p.description, p.label) || classOf(p.description, p.label) === 'office')) return {proposals: [p]};
   const info = await probe(p.wikidataId);
-  if (!info || info.isHuman || !info.isPosition) return {proposals: [p]};
+  if (!info || info.isHuman || !(info.isPosition || info.holders.length)) return {proposals: [p]};
   const holders = holdersInWindow(info.holders, window.from, window.to);
   const base = {canonical: id, title: p.label, office: p.wikidataId, confidence: p.confidence};
   if (!holders.length) return {proposals: [{...p, via: 'position', position_item: true, title: p.label, office: p.wikidataId}]};
@@ -368,7 +388,7 @@ async function main(argv) {
     return cache[key];
   };
   const result = await reconcile(ranked, {search: cached('s', client.search), probe: cached('p', client.probe), windows: actorWindows(data), settled, onProgress: (id, r) => console.error(`${r.proposals ? 'ok ' : '-- '} ${id}${r.proposals ? ` -> ${r.proposals.map((p) => `${p.wikidataId} ${p.via}`).join(', ')}` : ` (${r.unresolved})`}`)});
-  const summary = {at: new Date().toISOString(), source: opt.live ? `s3://${BUCKET}/record/views/index/active.json` : opt.input, top: opt.top, considered: ranked.length,
+  const summary = {at: new Date().toISOString(), source: opt.live ? `s3://${BUCKET}/record/views/index/active.json` : opt.input, top: Number.isFinite(opt.top) ? opt.top : 'all', considered: ranked.length,
     accepted: result.proposals.length, unresolved: result.unresolved.length, generic: result.generic.length, skipped: result.skipped.length};
   if (opt.write) {
     mkdirSync(opt.out, {recursive: true});

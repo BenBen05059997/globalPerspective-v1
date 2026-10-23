@@ -20,7 +20,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 | [home](#home) | `/today` | 4 |
 | [map](#map) | `/` | 8 |
 | [static](#static) | `/privacy`, `/about`, `/disclosures`, `/contact`, `/whitepaper` | 0 |
-| [threads](#threads) | `/weekly/thread/:threadId` | 7 |
+| [threads](#threads) | `/weekly/thread/:threadId` | 8 |
 | [track-record](#track-record) | `/track-record`, `/track-record/text` | 4 |
 | [weekly](#weekly) | none — imported by other features | 0 |
 
@@ -179,6 +179,7 @@ No Lambda in functions.json lists this feature.
 |---|---|---|---|---|---|
 | `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini` | Scheduler InvokeGoogleGemini `cron(15 4/8 * * ? *)` (ENABLED) | [topic-selection.md](../runbooks/topic-selection.md) | `audit/ingest-capture/` `audit/ingest-capture/latest.json` | `NewsCache` |
 | `NewsProjectInvokeAgentLambda-dev` | `backend/pipeline/NewsProjectInvokeAgentLambda` | Scheduler InvokeNewsAgent `cron(25 4/8 * * ? *)` (ENABLED) | [news-agent.md](../runbooks/news-agent.md) | `threads/story-map.json` | `GlobalPerspectivePredictionLog` `NewsCache` `SummarizeAndPredict` |
+| `newsRecordReview` | `backend/record/newsRecordReview` | rule TriggerRecordReview `cron(0 1 ? * MON *)` (DISABLED) | — | — | — |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData` | — | — | — | — |
 | `newsSituationTracker` | `backend/situations/newsSituationTracker` | rule TriggerSituationTracker `rate(30 minutes)` (ENABLED) | [situation-tracker.md](../runbooks/situation-tracker.md) | `shadow/situations/` `shadow/situations/index.json` `situations/archive/` `situations/history/` `situations/inbox/` `situations/index.json` `situations/state/` `world/latest.json` `world/latest.member.json` `world/shadow/` `world/shadow/latest.json` `world/shadow/latest.member.json` | — |
 | `newsStoryRecord` | `backend/record/newsStoryRecord` | rule TriggerStoryRecord `cron(45 23 * * ? *)` (ENABLED) | — | — | — |

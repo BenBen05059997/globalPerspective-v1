@@ -154,9 +154,9 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 ## newsPredictionResolver
 
-- Live keys: `BRAVE_SEARCH_API_KEY`, `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN`, `PREDICTION_LOG_TABLE`, `XAI_API_KEY`
+- Live keys: `BRAVE_SEARCH_API_KEY`, `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN`, `PREDICTION_LOG_TABLE`, `WORLD_BUCKET`, `XAI_API_KEY`
 - Set live, not read in repo source: `BRAVE_SEARCH_API_KEY`, `GROK_MODEL`
-- Read in repo source, not set live (code default applies): `DRAFT_MODEL`, `WORLD_BUCKET`
+- Read in repo source, not set live (code default applies): `DRAFT_MODEL`
 
 ## newsPredictionsSnapshot
 
@@ -175,6 +175,12 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 - Live keys: `FIREBASE_PROJECT_ID`, `SAVED_ITEMS_TABLE`, `TOPICS_DDB_TABLE`, `USERS_DDB_TABLE`, `USER_PREFS_TABLE`
 - Set live, not read in repo source: —
 - Read in repo source, not set live (code default applies): `BREAKING_ALERTS_TABLE`, `SITE_URL`
+
+## newsRecordReview
+
+- Live keys: `GROK_API_URL`, `REVIEW_CONCURRENCY`, `REVIEW_MODEL`, `WORLD_BUCKET`, `XAI_API_KEY`
+- Set live, not read in repo source: —
+- Read in repo source, not set live (code default applies): —
 
 ## newsSavedItems
 

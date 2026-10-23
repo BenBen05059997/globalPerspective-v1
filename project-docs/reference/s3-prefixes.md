@@ -23,11 +23,11 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `index/all.json` | newsStoryRecord | no |
 | `monitoring/freshness/state.json` | newsFreshnessMonitor | no |
 | `predictions/track_record.json` | newsPredictionsSnapshot, newsSensitiveData | yes |
-| `record/` | newsPredictionResolver, newsStoryRecord | yes |
+| `record/` | newsPredictionResolver, newsRecordReview, newsStoryRecord | yes |
 | `record/facts/` | newsPredictionResolver | yes |
 | `record/inbox/` | newsInvokeGemini | yes |
 | `record/runs/` | newsPredictionResolver | yes |
-| `record/shadow/` | newsInvokeGemini, newsStoryRecord | yes |
+| `record/shadow/` | newsInvokeGemini, newsRecordReview, newsStoryRecord | yes |
 | `record/views/` | newsBoard | yes |
 | `runs/` | newsStoryRecord | no |
 | `shadow/` | newsPredictionResolver | yes |
@@ -58,7 +58,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `audit/` | `impact/` `ingest-capture/` `selection-shadow/` | yes |
 | `corpus/` | `2026/` `gdacs/` `gdelt/` | yes |
 | `predictions/` | — (objects only) | yes |
-| `record/` | `facts/` `inbox/` `runs/` `shadow/` `views/` | yes |
+| `record/` | `facts/` `inbox/` `operator/` `runs/` `shadow/` `views/` | yes |
 | `signals/` | `snapshots/` | yes |
 | `situations/` | `archive/` `history/` `inbox/` `state/` | yes |
 | `stories/` | `state/` | yes |

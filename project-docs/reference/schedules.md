@@ -33,6 +33,7 @@ Only rules/schedules that target a Lambda in functions.json. EventBridge rule ex
 | `newsPredictionResolver` | EventBridge rule | TriggerPredictionResolver | `cron(30 10 * * ? *)` | UTC | ENABLED |
 | `newsPredictionsSnapshot` | EventBridge rule | TriggerPredictionsSnapshot | `rate(30 minutes)` | UTC | ENABLED |
 | `NewsProjectInvokeAgentLambda-dev` | Scheduler | InvokeNewsAgent | `cron(25 4/8 * * ? *)` | UTC | ENABLED |
+| `newsRecordReview` | EventBridge rule | TriggerRecordReview | `cron(0 1 ? * MON *)` | UTC | DISABLED |
 | `newsSelectionShadow` | EventBridge rule | TriggerSelectionShadow | `cron(20 4,12,20 * * ? *)` | UTC | ENABLED |
 | `newsSignals` | EventBridge rule | TriggerSignalsBuild | `cron(0 10 * * ? *)` | UTC | DISABLED |
 | `newsSituationIngest` | EventBridge rule | TriggerSituationIngest | `rate(1 hour)` | UTC | ENABLED |
@@ -44,4 +45,4 @@ Only rules/schedules that target a Lambda in functions.json. EventBridge rule ex
 | `newsWeeklyBrief` | EventBridge rule | TriggerWeeklyBrief | `cron(0 6 ? * SUN *)` | UTC | ENABLED |
 | `newsWeeklyMarkets` | EventBridge rule | TriggerWeeklyMarkets | `cron(30 8 ? * SUN *)` | UTC | DISABLED |
 
-26 enabled, 9 disabled. Skipped 23 EventBridge rules and 0 Scheduler schedules in the account that target nothing in functions.json (other projects).
+26 enabled, 10 disabled. Skipped 23 EventBridge rules and 0 Scheduler schedules in the account that target nothing in functions.json (other projects).

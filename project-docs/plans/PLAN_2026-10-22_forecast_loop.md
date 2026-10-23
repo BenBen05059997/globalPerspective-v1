@@ -56,3 +56,4 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 - 2026-10-22: operator: finish the rest before deploying the resolver. Lanes Q (coverage guard, draw gates) and R (page wording) opened. The resolver deploy now waits on lane Q as well as DeepSeek.
 - 2026-10-22: lane Q merged. Resolver deploy prerequisites now: DeepSeek top-up, IAM GetObject record/runs/*, shadow review.
 - 2026-10-23: NewsProjectInvokeAgentLambda deployed (draw rules + PRED# thread reconciliation). Takes effect at the first funded run.
+- 2026-10-23: resolver deployed (CodeSha256 UHqPWXy/…, 512 MB, `WORLD_BUCKET`, IAM `record/runs/*` read). First watch: 40 grace candidates, 0 moved. Drafts stay `needs_human` until DeepSeek is funded; `BRAVE_SEARCH_API_KEY` and `GROK_MODEL` removal waits until the new build is accepted.

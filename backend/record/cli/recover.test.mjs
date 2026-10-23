@@ -9,7 +9,7 @@ import {
   readFeeds, gdeltTargets, gdeltUrl, parseGdeltDoc, gdeltLine, seendateIso, cdxUrl, snapshotUrl, parseCdx, waybackLines,
   dedupeLines, tally, dayRange, splitWindow,
 } from './recover-lib.mjs';
-import { recoverGdelt, recoverWayback } from './recover-day.mjs';
+import { recoverGdelt, recoverWayback, makeFetcher, main, gdeltSummary } from './recover-day.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const fx = (n) => fs.readFileSync(path.join(HERE, 'fixtures', n), 'utf8');
@@ -135,4 +135,60 @@ test('recoverGdelt splits a capped window; recoverWayback walks CDX then snapsho
   const flaky = await recoverGdelt({ targets: [{ domain: 'bbc.com', domains: ['bbc.com'] }], day: '2026-09-20', fetchText: async () => { calls += 1; if (calls === 1) throw new Error('HTTP 429'); return fx('gdelt-doc.json'); }, now: NOW, log: quiet, retryPassWaitMs: 0 });
   assert.equal(flaky.failures.length, 0); // the second pass recovered it
   assert.equal(flaky.lines.length, 3);
+});
+
+const T1 = [{ domain: 'bbc.com', domains: ['bbc.com'] }];
+const res = (status, body = '') => ({ status, ok: status >= 200 && status < 300, text: async () => body });
+
+test('throttle: 429 then 429 is a failure, not a zero', async () => {
+  const fetchText = makeFetcher({ fetchImpl: async () => res(429, 'Please limit requests to one every 5 seconds'), retries: 1, sleepImpl: async () => {}, defaultGapMs: 0, log: quiet });
+  const r = await recoverGdelt({ targets: T1, day: '2026-09-20', fetchText, now: NOW, log: quiet, retryPassWaitMs: 0, sleepImpl: async () => {} });
+  assert.equal(r.domainStatus['bbc.com'], 'failed');
+  assert.equal(r.failures.length, 1);
+  assert.deepEqual(Object.keys(r.failures[0]).sort(), ['domain', 'error', 'source', 'window']);
+  assert.match(r.failures[0].error, /429/);
+  assert.equal(r.gdelt.domainsFailed, 1);
+});
+
+test('throttle: a failed window whose retry pass answers 0 stays failed', async () => {
+  let n = 0;
+  const r = await recoverGdelt({ targets: T1, day: '2026-09-20', fetchText: async () => { n += 1; if (n === 1) throw new Error('HTTP 429'); return '{"articles":[]}'; }, now: NOW, log: quiet, retryPassWaitMs: 0, sleepImpl: async () => {} });
+  assert.equal(r.domainStatus['bbc.com'], 'failed');
+});
+
+test('throttle: 429 then a real empty body is a zero, ok', async () => {
+  let n = 0;
+  const fetchText = makeFetcher({ fetchImpl: async () => res(++n === 1 ? 429 : 200, '{"articles":[]}'), sleepImpl: async () => {}, defaultGapMs: 0, log: quiet });
+  const r = await recoverGdelt({ targets: T1, day: '2026-09-20', fetchText, now: NOW, log: quiet, retryPassWaitMs: 0 });
+  assert.equal(r.domainStatus['bbc.com'], 'zero');
+  assert.equal(r.failures.length, 0);
+  assert.deepEqual(r.gdelt, { status: 'ok', domainsOk: 0, domainsZero: 1, domainsFailed: 0 });
+});
+
+test('throttle: all domains 429 -> manifest gdelt throttled, exit 2', async () => {
+  const out = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'recover-'));
+  const quietLog = console.log; console.log = () => {};
+  let code;
+  try {
+    code = await main(['--day', '2026-09-20', '--out', out, '--no-wayback', '--no-split'], { fetchText: async () => { throw new Error('HTTP 429'); }, sleepImpl: async () => {} });
+  } finally { console.log = quietLog; }
+  assert.equal(code, 2);
+  const m = JSON.parse(fs.readFileSync(path.join(out, 'recovery-manifest-2026-09-20.json'), 'utf8'));
+  assert.deepEqual(m.gdelt, { status: 'throttled', domainsOk: 0, domainsZero: 0, domainsFailed: 26 });
+  assert.equal(m.failures.length, 26);
+});
+
+test('throttle: partial when some domains answer; summary classes', () => {
+  const t = [{ domain: 'a' }, { domain: 'b' }];
+  assert.equal(gdeltSummary(t, { a: 'ok', b: 'failed' }, [{ error: 'HTTP 429' }]).status, 'partial');
+  assert.equal(gdeltSummary(t, { a: 'failed', b: 'failed' }, [{ error: 'fetch failed' }]).status, 'failed');
+  assert.equal(gdeltSummary(t, { a: 'zero', b: 'ok' }, []).status, 'ok');
+});
+
+test('throttle: 3 consecutive 429s trigger the cool-down; backoff starts at 60 s', async () => {
+  const sleeps = [];
+  let n = 0;
+  const fetchText = makeFetcher({ fetchImpl: async () => res(++n <= 4 ? 429 : 200, '{}'), sleepImpl: async (ms) => { sleeps.push(ms); }, defaultGapMs: 0, cooldownMs: 5000, log: quiet });
+  await fetchText('https://api.gdeltproject.org/x');
+  assert.deepEqual(sleeps.filter((ms) => ms > 1000), [60000, 120000, 5000, 480000]);
 });

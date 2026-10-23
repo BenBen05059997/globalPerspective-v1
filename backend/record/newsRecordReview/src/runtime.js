@@ -10,5 +10,5 @@ exports.handler = async (event = {}, context = {}) => {
   const bucket = process.env.WORLD_BUCKET;
   const s3json = makeS3Json({client, GetObjectCommand, PutObjectCommand, bucket});
   const timeLeft = typeof context.getRemainingTimeInMillis === 'function' ? () => context.getRemainingTimeInMillis() : undefined;
-  return makeHandler({store: makeStore({s3json, client, PutObjectCommand, bucket}), chat, model: process.env.REVIEW_MODEL, timeLeft})(event);
+  return makeHandler({store: makeStore({s3json, client, PutObjectCommand, bucket}), chat, model: process.env.REVIEW_MODEL, concurrency: Number(process.env.REVIEW_CONCURRENCY) || undefined, timeLeft})(event);
 };

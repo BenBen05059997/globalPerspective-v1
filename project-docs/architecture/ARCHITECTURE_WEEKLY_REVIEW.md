@@ -1,6 +1,6 @@
 # The weekly review
 
-Status: design adopted by the operator 2026-10-22. Code merged in `backend/record/newsRecordReview`; not created in AWS (no function, role or schedule). Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Work order: `plans/PLAN_2026-10-21_foundation.md`, step 3. Code and live AWS stay the truth.
+Status: design adopted by the operator 2026-10-22. Code merged in `backend/record/newsRecordReview`; not created in AWS (no function, role or schedule); `functions.json` entry and first-deploy runbook in `backend/record/newsRecordReview/DEPLOY.md`. Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Work order: `plans/PLAN_2026-10-21_foundation.md`, step 3. Code and live AWS stay the truth.
 
 ## 1. Why
 Facts say what happened each day. They do not say what a story means, which chapter it is in, whether a forecast branch fired, or which stories drive each other. That needs hindsight, so it runs once a week: one model call per active story reads the story's facts and its own earlier readings and writes readings. Every reading cites facts; code rejects what it cannot check. Readings are append-only and a rerun supersedes.

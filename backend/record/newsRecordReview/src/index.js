@@ -16,7 +16,7 @@ const SPARE_MS = 60000; // stop starting stories when less than this is left
 const REJECTIONS_CAP = 500;
 const messageOf = (e) => (e && e.message) || String(e);
 
-function makeHandler({store, chat, model, now = () => new Date().toISOString(), timeLeft = () => Infinity}) {
+function makeHandler({store, chat, model, concurrency = CONCURRENCY, now = () => new Date().toISOString(), timeLeft = () => Infinity}) {
   async function nextRunId(runKey, week) {
     const prev = await store.getJson(runKey);
     const n = prev && /-(\d+)$/.test(prev.runId || '') ? Number(prev.runId.match(/-(\d+)$/)[1]) + 1 : 1;
@@ -25,7 +25,7 @@ function makeHandler({store, chat, model, now = () => new Date().toISOString(), 
 
   async function pool(items, fn) {
     let i = 0;
-    await Promise.all(Array.from({length: Math.min(CONCURRENCY, items.length)}, async () => {
+    await Promise.all(Array.from({length: Math.min(concurrency, items.length)}, async () => {
       while (i < items.length) { const item = items[i]; i += 1; await fn(item); }
     }));
   }

@@ -46,24 +46,40 @@ export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetc
 }
 
 /** GDELT: every target domain for the day. Windows that return the 250 cap are halved (down to 15 minutes). */
-export async function recoverGdelt({ targets, day, fetchText, now, englishOnly = true, split = true, log = console }) {
+export async function recoverGdelt({ targets, day, fetchText, now, englishOnly = true, split = true, log = console, retryPassWaitMs = 60000 }) {
   const lines = [];
-  const failures = [];
   const perDomain = {};
-  for (const t of targets) {
+  const runTarget = async (t) => {
+    const failures = [];
     const queue = [[`${day.replace(/-/g, '')}000000`, `${day.replace(/-/g, '')}235959`]];
     let n = 0;
     while (queue.length) {
       const [from, to] = queue.shift();
-      const url = gdeltUrl(t.domains, day, { from, to, englishOnly });
       let arts;
-      try { arts = parseGdeltDoc(await fetchText(url)); } catch (e) { failures.push({ source: 'gdelt-doc', target: `${t.domain} ${from}-${to}`, error: e.message }); continue; }
+      try { arts = parseGdeltDoc(await fetchText(gdeltUrl(t.domains, day, { from, to, englishOnly }))); } catch (e) { failures.push({ source: 'gdelt-doc', target: `${t.domain} ${from}-${to}`, error: e.message }); continue; }
       const halves = split && arts.length >= 250 ? splitWindow(from, to) : null;
       if (halves) { queue.push(...halves); continue; }
       for (const a of arts) { const l = gdeltLine(a, now); if (l) { lines.push(l); n += 1; } }
     }
-    perDomain[t.domain] = n;
-    log.log(`  gdelt ${t.domain}: ${n}`);
+    perDomain[t.domain] = (perDomain[t.domain] || 0) + n;
+    return failures;
+  };
+  const failed = [];
+  for (const t of targets) {
+    const f = await runTarget(t);
+    log.log(`  gdelt ${t.domain}: ${perDomain[t.domain]}${f.length ? ` (${f.length} window(s) failed)` : ''}`);
+    if (f.length) failed.push(t);
+  }
+  // One more pass over the domains that failed (GDELT's rate limiter often clears after a pause); what still fails is reported.
+  let failures = [];
+  if (failed.length) {
+    log.log(`  retrying ${failed.length} failed domain(s) once after ${retryPassWaitMs / 1000}s`);
+    await sleep(retryPassWaitMs);
+    for (const t of failed) {
+      const f = await runTarget(t);
+      log.log(`  gdelt ${t.domain} (retry): ${perDomain[t.domain]}${f.length ? ' still failing' : ''}`);
+      failures.push(...f);
+    }
   }
   return { lines, failures, perDomain };
 }

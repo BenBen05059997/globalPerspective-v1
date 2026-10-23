@@ -129,6 +129,10 @@ test('recoverGdelt splits a capped window; recoverWayback walks CDX then snapsho
   const w = await recoverWayback({ feeds: [feed], day: '2026-09-20', fetchText: wf, now: NOW, log: quiet });
   assert.equal(w.perFeed['BBC World'].snapshots, 2);
   assert.equal(w.lines.length, 4); // 2 snapshots x 2 items on the day; dedupe happens later
-  const failing = await recoverGdelt({ targets: [{ domain: 'bbc.com', domains: ['bbc.com'] }], day: '2026-09-20', fetchText: async () => { throw new Error('boom'); }, now: NOW, log: quiet });
+  const failing = await recoverGdelt({ targets: [{ domain: 'bbc.com', domains: ['bbc.com'] }], day: '2026-09-20', fetchText: async () => { throw new Error('boom'); }, now: NOW, log: quiet, retryPassWaitMs: 0 });
   assert.equal(failing.failures.length, 1);
+  let calls = 0;
+  const flaky = await recoverGdelt({ targets: [{ domain: 'bbc.com', domains: ['bbc.com'] }], day: '2026-09-20', fetchText: async () => { calls += 1; if (calls === 1) throw new Error('HTTP 429'); return fx('gdelt-doc.json'); }, now: NOW, log: quiet, retryPassWaitMs: 0 });
+  assert.equal(flaky.failures.length, 0); // the second pass recovered it
+  assert.equal(flaky.lines.length, 3);
 });

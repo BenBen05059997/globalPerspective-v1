@@ -20,7 +20,7 @@ node backend/record/cli/recover-day.mjs --day 2026-09-20 --bucket <world bucket>
 
 Other flags: `--no-gdelt`, `--no-wayback`, `--no-split`, `--domains a.com,b.com`, `--gdelt-delay-ms` (default 6500). Output per day: `DAY.jsonl` and `recovery-manifest-DAY.json` (`day`, `fetchedAt`, `counts` per source and outlet, `sources` per domain and feed, `failures`). The console prints counts per source and per outlet.
 
-Rate limits: GDELT answers 429 (and keeps answering it for a while) when requests come faster than one per 5 seconds ("limit requests to one every 5 seconds"), so the script waits 6.5 s between GDELT calls (about 3 minutes per day, more when a window is split) and backs off on 429 (15 s, 30 s, ... up to 6 retries) and 5xx. Wayback is spaced 1 s.
+Rate limits: GDELT answers 429 when requests come faster than one per 5 seconds ("limit requests to one every 5 seconds") and keeps answering it for a while, even at 6.5 s spacing. The script waits 6.5 s between GDELT calls, backs off on 429 (15 s, 30 s, ... up to 6 retries) and 5xx, and re-runs the domains that still failed once after 60 s. Measured: one day takes about 1.5 hours (mostly 429 backoff), so run days one at a time, in the background, and read `failures` in the manifest. Wayback is spaced 1 s.
 
 Write path (`--write`): uses `backend/shared/src/s3json.js` `appendLines` (conditional put, retry on 412; ids already stored are skipped), bucket from `--bucket` or `WORLD_BUCKET`, shadow prefix `record/shadow/inbox/articles/`. It needs `@aws-sdk/client-s3`, which the repo does not install: `npm i --no-save @aws-sdk/client-s3` in a scratch directory and set `RECOVER_SDK_DIR` to it. The writer's IAM is the operator's; the coordinator runs `--write`, a lane never does.
 

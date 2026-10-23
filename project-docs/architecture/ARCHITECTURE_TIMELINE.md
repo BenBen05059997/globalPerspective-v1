@@ -126,7 +126,7 @@ Rules: a fact is never edited or deleted; a change is a new fact (`correction`, 
 `eventId` makes re-runs safe (`appendLines` dedupes by it); every fact names its source. Facts carry no judgment label:
 judgments are readings. Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status started|ok|partial|failed,
 `inputs.archiveDay` present|missing|thin, counts, failures). The Run is the one mutable object; it holds no world data. A
-missing archive day gets a Run and no facts; the 28 missing days before 2026-09-06 are not reconstructed.
+missing archive day gets a failed Run and no facts, except a recovered day (`recovery:true`), whose missing archive is expected: `inputs.recovered:true`, status ok; the 28 missing days before 2026-09-06 are not reconstructed.
 
 ## 3. Kinds
 ### Facts

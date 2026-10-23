@@ -80,7 +80,11 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const articles = await articleFacts(date, {prefix, run, inboxFrom});
     // A missing archive fails the Run for inputs but only the archive-derived kinds (entry, story_born, forecast_drawn) depend on it:
     // articles, verdicts, merges and splits come from their own inboxes and are appended regardless (0040 rule 1, a model outage cannot lose the news).
-    if (!input.dayRow) run.failures.push({stage: 'inputs', message: `no archive#${date} row and no today-archive entries for the day`});
+    // A recovered day has no archive by definition (0040 rule 2): that is the expected case, recorded as inputs.recovered, not a failure.
+    if (!input.dayRow) {
+      if (recovery) run.inputs.recovered = true;
+      else run.failures.push({stage: 'inputs', message: `no archive#${date} row and no today-archive entries for the day`});
+    }
     const known = await knownFacts(prefix, date);
     const knownIds = new Set(known.map((f) => f.eventId));
     let facts = input.dayRow ? buildFacts(input, known, run.runId) : [];

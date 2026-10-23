@@ -632,6 +632,19 @@ test('X2: a day whose Run notes recovery refuses forecast_drawn (hook); a normal
   assert.equal(rec.f.lines(`${P}facts/2026-10-20.jsonl`).filter((x) => x.kind === 'forecast_drawn').length, 0);
 });
 
+test('AD: a recovery day with no archive row and an inbox is ok (inputs.recovered), lands the articles and does not throw; without recovery the same day still fails and throws', async () => {
+  const mk = () => { const f0 = fakeS3(); putArticles(f0, '2026-10-20', [rawLine(1), rawLine(2)]); return make(scripted({}), f0); };
+  const rec = mk();
+  const r = await rec.handler({date: '2026-10-20', recovery: true});
+  const run = rec.f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([r.status, r.counts.article, run.status, run.inputs.archiveDay, run.inputs.recovered, run.failures, run.notes], ['ok', 2, 'ok', 'missing', true, [], 'recovery']);
+  assert.equal(rec.f.json(`${P}views/counts/2026-10-20.json`).articles, 2);
+  const plain = mk();
+  await assert.rejects(plain.handler({date: '2026-10-20'}), /failed/);
+  const pr = plain.f.json(`${P}runs/2026-10-20.json`);
+  assert.deepEqual([pr.status, pr.inputs.recovered, pr.failures.map((x) => x.stage)], ['failed', undefined, ['inputs']]);
+});
+
 // Y1: assignments (0040 rule 3). The entry fact is the ingest claim; the inbox carries the operator's and the review's.
 const assignLine = (o = {}) => ({entryId: 'a'.repeat(40), threadId: 'thread-9', by: 'operator', at: '2026-10-20T12:00:00.000Z', reason: 'belongs here', ...o});
 

@@ -19,34 +19,51 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const INBOX = 'record/inbox/articles';
 const SHADOW = 'record/shadow/inbox/articles';
 
-/** Polite fetch: at least `gapMs` between two requests to one host, retry 429/5xx/network errors with backoff. */
-export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetchImpl = fetch, log = console } = {}) {
+const THROTTLED = /429|limit requests/i;
+const COOLDOWN_AFTER = 3;
+const COOLDOWN_MS = 600000;
+
+/** Polite fetch: at least `gapMs` between two requests to one host, retry 429/5xx/network errors with backoff.
+ *  429 backoff is 60 s doubling to a 10 min cap (GDELT's limiter lasts minutes); after 3 consecutive 429s (any URL)
+ *  it sleeps a 10 min cool-down instead of burning the remaining retries. A thrown error carries `.status`. */
+export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetchImpl = fetch, log = console, sleepImpl = sleep, cooldownMs = COOLDOWN_MS } = {}) {
   const last = new Map();
+  let streak = 0;
   return async function fetchText(url) {
     const host = new URL(url).host;
     const gap = gapMs[host] ?? defaultGapMs;
     let lastErr;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       const wait = (last.get(host) || 0) + gap - Date.now();
-      if (wait > 0) await sleep(wait);
+      if (wait > 0) await sleepImpl(wait);
       last.set(host, Date.now());
       try {
         const res = await fetchImpl(url, { headers: { 'user-agent': 'globalperspective-recovery/1 (operator script)' }, signal: AbortSignal.timeout(60000) });
-        if (res.status === 429 || res.status >= 500) { lastErr = new Error(`HTTP ${res.status}`); }
-        else if (!res.ok) { throw Object.assign(new Error(`HTTP ${res.status}`), { final: true }); }
-        else return await res.text();
+        if (res.status === 429 || res.status >= 500) { lastErr = Object.assign(new Error(`HTTP ${res.status}`), { status: res.status }); }
+        else if (!res.ok) { throw Object.assign(new Error(`HTTP ${res.status}`), { final: true, status: res.status }); }
+        else { streak = 0; return await res.text(); }
       } catch (e) {
         if (e.final) throw e;
         lastErr = e;
       }
-      if (attempt < retries) { const back = /429/.test(lastErr.message) ? Math.min(120000, 15000 * (attempt + 1)) : Math.min(60000, 5000 * 2 ** attempt); log.warn(`  retry ${attempt + 1}/${retries} in ${back / 1000}s: ${host} ${lastErr.message}`); await sleep(back); }
+      const is429 = lastErr.status === 429;
+      streak = is429 ? streak + 1 : 0;
+      if (attempt < retries) {
+        let back;
+        if (is429 && streak >= COOLDOWN_AFTER) { back = cooldownMs; streak = 0; log.warn(`  ${COOLDOWN_AFTER} consecutive 429s: cool-down ${back / 1000}s`); }
+        else back = is429 ? Math.min(COOLDOWN_MS, 60000 * 2 ** attempt) : Math.min(60000, 5000 * 2 ** attempt);
+        log.warn(`  retry ${attempt + 1}/${retries} in ${back / 1000}s: ${host} ${lastErr.message}`);
+        await sleepImpl(back);
+      }
     }
     throw lastErr;
   };
 }
 
-/** GDELT: every target domain for the day. Windows that return the 250 cap are halved (down to 15 minutes). */
-export async function recoverGdelt({ targets, day, fetchText, now, englishOnly = true, split = true, log = console, retryPassWaitMs = 60000 }) {
+/** GDELT: every target domain for the day. Windows that return the 250 cap are halved (down to 15 minutes).
+ *  Per domain: ok (articles), zero (every window answered a parsed JSON body, none had articles), failed (a window
+ *  failed and was not recovered; a domain that failed once and then answered 0 on the retry pass is still failed). */
+export async function recoverGdelt({ targets, day, fetchText, now, englishOnly = true, split = true, log = console, retryPassWaitMs = 60000, sleepImpl = sleep }) {
   const lines = [];
   const perDomain = {};
   const runTarget = async (t) => {
@@ -56,7 +73,7 @@ export async function recoverGdelt({ targets, day, fetchText, now, englishOnly =
     while (queue.length) {
       const [from, to] = queue.shift();
       let arts;
-      try { arts = parseGdeltDoc(await fetchText(gdeltUrl(t.domains, day, { from, to, englishOnly }))); } catch (e) { failures.push({ source: 'gdelt-doc', target: `${t.domain} ${from}-${to}`, error: e.message }); continue; }
+      try { arts = parseGdeltDoc(await fetchText(gdeltUrl(t.domains, day, { from, to, englishOnly }))); } catch (e) { failures.push({ source: 'gdelt-doc', domain: t.domain, window: `${from}-${to}`, error: e.message }); continue; }
       const halves = split && arts.length >= 250 ? splitWindow(from, to) : null;
       if (halves) { queue.push(...halves); continue; }
       for (const a of arts) { const l = gdeltLine(a, now); if (l) { lines.push(l); n += 1; } }
@@ -64,24 +81,43 @@ export async function recoverGdelt({ targets, day, fetchText, now, englishOnly =
     perDomain[t.domain] = (perDomain[t.domain] || 0) + n;
     return failures;
   };
-  const failed = [];
+  const domainStatus = {};
+  const failedOnce = [];
   for (const t of targets) {
     const f = await runTarget(t);
     log.log(`  gdelt ${t.domain}: ${perDomain[t.domain]}${f.length ? ` (${f.length} window(s) failed)` : ''}`);
-    if (f.length) failed.push(t);
+    if (f.length) failedOnce.push({ t, f }); else domainStatus[t.domain] = perDomain[t.domain] > 0 ? 'ok' : 'zero';
   }
   // One more pass over the domains that failed (GDELT's rate limiter often clears after a pause); what still fails is reported.
-  let failures = [];
-  if (failed.length) {
-    log.log(`  retrying ${failed.length} failed domain(s) once after ${retryPassWaitMs / 1000}s`);
-    await sleep(retryPassWaitMs);
-    for (const t of failed) {
+  const failures = [];
+  if (failedOnce.length) {
+    log.log(`  retrying ${failedOnce.length} failed domain(s) once after ${retryPassWaitMs / 1000}s`);
+    await sleepImpl(retryPassWaitMs);
+    for (const { t, f: first } of failedOnce) {
+      const before = perDomain[t.domain];
       const f = await runTarget(t);
-      log.log(`  gdelt ${t.domain} (retry): ${perDomain[t.domain]}${f.length ? ' still failing' : ''}`);
-      failures.push(...f);
+      const got = perDomain[t.domain] - before;
+      if (f.length) { domainStatus[t.domain] = 'failed'; failures.push(...f); log.log(`  gdelt ${t.domain} (retry): still failing`); }
+      else if (got > 0) { domainStatus[t.domain] = 'ok'; log.log(`  gdelt ${t.domain} (retry): ${perDomain[t.domain]}`); }
+      else { domainStatus[t.domain] = 'failed'; failures.push(...first.map((x) => ({ ...x, error: `${x.error} (retry answered 0, not trusted)` }))); log.log(`  gdelt ${t.domain} (retry): 0 after a failure, counted as failed`); }
     }
   }
-  return { lines, failures, perDomain };
+  return { lines, failures, perDomain, domainStatus, gdelt: gdeltSummary(targets, domainStatus, failures) };
+}
+
+/** The manifest's gdelt block. throttled: no domain returned a body and every failure looks like the rate limiter;
+ *  failed: no domain returned a body for another reason; partial: some domains failed. */
+export function gdeltSummary(targets, domainStatus, failures) {
+  const vals = targets.map((t) => domainStatus[t.domain]);
+  const domainsOk = vals.filter((x) => x === 'ok').length;
+  const domainsZero = vals.filter((x) => x === 'zero').length;
+  const domainsFailed = vals.filter((x) => x === 'failed').length;
+  let status = 'ok';
+  if (domainsFailed) {
+    if (domainsOk + domainsZero > 0) status = 'partial';
+    else status = failures.every((f) => THROTTLED.test(f.error)) ? 'throttled' : 'failed';
+  }
+  return { status, domainsOk, domainsZero, domainsFailed };
 }
 
 /** Wayback: the day's snapshots of each feed, parsed with the selector's parser. */
@@ -116,7 +152,7 @@ function printCounts(day, lines, dupes, failures) {
   for (const [o, s] of Object.entries(byOutlet).sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${o.padEnd(28)} ${Object.entries(s).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 }
 
-export async function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2), { fetchText: injected, sleepImpl } = {}) {
   const { values: v } = parseArgs({
     args: argv,
     options: {
@@ -124,10 +160,11 @@ export async function main(argv = process.argv.slice(2)) {
       write: { type: 'boolean', default: false }, shadow: { type: 'boolean', default: false }, merge: { type: 'boolean', default: false },
       bucket: { type: 'string' }, 'no-gdelt': { type: 'boolean', default: false }, 'no-wayback': { type: 'boolean', default: false },
       'all-languages': { type: 'boolean', default: false }, 'no-split': { type: 'boolean', default: false },
-      domains: { type: 'string' }, 'gdelt-delay-ms': { type: 'string', default: '6500' },
+      domains: { type: 'string' }, 'gdelt-only': { type: 'boolean', default: false }, 'gdelt-delay-ms': { type: 'string', default: '10000' },
     },
   });
   if (!v.day) throw new Error('usage: recover-day.mjs --day YYYY-MM-DD [--to YYYY-MM-DD] [--out dir] [--merge] [--write] [--shadow] [--bucket name]');
+  if (v['gdelt-only']) v['no-wayback'] = true; // re-run the GDELT half of a day whose Wayback half is already in
   const days = dayRange(v.day, v.to || v.day);
   const out = path.resolve(v.out || 'recovery-out');
   fs.mkdirSync(out, { recursive: true });
@@ -137,13 +174,13 @@ export async function main(argv = process.argv.slice(2)) {
   let feeds = readFeeds();
   let targets = gdeltTargets(feeds);
   if (v.domains) { const only = new Set(v.domains.split(',')); targets = targets.filter((t) => only.has(t.domain)); feeds = feeds.filter((f) => only.has(f.source)); }
-  const fetchText = makeFetcher({ gapMs: { 'api.gdeltproject.org': Number(v['gdelt-delay-ms']) }, defaultGapMs: 1000 });
+  const fetchText = injected || makeFetcher({ gapMs: { 'api.gdeltproject.org': Number(v['gdelt-delay-ms']) }, defaultGapMs: 1000 });
   console.log(`${v.write ? 'WRITE' : 'dry run'}: ${days.join(', ')}; ${targets.length} domains, ${feeds.length} feeds; out ${out}`);
 
   for (const day of days) {
     const now = new Date().toISOString();
     console.log(`\n== ${day}`);
-    const g = v['no-gdelt'] ? { lines: [], failures: [], perDomain: {} } : await recoverGdelt({ targets, day, fetchText, now, englishOnly: !v['all-languages'], split: !v['no-split'] });
+    const g = v['no-gdelt'] ? { lines: [], failures: [], perDomain: {}, gdelt: { status: 'skipped', domainsOk: 0, domainsZero: 0, domainsFailed: 0 } } : await recoverGdelt({ targets, day, fetchText, now, englishOnly: !v['all-languages'], split: !v['no-split'], ...(sleepImpl ? { sleepImpl } : {}) });
     const w = v['no-wayback'] ? { lines: [], failures: [], perFeed: {} } : await recoverWayback({ feeds, day, fetchText, now });
     const existing = s3 ? (await s3.getLines(`${prefix}/${day}.jsonl`)).lines : [];
     // Wayback first: it carries the feed's own publishedAt, GDELT only its seendate. The day file holds the day's lines (UTC publishedAt).
@@ -151,21 +188,29 @@ export async function main(argv = process.argv.slice(2)) {
     const { lines, dupes } = dedupeLines([w.lines.filter(onDay), g.lines.filter(onDay)], existing);
     const failures = [...g.failures, ...w.failures];
     printCounts(day, lines, dupes, failures);
-    console.log(`  gdelt domains with results: ${Object.values(g.perDomain).filter((n) => n > 0).length} of ${targets.length}`);
+    console.log(`  gdelt ${g.gdelt.status}: ${g.gdelt.domainsOk} with results, ${g.gdelt.domainsZero} zero, ${g.gdelt.domainsFailed} failed of ${targets.length} domains`);
     fs.writeFileSync(path.join(out, `${day}.jsonl`), lines.map((l) => JSON.stringify(l)).join('\n') + (lines.length ? '\n' : ''));
     const { bySource, byOutlet } = tally(lines);
     fs.writeFileSync(path.join(out, `recovery-manifest-${day}.json`), `${JSON.stringify({
       day, fetchedAt: now,
       counts: { lines: lines.length, existingInbox: existing.length, duplicatesDropped: dupes, bySource, byOutlet },
+      gdelt: g.gdelt,
       sources: { 'gdelt-doc': { domains: g.perDomain, queried: !v['no-gdelt'] }, 'wayback-rss': { feeds: w.perFeed, queried: !v['no-wayback'] } },
       failures,
     }, null, 2)}\n`);
     if (v.write) {
-      if (!lines.length) { console.log('  nothing to write'); continue; }
-      const res = await s3.appendLines(`${prefix}/${day}.jsonl`, lines, { idKey: 'rawId' });
-      console.log(`  wrote ${prefix}/${day}.jsonl: ${res.appended} appended, ${res.skipped} already there`);
+      if (!lines.length) console.log('  nothing to write');
+      else {
+        const res = await s3.appendLines(`${prefix}/${day}.jsonl`, lines, { idKey: 'rawId' });
+        console.log(`  wrote ${prefix}/${day}.jsonl: ${res.appended} appended, ${res.skipped} already there`);
+      }
+    }
+    if (g.gdelt.status === 'throttled' || g.gdelt.status === 'failed') {
+      console.log(`  GDELT ${g.gdelt.status}: stopping, exit 2 (re-run with --gdelt-only later)`);
+      return 2;
     }
   }
+  return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(e.message); process.exit(1); });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().then((code) => process.exit(code)).catch((e) => { console.error(e.message); process.exit(1); });

@@ -59,7 +59,7 @@ test('GDELT DOC JSON fixture -> inbox lines', () => {
 
 test('GDELT: empty window and rate-limit text', () => {
   assert.deepEqual(parseGdeltDoc('{}'), []);
-  assert.deepEqual(parseGdeltDoc(''), []);
+  assert.throws(() => parseGdeltDoc(''), /empty body/);
   assert.throws(() => parseGdeltDoc('Please limit requests to one every 5 seconds'), /non-JSON/);
   assert.equal(seendateIso('garbage'), null);
 });

@@ -57,7 +57,7 @@ export function seendateIso(s) {
 /** The DOC API answers a rate limit or an error with plain text and an empty window with `{}`. -> articles[]; throws on non-JSON. */
 export function parseGdeltDoc(text) {
   const t = String(text || '').trim();
-  if (!t) return [];
+  if (!t) throw new Error('GDELT answered an empty body (rate limit or outage; not treated as an empty day)');
   let j;
   try { j = JSON.parse(t); } catch (e) { throw new Error(`GDELT answered non-JSON: ${t.slice(0, 120)}`); }
   return Array.isArray(j && j.articles) ? j.articles : [];

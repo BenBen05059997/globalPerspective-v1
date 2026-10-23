@@ -220,3 +220,14 @@ test('Y3: an accepted assignment proposal is a reading (subtype assignment) and 
   const written = [...f.objs.keys()].filter((k) => !before.includes(k)).sort();
   assert.deepEqual(written, [`${P}readings/${WEEK}.jsonl`, `${P}runs/review-${WEEK}.json`]);
 });
+
+test('concurrency option caps the model calls in flight (REVIEW_CONCURRENCY in the runtime)', async () => {
+  const peak = async (concurrency) => {
+    let now = 0, max = 0;
+    const chat = async (opts) => { now += 1; max = Math.max(max, now); await new Promise((r) => setImmediate(r)); now -= 1; return stub()(opts); };
+    await make(mkWorld(), chat, {concurrency})({...only});
+    return max;
+  };
+  assert.equal(await peak(1), 1);
+  assert.equal(await peak(2), 2);
+});

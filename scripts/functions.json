@@ -513,6 +513,21 @@
         }
       ]
     },
+    "newsRecordReview": {
+      "dir": "backend/record/newsRecordReview",
+      "runtime": "nodejs22.x",
+      "group": "record",
+      "features": ["threads"],
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerRecordReview",
+          "expr": "cron(0 1 ? * MON *)",
+          "state": "DISABLED"
+        }
+      ]
+    },
     "newsSourceAudit": {
       "dir": "backend/monitoring/newsSourceAudit",
       "runtime": "nodejs22.x",

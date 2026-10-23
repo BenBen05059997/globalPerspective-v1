@@ -1,6 +1,6 @@
 # newsRecordReview
 
-The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: built and tested offline with a stub model; not created in AWS as of 2026-10-23 (has a `functions.json` entry and a first-deploy runbook, [DEPLOY.md](DEPLOY.md); no function, role or schedule yet), not run live (waits for the DeepSeek top-up and the golden-week score).
+The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` cron(0 1 ? * MON *) DISABLED; runbook [DEPLOY.md](DEPLOY.md)); a 2026-W42 dry run selected 502 of 519 active stories, skipped 17; no readings written yet (waits for the DeepSeek top-up, the golden-week score and a canary).
 
 ## The loop
 
@@ -98,7 +98,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
 - Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` once the golden-week score passes.
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.
-- Deploy with `scripts/lambda.sh` (diff first). Needs the DeepSeek top-up and the golden-week score before the first live run.
+- Deploy with `scripts/lambda.sh` (diff first). Deployed; the first live run needs the DeepSeek top-up, the golden-week score and a canary.
 - `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. 900 s may not fit 100+ stories at 6 in flight; watch the first live Run's `notReached` and raise concurrency or split the run by `threadIds`.
 - The golden-week fixture and scored run (lane U) go in `fixtures/golden-week/`.
 

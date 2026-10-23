@@ -263,14 +263,14 @@ or a design, not an open defect.
 - **Other stages still swallow model errors** (plan Risks): only `newsInvokeGemini` and the agent now fail the run.
 - **Map ingest drops unclassified articles silently** and the tracker then closes pins for lack of data, so "no data" reads
   as "ended" (2026-10-20 audit; not re-checked; not in the plan's rows).
-- **Review not deployed** (step 3): `newsRecordReview` and its golden-week fixture are merged; no function, role, schedule or model key exists yet. Until readings exist the reading fields of the views are `null` with a reason. Not built: the `newsSystemsAnalysis` link field (dropped, the review writes links).
+- **Review deployed, not running** (step 3): `newsRecordReview` is created in AWS (2026-10-23) and rule `TriggerRecordReview` (Monday 01:00 UTC) is disabled; no readings yet (first live run waits for the DeepSeek top-up, the golden-week score and a canary). Until readings exist the reading fields of the views are `null` with a reason. Not built: the `newsSystemsAnalysis` link field (dropped, the review writes links).
 - **Entry time precision**: live entries stay day precision while archive rows lack `publishedAt`.
 - **Who's who file empty**: `record/operator/aliases.json` is operator-owned and not written yet, so actors keep `name:` ids in the views; `cli/reconcile-actors.mjs` proposes entries.
-- **Forecast loop**: the draw rules are deployed; the resolver's loop code (watch, own-entry evidence, coverage guard, verdict inbox) is merged and not deployed; the legacy void job and the one-time redirect for historical orphan forecasts wait for the operator.
+- **Forecast loop**: the draw rules are deployed; the resolver's loop code (watch, own-entry evidence, coverage guard, verdict inbox) is deployed (2026-10-23), waiting on DeepSeek funding for model drafts; the legacy void job and the one-time redirect for historical orphan forecasts wait for the operator.
 - **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
   several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
 - **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
-  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact from the merges inbox, which only the undeployed review feeds). Fixed by
+  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact from the merges inbox, which only the review feeds, and it has not run live yet). Fixed by
   lane F (f03ab32b, 2026-10-20) and no longer gaps: sources carry `publishedAt` and `outlet`; `PRED#` rows carry `threadId`,
   `forkId`, `scenarioIndex`; `Q#` rows carry `threadId`. Entries before 2026-09-12 keep `iso3:[]`/`actorIds:[]` (recorded as missing).
 - **Dead weight**: the plan's Retire list, plus `stories/state/` (3,436 objects, never pruned) and unused read actions in

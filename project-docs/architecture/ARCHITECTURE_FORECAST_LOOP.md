@@ -1,6 +1,6 @@
 # The forecast loop
 
-Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side deployed; resolver side merged, not deployed (state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side and resolver side deployed (resolver 2026-10-23; state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
 Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
 
 ## 1. Why
@@ -126,7 +126,7 @@ The code lives in two groups only, so nobody hunts for it:
 - Watch, Gather, Judge, Record: `backend/predictions/newsPredictionResolver`.
 - Prefixes: the resolver writes `record/inbox/verdicts/` and `record/shadow/inbox/verdicts/` and nothing else in `record/`; it reads `record/facts/` (and `record/runs/` for the coverage guard) and never writes it. `newsStoryRecord` writes `record/facts/`, converting the inbox lines into `verdict` facts.
 - Evidence is our own entries only, so the resolver needs no search key and no web access.
-- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan; merged, not created in AWS).
+- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan; created in AWS 2026-10-23, rule disabled).
 This doc is linked from `backend/predictions/README.md`, the resolver README and `ARCHITECTURE_TIMELINE.md` §1b row 3 and §3.
 
 ## 6. Verification (how we know it works)

@@ -1,6 +1,6 @@
 # The weekly review
 
-Status: design adopted by the operator 2026-10-22. Code merged in `backend/record/newsRecordReview`; not created in AWS (no function, role or schedule); `functions.json` entry and first-deploy runbook in `backend/record/newsRecordReview/DEPLOY.md`. Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Work order: `plans/PLAN_2026-10-21_foundation.md`, step 3. Code and live AWS stay the truth.
+Status: design adopted by the operator 2026-10-22. Code in `backend/record/newsRecordReview`; created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` DISABLED), no readings written yet; `functions.json` entry and first-deploy runbook in `backend/record/newsRecordReview/DEPLOY.md`. Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Work order: `plans/PLAN_2026-10-21_foundation.md`, step 3. Code and live AWS stay the truth.
 
 ## 1. Why
 Facts say what happened each day. They do not say what a story means, which chapter it is in, whether a forecast branch fired, or which stories drive each other. That needs hindsight, so it runs once a week: one model call per active story reads the story's facts and its own earlier readings and writes readings. Every reading cites facts; code rejects what it cannot check. Readings are append-only and a rerun supersedes.
@@ -79,7 +79,7 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 ## 7. Limits
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
-- Not run live until the DeepSeek top-up, a passing golden-week score and the deploy (function, role, schedule Monday 01:00 UTC, `REVIEW_MODEL`).
+- Not run live until the DeepSeek top-up, a passing golden-week score and a 2-3 story canary (`threadIds`); then the rule (Monday 01:00 UTC, disabled) is enabled with the operator's yes. Deployed: function, role, `REVIEW_MODEL=deepseek-v4-pro`; a 2026-W42 dry run selected 502 of 519 active stories and skipped 17 (`no_facts_by_week_end`).
 - Branch status depends on verdict facts from the forecast loop (0038); until verdicts exist, branches stay `holding` or `late`.
 - Not now: the weekly report reading the readings (lane weekly), retiring `newsWeeklyBrief`.
 

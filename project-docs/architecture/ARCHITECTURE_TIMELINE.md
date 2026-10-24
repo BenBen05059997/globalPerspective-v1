@@ -134,7 +134,7 @@ missing archive day gets a failed Run and no facts, except a recovered day (`rec
 |---|---|---|
 | `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID) | `NewsCache archive#` rows (agent Lambda) |
 | `article` | url, outlet, title, snippet, publishedAt, feed; recovered ones carry `recoveredAt`, `recoveredFrom` (0040). In no story | selector inbox `record/inbox/articles/`; recovery script. Converted even on a day whose archive row is missing |
-| `assignment` | entryId, threadId, by (ingest, review, operator), supersedes (0040); the views follow the latest per entry | derived from every `entry` (by ingest); operator and approved review proposals through `record/inbox/assignments/` |
+| `assignment` | entryId (the id of the fact placed: an `entry`, or an `article`), threadId, by (ingest, review, operator), supersedes (0040); the views follow the latest per entry; an assigned `article` appears in the story as a `kind:'article'` entry row | derived from every `entry` (by ingest); operator and approved review proposals through `record/inbox/assignments/` |
 | `story_born` | first title | derived: earliest `entry` per threadId |
 | `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due} | `PredictionLog PRED#` |
 | `verdict` | qid, result yes/no/void, decidedBy, evidence {eventId, quote, date}, revision | resolver lines in `record/inbox/verdicts/` (0038); loop: [ARCHITECTURE_FORECAST_LOOP.md](ARCHITECTURE_FORECAST_LOOP.md) |
@@ -157,7 +157,7 @@ they are not facts and their old `read_changed`, `country_read_changed` and `lin
 | `link` | typed link between two stories (§4) | event kind `link_confirmed` |
 | `merge_proposal` | another story that may be the same one | new |
 | `alias` | actor variants, a canonical id and a Wikidata Q-number; a proposal until the who's who file applies it | new |
-| `assignment` | an entry that belongs to another story (or a new one); a proposal, applied only through `record/inbox/assignments/` | new |
+| `assignment` | an entry or a recovered article that belongs to another story (or a new one); a proposal, applied only through `record/inbox/assignments/` | new |
 
 Common fields: `readingId` = sha1(kind + threadId + period), `schemaVersion`, `cites[eventId]`, `covers{from,to,precision}`,
 `supersedes[readingId]`, `run`, `model`, `promptVersion`, `label`, `confidence`, `status` accepted|rejected (+ reason).

@@ -63,3 +63,13 @@ test('Y2: views with a reassigned entry (and an emptied story) satisfy the schem
   assert.ok(v.stories.get('thread-b').entries.some((e) => e.reassignedFrom === 'thread-a'));
   for (const s of [v.active, v.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
 });
+test('views with an article placed by an assignment satisfy the schemas', () => {
+  const X = require('./views-fixture');
+  const V = require('../src/views');
+  const art = X.fact('article', null, '2026-10-16T03:00:00.000Z', {id: 'art1', sourceIds: ['s9'], payload: {url: 'https://x.test/1', canonicalUrl: 'https://x.test/1', title: 'T', outlet: null, feed: null, snippet: null, lang: null, recoveredAt: null, recoveredFrom: 'gdelt-gkg'}});
+  const v = V.buildViews([...X.golden(), art, X.assignment('art1', 'thread-c', '2026-10-24T00:00:00.000Z')], {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1, countDays: ['2026-10-16']});
+  assert.equal(validate.story(v.stories.get('thread-b')), true, JSON.stringify(validate.story.errors));
+  assert.equal(v.stories.get('thread-b').entries.some((e) => e.kind === 'article'), true);
+  assert.equal(validate.counts(v.counts.get('2026-10-16')), true, JSON.stringify(validate.counts.errors));
+  for (const s of [v.active, v.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
+});

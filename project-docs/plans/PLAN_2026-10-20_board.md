@@ -2,7 +2,7 @@
 
 Name (operator, 2026-10-20): **board**. Folders `backend/board/` and `features/board/`. Not "Studio", not "personal digest".
 
-Status: active (2026-10-21): slice 1 live, slice 2 merged and `newsBoard` deployed, UI not released; settled-past features wait for readings (see the 2026-10-21 note at the end); everything else here is design, not decided. The analyst's weekly
+Status: active (2026-10-24): slices 1 and 2 live (released 2026-10-20 and 2026-10-22); lanes R, V, AM merged, not released; slice 3 checklist below, built one lane at a time (operator 2026-10-24).
 (`PLAN_2026-10-20_analyst_weekly.md`) comes first; this records where the discussion landed so it is not lost.
 Design sketch: Studio Board canvas, https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo (12 boards, static, unchecked
 by eye). The earlier Personal Weekly canvas (https://claude.ai/artifact/CTKb75Mv3fC9Y6BV46hKnK) shows the personal
@@ -222,6 +222,29 @@ empty (board hidden); no console errors. The smoke board stays in the operator's
 ### Waits for the record (not in these stages)
 Pin lines and counts, branch status, tree, chapters, arrivals, confirmed strings, the board's weekly and monthly, summary,
 divergence "cut but held", `newsConnect` with the LLM grounds. See the now / waits checklist above.
+
+## Slice 3 checklist (2026-10-24: canvas vs live board)
+Sources: a source review of all 12 canvas artboards (`gp-mailbox/artifacts/board-review/REVIEW.md`) and the coordinator's look at the live board in the operator's Chrome (`board-review/LIVE-NOTES.md`, 14 screenshots). Visual language already matches the canvas (tokens, fonts, dark ground); no re-styling. Built one lane at a time, each merged and shown before the next; release needs the operator's yes.
+Wording rule (coordinator, from decision 0038): the canvas's "DEAD" is not used; a branch that did not happen reads "not reported by D MON", one that cannot be checked "could not be checked · reason", late = "open · due D MON" past its date.
+
+| # | Item | Data now? | Size | Status |
+|---|---|---|---|---|
+| B0 | Live defects: title runs into "Latest headline"; "no reading yet" said 3x per row (once per row); fork labels as raw ISO timestamps (use D MON); branch rows show label + p only (show trigger and due on the row, disambiguate repeated "Most Likely"); strings listed three times (keep graph + one list); dead "event" tab; tree list default browser styles; 50vh blank padding on phone with no sheet; phone graph min-width 760 and touch panning over pins | yes | S | ☐ |
+| B1 | Due-soon strip across pinned stories with the late flag | yes | S | ☐ |
+| B2 | Weekly header "your board moved · week ending D MON" and count line | yes | S | ☐ |
+| B3 | Pin card: counts ("9 events · 3 live branches"), type hue, line when read | counts yes, line after review | S-M | ☐ |
+| B4 | Strings encode strength (thickness), "OURS · MEDIUM · NOT CONFIRMED" label, mechanism in detail | strength yes, confirmed after review | S-M | ☐ |
+| B5 | ClaimTag: OURS kind, judgment level, PROVISIONAL / SETTLED / PRIVATE | yes | S | ☐ |
+| B6 | Drawn tree (SVG): trunk with dated nodes, present line, branch thickness = p, grey stubs for not-reported, late flag, fold connector; recovered nodes marked | yes (RESURRECTED waits) | L | ☐ |
+| B7 | Zoom ladder polish: fork outcome counts, event card with sources and branches drawn that day | yes | M | ☐ |
+| B8 | Verdict panel: evidence list and "who sits in both" | yes | M | ☐ |
+| B9 | Monthly card: pins gone quiet, next month's due dates | yes | S-M | ☐ |
+| B10 | Coverage note (recovered and missing days) on the weekly | needs a views field | M | ☐ |
+| B11 | Arrivals tray states (unseen count, cap 5, dismissed fade) | shell yes, cards after review | M | ☐ |
+| B12 | Preset grouping by region/theme, OURS · READ-ONLY tag | region yes, theme backend | S+M | ☐ |
+| B13 | Reader weights on branches + divergence panel | store yes, scoring after verdicts | M | ☐ |
+| B14 | Map view of the board | yes | L | ☐ |
+Waits: pin lines, chapters, mechanism and direction, "what follows if" and "what would break it" (model + pricing), board summary and monthly arc, time scrubber, alerts (UI buildable, sends need a fresh yes), RESURRECTED.
 
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)

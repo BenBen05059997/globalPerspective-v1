@@ -9,12 +9,13 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 1 SELECT     no model            [newsRecordReview]
 |  +- inputs : record/views/index/active.json, record/views/manifest.json (must be built for the week's last day)
-|  +- rule   : active stories only; skip a story with no new fact since its last reading unless a branch got a verdict
+|  +- rule   : active stories only; skip a story with no new fact since its last reading unless a branch got a verdict;
+|  |           facts are placed as the views place them (shared placement.js): latest assignment, merged stories folded into the survivor
 |  +- output : the week's story list
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-3)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
@@ -61,7 +62,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 
 Merge rule (the 5% rule of 0037): a `merge_proposal` is always a reading; it also goes to the inbox only if the two stories share a specific actor (fewer than 5% of active stories carry it) and a country, their last entries are within 14 days, the reading cites both stories, and confidence is `high`. The older story (earlier `born`) survives. One inbox line per pair and per `from` story.
 
-Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-2`; run the golden-week score again before the first live run with it.
+Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-3` (recovered article headlines placed on a story are bundle items marked `kind:"article"`, citable, no detail); run the golden-week score again before the first live run with it.
 
 Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, covers:{from,to}, supersedes, run, model, promptVersion, confidence}` ([schema](schema/reading.schema.json)). `readingId = sha1(week + threadId + subtype + key)` with key = chapter `from`, `branchId`, `otherThreadId`, alias `canonical`, empty for a line. `supersedes` is the `readingId` of the newest earlier-week reading of the same story, subtype and key, else null. `covers` is the first fact date of the bundle to the week's Sunday.
 

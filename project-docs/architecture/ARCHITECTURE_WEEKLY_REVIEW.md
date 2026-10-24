@@ -11,12 +11,13 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 1 SELECT     no model            [newsRecordReview]
 |  +- inputs : record/views/index/active.json, record/views/manifest.json (must be built for the week's last day)
-|  +- rule   : active stories only; skip a story with no new fact since its last reading unless a branch got a verdict
+|  +- rule   : active stories only; skip a story with no new fact since its last reading unless a branch got a verdict;
+|  |           facts are placed as the views place them (shared placement.js): latest assignment, merged stories folded into the survivor
 |  +- output : the week's story list
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-3)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]

@@ -4,12 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const { canonicalUrl, sha1 } = require('../../shared/src/record.js');
 const { getOutletMeta, registrableDomain } = require('../../shared/src/outlets.js');
 export const { parseRssXml } = require('../../shared/src/rss.js');
+const { decodeEntities } = require('../../shared/src/rss.js');
 
 export const SELECTOR_INDEX = path.join(HERE, '../../pipeline/newsInvokeGemini/src/index.js');
 export const GDELT_MAX = 250;
@@ -183,4 +185,64 @@ export function splitWindow(from, to) {
   if (b - a <= 15 * 60000) return null;
   const mid = Math.floor((a + b) / 2);
   return [[from, fmt(mid)], [fmt(mid + 1000), to]];
+}
+
+
+// ---- GDELT GKG 2.1 raw files (the primary GDELT source: static downloads, no rate limit) ----
+
+/** The day's 96 quarter-hour GKG file URLs (https://data.gdeltproject.org/gdeltv2/YYYYMMDDHHMMSS.gkg.csv.zip). */
+export function gkgFileUrls(day) {
+  const d = compact(day);
+  const out = [];
+  for (let h = 0; h < 24; h += 1) for (let m = 0; m < 60; m += 15) out.push(`https://data.gdeltproject.org/gdeltv2/${d}${String(h).padStart(2, '0')}${String(m).padStart(2, '0')}00.gkg.csv.zip`);
+  return out;
+}
+
+/** The content of the first entry of a zip buffer (stored or deflate), read through the central directory (the local header's
+ *  sizes can be 0 when a data descriptor follows). No dependency: node:zlib only. Throws on a malformed zip. */
+export function unzipFirst(buf) {
+  let e = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i -= 1) if (buf.readUInt32LE(i) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error('not a zip: no end-of-central-directory record');
+  let cd = buf.readUInt32LE(e + 16);
+  if (buf.readUInt32LE(cd) !== 0x02014b50) throw new Error('zip: bad central directory');
+  const method = buf.readUInt16LE(cd + 10);
+  const csize = buf.readUInt32LE(cd + 20);
+  const lho = buf.readUInt32LE(cd + 42);
+  if (buf.readUInt32LE(lho) !== 0x04034b50) throw new Error('zip: bad local header');
+  const start = lho + 30 + buf.readUInt16LE(lho + 26) + buf.readUInt16LE(lho + 28);
+  const data = buf.subarray(start, start + csize);
+  if (method === 0) return Buffer.from(data);
+  if (method === 8) return zlib.inflateRawSync(data);
+  throw new Error(`zip: unsupported method ${method}`);
+}
+
+const gkgIso = (s) => (/^\d{14}$/.test(s) ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(8, 10)}:${s.slice(10, 12)}:${s.slice(12, 14)}.000Z` : null);
+
+/** One GKG 2.1 file (text) -> { rows, rowsOurs, lines }. Keeps rows whose source domain is a target domain (exact or subdomain),
+ *  whose V2.1DATE falls on `day` (UTC) and that have a PAGE_TITLE. Fields (0-based): 1 V2.1DATE, 3 V2SOURCECOMMONNAME, 4 V2DOCUMENTIDENTIFIER, 26 V2EXTRASXML. */
+export function parseGkg(text, targets, day, now) {
+  const doms = [];
+  for (const t of targets) for (const d of t.domains || [t.domain]) doms.push(d);
+  const ours = (host) => doms.some((d) => host === d || host.endsWith(`.${d}`));
+  const dayCompact = compact(day);
+  let rows = 0;
+  let rowsOurs = 0;
+  const lines = [];
+  for (const row of String(text).split('\n')) {
+    if (!row) continue;
+    rows += 1;
+    const f = row.split('\t');
+    const host = String(f[3] || '').trim().toLowerCase();
+    if (!host || !ours(host)) continue;
+    const date = String(f[1] || '');
+    if (date.slice(0, 8) !== dayCompact) continue;
+    rowsOurs += 1;
+    const url = String(f[4] || '').trim();
+    const m = /<PAGE_TITLE>([\s\S]*?)<\/PAGE_TITLE>/.exec(f[26] || '');
+    const title = m ? decodeEntities(m[1]).replace(/\s+/g, ' ').trim() : '';
+    if (!url || !title) continue;
+    lines.push({ ...baseLine({ url, title, publishedAt: gkgIso(date), lang: null, feed: 'gdelt-gkg', now, recoveredFrom: 'gdelt-gkg', host }), precision: 'day' });
+  }
+  return { rows, rowsOurs, lines };
 }

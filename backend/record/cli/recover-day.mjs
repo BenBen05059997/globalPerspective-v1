@@ -9,7 +9,7 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import {
   readFeeds, gdeltTargets, gdeltUrl, parseGdeltDoc, gdeltLine, cdxUrl, snapshotUrl, parseCdx, waybackLines,
-  dedupeLines, tally, dayRange, splitWindow,
+  dedupeLines, tally, dayRange, splitWindow, gkgFileUrls, unzipFirst, parseGkg,
 } from './recover-lib.mjs';
 
 const require = createRequire(import.meta.url);
@@ -25,11 +25,12 @@ const COOLDOWN_MS = 600000;
 
 /** Polite fetch: at least `gapMs` between two requests to one host, retry 429/5xx/network errors with backoff.
  *  429 backoff is 60 s doubling to a 10 min cap (GDELT's limiter lasts minutes); after 3 consecutive 429s (any URL)
- *  it sleeps a 10 min cool-down instead of burning the remaining retries. A thrown error carries `.status`. */
+ *  it sleeps a 10 min cool-down instead of burning the remaining retries. A thrown error carries `.status`.
+ *  `fetchText(url, { binary: true })` returns a Buffer (the GKG zips). */
 export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetchImpl = fetch, log = console, sleepImpl = sleep, cooldownMs = COOLDOWN_MS } = {}) {
   const last = new Map();
   let streak = 0;
-  return async function fetchText(url) {
+  return async function fetchText(url, { binary = false } = {}) {
     const host = new URL(url).host;
     const gap = gapMs[host] ?? defaultGapMs;
     let lastErr;
@@ -41,7 +42,7 @@ export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetc
         const res = await fetchImpl(url, { headers: { 'user-agent': 'globalperspective-recovery/1 (operator script)' }, signal: AbortSignal.timeout(60000) });
         if (res.status === 429 || res.status >= 500) { lastErr = Object.assign(new Error(`HTTP ${res.status}`), { status: res.status }); }
         else if (!res.ok) { throw Object.assign(new Error(`HTTP ${res.status}`), { final: true, status: res.status }); }
-        else { streak = 0; return await res.text(); }
+        else { streak = 0; return binary ? Buffer.from(await res.arrayBuffer()) : await res.text(); }
       } catch (e) {
         if (e.final) throw e;
         lastErr = e;
@@ -60,7 +61,41 @@ export function makeFetcher({ gapMs = {}, defaultGapMs = 1000, retries = 6, fetc
   };
 }
 
-/** GDELT: every target domain for the day. Windows that return the 250 cap are halved (down to 15 minutes).
+/** GDELT GKG 2.1 raw files (primary GDELT source): the day's 96 quarter-hour zips, `concurrency` at a time. A 404 is a missing
+ *  quarter (recorded, not fatal); any other failure after the fetcher's retries is a failed file. status: ok (all 96 read),
+ *  partial (some missing/failed), failed (no file read). */
+export async function recoverGkg({ targets, day, fetchBuf, now, concurrency = 4, log = console }) {
+  const urls = gkgFileUrls(day);
+  const results = new Array(urls.length);
+  const failures = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < urls.length) {
+      const i = next++;
+      const file = urls[i].split('/').pop();
+      try {
+        const r = parseGkg(unzipFirst(await fetchBuf(urls[i], { binary: true })).toString('utf8'), targets, day, now);
+        results[i] = { state: 'ok', ...r };
+      } catch (e) {
+        if (e.status === 404) results[i] = { state: 'missing' };
+        else { results[i] = { state: 'failed' }; failures.push({ source: 'gdelt-gkg', file, error: e.message }); }
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, urls.length) }, worker));
+  const lines = [];
+  const g = { status: 'ok', filesOk: 0, filesMissing: 0, filesFailed: 0, rows: 0, rowsOurs: 0 };
+  for (const r of results) {
+    if (r.state === 'ok') { g.filesOk += 1; g.rows += r.rows; g.rowsOurs += r.rowsOurs; lines.push(...r.lines); }
+    else if (r.state === 'missing') g.filesMissing += 1;
+    else g.filesFailed += 1;
+  }
+  g.status = g.filesOk === 0 ? 'failed' : (g.filesMissing || g.filesFailed ? 'partial' : 'ok');
+  log.log(`  gkg ${g.status}: ${g.filesOk}/${urls.length} files, ${g.filesMissing} missing, ${g.filesFailed} failed, ${g.rows} rows, ${g.rowsOurs} ours, ${lines.length} with a title`);
+  return { lines, failures, gkg: g };
+}
+
+/** GDELT DOC API: every target domain for the day. Windows that return the 250 cap are halved (down to 15 minutes).
  *  Per domain: ok (articles), zero (every window answered a parsed JSON body, none had articles), failed (a window
  *  failed and was not recovered; a domain that failed once and then answered 0 on the retry pass is still failed). */
 export async function recoverGdelt({ targets, day, fetchText, now, englishOnly = true, split = true, log = console, retryPassWaitMs = 60000, sleepImpl = sleep }) {
@@ -158,7 +193,7 @@ export async function main(argv = process.argv.slice(2), { fetchText: injected, 
     options: {
       day: { type: 'string' }, to: { type: 'string' }, out: { type: 'string' },
       write: { type: 'boolean', default: false }, shadow: { type: 'boolean', default: false }, merge: { type: 'boolean', default: false },
-      bucket: { type: 'string' }, 'no-gdelt': { type: 'boolean', default: false }, 'no-wayback': { type: 'boolean', default: false },
+      bucket: { type: 'string' }, 'no-gdelt': { type: 'boolean', default: false }, 'no-gkg': { type: 'boolean', default: false }, 'gdelt-doc': { type: 'boolean', default: false }, 'no-wayback': { type: 'boolean', default: false },
       'all-languages': { type: 'boolean', default: false }, 'no-split': { type: 'boolean', default: false },
       domains: { type: 'string' }, 'gdelt-only': { type: 'boolean', default: false }, 'gdelt-delay-ms': { type: 'string', default: '10000' },
     },
@@ -174,28 +209,31 @@ export async function main(argv = process.argv.slice(2), { fetchText: injected, 
   let feeds = readFeeds();
   let targets = gdeltTargets(feeds);
   if (v.domains) { const only = new Set(v.domains.split(',')); targets = targets.filter((t) => only.has(t.domain)); feeds = feeds.filter((f) => only.has(f.source)); }
-  const fetchText = injected || makeFetcher({ gapMs: { 'api.gdeltproject.org': Number(v['gdelt-delay-ms']) }, defaultGapMs: 1000 });
+  const fetchText = injected || makeFetcher({ gapMs: { 'api.gdeltproject.org': Number(v['gdelt-delay-ms']), 'data.gdeltproject.org': 0 }, defaultGapMs: 1000 });
   console.log(`${v.write ? 'WRITE' : 'dry run'}: ${days.join(', ')}; ${targets.length} domains, ${feeds.length} feeds; out ${out}`);
 
   for (const day of days) {
     const now = new Date().toISOString();
     console.log(`\n== ${day}`);
-    const g = v['no-gdelt'] ? { lines: [], failures: [], perDomain: {}, gdelt: { status: 'skipped', domainsOk: 0, domainsZero: 0, domainsFailed: 0 } } : await recoverGdelt({ targets, day, fetchText, now, englishOnly: !v['all-languages'], split: !v['no-split'], ...(sleepImpl ? { sleepImpl } : {}) });
+    const gk = v['no-gdelt'] || v['no-gkg'] ? { lines: [], failures: [], gkg: { status: 'skipped', filesOk: 0, filesMissing: 0, filesFailed: 0, rows: 0, rowsOurs: 0 } } : await recoverGkg({ targets, day, fetchBuf: fetchText, now });
+    const docOn = v['gdelt-doc'] && !v['no-gdelt'];
+    const g = !docOn ? { lines: [], failures: [], perDomain: {}, gdelt: { status: 'skipped', domainsOk: 0, domainsZero: 0, domainsFailed: 0 } } : await recoverGdelt({ targets, day, fetchText, now, englishOnly: !v['all-languages'], split: !v['no-split'], ...(sleepImpl ? { sleepImpl } : {}) });
     const w = v['no-wayback'] ? { lines: [], failures: [], perFeed: {} } : await recoverWayback({ feeds, day, fetchText, now });
     const existing = s3 ? (await s3.getLines(`${prefix}/${day}.jsonl`)).lines : [];
-    // Wayback first: it carries the feed's own publishedAt, GDELT only its seendate. The day file holds the day's lines (UTC publishedAt).
+    // Priority wayback > gkg > doc: Wayback carries the feed's own publishedAt, GDELT only when it saw the article. The day file holds the day's lines (UTC publishedAt).
     const onDay = (l) => !l.publishedAt || l.publishedAt.slice(0, 10) === day;
-    const { lines, dupes } = dedupeLines([w.lines.filter(onDay), g.lines.filter(onDay)], existing);
-    const failures = [...g.failures, ...w.failures];
+    const { lines, dupes } = dedupeLines([w.lines.filter(onDay), gk.lines.filter(onDay), g.lines.filter(onDay)], existing);
+    const failures = [...gk.failures, ...g.failures, ...w.failures];
     printCounts(day, lines, dupes, failures);
-    console.log(`  gdelt ${g.gdelt.status}: ${g.gdelt.domainsOk} with results, ${g.gdelt.domainsZero} zero, ${g.gdelt.domainsFailed} failed of ${targets.length} domains`);
+    if (docOn) console.log(`  gdelt-doc ${g.gdelt.status}: ${g.gdelt.domainsOk} with results, ${g.gdelt.domainsZero} zero, ${g.gdelt.domainsFailed} failed of ${targets.length} domains`);
     fs.writeFileSync(path.join(out, `${day}.jsonl`), lines.map((l) => JSON.stringify(l)).join('\n') + (lines.length ? '\n' : ''));
     const { bySource, byOutlet } = tally(lines);
     fs.writeFileSync(path.join(out, `recovery-manifest-${day}.json`), `${JSON.stringify({
       day, fetchedAt: now,
       counts: { lines: lines.length, existingInbox: existing.length, duplicatesDropped: dupes, bySource, byOutlet },
+      gkg: gk.gkg,
       gdelt: g.gdelt,
-      sources: { 'gdelt-doc': { domains: g.perDomain, queried: !v['no-gdelt'] }, 'wayback-rss': { feeds: w.perFeed, queried: !v['no-wayback'] } },
+      sources: { 'gdelt-gkg': { queried: gk.gkg.status !== 'skipped' }, 'gdelt-doc': { domains: g.perDomain, queried: docOn }, 'wayback-rss': { feeds: w.perFeed, queried: !v['no-wayback'] } },
       failures,
     }, null, 2)}\n`);
     if (v.write) {
@@ -205,8 +243,8 @@ export async function main(argv = process.argv.slice(2), { fetchText: injected, 
         console.log(`  wrote ${prefix}/${day}.jsonl: ${res.appended} appended, ${res.skipped} already there`);
       }
     }
-    if (g.gdelt.status === 'throttled' || g.gdelt.status === 'failed') {
-      console.log(`  GDELT ${g.gdelt.status}: stopping, exit 2 (re-run with --gdelt-only later)`);
+    if (gk.gkg.status === 'failed' || g.gdelt.status === 'throttled' || g.gdelt.status === 'failed') {
+      console.log(`  GDELT ${gk.gkg.status === 'failed' ? `gkg failed (no file read)` : `doc ${g.gdelt.status}`}: stopping, exit 2 (re-run with --gdelt-only later)`);
       return 2;
     }
   }

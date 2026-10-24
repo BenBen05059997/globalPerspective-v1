@@ -53,3 +53,6 @@ What changes in 0035-0039:
 - Views must tolerate recovered days without forecasts or scores.
 
 Source: `gp-mailbox/artifacts/foundation-review.md` sections 5 and 6; `gp-mailbox/artifacts/selection-audit.md`.
+
+## Amendment 2026-10-24: recovery source
+The GDELT DOC API rate-limits a single client for hours, so recovery reads GDELT's raw 15-minute GKG 2.1 files instead (static downloads, same coverage, headline from `PAGE_TITLE`, time = when GDELT saw the article, so `precision:"day"`). The DOC API stays as an opt-in fallback; Wayback RSS stays as the source with real publish times. Operator agreed 2026-10-24.

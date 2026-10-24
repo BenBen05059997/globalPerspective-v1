@@ -43,13 +43,13 @@ test('bundle: an unreadable day inside the window marks it failed and incomplete
   assert.equal((await bundle({}, { ...Q, threadId: null })).complete, false);
 });
 
-test('bundle: facts days are read once for many questions, and only the days a window needs', async () => {
+test('bundle: facts days are read once for many questions, from the first window day to today (assignments and merges come later)', async () => {
   const keys = [];
   const facts = { async getLines(key) { keys.push(key); return { lines: [] }; } };
   await gather.loadEntries(facts, [Q, { ...Q, qid: 'q2' }], TODAY);
   assert.equal(new Set(keys).size, keys.length);
   assert.ok(keys.includes('record/facts/2026-10-21.jsonl') && keys.includes('record/facts/2026-11-05.jsonl'));
-  assert.ok(!keys.includes('record/facts/2026-10-20.jsonl') && !keys.includes('record/facts/2026-11-06.jsonl'));
+  assert.ok(!keys.includes('record/facts/2026-10-20.jsonl') && keys.includes('record/facts/2026-11-06.jsonl') && keys.includes('record/facts/2026-11-10.jsonl'));
 });
 
 test('no network module is imported anywhere in src (no search, fetch, http)', () => {
@@ -126,4 +126,76 @@ test('coverage: the real s3json reader (plain object, null on 404) yields no gap
   const loaded = await gather.loadEntries(s3.s3json, [CQ], TODAY);
   const b = gather.buildBundle(CQ, loaded, TODAY);
   assert.deepEqual(b.coverageGaps, [{ day: '2026-11-01', why: 'no run' }]);
+});
+
+// ---- ASSIGNED ARTICLES, REASSIGNED ENTRIES, MERGES (lane AK) ----
+const { buildPrompt } = require('../src/draft');
+const art = (id, date, extra = {}) => ({ kind: 'article', eventId: id, threadId: null, date, at: `${date}T00:00:00.000Z`, payload: { title: `Headline ${id} announces the ceasefire`, snippet: null, url: `https://ex.com/${id}`, recoveredAt: '2026-10-20T00:00:00Z', recoveredFrom: 'gkg' }, ...extra });
+const asg = (entryId, threadId, at, by = 'operator') => ({ kind: 'assignment', eventId: `as-${entryId}-${threadId}-${by}-${at}`, threadId, at, payload: { entryId, threadId, by } });
+
+test('assigned recovered article reaches the bundle; an unassigned one does not', async () => {
+  const b = await bundle({ '2026-10-25': [art('a1', '2026-10-25'), art('a2', '2026-10-25')], '2026-11-08': [asg('a1', 'tA', '2026-11-08T09:00:00.000Z')] });
+  assert.deepEqual(b.entries.map((x) => x.eventId), ['a1']); // the assignment sits on a later day than the article
+  assert.deepEqual([b.entries[0].kind, b.entries[0].recovered, b.entries[0].summary, b.entries[0].url], ['article', true, '', 'https://ex.com/a1']);
+});
+
+test('assignment to another thread, or an article outside the window, adds nothing', async () => {
+  const b = await bundle({ '2026-10-25': [art('a1', '2026-10-25')], '2026-10-19': [art('a3', '2026-10-19')], '2026-11-08': [asg('a1', 'tB', '2026-11-08T09:00:00.000Z'), asg('a3', 'tA', '2026-11-08T09:00:00.000Z')] });
+  assert.deepEqual(b.entries, []);
+});
+
+test('a reassigned entry moves to its new thread and leaves the old one', async () => {
+  const mv = e('tA', '2026-10-25');
+  const files = { '2026-10-25': [mv], '2026-11-01': [asg(mv.eventId, 'tB', '2026-11-01T00:00:00.000Z')] };
+  assert.equal((await bundle(files)).entries.length, 0);
+  assert.equal((await bundle(files, { ...Q, threadId: 'tB' })).entries.length, 1);
+});
+
+test('tie rule: latest at wins; at a tie operator beats review beats ingest', async () => {
+  const x = art('a1', '2026-10-25');
+  const t = '2026-11-01T00:00:00.000Z';
+  const has = async (...as) => (await bundle({ '2026-10-25': [x], '2026-11-01': as })).entries.length === 1;
+  assert.equal(await has(asg('a1', 'tA', t, 'review'), asg('a1', 'tB', t, 'operator')), false);
+  assert.equal(await has(asg('a1', 'tB', t, 'operator'), asg('a1', 'tA', t, 'ingest')), false);
+  assert.equal(await has(asg('a1', 'tB', t, 'review'), asg('a1', 'tA', t, 'operator')), true);
+  assert.equal(await has(asg('a1', 'tB', '2026-11-01T00:00:00.000Z'), asg('a1', 'tA', '2026-11-02T00:00:00.000Z', 'ingest')), true);
+});
+
+test('a story merged away: a question on it gathers the survivor, and the survivor gathers it', async () => {
+  const merge = { kind: 'story_merged', eventId: 'm1', at: '2026-11-01T00:00:00.000Z', threadId: 'tS', payload: { from: 'tA', into: 'tS' } };
+  const files = { '2026-10-25': [e('tS', '2026-10-25', 'SURVIVOR'), e('tA', '2026-10-26', 'FROM')], '2026-11-01': [merge] };
+  assert.deepEqual((await bundle(files)).entries.map((x) => x.title), ['SURVIVOR', 'FROM']);
+  assert.equal((await bundle(files, { ...Q, threadId: 'tS' })).entries.length, 2);
+  const loaded = await gather.loadEntries(fakeFacts(files), [Q], TODAY);
+  assert.ok(gather.movedThreads(loaded, '2026-10-26').has('tA')); // the survivor moved, so the merged-away story counts as moved
+  const cancelled = { ...files, '2026-11-02': [{ kind: 'story_split', eventId: 's1', at: '2026-11-02T00:00:00.000Z', payload: { from: 'tA', into: 'tS' } }] };
+  assert.deepEqual((await bundle(cancelled)).entries.map((x) => x.title), ['FROM']);
+});
+
+test('assignments are read from days after the window, up to today', async () => {
+  const keys = [];
+  const facts = { async getLines(key) { keys.push(key); return { lines: [] }; } };
+  await gather.loadEntries(facts, [Q], TODAY);
+  assert.ok(keys.includes('record/facts/2026-11-10.jsonl') && keys.includes('record/facts/2026-11-08.jsonl'));
+});
+
+test('prompt labels a recovered item as headline only; a verified quote of the title still counts', async () => {
+  const b = await bundle({ '2026-10-25': [art('a1', '2026-10-25')], '2026-11-08': [asg('a1', 'tA', '2026-11-08T09:00:00.000Z')] });
+  const p = buildPrompt({ ...Q, question: 'x', storyTitle: 's' }, b.entries, TODAY);
+  assert.match(p, /\[a1\] Headline a1 announces the ceasefire \(2026-10-25\) \[recovered headline, no text\]/);
+  const lib = require('../src/lib');
+  assert.equal(lib.quoteInEntry('announces the ceasefire', b.entries, 'a1'), true);
+  assert.equal(lib.quoteInEntry('announces the truce today', b.entries, 'a1'), false);
+});
+
+test('coverage guard: a recovered day (no archive) still blocks a no, even with an assigned article in the bundle', async () => {
+  const q = { ...CQ, question: 'x' };
+  const files = { '2026-11-01': [art('a1', '2026-11-01')], '2026-11-08': [asg('a1', 'tA', '2026-11-08T09:00:00.000Z')] };
+  const runs = { '2026-10-31': okRun(), '2026-11-01': okRun({ inputs: { archiveDay: 'absent' } }), '2026-11-02': okRun() };
+  const loaded = await gather.loadEntries(fakeFacts(files, runs), [q], TODAY);
+  const bnd = gather.buildBundle(q, loaded, TODAY);
+  assert.deepEqual(bnd.coverageGaps.map((g) => g.day), ['2026-11-01']);
+  const llm = async () => ({ verdict: 'no', why: 'headline does not report it' });
+  const d = await draftQuestion({ ...q, bundle: bnd }, { now: () => NOW_NO, llm });
+  assert.deepEqual([d.verdict, d.reason], ['not_yet', 'coverage_gap']);
 });

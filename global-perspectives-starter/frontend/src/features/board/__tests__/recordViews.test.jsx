@@ -39,6 +39,15 @@ describe('story tree on the 0037 story view', () => {
     expect(screen.getByRole('link', { name: 'BBC' })).toHaveAttribute('href', 'https://example.org/b');
     expect(screen.queryByText(/Branches killed/)).toBeNull();
   });
+  it('a recovered row is labelled in the trunk and its detail shows outlet and link, no empty summary', () => {
+    render(<StoryTree story={story} />);
+    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
+    expect(screen.getAllByText(/recovered from public records/)).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Strait traffic thins as insurers react' }));
+    expect(screen.getByText(/recovered from public records · A headline recovered/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Example Wire' })).toHaveAttribute('href', 'https://example.org/c');
+    expect(document.querySelectorAll('.board-line').length).toBe(2);
+  });
   it('no entries and no forks use their documented texts', () => {
     render(<StoryTree story={{ ...story, entries: [], forks: [] }} />);
     fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));

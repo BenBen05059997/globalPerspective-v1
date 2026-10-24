@@ -7,9 +7,10 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import {
   readFeeds, gdeltTargets, gdeltUrl, parseGdeltDoc, gdeltLine, seendateIso, cdxUrl, snapshotUrl, parseCdx, waybackLines,
-  dedupeLines, tally, dayRange, splitWindow,
+  dedupeLines, tally, dayRange, splitWindow, gkgFileUrls, unzipFirst, parseGkg,
 } from './recover-lib.mjs';
-import { recoverGdelt, recoverWayback, makeFetcher, main, gdeltSummary } from './recover-day.mjs';
+import zlib from 'node:zlib';
+import { recoverGkg, recoverGdelt, recoverWayback, makeFetcher, main, gdeltSummary } from './recover-day.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const fx = (n) => fs.readFileSync(path.join(HERE, 'fixtures', n), 'utf8');
@@ -170,7 +171,7 @@ test('throttle: all domains 429 -> manifest gdelt throttled, exit 2', async () =
   const quietLog = console.log; console.log = () => {};
   let code;
   try {
-    code = await main(['--day', '2026-09-20', '--out', out, '--no-wayback', '--no-split'], { fetchText: async () => { throw new Error('HTTP 429'); }, sleepImpl: async () => {} });
+    code = await main(['--day', '2026-09-20', '--out', out, '--no-wayback', '--no-split', '--gdelt-doc', '--no-gkg'], { fetchText: async () => { throw new Error('HTTP 429'); }, sleepImpl: async () => {} });
   } finally { console.log = quietLog; }
   assert.equal(code, 2);
   const m = JSON.parse(fs.readFileSync(path.join(out, 'recovery-manifest-2026-09-20.json'), 'utf8'));
@@ -191,4 +192,99 @@ test('throttle: 3 consecutive 429s trigger the cool-down; backoff starts at 60 s
   const fetchText = makeFetcher({ fetchImpl: async () => res(++n <= 4 ? 429 : 200, '{}'), sleepImpl: async (ms) => { sleeps.push(ms); }, defaultGapMs: 0, cooldownMs: 5000, log: quiet });
   await fetchText('https://api.gdeltproject.org/x');
   assert.deepEqual(sleeps.filter((ms) => ms > 1000), [60000, 120000, 5000, 480000]);
+});
+
+// ---- GKG ----
+/** A one-entry zip (deflate, central directory, no data descriptor needed; CRC left 0, the reader does not check it). */
+function zipOf(name, text, method = 8) {
+  const raw = Buffer.from(text, 'utf8');
+  const data = method === 8 ? zlib.deflateRawSync(raw) : raw;
+  const n = Buffer.from(name);
+  const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(method, 8); lh.writeUInt32LE(data.length, 18); lh.writeUInt32LE(raw.length, 22); lh.writeUInt16LE(n.length, 26);
+  const cd = Buffer.alloc(46); cd.writeUInt32LE(0x02014b50, 0); cd.writeUInt16LE(20, 4); cd.writeUInt16LE(20, 6); cd.writeUInt16LE(method, 10); cd.writeUInt32LE(data.length, 20); cd.writeUInt32LE(raw.length, 24); cd.writeUInt16LE(n.length, 28); cd.writeUInt32LE(0, 42);
+  const local = Buffer.concat([lh, n, data]);
+  const cdFull = Buffer.concat([cd, n]);
+  const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10); eocd.writeUInt32LE(cdFull.length, 12); eocd.writeUInt32LE(local.length, 16);
+  return Buffer.concat([local, cdFull, eocd]);
+}
+const gkgRow = (date, host, url, title) => { const f = new Array(27).fill(''); f[0] = `${date}-0`; f[1] = date; f[3] = host; f[4] = url; f[26] = title == null ? '<PAGE_AUTHORS>x</PAGE_AUTHORS>' : `<PAGE_LINKS>a</PAGE_LINKS><PAGE_TITLE>${title}</PAGE_TITLE>`; return f.join('\t'); };
+const GKG_TEXT = [
+  gkgRow('20260920061500', 'bbc.co.uk', 'https://www.bbc.co.uk/news/articles/c1?utm_source=x', 'Floods &amp; storms hit  the north'), // ours, title (entities, spaces)
+  gkgRow('20260920061500', 'scmp.com', 'https://www.scmp.com/news/a2', null), // ours, no title
+  gkgRow('20260920061500', 'example.org', 'https://example.org/x', 'Foreign'), // not ours
+  gkgRow('20260919234500', 'scmp.com', 'https://www.scmp.com/news/a0', 'Wrong day'), // ours, wrong day
+  gkgRow('20260920061500', 'text.npr.org', 'https://text.npr.org/a3', 'Subdomain of npr.org'),
+].join('\n') + '\n';
+
+test('unzipFirst: deflate and stored entries; garbage throws', () => {
+  assert.equal(unzipFirst(zipOf('a.csv', 'hello')).toString(), 'hello');
+  assert.equal(unzipFirst(zipOf('a.csv', 'hello', 0)).toString(), 'hello');
+  assert.throws(() => unzipFirst(Buffer.from('not a zip at all, definitely not, long enough bytes')), /not a zip/);
+});
+
+test('gkgFileUrls: 96 quarter-hour files', () => {
+  const u = gkgFileUrls('2026-09-14');
+  assert.equal(u.length, 96);
+  assert.equal(u[0], 'https://data.gdeltproject.org/gdeltv2/20260914000000.gkg.csv.zip');
+  assert.equal(u[95], 'https://data.gdeltproject.org/gdeltv2/20260914234500.gkg.csv.zip');
+});
+
+const GT = readFeeds() && gdeltTargets(readFeeds());
+
+test('parseGkg: ours with title kept; no title, foreign domain and wrong day dropped', () => {
+  const r = parseGkg(GKG_TEXT, GT, '2026-09-20', NOW);
+  assert.equal(r.rows, 5);
+  assert.equal(r.rowsOurs, 3); // bbc, scmp(no title), npr subdomain; the wrong-day scmp row is not counted
+  assert.deepEqual(r.lines.map((l) => l.title), ['Floods & storms hit the north', 'Subdomain of npr.org']);
+  const l = r.lines[0];
+  assert.deepEqual(Object.keys(l).sort(), ['canonicalUrl', 'feed', 'fetchedAt', 'lang', 'outlet', 'precision', 'publishedAt', 'rawId', 'recoveredAt', 'recoveredFrom', 'schemaVersion', 'snippet', 'title', 'url'].sort());
+  assert.equal(l.feed, 'gdelt-gkg');
+  assert.equal(l.recoveredFrom, 'gdelt-gkg');
+  assert.equal(l.precision, 'day');
+  assert.equal(l.publishedAt, '2026-09-20T06:15:00.000Z');
+  assert.equal(l.snippet, null);
+  assert.equal(l.lang, null);
+  assert.equal(l.outlet, 'BBC');
+  assert.equal(l.rawId, sha1(canonicalUrl(l.url)));
+  assert.equal(l.canonicalUrl, 'https://bbc.co.uk/news/articles/c1'); // utm_ dropped
+});
+
+test('recoverGkg: 404 quarter is missing, manifest counts, dedupe vs a Wayback line', async () => {
+  const zip = zipOf('x.gkg.csv', GKG_TEXT);
+  const fetchBuf = async (u) => {
+    if (u.includes('20260920001500')) throw Object.assign(new Error('HTTP 404'), { final: true, status: 404 });
+    if (u.includes('20260920003000')) throw Object.assign(new Error('boom'), {});
+    if (u.includes('20260920010000')) return zip;
+    return zipOf('e.csv', '');
+  };
+  const r = await recoverGkg({ targets: GT, day: '2026-09-20', fetchBuf, now: NOW, log: quiet });
+  assert.deepEqual(r.gkg, { status: 'partial', filesOk: 94, filesMissing: 1, filesFailed: 1, rows: 5, rowsOurs: 3 });
+  assert.equal(r.lines.length, 2);
+  assert.equal(r.failures.length, 1);
+  assert.deepEqual(Object.keys(r.failures[0]).sort(), ['error', 'file', 'source']);
+  const way = { ...r.lines[0], recoveredFrom: 'wayback-rss', feed: 'BBC World' };
+  const { lines, dupes } = dedupeLines([[way], r.lines, parseGdeltDoc(fx('gdelt-doc.json')).map((a) => gdeltLine(a, NOW)).filter(Boolean)]);
+  assert.equal(lines.find((l) => l.rawId === way.rawId).recoveredFrom, 'wayback-rss');
+  assert.equal(dupes['gdelt-gkg'], 1);
+  const none = await recoverGkg({ targets: GT, day: '2026-09-20', fetchBuf: async () => { throw Object.assign(new Error('HTTP 404'), { status: 404 }); }, now: NOW, log: quiet });
+  assert.equal(none.gkg.status, 'failed');
+  assert.equal(none.gkg.filesMissing, 96);
+});
+
+test('main: gkg is the default GDELT source; manifest shape; failed gkg exits 2', async () => {
+  const out = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'recover-'));
+  const log = console.log; console.log = () => {};
+  let code;
+  try { code = await main(['--day', '2026-09-20', '--out', out, '--no-wayback'], { fetchText: async (u, o) => { assert.ok(o && o.binary && u.includes('data.gdeltproject.org')); return zipOf('x.csv', GKG_TEXT); } }); } finally { console.log = log; }
+  assert.equal(code, 0);
+  const m = JSON.parse(fs.readFileSync(path.join(out, 'recovery-manifest-2026-09-20.json'), 'utf8'));
+  assert.deepEqual(m.gkg, { status: 'ok', filesOk: 96, filesMissing: 0, filesFailed: 0, rows: 480, rowsOurs: 288 });
+  assert.equal(m.gdelt.status, 'skipped');
+  assert.equal(m.sources['gdelt-doc'].queried, false);
+  assert.equal(m.counts.bySource['gdelt-gkg'], 2); // same urls in every file: deduped
+  assert.equal(fs.readFileSync(path.join(out, '2026-09-20.jsonl'), 'utf8').trim().split('\n').length, 2);
+  const out2 = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'recover-'));
+  console.log = () => {};
+  try { code = await main(['--day', '2026-09-20', '--out', out2, '--no-wayback'], { fetchText: async () => { throw Object.assign(new Error('HTTP 404'), { status: 404 }); } }); } finally { console.log = log; }
+  assert.equal(code, 2);
 });

@@ -57,3 +57,4 @@ Close the loop: few resolvable outcomes drawn per story per week, a cheap nightl
 - 2026-10-22: lane Q merged. Resolver deploy prerequisites now: DeepSeek top-up, IAM GetObject record/runs/*, shadow review.
 - 2026-10-23: NewsProjectInvokeAgentLambda deployed (draw rules + PRED# thread reconciliation). Takes effect at the first funded run.
 - 2026-10-23: resolver deployed (CodeSha256 UHqPWXy/…, 512 MB, `WORLD_BUCKET`, IAM `record/runs/*` read). First watch: 40 grace candidates, 0 moved. Drafts stay `needs_human` until DeepSeek is funded; `BRAVE_SEARCH_API_KEY` and `GROK_MODEL` removal waits until the new build is accepted.
+- 2026-10-24: first scheduled run of the rebuilt resolver (2026-10-23 10:30 UTC): 40 candidates drafted, all `coverage_gap` with "no run" for days whose Run exists. Cause: gather.js reads `getJson(...).obj` but s3json.getJson returns the object itself. Lane AH opened. DeepSeek still 402 at 2026-10-23 20:18 UTC.

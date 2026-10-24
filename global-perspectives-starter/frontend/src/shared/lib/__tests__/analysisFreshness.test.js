@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { pausedSince } from '@/shared/lib/freshness.js';
 import { statusLineText } from '@/features/map/components/HudStatusLine.jsx';
 import { newestOf, reportAnalysisAt, __resetAnalysisFreshness } from '@/shared/lib/analysisFreshness.js';
 import { pausedSince } from '@/shared/lib/freshness.js';

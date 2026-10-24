@@ -229,7 +229,7 @@ Wording rule (coordinator, from decision 0038): the canvas's "DEAD" is not used;
 
 | # | Item | Data now? | Size | Status |
 |---|---|---|---|---|
-| B0 | Live defects: title runs into "Latest headline"; "no reading yet" said 3x per row (once per row); fork labels as raw ISO timestamps (use D MON); branch rows show label + p only (show trigger and due on the row, disambiguate repeated "Most Likely"); strings listed three times (keep graph + one list); dead "event" tab; tree list default browser styles; 50vh blank padding on phone with no sheet; phone graph min-width 760 and touch panning over pins | yes | S | ☐ |
+| B0 | Live defects (released 2026-10-24, 4d31cd28, bundle index-C4ESgM9W):  title runs into "Latest headline"; "no reading yet" said 3x per row (once per row); fork labels as raw ISO timestamps (use D MON); branch rows show label + p only (show trigger and due on the row, disambiguate repeated "Most Likely"); strings listed three times (keep graph + one list); dead "event" tab; tree list default browser styles; 50vh blank padding on phone with no sheet; phone graph min-width 760 and touch panning over pins | yes | S | ◐ released; signed-out view checked (English UTC banner date, one date on both pages, plural fixed); signed-in board not yet seen |
 | B1 | Due-soon strip across pinned stories with the late flag | yes | S | ☐ |
 | B2 | Weekly header "your board moved · week ending D MON" and count line | yes | S | ☐ |
 | B3 | Pin card: counts ("9 events · 3 live branches"), type hue, line when read | counts yes, line after review | S-M | ☐ |
@@ -300,3 +300,4 @@ period. Design and object model: `architecture/ARCHITECTURE_TIMELINE.md`. Order 
 unsettled zone ("too early to call, N new entries") until readings exist; the settled past, tree zoom and board weekly read
 readings once `newsRecordReview` has run (step 5). Board UI is not yet released.
 - 2026-10-21: board slice 3 waits on foundation steps 1-2 (`PLAN_2026-10-21_foundation.md`).
+- 2026-10-24: B0 released to production with lanes R, V, AM (operator yes: "no user anyway"). Checked live, signed out: banner reads "Oct 19" in English on /board and /track-record (was 10月20日 / 10月19日), presets read "1 string". The Track Record sample copy ("draw of up to 22 questions") is accurate: the weekly sample is still scored (0038). Candidate Worker has no data connection, so it cannot be used to check the board.

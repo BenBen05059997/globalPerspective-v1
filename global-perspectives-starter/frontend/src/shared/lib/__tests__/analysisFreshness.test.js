@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { statusLineText } from '@/features/map/components/HudStatusLine.jsx';
 import { newestOf, reportAnalysisAt, __resetAnalysisFreshness } from '@/shared/lib/analysisFreshness.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
 
@@ -10,7 +9,6 @@ describe('no feed timestamp loaded', () => {
     expect(pausedSince({ newestAnalysisAt: newestOf([null, undefined]) })).toBeNull();
     expect(pausedSince({ newestAnalysisAt: 0 })).toBeNull();
     expect(pausedSince({ newestAnalysisAt: 'junk' })).toBeNull();
-    expect(statusLineText(pausedSince({ newestAnalysisAt: 0 }), null)).toBeNull();
   });
 });
 

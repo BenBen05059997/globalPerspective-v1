@@ -25,6 +25,12 @@ describe('HudStatusLine', () => {
     expect(screen.getByText('New stories and analysis paused since Oct 1 · disaster alerts live')).toBeInTheDocument();
   });
 
+  it('a zero or missing feed timestamp gives no banner at all (never "since Jan 1")', async () => {
+    const { pausedSince } = await import('@/shared/lib/freshness.js');
+    expect(statusLineText(pausedSince({ newestAnalysisAt: 0 }), null)).toBeNull();
+    expect(statusLineText(pausedSince({ newestAnalysisAt: null }), { state: 'live' })).toBeNull();
+  });
+
   it('says honestly when GDACS is stale: last checked <date>, never "live"', () => {
     const checked = new Date('2026-09-20T10:00:00Z');
     const label = 'Sep 20';

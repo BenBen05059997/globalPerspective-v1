@@ -1,6 +1,6 @@
 # The forecast loop
 
-Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side and resolver side deployed (resolver 2026-10-23; state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side and resolver side deployed (resolver 2026-10-23, gather extended 2026-10-24; state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
 Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
 
 ## 1. Why
@@ -85,7 +85,7 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 Candidates only: open branches on stories with a new entry fact that day (from `record/facts`), plus open branches whose due date passed 3 days ago. This replaces "all branches are due" and the Monday-only draft.
 
 ### Gather (no model, no search)
-Amendment 2026-10-22 (2): the evidence is the story's own `entry` facts dated after the draw date, read from `record/facts`. Nothing dated before the draw counts, other stories are not checked, and there is no web search, news API or page fetching. If another story carries the outcome, the weekly review writes a confirmed link with hindsight.
+Amendment 2026-10-22 (2): the evidence is the story's own `entry` facts dated after the draw date, read from `record/facts`. Nothing dated before the draw counts, other stories are not checked, and there is no web search, news API or page fetching. Amendment 2026-10-24: operator-assigned recovered articles (latest assignment per id), reassigned entries and the survivor of a merged story also count; a recovered article is a headline only ("[recovered headline, no text]"), may support `yes`, and its silence never supports `no`. If another story carries the outcome, the weekly review writes a confirmed link with hindsight.
 
 ### Judge (boxed model)
 The rules of `newsPredictionResolver/src/lib.js` stay: the quote is verified by code against the title or summary of an entry dated after the draw, `yes` needs a second independent pass, `no` ("not reported by DUE") waits for due + 3 days (`GRACE_DAYS`) and means no entry since the draw shows the event, `void` takes one of `VOID_REASONS` (`ambiguous_criterion`, `source_unavailable`, `event_moot`, `duplicate`, `criterion_met_at_issue`) plus `issued_before_method` (decision 0038). `criterion_met_at_issue` applies at the draw gate only, since evidence before the draw is never read. The judge is blind to p.

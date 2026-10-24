@@ -1,6 +1,6 @@
 # The record: facts daily, readings weekly, many views
 
-Status: design adopted (operator, 2026-10-20); revised 2026-10-21 to two clocks (§1c, §8) and 2026-10-23 for raw capture, assignments and canonical actors (0040). This is the one record design
+Status: design adopted (operator, 2026-10-20); revised 2026-10-21 to two clocks (§1c, §8) and 2026-10-23 for raw capture, assignments and canonical actors (0040), and 2026-10-24 for the finished recovery, article placement and story rejoin. This is the one record design
 doc and the system's core model. Every backend group and frontend feature README links here and says which facts or
 readings it **writes**, which **views** it reads, and nothing else about storage. Decisions that bind it: `0035` (facts are
 the system of record), `0036` (facts file format), `0037` (views), `0038` (forecast loop), `0039` (weekly review), `0040` (raw before model). Order of work and live status:
@@ -41,7 +41,7 @@ WORLD  S3 record/  (one writer per file)          USERS  DynamoDB            SCR
 │
 ├─ 2 COMMIT   backend/record/newsStoryRecord · no model · daily 23:45Z
 │    record/facts/DAY.jsonl   entry · article · assignment · story_born · forecast_drawn · verdict · story_merged · story_split · correction · run
-│    recovery: a missed day is rebuilt from public records (GDELT, Wayback) into the same facts, labelled, no forecasts (0040)
+│    recovery: a missed day is rebuilt from public records (GDELT GKG raw files, Wayback) into the same facts, labelled, no forecasts (0040); 17 days done 2026-10-24
 │    record/runs/DAY.json     ok | partial | failed  (a missing input is recorded, never filled)
 │    record/inbox/<kind>/DAY.jsonl  hand-off from other writers (articles: selector · verdicts: resolver · merges: review ·
 │         assignments, splits: operator, review proposals); read nightly, turned into facts
@@ -266,11 +266,12 @@ or a design, not an open defect.
 - **Review deployed, not running** (step 3): `newsRecordReview` is created in AWS (2026-10-23) and rule `TriggerRecordReview` (Monday 01:00 UTC) is disabled; no readings yet (first live run waits for the DeepSeek top-up, the golden-week score and a canary). Until readings exist the reading fields of the views are `null` with a reason. Not built: the `newsSystemsAnalysis` link field (dropped, the review writes links).
 - **Entry time precision**: live entries stay day precision while archive rows lack `publishedAt`.
 - **Who's who file empty**: `record/operator/aliases.json` is operator-owned and not written yet, so actors keep `name:` ids in the views; `cli/reconcile-actors.mjs` proposes entries.
-- **Forecast loop**: the draw rules are deployed; the resolver's loop code (watch, own-entry evidence, coverage guard, verdict inbox) is deployed (2026-10-23), waiting on DeepSeek funding for model drafts; the legacy void job and the one-time redirect for historical orphan forecasts wait for the operator.
+- **Recovery and continuity (2026-10-24)**: 17 days recovered (about 25k `article` facts; outlets GDELT lacks stay dark); operator assignments place recovered articles on stories and 7 operator `story_merged` facts rejoined stories (10 proposed matches held). Open: the weekly review (`newsRecordReview/src/select.js`) reads raw `entry` facts by threadId and does not yet see placed articles. The gap benchmark (`gp-mailbox/artifacts/gap-benchmark/`, outside the repo and not in the record) is an answer key for scoring a model offline; its 448 branches are legacy (no qid), so the nightly resolver never writes verdicts for them.
+- **Forecast loop**: the draw rules are deployed; the resolver's loop code (watch, own-entry evidence plus assigned recovered articles as headline-only evidence, coverage guard, verdict inbox) is deployed (2026-10-23), waiting on DeepSeek funding for model drafts; the legacy void job and the one-time redirect for historical orphan forecasts wait for the operator.
 - **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
   several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
 - **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
-  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact from the merges inbox, which only the review feeds, and it has not run live yet). Fixed by
+  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact from the merges inbox, fed by the review and, since 2026-10-24, by operator lines; the review has not run live yet). Fixed by
   lane F (f03ab32b, 2026-10-20) and no longer gaps: sources carry `publishedAt` and `outlet`; `PRED#` rows carry `threadId`,
   `forkId`, `scenarioIndex`; `Q#` rows carry `threadId`. Entries before 2026-09-12 keep `iso3:[]`/`actorIds:[]` (recorded as missing).
 - **Dead weight**: the plan's Retire list, plus `stories/state/` (3,436 objects, never pruned) and unused read actions in

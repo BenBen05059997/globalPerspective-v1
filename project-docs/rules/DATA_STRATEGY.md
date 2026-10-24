@@ -79,9 +79,9 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` (the daily Run) | daily, the one mutable object | `newsPredictionResolver` (coverage guard, role grant pending), monitoring (no alarm built), operator |
 | `record/inbox/articles/YYYY-MM-DD.jsonl` (decision 0040) | selector `newsInvokeGemini` (raw capture before the model call) and the recovery script | each generation, append-only | `newsStoryRecord` (converts to `article` facts) |
 | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`; 0038 amendment) | `newsPredictionResolver` | on each decision, append-only, kept (replay input) | `newsStoryRecord` (run day + 6 days before; `{inboxFrom}` backfills) |
-| `record/inbox/merges/YYYY-MM-DD.jsonl` | `newsRecordReview` | weekly | `newsStoryRecord` (turns lines into `story_merged` facts) |
+| `record/inbox/merges/YYYY-MM-DD.jsonl` | `newsRecordReview`; operator lines on demand | weekly | `newsStoryRecord` (turns lines into `story_merged` facts) |
 | `record/inbox/splits/YYYY-MM-DD.jsonl` | operator only | on demand | `newsStoryRecord` (turns lines into `story_split` facts) |
-| `record/inbox/assignments/YYYY-MM-DD.jsonl` (decision 0040) | operator, applying approved review proposals | on demand | `newsStoryRecord` (converts to `assignment` facts; ingest assignments are derived from entries, not inboxed) |
+| `record/inbox/assignments/YYYY-MM-DD.jsonl` (decision 0040) | operator, applying approved review proposals or benchmark placements (`entryId` may be an `article` fact id) | on demand | `newsStoryRecord` (converts to `assignment` facts; ingest assignments are derived from entries, not inboxed) |
 | `record/operator/aliases.json` (the who's who file) | operator only | on demand | `newsStoryRecord` view builds, `newsRecordReview` |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` | weekly Monday 01:00 UTC, append-only, model | view rebuilds, weekly report |
 | `record/runs/review-YYYY-Www.json` | `newsRecordReview` | weekly, the review Run | monitoring (alarm signal), operator |

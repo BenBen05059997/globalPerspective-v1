@@ -68,7 +68,7 @@ async function loadEntries(facts, questions, today) {
   for (const day of [...runDays].sort()) {
     try {
       if (typeof facts.getJson !== 'function') throw new Error('no run reader');
-      const why = runGap((await facts.getJson(runKey(day))).obj || null);
+      const why = runGap(await facts.getJson(runKey(day)));
       if (why) gaps.set(day, why);
     } catch (e) { gaps.set(day, `run unreadable: ${String(e.message).slice(0, 80)}`); }
   }

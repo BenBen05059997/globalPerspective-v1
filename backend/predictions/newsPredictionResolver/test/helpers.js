@@ -51,7 +51,7 @@ function fakeFacts(files = {}, runs) {
       const m = /record\/runs\/(\d{4}-\d{2}-\d{2})\.json$/.exec(key);
       const r = runs === undefined ? okRun() : runs[m && m[1]];
       if (r instanceof Error) throw r;
-      return { obj: r || null, etag: null };
+      return r || null; // like the real s3json.getJson: the parsed object, or null on 404
     },
     async getLines(key) { const m = /record\/facts\/(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(key); return { lines: (m && files[m[1]]) || [], etag: null }; },
   };

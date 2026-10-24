@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { newestOf, reportAnalysisAt, __resetAnalysisFreshness } from '@/shared/lib/analysisFreshness.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
 
+describe('no feed timestamp loaded', () => {
+  it('missing, null, 0 and invalid values are not a date: never Jan 1 1970', () => {
+    expect(newestOf([null, undefined])).toBeNull();
+    expect(newestOf([0, 'junk'])).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: newestOf([null, undefined]) })).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: 0 })).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: 'junk' })).toBeNull();
+  });
+});
+
 describe('newestOf', () => {
   it('picks the newest valid timestamp across ISO strings and numbers', () => {
     expect(newestOf(['2026-09-12T14:01:00Z', '2026-10-01T12:16:05Z', 'junk', null])).toBe(Date.parse('2026-10-01T12:16:05Z'));

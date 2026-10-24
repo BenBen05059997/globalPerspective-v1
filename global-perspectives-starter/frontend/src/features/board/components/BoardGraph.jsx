@@ -29,7 +29,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
   };
 
   const onPinDown = (e, pinId) => {
-    if (e.button > 0) return;
+    if (e.button > 0 || e.pointerType === 'touch') return; // touch pans the graph and page; connect by selecting two pins + Connect
     setDrag({ from: pinId, ...toSvg(e), sx: e.clientX, sy: e.clientY, moved: false });
   };
   const onMove = (e) => {

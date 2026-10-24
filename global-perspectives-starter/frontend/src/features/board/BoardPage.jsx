@@ -267,7 +267,7 @@ export default function BoardPage() {
   const empty = boards.settled && !boards.boards.length && !boardId;
 
   return (
-    <div className="board-page" onKeyDown={onKeyDown}>
+    <div className={`board-page${sheet ? ' has-sheet-open' : ''}`} onKeyDown={onKeyDown}>
       <div className="board-head">
         {board ? <NameField key={board.boardId} name={board.name} onRename={(name) => state.edit((b) => ({ ...b, name }))} /> : <h1 className="board-title">Board</h1>}
         {board ? <span className="board-budget" aria-label={`${pins.length} of ${PIN_BUDGET} pins used`}>{pins.length} / {PIN_BUDGET}<span className="board-budget__unit"> pins</span></span> : null}
@@ -324,6 +324,8 @@ export default function BoardPage() {
                 <span><svg width="36" height="8" aria-hidden="true"><line className="board-key board-key--cut" x1="0" y1="4" x2="36" y2="4" /></svg> cut</span>
               </div>
               {board.strings.length ? (
+                <details className="board-strings-disclosure">
+                <summary>List of strings ({board.strings.length})</summary>
                 <ul className="board-strings" aria-label="Strings on this board">
                   {board.strings.map((s) => (
                     <li key={pairKey(s.a, s.b)}>
@@ -336,12 +338,15 @@ export default function BoardPage() {
                     </li>
                   ))}
                 </ul>
+                </details>
               ) : null}
               <ul className="board-pinlist" aria-label="Pins on this board">
                 {pins.map((p) => (
                   <li key={p.pinId}>
-                    <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
-                    {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-note">Latest headline</span> : null}
+                    <div className="board-pinrow">
+                      <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
+                      {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-pinrow__tag">Latest headline</span> : null}
+                    </div>
                     <RecordPinDetails pin={p} />
                   </li>
                 ))}

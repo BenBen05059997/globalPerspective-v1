@@ -38,6 +38,7 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
 }));
 
 import BoardPage from '@/features/board/BoardPage.jsx';
+import PresetsPanel from '@/features/board/components/PresetsPanel.jsx';
 
 const thread = (n, refId) => ({ pinId: `p${String(n).padStart(2, '0')}`, kind: 'thread', refId, addedAt: '2026-10-20T00:00:00Z' });
 const baseBoard = () => ({
@@ -80,8 +81,27 @@ describe('record views', () => {
     boardStore = { ...baseBoard(), recordAvailable: true, pins: baseBoard().pins.map((p) => ({ ...p, recordAvailable: true, line: null, counts: { chapters: null, liveBranches: 1, confirmedLinks: null } })) };
     renderPage();
     expect(await screen.findByText('this week, unsettled: 2 new entries, 0 branches due, 1 verdicts')).toBeInTheDocument();
-    expect(screen.getAllByText('no reading yet · first weekly review pending').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/no reading yet|first weekly review pending/);
+    expect(screen.getAllByText('1 live branches').length).toBeGreaterThan(0);
     views.fetchCounts.mockImplementation(async () => null);
+  });
+});
+
+describe('B0 list fixes', () => {
+  it('presets count pins and strings in the singular and plural', () => {
+    const preset = (id, pins, strings) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: Array.from({ length: strings }, () => ({})) });
+    render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork signInHref="/signin" onFork={() => {}} /></MemoryRouter>);
+    expect(screen.getByText('8 pins, 1 string')).toBeInTheDocument();
+    expect(screen.getByText('1 pin, 0 strings')).toBeInTheDocument();
+  });
+  it('the strings list sits under a disclosure with its count; the pin list gives the headline tag its own element', async () => {
+    boardStore = { ...baseBoard(), strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] };
+    const { container } = renderPage();
+    const summary = await screen.findByText('List of strings (1)');
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+    expect(container.querySelector('.board-page')).not.toHaveClass('has-sheet-open');
+    const tag = container.querySelector('.board-pinrow__tag');
+    if (tag) expect(tag.previousElementSibling.tagName).toBe('BUTTON');
   });
 });
 

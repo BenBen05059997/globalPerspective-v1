@@ -6,12 +6,13 @@
 // part is also computed: "live" only when the GDACS source was checked within 2 hours, "last
 // checked <date>" when it was not, and left out when it is unknown. CLAUDE.md: never invent
 // facts/dates; no placeholder UI: it renders nothing rather than guess.
+import { utcDayLabel } from '@/shared/lib/freshness.js';
 import '@/features/map/components/HudStatusLine.css';
 
 function fmtDate(d) {
   const x = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(x.getTime())) return null;
-  return x.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return utcDayLabel(x);
 }
 
 /** statusLineText(paused, gdacs) -> the one line, or null when not paused. Pure (tested). */

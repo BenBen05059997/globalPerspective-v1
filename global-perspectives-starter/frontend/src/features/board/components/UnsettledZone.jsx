@@ -7,10 +7,11 @@ export default function UnsettledZone({ ids, counts }) {
   const generated = week.some((d) => byDate[d]);
   const total = sumCounts(byDate, week, ids);
   const fresh = since ? sumCounts(byDate, since, ids).newEntries : 0;
+  if (!loading && !error && !generated) return null; // counts not generated yet: nothing to show
   return <Card as="section" aria-label="This week, unsettled"><SectionHeader label="This week, unsettled" as="h2" />
     {loading ? <p className="board-line">Loading this week’s counts.</p>
       : error ? <p className="board-line">This week’s counts could not be read.</p>
-        : !generated ? <p className="board-line">This week’s counts are not generated yet.</p>
+        : !generated ? null
           : total.newEntries || total.branchesDue || total.verdicts
             ? <p className="board-line">this week, unsettled: {total.newEntries} new entries, {total.branchesDue} branches due, {total.verdicts} verdicts</p>
             : <p className="board-line">Nothing new this week.</p>}

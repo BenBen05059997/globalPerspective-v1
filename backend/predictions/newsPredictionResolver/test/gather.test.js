@@ -112,8 +112,18 @@ test('coverage: a model no on entries is blocked by a gap; a yes is unaffected',
 
 test('coverage: runs are read once per day for many questions, and never for days after today', async () => {
   const keys = [];
-  const facts = { async getLines() { return { lines: [] }; }, async getJson(k) { keys.push(k); return { obj: okRun() }; } };
+  const facts = { async getLines() { return { lines: [] }; }, async getJson(k) { keys.push(k); return okRun(); } };
   await gather.loadEntries(facts, [CQ, { ...CQ, qid: 'q2' }, { ...CQ, qid: 'late', deadline: '2026-12-31' }], TODAY);
   assert.equal(new Set(keys).size, keys.length);
   assert.ok(keys.every((k) => k.slice(-15, -5) <= TODAY));
+});
+
+test('coverage: the real s3json reader (plain object, null on 404) yields no gap for a healthy day and "no run" for a missing one', async () => {
+  const { fakeS3 } = require('./helpers');
+  const s3 = fakeS3();
+  s3.objects.set('record/runs/2026-10-31.json', JSON.stringify(okRun()));
+  s3.objects.set('record/runs/2026-11-02.json', JSON.stringify(okRun()));
+  const loaded = await gather.loadEntries(s3.s3json, [CQ], TODAY);
+  const b = gather.buildBundle(CQ, loaded, TODAY);
+  assert.deepEqual(b.coverageGaps, [{ day: '2026-11-01', why: 'no run' }]);
 });

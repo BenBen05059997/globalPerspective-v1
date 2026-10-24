@@ -246,6 +246,20 @@ Wording rule (coordinator, from decision 0038): the canvas's "DEAD" is not used;
 | B14 | Map view of the board | yes | L | ☐ |
 Waits: pin lines, chapters, mechanism and direction, "what follows if" and "what would break it" (model + pricing), board summary and monthly arc, time scrubber, alerts (UI buildable, sends need a fresh yes), RESURRECTED.
 
+## 2026-10-24 decision: build the whole board to the canvas first, then fill the data
+Operator: the board drifted because it was built data-first, slice by slice, so the screen became a list of whatever
+data existed. New order: build the complete UI of all 12 canvas boards now, every state drawn as designed, driven by
+fixture data in the dev harness (`?devBoard=1`); then connect each element to real data as it arrives (facts today,
+readings after the first weekly review, verdicts from the resolver, model pieces last). Rules:
+- An element whose data does not exist yet is still built and visible in the dev harness; on the live site it is
+  simply absent (no placeholder text), per the operator's rule of 2026-10-24.
+- Every artboard is checked by eye in Chrome against the canvas before it is merged (coordinator).
+- Dates and labels are always formatted for a reader, never shown raw.
+- Wording stays decision 0038's ("not reported by D MON", never "DEAD").
+The slice 3 checklist above becomes the data-wiring list; the build order is now by artboard: 1 graph, 6 tree, 11 zoom
+ladder, 3 verdict, 4 weekly, 5 arrivals, 7 summary + monthly, 8 presets, 10 divergence, 12 folding, 9 alerts (UI only),
+2 map. Lane B0 (live defects) finishes first.
+
 ## Open questions (operator)
 1. Is the weekly the product for the next quarter, with the board after ten readers open it? (Claude's view: yes.)
 2. What is free and what is paid: **deferred (operator, 2026-10-20)** until the record and the verdict panel exist. Until then

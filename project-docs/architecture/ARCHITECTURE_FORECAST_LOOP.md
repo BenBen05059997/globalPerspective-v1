@@ -38,6 +38,7 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  +- inputs : the story's own entry facts dated after the draw date (read from record/facts)
 |  +- rule   : nothing dated before the draw; nothing from other stories; no web, no news API, no page fetching
 |  +- model  : no
+|  +- evidence: also operator-assigned recovered articles (latest assignment per id), reassigned entries and merged-in stories; a recovered item is a headline only
 |  +- output : evidence bundle (entry title, summary, url, date)
 |  +- cost   : zero searches
 |

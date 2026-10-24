@@ -9,7 +9,7 @@ const lib = require('./lib');
 
 function buildPrompt(q, entries, today) {
   const ctx = entries.length
-    ? entries.map((e) => `[${e.eventId}] ${e.title} (${e.date})\n${e.summary}`).join('\n\n')
+    ? entries.map((e) => `[${e.eventId}] ${e.title} (${e.date})${e.recovered ? ' [recovered headline, no text]' : ''}\n${e.summary}`.trimEnd()).join('\n\n')
     : '(no entries)';
   return [
     'You verify whether a specific forecast question came true, using ONLY the entries below: the story\'s own news entries dated after the forecast was issued. Respond with ONLY valid JSON, no markdown.',
@@ -28,6 +28,7 @@ function buildPrompt(q, entries, today) {
     '- "no": none of the entries reports that the event happened by the deadline (these are all entries of the story since the forecast was issued).',
     '- "not_yet": the entries do not settle it either way.',
     `- "void": the question cannot be judged; give "void_reason" as one of ${lib.VOID_REASONS.join(', ')}.`,
+    '- An entry marked "recovered headline, no text" is a headline only; it may support a "yes" by its title, but silence in such entries never supports a "no".',
     '- Never use memory; never guess. If unsure, answer "not_yet".',
     '',
     'JSON: {"verdict":"yes|no|not_yet|void","void_reason":"","quote":"","event_id":"","why":"one sentence"}',

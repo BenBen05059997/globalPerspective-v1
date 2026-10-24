@@ -1,7 +1,7 @@
 'use strict';
 
 // GATHER (decision 0038, stage 3; operator decision 2026-10-22). No model, no network beyond the injected facts
-// reader. The only evidence is the forecast's own story: its `entry` facts in record/facts, dated AFTER the
+// reader. The only evidence is the forecast's own story: its `entry` facts (and operator-assigned `article` facts) in record/facts, dated AFTER the
 // forecast's draw day (the PRED issue day) and up to due + GRACE_DAYS. Nothing before the draw, no other story,
 // no web search.
 
@@ -37,31 +37,84 @@ function runGap(run) {
   return null;
 }
 
+const ASSIGNER_RANK = { ingest: 0, review: 1, operator: 2 };
+const byAtThenRank = (x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : 0)
+  || ((ASSIGNER_RANK[x.payload?.by] ?? -1) - (ASSIGNER_RANK[y.payload?.by] ?? -1))
+  || (x.eventId < y.eventId ? -1 : x.eventId > y.eventId ? 1 : 0);
+
+/** assignment facts -> Map(entryId -> current assignment). Latest `at` wins; ties operator > review > ingest, then larger eventId (same rule as newsStoryRecord views). */
+function currentAssignments(assignments) {
+  const cur = new Map();
+  for (const f of assignments) {
+    const id = f.payload && f.payload.entryId;
+    if (!id) continue;
+    const had = cur.get(id);
+    if (!had || byAtThenRank(had, f) < 0) cur.set(id, f);
+  }
+  return cur;
+}
+
+/** story_merged / story_split facts -> Map(from -> survivor), transitive; cycles and re-merges ignored, a later split cancels (views.js resolveAliases). */
+function resolveAliases(merges, splits) {
+  const direct = new Map();
+  const root = (id) => { const seen = new Set(); let at = id; while (direct.has(at) && !seen.has(at)) { seen.add(at); at = direct.get(at); } return at; };
+  const cancelled = (m) => splits.some((x) => x.payload?.from === m.payload.from && x.payload?.into === m.payload.into && x.at >= m.at);
+  const order = [...merges].sort((x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : String(x.eventId) < String(y.eventId) ? -1 : 1));
+  for (const f of order) {
+    const { from, into } = f.payload || {};
+    if (!from || !into || from === into || cancelled(f) || direct.has(from) || root(into) === from) continue;
+    direct.set(from, into);
+  }
+  return new Map([...direct.keys()].map((from) => [from, root(from)]));
+}
+
 /**
  * Read the record/facts days the open questions need (their windows, plus yesterday and today for WATCH) once each.
+ * ASSIGNMENTS and MERGES can be written on any later day than the facts they move, so every day from the earliest window start
+ * to today is read (one S3 GET per day; the windows alone usually cover most of that range).
  * facts = { getLines(key) -> {lines} } (s3json.getLines, injected). A missing file is an empty day; a failing
  * read puts that day in `failed`, and every question whose window holds it is not judged tonight.
  * Also reads record/runs/DAY.json (facts.getJson) once per day any question's coverage window holds: `gaps` Map(day -> why)
  * holds every day without a healthy Run; an unreadable Run is a gap too.
- * -> { byThread: Map(threadId -> [{fact, day}]), failed: Map(day -> message), gaps: Map(day -> why), available }
+ * Placement: an `entry` sits on the thread of its latest assignment (else its own threadId); an `article` (threadId null) counts only
+ * when an assignment places it; then every thread is replaced by its merge survivor.
+ * -> { byThread: Map(threadId -> [{fact, day}]), aliases: Map(from -> survivor), failed, gaps, available }
  */
 async function loadEntries(facts, questions, today) {
   const byThread = new Map();
   const failed = new Map();
   const gaps = new Map();
-  if (!facts) return { byThread, failed, gaps, available: false };
+  if (!facts) return { byThread, aliases: new Map(), failed, gaps, available: false };
   const need = new Set([lib.addDays(today, -1), today]);
-  for (const q of questions) for (const d of windowOf(q, today).days) need.add(d);
+  let first = null;
+  for (const q of questions) for (const d of windowOf(q, today).days) { need.add(d); if (!first || d < first) first = d; }
+  if (first) for (let d = first; d <= today; d = lib.addDays(d, 1)) need.add(d);
+  const placeable = [];
+  const assignments = [];
+  const merges = [];
+  const splits = [];
   for (const day of [...need].sort()) {
     try {
       const { lines } = await facts.getLines(factsKey(day));
       for (const f of lines) {
-        if (!f || f.kind !== 'entry' || !f.threadId) continue;
-        const list = byThread.get(f.threadId) || [];
-        list.push({ fact: f, day });
-        byThread.set(f.threadId, list);
+        if (!f) continue;
+        if (f.kind === 'entry' || f.kind === 'article') placeable.push({ fact: f, day });
+        else if (f.kind === 'assignment') assignments.push(f);
+        else if (f.kind === 'story_merged') merges.push(f);
+        else if (f.kind === 'story_split') splits.push(f);
       }
     } catch (e) { failed.set(day, String(e.message).slice(0, 120)); }
+  }
+  const cur = currentAssignments(assignments);
+  const aliases = resolveAliases(merges, splits);
+  for (const x of placeable) {
+    const a = cur.get(x.fact.eventId);
+    const thread = (a && a.payload.threadId) || (x.fact.kind === 'entry' ? x.fact.threadId : null);
+    if (!thread) continue;
+    const key = aliases.get(thread) || thread;
+    const list = byThread.get(key) || [];
+    list.push(x);
+    byThread.set(key, list);
   }
   const runDays = new Set();
   for (const q of questions) for (const d of coverageDays(q)) if (d <= today) runDays.add(d);
@@ -72,18 +125,23 @@ async function loadEntries(facts, questions, today) {
       if (why) gaps.set(day, why);
     } catch (e) { gaps.set(day, `run unreadable: ${String(e.message).slice(0, 80)}`); }
   }
-  return { byThread, failed, gaps, available: true };
+  return { byThread, aliases, failed, gaps, available: true };
 }
 
-/** Threads with an entry fact in yesterday's or today's file. */
+/** Threads with an entry or assigned article fact in yesterday's or today's file, plus the stories merged into a moved survivor. */
 function movedThreads(loaded, today) {
   const recent = new Set([lib.addDays(today, -1), today]);
   const out = new Set();
   for (const [thread, list] of loaded.byThread) if (list.some((x) => recent.has(x.day))) out.add(thread);
+  for (const [from, into] of loaded.aliases || []) if (out.has(into)) out.add(from);
   return out;
 }
 
 const entryOf = (f) => {
+  if (f.kind === 'article') {
+    const p = f.payload || {};
+    return { eventId: f.eventId || null, title: p.title || '', summary: p.snippet || '', date: f.date || dayOf(f.at), url: p.url || null, kind: 'article', recovered: Boolean(p.recoveredAt || p.recoveredFrom) };
+  }
   const src = (f.sources || []).find((x) => x && x.url) || {};
   return { eventId: f.eventId || null, title: f.payload?.title || src.title || '', summary: f.payload?.summary || '', date: f.date || dayOf(f.at), url: src.url || null };
 };
@@ -97,7 +155,7 @@ function buildBundle(q, loaded, today) {
   const { after, to, days } = windowOf(q, today);
   const failed = days.some((d) => loaded.failed.has(d));
   const seen = new Set();
-  const entries = (q.threadId ? loaded.byThread.get(q.threadId) || [] : [])
+  const entries = (q.threadId ? loaded.byThread.get((loaded.aliases && loaded.aliases.get(q.threadId)) || q.threadId) || [] : [])
     .map((x) => entryOf(x.fact))
     .filter((e) => e.date > after && e.date <= to && (e.title || e.summary))
     .filter((e) => !e.eventId || (!seen.has(e.eventId) && seen.add(e.eventId)))

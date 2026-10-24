@@ -116,7 +116,14 @@
           "type": "array",
           "maxItems": 400,
           "items": {
-            "$ref": "#/definitions/entry"
+            "anyOf": [
+              {
+                "$ref": "#/definitions/entry"
+              },
+              {
+                "$ref": "#/definitions/articleEntry"
+              }
+            ]
           }
         },
         "entriesOmitted": {
@@ -621,6 +628,103 @@
               "type": "null"
             }
           ]
+        }
+      }
+    },
+    "articleEntry": {
+      "type": "object",
+      "description": "an article fact placed on this story by an assignment (the assignment names the article's eventId)",
+      "required": [
+        "eventId",
+        "date",
+        "at",
+        "precision",
+        "title",
+        "summary",
+        "sources",
+        "kind",
+        "recovered",
+        "recoveredFrom"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "eventId": {
+          "type": "string"
+        },
+        "date": {
+          "$ref": "#/definitions/day"
+        },
+        "at": {
+          "$ref": "#/definitions/iso"
+        },
+        "precision": {
+          "enum": [
+            "exact",
+            "day"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "outlet",
+              "url"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "outlet": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "kind": {
+          "const": "article"
+        },
+        "recovered": {
+          "type": "boolean"
+        },
+        "recoveredFrom": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fromThreadId": {
+          "type": "string",
+          "description": "present on an entry that came from a story merged into this one"
+        },
+        "corrected": {
+          "const": true,
+          "description": "present when a correction fact names this entry"
         }
       }
     }

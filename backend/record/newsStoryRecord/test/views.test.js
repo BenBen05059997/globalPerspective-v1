@@ -270,3 +270,61 @@ test('Y2: a correction follows its entry, and factsThrough counts an assignment 
   assert.equal(v.stories.get('thread-a').corrections.length, 0);
   assert.equal(v.manifest.factsThrough, '2026-10-23');
 });
+
+// AJ: an assignment may name an article fact (the recovered articles the gap benchmark links to stories).
+const art = (id, at, o = {}) => X.fact('article', null, at, {id, sourceIds: ['s9'], payload: {url: `https://x.test/${id}`, canonicalUrl: `https://x.test/${id}`, title: `Title ${id}`, outlet: 'X News', feed: null, snippet: 'snippet' in o ? o.snippet : 'a snippet', lang: null, recoveredAt: null, recoveredFrom: o.recoveredFrom ?? null}});
+const A1 = () => art('art1', '2026-10-16T03:00:00.000Z', {recoveredFrom: 'gdelt-gkg'});
+
+test('AJ: an assigned article sits on the story as a kind:article entry; counts, born and lastFactAt follow; newEntries does not', () => {
+  const base = build(X.golden());
+  const v = build([...X.golden(), A1(), X.assignment('art1', 'thread-a', '2026-10-24T00:00:00.000Z')]);
+  const a = v.stories.get('thread-a');
+  assert.deepEqual(a.entries[0], {
+    eventId: 'art1', date: '2026-10-16', at: '2026-10-16T03:00:00.000Z', precision: 'exact', title: 'Title art1', summary: 'a snippet',
+    sources: [{outlet: 'X News', url: 'https://x.test/art1'}], kind: 'article', recovered: true, recoveredFrom: 'gdelt-gkg',
+  });
+  assert.deepEqual(a.entries.slice(1).map((e) => e.eventId), ['ea1', 'ea2']);
+  assert.equal(a.entries.slice(1).some((e) => 'kind' in e), false);
+  assert.equal(a.born, '2026-10-16');
+  assert.equal(rowOf(v, 'thread-a').entryCount, rowOf(base, 'thread-a').entryCount + 1);
+  assert.equal(rowOf(v, 'thread-a').born, '2026-10-16');
+  assert.ok(a.sourceIds.includes('s9'));
+  const c = v.counts.get('2026-10-16');
+  assert.deepEqual([c.articles, c.byStory['thread-a']], [1, {newEntries: 0, branchesDue: 0, verdicts: 0, articlesPlaced: 1}]);
+  assert.equal(c.total.newEntries, 0);
+  assert.equal(c.total.articlesPlaced, 1);
+  assert.equal('articlesPlaced' in base.counts.get('2026-10-20').total, false);
+});
+
+test('AJ: an article with no assignment stays out of every story; a summary-less article has summary null', () => {
+  const v = build([...X.golden(), A1(), art('art2', '2026-10-16T04:00:00.000Z', {snippet: null}), X.assignment('art2', 'thread-b', '2026-10-24T00:00:00.000Z')]);
+  assert.equal(v.stories.get('thread-a').entries.some((e) => e.eventId === 'art1'), false);
+  assert.equal(JSON.stringify([...v.stories.values()]).includes('art1'), false);
+  const e = v.stories.get('thread-b').entries.find((x) => x.eventId === 'art2');
+  assert.deepEqual([e.summary, e.recovered, e.recoveredFrom], [null, false, null]);
+});
+
+test('AJ: the latest operator assignment moves an article to another story', () => {
+  const f = [...X.golden(), A1(), X.assignment('art1', 'thread-a', '2026-10-24T00:00:00.000Z', 'review'), X.assignment('art1', 'thread-b', '2026-10-24T00:00:00.000Z', 'operator')];
+  const v = build(f);
+  assert.equal(v.stories.get('thread-a').entries.some((e) => e.eventId === 'art1'), false);
+  assert.equal(v.stories.get('thread-b').entries.some((e) => e.eventId === 'art1'), true);
+  const later = build([...f, X.assignment('art1', 'thread-a', '2026-10-25T00:00:00.000Z', 'operator')]);
+  assert.equal(later.stories.get('thread-a').entries[0].eventId, 'art1');
+  assert.equal(later.stories.get('thread-b').entries.some((e) => e.eventId === 'art1'), false);
+});
+
+test('AJ: an article assigned to a merged-away story follows the survivor, tagged fromThreadId', () => {
+  const v = build([...X.golden(), A1(), X.assignment('art1', 'thread-c', '2026-10-24T00:00:00.000Z')]);
+  const e = v.stories.get('thread-b').entries.find((x) => x.eventId === 'art1');
+  assert.deepEqual([e.kind, e.fromThreadId], ['article', 'thread-c']);
+  assert.equal(v.counts.get('2026-10-16').byStory['thread-b'].articlesPlaced, 1);
+});
+
+test('AJ: a build with articles but no article assignment is identical to the entry-only build', () => {
+  const plain = build(X.golden());
+  const v = build([...X.golden(), A1(), art('art2', '2026-10-17T00:00:00.000Z')]);
+  const noCounts = (x) => ({...stripIds(x), counts: undefined}); // counts.articles legitimately differs
+  assert.deepEqual(noCounts(v), noCounts(plain));
+  assert.deepEqual(JSONIFY([...v.counts.values()].map((c) => c.byStory)), JSONIFY([...plain.counts.values()].map((c) => c.byStory)));
+});

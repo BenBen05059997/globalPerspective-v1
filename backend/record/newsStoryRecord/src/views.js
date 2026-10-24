@@ -67,7 +67,8 @@ function currentAssignments(facts) {
 /**
  * Facts -> {placed, reassigned, keep}. `placed` has no assignment facts, and each entry (and any correction of it) sits on the thread of its
  * current assignment instead of its archive thread. `reassigned` = Map(entryId -> the archive thread it left); `keep` = those archive threads,
- * which stay stories even when nothing else is left in them. An assignment for an entry that has no entry fact does nothing. With no
+ * which stay stories even when nothing else is left in them. An assignment may name an `article` fact as well as an entry: the article then sits on
+ * the assigned story (an unassigned article has no thread and stays out of every story). An assignment naming no entry or article fact does nothing. With no
  * assignment but the ingest ones nothing moves and `placed` is the facts unchanged.
  */
 function placeEntries(facts) {
@@ -75,13 +76,13 @@ function placeEntries(facts) {
   const home = new Map();
   const reassigned = new Map();
   for (const f of facts) {
-    const a = f.kind === 'entry' && cur.get(f.eventId);
+    const a = (f.kind === 'entry' || f.kind === 'article') && cur.get(f.eventId);
     if (!a || a.payload.threadId === f.threadId) continue;
     home.set(f.eventId, a.payload.threadId);
     if (f.threadId) reassigned.set(f.eventId, f.threadId);
   }
   const placed = facts.filter((f) => f.kind !== 'assignment').map((f) => {
-    const to = f.kind === 'entry' ? home.get(f.eventId) : f.kind === 'correction' ? home.get(f.payload.corrects) : undefined;
+    const to = f.kind === 'entry' || f.kind === 'article' ? home.get(f.eventId) : f.kind === 'correction' ? home.get(f.payload.corrects) : undefined;
     return to ? {...f, threadId: to} : f;
   });
   return {placed, reassigned, keep: new Set(reassigned.values())};
@@ -89,9 +90,19 @@ function placeEntries(facts) {
 
 const sourcesOf = (f) => (f.sources || []).map((s) => ({sourceId: s.sourceId, outlet: s.outlet, url: s.url, title: s.title}));
 
-/** The entry rows of one story: its own entry facts plus those of stories merged into it (tagged), date ascending. */
+/** A placed article as a story row: marked `kind: 'article'`, no category or event type (an article carries neither). */
+function articleRow(f, corrected) {
+  const p = f.payload;
+  return {
+    eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: p.title, summary: p.snippet ?? null,
+    sources: [{outlet: p.outlet ?? null, url: p.url}], kind: 'article', recovered: Boolean(p.recoveredFrom), recoveredFrom: p.recoveredFrom ?? null,
+    ...(corrected.has(f.eventId) ? {corrected: true} : {}),
+  };
+}
+
+/** The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending. */
 function entryRows(group, corrected, reassigned = new Map()) {
-  return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry').map((f) => ({
+  return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.kind === 'article' ? {...articleRow(f, corrected), ...(own ? {} : {fromThreadId: threadId})} : ({
     eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: f.payload.title, summary: f.payload.summary ?? null,
     category: f.payload.category ?? null, eventType: f.payload.eventType ?? null, sources: sourcesOf(f),
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
@@ -153,8 +164,8 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const aliasIds = (merged.get(threadId) || []).slice().sort();
     const group = [
       {threadId, own: true, facts: own.get(threadId)},
-      // From a merged story only its entries (and corrections of them) move to the survivor (0037 section 3).
-      ...aliasIds.map((id) => ({threadId: id, own: false, facts: (own.get(id) || []).filter((f) => f.kind === 'entry' || f.kind === 'correction')})),
+      // From a merged story only its entries and placed articles (and corrections of them) move to the survivor (0037 section 3).
+      ...aliasIds.map((id) => ({threadId: id, own: false, facts: (own.get(id) || []).filter((f) => f.kind === 'entry' || f.kind === 'article' || f.kind === 'correction')})),
     ];
     const mine = group[0].facts;
     const allFacts = group.flatMap((g) => g.facts);
@@ -210,7 +221,7 @@ function readingFields(t, branches) {
   };
 }
 
-const bornOf = (facts) => minOf([...facts.filter((f) => f.kind === 'story_born').map((f) => f.payload.born || f.date), ...facts.filter((f) => f.kind === 'entry').map((f) => f.date)]);
+const bornOf = (facts) => minOf([...facts.filter((f) => f.kind === 'story_born').map((f) => f.payload.born || f.date), ...facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.date)]);
 const titleOf = (entries) => (entries.length ? entries[0].title : null);
 
 const rowOrder = byKey((r) => -Date.parse(r.lastFactAt || 0), (r) => r.threadId);
@@ -269,25 +280,28 @@ function confirmedLinks(t, aliases, self) {
     .sort(byKey((l) => l.otherThreadId, (l) => l.week, (l) => l.direction));
 }
 
-/** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date); `articles` = article facts of that day (raw, not stories). */
+/** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date); `articles` = article facts of that day (raw, not stories); `articlesPlaced` (only when nonzero) = those placed on a story by an assignment. */
 function buildCount(date, facts, aliases, builtFrom) {
   const byStory = {};
   const bump = (threadId, field, n = 1) => {
     const id = aliases.get(threadId) || threadId;
     const row = byStory[id] || (byStory[id] = {newEntries: 0, branchesDue: 0, verdicts: 0});
-    row[field] += n;
+    row[field] = (row[field] || 0) + n;
   };
   let articles = 0;
   for (const f of facts) {
     if (f.kind === 'article' && f.date === date) articles += 1;
     if (!f.threadId) continue;
     if (f.kind === 'entry' && f.date === date) bump(f.threadId, 'newEntries');
+    else if (f.kind === 'article' && f.date === date) bump(f.threadId, 'articlesPlaced'); // placed by an assignment; not selected news
     else if (f.kind === 'verdict' && f.date === date) bump(f.threadId, 'verdicts');
     else if (f.kind === 'forecast_drawn') { const n = f.payload.branches.filter((b) => resolvable(b) && b.due === date).length; if (n) bump(f.threadId, 'branchesDue', n); }
   }
   const sorted = Object.fromEntries(Object.keys(byStory).sort().map((k) => [k, byStory[k]]));
   const total = {newEntries: 0, branchesDue: 0, verdicts: 0};
   for (const r of Object.values(sorted)) for (const k of Object.keys(total)) total[k] += r[k];
+  const placed = Object.values(sorted).reduce((n, r) => n + (r.articlesPlaced || 0), 0);
+  if (placed) total.articlesPlaced = placed; // only when an article was placed that day, so a build with none is unchanged
   return {schemaVersion: SCHEMA_VERSION, builtFrom, date, articles, byStory: sorted, total};
 }
 

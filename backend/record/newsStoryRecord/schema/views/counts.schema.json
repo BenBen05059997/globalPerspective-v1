@@ -105,6 +105,11 @@
         "verdicts": {
           "type": "integer",
           "minimum": 0
+        },
+        "articlesPlaced": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "present only when an article dated that day was placed on a story by an assignment; not counted as a new entry"
         }
       }
     }

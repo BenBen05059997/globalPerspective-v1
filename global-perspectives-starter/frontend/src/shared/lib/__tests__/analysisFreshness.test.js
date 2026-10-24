@@ -1,6 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { pausedSince } from '@/shared/lib/freshness.js';
+import { statusLineText } from '@/features/map/components/HudStatusLine.jsx';
 import { newestOf, reportAnalysisAt, __resetAnalysisFreshness } from '@/shared/lib/analysisFreshness.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
+
+describe('no feed timestamp loaded', () => {
+  it('missing, null, 0 and invalid values are not a date: never Jan 1 1970', () => {
+    expect(newestOf([null, undefined])).toBeNull();
+    expect(newestOf([0, 'junk'])).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: newestOf([null, undefined]) })).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: 0 })).toBeNull();
+    expect(pausedSince({ newestAnalysisAt: 'junk' })).toBeNull();
+    expect(statusLineText(pausedSince({ newestAnalysisAt: 0 }), null)).toBeNull();
+  });
+});
 
 describe('newestOf', () => {
   it('picks the newest valid timestamp across ISO strings and numbers', () => {

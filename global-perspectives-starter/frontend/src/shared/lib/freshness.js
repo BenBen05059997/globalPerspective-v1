@@ -21,14 +21,14 @@ const PAUSE_THRESHOLD_MS = 36 * 60 * 60 * 1000; // 36h
 export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = false, lookbackDays = null } = {}) {
   // Nothing found after a completed search: the pause is older than the search window. Say so
   // (it is the MOST stale case), instead of rendering nothing. Monitor fix, M2 review 2026-09-26.
-  if (newestAnalysisAt == null) {
+  if (newestAnalysisAt == null || newestAnalysisAt === 0) {
     if (searched && Number.isFinite(lookbackDays)) {
       return { date: null, label: null, beyondLookback: true, text: `no analysis in the last ${lookbackDays} days` };
     }
     return null;
   }
   const then = new Date(newestAnalysisAt).getTime();
-  if (!Number.isFinite(then)) return null;
+  if (!Number.isFinite(then) || then <= 0) return null;
   const nowMs = new Date(now).getTime();
   if (!Number.isFinite(nowMs)) return null;
   const age = nowMs - then;

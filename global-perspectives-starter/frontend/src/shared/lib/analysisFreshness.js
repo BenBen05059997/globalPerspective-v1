@@ -15,8 +15,9 @@ const FUTURE_SLACK_MS = 10 * 60 * 1000; // clock skew allowance; a later timesta
 export function newestOf(values) {
   let best = null;
   for (const v of values || []) {
+    if (v == null) continue; // new Date(null) is the epoch: a missing timestamp is not Jan 1 1970
     const t = typeof v === 'number' ? v : new Date(v).getTime();
-    if (Number.isFinite(t) && (best === null || t > best)) best = t;
+    if (Number.isFinite(t) && t > 0 && (best === null || t > best)) best = t;
   }
   return best;
 }

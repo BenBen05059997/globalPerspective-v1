@@ -2,7 +2,7 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {world: mkWorld, P, WEEK, entry, row} = require('./fixture');
-const {loadWorld, selectStories, assemble, ENTRY_CAP} = require('../src/select');
+const {loadWorld, selectStories, assemble, ENTRY_CAP, RECOVERED_NOTE} = require('../src/select');
 const {weekOf, weekRange, lastEndedWeek, weekBefore} = require('../src/week');
 
 const load = (f, week = WEEK) => loadWorld({store: f.store, prefix: P, week});
@@ -102,4 +102,56 @@ test('assemble carries the previous readings, the operator aliases that touch th
   assert.deepEqual(a.bundle.operatorAliases.map((x) => x.canonical), ['name:donald tusk']);
   assert.deepEqual(a.bundle.neighbours.map((n) => n.threadId), ['thread-b']); // shares name:tusk (2 of 48 stories); thread-c shares nothing
   assert.deepEqual(a.bundle.neighbours[0].entries.map((e) => e.eventId), ['b1e']);
+});
+
+// --- placement: assignments, recovered articles and merges (same rules as the views and the resolver) ---
+const {fact} = require('./fixture');
+const article = (threadId, date, eventId, title, extra = {}) => fact('article', threadId, date, eventId, {title, url: `https://x/${eventId}`, outlet: 'Reuters', snippet: 'hidden', recoveredFrom: 'gap-2026-10', ...extra});
+const assignment = (date, eventId, entryId, threadId, by = 'review') => fact('assignment', null, date, eventId, {entryId, threadId, by, reason: 'r'});
+const bundleOf = async (f, id) => { const w = await load(f); return assemble(w, w.rows.find((r) => r.threadId === id)); };
+
+test('placement: an article placed by an assignment is a headline-only item of its story; an unassigned article stays out', async () => {
+  const days = {
+    '2026-10-13': [entry('thread-a', '2026-10-13', 'a1', 'A one'), article(null, '2026-10-12', 'art1', 'Recovered headline'), article(null, '2026-10-12', 'art2', 'Unassigned headline')],
+    '2026-10-14': [assignment('2026-10-14', 'as1', 'art1', 'thread-a')],
+  };
+  const b = await bundleOf(mkWorld({days}), 'thread-a');
+  assert.deepEqual(b.bundle.entries.map((e) => e.eventId), ['art1', 'a1']);
+  const art = b.bundle.entries[0];
+  assert.equal(art.kind, 'article');
+  assert.equal(art.summary, RECOVERED_NOTE);
+  assert.equal(art.recovered, true);
+  assert.ok(!JSON.stringify(b.bundle).includes('hidden') && !JSON.stringify(b.bundle).includes('art2'));
+  assert.ok(b.citable.has('art1'));
+  assert.ok(!b.entryIds.has('art1') && b.entryIds.has('a1'));
+});
+
+test('placement: a reassigned entry is read on its new story and gone from the old one; the latest assignment wins', async () => {
+  const days = {
+    '2026-10-13': [entry('thread-a', '2026-10-13', 'a1', 'A one'), entry('thread-a', '2026-10-13', 'a2', 'A two')],
+    '2026-10-14': [assignment('2026-10-14', 'as1', 'a1', 'thread-b'), fact('story_born', 'thread-b', '2026-10-14', 'sb', {born: '2026-10-14'})],
+    '2026-10-15': [assignment('2026-10-15', 'as2', 'a1', 'thread-c')],
+  };
+  const f = mkWorld({days});
+  assert.deepEqual((await bundleOf(f, 'thread-a')).bundle.entries.map((e) => e.eventId), ['a2']);
+  assert.deepEqual((await bundleOf(f, 'thread-c')).bundle.entries.map((e) => e.eventId), ['a1']);
+});
+
+test('placement: a merged-away story is read as part of its survivor (entries and articles), and a later split gives it back', async () => {
+  const merged = fact('story_merged', 'thread-a', '2026-10-14', 'm1', {from: 'thread-b', into: 'thread-a', reason: 'same'});
+  const days = {
+    '2026-10-13': [entry('thread-a', '2026-10-13', 'a1', 'A one'), entry('thread-b', '2026-10-13', 'b1', 'B one'), article('thread-b', '2026-10-12', 'bart', 'B recovered')],
+    '2026-10-14': [merged],
+  };
+  const rows = [row('thread-a', {aliases: ['thread-b']}), row('thread-b', {aliasOf: 'thread-a'})];
+  const w = await load(mkWorld({days, rows}));
+  assert.deepEqual(w.rows.map((r) => r.threadId).slice(0, 1), ['thread-a']);
+  assert.ok(!w.rows.some((r) => r.threadId === 'thread-b'));
+  assert.deepEqual(assemble(w, w.rows[0]).bundle.entries.map((e) => e.eventId), ['bart', 'a1', 'b1']);
+});
+
+test('placement: a story with no assignments, articles or merges gives byte-identical bundles to before', async () => {
+  const w = await load(mkWorld());
+  const out = selectStories(w).selected.map((r) => JSON.stringify(assemble(w, r).bundle));
+  assert.equal(require('node:crypto').createHash('sha256').update(out.join('\n')).digest('hex'), '3ad83aefa33c944522cec1d4778a478069a6af1fe2f745487c981dfd0c2ee922');
 });

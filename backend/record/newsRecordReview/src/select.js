@@ -3,6 +3,7 @@
 // S1 SELECT + ASSEMBLE (no model). Reads the views and facts of the record and builds one bundle per
 // story for the week. Every fact in a bundle carries its eventId so the model can cite it and the check can verify it.
 const {weekRange, weekBefore, daysBetween} = require('./week');
+const {ordered, placeEntries} = require('./_shared/placement'); // the one placement rule of views and the resolver
 
 const ENTRY_CAP = 60; // entries per bundle: the newest 60
 const FORK_CAP = 10; // forks per bundle: the newest 10
@@ -12,7 +13,9 @@ const READINGS_LOOKBACK_WEEKS = 8; // earlier reading files read back (there is 
 const SPECIFIC_SHARE = 0.05; // same constant and meaning as views.js (decision 0037, links rule)
 const NEAR_DAYS = 14;
 const READ_BATCH = 10;
-const FACT_KINDS = new Set(['entry', 'forecast_drawn', 'verdict', 'correction', 'story_merged']);
+const FACT_KINDS = new Set(['entry', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'article']);
+const LOAD_KINDS = new Set([...FACT_KINDS, 'assignment']); // assignments are read to place entries and articles, then dropped
+const RECOVERED_NOTE = '[recovered headline, no text]';
 
 const LEGACY_VOID = 'issued_before_method';
 const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.at < b.at ? -1 : a.at > b.at ? 1 : a.eventId < b.eventId ? -1 : 1);
@@ -28,13 +31,16 @@ async function loadWorld({store, prefix, week}) {
   if (!active || !Array.isArray(active.stories)) throw new Error('record/views/index/active.json is missing');
   const factsManifest = await store.getJson(`${prefix}facts/manifest.json`);
   const days = (factsManifest && Array.isArray(factsManifest.days) ? factsManifest.days : []).filter((d) => d <= to).sort();
-  const factsByThread = new Map();
+  const loaded = [];
   for (let i = 0; i < days.length; i += READ_BATCH) {
     const parts = await Promise.all(days.slice(i, i + READ_BATCH).map((d) => store.getLines(`${prefix}facts/${d}.jsonl`)));
-    for (const f of parts.flat()) {
-      if (!f.threadId || !FACT_KINDS.has(f.kind) || f.date > to) continue;
-      (factsByThread.get(f.threadId) || factsByThread.set(f.threadId, []).get(f.threadId)).push(f);
-    }
+    for (const f of parts.flat()) if (LOAD_KINDS.has(f.kind) && f.date <= to) loaded.push(f);
+  }
+  // Entries and articles sit on the thread of their latest assignment; an unassigned article has no thread and drops out here.
+  const factsByThread = new Map();
+  for (const f of placeEntries(ordered(loaded)).placed) {
+    if (!f.threadId || !FACT_KINDS.has(f.kind)) continue;
+    (factsByThread.get(f.threadId) || factsByThread.set(f.threadId, []).get(f.threadId)).push(f);
   }
   const operator = await store.getJson(`${prefix}operator/aliases.json`);
   const operatorAliases = operator && Array.isArray(operator.aliases) ? operator.aliases : [];
@@ -110,11 +116,16 @@ function selectStories(world, {threadIds} = {}) {
 
 const trim = (s, n) => (typeof s === 'string' && s.length > n ? `${s.slice(0, n - 1)}…` : s ?? null);
 
+/** A placed article as a bundle item: headline only, marked so the model cites it for what happened and expects no detail. */
+const articleItem = (f) => ({eventId: f.eventId, date: f.date, title: trim(f.payload.title, 200), summary: RECOVERED_NOTE, category: null, eventType: null,
+  outlets: f.payload.outlet ? [f.payload.outlet] : [], kind: 'article', recovered: Boolean(f.payload.recoveredFrom || f.payload.recoveredAt)});
+
 /** One bundle for a story: what the model sees. `citable` (a Set) is the check's list of valid eventIds; it is not sent. */
 function assemble(world, row, {withNeighbours = true} = {}) {
   const facts = factsOf(world, row);
   const entries = facts.filter((f) => f.kind === 'entry');
-  const shown = entries.slice(-ENTRY_CAP);
+  const items = facts.filter((f) => f.kind === 'entry' || f.kind === 'article'); // entries and placed (recovered) articles, date order
+  const shown = items.slice(-ENTRY_CAP);
   const verdicts = new Map();
   for (const v of facts.filter((f) => f.kind === 'verdict')) {
     const cur = verdicts.get(v.payload.branchId);
@@ -142,8 +153,8 @@ function assemble(world, row, {withNeighbours = true} = {}) {
   const bundle = {
     threadId: row.threadId, week: world.week, weekFrom: world.range.from, weekTo: world.range.to, title: row.title ?? null, born: row.born ?? null,
     iso3, actorIds,
-    entriesOmitted: entries.length - shown.length,
-    entries: shown.map((f) => ({eventId: f.eventId, date: f.date, title: trim(f.payload.title, 200), summary: trim(f.payload.summary, 280), category: f.payload.category ?? null, eventType: f.payload.eventType ?? null,
+    entriesOmitted: items.length - shown.length,
+    entries: shown.map((f) => f.kind === 'article' ? articleItem(f) : ({eventId: f.eventId, date: f.date, title: trim(f.payload.title, 200), summary: trim(f.payload.summary, 280), category: f.payload.category ?? null, eventType: f.payload.eventType ?? null,
       outlets: [...new Set((f.sources || []).map((s) => s.outlet).filter(Boolean))].slice(0, 4)})),
     forks, corrections, merges, previousReadings: previous, operatorAliases,
     neighbours: withNeighbours ? neighboursOf(world, row) : [],
@@ -152,7 +163,7 @@ function assemble(world, row, {withNeighbours = true} = {}) {
     ...corrections.map((c) => c.eventId), ...merges.map((m) => m.eventId)]);
   const dates = new Map([...shown, ...facts.filter((f) => f.kind !== 'entry')].map((f) => [f.eventId, f.date]));
   const covers = {from: facts[0].date, to: world.range.to};
-  const entryIds = new Set(bundle.entries.map((e) => e.eventId));
+  const entryIds = new Set(bundle.entries.filter((e) => e.kind !== 'article').map((e) => e.eventId)); // an assignment proposal names an entry, not an article
   const neighbourEntries = new Map(bundle.neighbours.flatMap((n) => n.entries.map((e) => [e.eventId, n.threadId])));
   return {bundle, citable, entryIds, neighbourEntries, dates, covers, actorIds, iso3, lastEntry: entries.length ? entries[entries.length - 1].date : null, branches: branchIndex(forks)};
 }
@@ -185,4 +196,4 @@ function neighboursOf(world, row) {
   }));
 }
 
-module.exports = {ENTRY_CAP, FORK_CAP, NEIGHBOURS, SPECIFIC_SHARE, NEAR_DAYS, READINGS_LOOKBACK_WEEKS, loadWorld, selectStories, assemble, keyOf, latestEarlier, shareIndex, isSpecific, factsOf};
+module.exports = {RECOVERED_NOTE, ENTRY_CAP, FORK_CAP, NEIGHBOURS, SPECIFIC_SHARE, NEAR_DAYS, READINGS_LOOKBACK_WEEKS, loadWorld, selectStories, assemble, keyOf, latestEarlier, shareIndex, isSpecific, factsOf};

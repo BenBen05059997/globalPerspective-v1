@@ -44,3 +44,10 @@ test('the model-output schema accepts the example and rejects shape errors', () 
   assert.equal(valid({...ex, extra: 1}), false);
   assert.equal(valid({}), true);
 });
+
+test('prompt: recovered headlines may be cited for what happened but carry no detail (review-3)', () => {
+  const {SYSTEM, PROMPT_VERSION} = require('../src/prompt');
+  assert.equal(PROMPT_VERSION, 'review-3');
+  assert.match(SYSTEM, /recovered headlines/);
+  assert.match(SYSTEM, /\[recovered headline, no text\]/);
+});

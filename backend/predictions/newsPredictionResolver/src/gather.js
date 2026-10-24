@@ -6,6 +6,7 @@
 // no web search.
 
 const lib = require('./lib');
+const { ordered, resolveAliases, placeEntries } = require('./_shared/placement');
 
 const factsKey = (day) => `record/facts/${day}.jsonl`;
 const runKey = (day) => `record/runs/${day}.json`;
@@ -37,37 +38,6 @@ function runGap(run) {
   return null;
 }
 
-const ASSIGNER_RANK = { ingest: 0, review: 1, operator: 2 };
-const byAtThenRank = (x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : 0)
-  || ((ASSIGNER_RANK[x.payload?.by] ?? -1) - (ASSIGNER_RANK[y.payload?.by] ?? -1))
-  || (x.eventId < y.eventId ? -1 : x.eventId > y.eventId ? 1 : 0);
-
-/** assignment facts -> Map(entryId -> current assignment). Latest `at` wins; ties operator > review > ingest, then larger eventId (same rule as newsStoryRecord views). */
-function currentAssignments(assignments) {
-  const cur = new Map();
-  for (const f of assignments) {
-    const id = f.payload && f.payload.entryId;
-    if (!id) continue;
-    const had = cur.get(id);
-    if (!had || byAtThenRank(had, f) < 0) cur.set(id, f);
-  }
-  return cur;
-}
-
-/** story_merged / story_split facts -> Map(from -> survivor), transitive; cycles and re-merges ignored, a later split cancels (views.js resolveAliases). */
-function resolveAliases(merges, splits) {
-  const direct = new Map();
-  const root = (id) => { const seen = new Set(); let at = id; while (direct.has(at) && !seen.has(at)) { seen.add(at); at = direct.get(at); } return at; };
-  const cancelled = (m) => splits.some((x) => x.payload?.from === m.payload.from && x.payload?.into === m.payload.into && x.at >= m.at);
-  const order = [...merges].sort((x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : String(x.eventId) < String(y.eventId) ? -1 : 1));
-  for (const f of order) {
-    const { from, into } = f.payload || {};
-    if (!from || !into || from === into || cancelled(f) || direct.has(from) || root(into) === from) continue;
-    direct.set(from, into);
-  }
-  return new Map([...direct.keys()].map((from) => [from, root(from)]));
-}
-
 /**
  * Read the record/facts days the open questions need (their windows, plus yesterday and today for WATCH) once each.
  * ASSIGNMENTS and MERGES can be written on any later day than the facts they move, so every day from the earliest window start
@@ -89,31 +59,26 @@ async function loadEntries(facts, questions, today) {
   let first = null;
   for (const q of questions) for (const d of windowOf(q, today).days) { need.add(d); if (!first || d < first) first = d; }
   if (first) for (let d = first; d <= today; d = lib.addDays(d, 1)) need.add(d);
-  const placeable = [];
-  const assignments = [];
-  const merges = [];
-  const splits = [];
+  const dayOfFact = new Map();
+  const all = [];
   for (const day of [...need].sort()) {
     try {
       const { lines } = await facts.getLines(factsKey(day));
       for (const f of lines) {
         if (!f) continue;
-        if (f.kind === 'entry' || f.kind === 'article') placeable.push({ fact: f, day });
-        else if (f.kind === 'assignment') assignments.push(f);
-        else if (f.kind === 'story_merged') merges.push(f);
-        else if (f.kind === 'story_split') splits.push(f);
+        if (f.kind === 'entry' || f.kind === 'article') dayOfFact.set(f.eventId, day);
+        if (['entry', 'article', 'assignment', 'story_merged', 'story_split'].includes(f.kind)) all.push(f);
       }
     } catch (e) { failed.set(day, String(e.message).slice(0, 120)); }
   }
-  const cur = currentAssignments(assignments);
-  const aliases = resolveAliases(merges, splits);
-  for (const x of placeable) {
-    const a = cur.get(x.fact.eventId);
-    const thread = (a && a.payload.threadId) || (x.fact.kind === 'entry' ? x.fact.threadId : null);
-    if (!thread) continue;
-    const key = aliases.get(thread) || thread;
+  const sorted = ordered(all);
+  const { placed } = placeEntries(sorted);
+  const { aliases } = resolveAliases(sorted);
+  for (const fact of placed) {
+    if ((fact.kind !== 'entry' && fact.kind !== 'article') || !fact.threadId) continue;
+    const key = aliases.get(fact.threadId) || fact.threadId;
     const list = byThread.get(key) || [];
-    list.push(x);
+    list.push({ fact, day: dayOfFact.get(fact.eventId) });
     byThread.set(key, list);
   }
   const runDays = new Set();

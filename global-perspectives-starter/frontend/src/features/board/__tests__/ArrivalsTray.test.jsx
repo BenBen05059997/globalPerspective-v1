@@ -1,5 +1,5 @@
 import {it,expect,vi,afterEach} from 'vitest';
-import {render,screen,cleanup,fireEvent} from '@testing-library/react';
+import {render,screen,cleanup,fireEvent,waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router';
 import ArrivalsTray from '../components/ArrivalsTray.jsx';
 const {call}=vi.hoisted(()=>({call:vi.fn()}));
@@ -7,9 +7,9 @@ vi.mock('../lib/boardApi.js',()=>({callBoard:call}));
 vi.mock('@/shared/api/errorSink',()=>({reportFetchError:vi.fn()}));
 afterEach(()=>{cleanup();vi.clearAllMocks();});
 const board={boardId:'b',pins:[],dismissed:[]};
-it('missing record shows its exact reason and no cards',async()=>{
- call.mockResolvedValue({recordAvailable:false});render(<ArrivalsTray board={board}/>);
- expect(await screen.findByText('Arrivals start when the story record goes live.')).toBeInTheDocument();expect(screen.queryByRole('button')).toBeNull();
+it('missing record renders no panel at all',async()=>{
+ call.mockResolvedValue({recordAvailable:false});const {container}=render(<ArrivalsTray board={board}/>);
+ await waitFor(()=>expect(call).toHaveBeenCalledWith('visit_board',expect.anything()));expect(container.textContent).toBe('');
 });
 it('empty record shows the actual prior visit',async()=>{
  call.mockResolvedValue({recordAvailable:true,since:'2026-10-18T01:00:00Z',arrivals:[]});render(<ArrivalsTray board={board}/>);

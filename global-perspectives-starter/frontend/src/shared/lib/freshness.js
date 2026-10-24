@@ -2,6 +2,11 @@
 // analysis" have been paused (news classification hasn't produced anything fresh) from a real
 // timestamp — never a typed/guessed date. See CLAUDE.md: never invent dates.
 
+/** 'Oct 20': the UTC day in English, whatever the browser's locale or timezone (English copy, one day for every page). */
+export function utcDayLabel(date) {
+  return new Date(date).toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
 const PAUSE_THRESHOLD_MS = 36 * 60 * 60 * 1000; // 36h
 
 /**
@@ -29,7 +34,7 @@ export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = fal
   const age = nowMs - then;
   if (age <= PAUSE_THRESHOLD_MS) return null;
   const date = new Date(then);
-  const label = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const label = utcDayLabel(date);
   return { date, label, beyondLookback: false, text: `analysis paused since ${label}` };
 }
 

@@ -11,48 +11,53 @@ import { boardWeek, sumCounts, isoWeekOf } from '../lib/recordProjection.js';
 import { fetchStoryView, fetchCounts, isoWeekStart, datesBetween } from '../lib/recordViews.js';
 import { countDates } from '../hooks/useWeekCounts.js';
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
-const NO_READING = 'no reading yet · first weekly review pending';
 const res = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
 describe('story tree on the 0037 story view', () => {
-  it('missing tree renders only its documented empty line', () => {
+  it('missing tree renders nothing', () => {
     const { container } = render(<StoryTree />);
-    expect(container.textContent).toBe('Branch status starts when the story record goes live.');
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.textContent).toBe('');
   });
-  it('line and chapters say no reading yet; entries, verdicts and sources are facts', () => {
+  it('unread story: no line or chapters tab, no placeholder; entries, verdicts and sources are facts', () => {
     render(<StoryTree story={story} />);
-    expect(screen.getByText(NO_READING)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'chapters' }));
-    expect(screen.getByText(NO_READING)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
+    expect(screen.queryByRole('button', { name: 'line' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'chapters' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'event' })).toBeDisabled();
+    expect(screen.getByText('choose an event on the trunk')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tankers reroute around the strait' })).toBeInTheDocument();
+    expect(screen.getAllByText((_, el) => el.tagName === 'SUMMARY' && /^\d{1,2} [A-Z][a-z]{2} · \d+ branches$/.test(el.textContent)).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}T\d/);
     expect(screen.getByText('Premiums rise again · 65% · happened · 20 Oct')).toBeInTheDocument();
     expect(screen.getByText(/“Second insurer raises premiums”/)).toBeInTheDocument();
     expect(screen.getByText('Shipping resumes the old route · 20% · open · due 30 Nov')).toBeInTheDocument();
     expect(screen.getByText('Talks restart · 10% · not reported by 12 Oct')).toBeInTheDocument();
     expect(screen.getByText('Sanctions eased · 5% · could not be checked · the source was unavailable')).toBeInTheDocument();
     expect(screen.getByText('Old question · recorded before scoring began')).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/not checked yet|has not been checked|did not happen|failed/);
-    expect(screen.getAllByText(`Status history: ${NO_READING}`)).toHaveLength(5);
+    expect(document.body.textContent).not.toMatch(/not checked yet|has not been checked|did not happen|failed|no reading yet|Status history/);
     fireEvent.click(screen.getByRole('button', { name: 'Insurers raise war-risk premiums' }));
+    expect(screen.getByRole('button', { name: 'event' })).not.toBeDisabled();
     expect(screen.getByRole('link', { name: 'BBC' })).toHaveAttribute('href', 'https://example.org/b');
     expect(screen.queryByText(/Branches killed/)).toBeNull();
   });
+  it('a branch row shows label, p, status and its trigger on a second line', () => {
+    const { container } = render(<StoryTree story={{ ...story, forks: [{ forkId: 'f', drawnAt: '2026-09-30T12:26:28.689Z', branches: [{ branchId: 'x', text: 'Most Likely', p: 25, trigger: 'Insurers announce a surcharge', due: '2026-11-30' }] }] }} />);
+    expect(screen.getByText((_, el) => el.tagName === 'SUMMARY' && el.textContent === '30 Sep · 1 branches')).toBeInTheDocument();
+    expect(screen.getByText('Most Likely · 25% · open · due 30 Nov')).toBeInTheDocument();
+    expect(container.querySelector('summary .board-branch__text').textContent).toBe('Insurers announce a surcharge');
+  });
   it('a recovered row is labelled in the trunk and its detail shows outlet and link, no empty summary', () => {
     render(<StoryTree story={story} />);
-    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
     expect(screen.getAllByText(/recovered from public records/)).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Strait traffic thins as insurers react' }));
     expect(screen.getByText(/recovered from public records · A headline recovered/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Example Wire' })).toHaveAttribute('href', 'https://example.org/c');
     expect(document.querySelectorAll('.board-line').length).toBe(2);
   });
-  it('no entries and no forks use their documented texts', () => {
+  it('no entries and no forks give one line, not two empty sections', () => {
     render(<StoryTree story={{ ...story, entries: [], forks: [] }} />);
-    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
-    expect(screen.getByText('No dated event has been recorded for this story.')).toBeInTheDocument();
-    expect(screen.getByText('No forecast branch has been recorded for this story.')).toBeInTheDocument();
+    expect(screen.getByText('No dated event or forecast branch has been recorded for this story.')).toBeInTheDocument();
+    expect(screen.queryByText('Trunk')).toBeNull();
+    expect(screen.queryByText('Forks')).toBeNull();
   });
   it('a read story shows its line, chapters (from – to · title, summary) and branch status words', () => {
     render(<StoryTree story={storyB} />);
@@ -66,10 +71,9 @@ describe('story tree on the 0037 story view', () => {
     expect(screen.getByText(/late · No convoy announced/)).toBeInTheDocument();
     expect(screen.queryByText(/Status history/)).toBeNull();
   });
-  it('verdict wording wins over a branch status word; unread stories show the status-history line', () => {
+  it('verdict wording wins over a branch status word', () => {
     const withStatus = { ...story, reading: { state: 'read', week: '2026-W43' }, branchStatus: { 'f1-0': { status: 'fired', why: 'x', week: '2026-W43' }, 'f1-1': { status: 'holding', why: 'waiting', week: '2026-W43' } } };
     render(<StoryTree story={withStatus} />);
-    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
     expect(screen.queryByText(/fired/)).toBeNull();
     expect(screen.getByText(/holding · waiting/)).toBeInTheDocument();
     expect(screen.queryByText(/Status history/)).toBeNull();
@@ -79,9 +83,8 @@ describe('story tree on the 0037 story view', () => {
 describe('weekly', () => {
   it('absent records never invent changes or counts', () => {
     render(<BoardWeekly board={{ pins: [], strings: [], recordAvailable: false }} stories={{}} />);
-    expect(screen.getByText('Pin changes start when the story record goes live.')).toBeInTheDocument();
-    expect(screen.getByText('Branch status starts when the story record goes live.')).toBeInTheDocument();
-    expect(screen.getByText('No confirmed link has been recorded this week.')).toBeInTheDocument();
+    expect(screen.getByText('Nothing on your board changed in the last seven days.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
   });
   it('uses dated changes within its seven-day window only; verdicts need a verdict date', () => {
     const board = { pins: [{ pinId: 'p1', lastMoved: '2026-10-19' }], strings: [{ a: 'p1', b: 'p2', keptAt: '2026-10-19', cutAt: '2026-09-01' }] };
@@ -106,12 +109,11 @@ describe('weekly', () => {
 });
 
 describe('pin details', () => {
-  it('render nothing without a record, and say no reading yet for null readings while keeping zero counts', () => {
+  it('render nothing without a record; null readings are omitted, real counts (including zero) stay', () => {
     const { container, rerender } = render(<RecordPinDetails pin={{ counts: { chapters: 0 } }} />);
     expect(container.textContent).toBe('');
     rerender(<RecordPinDetails pin={{ recordAvailable: true, line: null, counts: { chapters: null, liveBranches: 0, confirmedLinks: null } }} />);
-    expect(screen.getByText(NO_READING)).toBeInTheDocument();
-    expect(container.textContent).toContain(`chapters: ${NO_READING} · 0 live branches · confirmed links: ${NO_READING}`);
+    expect(container.textContent).toBe('0 live branches');
   });
 });
 
@@ -122,11 +124,11 @@ describe('unsettled zone', () => {
     zone({ '2026-10-20': { byStory: { 'story-a': { newEntries: 2, branchesDue: 1, verdicts: 1 }, other: { newEntries: 9, branchesDue: 9, verdicts: 9 } } }, '2026-10-21': counts });
     expect(screen.getByText('this week, unsettled: 3 new entries, 1 branches due, 1 verdicts')).toBeInTheDocument();
   });
-  it('all zero says nothing new; no files at all says not generated yet; failures say so', () => {
+  it('all zero says nothing new; no files at all renders nothing; failures say so', () => {
     zone({ '2026-10-21': { byStory: {} } });
     expect(screen.getByText('Nothing new this week.')).toBeInTheDocument();
-    cleanup(); zone({ '2026-10-21': null });
-    expect(screen.getByText('This week’s counts are not generated yet.')).toBeInTheDocument();
+    cleanup(); const { container } = zone({ '2026-10-21': null });
+    expect(container.textContent).toBe('');
     cleanup(); zone({}, { error: true });
     expect(screen.getByText('This week’s counts could not be read.')).toBeInTheDocument();
   });

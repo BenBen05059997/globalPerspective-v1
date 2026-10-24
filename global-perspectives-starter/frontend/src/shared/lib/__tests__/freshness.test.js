@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pausedSince, freshnessState, olderLabel, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
+import { utcDayLabel, pausedSince, freshnessState, olderLabel, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 
 const NOW = new Date('2026-09-26T12:00:00.000Z');
 
@@ -39,7 +39,13 @@ describe('pausedSince', () => {
     const result = pausedSince({ newestAnalysisAt: oldIso, now: NOW });
     expect(result).not.toBeNull();
     expect(result.date.toISOString()).toBe(oldIso);
-    expect(result.label).toBe(new Date(oldIso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+    expect(result.label).toBe('Sep 12');
+  });
+
+  it('labels the UTC day in English, never the browser day (a late-evening UTC time stays on its UTC date)', () => {
+    expect(pausedSince({ newestAnalysisAt: '2026-10-19T20:00:00.000Z', now: '2026-12-01T00:00:00Z' }).label).toBe('Oct 19');
+    expect(utcDayLabel('2026-10-19T23:59:00.000Z')).toBe('Oct 19');
+    expect(utcDayLabel('2026-10-20T00:01:00.000Z')).toBe('Oct 20');
   });
 
   it('defaults `now` to Date.now() when not passed', () => {

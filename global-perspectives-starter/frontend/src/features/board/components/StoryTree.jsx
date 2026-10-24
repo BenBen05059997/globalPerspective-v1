@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
-import { NO_READING } from '@/features/board/lib/recordText.js';
+import { NO_READING, RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordText.js';
 import { branchStatus } from '@/shared/lib/branchWording.js';
 const evidenceOf = (v) => Array.isArray(v) ? v.map((e, n) => (e?.url ? <a className="board-link" key={n} href={e.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a> : null)) : v ? <span> · {String(v)}</span> : null;
 // Facts view of one story (0037 story view). line, chapters and branch status are the weekly reading's; empty until the story has one.
@@ -19,7 +19,7 @@ export default function StoryTree({ story, loading, error }) {
     {level === 'chapters' ? (story.chapters?.length ? <ol>{story.chapters.map((c) => <li key={`${c.from}:${c.title}`}><ClaimTag kind="judgment" /> <time>{c.from}</time> – <time>{c.to}</time> · {c.title}{c.summary ? <p className="board-line">{c.summary}</p> : null}</li>)}</ol> : <p className="board-line">{NO_READING}</p>) : null}
     {level === 'forks and events' ? <>
       <h3>Trunk</h3>
-      {story.entries?.length ? <ol>{story.entries.map((e) => <li key={e.eventId}><time>{e.date}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => { setEvent(e); setLevel('event'); }}>{e.title}</button></li>)}</ol> : <p className="board-line">No dated event has been recorded for this story.</p>}
+      {story.entries?.length ? <ol>{story.entries.map((e) => <li key={e.eventId}><time>{e.date}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => { setEvent(e); setLevel('event'); }}>{e.title}</button>{e.recovered ? <span className="board-line"> · {RECOVERED_LABEL}</span> : null}</li>)}</ol> : <p className="board-line">No dated event has been recorded for this story.</p>}
       <h3>Forks</h3>
       {!story.forks?.length ? <p className="board-line">No forecast branch has been recorded for this story.</p> : story.forks.map((f) => <details key={f.forkId}><summary><time>{f.drawnAt}</time> · {f.branches.length} branches</summary>
         {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</summary>
@@ -30,6 +30,6 @@ export default function StoryTree({ story, loading, error }) {
         </details>; })}
       </details>)}
     </> : null}
-    {level === 'event' ? (event ? <div><p className="board-line"><ClaimTag kind="fact" /> <time>{event.date}</time> {event.title}</p>{event.summary ? <p className="board-line">{event.summary}</p> : null}{event.sources?.map((s, i) => s.url ? <a className="board-link" key={i} href={s.url} target="_blank" rel="noreferrer">{s.outlet || s.title || s.url}</a> : null)}</div> : <p className="board-line">Choose a dated event from the trunk to read its evidence.</p>) : null}
+    {level === 'event' ? (event ? <div><p className="board-line"><ClaimTag kind="fact" /> <time>{event.date}</time> {event.title}</p>{event.recovered ? <p className="board-line">{RECOVERED_LABEL} · {RECOVERED_DETAIL}</p> : null}{event.summary ? <p className="board-line">{event.summary}</p> : null}{event.sources?.map((s, i) => s.url ? <a className="board-link" key={i} href={s.url} target="_blank" rel="noreferrer">{s.outlet || s.title || s.url}</a> : null)}</div> : <p className="board-line">Choose a dated event from the trunk to read its evidence.</p>) : null}
   </section>;
 }

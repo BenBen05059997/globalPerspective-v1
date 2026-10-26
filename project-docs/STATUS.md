@@ -3,6 +3,13 @@
 Built from `git log --since=2026-10-17`, the plans in `plans/` and the decision records, read 2026-10-20; the pipeline table, the foundation roadmap line and the Done list re-checked 2026-10-23; recovery, story continuity and the gap benchmark 2026-10-24.
 Update a line when its source changes; delete it when its source says done. Design: [ARCHITECTURE](architecture/ARCHITECTURE.md).
 
+## Start here (handoff 2026-10-26, moving to a new Mac)
+- Session role: one coordinator session monitors, reviews, merges, deploys and keeps docs; every code change goes to a lane or a Sonnet sub-agent.
+- Board: operator decided 2026-10-24 to build the whole board to the design canvas first (fixtures), then wire data one element at a time. Lane B0 (live defects) is released (4d31cd28). Next: the operator answers the 117-item design check page (https://claude.ai/artifact/NNBZv4WWDoHFuRGwVXCNGE, answers in its `decisions` collection); then one lane per artboard in the order in [the board plan](plans/PLAN_2026-10-20_board.md) (graph, tree, zoom ladder, verdict, weekly, arrivals, summary, presets, divergence, folding, alerts, map). Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo. B0 still needs a signed-in look.
+- Waiting on the operator: DeepSeek top-up (402 since 2026-10-20). After it: watch the first selection, verdicts and a 2-3 story review canary; rebuild the gap-benchmark answer key and score DeepSeek on it; yeses to enable `TriggerRecordReview` and the legacy void job.
+- Small open items: `newsInvokeGemini-dev` deployed code is behind the repo (shared RSS parser refactor, same behaviour; routine redeploy). `lane/weekly` and `lane/routine` (analyst weekly, 2026-10-20/21) are on GitHub unmerged; review against the new record before merging.
+- Lost 2026-10-25: the mailbox `~/Downloads/gp-mailbox/` (lane briefs and reports, board review notes, judge and gap benchmark files). References to it in the plans point at files that no longer exist. Keep future lane briefs in the repo under an ignored folder.
+
 ## Pipeline status (2026-10-23; ten stages, two clocks; stages as in architecture/ARCHITECTURE_TIMELINE.md §1b)
 Deployed = running in AWS (CodeSha256 read 2026-10-23); merged = on main, not in AWS.
 | # | Stage | Status |
@@ -41,7 +48,7 @@ Deployed = running in AWS (CodeSha256 read 2026-10-23); merged = on main, not in
 6. Weekly becomes a view of the week's readings (after the review); weekly page; cloud schedule.
 7. Board slice 2 (lines, branch status, tree, arrivals, the board's weekly) fills in once readings exist.
 Plans: [foundation](plans/PLAN_2026-10-21_foundation.md), [weekly](plans/PLAN_2026-10-20_analyst_weekly.md),
-[board](plans/PLAN_2026-10-20_board.md). Lanes and mailbox: `/Users/benlai/Downloads/gp-mailbox/`.
+[board](plans/PLAN_2026-10-20_board.md). Lanes: see Start here.
 
 ## In progress
 - Website release shipped 2026-10-20 (Pages, front Worker, situation Lambdas, smoke checks, desktop click-through).

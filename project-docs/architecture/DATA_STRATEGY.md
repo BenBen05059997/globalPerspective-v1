@@ -2,7 +2,7 @@
 
 **Status:** binding rule (decisions/0003, adopted 2026-09-08); applies to every new subsystem, to existing tables incrementally (§6).
 Last verified: 2026-10-19 (tables, prefixes, lifecycle rules and schedules read from live AWS; writers from the repo source); the `record/` rows, the PredictionLog row in §6 and the IAM paragraph re-checked 2026-10-23.
-Live inventories are generated: `project-docs/reference/s3-prefixes.md`, `schedules.md`, `lambdas.md`.
+Live inventories come from AWS (`aws s3 ls`, `aws events list-rules`, `aws lambda list-functions`) and `scripts/functions.json`.
 
 ## 1. The principle
 
@@ -146,7 +146,7 @@ Rule for every drop: **"nothing reads the table"** (grep + CloudWatch) before `d
 - `newsSensitiveData` (the read proxy) still serves most content reads; it shrinks to user actions only as tables in §6 move.
 - The client concurrency limiter (`shared/api/restProxy.js`, cap 4) stays while content goes through the proxy.
 - The tracker computes the map's `lede` and `ranked` once per sweep; `/today` still composes its own lede in the browser (`features/home/lib/composeTopicsLede.js`).
-- The bucket, prefixes and per-role IAM are recorded in `ARCHITECTURE.md` and the generated `reference/s3-prefixes.md`.
+- The bucket, prefixes and per-role IAM are recorded in `ARCHITECTURE.md` and `aws s3 ls`.
 
 ## 8. Not chosen (and why)
 

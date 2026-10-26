@@ -13,8 +13,9 @@ Docs go stale; check the source of truth yourself before acting or reporting:
 - Routes: `src/app/App.jsx`. Features: `ls src/features`. Deployed frontend: the served bundle hash.
 - Deployed Lambda zips can differ from the repo (`newsAnalyze` especially: the repo carries parked
   credits code). Diff deployed vs repo before deploying any Lambda.
-Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHITECTURE.md`
-(system overview), `rules/DATA_STRATEGY.md` (storage rules), `decisions/`, plans in `plans/`.
+Docs are for design intent and navigation: `project-docs/START_HERE.md` (map + where we left off),
+`architecture/ARCHITECTURE.md` (system overview and area designs), `architecture/DATA_STRATEGY.md`
+(storage rules), `decisions/`.
 
 ## Layout
 - Frontend `global-perspectives-starter/frontend/src/`: `app/` → `features/<name>/` → `shared/`
@@ -31,9 +32,9 @@ Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHI
 - UI changes: click every touched control in a browser before calling it done; if you can't, say so.
 
 ## Docs
-Update `ARCHITECTURE.md` (and `INDEX.md` for a new doc) only when the architecture changes: a Lambda,
+Update `ARCHITECTURE.md` (and `START_HERE.md` for a new doc) only when the architecture changes: a Lambda,
 store/S3 prefix, schedule, route, feature or data flow is added or removed. Record design decisions
-in the relevant plan. Routine code changes need no doc edit; git log is the change log
+in the relevant architecture doc or a decision record. Routine code changes need no doc edit; git log is the change log
 (old docs and CHANGES.md were deleted 2026-10-19; git history keeps them).
 
 ## Working style
@@ -54,7 +55,7 @@ merge → write the full map; pass secrets via a temp file. Verify after.
 
 Needs a fresh "yes" in the current message every time:
 - Frontend releases: `./deploy.sh --target candidate|production|legacy-pages` (plain `./deploy.sh`
-  only builds locally). See `.claude/skills/deploy-frontend/` and `project-docs/runbooks/DEPLOYMENT_NOTES.md`.
+  only builds locally). See `.claude/skills/deploy-frontend/` and `.claude/skills/deploy-frontend/DEPLOYMENT_NOTES.md`.
 - secret values, IAM changes, Firebase auth config, `.env*`, `docs/config.js`
 - Polar / billing code or config (credits are parked)
 - enabling user-facing sends (email crons), destructive data ops (delete tables/items/S3 prefixes)

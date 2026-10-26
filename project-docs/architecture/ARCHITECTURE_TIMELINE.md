@@ -3,9 +3,9 @@
 Status: design adopted (operator, 2026-10-20); revised 2026-10-21 to two clocks (§1c, §8) and 2026-10-23 for raw capture, assignments and canonical actors (0040), and 2026-10-24 for the finished recovery, article placement and story rejoin. This is the one record design
 doc and the system's core model. Every backend group and frontend feature README links here and says which facts or
 readings it **writes**, which **views** it reads, and nothing else about storage. Decisions that bind it: `0035` (facts are
-the system of record), `0036` (facts file format), `0037` (views), `0038` (forecast loop), `0039` (weekly review), `0040` (raw before model). Order of work and live status:
-`plans/PLAN_2026-10-21_foundation.md`. Storage rules: `rules/DATA_STRATEGY.md`; the stage list as data: `pipeline.json`;
-what runs when: `reference/schedules.md` (generated). Open items are in §7.
+the system of record), `0036` (facts file format), `0037` (views), `0038` (forecast loop), `0039` (weekly review), `0040` (raw before model). Live state is read from the code and AWS, not from docs.
+Storage rules: `DATA_STRATEGY.md`; the stage list as data: `pipeline.json`;
+what runs when: `aws events list-rules` and `aws scheduler list-schedules`. Open items are in §7.
 
 ## 1. The idea
 Everything the site knows about the world is **dated and append-only, never rewritten**, and is one of two things: a
@@ -27,8 +27,7 @@ and readings, filtered by time, story, country, actor or kind. A page never stit
 ```
 
 ## 1a. The foundation at a glance
-Structure only; live state per stage is `project-docs/STATUS.md` ("Pipeline status"), order of work is
-`plans/PLAN_2026-10-21_foundation.md`. One story = one thread. Readers never touch a table: they read views through the Worker.
+Structure only; live state per stage comes from AWS and `project-docs/START_HERE.md` (what is stopped or waiting). One story = one thread. Readers never touch a table: they read views through the Worker.
 
 ```text
 FOUNDATION  (decision 0035: facts are the system of record · two clocks: facts daily, readings weekly)
@@ -71,7 +70,7 @@ REBUILD TEST  delete every view and world row in a copy; the site rebuilds from 
 
 Mapping to the ten detailed stages below: Ingest = 1-3, Commit = 4-5, Review = 6, Build = 7-8, Serve = 9, Watch = 10.
 
-## 1b. The pipeline, stage by stage (structure; live status is in `project-docs/STATUS.md`, "Pipeline status")
+## 1b. The pipeline, stage by stage (structure only)
 Ten stages in three speeds. `pipeline.json` is the machine-readable copy and drives the block in every folder README.
 
 | # | Stage | What runs (folder) | Produces | Role |
@@ -198,7 +197,7 @@ Views (0037) live under `record/views/` (shadow: `record/shadow/views/`), each w
 | Board | readings and counts for your pins and strings | computed on request (`newsBoard`) | board |
 | Track record | `forecast_drawn`, `branch_status`, `verdict` | `predictions/track_record.json` (today) | track record page |
 
-Stores (one writer per file; `quality`-checked list in `rules/DATA_STRATEGY.md` §4):
+Stores (one writer per file; `quality`-checked list in `DATA_STRATEGY.md` §4):
 - `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` (days present): `newsStoryRecord`.
 - `record/runs/YYYY-MM-DD.json` (daily Run): `newsStoryRecord`. `record/runs/review-YYYY-Www.json` (review Run): `newsRecordReview`.
 - `record/readings/YYYY-Www.jsonl`: `newsRecordReview`.
@@ -253,34 +252,25 @@ browser reads world data only through the Worker's `/data/*`; member-only comput
 is published by its run and sent unless the week's file says `held`. (7) A Lambda error leaves the previous views in place; the
 next run catches up (idempotent per date and per period).
 
-## 7. Open items
-Pointers are to `plans/PLAN_2026-10-21_foundation.md`. Everything not listed here is either done (see the plan's ticked rows)
-or a design, not an open defect.
-- **Run alarms not built** (step 1): the facts writer is scheduled (`TriggerStoryRecord`, cron(45 23 * * ? *), live since 2026-10-22). The
-  alarms (no `record/facts/DATE.jsonl` by a fixed UTC time, a `started` or `archiveDay: missing` Run, fast-fail Duration of the model
-  Lambda) are parked by the operator; `backend/monitoring/alarms/spec.json` is a proposal, none of its alarms exist.
-  No alarm watches `LLM 402`; there are two alert topics (`GlobalPerspectiveAlerts`, `GlobalPerspectivesAlerts`).
-- **Other stages still swallow model errors** (plan Risks): only `newsInvokeGemini` and the agent now fail the run.
-- **Map ingest drops unclassified articles silently** and the tracker then closes pins for lack of data, so "no data" reads
-  as "ended" (2026-10-20 audit; not re-checked; not in the plan's rows).
-- **Review deployed, not running** (step 3): `newsRecordReview` is created in AWS (2026-10-23) and rule `TriggerRecordReview` (Monday 01:00 UTC) is disabled; no readings yet (first live run waits for the DeepSeek top-up, the golden-week score and a canary). Until readings exist the reading fields of the views are `null` with a reason. Not built: the `newsSystemsAnalysis` link field (dropped, the review writes links).
+## 7. Open design items
+Design that is not built or not settled. Dated state (what is deployed, which rule is disabled) comes from AWS.
+- **Run alarms**: no alarm watches a missing `record/facts/DATE.jsonl`, a `started` or `archiveDay: missing` Run, an empty Run, or `LLM 402`. `backend/monitoring/alarms/spec.json` is a proposal; none of its alarms exist. Two alert topics exist (see ARCHITECTURE.md, Monitoring).
+- **Other stages swallow model errors**: only `newsInvokeGemini` and the agent fail the run on a model error (cause of the 28 archive days once lost). Others should follow.
+- **Map ingest drops unclassified articles silently**, and the tracker then closes pins for lack of data, so "no data" reads as "ended" (2026-10-20 audit, not re-checked).
+- **Review not yet running live**: until readings exist the reading fields of the views are `null` with a reason. The review's `select.js` reads raw `entry` facts by threadId and does not yet see placed (recovered) articles.
+- **Weekly report reads live tables** on the unmerged branches; the final design reads the week's readings (ARCHITECTURE_WEEKLY_REVIEW.md §9).
 - **Entry time precision**: live entries stay day precision while archive rows lack `publishedAt`.
-- **Who's who file empty**: `record/operator/aliases.json` is operator-owned and not written yet, so actors keep `name:` ids in the views; `cli/reconcile-actors.mjs` proposes entries.
-- **Recovery and continuity (2026-10-24)**: 17 days recovered (about 25k `article` facts; outlets GDELT lacks stay dark); operator assignments place recovered articles on stories and 7 operator `story_merged` facts rejoined stories (10 proposed matches held). Open: the weekly review (`newsRecordReview/src/select.js`) reads raw `entry` facts by threadId and does not yet see placed articles. The gap benchmark (`gp-mailbox/artifacts/gap-benchmark/`, outside the repo and not in the record) is an answer key for scoring a model offline; its 448 branches are legacy (no qid), so the nightly resolver never writes verdicts for them.
-- **Forecast loop**: the draw rules are deployed; the resolver's loop code (watch, own-entry evidence plus assigned recovered articles as headline-only evidence, coverage guard, verdict inbox) is deployed (2026-10-23), waiting on DeepSeek funding for model drafts; the legacy void job and the one-time redirect for historical orphan forecasts wait for the operator.
-- **Raw-row parsers outside `world/`** (step 4): most Lambdas still parse raw rows themselves; the same concept is defined
-  several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Retire list: plan "Retire list".
-- **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place;
-  `threads.mjs merge/split` rewrites rows in place (a merge on the record is a `story_merged` fact from the merges inbox, fed by the review and, since 2026-10-24, by operator lines; the review has not run live yet). Fixed by
-  lane F (f03ab32b, 2026-10-20) and no longer gaps: sources carry `publishedAt` and `outlet`; `PRED#` rows carry `threadId`,
-  `forkId`, `scenarioIndex`; `Q#` rows carry `threadId`. Entries before 2026-09-12 keep `iso3:[]`/`actorIds:[]` (recorded as missing).
-- **Dead weight**: the plan's Retire list, plus `stories/state/` (3,436 objects, never pruned) and unused read actions in
-  `newsSensitiveData` (2026-10-20 audit; not re-checked). Also from that audit: `newsClientErrors` CORS lacked
-  `www.globalperspective.net`, and several headers and `scripts/functions.json` runtimes were stale.
-- **Two failing agent tests** on main (plan step 1, last row).
+- **Who's who file**: `record/operator/aliases.json` is operator-owned; while it is empty actors keep `name:` ids. `cli/reconcile-actors.mjs` proposes entries. 178 names were unresolved at last count.
+- **Place below country and eventType gaps**; actor/place backfill for stories before 2026-09-12 needs the review (a model key); 93 historical orphan forecasts need an operator redirect; the gap benchmark answer key (448 legacy branches without qid, scored by `predictions/score-gap-benchmark.mjs`) was lost with the old mailbox on 2026-10-25 and must be rebuilt or dropped.
+- **Feeds for Latin America and Southeast Asia** wait on operator-supplied URLs; 13 of about 25 feeds are fetched by both pipelines.
+- **Raw-row parsers outside `world/`**: most Lambdas still parse raw rows themselves, and the same concept is defined several times (risk tier, story title, freshness, outlet from host, Firebase JWT check). Each Lambda should move to `world/` or a view.
+- **Retire list** (each deletion needs its own operator yes, after the rebuild test): `DRIFTLOG#`, `situations/history`, `WEB#INDEX` / `LATEST`, `tags/backfill`, `world/shadow`, `signals/snapshots` (1.03 GB), the eight Scans in `newsSensitiveData`, and `stories/state/` (3,436 objects, never pruned).
+- **Rebuild test not run**: delete views and world rows in a copy and prove the site rebuilds from `record/facts/` + `record/readings/`; only then remove the world DynamoDB rows (destructive, needs a yes).
+- **Open questions**: does the daily drift note fold into the weekly review; migrate the prediction log into `record/`; one ingest or two (ARCHITECTURE_INGEST_DESIGN.md); consolidate the five user tables.
+- **Source gaps the facts inherit**: `topicId` is unstable across runs; a legacy script still edits verdicts in place; `threads.mjs merge/split` rewrites rows in place (on the record a merge is a `story_merged` fact fed by the review and by operator lines). Entries before 2026-09-12 keep `iso3:[]`/`actorIds:[]` (recorded as missing).
 
 ## 8. Decided 2026-10-21 (operator)
-Two clocks (§1c), ten stages (§1b), the object model (§4) and the stores (§5) are decided. Order of work: `plans/PLAN_2026-10-21_foundation.md` (steps 0-5, checklist) and decision `0035-facts-are-the-system-of-record.md`.
+Two clocks (§1c), ten stages (§1b), the object model (§4) and the stores (§5) are decided. Decision: `0035-facts-are-the-system-of-record.md`.
 Facts are the system of record; the five-stage picture below is the top level, the ten stages stay as the detailed mapping.
 
 **Top-level picture: five stages.** Ingest, Commit, Review, Build, Serve; Watch is a rule, not a stage. Ten stages onto five:
@@ -289,5 +279,5 @@ write and Build's read; stage 6 (review) is Review; stage 7 (views) is Build; st
 weekly is a view; stage 9 (delivery) is Serve; stage 10 (watch) is the Watch rule: every run writes a Run object, and a
 missing or empty Run is the alarm. Commit (forecasts, resolver verdicts) runs daily because a forecast is a dated commitment.
 
-Live state per stage, with deployed versus merged: `project-docs/STATUS.md` and the plan. A design discussion
+Live state per stage, deployed versus merged: read AWS and git. A design discussion
 is not a build go-ahead: each step waits for its own go.

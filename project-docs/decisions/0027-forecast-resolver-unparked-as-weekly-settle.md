@@ -20,7 +20,7 @@ Mondays, and nothing is final until the operator confirms it.
 ## Consequences
 - The other parts of 0015 stand: economic impact, its quality judge and the impact audit stay parked.
 - The freshness monitor alerts when a draw, a commit or the tick is missed (`settleCheck.js`).
-- How to check and re-run it: `project-docs/runbooks/prediction-resolver.md`.
+- How to check and re-run it: `project-docs/runbooks/prediction-resolver.md` (deleted 2026-10-26; in git history).
 
 Source: live `aws events describe-rule --name TriggerPredictionResolver --region ap-northeast-1`
 (2026-10-19); git log 925250f, 56b13fa, 8c54fd4.

@@ -35,7 +35,6 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Situations with no change for 30+ days are hidden and counted, never dropped silently (`situationFreshness`).
 
 ## Backend
-- Generated row: [reference/features.md#map](../../../../../project-docs/reference/features.md#map)
 - Group guides: [situations](../../../../../backend/situations/README.md), [pipeline](../../../../../backend/pipeline/README.md)
 - `newsGdacsIngest` (rule `TriggerGdacsIngest`, every 20 min) and `newsSituationIngest` (`TriggerSituationIngest`, hourly) feed
   `newsSituationTracker` (`TriggerSituationTracker`, every 30 min, live `DRY_RUN=false`), which writes `world/latest.json`.
@@ -65,10 +64,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md), [0023](../../../../../project-docs/decisions/0023-radar-one-sweep-12h-window.md),
   [0022](../../../../../project-docs/decisions/0022-crisis-hues-option-a.md), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
-- Plan: [colour consistency](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
-- Rules: [DATA_STRATEGY.md](../../../../../project-docs/rules/DATA_STRATEGY.md), [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md)
-- Runbooks: [situation-tracker.md](../../../../../project-docs/runbooks/situation-tracker.md),
-  [situation-ingest.md](../../../../../project-docs/runbooks/situation-ingest.md), [gdacs-ingest.md](../../../../../project-docs/runbooks/gdacs-ingest.md)
+- Rules: [DATA_STRATEGY.md](../../../../../project-docs/architecture/DATA_STRATEGY.md), [WORLD_MODEL.md](../../../../../project-docs/architecture/WORLD_MODEL.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/map src/shared/map`

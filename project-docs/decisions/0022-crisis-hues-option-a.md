@@ -16,4 +16,4 @@ economic green `#8fd46a`, and `--error` moved to rose `#f2689a`; conflict keeps 
 - `crisisHue` derives hex and RGB from the tokens, so the values live in one place
   (`shared/styles/tokens.css`).
 
-Source: `project-docs/plans/PLAN_2026-10-19_colour_consistency.md` (Operator decisions 2026-10-19, C5)
+Source: `project-docs/plans/PLAN_2026-10-19_colour_consistency.md` (deleted 2026-10-26; in git history) (Operator decisions 2026-10-19, C5)

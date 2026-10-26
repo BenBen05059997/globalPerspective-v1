@@ -35,7 +35,6 @@ This folder is stage 9: the track record page. Timeline: reads predictions/track
   `trFormatDate.js`, `driftNote.js`
 
 ## Backend
-- Generated row: [reference/features.md#track-record](../../../../../project-docs/reference/features.md#track-record)
 - Group guides: [predictions](../../../../../backend/predictions/README.md); the forecasts and drift notes come from [pipeline](../../../../../backend/pipeline/README.md)
 - `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
 - `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily, input `tick`): commits seeds for upcoming weeks, draws the
@@ -62,9 +61,7 @@ This folder is stage 9: the track record page. Timeline: reads predictions/track
 ## Docs
 - Decisions: [0011](../../../../../project-docs/decisions/0011-track-record-and-studio.md) (lean and sampled),
   [0027](../../../../../project-docs/decisions/0027-forecast-resolver-unparked-as-weekly-settle.md) (resolver as weekly settle)
-- Live plan: [PLAN_2026-10-22_forecast_loop.md](../../../../../project-docs/plans/PLAN_2026-10-22_forecast_loop.md)
-- Runbooks: [prediction-resolver.md](../../../../../project-docs/runbooks/prediction-resolver.md),
-  [predictions-snapshot.md](../../../../../project-docs/runbooks/predictions-snapshot.md)
+- Design: [ARCHITECTURE_FORECAST_LOOP.md](../../../../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/track-record`; parity: `node scripts/check-shared-sync.mjs`

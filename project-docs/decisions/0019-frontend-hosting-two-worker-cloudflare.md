@@ -19,6 +19,6 @@ Wrangler. Merging the two Workers is a separate, later decision (Phase E).
 - Candidate, production and legacy-pages releases each need a fresh operator "yes"
   (`CLAUDE.md`, Authorization).
 
-Source: `project-docs/plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md` (§1 and the 2026-10-05
+Source: `project-docs/plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md` (deleted 2026-10-26; in git history) (§1 and the 2026-10-05
 revisions); `git show a5c0de8:project-docs/plans/TASK_2026-10-05_cloudflare_frontend_migration.md` (deleted 2026-10-19);
-`project-docs/runbooks/DEPLOYMENT_NOTES.md`; `CLAUDE.md`
+`.claude/skills/deploy-frontend/DEPLOYMENT_NOTES.md`; `CLAUDE.md`

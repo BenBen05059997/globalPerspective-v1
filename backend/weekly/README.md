@@ -50,4 +50,4 @@ Tests: `node --test backend/weekly/test/*.test.*` (the schema test borrows ajv f
 
 ## Status
 
-W0: schema and section model frozen. Plan: `project-docs/plans/PLAN_2026-10-20_analyst_weekly.md`.
+W0: schema and section model frozen. Design: `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9.

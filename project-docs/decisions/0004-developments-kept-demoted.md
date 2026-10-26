@@ -18,4 +18,4 @@ means DEVELOPMENT), with no new ID space, scale or taxonomy.
 - Developments show in a quieter, secondary treatment below events, not as a nav page or a peer of
   the front page.
 
-Source: `project-docs/rules/WORLD_MODEL.md` (Operator decisions 2026-09-12, D1)
+Source: `project-docs/architecture/WORLD_MODEL.md` (Operator decisions 2026-09-12, D1)

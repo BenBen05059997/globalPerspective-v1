@@ -29,7 +29,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0022](0022-crisis-hues-option-a.md) | 2026-10-19 | Crisis hues re-picked (option A) | accepted |
 | [0023](0023-radar-one-sweep-12h-window.md) | 2026-10-19 | Radar: one sweep, happening now = 12 h, max 5 | accepted |
 | [0024](0024-feature-public-api-and-lambda-grouping.md) | 2026-10-19 | Feature index.js public API; Lambdas grouped by feature | accepted |
-| [0025](0025-docs-storage-layout.md) | 2026-10-19 | How documentation is stored | accepted (archive/ part superseded by 0026) |
+| [0025](0025-docs-storage-layout.md) | 2026-10-19 | How documentation is stored | partly superseded by 0026 and 0041 |
 | [0026](0026-delete-not-archive.md) | 2026-10-19 | Delete old docs instead of archiving them | accepted |
 | [0027](0027-forecast-resolver-unparked-as-weekly-settle.md) | 2026-09-30 | The forecast resolver is unparked as the weekly settle job | accepted |
 | [0028](0028-briefings-merge-real-301s.md) | 2026-10-19 | One Briefings page; old addresses get real 301s | accepted (supersedes 0017's client-only redirects) |
@@ -45,3 +45,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0038](0038-forecast-loop.md) | 2026-10-22 | Forecast loop: few resolvable outcomes, nightly watch, verdict facts | accepted (refines 0034 and 0036, keeps 0011's sample) |
 | [0039](0039-weekly-review.md) | 2026-10-22 | Weekly review: DeepSeek per story, narrow auto-merge, operator aliases, golden week | accepted (implements step 3 of 0035; amends 0036 kinds and 0037 §2) |
 | [0040](0040-raw-before-model.md) | 2026-10-22 | Raw before model, recovered days, re-assignable stories, canonical actors | accepted (amends 0036, 0037, 0038, 0039) |
+| [0041](0041-docs-slimmed-to-architecture-decisions-readmes.md) | 2026-10-26 | Docs slimmed to architecture, decisions, READMEs and one start file | accepted |

@@ -32,7 +32,6 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Imports from other features: none. Shared: `restProxy.js` (`fetchAlerts`, `fetchAlert`), `links.js`.
 
 ## Backend
-- Generated row: [reference/features.md#breaking](../../../../../project-docs/reference/features.md#breaking)
 - Guides: [distribution](../../../../../backend/distribution/README.md) (`newsBreakingAlert`, `newsEmailSender`),
   [read-api](../../../../../backend/read-api/README.md) (`newsRecommend`)
 - `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(35 4/8 * * ? *)`, ENABLED) writes rows to `GlobalPerspectiveBreakingAlerts`;
@@ -56,8 +55,7 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 
 ## Docs
 - Decisions: [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md) (`/breaking` redirects)
-- Rules: [DATA_STRATEGY.md](../../../../../project-docs/rules/DATA_STRATEGY.md)
-- Runbooks: [breaking-alert.md](../../../../../project-docs/runbooks/breaking-alert.md), [parked-jobs.md](../../../../../project-docs/runbooks/parked-jobs.md)
+- Rules: [DATA_STRATEGY.md](../../../../../project-docs/architecture/DATA_STRATEGY.md)
 
 ## How to check it
 - Tests: none cover this feature (`home/__tests__/todayErrors.test.jsx` mocks the strip out); lint only:

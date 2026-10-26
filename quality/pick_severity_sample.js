@@ -5,7 +5,7 @@
 // different record's data under the same id).
 //
 // See project-docs/architecture/ONE_TRUTH_EXECUTION_PLAN.md Phase 3 Step 3.2 for the full spec
-// this script implements, and project-docs/architecture/SEVERITY_CODEBOOK.md for the rubric the
+// this script implements, and quality/SEVERITY_CODEBOOK.md for the rubric the
 // operator will use to label the output.
 //
 // Usage:
@@ -273,7 +273,7 @@ function main() {
 
   const output = {
     _instructions: 'Fill gold.<axis> (integer 0-100 or null) and gold_why.<axis> (one sentence) for every ' +
-      'record per project-docs/architecture/SEVERITY_CODEBOOK.md. Read narrative FIRST — model_dimensions is ' +
+      'record per quality/SEVERITY_CODEBOOK.md. Read narrative FIRST — model_dimensions is ' +
       'placed last in each object deliberately so you can label without peeking (a soft blind, not a real one: ' +
       'you authored/reviewed the generator prompts and may recognize model phrasing). Never write 0 for "no ' +
       'signal" — use null. Once every gold object is fully filled (no axis left unconsidered), run ' +

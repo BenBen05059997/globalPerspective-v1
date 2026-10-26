@@ -5,7 +5,7 @@ Date: 2026-10-21
 
 ## Context
 0035 makes `record/facts/` the system of record and says step 1 is "Ingest writes facts alongside today's rows".
-It does not fix the file format. FOUNDATION.md (A, C, E, G) found the inputs a lane must handle:
+It does not fix the file format. FOUNDATION.md (A, C, E, G; deleted 2026-10-26, in git history) found the inputs a lane must handle:
 - `eventId` is `sha1(kind + sourceKey)`, and an entry `sourceKey` is `archive#date|generationId|topicId`. `topicId` is `<title>-<rank>` and changes between runs, so the same article gets a new ID on a re-run.
 - Entries carry no `schemaVersion`, no source ID, no actor ID, no absolute publish time (only `archivedAt`).
 - `iso3`, `actors`, `event_type` are absent before about 2026-09-12; 28 of 60 days have no `archive#` row.
@@ -147,7 +147,7 @@ Rejected alternatives:
 | `unresolved:<name>` actor IDs now | needs the actor table; deferred |
 
 ## Source
-`architecture/FOUNDATION.md` A, C, E, G; `architecture/ARCHITECTURE_TIMELINE.md` §2 to §5; `backend/record/newsStoryRecord/src/timeline.js`; `backend/shared/src/s3json.js`; `backend/shared/src/record.js`; `backend/shared/src/outlets.js`; decision 0035.
+`architecture/FOUNDATION.md` A, C, E, G (deleted 2026-10-26); `architecture/ARCHITECTURE_TIMELINE.md` §2 to §5; `backend/record/newsStoryRecord/src/timeline.js`; `backend/shared/src/s3json.js`; `backend/shared/src/record.js`; `backend/shared/src/outlets.js`; decision 0035.
 
 Deferred, not dropped: the action-vs-statement `type` on facts (operator 2026-10-21: add object fields only when the news needs them).
 

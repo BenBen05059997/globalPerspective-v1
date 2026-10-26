@@ -1,6 +1,6 @@
 # The forecast loop
 
-Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Draw side and resolver side deployed (resolver 2026-10-23, gather extended 2026-10-24; state per stage: `project-docs/STATUS.md`). Decision: [0038](../decisions/0038-forecast-loop.md). Work order: [PLAN_2026-10-22_forecast_loop.md](../plans/PLAN_2026-10-22_forecast_loop.md).
+Status: design agreed by the operator 2026-10-22 (evidence rule amended the same day, own entries only). Decision: [0038](../decisions/0038-forecast-loop.md). Code and live AWS stay the truth for what is deployed.
 Evidence for every number below: the research brief of 2026-10-22 (file:line in the code it names). Code and live AWS stay the truth.
 
 ## 1. Why

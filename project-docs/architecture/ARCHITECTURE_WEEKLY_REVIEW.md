@@ -1,6 +1,6 @@
 # The weekly review
 
-Status: design adopted by the operator 2026-10-22. Code in `backend/record/newsRecordReview`; created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` DISABLED), no readings written yet; `functions.json` entry and first-deploy runbook in `backend/record/newsRecordReview/DEPLOY.md`. Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Work order: `plans/PLAN_2026-10-21_foundation.md`, step 3. Code and live AWS stay the truth.
+Status: design adopted by the operator 2026-10-22. Code in `backend/record/newsRecordReview`. Decision: [0039](../decisions/0039-weekly-review.md). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Code and live AWS stay the truth (deployed state, rule state and run results: read them from AWS).
 
 ## 1. Why
 Facts say what happened each day. They do not say what a story means, which chapter it is in, whether a forecast branch fired, or which stories drive each other. That needs hindsight, so it runs once a week: one model call per active story reads the story's facts and its own earlier readings and writes readings. Every reading cites facts; code rejects what it cannot check. Readings are append-only and a rerun supersedes.
@@ -80,9 +80,30 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 ## 7. Limits
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
-- Not run live until the DeepSeek top-up, a passing golden-week score and a 2-3 story canary (`threadIds`); then the rule (Monday 01:00 UTC, disabled) is enabled with the operator's yes. Deployed: function, role, `REVIEW_MODEL=deepseek-v4-pro`; a 2026-W42 dry run selected 502 of 519 active stories and skipped 17 (`no_facts_by_week_end`).
+- Not run live until a passing golden-week score and a 2-3 story canary (`threadIds`); then the rule (Monday 01:00 UTC) is enabled with the operator's yes.
 - Branch status depends on verdict facts from the forecast loop (0038); until verdicts exist, branches stay `holding` or `late`.
 - Not now: the weekly report reading the readings (lane weekly), retiring `newsWeeklyBrief`.
 
 ## 8. Decisions
 [0039](../decisions/0039-weekly-review.md) (this loop), [0035](../decisions/0035-facts-are-the-system-of-record.md) (two clocks), [0036](../decisions/0036-facts-file-format.md) (kinds, Run), [0037](../decisions/0037-views-from-facts.md) (views, one builder), [0038](../decisions/0038-forecast-loop.md) (verdicts the review reads).
+
+## 9. The analyst's weekly (the published brief)
+The weekly brief is a view of the week's readings, written as an argument, not a digest of the most-covered stories. Design (operator, 2026-10-20); the content model is in code: `backend/weekly/sections.js` and `backend/weekly/schema/weekly.schema.json` (v2). Code is the truth for caps and fields.
+
+Why a reader opens it: not to miss a change in what they follow; to check their read against a dated, labelled view and later see who was right; to lift a sourced line into their own note.
+
+Sections, in order: lead (the week's most important change as an argument: what happened, what we now expect, what would prove us wrong); where our view moved (one line per story, before to after with the mechanism, "none this week" stated); the trace (up to five anchor stories: where it was, is, goes, with the branches we drew); next week's dates; new this week (cap 3, events only); what we did not see (coverage). No scoreboard and no Brier number in the weekly; that stays on `/track-record`. "Moved" means a change in the expected path or a risk move that holds, only for stories at moderate risk or above. Selection is never by coverage volume.
+
+Honesty rules (enforced by the check script when it exists):
+- A fact line carries at least one archive source (date plus entry id or URL); no figure, date or name that is not in the cited source.
+- Every non-fact line is labelled `judgment` with a confidence; every judgment is one plain sentence with the mechanism spelled out, no internal terms.
+- A link between stories is `possibly_related` unless it is defensible (typed link from the review).
+- A test or watch date is after the send date.
+
+Publication: publish unless vetoed. There is no human gate (consistent with 0034); the operator may veto, which writes `status: held`. Enabling the sender on the new path is a user-facing send and needs a fresh yes.
+
+Storage (world data, so S3 per [DATA_STRATEGY.md](DATA_STRATEGY.md)): `weekly/YYYY-MM-DD.json` (week ending; status draft | published | held, create-only) and `weekly/latest.json` (newest published). The email sender and the future `/briefings/weekly?week=` page read these files, not DynamoDB.
+
+Code layout: one backend source of truth, `backend/weekly/`. `newsEmailSender` imports it through a `_weekly` symlink (as `_shared`); the frontend mirror is checked by `scripts/check-shared-sync.mjs`. A headless scheduled Claude Code run (cloud, skill in the repo, IAM scoped to read the tables and bucket and write `weekly/*` only) is the intended author. The old `newsWeeklyBrief` Lambda retires after one new-path send.
+
+Built so far: the content model (W0, on main). The pull, check and publish scripts, the skill, the email renderer (W1-W3) and the cloud routine live on the unmerged branches `lane/weekly` and `lane/routine`; they pull live tables and must be reviewed against the readings before merge. The page (W5) and retirement (W6) are not built. Known gaps the weekly cannot paper over: no corrections store, first reads are thin for stories born in the week, country drift notes are shown nowhere, and every story link is model-inferred until the review confirms it.

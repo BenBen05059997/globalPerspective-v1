@@ -37,7 +37,6 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 - Shared: `@/shared/lib/deadlines.js` (`buildDeadlines`), `useArchiveDayMap`, `useDisruptionsList`, `@/shared/map/countryRiskLayer.js`, `countryCoordinates.js`, `@/shared/ui/risk/*`
 
 ## Backend
-- Generated row: [reference/features.md#countries](../../../../../project-docs/reference/features.md#countries)
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [economy-parked](../../../../../backend/economy-parked/README.md)
 - `newsCountryIntelligence` (Scheduler `countryIntelliegence`, 05:15 UTC daily) writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE`
   and `HISTORY#<date>`; `newsCountryFactsUpdater` (Scheduler `Fact`, Mondays 05:00 Asia/Tokyo) writes `FACTS#<name>`;
@@ -68,9 +67,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 - Decisions: [0010](../../../../../project-docs/decisions/0010-country-view-split.md) (country view split by job),
   [0005](../../../../../project-docs/decisions/0005-one-importance-scale.md), [0009](../../../../../project-docs/decisions/0009-economy-parked.md),
   [0031](../../../../../project-docs/decisions/0031-economy-parked-fx-box-labelled.md)
-- Plans: [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md); rules: [SEVERITY_CODEBOOK.md](../../../../../project-docs/rules/SEVERITY_CODEBOOK.md)
-- Runbooks: [country-intelligence.md](../../../../../project-docs/runbooks/country-intelligence.md), [country-facts.md](../../../../../project-docs/runbooks/country-facts.md),
-  [drift-corrector.md](../../../../../project-docs/runbooks/drift-corrector.md), [markets-data.md](../../../../../project-docs/runbooks/markets-data.md)
+- Rules: [SEVERITY_CODEBOOK.md](../../../../../quality/SEVERITY_CODEBOOK.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/countries`

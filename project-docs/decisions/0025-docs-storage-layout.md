@@ -1,6 +1,6 @@
 # 25. How documentation is stored
 
-Status: accepted
+Status: accepted (archive/ part superseded by 0026; plans, runbooks, reference and rules superseded by 0041)
 Date: 2026-10-19
 
 ## Context

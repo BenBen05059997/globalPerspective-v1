@@ -4,12 +4,12 @@ Status: accepted (supersedes 0010 and 0011, which lean on the retired Studio; 00
 Date: 2026-10-21
 
 ## Context
-The stocktake in `architecture/FOUNDATION.md` (2026-10-21, read-only, code and live AWS) found:
+The stocktake in `architecture/FOUNDATION.md` (deleted 2026-10-26; in git history) (2026-10-21, read-only, code and live AWS) found:
 - 28 of the last 60 days have no `archive#DATE` row (Aug 23-Sep 2, Sep 14-29, Oct 14). No other copy of the editorial days is known.
 - The entry ID `topicId` is `<title>-<rank>` and changes between runs; the map's `storyId` is a second story ID; a story has no merge record, so 18 known duplicates stay split in every store.
 - Four stores hold the same data: `DRIFT#` and `DRIFTLOG#`, `WEB#INDEX` and S3 `web/`, `situations/history` and `world/` snapshots, entry text in `archive#`, `TOPIC#` and the record timeline.
 - One shared reader (`backend/shared/src/world/`) exists, and 2 of 41 Lambdas use it; the rest parse raw rows themselves.
-- About half the stores are only described in docs, with no record of why they exist (decision-coverage audit, FOUNDATION.md H).
+- About half the stores are only described in docs, with no record of why they exist (decision-coverage audit, FOUNDATION.md H, deleted 2026-10-26).
 Table TTL is disabled, so history is not deleted today, but nothing says the DynamoDB world rows are the truth.
 
 ## Decision

@@ -8,7 +8,7 @@
  * triggers that have come DUE (deadline <= today) and still lack a `finalVerdict`,
  * and writes an oldest-first worklist the agent verifies. It never writes to DDB.
  *
- * The resolution loop itself is AGENT-RUN (see V1_RESOLUTION_RUNBOOK.md): this
+ * The resolution loop itself is AGENT-RUN: this
  * script only produces the work-list; independent web-grounded verification is done
  * by the agent, and confirmed verdicts are written back by resolve-v1-write.js.
  *

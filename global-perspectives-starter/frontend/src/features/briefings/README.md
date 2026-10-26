@@ -35,7 +35,6 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
   `countryHref`). A story links only with a real `threadId`; a region or bloc is plain text.
 
 ## Backend
-- Generated row: [reference/features.md#briefings](../../../../../project-docs/reference/features.md#briefings)
 - Group guide: [distribution](../../../../../backend/distribution/README.md); inputs come from [pipeline](../../../../../backend/pipeline/README.md)
 - `newsPostDevTo` (Scheduler `InvokeDev`, 23:00 Asia/Tokyo daily) writes `DAILY_BRIEF#<date>`; `newsWeeklyBrief` (rule
   `TriggerWeeklyBrief`, Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`; `newsSensitiveData-dev` serves both.
@@ -64,8 +63,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - Decisions: [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md) (retired routes),
   [0028](../../../../../project-docs/decisions/0028-briefings-merge-real-301s.md) (Briefings merge, real 301s),
   [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
-- Plans: [linking and pages](../../../../../project-docs/plans/PLAN_2026-10-19_linking_and_pages.md)
-- Runbooks: [daily-brief.md](../../../../../project-docs/runbooks/daily-brief.md), [weekly-brief.md](../../../../../project-docs/runbooks/weekly-brief.md), [weekly-email.md](../../../../../project-docs/runbooks/weekly-email.md)
+- Design: [link system](../../../../../project-docs/architecture/ARCHITECTURE.md) (Links, identity and product rules)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/briefings src/app`; Worker

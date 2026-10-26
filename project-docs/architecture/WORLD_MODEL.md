@@ -189,7 +189,7 @@ source of truth** — Lambda inventory, DDB schemas, S3 prefixes, IAM. When the 
 this doc wins on **meaning** (what a field means, what identity it belongs to, whether a scale
 should exist), `ARCHITECTURE.md` wins on **machinery** (how a field is stored, which Lambda writes
 it, what the IAM policy says). Neither overrides `DATA_STRATEGY.md`'s S3-world/DDB-user split,
-which this doc does not touch (`rules/DATA_STRATEGY.md`).
+which this doc does not touch (`DATA_STRATEGY.md`).
 
 ## §8 Convergence sequence
 
@@ -207,7 +207,7 @@ which this doc does not touch (`rules/DATA_STRATEGY.md`).
 5. **Editorial-selects-from-registry** = `EVENT_REGISTRY_PLAN.md` Phase 2 ≡ `IMPACT_FIRST` P3 —
    the single point where the two pipelines' identity roots become one by construction. **Shadow-
    gated**: `newsSelectionShadow` runs the layered selector 3×/day since 2026-10-18 and writes
-   `audit/selection-shadow/` (plans/PLAN_2026-10-22_forecast_loop.md P7c); flip only
+   `audit/selection-shadow/` (decision 0020; shadow-week outcome pending); flip only
    on quality parity after the shadow week.
 6. **Surfaces render canonical marks on next touch** — no big-bang UI migration; each surface
    adopts tier/evidence/fingerprint fields the next time it's touched for another reason.

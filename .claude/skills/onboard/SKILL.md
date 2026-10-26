@@ -8,14 +8,13 @@ allowed-tools: Read, Glob, Grep
 
 ## Read, in order
 
-1. `project-docs/INDEX.md` — the map of living docs (architecture, decisions, plans, runbooks,
-   rules).
-2. `project-docs/architecture/ARCHITECTURE.md` — the system overview, linked from INDEX.
+1. `project-docs/START_HERE.md` — the map of living docs and where we left off.
+2. `project-docs/architecture/ARCHITECTURE.md` — the system overview, linked from START_HERE.
 
 Code and live AWS are the truth; docs describe intent and can be stale (`CLAUDE.md`, "Facts come
 from code and live AWS"). Check the code or AWS before acting on a fact from any doc.
 
-If a task touches active work, open the relevant plan in `project-docs/plans/` and the decision
+If a task touches active work, open the area's architecture doc (linked from START_HERE) and the decision
 records in `project-docs/decisions/` before proposing next steps.
 
 ## Related skills

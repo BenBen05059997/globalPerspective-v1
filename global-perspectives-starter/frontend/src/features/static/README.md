@@ -31,8 +31,8 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 - About wording must not claim fixed rates ("every hour"); it says "when the pipeline runs". `__tests__/aboutContact.test.jsx` locks this.
 
 ## Backend
-- Generated row: [reference/features.md#static](../../../../../project-docs/reference/features.md#static); no Lambda lists this feature.
-- About reads the daily brief written by `newsPostDevTo` (scheduler `InvokeDev`, see the runbook below), served by
+- No Lambda lists this feature.
+- About reads the daily brief written by `newsPostDevTo` (scheduler `InvokeDev`), served by
   `newsSensitiveData-dev` ([read-api guide](../../../../../backend/read-api/README.md)).
 
 ## Data
@@ -51,7 +51,6 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 
 ## Docs
 - Legal notes: `internal-docs/LEGAL_NOTES.md` (operator-owned; copy changes need the operator).
-- Runbook for the brief behind the paused note: [daily-brief.md](../../../../../project-docs/runbooks/daily-brief.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/static src/app/__tests__/routes.test.jsx`

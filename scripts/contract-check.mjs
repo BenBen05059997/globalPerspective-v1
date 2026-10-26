@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Class-4 (API contract drift) boundary check — BUG_PLAYBOOK.md.
+ * Class-4 (API contract drift) boundary check.
  *
  * The frontend reads specific fields off each proxy action. When the backend
  * renames/removes a field, or changes its type (the b0f84bc bug: a numeric

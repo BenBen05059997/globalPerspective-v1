@@ -1,6 +1,6 @@
 # Severity codebook — anchored labeling rubric
 
-**Status:** in use — the labeling standard for `quality/severity_gold_set.json`; baseline `quality/calibration/severity-2026-09-14.md` exists. Last verified: 2026-10-19 (prompts below re-read from the repo source).
+**Status:** in use — the labeling standard for `quality/severity_gold_set.json`; the 2026-09-14 baseline report is in git history; `severity_agreement.js` regenerates one. Last verified: 2026-10-19 (prompts below re-read from the repo source).
 **Purpose:** give a human labeler a concrete, repeatable standard for scoring the same four risk
 axes the generators score, so `quality/severity_agreement.js` can measure model/human agreement.
 **The prompt is not touched by this doc.** This is read-only source material quoted from the live

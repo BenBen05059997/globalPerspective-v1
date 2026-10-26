@@ -21,6 +21,6 @@ recorded exception.
   through the Cloudflare Worker; lifecycle rules replace TTL; conditional writes only where a
   read-modify-write cannot be avoided.
 - Recorded exception: `GlobalPerspectiveShares` (2026-09-30, Batch 4 Y1).
-- Full rules and the prefix ownership table: `project-docs/rules/DATA_STRATEGY.md`.
+- Full rules and the prefix ownership table: `project-docs/architecture/DATA_STRATEGY.md`.
 
-Source: `project-docs/rules/DATA_STRATEGY.md`
+Source: `project-docs/architecture/DATA_STRATEGY.md`

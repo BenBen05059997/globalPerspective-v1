@@ -40,7 +40,6 @@ This folder is stage 9: shared-run pages of the retired Studio. Timeline: reads 
   `shared/lib/links.js`, `shared/hooks/useNoIndex.js`.
 
 ## Backend
-- Generated row: [reference/features.md#analysis-studio](../../../../../project-docs/reference/features.md#analysis-studio)
 - Guides: [membership-studio](../../../../../backend/membership-studio/README.md) (`newsAnalyze`),
   [read-api](../../../../../backend/read-api/README.md) (`newsSharedAnalysis`)
 - `newsSharedAnalysis` (Function URL): serves and deletes shares in `GlobalPerspectiveShares`; its create path is
@@ -64,7 +63,7 @@ This folder is stage 9: shared-run pages of the retired Studio. Timeline: reads 
   [0011](../../../../../project-docs/decisions/0011-track-record-and-studio.md),
   [0002](../../../../../project-docs/decisions/0002-analysis-credits-parked.md),
   [0014](../../../../../project-docs/decisions/0014-deepseek-replaces-gemini-no-fallback.md) (DeepSeek, no fallback)
-- Rules: [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md); eval harness: [quality/analysis](../../../../../quality/analysis/README.md)
+- Rules: [WORLD_MODEL.md](../../../../../project-docs/architecture/WORLD_MODEL.md); eval harness: [quality/analysis](../../../../../quality/analysis/README.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/analysis-studio`

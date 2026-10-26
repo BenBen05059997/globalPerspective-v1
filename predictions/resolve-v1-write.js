@@ -4,8 +4,7 @@
 /**
  * predictions/resolve-v1-write.js — Phase 2 write-back for prediction methodology v1.
  *
- * Takes a verdicts file produced by the agent verification pass (see
- * V1_RESOLUTION_RUNBOOK.md) and writes each `finalVerdict` back to
+ * Takes a verdicts file produced by the agent verification pass and writes each `finalVerdict` back to
  * GlobalPerspectivePredictionLog with `confirmedBy: 'agent-verified'` + the agent's
  * evidence. DRY-RUN by default — prints what would change; pass --commit to write.
  *

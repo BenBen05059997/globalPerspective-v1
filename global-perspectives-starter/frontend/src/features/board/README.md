@@ -64,8 +64,7 @@ Imports from other features: none.
 3. `BoardPage` renders the board; nothing else reads it. Later, the record (`record/`) feeds lines, branch status and arrivals.
 
 ## Docs
-- Generated reference: [features.md#board](../../../../../project-docs/reference/features.md#board)
-- Plan and stages: [PLAN_2026-10-20_board.md](../../../../../project-docs/plans/PLAN_2026-10-20_board.md)
+- Design: [ARCHITECTURE_BOARD.md](../../../../../project-docs/architecture/ARCHITECTURE_BOARD.md)
 - Backend: [newsBoard README](../../../../../backend/board/newsBoard/README.md), [schema](../../../../../backend/board/schema/board.schema.json)
 
 ## How to check it

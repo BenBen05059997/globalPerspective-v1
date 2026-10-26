@@ -1,7 +1,7 @@
 # Ingest design: one ingest vs two (lane D, proposed)
 
 Status: proposed (2026-10-20, lane D). Operator decision pending; recommended to revisit after the record and the weekly are live. Update 2026-10-22: the narrow D3 guards (stale-run, same-run joins, failed-run marker) are deployed in `NewsProjectInvokeAgentLambda-dev` and `newsInvokeGemini-dev` now fails the run on a failed model call (plan step 1); the one-ingest decision itself is still open, and the selector still fails with LLM 402.
-Source: lane D design note, copied from the lane mailbox; cleanup proposals and the append-only repair policy are in
+Source: lane D design note (original in the lost mailbox, 2026-10-25); cleanup proposals and the append-only repair policy are in
 `backend/pipeline/cli/README.md`.
 
 

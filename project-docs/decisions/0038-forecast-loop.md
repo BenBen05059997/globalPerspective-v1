@@ -46,7 +46,7 @@ Rejected: a direct DynamoDB lookup (cost grows with questions; ties the record t
 IAM (operator yes needed, not done): resolver role `s3:PutObject` on the two inbox prefixes and `s3:GetObject` on `record/facts/*` (for WATCH). The facts writer role is unchanged (it already reads and writes `record/*`).
 
 ## Amendment 2026-10-22 (2): evidence is our own entries after the draw
-Problem: the judge benchmark of 2026-10-22 (`gp-mailbox/artifacts/judge-bench/README.md`) showed web evidence is the bottleneck: 38 of 47 due questions stayed undecided on years-old pages, fetch failures and unsearched questions. Its hard cases were events that were already true before the draw.
+Problem: the judge benchmark of 2026-10-22 (lost 2026-10-25) showed web evidence is the bottleneck: 38 of 47 due questions stayed undecided on years-old pages, fetch failures and unsearched questions. Its hard cases were events that were already true before the draw.
 
 Decision (operator, 2026-10-22):
 - Evidence is only our own record: `entry` facts on the forecast's own story (threadId) dated after the forecast's draw date. No web search, no news API, no page fetching. Nothing dated before the draw counts.

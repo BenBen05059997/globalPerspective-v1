@@ -16,4 +16,4 @@ desktop About drawer and the phone fold below the map). The Worker gets a bot pr
 - The buried "Today's topics" teaser card is replaced by that one link.
 - `/today` can be promoted later without a new route.
 
-Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (Decisions 3; "Usage evidence").
+Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (deleted 2026-10-26; in git history) (Decisions 3; "Usage evidence").

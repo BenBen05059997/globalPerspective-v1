@@ -63,7 +63,7 @@ download_deployed() { # dest_zip -> echoes CodeSha256 after checking the downloa
   local url sha info
   info="$(aws lambda get-function --region "$REGION" --function-name "$NAME" \
     --query '[Code.Location, Configuration.CodeSha256]' --output text)" \
-    || { echo "✗ $NAME is not deployed (aws lambda get-function failed); create it first (see its DEPLOY.md)" >&2; exit 1; }
+    || { echo "✗ $NAME is not deployed (aws lambda get-function failed); create it first (see its README)" >&2; exit 1; }
   read -r url sha <<< "$info"
   curl -sfS -o "$1" "$url"
   [ "$(sha_b64 "$1")" = "$sha" ] || { echo "✗ downloaded zip does not match CodeSha256 $sha" >&2; exit 1; }

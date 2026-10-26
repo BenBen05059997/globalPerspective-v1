@@ -36,7 +36,7 @@ const REDO_B = process.argv.includes('--redo-b'); // keep cached A, re-run only 
 const DAYS = Number((process.argv.find((a) => a.startsWith('--days=')) || '').split('=')[1]) || 0;
 const CONCURRENCY = 4;
 
-// DeepSeek v4-pro, $ per 1M tokens, [off-peak, peak] (project-docs/ops/DEEPSEEK_COST_ESTIMATE.md)
+// DeepSeek v4-pro, $ per 1M tokens, [off-peak, peak] (provider price list, 2026-10)
 const PRICE = { hit: [0.022, 0.044], miss: [0.66, 1.32], out: [1.98, 3.96] };
 const isPeak = (d = new Date()) => {
   const dow = d.getUTCDay(); const h = d.getUTCHours();

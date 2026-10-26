@@ -19,5 +19,5 @@ soft halo.
 - The expanding ripple ring and the per-marker flare are removed.
 - New data while the page is open runs one sweep.
 
-Source: `project-docs/plans/PLAN_2026-10-19_colour_consistency.md` (Operator decisions
+Source: `project-docs/plans/PLAN_2026-10-19_colour_consistency.md` (deleted 2026-10-26; in git history) (Operator decisions
 2026-10-19; C6 R1–R6)

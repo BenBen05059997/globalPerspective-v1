@@ -1,6 +1,6 @@
 # newsRecordReview
 
-The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` cron(0 1 ? * MON *) DISABLED; runbook [DEPLOY.md](DEPLOY.md)); a 2026-W42 dry run selected 502 of 519 active stories, skipped 17; no readings written yet (waits for the DeepSeek top-up, the golden-week score and a canary).
+The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` cron(0 1 ? * MON *) DISABLED); a 2026-W42 dry run selected 502 of 519 active stories, skipped 17; no readings written yet (waits for the DeepSeek top-up, the golden-week score and a canary).
 
 ## The loop
 
@@ -95,7 +95,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 
 ## Follow-ups (coordinator; not done by this lane)
 
-- `scripts/functions.json` entry: `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record`, Node runtime, timeout 900 s, memory 1024 MB (see DEPLOY.md).
+- `scripts/functions.json` entry: `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record`, Node runtime, timeout 900 s, memory 1024 MB.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
 - Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` once the golden-week score passes.
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.

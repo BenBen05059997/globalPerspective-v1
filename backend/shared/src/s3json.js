@@ -2,7 +2,7 @@
 
 // s3json — JSON objects in S3 for the record (PLAN_2026-10-20_board.md, Stage 1). UNUSED until the record
 // writes; written now so the board and the record share one implementation.
-// Rule (rules/DATA_STRATEGY.md §3.4, snapshot + pointer): a snapshot key is written once and never changed
+// Rule (architecture/DATA_STRATEGY.md §3.4, snapshot + pointer): a snapshot key is written once and never changed
 // (putOnce, If-None-Match: *, so a second writer gets false instead of overwriting); the "latest" pointer is the
 // only key that is overwritten (putLatest, no-cache so readers see the new pointer at once).
 // JSONL (the timeline's daily files): getLines reads one JSON object per line with its ETag; appendLines adds events

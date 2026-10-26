@@ -35,7 +35,6 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - Links: a topic title opens its story only with a real `threadId`; a country opens its page.
 
 ## Backend
-- Generated row: [reference/features.md#home](../../../../../project-docs/reference/features.md#home)
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [predictions](../../../../../backend/predictions/README.md)
 - `newsInvokeGemini-dev` (Scheduler `InvokeGoogleGemini`, 04:15 / 12:15 / 20:15 UTC) picks the topics;
   `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 25 min later) writes summaries, trace causes and forecasts and
@@ -62,8 +61,6 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md) (map is home, this moved to `/today`),
   [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md), [0009](../../../../../project-docs/decisions/0009-economy-parked.md),
   [0029](../../../../../project-docs/decisions/0029-today-kept-linked-from-map.md)
-- Runbooks: [topic-selection.md](../../../../../project-docs/runbooks/topic-selection.md),
-  [news-agent.md](../../../../../project-docs/runbooks/news-agent.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/home` (+ `node quality/briefing/verify_lede.mjs`)

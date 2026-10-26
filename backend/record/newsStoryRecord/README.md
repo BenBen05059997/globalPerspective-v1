@@ -120,16 +120,16 @@ Views choices (step 2, 0037 left these open; narrowest reading):
 - `entriesOmitted` is always present (0 when nothing was cut). Entries carry `fromThreadId` only when merged in, and `corrected: true` only when a correction names them.
 
 ```sh
-node backend/record/newsStoryRecord/dryrun.mjs --from 2026-09-06 --to 2026-10-20 --out /Users/benlai/Downloads/gp-mailbox/artifacts/facts-dryrun/
+node backend/record/newsStoryRecord/dryrun.mjs --from 2026-09-06 --to 2026-10-20 --out <outDir>/
 ```
 
-The dry run reads live DynamoDB (`get-item`, `query`, `batch-get-item` through the aws CLI; nothing else is allowed) and writes the would-be S3 objects to local files with local ETags through the real shared helpers. See [DRYRUN.md](DRYRUN.md) for the 2026-09-06..2026-10-20 result.
+The dry run reads live DynamoDB (`get-item`, `query`, `batch-get-item` through the aws CLI; nothing else is allowed) and writes the would-be S3 objects to local files with local ETags through the real shared helpers.
 
 The views dry run needs no DynamoDB: sync the facts read-only and build locally (nothing is written to S3).
 
 ```sh
 aws s3 sync s3://globalperspective-world-280362093938/record/facts/ <factsDir> --region ap-northeast-1
-node backend/record/newsStoryRecord/dryrun-views.mjs <factsDir> /Users/benlai/Downloads/gp-mailbox/artifacts/views-dryrun/ 2026-10-22
+node backend/record/newsStoryRecord/dryrun-views.mjs <factsDir> <outDir>/ 2026-10-22
 ```
 
 2026-10-22 result over the 48 live fact days (2026-09-05..2026-10-22): 519 stories (all active, since the facts start 47 days back), no aliases, `all.json` 203 KB (the 5 MB cap is about 13,000 stories at this row size), largest story 33 entries and 31 forks (140 KB), 1,052 files (11 MB), build 1.2 s. Links: 499 of 519 stories hit the 50-link cap and 15,547 of 25,615 rows rest on one ground only (usually a country or a big outlet), so `links/` is mostly weak signal until readings confirm links.

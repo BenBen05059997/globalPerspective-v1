@@ -60,7 +60,7 @@ if (!LABEL) {
 // ─── the CURRENT live rubric text, verbatim (used only for --baseline-check) ───────────────────
 // Quoted verbatim from backend/pipeline/newsCountryIntelligence/src/index.js (~line
 // 487-492) and backend/pipeline/newsThreadAnalysis/src/index.js (~line 263) as of
-// 2026-09-15 — see project-docs/architecture/SEVERITY_CODEBOOK.md §1. This block is NOT edited by
+// 2026-09-15 — see quality/SEVERITY_CODEBOOK.md §1. This block is NOT edited by
 // this harness; if the live prompt text ever changes, re-quote it here so --baseline-check keeps
 // meaning what it says.
 const CURRENT_RUBRIC_COUNTRY = `10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event from the data above that justifies the score} — or null when the data gives genuinely no signal for that axis. Be sparing: most countries are NOT elevated on all four — use null rather than a filler mid-number. Axes:
@@ -337,7 +337,7 @@ function grade(records) {
 
 const fmtPct = (num, den) => (den === 0 ? 'n/a' : `${((num / den) * 100).toFixed(1)}%`);
 
-// ─── known live baseline (per SEVERITY_CODEBOOK.md / severity-2026-09-14.md) — for delta report ─
+// ─── known live baseline (2026-09-14 baseline from SEVERITY_CODEBOOK.md; the report is in git history) — for delta report ─
 const KNOWN_BASELINE = {
   perAxis: {
     conflict: { n: 15, exact: 53.3, withinOne: 93.3 },
@@ -522,7 +522,7 @@ async function main() {
   lines.push('');
 
   if (BASELINE_CHECK) {
-    lines.push('## Delta vs known live baseline (`quality/calibration/severity-2026-09-14.md`)');
+    lines.push('## Delta vs known live baseline (2026-09-14 report, in git history)');
     lines.push('');
     lines.push('| Metric | Known baseline | This harness run | Delta |');
     lines.push('|---|---|---|---|');

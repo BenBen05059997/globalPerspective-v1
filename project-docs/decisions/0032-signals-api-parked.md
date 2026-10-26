@@ -15,8 +15,8 @@ table. Disabling the rule is a schedule change the coordinator runs with a fresh
 (`aws events disable-rule --name TriggerSignalsBuild --region ap-northeast-1`).
 
 ## Consequences
-- `runbooks/parked-jobs.md` lists the rule ("to be disabled" until the change is run, then DISABLED).
+- `runbooks/parked-jobs.md` listed the rule (deleted 2026-10-26; read the rule state from `aws events list-rules`).
 - Re-enabling is a product decision: `aws events enable-rule --name TriggerSignalsBuild`.
 - The last `signals/latest.json` stays in S3 and goes stale; SERVE keeps answering any key minted later.
 
-Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` ("Backlog": Signals API; operator 2026-10-19).
+Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (deleted 2026-10-26; in git history) ("Backlog": Signals API; operator 2026-10-19).

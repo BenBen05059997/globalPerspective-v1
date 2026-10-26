@@ -37,7 +37,6 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
   `usePreferences`, `useDailyBrief`; context `useAuth`.
 
 ## Backend
-- Generated row: [reference/features.md#account](../../../../../project-docs/reference/features.md#account)
 - Guides: [read-api](../../../../../backend/read-api/README.md) (`newsSavedItems`, `newsRecommend`, `newsSensitiveData-dev`),
   [membership-studio](../../../../../backend/membership-studio/README.md) (`newsPolarBilling`),
   [distribution](../../../../../backend/distribution/README.md) (`newsEmailSender`)
@@ -66,8 +65,7 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
 ## Docs
 - Decisions: [0002](../../../../../project-docs/decisions/0002-analysis-credits-parked.md) (credits parked),
   [0003](../../../../../project-docs/decisions/0003-storage-s3-world-dynamodb-user.md) (user data in DynamoDB)
-- Rules: [DATA_STRATEGY.md](../../../../../project-docs/rules/DATA_STRATEGY.md)
-- Runbooks: [drift-email.md](../../../../../project-docs/runbooks/drift-email.md), [weekly-email.md](../../../../../project-docs/runbooks/weekly-email.md)
+- Rules: [DATA_STRATEGY.md](../../../../../project-docs/architecture/DATA_STRATEGY.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/account`

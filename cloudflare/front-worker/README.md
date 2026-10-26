@@ -22,4 +22,4 @@ is a two-module upload (it imports `baseline/worker2.mjs`). Any upload must be c
 existing Worker name, routes, bindings, secrets, compatibility settings and other live settings —
 never a bare `wrangler deploy`. Before upload, record the current deployed version and settings.
 Recovery is a version rollback to the recorded baseline, or a controlled upload of the captured
-baseline source if that version is unavailable. Process: `project-docs/runbooks/DEPLOYMENT_NOTES.md`.
+baseline source if that version is unavailable. Process: `.claude/skills/deploy-frontend/DEPLOYMENT_NOTES.md`.

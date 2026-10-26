@@ -3,7 +3,7 @@
 ## `world.json`
 
 A hand-authored sample of the **map-as-home data contract** (`world/latest.json`) — the single
-object the map/home fetches. Schema + field meaning: `project-docs/rules/DATA_STRATEGY.md` §5.
+object the map/home fetches. Schema + field meaning: `project-docs/architecture/DATA_STRATEGY.md` §5.
 
 Production no longer uses it: the situation tracker writes the real bundle to S3, served at
 `https://globalperspective.net/data/world/latest.json` through the Cloudflare Worker `/data/*` route.

@@ -5,7 +5,7 @@
 and normalised here, once. The derivations everyone needs (story birth, branches from scenarios, coverage and missing
 days (which days have archive data; not the Run object's coverage), risk tier from score, outlets) live here too, so two consumers can never print two different numbers. The rule
 (operator, 2026-10-20) is `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6; storage rules are
-`project-docs/rules/DATA_STRATEGY.md` §3. Raw tables are written by the existing pipeline and are not changed by this
+`project-docs/architecture/DATA_STRATEGY.md` §3. Raw tables are written by the existing pipeline and are not changed by this
 folder. Read-only: nothing here writes.
 
 Glossary (ARCHITECTURE_TIMELINE §6): **topic** = one item the selector picks in a run; **thread / story** = the editorial

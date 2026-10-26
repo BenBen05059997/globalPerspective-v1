@@ -36,7 +36,6 @@ This folder is outside the pipeline: parked economy page. Timeline: parked; read
   `useCachedQuery`, `@/shared/lib/links.js` (`storyHref`, `ROUTE`).
 
 ## Backend
-- Generated row: [reference/features.md#economy](../../../../../project-docs/reference/features.md#economy)
 - Guides: [economy-parked](../../../../../backend/economy-parked/README.md) (all four jobs),
   [read-api](../../../../../backend/read-api/README.md) (`newsSensitiveData-dev`, serves every action below)
 - `newsEconomicImpact`, `newsEconomicQuality`, `newsWeeklyMarkets` (parked; write `SummarizeAndPredict`);
@@ -61,7 +60,6 @@ All through `useCachedQuery`, all public reads (no sign-in).
 - Decisions: [0009](../../../../../project-docs/decisions/0009-economy-parked.md) (economy parked),
   [0031](../../../../../project-docs/decisions/0031-economy-parked-fx-box-labelled.md) (FX box labelled),
   [0015](../../../../../project-docs/decisions/0015-park-jobs-that-feed-nothing-shown.md) (park jobs that feed nothing shown)
-- Runbooks: [markets-data.md](../../../../../project-docs/runbooks/markets-data.md), [parked-jobs.md](../../../../../project-docs/runbooks/parked-jobs.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/economy`

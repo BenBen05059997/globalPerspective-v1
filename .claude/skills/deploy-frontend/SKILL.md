@@ -25,7 +25,7 @@ or GitHub Pages legacy release needs explicit current-message authorization, per
      authorization.
    - If verification/build/package fails, stop before any upload or publish.
 2. Commit the change with a plain descriptive message (git log is the change log).
-3. Follow `project-docs/runbooks/DEPLOYMENT_NOTES.md` for target-specific smoke checks and release
+3. Follow `DEPLOYMENT_NOTES.md` (next to this file) for target-specific smoke checks and release
    records. Do not infer candidate isolation from a `workers.dev` hostname: it shares the Worker
    code and configured backend integrations for that Worker.
 4. After a production upload passes its smoke checks, record it with

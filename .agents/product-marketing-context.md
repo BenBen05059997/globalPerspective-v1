@@ -1,6 +1,6 @@
 # Product Marketing Context
 
-*Last updated: 2026-10-19 (facts checked against code and live AWS). This is the single marketing context file; `internal-docs/marketing/brand-context.md` points here.*
+*Last updated: 2026-10-19 (facts checked against code and live AWS). This is the single marketing context file.*
 
 ## Product Overview
 **One-liner:** AI-powered geopolitical intelligence platform that tracks how stories evolve — not just what happened today.

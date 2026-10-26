@@ -23,7 +23,7 @@ We will (wave 3 of the consistency and modernisation plan, operator go 2026-10-1
 - Production deploys after wave 3 need a fresh operator "yes"; env renames (`GROK_*`/`XAI_*` →
   `LLM_*`) are not part of this decision.
 
-Source: `project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md` (Phases 3–4,
+Source: `project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md` (deleted 2026-10-26; in git history) (Phases 3–4,
 operator decision 4); coordinator board `.board/board.json` → `decisions.wave3` ("GO (operator
 2026-10-19; overrides the 2026-09-24 restructure doc on barrels/Lambda folders)");
 `git show 120de90:project-docs/archive/architecture/REPO_RESTRUCTURE_DESIGN_2026-09-24.md` (deleted 2026-10-19) (§2.6 and the barrel note)

@@ -1,17 +1,12 @@
 # Frontend Deployment Checklist
 
-Last verified: 2026-10-19 (scripts read from the repo; the curl checks below run against production; the Worker version is as captured 2026-10-05, not re-read).
+Last verified: 2026-10-19 (scripts read from the repo; the curl checks below run against production).
 
 **Production URL:** https://globalperspective.net (currently GitHub Pages behind Cloudflare)
 **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
 **Served from:** `docs/` directory on the `main` branch
 
-**Migration status (2026-10-05):** production still uses GitHub Pages plus the existing
-`globalperspective-rss` Worker. A new static-site Worker and a candidate front-Worker wrapper are
-prepared locally, but neither has been uploaded; DNS/domain cutover has not occurred. The captured
-front-Worker source matches deployed version `91ba1e98-0959-4387-84f3-10a0d5790ad8` (deployed
-2026-10-01). See the [migration plan](../plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) (§11 holds
-the former task tracker).
+Production is still GitHub Pages behind the `globalperspective-rss` Worker; the Cloudflare cutover and its rollback rules are in `project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover). Read the live Worker version from Cloudflare, not from this file.
 
 Use these steps every time frontend source files are changed.
 

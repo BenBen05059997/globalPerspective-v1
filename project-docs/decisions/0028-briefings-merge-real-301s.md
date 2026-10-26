@@ -20,4 +20,4 @@ redirects stay as a fallback.
 - The Worker upload carrying the 301s is a release step and needs a fresh operator yes.
 - The weekly email button, saved "daily" items, the sitemap and the Worker's page directory point at the new address.
 
-Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (Decisions 2; checklist P B1–B3).
+Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (deleted 2026-10-26; in git history) (Decisions 2; checklist P B1–B3).

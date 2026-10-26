@@ -16,8 +16,8 @@ legacy field (its only consumer is the LinkedIn post-order sort).
 
 ## Consequences
 - No new importance scales; new surfaces show the tier.
-- The rubric behind the tier is `project-docs/rules/SEVERITY_CODEBOOK.md`.
+- The rubric behind the tier is `quality/SEVERITY_CODEBOOK.md`.
 
-Source: `project-docs/rules/WORLD_MODEL.md` (D2 and the 2026-09-15 amendment);
+Source: `project-docs/architecture/WORLD_MODEL.md` (D2 and the 2026-09-15 amendment);
 `git show 120de90:project-docs/archive/architecture/ONE_TRUTH_EXECUTION_PLAN.md` (deleted 2026-10-19);
 `git show 120de90:project-docs/archive/architecture/IMPORTANCE_SCALE_MAPPING.md` (deleted 2026-10-19)

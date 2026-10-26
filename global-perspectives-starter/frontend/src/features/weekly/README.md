@@ -11,7 +11,7 @@ This folder is stage 9: the weekly page (planned /briefings/weekly). Timeline: w
 
 ## Status
 - W0 only (2026-10-20): the mirrored section model. No page, no route, no hook yet; the page is stage W5 of
-  `project-docs/plans/PLAN_2026-10-20_analyst_weekly.md`. Briefings' `WeeklyMode` still serves the old brief.
+  `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9. Briefings' `WeeklyMode` still serves the old brief.
 
 ## Routes
 - None yet. Planned: `/briefings/weekly` (`/weekly/*` is taken by the countries list).
@@ -34,8 +34,7 @@ This folder is stage 9: the weekly page (planned /briefings/weekly). Timeline: w
 3. `newsEmailSender` renders the email from the same section model (W3); this page renders the web view (W5).
 
 ## Docs
-- Generated reference: [features.md#weekly](../../../../../project-docs/reference/features.md#weekly)
-- Plan: [PLAN_2026-10-20_analyst_weekly.md](../../../../../project-docs/plans/PLAN_2026-10-20_analyst_weekly.md)
+- Design: [ARCHITECTURE_WEEKLY_REVIEW.md](../../../../../project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md) (section 9)
 - Backend: [backend/weekly/README.md](../../../../../backend/weekly/README.md)
 
 ## How to check it

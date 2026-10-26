@@ -31,6 +31,6 @@ Lambdas, schedules, stores and pipeline.
 
 ## Storage rule
 
-S3 for the world, DynamoDB for the user: what the pipeline computes about the world is a JSON object in S3; what a person owns or pays for is a DynamoDB row (`project-docs/rules/DATA_STRATEGY.md`).
+S3 for the world, DynamoDB for the user: what the pipeline computes about the world is a JSON object in S3; what a person owns or pays for is a DynamoDB row (`project-docs/architecture/DATA_STRATEGY.md`).
 
 Last verified: 2026-10-20 against code @14dd450d and live AWS.

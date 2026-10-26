@@ -19,4 +19,4 @@ sharing working end to end, and a deployed `newsAnalyze` that matches the repo.
 ## Consequences
 - `quality/verify_pages.sh` asserts the menu has no Studio item; a new record supersedes this one when it returns.
 
-Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (Decisions 4).
+Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (deleted 2026-10-26; in git history) (Decisions 4).

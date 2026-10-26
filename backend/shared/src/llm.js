@@ -8,7 +8,7 @@
 // base or full .../chat/completions URL, XAI_API_KEY the DeepSeek key. Callers pass the model they use.
 //
 // Every successful call prints the `[usage] {fn,step,model,...usage}` line the cost estimate
-// (DEEPSEEK_COST_ESTIMATE.md) and newsModelGuard read. Transport failures (network, timeout, 429, 5xx)
+// and newsModelGuard read. Transport failures (network, timeout, 429, 5xx)
 // are retried with 1s·2^n backoff; 4xx never is. App-level retries (re-ask on bad output) stay in callers.
 
 const PROVIDERS = {

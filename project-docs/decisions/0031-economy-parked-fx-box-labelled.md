@@ -19,4 +19,4 @@ and links to no story. Components only tests used (`DisruptionRow`, `DisruptionP
 - `/economy` stays reachable by URL; re-enabling stays as 0009 describes.
 - Economy links guarded by `ECONOMY_PARKED` (rendered only when it is false) stay in code for the return.
 
-Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (Decisions 5; checklist E1).
+Source: `project-docs/plans/PLAN_2026-10-19_linking_and_pages.md` (deleted 2026-10-26; in git history) (Decisions 5; checklist E1).

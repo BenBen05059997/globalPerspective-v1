@@ -24,4 +24,4 @@ We will use one token set (DS1, `shared/styles/tokens.css`) across the site:
 
 Source: `git show a5c0de8:project-docs/plans/REDESIGN_MASTER_PLAN.md` (deleted 2026-10-19) (§1, §3.1 DS1);
 `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md` (deleted 2026-10-19) (decision 11);
-`project-docs/plans/PLAN_2026-10-19_colour_consistency.md` ("What the site already decided")
+`project-docs/plans/PLAN_2026-10-19_colour_consistency.md` (deleted 2026-10-26; in git history) ("What the site already decided")

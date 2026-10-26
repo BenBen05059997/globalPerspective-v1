@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Class-2 (auth-guard regression) tripwire — BUG_PLAYBOOK.md.
+ * Class-2 (auth-guard regression) tripwire.
  *
  * Three times now a leftover `if (!user) return` has shipped into a hook that
  * fetches FULLY PUBLIC content, silently blocking anonymous + incognito visitors

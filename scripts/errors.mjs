@@ -2,7 +2,7 @@
 /**
  * errors.mjs — read back the client-error sink (newsClientErrors → DynamoDB).
  *
- * Passive monitoring counterpart to the active checks in BUG_PLAYBOOK.md: the
+ * Passive monitoring counterpart to the active checks (smoke-test, link-crawl, auth-guard-check, contract-check): the
  * scripts there detect the SIX bug classes we already know. This surfaces the
  * NOVEL ones — a contract only exists once a bug has shipped, so a thrown error
  * nobody anticipated lands here first.

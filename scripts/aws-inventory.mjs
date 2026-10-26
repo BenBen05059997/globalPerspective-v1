@@ -1,4 +1,4 @@
-// Read-only live-AWS helpers shared by scripts/gen-reference.mjs and quality/check_aws_inventory.mjs.
+// Read-only live-AWS helpers shared by quality/check_aws_inventory.mjs.
 // list/get calls only (ap-northeast-1). Nothing here writes to AWS.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

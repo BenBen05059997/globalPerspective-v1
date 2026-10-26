@@ -35,7 +35,7 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Status
 
-Live state per stage: `project-docs/STATUS.md`. `newsRecordReview` is merged but not deployed (no function, role or schedule). No Run alarm exists (parked). Coordinator owns AWS resources and deployment. First dry run of the facts writer: [DRYRUN.md](newsStoryRecord/DRYRUN.md).
+Live state per stage comes from AWS (`aws lambda get-function`, `aws events describe-rule`); what is stopped or waiting is in `project-docs/START_HERE.md`. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.
 
 ## cli/reconcile-actors.mjs
 Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata (`wbsearchentities` and, for offices, one SPARQL query; 1 request/second in total) for the top N (`--top`) or all (`--all`), and keeps a hit only when its description names an allowed class (person, office, government, ministry, armed forces, police, central bank, court, parliament, party, company, NGO, international organisation, armed group, country/region).

@@ -33,7 +33,6 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - Story page links: forecast questions -> `/track-record?q=<qid>`, "Show on map" -> `/?story=`. There is no link into the retired Studio.
 
 ## Backend
-- Generated row: [reference/features.md#threads](../../../../../project-docs/reference/features.md#threads)
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [situations](../../../../../backend/situations/README.md),
   [predictions](../../../../../backend/predictions/README.md)
 - `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) writes topics, archive rows and thread ids;
@@ -62,10 +61,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - Decisions: [0012](../../../../../project-docs/decisions/0012-story-web-is-news-based.md) (story web is news-based),
   [0018](../../../../../project-docs/decisions/0018-spider-demo-retired-into-stories-web.md) (spider-demo -> WEB view),
   [0004](../../../../../project-docs/decisions/0004-developments-kept-demoted.md), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
-- Plans: [consistency](../../../../../project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md), [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
-- Rules: [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md)
-- Runbooks: [news-agent.md](../../../../../project-docs/runbooks/news-agent.md), [thread-analysis.md](../../../../../project-docs/runbooks/thread-analysis.md),
-  [systems-analysis.md](../../../../../project-docs/runbooks/systems-analysis.md)
+- Rules: [WORLD_MODEL.md](../../../../../project-docs/architecture/WORLD_MODEL.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/threads`

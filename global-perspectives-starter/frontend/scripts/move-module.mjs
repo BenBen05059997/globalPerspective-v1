@@ -115,7 +115,6 @@ const LIVE_DOC_GLOBS = [
   'scripts/**',
   '.githooks/**',
   '.claude/skills/**',
-  'agent-kit/**',
 ];
 
 function isStaleDocExempt(relPath) {
@@ -141,7 +140,7 @@ function ripgrepOrGrep(term, root) {
 }
 
 console.log('\nRemaining references to the old path (live docs/scripts/hooks/skills only):');
-const searchRoots = ['project-docs', 'quality', 'scripts', '.githooks', '.claude/skills', 'agent-kit']
+const searchRoots = ['project-docs', 'quality', 'scripts', '.githooks', '.claude/skills']
   .map(d => path.join(REPO_ROOT, d))
   .filter(d => fs.existsSync(d));
 

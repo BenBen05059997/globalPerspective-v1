@@ -91,8 +91,8 @@ describe('B0 list fixes', () => {
   it('presets count pins and strings in the singular and plural', () => {
     const preset = (id, pins, strings) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: Array.from({ length: strings }, () => ({})) });
     render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork signInHref="/signin" onFork={() => {}} /></MemoryRouter>);
-    expect(screen.getByText('8 pins, 1 string')).toBeInTheDocument();
-    expect(screen.getByText('1 pin, 0 strings')).toBeInTheDocument();
+    expect(screen.getByText('8 pins · 1 string')).toBeInTheDocument();
+    expect(screen.getByText('1 pin · 0 strings')).toBeInTheDocument();
   });
   it('the strings list sits under a disclosure with its count; the pin list gives the headline tag its own element', async () => {
     boardStore = { ...baseBoard(), strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] };
@@ -124,8 +124,10 @@ describe('connect and the verdict card', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     const card = await screen.findByText('Medium link');
     expect(card).toBeInTheDocument();
-    expect(screen.getByText(/Shared actors:/).parentElement.textContent).toContain('iran, oman');
-    expect(screen.getByText(/Shared places:/).parentElement.textContent).toContain('Iran');
+    const both = screen.getByRole('region', { name: 'Who sits in both' });
+    // the actor tag "iran" and the place Iran are one chip, spelled as the place
+    expect([...both.querySelectorAll('li, .pn-chip, span')].map((x) => x.textContent).filter((t) => /^iran$/i.test(t))).toEqual(['Iran']);
+    expect(both.textContent).toContain('oman');
     expect(screen.getByText(/Shared outlets:/).parentElement.textContent).toMatch(/Reuters.*coverage artefact possible/);
     expect(screen.getByText(/Scores moved together:/).parentElement.textContent).toMatch(/1 pairing, up to 2 days apart.*one pairing is not a pattern/);
     expect(screen.getByText('no analysis row for thread thread-b')).toBeInTheDocument();
@@ -138,7 +140,8 @@ describe('connect and the verdict card', () => {
     await selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(await screen.findByText('No link found')).toBeInTheDocument();
-    expect(screen.getByText(NO_LINK)).toBeInTheDocument();
+    expect(screen.getAllByText(NO_LINK)).toHaveLength(2); // the verdict card, and the "Combination failed" string on the graph
+    expect(screen.getByText('Combination failed')).toBeInTheDocument();
   });
 
   it('the c key connects two selected pins', async () => {
@@ -165,9 +168,9 @@ describe('connect and the verdict card', () => {
     await selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await screen.findByText('Medium link');
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Drop it' }));
     expect(screen.queryByText('Medium link')).toBeNull();
-    expect(document.querySelector('.board-string')).toBeNull();
+    expect(document.querySelector('.board-string:not(.board-string--ghost)')).toBeNull();
   });
 });
 
@@ -190,7 +193,7 @@ describe('pin budget', () => {
     boardStore.pins = Array.from({ length: 12 }, (_, i) => thread(i + 1, `thread-${i + 1}`));
     renderPage();
     await screen.findByText(/12 \/ 12/);
-    fireEvent.click(screen.getByRole('button', { name: 'Add pin' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
     expect(await screen.findByText(/Pin budget reached/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Add Oil price/ })).toBeDisabled();
     expect(calls.some(([a]) => a === 'update_board')).toBe(false);
@@ -199,7 +202,7 @@ describe('pin budget', () => {
   it('adds a followed story as a pin and saves', async () => {
     renderPage();
     await screen.findByText(/2 \/ 12/);
-    fireEvent.click(screen.getByRole('button', { name: 'Add pin' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
     fireEvent.click(await screen.findByRole('button', { name: /^Add Oil price/ }));
     await screen.findByText(/3 \/ 12/);
     await waitFor(() => expect(lastUpdate()?.pins).toHaveLength(3), { timeout: 3000 });

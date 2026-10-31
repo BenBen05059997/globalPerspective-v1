@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PIN_BUDGET } from '@/shared/lib/board.js';
-import { addPin, removePin, keepString, cutString, restoreString, layoutPins, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
+import { placeLabels, addPin, removePin, keepString, cutString, restoreString, layoutPins, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
 
 const pin = (i, kind = 'thread', refId = `thread-${i}`) => ({ pinId: `p${String(i).padStart(2, '0')}`, kind, refId, addedAt: '2026-10-20T00:00:00Z' });
 const empty = () => ({ boardId: 'b1', name: 'Test', pins: [], strings: [] });
@@ -63,6 +63,28 @@ describe('layoutPins', () => {
     expect(layoutPins([pin(1)], 900, 620)).toEqual({ p01: { x: 450, y: 310 } });
     const spots = Object.values(layoutPins(withPins(12).pins, 900, 620)).map((p) => `${p.x},${p.y}`);
     expect(new Set(spots).size).toBe(12);
+  });
+  it('keeps every centre a margin away from the edges', () => {
+    const at = Object.values(layoutPins(withPins(12).pins, 900, 620, [], { x: 100, y: 70 }));
+    expect(at.every((p) => p.x >= 100 && p.x <= 800 && p.y >= 70 && p.y <= 550)).toBe(true);
+  });
+});
+
+describe('placeLabels', () => {
+  const full = { w: 100, h: 40 };
+  const small = { w: 60, h: 20 };
+  it('puts a label at the string midpoint when nothing is in the way', () => {
+    expect(placeLabels([{ id: 's', a: { x: 100, y: 200 }, b: { x: 500, y: 200 } }], [], 800, 400, full, small)).toEqual({ s: { x: 300, y: 200, small: false } });
+  });
+  it('slides off a card that covers the midpoint', () => {
+    const out = placeLabels([{ id: 's', a: { x: 100, y: 200 }, b: { x: 500, y: 200 } }], [{ x: 300, y: 200, w: 120, h: 80 }], 800, 400, full, small);
+    expect(Math.abs(out.s.x - 300) >= 110 || Math.abs(out.s.y - 200) >= 60).toBe(true);
+    expect(out.s.small).toBe(false);
+  });
+  it('shrinks to the short tag when no full-size spot is free', () => {
+    const items = [{ id: 'a', a: { x: 100, y: 50 }, b: { x: 140, y: 50 } }, { id: 'b', a: { x: 100, y: 50 }, b: { x: 140, y: 50 } }];
+    const out = placeLabels(items, [], 240, 100, full, small);
+    expect(out.a.small || out.b.small).toBe(true);
   });
 });
 

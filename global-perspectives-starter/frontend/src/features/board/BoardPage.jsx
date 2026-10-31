@@ -21,7 +21,7 @@ import { usePresets } from '@/features/board/hooks/usePresets.js';
 import { usePinInfo } from '@/features/board/hooks/usePinInfo.js';
 import { boardAvailable, callBoard } from '@/features/board/lib/boardApi.js';
 import {
-  addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, MAX_NAME, KIND_WORD,
+  addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, failedCombos, KIND_WORD,
 } from '@/features/board/lib/boardOps.js';
 import RecordPinDetails from '@/features/board/components/RecordPinDetails.jsx';
 import ArrivalsTray from '@/features/board/components/ArrivalsTray.jsx';
@@ -36,41 +36,17 @@ import StringDetail from '@/features/board/components/StringDetail.jsx';
 import AddPinPanel from '@/features/board/components/AddPinPanel.jsx';
 import PresetsPanel from '@/features/board/components/PresetsPanel.jsx';
 import MissingCard from '@/features/board/components/MissingCard.jsx';
+import BoardTopBar from '@/features/board/components/BoardTopBar.jsx';
+import DueStrip from '@/features/board/components/DueStrip.jsx';
+import RailBranches from '@/features/board/components/RailBranches.jsx';
+import WeekScrubber from '@/features/board/components/WeekScrubber.jsx';
+import DivergencePanel from '@/features/board/components/DivergencePanel.jsx';
+import FoldingRules from '@/features/board/components/FoldingRules.jsx';
+import { setWeight } from '@/features/board/lib/divergence.js';
+import { isoWeekEnd } from '@/features/board/lib/recordViews.js';
 import '@/features/board/board.css';
 
 const SHEET_TITLE = { add: 'Add a pin', presets: 'From a preset', verdict: 'Connection verdict', string: 'String', pin: 'Pin' };
-
-function NameField({ name, onRename }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(name);
-  const commit = () => {
-    setEditing(false);
-    const next = draft.trim();
-    if (next && next !== name) onRename(next);
-    else setDraft(name);
-  };
-  if (!editing) {
-    return (
-      <h1 className="board-title">
-        <button type="button" className="board-title__btn" onClick={() => { setDraft(name); setEditing(true); }} title="Rename this board" aria-label={`Board name: ${name}. Rename`}>{name}</button>
-      </h1>
-    );
-  }
-  return (
-    <h1 className="board-title">
-      <input
-        className="board-input board-input--title"
-        autoFocus
-        value={draft}
-        maxLength={MAX_NAME}
-        aria-label="Board name"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(name); setEditing(false); } }}
-      />
-    </h1>
-  );
-}
 
 export default function BoardPage() {
   useNoIndex();
@@ -94,13 +70,16 @@ export default function BoardPage() {
   const [results, setResults] = useState([]);
   const [notice, setNotice] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [view, setView] = useState('graph');
+  const [weekPick, setWeekPick] = useState(null);
   const presets = usePresets(available && (panel?.type === 'presets' || (member.signedIn && boards.settled && !boards.boards.length) || !member.signedIn));
 
   const board = state.board;
   const pins = useMemo(() => board?.pins || [], [board]);
   const info = usePinInfo(pins, topics);
   const records = useStoryViews(pins);
-  const counts = useWeekCounts(new Date().toISOString().slice(0, 10), board?.lastVisitedAt, !!board?.recordAvailable);
+  const today = new Date().toISOString().slice(0, 10);
+  const counts = useWeekCounts(today, board?.lastVisitedAt, !!board?.recordAvailable);
   const countIds = useMemo(() => [...new Set([...pins.filter((p) => p.kind === 'thread').map((p) => p.refId), ...Object.values(records.stories).map((s) => s?.threadId).filter(Boolean)])], [pins, records.stories]);
   const full = pins.length >= PIN_BUDGET;
   const pinById = useMemo(() => Object.fromEntries(pins.map((p) => [p.pinId, p])), [pins]);
@@ -112,7 +91,7 @@ export default function BoardPage() {
   }, [live, boardId, boards.settled, boards.boards, navigate]);
 
   // A different board starts with a clean selection and no open panel.
-  useEffect(() => { setPanel(null); setSelected([]); setResults([]); setNotice(''); setConfirmDelete(false); }, [boardId]);
+  useEffect(() => { setPanel(null); setSelected([]); setResults([]); setNotice(''); setConfirmDelete(false); setWeekPick(null); }, [boardId]);
 
   const connectSeq = useRef(0);
   const connect = useCallback(async (idA, idB) => {
@@ -181,6 +160,11 @@ export default function BoardPage() {
   };
 
   const missing = useMemo(() => (board ? missingActors(board, results, follows.actors) : []), [board, results, follows.actors]);
+  const failed = useMemo(() => (board ? failedCombos(board, results) : []), [board, results]);
+  const addActor = (name) => addToBoard({ kind: 'actor', refId: name });
+  // The map view is not built yet: the switch shows only in the dev harness.
+  const views = import.meta.env.DEV ? ['map', 'graph'] : ['graph'];
+  const coverage = board?.coverage || null; // per-day coverage and kept weeks: the live board feed does not carry it yet
   const signInHref = `/signin?returnTo=${encodeURIComponent(boardHref(boardId))}`;
 
   if (!available) return <div className="board-page"><p className="board-line">The board is not available yet.</p></div>;
@@ -203,6 +187,10 @@ export default function BoardPage() {
   const pickedString = panel?.type === 'string' ? panel.string : null;
   const pickedKey = pickedString ? pairKey(pickedString.a, pickedString.b) : null;
   const detailPin = panel?.type === 'pin' ? pinById[panel.pinId] : null;
+
+  // The open story pin's tree: in the bottom sheet on a phone, full width under the graph on a desktop.
+  const storyTree = detailPin?.kind === 'thread'
+    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null;
 
   let sheetBody = null;
   if (panel?.type === 'add') {
@@ -242,7 +230,7 @@ export default function BoardPage() {
           {detailPin.kind === 'thread' ? <EntityLink kind="story" id={detailPin.refId}>{i?.label}</EntityLink>
             : detailPin.kind === 'country' ? <EntityLink kind="country" id={detailPin.refId}>{i?.label}</EntityLink> : i?.label}
         </p>
-        {detailPin.kind === 'thread' ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null}
+        {detailPin.kind === 'thread' && isPhone ? storyTree : null}
         <div className="board-actions">
           {detailPin.kind === 'actor' && !follows.actors.some((a) => a.toLowerCase() === detailPin.refId.toLowerCase())
             ? <Button onClick={() => follows.followActor(detailPin.refId)}>Follow actor</Button> : null}
@@ -268,11 +256,18 @@ export default function BoardPage() {
 
   return (
     <div className={`board-page${sheet ? ' has-sheet-open' : ''}`} onKeyDown={onKeyDown}>
-      <div className="board-head">
-        {board ? <NameField key={board.boardId} name={board.name} onRename={(name) => state.edit((b) => ({ ...b, name }))} /> : <h1 className="board-title">Board</h1>}
-        {board ? <span className="board-budget" aria-label={`${pins.length} of ${PIN_BUDGET} pins used`}>{pins.length} / {PIN_BUDGET}<span className="board-budget__unit"> pins</span></span> : null}
-        {state.saving ? <span className="board-save" role="status">Saving</span> : null}
-      </div>
+      <BoardTopBar
+        board={board}
+        pinCount={pins.length}
+        saving={state.saving}
+        views={views}
+        view={view}
+        onView={setView}
+        weekEnd={weekPick || isoWeekEnd(today)}
+        addOpen={panel?.type === 'add'}
+        onAdd={() => setPanel(panel?.type === 'add' ? null : { type: 'add' })}
+        onRename={(name) => state.edit((b) => ({ ...b, name }))}
+      />
       {state.saveError ? <p className="board-line" role="status">{state.saveError}</p> : null}
 
       <div className="board-switch" role="group" aria-label="Your boards">
@@ -290,7 +285,6 @@ export default function BoardPage() {
       {board ? (
         <>
           <div className="board-toolbar">
-            <Button selected={panel?.type === 'add'} onClick={() => setPanel(panel?.type === 'add' ? null : { type: 'add' })}>Add pin</Button>
             <Button disabled={selected.length !== 2} onClick={connectSelected} title="Select two pins, then connect (or press c)">Connect</Button>
             <span className="board-hint">
               {selected.length === 0 ? 'Drag one pin onto another, or select two and press Connect.'
@@ -306,55 +300,79 @@ export default function BoardPage() {
             ) : <Button compact onClick={() => setConfirmDelete(true)}>Delete board</Button>}
           </div>
 
-          <div className={`board-main${panel && sheetBody && !isPhone ? ' has-sheet' : ''}`}>
+          <div className="board-main">
             <div className="board-canvas">
-              <BoardGraph
-                pins={pins}
-                strings={board.strings}
-                info={info}
-                selected={selected}
-                pickedKey={pickedKey}
-                onSelectPin={selectPin}
-                onPickString={(s) => setPanel({ type: 'string', string: s })}
-                onConnect={connect}
-              />
-              <div className="board-legend" aria-label="How strings are drawn">
-                <span><svg width="36" height="8" aria-hidden="true"><line className="board-key board-key--dashed" x1="0" y1="4" x2="36" y2="4" /></svg> ours, inferred</span>
-                <span><svg width="36" height="8" aria-hidden="true"><line className="board-key board-key--dashed-alt" x1="0" y1="4" x2="36" y2="4" /></svg> yours</span>
-                <span><svg width="36" height="8" aria-hidden="true"><line className="board-key board-key--cut" x1="0" y1="4" x2="36" y2="4" /></svg> cut</span>
-              </div>
+              {import.meta.env.DEV && view === 'map' ? (
+                <p className="board-line">The map view is not built yet (dev harness only).</p>
+              ) : (
+                <BoardGraph
+                  pins={pins}
+                  strings={board.strings}
+                  info={info}
+                  selected={selected}
+                  pickedKey={pickedKey}
+                  onSelectPin={selectPin}
+                  onPickString={(s) => setPanel({ type: 'string', string: s })}
+                  onConnect={connect}
+                  ghosts={missing}
+                  failed={failed}
+                  onAddGhost={addActor}
+                  coverageGap={coverage?.gaps?.[0] || null}
+                />
+              )}
+              <DueStrip stories={records.stories} today={today} />
+              {storyTree && !isPhone ? (
+                <Card as="section" aria-label={`Story tree: ${labelOf(detailPin.pinId)}`}>
+                  <SectionHeader label={labelOf(detailPin.pinId)} hint="Story tree" as="h2"><Button compact onClick={closePanel}>Close tree</Button></SectionHeader>
+                  {storyTree}
+                </Card>
+              ) : null}
+              {coverage?.weeks ? <WeekScrubber weeks={coverage.weeks} note={coverage.note} onChange={setWeekPick} /> : null}
               {board.strings.length ? (
                 <details className="board-strings-disclosure">
-                <summary>List of strings ({board.strings.length})</summary>
-                <ul className="board-strings" aria-label="Strings on this board">
-                  {board.strings.map((s) => (
-                    <li key={pairKey(s.a, s.b)}>
-                      <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'string', string: s })}>
-                        {labelOf(s.a)} / {labelOf(s.b)}
-                      </button>
-                      <ClaimTag kind={s.owner === 'ours' ? 'inference' : 'yours'} />
-                      {s.cutAt ? <span className="board-note">cut</span> : null}
-                      {s.line ? <span className="board-note">{s.line}</span> : null}
+                  <summary>List of strings ({board.strings.length})</summary>
+                  <ul className="board-strings" aria-label="Strings on this board">
+                    {board.strings.map((s) => (
+                      <li key={pairKey(s.a, s.b)}>
+                        <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'string', string: s })}>
+                          {labelOf(s.a)} / {labelOf(s.b)}
+                        </button>
+                        <ClaimTag kind={s.owner === 'ours' ? 'inference' : 'yours'} />
+                        {s.cutAt ? <span className="board-note">cut</span> : null}
+                        {s.line ? <span className="board-note">{s.line}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+              <details className="board-strings-disclosure">
+                <summary>List of pins ({pins.length})</summary>
+                <ul className="board-pinlist" aria-label="Pins on this board">
+                  {pins.map((p) => (
+                    <li key={p.pinId}>
+                      <div className="board-pinrow">
+                        <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
+                        {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-pinrow__tag">Latest headline</span> : null}
+                      </div>
+                      <RecordPinDetails pin={p} />
                     </li>
                   ))}
                 </ul>
-                </details>
-              ) : null}
-              <ul className="board-pinlist" aria-label="Pins on this board">
-                {pins.map((p) => (
-                  <li key={p.pinId}>
-                    <div className="board-pinrow">
-                      <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
-                      {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-pinrow__tag">Latest headline</span> : null}
-                    </div>
-                    <RecordPinDetails pin={p} />
-                  </li>
-                ))}
-              </ul>
+              </details>
             </div>
-            {!isPhone ? sheet : null}
+            <div className="board-rail">
+              {!isPhone ? sheet : null}
+              <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors}
+                onAddPin={(threadId) => addToBoard({ kind: 'thread', refId: threadId })}
+                onDismissLink={(threadId) => state.edit((b) => ({ ...b, dismissed: [...new Set([...b.dismissed, threadId])] }))} />
+              <RailBranches stories={records.stories} labelOf={(threadId) => info[board.pins.find((p) => p.refId === threadId)?.pinId]?.label || threadId} />
+              <MissingCard actors={missing} full={full} onFollow={follows.followActor} onAdd={addActor} />
+              <DivergencePanel board={board} stories={records.stories} labelOf={labelOf}
+                onRestore={(a, b) => state.edit((bd) => restoreString(bd, a, b))}
+                onWeight={(forkId, branchId, percent) => state.edit((bd) => setWeight(bd, forkId, branchId, percent))} />
+            </div>
           </div>
-          <ArrivalsTray key={board.boardId} board={board}
+          <ArrivalsTray key={board.boardId} board={board} labelOf={labelOf}
             onDismiss={(id) => state.edit((b) => ({...b, dismissed: [...new Set([...b.dismissed, id])]}))}
             onKeep={(card) => {
               state.edit((b) => {
@@ -365,8 +383,7 @@ export default function BoardPage() {
               });
             }} />
           {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
-          <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors} />
-          <MissingCard actors={missing} onFollow={follows.followActor} />
+          <details className="board-fold"><summary>How the board folds</summary><FoldingRules /></details>
         </>
       ) : null}
       {board ? null : (state.loading ? <p className="board-line" aria-busy="true">Loading the board.</p> : null)}

@@ -6,6 +6,8 @@
 // grounds are computed from the topics' actors, places and outlets; there is no score history here, so no
 // co-movement ground ever appears. State lives in this tab's sessionStorage.
 import { devRecordIndex } from './fakeRecordViews.js';
+import { dayFromNow, devArrivals, devVerdict } from './panelFixtures.js';
+import { DEV_GRAPH_ID, devGraphBoard, decorateDevGraph, devGraphFacts } from './devGraphBoard.js';
 import { contentService } from '@/shared/data/contentService';
 import { pairKey, normalizeActor, PIN_BUDGET } from '@/shared/lib/board.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
@@ -69,7 +71,7 @@ function checkBoard(board) {
   const ids = new Set(board.pins.map((p) => p.pinId));
   for (const s of board.strings) {
     if (!ids.has(s.a) || !ids.has(s.b)) throw fail(400, 'Invalid board: a string must join two pins on the board', { code: 'invalid_board' });
-    if (s.owner === 'ours' && s.strength !== 'inferred') throw fail(400, "Invalid board: every ours-string must have strength 'inferred'", { code: 'ours_must_be_inferred' });
+    if (s.owner === 'ours' && !['inferred', 'weak', 'medium', 'strong'].includes(s.strength)) throw fail(400, "Invalid board: every ours-string must have strength 'inferred'", { code: 'ours_must_be_inferred' });
     if (s.line && s.line.length > 280) throw fail(400, 'Invalid board: line is at most 280 characters', { code: 'invalid_board' });
   }
 }
@@ -86,7 +88,7 @@ function normalise(board) {
 
 async function dataOf(pin) {
   if (pin.kind === 'thread') {
-    const t = (await topics()).find((x) => x.threadId === pin.refId);
+    const t = (await topics()).find((x) => x.threadId === pin.refId) || devGraphFacts(pin.refId);
     return { actors: t?.actors || [], places: t?.iso3 || [], outlets: [...new Set((t?.sources || []).map((s) => s.source).filter(Boolean))], known: !!t };
   }
   if (pin.kind === 'country') {
@@ -138,18 +140,20 @@ export async function fakeBoardAction(action, body = {}) {
   const mode = new URLSearchParams(window.location.search).get('devRecord');
   const available = mode === '1';
   if (mode && !db.boards['dev-record']) {
-    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record views example', pins:[{pinId:'p1',kind:'thread',refId:devRecordIndex[0].threadId,addedAt:now},{pinId:'p2',kind:'thread',refId:devRecordIndex[1].threadId,addedAt:now}], strings:[], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
+    db.boards['dev-record'] = { boardId:'dev-record', uid:'dev-member', name:'Record views example', pins:[{pinId:'p1',kind:'thread',refId:devRecordIndex[0].threadId,addedAt:now},{pinId:'p2',kind:'thread',refId:devRecordIndex[1].threadId,addedAt:now},{pinId:'p3',kind:'thread',refId:devRecordIndex[2].threadId,addedAt:now}], strings:[{a:'p1',b:'p2',owner:'yours',keptAt:now,line:'Rerouting is what moves insurers.'}], weights:{}, dismissed:[], summary:{versions:[]},createdAt:now,updatedAt:now };
     persist();
   }
+  if (available && !db.boards[DEV_GRAPH_ID]) { db.boards[DEV_GRAPH_ID] = devGraphBoard(now); persist(); }
   switch (action) {
     case 'list_boards':
       return Object.values(db.boards).map((b) => ({ boardId: b.boardId, name: b.name, pinCount: b.pins.length, updatedAt: b.updatedAt }))
         .sort((x, y) => String(y.updatedAt).localeCompare(String(x.updatedAt)));
     case 'get_board': {
       const board = own(boardOf(body.boardId));
-      return { ...board, recordAvailable:available, pins:board.pins.map((p) => { const row = devRecordIndex.find((r) => r.threadId === p.refId); return available && row ? {...p,recordAvailable:true,line:row.line ?? null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:row.lastFactAt} : p; }) };
+      if (board.boardId === DEV_GRAPH_ID) return decorateDevGraph(board);
+      return { ...board, recordAvailable:available, pins:board.pins.map((p) => { const row = devRecordIndex.find((r) => r.threadId === p.refId); return available && row ? {...p,recordAvailable:true,line:row.line ?? null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:dayFromNow(-1)} : p; }) };
     }
-    case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:[]};
+    case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:available && body.boardId==='dev-record' ? devArrivals() : []};
     case 'visit_board': {const b=boardOf(body.boardId);b.lastVisitedAt=now;persist();return {lastVisitedAt:now};}
     case 'create_board': {
       const name = String(body.name || '').trim();
@@ -194,7 +198,7 @@ export async function fakeBoardAction(action, body = {}) {
       db.boards[b.boardId] = b; persist();
       return own(b);
     }
-    case 'connect': return connect(body.a, body.b);
+    case 'connect': return available && [body.a, body.b].every((p) => devRecordIndex.some((r) => r.threadId === p?.refId)) ? devVerdict(body.a, body.b) : connect(body.a, body.b);
     default: throw fail(400, 'Unsupported action');
   }
 }

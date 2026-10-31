@@ -1,0 +1,38 @@
+/* Presets, pin budget, divergence and folding rules of the board. Tokens only. */
+
+.pin-budget { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
+.pin-budget__count { color: var(--text-head); }
+.pin-budget__bar { display: inline-flex; gap: var(--space-1); }
+.pin-budget__seg { width: var(--space-2); height: var(--space-2); border-radius: var(--r-sm); border: 1px solid var(--hairline-3); }
+.pin-budget__seg--on { background: var(--accent); border-color: var(--accent); }
+
+.presets { display: flex; flex-direction: column; gap: var(--space-3); }
+.presets__group { margin: 0; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); font-weight: 500; }
+.presets__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
+.preset-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-3); min-width: 0; }
+.preset-card__tag { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--accent); }
+.preset-card__name { font-size: var(--text-base); color: var(--text-head); overflow-wrap: anywhere; }
+.preset-card__mini { width: 100%; height: auto; color: var(--text-dim); }
+.preset-card__line { stroke: var(--hairline-3); stroke-width: 1; }
+.preset-card__pin { fill: var(--accent); }
+.preset-card__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+
+.divergence { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.divergence__kicker { margin: 0; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--accent); }
+.divergence__title { margin: 0; font-family: var(--serif); font-size: var(--text-xl); color: var(--text-head); font-weight: 500; }
+.divergence__item { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
+.divergence__head { margin: 0; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); font-weight: 500; }
+.divergence__row { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--text-base); overflow-wrap: anywhere; }
+.divergence__fork { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.divergence__fork legend { padding: 0; font-size: var(--text-sm); color: var(--text-muted); }
+.divergence__branch { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--text-base); }
+.divergence__nums { display: inline-flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.divergence__nums input { width: 56px; min-height: 32px; padding: 0 var(--space-2); font: inherit; font-family: var(--mono); color: var(--text-head); background: var(--panel-2); border: 1px solid var(--hairline-strong); border-radius: var(--r-md); }
+
+.folding { display: flex; flex-direction: column; gap: var(--space-4); }
+.folding__block { display: flex; flex-direction: column; gap: var(--space-2); }
+.folding__title { margin: 0; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); font-weight: 500; }
+.folding__rows { margin: 0; display: flex; flex-direction: column; }
+.folding__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); font-size: var(--text-base); }
+.folding__row dt { color: var(--text-head); }
+.folding__row dd { margin: 0; color: var(--text-muted); }

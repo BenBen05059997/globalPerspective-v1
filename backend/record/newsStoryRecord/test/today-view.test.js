@@ -121,3 +121,13 @@ test('the schema rejects a view that is not ours', () => {
     assert.equal(validate(bad), false, JSON.stringify(bad).slice(0, 80));
   }
 });
+
+test('a topic with more than 10 sources keeps them whole in the entry\'s latest.sources, and the view still satisfies the schema (0054)', () => {
+  const many = [...Array(12).keys()].map((n) => ({source: `s${n}.com`, title: 't', url: `https://s${n}.com/a`}));
+  const e = entry(3, `${D1}T04:00:02.000Z`, 'gen-3', {sources: many.slice(0, 10)});
+  const lines = inbox.inboxLines([e], {batch: `${D1}T04:00:00.000Z`, selection: {topics: {'Topic 3-3': {urgency: 'high', sources: many}}, run: run(1)}});
+  const v = todayIndex([{day: D1, lines}], new Map(), {});
+  assert.equal(v.entries[0].latest.sources.length, 12);
+  assert.equal(v.entries[0].sources.length, 10);
+  assert.ok(validate(v), JSON.stringify(validate.errors));
+});

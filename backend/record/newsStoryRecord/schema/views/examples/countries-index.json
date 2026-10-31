@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "countries": {
+    "POL": {
+      "countryName": "Poland",
+      "generatedAt": "2026-10-21T05:00:00.000Z"
+    },
+    "UKR": {
+      "countryName": "Ukraine",
+      "riskScore": 61,
+      "riskLevel": "elevated",
+      "dimensions": {
+        "conflict": {
+          "score": 61,
+          "why": "w"
+        }
+      },
+      "headline": "H",
+      "trajectory": "stable",
+      "generatedAt": "2026-10-21T05:00:00.000Z",
+      "riskSignals": [
+        "s1"
+      ]
+    }
+  }
+}

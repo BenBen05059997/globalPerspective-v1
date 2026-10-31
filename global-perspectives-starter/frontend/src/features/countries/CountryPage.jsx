@@ -395,7 +395,7 @@ export default function CountryPage() {
   }, [dayMap, sortedDates, decodedName, loading]);
 
   const arcIds = useMemo(() => (countryData?.arcs || []).map(a => a.threadId), [countryData]);
-  const { analyses: threadAnalyses } = useThreadAnalyses(arcIds);
+  const { analyses: threadAnalyses } = useThreadAnalyses(arcIds, { light: true });
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);

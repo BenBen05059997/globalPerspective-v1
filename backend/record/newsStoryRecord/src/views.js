@@ -10,6 +10,7 @@ const {buildTrackRecord} = require('./trackRecord');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
+const {buildIndexViews} = require('./indexViews');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -494,7 +495,9 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
-  return {stories, links, counts, active, all: everything, manifest, countries: countryViews(noteLines, builtFrom), trackRecord: buildTrackRecord(allFacts, {today})};
+  const countries = countryViews(noteLines, builtFrom);
+  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}}); // the many-at-once readers' indexes (indexViews.js)
+  return {stories, links, counts, active, all: everything, manifest, countries, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
 }
 
 /** The write order of 0037 section 2 as groups of [key, object]; the groups are written one after another, manifest last. */
@@ -502,7 +505,7 @@ function writeGroups(views) {
   const keyed = (dir, map) => [...map].map(([id, obj]) => [`${dir}/${id}.json`, obj]);
   return [
     [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('counts', views.counts), ...keyed('countries', views.countries || new Map())],
-    [['index/active.json', views.active]],
+    [['index/active.json', views.active], ...Object.entries(views.indexes || {}).map(([name, obj]) => [`index/${name}`, obj])],
     [['index/all.json', views.all]],
     [['track-record.json', views.trackRecord]],
     [['manifest.json', views.manifest]],

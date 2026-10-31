@@ -6,6 +6,7 @@ import { resolveCountry } from '@/shared/lib/countries';
 import { intelligenceFromCountryView } from '@/features/countries/lib/viewIntelligence';
 import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
+import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBriefingsIndex.js';
 
 const CACHE_KEY = 'gp_country_intel_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -15,7 +16,8 @@ const views = makeRecordViews();
 /**
  * One country's briefing, the record first (decision 0042): the country view's `intelligence`; a country without a
  * view or briefing falls back to the `country_intelligence` action, as does a failed view fetch (reported). Several
- * countries at once (the list page, the map) stay on the action: one call covers 15 names, where views are one file each.
+ * countries at once (the list page) read the record's countries index in one request (`index/countries.json`), and
+ * only when it is missing or unreadable (reported) ask the action, 15 names per call.
  */
 export async function fetchCountryBriefing(name, { getViews = views, fetchAction = fetchCountryIntelligence } = {}) {
   const iso3 = resolveCountry(name)?.iso3;
@@ -88,10 +90,15 @@ export function useCountryIntelligence(countryNames) {
         const one = await fetchCountryBriefing(countryNames[0]);
         if (one) data[countryNames[0]] = one;
       } else {
-        await runPooled(chunkNames(countryNames, MAX_NAMES_PER_CALL), MAX_CONCURRENT_BATCHES, async (chunk) => {
-          const result = await fetchCountryIntelligence(chunk);
-          Object.assign(data, result?.data || {});
-        });
+        const index = await loadCountriesIndex();
+        if (index) {
+          Object.assign(data, briefingsFromIndex(index, countryNames));
+        } else {
+          await runPooled(chunkNames(countryNames, MAX_NAMES_PER_CALL), MAX_CONCURRENT_BATCHES, async (chunk) => {
+            const result = await fetchCountryIntelligence(chunk);
+            Object.assign(data, result?.data || {});
+          });
+        }
       }
       setIntelligence(data);
       cacheMerge(data);

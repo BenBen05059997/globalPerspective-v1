@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Countries index (record/views/index/countries.json)",
+  "description": "Per ISO3 with a country briefing, the fields the countries list and the country-risk map layer read (the country_intelligence action's answer, cut to those fields, and only the first risk signal). No drift notes at all (drift depth is a member perk) and no systems analysis. Built by indexViews.js from the country views' `intelligence`.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "countries"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "countries": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Z]{3}$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["generatedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "countryName": {"type": ["string", "null"]},
+          "riskScore": {"type": ["number", "string", "null"]},
+          "riskLevel": {"type": ["string", "null"]},
+          "dimensions": {"type": ["object", "null"]},
+          "headline": {"type": ["string", "null"]},
+          "trajectory": {"type": ["string", "null"]},
+          "riskSignals": {"type": "array", "items": {"type": "string"}, "maxItems": 1},
+          "generatedAt": {"type": "string"}
+        }
+      }
+    }
+  }
+}

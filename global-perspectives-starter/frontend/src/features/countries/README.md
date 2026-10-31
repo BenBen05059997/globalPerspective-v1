@@ -44,10 +44,10 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   `newsMarketsData` (rule `MarketsDataHourly`, hourly; weekly macros `MarketsMacrosWeekly`) writes the FX and macro rows. `newsSensitiveData-dev` serves all.
 
 ## Data
-- `useCountryIntelligence` -> `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
+- `useCountryIntelligence` (several countries: the list page) -> the record's countries index (`/data/record/views/index/countries.json`, one request for every briefed country; `@/shared/api/countryBriefingsIndex.js`: the fields the list and the risk layer read, only the first risk signal, no drift), falling back when the index is missing or unreadable (reported) to `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
   localStorage `gp_country_intel_v1`, 30 min. The auth header is sent when signed in; the action is not tier-gated.
   One country (page, `CountryCardV2`) reads the view's `intelligence` first (0042 step 4, `lib/viewIntelligence.js`; equal to the action's item
-  for all 48 views), falling back to the action on a missing view or failed fetch (reported); the list page and map layer stay on the action.
+  for all 48 views), falling back to the action on a missing view or failed fetch (reported); the list page and the map layer read the countries index (compared field by field with the action for 40 live briefings, 2026-10-31: no difference).
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h). Drift-note depth is capped by tier on the
   server; the call sends the auth header when signed in, so members get full depth (anonymous: latest note plus a count).
   The drift notes are read from the record's country view (`/data/record/views/countries/<ISO3>.json`, decision 0042 step 4: notes only, as
@@ -55,8 +55,8 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   failed view fetch or a shorter view keeps the action's notes. Snapshots, the total and the gate always come from `country_history`.
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
-- `useWebIndex` -> `web_index` (memory, 30 min): How it connects and the story-web coverage line.
-- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`
+- `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
+- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
   (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).
 
 ## Pipeline

@@ -1,6 +1,7 @@
 // useCountryRiskLayer — data for the R4b COUNTRY RISK map layer. Fetches country_intelligence for
 // every country candidate the site already knows is "in the news" (the same weekly-archive
-// derivation CountryListPage uses), batched at the backend's real per-call cap (15 names — the
+// derivation CountryListPage uses). The record's countries index answers every name in ONE request; when it is missing or
+// unreadable the action is asked instead, batched at the backend's real per-call cap (15 names — the
 // newsSensitiveData Lambda silently slices anything bigger, so a caller that ignores this loses
 // the tail of its request without an error), with bounded concurrency and a session cache so
 // flipping the layer switch back and forth never re-fetches.
@@ -15,6 +16,7 @@ import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES, buildCountryRiskLayer } from '@/shared/map/countryRiskLayer.js';
 import { isCountry } from '@/shared/lib/countries.js';
+import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBriefingsIndex.js';
 
 // How many candidate countries to request briefings for. Bounded so a busy news day can't turn
 // one layer switch into dozens of Lambda calls; a country beyond this rank simply isn't drawn
@@ -82,6 +84,18 @@ export function useCountryRiskLayer(active) {
     setLoading(true);
     setCallCount(0);
     (async () => {
+      // The record's countries index answers every name in ONE request; the action's chunks are the fallback.
+      const index = await loadCountriesIndex();
+      if (cancelled) return;
+      if (index) {
+        const data = briefingsFromIndex(index, names);
+        for (const name of names) intelCache.set(name, data[name] || null);
+        setCallCount(1);
+        intelFetchedKey = namesKey;
+        setIntelByName(Object.fromEntries(intelCache));
+        setLoading(false);
+        return;
+      }
       await runPooled(chunks, MAX_CONCURRENT_BATCHES, async (chunk) => {
         try {
           const result = await fetchCountryIntelligence(chunk);

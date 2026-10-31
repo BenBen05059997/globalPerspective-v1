@@ -1,0 +1,199 @@
+{
+  "analyses.json": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "analyses": {
+      "thread-a": {
+        "threadId": "thread-a",
+        "threadTitle": "A title",
+        "storyArc": "A arc",
+        "watchQuestions": [
+          "Q1?"
+        ],
+        "dimensions": {
+          "conflict": {
+            "score": 60,
+            "why": "w"
+          }
+        },
+        "riskScore": 60,
+        "generatedAt": "2026-10-21T05:00:00.000Z"
+      },
+      "thread-b": {
+        "threadId": "thread-b",
+        "threadTitle": "B title",
+        "generatedAt": "2026-10-21T05:00:00.000Z"
+      }
+    }
+  },
+  "web.json": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "generatedAt": "2026-10-21T05:00:00.000Z",
+    "maxAgeDays": 30,
+    "websUsed": [
+      {
+        "country": "Germany",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "nodes": 1
+      },
+      {
+        "country": "France",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "nodes": 2
+      }
+    ],
+    "links": [
+      {
+        "from": "thread-a",
+        "to": "thread-b",
+        "confidence": "strong",
+        "lagDays": 2,
+        "mechanism": "forward",
+        "cited": [
+          {
+            "topicId": "t",
+            "date": "2026-10-20",
+            "title": "T"
+          }
+        ],
+        "country": "France",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "iso3": [
+          "FRA"
+        ]
+      },
+      {
+        "from": "thread-b",
+        "to": "thread-a",
+        "confidence": "weak",
+        "lagDays": 1,
+        "mechanism": "back",
+        "cited": [],
+        "country": "France",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "iso3": [
+          "FRA"
+        ]
+      }
+    ],
+    "shared": [
+      {
+        "a": "thread-a",
+        "b": "thread-b",
+        "actors": [
+          "Macron"
+        ],
+        "weight": 1,
+        "country": "France",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "iso3": [
+          "FRA"
+        ]
+      }
+    ],
+    "threads": {
+      "thread-a": {
+        "state": "linked",
+        "title": "A second",
+        "entries": 2,
+        "places": [
+          {
+            "name": "France",
+            "n": 2
+          },
+          {
+            "name": "Germany",
+            "n": 1
+          }
+        ],
+        "analysedIn": [
+          {
+            "country": "France",
+            "generatedAt": "2026-10-21T05:00:00.000Z"
+          }
+        ],
+        "iso3": [
+          "FRA",
+          "DEU"
+        ]
+      },
+      "thread-b": {
+        "state": "linked",
+        "title": "B first",
+        "entries": 1,
+        "places": [
+          {
+            "name": "France",
+            "n": 1
+          }
+        ],
+        "analysedIn": [
+          {
+            "country": "France",
+            "generatedAt": "2026-10-21T05:00:00.000Z"
+          }
+        ],
+        "iso3": [
+          "FRA"
+        ]
+      },
+      "thread-c": {
+        "state": "analysed_no_links",
+        "title": "C first",
+        "entries": 1,
+        "places": [
+          {
+            "name": "Ukraine",
+            "n": 1
+          }
+        ],
+        "analysedIn": [
+          {
+            "country": "Germany",
+            "generatedAt": "2026-10-21T05:00:00.000Z"
+          }
+        ],
+        "iso3": [
+          "UKR"
+        ]
+      }
+    }
+  },
+  "countries.json": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "countries": {
+      "POL": {
+        "countryName": "Poland",
+        "generatedAt": "2026-10-21T05:00:00.000Z"
+      },
+      "UKR": {
+        "countryName": "Ukraine",
+        "riskScore": 61,
+        "riskLevel": "elevated",
+        "dimensions": {
+          "conflict": {
+            "score": 61,
+            "why": "w"
+          }
+        },
+        "headline": "H",
+        "trajectory": "stable",
+        "generatedAt": "2026-10-21T05:00:00.000Z",
+        "riskSignals": [
+          "s1"
+        ]
+      }
+    }
+  }
+}

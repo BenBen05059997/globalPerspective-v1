@@ -1,5 +1,5 @@
 // The record views (decisions 0037, 0042), read straight from the Worker's /data/* route: story, links, country and daily counts
-// files. A 404 means "not generated yet" and answers null; any other failure throws for the caller to report.
+// files, and the index/ files that serve a page needing many stories or countries at once. A 404 means "not generated yet" and answers null; any other failure throws for the caller to report.
 // makeRecordViews(getView) lets a feature swap the fetch (the board's dev fixtures); every reader shares these rules.
 const BASE = '/data/record/views';
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
@@ -25,5 +25,10 @@ export function makeRecordViews(getView = fetchRecordView) {
     fetchLinksView(id) { return ID.test(id || '') ? getView(`links/${id}.json`) : Promise.resolve(null); },
     fetchCountryView(iso3) { return ISO3.test(iso3 || '') ? getView(`countries/${iso3}.json`) : Promise.resolve(null); },
     fetchCounts(date) { return DAY.test(date || '') ? getView(`counts/${date}.json`) : Promise.resolve(null); },
+    // The many-at-once indexes (one file each, built from the same notes as the per-story and per-country views):
+    // the analysis fields of every story, the whole story web in `web_index` shape, the briefing fields of every country.
+    fetchAnalysesIndex() { return getView('index/analyses.json'); },
+    fetchWebIndexView() { return getView('index/web.json'); },
+    fetchCountriesIndex() { return getView('index/countries.json'); },
   };
 }

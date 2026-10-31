@@ -1,0 +1,972 @@
+{
+ "note": "Captured live 2026-10-31: the country_intelligence action (long text the readers never touch dropped) and the record index/countries.json built locally from a copy of the live record.",
+ "names": [
+  "United States",
+  "France",
+  "Japan",
+  "India",
+  "Israel",
+  "China",
+  "Yemen",
+  "Russia",
+  "Ukraine",
+  "Spain",
+  "South Korea",
+  "Saudi Arabia"
+ ],
+ "action": {
+  "United States": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 32096,
+   "dayCount": 25,
+   "dominantCategory": "politics",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "United States",
+   "generatedAt": "2026-10-29T05:15:55.055Z",
+   "riskSignals": [
+    "US midterm elections on November 3 — watch for election security incidents, voter suppression claims, and Trump's response to any Democratic gains",
+    "Qatari-mediated Iran deal response expected by early November — watch for Iranian Supreme Leader Mojtaba Khamenei's decision on the US-Israel proposal",
+    "Anthropic IPO expected in November — watch for whether the $2 trillion valuation holds amid the company's own risk disclosures",
+    "Russia sanctions waiver expiration in mid-December — watch for Trump's decision on whether to extend, modify, or let Graham-Blumenthal sanctions snap back"
+   ],
+   "totalArticles": 228,
+   "riskLevel": "high",
+   "categories": {
+    "business": 12,
+    "climate": 3,
+    "conflict": 13,
+    "disaster": 11,
+    "economy": 8,
+    "energy": 13,
+    "health": 5,
+    "military": 24,
+    "politics": 76,
+    "science": 7,
+    "society": 32,
+    "technology": 24
+   },
+   "headline": "Trump's Pre-Midterm Gamble: Sanctions Relief, Iran Brinkmanship, and Institutional Stress",
+   "activeArcCount": 37,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-29"
+   },
+   "riskScore": 75,
+   "dimensions": {
+    "conflict": {
+     "score": 70,
+     "why": "Active US war with Iran, Pentagon post-election strike planning, and the Ukraine intelligence-sharing rift keep armed conflict risk elevated."
+    },
+    "economic": {
+     "score": 60,
+     "why": "Diesel price crisis from the Iran war, Russia sanctions waiver, and Federal Reserve holding rates steady amid inflation signal economic strain."
+    },
+    "humanitarian": {
+     "score": 45,
+     "why": "Botched execution of Christa Pike, Hurricane Isaias impacts, and the air ambulance crash contribute to humanitarian concerns, though no mass displacement crisis is evident."
+    },
+    "political": {
+     "score": 75,
+     "why": "Midterm elections under threat from campaign finance hacks, the Comey family legal battles, and Trump's transactional foreign policy decisions create institutional stress."
+    }
+   }
+  },
+  "France": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 22998,
+   "dayCount": 23,
+   "dominantCategory": "society",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "France",
+   "generatedAt": "2026-10-29T05:15:45.858Z",
+   "riskSignals": [
+    "Watch for government announcement of concrete measures on school funding and teacher recruitment by November 5, as promised for October 26.",
+    "Monitor Marine Le Pen's campaign rallies and polling numbers through mid-November for signs of momentum from the unrest.",
+    "Track G7 diesel release implementation and fuel price movements in France over the next two weeks.",
+    "Observe any French diplomatic response to Iraqi court sentences for French IS fighters by November 10."
+   ],
+   "totalArticles": 66,
+   "riskLevel": "high",
+   "categories": {
+    "conflict": 1,
+    "disaster": 2,
+    "economy": 2,
+    "energy": 6,
+    "military": 2,
+    "politics": 6,
+    "science": 2,
+    "society": 43,
+    "technology": 2
+   },
+   "headline": "Macron Faces Mounting Unrest as Protests and Political Challenges Converge",
+   "activeArcCount": 9,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-28"
+   },
+   "riskScore": 85,
+   "dimensions": {
+    "conflict": {
+     "score": 80,
+     "why": "Violent cost-of-living protests with widespread looting and 1,800 arrests represent severe civil unrest, though not armed conflict."
+    },
+    "economic": {
+     "score": 65,
+     "why": "EU budget clashes and diesel supply disruptions from the US-Iran war are creating economic stress, though not yet a full crisis."
+    },
+    "humanitarian": {
+     "score": 55,
+     "why": "Widespread looting and 1,800 arrests during protests indicate civilian harm and social disruption, while storms cut power to 150,000 homes."
+    },
+    "political": {
+     "score": 85,
+     "why": "The escalation of protests into national disorder, combined with Marine Le Pen's presidential campaign launch, threatens institutional stability and governance legitimacy."
+    }
+   }
+  },
+  "Japan": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 22243,
+   "dayCount": 12,
+   "dominantCategory": "military",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Japan",
+   "generatedAt": "2026-10-26T05:15:44.865Z",
+   "riskSignals": [
+    "North Korean missile test or satellite launch expected around Workers' Party anniversary in early November",
+    "US Forces Japan announcement on curfew enforcement and operational pause review by November 1",
+    "Governor Koja Genta's formal SOFA revision request to Tokyo expected by mid-November",
+    "Japan Meteorological Agency updated El Niño advisory with peak intensity forecast by November 5"
+   ],
+   "totalArticles": 28,
+   "riskLevel": "elevated",
+   "categories": {
+    "business": 2,
+    "climate": 2,
+    "conflict": 1,
+    "energy": 5,
+    "military": 9,
+    "science": 3,
+    "society": 5,
+    "technology": 1
+   },
+   "headline": "Okinawa Murder Indictment and North Korean Missiles Test Japan's Security",
+   "activeArcCount": 6,
+   "dateRange": {
+    "from": "2026-10-01",
+    "to": "2026-10-25"
+   },
+   "riskScore": 72,
+   "dimensions": {
+    "conflict": {
+     "score": 72,
+     "why": "North Korea's fourth ballistic missile launch in a month and the Okinawa murder indictment both elevate armed-actor intensity and military friction."
+    },
+    "economic": {
+     "score": 55,
+     "why": "G7 strategic reserve releases and record El Niño conditions signal energy market stress and potential agricultural disruption for import-dependent Japan."
+    },
+    "humanitarian": {
+     "score": 45,
+     "why": "Record El Niño raises risks of drought, flooding, and civilian harm, though no acute humanitarian crisis is yet reported."
+    },
+    "political": {
+     "score": 68,
+     "why": "The Okinawa murder case strains the US-Japan alliance and fuels domestic protest over the US military presence, testing institutional legitimacy."
+    }
+   }
+  },
+  "India": {
+   "latencyMs": 19587,
+   "dayCount": 19,
+   "riskScore": 72,
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "India",
+   "generatedAt": "2026-10-28T05:15:42.178Z",
+   "riskLevel": "elevated",
+   "headline": "Modi Faces Youth-Led Voter Roll Revolt as Crises Multiply",
+   "model": "deepseek-v4-pro",
+   "dominantCategory": "society",
+   "riskSignals": [
+    "Supreme Court hearing on media groups' privacy law challenge expected within 1-2 weeks",
+    "West Bengal government official casualty report on Kolkata crush due by mid-November",
+    "Election Commission response to voter-roll revision demands expected within 2 weeks",
+    "Cyclone Arnab post-landfall damage assessment and relief deployment report due within 1 week"
+   ],
+   "totalArticles": 29,
+   "categories": {
+    "conflict": 3,
+    "disaster": 4,
+    "military": 1,
+    "politics": 7,
+    "society": 14
+   },
+   "activeArcCount": 3,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-28"
+   },
+   "dimensions": {
+    "conflict": {
+     "score": 35,
+     "why": "The Flydubai terror plot and Strait of Hormuz tanker attack show regional conflict spillover, but India itself is not engaged in armed violence."
+    },
+    "economic": null,
+    "humanitarian": {
+     "score": 58,
+     "why": "The Kolkata festival crush killed 17 and injured many, while Cyclone Arnab forced the evacuation of nearly 100,000 people."
+    },
+    "political": {
+     "score": 72,
+     "why": "The voter-roll crisis has triggered mass youth protests, pre-emptive detentions, and a Supreme Court privacy law challenge against the Modi government."
+    }
+   }
+  },
+  "Israel": {
+   "latencyMs": 22123,
+   "dayCount": 20,
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Israel",
+   "generatedAt": "2026-10-28T05:15:44.736Z",
+   "riskLevel": "high",
+   "headline": "Netanyahu's Election Gamble Meets Multi-Front War and West Bank Unrest",
+   "model": "deepseek-v4-pro",
+   "dominantCategory": "conflict",
+   "riskSignals": [
+    "President Herzog's coalition consultations expected to begin by November 2, with a decision on who forms the next government likely by November 10",
+    "IDF Central Command announcements on Hebron crackdown arrests and settler violence prosecutions expected within 1-2 weeks",
+    "UN Security Council debate on the genocide commission report likely scheduled for early November",
+    "UAE Attorney General's formal terrorism charges against Flydubai co-pilot Hamam al-Hammami expected by mid-November"
+   ],
+   "totalArticles": 60,
+   "categories": {
+    "conflict": 33,
+    "disaster": 1,
+    "politics": 24,
+    "society": 2
+   },
+   "activeArcCount": 10,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-28"
+   },
+   "riskScore": 90,
+   "dimensions": {
+    "conflict": {
+     "score": 90,
+     "why": "Active Iran-Israel war, Hebron crackdown, Gaza drone strikes despite ceasefire, and escalating settler violence all indicate severe armed-actor intensity."
+    },
+    "economic": {
+     "score": 55,
+     "why": "Continued US military aid and no major sanctions signal moderate economic stress, but prolonged political paralysis and security threats could disrupt trade and investment."
+    },
+    "humanitarian": {
+     "score": 70,
+     "why": "UN genocide accusation, civilian deaths in Gaza and Hebron, and settler attacks on Palestinian harvesters indicate severe civilian harm and displacement."
+    },
+    "political": {
+     "score": 75,
+     "why": "Election deadlock, Supreme Court intervention on Arab party ban, and Trump's endorsement create institutional instability and contested legitimacy."
+    }
+   }
+  },
+  "China": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 21390,
+   "dayCount": 19,
+   "dominantCategory": "politics",
+   "situationSummary": null,
+   "trajectory": "stable",
+   "countryName": "China",
+   "generatedAt": "2026-10-26T05:15:43.932Z",
+   "riskSignals": [
+    "EU-China hybrid vehicle quota formalization expected by mid-November",
+    "US Commerce Department Bureau of Industry and Security decision on expanding data center gear ban by early November",
+    "Chinese leadership meeting outcome and any new anti-corruption directives by November 5",
+    "Philippine Sea carrier group movements and any US-China naval incidents by November 10"
+   ],
+   "totalArticles": 52,
+   "riskLevel": "elevated",
+   "categories": {
+    "business": 5,
+    "economy": 11,
+    "military": 9,
+    "politics": 13,
+    "science": 3,
+    "society": 2,
+    "technology": 9
+   },
+   "headline": "Xi's Corruption Crackdown Meets Trade Deals and Military Posturing",
+   "activeArcCount": 8,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-26"
+   },
+   "riskScore": 55,
+   "dimensions": {
+    "conflict": {
+     "score": 55,
+     "why": "The Liaoning aircraft carrier and USS Theodore Roosevelt converging in the Philippine Sea raises the risk of a naval incident, while Taiwan's defense spending increase signals heightened cross-strait tensions."
+    },
+    "economic": {
+     "score": 35,
+     "why": "The 4.5% Q3 GDP beat and EU trade deal are positive signals, but the hybrid vehicle quotas and US supply chain bans represent ongoing economic restrictions."
+    },
+    "humanitarian": null,
+    "political": {
+     "score": 40,
+     "why": "Xi's corruption crackdown ahead of the leadership meeting suggests internal party discipline is being tightened, but no signs of instability or unrest are evident."
+    }
+   }
+  },
+  "Yemen": {
+   "latencyMs": 20054,
+   "dayCount": 18,
+   "riskScore": 90,
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Yemen",
+   "generatedAt": "2026-10-25T05:16:01.905Z",
+   "riskLevel": "high",
+   "headline": "Saudi-Houthi Escalation Widens as Yemen Faces Migrant Tragedy and Hunger",
+   "dimensions": {
+    "conflict": {
+     "score": 85,
+     "why": "Active Saudi-Houthi tit-for-tat strikes, record ship attacks near Hormuz, and foreign troop deployments signal severe armed-actor intensity."
+    },
+    "economic": {
+     "score": 70,
+     "why": "Record ship attacks near Hormuz are slowing oil exports, threatening regional and global energy trade flows."
+    },
+    "humanitarian": {
+     "score": 90,
+     "why": "The Djibouti migrant disaster killed 139 people, and deepening hunger among Yemen's displaced is worsening as fighting disrupts aid."
+    },
+    "political": {
+     "score": 55,
+     "why": "Yemen's internationally recognized government remains fragile amid the escalation, with no clear political resolution in sight."
+    }
+   },
+   "model": "deepseek-v4-pro",
+   "dominantCategory": "conflict",
+   "riskSignals": [
+    "Watch for Houthi missile or drone strikes on Saudi airports or oil infrastructure in the next 7-14 days, especially after Turkish and Pakistani force deployments.",
+    "Monitor IOM and Djiboutian Coast Guard announcements on final migrant death toll and recovery operations by early November.",
+    "Track any UN Security Council emergency session on Yemen or the Strait of Hormuz shipping attacks before November 8.",
+    "Watch for coalition naval repositioning near Bab el-Mandeb or Hormuz in response to record ship attacks."
+   ],
+   "totalArticles": 44,
+   "categories": {
+    "conflict": 38,
+    "disaster": 4,
+    "military": 1,
+    "society": 1
+   },
+   "activeArcCount": 3,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-20"
+   }
+  },
+  "Russia": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 24316,
+   "dayCount": 20,
+   "dominantCategory": "conflict",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Russia",
+   "generatedAt": "2026-10-26T05:15:46.915Z",
+   "riskSignals": [
+    "WHO emergency committee meeting on the Siberian plague incident expected by November 5",
+    "U.S. Treasury decision on extending the Russian diesel sanctions waiver due by mid-December, with interim guidance expected by November 10",
+    "NATO defense ministers' meeting in early November to address Russian strikes near Polish airspace",
+    "Rospotrebnadzor press conference on the Shipilova death investigation expected by November 3"
+   ],
+   "totalArticles": 84,
+   "riskLevel": "high",
+   "categories": {
+    "conflict": 41,
+    "economy": 1,
+    "energy": 6,
+    "health": 8,
+    "military": 7,
+    "politics": 19,
+    "technology": 2
+   },
+   "headline": "Russia Escalates Ukraine Air War as Sanctions Ease and Plague Mystery Deepens",
+   "activeArcCount": 6,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-20"
+   },
+   "riskScore": 85,
+   "dimensions": {
+    "conflict": {
+     "score": 85,
+     "why": "Russia is conducting its heaviest sustained aerial assault on Ukraine's energy infrastructure since spring, with strikes reaching western Ukraine and triggering NATO member Poland to scramble fighter jets."
+    },
+    "economic": {
+     "score": 55,
+     "why": "The U.S. diesel sanctions waiver provides temporary economic relief, but Black Sea shipping disruption has cut wheat exports by 60% and long-term sanctions uncertainty persists."
+    },
+    "humanitarian": {
+     "score": 65,
+     "why": "The Siberian plague incident raises biosafety concerns, while the air war on Ukraine's energy infrastructure threatens civilian access to power and heat as winter approaches."
+    },
+    "political": {
+     "score": 70,
+     "why": "The detention of Novaya Gazeta editor Sergei Sokolov and a Swedish citizen signals an intensifying domestic crackdown, while the Trump diesel waiver creates political volatility in U.S.-Russia relations."
+    }
+   }
+  },
+  "Ukraine": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 24806,
+   "dayCount": 23,
+   "dominantCategory": "conflict",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Ukraine",
+   "generatedAt": "2026-10-29T05:15:47.725Z",
+   "riskSignals": [
+    "EU foreign ministers' formal response to Zelenskyy's $79 billion request expected by mid-November 2026",
+    "US Treasury decision on extending the Russian diesel sanctions waiver due by December 15, 2026",
+    "Watch for any renewed Starlink/Starshield restrictions announced by SpaceX or the US government before November 12, 2026",
+    "Russian military command in Kherson oblast to confirm whether the Oleshky humanitarian corridor holds beyond November 5, 2026"
+   ],
+   "totalArticles": 74,
+   "riskLevel": "high",
+   "categories": {
+    "conflict": 48,
+    "economy": 2,
+    "energy": 1,
+    "military": 3,
+    "politics": 16,
+    "technology": 4
+   },
+   "headline": "Zelenskyy Scrambles for European Backing as US Ties Fracture",
+   "activeArcCount": 5,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-27"
+   },
+   "riskScore": 95,
+   "dimensions": {
+    "conflict": {
+     "score": 95,
+     "why": "Russia's heaviest air assault since spring struck 11 regions on September 30, jet-powered drones were deployed on October 1, and Poland scrambled fighters on October 16 as strikes hit western Ukraine."
+    },
+    "economic": {
+     "score": 75,
+     "why": "Black Sea wheat exports are down 60% due to crippled shipping routes, and Zelenskyy is requesting an emergency $79 billion from the EU to sustain the war effort."
+    },
+    "humanitarian": {
+     "score": 80,
+     "why": "Residents of Oleshky have been surviving on weeds and pickles while trapped by minefields and shelling, and Russia's sustained campaign against energy infrastructure threatens civilian heating and power as winter approaches."
+    },
+    "political": {
+     "score": 85,
+     "why": "Zelenskyy's ties with Trump have deteriorated over sanctions relief and intelligence restrictions, forcing a scramble for European backing while South Korea recalled its ambassador over the North Korean POW disclosure."
+    }
+   }
+  },
+  "Spain": {
+   "latencyMs": 23247,
+   "dayCount": 12,
+   "riskScore": 78,
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Spain",
+   "generatedAt": "2026-10-29T05:16:03.548Z",
+   "riskLevel": "high",
+   "headline": "Spain Faces Snap Election Amid Housing Crisis and Rail Disaster",
+   "model": "deepseek-v4-pro",
+   "dominantCategory": "politics",
+   "riskSignals": [
+    "Preliminary findings from the train collision investigation expected by November 5-10, 2026",
+    "Parliamentary vote on the eviction ban proposal before the November 29 election",
+    "New housing protests in Madrid or Barcelona likely before November 15, 2026",
+    "Renfe and Iryo safety audit results expected by November 12, 2026"
+   ],
+   "totalArticles": 22,
+   "categories": {
+    "disaster": 5,
+    "politics": 9,
+    "society": 8
+   },
+   "activeArcCount": 3,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-29"
+   },
+   "dimensions": {
+    "conflict": null,
+    "economic": {
+     "score": 45,
+     "why": "The housing crisis and rail disaster could disrupt economic confidence, but no direct financial stress indicators are yet present."
+    },
+    "humanitarian": {
+     "score": 62,
+     "why": "The train collision killed at least 30 people and flooding prompted rooftop rescues, indicating significant civilian harm and displacement."
+    },
+    "political": {
+     "score": 78,
+     "why": "The housing crisis has already toppled the government and forced a snap election, with intense polarization between PSOE and PP."
+    }
+   }
+  },
+  "South Korea": {
+   "model": "deepseek-v4-pro",
+   "latencyMs": 19410,
+   "dayCount": 12,
+   "dominantCategory": "military",
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "South Korea",
+   "generatedAt": "2026-10-28T05:15:41.944Z",
+   "riskSignals": [
+    "North Korean missile test or military provocation expected around Workers' Party of Korea anniversary on October 10 (already passed, watch for follow-up)",
+    "Seoul Defense Dialogue scheduled for October 30 — watch for South Korean military announcements or new defense commitments",
+    "Ukraine's response to South Korea's apology demand — watch for diplomatic statements from Kyiv by November 5",
+    "Additional North Korean howitzer or artillery movements near the DMZ — monitor for any firing incidents or border violations"
+   ],
+   "totalArticles": 27,
+   "riskLevel": "elevated",
+   "categories": {
+    "business": 5,
+    "conflict": 1,
+    "economy": 3,
+    "military": 12,
+    "politics": 6
+   },
+   "headline": "South Korea Confronts North Korean Provocations and Ukraine Diplomatic Rift",
+   "activeArcCount": 6,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-27"
+   },
+   "riskScore": 72,
+   "dimensions": {
+    "conflict": {
+     "score": 72,
+     "why": "North Korea's missile tests, DMZ mine blasts, and howitzer deployment near the border represent active military escalation with direct South Korean military responses."
+    },
+    "economic": {
+     "score": 40,
+     "why": "Trade tensions with the US over investment claims and competitive pressures from Chinese carmakers create moderate economic stress, though Samsung's retention bonuses suggest resilience."
+    },
+    "humanitarian": {
+     "score": 25,
+     "why": "Three South Korean soldiers were wounded by landmines in the DMZ, indicating limited but real humanitarian impact from the border conflict."
+    },
+    "political": {
+     "score": 55,
+     "why": "The diplomatic rift with Ukraine and President Lee Jae Myung's demand for an apology indicate political tensions, though domestic institutional stability remains intact."
+    }
+   }
+  },
+  "Saudi Arabia": {
+   "latencyMs": 20902,
+   "dayCount": 19,
+   "riskScore": 78,
+   "situationSummary": null,
+   "trajectory": "escalating",
+   "countryName": "Saudi Arabia",
+   "generatedAt": "2026-10-25T05:16:02.990Z",
+   "riskLevel": "high",
+   "headline": "Saudi Arabia Faces Houthi Escalation as Regional Forces Mobilize",
+   "model": "deepseek-v4-pro",
+   "dominantCategory": "conflict",
+   "riskSignals": [
+    "Watch for formal announcement of Turkish and Pakistani troop deployments to Saudi Arabia by November 8",
+    "Monitor Houthi missile or drone attacks on Saudi airports or oil infrastructure in the next 7-14 days",
+    "Watch for UAE Attorney General's formal terrorism charges against Hamam al-Hammami by November 1",
+    "Monitor Strait of Hormuz shipping incident reports for further escalation beyond record levels by November 8"
+   ],
+   "totalArticles": 42,
+   "categories": {
+    "conflict": 36,
+    "military": 2,
+    "society": 2,
+    "technology": 2
+   },
+   "activeArcCount": 5,
+   "dateRange": {
+    "from": "2026-09-30",
+    "to": "2026-10-20"
+   },
+   "dimensions": {
+    "conflict": {
+     "score": 78,
+     "why": "Active kinetic exchanges with Houthi forces targeting Saudi airports and border regions, with 31 conflict articles documenting sustained tit-for-tat strikes."
+    },
+    "economic": {
+     "score": 62,
+     "why": "Record ship attacks near the Strait of Hormuz are slowing oil exports, directly threatening Saudi Arabia's primary revenue stream and global energy markets."
+    },
+    "humanitarian": {
+     "score": 45,
+     "why": "Civilian casualties from Houthi strikes on airports and coalition counterstrikes are likely, though no mass displacement or aid crisis is yet documented in the coverage."
+    },
+    "political": {
+     "score": 35,
+     "why": "International human rights pressure over the death sentence for a Facebook post creates diplomatic friction, but domestic institutional stability remains intact under Salman bin Abdulaziz Al Saud."
+    }
+   }
+  }
+ },
+ "index": {
+  "schemaVersion": 1,
+  "builtFrom": {
+   "factsThrough": "2026-10-30",
+   "readingsThrough": "2026-W43"
+  },
+  "countries": {
+   "USA": {
+    "countryName": "United States",
+    "riskScore": 75,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 70,
+      "why": "Active US war with Iran, Pentagon post-election strike planning, and the Ukraine intelligence-sharing rift keep armed conflict risk elevated."
+     },
+     "economic": {
+      "score": 60,
+      "why": "Diesel price crisis from the Iran war, Russia sanctions waiver, and Federal Reserve holding rates steady amid inflation signal economic strain."
+     },
+     "humanitarian": {
+      "score": 45,
+      "why": "Botched execution of Christa Pike, Hurricane Isaias impacts, and the air ambulance crash contribute to humanitarian concerns, though no mass displacement crisis is evident."
+     },
+     "political": {
+      "score": 75,
+      "why": "Midterm elections under threat from campaign finance hacks, the Comey family legal battles, and Trump's transactional foreign policy decisions create institutional stress."
+     }
+    },
+    "headline": "Trump's Pre-Midterm Gamble: Sanctions Relief, Iran Brinkmanship, and Institutional Stress",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-29T05:15:55.055Z",
+    "riskSignals": [
+     "US midterm elections on November 3 — watch for election security incidents, voter suppression claims, and Trump's response to any Democratic gains"
+    ]
+   },
+   "FRA": {
+    "countryName": "France",
+    "riskScore": 85,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 80,
+      "why": "Violent cost-of-living protests with widespread looting and 1,800 arrests represent severe civil unrest, though not armed conflict."
+     },
+     "economic": {
+      "score": 65,
+      "why": "EU budget clashes and diesel supply disruptions from the US-Iran war are creating economic stress, though not yet a full crisis."
+     },
+     "humanitarian": {
+      "score": 55,
+      "why": "Widespread looting and 1,800 arrests during protests indicate civilian harm and social disruption, while storms cut power to 150,000 homes."
+     },
+     "political": {
+      "score": 85,
+      "why": "The escalation of protests into national disorder, combined with Marine Le Pen's presidential campaign launch, threatens institutional stability and governance legitimacy."
+     }
+    },
+    "headline": "Macron Faces Mounting Unrest as Protests and Political Challenges Converge",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-29T05:15:45.858Z",
+    "riskSignals": [
+     "Watch for government announcement of concrete measures on school funding and teacher recruitment by November 5, as promised for October 26."
+    ]
+   },
+   "JPN": {
+    "countryName": "Japan",
+    "riskScore": 72,
+    "riskLevel": "elevated",
+    "dimensions": {
+     "conflict": {
+      "score": 72,
+      "why": "North Korea's fourth ballistic missile launch in a month and the Okinawa murder indictment both elevate armed-actor intensity and military friction."
+     },
+     "economic": {
+      "score": 55,
+      "why": "G7 strategic reserve releases and record El Niño conditions signal energy market stress and potential agricultural disruption for import-dependent Japan."
+     },
+     "humanitarian": {
+      "score": 45,
+      "why": "Record El Niño raises risks of drought, flooding, and civilian harm, though no acute humanitarian crisis is yet reported."
+     },
+     "political": {
+      "score": 68,
+      "why": "The Okinawa murder case strains the US-Japan alliance and fuels domestic protest over the US military presence, testing institutional legitimacy."
+     }
+    },
+    "headline": "Okinawa Murder Indictment and North Korean Missiles Test Japan's Security",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-26T05:15:44.865Z",
+    "riskSignals": [
+     "North Korean missile test or satellite launch expected around Workers' Party anniversary in early November"
+    ]
+   },
+   "IND": {
+    "countryName": "India",
+    "riskScore": 72,
+    "riskLevel": "elevated",
+    "dimensions": {
+     "conflict": {
+      "score": 35,
+      "why": "The Flydubai terror plot and Strait of Hormuz tanker attack show regional conflict spillover, but India itself is not engaged in armed violence."
+     },
+     "economic": null,
+     "humanitarian": {
+      "score": 58,
+      "why": "The Kolkata festival crush killed 17 and injured many, while Cyclone Arnab forced the evacuation of nearly 100,000 people."
+     },
+     "political": {
+      "score": 72,
+      "why": "The voter-roll crisis has triggered mass youth protests, pre-emptive detentions, and a Supreme Court privacy law challenge against the Modi government."
+     }
+    },
+    "headline": "Modi Faces Youth-Led Voter Roll Revolt as Crises Multiply",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-28T05:15:42.178Z",
+    "riskSignals": [
+     "Supreme Court hearing on media groups' privacy law challenge expected within 1-2 weeks"
+    ]
+   },
+   "ISR": {
+    "countryName": "Israel",
+    "riskScore": 90,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 90,
+      "why": "Active Iran-Israel war, Hebron crackdown, Gaza drone strikes despite ceasefire, and escalating settler violence all indicate severe armed-actor intensity."
+     },
+     "economic": {
+      "score": 55,
+      "why": "Continued US military aid and no major sanctions signal moderate economic stress, but prolonged political paralysis and security threats could disrupt trade and investment."
+     },
+     "humanitarian": {
+      "score": 70,
+      "why": "UN genocide accusation, civilian deaths in Gaza and Hebron, and settler attacks on Palestinian harvesters indicate severe civilian harm and displacement."
+     },
+     "political": {
+      "score": 75,
+      "why": "Election deadlock, Supreme Court intervention on Arab party ban, and Trump's endorsement create institutional instability and contested legitimacy."
+     }
+    },
+    "headline": "Netanyahu's Election Gamble Meets Multi-Front War and West Bank Unrest",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-28T05:15:44.736Z",
+    "riskSignals": [
+     "President Herzog's coalition consultations expected to begin by November 2, with a decision on who forms the next government likely by November 10"
+    ]
+   },
+   "CHN": {
+    "countryName": "China",
+    "riskScore": 55,
+    "riskLevel": "elevated",
+    "dimensions": {
+     "conflict": {
+      "score": 55,
+      "why": "The Liaoning aircraft carrier and USS Theodore Roosevelt converging in the Philippine Sea raises the risk of a naval incident, while Taiwan's defense spending increase signals heightened cross-strait tensions."
+     },
+     "economic": {
+      "score": 35,
+      "why": "The 4.5% Q3 GDP beat and EU trade deal are positive signals, but the hybrid vehicle quotas and US supply chain bans represent ongoing economic restrictions."
+     },
+     "humanitarian": null,
+     "political": {
+      "score": 40,
+      "why": "Xi's corruption crackdown ahead of the leadership meeting suggests internal party discipline is being tightened, but no signs of instability or unrest are evident."
+     }
+    },
+    "headline": "Xi's Corruption Crackdown Meets Trade Deals and Military Posturing",
+    "trajectory": "stable",
+    "generatedAt": "2026-10-26T05:15:43.932Z",
+    "riskSignals": [
+     "EU-China hybrid vehicle quota formalization expected by mid-November"
+    ]
+   },
+   "YEM": {
+    "countryName": "Yemen",
+    "riskScore": 90,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 85,
+      "why": "Active Saudi-Houthi tit-for-tat strikes, record ship attacks near Hormuz, and foreign troop deployments signal severe armed-actor intensity."
+     },
+     "economic": {
+      "score": 70,
+      "why": "Record ship attacks near Hormuz are slowing oil exports, threatening regional and global energy trade flows."
+     },
+     "humanitarian": {
+      "score": 90,
+      "why": "The Djibouti migrant disaster killed 139 people, and deepening hunger among Yemen's displaced is worsening as fighting disrupts aid."
+     },
+     "political": {
+      "score": 55,
+      "why": "Yemen's internationally recognized government remains fragile amid the escalation, with no clear political resolution in sight."
+     }
+    },
+    "headline": "Saudi-Houthi Escalation Widens as Yemen Faces Migrant Tragedy and Hunger",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-25T05:16:01.905Z",
+    "riskSignals": [
+     "Watch for Houthi missile or drone strikes on Saudi airports or oil infrastructure in the next 7-14 days, especially after Turkish and Pakistani force deployments."
+    ]
+   },
+   "RUS": {
+    "countryName": "Russia",
+    "riskScore": 85,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 85,
+      "why": "Russia is conducting its heaviest sustained aerial assault on Ukraine's energy infrastructure since spring, with strikes reaching western Ukraine and triggering NATO member Poland to scramble fighter jets."
+     },
+     "economic": {
+      "score": 55,
+      "why": "The U.S. diesel sanctions waiver provides temporary economic relief, but Black Sea shipping disruption has cut wheat exports by 60% and long-term sanctions uncertainty persists."
+     },
+     "humanitarian": {
+      "score": 65,
+      "why": "The Siberian plague incident raises biosafety concerns, while the air war on Ukraine's energy infrastructure threatens civilian access to power and heat as winter approaches."
+     },
+     "political": {
+      "score": 70,
+      "why": "The detention of Novaya Gazeta editor Sergei Sokolov and a Swedish citizen signals an intensifying domestic crackdown, while the Trump diesel waiver creates political volatility in U.S.-Russia relations."
+     }
+    },
+    "headline": "Russia Escalates Ukraine Air War as Sanctions Ease and Plague Mystery Deepens",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-26T05:15:46.915Z",
+    "riskSignals": [
+     "WHO emergency committee meeting on the Siberian plague incident expected by November 5"
+    ]
+   },
+   "UKR": {
+    "countryName": "Ukraine",
+    "riskScore": 95,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 95,
+      "why": "Russia's heaviest air assault since spring struck 11 regions on September 30, jet-powered drones were deployed on October 1, and Poland scrambled fighters on October 16 as strikes hit western Ukraine."
+     },
+     "economic": {
+      "score": 75,
+      "why": "Black Sea wheat exports are down 60% due to crippled shipping routes, and Zelenskyy is requesting an emergency $79 billion from the EU to sustain the war effort."
+     },
+     "humanitarian": {
+      "score": 80,
+      "why": "Residents of Oleshky have been surviving on weeds and pickles while trapped by minefields and shelling, and Russia's sustained campaign against energy infrastructure threatens civilian heating and power as winter approaches."
+     },
+     "political": {
+      "score": 85,
+      "why": "Zelenskyy's ties with Trump have deteriorated over sanctions relief and intelligence restrictions, forcing a scramble for European backing while South Korea recalled its ambassador over the North Korean POW disclosure."
+     }
+    },
+    "headline": "Zelenskyy Scrambles for European Backing as US Ties Fracture",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-29T05:15:47.725Z",
+    "riskSignals": [
+     "EU foreign ministers' formal response to Zelenskyy's $79 billion request expected by mid-November 2026"
+    ]
+   },
+   "ESP": {
+    "countryName": "Spain",
+    "riskScore": 78,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": null,
+     "economic": {
+      "score": 45,
+      "why": "The housing crisis and rail disaster could disrupt economic confidence, but no direct financial stress indicators are yet present."
+     },
+     "humanitarian": {
+      "score": 62,
+      "why": "The train collision killed at least 30 people and flooding prompted rooftop rescues, indicating significant civilian harm and displacement."
+     },
+     "political": {
+      "score": 78,
+      "why": "The housing crisis has already toppled the government and forced a snap election, with intense polarization between PSOE and PP."
+     }
+    },
+    "headline": "Spain Faces Snap Election Amid Housing Crisis and Rail Disaster",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-29T05:16:03.548Z",
+    "riskSignals": [
+     "Preliminary findings from the train collision investigation expected by November 5-10, 2026"
+    ]
+   },
+   "KOR": {
+    "countryName": "South Korea",
+    "riskScore": 72,
+    "riskLevel": "elevated",
+    "dimensions": {
+     "conflict": {
+      "score": 72,
+      "why": "North Korea's missile tests, DMZ mine blasts, and howitzer deployment near the border represent active military escalation with direct South Korean military responses."
+     },
+     "economic": {
+      "score": 40,
+      "why": "Trade tensions with the US over investment claims and competitive pressures from Chinese carmakers create moderate economic stress, though Samsung's retention bonuses suggest resilience."
+     },
+     "humanitarian": {
+      "score": 25,
+      "why": "Three South Korean soldiers were wounded by landmines in the DMZ, indicating limited but real humanitarian impact from the border conflict."
+     },
+     "political": {
+      "score": 55,
+      "why": "The diplomatic rift with Ukraine and President Lee Jae Myung's demand for an apology indicate political tensions, though domestic institutional stability remains intact."
+     }
+    },
+    "headline": "South Korea Confronts North Korean Provocations and Ukraine Diplomatic Rift",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-28T05:15:41.944Z",
+    "riskSignals": [
+     "North Korean missile test or military provocation expected around Workers' Party of Korea anniversary on October 10 (already passed, watch for follow-up)"
+    ]
+   },
+   "SAU": {
+    "countryName": "Saudi Arabia",
+    "riskScore": 78,
+    "riskLevel": "high",
+    "dimensions": {
+     "conflict": {
+      "score": 78,
+      "why": "Active kinetic exchanges with Houthi forces targeting Saudi airports and border regions, with 31 conflict articles documenting sustained tit-for-tat strikes."
+     },
+     "economic": {
+      "score": 62,
+      "why": "Record ship attacks near the Strait of Hormuz are slowing oil exports, directly threatening Saudi Arabia's primary revenue stream and global energy markets."
+     },
+     "humanitarian": {
+      "score": 45,
+      "why": "Civilian casualties from Houthi strikes on airports and coalition counterstrikes are likely, though no mass displacement or aid crisis is yet documented in the coverage."
+     },
+     "political": {
+      "score": 35,
+      "why": "International human rights pressure over the death sentence for a Facebook post creates diplomatic friction, but domestic institutional stability remains intact under Salman bin Abdulaziz Al Saud."
+     }
+    },
+    "headline": "Saudi Arabia Faces Houthi Escalation as Regional Forces Mobilize",
+    "trajectory": "escalating",
+    "generatedAt": "2026-10-25T05:16:02.990Z",
+    "riskSignals": [
+     "Watch for formal announcement of Turkish and Pakistani troop deployments to Saudi Arabia by November 8"
+    ]
+   }
+  }
+ }
+}

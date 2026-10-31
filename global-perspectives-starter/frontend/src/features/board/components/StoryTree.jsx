@@ -5,7 +5,7 @@ import StoryTreeDrawing from '@/features/board/components/StoryTreeDrawing.jsx';
 import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordText.js';
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, outcomeText, inChapter, foldTrunk, weekMonday } from '@/features/board/lib/storyTree.js';
 import '@/features/board/storyTree.css';
 
 const evidenceOf = (v) => Array.isArray(v) ? v.map((e, n) => (e?.url ? <a className="board-link" key={n} href={e.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a> : null)) : v ? <span> · {String(v)}</span> : null;
@@ -73,6 +73,7 @@ export default function StoryTree({ story, loading, error }) {
     </div>;
   };
 
+  const readWeek = story.reading?.state === 'read' ? weekMonday(story.reading.week) : null; // chapters carry no date of their own: the reading's week
   const chapterCards = () => <ol className="story-tree__chapters">{story.chapters.map((c) => {
     const f = inChapter(story, c).forks;
     const live = liveBranches(f).length;
@@ -81,7 +82,7 @@ export default function StoryTree({ story, loading, error }) {
       <div className="story-tree__card-head"><time>from {dayMonth(c.from)}</time>{now ? <span className="story-tree__kicker story-tree__kicker--accent">present · {dayMonth(present)}</span> : null}</div>
       <Button compact onClick={() => { setChapter(c); setLevel(3); }}>{c.title}</Button>
       {c.summary ? <p className="board-line"><ClaimTag kind="judgment" /> {c.summary}</p> : null}
-      {c.writtenAt ? <span className="story-tree__stamp">written {dayMonth(c.writtenAt)} · never rewritten</span> : null}
+      {readWeek ? <span className="story-tree__stamp">written week of {dayMonth(readWeek)} · never rewritten</span> : null}
       {f.length ? <span className="story-tree__counts">{plural(f.length, 'fork', 'forks')} · {live} open</span> : null}
     </li>;
   })}</ol>;
@@ -97,8 +98,8 @@ export default function StoryTree({ story, loading, error }) {
     </div>
     <div className="story-tree__body">
       {level === 1 && hasLine ? <>
-        <p className="board-line"><ClaimTag kind="judgment" /> <span className="story-tree__stamp">ours</span> {story.line.text} <time>{story.line.week}</time></p>
-        {story.line.writtenAt ? <span className="story-tree__stamp">written {dayMonth(story.line.writtenAt)} · never rewritten</span> : null}
+        <p className="board-line"><ClaimTag kind="judgment" /> <span className="story-tree__stamp">ours</span> {story.line.text}</p>
+        {weekMonday(story.line.week) ? <span className="story-tree__stamp">written week of {dayMonth(weekMonday(story.line.week))} · never rewritten</span> : null}
         {counts ? <span className="story-tree__counts">{counts}</span> : null}
       </> : null}
       {level === 2 && hasChapters ? chapterCards() : null}

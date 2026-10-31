@@ -38,10 +38,10 @@ describe('story tree zoom ladder', () => {
     expect(rung(3)).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
   });
-  it('rung 2 shows chapter cards with the written-on stamp; opening one scopes rung 3 to that chapter', () => {
+  it('rung 2 shows chapter cards stamped with the reading week; opening one scopes rung 3 to that chapter', () => {
     show(storyC);
     fireEvent.click(rung(2));
-    expect(screen.getByText('written 21 Sep · never rewritten')).toBeInTheDocument();
+    expect(screen.getAllByText('written week of 12 Oct · never rewritten')).toHaveLength(3); // reading week 2026-W42
     expect(screen.getByText('present · 18 Oct')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Harassment' }));
     expect(rung(3)).toHaveAttribute('aria-pressed', 'true');
@@ -51,8 +51,8 @@ describe('story tree zoom ladder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'whole story' }));
     expect(within(screen.getByText('Trunk').nextSibling).getAllByRole('button')).toHaveLength(5);
   });
-  it('a read story without a written-on date shows no stamp', () => {
-    show(storyB);
+  it('a story whose reading carries no week shows no stamp', () => {
+    show({ ...storyB, reading: { state: 'read' } });
     fireEvent.click(rung(2));
     expect(screen.getByText('Operators reroute')).toBeInTheDocument();
     expect(screen.queryByText(/never rewritten/)).toBeNull();
@@ -148,5 +148,15 @@ describe('storyTree helpers', () => {
     const c = inChapter(storyC, storyC.chapters[2]);
     expect(c.entries.map((e) => e.eventId)).toEqual(['c4', 'c5']);
     expect(c.forks.map((f) => f.forkId)).toEqual(['cf2', 'cf3']);
+  });
+});
+
+describe('weekMonday', () => {
+  it('turns an ISO week into its Monday; anything else is null', async () => {
+    const { weekMonday } = await import('@/features/board/lib/storyTree.js');
+    expect(weekMonday('2026-W42')).toBe('2026-10-12');
+    expect(weekMonday('2026-W01')).toBe('2025-12-29');
+    expect(weekMonday('2026-10-12')).toBeNull();
+    expect(weekMonday(undefined)).toBeNull();
   });
 });

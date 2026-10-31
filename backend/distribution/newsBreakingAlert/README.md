@@ -15,6 +15,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 - DynamoDB read: `TOPICS_DDB_TABLE` (`id: 'latest'`); `SUMMARIZE_PREDICT_TABLE` `COUNTRY#<r>`/`COUNTRY_INTELLIGENCE`, `THREAD#<id>`/`THREAD_ANALYSIS`, `TOPIC#<id>`/`SUMMARY|PREDICTION|TRACE_CAUSE`.
 - DynamoDB write: `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`), key `alertKey` = threadId; doubles as dedupe row (`DEDUPE_DAYS` 5, `ttl` `DEDUPE_TTL_DAYS` 14).
 - External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Story links come from `src/_shared/links.js` (`storyHref` + `absoluteUrl`; env `SITE_URL` only overrides the origin), and only when the story has a real thread arc.
+- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` reads the topic pool (`latest`), `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` from the record's views and DynamoDB when a view cannot answer (a region spelled differently from the stored briefing, such as `USA`, has no record row, as it had none in DynamoDB); `compare` logs and decides from DynamoDB. `TOPIC#` rows (summary, prediction, cause) and the alerts table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*` (role `newsBreakingAlert-role`).
 
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.

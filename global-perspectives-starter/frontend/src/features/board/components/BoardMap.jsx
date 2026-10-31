@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { stringTexture, pairKey } from '@/shared/lib/board.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { crisisDotVar } from '@/shared/lib/crisisHue.js';
@@ -47,13 +47,24 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
     return { centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL, { dropBlocked: true }) };
   }, [pins, strings, failed, info, stories, now]);
 
+  // when the map is wider than its box (a phone), open it scrolled to the middle of the pins, not to the Americas
+  const box = useRef(null);
+  const placedXs = Object.values(layout.centres).map((c) => c.x);
+  const midX = placedXs.length ? (Math.min(...placedXs) + Math.max(...placedXs)) / 2 : null;
+  useEffect(() => {
+    const el = box.current;
+    if (!el || midX == null || el.scrollWidth <= el.clientWidth) return;
+    const scale = (el.querySelector('svg')?.getBoundingClientRect().width || MAP_W) / MAP_W;
+    el.scrollLeft = Math.max(0, midX * scale - el.clientWidth / 2);
+  }, [midX]);
+
   if (!pins.length) return <p className="board-empty">No pins yet. Add a story, a country or an actor to start the board.</p>;
 
   const unplaced = pins.filter((p) => !layout.centres[p.pinId]);
   const arc = (a, b) => (layout.centres[a] && layout.centres[b] ? arcPath(layout.centres[a], layout.centres[b]) : null);
 
   return (
-    <div className="board-graph bm" data-testid="board-map">
+    <div ref={box} className="board-graph bm" data-testid="board-map">
       <div className="board-stage bm-stage">
         {coverageGap ? (
           <div className="board-fog" data-testid="board-fog">

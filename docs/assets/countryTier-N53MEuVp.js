@@ -1,0 +1,1 @@
+import{U as i,aa as l,ab as s}from"./index-Xa1YEPQO.js";function c(r){return r?i(o(r))??l(r.riskLevel):null}function o(r){const n=r?.riskScore==null||r.riskScore===""?NaN:Number(r.riskScore);return Number.isFinite(n)?n:null}function a(r,n){const u=o(r),e=o(n);return u!=null&&e!=null?e-u:u!=null||e!=null?u==null?1:-1:(s[c(r)]??4)-(s[c(n)]??4)}export{a,c};

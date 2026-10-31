@@ -1,4 +1,7 @@
 import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache, fetchTodayArchive } from '@/shared/api/restProxy.js';
+import { viewFirst, topicsPayload, todayPayload, notePayload } from '@/shared/api/todayView.js';
+
+// While the record's views are fresh (0050) the five calls below are answered from the today view (0051); each action is the fallback.
 
 const PREDICTION_WORD_LIMIT = 500;
 
@@ -53,7 +56,7 @@ function createStableTopicId(topic, index) {
 
 class ContentService {
   async getGeminiTopics(limit = 5) {
-    const payload = await fetchTopicsCache();
+    const payload = await viewFirst((v) => topicsPayload(v), fetchTopicsCache);
     const isStaleWithData = payload?.success === false &&
       Array.isArray(payload?.data?.topics) && payload.data.topics.length > 0;
     if (!payload || (payload.success === false && !isStaleWithData)) {
@@ -88,7 +91,7 @@ class ContentService {
     if (!topicId) {
       throw new Error('Missing topicId for summary lookup');
     }
-    const payload = await fetchSummaryCache(topicId);
+    const payload = await viewFirst((v) => notePayload(v, topicId, 'summary'), () => fetchSummaryCache(topicId));
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Summary cache unavailable';
       throw new Error(reason);
@@ -104,7 +107,7 @@ class ContentService {
     if (!topicId) {
       throw new Error('Missing topicId for prediction lookup');
     }
-    const payload = await fetchPredictionCache(topicId);
+    const payload = await viewFirst((v) => notePayload(v, topicId, 'prediction'), () => fetchPredictionCache(topicId));
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Prediction cache unavailable';
       throw new Error(reason);
@@ -120,7 +123,7 @@ class ContentService {
     if (!topicId) {
       throw new Error('Missing topicId for trace cause lookup');
     }
-    const payload = await fetchTraceCauseCache(topicId);
+    const payload = await viewFirst((v) => notePayload(v, topicId, 'trace_cause'), () => fetchTraceCauseCache(topicId));
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Trace cause cache unavailable';
       throw new Error(reason);
@@ -133,7 +136,7 @@ class ContentService {
   }
 
   async getTodayArchive() {
-    const payload = await fetchTodayArchive();
+    const payload = await viewFirst((v) => todayPayload(v), fetchTodayArchive);
     if (!payload || payload.success === false) {
       throw new Error(payload?.error || 'Today archive unavailable');
     }

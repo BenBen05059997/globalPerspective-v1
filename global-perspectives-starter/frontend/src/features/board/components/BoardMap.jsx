@@ -84,15 +84,16 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
           <path className="bm-land" d={layout.frame.worldPath} />
           {layout.frame.regions.map((r) => <text key={r.name} className="bm-region" x={r.x} y={r.y} aria-hidden="true">{r.name}</text>)}
           {/* every other country a story touches: a small mark tied to its ring (a place involved is a place affected) */}
-          {Object.entries(layout.touches).flatMap(([pinId, ts]) => ts.map((t) => (
+          {/* a country several stories touch is named once at the edge; every story keeps its own tie */}
+          {((named) => Object.entries(layout.touches).flatMap(([pinId, ts]) => ts.map((t) => (
             <g key={`t-${pinId}-${t.iso3}`} className="bm-touch" data-pin-id={pinId}>
               <title>{`${info[pinId]?.label || pinId} also touches ${t.name}`}</title>
               <line className="bm-touch__tie" x1={layout.centres[pinId].x} y1={layout.centres[pinId].y} x2={t.x} y2={t.y} />
-              {t.edge ? (
+              {t.edge ? (named.has(t.iso3) ? null : named.add(t.iso3) &&
                 <text className="bm-touch__edge" x={t.x} y={t.y} textAnchor={t.x > MAP_W / 2 ? 'end' : 'start'} dominantBaseline="middle">{t.arrow === '←' || t.arrow === '↑' ? `${t.arrow} ${t.name}` : `${t.name} ${t.arrow}`}</text>
               ) : <circle className="bm-touch__dot" cx={t.x} cy={t.y} r={RING_R / 3} />}
             </g>
-          )))}
+          ))))(new Set())}
           {strings.map((s) => {
             const d = arc(s.a, s.b);
             if (!d) return null;

@@ -19,7 +19,7 @@
 // two conventions so a machine never special-cases.
 
 const CONFIDENCE_ENUM = Object.freeze({
-  low: 0.3, medium: 0.6, high: 0.9, // economic_impact / signalVsNoise
+  low: 0.3, medium: 0.6, high: 0.9, // signalVsNoise
   weak: 0.3, strong: 0.9,           // systems edges
 });
 
@@ -170,49 +170,6 @@ function hostFromUrl(url) {
 
 // ── Per-record adapters ─────────────────────────────────────────────────────────────
 
-// ECONOMIC_IMPACT record (ECON#THREAD#{id}/ECONOMIC_IMPACT) → economic_impact signal.
-function fromEconomicImpact(rec, { emittedAt } = {}) {
-  if (!rec || rec.hasImpact === false) return null; // tombstones are not signals
-  const threadId = rec.scopeId || rec.threadId || rec.scope || null;
-  const instruments = (rec.instruments || []).map((i) => ({
-    id: i.instrumentId, direction: i.direction || null, magnitude: i.magnitude || null,
-    rationale: i.rationale || '', cited_topic_ids: i.citedTopicIds || [],
-  })).filter((i) => i.id);
-  const winners = rec.winners || [];
-  const losers = rec.losers || [];
-  const countries = dedupeBy(
-    [...winners, ...losers].filter((w) => w?.type === 'country').map((w) => toEntityCountry(w.name)),
-    (c) => c.name,
-  );
-  return makeEnvelope({
-    type: 'economic_impact',
-    scopeId: threadId,
-    emittedAt: emittedAt || rec.generatedAt || null,
-    eventTime: rec.generatedAt || null,
-    threadId,
-    headline: rec.headline || '',
-    summary: rec.mechanism ? truncate(rec.mechanism, 280) : (rec.headline || ''),
-    entities: {
-      countries,
-      instruments: instruments.map((i) => ({ id: i.id, kind: instrumentKind(i.id) })),
-      categories: ['economy'],
-    },
-    severity: Number.isFinite(rec.severityScore) ? rec.severityScore : null,
-    confidence: normConfidence(rec.confidence),
-    direction: null, // instrument-level; top-level intentionally null
-    analysis: {
-      instruments, winners, losers,
-      mechanism: rec.mechanism || '',
-      horizon: rec.horizon || null,
-      historical_analog: rec.historicalAnalog || null,
-      market_snapshot: rec.marketContext || {},
-      watch_signals: rec.watchSignals || [],
-      quality_flags: rec.qualityFlags || [],
-    },
-    provenance: provenanceFrom([], rec.citedTopicIds, null),
-  });
-}
-
 // PredictionLog item (PRED#{id}/{date}) → forecast signal. `calibration` is the global
 // track-record summary, injected by the caller (the differentiator, machine-readable).
 function fromPredictionLog(item, { emittedAt, calibration, trackRecordUrl } = {}) {
@@ -317,22 +274,12 @@ function scoreToSeverity(score) {
   return Math.round(clamp((s / 5) * 100, 0, 100));
 }
 
-function instrumentKind(id) {
-  const s = String(id || '').toUpperCase();
-  if (['BTC', 'ETH'].includes(s)) return 'crypto';
-  if (['BRENT', 'WTI', 'GOLD', 'COPPER', 'NATGAS', 'SILVER'].includes(s)) return 'commodity';
-  if (['DXY', 'VIX'].includes(s)) return 'index';
-  if (s.startsWith('US') && s.endsWith('Y')) return 'rate';
-  return 'instrument';
-}
-
 function truncate(str, n) {
   const s = String(str || '');
   return s.length <= n ? s : s.slice(0, n - 1).trimEnd() + '…';
 }
 
 module.exports = {
-  fromEconomicImpact,
   fromPredictionLog,
   fromCountryIntelligence,
   fromBreakingAlert,
@@ -341,6 +288,6 @@ module.exports = {
   // exported for tests + reuse
   _internals: {
     normConfidence, severityBand, toEntityCountry, provenanceFrom,
-    scoreToSeverity, instrumentKind, COUNTRY_ISO, clamp,
+    scoreToSeverity, COUNTRY_ISO, clamp,
   },
 };

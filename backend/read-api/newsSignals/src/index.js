@@ -4,7 +4,7 @@
 //
 // One Lambda, two modes:
 //   • BUILD (direct invoke `{ action:'build' }`, or scheduled): reads the analysis records
-//     we already produce (ECONOMIC_IMPACT, prediction log, COUNTRY_INTELLIGENCE, confirmed
+//     we already produce (prediction log, COUNTRY_INTELLIGENCE, confirmed
 //     breaking alerts), maps each into the stable v1 envelope via signalAdapter, and writes
 //     them as a single `signals/latest.json` document in S3 (+ a dated `signals/snapshots/`
 //     copy). Idempotent — signal_id is a deterministic dedupe key, so re-running overwrites.
@@ -127,7 +127,7 @@ function computeCalibration(predictionItems) {
 async function build() {
   const emittedAt = nowIso();
   const nowMs = Date.parse(emittedAt);
-  const summary = { economic_impact: 0, forecast: 0, geopolitical_risk: 0, breaking: 0, skipped: 0, dropped_stale: 0 };
+  const summary = { forecast: 0, geopolitical_risk: 0, breaking: 0, skipped: 0, dropped_stale: 0 };
 
   // Carry first_emitted_at (the first build that ever published a signal_id) across rebuilds.
   const prev = (await s3GetJson(LATEST_KEY)).doc;
@@ -144,15 +144,7 @@ async function build() {
     summary[bucket]++;
   };
 
-  // 1. Economic impact (real records only, tombstones skipped by the adapter)
-  const econ = await scanAll({
-    TableName: SUMMARIZE_PREDICT_TABLE,
-    FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk AND hasImpact = :hi',
-    ExpressionAttributeValues: { ':prefix': 'ECON#THREAD#', ':sk': 'ECONOMIC_IMPACT', ':hi': true },
-  });
-  for (const rec of econ) collect(adapter.fromEconomicImpact(rec, { emittedAt }), 'economic_impact');
-
-  // 2. Forecasts — newest snapshot per prediction, with the global calibration stamp.
+  // 1. Forecasts — newest snapshot per prediction, with the global calibration stamp.
   const predItems = await scanAll({ TableName: PREDICTION_LOG_TABLE });
   const calibration = computeCalibration(predItems);
   const latestByTopic = new Map();
@@ -164,7 +156,7 @@ async function build() {
     collect(adapter.fromPredictionLog(it, { emittedAt, calibration, trackRecordUrl: TRACK_RECORD_URL }), 'forecast');
   }
 
-  // 3. Country intelligence (current standing record per country)
+  // 2. Country intelligence (current standing record per country)
   const countries = await scanAll({
     TableName: SUMMARIZE_PREDICT_TABLE,
     FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
@@ -180,7 +172,7 @@ async function build() {
   }
   if (skippedCountries) console.info(`signals: skipped ${skippedCountries} region / stale COUNTRY# record(s)`);
 
-  // 4. Operator-confirmed breaking alerts only
+  // 3. Operator-confirmed breaking alerts only
   let breaking = [];
   try {
     breaking = await scanAll({

@@ -242,7 +242,7 @@ export default function ThreadPage() {
     () => [...new Set((thread?.entries || []).map(e => e.topicId).filter(Boolean))],
     [thread]
   );
-  const { snapshot: forecast } = useThreadForecast(forecastTopicIds);
+  const { snapshot: forecast } = useThreadForecast(forecastTopicIds, threadId);
   const hasForecast = !!(forecast && forecast.scenarios?.length);
 
   // S2.2 (STORY_WEB_RETHINK_PLAN.md §5): the same news-based links story mode's FED INTO slide

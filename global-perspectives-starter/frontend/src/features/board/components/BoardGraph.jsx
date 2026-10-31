@@ -26,7 +26,7 @@ const PIN_MARGIN = { x: PIN_W / 2 + 12, y: PIN_H / 2 + 12 }; // pin centres stay
 const DRAG_PX = 6;
 
 // `at` is { x, y, small } from placeLabels. The full text stays in the string's <title> and the string list.
-function StringLabel({ at, head, body, ghost = false }) {
+export function StringLabel({ at, head, body, ghost = false }) {
   const w = at.small ? SMALL_W : LABEL_W;
   const h = at.small ? SMALL_H : LABEL_H;
   return (

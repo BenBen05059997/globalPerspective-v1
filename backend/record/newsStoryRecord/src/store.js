@@ -19,9 +19,13 @@ function makeStore(client, {env = {}, tables} = {}) {
       const range = await world.archiveRange(client, from, date, {...opts, nowMs: Date.parse(`${date}T12:00:00Z`)});
       const dayRow = range.days.find((d) => d.date === date) || null;
       const entries = dayRow ? dayRow.entries : [];
-      const topicIds = [...new Set(entries.map((e) => e.topicId).filter(Boolean))];
-      const snapshots = topicIds.length ? await world.scenarios(client, {topicIds, from, to: date}, opts) : [];
-      return {date, from, range, dayRow, entries, births: world.birthByThread(range), snapshots};
+      // Every PRED# row of the window, not only those of the day's archive topics: the forecaster also draws topics the archive never
+      // keeps (a different run's topic id). Needs dynamodb:Scan on the PredictionLog table.
+      const snapshots = await world.scenarios(client, {from, to: date}, opts);
+      // Thread of a topic for a row that names none: its latest archive entry in the window (the row's own threadId wins in buildFacts).
+      const threadOfTopic = new Map();
+      for (const d of range.days) for (const e of d.entries) if (e.topicId && e.threadId) threadOfTopic.set(e.topicId, e.threadId);
+      return {date, from, range, dayRow, entries, births: world.birthByThread(range), snapshots, threadOfTopic};
     },
   };
 }

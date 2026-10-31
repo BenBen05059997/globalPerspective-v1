@@ -50,7 +50,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
       if (birth.born === input.date && firstOf.has(threadId)) facts.push(bornFact(threadId, birth, firstOf.get(threadId), runId));
     }
     for (const snap of input.snapshots) {
-      const threadId = snap.threadId || threadOfTopic.get(snap.topicId);
+      const threadId = snap.threadId || threadOfTopic.get(snap.topicId) || (input.threadOfTopic && input.threadOfTopic.get(snap.topicId));
       if (threadId) facts.push(forecastFact(snap, threadId, input.entries.filter((e) => e.topicId === snap.topicId), runId));
     }
     return facts;

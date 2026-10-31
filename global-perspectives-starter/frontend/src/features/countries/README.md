@@ -28,7 +28,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 - `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps; "Map unavailable" without
   `window.GOOGLE_MAPS_API_KEY`)
 - `hooks/` - `useCountryIntelligence`, `useCountryHistory`, `useCountryFacts`, `useCountryStories`, `useMarketsCountry`
-- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `countryFacts`, `countryMacro`, `countryMatch`,
+- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `viewDrift` (country view -> drift notes), `countryFacts`, `countryMacro`, `countryMatch`,
   `countryTier`, `countryTriggers`, `countryWatch`; sheet: `countryUnknowns`, `countryConnections` (story-web links, "judged to feed
   into", negative lag = "order unclear"), `countryChange`, `countryText` (plain-text sheet, numbered absolute footnotes), `countryYourView`
 - Public API (`index.js`): `CountryCardV2` (used by `map`)
@@ -48,6 +48,10 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   localStorage `gp_country_intel_v1`, 30 min. The auth header is sent when signed in; the action is not tier-gated.
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h). Drift-note depth is capped by tier on the
   server; the call sends the auth header when signed in, so members get full depth (anonymous: latest note plus a count).
+  The drift notes are read from the record's country view (`/data/record/views/countries/<ISO3>.json`, decision 0042 step 4: notes only, as
+  `newsDriftCorrector` stored them) when it holds at least as many as the action returned, cut to that many (`lib/viewDrift.js`); a 404, a
+  failed view fetch or a shorter view keeps the action's notes. Snapshots, the total and the gate always come from `country_history`.
+  The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
 - `useWebIndex` -> `web_index` (memory, 30 min): How it connects and the story-web coverage line.
 - `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`

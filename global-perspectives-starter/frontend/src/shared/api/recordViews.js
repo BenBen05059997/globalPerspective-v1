@@ -1,9 +1,10 @@
-// The record views (decisions 0037, 0042), read straight from the Worker's /data/* route: story, links and daily counts
+// The record views (decisions 0037, 0042), read straight from the Worker's /data/* route: story, links, country and daily counts
 // files. A 404 means "not generated yet" and answers null; any other failure throws for the caller to report.
 // makeRecordViews(getView) lets a feature swap the fetch (the board's dev fixtures); every reader shares these rules.
 const BASE = '/data/record/views';
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const ISO3 = /^[A-Z]{3}$/;
 
 /** One view file by its path under record/views/, or null when it is not generated. */
 export async function fetchRecordView(path) {
@@ -22,6 +23,7 @@ export function makeRecordViews(getView = fetchRecordView) {
       return view?.aliasOf && ID.test(view.aliasOf) ? getView(`stories/${view.aliasOf}.json`) : view;
     },
     fetchLinksView(id) { return ID.test(id || '') ? getView(`links/${id}.json`) : Promise.resolve(null); },
+    fetchCountryView(iso3) { return ISO3.test(iso3 || '') ? getView(`countries/${iso3}.json`) : Promise.resolve(null); },
     fetchCounts(date) { return DAY.test(date || '') ? getView(`counts/${date}.json`) : Promise.resolve(null); },
   };
 }

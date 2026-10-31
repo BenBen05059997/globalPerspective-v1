@@ -25,7 +25,7 @@ import from here; here imports from no feature and not from `app/`.
 - Risk: `lib/riskTiers.js` (score to tier), `ui/TierChip.jsx`, `ui/risk/`; colors from `styles/tokens.js`.
 - Colors, type scale, radii, spacing: `styles/tokens.css`. Use `var(--token)`; JS and canvas read `styles/tokens.js`.
 - The backend door: `api/restProxy.js` (every fetch of our data, the Firebase token via `setAuthProvider`, a cap of 4 requests in flight, identical concurrent calls collapsed). Endpoints come from `window.*_ENDPOINT` set in `config.js`.
-- Record views: `api/recordViews.js` (`fetchRecordView`, `makeRecordViews(getView)` -> `fetchStoryView` (follows a merged story to its survivor), `fetchLinksView`, `fetchCounts`), read from the Worker's `/data/record/views/`; a 404 is null. Used by the board and the story page.
+- Record views: `api/recordViews.js` (`fetchRecordView`, `makeRecordViews(getView)` -> `fetchStoryView` (follows a merged story to its survivor), `fetchLinksView`, `fetchCountryView` (`^[A-Z]{3}$`), `fetchCounts`), read from the Worker's `/data/record/views/`; a 404 is null. Used by the board and the story page. `api/storyAnalysis.js` `fetchStoryAnalysis(id)`: one story's analysis from the story view's `analysis` (`lib/viewAnalysis.js`), else the `thread_analysis` action.
 - Error sink: `api/errorSink.js` (`installErrorSink`, `reportBoundaryError`, `reportFetchError`). It posts to `window.CLIENT_ERRORS_ENDPOINT` (the `newsClientErrors` Lambda); read the log with `node scripts/errors.mjs`.
 - LLM providers: `lib/llmProviders.js` (pure data for `analysis-studio/lib/llm.js` and the eval harness; no page uses it).
 - Economy switch: `lib/economyFlag.js` (`ECONOMY_PARKED`).

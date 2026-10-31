@@ -5,7 +5,7 @@ import ShareButtons from '@/shared/ui/ShareButtons';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useNarrativeThread } from '@/features/threads/hooks/useNarrativeThread';
-import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
+import { useStoryAnalysis } from '@/features/threads/hooks/useStoryAnalysis';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
@@ -183,8 +183,7 @@ export default function ThreadPage() {
     };
   }, [narrativeEntries, threadId]);
 
-  const { analyses, loading: analysisLoading } = useThreadAnalyses([threadId]);
-  const analysis = analyses?.[threadId];
+  const { analysis, loading: analysisLoading } = useStoryAnalysis(threadId);
   const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId, { enabled: !ECONOMY_PARKED });
   const hasEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();

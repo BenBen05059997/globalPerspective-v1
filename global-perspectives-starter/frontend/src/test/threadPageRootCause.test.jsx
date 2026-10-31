@@ -21,8 +21,8 @@ vi.mock('@/features/threads/hooks/useNarrativeThread', () => ({
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
   useWeeklyArchive: () => ({ dayMap: {}, sortedDates: [], loading: false, error: null }),
 }));
-vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
-  useThreadAnalyses: () => ({ analyses: { [THREAD_ID]: { threadTitle: 'Test story', rootCauseChain } }, loading: false, error: null }),
+vi.mock('@/features/threads/hooks/useStoryAnalysis', () => ({
+  useStoryAnalysis: () => ({ analysis: { threadTitle: 'Test story', rootCauseChain }, loading: false }),
 }));
 vi.mock('@/features/economy/hooks/useEconomicImpact', () => ({
   useEconomicImpact: () => ({ data: null, loading: false, error: null }),

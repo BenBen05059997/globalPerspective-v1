@@ -30,7 +30,7 @@ test('a note breaking the consistency rules is rejected', () => {
     {...example, payload: {format: 'markdown', content: 'x'}}, // the topicId is kept for tracing
     {...example, payload: {...example.payload, format: 'json'}}, // json content is an object, not text
     {...example, extra: 1}, // no fields outside the envelope
-    {...example, subtype: 'brief', subject: {kind: 'brief', id: 'last week'}}, // brief subjects are daily:DATE or weekly:WEEK
+    {...example, subtype: 'daily_brief', subject: {kind: 'brief', id: 'last week'}}, // brief subjects are daily:DATE or weekly:DATE
   ];
   for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 120));
 });
@@ -62,7 +62,9 @@ test('buildNote refuses what the schema forbids: unknown subtype, a country name
   assert.equal(valid(N.buildNote(base)), true, JSON.stringify(valid.errors));
   assert.throws(() => N.buildNote({...base, subtype: 'opinion'}), /unknown subtype/);
   assert.throws(() => N.buildNote({...base, iso3: ['Ukraine']}), /ISO3/);
-  assert.throws(() => N.buildNote({...base, subtype: 'brief', subjectId: 'last week'}), /daily:DATE/);
+  assert.throws(() => N.buildNote({...base, subtype: 'daily_brief', subjectId: 'last week'}), /daily:DATE/);
+  assert.throws(() => N.buildNote({...base, subtype: 'weekly_brief', subjectId: 'weekly:2026-W43'}), /weekly:DATE/);
+  assert.throws(() => N.buildNote({...base, subtype: 'brief', subjectId: 'daily:2026-10-30'}), /unknown subtype/);
   assert.throws(() => N.buildNote({...base, subtype: 'entry', subjectId: 'e1', part: 'summary'}), /cites its entry/);
 });
 
@@ -311,4 +313,53 @@ test('linkNote: the other direction of a pair rides in payload.reverse, its cite
   assert.equal(n.cites.length, 2);
   assert.equal('reverse' in N.linkNote({edge: {...edge, reverse: {...back, to: 'thread-c'}}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer}).payload, false);
   assert.equal(valid({...n, payload: {...n.payload, reverse: {...n.payload.reverse, extra: 1}}}), false);
+});
+
+// daily_brief and weekly_brief (decision 0048): the examples were built by the real builders from live rows (fixtures/brief-rows.json is the same data).
+const dailyEx = load('examples/note-daily_brief.json');
+const weeklyEx = load('examples/note-weekly_brief.json');
+const briefRows = JSON.parse(readFileSync(resolve(__dirname, '../../cli/fixtures/brief-rows.json'), 'utf8'));
+
+test('the brief examples validate and carry the shared noteId', () => {
+  for (const ex of [dailyEx, weeklyEx]) {
+    assert.equal(valid(ex), true, JSON.stringify(valid.errors));
+    assert.equal(ex.noteId, R.noteId(ex.subtype, ex.subject.id, ex.part, ex.at));
+  }
+  assert.deepEqual([dailyEx.subject, dailyEx.part, dailyEx.threadId], [{kind: 'brief', id: 'daily:2026-10-30'}, '', null]);
+  assert.deepEqual([weeklyEx.subject, weeklyEx.part, weeklyEx.payload.status], [{kind: 'brief', id: 'weekly:2026-10-25'}, '', 'published']);
+});
+
+test('dailyBriefNote and weeklyBriefNote: every live-shaped row (old and new, draft and published) builds a schema-valid note; payload is the row as stored', () => {
+  const notes = [...briefRows.daily.map((item) => N.dailyBriefNote({item, producer})), ...briefRows.weekly.map((item) => N.weeklyBriefNote({item, producer}))];
+  for (const n of notes) assert.equal(valid(n), true, JSON.stringify(valid.errors) + n.subject.id);
+  for (const k of ['PK', 'SK', 'ttl', 'generatedAt', 'model']) assert.equal(notes.some((n) => k in n.payload), false, k);
+  const old = notes.find((n) => n.subject.id === 'daily:2026-06-10');
+  assert.equal(old.payload.topStories.some((s) => 'iso3' in s), false); // stored as written: the iso3 is derived on read, not stored
+  assert.ok(old.iso3.length > 0 && old.iso3.every((c) => /^[A-Z]{3}$/.test(c)));
+  assert.equal(notes.find((n) => n.subject.id === 'weekly:2026-06-21').payload.status, 'draft');
+  assert.equal(notes.find((n) => n.subject.id === 'weekly:2026-06-10').payload.confirmedBy, 'human');
+  assert.equal(N.dailyBriefNote({item: null, producer}), null);
+  assert.equal(N.dailyBriefNote({item: {dateKey: '2026-10-30'}, producer}), null); // no headline
+  assert.equal(N.weeklyBriefNote({item: {weekOf: '2026-10-25'}, producer}), null); // no signals
+});
+
+test('brief notes breaking their rules are rejected', () => {
+  const dp = dailyEx.payload;
+  const wp = weeklyEx.payload;
+  const {headline, ...noHeadline} = dp;
+  const {signals, ...noSignals} = wp;
+  const bad = [
+    {...dailyEx, subject: {kind: 'story', id: dailyEx.subject.id}},
+    {...dailyEx, subject: {kind: 'brief', id: 'weekly:2026-10-25'}}, // a daily note is about a day
+    {...dailyEx, part: 'summary'},
+    {...dailyEx, payload: noHeadline},
+    {...dailyEx, payload: {...dp, extra: 1}},
+    {...dailyEx, model: null},
+    {...weeklyEx, subject: {kind: 'brief', id: 'weekly:2026-W43'}}, // the weekOf date, not an ISO week
+    {...weeklyEx, subject: {kind: 'brief', id: 'daily:2026-10-25'}},
+    {...weeklyEx, payload: noSignals},
+    {...weeklyEx, payload: {...wp, status: 'maybe'}},
+    {...weeklyEx, payload: {...wp, extra: 1}},
+  ];
+  for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 120));
 });

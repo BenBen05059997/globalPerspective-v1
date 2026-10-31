@@ -35,5 +35,9 @@ export function makeRecordViews(getView = fetchRecordView) {
     fetchCountriesIndex() { return getView('index/countries.json'); },
     // The last 30 archive days (the `archive_range` action's days: topic, story, category, countries, sources).
     fetchWeeklyIndex() { return getView('index/weekly.json'); },
+    // The daily and weekly briefs (decision 0048): which exist, and one brief each by its date (a weekly by its weekOf).
+    fetchBriefsIndex() { return getView('index/briefs.json'); },
+    fetchDailyBriefView(dateKey) { return DAY.test(dateKey || '') ? getView(`briefs/daily/${dateKey}.json`) : Promise.resolve(null); },
+    fetchWeeklyBriefView(weekOf) { return DAY.test(weekOf || '') ? getView(`briefs/weekly/${weekOf}.json`) : Promise.resolve(null); },
   };
 }

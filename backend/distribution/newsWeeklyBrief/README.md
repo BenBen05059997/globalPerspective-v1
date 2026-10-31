@@ -10,7 +10,8 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `today-archive` and `archive#YYYY-MM-DD` (key `id`)
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `WEEKLY_BRIEF#<weekKey>`/`WEEKLY_BRIEF` (ttl 180 days)
-- Sends no email itself.
+- S3 world bucket, only when env `NOTES_PREFIX` is set (unset = nothing): the brief as a `weekly_brief` note under `<NOTES_PREFIX>notes/weekly_brief/` (decision 0048; best-effort, never fails the run; the DynamoDB put stays). Needs `s3:GetObject`/`PutObject` on `record/notes/weekly_brief/*` and its manifest.
+- Sends no email itself (`newsEmailSender` reads `WEEKLY_BRIEF#` for the weekly email).
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.3)
 
 ## Models

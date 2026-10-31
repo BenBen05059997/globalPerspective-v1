@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "daily": [
+    {
+      "dateKey": "2026-10-30",
+      "headline": "Binance Suffers Record $6.3 Billion Breach as Global Crises Multiply",
+      "generatedAt": "2026-10-30T14:01:22.979Z"
+    },
+    {
+      "dateKey": "2026-10-25",
+      "headline": "France Erupts as 1,300 Arrested in Nationwide Cost-of-Living Protests",
+      "generatedAt": "2026-10-25T14:01:25.584Z"
+    },
+    {
+      "dateKey": "2026-06-10",
+      "headline": "US and Iran exchange airstrikes after Apache downed near Strait of Hormuz",
+      "generatedAt": "2026-06-10T14:01:19.192Z"
+    },
+    {
+      "dateKey": "2026-04-09",
+      "headline": "Iran Blocks Strait of Hormuz After Israeli Strikes Kill 182-254 in Lebanon Amid Fragile US Ceasefire",
+      "generatedAt": "2026-04-09T14:01:14.999Z"
+    }
+  ],
+  "weekly": [
+    {
+      "weekOf": "2026-10-25",
+      "asOf": "2026-10-25",
+      "lede": "Houthi missile strike kills 50 security recruits in Yemen",
+      "signals": 2,
+      "generatedAt": "2026-10-25T06:00:21.001Z"
+    },
+    {
+      "weekOf": "2026-10-18",
+      "asOf": "2026-10-18",
+      "lede": "Houthi missile campaign shatters Saudi air hub and Yemen frontlines",
+      "signals": 2,
+      "generatedAt": "2026-10-18T06:00:21.137Z"
+    },
+    {
+      "weekOf": "2026-06-10",
+      "asOf": "2026-06-10",
+      "lede": "Ebola outbreak escalates, WHO warns of delays",
+      "signals": 2,
+      "generatedAt": "2026-06-10T13:55:04.263Z"
+    }
+  ]
+}

@@ -172,7 +172,7 @@ test('same facts, any order, give the same objects; only builtAt and runId may d
 
 test('writeGroups orders stories, links and counts, then active with the many-at-once indexes, then all, then the track record, then the manifest', () => {
   const groups = V.writeGroups(build(X.golden()));
-  assert.deepEqual(groups.slice(1).map((g) => g.map(([k]) => k)), [['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json'], ['index/all.json'], ['track-record.json'], ['manifest.json']]);
+  assert.deepEqual(groups.slice(1).map((g) => g.map(([k]) => k)), [['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json', 'index/briefs.json'], ['index/all.json'], ['track-record.json'], ['manifest.json']]);
   assert.deepEqual([...new Set(groups[0].map(([k]) => k.split('/')[0]))], ['stories', 'links', 'counts']);
 });
 

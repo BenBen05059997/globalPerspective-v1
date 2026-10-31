@@ -1,0 +1,654 @@
+{
+ "_meta": "Live SummarizeAndPredict DAILY_BRIEF# / WEEKLY_BRIEF# rows read 2026-10-31, topStories cut to 3, signals to 2 (2 sources each), watch to 2.",
+ "daily": [
+  {
+   "model": "deepseek-v4-pro",
+   "stats": {
+    "countriesCovered": 14,
+    "sourceOutlets": 12,
+    "totalArticles": 14
+   },
+   "summary": "A **$6.3 billion security breach at Binance** has shaken global cryptocurrency markets, with analysts calling it potentially the largest crypto heist in history. The incident underscores the persistent vulnerability of digital asset platforms even as institutional adoption grows, and it arrives amid a broader climate of instability spanning Europe, Asia, and the Horn of Africa. The breach's scale could trigger regulatory crackdowns and erode confidence in centralized exchanges at a critical moment for the sector.\n\nMeanwhile, **Europe is reeling from two major transport disasters**: a high-speed train collision in Spain's Toledo province that killed at least 69 people, and a Russian drone strike on a crowded Dnipro train station in Ukraine that killed at least 14. The Spanish crash has already become a political flashpoint ahead of snap elections, while the Dnipro attack marks a sharp escalation in Russia's air campaign against civilian infrastructure. Both events highlight the growing human cost of infrastructure failures and conflict in Europe.\n\nIn Asia, **China's record expulsion of Communist Party members** signals an intensification of Xi Jinping's anti-corruption purge, while North Korea's latest weapons demonstration—including attack drones and cruise missiles—underscores Pyongyang's push for 'absolute superiority.' The US and Japan's agreement to establish a joint missile production facility adds another layer to regional military posturing, suggesting a deepening arms-production alliance in the Indo-Pacific.\n\nThe European Central Bank faces leadership uncertainty as **Christine Lagarde steps down nine months early**, opening a succession race that could reshape monetary policy direction. In the Horn of Africa, Ethiopia's border clashes are driving thousands into Kenya, while El Niño-driven drought in Papua New Guinea affects up to 8 million people. These disparate crises reveal a world under simultaneous financial, military, climatic, and political stress, with **institutional resilience being tested on multiple continents**.",
+   "ttl": 1801144882,
+   "generatedAt": "2026-10-30T14:01:22.979Z",
+   "risingThread": {
+    "articleCount": 6,
+    "dayCount": 3,
+    "oneLiner": "The Toledo collision has become a national political crisis, with rail safety failures now central to Spain's snap election campaign and public trust in infrastructure eroding rapidly.",
+    "threadId": "thread-spain-high-speed-train-collisi-e41c9f",
+    "title": "Spain Train Crash Exposes Rail Safety Failures Before Election",
+    "trajectory": "escalating"
+   },
+   "displayDate": "October 30, 2026",
+   "headline": "Binance Suffers Record $6.3 Billion Breach as Global Crises Multiply",
+   "dateKey": "2026-10-30",
+   "topStories": [
+    {
+     "category": "technology",
+     "iso3": [],
+     "prediction": "Regulators in the US, EU, and Asia will announce coordinated investigations into exchange security practices within two weeks, and Binance will face significant customer withdrawals and legal challenges.",
+     "regions": [
+      "Global"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-binance-security-breach-impact-fb5999",
+     "title": "Binance Security Breach Impacts $6.3 Billion in Assets, Potentially Largest Crypto Heist"
+    },
+    {
+     "category": "disaster",
+     "iso3": [
+      "ESP"
+     ],
+     "prediction": "The Spanish government will announce a national rail safety review and suspend high-speed services on the affected line within days, intensifying political pressure ahead of the snap election.",
+     "regions": [
+      "Spain"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-spain-high-speed-train-collisi-e41c9f",
+     "title": "Spain High-Speed Train Collision Kills 69 in Toledo Province"
+    },
+    {
+     "category": "conflict",
+     "iso3": [
+      "UKR",
+      "RUS"
+     ],
+     "prediction": "Ukraine will launch retaliatory strikes on Russian logistics hubs within 72 hours, and Western allies will issue fresh condemnations while accelerating air defense deliveries.",
+     "regions": [
+      "Ukraine",
+      "Russia"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-russian-drone-strike-on-dnipro-d64183",
+     "title": "Russian Drone Strike on Dnipro Train Station Kills at Least 14"
+    }
+   ],
+   "categoryBreakdown": {
+    "climate": 1,
+    "conflict": 3,
+    "disaster": 3,
+    "economy": 1,
+    "military": 2,
+    "politics": 4,
+    "technology": 1
+   },
+   "PK": "DAILY_BRIEF#2026-10-30",
+   "countryToWatch": {
+    "countryName": "Spain",
+    "headline": "Spain faces a snap election amid a housing crisis and a rail disaster that has killed at least 69 people, fueling public anger and political instability.",
+    "iso3": [
+     "ESP"
+    ],
+    "riskLevel": "high",
+    "threadId": "thread-spain-high-speed-train-collisi-e41c9f",
+    "trajectory": "escalating"
+   },
+   "SK": "DAILY_BRIEF"
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "stats": {
+    "countriesCovered": 16,
+    "sourceOutlets": 14,
+    "totalArticles": 13
+   },
+   "summary": "France has become the epicenter of a deepening European stability crisis, with over 1,300 arrests and at least 50 officers injured as nationwide demonstrations over cost-of-living pressures and budget cuts show no sign of abating. The unrest, which began as a contained education dispute in late September, has now fused with public sector strikes into a broader challenge to President Macron's austerity agenda. **The scale and persistence of the French protests mark the most serious domestic threat to Macron's presidency since the 2018 yellow vest movement**, and they are reverberating across a continent already strained by energy costs and fiscal tightening.\n\nThe Middle East remains a tinderbox of intersecting conflicts. Israel's decision to close West Bank crossings on election day follows a Hebron shooting, while reports that US CENTCOM has drawn up plans for strikes on Iran after the midterm polls suggest Washington is preparing for a potential escalation. **The convergence of Israeli election tensions, Iranian mobilization campaigns, and American military planning creates a volatile triangle** in which a single miscalculation could trigger a wider regional war. Meanwhile, Riyadh's airport has resumed flights after a two-week Houthi strike closure, but the underlying Saudi-Yemen conflict continues to smolder.\n\nIn the Indo-Pacific, China's Liaoning carrier strike group and the USS Theodore Roosevelt have converged in the Philippine Sea, a rare simultaneous deployment that underscores the intensifying great-power competition. **The Philippine Sea encounter between Chinese and American carrier groups represents the most significant naval standoff in the region this year**, even as Washington's attention is divided by the Middle East and domestic politics. The Okinawa murder indictment of a US Marine adds another layer of friction to the US-Japan alliance at a delicate moment.\n\nElsewhere, Brazil's presidential runoff between Lula and Flávio Bolsonaro will test the resilience of Latin America's largest democracy, while Serbia's parliamentary election pits Vucic against a student-led opposition in what sources describe as the country's most contested vote in 14 years. **The simultaneous electoral tests in Brazil and Serbia reflect a broader global pattern of incumbent leaders facing energized opposition movements**, from Paris to Belgrade to Brasília. The DR Congo's Ebola vaccine trial offers a rare note of hope amid a outbreak that has killed over 4,000 people and spread to Kenya.",
+   "ttl": 1800712885,
+   "generatedAt": "2026-10-25T14:01:25.584Z",
+   "risingThread": {
+    "articleCount": 31,
+    "dayCount": 26,
+    "oneLiner": "France's unrest has transformed from a contained education dispute into a nationwide anti-government movement that now threatens Macron's reform agenda and could inspire similar protests across Europe.",
+    "threadId": "thread-french-student-protests-turn-v-68e0fb",
+    "title": "France's School Protests Escalate Into National Cost-of-Living Unrest",
+    "trajectory": "escalating"
+   },
+   "displayDate": "October 25, 2026",
+   "dateKey": "2026-10-25",
+   "headline": "France Erupts as 1,300 Arrested in Nationwide Cost-of-Living Protests",
+   "categoryBreakdown": {
+    "conflict": 4,
+    "health": 1,
+    "military": 2,
+    "politics": 4,
+    "society": 2,
+    "technology": 1
+   },
+   "topStories": [
+    {
+     "category": "politics",
+     "iso3": [
+      "FRA"
+     ],
+     "prediction": "Protests will intensify through the coming week as unions announce further strike days, with Macron likely to offer limited concessions on cost-of-living measures within 10 days.",
+     "regions": [
+      "France"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-french-student-protests-turn-v-68e0fb",
+     "title": "France Protests: Over 1,300 Arrested as Nationwide Demonstrations Continue"
+    },
+    {
+     "category": "politics",
+     "iso3": [
+      "BRA"
+     ],
+     "prediction": "Lula will win by a narrow margin, but Bolsonaro's camp will contest the result, triggering weeks of legal challenges and street demonstrations.",
+     "regions": [
+      "Brazil"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-brazilian-amazon-deforestation-c5bce9",
+     "title": "Brazil Presidential Runoff: Lula Faces Flávio Bolsonaro"
+    },
+    {
+     "category": "military",
+     "iso3": [
+      "USA",
+      "IRN"
+     ],
+     "prediction": "The Pentagon will neither confirm nor deny the plans, but naval assets will be repositioned in the Persian Gulf within two weeks as a deterrent signal.",
+     "regions": [
+      "United States",
+      "Iran"
+     ],
+     "sourceCount": 3,
+     "threadId": "thread-us-centcom-reportedly-has-plan-80ea85",
+     "title": "US CENTCOM Reportedly Has Plans for Iran Strikes"
+    }
+   ],
+   "PK": "DAILY_BRIEF#2026-10-25",
+   "countryToWatch": {
+    "countryName": "France",
+    "headline": "Nationwide protests over cost-of-living and budget cuts have led to over 1,300 arrests and are challenging Macron's presidency.",
+    "iso3": [
+     "FRA"
+    ],
+    "riskLevel": "high",
+    "threadId": "thread-french-student-protests-turn-v-68e0fb",
+    "trajectory": "escalating"
+   },
+   "SK": "DAILY_BRIEF"
+  },
+  {
+   "model": "deepseek-chat",
+   "stats": {
+    "totalArticles": 50,
+    "sourceOutlets": 30,
+    "countriesCovered": 35
+   },
+   "summary": "The global landscape on June 10, 2026, is defined by a dangerous convergence of escalating conflicts, public health emergencies, and geopolitical realignments. The most immediate flashpoint is the direct military exchange between the United States and Iran, triggered by the downing of a US Army Apache helicopter near the Strait of Hormuz. This incident marks a significant escalation in a region already strained by the Iran war entering its 100th day, with a fragile ceasefire teetering on President Trump's decisions. **The US-Iran airstrikes risk drawing in broader regional and global powers**, as the Strait of Hormuz is a critical chokepoint for global oil transit. Simultaneously, Israel launched air strikes on the Lebanese city of Tyre, killing 11, despite Iranian warnings, further inflaming the multi-front war that has already passed 100 days. These military actions are unfolding against a backdrop of **global conflicts reaching their highest fatality level since World War II**, with 244,600 deaths recorded in 2025 alone, according to a new report. This pattern of violence is compounded by a severe public health crisis in Central Africa, where the Ebola outbreak in DR Congo and Uganda has neared 600 confirmed cases amid a vaccine shortage, and a protest against a US-built quarantine facility in Kenya turned deadly. In Asia, Chinese President Xi Jinping and North Korean leader Kim Jong Un agreed to strengthen their strategic relationship, with China effectively recognizing North Korea as a nuclear state, a move that reshapes the security dynamic on the Korean Peninsula ahead of Xi's planned visit. Domestically, the US Congress approved a $70 billion bill to fund President Trump's immigration crackdown, while a federal judge halted an execution by nitrogen gas, ruling it unconstitutional. **The interconnected themes of military escalation, public health vulnerability, and shifting alliances** suggest a world order under severe strain, with the potential for further cascading crises in the coming days and weeks.",
+   "ttl": 1788876079,
+   "generatedAt": "2026-06-10T14:01:19.192Z",
+   "risingThread": {
+    "threadId": "thread-ebola-outbreak-in-dr-congo-kil-7806ee",
+    "oneLiner": "The Ebola outbreak in Central Africa is accelerating with nearly 600 cases and a vaccine shortage, now compounded by a deadly protest against a US quarantine facility in Kenya.",
+    "articleCount": 14,
+    "dayCount": 25,
+    "title": "Ebola Outbreak Escalates: WHO Warns of Vaccine Delays",
+    "trajectory": "escalating"
+   },
+   "displayDate": "June 10, 2026",
+   "dateKey": "2026-06-10",
+   "headline": "US and Iran exchange airstrikes after Apache downed near Strait of Hormuz",
+   "topStories": [
+    {
+     "prediction": "The US and Iran will likely engage in further tit-for-tat strikes within 48 hours, potentially targeting naval assets in the Gulf.",
+     "regions": [
+      "United States",
+      "Iran",
+      "Bahrain"
+     ],
+     "sourceCount": 3,
+     "title": "US and Iran exchange airstrikes after US Army Apache helicopter downed near Strait of Hormuz",
+     "category": "conflict"
+    },
+    {
+     "prediction": "International organizations will issue urgent calls for ceasefire and diplomatic intervention within the next week, but major powers are unlikely to de-escalate.",
+     "regions": [
+      "Global"
+     ],
+     "sourceCount": 3,
+     "title": "Global conflicts surge to highest level since World War II, with 244,600 fatalities in 2025",
+     "category": "conflict"
+    },
+    {
+     "prediction": "China will formally announce Xi's visit to North Korea within days, solidifying a new security framework that challenges US non-proliferation efforts.",
+     "regions": [
+      "China",
+      "North Korea"
+     ],
+     "sourceCount": 3,
+     "title": "Xi Jinping and Kim Jong Un agree to strengthen strategic relationship; China de facto recognizes North Korea as nuclear state",
+     "category": "politics"
+    }
+   ],
+   "categoryBreakdown": {
+    "politics": 3,
+    "society": 3,
+    "science": 1,
+    "health": 2,
+    "military": 0,
+    "economy": 2,
+    "technology": 1,
+    "conflict": 4,
+    "disaster": 1
+   },
+   "PK": "DAILY_BRIEF#2026-06-10",
+   "countryToWatch": {
+    "countryName": "Iran",
+    "riskLevel": "high",
+    "headline": "Iran war enters 100th day as fragile ceasefire teeters on Trump's decision, and direct airstrikes with the US have just been exchanged.",
+    "trajectory": "escalating"
+   },
+   "SK": "DAILY_BRIEF"
+  },
+  {
+   "model": "grok-4-1-fast-non-reasoning",
+   "stats": {
+    "totalArticles": 50,
+    "sourceOutlets": 13,
+    "countriesCovered": 28
+   },
+   "summary": "The Middle East teeters on the brink of renewed conflict as **Iran blocks the Strait of Hormuz**, a vital global oil chokepoint, in direct retaliation for Israel's deadliest airstrikes on Lebanon, which killed at least 182-254 people across Beirut suburbs, the Bekaa Valley, and southern regions just hours after a US-brokered ceasefire with Iran. President Trump has warned of **resumed shooting** if tensions escalate further, while ordering US forces to remain deployed near Iran until a 'real agreement' is reached, underscoring the ceasefire's precarious hold. Pakistan has emerged as an unlikely key mediator, hosting an Iranian delegation in Islamabad for upcoming US-Iran talks, potentially stabilizing the two-week truce but complicated by Israel's independent escalation not covered by the US-Iran deal.\n\nGlobal repercussions ripple outward, with Trump's **sharp criticism of NATO** chief Mark Rutte over insufficient Iran war support, renewed threats to exit the alliance, and mentions of acquiring Greenland, signaling strained transatlantic ties. North Korea capitalized on the chaos with missile tests featuring cluster-bomb warheads ahead of a China summit, while the Philippines bolstered its South China Sea presence with a new coast guard base on Thitu Island, heightening regional flashpoints. In Sudan, a Human Rights Watch report exposed the army's ethnic targeting and torture of civilians, adding to humanitarian crises where over 1,000 aid workers have been killed globally in three years per the Red Cross.\n\nEmerging patterns reveal opportunistic power plays amid distraction: China's Xi Jinping urges PLA officers to 'stay pure' in an anti-corruption drive tied to the army's centenary, as major banks impose bonus clawbacks despite profit gains. Russia's discounted LNG offers to South Asia exploit energy shortages from sanctions and disruptions. These interconnections highlight how **US-Iran tensions** amplify risks from Lebanon to the South China Sea, with diplomatic mediations in Pakistan offering slim hope against mounting military posturing.",
+   "ttl": 1783519274,
+   "generatedAt": "2026-04-09T14:01:14.999Z",
+   "risingThread": {
+    "threadId": "Israel Escalates Airstrikes on Lebanon Amid Iran Ceasefire",
+    "oneLiner": "Israel's strikes risk unraveling the US-Iran ceasefire by provoking Hezbollah and Iran into broader regional war.",
+    "articleCount": 6,
+    "dayCount": 6,
+    "title": "Israel Escalates Airstrikes on Lebanon Amid Iran Ceasefire",
+    "trajectory": "escalating"
+   },
+   "displayDate": "April 9, 2026",
+   "dateKey": "2026-04-09",
+   "headline": "Iran Blocks Strait of Hormuz After Israeli Strikes Kill 182-254 in Lebanon Amid Fragile US Ceasefire",
+   "topStories": [
+    {
+     "prediction": "Iran will maintain the blockade for 3-5 days to pressure talks, but US naval intervention will reopen it within a week if negotiations stall.",
+     "regions": [
+      "Iran",
+      "Israel",
+      "USA"
+     ],
+     "sourceCount": 3,
+     "title": "Iran blocks Strait of Hormuz after Israeli strikes on Lebanon threatening fragile US ceasefire as Trump warns of renewed shooting (Iran, Israel, USA, 3 sources)",
+     "category": "conflict"
+    },
+    {
+     "prediction": "Israel will conduct follow-up strikes targeting Hezbollah leadership within 48 hours, prompting Hezbollah rocket retaliation.",
+     "regions": [
+      "Israel",
+      "Lebanon"
+     ],
+     "sourceCount": 3,
+     "title": "Israeli strikes kill at least 182-254 across Lebanon in Beirut suburbs, Bekaa Valley and south in deadliest day hours after US-Iran ceasefire (Israel, Lebanon, 3 sources)",
+     "category": "conflict"
+    },
+    {
+     "prediction": "Trump will issue a formal NATO funding ultimatum by end of next week, increasing exit speculation if unmet.",
+     "regions": [
+      "USA",
+      "Europe"
+     ],
+     "sourceCount": 3,
+     "title": "Trump criticizes NATO after 'very frank' meeting with chief Mark Rutte over lack of Iran war support, renews Greenland threat and weighs US exit (USA, Europe, 3 sources)",
+     "category": "politics"
+    }
+   ],
+   "categoryBreakdown": {
+    "politics": 5,
+    "military": 6,
+    "economy": 2,
+    "conflict": 4,
+    "disaster": 3
+   },
+   "PK": "DAILY_BRIEF#2026-04-09",
+   "countryToWatch": {
+    "countryName": "Israel",
+    "riskLevel": "high",
+    "headline": "Israel launches deadliest strikes on Lebanon hours after US-Iran ceasefire, killing 182-254 amid heightened tensions.",
+    "trajectory": "escalating"
+   },
+   "SK": "DAILY_BRIEF"
+  }
+ ],
+ "weekly": [
+  {
+   "model": "deepseek-v4-pro",
+   "asOf": "2026-10-25",
+   "watch": [
+    {
+     "date": "",
+     "event": "King Khalid International Airport reopening and airline service restoration",
+     "stake": "A test of whether Saudi Arabia can restore civilian aviation security amid ongoing Houthi threats."
+    },
+    {
+     "date": "",
+     "event": "French government's school-conditions plan due by end-October",
+     "stake": "A test of whether the government can defuse the student-led cost-of-living movement before further weekend mobilizations."
+    }
+   ],
+   "signals": [
+    {
+     "asOf": "2026-10-20",
+     "fact": "A Houthi missile strike killed 50 security recruits in Yemen as of 2026-10-20, amid a wider escalation that has included Houthi strikes on Saudi airports and Saudi-led airstrikes on Houthi positions.",
+     "iso3": [
+      "YEM",
+      "SAU"
+     ],
+     "kind": "threat",
+     "lede": "Houthi missile strike kills 50 security recruits in Yemen",
+     "region": "Yemen · Saudi Arabia",
+     "related": null,
+     "relatedThreadIds": [],
+     "riskLevel": "high",
+     "riskScore": 92,
+     "soWhat": "Signals a sustained, multi-front conflict with regional spillover, raising the odds of further attacks on civilian infrastructure and Red Sea shipping.",
+     "sources": [
+      {
+       "source": "aljazeera.com",
+       "title": "Saudi-led forces try to break Houthi siege of Taiz with airstrikes",
+       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/18/saudi-led-forces-try-to-break-houthi-siege-of-taiz-with-airstrikes?traffic_source=rss"
+      },
+      {
+       "source": "middleeasteye.net",
+       "title": "Saudi-led coalition says drones targeting Riyadh, Eastern Province destroyed",
+       "url": "https://www.middleeasteye.net/live-blog/live-blog-update/saudi-led-coalition-says-drones-targeting-riyadh-eastern-province"
+      }
+     ],
+     "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+     "asOf": "2026-10-19",
+     "fact": "Nationwide cost-of-living demonstrations in France turned violent on October 16-17, with looting in Paris, Lyon, and Marseille, the Limoges town hall set ablaze, at least 1,800 arrests, 150 officers injured, and one demonstrator dead.",
+     "iso3": [
+      "FRA"
+     ],
+     "kind": "threat",
+     "lede": "Cost-of-living protests turn violent with looting, 1,800 arrests",
+     "region": "France",
+     "related": null,
+     "relatedThreadIds": [],
+     "riskLevel": "high",
+     "riskScore": 78,
+     "soWhat": "Points to a volatile pre-electoral period, with the convergence of student and Yellow Vest movements raising the odds of sustained unrest.",
+     "sources": [
+      {
+       "source": "aljazeera.com",
+       "title": "Buildings burn as French protests go into the night",
+       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/18/buildings-burn-as-french-protests-go-into-the-night?traffic_source=rss"
+      },
+      {
+       "source": "france24.com",
+       "title": "Looters seize on massive French protests to raid and vandalise shops",
+       "url": "https://www.france24.com/en/france/20261017-looters-seize-massive-french-protests-raid-vandalise-shops-france"
+      }
+     ],
+     "threadId": "thread-french-student-protests-turn-v-68e0fb"
+    }
+   ],
+   "threadIds": [
+    "thread-saudi-arabia-and-yemen-call-fo-4e946d",
+    "thread-french-student-protests-turn-v-68e0fb",
+    "thread-trump-announces-us-to-import-r-8c45a3",
+    "thread-dr-congo-ebola-outbreak-surpas-d5acb9",
+    "thread-india-election-chief-faces-cal-6a2810",
+    "thread-pope-leo-to-undergo-surgery-fo-a06c81"
+   ],
+   "status": "published",
+   "weekOf": "2026-10-25",
+   "ttl": 1808460021,
+   "PK": "WEEKLY_BRIEF#2026-10-25",
+   "generatedAt": "2026-10-25T06:00:21.001Z",
+   "format": "signals",
+   "SK": "WEEKLY_BRIEF"
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "asOf": "2026-10-18",
+   "watch": [
+    {
+     "date": "",
+     "event": "Congressional response to Trump's 60-day sanctions waiver on Russia",
+     "stake": "A legislative override attempt would test bipartisan opposition and could constrain presidential waiver authority."
+    },
+    {
+     "date": "2026-10-23",
+     "event": "EU European Council summit on Ukraine funding",
+     "stake": "Whether the EU approves any of Zelenskyy's €70 billion request will signal European unity and support for Ukraine."
+    }
+   ],
+   "signals": [
+    {
+     "asOf": "2026-10-18",
+     "fact": "Houthis claimed missile and drone strikes on an Aramco facility near Riyadh, and Saudi jets pounded Sanaa, ending a four-year lull. Houthis struck Riyadh's King Khalid International Airport repeatedly, killing at least 12 and wounding over 300 on October 10-11. Saudi-backed forces pushed Houthis out of most positions around Bab el-Mandeb, and Saudi Arabia blamed Iran for the escalation.",
+     "kind": "threat",
+     "lede": "Houthi missile campaign shatters Saudi air hub and Yemen frontlines",
+     "region": "Saudi Arabia · Yemen",
+     "related": null,
+     "riskLevel": "high",
+     "riskScore": 92,
+     "soWhat": "Raises the odds of a direct Saudi-Iran confrontation as the conflict widens beyond Yemen's borders.",
+     "sources": [
+      {
+       "source": "npr.org",
+       "title": "Attack on Riyadh airport killed 12 people and wounded over 300 more, Saudi authorities say",
+       "url": "https://www.npr.org/2026/10/10/g-s1-147682/attack-on-riyadh-airport-killed-12-people-and-wounded-over-300-more-saudi-authorities-say"
+      },
+      {
+       "source": "aljazeera.com",
+       "title": "Yemen fighting expands as Houthis attack Saudi airport: What to know",
+       "url": "https://www.aljazeera.com/news/2026/10/11/yemen-fighting-expands-as-houthis-attack-saudi-airport-what-to-know?traffic_source=rss"
+      }
+     ],
+     "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+    },
+    {
+     "asOf": "2026-10-17",
+     "fact": "Russia launched its heaviest assault on Ukraine's energy grid in months, striking Kyiv and 11 regions, killing at least 7. Subsequent strikes killed dozens, including 25-28 in an October 7 barrage and 30-33 in a Kramatorsk bus strike. Trump announced an energy ceasefire on October 12, but Kyiv said Russia violated it immediately, and Zelensky declared it over by October 15.",
+     "kind": "threat",
+     "lede": "Russia escalates air war on Kyiv as energy ceasefire collapses",
+     "region": "Ukraine · Russia · USA",
+     "related": null,
+     "riskLevel": "high",
+     "riskScore": 88,
+     "soWhat": "Points to a sustained mutual energy war, raising the odds of further mass-casualty strikes and a worsening humanitarian crisis as winter approaches.",
+     "sources": [
+      {
+       "source": "bbc.com",
+       "title": "Russian glide bomb attack on Zaporizhzhia kills at least 20 people",
+       "url": "https://www.bbc.co.uk/news/articles/cwvgdpv642g5o?at_medium=RSS&amp;at_campaign=rss"
+      },
+      {
+       "source": "arstechnica.com",
+       "title": "Ukraine’s drones knock out AI data center belonging to \"Russia’s Google\"",
+       "url": "https://arstechnica.com/gadgets/2026/10/ukraines-drones-knock-out-ai-data-center-belonging-to-russias-google/"
+      }
+     ],
+     "threadId": "thread-russia-launches-largest-attack-287240"
+    }
+   ],
+   "threadIds": [
+    "thread-trump-announces-us-to-import-r-8c45a3",
+    "thread-russia-launches-largest-attack-287240",
+    "thread-saudi-arabia-and-yemen-call-fo-4e946d",
+    "thread-pope-leo-to-undergo-surgery-fo-a06c81",
+    "thread-india-election-chief-faces-cal-6a2810",
+    "thread-us-court-halts-execution-of-ch-ae75a8"
+   ],
+   "status": "published",
+   "weekOf": "2026-10-18",
+   "ttl": 1807855221,
+   "PK": "WEEKLY_BRIEF#2026-10-18",
+   "generatedAt": "2026-10-18T06:00:21.137Z",
+   "format": "signals",
+   "SK": "WEEKLY_BRIEF"
+  },
+  {
+   "model": "deepseek-v4-flash",
+   "asOf": "2026-06-21",
+   "watch": [
+    {
+     "event": "WMO or national meteorological agencies upgrade El Niño intensity forecasts",
+     "date": "",
+     "stake": "An upgrade would signal more severe climate impacts, prompting accelerated preparedness measures."
+    },
+    {
+     "event": "WHO update on Ebola vaccine development timeline",
+     "date": "",
+     "stake": "Any acceleration or delay in vaccine availability will directly affect containment prospects."
+    }
+   ],
+   "signals": [
+    {
+     "threadId": "thread-ebola-outbreak-in-dr-congo-kil-7806ee",
+     "soWhat": "Signals that community resistance and logistical challenges are undermining containment efforts, increasing the risk of wider regional spread.",
+     "fact": "On June 20, 2026, families stormed an Ebola treatment centre in the DRC, and 30 people died at a camp. The outbreak involves the Bundibugyo strain, for which no licensed vaccine is available; the WHO warned a new vaccine could take up to nine months to develop.",
+     "riskLevel": "high",
+     "related": null,
+     "asOf": "2026-06-20",
+     "sources": [
+      {
+       "title": "Congo-Kinshasa: Ebola Outbreak Spreads in DR Congo As Misinformation Hampers Response",
+       "url": "https://allafrica.com/stories/202606120223.html",
+       "source": "allafrica.com"
+      },
+      {
+       "title": "Health workers struggle to contain Ebola in Congo camps as distrust grows",
+       "url": "https://www.japantimes.co.jp/news/2026/06/14/world/science-health/congo-health-workers-ebola-containment-struggles/",
+       "source": "japantimes.co.jp"
+      }
+     ],
+     "kind": "threat",
+     "lede": "Ebola outbreak accelerates; families storm treatment centre",
+     "riskScore": 85,
+     "region": "Democratic Republic of the Congo · Democratic Republic of Congo · Uganda"
+    },
+    {
+     "threadId": "thread-israeli-strikes-kill-at-least--bd3dfc",
+     "soWhat": "Signals that Israel is prioritizing its military objectives over the US-Iran peace framework, raising the odds of a prolonged occupation and Hezbollah retaliation.",
+     "fact": "On June 21, 2026, Israeli strikes killed at least 20 people in southern Lebanon, hours after a renewed ceasefire. This follows Israel's expanded occupation of southern Lebanon and Prime Minister Netanyahu's refusal to withdraw troops, directly defying the US-Iran memorandum of understanding.",
+     "riskLevel": "high",
+     "related": null,
+     "asOf": "2026-06-21",
+     "sources": [
+      {
+       "title": "Israel attacks Beirut on same day Trump says Iran deal to be signed",
+       "url": "https://www.aljazeera.com/video/newsfeed/2026/6/14/israel-attacks-beirut-on-same-day-trump-says-iran-deal-to-be-signed?traffic_source=rss",
+       "source": "aljazeera.com"
+      },
+      {
+       "title": "Israel accuses Hezbollah of ceasefire violation, issues displacement orders",
+       "url": "https://www.aljazeera.com/news/2026/6/14/israel-issues-forced-displacement-orders-for-29-towns-in-southern-lebanon?traffic_source=rss",
+       "source": "aljazeera.com"
+      }
+     ],
+     "kind": "threat",
+     "lede": "Israeli strikes kill at least 20 in southern Lebanon after renewed ceasefire",
+     "riskScore": 75,
+     "region": "Israel · Lebanon · Iran"
+    }
+   ],
+   "threadIds": [
+    "thread-el-nino-turbocharging-climate--5547ec",
+    "thread-ebola-outbreak-in-dr-congo-kil-7806ee",
+    "thread-us-and-iran-exchange-strikes-i-19ebab",
+    "thread-israeli-strikes-kill-at-least--bd3dfc",
+    "thread-ukrainian-drones-strike-st-pet-b69cc4",
+    "thread-trump-says-iran-shot-down-us-a-7ed4a3"
+   ],
+   "status": "draft",
+   "weekOf": "2026-06-21",
+   "ttl": 1797573622,
+   "PK": "WEEKLY_BRIEF#2026-06-21",
+   "generatedAt": "2026-06-21T06:00:22.937Z",
+   "format": "signals",
+   "SK": "WEEKLY_BRIEF"
+  },
+  {
+   "PK": "WEEKLY_BRIEF#2026-06-10",
+   "asOf": "2026-06-10",
+   "confirmedBy": "human",
+   "format": "signals",
+   "generatedAt": "2026-06-10T13:55:04.263Z",
+   "model": "deepseek-v4-flash",
+   "reviewedAt": "2026-06-10T00:00:00Z",
+   "signals": [
+    {
+     "threadId": "thread-ebola-outbreak-in-dr-congo-kil-7806ee",
+     "soWhat": "Points to a prolonged outbreak with high risk of cross-border spread given limited countermeasures and logistical challenges.",
+     "fact": "The Ebola outbreak in DR Congo and Uganda, caused by the Bundibugyo strain, has nearly 600 confirmed cases. The WHO declared a PHEIC and warned that a new vaccine could take up to nine months to develop.",
+     "riskLevel": "high",
+     "related": null,
+     "asOf": "2026-06-10",
+     "sources": [
+      {
+       "title": "Uganda health ministry confirms six new cases of Ebola",
+       "url": "https://www.theeastafrican.co.ke/tea/sustainability/health/uganda-health-ministry-confirms-six-new-cases-of-ebola-5482774",
+       "source": "theeastafrican.co.ke"
+      },
+      {
+       "title": "EAC ministers hold urgent talks on Ebola outbreak",
+       "url": "https://www.theeastafrican.co.ke/tea/news/east-africa/eac-ministers-hold-urgent-talks-on-ebola-outbreak-5482392",
+       "source": "theeastafrican.co.ke"
+      }
+     ],
+     "kind": "threat",
+     "lede": "Ebola outbreak escalates, WHO warns of delays",
+     "riskScore": 85,
+     "region": "Democratic Republic of the Congo · Uganda"
+    },
+    {
+     "threadId": "thread-ukrainian-drones-strike-st-pet-b69cc4",
+     "soWhat": "Raises the odds of further escalation in energy infrastructure targeting and potential Russian retaliation.",
+     "fact": "Ukrainian drones struck a museum in Sevastopol and key Russian oil refineries, causing a fuel crisis, according to reports from BBC, NPR, France24, and AP.",
+     "riskLevel": "high",
+     "related": null,
+     "asOf": "2026-06-10",
+     "sources": [
+      {
+       "title": "Ukrainian drones hit St Petersburg as Putin's flagship economic forum opens",
+       "url": "https://www.bbc.com/news/articles/c0e2vqd3j1vo?at_medium=RSS&amp;at_campaign=rss",
+       "source": "bbc.com"
+      },
+      {
+       "title": "Ukrainian drones strike a St. Petersburg oil terminal ahead of Putin visit",
+       "url": "https://www.npr.org/2026/06/03/nx-s1-5844793/ukrainian-drones-hit-st-petersburg",
+       "source": "npr.org"
+      }
+     ],
+     "kind": "threat",
+     "lede": "Ukraine drones strike Russian oil refineries",
+     "riskScore": 82,
+     "region": "Ukraine · Russia · Europe"
+    }
+   ],
+   "status": "published",
+   "threadIds": [
+    "thread-xi-jinping-to-visit-north-kore-9ac03d",
+    "thread-ukrainian-drones-strike-st-pet-b69cc4",
+    "thread-pacific-nations-adopt-first-re-5435c2",
+    "thread-us-adds-alibaba-byd-and-other--cea9db",
+    "thread-ebola-outbreak-in-dr-congo-kil-7806ee",
+    "thread-trump-administration-funds-two-10bd13"
+   ],
+   "ttl": 1796651704,
+   "watch": [
+    {
+     "event": "North Korea possible missile or nuclear test",
+     "date": "",
+     "stake": "Emboldened by China's support, Pyongyang may conduct further provocations, testing US-South Korea-Japan response."
+    },
+    {
+     "event": "Pacific Islands Forum Leaders' Meeting in Honiara",
+     "date": "2026-07",
+     "stake": "Will produce concrete commitments for the climate relocation framework's funding and implementation."
+    }
+   ],
+   "weekOf": "2026-06-10",
+   "SK": "WEEKLY_BRIEF"
+  }
+ ]
+}

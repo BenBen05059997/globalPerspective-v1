@@ -43,6 +43,20 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-notes.mjs [--d
 ```
 Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-country-notes.test.mjs`.
 
+## backfill-brief-notes.mjs
+
+Copies every `SummarizeAndPredict` `DAILY_BRIEF#<date>` / `DAILY_BRIEF` row into a `daily_brief` note and every `WEEKLY_BRIEF#<weekOf>` /
+`WEEKLY_BRIEF` row into a `weekly_brief` note (decision 0048) through the builders the writers use (`dailyBriefNote`, `weeklyBriefNote` in
+shared `notes.js`). Subject `daily:<date>` / `weekly:<weekOf>`, `at` the row's own `generatedAt`, `model` the row's, payload the stored row
+minus `PK`, `SK`, `ttl`, `generatedAt` and `model` (drafts included; the views serve published weeklies only). The note a writer makes for a
+row has the same `noteId`, so a row the writers also wrote, or a re-run, appends nothing. A row the builder refuses is reported and skipped.
+Dry run on 2026-10-31: 137 daily and 15 weekly rows (13 published) become 152 notes, none skipped, all valid against the schema.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-brief-notes.mjs [--dry] [--live]
+```
+Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-brief-notes.test.mjs`.
+
 ## backfill-link-notes.mjs
 
 Turns the causal edges of the country webs into `link` notes through the same planner `newsSystemsAnalysis` uses (`recordNotes.js`

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchDailyBrief, fetchLatestDailyBrief } from '@/shared/api/restProxy';
+import { readDailyBrief, readLatestDaily, todayUtc } from '@/shared/api/briefViews.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
 
 const CACHE_KEY = 'gp_daily_brief_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -88,6 +90,9 @@ function dateKeyForOffset(base, daysBack) {
 
 async function tryOffset(base, daysBack) {
   const tryKey = dateKeyForOffset(base, daysBack);
+  // the record's copy first (decision 0048); a date it does not hold, or could not be read, asks the action
+  const recorded = await readDailyBrief(tryKey);
+  if (recorded) return { daysBack, tryKey, data: recorded };
   try {
     const result = await fetchDailyBrief(tryKey);
     return result?.data ? { daysBack, tryKey, data: result.data } : null;
@@ -145,7 +150,25 @@ async function findBrief(effectiveDateKey) {
   return scanned;
 }
 
+// The record answers the newest brief in the window in two small static reads. It is rebuilt nightly, so a brief generated since
+// the last build (today's, 14:00 UTC) is not in it: unless the record already holds today's, ask the action for today's alone.
+async function findLatestInRecord() {
+  const today = todayUtc();
+  const recorded = await readLatestDaily({ today, lookbackDays: MAX_LOOKBACK_DAYS });
+  if (!recorded) return null;
+  if (recorded.dateKey === today) return { data: recorded.data, served: today, editions: recorded.editions };
+  try {
+    const fresh = await fetchDailyBrief(today);
+    if (fresh?.data) return { data: fresh.data, served: today, editions: [today, ...recorded.editions] };
+  } catch (err) {
+    reportFetchError('daily-brief-today', err);
+  }
+  return { data: recorded.data, served: recorded.dateKey, editions: recorded.editions };
+}
+
 async function findLatest() {
+  const recorded = await findLatestInRecord();
+  if (recorded) return recorded;
   const res = await fetchLatestDailyBrief(MAX_LOOKBACK_DAYS);
   const data = res?.data || null;
   return {

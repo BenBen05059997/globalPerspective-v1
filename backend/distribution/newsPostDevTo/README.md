@@ -10,6 +10,7 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `id = today-archive` (only entries archived today)
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `DAILY_BRIEF#<date>`/`DAILY_BRIEF` (90-day `ttl`)
+- S3 world bucket, only when env `NOTES_PREFIX` is set (unset = nothing): the brief as a `daily_brief` note under `<NOTES_PREFIX>notes/daily_brief/` (decision 0048; best-effort, never fails the run; the DynamoDB put stays). Needs `s3:GetObject`/`PutObject` on `record/notes/daily_brief/*` and its manifest.
 - External APIs: DeepSeek chat completions via `src/_shared/llm.js` (`GROK_API_URL`, fallback `https://api.deepseek.com`)
 
 ## Models

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Weekly brief view (record/views/briefs/weekly/YYYY-MM-DD.json)",
+  "description": "One published weekly brief, named by its weekOf (the run's date, the key the `weekly_brief` action takes). `brief` = the action's `data` (the stored WEEKLY_BRIEF# row with generatedAt and model, signals carrying iso3). A draft or held-back brief has no view: the action serves published ones only. Built by briefViews.js from the latest weekly_brief note of the week.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "weekOf", "brief"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "weekOf": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "brief": {
+      "type": "object",
+      "required": ["format", "weekOf", "asOf", "status", "signals", "watch", "generatedAt", "model"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {"const": "signals"},
+        "weekOf": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "asOf": {"type": "string"},
+        "status": {"const": "published"},
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["lede", "fact", "iso3", "sources"],
+            "properties": {
+              "iso3": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]{3}$"}},
+              "sources": {"type": "array", "items": {"type": "object"}}
+            }
+          }
+        },
+        "watch": {"type": "array", "items": {"type": "object"}},
+        "threadIds": {"type": "array", "items": {"type": "string"}},
+        "confirmedBy": {"type": "string"},
+        "reviewedAt": {"type": "string"},
+        "generatedAt": {"type": "string"},
+        "model": {"type": "string"}
+      }
+    }
+  }
+}

@@ -8,6 +8,7 @@
 // (index.js requires it). The zip currently lists files explicitly — add lib.js.
 
 const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
+const { briefWithIso3, weeklyWithIso3 } = require('./_shared/briefs'); // shared with the record's brief views (decision 0048)
 
 // Teaser cap: members get the whole (already newest-first) array; everyone else gets the
 // newest `teaser` items + the honest total, so the UI can show "+N earlier — Join to see all".
@@ -157,26 +158,6 @@ function countryKeys(name) {
   const raw = String(name || '').trim();
   const canonical = resolveIso3(raw)?.name;
   return canonical && canonical !== raw ? [canonical, raw] : [raw];
-}
-
-// Daily brief: top stories and the country to watch carry iso3[] (rows written before the writer added it
-// get it here from their names). Everything else passes through.
-function briefWithIso3(brief) {
-  if (!brief || typeof brief !== 'object') return brief;
-  const out = { ...brief };
-  if (Array.isArray(brief.topStories)) {
-    out.topStories = brief.topStories.map((s) => (s && typeof s === 'object' ? { ...s, iso3: Array.isArray(s.iso3) ? s.iso3 : iso3List(s.regions) } : s));
-  }
-  const ctw = brief.countryToWatch;
-  if (ctw && typeof ctw === 'object') out.countryToWatch = { ...ctw, iso3: Array.isArray(ctw.iso3) ? ctw.iso3 : iso3List([ctw.countryName]) };
-  return out;
-}
-
-// Weekly brief: signals carry iso3[] (older rows: from the "A · B" region text).
-function weeklyWithIso3(brief) {
-  if (!brief || !Array.isArray(brief.signals)) return brief;
-  return { ...brief, signals: brief.signals.map((s) => (s && typeof s === 'object'
-    ? { ...s, iso3: Array.isArray(s.iso3) ? s.iso3 : iso3List(String(s.region || '').split('·').map((x) => x.trim())) } : s)) };
 }
 
 // Story web: each link / shared-actor link carries the iso3 of its web's country; each thread the iso3 of its places.

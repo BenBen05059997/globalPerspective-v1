@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Daily brief view (record/views/briefs/daily/YYYY-MM-DD.json)",
+  "description": "One day's brief, `brief` = the `daily_brief` action's `data` (the stored DAILY_BRIEF# row with generatedAt and model, and iso3 on every top story and the country to watch, filled from the names where the row has none). Built by briefViews.js from the latest daily_brief note of the day. Public: the action has no membership gate.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "dateKey", "brief"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "dateKey": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "brief": {
+      "type": "object",
+      "required": ["dateKey", "displayDate", "headline", "summary", "topStories", "generatedAt", "model"],
+      "additionalProperties": false,
+      "properties": {
+        "dateKey": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "displayDate": {"type": "string"},
+        "headline": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "topStories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "iso3"],
+            "properties": {"iso3": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]{3}$"}}}
+          }
+        },
+        "risingThread": {"type": ["object", "null"]},
+        "countryToWatch": {"type": ["object", "null"]},
+        "categoryBreakdown": {"type": "object"},
+        "stats": {"type": "object"},
+        "generatedAt": {"type": "string"},
+        "model": {"type": "string"}
+      }
+    }
+  }
+}

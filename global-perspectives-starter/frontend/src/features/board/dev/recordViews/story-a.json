@@ -9,4 +9,4 @@
 {"branchId":"f1-2","text":"Talks restart","p":10,"trigger":"Talks restart","resolutionSource":"Wire","due":"2026-10-12","verdict":{"at":"2026-10-13","result":"no","decidedBy":"facts","evidence":null,"voidReason":null}},
 {"branchId":"f1-3","text":"Sanctions eased","p":5,"trigger":"Sanctions eased","resolutionSource":"Official","due":"2026-10-12","verdict":{"at":"2026-10-13","result":"void","decidedBy":"facts","evidence":null,"voidReason":"source_unavailable"}},
 {"branchId":"f1-4","text":"Old question","p":null,"trigger":"Old","resolutionSource":"","due":"2026-10-01","legacy":true,"verdict":null}]}],
-"merges":[],"corrections":[],"line":null,"chapters":[],"branchStatus":null,"reading":{"state":"none","reason":"no reading yet"}}
+"merges":[],"corrections":[],"line":null,"chapters":[],"reading":{"state":"none","reason":"no reading yet"}}

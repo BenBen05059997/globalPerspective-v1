@@ -4,7 +4,7 @@
 // plain objects out. A reading is never trusted past its shape: a malformed line is skipped, never thrown on.
 const {addDays} = require('./_shared/world');
 
-const SUBTYPES = ['line', 'chapter', 'branch_status', 'link', 'merge_proposal', 'alias'];
+const SUBTYPES = ['line', 'chapter', 'link', 'merge_proposal', 'alias'];
 const WEEK = /^\d{4}-W\d{2}$/;
 const WIKIDATA = /^Q\d+$/;
 
@@ -31,7 +31,6 @@ function weeksBetween(from, to) {
 const KEY = {
   line: () => '',
   chapter: (p) => p.from,
-  branch_status: (p) => p.branchId,
   link: (p) => p.otherThreadId,
   merge_proposal: (p) => p.otherThreadId,
   alias: (p) => p.canonical,
@@ -44,7 +43,6 @@ function valid(r) {
   switch (r.subtype) {
     case 'line': return text(p.text);
     case 'chapter': return text(p.title) && text(p.from) && text(p.to) && text(p.summary);
-    case 'branch_status': return text(p.branchId) && ['fired', 'dead', 'holding', 'late'].includes(p.status);
     case 'link': return text(p.otherThreadId) && text(p.mechanism) && ['drives', 'driven_by', 'shared_cause'].includes(p.direction);
     case 'merge_proposal': return text(p.otherThreadId);
     default: return Array.isArray(p.variants) && p.variants.every(text) && text(p.canonical);
@@ -71,15 +69,14 @@ function standing(lines) {
 
 const maxWeek = (rs) => rs.reduce((m, r) => (m === null || r.week > m ? r.week : m), null);
 
-/** thread -> {line, chapters, branchStatus: {branchId: reading}, links: [reading], week} from the standing readings. */
+/** thread -> {line, chapters, links: [reading], week} from the standing readings. */
 function byThread(rs) {
   const out = new Map();
   for (const r of rs) {
-    if (!['line', 'chapter', 'branch_status', 'link'].includes(r.subtype)) continue;
-    const t = out.get(r.threadId) || out.set(r.threadId, {line: null, chapters: [], branchStatus: new Map(), links: [], week: null}).get(r.threadId);
+    if (!['line', 'chapter', 'link'].includes(r.subtype)) continue;
+    const t = out.get(r.threadId) || out.set(r.threadId, {line: null, chapters: [], links: [], week: null}).get(r.threadId);
     if (r.subtype === 'line') t.line = r;
     else if (r.subtype === 'chapter') t.chapters.push(r);
-    else if (r.subtype === 'branch_status') t.branchStatus.set(r.payload.branchId, r);
     else t.links.push(r);
     if (!t.week || r.week > t.week) t.week = r.week;
   }

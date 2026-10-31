@@ -150,13 +150,6 @@
       ]
     }
   ],
-  "branchStatus": {
-    "a-0": {
-      "status": "holding",
-      "why": "No vote scheduled yet; due 2026-10-25.",
-      "week": "2026-W43"
-    }
-  },
   "reading": {
     "state": "read",
     "week": "2026-W43"

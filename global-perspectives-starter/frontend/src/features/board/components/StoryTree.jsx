@@ -30,7 +30,6 @@ export default function StoryTree({ story, loading, error }) {
         {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary><span>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</span>{b.trigger ? <span className="board-branch__text">{b.trigger}</span> : null}</summary>
           <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${b.due}` : ''}</p>
           {b.verdict ? <p className="board-line"><time>{b.verdict.at.slice(0, 10)}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
-          {!b.verdict && story.branchStatus?.[b.branchId] ? <p className="board-line"><ClaimTag kind="judgment" /> {story.branchStatus[b.branchId].status}{story.branchStatus[b.branchId].why ? ` · ${story.branchStatus[b.branchId].why}` : ''}</p> : null}
         </details>; })}
       </details>)}</> : null}
       {!story.entries?.length && !story.forks?.length ? <p className="board-line">No dated event or forecast branch has been recorded for this story.</p> : null}

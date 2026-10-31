@@ -120,7 +120,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
       entries: kept, entriesOmitted: entries.length - kept.length, forks,
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
-      ...readingFields(readings.get(threadId), branches),
+      ...readingFields(readings.get(threadId)),
     });
     rows.set(threadId, {
       threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
@@ -133,23 +133,13 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
   return {stories, rows, survivors};
 }
 
-/**
- * line, chapters, branchStatus and reading of a story view from its standing readings (`t`, may be undefined). A branch status
- * is kept only for an open branch of this story: a branch with any verdict is decided by the verdict fact, never by a reading.
- */
-function readingFields(t, branches) {
-  if (!t) return {line: null, chapters: [], branchStatus: null, reading: {state: 'none', reason: NO_READING}};
-  const open = new Set(branches.filter((b) => !b.verdict).map((b) => b.branchId));
-  const status = {};
-  for (const id of [...t.branchStatus.keys()].sort()) {
-    const r = t.branchStatus.get(id);
-    if (open.has(id)) status[id] = {status: r.payload.status, why: r.payload.why ?? null, week: r.week};
-  }
+/** line, chapters and reading of a story view from its standing readings (`t`, may be undefined). */
+function readingFields(t) {
+  if (!t) return {line: null, chapters: [], reading: {state: 'none', reason: NO_READING}};
   return {
     line: t.line ? {text: t.line.payload.text, week: t.line.week, cites: Rd.cites(t.line)} : null,
     chapters: t.chapters.map((r) => ({title: r.payload.title, from: r.payload.from, to: r.payload.to, summary: r.payload.summary, cites: Rd.cites(r)}))
       .sort(byKey((c) => c.from, (c) => c.to, (c) => c.title)),
-    branchStatus: Object.keys(status).length ? status : null,
     reading: {state: 'read', week: t.week},
   };
 }

@@ -30,5 +30,6 @@
       ]
     }
   ],
-  "confirmedLinksReason": null
+  "confirmedLinksReason": null,
+  "judgedLinks": []
 }

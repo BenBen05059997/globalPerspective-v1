@@ -8,6 +8,7 @@ const {buildViews, countDaysFor, writeGroups} = require('./views');
 const {weeksBetween} = require('./readings');
 
 const READ_BATCH = 10;
+const NOTE_SUBTYPES = ['entry', 'story_analysis', 'drift', 'country', 'link']; // decision 0042; a subtype with no manifest reads as empty
 const WRITE_BATCH = 16;
 
 function makePublisher({s3json}) {
@@ -52,7 +53,7 @@ function makePublisher({s3json}) {
     const {facts, manifestDays} = await readFacts(prefix, changedDays);
     const readings = await readReadings(prefix, facts, today);
     const operatorAliases = await s3json.getJson(`${prefix}operator/aliases.json`); // null when the operator wrote none
-    const notes = await readNotes(prefix, 'entry');
+    const notes = (await Promise.all(NOTE_SUBTYPES.map((t) => readNotes(prefix, t)))).flat();
     const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases, notes});
     let written = 0;
     for (const group of writeGroups(views)) {

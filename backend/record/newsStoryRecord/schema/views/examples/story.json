@@ -137,5 +137,6 @@
   "reading": {
     "state": "none",
     "reason": "no reading yet"
-  }
+  },
+  "analysis": null
 }

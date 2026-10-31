@@ -73,7 +73,7 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `record/notes/entry/YYYY-MM-DD.jsonl`, `record/notes/entry/manifest.json` | `NewsProjectInvokeAgentLambda` after its daily archive (env `NOTES_PREFIX`; `record/shadow/` until switched), and `backend/record/cli/capture-entry-notes.mjs` (one-off capture) | each agent run (04:25, 12:25, 20:25 UTC), append-only, model text, deduped by `noteId` | view rebuilds (next) |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` | weekly, Monday 01:00 UTC, append-only, model | view rebuilds |
 | `record/runs/review-YYYY-Www.json` | `newsRecordReview` | weekly, the review Run | operator |
-| `record/views/…` (stories, index/active, index/all, links, counts, manifest) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | `newsBoard`, the Worker (`/data/record/views/`) |
+| `record/views/…` (stories, index/active, index/all, links, counts, countries, manifest) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | `newsBoard`, the Worker (`/data/record/views/`) |
 | `record/shadow/…` | `newsStoryRecord`, the selector, the resolver and the review on a manual `shadow:true` invoke; also the retired old dry-run output | manual only | humans, tuning |
 | `weekly/YYYY-MM-DD.json`, `weekly/latest.json` | the weekly run (planned; no objects yet) | weekly | email, weekly page |
 

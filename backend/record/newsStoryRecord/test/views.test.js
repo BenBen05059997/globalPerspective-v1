@@ -352,3 +352,22 @@ test('an exact entry note beats an archive copy of the same part, even when the 
   assert.deepEqual(row([n('2026-10-21T10:00:00.000Z', 'exact'), n('2026-10-21T10:01:00.000Z', 'cut copy', 'archive')]), {format: 'markdown', content: 'exact', at: '2026-10-21T10:00:00.000Z', model: 'deepseek-flash'});
   assert.deepEqual(row([n('2026-10-21T10:01:00.000Z', 'cut copy', 'archive')]), {format: 'text', content: 'cut copy', at: '2026-10-21T10:01:00.000Z', model: null, from: 'archive'});
 });
+
+test('notes in views (0042): analysis as stored, judged links on both stories, country drift newest first with a count', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const note = (subtype, kind, id, part, at, payload) => ({subtype, subject: {kind, id}, part, at, model: 'm', noteId: `${subtype}${id}${part}${at}`, iso3: ['UKR'], payload});
+  const notes = [
+    note('story_analysis', 'story', 'thread-a', '', '2026-10-20T05:00:00.000Z', {lead: 'old'}), note('story_analysis', 'story', 'thread-a', '', '2026-10-21T05:00:00.000Z', {lead: 'new'}),
+    note('link', 'pair', 'thread-a__thread-b', '', '2026-10-21T05:00:00.000Z', {mechanism: 'drives'}),
+    note('drift', 'country', 'UKR', '', '2026-10-19T05:30:00.000Z', {whyChanged: 'first'}), note('drift', 'country', 'UKR', '', '2026-10-21T05:30:00.000Z', {whyChanged: 'latest'}),
+    note('country', 'country', 'UKR', '', '2026-10-21T05:15:00.000Z', {riskScore: 61}), note('country', 'country', 'UKR', 'systems', '2026-10-21T05:00:00.000Z', {web: 1})];
+  const v = build([e, f], {notes});
+  assert.deepEqual(v.stories.get('thread-a').analysis, {lead: 'new', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm', threadId: 'thread-a', iso3: ['UKR']});
+  assert.equal(v.stories.get('thread-b').analysis, null);
+  assert.deepEqual(v.links.get('thread-a').judgedLinks, [{otherThreadId: 'thread-b', mechanism: 'drives', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm'}]);
+  assert.deepEqual(v.links.get('thread-b').judgedLinks.map((l) => l.otherThreadId), ['thread-a']);
+  const c = v.countries.get('UKR');
+  assert.deepEqual([c.drift.map((d) => d.whyChanged), c.driftCount, c.intelligence.riskScore, c.systems.web], [['latest', 'first'], 2, 61, 1]);
+  assert.equal(build([e]).countries.size, 0); // no notes: no country views
+});

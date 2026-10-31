@@ -9,7 +9,7 @@ const Ajv = requireFrontend('ajv');
 const dir = resolve(__dirname, '../schema/views');
 const load = (...p) => JSON.parse(readFileSync(resolve(dir, ...p), 'utf8'));
 const ajv = new Ajv({allErrors: true, strict: false});
-const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
+const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest', 'country'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
 const examples = {story: ['story', 'story-alias', 'story-read'], index: ['index-active', 'index-all'], links: ['links', 'links-confirmed'], counts: ['counts'], manifest: ['manifest']};
 
 for (const [type, files] of Object.entries(examples)) {
@@ -72,4 +72,20 @@ test('views with an article placed by an assignment satisfy the schemas', () => 
   assert.equal(v.stories.get('thread-b').entries.some((e) => e.kind === 'article'), true);
   assert.equal(validate.counts(v.counts.get('2026-10-16')), true, JSON.stringify(validate.counts.errors));
   for (const s of [v.active, v.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
+});
+
+test('notes views (0042): a story analysis, judged links and a country view built from notes satisfy the schemas', () => {
+  const V = require('../src/views');
+  const X = require('./views-fixture');
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const note = (subtype, kind, id, part, at, payload) => ({subtype, subject: {kind, id}, part, at, model: 'deepseek-v4-pro', noteId: `${subtype}${id}${part}${at}`, iso3: [], payload});
+  const notes = [note('story_analysis', 'story', 'thread-a', '', '2026-10-21T05:00:00.000Z', {lead: 'L', storyArc: 'A'}),
+    note('link', 'pair', 'thread-a__thread-b', '', '2026-10-21T05:00:00.000Z', {mechanism: 'drives', strength: 'moderate'}),
+    note('drift', 'country', 'UKR', '', '2026-10-21T05:30:00.000Z', {countryName: 'Ukraine', whyChanged: 'x'}),
+    note('country', 'country', 'UKR', '', '2026-10-21T05:15:00.000Z', {riskScore: 61})];
+  const v = V.buildViews([e, f], {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1, notes});
+  assert.equal(validate.story(v.stories.get('thread-a')), true, JSON.stringify(validate.story.errors));
+  assert.equal(validate.links(v.links.get('thread-b')), true, JSON.stringify(validate.links.errors));
+  assert.equal(validate.country(v.countries.get('UKR')), true, JSON.stringify(validate.country.errors));
 });

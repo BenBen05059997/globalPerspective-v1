@@ -154,7 +154,8 @@
       "reading": {
         "state": "none",
         "reason": "no reading yet"
-      }
+      },
+      "analysis": null
     },
     "thread-b": {
       "schemaVersion": 1,
@@ -243,7 +244,8 @@
       "reading": {
         "state": "none",
         "reason": "no reading yet"
-      }
+      },
+      "analysis": null
     },
     "thread-c": {
       "schemaVersion": 1,
@@ -305,7 +307,8 @@
       "reading": {
         "state": "none",
         "reason": "no reading yet"
-      }
+      },
+      "analysis": null
     }
   },
   "links": {
@@ -318,7 +321,8 @@
       "threadId": "thread-a",
       "links": [],
       "confirmedLinks": [],
-      "confirmedLinksReason": "no reading yet"
+      "confirmedLinksReason": "no reading yet",
+      "judgedLinks": []
     },
     "thread-b": {
       "schemaVersion": 1,
@@ -329,7 +333,8 @@
       "threadId": "thread-b",
       "links": [],
       "confirmedLinks": [],
-      "confirmedLinksReason": "no reading yet"
+      "confirmedLinksReason": "no reading yet",
+      "judgedLinks": []
     },
     "thread-c": {
       "schemaVersion": 1,
@@ -340,7 +345,8 @@
       "threadId": "thread-c",
       "links": [],
       "confirmedLinks": [],
-      "confirmedLinksReason": "no reading yet"
+      "confirmedLinksReason": "no reading yet",
+      "judgedLinks": []
     },
     "thread-old": {
       "schemaVersion": 1,
@@ -351,7 +357,8 @@
       "threadId": "thread-old",
       "links": [],
       "confirmedLinks": [],
-      "confirmedLinksReason": "no reading yet"
+      "confirmedLinksReason": "no reading yet",
+      "judgedLinks": []
     }
   },
   "counts": {

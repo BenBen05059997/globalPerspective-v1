@@ -76,7 +76,8 @@
         "corrections",
         "line",
         "chapters",
-        "reading"
+        "reading",
+        "analysis"
       ],
       "additionalProperties": false,
       "properties": {
@@ -294,6 +295,41 @@
               }
             }
           ]
+        },
+        "analysis": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "threadId",
+                "generatedAt"
+              ],
+              "properties": {
+                "threadId": {
+                  "type": "string"
+                },
+                "generatedAt": {
+                  "type": "string"
+                },
+                "model": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "iso3": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ],
+          "description": "the latest story analysis note (decision 0042), model text, in the shape newsThreadAnalysis stores it"
         }
       }
     },

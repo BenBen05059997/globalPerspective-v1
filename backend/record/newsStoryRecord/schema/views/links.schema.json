@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Links view",
-  "description": "record/views/links/{threadId}.json: shared facts between active stories, not judged links (0037 section 1)",
+  "description": "record/views/links/{threadId}.json: shared facts between active stories (links, 0037 section 1), the review-confirmed links (confirmedLinks) and the story web's model-judged links (judgedLinks, link notes of 0042)",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -9,7 +9,8 @@
     "threadId",
     "links",
     "confirmedLinks",
-    "confirmedLinksReason"
+    "confirmedLinksReason",
+    "judgedLinks"
   ],
   "additionalProperties": false,
   "properties": {
@@ -80,6 +81,31 @@
           "type": "null"
         }
       ]
+    },
+    "judgedLinks": {
+      "type": "array",
+      "description": "the story web's model-judged links (link notes, decision 0042), latest per pair; model judgment, not computed",
+      "items": {
+        "type": "object",
+        "required": [
+          "otherThreadId",
+          "generatedAt"
+        ],
+        "properties": {
+          "otherThreadId": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string"
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
     }
   },
   "definitions": {

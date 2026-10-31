@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/record-view-country.json",
+  "title": "Country view (record/views/countries/<ISO3>.json), built from notes (decision 0042)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "builtFrom",
+    "iso3",
+    "drift",
+    "driftCount",
+    "intelligence",
+    "systems"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "builtFrom": {
+      "type": "object"
+    },
+    "iso3": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "drift": {
+      "type": "array",
+      "description": "drift notes, newest first, at most 90, each as newsDriftCorrector stored it plus generatedAt and model",
+      "items": {
+        "type": "object",
+        "required": [
+          "generatedAt"
+        ]
+      }
+    },
+    "driftCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "intelligence": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "generatedAt"
+          ]
+        }
+      ],
+      "description": "the latest country note (part ''), as stored"
+    },
+    "systems": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "generatedAt"
+          ]
+        }
+      ],
+      "description": "the latest country systems note (part 'systems'), as stored"
+    }
+  }
+}

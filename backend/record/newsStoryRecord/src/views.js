@@ -44,6 +44,59 @@ function entryNotesBy(noteLines) {
   return out;
 }
 
+/** A note as the item its writer stored in DynamoDB (payload + generatedAt + model), so a page switches source, not shape. */
+const asStored = (n) => ({...n.payload, generatedAt: n.at, model: n.model});
+const DRIFT_MAX = 90; // drift notes kept per country view (newest); the count says how many exist
+
+/** The latest note per key of one subtype (and part, when given). */
+function latestBy(noteLines, subtype, keyOf, part) {
+  const out = new Map();
+  for (const n of noteLines) {
+    if (!n || n.subtype !== subtype || !n.subject || !n.payload || (part !== undefined && n.part !== part)) continue;
+    const k = keyOf(n);
+    const cur = out.get(k);
+    if (!cur || n.at > cur.at) out.set(k, n);
+  }
+  return out;
+}
+
+/** Story analysis notes (0042) -> threadId -> the analysis as stored. */
+function storyAnalysisBy(noteLines) {
+  const out = new Map();
+  for (const [id, n] of latestBy(noteLines, 'story_analysis', (x) => x.subject.id)) out.set(id, {...asStored(n), threadId: id, iso3: n.iso3});
+  return out;
+}
+
+/** Link notes (pair subjects, record.js pairKey a__b) -> threadId -> judged links [{otherThreadId, ...as stored}], model judgment. */
+function judgedLinksBy(noteLines) {
+  const out = new Map();
+  for (const [pair, n] of latestBy(noteLines, 'link', (x) => x.subject.id)) {
+    const ids = pair.split('__');
+    if (ids.length !== 2) continue;
+    for (const [me, other] of [[ids[0], ids[1]], [ids[1], ids[0]]]) (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, ...asStored(n)});
+  }
+  for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId));
+  return out;
+}
+
+/** Country views (0042): per ISO3, its drift notes (newest first, capped) and its latest country notes, from notes alone. */
+function countryViews(noteLines, builtFrom) {
+  const out = new Map();
+  const view = (iso3) => out.get(iso3) || out.set(iso3, {schemaVersion: SCHEMA_VERSION, builtFrom, iso3, drift: [], driftCount: 0, intelligence: null, systems: null}).get(iso3);
+  const drift = noteLines.filter((n) => n && n.subtype === 'drift' && n.subject && n.payload).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  const seen = new Set();
+  for (const n of drift) {
+    if (seen.has(n.noteId)) continue;
+    seen.add(n.noteId);
+    const v = view(n.subject.id);
+    v.driftCount += 1;
+    if (v.drift.length < DRIFT_MAX) v.drift.push(asStored(n));
+  }
+  for (const [iso3, n] of latestBy(noteLines, 'country', (x) => x.subject.id, '')) view(iso3).intelligence = asStored(n);
+  for (const [iso3, n] of latestBy(noteLines, 'country', (x) => x.subject.id, 'systems')) view(iso3).systems = asStored(n);
+  return out;
+}
+
 /** A placed article as a story row: marked `kind: 'article'`, no category or event type (an article carries neither). */
 function articleRow(f, corrected) {
   const p = f.payload;
@@ -101,7 +154,7 @@ function groupStories(facts, aliases, keep = new Set()) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy}) {
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy = new Map()}) {
   const {own, merged} = groupStories(facts, aliases, keep);
   const stories = new Map();
   const rows = new Map();
@@ -144,6 +197,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
       ...readingFields(readings.get(threadId)),
+      analysis: analysisBy.get(threadId) ?? null, // the latest story analysis note (model text), as stored
     });
     rows.set(threadId, {
       threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
@@ -276,7 +330,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy: entryNotesBy(noteLines)});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy: entryNotesBy(noteLines), analysisBy: storyAnalysisBy(noteLines)});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
@@ -287,20 +341,23 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   for (const id of stories.keys()) {
     if (!links.has(id)) links.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: [], confirmedLinks: [], confirmedLinksReason: NO_READING});
   }
+  // the story web's model-judged links (link notes, 0042) beside the computed shared-fact links
+  const judged = judgedLinksBy(noteLines);
+  for (const [id, view] of links) view.judgedLinks = judged.get(id) || [];
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
-  return {stories, links, counts, active, all: everything, manifest};
+  return {stories, links, counts, active, all: everything, manifest, countries: countryViews(noteLines, builtFrom)};
 }
 
 /** The write order of 0037 section 2 as groups of [key, object]; the groups are written one after another, manifest last. */
 function writeGroups(views) {
   const keyed = (dir, map) => [...map].map(([id, obj]) => [`${dir}/${id}.json`, obj]);
   return [
-    [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('counts', views.counts)],
+    [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('counts', views.counts), ...keyed('countries', views.countries || new Map())],
     [['index/active.json', views.active]],
     [['index/all.json', views.all]],
     [['manifest.json', views.manifest]],

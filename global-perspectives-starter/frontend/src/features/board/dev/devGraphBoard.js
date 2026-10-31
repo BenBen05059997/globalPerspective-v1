@@ -62,7 +62,7 @@ export function decorateDevGraph(board, now = new Date()) {
       return {
         ...pin, recordAvailable: true, ...(d.title ? { title: d.title } : {}), ...(d.category ? { category: d.category } : {}),
         ...(d.risk != null ? { risk: d.risk } : {}), ...(d.riskWas != null ? { riskWas: d.riskWas } : {}),
-        line: d.line ?? null, ...(d.counts ? { counts: d.counts } : {}),
+        line: d.line ?? null, ...(d.iso3 ? { iso3: d.iso3 } : {}), ...(d.counts ? { counts: d.counts } : {}),
         ...(d.quietDays != null ? { lastMoved: iso(now.getTime() - d.quietDays * DAY).slice(0, 10) } : {}),
         ...(d.bornDaysAgo != null ? { born: iso(now.getTime() - d.bornDaysAgo * DAY).slice(0, 10) } : {}),
       };

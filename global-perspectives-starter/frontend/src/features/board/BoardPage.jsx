@@ -31,6 +31,8 @@ import UnsettledZone from '@/features/board/components/UnsettledZone.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
 import { useWeekCounts } from '@/features/board/hooks/useWeekCounts.js';
 import BoardGraph from '@/features/board/components/BoardGraph.jsx';
+import BoardMap from '@/features/board/components/BoardMap.jsx';
+import MapRail from '@/features/board/components/MapRail.jsx';
 import VerdictCard from '@/features/board/components/VerdictCard.jsx';
 import StringDetail from '@/features/board/components/StringDetail.jsx';
 import AddPinPanel from '@/features/board/components/AddPinPanel.jsx';
@@ -74,6 +76,7 @@ export default function BoardPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [view, setView] = useState('graph');
   const [weekPick, setWeekPick] = useState(null);
+  const [railOpen, setRailOpen] = useState(false);
   const presets = usePresets(available && (panel?.type === 'presets' || (member.signedIn && boards.settled && !boards.boards.length) || !member.signedIn));
 
   const board = state.board;
@@ -164,8 +167,8 @@ export default function BoardPage() {
   const missing = useMemo(() => (board ? missingActors(board, results, follows.actors) : []), [board, results, follows.actors]);
   const failed = useMemo(() => (board ? failedCombos(board, results) : []), [board, results]);
   const addActor = (name) => addToBoard({ kind: 'actor', refId: name });
-  // The map view is not built yet: the switch shows only in the dev harness.
-  const views = import.meta.env.DEV ? ['map', 'graph'] : ['graph'];
+  const views = ['map', 'graph'];
+  const mapView = view === 'map';
   const coverage = board?.coverage || null; // per-day coverage and kept weeks: the live board feed does not carry it yet
   const signInHref = `/signin?returnTo=${encodeURIComponent(boardHref(boardId))}`;
 
@@ -254,6 +257,8 @@ export default function BoardPage() {
     )
   ) : null;
 
+  // On the map the rail starts collapsed; an open panel (a pin, a string) or its arrow opens it.
+  const thinRail = mapView && !railOpen && !(sheet && !isPhone);
   const empty = boards.settled && !boards.boards.length && !boardId;
 
   return (
@@ -287,12 +292,14 @@ export default function BoardPage() {
       {board ? (
         <>
           <div className="board-toolbar">
-            <Button disabled={selected.length !== 2} onClick={connectSelected} title="Select two pins, then connect (or press c)">Connect</Button>
-            <span className="board-hint">
-              {selected.length === 0 ? 'Drag one pin onto another, or select two and press Connect.'
-                : selected.length === 1 ? `Selected: ${labelOf(selected[0])}. Select a second pin.`
-                  : `Selected: ${labelOf(selected[0])} and ${labelOf(selected[1])}.`}
-            </span>
+            {mapView ? <span className="board-hint">Click a pin or an arc for its detail. Switch to Graph to connect pins.</span> : <>
+              <Button disabled={selected.length !== 2} onClick={connectSelected} title="Select two pins, then connect (or press c)">Connect</Button>
+              <span className="board-hint">
+                {selected.length === 0 ? 'Drag one pin onto another, or select two and press Connect.'
+                  : selected.length === 1 ? `Selected: ${labelOf(selected[0])}. Select a second pin.`
+                    : `Selected: ${labelOf(selected[0])} and ${labelOf(selected[1])}.`}
+              </span>
+            </>}
             {confirmDelete ? (
               <span className="board-confirm" role="group" aria-label="Confirm delete">
                 <span>Delete &ldquo;{board.name}&rdquo;?</span>
@@ -302,10 +309,22 @@ export default function BoardPage() {
             ) : <Button compact onClick={() => setConfirmDelete(true)}>Delete board</Button>}
           </div>
 
-          <div className="board-main">
+          <div className={`board-main${thinRail ? ' board-main--thin' : ''}`}>
             <div className="board-canvas">
-              {import.meta.env.DEV && view === 'map' ? (
-                <p className="board-line">The map view is not built yet (dev harness only).</p>
+              {mapView ? (
+                <BoardMap
+                  pins={pins}
+                  strings={board.strings}
+                  info={info}
+                  stories={records.stories}
+                  pickedKey={pickedKey}
+                  ghosts={missing}
+                  failed={failed}
+                  coverageGap={coverage?.gaps?.[0] || null}
+                  onPickPin={(pinId) => setPanel({ type: 'pin', pinId })}
+                  onPickString={(s) => setPanel({ type: 'string', string: s })}
+                  onAddGhost={addActor}
+                />
               ) : (
                 <BoardGraph
                   pins={pins}
@@ -362,7 +381,9 @@ export default function BoardPage() {
                 </ul>
               </details>
             </div>
+            {thinRail ? <MapRail board={board} stories={records.stories} links={records.links} missing={missing} onOpen={() => setRailOpen(true)} /> : (
             <div className="board-rail">
+              {mapView ? <Button compact onClick={() => setRailOpen(false)} aria-label="Collapse this week on your board">› Collapse</Button> : null}
               {!isPhone ? sheet : null}
               <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors}
                 onAddPin={(threadId) => addToBoard({ kind: 'thread', refId: threadId })}
@@ -372,7 +393,7 @@ export default function BoardPage() {
               <DivergencePanel board={board} stories={records.stories} labelOf={labelOf}
                 onRestore={(a, b) => state.edit((bd) => restoreString(bd, a, b))}
                 onWeight={(forkId, branchId, percent) => state.edit((bd) => setWeight(bd, forkId, branchId, percent))} />
-            </div>
+            </div>)}
           </div>
           <ArrivalsTray key={board.boardId} board={board} labelOf={labelOf}
             onDismiss={(id) => state.edit((b) => ({...b, dismissed: [...new Set([...b.dismissed, id])]}))}

@@ -2,6 +2,7 @@
 
 const { generateTopicMapImage } = require('./mapImageGenerator');
 const { storyHref, absoluteUrl } = require('./_shared/links');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -30,6 +31,10 @@ const BLUESKY_APP_PASSWORD = process.env.BLUESKY_APP_PASSWORD || '';
 
 const MAX_POSTS_PER_RUN = parseInt(process.env.MAX_POSTS_PER_RUN || '5', 10);
 const MAX_POSTS_PER_DAY = parseInt(process.env.MAX_POSTS_PER_DAY || '100', 10);
+
+// RECORD_READS=ddb|record|compare (decision 0054): where the topic pool (NewsCache `latest`) comes from
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -268,12 +273,11 @@ function titleFingerprint(title) {
 }
 
 async function loadLatestTopics() {
-  const { Item } = await ddb.send(
-    new GetCommand({
-      TableName: TOPICS_TABLE,
-      Key: { id: 'latest' },
-    })
-  );
+  const Item = await readBy({
+    mode: RECORD_READS, label: 'linkedin latest', same: SAME.latest,
+    ddb: async () => (await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }))).Item,
+    record: () => records.latestItem(),
+  });
 
   if (!Item || !Array.isArray(Item.topics)) {
     return [];
@@ -755,3 +759,5 @@ function response(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
+
+exports.loadLatestTopics = loadLatestTopics; // for tests

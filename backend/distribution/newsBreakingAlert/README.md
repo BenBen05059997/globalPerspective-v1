@@ -1,7 +1,7 @@
 # newsBreakingAlert
 
 Each pipeline cycle: groups the latest topics into stories by `threadId`, scores each deterministically
-(`src/significance.js`: sources, topic count, region risk, economic magnitude, velocity; continuations
+(`src/significance.js`: sources, topic count, region risk, velocity; continuations
 face a raised bar), picks at most ONE un-deduped story above the threshold, renders an email
 (`src/render.js`) and writes a `status: 'proposed'` row. With `DRY_RUN` off and `RESEND_API_KEY` set it
 emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. The email is flagged NOT PUBLIC until confirmed and names the confirm command (`node backend/distribution/cli/breaking/review.js`). `sent` is not public: readers see an alert only once the operator sets it `confirmed`. LLM verify is a stub (`pending`).
@@ -12,7 +12,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 - Deploy: `scripts/lambda.sh newsBreakingAlert diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes
-- DynamoDB read: `TOPICS_DDB_TABLE` (`id: 'latest'`); `SUMMARIZE_PREDICT_TABLE` `COUNTRY#<r>`/`COUNTRY_INTELLIGENCE`, `ECON#THREAD#<id>`/`ECONOMIC_IMPACT`, `THREAD#<id>`/`THREAD_ANALYSIS`, `TOPIC#<id>`/`SUMMARY|PREDICTION|TRACE_CAUSE`.
+- DynamoDB read: `TOPICS_DDB_TABLE` (`id: 'latest'`); `SUMMARIZE_PREDICT_TABLE` `COUNTRY#<r>`/`COUNTRY_INTELLIGENCE`, `THREAD#<id>`/`THREAD_ANALYSIS`, `TOPIC#<id>`/`SUMMARY|PREDICTION|TRACE_CAUSE`.
 - DynamoDB write: `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`), key `alertKey` = threadId; doubles as dedupe row (`DEDUPE_DAYS` 5, `ttl` `DEDUPE_TTL_DAYS` 14).
 - External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Story links come from `src/_shared/links.js` (`storyHref` + `absoluteUrl`; env `SITE_URL` only overrides the origin), and only when the story has a real thread arc.
 

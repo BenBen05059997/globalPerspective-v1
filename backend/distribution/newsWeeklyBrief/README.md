@@ -9,7 +9,7 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `today-archive` and `archive#YYYY-MM-DD` (key `id`)
-- DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `ECON#THREAD#<id>`/`ECONOMIC_IMPACT`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `WEEKLY_BRIEF#<weekKey>`/`WEEKLY_BRIEF` (ttl 180 days)
+- DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `WEEKLY_BRIEF#<weekKey>`/`WEEKLY_BRIEF` (ttl 180 days)
 - Sends no email itself.
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.3)
 

@@ -9,7 +9,6 @@
 //     sourceCount,   // total sources across the thread's topics this cycle
 //     topicCount,    // distinct topics under the thread this cycle (breadth)
 //     riskScore,     // 0-100, max COUNTRY_INTELLIGENCE.riskScore over the regions
-//     econMagnitude, // 'large' | 'moderate' | 'small' | null  (max over instruments)
 //   }
 //
 // score = Σ weight·normalizedSignal. A story is "breaking" when score ≥ threshold.
@@ -21,7 +20,6 @@ const WEIGHTS = Object.freeze({
   popularity: 1.0, // many outlets corroborating the same story
   breadth: 1.0, // story breaking across several simultaneous angles
   risk: 1.0, // country-level risk TILTS the decision; capped (RISK_CAP) so it can't dominate
-  economic: 1.5, // market-moving magnitude
   velocity: 1.5, // rate of change — a story accelerating *now* (burst), not just loud
 });
 
@@ -34,8 +32,6 @@ const SIGNIFICANCE_THRESHOLD = 2.0;
 // magnitude delta), never on a story merely staying loud. This is the deterministic
 // stand-in for First Story Detection: suppress unless the delta clears a raised bar.
 const CONTINUATION_THRESHOLD_MULT = 1.8;
-
-const MAGNITUDE_WEIGHT = Object.freeze({ large: 1.0, moderate: 0.6, small: 0.3 });
 
 function clamp01(x) {
   if (!Number.isFinite(x)) return 0;
@@ -62,7 +58,7 @@ function breadth(topicCount) {
 // Standing country riskScore is a STANDING posture, not event evidence — an uncapped
 // 88/100 country could clear the bar on its own (62-88% of threshold) for a routine
 // story. Cap the contribution at 0.5 so risk only TILTS the decision; real event
-// signals (sources/breadth/economic/velocity) must do the rest.
+// signals (sources/breadth/velocity) must do the rest.
 // See SCORING_RUBRIC.md §2a / BREAKING_ALERT_V2_BUILD_PLAN.md (Stage 1).
 const RISK_CAP = 50;
 function risk(riskScore) {
@@ -95,10 +91,6 @@ function regionRiskScore(record, category) {
   return Number.isFinite(blended) ? blended : 0;
 }
 
-function economic(magnitude) {
-  return MAGNITUDE_WEIGHT[magnitude] || 0;
-}
-
 // Velocity in [0,1] — new angles/sources added THIS cycle vs the thread's prior size,
 // squashed so ~5 new ≈ 1.0. This is the burst signal: a story going 2→8 in one cycle
 // scores far above one sitting flat at 8.
@@ -114,23 +106,20 @@ function scoreStory(signals = {}, w = WEIGHTS) {
     popularity: popularity(signals.sourceCount),
     breadth: breadth(signals.topicCount),
     risk: risk(signals.riskScore),
-    economic: economic(signals.econMagnitude),
     velocity: velocity(signals.velocity),
   };
   const contributions = {
     popularity: w.popularity * s.popularity,
     breadth: w.breadth * s.breadth,
     risk: w.risk * s.risk,
-    economic: w.economic * s.economic,
     velocity: w.velocity * s.velocity,
   };
   const score = round3(
-    contributions.popularity + contributions.breadth + contributions.risk + contributions.economic + contributions.velocity
+    contributions.popularity + contributions.breadth + contributions.risk + contributions.velocity
   );
 
   const reasons = [];
   if (s.risk >= 0.5) reasons.push(`country risk ${signals.riskScore}/100`);
-  if (s.economic >= 0.6) reasons.push(`${signals.econMagnitude} market impact`);
   if ((Number(signals.sourceCount) || 0) >= 6) reasons.push(`${signals.sourceCount} sources`);
   if ((Number(signals.topicCount) || 0) >= 3) reasons.push(`${signals.topicCount} concurrent angles`);
   if ((Number(signals.velocity) || 0) >= 3) reasons.push(`accelerating (+${signals.velocity} this cycle)`);
@@ -153,12 +142,11 @@ module.exports = {
   WEIGHTS,
   SIGNIFICANCE_THRESHOLD,
   CONTINUATION_THRESHOLD_MULT,
-  MAGNITUDE_WEIGHT,
   scoreStory,
   isBreaking,
   effectiveThreshold,
   axisForCategory,
   regionRiskScore,
   // exported for tests
-  _internals: { popularity, breadth, risk, economic, velocity, clamp01 },
+  _internals: { popularity, breadth, risk, velocity, clamp01 },
 };

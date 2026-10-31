@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Forecasts view",
+  "description": "record/views/forecasts/{threadId}.json (decision 0052): the forks of one story that has drawn a question, as the story view lists them, in a file of its own for the readers that need a story's forecast and not its timeline (the briefing's next question, the country card's deadlines, the analysis context). A story merged into another has an empty list.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "builtFrom",
+    "threadId",
+    "forks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "builtFrom": {
+      "$ref": "#/definitions/builtFrom"
+    },
+    "threadId": {
+      "type": "string"
+    },
+    "forks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/fork"
+      }
+    }
+  },
+  "definitions": {
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"
+    },
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "builtFrom": {
+      "type": "object",
+      "required": [
+        "factsThrough",
+        "readingsThrough"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "factsThrough": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "readingsThrough": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-W\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "newest ISO week among the readings the build used; null when there are none"
+        },
+        "provisionalThrough": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "the newest day of the provisional entries (today's archive before the nightly run has frozen it, 0050); absent when the build had none"
+        }
+      }
+    },
+    "fork": {
+      "type": "object",
+      "required": [
+        "forkId",
+        "drawnAt",
+        "branches"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "forkId": {
+          "type": "string"
+        },
+        "drawnAt": {
+          "$ref": "#/definitions/iso"
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/branch"
+          }
+        }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "required": [
+        "branchId",
+        "text",
+        "p",
+        "trigger",
+        "resolutionSource",
+        "due",
+        "verdict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "branchId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trigger": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolutionSource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/day"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legacy": {
+          "const": true
+        },
+        "verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/verdict"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "question": {
+          "type": "boolean",
+          "description": "a scoreable question of the forecast loop (0038)"
+        },
+        "qid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the question id, /track-record?q=<qid>; null on a legacy branch"
+        },
+        "scenarioP": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the probability of the branch's scenario, as drawn"
+        },
+        "scoring": {
+          "anyOf": [
+            {
+              "enum": [
+                "sampled",
+                "not_eligible",
+                "warm_up",
+                "awaiting_draw",
+                "not_sampled"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "where the question stands in the weekly sample (0043); null on a legacy branch"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no",
+                "void",
+                "awaiting",
+                "past_deadline_unchecked"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the outcome of a sampled question (0043); null when the question was not sampled or the branch is legacy"
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": [
+        "at",
+        "result",
+        "decidedBy",
+        "evidence",
+        "voidReason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/definitions/iso"
+        },
+        "result": {
+          "enum": [
+            "yes",
+            "no",
+            "void"
+          ]
+        },
+        "decidedBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {},
+        "voidReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

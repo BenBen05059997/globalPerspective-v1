@@ -9,8 +9,8 @@ const Ajv = requireFrontend('ajv');
 const dir = resolve(__dirname, '../schema/views');
 const load = (...p) => JSON.parse(readFileSync(resolve(dir, ...p), 'utf8'));
 const ajv = new Ajv({allErrors: true, strict: false});
-const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest', 'country', 'analyses-index', 'web-index', 'countries-index', 'weekly-index', 'brief-daily', 'brief-weekly', 'briefs-index', 'today-index'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
-const examples = {story: ['story', 'story-alias', 'story-read'], index: ['index-active', 'index-all'], links: ['links', 'links-confirmed'], counts: ['counts'], manifest: ['manifest'], 'analyses-index': ['analyses-index'], 'web-index': ['web-index'], 'countries-index': ['countries-index'], 'weekly-index': ['weekly-index'], 'brief-daily': ['brief-daily'], 'brief-weekly': ['brief-weekly'], 'briefs-index': ['briefs-index'], 'today-index': ['today-index']};
+const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest', 'country', 'analyses-index', 'web-index', 'countries-index', 'weekly-index', 'brief-daily', 'brief-weekly', 'briefs-index', 'today-index', 'forecasts'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
+const examples = {story: ['story', 'story-alias', 'story-read'], index: ['index-active', 'index-all'], links: ['links', 'links-confirmed'], counts: ['counts'], manifest: ['manifest'], 'analyses-index': ['analyses-index'], 'web-index': ['web-index'], 'countries-index': ['countries-index'], 'weekly-index': ['weekly-index'], 'brief-daily': ['brief-daily'], 'brief-weekly': ['brief-weekly'], 'briefs-index': ['briefs-index'], 'today-index': ['today-index'], forecasts: ['forecasts']};
 
 for (const [type, files] of Object.entries(examples)) {
   for (const file of files) {
@@ -24,6 +24,7 @@ test('the built golden views satisfy the schemas', () => {
   const g = JSON.parse(readFileSync(resolve(__dirname, 'golden/views.golden.json'), 'utf8'));
   for (const s of Object.values(g.stories)) assert.equal(validate.story(s), true, JSON.stringify(validate.story.errors));
   for (const s of Object.values(g.links)) assert.equal(validate.links(s), true, JSON.stringify(validate.links.errors));
+  for (const s of Object.values(g.forecasts || {})) assert.equal(validate.forecasts(s), true, JSON.stringify(validate.forecasts.errors));
   for (const s of Object.values(g.counts)) assert.equal(validate.counts(s), true, JSON.stringify(validate.counts.errors));
   for (const s of [g.active, g.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
 });

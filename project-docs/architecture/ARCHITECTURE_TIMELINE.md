@@ -94,7 +94,7 @@ Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status `started|ok|parti
 | `story_split` | from, into, reason; cancels the matching merge in the views | operator, `record/inbox/splits/` |
 | `run` | runId, status, counts | the writer itself |
 
-`situation` stays deferred. Drift notes, story analysis, country briefings and the story web are raw daily notes the review may cite as input; they are not facts.
+`situation` stays deferred. Drift notes, story analysis, country briefings, the story web and the per-entry summaries are model notes, not facts: they move to `record/notes/<subtype>/` (decision 0042) and the review may cite them as input.
 
 ### Readings (one kind, `reading`, six subtypes)
 | subtype | payload (essentials) |

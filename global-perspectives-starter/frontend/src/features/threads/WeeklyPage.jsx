@@ -77,7 +77,7 @@ export default function WeeklyPage() {
 
   const { threads, standalone } = useMemo(() => buildThreads(dayMap, allDates, now), [dayMap, allDates, now]);
   const qualifyingThreadIds = useMemo(() => threads.filter((t) => t.articleCount >= 2).map((t) => t.threadId), [threads]);
-  const { analyses } = useThreadAnalyses(qualifyingThreadIds);
+  const { analyses } = useThreadAnalyses(qualifyingThreadIds, { light: true });
 
   const filters = useMemo(() => ({ q, crisis, tiers, region, category, window: windowValue }), [q, crisis, tiers, region, category, windowValue]);
   const listed = useMemo(

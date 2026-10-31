@@ -56,7 +56,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
 - `useWebIndex` -> `web_index` (memory, 30 min): How it connects and the story-web coverage line.
-- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`
+- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
   (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).
 
 ## Pipeline

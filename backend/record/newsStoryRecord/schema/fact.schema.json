@@ -38,7 +38,9 @@
           "sourceId": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
           "outlet": { "type": ["string", "null"] },
           "url": { "type": ["string", "null"] },
-          "title": { "type": ["string", "null"] }
+          "title": { "type": ["string", "null"] },
+          "snippet": { "type": "string", "description": "the feed's text for the article (raw capture, from 2026-10-31)" },
+          "tier": { "enum": ["primary", "secondary"], "description": "primary = cited by the selector, secondary = added by code matching (from 2026-10-31)" }
         },
         "additionalProperties": false
       }
@@ -52,7 +54,7 @@
         "properties": {
           "payload": {
             "required": ["title", "summary", "category", "eventType", "continuesTopic", "topicId"],
-            "properties": { "title": { "type": "string" }, "summary": { "type": ["string", "null"] }, "category": { "type": ["string", "null"] }, "eventType": { "type": ["string", "null"] }, "continuesTopic": { "type": ["string", "null"] }, "topicId": { "type": "string" } }
+            "properties": { "title": { "type": "string" }, "summary": { "type": ["string", "null"] }, "category": { "type": ["string", "null"] }, "eventType": { "type": ["string", "null"] }, "continuesTopic": { "type": ["string", "null"] }, "topicId": { "type": "string" }, "actors": { "type": "array", "items": { "type": "string" }, "description": "actor display names as captured (from 2026-10-31); actorIds holds the normalized ids" } }
           }
         }
       }

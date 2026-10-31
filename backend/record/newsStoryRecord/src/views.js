@@ -6,6 +6,7 @@ const {addDays} = require('./_shared/world');
 const {isResolvable: resolvable} = require('./facts'); // a question with a question id (0038); anything else is legacy
 const Rd = require('./readings');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
+const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -21,7 +22,24 @@ const maxOf = (xs) => xs.reduce((m, x) => (m === null || x > m ? x : m), null);
 const minOf = (xs) => xs.reduce((m, x) => (m === null || x < m ? x : m), null);
 const bytesOf = (obj) => Buffer.byteLength(`${JSON.stringify(obj)}\n`);
 
-const sourcesOf = (f) => (f.sources || []).map((s) => ({sourceId: s.sourceId, outlet: s.outlet, url: s.url, title: s.title}));
+// outlet country and type come from the one outlet table at build time (not stored); snippet and tier where the fact has them
+const sourcesOf = (f) => (f.sources || []).map((s) => {
+  const meta = s.url ? getOutletMeta(registrableDomain(s.url)) : null;
+  return {sourceId: s.sourceId, outlet: s.outlet, url: s.url, title: s.title, outletCountry: meta ? meta.country : null, outletType: meta ? meta.type : null,
+    ...(s.snippet ? {snippet: s.snippet} : {}), ...(s.tier ? {tier: s.tier} : {})};
+});
+
+/** Entry notes (0042) -> eventId -> {part: {format, content, at, model}}: the latest note per entry and part wins. */
+function entryNotesBy(noteLines) {
+  const out = new Map();
+  for (const n of noteLines) {
+    if (!n || n.subtype !== 'entry' || !n.subject || !n.payload) continue;
+    const parts = out.get(n.subject.id) || out.set(n.subject.id, {}).get(n.subject.id);
+    const cur = parts[n.part];
+    if (!cur || n.at > cur.at) parts[n.part] = {format: n.payload.format, content: n.payload.content, at: n.at, model: n.model};
+  }
+  return out;
+}
 
 /** A placed article as a story row: marked `kind: 'article'`, no category or event type (an article carries neither). */
 function articleRow(f, corrected) {
@@ -34,10 +52,11 @@ function articleRow(f, corrected) {
 }
 
 /** The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending. */
-function entryRows(group, corrected, reassigned = new Map()) {
+function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()) {
   return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.kind === 'article' ? {...articleRow(f, corrected), ...(own ? {} : {fromThreadId: threadId})} : ({
     eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: f.payload.title, summary: f.payload.summary ?? null,
     category: f.payload.category ?? null, eventType: f.payload.eventType ?? null, sources: sourcesOf(f),
+    ...(f.payload.actors ? {actors: f.payload.actors} : {}), ...(notesBy.has(f.eventId) ? {notes: notesBy.get(f.eventId)} : {}),
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
@@ -78,7 +97,7 @@ function groupStories(facts, aliases, keep = new Set()) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep}) {
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy}) {
   const {own, merged} = groupStories(facts, aliases, keep);
   const stories = new Map();
   const rows = new Map();
@@ -106,7 +125,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const mergeFacts = applied.filter((f) => ids.has(f.payload.into));
     const corrections = allFacts.filter((f) => f.kind === 'correction');
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
-    const entries = entryRows(group, corrected, reassigned);
+    const entries = entryRows(group, corrected, reassigned, notesBy);
     const kept = entries.slice(-ENTRY_CAP);
     const forks = forkRows(mine);
     const branches = forks.flatMap((k) => k.branches);
@@ -242,7 +261,7 @@ function countDaysFor(today, changedDays = []) {
  * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
  * (record/operator/aliases.json or null). Throws when all.json is over its hard cap.
  */
-function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null}) {
+function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = []}) {
   const sorted = ordered(allFacts);
   const {placed: facts, reassigned, keep} = placeEntries(sorted);
   const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run').map((f) => f.date));
@@ -253,7 +272,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy: entryNotesBy(noteLines)});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);

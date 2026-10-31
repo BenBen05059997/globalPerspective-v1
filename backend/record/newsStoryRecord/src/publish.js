@@ -35,12 +35,25 @@ function makePublisher({s3json}) {
     return lines;
   }
 
+  /** Every note of a subtype (0042): the days in record/notes/<subtype>/manifest.json; none written yet is empty. */
+  async function readNotes(prefix, subtype) {
+    const manifest = await s3json.getJson(`${prefix}notes/${subtype}/manifest.json`);
+    const days = manifest && Array.isArray(manifest.days) ? manifest.days : [];
+    const lines = [];
+    for (let i = 0; i < days.length; i += READ_BATCH) {
+      const parts = await Promise.all(days.slice(i, i + READ_BATCH).map((d) => s3json.getLines(`${prefix}notes/${subtype}/${d}.jsonl`)));
+      for (const p of parts) lines.push(...p.lines);
+    }
+    return lines;
+  }
+
   /** Build and write all views. `changedDays` = days whose facts changed in this invocation (their counts are rewritten). */
   async function publish({prefix, today, builtAt, runId, changedDays = []}) {
     const {facts, manifestDays} = await readFacts(prefix, changedDays);
     const readings = await readReadings(prefix, facts, today);
     const operatorAliases = await s3json.getJson(`${prefix}operator/aliases.json`); // null when the operator wrote none
-    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases});
+    const notes = await readNotes(prefix, 'entry');
+    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases, notes});
     let written = 0;
     for (const group of writeGroups(views)) {
       for (let i = 0; i < group.length; i += WRITE_BATCH) {

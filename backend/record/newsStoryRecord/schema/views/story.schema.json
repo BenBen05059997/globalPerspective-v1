@@ -401,6 +401,122 @@
         "corrected": {
           "const": true,
           "description": "present when a correction fact names this entry"
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "actor display names (entries from 2026-10-31)"
+        },
+        "notes": {
+          "type": "object",
+          "description": "model notes about this entry (decision 0042): the latest per part; model text, never a fact",
+          "additionalProperties": false,
+          "properties": {
+            "summary": {
+              "type": "object",
+              "required": [
+                "format",
+                "content",
+                "at",
+                "model"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "format": {
+                  "enum": [
+                    "markdown",
+                    "json"
+                  ]
+                },
+                "content": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                },
+                "at": {
+                  "$ref": "#/definitions/iso"
+                },
+                "model": {
+                  "type": "string"
+                }
+              }
+            },
+            "prediction": {
+              "type": "object",
+              "required": [
+                "format",
+                "content",
+                "at",
+                "model"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "format": {
+                  "enum": [
+                    "markdown",
+                    "json"
+                  ]
+                },
+                "content": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                },
+                "at": {
+                  "$ref": "#/definitions/iso"
+                },
+                "model": {
+                  "type": "string"
+                }
+              }
+            },
+            "cause": {
+              "type": "object",
+              "required": [
+                "format",
+                "content",
+                "at",
+                "model"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "format": {
+                  "enum": [
+                    "markdown",
+                    "json"
+                  ]
+                },
+                "content": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ]
+                },
+                "at": {
+                  "$ref": "#/definitions/iso"
+                },
+                "model": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -445,6 +561,29 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "outletCountry": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "from the outlet table at build time"
+        },
+        "outletType": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "from the outlet table at build time"
+        },
+        "snippet": {
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            "primary",
+            "secondary"
           ]
         }
       }

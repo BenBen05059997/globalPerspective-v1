@@ -27,6 +27,13 @@ test('entry fact: content id, sorted unique ids, outlet from the table or null, 
   assert.equal(f.date, '2026-10-20');
 });
 
+test('entry fact keeps the raw capture the pages show: source snippet and tier, actor display names; absent fields stay absent', () => {
+  const f = F.entryFact({...entry, actors: ['Volodymyr Zelensky', ''], sources: [{url: 'https://www.bbc.co.uk/news/x', source: 'bbc.co.uk', title: 'T', snippet: 'Feed text', tier: 'primary'}, {url: 'https://www.reuters.com/y', title: 'U', tier: 'odd'}]}, 'r');
+  assert.deepEqual(f.sources.map((s) => [s.snippet, s.tier]), [['Feed text', 'primary'], [undefined, undefined]]);
+  assert.deepEqual(f.payload.actors, ['Volodymyr Zelensky']);
+  assert.equal('actors' in F.entryFact({...entry, actors: []}, 'r').payload, false);
+});
+
 test('entry without a usable url uses title basis; without archivedAt the day is the archive day', () => {
   const f = F.entryFact({...entry, sources: [], archivedAt: null}, 'r');
   assert.equal(f.idBasis, 'title');

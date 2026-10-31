@@ -328,3 +328,18 @@ test('AJ: a build with articles but no article assignment is identical to the en
   assert.deepEqual(noCounts(v), noCounts(plain));
   assert.deepEqual(JSONIFY([...v.counts.values()].map((c) => c.byStory)), JSONIFY([...plain.counts.values()].map((c) => c.byStory)));
 });
+
+test('entry notes (0042) attach to their entry, latest per part; sources carry outlet country and type from the table', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Notes story');
+  e.sources = [{sourceId: e.sources[0].sourceId, outlet: 'Reuters', url: 'https://www.reuters.com/world/x', title: 'x', snippet: 'Feed text', tier: 'primary'}];
+  e.payload.actors = ['Ana Example'];
+  const note = (part, at, content, format = 'markdown') => ({subtype: 'entry', subject: {kind: 'entry', id: e.eventId}, part, at, model: 'deepseek-flash', payload: {format, content, topicId: 'Notes story-1'}});
+  const notes = [note('summary', '2026-10-21T10:00:00.000Z', 'old'), note('summary', '2026-10-21T18:00:00.000Z', 'new'), note('cause', '2026-10-21T10:00:00.000Z', {proximate: {}}, 'json'),
+    {...note('summary', '2026-10-21T19:00:00.000Z', 'other entry'), subject: {kind: 'entry', id: 'not-this-entry'}}];
+  const v = build([e], {notes});
+  const row = v.stories.get('thread-a').entries[0];
+  assert.deepEqual(row.notes, {summary: {format: 'markdown', content: 'new', at: '2026-10-21T18:00:00.000Z', model: 'deepseek-flash'}, cause: {format: 'json', content: {proximate: {}}, at: '2026-10-21T10:00:00.000Z', model: 'deepseek-flash'}});
+  assert.deepEqual(row.sources[0], {sourceId: e.sources[0].sourceId, outlet: 'Reuters', url: 'https://www.reuters.com/world/x', title: 'x', outletCountry: 'GB', outletType: 'wire', snippet: 'Feed text', tier: 'primary'});
+  assert.deepEqual(row.actors, ['Ana Example']);
+  assert.equal('notes' in build([e]).stories.get('thread-a').entries[0], false); // no notes: no field
+});

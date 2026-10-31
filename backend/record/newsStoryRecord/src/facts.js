@@ -40,7 +40,10 @@ function entrySources(e) {
   return (e.sources || []).map((s) => {
     const sourceId = R.sourceIdOf(s.url) || R.sourceIdOf(s.source);
     const meta = getOutletMeta(s.source) || getOutletMeta(registrableDomain(s.url) || registrableDomain(s.source));
-    return {sourceId, outlet: meta ? meta.outlet : null, url: s.url || null, title: s.title || null};
+    // snippet (the feed's text) and tier (primary = the selector's cited source, secondary = added by matching) are raw
+    // capture, kept from 2026-10-31; older facts lack them.
+    return {sourceId, outlet: meta ? meta.outlet : null, url: s.url || null, title: s.title || null,
+      ...(typeof s.snippet === 'string' && s.snippet ? {snippet: s.snippet} : {}), ...(s.tier === 'primary' || s.tier === 'secondary' ? {tier: s.tier} : {})};
   });
 }
 const sourceIdsOf = (e) => entrySources(e).map((s) => s.sourceId);
@@ -66,7 +69,8 @@ function entryFact(e, runId) {
   return makeFact({
     kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: exact || e.archivedAt || `${e.date}T00:00:00Z`, precision: exact ? 'exact' : 'day', threadId: e.threadId,
     iso3: e.iso3, actorIds: actorIdsOf(e.actors), sourceIds: sources.map((s) => s.sourceId), sourceRow: e.sourceRow, runId,
-    payload: {title: e.title, summary: null, category: e.category, eventType: e.eventType, continuesTopic: e.continuesTopic, topicId: e.topicId},
+    payload: {title: e.title, summary: null, category: e.category, eventType: e.eventType, continuesTopic: e.continuesTopic, topicId: e.topicId,
+      ...(Array.isArray(e.actors) && e.actors.length ? {actors: e.actors.filter((a) => typeof a === 'string' && a)} : {})}, // display names, as captured
     extra: {idBasis: identity.idBasis, sources},
   });
 }

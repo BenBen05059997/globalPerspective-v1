@@ -35,13 +35,17 @@
               "sourceId": "s1",
               "outlet": "S1",
               "url": "https://s1.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             },
             {
               "sourceId": "s2",
               "outlet": "S2",
               "url": "https://s2.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             }
           ],
           "corrected": true
@@ -60,7 +64,9 @@
               "sourceId": "s1",
               "outlet": "S1",
               "url": "https://s1.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             }
           ]
         }
@@ -176,7 +182,9 @@
               "sourceId": "s3",
               "outlet": "S3",
               "url": "https://s3.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             }
           ],
           "fromThreadId": "thread-c"
@@ -195,7 +203,9 @@
               "sourceId": "s1",
               "outlet": "S1",
               "url": "https://s1.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             }
           ]
         }
@@ -258,7 +268,9 @@
               "sourceId": "s1",
               "outlet": "S1",
               "url": "https://s1.test/a",
-              "title": "t"
+              "title": "t",
+              "outletCountry": null,
+              "outletType": null
             }
           ]
         }

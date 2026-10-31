@@ -4,13 +4,13 @@ Dead-man's switch for content freshness. It calls the public proxy `?action=topi
 
 ## Deployment
 - Deployed name `newsFreshnessMonitor` · runtime `nodejs24.x` · group `monitoring` (scripts/functions.json)
-- Trigger: EventBridge rule `TriggerFreshnessMonitor` `cron(30 0/2 * * ? *)` (UTC, DISABLED per coordinator/operator 2026-10-20)
+- Trigger: EventBridge rule `TriggerFreshnessMonitor` `cron(30 0/2 * * ? *)` (UTC; paused 2026-10-20 during the DeepSeek outage, re-enabled 2026-10-31 with dedupe state)
 - Deploy: `scripts/lambda.sh newsFreshnessMonitor diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships node_modules.
 
 ## Reads / writes
 - HTTP: `PROXY_URL` with `action=topics` and `action=prediction_track_record` (no direct table access).
 - SNS: publishes to `SNS_TOPIC_ARN` on unhealthy/recovered transitions.
-- Proposed private S3 dedupe marker: `monitoring/freshness/state.json`, configured by `FRESHNESS_STATE_BUCKET`; coordinator must provision narrow GetObject/PutObject access before deployment.
+- Private S3 dedupe marker: `monitoring/freshness/state.json` in the world bucket (`FRESHNESS_STATE_BUCKET`); role inline policy `freshnessStateMarker` grants GetObject/PutObject on that key only (2026-10-31). Without ListBucket a missing key reads as AccessDenied, so the marker was seeded with `{"health":"healthy","revision":0}` (the code's default for no state); do not delete it.
 - Env: `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `FRESHNESS_STATE_BUCKET`, `SITE_URL` (origin override; the settle alert's track record link comes from `src/_shared/links.js`, a symlink to `backend/shared/src` that `scripts/lambda.sh` zips as real files).
 
 ## Gotchas
@@ -34,8 +34,6 @@ configuration requests, topic migration and the live 9h threshold. Unit tests in
 recovery and dry-run behavior; no AWS calls occur in tests.
 
 
-The operator paused `TriggerFreshnessMonitor` to stop repeated stale emails. After the coordinator configures the marker
-bucket/IAM and notification topic and deploys/verifies dedupe (or the operator chooses to resume after top-up), the
-coordinator can re-enable it with `aws events enable-rule --name TriggerFreshnessMonitor --region ap-northeast-1`.
-This is a proposed coordinator action, not a command run by lane G. Verify its schedule remains
-`cron(30 0/2 * * ? *)` and check the first unhealthy/recovery transition; do not delete state on re-enable.
+The operator paused `TriggerFreshnessMonitor` on 2026-10-20 to stop repeated stale emails during the outage. Re-enabled
+2026-10-31 after the marker bucket env, the one-key IAM grant and the seeded marker were in place; the first real run
+answered healthy with `suppressed: unchanged` (no email). Do not delete the marker on re-enable.

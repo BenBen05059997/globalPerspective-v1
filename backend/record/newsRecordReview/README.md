@@ -1,6 +1,6 @@
 # newsRecordReview
 
-The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: created in AWS 2026-10-23 (function, role `newsRecordReview-role`, rule `TriggerRecordReview` cron(0 1 ? * MON *) DISABLED); a 2026-W42 dry run selected 502 of 519 active stories, skipped 17; no readings written yet (waits for the DeepSeek top-up, the golden-week score and a canary).
+The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: live since 2026-10-31. Rule `TriggerRecordReview` cron(0 1 ? * MON *) ENABLED with payload `{"shadow":false}`, env `REVIEW_CONCURRENCY` 12 (a week has about 520 active stories; 6 in flight needed about 870 s of the 900 s). Prompt review-4 passed the golden-week gates (fixture README); live canary 2026-W43 on 5 stories (operator checked); first full run 2026-11-02 for 2026-W44.
 
 ## The loop
 
@@ -98,10 +98,10 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 
 - `scripts/functions.json` entry: `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record`, Node runtime, timeout 900 s, memory 1024 MB.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
-- Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` once the golden-week score passes.
+- Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` (enabled 2026-10-31).
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.
-- Deploy with `scripts/lambda.sh` (diff first). Deployed; the first live run needs the DeepSeek top-up, the golden-week score and a canary.
-- `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. 900 s may not fit 100+ stories at 6 in flight; watch the first live Run's `notReached` and raise concurrency or split the run by `threadIds`.
+- Deploy with `scripts/lambda.sh` (diff first). Deployed and live (2026-10-31).
+- `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. Watch the first full Run's `notReached`: a re-run of the same week re-reads every story (only earlier weeks' readings count for the skip rule), so raise `REVIEW_CONCURRENCY` or split by `threadIds` if it times out.
 - Golden week: `node scripts/golden-week.js capture|real|replay DIR` runs this handler on the frozen fixture in memory; results under `fixtures/golden-week/runs/` (see its README).
 
 ## Tests

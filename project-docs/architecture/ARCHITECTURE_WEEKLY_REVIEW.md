@@ -80,7 +80,7 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 ## 7. Limits
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
-- Not run live until a passing golden-week score and a 2-3 story canary (`threadIds`); then the rule (Monday 01:00 UTC) is enabled with the operator's yes.
+- Live gate (met 2026-10-31): golden-week gates passed (prompt review-4), a live canary on 5 stories checked by the operator, then the rule (Monday 01:00 UTC) enabled with the operator's yes.
 - Branch status comes from verdict facts of the forecast loop (0038), never from the review.
 - Not now: the weekly report reading the readings (lane weekly), retiring `newsWeeklyBrief`.
 

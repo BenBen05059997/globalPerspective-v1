@@ -127,7 +127,7 @@ The code lives in two groups only, so nobody hunts for it:
 - Watch, Gather, Judge, Record: `backend/predictions/newsPredictionResolver`.
 - Prefixes: the resolver writes `record/inbox/verdicts/` and `record/shadow/inbox/verdicts/` and nothing else in `record/`; it reads `record/facts/` (and `record/runs/` for the coverage guard) and never writes it. `newsStoryRecord` writes `record/facts/`, converting the inbox lines into `verdict` facts.
 - Evidence is our own entries only, so the resolver needs no search key and no web access.
-- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan; created in AWS 2026-10-23, rule disabled).
+- Review: `backend/record` (`newsRecordReview`, step 3 of the foundation plan; live since 2026-10-31, Mondays 01:00 UTC).
 This doc is linked from `backend/predictions/README.md`, the resolver README and `ARCHITECTURE_TIMELINE.md` §1b row 3 and §3.
 
 ## 6. Verification (how we know it works)

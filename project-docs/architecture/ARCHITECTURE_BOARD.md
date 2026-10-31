@@ -53,35 +53,64 @@ Alerts come only from what the reader pinned or wrote (branch fired, a date is t
 Deferred (operator, 2026-10-20): the board is free for signed-in members until the verdict panel exists. If a seam is needed: verdict plus joint trace free, the rest paid. A business decision for the operator.
 
 ## 10. Where the build stands (read from the code)
-Live: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. The page offers boards, pins up to the budget, drag or keyboard connect with the cheap verdict, keep or cut a string, region presets and fork, the arrivals tray, the story tree for a pinned story, "This week on your board", the unsettled counts and the missing-actors card. It reads the record's story, links and counts views through the Worker, and the active and all indexes through `newsBoard`.
+Checked against `features/board/` on main after the merge of board wave 1 (2026-10-31).
+
+Live on the site: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. What is released is the page as it stood before wave 1: boards, pins up to the budget, drag or keyboard connect with the cheap verdict, keep or cut a string, region presets and fork, the arrivals tray, a list-style story tree, "This week on your board", the unsettled counts and the missing-actors card. Nothing of wave 1 is released yet; that needs the operator's yes.
+
+Built on main, not released (wave 1): artboards 1, 3, 4, 5, 6, 8, 10, 11 and 12, mounted in `BoardPage`. The coordinator looked at them in Chrome on the dev harness (`/board?devBoard=1&devRecord=1`, boards `dev-graph` and `dev-record`) at desktop width: the graph with top bar, pin budget bar, legend band, strength widths, string labels placed clear of the pins, fog, week scrubber, due strip and a rail with the weekly, branches, missing card and divergence panel; the tree and zoom ladder full width under the graph; the verdict with who sits in both, evidence, your line and export as memo (the joint trace is absent live until `connect` returns dated moves); the weekly header with the ISO-week Sunday; the clue pool with face-down cards; presets with the OURS - READ-ONLY tag, mini picture and fork; the divergence panel; the folding sheet. Phone width was not checked in a browser. The Map switch in the top bar shows only in dev builds and leads to a one-line "not built" message.
+
+What the live `get_board` feed gives a pin today (`newsBoard/src/recordViews.js`): `recordAvailable`, `line`, `born`, `entryCount`, `counts.liveBranches` and `lastMoved`. It does not give `risk`, `riskWas`, `category` or `board.coverage`, and `counts.chapters` and `counts.confirmedLinks` are null. So on the live site the risk number comes from thread analysis and the crisis dot from today's topics, while "was N", the no-coverage fog and the week scrubber stay absent until the feed carries those fields. An element with no data is built, shown in the dev harness and absent live.
 
 Still on the old stores: pin titles and the add-pin list come from today's topics (`useGeminiTopics`, the `topics` action) and `thread_analysis`; the server-side presets and `connect` read the world through `backend/shared/src/world/` (`WEB#INDEX`, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`, the `latest` topic pool). Step 5 cannot delete those rows until the board reads views for them.
 
-## 11. Checklist (data-wiring list; status checked against the board feature source 2026-10-31)
+Reading fields wait on the weekly review: it has read 5 stories so far (canary, 2026-W43); the first full run is Monday 2026-11-02 01:00 UTC.
+
+## 11. Checklist (status read from the board feature source, 2026-10-31)
+Gap kinds: **data** (waits on a field or history that does not exist yet, named), **model** (a model call and a price decision), **wave 2** (map view = artboard 2, alerts = artboard 9 UI only, the non-model parts of artboard 7), **UI** (nothing but the build is missing).
+
+### The 12 canvas artboards
+| # | Artboard | State | What is built, and the gaps |
+|---|---|---|---|
+| 1 | Graph | built | Top bar, pin budget bar, legend band, pin cards (crisis dot and type line, title, line, counts, risk tier with "was N"), strings by texture and strength width with placed labels, suggested pins, "Combination failed" strings, fog, week scrubber, due strip, right rail. Gaps: live feed lacks `risk`, `riskWas`, `category` and `coverage` (data: feed fields); a string is drawn solid only once confirmed (data: confirmation by the weekly review); the scrubber only sets the week in the top bar and does not replay the graph (data: stored board snapshots per week) |
+| 2 | Map | not built | Only a dev-only Map switch with a "not built" line. Wave 2 |
+| 3 | Verdict | partly built | Verdict word, OURS and strength badges, note, joint trace, who sits in both, evidence, limits, your line, Keep string, Export as memo, Drop it. Gaps: the mechanism sentence, direction, "what follows if" and "what would break it" (model); the joint trace needs dated moves from `connect`, which the live reply does not carry (data: score history in `connect`); no shared-source-chain or third-story-path ground (data: `connect` computes only actor, place, outlet and co-movement) |
+| 4 | Weekly | partly built | Header "Your board moved - week ending D Mon" (the ISO-week Sunday), pins that moved, strings that changed, branch outcomes, "New link we found" with Add pin and Dismiss. Gaps: old to new scores and a string strengthening (data: we store no score or strength history); the coverage line (data: a coverage field in the views); the board summary paragraph (model) |
+| 5 | Arrivals | partly built | Clue pool with face-down cards, Turn over, unseen count, via lines with mechanism and direction, Keep story, Dismiss with a fade. Gaps: dragging a card onto a pin (UI); the landed-on-string node and a count on the pin (data: strength history); medium arrivals overflowing into the weekly and the "came back" re-knock (data: `arrivals` returns strong cards only and keeps no re-knock state) |
+| 6 | Story tree | built | Dated trunk, present line, one dashed line per open branch weighted by its percentage, late flag, key, fold of older events, fork and branch rows worded by `branchWording`, OURS - PROVISIONAL tag. Gap: the reader's weighting as a thin dashed row on the tree (UI; weights are written in the divergence panel) and live branches only exist for stories the weekly review has read (data: the review) |
+| 7 | Summary and monthly | not built | Nothing mounted. The dated summary paragraph, the monthly text and its arc, surprise and quiet pins need a model (model). The non-model parts (the versioned summary store, the monthly layout, pins gone quiet, next month's dates) are wave 2 |
+| 8 | Presets | built | Region presets as cards with the OURS - READ-ONLY tag, a mini picture, pin and string counts and Fork; Sign in to fork when signed out. Gap: only the "By region" group exists; theme and desk presets come later (data: no such presets exist in the backend) |
+| 9 | Alerts | not built | Nothing mounted. The UI is wave 2; delivery is a user-facing send and needs a fresh yes, and is on the later list of the design check (model and price decision for the text where one is written) |
+| 10 | Divergence | partly built | Private panel: strings you cut with Restore?, your branch weights beside ours (writes `weights`), lines you wrote. Gap: the dotted grey "you cut it and it held" state on the graph (data: strength after the cut) |
+| 11 | Zoom ladder | partly built | Four rungs for a story: line, chapters, forks and events, the event with its sources, the branches drawn that day and a link to the story page. Gaps: the day's drift note on rung 4 (data: no such field in the story view); rungs 1 and 2 only after the weekly review read the story (data: the review); the same rungs on a string and on the board (the board rung needs the summary, model) |
+| 12 | Folding rules | built | The "How the board folds" sheet reads its numbers from `lib/folding.js`. Gap: the rules are not applied to the views except the tree keeping its last four events; `isOldNode`, `isDeadBranch` and `strongestArrivals` are written and tested but called by nothing (UI) |
+
+### Items B0 to B14
 | # | Item | Status |
 |---|---|---|
-| B0 | Live defects (title overlap, repeated "no reading yet", raw ISO dates, strings listed thrice, phone layout) | released (4d31cd28) and checked signed out; the strings list is now one collapsed disclosure. A signed-in look is still to do. ISO dates still print raw in `BoardWeekly` (moved pins, branch dates), the `StoryTree` trunk and chapters, and `ArrivalsTray`; only fork dates use `dayMonth` |
-| B1 | Due-soon strip with the late flag | not built |
-| B2 | Weekly header "your board moved · week ending D MON" | partly built: the `BoardWeekly` card "This week on your board" lists pins moved, strings changed, branch outcomes and confirmed links of the last 7 days; the dated header is not built |
-| B3 | Pin card counts and line | partly built: the pin list rows show the line and counts (`RecordPinDetails`: chapters, live branches, confirmed links); the graph pin card shows kind, title and risk only |
-| B4 | Strings encode strength; "OURS · MEDIUM · NOT CONFIRMED" label | partly built: texture by owner and state (dashed ours, dashed-alt yours, faint cut) with a short tag on the line; strength is not encoded and the full label is not built |
-| B5 | ClaimTag kinds (OURS, judgment level, PROVISIONAL / SETTLED / PRIVATE) | partly built: `ClaimTag` has FACT, INFERENCE, MODEL JUDGMENT and YOURS and the board uses them; OURS, PROVISIONAL, SETTLED and PRIVATE are not built |
-| B6 | Drawn SVG tree (L) | not built: `StoryTree` is a list with collapsible forks |
-| B7 | Zoom ladder polish, event card with sources | partly built: the four rungs exist (line, chapters, forks and events, event) and the event rung links its sources; the day's drift note and the branches drawn that evening are not on it |
-| B8 | Verdict panel evidence and "who sits in both" | partly built: `VerdictCard` shows strength, shared actors, places, outlets and score co-movement with limits; no mechanism, direction, "what follows if", falsifier or evidence list |
-| B9 | Monthly card | not built |
-| B10 | Coverage note on the weekly (needs a views field) | not built |
-| B11 | Arrivals tray states | partly built: `ArrivalsTray` shows strong arrivals (confirmed link plus grounds) with the via line and Keep or Dismiss; the face-down card, the unseen badge and "came back" are not built |
-| B12 | Preset grouping, OURS · READ-ONLY tag | not built: `PresetsPanel` lists region presets with pin and string counts and a Fork button |
-| B13 | Reader weights and divergence panel | not built (the schema carries `weights`; no UI writes or reads them) |
-| B14 | Map view of the board (L) | not built |
+| B0 | Live defects (title overlap, repeated "no reading yet", raw ISO dates, strings listed thrice, phone layout) | released (4d31cd28) and checked signed out; the strings list is one collapsed disclosure. Dates now print through `dayMonth` in the weekly, the tree, the arrivals and the verdict; a raw ISO due date remains in the branch detail line of the tree. Phone width of the wave 1 build is unchecked in a browser |
+| B1 | Due-soon strip with the late flag | built: `DueStrip` lists up to four open branches by date with our percentage and "past due"; the tree and rail flag late branches. Gap: only stories the weekly review has read have branches (data: the review) |
+| B2 | Weekly header "your board moved - week ending D MON" | built: the header appears when something changed, and the top bar shows the ISO-week Sunday. Gap: the coverage line (see B10) |
+| B3 | Pin card counts and line | built on the graph card and the pin list. Gap: live `counts.chapters` and `counts.confirmedLinks` are null, and the line exists only after the review (data: the review and the feed) |
+| B4 | Strings encode strength; "OURS - MEDIUM - NOT CONFIRMED" label | built: texture, width by strength, a label per string and the legend. Gap: ours strings are stored `inferred` until a review confirms them, so live ones read "Ours - Inferred" (data: confirmation) |
+| B5 | ClaimTag kinds (OURS, judgment level, PROVISIONAL / SETTLED / PRIVATE) | partly built: `ClaimTag` has FACT, INFERENCE, MODEL JUDGMENT and YOURS. The board has its own OURS badge, an "OURS - PROVISIONAL" line on the tree and a "Private" kicker on the divergence panel; SETTLED and PROVISIONAL are not shared tag kinds (UI) |
+| B6 | Drawn SVG tree (L) | built: `StoryTreeDrawing` |
+| B7 | Zoom ladder polish, event card with sources | built except the day's drift note (data: no such field in the story view) |
+| B8 | Verdict panel evidence and "who sits in both" | built: who sits in both, evidence, joint trace, memo export. Missing: mechanism, direction, "what follows if", falsifier (model) |
+| B9 | Monthly card | not built (see artboard 7: text is model, the rest wave 2) |
+| B10 | Coverage note on the weekly (needs a views field) | not built (data: a coverage field in the views) |
+| B11 | Arrivals tray states | built: face-down card, unseen count, fade on dismiss. Missing: "came back" and the medium overflow (data: `arrivals` server side) |
+| B12 | Preset grouping, OURS - READ-ONLY tag | built for the region group; theme and desk groups later (data) |
+| B13 | Reader weights and divergence panel | built: the panel writes and reads `weights`. Gap: the weighting row on the tree (UI) |
+| B14 | Map view of the board (L) | not built (wave 2) |
 
 Waits for data, not UI:
-- pin lines and chapters beyond the stories the weekly review has read: the review has read 5 stories so far (canary, 2026-W43); the first full run is Monday 2026-11-02 01:00 UTC;
-- mechanism, direction, "what follows if" and "what would break it" (model plus pricing);
-- summary and monthly arc;
-- alert sends (fresh yes);
-- RESURRECTED and the time scrubber.
+- pin lines, chapters and confirmed links beyond the stories the weekly review has read (5 so far, canary 2026-W43; first full run Monday 2026-11-02 01:00 UTC);
+- feed fields `risk`, `riskWas`, `category` and `coverage` on `get_board`;
+- score and strength history (old to new scores, a string strengthening, the replay behind the scrubber);
+- dated moves in the `connect` reply for the joint trace;
+- RESURRECTED.
+
+Waits for a model call and a price decision: the verdict's mechanism sentence, direction, "what follows if" and "what would break it"; the board summary paragraph and the monthly text. Alert delivery waits on a fresh yes for user-facing sends.
 
 At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs` (it is not in the list today).
 

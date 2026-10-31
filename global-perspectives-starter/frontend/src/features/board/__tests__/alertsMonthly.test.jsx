@@ -25,7 +25,7 @@ describe('monthlyView', () => {
     expect(m.ours.settled).toBe(1);
     expect(m.yours).toEqual({ set: 1, settled: 1 });
     expect(m.quiet).toEqual([{ pinId: 'p1', weeks: 5 }]);
-    expect(m.dates.map((d) => d.text)).toEqual(['Talks restart']);
+    expect(m.dates.map((d) => d.line)).toEqual(['Talks restart']);
   });
   it('first line of a summary is its first sentence', () => expect(firstLine('One. Two.')).toBe('One.'));
   it('renders nothing for an empty board', () => {

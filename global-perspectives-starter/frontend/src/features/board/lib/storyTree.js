@@ -14,6 +14,16 @@ export const isLate = (b, present) => isOpen(b) && Boolean(present) && Boolean(d
 
 export const liveBranches = (forks) => (forks || []).flatMap((f) => f.branches || []).filter(isOpen);
 
+export const DRAWN_BRANCHES = 6;
+
+/** The branches the drawing shows: the open ones of the newest fork that still has any (the "open fork"), at most
+ *  DRAWN_BRANCHES. Older forks stay in the text list. */
+export function drawnBranches(forks) {
+  const newest = [...(forks || [])].filter((f) => liveBranches([f]).length)
+    .sort((a, b) => String(b.drawnAt).localeCompare(String(a.drawnAt)))[0];
+  return newest ? liveBranches([newest]).slice(0, DRAWN_BRANCHES) : [];
+}
+
 /** Counts of one fork's branches by outcome: { total, open, late, happened, notReported, unchecked }. */
 export function forkOutcome(fork, present) {
   const out = { total: 0, open: 0, late: 0, happened: 0, notReported: 0, unchecked: 0 };

@@ -22,6 +22,10 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
   const pinOf = (id) => board.pins.find((p) => p.pinId === id);
   const label = (id) => info[id]?.label || pinOf(id)?.line || pinOf(id)?.refId || id;
   const pinnedThread = (threadId) => board.pins.find((p) => p.kind === 'thread' && p.refId === threadId);
+  const outcomes = week.branches.filter((b) => b.kind !== 'void');
+  const voids = week.branches.filter((b) => b.kind === 'void');
+  const unchecked = voids.length;
+  const uncheckedWhy = new Set(voids.map((b) => b.why)).size === 1 ? voids[0].why : null; // one shared reason, or none
   const newLinks = week.links.filter((l) => !(board.dismissed || []).includes(l.otherThreadId));
   const summary = [
     week.moved.length ? count(week.moved.length, 'pin moved', 'pins moved') : null,
@@ -48,9 +52,9 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
       <span className="board-note"><time dateTime={s.date}>{dayMonth(s.date)}</time>{s.line ? ` · ${s.line}` : ''}</span>
     </li>)}</ul></section> : null}
 
-    {week.branches.length ? <section className="pn-sec"><h3 className="pn-kicker">Branch outcomes</h3><ul className="pn-rows">{week.branches.map((b, i) => <li key={`${b.branchId}:${i}`} className="pn-row pn-row--stack">
-      <span className="pn-row__head"><ClaimTag kind="fact" />{b.text}: {b.status}</span><span className="board-note"><time dateTime={b.date}>{dayMonth(b.date)}</time></span>
-    </li>)}</ul></section> : null}
+    {week.branches.length ? <section className="pn-sec"><h3 className="pn-kicker">Branch outcomes</h3>{outcomes.length ? <ul className="pn-rows">{outcomes.map((b, i) => <li key={`${b.branchId}:${i}`} className="pn-row pn-row--stack">
+      <span className="pn-row__head"><ClaimTag kind="fact" />{b.line}{b.scenario ? ` (${b.scenario})` : ''}: {b.status}</span><span className="board-note"><time dateTime={b.date}>{dayMonth(b.date)}</time></span>
+    </li>)}</ul> : null}{unchecked ? <p className="board-note">{unchecked} could not be checked{uncheckedWhy ? ` (${uncheckedWhy})` : ''}</p> : null}</section> : null}
 
     {newLinks.map((l) => {
       const mine = pinnedThread(l.threadId);

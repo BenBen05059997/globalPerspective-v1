@@ -1,5 +1,6 @@
 // divergence — where the reader's board differs from ours. Pure reads of one board plus the story views.
 // Everything here is the reader's own data; nothing is sent anywhere except through update_board.
+import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 
 /** Strings of ours the reader cut: [{a, b, cutAt}]. */
 export function cutByYou(board) {
@@ -19,10 +20,10 @@ export function forkWeights(board, stories) {
     const story = pin.kind === 'thread' ? stories?.[pin.refId] : null;
     for (const f of story?.forks || []) {
       const branches = (f.branches || [])
-        .filter((b) => b.p != null && !b.verdict)
+        .filter((b) => branchPercent(b) != null && !b.verdict)
         .map((b) => {
           const w = board.weights?.[f.forkId]?.[b.branchId];
-          return { branchId: b.branchId, text: b.text, ours: Math.round(Number(b.p)), yours: w == null ? null : Math.round(w * 100) };
+          return { branchId: b.branchId, text: branchScenario(b) || branchLine(b), line: branchLine(b), ours: branchPercent(b), yours: w == null ? null : Math.round(w * 100) };
         });
       if (branches.length) out.push({ forkId: f.forkId, pinId: pin.pinId, branches });
     }

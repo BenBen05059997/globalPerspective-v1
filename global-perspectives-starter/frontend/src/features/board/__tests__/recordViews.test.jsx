@@ -22,13 +22,13 @@ describe('weekly', () => {
     const board = { pins: [{ pinId: 'p1', lastMoved: '2026-10-19' }], strings: [{ a: 'p1', b: 'p2', keptAt: '2026-10-19', cutAt: '2026-09-01' }] };
     const week = boardWeek(board, { a: story }, {}, new Date('2026-10-21T12:00:00Z'));
     expect(week.moved).toHaveLength(1); expect(week.strings).toHaveLength(1);
-    expect(week.branches).toEqual([{ branchId: 'f1-0', text: 'Premiums rise again', threadId: 'story-a', date: '2026-10-20', result: 'yes', status: 'happened · 20 Oct' }]);
+    expect(week.branches).toEqual([{ branchId: 'f1-0', line: 'A second insurer announces an increase', scenario: 'Premiums rise again', threadId: 'story-a', date: '2026-10-20', result: 'yes', kind: 'happened', why: null, status: 'happened · 20 Oct' }]);
     expect(boardWeek(board, { a: story }, {}, new Date('2026-11-30T12:00:00Z')).branches).toHaveLength(0);
   });
   it('renders recorded verdicts and confirmed links', () => {
     render(<MemoryRouter><BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
       links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', direction: 'drives', mechanism: 'Recorded transmission', week: '2026-W43', cites: [] }] } }} now={new Date('2026-10-21T12:00:00Z')} /></MemoryRouter>);
-    expect(screen.getByText(/Premiums rise again: happened · 20 Oct/)).toBeInTheDocument();
+    expect(screen.getByText(/A second insurer announces an increase \(Premiums rise again\): happened · 20 Oct/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();
   });
   it('a confirmed link counts only in the current ISO week', () => {

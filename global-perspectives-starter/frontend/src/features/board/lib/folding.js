@@ -3,6 +3,7 @@
 export const FOLD_AFTER_DAYS = 28; // a node older than 4 weeks folds into one node with a count
 export const DEAD_BRANCH_P = 20;   // a branch under 20% starts folded
 export const ARRIVALS_SHOWN = 5;   // the arrivals strip shows at most this many, strongest first
+import { branchPercent } from '@/features/board/lib/branchView.js';
 const DAY = 86400000;
 const STRENGTH_RANK = { strong: 3, medium: 2, weak: 1 };
 
@@ -14,7 +15,8 @@ export function isOldNode(date, now = Date.now()) {
 
 /** A branch with a stated probability under DEAD_BRANCH_P percent. No probability, not dead. */
 export function isDeadBranch(branch) {
-  return branch?.p != null && Number(branch.p) < DEAD_BRANCH_P;
+  const p = branchPercent(branch);
+  return p != null && p < DEAD_BRANCH_P;
 }
 
 /** The strongest arrivals first (ties keep their order), at most ARRIVALS_SHOWN; `hidden` is the count left out. */

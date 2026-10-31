@@ -291,5 +291,14 @@
         ]
       }
     }
+  },
+  "briefs.json": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "daily": [],
+    "weekly": []
   }
 }

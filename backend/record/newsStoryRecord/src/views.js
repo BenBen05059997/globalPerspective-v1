@@ -11,6 +11,7 @@ const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = requi
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
 const {buildIndexViews, archiveRefOf} = require('./indexViews');
+const {buildBriefViews} = require('./briefViews');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -497,15 +498,17 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
-  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}}); // the many-at-once readers' indexes (indexViews.js)
-  return {stories, links, counts, active, all: everything, manifest, countries, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
+  const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
+  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index}); // the many-at-once readers' indexes (indexViews.js)
+  return {stories, links, counts, active, all: everything, manifest, countries, briefs, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
 }
 
 /** The write order of 0037 section 2 as groups of [key, object]; the groups are written one after another, manifest last. */
 function writeGroups(views) {
   const keyed = (dir, map) => [...map].map(([id, obj]) => [`${dir}/${id}.json`, obj]);
   return [
-    [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('counts', views.counts), ...keyed('countries', views.countries || new Map())],
+    [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('counts', views.counts), ...keyed('countries', views.countries || new Map()),
+      ...keyed('briefs/daily', views.briefs ? views.briefs.daily : new Map()), ...keyed('briefs/weekly', views.briefs ? views.briefs.weekly : new Map())],
     [['index/active.json', views.active], ...Object.entries(views.indexes || {}).map(([name, obj]) => [`index/${name}`, obj])],
     [['index/all.json', views.all]],
     [['track-record.json', views.trackRecord]],

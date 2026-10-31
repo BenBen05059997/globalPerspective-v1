@@ -32,7 +32,7 @@ test('built views with readings satisfy the schemas', () => {
   const V = require('../src/views');
   const c = ['3'.repeat(40)];
   const readings = [X.reading('2026-W43', 'thread-a', 'line', {text: 'A line'}, {cites: c}), X.reading('2026-W43', 'thread-a', 'chapter', {title: 'T', from: '2026-10-18', to: '2026-10-20', summary: 'S'}, {cites: c}),
-    X.reading('2026-W43', 'thread-a', 'branch_status', {branchId: 'a-0', status: 'late', why: 'w'}, {key: 'a-0', cites: c}), X.reading('2026-W43', 'thread-a', 'link', {otherThreadId: 'thread-b', mechanism: 'm', direction: 'drives'}, {cites: c})];
+    X.reading('2026-W43', 'thread-a', 'link', {otherThreadId: 'thread-b', mechanism: 'm', direction: 'drives'}, {cites: c})];
   const f = [...X.golden(), ...Array.from({length: 60}, (_, i) => X.entry(`pad${i}`, '2026-10-20T04:00:00.000Z', 'x', {sources: [`p${i}`]}))];
   const v = V.buildViews(f, {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1, readings});
   assert.equal(validate.story(v.stories.get('thread-a')), true, JSON.stringify(validate.story.errors));
@@ -46,7 +46,7 @@ test('the schemas reject what 0037 forbids', () => {
   const story = load('examples', 'story.json');
   const links = load('examples', 'links.json');
   for (const bad of [{...story, line: 'a made-up line'}, {...story, chapters: [{x: 1}]}, {...story, reading: {state: 'none', reason: 'oops'}}, {...story, schemaVersion: 2},
-    {...story, builtFrom: {factsThrough: '2026-10-20', readingsThrough: '2026-10-18'}}, {...story, line: {text: 'x', week: '2026-W43', cites: []}}, {...story, reading: {state: 'read', reason: 'x'}}, {...story, branchStatus: {'a-0': {status: 'maybe', why: null, week: '2026-W43'}}}, {...story, entries: Array(401).fill(story.entries[0])}]) {
+    {...story, builtFrom: {factsThrough: '2026-10-20', readingsThrough: '2026-10-18'}}, {...story, line: {text: 'x', week: '2026-W43', cites: []}}, {...story, reading: {state: 'read', reason: 'x'}}, {...story, entries: Array(401).fill(story.entries[0])}]) {
     assert.equal(validate.story(bad), false, JSON.stringify(bad).slice(0, 60));
   }
   assert.equal(validate.links({...links, confirmedLinks: [{x: 1}]}), false);

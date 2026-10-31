@@ -20,7 +20,7 @@ test('T1: ISO weeks, and the weeks to read run from the first fact day to today 
 test('T1: no readings leaves every view as before (reading none, readingsThrough null, no index line)', () => {
   const v = build(X.golden());
   const a = v.stories.get('thread-a');
-  assert.deepEqual([a.line, a.chapters, a.branchStatus, a.reading], [null, [], null, {state: 'none', reason: 'no reading yet'}]);
+  assert.deepEqual([a.line, a.chapters, a.reading], [null, [], {state: 'none', reason: 'no reading yet'}]);
   assert.deepEqual([v.manifest.readingsThrough, v.active.builtFrom.readingsThrough], [null, null]);
   assert.equal('line' in rowOf(v, 'thread-a'), false);
   assert.deepEqual(build(X.golden(), []), build(X.golden()));
@@ -49,25 +49,8 @@ test('T1: the latest week wins per (thread, subtype, key); a superseded reading 
 });
 
 test('T1: malformed readings are skipped, never thrown on', () => {
-  const bad = [null, 'x', {subtype: 'line'}, X.reading('2026-W43', 'thread-a', 'line', {text: ''}), X.reading('week43', 'thread-a', 'line', {text: 'x'}), X.reading('2026-W43', 'thread-a', 'branch_status', {branchId: 'a-0', status: 'maybe'})];
+  const bad = [null, 'x', {subtype: 'line'}, X.reading('2026-W43', 'thread-a', 'line', {text: ''}), X.reading('week43', 'thread-a', 'line', {text: 'x'})];
   assert.deepEqual(build(X.golden(), bad).stories.get('thread-a').reading, {state: 'none', reason: 'no reading yet'});
-});
-
-test('T1: branch status fills only open branches; a verdict always decides (yes, no and void are never overridden)', () => {
-  // thread-a: a-0 open (due 10-25), a-1 open (due 10-21, no verdict), a-2 yes, a-3 no
-  const rs = ['a-0', 'a-1', 'a-2', 'a-3', 'nope'].map((id, i) => X.reading('2026-W43', 'thread-a', 'branch_status', {branchId: id, status: i % 2 ? 'late' : 'holding', why: `why ${id}`}, {key: id}));
-  const a = build(X.golden(), rs).stories.get('thread-a');
-  assert.deepEqual(a.branchStatus, {'a-0': {status: 'holding', why: 'why a-0', week: '2026-W43'}, 'a-1': {status: 'late', why: 'why a-1', week: '2026-W43'}});
-  const verdicts = Object.fromEntries(a.forks.flatMap((k) => k.branches).map((b) => [b.branchId, b.verdict && b.verdict.result]));
-  assert.deepEqual(verdicts, {'a-0': null, 'a-1': null, 'a-2': 'yes', 'a-3': 'no'});
-  // a reading that says dead for a yes-branch changes nothing
-  const contra = [X.reading('2026-W43', 'thread-a', 'branch_status', {branchId: 'a-2', status: 'dead', why: 'x'}, {key: 'a-2'})];
-  const b = build(X.golden(), contra).stories.get('thread-a');
-  assert.equal(b.branchStatus, null);
-  assert.equal(b.forks[0].branches.find((x) => x.branchId === 'a-2').verdict.result, 'yes');
-  // a void verdict is a verdict too
-  const withVoid = [...X.golden(), X.verdict('thread-a', '2026-10-22T07:00:00.000Z', 'a-0', 'void')];
-  assert.equal(build(withVoid, rs).stories.get('thread-a').branchStatus['a-0'], undefined);
 });
 
 test('T1: the index row gets line (text) only when a line reading exists; a merged story keeps its alias row', () => {

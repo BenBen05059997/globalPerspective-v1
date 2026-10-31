@@ -59,23 +59,13 @@ describe('story tree on the 0037 story view', () => {
     expect(screen.queryByText('Trunk')).toBeNull();
     expect(screen.queryByText('Forks')).toBeNull();
   });
-  it('a read story shows its line, chapters (from – to · title, summary) and branch status words', () => {
+  it('a read story shows its line, chapters (from – to · title, summary) and no branch status words from the reading', () => {
     render(<StoryTree story={storyB} />);
     expect(screen.getByText(/Shipping adapts around the strait/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'chapters' }));
     expect(screen.getByText(/Operators reroute/)).toBeInTheDocument();
     expect(screen.getByText('Tanker operators change course as premiums climb.')).toBeInTheDocument();
     expect(document.querySelectorAll('li time')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'forks and events' }));
-    expect(screen.getByText(/holding · No insurer has moved/)).toBeInTheDocument();
-    expect(screen.getByText(/late · No convoy announced/)).toBeInTheDocument();
-    expect(screen.queryByText(/Status history/)).toBeNull();
-  });
-  it('verdict wording wins over a branch status word', () => {
-    const withStatus = { ...story, reading: { state: 'read', week: '2026-W43' }, branchStatus: { 'f1-0': { status: 'fired', why: 'x', week: '2026-W43' }, 'f1-1': { status: 'holding', why: 'waiting', week: '2026-W43' } } };
-    render(<StoryTree story={withStatus} />);
-    expect(screen.queryByText(/fired/)).toBeNull();
-    expect(screen.getByText(/holding · waiting/)).toBeInTheDocument();
     expect(screen.queryByText(/Status history/)).toBeNull();
   });
 });

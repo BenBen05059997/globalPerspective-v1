@@ -28,7 +28,7 @@ test('every view carries schemaVersion 1 and builtFrom; readings are null with t
   const all = [...v.stories.values(), ...v.links.values(), ...v.counts.values(), v.active, v.all];
   for (const o of all) assert.deepEqual([o.schemaVersion, o.builtFrom], [1, {factsThrough: '2026-10-22', readingsThrough: null}]);
   const a = v.stories.get('thread-a');
-  assert.deepEqual([a.line, a.chapters, a.branchStatus, a.reading], [null, [], null, {state: 'none', reason: 'no reading yet'}]);
+  assert.deepEqual([a.line, a.chapters, a.reading], [null, [], {state: 'none', reason: 'no reading yet'}]);
   assert.deepEqual(v.manifest, {schemaVersion: 1, builtAt: opts.builtAt, runId: opts.runId, factsManifestDays: 7, factsThrough: '2026-10-22', readingsThrough: null});
 });
 

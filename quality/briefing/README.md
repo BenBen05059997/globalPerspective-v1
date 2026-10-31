@@ -4,8 +4,7 @@
 > and surfaces behind `ECONOMY_PARKED` 2026-09-28). Kept so the standard is ready if economy
 > returns; `capture.js` reads economy actions that may be stale or empty while parked.
 
-A fixed standard for the "Today in the economy" briefing on `/economy`
-(plan deleted 2026-10-19: `git show 120de90:project-docs/archive/economy/_proposed/ECONOMY_BRIEFING_PLAN.md`, workstream **W1**). Build the standard before
+A fixed standard for the "Today in the economy" briefing on `/economy`. Build the standard before
 tuning any prompt: you can't optimize against a target that comes from the optimizer.
 
 Three parts:
@@ -66,3 +65,12 @@ The `assertions.js` floor is objective and always-on. The `targets/*.md` are
 **candidates** — they describe the correct honest behavior but must be human-ratified
 before being treated as ground truth for prose/lead-selection quality. Until then each
 target carries `STATUS: UNRATIFIED — awaiting operator sign-off`.
+
+## Verify scripts
+
+Each runs the real compose function from the frontend against inline cases or the frozen fixtures and asserts it never
+fabricates a number. Run from the repo root:
+
+- `node quality/briefing/verify_lede.mjs` - the Today lede band (`features/home/lib/composeTopicsLede.js`). Not parked.
+- `node quality/briefing/verify_compose.mjs` - the economy briefing (`features/economy/lib/composeEconomyBriefing.js`) against every fixture.
+- `node quality/briefing/verify_instrument_why.mjs` - the per-instrument "what's priced in" line.

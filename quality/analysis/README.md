@@ -1,21 +1,23 @@
-# Analysis Studio output tests
+# Analysis output tests
 
-Tests for what the retired `/analyze` (Analysis Studio) feature produced; the prompt and validator libraries stay for the share Lambda and these scripts. The
-Studio's honesty rules — cite real sources, never invent figures, refuse on thin
-data — previously lived **only as instructions in the system prompt**, with
-nothing verifying the model obeyed them. These tests close that gap.
+Offline checks of the analysis libraries that stay after the Analysis Studio was retired (decision 0033): the guardrail
+validator, the prompt layer and the gp-struct checker in `global-perspectives-starter/frontend/src/features/analysis-studio/lib/`.
+The honesty rules (cite real sources, never invent figures, refuse on thin data) are instructions in the system prompt;
+these scripts verify the model's output obeys them. Nothing here runs in the site; five of those library files are
+byte-identical copies in `backend/read-api/newsSharedAnalysis/src/` (`node scripts/check-shared-sync.mjs`).
 
 ## Pieces
 
 | File | What it is |
 |------|------------|
-| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisValidator.js` | The shared guardrail checker. Pure/dependency-free. Used by **both** the live Studio (warning banner) and this eval. |
-| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js` | The pure prompt layer (system prompt, lenses, context assembler, user-message builder) the Studio ships — imported here so the eval tests exactly what runs in production. |
-| `fixtures.mjs` | `GOLDEN` (frozen validator cases) + `RICHNESS_CASES` (thin-input detector) + `LIVE_FIXTURES` (story-sets for live generation). |
-| `run.mjs` | The runner. Layer A (validator) + A2 (`assessRichness`) always; Layer B (live) with a key. |
+| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisValidator.js` | The guardrail checker. Pure and dependency-free; imported by these scripts and kept in sync with the share Lambda's copy. |
+| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js` | The pure prompt layer (system prompt, lenses, context assembler, user-message builder), imported here so the eval tests the same prompt text. |
+| `fixtures.mjs` | `GOLDEN` (frozen validator cases), `RICHNESS_CASES` (thin-input detector), `STRUCT_CASES` (gp-struct checker) and `LIVE_FIXTURES` (story-sets for live generation). |
+| `run.mjs` | The runner. Layer A (validator), A2 (`assessRichness`) and the struct cases always; Layer B (live) with a key. |
 | `compare.mjs` | A/B free-form vs grounded-lens on one story-set, full text + verdict. |
 | `judge.mjs` | **Layer C** — LLM-as-judge: grades live output on faithfulness/overreach/calibration/citations/insight. Needs a key. |
 | `check.mjs` | The fabrication check: a few live analyses, the validator, and a one-line faithfulness flag per case (optionally emailed). Needs a key. |
+| `samples/` | Two saved example outputs (HTML) referenced by `check.mjs`. |
 | `source_check.mjs` | Source-truth check: outlet corroboration (no key with `--l1-only`) and summary-vs-snippet drift (needs a key). |
 
 ## What the validator flags
@@ -54,7 +56,7 @@ and vary run to run. A non-zero exit means a case scored below the PASS bar
 the exit code.
 
 `ANALYSIS_EVAL_PROVIDER` accepts any provider id from
-`global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js` (`deepseek`,
+`global-perspectives-starter/frontend/src/shared/lib/llmProviders.js` (`deepseek`,
 `perplexity`, `openai`, `gemini`, `qwen`, `anthropic`); the default is `deepseek`.
 `ANALYSIS_EVAL_MODEL` defaults to the first model that file lists for the provider.
 

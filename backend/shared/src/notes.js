@@ -5,13 +5,14 @@
 // keep notes consistent and throws instead of writing a bad note.
 const {noteId, entryIdentity, pairKey} = require('./record');
 const {makeManifest} = require('./manifest');
+const {briefWithIso3, weeklyWithIso3, briefCountries} = require('./briefs');
 
 const SCHEMA_VERSION = 1;
-const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', web: 'country', brief: 'brief'};
+const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', web: 'country', daily_brief: 'brief', weekly_brief: 'brief'};
 // TOPIC# sort key -> the entry note part
 const ENTRY_PARTS = {SUMMARY: 'summary', PREDICTION: 'prediction', TRACE_CAUSE: 'cause'};
 const ISO3 = /^[A-Z]{3}$/;
-const BRIEF_ID = /^(daily:\d{4}-\d{2}-\d{2}|weekly:\d{4}-W\d{2})$/;
+const BRIEF_ID = {daily_brief: /^daily:\d{4}-\d{2}-\d{2}$/, weekly_brief: /^weekly:\d{4}-\d{2}-\d{2}$/};
 
 const text = (v) => typeof v === 'string' && v.length > 0;
 
@@ -21,7 +22,7 @@ function buildNote({subtype, subjectId, kind: subjectKind, part = '', threadId =
   if (!SUBJECT_KIND[subtype]) throw new Error(`notes: unknown subtype ${subtype}`);
   if (subjectKind && subjectKind !== SUBJECT_KIND[subtype] && !(subtype === 'drift' && subjectKind === 'story')) throw new Error(`notes: a ${subtype} note's subject is not a ${subjectKind}`);
   if (!text(subjectId)) throw new Error(`notes: ${subtype} needs a subject id`);
-  if (subtype === 'brief' && !BRIEF_ID.test(subjectId)) throw new Error(`notes: brief subject ${subjectId} is not daily:DATE or weekly:WEEK`);
+  if (BRIEF_ID[subtype] && !BRIEF_ID[subtype].test(subjectId)) throw new Error(`notes: ${subtype} subject ${subjectId} is not ${subtype === 'daily_brief' ? 'daily:DATE' : 'weekly:DATE'}`);
   if (subtype === 'entry' && !Object.values(ENTRY_PARTS).includes(part)) throw new Error(`notes: entry part ${part}`);
   if (subtype === 'link' && !ISO3.test(part)) throw new Error(`notes: a link note's part is its country ISO3 (${part})`);
   if ((subtype === 'country' || subtype === 'web') && part !== '') throw new Error(`notes: a country or web note has no part (${part})`);
@@ -190,6 +191,32 @@ function webNote({row, iso3, at, model, producer}) {
   });
 }
 
+/**
+ * The DAILY_BRIEF# / DAILY_BRIEF item newsPostDevTo stores -> a daily_brief note about the day (subject `daily:<dateKey>`, part '').
+ * Payload = the stored row minus keys, ttl and the envelope's (generatedAt = at, model); the row as stored, so a reader applies
+ * briefWithIso3 as the action does. iso3 = the countries the brief names.
+ */
+function dailyBriefNote({item, producer}) {
+  if (!item || !text(item.dateKey) || !text(item.headline)) return null;
+  return buildNote({
+    subtype: 'daily_brief', subjectId: `daily:${item.dateKey}`, iso3: briefCountries(briefWithIso3(item)), at: item.generatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'model']), model: item.model, producer,
+  });
+}
+
+/**
+ * The WEEKLY_BRIEF# / WEEKLY_BRIEF item newsWeeklyBrief stores -> a weekly_brief note about the week (subject `weekly:<weekOf>`,
+ * part ''; weekOf is the run's date, the key the weekly_brief action takes). Payload = the stored row minus keys, ttl and the
+ * envelope's; `status` stays (the readers serve a published brief only). iso3 = the countries the signals name.
+ */
+function weeklyBriefNote({item, producer}) {
+  if (!item || !text(item.weekOf) || !Array.isArray(item.signals)) return null;
+  return buildNote({
+    subtype: 'weekly_brief', subjectId: `weekly:${item.weekOf}`, iso3: briefCountries(weeklyWithIso3(item)), at: item.generatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'model']), model: item.model, producer,
+  });
+}
+
 // archive ai field -> entry note part
 const ARCHIVE_PARTS = {summary: 'summary', prediction: 'prediction', trace_cause: 'cause'};
 
@@ -236,4 +263,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, webNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, webNote, dailyBriefNote, weeklyBriefNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};

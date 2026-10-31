@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "noteId": "31c1f8e80e07fe73e01392e9806e21b5c3daf42f",
+  "subtype": "weekly_brief",
+  "subject": {
+    "kind": "brief",
+    "id": "weekly:2026-10-25"
+  },
+  "part": "",
+  "threadId": null,
+  "iso3": [
+    "FRA",
+    "SAU",
+    "YEM"
+  ],
+  "at": "2026-10-25T06:00:21.001Z",
+  "date": "2026-10-25",
+  "payload": {
+    "asOf": "2026-10-25",
+    "watch": [
+      {
+        "date": "",
+        "event": "King Khalid International Airport reopening and airline service restoration",
+        "stake": "A test of whether Saudi Arabia can restore civilian aviation security amid ongoing Houthi threats."
+      },
+      {
+        "date": "",
+        "event": "French government's school-conditions plan due by end-October",
+        "stake": "A test of whether the government can defuse the student-led cost-of-living movement before further weekend mobilizations."
+      }
+    ],
+    "signals": [
+      {
+        "asOf": "2026-10-20",
+        "fact": "A Houthi missile strike killed 50 security recruits in Yemen as of 2026-10-20, amid a wider escalation that has included Houthi strikes on Saudi airports and Saudi-led airstrikes on Houthi positions.",
+        "iso3": [
+          "YEM",
+          "SAU"
+        ],
+        "kind": "threat",
+        "lede": "Houthi missile strike kills 50 security recruits in Yemen",
+        "region": "Yemen · Saudi Arabia",
+        "related": null,
+        "relatedThreadIds": [],
+        "riskLevel": "high",
+        "riskScore": 92,
+        "soWhat": "Signals a sustained, multi-front conflict with regional spillover, raising the odds of further attacks on civilian infrastructure and Red Sea shipping.",
+        "sources": [
+          {
+            "source": "aljazeera.com",
+            "title": "Saudi-led forces try to break Houthi siege of Taiz with airstrikes",
+            "url": "https://www.aljazeera.com/video/newsfeed/2026/10/18/saudi-led-forces-try-to-break-houthi-siege-of-taiz-with-airstrikes?traffic_source=rss"
+          },
+          {
+            "source": "middleeasteye.net",
+            "title": "Saudi-led coalition says drones targeting Riyadh, Eastern Province destroyed",
+            "url": "https://www.middleeasteye.net/live-blog/live-blog-update/saudi-led-coalition-says-drones-targeting-riyadh-eastern-province"
+          }
+        ],
+        "threadId": "thread-saudi-arabia-and-yemen-call-fo-4e946d"
+      },
+      {
+        "asOf": "2026-10-19",
+        "fact": "Nationwide cost-of-living demonstrations in France turned violent on October 16-17, with looting in Paris, Lyon, and Marseille, the Limoges town hall set ablaze, at least 1,800 arrests, 150 officers injured, and one demonstrator dead.",
+        "iso3": [
+          "FRA"
+        ],
+        "kind": "threat",
+        "lede": "Cost-of-living protests turn violent with looting, 1,800 arrests",
+        "region": "France",
+        "related": null,
+        "relatedThreadIds": [],
+        "riskLevel": "high",
+        "riskScore": 78,
+        "soWhat": "Points to a volatile pre-electoral period, with the convergence of student and Yellow Vest movements raising the odds of sustained unrest.",
+        "sources": [
+          {
+            "source": "aljazeera.com",
+            "title": "Buildings burn as French protests go into the night",
+            "url": "https://www.aljazeera.com/video/newsfeed/2026/10/18/buildings-burn-as-french-protests-go-into-the-night?traffic_source=rss"
+          },
+          {
+            "source": "france24.com",
+            "title": "Looters seize on massive French protests to raid and vandalise shops",
+            "url": "https://www.france24.com/en/france/20261017-looters-seize-massive-french-protests-raid-vandalise-shops-france"
+          }
+        ],
+        "threadId": "thread-french-student-protests-turn-v-68e0fb"
+      }
+    ],
+    "threadIds": [
+      "thread-saudi-arabia-and-yemen-call-fo-4e946d",
+      "thread-french-student-protests-turn-v-68e0fb",
+      "thread-trump-announces-us-to-import-r-8c45a3",
+      "thread-dr-congo-ebola-outbreak-surpas-d5acb9",
+      "thread-india-election-chief-faces-cal-6a2810",
+      "thread-pope-leo-to-undergo-surgery-fo-a06c81"
+    ],
+    "status": "published",
+    "weekOf": "2026-10-25",
+    "format": "signals"
+  },
+  "cites": [],
+  "model": "deepseek-v4-pro",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsWeeklyBrief",
+    "runId": "example"
+  }
+}

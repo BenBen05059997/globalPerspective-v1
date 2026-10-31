@@ -11,6 +11,7 @@ const { keepDayZero } = require('./_shared/dayZero');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
+const { writeBriefNote } = require('./_shared/briefNotes');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
@@ -232,6 +233,8 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
 
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
   console.log(`[DAILY_BRIEF] Stored for ${dateKey}: "${brief.headline}"`);
+  // the record's copy (decision 0048); a no-op unless NOTES_PREFIX is set, never fails the run
+  await writeBriefNote({ subtype: 'daily_brief', item, lambda: 'newsPostDevTo', runId: item.generatedAt });
   return item;
 }
 

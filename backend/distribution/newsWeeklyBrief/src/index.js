@@ -13,6 +13,7 @@ const { keepDayZero } = require('./_shared/dayZero');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
+const { writeBriefNote } = require('./_shared/briefNotes');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -138,6 +139,7 @@ const generateBrief = async (event = {}) => {
     ttl: Math.floor(Date.now() / 1000) + BRIEF_TTL_DAYS * 86400,
   };
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
+  await writeBriefNote({ subtype: 'weekly_brief', item, lambda: 'newsWeeklyBrief', runId: item.generatedAt }); // the record's copy (decision 0048); no-op unless NOTES_PREFIX is set
 
   console.log(`[weekly] published: WEEKLY_BRIEF#${weekKey} (${signals.length} signals, ${watch.length} watch).`);
   return { ok: true, weekKey, status: 'published', signals: signals.length, watch: watch.length };

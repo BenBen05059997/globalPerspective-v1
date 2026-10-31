@@ -20,6 +20,4 @@ Analysis Studio share links. POST (Firebase JWT) re-fetches and freezes a run's 
 - `analysisValidator.js`, `analysisStruct.js`, `webCitations.js`, `analysisContext.js`, `analysisPrompt.js`, `driftNote.js`, `dropRedatedRepeats.js` and `test/fixtures/contextGolden.json` are byte-identical copies of frontend files; `scripts/check-shared-sync.mjs` guards them. Edit both sides.
 
 ## Tests
-- `cd backend/read-api/newsSharedAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 39 passed 2026-10-19
-
-Last verified: 2026-10-19
+- `cd backend/read-api/newsSharedAnalysis/src && npm test` (`node --test ../test/*.test.js`)

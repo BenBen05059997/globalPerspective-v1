@@ -52,7 +52,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
   `newsDriftCorrector` stored them) when it holds at least as many as the action returned, cut to that many (`lib/viewDrift.js`); a 404, a
   failed view fetch or a shorter view keeps the action's notes. Snapshots, the total and the gate always come from `country_history`.
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
-- `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (the record's weekly index, `archive_range` for the newest days; decision 0046) + `prediction_snapshot`.
+- `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (the record's weekly index, `archive_range` for the newest days; decision 0046) + the newest forecast among the card's stories from the record's `forecasts/<threadId>.json` views (`lib/countryForecast.js`, `shared/api/forecastViews.js`, decision 0052), `prediction_snapshot` for the whole list when a view cannot answer.
 - `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
 - `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback.
 

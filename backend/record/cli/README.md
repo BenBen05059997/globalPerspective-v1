@@ -57,6 +57,16 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-link-notes.mjs [--dry]
 ```
 Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-link-notes.test.mjs`.
 
+## backfill-question-draws.mjs
+
+Turns the PredictionLog `SEED#<week>/COMMIT` rows into `commit` lines and the `SAMPLE#<week>/DRAW` rows (with the `SEED#<week>/REVEAL` seed) into `draw` lines of the draws inbox (decision 0043), built with the resolver's own `inbox.js` `commitLine` / `drawLine`, so newsStoryRecord makes `question_commit` / `question_draw` facts from them. PredictionLog is read only; the seed `SECRET` is never read out and the draw's `pool` is not copied. A week with a `DRAW` but no `REVEAL` is written with `seedHex: null`. A re-run appends nothing (`sourceKey` `backfill:draws/...`).
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-question-draws.mjs [--dry] [--live]
+```
+Default writes `record/shadow/inbox/draws/`; `--live` writes `record/inbox/draws/`. Test: `node --test backend/record/cli/backfill-question-draws.test.mjs`.
+First shadow run 2026-10-31: 6 commits, 3 draws (W41-W43), 9 lines on 5 days, 0 skipped.
+
 `sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
 
 ## backfill-story-analysis-notes.mjs

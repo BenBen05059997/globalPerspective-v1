@@ -13,9 +13,10 @@ retired addresses. Every page itself lives in a folder under `features/`.
 - Lazy pages: every page except Today (`features/home`, eager) is `lazy(import(...))`, a chunk fetched on first visit.
   While a chunk loads, `RouteFallback` shows the shared `BootLoader` (full-screen sensor list on `/`, inline elsewhere).
   `removeStaticBoot()` hands off from the pre-JS boot screen in `index.html`.
-- `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record, the bell from `features/breaking`, Account or
-  Sign in), the paused-analysis status line, the footer (About, Membership, Privacy, Disclosures, Contact).
-  `layout/AIToast.jsx` shows a toast while a generation runs. The Studio retired 2026-10-20 (decision 0033).
+- `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record), a "?" link to the map's About, the bell from
+  `features/breaking`, a Board link (signed-in non-guest users, only when `boardAvailable()`), Account or Sign in; the
+  paused-analysis status line (not on `/`), the footer (About, Membership, Privacy, Disclosures, Contact; hidden on the
+  desktop map console) and a phone tab bar with the four main items. `layout/AIToast.jsx` shows a toast while a generation runs.
 - `errors/ErrorHandling.jsx` - `ErrorBoundary` renders nothing on a crash on purpose (no "something went wrong" card)
   and reports the crash to `shared/api/errorSink.js`. The nav and footer sit outside it and survive. `/__boom` is the
   deliberate crash used by the smoke test.
@@ -25,16 +26,18 @@ retired addresses. Every page itself lives in a folder under `features/`.
 | Address | Feature folder | Page or action |
 |---|---|---|
 | `/` | `map` | `SituationHome`, the map console |
-| `/today` | `home` | `Home` |
+| `/today` | `home` | `Home` (eager import) |
 | `/weekly` | `threads` | `WeeklyPage` (`?section=countries` redirects to `/weekly/countries`) |
 | `/weekly/thread/:threadId` | `threads` | `ThreadPage` |
 | `/weekly/countries`, `/weekly/country/:countryName` | `countries` | `CountryListPage`, `CountryPage` |
 | `/briefings` | `briefings` | `BriefingsPage` (modes read, weekly, present) |
 | `/track-record`, `/track-record/text` | `track-record` | `TrackRecordPage`, `TrackRecordText` |
+| `/board`, `/board/:boardId` | `board` | `BoardPage` (members' personal board) |
 | `/analyze/s/:id` | `analysis-studio` | `SharedAnalysisPage` (read-only shared run) |
 | `/economy` | `economy` | `EconomyPage` (parked, hidden) |
 | `/signin`, `/auth/callback`, `/account`, `/membership` | `account` | `SignIn`, `AuthCallback`, `Account`, `MembershipPage` |
-| `/about`, `/contact`, `/disclosures`, `/privacy`, `/whitepaper` | `static` | the five static pages |
+| `/about`, `/contact`, `/disclosures`, `/privacy`, `/whitepaper` | `static` | `AboutContact`, `Contact`, `Disclosures`, `PrivacyTerms`, `WhitepaperPage` |
+| `/__boom` | app | deliberate render crash for the smoke test (not linked) |
 | `*` | app | `NotFound` (links to the map and Stories) |
 
 ## Legacy redirects (client fallback; the Cloudflare Worker sends real 301s)
@@ -53,5 +56,3 @@ retired addresses. Every page itself lives in a folder under `features/`.
 - Everything: `cd global-perspectives-starter/frontend && npm run verify`
 - Shell tests: `cd global-perspectives-starter/frontend && npx vitest run src/app`
 - Import rules: `node quality/check_feature_cycles.mjs` (from the repo root)
-
-Last verified: 2026-10-20

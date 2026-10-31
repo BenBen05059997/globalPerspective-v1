@@ -1,6 +1,6 @@
 # weekly
 
-The analyst's weekly page (planned `/briefings/weekly?week=YYYY-MM-DD`): the shared report, the same for every reader.
+The analyst's weekly page (planned, not built): the shared report, the same for every reader.
 It is the **weekly** of the three names in `project-docs/architecture/ARCHITECTURE_TIMELINE.md` §6; it never writes the
 record or board data.
 
@@ -10,28 +10,29 @@ This folder is stage 9: the weekly page (planned /briefings/weekly). Timeline: w
 <!-- pipeline:end -->
 
 ## Status
-- W0 only (2026-10-20): the mirrored section model. No page, no route, no hook yet; the page is stage W5 of
-  `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9. Briefings' `WeeklyMode` still serves the old brief.
+- Not built. This folder holds only the mirrored section model (`lib/sections.js`). There is no page, no route, no hook and no
+  `index.js`. Today's weekly surface is Briefings' weekly mode (`features/briefings`, `/briefings?mode=weekly`), which still serves the
+  old weekly brief. The page is stage W5 of `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9.
 
 ## Routes
-- None yet. Planned: `/briefings/weekly` (`/weekly/*` is taken by the countries list).
+- None. Planned: `/briefings/weekly` (`/weekly/*` is taken by the Stories and countries pages).
 
 ## Frontend
-- `lib/sections.js` — mirror of the core block of `backend/weekly/sections.js` (section order, titles, required, caps,
-  empty texts, `orderedSections`). Never edit one copy alone: `scripts/check-shared-sync.mjs` section (g) fails on drift.
-- Public API: none yet (no `index.js` until the page exists).
+- `lib/sections.js` - mirror of the core block of `backend/weekly/sections.js` (section order, titles, required, caps, empty texts,
+  `orderedSections`). Never edit one copy alone: `scripts/check-shared-sync.mjs` section (g) fails on drift.
+- Public API: none.
 
 ## Backend
-- One source of truth: `backend/weekly/` (schema, section model; pull, check, publish, hold from W1-W2). The page will
-  read `weekly/latest.json` and `weekly/YYYY-MM-DD.json` through the Worker's `/data/*` once its allowlist includes `weekly/`.
+- One source of truth: `backend/weekly/` (schema and section model today; the pull, check, publish and hold scripts are planned
+  there, see its README). The page will read `weekly/latest.json` and `weekly/YYYY-MM-DD.json` through the Worker's `/data/*` once
+  the Worker allowlist (`DATA_ALLOWED` in `cloudflare/front-worker/production/worker.mjs`) includes `weekly/`; it does not today.
 
 ## Data
-- None yet. Planned: one public fetch of the week's JSON; no sign-in.
+- None yet. Planned: one public fetch of the week's JSON, no sign-in.
 
 ## Pipeline
-1. `backend/weekly/pull.mjs` selects from the live tables (W1); interim. Final design: the weekly is a view of the week's readings, run after the review (stage 8).
-2. The headless run writes the week to the schema; `check.mjs` validates; `publish.mjs` writes S3 `weekly/` (W2).
-3. `newsEmailSender` renders the email from the same section model (W3); this page renders the web view (W5).
+1. The weekly is stage 8 (a view of the week's readings, run after the review); `backend/weekly/` writes S3 `weekly/` (planned).
+2. `newsEmailSender` renders the email from the same section model (planned); this page will render the web view.
 
 ## Docs
 - Design: [ARCHITECTURE_WEEKLY_REVIEW.md](../../../../../project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md) (section 9)
@@ -40,5 +41,3 @@ This folder is stage 9: the weekly page (planned /briefings/weekly). Timeline: w
 ## How to check it
 - `cd global-perspectives-starter/frontend && npx vitest run src/features/weekly`
 - `node scripts/check-shared-sync.mjs` (section g: weekly sections)
-
-Last verified: 2026-10-20

@@ -8,76 +8,71 @@ This folder is stage 9: the board page (/board). Timeline: reads boards via news
 <!-- pipeline:end -->
 
 ## Status
-- Slice 1, live 2026-10-20: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. Without that key
-  (local builds, or a config that lacks it) the page says "The board is not available yet." and shows no Board link.
+- Live. `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. Without that key (local builds, or a
+  config that lacks it) the page says "The board is not available yet." and shows no Board link.
+- Record views are read straight from `/data/record/views/` with no sign-in. Anything not generated yet (404) reads as an
+  honest empty state, not an error.
 
 ## Routes
-- `/board` → the newest board (or the empty state with presets); `/board/:boardId` → that board. Built from `ROUTE.board`
-  and `boardHref()` in `@/shared/lib/links.js`.
+- `/board` -> the newest board (or the empty state with presets); `/board/:boardId` -> that board. Built from `ROUTE.board`
+  and `boardHref()` in `@/shared/lib/links.js`. The page is noindex.
 - The Board link sits in the account area (`app/layout/Layout.jsx`), shown only to a signed-in, non-guest user when
   `boardAvailable()` is true.
 
 ## Frontend
-- `BoardPage.jsx` — header (inline rename, board switcher, New board, From preset, pin budget n / 12), graph, side sheet
+- `BoardPage.jsx` - header (inline rename, board switcher, New board, From preset, pin budget n / 12), graph, side sheet
   (bottom sheet on phones), pin and string lists for keyboard and screen-reader use; `board.css` (tokens only).
-- `components/BoardGraph.jsx` — SVG graph: pins on a fixed circle ordered by kind then id; strings drawn by
-  `stringTexture` (dashed = ours inferred, dashed-alt = yours, faint = cut). Drag a pin onto another (pointer captured
-  only after a 6px move), or select two pins and press `c` / Connect.
-- `components/VerdictCard.jsx` — the `connect` result: strength word, grounds (actor, place, outlet with "coverage
-  artefact possible", co-movement with lag and "one pairing is not a pattern"), `limits[]`, the honest none; Keep string
-  (optional line ≤ 280) or Dismiss.
-- `components/StringDetail.jsx` (cut sets `cutAt`, never deletes; Restore clears it), `AddPinPanel.jsx` (followed
-  threads and actors, today's topics, countries; disabled at the budget), `PresetsPanel.jsx` (region presets, fork),
-  `MissingCard.jsx` (actors on 2+ of your pins that you do not follow).
+- `components/BoardGraph.jsx` - SVG graph: pins on a fixed circle ordered by kind then id; strings drawn by `stringTexture`
+  (dashed = ours inferred, dashed-alt = yours, faint = cut). Drag a pin onto another, or select two pins and press `c` / Connect.
+- `VerdictCard` (the `connect` result: strength word, grounds, `limits[]`, the honest none; Keep string with an optional
+  line up to 280, or Dismiss), `StringDetail` (cut sets `cutAt`, never deletes; Restore clears it), `AddPinPanel`,
+  `PresetsPanel` (region presets, fork), `MissingCard` (actors on 2+ of your pins that you do not follow).
+- Record panels: `RecordPinDetails` (index-row line and counts), `StoryTree` (zoom: line, chapters, forks and events, one event),
+  `BoardWeekly` ("This week on your board": moved pins, changed strings, branch outcomes and confirmed links of the last
+  7 days), `UnsettledZone` ("This week, unsettled": counts only), `ArrivalsTray` (new stories linked to your pins).
 - Hooks: `useBoards`, `useBoard` (debounced `update_board`, then shows the server's normalised board), `useFollows`,
-  `usePresets`, `usePinInfo` (titles from topics / presets / thread analysis; risk from presets or analysis),
-  `useMember` (signed-in, non-guest).
-- `lib/boardApi.js` — the one call path: `boardAction` from `@/shared/api/restProxy.js` when `BOARD_ENDPOINT` is set;
-  in a dev build only, the in-memory fake `dev/fakeBoardApi.js` (dynamic import behind `import.meta.env.DEV`, absent from
-  production chunks). `?devBoard=1` in a dev build acts as a signed-in member for local testing.
-- `lib/boardOps.js` — pure board edits (add/remove pin, keep/cut/restore string) on top of `@/shared/lib/board.js`.
+  `usePresets`, `usePinInfo`, `useMember` (signed-in, non-guest), `useStoryViews`, `useWeekCounts`.
+- `lib/boardApi.js` - the one call path: `boardAction` from `@/shared/api/restProxy.js` when `BOARD_ENDPOINT` is set; in a dev
+  build only, the in-memory fake `dev/fakeBoardApi.js` (dynamic import behind `import.meta.env.DEV`). `?devBoard=1` acts as a
+  signed-in member. `lib/boardOps.js` (pure pin and string edits), `lib/recordViews.js` (view fetchers, ISO-week helpers),
+  `lib/recordProjection.js` (`boardWeek`, `sumCounts`), `lib/recordText.js`.
+- Branch status is worded only by `@/shared/lib/branchWording.js` from the branch's verdict and due date (open, happened with the
+  evidence quote, not reported by the due date, could not be checked, recorded before scoring began). A "no" is a claim about
+  our coverage, never "did not happen".
 - Public API (`index.js`): `boardAvailable`.
 
 ## Backend
-`newsBoard` (`backend/board/newsBoard/`, Function URL, Firebase JWT): `list_boards`, `get_board`, `create_board`,
-`update_board`, `delete_board`, `get_follows`, `follow_thread`, `unfollow_thread`, `follow_actor`, `unfollow_actor`,
-`list_presets` (public), `fork_preset`, `connect`. Board shape: `backend/board/schema/board.schema.json`.
-
-## Shared
-`@/shared/lib/board.js` (pairKey, normalizeActor, stringTexture, PIN_BUDGET; mirrors `backend/shared/src/record.js`,
-checked by `scripts/check-shared-sync.mjs`), `@/shared/lib/links.js`, `@/shared/lib/countries.js`, `@/shared/api/restProxy.js`
-(`boardAction`, `boardConfigured`), `@/shared/data/useGeminiTopics.js`, `ClaimTag`, `TierChip`, tokens.
-Imports from other features: none.
+`newsBoard` (`backend/board/newsBoard/`, Function URL, Firebase JWT) actions: `list_boards`, `get_board`, `arrivals`,
+`visit_board`, `create_board`, `update_board`, `delete_board`, `get_follows`, `follow_thread`, `unfollow_thread`,
+`follow_actor`, `unfollow_actor`, `list_presets` (public), `fork_preset`, `connect`. Board shape:
+`backend/board/schema/board.schema.json`. Shared: `@/shared/lib/board.js` (pairKey, stringTexture, PIN_BUDGET; mirrors
+`backend/shared/src/record.js`, checked by `scripts/check-shared-sync.mjs`), `links.js`, `countries.js`, `restProxy.js`
+(`boardAction`, `boardConfigured`), `useGeminiTopics`, `ClaimTag`, tokens. Imports from other features: none.
 
 ## Data
-- `useBoards()` -> `list_boards`; `useBoard(boardId)` -> `get_board`, edits through `update_board` (debounced 600 ms); `useFollows()`
-  -> `get_follows` and the four follow actions; `usePresets()` -> `list_presets` (public, no token). No local cache: boards are
-  the member's own mutable data and always come from the server.
-- `usePinInfo` reads titles and risk from today's topics (`useGeminiTopics`), preset pins, or `thread_analysis` through the
-  read proxy.
+- Boards: `useBoards` -> `list_boards`; `useBoard(boardId)` -> `get_board`, edits through `update_board` (debounced 600 ms);
+  `useFollows` -> `get_follows` and the follow actions; `usePresets` -> `list_presets`. No local cache: boards are the
+  member's own data and always come from the server.
+- Record views (decision 0037): `useStoryViews` fetches `stories/<id>.json` and `links/<id>.json` for each pinned story (an
+  alias story view fetches its survivor); `useWeekCounts` fetches `counts/<date>.json` for the current ISO week (UTC) and,
+  when the last visit is at most 31 days back, the days since. Non-404 failures go to the error sink.
+- Reading fields (pin line, story line, chapters) exist only after the story's weekly review; until then they are not shown.
+- `usePinInfo` reads titles from today's topics, preset pins, or thread analysis through the read proxy.
 
 ## Pipeline
-1. Existing writers feed it: `newsThreadAnalysis` (`THREAD_ANALYSIS`, `THREAD_HISTORY#`), `newsSystemsAnalysis` (`WEB#INDEX`),
-   `newsCountryIntelligence` (`HISTORY#`), the agent Lambda (`NewsCache latest`).
-2. `newsBoard` (on demand) reads them for presets and `connect`, and owns `GlobalPerspectiveSavedItems` items `board#<id>` and
-   `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`.
-3. `BoardPage` renders the board; nothing else reads it. Later, the record (`record/`) feeds lines, branch status and arrivals.
+1. `newsStoryRecord` builds `record/views/` from facts; the Worker serves `/data/record/views/`; the weekly review fills readings.
+2. `newsBoard` (on demand) reads the world store and record views for presets, `connect` and `arrivals`, and owns
+   `GlobalPerspectiveSavedItems` items `board#<id>` and `GlobalPerspectiveUserPrefs` fields `followedThreads`, `followedActors`.
+3. `BoardPage` renders the board; nothing else reads it.
 
 ## Docs
-- Design: [ARCHITECTURE_BOARD.md](../../../../../project-docs/architecture/ARCHITECTURE_BOARD.md)
+- Design: [ARCHITECTURE_BOARD.md](../../../../../project-docs/architecture/ARCHITECTURE_BOARD.md),
+  [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md); decision [0037](../../../../../project-docs/decisions/0037-views-from-facts.md)
 - Backend: [newsBoard README](../../../../../backend/board/newsBoard/README.md), [schema](../../../../../backend/board/schema/board.schema.json)
 
 ## How to check it
-- `npx vitest run src/features/board` — `boardOps.test.js`, `BoardGraph.test.jsx`, `BoardPage.test.jsx`, `recordViews.test.jsx`, `ArrivalsTray.test.jsx`.
-- Browser (2026-10-20, dev fake, 1440 wide): presets and fork, drag-connect, keyboard connect, keep with and without a
-  line, dismiss, cut, rename, add pin (actor, country, story) up to 12 / 12, switch boards, delete board; no console
-  errors. Phone (390 wide, in an iframe): no sideways scroll, graph scrolls in its container, connect opens the bottom
-  sheet. Not tested in a browser: signed-out and not-available views (unit-tested), the What is missing follow,
-  co-movement grounds, touch drag on a device.
-## Record views (decision 0037)
-State 2026-10-23: released 2026-10-22 (bundle `index-CWK5qz3j.js`); the data side is live (`newsStoryRecord` builds `record/views/`, `newsBoard` reads it, the Worker serves `/data/record/views/`). Signed-out `/board` was smoke-checked; the signed-in 7-step click-through by the operator is still pending. Reading fields stay empty until the weekly review runs.
-Facts come from the record views; reading fields come from the weekly reading when the story has one (pin line from the index row, story `line {text, week}`, `chapters [{title, from, to, summary}]` shown as "from – to · title" with the summary) and read "no reading yet · first weekly review pending" otherwise (the branch "Status history" line only when `reading.state` is `none`); `risk` shows no badge. Pins come from `get_board` (index row facts). `ArrivalsTray` calls `arrivals`; a card's text is the confirmed link's mechanism with its direction (drives, driven by, shared cause). With no cards it says "No new story touches your board since DATE."
-- `lib/recordViews.js` fetches `/data/record/views/{stories,links,counts}/...` directly, no sign-in; an alias story view fetches its survivor. 404 = "not generated yet" (honest empty text, not reported); other failures go to the error sink with a specific line.
-- `useStoryViews` feeds `StoryTree` (entries as events, verdicts) and `BoardWeekly` (branch outcomes of the last 7 days; confirmed links whose `week` equals the current ISO week). Branch status is worded only by `@/shared/lib/branchWording.js` (open · due D MMM; happened · D MMM with the evidence quote; not reported by D MMM; could not be checked · reason; recorded before scoring began for legacy branches). A `no` is a claim about our coverage, never "did not happen". `UnsettledZone` + `useWeekCounts`: current ISO week (UTC) counts for the pinned stories, "this week, unsettled: N new entries, N branches due, N verdicts"; "N new entries since DATE" only when some (gap at most 31 days).
-- Dev fake: `?devBoard=1&devRecord=1` and `/board/dev-record` serve `dev/recordViews/` (story-a unread; story-b read, with a confirmed link to story-a in the current ISO week); `devRecord=missing` shows the not-generated paths.
-- Choices: index container `{stories:[rows]}` keyed `threadId`; a confirmed link is `{otherThreadId, mechanism, direction, week, cites}` (no strength); BoardWeekly header and empty text unchanged.
+- `npx vitest run src/features/board` - `boardOps.test.js`, `BoardGraph.test.jsx`, `BoardPage.test.jsx`, `recordViews.test.jsx`, `ArrivalsTray.test.jsx`.
+- Dev fakes: `?devBoard=1` for boards; add `&devRecord=1` (or open `/board/dev-record`) to serve `dev/recordViews/`; `devRecord=missing`
+  shows the not-generated paths.
+- Browser: presets and fork, drag-connect, keyboard connect, keep and dismiss, cut, rename, add pin up to 12, switch and delete
+  boards; on a phone the connect result opens the bottom sheet.

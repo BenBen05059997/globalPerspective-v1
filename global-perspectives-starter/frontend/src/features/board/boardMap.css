@@ -1,0 +1,45 @@
+/* Board map view (artboard 2). Tokens only. The map reuses the graph's frame (.board-graph, .board-stage, .board-fog)
+   and string classes (.board-string*), so only the land, the rings, the chips and the collapsed rail live here. */
+.bm-land { fill: var(--tier-low-wash); stroke: var(--hairline-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.bm-region { fill: var(--text-dim); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; text-anchor: middle; pointer-events: none; }
+
+.bm-pin { cursor: pointer; outline: none; }
+.bm-pin__ring { fill: var(--panel-2); stroke: var(--pin-hue, var(--text-body)); stroke-width: 2; }
+.bm-pin[data-tier='low'] .bm-pin__ring { stroke-width: 1.2; }
+.bm-pin[data-tier='moderate'] .bm-pin__ring { stroke-width: 2; }
+.bm-pin[data-tier='elevated'] .bm-pin__ring { stroke-width: 3; }
+.bm-pin[data-tier='high'] .bm-pin__ring { stroke-width: 4.5; }
+.bm-pin[data-kind='country'] .bm-pin__ring { stroke-dasharray: none; fill: var(--tier-low-wash); }
+.bm-pin:hover .bm-pin__ring, .bm-pin.is-selected .bm-pin__ring { stroke: var(--accent); }
+.bm-pin:focus-visible .bm-pin__ring { stroke: var(--focus-ring); stroke-width: 5; }
+.bm-pin__leader { stroke: var(--hairline-strong); stroke-width: 1; }
+.bm-pin__name, .bm-pin__line { paint-order: stroke; stroke: var(--bg); stroke-width: 3; stroke-linejoin: round; }
+.bm-pin__name { fill: var(--text-head); font-family: var(--serif); font-size: var(--text-sm); }
+.bm-pin__line { fill: var(--text-muted); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.04em; text-transform: uppercase; }
+
+.bm-note { position: absolute; left: var(--space-4); top: var(--space-3); margin: 0; max-width: 48ch; font-size: var(--text-xs); color: var(--text-dim); pointer-events: none; }
+.bm-chips { position: absolute; left: var(--space-4); bottom: var(--space-3); z-index: 2; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.bm-chip { display: inline-flex; align-items: baseline; gap: var(--space-2); padding: var(--space-1) var(--space-3); background: var(--bg); border: 1px solid var(--hairline-strong); border-radius: var(--r-pill); color: var(--text-body); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.bm-chip--ghost { border-style: dashed; }
+.bm-chip:hover { border-color: var(--accent); }
+.bm-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.bm-chip__head { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
+.bm-chip__name { color: var(--text-head); }
+.bm-chip__tail { color: var(--text-dim); font-size: var(--text-xs); }
+
+/* The collapsed rail: a thin column beside the map; the arrow opens the full rail. On a phone it is a strip. */
+.bm-rail { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-2) var(--space-3); border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel); min-width: 0; }
+.bm-rail__open { all: unset; cursor: pointer; padding: 0 var(--space-2); font-size: var(--text-xl); color: var(--accent); }
+.bm-rail__open:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.bm-rail__week { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
+.bm-rail__counts { display: flex; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-sm); color: var(--text-head); }
+.bm-rail__gap { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-muted); }
+@media (min-width: 1100px) {
+  .board-main.board-main--thin { grid-template-columns: minmax(0, 1fr) var(--space-16); }
+  .bm-rail { flex-direction: column; padding: var(--space-3) var(--space-1); min-height: 320px; align-self: stretch; }
+  .bm-rail__week, .bm-rail__gap { writing-mode: vertical-rl; }
+}
+
+/* the other countries a story touches: a faint dot tied to the story's ring, under the strings and rings */
+.bm-touch__tie { stroke: var(--hairline-3); stroke-width: 1; stroke-dasharray: 1 3; }
+.bm-touch__dot { fill: none; stroke: var(--text-dim); stroke-width: 1; }

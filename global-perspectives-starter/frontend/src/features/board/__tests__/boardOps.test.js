@@ -86,6 +86,12 @@ describe('placeLabels', () => {
     const out = placeLabels(items, [], 240, 100, full, small);
     expect(out.a.small || out.b.small).toBe(true);
   });
+  it('with dropBlocked, leaves out a label that has no clear spot instead of stacking it on a card', () => {
+    const wall = [{ x: 120, y: 50, w: 400, h: 200 }];
+    const item = [{ id: 's', a: { x: 100, y: 50 }, b: { x: 140, y: 50 } }];
+    expect(placeLabels(item, wall, 240, 100, full, small, { dropBlocked: true })).toEqual({});
+    expect(placeLabels(item, wall, 240, 100, full, small).s.small).toBe(true); // the graph keeps its short tag
+  });
 });
 
 describe('missingActors', () => {

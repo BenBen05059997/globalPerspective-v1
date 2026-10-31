@@ -18,7 +18,7 @@ const PINS = [
   { pinId: 'p01', kind: 'thread', refId: 'dev-hormuz', title: 'Ship attacks near Hormuz', category: 'conflict', risk: 88, line: 'Attacks on shipping keep the strait one incident from closing.', counts: { chapters: 4, liveBranches: 3, confirmedLinks: 1 }, actors: ['Oil price', 'Iran'], iso3: ['IRN'] },
   { pinId: 'p02', kind: 'thread', refId: 'dev-sanctions', title: "Trump's Russia sanctions pause", category: 'politics', risk: 78, line: null, counts: { chapters: 2, liveBranches: 1, confirmedLinks: null }, actors: ['Oil price', 'Trump'], iso3: ['USA', 'RUS'] },
   { pinId: 'p03', kind: 'country', refId: 'USA', risk: 85, riskWas: 95 },
-  { pinId: 'p04', kind: 'thread', refId: 'dev-houthi', title: 'Saudi Arabia and Yemen: Houthi campaign', category: 'conflict', risk: 92, line: null, counts: { chapters: 5, liveBranches: 2, confirmedLinks: 2 }, actors: ['Oil price', 'Houthis'], iso3: ['SAU', 'YEM'] },
+  { pinId: 'p04', kind: 'thread', refId: 'dev-houthi', title: 'Saudi Arabia and Yemen: Houthi campaign', quietDays: 35, category: 'conflict', risk: 92, line: null, counts: { chapters: 5, liveBranches: 2, confirmedLinks: 2 }, actors: ['Oil price', 'Houthis'], iso3: ['SAU', 'YEM'] },
   { pinId: 'p05', kind: 'thread', refId: 'dev-sudan', title: 'Sudan gold-mine airstrikes', category: 'conflict', risk: 85, line: null, counts: null, actors: ['RSF'], iso3: ['SDN'] },
   { pinId: 'p06', kind: 'thread', refId: 'dev-ethiopia', title: 'Ethiopia–Eritrea tension', category: 'conflict', risk: 80, line: null, counts: null, actors: ['TPLF'], iso3: ['ETH', 'ERI'] },
   { pinId: 'p07', kind: 'thread', refId: 'dev-albania', title: 'Albanian protests', category: 'politics', risk: 60, line: null, counts: null, bornDaysAgo: 2, actors: ['Rama'], iso3: ['ALB'] },
@@ -40,7 +40,11 @@ export function devGraphBoard(nowIso) {
       { a: 'p01', b: 'p07', owner: 'yours', cutAt: nowIso, keptAt: nowIso },
       { a: 'p01', b: 'p08', owner: 'ours', strength: 'inferred', mechanism: 'Shared actors: Iran' },
     ],
-    weights: {}, dismissed: [], summary: { versions: [] }, createdAt: nowIso, updatedAt: nowIso,
+    weights: {}, dismissed: [], summary: { versions: [
+      { text: 'The Gulf pins held steady. Sudan stayed untested.', writtenAt: iso(Date.parse(nowIso) - 21 * DAY) },
+      { text: 'Hormuz strengthened against Washington. Nothing moved in the Horn.', writtenAt: iso(Date.parse(nowIso) - 14 * DAY) },
+      { text: 'You follow seven pins around the Gulf and the Horn. The first half strengthened.', writtenAt: iso(Date.parse(nowIso) - 7 * DAY) },
+    ] }, createdAt: nowIso, updatedAt: nowIso,
   };
 }
 
@@ -58,7 +62,8 @@ export function decorateDevGraph(board, now = new Date()) {
       return {
         ...pin, recordAvailable: true, ...(d.title ? { title: d.title } : {}), ...(d.category ? { category: d.category } : {}),
         ...(d.risk != null ? { risk: d.risk } : {}), ...(d.riskWas != null ? { riskWas: d.riskWas } : {}),
-        line: d.line ?? null, ...(d.counts ? { counts: d.counts } : {}),
+        line: d.line ?? null, ...(d.iso3 ? { iso3: d.iso3 } : {}), ...(d.counts ? { counts: d.counts } : {}),
+        ...(d.quietDays != null ? { lastMoved: iso(now.getTime() - d.quietDays * DAY).slice(0, 10) } : {}),
         ...(d.bornDaysAgo != null ? { born: iso(now.getTime() - d.bornDaysAgo * DAY).slice(0, 10) } : {}),
       };
     }),

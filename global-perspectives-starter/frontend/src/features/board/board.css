@@ -64,7 +64,7 @@
 .board-pin__was { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
 
 .board-string__line, .board-key { fill: none; stroke-width: 2; }
-.board-string__hit { stroke: transparent; stroke-width: 16; cursor: pointer; pointer-events: stroke; }
+.board-string__hit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; pointer-events: stroke; }
 .board-string[data-strength='strong'] .board-string__line, .board-key--strong { stroke-width: 4; }
 .board-string[data-strength='medium'] .board-string__line, .board-key--medium { stroke-width: 2.5; }
 .board-string[data-strength='weak'] .board-string__line, .board-key--weak { stroke-width: 1.2; }

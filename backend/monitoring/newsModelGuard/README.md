@@ -3,7 +3,7 @@
 Daily guard against DeepSeek model retirements and an empty balance. It checks DeepSeek's `/user/balance` and alerts when `is_available` is false or the USD balance is below `DEEPSEEK_BALANCE_ALERT_USD` (default 3). It then lists every Lambda in the region and flags any model env var (`MODEL_VARS`) set to a `deepseek-*` id that is a deprecated alias (`DEPRECATED_ALIASES`, default `deepseek-chat,deepseek-reasoner`) or is missing from DeepSeek's live `/models` list. It is silent when nothing is wrong.
 
 ## Deployment
-- Deployed name `newsModelGuard` · runtime `nodejs20.x` · group `monitoring` (scripts/functions.json)
+- Deployed name `newsModelGuard` · runtime `nodejs22.x` · group `monitoring` (scripts/functions.json)
 - Trigger: EventBridge rule `TriggerModelGuard` `cron(0 12 * * ? *)` (UTC, ENABLED)
 - Deploy: `scripts/lambda.sh newsModelGuard diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip does not ship node_modules, and `src/` has no package.json.
 
@@ -21,6 +21,4 @@ Daily guard against DeepSeek model retirements and an empty balance. It checks D
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- `node --test backend/monitoring/newsModelGuard/test/*.test.js` (the AWS SDK is stubbed). Passed 4/4 on 2026-10-19. The header's `node --test .../test/` (directory form) fails on Node 22.
-
-Last verified: 2026-10-19
+- `node --test backend/monitoring/newsModelGuard/test/*.test.js` (the AWS SDK is stubbed). Use the glob form: the directory form fails on Node 22.

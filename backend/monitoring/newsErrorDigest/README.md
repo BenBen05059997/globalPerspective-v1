@@ -20,5 +20,3 @@ Alerting layer over the client-error sink (newsClientErrors). Each run scans the
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

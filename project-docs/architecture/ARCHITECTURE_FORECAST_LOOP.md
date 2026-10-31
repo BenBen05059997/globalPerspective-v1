@@ -1,6 +1,6 @@
 # The forecast loop
 
-Decision: [0038](../decisions/0038-forecast-loop.md) (design agreed by the operator 2026-10-22; evidence rule: our own entries only). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Code and live AWS are the truth for what is deployed: the draw is `NewsProjectInvokeAgentLambda-dev`, the nightly pass is `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily), and both deployed zips match the repo.
+Decision: [0038](../decisions/0038-forecast-loop.md) (design agreed by the operator 2026-10-22; evidence rule: our own entries only). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Code and live AWS are the truth for what is deployed: the draw is `NewsProjectInvokeAgentLambda-dev`, the nightly pass is `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily). Diff a deployed zip against the repo before deploying either (`scripts/lambda.sh <name> diff`).
 
 ## 1. Why
 The product is an analyst tool. A forecast with a verdict is what separates it from a feed and what turns a timeline into a narrative. Before this design the loop was open: most branches carried no question id, no probability and no source, so nothing could resolve them; the resolver sampled 22 questions a week and the pages promised a check ("not checked yet") that never came; a story could fork almost daily. The loop now draws few, checkable outcomes, watches only what moved, and judges on the story's own entries.
@@ -56,7 +56,7 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 ## 3. Objects and ownership
 | Object | Where | Notes |
 |---|---|---|
-| `forecast_drawn` fact | `record/facts/` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid}; written by `newsStoryRecord` from `PRED#` rows |
+| `forecast_drawn` fact | `record/facts/` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid}; written by `newsStoryRecord` from `PRED#` rows (it scans the prediction log for the 30-day window, so a forecast whose topic left the day's entries is still found) |
 | `verdict` fact | `record/facts/` | qid, result, voidReason, quote, url, at, decidedBy, evidence, revision; `eventId = sha1('verdict' + qid + revision)`; only `newsStoryRecord` writes it, from the inbox |
 | verdict inbox | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`) | one line per final verdict, written only by the resolver |
 | draws inbox | `record/inbox/draws/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/draws/`) | one `commit` line per week's seed hash and one `draw` line per week's sample, written only by the resolver (0043) |
@@ -64,6 +64,8 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 | `Q#<qid>` `SAMPLED`, `DRAFT#`, `VERDICT`, `VERDICT#<n>` | `GlobalPerspectivePredictionLog` | the resolver's working rows, put-once; a correction appends `VERDICT#<n>` |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its seed commit |
 | `predictions/track_record.json` | S3 | the scored sample only; `newsPredictionsSnapshot` rebuilds it every 30 minutes |
+| `record/views/track-record.json` | S3 | the public `/track-record` page's source (decision 0044): the question scheme counted from the `forecast_drawn`, `question_*` and `verdict` facts, plus the frozen pilot-era constants. Built nightly by `newsStoryRecord`; the settle health and the draw pool stay in the prediction log |
+| `record/legacy/predictions/` | S3 | whole `PRED#` rows from before the record that no rule places on a story, copied once (decision 0047); not facts, and none carries a question id, so none is scored |
 
 Draw code lives in `backend/pipeline/NewsProjectInvokeAgentLambda`; watch, gather, judge and record in `backend/predictions/newsPredictionResolver`; review in `backend/record`. The resolver writes only `record/inbox/verdicts/` and `record/inbox/draws/` (and their shadows) under `record/`, reads `record/facts/` and `record/runs/` (its role has both), and needs no search key. An operator dispute is `predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`, which appends a correction (0034: no human gate on verdicts).
 

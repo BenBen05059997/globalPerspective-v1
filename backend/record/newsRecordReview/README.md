@@ -94,14 +94,13 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Bad answers are not re-asked: one call per story per week. `dryRun` makes no model call.
 - Shadow mode reads and writes under `record/shadow/` only, including `operator/aliases.json`, so a shadow run needs a shadow copy of the views and facts.
 
-## Follow-ups (coordinator; not done by this lane)
+## Deployment
 
-- `scripts/functions.json` entry: `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record`, Node runtime, timeout 900 s, memory 1024 MB.
+- Deployed name `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record` (`scripts/functions.json`); runtime `nodejs22.x`, timeout 900 s, memory 1024 MB. Deploy with `scripts/lambda.sh` (diff first).
+- Schedule: EventBridge rule `TriggerRecordReview`, Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), input `{"shadow":false}`, ENABLED.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
-- Schedule: Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), payload `{"shadow":false}` (enabled 2026-10-31).
-- Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.
-- Deploy with `scripts/lambda.sh` (diff first). Deployed and live (2026-10-31).
-- `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. Watch the first full Run's `notReached`: a re-run of the same week re-reads every story (only earlier weeks' readings count for the skip rule), so raise `REVIEW_CONCURRENCY` or split by `threadIds` if it times out.
+- Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`, and `REVIEW_CONCURRENCY` (set live; the code default is 6). The provider and model are the live env, not the variable names (`GROK_*`/`XAI_*` hold DeepSeek).
+- Watch the first full Run's `notReached` after a change: a re-run of the same week re-reads every story (only earlier weeks' readings count for the skip rule), so raise `REVIEW_CONCURRENCY` or split by `threadIds` if it times out.
 - Golden week: `node scripts/golden-week.js capture|real|replay DIR` runs this handler on the frozen fixture in memory; results under `fixtures/golden-week/runs/` (see its README).
 
 ## Tests

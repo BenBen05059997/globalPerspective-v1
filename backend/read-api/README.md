@@ -6,7 +6,7 @@ takes browser error reports and holds a parked, key-gated signal API.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the read proxy and the per-user endpoints that serve every page. Timeline: writes no facts or readings; serves raw tables and S3 JSON today; the board reads the record views directly, other pages move to views in plan step 4. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the read proxy and the per-user endpoints that serve every page. Timeline: writes no facts or readings; serves raw tables and S3 JSON; most pages now read the record views first and ask these actions only for what a view lacks, so the actions shrink as step 5 retires the world tables. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -27,7 +27,7 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 3. The handler fetches from DynamoDB (or the S3 track-record file) and returns JSON. Account calls go to their own Lambda, which checks the Firebase token first.
 4. The map feature reads the S3 world store through the Cloudflare Worker `/data/*` route instead; that path does not touch this group.
 
-Proxy actions and the feature that calls each (found by grep in `frontend/src`):
+Proxy actions and the feature that calls each (found by grep in `frontend/src`). Where the record holds a view of the same thing, the page reads the view first and calls the action only as its fallback: the track record (0044), the list pages (analyses, web, countries, weekly archive index; 0046) and the briefs (0048, as released; `project-docs/START_HERE.md` says which release is live). The actions stay served until the world tables retire (step 5).
 - Home and Today (`/today`): `topics`, `today`, `corrections_feed`.
 - Thread pages (`/weekly/thread/:id`): `narrative_thread`, `thread_analysis`, `systems_analysis`, `web_index`, `summary`, `prediction`, `trace_cause`, `archive_range`.
 - Country pages (`/weekly/country/:name`): `country_intelligence`, `country_facts`, `country_history`.

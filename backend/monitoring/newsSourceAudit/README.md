@@ -14,7 +14,7 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 - No S3 or DynamoDB writes
 
 ## Models
-- `AUDIT_MODEL` (code fallback `deepseek-v4-pro`) at `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek. Thinking mode disabled.
+- `AUDIT_MODEL` (code fallback `deepseek-v4-pro`; the live env sets it to `deepseek-flash`) at `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek. Thinking mode disabled.
 
 ## Gotchas
 - The rule is named `...Daily` but runs Mon/Wed/Fri only.

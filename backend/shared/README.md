@@ -26,9 +26,19 @@ This folder is stage 4: world/, the only reader of the raw tables, plus the shar
 - `manifest.js`: `makeManifest(s3json).addDays(key, dates)`, the conditional day-manifest rewrite (412 re-read and union) for
   `record/facts/manifest.json` and each `record/notes/<subtype>/manifest.json`.
 - `notes.js`: the one builder and writer of notes (decision 0042, schema `backend/record/schema/note.schema.json`):
-  `buildNote` (throws on anything the schema rejects), `entryNote` (a `TOPIC#` item + its topic -> an entry note whose subject
-  is the entry fact's `eventId`), `makeNoteWriter({s3json, prefix}).write(subtype, notes)` (manifest first, then
-  `appendLines` deduped by `noteId`). Every note writer uses it.
+  `buildNote` (throws on anything the schema rejects) and one builder per subtype (`entryNote`, `archiveEntryNotes`,
+  `storyAnalysisNote`, `driftNote`, `storyDriftNote`, `countryNote`, `countryHistoryNote`, `linkNote`, `webNote`,
+  `dailyBriefNote`, `weeklyBriefNote`), and `makeNoteWriter({s3json, prefix}).write(subtype, notes)` (manifest first, then
+  `appendLines` deduped by `noteId`). Every note writer, Lambda or CLI, uses it.
+- `briefNotes.js`: `writeBriefNote({subtype, item, lambda, runId})`, the brief writers' one helper (decision 0048). Gated by env
+  `NOTES_PREFIX`: unset writes nothing; best-effort, a failure logs `[notes]` and never fails the run. Used by `newsPostDevTo`
+  and `newsWeeklyBrief`.
+- `briefs.js`: `briefWithIso3`, `weeklyWithIso3`, `briefCountries`: the countries every reader gets on the daily and weekly
+  brief (filled from names when the stored row has no `iso3`). Used by the read API's brief actions, `notes.js` and the
+  record's brief views, so they answer the same.
+- `questionState.js`: where a forecast question stands in the weekly sample and in its outcome (decision 0043); pure, used by
+  the record's views. `questionScoring.js`: Brier score, skill against the base rate and the cluster-bootstrap interval of the
+  sampled questions; pure, used by `newsStoryRecord`'s track-record view.
 - `record.js`: the record's and board's pure rules (`canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`, `noteId`,
   `pairKey`, `normalizeActor`, `stringTexture`, `PIN_BUDGET`, `pinBudgetOk`, `normalizeBoard`, `cheapGrounds`: shared
   actors/places/outlets and score co-movement, never 'strong'). Used by `newsBoard`, `newsStoryRecord` and the selector's raw

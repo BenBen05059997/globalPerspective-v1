@@ -6,7 +6,7 @@ and to open a stored Summary, Prediction or Trace Cause for any topic.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the today page (/today). Timeline: reads today's topics from raw tables; target: the daily facts and counts. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the today page (/today). Timeline: reads today's topics from raw tables; target: a today view of the daily facts. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -44,7 +44,8 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - `useTodayArchive()` -> `contentService.getTodayArchive()` -> `today`; localStorage `today_archive_cache_v1`, 10 min; an empty day is not cached.
 - On click: `contentService.getTopicSummary` / `getTopicPrediction` / `getTopicTraceCause` -> `summary` / `prediction` / `trace_cause`.
   These read stored results by `topicId`; nothing is generated on view.
-- `useTrackRecord()` -> `prediction_track_record`; `useCorrectionsFeed(100)` -> `corrections_feed` (the trust strip uses the server's `total`).
+- `useTrackRecord()` -> the record's `track-record.json` view, `prediction_track_record` as fallback (decision 0044); `useCorrectionsFeed(100)` ->
+  `corrections_feed` (the trust strip uses the server's `total`). Both hooks belong to `features/track-record`.
 
 ## Pipeline
 1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) picks topics -> NewsCache `staging`.
@@ -53,7 +54,8 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 4. `newsSensitiveData-dev` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
 5. `useGeminiTopics` -> `Home.jsx` groups by region and renders the topic cards on `/today`.
 6. A click calls `summary`, `prediction` or `trace_cause` -> `SummaryDisplay` / `PredictionDisplay` / `TraceCauseDisplay`.
-7. Trust strip: `newsPredictionsSnapshot` -> S3 `predictions/track_record.json` -> `prediction_track_record` -> `useTrackRecord`.
+7. Trust strip: `newsStoryRecord` builds `record/views/track-record.json` from the forecast facts -> `useTrackRecord` (fallback: `newsPredictionsSnapshot`
+   -> S3 `predictions/track_record.json` -> `prediction_track_record`).
 
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md) (map is home, this moved to `/today`),
@@ -66,4 +68,4 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"topics"}' | head -c 300`
 - Selection schedule: `aws scheduler get-schedule --name InvokeGoogleGemini --region ap-northeast-1 --query State`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

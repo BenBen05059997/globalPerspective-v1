@@ -22,7 +22,7 @@ Board data (no new table): a member's boards are `GlobalPerspectiveSavedItems` i
 
 `GlobalPerspectiveShares` is the one approved exception to "nothing new in DynamoDB" (operator, 2026-09-30): user-owned share links, partition key `id` (a 22-character public id), a keys-only index `uid-createdAt-index` for the owner's list and account deletion, on-demand billing, deletion protection, no TTL, sole writer `newsSharedAnalysis`. A new table needs an exception recorded here.
 
-Live there are 12 Global Perspectives tables: the five above plus seven world tables not yet migrated (§6): `NewsCache` (topics), `SummarizeAndPredict`, `GlobalPerspectivePredictionLog`, `GlobalPerspectiveBreakingAlerts`, `GlobalPerspectiveMarkets`, `GlobalPerspectiveClientErrors`, `NewsProject-linkedin-posts`. (`PPA*`, `ppa-*` and Polybot tables belong to other projects in the account.)
+Besides the five, these Global Perspectives tables exist (§6 says which stay): `NewsCache` (topics), `SummarizeAndPredict`, `GlobalPerspectivePredictionLog`, `GlobalPerspectiveBreakingAlerts`, `GlobalPerspectiveClientErrors`, `NewsProject-linkedin-posts`, and `GlobalPerspectiveMarkets` (retired with the economy product, decision 0049; no writer, no reader, awaiting deletion). `NewsCache`, `SummarizeAndPredict` and the `PRED#` rows of the prediction log are the world tables that step 5 retires once the record holds what they hold. (`PPA*`, `ppa-*`, Polybot and other tables belong to other projects in the account.)
 
 ## 3. Rules that keep S3-as-truth safe
 
@@ -60,7 +60,7 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `audit/impact/…` | `newsImpactAudit` | parked (rule DISABLED, decision 0015) | operator |
 | `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation | `newsSelectionShadow`, `newsImpactAudit` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json`, `latest.json` | `newsSelectionShadow` | 3x/day | operator review only |
-| `predictions/track_record.json` | `newsPredictionsSnapshot` | 30 min | the proxy action `prediction_track_record` |
+| `predictions/track_record.json` | `newsPredictionsSnapshot` | 30 min | the proxy action `prediction_track_record` (the page's fallback; it reads the record view first) |
 | `monitoring/freshness/state.json` (alert dedupe marker) | `newsFreshnessMonitor` | each run | `newsFreshnessMonitor` |
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord`, 23:45 UTC, `{"shadow":false}`), append-only, no model | `newsRecordReview`, view rebuilds, `newsPredictionResolver` |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` | daily, the one mutable object | `newsPredictionResolver` (coverage guard), operator |
@@ -71,18 +71,21 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `record/inbox/splits/YYYY-MM-DD.jsonl` | operator only | on demand | `newsStoryRecord` |
 | `record/inbox/assignments/YYYY-MM-DD.jsonl` | operator, applying approved review proposals or benchmark placements | on demand | `newsStoryRecord` |
 | `record/operator/aliases.json` (the who's who file) | operator only | on demand | `newsStoryRecord`, `newsRecordReview` |
-| `record/notes/entry/YYYY-MM-DD.jsonl`, `record/notes/entry/manifest.json` | `NewsProjectInvokeAgentLambda` after its daily archive (env `NOTES_PREFIX`; `record/shadow/` until switched), and `backend/record/cli/capture-entry-notes.mjs` (one-off capture) | each agent run (04:25, 12:25, 20:25 UTC), append-only, model text, deduped by `noteId` | view rebuilds (next) |
+| `record/notes/entry/YYYY-MM-DD.jsonl`, `record/notes/entry/manifest.json` | `NewsProjectInvokeAgentLambda` after its daily archive (env `NOTES_PREFIX`; `record/shadow/` until switched), and `backend/record/cli/capture-entry-notes.mjs` (one-off capture) | each agent run (04:25, 12:25, 20:25 UTC), append-only, model text, deduped by `noteId` | `newsStoryRecord` view rebuilds |
+| `record/notes/story_analysis/`, `drift/`, `country/`, `link/`, `web/` (same file layout and manifest) | one writer each, env `NOTES_PREFIX`: `newsThreadAnalysis` (story_analysis), `newsDriftCorrector` (drift), `newsCountryIntelligence` (country), `newsSystemsAnalysis` (link and web); the backfills in `backend/record/cli/` | with the writer's own run, append-only, model text, deduped by `noteId` | `newsStoryRecord` view rebuilds |
 | `record/notes/daily_brief/YYYY-MM-DD.jsonl`, `record/notes/weekly_brief/YYYY-MM-DD.jsonl` (+ `manifest.json` each) | `newsPostDevTo` (daily brief, 23:00 JST) and `newsWeeklyBrief` (Sundays 06:00 UTC), env `NOTES_PREFIX` (unset = no note), and `backend/record/cli/backfill-brief-notes.mjs` (decision 0048) | once per brief, append-only, model text, deduped by `noteId`; the DynamoDB `DAILY_BRIEF#` / `WEEKLY_BRIEF#` puts stay until step 5 | `newsStoryRecord` views `briefs/daily/`, `briefs/weekly/`, `index/briefs.json` |
-| `record/legacy/predictions/YYYY-MM-DD.jsonl`, `record/legacy/predictions/manifest.json` | `backend/record/cli/backfill-history.mjs` (one-off, decision 0047) | once; whole `PRED#` rows from before the record that no story can be found for (no thread, so no fact) | nothing reads it; the only copy once PredictionLog `PRED#` is deleted |
+| `record/legacy/predictions/YYYY-MM-DD.jsonl`, `record/legacy/predictions/manifest.json` | `backend/record/cli/backfill-history.mjs` (one-off, decision 0047; the same CLI replayed the pre-September archive days into `record/facts/`, so facts begin 2026-03-07) | once; whole `PRED#` rows from before the record that no story can be found for (no thread, so no fact) | nothing reads it; the only copy once PredictionLog `PRED#` is deleted |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` | weekly, Monday 01:00 UTC, append-only, model | view rebuilds |
 | `record/runs/review-YYYY-Www.json` | `newsRecordReview` | weekly, the review Run | operator |
-| `record/views/…` (stories, index/active, index/all, links, counts, countries, manifest) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | `newsBoard`, the Worker (`/data/record/views/`) |
-| `record/shadow/…` | `newsStoryRecord`, the selector, the resolver and the review on a manual `shadow:true` invoke; also the retired old dry-run output | manual only | humans, tuning |
+| `record/views/…` (stories, countries, links, briefs, counts, `index/*.json`, `track-record.json`, `manifest.json`) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | the browser through the Worker (`/data/record/views/`), `newsBoard` |
+| `record/shadow/…` | `newsStoryRecord`, the selector, the resolver and the review on a manual `shadow:true` invoke; note writers whose `NOTES_PREFIX` is `record/shadow/`; also the retired old dry-run output | manual only | humans, tuning |
+| `record/shadow-history/…` | `backend/record/cli/backfill-history.mjs` (the trial run of decision 0047, now superseded by the live copy) | once | humans; delete when the operator says |
+| `backup/<name>-YYYY-MM-DD/` | the operator or coordinator, before a destructive step (`record-2026-10-31/`, `economy-2026-10-31/`) | on demand | nothing reads it; the only copy of what step 5 deletes, so keep it until the operator says |
 | `weekly/YYYY-MM-DD.json`, `weekly/latest.json` | the weekly run (planned; no objects yet) | weekly | email, weekly page |
 
-The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Daily model notes move into the record as `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, schema `backend/record/schema/note.schema.json`, built and written only through shared `notes.js` (decision 0042). Entry notes are written; story analysis, drift, country, link and brief notes follow.
+The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Model notes live in the record as `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, schema `backend/record/schema/note.schema.json`, built and written only through shared `notes.js` (decision 0042). A writer's `NOTES_PREFIX` env decides where it writes (`record/`, `record/shadow/` for a trial, or unset for none); read the live value from the Lambda.
 
-IAM: one inline policy set per Lambda, `s3:PutObject` scoped to its own prefix(es); readers get `s3:GetObject` on what they read, plus a `ListBucket` so a missing object returns 404, not 403. The Worker's credentials (user `gp-worker-s3-reader`) are read-only on `world/*`, `situations/state/*`, `stories/state/*` and `record/views/*`, never facts, runs, inboxes or readings. Record roles: `newsStoryRecord-role` reads `web/*` and `record/*` and writes `record/shadow/*`, `facts/*`, `runs/*`, `views/*`; the selector's role writes `record/inbox/articles/*`; `newsPredictionResolver-role` reads `record/facts/*` and `record/runs/*` and reads and writes `record/inbox/verdicts/*` (and its shadow); `newsRecordReview-role` reads `record/*` and writes `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` (and their shadow copies); `newsBoard-role` reads `record/views/index/active.json`, `index/all.json` and `links/*`; `newsFreshnessMonitor-role` reads and writes the one key `monitoring/freshness/state.json`.
+IAM: one inline policy set per Lambda, `s3:PutObject` scoped to its own prefix(es); readers get `s3:GetObject` on what they read, plus a `ListBucket` so a missing object returns 404, not 403. The Worker's credentials (user `gp-worker-s3-reader`) are read-only on `world/*`, `situations/state/*`, `stories/state/*` and `record/views/*`, never facts, runs, inboxes, notes or readings. Record roles follow the ownership table: `newsStoryRecord-role` reads `web/*` and `record/*` and writes `record/facts`, `runs`, `views` (and shadow); each inbox writer (selector, resolver, review) writes only its own inbox prefix; each note writer's policy adds `record/notes/<its subtype>/*` and its shadow copy. A new writer needs its statement added first (operator yes), then `NOTES_PREFIX`. Read the live policies with `aws iam get-role-policy`.
 
 Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `world/` expire at 400 days; `stories/` at 45 days; `signals/snapshots/` goes to Glacier IR at 30 days and expires at 365; `audit/impact/` expires at 400 days; `situations/inbox/processed/` at 30 days; `situations/history/` and `situations/archive/` move to Infrequent Access; incomplete multipart uploads abort. `record/` has no expiry. Never apply a rule to `record/`, and fetch and merge the configuration rather than appending blindly.
 
@@ -118,24 +121,24 @@ Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `
 
 ## 6. Migration of existing tables (incremental, never big-bang)
 
-Flipping a proxy (`newsSensitiveData`) action from DynamoDB to S3 is backend-only, but the proxy is the live site's spine, so each edit needs an explicit operator OK. The foundation plan (decision 0035) now moves world data to the record first: pages other than the board read DynamoDB through the proxy until their reading exists as a view (`ARCHITECTURE_TIMELINE.md` §7).
+Flipping a proxy (`newsSensitiveData`) action from DynamoDB to S3 is backend-only, but the proxy is the live site's spine, so each edit needs an explicit operator OK. The foundation plan (decision 0035) moves world data to the record first: a page reads the record's view and falls back to the proxy action only for what no view holds yet (`ARCHITECTURE_TIMELINE.md` §7). Step 5 then retires the world tables. Scope (operator, 2026-10-31): the world tables only; order and preconditions in `STEP5_AUDIT.md`. Until step 5 runs those tables are still live and still read.
 
 | Table | Status |
 |---|---|
 | `UserTable`, `SavedItems`, `UserPrefs`, `ApiKeys`, `Shares` | stay DynamoDB |
 | `GlobalPerspectiveSituations`, `Signals`, `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | done: moved to S3 (§4), tables dropped |
-| `GlobalPerspectivePredictionLog` | stays DynamoDB as the per-record store (the resolver appends write-once `Q#` rows; a correction appends `VERDICT#<n>`); `/track-record` reads the `predictions/track_record.json` aggregate |
-| `GlobalPerspectiveMarkets` | retired (decision 0049): no writer, no reader; the table is deleted after an operator yes |
-| `GlobalPerspectiveClientErrors` | not started (target append-only `logs/errors/YYYY/MM/DD.jsonl`) |
-| `GlobalPerspectiveBreakingAlerts` | not started; `review.js` mutates rows, so it waits for an inbox-event review flow |
-| `NewsCache`, `SummarizeAndPredict` | last: their world data moves into the record (facts and notes), then readers flip one action at a time, then the rows retire |
+| `GlobalPerspectivePredictionLog` | `PRED#` rows (forecast inputs to the record) are retired in step 5 after the history copy (decision 0047). The commitment state stays DynamoDB (decision 0003): `SEED#`, `SAMPLE#`, `SETTLE#` and the write-once `Q#` rows, a correction appending `VERDICT#<n>`. `/track-record` reads the record's `track-record.json` view, falling back to the `predictions/track_record.json` aggregate |
+| `GlobalPerspectiveMarkets` | retired (decision 0049): no writer, no reader; the table and the `ECON#`/`PAIR#`/`WEEKLY_MARKETS#` rows are deleted after an operator yes (backup in `backup/economy-2026-10-31/`) |
+| `GlobalPerspectiveClientErrors` | stays (outside step 5's scope, operator 2026-10-31); an append-only `logs/errors/` log was the earlier target |
+| `GlobalPerspectiveBreakingAlerts` | stays (outside step 5's scope); `review.js` mutates rows, so it would need an inbox-event review flow to move |
+| `NewsCache`, `SummarizeAndPredict` | retired in step 5, last: their world data lives in the record (facts and notes; entries and briefs included), readers flip one action at a time, then the rows go. `EMAILLOG#` send markers and the rows the email sender and Worker still read (`WEEKLY_BRIEF#`, `DAILY_BRIEF#`) move or stay as the audit says |
 | `NewsProject-linkedin-posts` | not planned (posting log for `newsPostLinkedIn`) |
 
 Rule for every drop: nothing reads the table (grep and CloudWatch) before `delete-table`, and deletion needs an operator yes.
 
 ## 7. Consequences to remember
 
-- `newsSensitiveData` (the read proxy) still serves most content reads; it shrinks to user actions as §6 completes.
+- `newsSensitiveData` (the read proxy) still answers the actions the views do not cover (today's topics, the newest days, member extras) and is the fallback for the rest; it shrinks to user actions as step 5 completes.
 - The client concurrency limiter (`shared/api/restProxy.js`, cap 4) stays while content goes through the proxy.
 - The tracker computes the map's `lede` and `ranked` once per sweep; `/today` composes its own lede in the browser (`features/home/lib/composeTopicsLede.js`).
 - The bucket, prefixes and per-role IAM are read from AWS; this file records the intent.

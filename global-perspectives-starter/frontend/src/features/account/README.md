@@ -50,7 +50,8 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
 - `useMembership` -> `window.POLAR_BILLING_ENDPOINT`: `get_membership` (token; anonymous users skipped); `createCheckout`
   -> `create_checkout`. Without the endpoint `available` is false and billing UI is hidden.
 - `useDeskChanges` -> restProxy `country_history` per followed country, 3 at a time, members only (`DeskPanel`).
-- Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief` (edition notes).
+- Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief` (edition notes): the record's brief views first, the actions for
+  what is newer (decision 0048; see `features/briefings`).
 
 ## Pipeline
 1. The reader opens `/signin`; `AuthContext` (`sendSignInLink`, `signInWithGoogle` or `signInAsGuest`) talks to Firebase Auth.
@@ -73,4 +74,4 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
 - Saved-items traffic: `aws logs tail /aws/lambda/newsSavedItems --since 7d --region ap-northeast-1 --format short`
 - Drift email still off: `aws events describe-rule --name TriggerDriftEmailSend --region ap-northeast-1 --query State`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

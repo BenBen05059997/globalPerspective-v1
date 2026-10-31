@@ -5,12 +5,12 @@ place a page address, a country name, a claim label, a freshness line or a backe
 import from here; here imports from no feature and not from `app/`.
 
 ## Subfolders
-- `api/` - the single door to the backend, the error reporter, and `useCachedQuery` (the one cached-fetch hook every data hook builds on).
+- `api/` - the single door to the backend (`restProxy.js`), the record view readers (`recordViews.js`, `archiveRange.js`, `briefViews.js`, `countryBriefingsIndex.js`, `storyAnalysis.js`), the error reporter, and `useCachedQuery` (the one cached-fetch hook every data hook builds on).
 - `contexts/` - app-wide React context: `AuthContext.jsx` (Firebase sign-in, `useAuth`, `getIdToken`).
 - `data/` - story-list loading (`contentService.js`, `useGeminiTopics.js`) and the one country table, `iso3Names.json`.
-- `hooks/` - hooks used by more than one feature: membership, saved items, preferences, daily brief, disruptions list, peek, viewport (`useIsMobile`, `useIsPhone`), `useNoIndex`.
-- `lib/` - pure helpers with no UI: links, countries, risk tiers, dates and freshness, LLM provider catalog (used by the eval client only), economy flag.
-- `map/` - the shared map kit: `RadarMap`, `SituationMap3D` (deck.gl globe), `StoryMap`, country geometry and coordinates (`countryGeo.js` is generated: `node scripts/gen-country-geo.mjs`), legend and pulse helpers.
+- `hooks/` - hooks used by more than one feature: membership, saved items, preferences, daily brief, the 30-day archive day map (`useArchiveDayMap`), peek, viewport (`useIsMobile`, `useIsPhone`), `useNoIndex`.
+- `lib/` - pure helpers with no UI: links, countries, risk tiers, dates and freshness, branch and question wording, board constants, view-to-page mappers (`viewAnalysis.js`), LLM provider catalog (used by the eval client only).
+- `map/` - the shared map kit: `RadarMap`, `SituationMap3D` (deck.gl globe), `StoryMap`, country geometry and coordinates (`countryGeo.js` is generated: `node scripts/gen-country-geo.mjs`), the country risk layer, legend and pulse helpers.
 - `styles/` - `tokens.css` (the one token set) and `tokens.js` (the same colors for canvas and JS).
 - `ui/` - shared building blocks (Button, Card, Chip, Tabs, SectionHeader, TierChip, PhoneTabs, StoryRow, ...), their CSS (`primitives.css`, `blocks.css`, `atoms.css`), `boot/` (loader) and `risk/` (risk badges).
 
@@ -25,7 +25,7 @@ import from here; here imports from no feature and not from `app/`.
 - Risk: `lib/riskTiers.js` (score to tier), `ui/TierChip.jsx`, `ui/risk/`; colors from `styles/tokens.js`.
 - Colors, type scale, radii, spacing: `styles/tokens.css`. Use `var(--token)`; JS and canvas read `styles/tokens.js`.
 - The backend door: `api/restProxy.js` (every fetch of our data, the Firebase token via `setAuthProvider`, a cap of 4 requests in flight, identical concurrent calls collapsed). Endpoints come from `window.*_ENDPOINT` set in `config.js`.
-- Record views: `api/recordViews.js` (`fetchRecordView`, `fetchTrackRecordView` (`track-record.json`, decision 0044), `makeRecordViews(getView)` -> `fetchStoryView` (follows a merged story to its survivor), `fetchLinksView`, `fetchCountryView` (`^[A-Z]{3}$`), `fetchCounts`, and the many-at-once files `fetchAnalysesIndex`, `fetchWebIndexView`, `fetchCountriesIndex` under `index/`), read from the Worker's `/data/record/views/`; a 404 is null. Used by the board and the story page. `api/storyAnalysis.js` `fetchStoryAnalysis(id)`: one story's analysis from the story view's `analysis` (`lib/viewAnalysis.js`), else the `thread_analysis` action.
+- Record views: `api/recordViews.js` (`fetchRecordView`, `fetchTrackRecordView`, `makeRecordViews(getView)`: story (follows a merged story to its survivor), links, country, counts, and the many-at-once `index/` files for analyses, web, countries, weekly and briefs, plus the brief views), read from the Worker's `/data/record/views/`; a 404 is null. Page-shaped readers on top: `archiveRange.js` (30-day archive), `briefViews.js` (daily and weekly briefs, decision 0048), `countryBriefingsIndex.js`, `storyAnalysis.js` (a story's analysis from the story view, else the `thread_analysis` action). Each falls back to its action when a view is missing; a failed read is reported, never shown as empty.
 - Error sink: `api/errorSink.js` (`installErrorSink`, `reportBoundaryError`, `reportFetchError`). It posts to `window.CLIENT_ERRORS_ENDPOINT` (the `newsClientErrors` Lambda); read the log with `node scripts/errors.mjs`.
 - LLM providers: `lib/llmProviders.js` (pure data for `analysis-studio/lib/llm.js` and the eval harness; no page uses it).
 

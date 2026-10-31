@@ -4,7 +4,7 @@ Country views. The URLs sit under `/weekly/...` for historical reasons (the Stor
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the country pages. Timeline: reads country rows from raw tables; country views are not needed now. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the country pages. Timeline: reads the country views (briefing, what changed) and the country index; member drift depth, facts and the cross-country ledger stay on the actions. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -21,7 +21,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 ## Frontend
 - `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z); its coverage counts read `useWeeklyArchive({ source: 'action' })`, the `archive_range` action, not the record (decision 0046)
 - `CountryPage.jsx` - hero, map band, `CountryCardV2`, the three tabs, rails; phone gets Read / Map tabs
-- `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers, FX; the name links out
+- `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers; the name links out
 - `components/CountrySheet.jsx` (+css, print) - How it connects, What we don't know, Your view (localStorage only), Copy as text, Print
 - `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps; "Map unavailable" without
   `window.GOOGLE_MAPS_API_KEY`)
@@ -54,8 +54,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (the record's weekly index, `archive_range` for the newest days; decision 0046) + `prediction_snapshot`.
 - `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
-- `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback;
-
+- `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback.
 
 ## Pipeline
 1. `newsInvokeGemini-dev` / `NewsProjectInvokeAgentLambda-dev` (3x a day) write topics with `regions` into NewsCache `archive#<date>`.
@@ -78,4 +77,5 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"country_intelligence","payload":{"countryNames":["Japan"]}}' | head -c 300`
 - Facts: same command with `-d '{"action":"country_facts","payload":{"countryNames":["Japan"]}}'`
 - Daily job: `aws scheduler get-schedule --name countryIntelliegence --region ap-northeast-1 --query State`
-Last verified: 2026-10-20
+
+Last verified: 2026-10-31

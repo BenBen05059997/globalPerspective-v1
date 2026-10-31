@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import BoardMap from '@/features/board/components/BoardMap.jsx';
 import MapRail from '@/features/board/components/MapRail.jsx';
-import { placeOfPin, placeOfCountry, storyCountries, touchesOfPin, ringCentres, placeRingLabels, MAP_W, MAP_H } from '@/features/board/lib/mapPlaces.js';
+import { placeOfPin, placeOfCountry, storyCountries, touchesOfPin, ringCentres, placeRingLabels, mapFrame, MAP_W } from '@/features/board/lib/mapPlaces.js';
 import { mapPinLine } from '@/features/board/lib/graphText.js';
 
 afterEach(cleanup);
@@ -39,13 +39,56 @@ describe('map places', () => {
   it('fans pins on one spot apart and keeps labels on the map and apart', () => {
     const centres = ringCentres([{ pinId: 'a', at: [100, 100] }, { pinId: 'b', at: [100, 100] }]);
     expect(centres.a).not.toEqual(centres.b);
-    const labels = placeRingLabels([{ pinId: 'a', text: 'First label' }, { pinId: 'b', text: 'Second label' }], centres, MAP_W, MAP_H);
+    const labels = placeRingLabels([{ pinId: 'a', text: 'First label' }, { pinId: 'b', text: 'Second label' }], centres, MAP_W, 400);
     expect(Math.abs(labels.a.y - labels.b.y) >= 30 || Math.abs(labels.a.x - labels.b.x) >= 60).toBe(true);
+  });
+  it('fits the frame to the pins: East Asia fills the map, no pins keeps the world', () => {
+    const asia = ['JPN', 'KOR', 'PRK', 'CHN'].map(placeOfCountry);
+    const f = mapFrame(asia);
+    const xs = asia.map((p) => f.project(p)[0]);
+    const ys = asia.map((p) => f.project(p)[1]);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(MAP_W / 2);
+    expect(Math.min(...xs)).toBeGreaterThan(0);
+    expect(Math.max(...xs)).toBeLessThan(MAP_W);
+    expect(Math.min(...ys)).toBeGreaterThan(0);
+    expect(Math.max(...ys)).toBeLessThan(f.h);
+    expect(f.regions.map((r) => r.name)).toContain('Asia');
+    expect(f.regions.map((r) => r.name)).not.toContain('Americas');
+    const world = mapFrame([]);
+    expect(world.regions.map((r) => r.name)).toEqual(expect.arrayContaining(['Americas', 'Europe', 'Africa']));
+    expect(world.h).toBeLessThan(MAP_W / 1.5);
+    const one = mapFrame([placeOfCountry('JPN')]); // one pin: held at the minimum span, not street level
+    expect(one.project(placeOfCountry('KOR'))[0]).toBeGreaterThan(0);
+    expect(one.project(placeOfCountry('KOR'))[0]).toBeLessThan(MAP_W);
   });
   it('words the pin line from the data it holds', () => {
     expect(mapPinLine(pins[0], info.p1)).toBe('HIGH 88 · conflict');
     expect(mapPinLine(pins[1], info.p2)).toBe('HIGH 85 · was 95');
     expect(mapPinLine(pins[2], info.p3)).toBe('');
+  });
+});
+
+describe('BoardMap frame', () => {
+  it('keeps the East Asia frame when a story also touches the US, and marks the US at the frame edge', () => {
+    const asia = [
+      { pinId: 'a1', kind: 'thread', refId: 't1' },
+      { pinId: 'a2', kind: 'country', refId: 'KOR' },
+      { pinId: 'a3', kind: 'country', refId: 'CHN' },
+    ];
+    const stories = { t1: { iso3: ['JPN', 'USA'], entries: [{ iso3: ['JPN'] }, { iso3: ['JPN', 'USA'] }] } };
+    const lbl = { a1: { label: 'Strait talks' }, a2: { label: 'South Korea' }, a3: { label: 'China' } };
+    render(<BoardMap pins={asia} strings={[]} info={lbl} stories={stories} onPickPin={() => {}} onPickString={() => {}} />);
+    const xs = [...document.querySelectorAll('.bm-pin__ring')].map((c) => Number(c.getAttribute('cx')));
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(MAP_W / 2);
+    const h = Number(document.querySelector('svg.bm-svg').getAttribute('height'));
+    const edge = document.querySelectorAll('.bm-touch__edge');
+    expect(edge).toHaveLength(1);
+    expect(edge[0].textContent).toMatch(/United States/);
+    expect(Number(edge[0].getAttribute('x'))).toBeGreaterThan(0);
+    expect(Number(edge[0].getAttribute('x'))).toBeLessThan(MAP_W);
+    expect(Number(edge[0].getAttribute('y'))).toBeGreaterThan(0);
+    expect(Number(edge[0].getAttribute('y'))).toBeLessThan(h);
+    expect(document.querySelector('.bm-touch title').textContent).toBe('Strait talks also touches United States');
   });
 });
 

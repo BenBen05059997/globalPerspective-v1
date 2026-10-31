@@ -36,8 +36,11 @@ function entryNotesBy(noteLines) {
     if (!n || n.subtype !== 'entry' || !n.subject || !n.payload) continue;
     const parts = out.get(n.subject.id) || out.set(n.subject.id, {}).get(n.subject.id);
     const cur = parts[n.part];
-    if (!cur || n.at > cur.at) parts[n.part] = {format: n.payload.format, content: n.payload.content, at: n.at, model: n.model};
+    const copy = n.payload.from === 'archive';
+    // an exact note always beats an archive copy (cut text, no model); then the latest wins
+    if (!cur || (cur.copy && !copy) || (cur.copy === copy && n.at > cur.at)) parts[n.part] = {format: n.payload.format, content: n.payload.content, at: n.at, model: n.model, copy};
   }
+  for (const parts of out.values()) for (const k of Object.keys(parts)) { const {copy, ...note} = parts[k]; parts[k] = copy ? {...note, from: 'archive'} : note; }
   return out;
 }
 

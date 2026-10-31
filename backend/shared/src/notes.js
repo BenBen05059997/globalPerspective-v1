@@ -27,7 +27,8 @@ function buildNote({subtype, subjectId, part = '', threadId = null, iso3 = [], a
   if (!Number.isFinite(when)) throw new Error(`notes: ${subtype} needs a valid at`);
   if (!Array.isArray(iso3) || !iso3.every((c) => ISO3.test(c))) throw new Error(`notes: iso3 must be ISO3 codes (${iso3})`);
   if (!payload || typeof payload !== 'object') throw new Error('notes: payload must be an object');
-  if (!text(model)) throw new Error('notes: model is required');
+  const archiveCopy = payload && payload.from === 'archive';
+  if (!text(model) && !(archiveCopy && model === null)) throw new Error('notes: model is required (null only on an archive copy)');
   if (!producer || !text(producer.lambda) || !text(producer.runId)) throw new Error('notes: producer {lambda, runId} is required');
   const iso = new Date(when).toISOString();
   return {
@@ -85,6 +86,25 @@ function driftNote({item, iso3, model, producer}) {
   });
 }
 
+// archive ai field -> entry note part
+const ARCHIVE_PARTS = {summary: 'summary', prediction: 'prediction', trace_cause: 'cause'};
+
+/**
+ * One NewsCache archive entry (its `ai` texts, as the agent archived them, cut at 1,500 characters) -> archive-copy entry
+ * notes: format 'text', model null (not recorded there), `at` the archive time, payload.from 'archive'. For backfill of
+ * entries older than the notes; views prefer an exact note over a copy. Subject: the eventId newsStoryRecord computes from
+ * the same entry (shared entryIdentity).
+ */
+function archiveEntryNotes({entry, archiveDate, producer}) {
+  if (!entry || !entry.ai) return [];
+  const {eventId} = entryIdentity({sources: entry.sources, date: archiveDate, title: entry.title});
+  const at = entry.archivedAt || `${archiveDate}T00:00:00.000Z`;
+  return Object.entries(ARCHIVE_PARTS).filter(([field]) => text(entry.ai[field])).map(([field, part]) => buildNote({
+    subtype: 'entry', subjectId: eventId, part, threadId: entry.threadId || null, iso3: (entry.iso3 || []).filter((c) => ISO3.test(c)),
+    at, payload: {format: 'text', content: entry.ai[field], topicId: entry.topicId, from: 'archive'}, cites: [eventId], model: null, producer,
+  }));
+}
+
 const notesKey = (prefix, subtype, date) => `${prefix}notes/${subtype}/${date}.jsonl`;
 
 /** Appends notes to their day files (dedupe by noteId) and registers the days in the subtype manifest first, as facts do. */
@@ -112,4 +132,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, storyAnalysisNote, driftNote, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, makeNoteWriter, notesKey};

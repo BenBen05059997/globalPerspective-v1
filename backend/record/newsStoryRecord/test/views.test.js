@@ -343,3 +343,12 @@ test('entry notes (0042) attach to their entry, latest per part; sources carry o
   assert.deepEqual(row.actors, ['Ana Example']);
   assert.equal('notes' in build([e]).stories.get('thread-a').entries[0], false); // no notes: no field
 });
+
+test('an exact entry note beats an archive copy of the same part, even when the copy is later; copies are marked', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Copy story');
+  const n = (at, content, from) => ({subtype: 'entry', subject: {kind: 'entry', id: e.eventId}, part: 'summary', at, model: from ? null : 'deepseek-flash',
+    payload: {format: from ? 'text' : 'markdown', content, topicId: 't', ...(from ? {from} : {})}});
+  const row = (notes) => build([e], {notes}).stories.get('thread-a').entries[0].notes.summary;
+  assert.deepEqual(row([n('2026-10-21T10:00:00.000Z', 'exact'), n('2026-10-21T10:01:00.000Z', 'cut copy', 'archive')]), {format: 'markdown', content: 'exact', at: '2026-10-21T10:00:00.000Z', model: 'deepseek-flash'});
+  assert.deepEqual(row([n('2026-10-21T10:01:00.000Z', 'cut copy', 'archive')]), {format: 'text', content: 'cut copy', at: '2026-10-21T10:01:00.000Z', model: null, from: 'archive'});
+});

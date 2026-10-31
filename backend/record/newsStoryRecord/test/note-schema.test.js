@@ -131,3 +131,17 @@ test('storyAnalysisNote and driftNote: payload as stored, ids from the shared he
   assert.equal(d.threadId, null); // no trigger story stored
   assert.equal('triggerEvent' in d.payload, false);
 });
+
+test('archive copies (backfill): one note per stored ai text, format text, model null, marked from archive, schema-valid', () => {
+  const entry = {title: topic.title, threadId: topic.threadId, iso3: ['USA'], sources: topic.sources, topicId: `${topic.title}-2`, archivedAt: '2026-10-10T12:26:00.000Z',
+    ai: {summary: '- Cut text...', prediction: '{\n  "scenarios": [ ...', trace_cause: null}};
+  const notes = N.archiveEntryNotes({entry, archiveDate: '2026-10-10', producer});
+  for (const n of notes) assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(notes.map((n) => [n.part, n.payload.format, n.payload.from, n.model, n.at]), [
+    ['summary', 'text', 'archive', null, '2026-10-10T12:26:00.000Z'], ['prediction', 'text', 'archive', null, '2026-10-10T12:26:00.000Z']]);
+  assert.equal(notes[0].subject.id, R.entryIdentity({sources: topic.sources, date: '2026-10-10', title: topic.title}).eventId);
+  assert.deepEqual(N.archiveEntryNotes({entry: {...entry, ai: null}, archiveDate: '2026-10-10', producer}), []);
+  // model null is allowed only on an archive copy; a text note must say it is one
+  assert.throws(() => N.buildNote({subtype: 'entry', subjectId: 'e', part: 'summary', at: entry.archivedAt, payload: {format: 'markdown', content: 'x', topicId: 't'}, cites: ['e'], model: null, producer}), /model is required/);
+  assert.equal(valid({...notes[0], payload: {format: 'text', content: 'x', topicId: 't'}}), false);
+});

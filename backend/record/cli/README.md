@@ -17,6 +17,19 @@ RECORD_SDK_DIR=<dir with @aws-sdk/client-s3, client-dynamodb, lib-dynamodb> node
 Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/capture-entry-notes.test.mjs`.
 First live run 2026-10-31: 33 notes (13 summaries, 13 causes, 7 forecasts) for 2026-10-30, all matched.
 
+## backfill-entry-notes.mjs
+
+For every day the record has facts for, turns each NewsCache `archive#DAY` entry's stored `ai` texts (summary, forecast, cause,
+cut at 1,500 characters by the agent) into archive-copy entry notes through shared `notes.js` `archiveEntryNotes`: format
+`text`, `model` null (the archive did not keep it), `at` the archive time, `payload.from: "archive"`. Views prefer an exact note
+over a copy. Unmatched subjects are reported and not written; a re-run appends nothing.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-entry-notes.mjs [--dry] [--live] [--from DAY] [--to DAY]
+```
+First live run 2026-10-31: 3,713 notes from 1,325 archived entries over 35 days (126 unmatched, mostly 2026-09-05, the record's
+first day). Test: `node --test backend/record/cli/backfill-entry-notes.test.mjs`.
+
 `sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
 
 ## recover-day.mjs

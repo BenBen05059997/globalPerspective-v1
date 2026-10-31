@@ -427,7 +427,8 @@
                 "format": {
                   "enum": [
                     "markdown",
-                    "json"
+                    "json",
+                    "text"
                   ]
                 },
                 "content": {
@@ -444,7 +445,16 @@
                   "$ref": "#/definitions/iso"
                 },
                 "model": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "from": {
+                  "enum": [
+                    "archive"
+                  ],
+                  "description": "an archive copy (cut at 1,500 characters, model not recorded)"
                 }
               }
             },
@@ -461,7 +471,8 @@
                 "format": {
                   "enum": [
                     "markdown",
-                    "json"
+                    "json",
+                    "text"
                   ]
                 },
                 "content": {
@@ -478,7 +489,16 @@
                   "$ref": "#/definitions/iso"
                 },
                 "model": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "from": {
+                  "enum": [
+                    "archive"
+                  ],
+                  "description": "an archive copy (cut at 1,500 characters, model not recorded)"
                 }
               }
             },
@@ -495,7 +515,8 @@
                 "format": {
                   "enum": [
                     "markdown",
-                    "json"
+                    "json",
+                    "text"
                   ]
                 },
                 "content": {
@@ -512,7 +533,16 @@
                   "$ref": "#/definitions/iso"
                 },
                 "model": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "from": {
+                  "enum": [
+                    "archive"
+                  ],
+                  "description": "an archive copy (cut at 1,500 characters, model not recorded)"
                 }
               }
             }

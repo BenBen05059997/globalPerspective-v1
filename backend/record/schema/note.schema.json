@@ -100,7 +100,11 @@
       }
     },
     "model": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "the model that wrote the note; null only on an archive copy (payload.from = archive), whose writer did not record it"
     },
     "promptVersion": {
       "type": [
@@ -164,8 +168,10 @@
               "format": {
                 "enum": [
                   "markdown",
-                  "json"
-                ]
+                  "json",
+                  "text"
+                ],
+                "description": "text = an archive copy: the stored text, possibly cut at 1,500 characters; its original format is not restored"
               },
               "content": {
                 "description": "exactly what the model produced: markdown text, or the parsed JSON object",
@@ -182,6 +188,12 @@
               "topicId": {
                 "type": "string",
                 "description": "the archive topic the agent wrote it for; tracing only"
+              },
+              "from": {
+                "enum": [
+                  "archive"
+                ],
+                "description": "present on a copy taken from the NewsCache archive (backfill); views prefer an exact note"
               }
             }
           }
@@ -229,6 +241,33 @@
                   "properties": {
                     "content": {
                       "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "payload": {
+                  "properties": {
+                    "format": {
+                      "const": "text"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "required": [
+                    "from"
+                  ],
+                  "properties": {
+                    "content": {
+                      "type": "string"
                     }
                   }
                 }

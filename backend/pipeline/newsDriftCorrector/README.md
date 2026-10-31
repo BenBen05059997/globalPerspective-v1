@@ -15,6 +15,7 @@ Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` ma
 
 ## Reads / writes
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: query `COUNTRY#<c>` `HISTORY#*` and `THREAD#<id>` `THREAD_HISTORY#*`; writes `DRIFT#<date>` (`ttl` `DRIFT_TTL_DAYS`, 60) and `DRIFTLOG#<date>` (no TTL, permanent member history) on the same PK.
+- S3 `WORLD_BUCKET`, drift notes (decision 0042): each country `DRIFT#<date>` written (not the `DRIFTLOG#` copy, not thread drift) is also written as a `drift` note to `<NOTES_PREFIX>notes/drift/DAY.jsonl` through shared `notes.js` (`src/recordNotes.js`; subject = the country's ISO3 from the shared `resolveIso3`, a country with no ISO3 is skipped and logged). Best-effort: a failure logs `[notes]` and never fails the run. `NOTES_PREFIX` defaults to `record/shadow/`; set `record/` to go live. Needs role access: Get/Put on `record/notes/drift/*` and `record/shadow/notes/drift/*`, plus `s3:ListBucket` on the world bucket so a new day file reads as missing.
 - DynamoDB `TOPICS_DDB_TABLE`: `archive#<date>` + `today-archive` (day-zero filtered) for events; `latest` for thread ids.
 - Countries: `DRIFT_COUNTRIES` (comma list; code default is 12 countries). `DRIFT_MAX_EVENTS` (25) events per prompt.
 

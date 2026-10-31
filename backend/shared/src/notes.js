@@ -7,7 +7,7 @@ const {noteId, entryIdentity, pairKey} = require('./record');
 const {makeManifest} = require('./manifest');
 
 const SCHEMA_VERSION = 1;
-const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', brief: 'brief'};
+const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', web: 'country', brief: 'brief'};
 // TOPIC# sort key -> the entry note part
 const ENTRY_PARTS = {SUMMARY: 'summary', PREDICTION: 'prediction', TRACE_CAUSE: 'cause'};
 const ISO3 = /^[A-Z]{3}$/;
@@ -24,7 +24,7 @@ function buildNote({subtype, subjectId, kind: subjectKind, part = '', threadId =
   if (subtype === 'brief' && !BRIEF_ID.test(subjectId)) throw new Error(`notes: brief subject ${subjectId} is not daily:DATE or weekly:WEEK`);
   if (subtype === 'entry' && !Object.values(ENTRY_PARTS).includes(part)) throw new Error(`notes: entry part ${part}`);
   if (subtype === 'link' && !ISO3.test(part)) throw new Error(`notes: a link note's part is its country ISO3 (${part})`);
-  if (subtype === 'country' && part !== '') throw new Error(`notes: a country note has no part (${part})`);
+  if ((subtype === 'country' || subtype === 'web') && part !== '') throw new Error(`notes: a country or web note has no part (${part})`);
   if (subtype === 'entry' && !cites.length) throw new Error('notes: an entry note cites its entry');
   const when = Date.parse(at);
   if (!Number.isFinite(when)) throw new Error(`notes: ${subtype} needs a valid at`);
@@ -152,16 +152,41 @@ function entryEventIdIndex(entries) {
  * keeps it plus the country name; threadId null (a pair; both ids are in the payload). `at` = the web's generatedAt, `model` its
  * model; a null `model` marks a copy rebuilt from the dated S3 web history (rows there did not record it): payload.source
  * 'web-history'. `cites` = eventIds of the cited entries found in `eventIds` (entryEventIdIndex); a cite not found is left out.
+ * A web holding both directions of the pair passes the weaker one as `edge.reverse` (to -> from): it rides in `payload.reverse`
+ * (confidence, lagDays, mechanism, cited) and its cites join `cites`.
  */
 function linkNote({edge, countryName, iso3, at, model, eventIds = new Map(), producer}) {
   if (!edge || !text(edge.from) || !text(edge.to) || edge.from === edge.to) return null;
   const cited = citedOf(edge);
-  const cites = cited.map((c) => eventIds.get(citeKey(c.date, c.topicId))).filter(Boolean);
+  const back = edge.reverse && edge.reverse.from === edge.to && edge.reverse.to === edge.from ? edge.reverse : null;
+  const reverse = back ? {confidence: back.confidence, lagDays: back.lagDays ?? 0, mechanism: back.mechanism, cited: citedOf(back)} : null;
+  const cites = [...cited, ...(reverse ? reverse.cited : [])].map((c) => eventIds.get(citeKey(c.date, c.topicId))).filter(Boolean);
   return buildNote({
     subtype: 'link', subjectId: pairKey(edge.from, edge.to), part: iso3, iso3: [iso3], at,
     payload: {from: edge.from, to: edge.to, country: countryName, confidence: edge.confidence, lagDays: edge.lagDays ?? 0, mechanism: edge.mechanism, cited,
-      ...(model === null ?{source: 'web-history'} : {})},
+      ...(reverse ? {reverse} : {}), ...(model === null ?{source: 'web-history'} : {})},
     cites, model, producer,
+  });
+}
+
+/**
+ * One SYSTEMS# country web (a row of newsSystemsAnalysis) -> a web note about its country (part ''): the web as a whole, which the
+ * link notes cannot say. Payload = `country`, `nodes` (the stories in the web, whether or not they have an edge: threadId and the model's one-line summary, which titles a story the archive no longer has) and `backbone`
+ * (the deterministic shared-actor edges, no model: from, to, sharedActors, weight). One per web and run, even a web with no edges,
+ * so the newest web of a country is known and a story in it with no link is 'analysed, no links'. `at` = the web's generatedAt;
+ * model as for linkNote (null only on a copy rebuilt from the dated web history: payload.source 'web-history').
+ */
+function webNote({row, iso3, at, model, producer}) {
+  if (!row || !text(row.countryName)) return null;
+  const nodes = [];
+  for (const n of row.nodes || []) { // a story once, its first entry
+    if (n && text(n.threadId) && !nodes.some((x) => x.threadId === n.threadId)) nodes.push({threadId: n.threadId, ...(text(n.summary) ? {summary: n.summary} : {})});
+  }
+  const backbone = (row.backbone || []).filter((b) => b && text(b.from) && text(b.to))
+    .map((b) => ({from: b.from, to: b.to, sharedActors: (b.sharedActors || []).filter(text), weight: b.weight || (b.sharedActors || []).length}));
+  return buildNote({
+    subtype: 'web', subjectId: iso3, iso3: [iso3], at: at || row.generatedAt,
+    payload: {country: row.countryName, nodes, backbone, ...(model === null ? {source: 'web-history'} : {})}, model, producer,
   });
 }
 
@@ -211,4 +236,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, webNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};

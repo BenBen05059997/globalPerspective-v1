@@ -4,6 +4,7 @@
 //  - the dated S3 web history web/YYYY/MM/DD.json (`webs`, from 2026-10-19): a web there that is not also a current row has no
 //    recorded model, so its notes are copies (model null, payload.source 'web-history').
 // Cites: eventIds of the cited entries, found in the NewsCache archive rows of the cited days (a cite not found is left out).
+// Each web (current and history) is also one `web` note (its nodes and shared-actor backbone), so a web with no edge is in the record.
 // A re-run appends nothing (same noteId). WEB#INDEX/LATEST is read only to compare its link count with the planned notes.
 //
 //   node backfill-link-notes.mjs [--live] [--dry] [--no-history] [--bucket B]
@@ -16,7 +17,7 @@ import { requireSdk, REGION } from './sdk.mjs';
 const require = createRequire(import.meta.url);
 const { makeS3Json } = require('../../shared/src/s3json.js');
 const N = require('../../shared/src/notes.js');
-const { planLinkNotes } = require('../../pipeline/newsSystemsAnalysis/src/recordNotes.js');
+const { planLinkNotes, planWebNotes } = require('../../pipeline/newsSystemsAnalysis/src/recordNotes.js');
 
 const NOTE_TABLE = 'SummarizeAndPredict';
 const TOPICS_TABLE = 'NewsCache';
@@ -25,7 +26,7 @@ const LAMBDA = 'record/cli/backfill-link-notes';
 const rowKey = (r) => `${r.countryName}|${r.generatedAt}`;
 
 /**
- * Pure: current webs (with model), dated history files [{date, webs}] and archive entries -> {notes, skipped, counts}.
+ * Pure: current webs (with model), dated history files [{date, webs}] and archive entries -> {notes, webNotes, skipped, counts}.
  * A history web already covered by a current row (same country and generatedAt) is not planned again.
  */
 export function planBackfillLinks({ current, history = [], entries = [], runId }) {
@@ -34,9 +35,10 @@ export function planBackfillLinks({ current, history = [], entries = [], runId }
   for (const { webs } of history) for (const w of webs || []) if (w && w.generatedAt && !have.has(rowKey(w))) copies.set(rowKey(w), { ...w, model: null });
   const a = planLinkNotes({ rows: current, entries, model: null, runId, lambda: LAMBDA });
   const b = planLinkNotes({ rows: [...copies.values()], entries, model: null, runId, lambda: LAMBDA });
-  const byId = new Map();
-  for (const n of [...a.notes, ...b.notes]) if (!byId.has(n.noteId)) byId.set(n.noteId, n);
-  return { notes: [...byId.values()], skipped: [...a.skipped, ...b.skipped], counts: { current: a.notes.length, history: b.notes.length, historyWebs: copies.size } };
+  const wa = planWebNotes({ rows: current, model: null, runId, lambda: LAMBDA });
+  const wb = planWebNotes({ rows: [...copies.values()], model: null, runId, lambda: LAMBDA });
+  const once = (list) => [...new Map(list.map((n) => [n.noteId, n])).values()];
+  return { notes: once([...a.notes, ...b.notes]), webNotes: once([...wa.notes, ...wb.notes]), skipped: [...a.skipped, ...b.skipped], counts: { current: a.notes.length, history: b.notes.length, historyWebs: copies.size } };
 }
 
 /** The (date, topicId) cites of the webs, as the archive days they live in. */
@@ -82,10 +84,12 @@ async function main() {
   }
 
   const plan = planBackfillLinks({ current, history, entries, runId: `backfill-${new Date().toISOString()}` });
-  const result = values.dry ? { dry: true } : await N.makeNoteWriter({ s3json, prefix }).write('link', plan.notes);
+  const writer = N.makeNoteWriter({ s3json, prefix });
+  const webResult = values.dry ? { dry: true } : await writer.write('web', plan.webNotes);
+  const result = values.dry ? { dry: true } : await writer.write('link', plan.notes);
   const withCites = plan.notes.filter((n) => n.cites.length).length;
   console.log(JSON.stringify({ prefix, currentWebs: current.length, historyDays: history.length, indexLinks: (index.links || []).length, archiveEntries: entries.length, ...plan.counts,
-    notes: plan.notes.length, withCites, skipped: plan.skipped.length, ...result, days: undefined }));
+    notes: plan.notes.length, webNotes: plan.webNotes.length, webAppended: webResult.appended, withCites, skipped: plan.skipped.length, ...result, days: undefined }));
   for (const s of plan.skipped.slice(0, 20)) console.log('skipped', JSON.stringify(s));
   return 0;
 }

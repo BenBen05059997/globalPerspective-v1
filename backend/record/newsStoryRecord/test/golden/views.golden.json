@@ -342,7 +342,26 @@
       "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet",
-      "judgedLinks": []
+      "judgedLinks": [],
+      "web": {
+        "state": "country_not_analysed",
+        "entries": 2,
+        "places": [
+          {
+            "iso3": "FRA",
+            "name": "France",
+            "n": 2
+          },
+          {
+            "iso3": "DEU",
+            "name": "Germany",
+            "n": 1
+          }
+        ],
+        "analysedIn": [],
+        "backbone": [],
+        "otherPlaces": {}
+      }
     },
     "thread-b": {
       "schemaVersion": 1,
@@ -354,7 +373,21 @@
       "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet",
-      "judgedLinks": []
+      "judgedLinks": [],
+      "web": {
+        "state": "single_update",
+        "entries": 1,
+        "places": [
+          {
+            "iso3": "FRA",
+            "name": "France",
+            "n": 1
+          }
+        ],
+        "analysedIn": [],
+        "backbone": [],
+        "otherPlaces": {}
+      }
     },
     "thread-c": {
       "schemaVersion": 1,
@@ -366,7 +399,21 @@
       "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet",
-      "judgedLinks": []
+      "judgedLinks": [],
+      "web": {
+        "state": "single_update",
+        "entries": 1,
+        "places": [
+          {
+            "iso3": "UKR",
+            "name": "Ukraine",
+            "n": 1
+          }
+        ],
+        "analysedIn": [],
+        "backbone": [],
+        "otherPlaces": {}
+      }
     },
     "thread-old": {
       "schemaVersion": 1,
@@ -378,7 +425,15 @@
       "links": [],
       "confirmedLinks": [],
       "confirmedLinksReason": "no reading yet",
-      "judgedLinks": []
+      "judgedLinks": [],
+      "web": {
+        "state": null,
+        "entries": 0,
+        "places": [],
+        "analysedIn": [],
+        "backbone": [],
+        "otherPlaces": {}
+      }
     }
   },
   "counts": {

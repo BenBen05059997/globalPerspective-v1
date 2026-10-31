@@ -276,3 +276,39 @@ test('storyDriftNote: the example validates; subject and thread are the story; t
   assert.equal(valid({...driftEx, subject: {kind: 'story', id: 'thread-x'}}), false); // a country payload is not a story's
   assert.equal(valid({...countryEx, subject: {kind: 'story', id: 'thread-x'}}), false);
 });
+
+// web notes: one per SYSTEMS# country web, so a web with no edge (no link note) and its shared-actor backbone are in the record
+const webEx = load('examples/note-web.json');
+
+test('webNote: the example validates; nodes with or without an edge, the backbone as stored; a history copy has model null; a bad one is refused', () => {
+  assert.equal(valid(webEx), true, JSON.stringify(valid.errors));
+  assert.equal(webEx.noteId, R.noteId('web', webEx.subject.id, '', webEx.at));
+  assert.deepEqual([webEx.subject, webEx.part, webEx.iso3, webEx.threadId], [{kind: 'country', id: 'JPN'}, '', ['JPN'], null]);
+  const row = {countryName: 'Japan', generatedAt: '2026-10-30T05:02:09.564Z', nodes: [{threadId: 't1', summary: 'one'}, {threadId: 't2'}, {threadId: 't1'}, {summary: 'no id'}],
+    backbone: [{from: 't1', to: 't2', sharedActors: ['G7', 'diesel']}, {from: 't1'}], edges: []};
+  const n = N.webNote({row, iso3: 'JPN', at: row.generatedAt, model: 'deepseek-v4-pro', producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(n.payload, {country: 'Japan', nodes: [{threadId: 't1', summary: 'one'}, {threadId: 't2'}], backbone: [{from: 't1', to: 't2', sharedActors: ['G7', 'diesel'], weight: 2}]}); // weight defaults to the actor count
+  const copy = N.webNote({row, iso3: 'JPN', at: row.generatedAt, model: null, producer});
+  assert.equal(valid(copy), true, JSON.stringify(valid.errors));
+  assert.deepEqual([copy.model, copy.payload.source], [null, 'web-history']);
+  assert.equal(N.webNote({row: null, iso3: 'JPN', at: row.generatedAt, model: 'm', producer}), null);
+  assert.throws(() => N.webNote({row, iso3: 'Japan', at: row.generatedAt, model: 'm', producer}), /ISO3/);
+  const bad = [{...webEx, part: 'JPN'}, {...webEx, subject: {kind: 'pair', id: 'JPN'}}, {...webEx, model: null}, {...webEx, payload: {...webEx.payload, extra: 1}},
+    {...webEx, payload: {...webEx.payload, nodes: ['t1']}}, {...webEx, payload: {country: 'Japan', nodes: []}}];
+  for (const b of bad) assert.equal(valid(b), false, JSON.stringify(b).slice(0, 160));
+});
+
+test('linkNote: the other direction of a pair rides in payload.reverse, its cites join the note; a reverse that is not the opposite edge is ignored', () => {
+  const entries = [{topicId: 'A-1', date: '2026-10-02', title: 'A', sources: [{url: 'https://www.reuters.com/a'}]}, {topicId: 'B-1', date: '2026-10-03', title: 'B', sources: [{url: 'https://www.bbc.com/b'}]}];
+  const eventIds = N.entryEventIdIndex(entries);
+  const at = '2026-10-30T05:02:09.564Z';
+  const back = {from: 'thread-a', to: 'thread-b', mechanism: 'back', lagDays: 3, confidence: 'weak', cited: [{topicId: 'B-1', date: '2026-10-03', title: 'B'}]};
+  const edge = {from: 'thread-b', to: 'thread-a', mechanism: 'm', lagDays: 1, confidence: 'strong', cited: [{topicId: 'A-1', date: '2026-10-02', title: 'A'}], reverse: back};
+  const n = N.linkNote({edge, countryName: 'Japan', iso3: 'JPN', at, model: 'deepseek-v4-pro', eventIds, producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(n.payload.reverse, {confidence: 'weak', lagDays: 3, mechanism: 'back', cited: back.cited});
+  assert.equal(n.cites.length, 2);
+  assert.equal('reverse' in N.linkNote({edge: {...edge, reverse: {...back, to: 'thread-c'}}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer}).payload, false);
+  assert.equal(valid({...n, payload: {...n.payload, reverse: {...n.payload.reverse, extra: 1}}}), false);
+});

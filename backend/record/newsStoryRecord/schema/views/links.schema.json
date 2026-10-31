@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Links view",
-  "description": "record/views/links/{threadId}.json: shared facts between active stories (links, 0037 section 1), the review-confirmed links (confirmedLinks) and the story web's model-judged links (judgedLinks, link notes of 0042)",
+  "description": "record/views/links/{threadId}.json: shared facts between active stories (links, 0037 section 1), the review-confirmed links (confirmedLinks), the story web's model-judged links (judgedLinks, link notes of 0042) and how the story sits in the country webs (web, web notes of 0042)",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -10,7 +10,8 @@
     "links",
     "confirmedLinks",
     "confirmedLinksReason",
-    "judgedLinks"
+    "judgedLinks",
+    "web"
   ],
   "additionalProperties": false,
   "properties": {
@@ -106,6 +107,128 @@
           }
         }
       }
+    },
+    "web": {
+      "type": "object",
+      "description": "the story's place in the country webs (newsSystemsAnalysis): what the web_index action carried beside the judged links. Same rules as the index: each country's newest web, at most 30 days old; titles, entry counts and places from the last 30 days of entries",
+      "required": [
+        "state",
+        "entries",
+        "places",
+        "analysedIn",
+        "backbone",
+        "otherPlaces"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "anyOf": [
+            {
+              "enum": [
+                "linked",
+                "analysed_no_links",
+                "single_update",
+                "country_not_analysed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "stateOf of buildWebIndex; null when the story is in no web and had no entry in the last 14 days (the index does not know it)"
+        },
+        "entries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "distinct entries of the story id in the last 30 days"
+        },
+        "places": {
+          "$ref": "#/definitions/places"
+        },
+        "analysedIn": {
+          "type": "array",
+          "description": "the webs the story is a node of (with or without an edge)",
+          "items": {
+            "type": "object",
+            "required": [
+              "iso3",
+              "country",
+              "generatedAt",
+              "nodes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "iso3": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "country": {
+                "type": "string"
+              },
+              "generatedAt": {
+                "$ref": "#/definitions/iso"
+              },
+              "nodes": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "stories in that web"
+              }
+            }
+          }
+        },
+        "backbone": {
+          "type": "array",
+          "description": "shared-actor edges to other stories in the same webs (deterministic, no model): one row per web and other story, weight = shared actors",
+          "items": {
+            "type": "object",
+            "required": [
+              "otherThreadId",
+              "otherTitle",
+              "iso3",
+              "country",
+              "generatedAt",
+              "actors",
+              "weight"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "otherThreadId": {
+                "type": "string"
+              },
+              "otherTitle": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "iso3": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "country": {
+                "type": "string"
+              },
+              "generatedAt": {
+                "$ref": "#/definitions/iso"
+              },
+              "actors": {
+                "$ref": "#/definitions/strings"
+              },
+              "weight": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "otherPlaces": {
+          "type": "object",
+          "description": "threadId -> top places, for every story in judgedLinks or backbone (the map arcs)",
+          "additionalProperties": {
+            "$ref": "#/definitions/places"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -190,6 +313,32 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 14
+        }
+      }
+    },
+    "places": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "iso3",
+          "name",
+          "n"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "iso3": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 1
+          }
         }
       }
     }

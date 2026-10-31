@@ -31,5 +31,13 @@
     }
   ],
   "confirmedLinksReason": null,
-  "judgedLinks": []
+  "judgedLinks": [],
+  "web": {
+    "state": null,
+    "entries": 0,
+    "places": [],
+    "analysedIn": [],
+    "backbone": [],
+    "otherPlaces": {}
+  }
 }

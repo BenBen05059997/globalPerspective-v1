@@ -399,3 +399,38 @@ test('judged links follow the web index rules: the newest web of each country on
   const rows = build([e, f], {notes}).links.get('thread-a').judgedLinks;
   assert.deepEqual(rows.map((r) => [r.iso3, r.mechanism]), [['POL', 'newest POL web'], ['UKR', 'newest UKR web']]);
 });
+
+test('web notes (0042): the story web beside the judged links: state, webs a story is a node of, backbone, places; a newer web without edges hides the older links', () => {
+  const note = (subtype, subject, part, at, payload) => ({subtype, subject, part, at, model: 'm', noteId: `${subtype}${subject.id}${part}${at}`, iso3: [], payload});
+  const web = (iso3, at, nodes, backbone = []) => note('web', {kind: 'country', id: iso3}, '', at, {country: iso3, nodes, backbone});
+  const pair = (iso3, at) => note('link', {kind: 'pair', id: 'thread-a__thread-b'}, iso3, at, {from: 'thread-a', to: 'thread-b', mechanism: 'drives'});
+  const notes = [
+    web('FRA', '2026-10-21T05:00:00.000Z', [{threadId: 'thread-a', summary: 'Summary A'}, {threadId: 'thread-b'}, {threadId: 'thread-gone', summary: 'Gone summary'}], [{from: 'thread-a', to: 'thread-b', sharedActors: ['Macron'], weight: 1}, {from: 'thread-a', to: 'thread-gone', sharedActors: ['X'], weight: 1}, {from: 'thread-a', to: 'thread-out', sharedActors: ['Y'], weight: 1}]), // thread-out is no node of the web: the edge is ignored
+    pair('FRA', '2026-10-21T05:00:00.000Z'),
+    pair('UKR', '2026-10-15T05:00:00.000Z'), web('UKR', '2026-10-21T05:00:00.000Z', [{threadId: 'thread-c'}]), // the newer UKR web has no edge: the old UKR link is no longer in the web
+    web('POL', '2026-08-01T05:00:00.000Z', [{threadId: 'thread-old'}]), // over 30 days: not a web any more
+  ];
+  const v = build(X.golden(), {notes}).links;
+  const a = v.get('thread-a');
+  assert.deepEqual(a.judgedLinks.map((l) => l.iso3), ['FRA']);
+  assert.deepEqual(a.web.analysedIn, [{iso3: 'FRA', country: 'FRA', generatedAt: '2026-10-21T05:00:00.000Z', nodes: 3}]);
+  // the title of a story with no entry in the record is the web node's summary
+  assert.deepEqual(a.web.backbone.map((b) => [b.otherThreadId, b.otherTitle, b.actors, b.weight]), [['thread-b', 'B first', ['Macron'], 1], ['thread-gone', 'Gone summary', ['X'], 1]]);
+  assert.deepEqual([a.web.state, a.web.entries, a.web.places.map((p) => [p.iso3, p.name, p.n])], ['linked', 2, [['FRA', 'France', 2], ['DEU', 'Germany', 1]]]);
+  assert.deepEqual(a.web.otherPlaces, {'thread-b': [{iso3: 'FRA', name: 'France', n: 1}], 'thread-gone': []});
+  assert.equal(v.get('thread-b').web.backbone[0].otherThreadId, 'thread-a'); // both ends carry the edge
+  assert.deepEqual([v.get('thread-c').web.state, v.get('thread-c').web.analysedIn.map((w) => w.iso3)], ['analysed_no_links', ['UKR']]); // a node with no edge
+  assert.deepEqual([v.get('thread-old').web.state, v.get('thread-old').web.analysedIn], [null, []]); // no recent entry, in no web
+  assert.equal(build(X.golden()).links.get('thread-a').web.state, 'country_not_analysed'); // no notes: two entries, in no web
+});
+
+test('judged links: a pair held both ways in one web is two rows (the weaker is the note\'s payload.reverse), on both stories', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const n = {subtype: 'link', subject: {kind: 'pair', id: 'thread-a__thread-b'}, part: 'UKR', at: '2026-10-21T05:00:00.000Z', model: 'm', noteId: 'x', iso3: ['UKR'],
+    payload: {from: 'thread-a', to: 'thread-b', confidence: 'strong', mechanism: 'forward', reverse: {confidence: 'weak', mechanism: 'back', lagDays: 2, cited: []}}};
+  for (const id of ['thread-a', 'thread-b']) {
+    const rows = build([e, f], {notes: [n]}).links.get(id).judgedLinks;
+    assert.deepEqual(rows.map((r) => [r.from, r.to, r.confidence, r.mechanism, 'reverse' in r]).sort(), [['thread-a', 'thread-b', 'strong', 'forward', false], ['thread-b', 'thread-a', 'weak', 'back', false]]);
+  }
+});

@@ -21,5 +21,74 @@
   ],
   "confirmedLinks": [],
   "confirmedLinksReason": "no reading yet",
-  "judgedLinks": []
+  "judgedLinks": [
+    {
+      "otherThreadId": "thread-b",
+      "otherTitle": "Story B",
+      "iso3": "JPN",
+      "from": "thread-a",
+      "to": "thread-b",
+      "country": "Japan",
+      "confidence": "medium",
+      "lagDays": 2,
+      "mechanism": "A names the supply route B depends on.",
+      "cited": [
+        {
+          "topicId": "A-1",
+          "date": "2026-10-20",
+          "title": "Story A"
+        }
+      ],
+      "generatedAt": "2026-10-21T05:02:09.564Z",
+      "model": "deepseek-v4-pro"
+    }
+  ],
+  "web": {
+    "state": "linked",
+    "entries": 2,
+    "places": [
+      {
+        "iso3": "JPN",
+        "name": "Japan",
+        "n": 2
+      },
+      {
+        "iso3": "USA",
+        "name": "United States",
+        "n": 1
+      }
+    ],
+    "analysedIn": [
+      {
+        "iso3": "JPN",
+        "country": "Japan",
+        "generatedAt": "2026-10-21T05:02:09.564Z",
+        "nodes": 6
+      }
+    ],
+    "backbone": [
+      {
+        "otherThreadId": "thread-c",
+        "otherTitle": "Story C",
+        "iso3": "JPN",
+        "country": "Japan",
+        "generatedAt": "2026-10-21T05:02:09.564Z",
+        "actors": [
+          "G7",
+          "diesel"
+        ],
+        "weight": 2
+      }
+    ],
+    "otherPlaces": {
+      "thread-b": [
+        {
+          "iso3": "JPN",
+          "name": "Japan",
+          "n": 2
+        }
+      ],
+      "thread-c": []
+    }
+  }
 }

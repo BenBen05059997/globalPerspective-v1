@@ -8,7 +8,7 @@ const {buildViews, countDaysFor, writeGroups} = require('./views');
 const {weeksBetween} = require('./readings');
 
 const READ_BATCH = 10;
-const NOTE_SUBTYPES = ['entry', 'story_analysis', 'drift', 'country', 'link']; // decision 0042; a subtype with no manifest reads as empty
+const NOTE_SUBTYPES = ['entry', 'story_analysis', 'drift', 'country', 'link', 'web']; // decision 0042; a subtype with no manifest reads as empty
 const WRITE_BATCH = 16;
 
 function makePublisher({s3json}) {

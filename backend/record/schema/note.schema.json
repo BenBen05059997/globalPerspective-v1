@@ -36,6 +36,7 @@
         "drift",
         "country",
         "link",
+        "web",
         "brief"
       ]
     },
@@ -1007,6 +1008,195 @@
                   "web-history"
                 ],
                 "description": "present on a link rebuilt from web/YYYY/MM/DD.json (backfill); views prefer an exact note"
+              },
+              "reverse": {
+                "type": "object",
+                "description": "the other direction of the pair in the same web (to -> from), when the web held both: the weaker one",
+                "required": [
+                  "confidence",
+                  "lagDays",
+                  "mechanism",
+                  "cited"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "confidence": {
+                    "enum": [
+                      "strong",
+                      "medium",
+                      "weak"
+                    ]
+                  },
+                  "lagDays": {
+                    "type": "integer"
+                  },
+                  "mechanism": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "cited": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "topicId"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "topicId": {
+                          "type": "string"
+                        },
+                        "date": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "payload": {
+                  "required": [
+                    "source"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "model": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "web"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "kind": {
+                "const": "country"
+              },
+              "id": {
+                "pattern": "^[A-Z]{3}$",
+                "description": "ISO3 of the country web"
+              }
+            }
+          },
+          "part": {
+            "const": ""
+          },
+          "iso3": {
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "threadId": {
+            "type": "null"
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "null only on a copy rebuilt from the dated S3 web history (payload.source web-history)"
+          },
+          "payload": {
+            "description": "one SYSTEMS# country web: its nodes (stories, with or without an edge; summary = the model's one-line summary) and its deterministic shared-actor backbone",
+            "required": [
+              "country",
+              "nodes",
+              "backbone"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "country": {
+                "type": "string",
+                "minLength": 1
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "threadId"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "threadId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "backbone": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "from",
+                    "to",
+                    "sharedActors",
+                    "weight"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "to": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sharedActors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "weight": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "source": {
+                "enum": [
+                  "web-history"
+                ]
               }
             }
           }

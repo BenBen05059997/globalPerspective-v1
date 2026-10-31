@@ -50,7 +50,7 @@ Turns the causal edges of the country webs into `link` notes through the same pl
 the model) and the dated S3 web history `web/YYYY/MM/DD.json` (`webs`): a web there that is not also a current row has no recorded model, so its
 notes are copies (`model` null, `payload.source: "web-history"`). Cites are the eventIds of the cited entries found in the NewsCache archive
 rows of the cited days. Region rows (Europe, Asia ...) have no ISO3 and are reported and skipped; a web holding both directions of a pair
-keeps the stronger edge. `WEB#INDEX/LATEST` is read only to print its link count beside the planned notes. A re-run appends nothing.
+keeps the stronger edge as the note and the other as `payload.reverse`. `WEB#INDEX/LATEST` is read only to print its link count beside the planned notes. Each web (current and history, edges or not) is also written as one `web` note (nodes and shared-actor backbone; `planWebNotes`), written before the links. A re-run appends nothing.
 
 ```sh
 RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-link-notes.mjs [--dry] [--live] [--no-history]

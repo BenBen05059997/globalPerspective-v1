@@ -125,10 +125,6 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
 <li><a href="${SITE_URL}/weekly/countries">Countries</a> — every covered country ranked by risk tier, with a standing intelligence briefing; each read self-corrects as news arrives</li>
 <li><a href="${SITE_URL}/">World Map (this home page)</a> — the live situation map: open situations, disaster alerts and the stories behind them on a globe, with a click-through story card</li>
 </ul>
-<h2>Markets &amp; analysis</h2>
-<ul>
-<li><a href="${SITE_URL}/economy">Economy</a> — live instrument dashboard plus which stories are repricing markets today, with a weekly what-moved-and-why wrap</li>
-</ul>
 <h2>Accountability</h2>
 <ul>
 <li><a href="${SITE_URL}/track-record">Track Record</a> — every forecast publicly scored (Brier + calibration), every revised conclusion logged, methodology published</li>
@@ -336,7 +332,6 @@ function legacyTarget(url) {
     return date ? `/briefings?mode=read&date=${date}` : '/briefings?mode=read';
   }
   if (path === '/weekly-brief') return '/briefings?mode=weekly';
-  if (path === '/weekly-markets') return '/briefings?from=markets';
   if (path === '/spider-demo') return '/weekly?view=web';
   if (path === '/map') return '/';
   if (path === '/weekly' && url.searchParams.get('section') === 'countries') return '/weekly/countries';
@@ -498,7 +493,7 @@ export default {
     // wasn't already handled above (not /data/*, not /rss, not bot-prerendered)
     // gets the SPA shell (docs/index.html) with a real 200, not GitHub Pages'
     // 404 status for an unrecognised path. This covers every client route
-    // (/economy, /analyze, /membership, /track-record, /briefings,
+    // (/analyze, /membership, /track-record, /briefings,
     // /breaking(/:id) (a client redirect since 2026-10-01), /weekly, /weekly/countries,
     // /signin, /account, /whitepaper, etc.) without enumerating
     // them, and survives future route additions. A genuinely bogus path still

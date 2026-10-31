@@ -11,7 +11,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 <!-- pipeline:end -->
 
 ## Status
-- Live, public. Markets are paused with economy: `?from=markets` shows a one-line note and nothing else.
+- Live, public. No markets line (economy retired, decision 0049); `/weekly-markets` is no longer redirected here.
 - The weekly brief is written with `status: 'published'` and no review step (`newsWeeklyBrief/src/index.js`); the read action
   serves only published briefs, so a bad one is held back by setting its status to `draft`.
 

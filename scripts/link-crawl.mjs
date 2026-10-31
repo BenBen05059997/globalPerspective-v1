@@ -23,7 +23,7 @@ const T = 15000;
 // crawl from these covers the "aggregate → detail across a rolling window"
 // dangling-reference class everywhere it can occur.
 const HUBS = [
-  '/', '/economy', '/weekly', '/weekly/countries',
+  '/', '/weekly', '/weekly/countries',
   '/briefings?mode=read', '/map', '/about', '/contact', '/privacy', '/disclosures', '/whitepaper',
 ];
 

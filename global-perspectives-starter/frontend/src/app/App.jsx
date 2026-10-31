@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import {
-  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
+  BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
 } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
@@ -37,7 +37,6 @@ const AuthCallback = lazy(() => import('@/features/account/AuthCallback'));
 const Account = lazy(() => import('@/features/account/Account'));
 const WhitepaperPage = lazy(() => import('@/features/static/WhitepaperPage'));
 const SituationHome = lazy(() => import('@/features/map/SituationHome'));
-const EconomyPage = lazy(() => import('@/features/economy/EconomyPage'));
 const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
 const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
@@ -128,7 +127,6 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/daily" element={<DailyRedirect />} />
             <Route path="/daily/:dateKey" element={<DailyRedirect />} />
-            <Route path="/economy" element={<EconomyPage />} />
             <Route path="/analyze" element={<AnalyzeRedirect />} />
             <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
             <Route path="/membership" element={<MembershipPage />} />
@@ -138,7 +136,6 @@ export default function App() {
             <Route path="/briefings" element={<BriefingsPage />} />
             <Route path={ROUTE.board} element={<BoardPage />} />
             <Route path={`${ROUTE.board}/:boardId`} element={<BoardPage />} />
-            <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
             <Route path="/weekly" element={<WeeklyRoute><WeeklyPage /></WeeklyRoute>} />

@@ -17,7 +17,7 @@ or `wrangler versions list`); it is not recorded here.
   in the allowlist.
 - `/rss` proxies the RSS action of the read API.
 - Real 301s (query string kept) for retired addresses: `/daily`, `/daily/:date`, `/weekly-brief` (to `/briefings?mode=read|weekly`),
-  `/weekly-markets` (to `/briefings?from=markets`), `/spider-demo` (to `/weekly?view=web`), `/map` (to `/`),
+  `/spider-demo` (to `/weekly?view=web`), `/map` (to `/`),
   `/weekly?section=countries` (to `/weekly/countries`) and `/analyze` (to the first `?stories=` thread's story page, else
   `/weekly/countries`). The client redirects in `src/app/LegacyRedirects.jsx` and `MapRedirect.jsx` are the fallback.
 - Bot pre-render: story and country pages, every `/briefings` mode (canonical = the edition served) and `/today`. Shared runs

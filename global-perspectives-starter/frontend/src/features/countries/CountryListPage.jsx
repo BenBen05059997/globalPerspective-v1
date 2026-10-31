@@ -2,8 +2,6 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useWeeklyArchive } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
-import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
-import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { countryTier, compareByRisk } from '@/features/countries/lib/countryTier';
 import { trajectoryOf } from '@/shared/lib/trajectory';
@@ -20,10 +18,8 @@ import Chip from '@/shared/ui/Chip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { parentCountry } from '@/shared/lib/countries.js';
 import { countryHref } from '@/shared/lib/links.js';
-import SeverityBadge from '@/shared/ui/SeverityBadge';
 import '@/features/countries/CountryListPage.css';
 
-const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
 
 function Trajectory({ value }) {
   const t = trajectoryOf(value);
@@ -32,13 +28,12 @@ function Trajectory({ value }) {
 
 // ─── Country Card ─────────────────────────────────────────────────────────────
 
-function CountryCard({ country, intel, disruptionSeverity }) {
+function CountryCard({ country, intel }) {
   return (
     <Card as={Link} to={countryHref(country.name)} className="clp-card">
       <div className="clp-card-head">
         <span className="clp-card-name">{country.name}</span>
         <TierChip tier={countryTier(intel)} score={intel?.riskScore} />
-        {disruptionSeverity && <SeverityBadge level={disruptionSeverity} size="sm" />}
         <Trajectory value={intel?.trajectory} />
       </div>
 
@@ -89,7 +84,7 @@ function CountryRow({ country, intel }) {
 
 // ─── Risk band (one tier) ─────────────────────────────────────────────────────
 
-function RiskBand({ band, items, intelligence, maxSeverityByCountry }) {
+function RiskBand({ band, items, intelligence }) {
   if (!items.length) return null;
   return (
     <section className="clp-band">
@@ -101,7 +96,6 @@ function RiskBand({ band, items, intelligence, maxSeverityByCountry }) {
               key={c.name}
               country={c}
               intel={intelligence?.[c.name]}
-              disruptionSeverity={maxSeverityByCountry[c.name]}
             />
           ))}
         </div>
@@ -134,7 +128,7 @@ function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegio
       <div className="clp-rail-section">
         <SectionHeader label="Sort" />
         <div className="clp-chips">
-          {[['risk', 'Risk level'], ['articles', 'Coverage'], !ECONOMY_PARKED && ['economy', 'Disruption'], ['alpha', 'A → Z']].filter(Boolean).map(([v, label]) => (
+          {[['risk', 'Risk level'], ['articles', 'Coverage'], ['alpha', 'A → Z']].map(([v, label]) => (
             <Chip key={v} selected={sortBy === v} onClick={() => onSort(v)}>{label}</Chip>
           ))}
         </div>
@@ -253,24 +247,6 @@ export default function CountryListPage() {
   // "not enough coverage" bucket. Single batched call — no request-burst cost.
   const countryNames = useMemo(() => countries.slice(0, 24).map(c => c.name), [countries]);
   const { intelligence } = useCountryIntelligence(countryNames);
-  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 }, { enabled: !ECONOMY_PARKED });
-
-  // Map: countryName → max severity from any thread disruption involving that country
-  const maxSeverityByCountry = useMemo(() => {
-    const map = {};
-    for (const d of allDisruptions) {
-      const rank = SEVERITY_RANK[d.severity] || 0;
-      for (const w of (d.winners || [])) {
-        if (w.type !== 'country') continue;
-        if (!map[w.name] || rank > SEVERITY_RANK[map[w.name]]) map[w.name] = d.severity;
-      }
-      for (const l of (d.losers || [])) {
-        if (l.type !== 'country') continue;
-        if (!map[l.name] || rank > SEVERITY_RANK[map[l.name]]) map[l.name] = d.severity;
-      }
-    }
-    return map;
-  }, [allDisruptions]);
 
   const [activeRegion, setActiveRegion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,12 +297,6 @@ export default function CountryListPage() {
     filteredFeatured = [...filteredFeatured].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'articles') {
     filteredFeatured = [...filteredFeatured].sort((a, b) => b.articles - a.articles);
-  } else if (!ECONOMY_PARKED && sortBy === 'economy') {
-    filteredFeatured = [...filteredFeatured].sort((a, b) => {
-      const sa = SEVERITY_RANK[maxSeverityByCountry[a.name]] || 0;
-      const sb = SEVERITY_RANK[maxSeverityByCountry[b.name]] || 0;
-      return sb !== sa ? sb - sa : b.articles - a.articles;
-    });
   }
 
   let filteredOthers = others;
@@ -392,7 +362,6 @@ export default function CountryListPage() {
                 band={band}
                 items={byTier[band.tier]}
                 intelligence={intelligence}
-                maxSeverityByCountry={maxSeverityByCountry}
               />
             ));
           })()
@@ -405,7 +374,6 @@ export default function CountryListPage() {
                   key={c.name}
                   country={c}
                   intel={intelligence?.[c.name]}
-                  disruptionSeverity={maxSeverityByCountry[c.name]}
                 />
               ))}
             </div>

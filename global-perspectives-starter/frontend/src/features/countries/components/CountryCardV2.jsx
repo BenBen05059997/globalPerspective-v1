@@ -1,7 +1,7 @@
 // CountryCardV2 — the S4 one-screen country card (COUNTRY_VIEW_DISCUSSION.md "Debate outcome":
 // state line -> verified facts only -> one-sentence summary -> RISK + DIRECTION -> 4 risk bars
 // (WHY on click) -> latest change (only with a cited event) -> <=3 stories -> <=2 future dated
-// triggers -> FX. Stored data only — no AI run on view.
+// triggers. Stored data only — no AI run on view.
 //
 // Mounted from two places: the /map console (SituationHome, passed `situations` for the watch
 // flag) and the public /weekly/country/:name page (CountryPage, no `situations` — watch flag
@@ -15,16 +15,13 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence.js';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory.js';
-import { useMarketsCountry } from '@/features/countries/hooks/useMarketsCountry';
 import { useCountryStories } from '@/features/countries/hooks/useCountryStories.js';
 import { computeCountryDirection, directionLabel } from '@/features/countries/lib/countryDirection.js';
 import { countryWatchFlag } from '@/features/countries/lib/countryWatch.js';
 import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js';
-import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
 import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
-import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
@@ -46,7 +43,6 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const intel = name ? intelligence[name] : null;
 
   const { snapshots, driftNotes, loading: historyLoading } = useCountryHistory(name);
-  const { data: markets } = useMarketsCountry(name);
   const { facts: storedFacts } = useCountryFacts(name);
   const { stories, deadlines, topicIdToThreadId, loading: storiesLoading } = useCountryStories(name);
 
@@ -69,8 +65,6 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const iso3 = resolveCountry(name)?.iso3 || null;
   const watch = situations ? countryWatchFlag(situations, iso3, now) : null;
   const triggers = futureDatedTriggers(deadlines, now, 2);
-  const fx = fxRowForCountry(name, markets?.fx);
-  const macro = macroRows(markets?.macro);
   const facts = factRows(storedFacts, now);
 
   const latestChange = useMemo(() => pickLatestChange(driftNotes, topicIdToThreadId), [driftNotes, topicIdToThreadId]);
@@ -104,9 +98,8 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
 
       {/* 2. Verified facts only. Leader / capital / population come from the stored Wikidata facts
           (country_facts) and are shown ONLY with their source and the date we last checked them
-          (factRows drops anything undated, unsourced or stale); nothing is guessed. Macro only if
-          <=3 years old. */}
-      {(facts.length || macro.length || fx) ? (
+          (factRows drops anything undated, unsourced or stale); nothing is guessed. */}
+      {facts.length ? (
         <div className="ccv2-facts">
           {facts.length ? <ClaimTag kind="fact" /> : null}
           {facts.map((r) => (
@@ -117,10 +110,6 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
               <span className="ccv2-fact-date">{r.source} · checked {fmtShort(r.checkedAt)}</span>
             </span>
           ))}
-          {macro.map((r) => (
-            <span key={r.k} className="ccv2-fact"><b>{r.v}</b> {r.k} ({r.year})</span>
-          ))}
-          {fx ? <span className="ccv2-fact"><b>{fx.rate.toFixed(4)}</b> {fx.currency}/{fx.base} <span className="ccv2-fact-date">{fmtShort(markets?.fx?.asOf)}</span></span> : null}
         </div>
       ) : null}
 

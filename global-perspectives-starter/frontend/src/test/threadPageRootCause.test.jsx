@@ -24,9 +24,6 @@ vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
 vi.mock('@/features/threads/hooks/useStoryAnalysis', () => ({
   useStoryAnalysis: () => ({ analysis: { threadTitle: 'Test story', rootCauseChain }, loading: false }),
 }));
-vi.mock('@/features/economy/hooks/useEconomicImpact', () => ({
-  useEconomicImpact: () => ({ data: null, loading: false, error: null }),
-}));
 vi.mock('@/features/threads/hooks/useThreadForecast', () => ({
   useThreadForecast: () => ({ snapshot: null, loading: false }),
 }));

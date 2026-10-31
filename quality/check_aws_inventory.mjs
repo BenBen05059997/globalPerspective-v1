@@ -4,7 +4,7 @@
 //   - a deployed Lambda named news*/News* is missing from functions.json,
 //   - a functions.json entry has no deployed Lambda (unless it is marked `"planned": true`: written, not yet created),
 //   - an EventBridge rule or Scheduler schedule targets a news*/News* Lambda that is not in functions.json.
-// Needs AWS credentials, so it is NOT in the pre-commit hook. Run it by hand or from quality/verify_all.sh.
+// Needs AWS credentials, so it is NOT in the pre-commit hook. Run it by hand.
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

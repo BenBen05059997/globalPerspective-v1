@@ -6,16 +6,12 @@ import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useWeeklyArchive, useThreadAnalyses, useWebIndex } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
-import { useMarketsCountry } from '@/features/countries/hooks/useMarketsCountry';
-import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
-import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
 import CountryCardV2 from '@/features/countries/components/CountryCardV2';
 import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
-import SeverityBadge from '@/shared/ui/SeverityBadge';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
@@ -56,13 +52,6 @@ import { connectionRows } from '@/features/countries/lib/countryConnections.js';
 import { whatWeDontKnow } from '@/features/countries/lib/countryUnknowns.js';
 import { formatCountrySheet } from '@/features/countries/lib/countryText.js';
 import { HowItConnects, WhatWeDontKnow, YourView, CopyAsText, PrintButton, SheetFooter } from '@/features/countries/components/CountrySheet.jsx';
-
-function formatAsOf(iso) {
-  if (!iso) return '';
-  try {
-    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-  } catch { return iso; }
-}
 
 // The three AI read-outs on a coverage item. The kind is the button label, never a colour.
 const AI_VIEWS = [
@@ -398,15 +387,10 @@ export default function CountryPage() {
   const { analyses: threadAnalyses } = useThreadAnalyses(arcIds, { light: true });
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
-  const { data: markets } = useMarketsCountry(decodedName);
   const { index: webIndex } = useWebIndex();
   const { deadlines, topicIdToThreadId } = useCountryStories(decodedName);
   const { facts: storedFacts } = useCountryFacts(decodedName);
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
-  const { data: countryDisruptions } = useDisruptionsList(
-    decodedName ? { country: decodedName, limit: 5 } : {},
-    { enabled: !ECONOMY_PARKED },
-  );
 
   useEffect(() => {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
@@ -545,76 +529,7 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* Economic Disruption — event-driven, dated to the hour. Soft-hidden while
-          ECONOMY_PARKED: the underlying job is off, so countryDisruptions is always
-          [] (fetch skipped above), but the flag also guards the render directly. */}
-      {!ECONOMY_PARKED && countryDisruptions?.length > 0 && (
-        <div className="cpg-rail-section">
-          <SectionHeader label="Economic Disruption" hint={`${countryDisruptions.length} active`} />
-          <div className="cpg-disruptions">
-          {countryDisruptions.slice(0, 3).map((d, i) => (
-            <Link
-              key={d.scopeId || i}
-              to={storyHref(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
-              className="cpg-disruption-row"
-            >
-              <div className="cpg-disruption-top">
-                <SeverityBadge level={d.severity} size="sm" />
-                <span className="cpg-disruption-insts">
-                  {(d.instruments || []).slice(0, 3).map(inst => (
-                    <span key={inst.instrumentId}>
-                      <b>{inst.instrumentId}</b>
-                      <DirectionArrow dir={inst.direction} />
-                    </span>
-                  ))}
-                </span>
-              </div>
-              <div className="cpg-disruption-head">{d.headline}</div>
-            </Link>
-          ))}
-          </div>
-        </div>
-      )}
-
-      {/* Markets snapshot — structural baseline (annual macros + FX) */}
-      {markets?.macro && Object.keys(markets.macro).length > 0 && (
-        <div className="cpg-rail-section">
-          <SectionHeader label="Macro Baseline" hint={markets.asOf ? formatAsOf(markets.asOf) : null} />
-          {(() => {
-            const mv = f => (f != null && typeof f === 'object' ? f.value : f);
-            const gdp = mv(markets.macro.gdp);
-            const cpi = mv(markets.macro.cpi_yoy);
-            const unemp = mv(markets.macro.unemployment);
-            const debt = mv(markets.macro.debt_to_gdp);
-            return <>
-              {gdp != null && <div className="cpg-mkt-row"><span>GDP</span><b>${(gdp / 1e9).toFixed(0)}B</b></div>}
-              {cpi != null && <div className="cpg-mkt-row"><span>CPI YoY</span><b>{(+cpi).toFixed(1)}%</b></div>}
-              {unemp != null && <div className="cpg-mkt-row"><span>Unemployment</span><b>{(+unemp).toFixed(1)}%</b></div>}
-              {debt != null && <div className="cpg-mkt-row"><span>Debt/GDP</span><b>{(+debt).toFixed(0)}%</b></div>}
-            </>;
-          })()}
-        </div>
-      )}
-
-      {/* FX snapshot — raw quotes only, no story link (economy parked, decision 0031) */}
-      {markets?.fx?.rates && Object.keys(markets.fx.rates).length > 0 && (
-        <div className="cpg-rail-section">
-          <SectionHeader
-            label={`Market prices · raw quotes${markets.fx.asOf ? ` · as of ${formatAsOf(markets.fx.asOf)}` : ''}`}
-            hint={`vs ${markets.fx.base || 'USD'}`}
-          />
-          {Object.entries(markets.fx.rates)
-            .slice(0, 5)
-            .map(([pair, rate]) => (
-              <div key={pair} className="cpg-mkt-row">
-                <span>{pair}</span>
-                <b>{typeof rate === 'number' ? rate.toFixed(4) : rate}</b>
-              </div>
-            ))}
-        </div>
-      )}
-
-      {!intel && !markets && (
+      {!intel && (
         <div className="cpg-rail-section">
           <div className="cpg-ai-pending">Analysis generates daily</div>
         </div>

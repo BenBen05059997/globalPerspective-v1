@@ -17,7 +17,6 @@ vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({ useWeeklyArchive: 
 vi.mock('@/features/threads/hooks/useStoryAnalysis', () => ({
   useStoryAnalysis: () => ({ analysis: { threadTitle: 'Test story', storyArc: 'An arc.' }, loading: false }),
 }));
-vi.mock('@/features/economy/hooks/useEconomicImpact', () => ({ useEconomicImpact: () => ({ data: null, loading: false, error: null }) }));
 vi.mock('@/features/threads/hooks/useThreadForecast', () => ({ useThreadForecast: () => ({ snapshot: null, loading: false }) }));
 vi.mock('@/features/threads/hooks/useStoryLinks', () => ({ useStoryLinks: () => LINKS.value }));
 vi.mock('@/shared/contexts/AuthContext', () => ({ AuthProvider: ({ children }) => children, useAuth: () => ({ user: null, loading: false }) }));

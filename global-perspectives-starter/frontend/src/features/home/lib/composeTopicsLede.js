@@ -1,39 +1,23 @@
 // imported by Node tooling outside src/ — keep relative imports
 // composeTopicsLede — deterministic "Today's lede" one-line orientation band.
 //
-// Pure function over the data Home + the Map already load (today's `topics` and
-// the economic-disruption list). NO LLM, NO fabrication: the headline is a real
-// topic title and every count traces to a real input field. It mirrors the
-// /economy `composeEconomyBriefing` honesty contract.
+// Pure function over the data Home + the Map already load (today's `topics`).
+// NO LLM, NO fabrication: the headline is a real topic title and every count
+// traces to a real input field.
 //
 // Honesty contract (enforced by quality/briefing/verify_lede.mjs):
 //   - the lede headline is verbatim one of the input topics' titles
 //   - topicCount / countryCount / threadCount equal real tallies of the inputs
-//   - the `reason` is derived from a real signal on the chosen topic (severity
-//     of a cited disruption, urgency flag, trending flag, or source count) —
-//     never invented
+//   - the `reason` is derived from a real signal on the chosen topic (urgency
+//     flag, trending flag, or source count) — never invented
 //   - if there are no topics, it returns { empty: true } and the band renders
 //     nothing rather than a placeholder lede
-
-const SEV_RANK = { severe: 3, moderate: 2, minor: 1 };
-
-// Build threadId → highest severity cited by the disruption list.
-function severityByThread(disruptions) {
-  const m = {};
-  for (const d of disruptions || []) {
-    const tid = d && d.scopeId;
-    if (!tid) continue;
-    const rank = SEV_RANK[d.severity] || 0;
-    if (rank > (SEV_RANK[m[tid]] || 0)) m[tid] = d.severity;
-  }
-  return m;
-}
 
 const sourceCountOf = (t) => (Array.isArray(t && t.sources) ? t.sources.length : 0);
 
 // Returns { empty, lede, topicCount, countryCount, threadCount, text }.
 // `lede` = { title, threadId, category, country, reason } | null.
-export function composeTopicsLede({ topics = [], disruptions = [] } = {}) {
+export function composeTopicsLede({ topics = [] } = {}) {
   const list = Array.isArray(topics) ? topics.filter((t) => t && t.title) : [];
 
   if (list.length === 0) {
@@ -47,8 +31,6 @@ export function composeTopicsLede({ topics = [], disruptions = [] } = {}) {
     };
   }
 
-  const sevByThread = severityByThread(disruptions);
-
   // Distinct countries (from each topic's regions[]) and distinct active threads.
   const countries = new Set();
   const threads = new Set();
@@ -59,15 +41,11 @@ export function composeTopicsLede({ topics = [], disruptions = [] } = {}) {
     if (t.threadId) threads.add(t.threadId);
   }
 
-  // ── Pick the day's lede: severity of cited disruption first, then urgency,
-  // then trending, then source count. Ties resolve to the earlier topic. ──
-  const score = (t) => {
-    const sev = SEV_RANK[sevByThread[t.threadId]] || 0;
-    return sev * 1000
-      + (t.urgency === 'high' ? 400 : 0)
-      + (t.x_trending ? 200 : 0)
-      + Math.min(sourceCountOf(t), 99);
-  };
+  // ── Pick the day's lede: urgency first, then trending, then source count.
+  // Ties resolve to the earlier topic. ──
+  const score = (t) => (t.urgency === 'high' ? 400 : 0)
+    + (t.x_trending ? 200 : 0)
+    + Math.min(sourceCountOf(t), 99);
 
   let best = null;
   let bestScore = -1;
@@ -77,11 +55,9 @@ export function composeTopicsLede({ topics = [], disruptions = [] } = {}) {
   }
 
   // Reason traces to the winning signal that put this topic on top.
-  const sev = sevByThread[best.threadId];
   const srcN = sourceCountOf(best);
   let reason = null;
-  if (sev) reason = `${sev} economic impact`;
-  else if (best.urgency === 'high') reason = 'urgent';
+  if (best.urgency === 'high') reason = 'urgent';
   else if (best.x_trending) reason = 'trending';
   else if (srcN > 0) reason = `${srcN} source${srcN !== 1 ? 's' : ''}`;
 

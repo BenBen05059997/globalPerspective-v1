@@ -9,9 +9,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 
 ## Status
 - Live, public (signed-out reads work).
-- `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) hides the disruption sort and blocks and turns off `useDisruptionsList`
-  (`enabled: !ECONOMY_PARKED`). `useMarketsCountry` is not gated: the FX box is labelled "Market prices · raw quotes · as of <time>"
-  with no story link (decision 0031).
+- No economy blocks: the disruption sort and rail, the macro baseline, the FX box and the card's macro and FX facts are gone (decision 0049).
 
 ## Routes
 - `/weekly/countries` -> `CountryListPage` (`/weekly?section=countries` redirects here, `app/LegacyRedirects.jsx`)
@@ -21,27 +19,27 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 - Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`; card forecasts -> `?q=<qid>`).
 
 ## Frontend
-- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z; disruption only when economy is not parked); its coverage counts read `useWeeklyArchive({ source: 'action' })`, the `archive_range` action, not the record (decision 0046)
+- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z); its coverage counts read `useWeeklyArchive({ source: 'action' })`, the `archive_range` action, not the record (decision 0046)
 - `CountryPage.jsx` - hero, map band, `CountryCardV2`, the three tabs, rails; phone gets Read / Map tabs
 - `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers, FX; the name links out
 - `components/CountrySheet.jsx` (+css, print) - How it connects, What we don't know, Your view (localStorage only), Copy as text, Print
 - `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps; "Map unavailable" without
   `window.GOOGLE_MAPS_API_KEY`)
-- `hooks/` - `useCountryIntelligence`, `useCountryHistory`, `useCountryFacts`, `useCountryStories`, `useMarketsCountry`
-- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `viewDrift` (country view -> drift notes), `viewIntelligence` (country view -> briefing), `countryFacts`, `countryMacro`, `countryMatch`,
+- `hooks/` - `useCountryIntelligence`, `useCountryHistory`, `useCountryFacts`, `useCountryStories`
+- `lib/` - pure helpers: `countryDirection`, `countryDrift`, `viewDrift` (country view -> drift notes), `viewIntelligence` (country view -> briefing), `countryFacts`, `countryMatch`,
   `countryTier`, `countryTriggers`, `countryWatch`; sheet: `countryUnknowns`, `countryConnections` (story-web links, "judged to feed
   into", negative lag = "order unclear"), `countryChange`, `countryText` (plain-text sheet, numbered absolute footnotes), `countryYourView`
 - Public API (`index.js`): `CountryCardV2` (used by `map`)
 - Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`, `deriveFromIndex`, plus a lazy
-  `import()` of `threads/components/WeeklyMap` (a static import pulled it into the main chunk). Nothing from `@/features/economy`.
-- Shared: `@/shared/lib/deadlines.js` (`buildDeadlines`), `useArchiveDayMap`, `useDisruptionsList`, `@/shared/map/countryRiskLayer.js`, `countryCoordinates.js`, `@/shared/ui/risk/*`
+  `import()` of `threads/components/WeeklyMap` (a static import pulled it into the main chunk).
+- Shared: `@/shared/lib/deadlines.js` (`buildDeadlines`), `useArchiveDayMap`, `@/shared/map/countryRiskLayer.js`, `countryCoordinates.js`, `@/shared/ui/risk/*`
 
 ## Backend
-- Group guides: [pipeline](../../../../../backend/pipeline/README.md), [economy-parked](../../../../../backend/economy-parked/README.md)
+- Group guides: [pipeline](../../../../../backend/pipeline/README.md)
 - `newsCountryIntelligence` (Scheduler `countryIntelliegence`, 05:15 UTC daily) writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE`
   and `HISTORY#<date>`; `newsCountryFactsUpdater` (Scheduler `Fact`, Mondays 05:00 Asia/Tokyo) writes `FACTS#<name>`;
   `newsDriftCorrector` (rule `TriggerDriftCorrector`, 05:30 UTC) writes `DRIFT#` notes; `newsSystemsAnalysis` (05:00 UTC) the story web;
-  `newsMarketsData` (rule `MarketsDataHourly`, hourly; weekly macros `MarketsMacrosWeekly`) writes the FX and macro rows. `newsSensitiveData-dev` serves all.
+  `newsSensitiveData-dev` serves all.
 
 ## Data
 - `useCountryIntelligence` (several countries: the list page) -> the record's countries index (`/data/record/views/index/countries.json`, one request for every briefed country; `@/shared/api/countryBriefingsIndex.js`: the fields the list and the risk layer read, only the first risk signal, no drift), falling back when the index is missing or unreadable (reported) to `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
@@ -56,23 +54,22 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (the record's weekly index, `archive_range` for the newest days; decision 0046) + `prediction_snapshot`.
 - `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
-- `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
-  (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).
+- `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback;
+
 
 ## Pipeline
 1. `newsInvokeGemini-dev` / `NewsProjectInvokeAgentLambda-dev` (3x a day) write topics with `regions` into NewsCache `archive#<date>`.
 2. `newsThreadAnalysis` (04:40 UTC) writes `THREAD_ANALYSIS`; `newsCountryFactsUpdater` (weekly) pulls Wikidata into `FACTS#`.
 3. `newsCountryIntelligence` (05:15 UTC) reads the archives, thread analyses and facts -> `COUNTRY#<name>` briefing and risk read.
 4. `newsDriftCorrector` (05:30 UTC) compares days -> `DRIFT#<date>` notes.
-5. `newsSensitiveData-dev` actions `country_intelligence`, `country_facts`, `country_history`, `archive_range`, `markets_country`.
+5. `newsSensitiveData-dev` actions `country_intelligence`, `country_facts`, `country_history`, `archive_range`.
 6. Hooks above -> `CountryCardV2`, `CountryPage` (`/weekly/country/:countryName`) and `CountryListPage` (`/weekly/countries`).
 7. In the browser, no model: `CountryPage` builds the sheet blocks and the copied text from what it read; "built only from our archive"
    is said only when the analysis has no `groundingSources`.
 
 ## Docs
 - Decisions: [0010](../../../../../project-docs/decisions/0010-country-view-split.md) (country view split by job),
-  [0005](../../../../../project-docs/decisions/0005-one-importance-scale.md), [0009](../../../../../project-docs/decisions/0009-economy-parked.md),
-  [0031](../../../../../project-docs/decisions/0031-economy-parked-fx-box-labelled.md)
+  [0005](../../../../../project-docs/decisions/0005-one-importance-scale.md), [0049](../../../../../project-docs/decisions/0049-retire-economy.md)
 - Rules: [SEVERITY_CODEBOOK.md](../../../../../quality/SEVERITY_CODEBOOK.md)
 
 ## How to check it

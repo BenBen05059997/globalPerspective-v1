@@ -11,12 +11,11 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 
 ## Status
 - Live, public; nothing gates on sign-in. The map's About drawer links here (decision 0029).
-- `ECONOMY_PARKED` (`@/shared/lib/economyFlag`, currently `true`): severity badges and "Economic impact" links are hidden, topics link
-  to the story arc instead, and the disruption list is not fetched.
+- The economy product is retired (decision 0049): topics link to the story arc, and the lede is picked from urgency, trending and source count.
 
 ## Routes
 - `/today` -> `Home` (the one page `src/app/App.jsx` imports eagerly, through `index.js`)
-- No redirects point here. The masthead no longer links to `/weekly-markets` (economy parked, decision 0031).
+- No redirects point here. The masthead has no markets link (economy retired, decision 0049).
 
 ## Frontend
 - `Home.jsx` - the page: region grouping, per-topic Summary / Predict / Trace buttons, retry loop, trust strip
@@ -29,7 +28,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - Public API (`index.js`): `Home`
 - Imports from other features: `@/features/breaking` -> `BreakingStrip`; `@/features/track-record` -> `useTrackRecord`,
   `useCorrectionsFeed` (trust strip)
-- Shared: `useGeminiTopics`, `contentService`, `useDisruptionsList`, `EntityLink`, `@/shared/lib/links.js`
+- Shared: `useGeminiTopics`, `contentService`, `EntityLink`, `@/shared/lib/links.js`
 - Failures render inline (no modal) and go to `reportFetchError`. Summary and Predict retry on cache miss or 503 up to `MAX_RETRIES`
   (6), `RETRY_DELAY_MS` 10 s apart; Trace Cause does not retry.
 - Links: a topic title opens its story only with a real `threadId`; a country opens its page.
@@ -46,7 +45,6 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - On click: `contentService.getTopicSummary` / `getTopicPrediction` / `getTopicTraceCause` -> `summary` / `prediction` / `trace_cause`.
   These read stored results by `topicId`; nothing is generated on view.
 - `useTrackRecord()` -> `prediction_track_record`; `useCorrectionsFeed(100)` -> `corrections_feed` (the trust strip uses the server's `total`).
-- `useDisruptionsList({ limit: 100 })` -> `economic_impact_list`, only when `!ECONOMY_PARKED`.
 
 ## Pipeline
 1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) picks topics -> NewsCache `staging`.
@@ -59,7 +57,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md) (map is home, this moved to `/today`),
-  [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md), [0009](../../../../../project-docs/decisions/0009-economy-parked.md),
+  [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md), [0049](../../../../../project-docs/decisions/0049-retire-economy.md),
   [0029](../../../../../project-docs/decisions/0029-today-kept-linked-from-map.md)
 
 ## How to check it

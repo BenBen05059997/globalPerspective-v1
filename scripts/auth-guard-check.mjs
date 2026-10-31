@@ -51,8 +51,6 @@ const PUBLIC_HOOKS = [
   'useCountryIntelligence.js',
   'useDailyBrief.js',
   'useGeminiTopics.js',
-  'useMarketsGlobal.js',
-  'useMarketsCountry.js',
 ];
 
 // Matches an early-return / bail guard keyed on a falsy user, e.g.

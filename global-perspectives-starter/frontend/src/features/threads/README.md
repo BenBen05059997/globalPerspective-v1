@@ -11,7 +11,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 
 ## Status
 - Live, public; signed-out reads work (no tier cap in the archive, thread or analysis reads).
-- `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) drops the Economy tab; `?tab=economy` falls back to Overview.
+- No Economy tab (retired, decision 0049); an old `?tab=economy` link falls back to Overview.
 
 ## Routes
 - `/weekly` -> `WeeklyPage` (`?view=list|board|timeline|map|web|changes`, `?category=`; no `view` means list)
@@ -27,7 +27,6 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `linksFromView`, `storyLinks`, `linkStates` (story links)
 - Public API (`index.js`): `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`,
   `deriveFromIndex` (used by map). `WeeklyMap` is not exported: countries lazy-imports it by path.
-- Imports from other features: `@/features/economy` -> `MechanismCard`, `useEconomicImpact` (ThreadPage only; never countries).
 - Shared: `@/shared/lib/links.js` addresses, `EntityLink`, `@/shared/ui/deck.css` (deck shell shared with briefings).
   Country positions live in `@/shared/map/countryCoordinates.js`.
 - Story page links: forecast questions -> `/track-record?q=<qid>`, "Show on map" -> `/?story=`. There is no link into the retired Studio.

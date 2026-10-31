@@ -15,31 +15,20 @@ const { composeTopicsLede } = await import(
 );
 
 const CASES = {
-  empty: { topics: [], disruptions: [] },
-  'no-disruptions': {
+  empty: { topics: [] },
+  basic: {
     topics: [
       { id: 't1', title: 'Quiet diplomacy resumes', regions: ['France'], sources: [{}, {}] },
       { id: 't2', title: 'Markets drift', regions: ['United States'], threadId: 'thread-mkt', x_trending: true, sources: [{}] },
     ],
-    disruptions: [],
-  },
-  'severity-wins': {
-    topics: [
-      { id: 't1', title: 'Trending but minor', regions: ['Japan'], x_trending: true, sources: [{}, {}, {}, {}, {}] },
-      { id: 't2', title: 'Oil shock escalates', regions: ['Iran', 'Israel'], threadId: 'thread-oil', sources: [{}] },
-    ],
-    disruptions: [{ scopeId: 'thread-oil', severity: 'severe' }],
   },
   'urgent-over-trending': {
     topics: [
       { id: 't1', title: 'Trending story', regions: ['Brazil'], x_trending: true, sources: [{}] },
       { id: 't2', title: 'Breaking crisis', regions: ['Sudan'], urgency: 'high', sources: [{}] },
     ],
-    disruptions: [],
   },
 };
-
-const SEV_RANK = { severe: 3, moderate: 2, minor: 1 };
 
 function check(name, input, out) {
   const failures = [];
@@ -69,17 +58,9 @@ function check(name, input, out) {
 
   // 3. reason traces to a real signal on the chosen topic
   const chosen = titled.find((t) => t.title === out.lede.title);
-  const sevByThread = {};
-  for (const d of input.disruptions || []) {
-    if (!d.scopeId) continue;
-    if ((SEV_RANK[d.severity] || 0) > (SEV_RANK[sevByThread[d.scopeId]] || 0)) sevByThread[d.scopeId] = d.severity;
-  }
   const r = out.lede.reason;
   if (r) {
-    if (/economic impact$/.test(r)) {
-      const sev = r.replace(' economic impact', '');
-      if (sevByThread[chosen.threadId] !== sev) failures.push(`reason "${r}" not backed by a cited disruption`);
-    } else if (r === 'urgent') {
+    if (r === 'urgent') {
       if (chosen.urgency !== 'high') failures.push('reason "urgent" but topic.urgency !== high');
     } else if (r === 'trending') {
       if (!chosen.x_trending) failures.push('reason "trending" but topic.x_trending falsy');

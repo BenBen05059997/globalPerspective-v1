@@ -1,24 +1,14 @@
 {
   "note": "Per-file, per-kind count of hard-coded colours in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
   "totals": {
-    "hex": 68,
-    "func": 4,
+    "hex": 14,
     "template": 1,
+    "func": 2,
     "tokenCopy": 8
   },
   "files": {
     "features/account/SignIn.jsx": {
       "hex": 4
-    },
-    "features/economy/components/Sparkline.jsx": {
-      "hex": 1
-    },
-    "features/economy/components/WeeklyMarketsView.css": {
-      "hex": 48
-    },
-    "features/economy/EconomyPage.css": {
-      "hex": 5,
-      "func": 2
     },
     "shared/lib/crisisHue.js": {
       "hex": 1

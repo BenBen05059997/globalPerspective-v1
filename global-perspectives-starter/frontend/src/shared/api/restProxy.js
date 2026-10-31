@@ -28,7 +28,7 @@ function assertProxy() {
   PROXY_ENDPOINT = endpoint;
 }
 
-// Concurrency limiter for the shared proxy Lambda. Pages like /economy and
+// Concurrency limiter for the shared proxy Lambda. Pages like
 // /weekly/country mount many hooks at once; firing every request simultaneously
 // spins up a burst of cold Lambda containers, some of which error (HTTP 500).
 // Capping in-flight proxy requests turns the burst into small waves — the first
@@ -215,30 +215,8 @@ export async function fetchWeeklyBrief(week = null) {
   return proxyAction('weekly_brief', week ? { week } : {});
 }
 
-export async function fetchWeeklyMarkets() {
-  return proxyAction('weekly_markets');
-}
-
-// ── Markets data (public, no auth required) ──────────────────────────────────
-export async function fetchMarketsGlobal() {
-  return proxyAction('markets_global');
-}
-
-export async function fetchMarketsCountry(country) {
-  return proxyAction('markets_country', { country });
-}
-
-export async function fetchMarketsHistory(symbol, days = 30) {
-  return proxyAction('markets_history', { symbol, days });
-}
-
 export async function fetchSystemsAnalysis(countryName) {
   return proxyAction('systems_analysis', { countryName });
-}
-
-// ── Economic Impact (per-thread economic disruption) ─────────────────────────
-export async function fetchEconomicImpact(threadId) {
-  return proxyAction('economic_impact', { threadId });
 }
 
 // ── Prediction track record (calibration / forecast accountability) ──────────
@@ -264,18 +242,6 @@ export async function fetchPredictionSnapshotByThread(threadId) {
 // with a threadId = that story's record + state (the frontend uses the whole index, shared by every surface).
 export async function fetchWebIndex(threadId) {
   return proxyAction('web_index', threadId ? { threadId } : {});
-}
-
-export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
-  const payload = {};
-  if (minSeverity) payload.minSeverity = minSeverity;
-  if (country) payload.country = country;
-  if (limit) payload.limit = limit;
-  return proxyAction('economic_impact_list', payload);
-}
-
-export async function fetchTopMovers(limit = 10) {
-  return proxyAction('economic_top_movers', { limit });
 }
 
 // ── Saved items (newsSavedItems Lambda, separate Function URL endpoint) ────

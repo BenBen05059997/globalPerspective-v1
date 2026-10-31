@@ -16,9 +16,7 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
-import { MechanismCard, useEconomicImpact } from '@/features/economy';
 import ThreadForecast from '@/features/threads/components/ThreadForecast';
-import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useThreadForecast } from '@/features/threads/hooks/useThreadForecast';
 import StoryMode from '@/features/threads/components/StoryMode';
 import PhoneStoryMode from '@/features/threads/components/PhoneStoryMode';
@@ -131,22 +129,17 @@ export default function ThreadPage() {
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
   const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
-  // Honor deep-linked tabs (storyHref's ?tab= contract — e.g. ?tab=economy from
-  // disruption links on Economy/Daily/Country/Map). Unknown values → Overview
-  // (the synthesis-first landing tab; falls back to Timeline when no analysis yet).
+  // Honor deep-linked tabs (storyHref's ?tab= contract). Unknown values (an old
+  // ?tab=economy link included, decision 0049) → Overview (the synthesis-first
+  // landing tab; falls back to Timeline when no analysis yet).
   const requestedTab = searchParams.get('tab');
-  // Economy parked (2026-09-28): 'economy' is no longer a selectable tab, so a
-  // ?tab=economy deep link (old disruption links) falls through to Overview,
-  // same as any other unknown tab value.
-  const allowedTabs = ECONOMY_PARKED
-    ? ['overview', 'timeline', 'actors', 'sources']
-    : ['overview', 'timeline', 'actors', 'sources', 'economy'];
+  const allowedTabs = ['overview', 'timeline', 'actors', 'sources'];
   const [contentTab, setContentTab] = useState(() =>
     allowedTabs.includes(requestedTab) ? requestedTab : 'overview');
   // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page, on desktop and phone
   // alike (S2.2 — PhoneStoryMode replaces the phone's former long-page default). "Read in full" is
   // the alternate, long accessible page (unchanged below, same component on both breakpoints). A
-  // deep-linked tab (e.g. ?tab=economy from a disruption link) lands straight on the full page so
+  // deep-linked tab (?tab=) lands straight on the full page so
   // that contract keeps working — story mode has no tabs to honor it.
   const isPhone = useIsPhone();
   const [readFull, setReadFull] = useState(() => !!requestedTab);
@@ -184,8 +177,6 @@ export default function ThreadPage() {
   }, [narrativeEntries, threadId]);
 
   const { analysis, loading: analysisLoading } = useStoryAnalysis(threadId);
-  const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId, { enabled: !ECONOMY_PARKED });
-  const hasEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
 
   // Related threads: same category + same region
@@ -272,14 +263,13 @@ export default function ThreadPage() {
 
   if (!thread) {
     // Beyond the 90-day durable window the timeline can't be rebuilt. Wait for the
-    // analysis + economic records before deciding, so we never flash a dead-end
-    // while those by-ID fetches are still in flight.
-    if (analysisLoading || economicLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
-    // We may still hold the analysis and/or economic-impact record (keyed by the
-    // same threadId). Show a focused fallback instead of a dead end.
-    const fallbackEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
-    if (analysis || fallbackEconomy) {
-      const fallbackTitle = analysis?.threadTitle || economicImpact?.headline || humanizeThreadId(threadId);
+    // analysis record before deciding, so we never flash a dead-end
+    // while that by-ID fetch is still in flight.
+    if (analysisLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
+    // We may still hold the analysis record (keyed by the same threadId).
+    // Show a focused fallback instead of a dead end.
+    if (analysis) {
+      const fallbackTitle = analysis.threadTitle || humanizeThreadId(threadId);
       return (
         <div className="container tp-fallback">
           <div className="tp-fallback-crumbs">
@@ -291,13 +281,7 @@ export default function ThreadPage() {
             but here&apos;s the analysis we have.
           </p>
 
-          {fallbackEconomy && (
-            <div className="tp-fallback-econ">
-              <MechanismCard impact={economicImpact} />
-            </div>
-          )}
-
-          {analysis && (analysis.storyArc || analysis.trajectory) && (
+          {(analysis.storyArc || analysis.trajectory) && (
             <div className="tp-fallback-analysis">
               {analysis.storyArc && (
                 <>
@@ -439,18 +423,17 @@ export default function ThreadPage() {
     analysis.storyArc || analysis.trajectory || rootCauseSteps(analysis.rootCauseChain).length || analysis.watchQuestions?.length
   ));
 
-  // Content tabs: Overview | Timeline | Actors | Sources | Economy
+  // Content tabs: Overview | Timeline | Actors | Sources
   const contentTabs = [
     hasOverview && { key: 'overview', label: 'Overview' },
     { key: 'timeline', label: 'Timeline', count: thread.entries.length },
     analysis?.keyActors?.length > 0 && { key: 'actors', label: 'Actors', count: analysis.keyActors.length },
     sourceRollup.length > 0 && { key: 'sources', label: 'Sources', count: sourceRollup.length },
-    hasEconomy && { key: 'economy', label: 'Economy', count: economicImpact.instruments?.length || 0, severity: economicImpact.severity },
-  ].filter(Boolean); // hasEconomy is always false while ECONOMY_PARKED — see above
+  ].filter(Boolean);
 
   // Effective tab, derived (not reset via effects — no race with async fetches).
-  // A deep-linked tab (?tab=economy) shows the first available tab until its data
-  // arrives, switches over when it does, and stays put if it never materializes.
+  // A deep-linked tab shows the first available tab until its data arrives, switches
+  // over when it does, and stays put if it never materializes.
   const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : (contentTabs[0]?.key || 'timeline');
 
   return (
@@ -743,12 +726,6 @@ export default function ThreadPage() {
           </div>
         )}
 
-        {/* Economy tab */}
-        {activeTab === 'economy' && hasEconomy && (
-          <>
-            <MechanismCard impact={economicImpact} />
-          </>
-        )}
         </div>
 
       </EditorialShell>

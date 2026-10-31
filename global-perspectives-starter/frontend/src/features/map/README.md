@@ -10,7 +10,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 <!-- pipeline:end -->
 
 ## Status
-- Live, public; map data never gates on sign-in. No feature flag and no economy gate in this folder.
+- Live, public; map data never gates on sign-in. No feature flag.
 - The SITUATIONS / COUNTRY RISK layer switch and the Globe / Radar switch are both live. Radar behaviour: decision 0023.
 
 ## Routes

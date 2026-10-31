@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # verify_pages.sh — Layer 7 per-page grep guards.
-# See ECONOMIC_VERIFICATION_PLAN.md §9.
 #
 # For each page: assert the imports / hooks / wiring that MUST be present
 # (positive) or MUST NOT be present (negative). Greps are deliberately strict
@@ -44,102 +43,21 @@ echo "==> Per-page grep guards"
 echo
 
 # ─── App-level ───
-# Stage-0 item (g) (STAGE0_FIXES_PLAN.md) converted App.jsx's page imports to React.lazy(); match
-# both the old static form and the new `const EconomyPage = lazy(() => import(...))` form.
-must_have "$SRC/app/App.jsx" "import EconomyPage|EconomyPage = lazy" "imports EconomyPage"
-must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
-must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "economy soft-hidden from nav (2026-09-25; route stays live)"
+# The economy product is retired (decision 0049): no route, no feature folder, no flag.
+must_not_have "$SRC/app/App.jsx" "EconomyPage|/economy|/weekly-markets|MarketsRedirect" "no economy or markets route"
 
-# ─── N1 site shell (2026-09-26): plain, flat menu items; the Studio is gone from the menu and retired 2026-10-20 (decision 0030) ───
-must_have "$SRC/app/layout/Layout.jsx" "label: 'Map'" "menu has Map"
-must_have "$SRC/app/layout/Layout.jsx" "label: 'Stories'" "menu has Stories"
-must_have "$SRC/app/layout/Layout.jsx" "label: 'Briefings'" "menu has Briefings"
-must_not_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "no Studio menu item (the Studio retired 2026-10-20; /analyze redirects)"
-must_have "$SRC/app/layout/Layout.jsx" "label: 'Track record'" "menu has Track record"
-must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/whitepaper" "white paper soft-hidden from nav (A1, 2026-09-26; route stays live)"
-
-# ─── S6 home swap (2026-10-01): `/` is the map console, the old home lives at /today ───
-must_have "$SRC/app/App.jsx" 'path="/" element=\{<SituationHome' "/ renders the map console"
-must_have "$SRC/app/App.jsx" 'path="/today" element=\{<Home' "old home kept reachable at /today"
-must_have "$SRC/app/App.jsx" 'path="/map" element=\{<MapRedirect' "/map redirects to /"
-must_have "$SRC/app/MapRedirect.jsx" "search, hash" "the /map redirect keeps the query params"
-must_have "$SRC/app/layout/Layout.jsx" "to: ROUTE.map, exact: true, label: 'Map'" "menu Map item points at / (exact; ROUTE.map from shared/lib/links.js)"
-must_have "$SRC/app/layout/Layout.jsx" "location.pathname === ROUTE.map && !isPhone" "desktop console shell keyed on / (ROUTE.map)"
-must_have "$SRC/features/map/components/MapAbout.jsx" "to=\{todayHref\(\)\}" "/today stays reachable from the map's About drawer (the footer no longer links it)"
-must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
-
-# ─── BriefingsPage (/briefings: read / weekly / present modes; /daily and /weekly-brief merged 2026-10-19) ───
-must_have "$SRC/app/App.jsx" "import BriefingsPage|BriefingsPage = lazy" "imports BriefingsPage"
-must_have "$SRC/app/App.jsx" "/briefings" "wires /briefings route"
-must_have "$SRC/app/layout/Layout.jsx" "to: ROUTE.briefings, label: 'Briefings'" "menu Briefings item points at /briefings (ROUTE.briefings)"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'read'" "read mode exists (the default)"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'weekly'" "weekly mode exists"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'present'" "present mode exists"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyEditionsIndex" "present mode wires the editions strip index"
-must_have "$SRC/features/briefings/components/ReadMode.jsx" "useDailyBrief" "read mode uses useDailyBrief"
-must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "useWeeklyBrief\\(weekParam\\)" "weekly mode reads the requested week (week=)"
-must_have "$SRC/features/briefings/components/ReadMode.jsx" "Key Takeaways" "read mode keeps Key Takeaways"
-must_have "$SRC/features/briefings/components/ReadMode.jsx" "Shape of the Day" "read mode keeps the category bars"
-must_have "$SRC/features/briefings/components/ReadMode.jsx" "Full Analysis" "read mode keeps the full analysis"
-must_have "$SRC/features/briefings/components/ReadMode.jsx" "SaveButton itemType=\"daily\"" "read mode keeps Save"
-must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "SaveButton itemType=\"weekly\"" "weekly mode has Save"
-must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "SubscribeCard" "weekly mode keeps the subscribe card"
-must_have "$SRC/features/briefings/components/BriefingSlides.jsx" "isLast && <SubscribeCard" "the weekly deck ends with the subscribe card"
-must_have "$SRC/app/App.jsx" 'path="/daily" element=\{<DailyRedirect' "/daily redirects to /briefings"
-must_have "$SRC/app/App.jsx" 'path="/daily/:dateKey" element=\{<DailyRedirect' "/daily/:date redirects to /briefings"
 must_have "$SRC/app/App.jsx" 'path="/weekly-brief" element=\{<WeeklyBriefRedirect' "/weekly-brief redirects to /briefings?mode=weekly"
 must_not_have "$SRC/app/App.jsx" "DailyPage|WeeklyBriefPage" "no page component behind /daily or /weekly-brief"
 must_have "$SRC/app/App.jsx" 'path="/weekly" element=\{<WeeklyRoute' "/weekly?section=countries redirects to /weekly/countries (one address for the countries list)"
 
-# ─── EconomyPage ───
-must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/features/economy/EconomyPage.jsx" "useTopMovers" "uses useTopMovers"
-must_have "$SRC/features/economy/EconomyPage.jsx" "useMarketsGlobal" "renders Market Context rail"
-must_have "$SRC/features/economy/EconomyPage.jsx" "tab.{1,4}economy" "deep-links stories to thread economy tab"
-
-# ─── Home ───
-must_have "$SRC/features/home/Home.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/features/home/Home.jsx" "disruptionByThread" "builds per-thread map"
-must_have "$SRC/features/home/Home.jsx" "tab.{1,4}economy" "deep-links to economy tab"
-must_have "$SRC/features/home/Home.jsx" "SeverityBadge" "renders SeverityBadge"
-
-# ─── Briefings read mode: Economic Footprint dropped with the merge (economy parked, 2026-10-19) ───
-must_not_have "$SRC/features/briefings/components/ReadMode.jsx" "useDisruptionsList|EconomicFootprint" "read mode carries no economy section while economy is parked"
-
-# ─── ThreadPage ───
-must_have "$SRC/features/threads/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"
-must_have "$SRC/features/threads/ThreadPage.jsx" "MechanismCard" "renders MechanismCard"
-# DisruptionPreview removed 2026-06-29 — economy now lives in the center Economy
-# tab (MechanismCard) after the rail was de-duplicated; preview atom no longer used here.
-must_have "$SRC/features/threads/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gate"
-
-# ─── CountryPage ───
-must_have "$SRC/features/countries/CountryPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/features/countries/CountryPage.jsx" "country:" "passes country filter"
-must_have "$SRC/features/countries/CountryPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
-
-# ─── CountryListPage ───
-must_have "$SRC/features/countries/CountryListPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/features/countries/CountryListPage.jsx" "maxSeverityByCountry" "builds per-country max"
-must_have "$SRC/features/countries/CountryListPage.jsx" "Disruption" "exposes Disruption sort"
-
-# ─── WorldMapV2: REMOVED 2026-09-24 (legacy map deleted; /map = SituationHome) ───
-# Its four guards are gone with it. Disruption data keeps its surfaces on Home,
-# CountryPage, CountryListPage, EconomyPage, briefings read mode — guarded above/below.
-
-# ─── Disclosures ───
-must_have "$SRC/features/static/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"
-must_have "$SRC/features/static/Disclosures.jsx" "[Aa]uto" "mentions automated quality judge"
-
-# ─── QualityFlag propagation contract (ECONOMIC_DISRUPTION.md §"Quality flag propagation") ───
-# Phase B's verdict flag must surface in every atom that renders economic content.
-# Each atom imports QualityFlag itself; remove the import → flag goes dark on that surface.
-# DisruptionRow / DisruptionPreview were deleted 2026-10-19 (only tests used them; economy parked).
-must_have "$SRC/features/economy/components/MechanismCard.jsx"     "import QualityFlag" "QualityFlag wired into MechanismCard"
-must_have "$SRC/features/economy/components/MechanismCard.jsx"     "<QualityFlag" "QualityFlag rendered in MechanismCard"
-
-# ─── §9.11 negative guards — pages that intentionally do NOT carry economic UI ───
+# ─── Economy surfaces are gone (decision 0049) ───
+must_not_have "$SRC/features/home/Home.jsx" "useDisruptionsList|disruptionByThread|ECONOMY_PARKED|SeverityBadge" "Home carries no economy surface"
+must_not_have "$SRC/features/briefings/components/ReadMode.jsx" "useDisruptionsList|EconomicFootprint" "read mode carries no economy section"
+must_not_have "$SRC/features/threads/ThreadPage.jsx" "useEconomicImpact|MechanismCard|hasEconomy|ECONOMY_PARKED" "story page carries no economy tab"
 must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard" "no economic hooks/atoms"
+must_not_have "$SRC/features/countries/CountryPage.jsx" "useDisruptionsList|useMarketsCountry|ECONOMY_PARKED" "country page carries no economy or markets block"
+must_not_have "$SRC/features/countries/CountryListPage.jsx" "useDisruptionsList|maxSeverityByCountry|ECONOMY_PARKED" "country list has no disruption sort"
+must_not_have "$SRC/features/static/Disclosures.jsx" "Economic Disruption" "disclosures no longer describe the retired economy layer"
 
 # ─── S6: track record E2 (service record) + E1 text version ───
 # The July pilot (122 triggers, all confirmed 2026-07-24) is archived and must never be blended
@@ -286,7 +204,7 @@ for jsx in features/static/Contact.jsx features/static/AboutContact.jsx features
   must_not_have "$SRC/$jsx" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "$jsx has no colour literals (tokens only)"
 done
 must_have "$SRC/app/index.css" "^a \\{ color: var\\(--accent\\)" "bare links read the accent, not the browser blue"
-must_not_have "$SRC/shared/ui/atoms.css" "\\.(sev|rsb)-(high|elevated|moderate|low) *\\{[^}]*background" "SeverityBadge / RiskScoreBadge are outlines, not fills"
+must_not_have "$SRC/shared/ui/atoms.css" "\\.(sev|rsb)-(high|elevated|moderate|low) *\\{[^}]*background" "RiskScoreBadge is an outline, not a fill"
 
 # ─── P4 (2026-10-01): Stories /weekly = A (list) + C (timeline) ───
 T="$SRC/features/threads"
@@ -307,7 +225,6 @@ must_not_have "$T/WeeklyPage.jsx" "return null" "WeeklyPage never null-gates"
 must_not_have "$SRC/shared/map/RadarMap.jsx" "(shading|linkArcs|countryRisk|situations) = \\[\\]" "RadarMap defaults are stable (a '= []' default re-ran the draw effect every render)"
 must_not_have "$SRC/features/track-record/components/ForecastBoard.jsx" "(situations|countryRisk)=\\{\\[\\]\\}" "ForecastBoard passes stable arrays to RadarMap (inline [] looped: Maximum update depth)"
 # (the /spider-demo prototype and its button guard were retired in P7b)
-must_not_have "$SRC/features/economy/EconomyPage.css" "ep-chg-(up|dn) *\\{ *color: *#" "economy change colours are tokens (the light-theme green/red were under 4.5:1 on dark)"
 
 # ─── P6 (2026-10-01): operator decisions 1-14 ───
 # 11 · risk colours are neutral: --tier-* (and washes) are low-saturation greys that get brighter with the tier
@@ -352,9 +269,7 @@ fi
 # 1 + 2 · retired routes are redirects, with no page behind them
 must_have "$SRC/app/App.jsx" 'path="/breaking" element=\{<BreakingFeedRedirect' "/breaking redirects"
 must_have "$SRC/app/App.jsx" 'path="/breaking/:id" element=\{<BreakingDetailRedirect' "/breaking/:id redirects"
-must_have "$SRC/app/App.jsx" 'path="/weekly-markets" element=\{<MarketsRedirect' "/weekly-markets redirects"
 must_not_have "$SRC/app/App.jsx" "BreakingFeedPage|BreakingDetailPage|WeeklyMarketsPage" "no page component behind the retired routes"
-must_have "$SRC/app/LegacyRedirects.jsx" "/briefings\?from=markets" "/weekly-markets keeps the markets paused note (?from=markets)"
 must_have "$SRC/app/LegacyRedirects.jsx" "alert.hasArc && alert.threadId" "/breaking/:id goes to the story only when the alert resolves to one"
 must_not_have "$SRC/features/breaking/components/NotificationBell.jsx" "to=\"/breaking\"" "the bell does not link a /breaking feed page"
 must_not_have "$SRC/features/breaking/components/BreakingStrip.jsx" "'/breaking'" "the strip does not link a /breaking feed page"

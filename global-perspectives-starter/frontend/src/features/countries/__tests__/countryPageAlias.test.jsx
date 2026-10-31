@@ -20,8 +20,6 @@ vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => null 
 vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
   useCountryIntelligence: (names) => { intelNames.list.push(...names); return { intelligence: {} }; },
 }));
-vi.mock('@/features/countries/hooks/useMarketsCountry', () => ({ useMarketsCountry: () => ({ data: null }) }));
-vi.mock('@/shared/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
 vi.mock('@/features/countries/hooks/useCountryHistory', () => ({ useCountryHistory: () => ({ snapshots: [], driftNotes: [] }) }));
 vi.mock('@/features/countries/components/CountryCardV2', () => ({ default: () => null }));
 vi.mock('@/shared/ui/SaveButton', () => ({ SaveButton: () => <span>save</span> }));

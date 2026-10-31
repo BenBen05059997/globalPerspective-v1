@@ -325,6 +325,14 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "driftNote": {
+                  "type": "object",
+                  "required": [
+                    "whyChanged",
+                    "generatedAt"
+                  ],
+                  "description": "the story's latest drift note as stored (what changed since the previous reading); absent when it has none"
                 }
               }
             }

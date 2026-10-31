@@ -372,3 +372,20 @@ test('notes in views (0042): analysis as stored, judged links on both stories, c
   assert.deepEqual([c.drift.map((d) => d.whyChanged), c.driftCount, c.intelligence.riskScore, c.systems.web], [['latest'], 2, 61, 1]);
   assert.equal(build([e]).countries.size, 0); // no notes: no country views
 });
+
+test('story drift notes (0042): the latest one rides on the story analysis as stored; none without an analysis; country views ignore them', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const note = (subtype, kind, id, at, payload) => ({subtype, subject: {kind, id}, part: '', at, model: 'm', noteId: `${subtype}${kind}${id}${at}`, iso3: [], payload});
+  const notes = [
+    note('story_analysis', 'story', 'thread-a', '2026-10-21T05:00:00.000Z', {lead: 'L'}),
+    note('drift', 'story', 'thread-a', '2026-10-19T05:30:00.000Z', {whyChanged: 'first'}), note('drift', 'story', 'thread-a', '2026-10-21T05:30:00.000Z', {whyChanged: 'latest'}),
+    note('drift', 'story', 'thread-b', '2026-10-21T05:30:00.000Z', {whyChanged: 'no analysis'}), // thread-b has no analysis note
+    note('drift', 'country', 'thread-a', '2026-10-22T05:30:00.000Z', {whyChanged: 'a country, not the story'})];
+  const v = build([e, f], {notes});
+  assert.deepEqual(v.stories.get('thread-a').analysis.driftNote, {whyChanged: 'latest', generatedAt: '2026-10-21T05:30:00.000Z', model: 'm'});
+  assert.equal(v.stories.get('thread-b').analysis, null); // the old action attached drift only to an existing analysis
+  assert.equal('driftNote' in build([e], {notes: notes.slice(0, 1)}).stories.get('thread-a').analysis, false);
+  assert.deepEqual([...v.countries.keys()], ['thread-a']); // only the country-kind drift note makes a country view
+  assert.equal(v.countries.get('thread-a').driftCount, 1);
+});

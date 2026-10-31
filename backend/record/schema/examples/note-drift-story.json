@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "noteId": "4fa7b99adcc7fa61ee71ee1624d10a8da01e0b4f",
+  "subtype": "drift",
+  "subject": {
+    "kind": "story",
+    "id": "thread-india-election-chief-faces-cal-6a2810"
+  },
+  "part": "",
+  "threadId": "thread-india-election-chief-faces-cal-6a2810",
+  "iso3": [],
+  "at": "2026-10-11T05:30:26.883Z",
+  "date": "2026-10-11",
+  "payload": {
+    "changeScore": {
+      "from": 75,
+      "to": 75,
+      "delta": 0
+    },
+    "since": "2026-10-10",
+    "priorTitle": "India's Voter Roll Crisis Sparks Nationwide Protests and Crackdown",
+    "whyChanged": "The October 10 crackdown on youth protests against Modi and the election chief escalated state repression against demonstrators, worsening humanitarian conditions. This shift toward targeting youth protesters is reflected in the headline change from generic nationwide protests to youth-led protests, and the humanitarian risk score rose accordingly.",
+    "currentTitle": "India's Voter Roll Crisis Ignites Youth-Led Protests and Crackdown",
+    "asOf": "2026-10-11",
+    "noSingleDriver": false,
+    "changeDimensions": {
+      "humanitarian": {
+        "to": 40,
+        "delta": 15,
+        "from": 25
+      }
+    },
+    "threadId": "thread-india-election-chief-faces-cal-6a2810",
+    "triggerEvent": {
+      "title": "India Cracks Down on Youth Protests Against Modi and Election Chief",
+      "topicId": "India Cracks Down on Youth Protests Against Modi and Election Chief-7",
+      "date": "2026-10-10"
+    }
+  },
+  "cites": [],
+  "model": "deepseek-flash",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsDriftCorrector",
+    "runId": "2026-10-11T05:30:26.883Z"
+  }
+}

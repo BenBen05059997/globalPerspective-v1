@@ -33,7 +33,7 @@ const COUNTRIES = (process.env.DRIFT_COUNTRIES
   || 'Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,DR Congo,South Africa')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
-const { writeDriftNote } = require('./recordNotes');
+const { writeDriftNote, writeStoryDriftNote } = require('./recordNotes');
 let RUN_ID = new Date().toISOString(); // reset per invocation in the handler
 
 const COUNTRY_PK =(n) => `COUNTRY#${n}`;
@@ -232,6 +232,7 @@ async function writeThreadNote(threadId, drift, note) {
     generatedAt: new Date().toISOString(),
   };
   await putDriftNote(THREAD_PK(threadId), cur.dateKey, base, ttl);
+  await writeStoryDriftNote({ threadId, item: base, model: LLM_MODEL, runId: RUN_ID });
 }
 
 async function processThread(threadId, dryRun = false) {

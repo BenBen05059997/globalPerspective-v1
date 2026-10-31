@@ -32,4 +32,17 @@ async function writeDriftNote({ country, item, model, runId, writer }) {
   }
 }
 
-module.exports = { writeDriftNote, NOTES_PREFIX };
+/** `item` is the stored story drift fields (before PK/SK/ttl) of the story `threadId`: the same drift file, subject kind story. */
+async function writeStoryDriftNote({ threadId, item, model, runId, writer }) {
+  try {
+    const note = notes.storyDriftNote({ item, threadId, model, producer: { lambda: LAMBDA, runId } });
+    const r = await (writer || s3Writer()).write('drift', [note]);
+    console.log(`[notes] drift: story ${threadId} ${item.asOf} ${r.appended} appended, ${r.skipped} already stored (${NOTES_PREFIX})`);
+    return note;
+  } catch (e) {
+    console.error(`[notes] story drift note not written: ${e.message}`);
+    return null;
+  }
+}
+
+module.exports = { writeDriftNote, writeStoryDriftNote, NOTES_PREFIX };

@@ -60,6 +60,9 @@ const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
 // (Tier 2, gated). Writes threads/story-map.json; the tracker reads it and stamps situation.threadId.
 const { buildStoryMap } = require('./matcher');
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+// Entry notes (decision 0042): each summary, cause chain and forecast this run stored is also written to
+// <NOTES_PREFIX>notes/entry/ through shared notes.js; record/shadow/ until the switch is checked.
+const NOTES_PREFIX = process.env.NOTES_PREFIX || 'record/shadow/';
 const STORY_MAP_KEY = 'threads/story-map.json';
 const ENABLE_R3_TIER = String(process.env.ENABLE_R3_TIER || 'false').toLowerCase() === 'true'; // gated until real-tag re-measurement
 let _s3;
@@ -265,7 +268,8 @@ exports.handler = async (event) => {
 
     if (!readOnly && swapped) {
       try {
-        await buildAndWriteArchive(filteredTopics, generationId, threadIdById);
+        const archived = await buildAndWriteArchive(filteredTopics, generationId, threadIdById);
+        if (archived) await writeEntryNotes([...outputs, ...reused], archived, generationId);
       } catch (archiveErr) {
         console.warn('Archive write encountered an issue:', archiveErr);
       }
@@ -1319,10 +1323,29 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
     );
     console.log(`Daily archive written (${dailyKey}): ${dailyEntries.length} new + ${mergedDaily.length - dailyEntries.length} existing = ${mergedDaily.length} total`);
 
-    return true;
+    // the entries as archived (sources capped), so an entry note's subject is the eventId newsStoryRecord computes from them
+    return { dailyEntries, archiveDate: dailyKey.slice('archive#'.length) };
   } catch (err) {
     console.error('Failed to write archive:', err);
     return false;
+  }
+}
+
+// The run's stored TOPIC# items -> entry notes in the record (decision 0042). Best-effort while DynamoDB stays the
+// primary copy: a failure is logged as [notes] and never fails the run.
+async function writeEntryNotes(items, { dailyEntries, archiveDate }, generationId) {
+  try {
+    const notes = require('./_shared/notes');
+    const { makeS3Json } = require('./_shared/s3json');
+    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+    const entryByTopic = new Map(dailyEntries.map((e) => [e.topicId, e]));
+    const producer = { lambda: 'NewsProjectInvokeAgentLambda', runId: generationId };
+    const built = items.map((item) => notes.entryNote({ item, topic: entryByTopic.get(item.topicId), archiveDate, producer })).filter(Boolean);
+    const writer = notes.makeNoteWriter({ s3json: makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET }), prefix: NOTES_PREFIX });
+    const r = await writer.write('entry', built);
+    console.log(`[notes] entry: ${built.length} built from ${items.length} items, ${r.appended} appended, ${r.skipped} already stored (${NOTES_PREFIX})`);
+  } catch (e) {
+    console.error(`[notes] entry notes not written: ${e.message}`);
   }
 }
 

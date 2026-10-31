@@ -1,6 +1,6 @@
 # 9. Economy is parked
 
-Status: accepted
+Status: superseded by 0049 (economy retired 2026-10-31)
 Date: 2026-09-25 (surfaces hidden behind a flag 2026-09-28)
 
 ## Context

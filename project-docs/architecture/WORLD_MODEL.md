@@ -42,7 +42,7 @@ Typed inputs by domain:
 | disaster | GDACS alert level (Red/Orange/Green) | live (`newsGdacsIngest`) |
 | disaster | affected population | known gap: the feed does not carry it |
 | conflict, humanitarian | fatalities | per-event gap; country level only: `newsCountryFactsUpdater` collects ACLED `fatalities30d` / `eventCount30d` for its first 12 countries into `FACTS#<country>`. ReliefWeb and the INFORM Severity Index are not wired |
-| economy | `newsEconomicImpact` severity | parked (decision 0009) |
+| economy | `newsEconomicImpact` severity | retired (decision 0049) |
 | everything else | editorial rubric: reach, severity, irreversibility, novelty | the vocabulary exists as QA tags in `newsImpactAudit` (parked, decision 0015); not yet populating a record |
 
 Universal counts for every event, never judged: outlets (corroboration), countries (spread), velocity (rate of new coverage). A field with no measured input renders "no data", never a judged substitute presented as measured.
@@ -57,7 +57,7 @@ Universal counts for every event, never judged: outlets (corroboration), countri
 | Editorial significance (h/m/l) | derive then deprecate: on the next touch of selection, fold into the tier if no frontend consumer exists |
 | Editorial urgency (h/m/l) | keep: tempo, not importance |
 | Breaking-alert float score | keep: a send-eligibility gate that combines canonical inputs |
-| Economic-impact severity | keep, parked with the economy |
+| Economic-impact severity | retired with the economy (decision 0049) |
 | Prediction probabilities (ICD-203 bands) | keep: likelihood, not impact, a permanent separate axis |
 | Quality-judge 1-5 scores | keep: scores analysis quality, not event importance |
 | `velocity`, `escalating`, `x_trending` | raw signals, not scales |

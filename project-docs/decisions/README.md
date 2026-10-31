@@ -13,7 +13,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0006](0006-frontend-feature-folders.md) | 2026-09-24 | Frontend by feature; Lambda paths stay put | partly superseded by 0024 |
 | [0007](0007-pair-arcs-relocation-cancelled.md) | 2026-09-24 | Pair arcs are not moved onto the live map | accepted |
 | [0008](0008-design-discussion-is-not-build.md) | 2026-09-25 | A design discussion is not a build go-ahead | accepted |
-| [0009](0009-economy-parked.md) | 2026-09-25 | Economy is parked | accepted |
+| [0009](0009-economy-parked.md) | 2026-09-25 | Economy is parked | superseded by 0049 |
 | [0010](0010-country-view-split.md) | 2026-09-25 | The country view is split by job | superseded by 0035 (Studio half already gone in 0033) |
 | [0011](0011-track-record-and-studio.md) | 2026-09-25 | Track record lean and sampled; Studio stays a page | superseded by 0035 (confirm step by 0034, Studio by 0033) |
 | [0012](0012-story-web-is-news-based.md) | 2026-09-25 | A story's web is its own news; "judged to feed into", never "caused" | accepted |
@@ -35,7 +35,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0028](0028-briefings-merge-real-301s.md) | 2026-10-19 | One Briefings page; old addresses get real 301s | accepted (supersedes 0017's client-only redirects) |
 | [0029](0029-today-kept-linked-from-map.md) | 2026-10-19 | /today is kept and linked from the map | accepted (refines 0016) |
 | [0030](0030-studio-out-of-menu.md) | 2026-10-19 | The Studio leaves the menu until its return criteria are met | superseded by 0033 |
-| [0031](0031-economy-parked-fx-box-labelled.md) | 2026-10-19 | Economy stays parked; dead links go; FX box labelled raw quotes | accepted (extends 0009) |
+| [0031](0031-economy-parked-fx-box-labelled.md) | 2026-10-19 | Economy stays parked; dead links go; FX box labelled raw quotes | superseded by 0049 |
 | [0032](0032-signals-api-parked.md) | 2026-10-19 | The Signals API is parked | accepted (extends 0015) |
 | [0033](0033-lens-studio-retired.md) | 2026-10-20 | The lens Analysis Studio is retired | accepted (supersedes 0030) |
 | [0034](0034-auto-verdicts-no-human-gate.md) | 2026-10-20 | The resolver writes verdicts itself; no human gate | accepted (supersedes the confirm step of 0011) |
@@ -51,3 +51,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0044](0044-track-record-view.md) | 2026-10-31 | The track record page reads `views/track-record.json` built from facts; legacy pilot stats are a constant; corrections stay gated on the action | accepted; follows 0037, 0043 |
 | [0045](0045-eligibility-window-90-days.md) | 2026-10-31 | The weekly draw's eligibility window is 7-90 days everywhere (page, labels, views, read API), matching the draw; resolves 0043's open question | accepted (operator) |
 | [0046](0046-weekly-index.md) | 2026-10-31 | The 30-day archive pages read `views/index/weekly.json`; the action serves the newest days and the fallback; the countries list stays on the action | accepted (operator); follows 0037, 0042, 0044 |
+| [0049](0049-retire-economy.md) | 2026-10-31 | The economy product is retired: page, story tab, FX box, read actions and five Lambdas leave the code; the data is deleted later, one yes each | accepted (operator); supersedes 0009, 0031; trims 0032 |

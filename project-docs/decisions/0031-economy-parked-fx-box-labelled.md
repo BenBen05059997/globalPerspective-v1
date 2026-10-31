@@ -1,6 +1,6 @@
 # 0031. Economy stays parked; its dead links go; the FX box is labelled raw quotes
 
-Status: accepted (extends 0009)
+Status: superseded by 0049 (economy retired 2026-10-31)
 Date: 2026-10-19
 
 ## Context

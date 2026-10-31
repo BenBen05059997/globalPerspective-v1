@@ -434,3 +434,17 @@ test('judged links: a pair held both ways in one web is two rows (the weaker is 
     assert.deepEqual(rows.map((r) => [r.from, r.to, r.confidence, r.mechanism, 'reverse' in r]).sort(), [['thread-a', 'thread-b', 'strong', 'forward', false], ['thread-b', 'thread-a', 'weak', 'back', false]]);
   }
 });
+
+test('an entry with no iso3 takes the countries of its archive places text; regions and unknown places add nothing (0047)', () => {
+  const facts = X.golden();
+  const i = facts.findIndex((f) => f.kind === 'entry');
+  const old = facts[i];
+  facts[i] = {...old, iso3: [], payload: {...old.payload, regions: ['France', 'Global', 'Middle East', 'Nowhere-land']}};
+  const v = V.buildViews(facts, {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1});
+  const story = v.stories.get(old.threadId);
+  assert.ok(story.iso3.includes('FRA'));
+  const entry = story.entries.find((e) => e.eventId === old.eventId);
+  assert.deepEqual(entry.iso3, ['FRA']);
+  const kept = V.buildViews(X.golden(), {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1});
+  assert.deepEqual(JSON.parse(JSON.stringify(kept.stories.get(old.threadId).entries.find((e) => e.eventId === old.eventId).iso3)), old.iso3); // an entry with iso3 is unchanged
+});

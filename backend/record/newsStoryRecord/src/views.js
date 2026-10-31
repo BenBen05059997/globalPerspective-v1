@@ -10,6 +10,7 @@ const {buildTrackRecord} = require('./trackRecord');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
+const {iso3List} = require('./_shared/resolveIso3');
 const {buildIndexViews, archiveRefOf} = require('./indexViews');
 const {buildBriefViews} = require('./briefViews');
 
@@ -457,10 +458,15 @@ function countDaysFor(today, changedDays = []) {
  * Views stay a pure function of (facts, notes, readings, provisional entries): `factsThrough` is the newest day of the real facts, and
  * `provisionalThrough` (builtFrom and manifest, only when there are provisional entries) the newest day of the provisional ones.
  */
+// An entry with no iso3 (archive rows before 2026-09-12, 0047) takes the countries named in its archive row's places text
+// (`payload.regions`) by the one country resolver; regions and unknown places add nothing (operator 2026-10-31, 0047 open problem 4).
+const withPlaces = (f) => (f.kind === 'entry' && !(f.iso3 || []).length && f.payload && Array.isArray(f.payload.regions) && f.payload.regions.length
+  ? {...f, iso3: iso3List(f.payload.regions).sort()} : f);
+
 function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = [], provisional = []}) {
   const known = new Set(allFacts.map((f) => f.eventId));
   const extra = provisional.filter((f) => f.kind === 'entry' && f.provisional && !known.has(f.eventId) && known.add(f.eventId));
-  const sorted = ordered([...allFacts, ...extra]);
+  const sorted = ordered([...allFacts, ...extra].map(withPlaces));
   const {placed: facts, reassigned, keep} = placeEntries(sorted);
   const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run' && !f.provisional).map((f) => f.date));
   const provisionalThrough = maxOf(extra.map((f) => f.date));

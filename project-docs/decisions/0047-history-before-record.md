@@ -118,3 +118,5 @@ node backend/record/newsStoryRecord/scripts/rebuild-test.js ./live-after-without
 ## Consequences
 - After step 3 the record holds every archive entry and every forecast row that DynamoDB holds, except the items under "Not copied" and the 41 empty days. NewsCache `archive#` days before 09-05 and PredictionLog `PRED#` rows before 09-05 are then deletable under STEP5_AUDIT steps 7 and 9 (each still needs its own operator yes and the ingest-inbox work those steps name); the 202 stories' analyses stop being a blocker for step 5.
 - The 100-day lookback, the nightly code and every view schema are unchanged.
+
+Amendment (operator, 2026-10-31): open problem 4 is resolved in the views, not the facts: an entry with no `iso3` takes the countries named in its `payload.regions` by the one country resolver (`resolveIso3.iso3List`); regions such as Global or the Middle East and unknown places add nothing (`views.js` `withPlaces`).

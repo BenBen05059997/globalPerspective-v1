@@ -26,7 +26,7 @@ function stubAws({ ddb = () => { throw new Error('unexpected DynamoDB read'); },
       return new Proxy({}, {
         get: (_, key) => {
           if (key === 'DynamoDBDocumentClient') return { from: () => ({ send: async (cmd) => { reads.push(`ddb:${describe(cmd.input)}`); return ddb(cmd.input, cmd.constructor.name); } }) };
-          return class { constructor(input) { this.input = input; } };
+          return { [key]: class { constructor(input) { this.input = input; } } }[key]; // named after the command, so ddb() can tell GetCommand from ScanCommand
         },
       });
     }

@@ -20,6 +20,7 @@ const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateComma
 const { sendEmail } = require('./sendEmail');
 const { renderWeeklyEmail } = require('./renderWeeklyEmail');
 const { renderDriftEmail } = require('./renderDriftEmail');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREFS_TABLE = process.env.USER_PREFS_TABLE || 'GlobalPerspectiveUserPrefs';
@@ -32,6 +33,12 @@ const TEST_RECIPIENT = process.env.TEST_RECIPIENT || null;
 const DRY_RUN = process.env.EMAIL_SEND_DRY_RUN !== 'false'; // default ON
 const BREAKING_FRESH_HOURS = Number(process.env.BREAKING_FRESH_HOURS || 48);
 const DRIFT_FRESH_HOURS = Number(process.env.DRIFT_FRESH_HOURS || 36);
+
+// RECORD_READS=ddb|record|compare (decision 0054): where the weekly email's brief content comes from (the weekly_brief view, or the WEEKLY_BRIEF# row).
+// The sent marker (EMAILLOG#weekly#) and the recipients stay in DynamoDB.
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
+const DAY_MS = 86400000;
 
 let _ddb;
 function ddb() {
@@ -112,7 +119,7 @@ async function deliver(recipients, buildFor, kind) {
 }
 
 // ── WEEKLY ──────────────────────────────────────────────────────────────────
-async function loadLatestBrief() {
+async function loadLatestBriefFromDdb() {
   const items = await scanAll({
     TableName: SUMMARY_TABLE,
     FilterExpression: 'SK = :sk AND #s = :pub',
@@ -121,6 +128,18 @@ async function loadLatestBrief() {
   });
   if (!items.length) return null;
   return items.sort((a, b) => String(b.weekOf).localeCompare(String(a.weekOf)))[0];
+}
+
+// The record's newest published weekly brief, but only a recent one: the weekly view is built after the brief (Sunday 06:15 UTC) and this runs at 14:00, so a
+// record whose newest week is older than a week has missed the new brief, and DynamoDB (with the sent marker) decides what is sent, as before.
+async function loadLatestBriefFromRecord() {
+  const brief = await records.latestWeeklyBrief();
+  const at = brief && Date.parse(`${brief.weekOf}T00:00:00Z`);
+  return Number.isFinite(at) && Date.now() - at <= 6 * DAY_MS ? brief : null;
+}
+
+async function loadLatestBrief() {
+  return readBy({ mode: RECORD_READS, label: 'email weekly_brief', same: SAME.weeklyBrief, ddb: loadLatestBriefFromDdb, record: loadLatestBriefFromRecord });
 }
 
 async function weeklyAlreadySent(weekOf) {
@@ -279,3 +298,6 @@ exports.handler = async (event = {}) => {
     return { ok: false, mode, error: err.message };
   }
 };
+
+exports.loadLatestBrief = loadLatestBrief; // for tests
+exports.runWeekly = runWeekly; // for tests

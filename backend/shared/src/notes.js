@@ -55,6 +55,36 @@ function entryNote({item, topic, archiveDate, producer}) {
   });
 }
 
+// Stored-row plumbing that is not part of the note: keys, ttl, and fields the envelope already carries.
+const omit = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k, v]) => !keys.includes(k) && v !== undefined));
+
+/**
+ * The THREAD# / THREAD_ANALYSIS item newsThreadAnalysis stores + the thread's archive entries (topicId, date, title, sources) ->
+ * a story_analysis note. Payload = the stored analysis as the site reads it. `cites` = eventIds (shared entryIdentity, as
+ * entryNote) of the entries the analysis was built from (the stored entryTopicIds); iso3/threadId/model/at come from the item.
+ */
+function storyAnalysisNote({item, entries = [], producer}) {
+  if (!item || !text(item.threadId)) return null;
+  const built = new Set(item.entryTopicIds || []);
+  const cites = entries.filter((e) => built.has(e.topicId))
+    .map((e) => entryIdentity({sources: e.sources, date: e.date, title: e.title}).eventId);
+  return buildNote({
+    subtype: 'story_analysis', subjectId: item.threadId, threadId: item.threadId, iso3: (item.iso3 || []).filter((c) => ISO3.test(c)),
+    at: item.generatedAt, payload: omit(item, ['PK', 'SK', 'ttl', 'threadId', 'iso3', 'generatedAt', 'model']), cites, model: item.model, producer,
+  });
+}
+
+/**
+ * The COUNTRY# / DRIFT# item newsDriftCorrector stores (before PK/SK/ttl) + the country's ISO3 -> a drift note about the country.
+ * Payload = the stored fields (headlines, scores, trigger event, why); threadId = the trigger story's, if it has one.
+ */
+function driftNote({item, iso3, model, producer}) {
+  return buildNote({
+    subtype: 'drift', subjectId: iso3, threadId: item.triggerEvent && item.triggerEvent.threadId, iso3: [iso3], at: item.generatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt']), model, producer,
+  });
+}
+
 const notesKey = (prefix, subtype, date) => `${prefix}notes/${subtype}/${date}.jsonl`;
 
 /** Appends notes to their day files (dedupe by noteId) and registers the days in the subtype manifest first, as facts do. */
@@ -82,4 +112,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, storyAnalysisNote, driftNote, makeNoteWriter, notesKey};

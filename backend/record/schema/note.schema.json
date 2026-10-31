@@ -254,6 +254,214 @@
                 "const": "story"
               }
             }
+          },
+          "part": {
+            "const": ""
+          },
+          "payload": {
+            "description": "the THREAD_ANALYSIS item as newsThreadAnalysis stores it, minus keys, ttl and what the envelope carries (threadId, iso3, generatedAt as at, model)",
+            "required": [
+              "threadTitle",
+              "entryShortTitles",
+              "storyArc",
+              "trajectory",
+              "rootCauseChain",
+              "watchQuestions",
+              "inflectionTopicId",
+              "riskScore",
+              "dimensions",
+              "lead",
+              "sentiment",
+              "keyActors",
+              "entryCount",
+              "entryTopicIds",
+              "latencyMs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "threadTitle": {
+                "type": "string",
+                "minLength": 1
+              },
+              "entryShortTitles": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "storyArc": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trajectory": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "rootCauseChain": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "watchQuestions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "inflectionTopicId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "riskScore": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "dimensions": {
+                "type": "object"
+              },
+              "lead": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sentiment": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "keyActors": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "entryCount": {
+                "type": "integer"
+              },
+              "entryTopicIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "latencyMs": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "drift"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "iso3": {
+            "minItems": 1
+          },
+          "subject": {
+            "properties": {
+              "id": {
+                "pattern": "^[A-Z]{3}$"
+              }
+            }
+          },
+          "part": {
+            "const": ""
+          },
+          "payload": {
+            "description": "the DRIFT# item as newsDriftCorrector stores it for a country, minus keys, ttl and generatedAt (the note's at)",
+            "required": [
+              "countryName",
+              "asOf",
+              "since",
+              "changeScore",
+              "currentRiskScore",
+              "whyChanged",
+              "noSingleDriver"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "countryName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "asOf": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "since": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "changeLevel": {
+                "type": "object"
+              },
+              "changeScore": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "delta"
+                ]
+              },
+              "changeDimensions": {
+                "type": "object"
+              },
+              "priorHeadline": {
+                "type": "string"
+              },
+              "currentHeadline": {
+                "type": "string"
+              },
+              "currentDimensions": {
+                "type": "object"
+              },
+              "currentRiskScore": {
+                "type": "number"
+              },
+              "currentRiskLevel": {
+                "type": "string"
+              },
+              "currentLead": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "triggerEvent": {
+                "type": "object",
+                "required": [
+                  "topicId",
+                  "title"
+                ]
+              },
+              "whyChanged": {
+                "type": "string",
+                "minLength": 1
+              },
+              "noSingleDriver": {
+                "type": "boolean"
+              },
+              "directionFlag": {
+                "type": "object"
+              }
+            }
           }
         }
       }

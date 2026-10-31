@@ -57,7 +57,7 @@ test('entryNote: each TOPIC# part becomes a schema-valid note about the entry fa
 });
 
 test('buildNote refuses what the schema forbids: unknown subtype, a country name, a bad brief id, an entry note without a cite', () => {
-  const base = {subtype: 'drift', subjectId: 'UKR', at: '2026-10-30T05:30:00Z', payload: {}, model: 'm', producer};
+  const base = {subtype: 'country', subjectId: 'UKR', at: '2026-10-30T05:30:00Z', payload: {}, model: 'm', producer};
   assert.equal(valid(N.buildNote(base)), true, JSON.stringify(valid.errors));
   assert.throws(() => N.buildNote({...base, subtype: 'opinion'}), /unknown subtype/);
   assert.throws(() => N.buildNote({...base, iso3: ['Ukraine']}), /ISO3/);
@@ -74,4 +74,60 @@ test('the note writer registers the day, appends once per noteId, and keeps subt
   assert.deepEqual(f.json('record/shadow/notes/entry/manifest.json'), {schemaVersion: 1, days: ['2026-10-30']});
   assert.equal(f.lines('record/shadow/notes/entry/2026-10-30.jsonl').length, 1);
   await assert.rejects(() => w.write('drift', [n]), /entry note in a drift write/);
+});
+
+// story_analysis and drift (decision 0042 step 2): the examples were built by the real builders from the stored item shapes.
+const storyEx = load('examples/note-story_analysis.json');
+const driftEx = load('examples/note-drift.json');
+
+test('the story_analysis and drift examples validate and carry the shared noteId', () => {
+  for (const ex of [storyEx, driftEx]) {
+    assert.equal(valid(ex), true, JSON.stringify(valid.errors));
+    assert.equal(ex.noteId, R.noteId(ex.subtype, ex.subject.id, ex.part, ex.at));
+  }
+  assert.deepEqual([storyEx.subject, storyEx.part, storyEx.threadId], [{kind: 'story', id: storyEx.threadId}, '', storyEx.threadId]);
+  assert.deepEqual([driftEx.subject, driftEx.iso3], [{kind: 'country', id: 'IRN'}, ['IRN']]);
+});
+
+test('story_analysis and drift notes breaking their rules are rejected', () => {
+  const sp = storyEx.payload;
+  const dp = driftEx.payload;
+  const {storyArc, ...noArc} = sp;
+  const {whyChanged, ...noWhy} = dp;
+  const bad = [
+    {...storyEx, subject: {kind: 'country', id: storyEx.subject.id}}, // a story analysis is about a story
+    {...storyEx, part: 'analysis'}, // one text, part ''
+    {...storyEx, payload: noArc},
+    {...storyEx, payload: {...sp, extra: 1}},
+    {...storyEx, payload: {...sp, entryCount: '2'}},
+    {...driftEx, subject: {kind: 'country', id: 'Iran'}}, // countries are ISO3, never names
+    {...driftEx, iso3: []},
+    {...driftEx, payload: noWhy},
+    {...driftEx, payload: {...dp, extra: 1}},
+    {...driftEx, payload: {...dp, noSingleDriver: 'no'}},
+  ];
+  for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 120));
+});
+
+test('storyAnalysisNote and driftNote: payload as stored, ids from the shared helpers, cites = the entries the analysis was built from', () => {
+  const entries = [
+    {topicId: 'a-1', date: '2026-10-29', title: 'A', sources: [{url: 'https://www.reuters.com/a'}]},
+    {topicId: 'b-1', date: '2026-10-30', title: 'B', sources: []}, // no usable url: title basis, still deterministic
+    {topicId: 'old-1', date: '2026-09-01', title: 'Old', sources: [{url: 'https://www.bbc.com/old'}]}, // not in entryTopicIds (beyond the stored 50)
+  ];
+  const item = {PK: 'THREAD#t1', SK: 'THREAD_ANALYSIS', threadId: 't1', ttl: 1, iso3: ['UKR'], generatedAt: '2026-10-30T04:41:12.318Z', model: 'deepseek-flash',
+    threadTitle: 'T', storyArc: 'S', entryShortTitles: [], trajectory: null, rootCauseChain: null, watchQuestions: [], inflectionTopicId: null,
+    riskScore: null, dimensions: {}, lead: null, sentiment: null, keyActors: [], entryCount: 3, entryTopicIds: ['a-1', 'b-1'], latencyMs: 5};
+  const n = N.storyAnalysisNote({item, entries, producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(n.cites, entries.slice(0, 2).map((e) => R.entryIdentity({sources: e.sources, date: e.date, title: e.title}).eventId));
+  assert.deepEqual(Object.keys(n.payload).sort(), ['dimensions', 'entryCount', 'entryShortTitles', 'entryTopicIds', 'inflectionTopicId', 'keyActors', 'latencyMs', 'lead',
+    'riskScore', 'rootCauseChain', 'sentiment', 'storyArc', 'threadTitle', 'trajectory', 'watchQuestions']);
+  assert.equal(N.storyAnalysisNote({item: null, entries, producer}), null);
+
+  const d = N.driftNote({iso3: 'UKR', model: 'm', producer, item: {countryName: 'Ukraine', asOf: '2026-10-30', since: '2026-10-29', changeScore: {from: 1, to: 2, delta: 1},
+    currentRiskScore: 2, whyChanged: 'x', noSingleDriver: true, triggerEvent: undefined, generatedAt: '2026-10-30T05:30:00.000Z'}});
+  assert.equal(valid(d), true, JSON.stringify(valid.errors));
+  assert.equal(d.threadId, null); // no trigger story stored
+  assert.equal('triggerEvent' in d.payload, false);
 });

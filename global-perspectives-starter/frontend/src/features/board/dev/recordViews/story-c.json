@@ -1,0 +1,281 @@
+{
+ "schemaVersion": 1,
+ "builtFrom": {
+  "factsThrough": "2026-10-18",
+  "readingsThrough": "2026-W42"
+ },
+ "threadId": "story-c",
+ "born": "2026-09-07",
+ "aliasOf": null,
+ "iso3": [
+  "IRN"
+ ],
+ "actorIds": [
+  "a1"
+ ],
+ "sourceIds": [],
+ "entries": [
+  {
+   "eventId": "c1",
+   "date": "2026-09-07",
+   "at": "2026-09-07T08:00:00Z",
+   "precision": "day",
+   "title": "Threats",
+   "summary": "Tehran threatens shipping; no vessel touched.",
+   "category": "conflict",
+   "eventType": "report",
+   "sources": [
+    {
+     "sourceId": "sc1",
+     "outlet": "BBC",
+     "url": "https://example.org/c1",
+     "title": "Threats"
+    }
+   ]
+  },
+  {
+   "eventId": "c2",
+   "date": "2026-09-21",
+   "at": "2026-09-21T08:00:00Z",
+   "precision": "day",
+   "title": "Harassment; insurers pull cover",
+   "summary": "Boardings and drone shadowing; insurers pull cover.",
+   "category": "conflict",
+   "eventType": "report",
+   "sources": [
+    {
+     "sourceId": "sc2",
+     "outlet": "Middle East Eye",
+     "url": "https://example.org/c2",
+     "title": "Harassment; insurers pull cover"
+    }
+   ]
+  },
+  {
+   "eventId": "c3",
+   "date": "2026-09-30",
+   "at": "2026-09-30T08:00:00Z",
+   "precision": "day",
+   "title": "Insurers resume cover for some routes",
+   "summary": "Two insurers return at a higher premium.",
+   "category": "conflict",
+   "eventType": "report",
+   "sources": [
+    {
+     "sourceId": "sc3",
+     "outlet": "Reuters",
+     "url": "https://example.org/c3",
+     "title": "Insurers resume cover for some routes"
+    }
+   ]
+  },
+  {
+   "eventId": "c4",
+   "date": "2026-10-12",
+   "at": "2026-10-12T08:00:00Z",
+   "precision": "day",
+   "title": "First strikes",
+   "summary": "Two vessels struck near the strait.",
+   "category": "conflict",
+   "eventType": "report",
+   "sources": [
+    {
+     "sourceId": "sc4",
+     "outlet": "Al Jazeera",
+     "url": "https://example.org/c4",
+     "title": "First strikes"
+    }
+   ]
+  },
+  {
+   "eventId": "c5",
+   "date": "2026-10-16",
+   "at": "2026-10-16T08:00:00Z",
+   "precision": "day",
+   "title": "12 vessels struck; Strait declared closed",
+   "summary": "Closure declared after twelve vessels were struck.",
+   "category": "conflict",
+   "eventType": "report",
+   "sources": [
+    {
+     "sourceId": "sc5",
+     "outlet": "BBC",
+     "url": "https://example.org/c5",
+     "title": "12 vessels struck; Strait declared closed"
+    }
+   ]
+  }
+ ],
+ "forks": [
+  {
+   "forkId": "cf1",
+   "drawnAt": "2026-09-21",
+   "branches": [
+    {
+     "branchId": "cf1-0",
+     "text": "Insurers pull cover",
+     "p": 60,
+     "trigger": "A major insurer withdraws",
+     "resolutionSource": "Wire",
+     "due": "2026-09-28",
+     "verdict": {
+      "at": "2026-09-24",
+      "result": "yes",
+      "decidedBy": "facts",
+      "evidence": {
+       "eventId": "x",
+       "quote": "Lloyd's syndicates suspend cover",
+       "date": "2026-09-24"
+      },
+      "voidReason": null
+     }
+    },
+    {
+     "branchId": "cf1-1",
+     "text": "Talks restart",
+     "p": 25,
+     "trigger": "Talks restart",
+     "resolutionSource": "Wire",
+     "due": "2026-09-30",
+     "verdict": {
+      "at": "2026-10-01",
+      "result": "no",
+      "decidedBy": "facts",
+      "evidence": null,
+      "voidReason": null
+     }
+    },
+    {
+     "branchId": "cf1-2",
+     "text": "Navy escorts begin",
+     "p": 15,
+     "trigger": "A navy announces escorts",
+     "resolutionSource": "Wire",
+     "due": "2026-10-05",
+     "verdict": {
+      "at": "2026-10-06",
+      "result": "no",
+      "decidedBy": "facts",
+      "evidence": null,
+      "voidReason": null
+     }
+    }
+   ]
+  },
+  {
+   "forkId": "cf2",
+   "drawnAt": "2026-10-12",
+   "branches": [
+    {
+     "branchId": "cf2-0",
+     "text": "Another vessel struck",
+     "p": 45,
+     "trigger": "A vessel struck before 16 Oct",
+     "resolutionSource": "Wire",
+     "due": "2026-10-16",
+     "verdict": {
+      "at": "2026-10-16",
+      "result": "yes",
+      "decidedBy": "facts",
+      "evidence": {
+       "eventId": "x",
+       "quote": "Twelve vessels struck",
+       "date": "2026-10-16"
+      },
+      "voidReason": null
+     }
+    },
+    {
+     "branchId": "cf2-1",
+     "text": "No strikes before November",
+     "p": 30,
+     "trigger": "No strike reported",
+     "resolutionSource": "Wire",
+     "due": "2026-10-31",
+     "verdict": {
+      "at": "2026-10-16",
+      "result": "no",
+      "decidedBy": "facts",
+      "evidence": null,
+      "voidReason": null
+     }
+    },
+    {
+     "branchId": "cf2-2",
+     "text": "IRGC reopening statement",
+     "p": 35,
+     "trigger": "IRGC reopening statement",
+     "resolutionSource": "Wire",
+     "due": "2026-10-15",
+     "verdict": null
+    }
+   ]
+  },
+  {
+   "forkId": "cf3",
+   "drawnAt": "2026-10-16",
+   "branches": [
+    {
+     "branchId": "cf3-0",
+     "text": "Selective coercion continues",
+     "p": 55,
+     "trigger": "Another vessel struck by 1 Nov",
+     "resolutionSource": "Wire",
+     "due": "2026-11-01",
+     "verdict": null
+    },
+    {
+     "branchId": "cf3-1",
+     "text": "Reopening for compliant vessels",
+     "p": 30,
+     "trigger": "IRGC statement by 1 Nov",
+     "resolutionSource": "Wire",
+     "due": "2026-11-01",
+     "verdict": null
+    },
+    {
+     "branchId": "cf3-2",
+     "text": "Physical closure",
+     "p": 15,
+     "trigger": "Zero transits for three days",
+     "resolutionSource": "Wire",
+     "due": "2026-11-01",
+     "verdict": null
+    }
+   ]
+  }
+ ],
+ "merges": [],
+ "corrections": [],
+ "line": {
+  "text": "Closure is leverage, not a seal; another strike by 1 Nov is the test.",
+  "week": "2026-W42"
+ },
+ "chapters": [
+  {
+   "title": "Threats",
+   "from": "2026-09-07",
+   "to": "2026-09-20",
+   "summary": "Tehran threatens shipping; no vessel touched.",
+   "writtenAt": "2026-09-07"
+  },
+  {
+   "title": "Harassment",
+   "from": "2026-09-21",
+   "to": "2026-10-11",
+   "summary": "Boardings and drone shadowing; insurers pull cover.",
+   "writtenAt": "2026-09-21"
+  },
+  {
+   "title": "Strikes and closure",
+   "from": "2026-10-12",
+   "to": "2026-10-18",
+   "summary": "First vessels struck; closure declared on 16 Oct.",
+   "writtenAt": "2026-10-12"
+  }
+ ],
+ "reading": {
+  "state": "read",
+  "week": "2026-W42"
+ }
+}

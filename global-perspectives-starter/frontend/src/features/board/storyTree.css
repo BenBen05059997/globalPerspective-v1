@@ -1,0 +1,43 @@
+/* Story tree (artboards 6 and 11): the zoom ladder, the chapter cards and the drawn tree. Tokens only.
+   Dashed = judged, solid = reported; colour never carries a risk tier. */
+.board-tree.story-tree { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.story-tree__body { display: grid; gap: var(--space-3); min-width: 0; }
+
+.story-tree__ladder { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+.story-tree__zoom { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); color: var(--text-dim); }
+.story-tree__hint { grid-column: 1 / -1; }
+
+.story-tree__kicker { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
+.story-tree__kicker--accent { color: var(--accent); }
+.story-tree__counts { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
+.story-tree__stamp { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
+
+.story-tree__chapters { border-left: 1px solid var(--hairline-strong); padding-left: var(--space-3); }
+.story-tree__card { border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel-2); padding: var(--space-2) var(--space-3); display: grid; gap: var(--space-1); }
+.story-tree__card--now { border-color: var(--hairline-3); }
+.story-tree__card-head { display: flex; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+.story-tree__title { font-family: var(--serif); font-weight: var(--weight-semibold); font-size: var(--text-md); color: var(--text-head); }
+
+.story-tree__draw { display: grid; gap: var(--space-2); min-width: 0; }
+.story-tree__ours { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); color: var(--accent); }
+.story-tree__scroll { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-2); }
+.story-tree__scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.story-tree__svg { display: block; max-width: none; }
+.story-tree__legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+.story-tree__legend li { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-dim); }
+.story-tree__swatch { display: inline-block; width: var(--space-6); border-top: 1px solid var(--text-head); }
+.story-tree__swatch--thick { border-top-width: var(--space-2); border-top-color: var(--accent); opacity: 0.7; }
+.story-tree__swatch--dash { border-top-style: dashed; border-top-color: var(--accent); }
+
+.st-trunk { stroke: var(--text-head); stroke-width: 3; }
+.st-node { fill: var(--bg); stroke: var(--text-head); stroke-width: 3; }
+.st-present { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.st-now { fill: var(--accent); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); }
+.st-date { fill: var(--text-head); font-family: var(--mono); font-size: var(--text-2xs); text-anchor: middle; }
+.st-label { fill: var(--text-body); font-size: var(--text-2xs); text-anchor: middle; }
+.st-label--head, .st-label--dim, .st-label--late { text-anchor: start; }
+.st-label--head { fill: var(--text-head); font-size: var(--text-xs); }
+.st-label--dim { fill: var(--text-dim); }
+.st-label--late { fill: var(--text-head); font-family: var(--mono); }
+.st-branch { fill: none; stroke: var(--accent); stroke-dasharray: 16 8; opacity: 0.7; }
+.st-branch--late { stroke-dasharray: 9 6; opacity: 0.85; }

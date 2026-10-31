@@ -21,6 +21,4 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 - `nostr-tools` and `ws` are dependencies but unused by the code.
 
 ## Tests
-- `cd backend/distribution/newsPostLinkedIn/src && npm test` (`node --test ../test/*.test.js`, offline; DynamoDB, map image and fetch stubbed): 6 pass.
-
-Last verified: 2026-10-19
+- `cd backend/distribution/newsPostLinkedIn/src && npm test` (`node --test ../test/*.test.js`, offline; DynamoDB, map image and fetch stubbed).

@@ -24,6 +24,4 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 - Subscriber breaking sends live in `newsEmailSender` (its breaking rule is DISABLED).
 
 ## Tests
-- `cd backend/distribution/newsBreakingAlert/src && npm test` (node --test ../test/*.test.js + `node test-significance.mjs`): all pass (50/50 in test-significance).
-
-Last verified: 2026-10-19
+- `cd backend/distribution/newsBreakingAlert/src && npm test` (node --test ../test/*.test.js + `node test-significance.mjs`).

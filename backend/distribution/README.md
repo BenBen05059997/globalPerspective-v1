@@ -22,8 +22,8 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 ## Pipeline
 
 1. The pipeline group fills NewsCache (`latest`, `today-archive`) and the thread and country analysis rows.
-2. Three times a day newsBreakingAlert scores stories and writes a `proposed` alert row. Its live `DRY_RUN` is `false`, so it emails the operator address (not subscribers) when a story clears the bar.
-3. With `DRY_RUN=false` (live) newsBreakingAlert emails the operator (the email says it is not public) and marks the alert `sent`. A `sent` alert is NOT public: it reaches the site bell and strip (newsRecommend `list_alerts`, see the read-api group) only after the operator runs `node backend/distribution/cli/breaking/review.js` and confirms it. Subscriber breaking and drift emails are DISABLED, so they send nothing.
+2. Three times a day newsBreakingAlert scores stories and writes a `proposed` alert row. Its live `DRY_RUN` is `false`, so when a story clears the bar it emails the operator (not subscribers; the email says it is not public) and marks the alert `sent`.
+3. A `sent` alert is NOT public: it reaches the site bell and strip (newsRecommend `list_alerts`, see the read-api group) only after the operator runs `node backend/distribution/cli/breaking/review.js` and confirms it. Subscriber breaking and drift emails are DISABLED, so they send nothing.
 4. At 23:00 Tokyo time newsPostDevTo writes the daily brief. The site reads it through `daily_brief` on the `/briefings` page (`/daily` redirects there).
 5. Every three hours newsPostLinkedin posts new topics to LinkedIn and Bluesky; a platform posts only when its credentials are set.
 6. Sunday 06:00 UTC newsWeeklyBrief writes and publishes the week's brief. The site serves it through `weekly_brief` on `/briefings`.
@@ -38,7 +38,6 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 
 ## Known limits
 
-- The `newsBreakingAlert` header says it never auto-sends. The code does send to the operator when `DRY_RUN` is `false`, which it is live.
 - Subscriber breaking emails only include alerts a human set to `confirmed`.
 - The live newsPostLinkedin env carries Mastodon, Telegram, Farcaster and Nostr settings, but the code posts only to LinkedIn and Bluesky.
 - `newsPostDevTo` keeps dead Dev.to and OpenRouter code that the handler never calls.
@@ -51,5 +50,3 @@ aws scheduler list-schedules --region ap-northeast-1 --query 'Schedules[].[Name,
 aws events list-targets-by-rule --rule TriggerWeeklyEmailSend --region ap-northeast-1 --query 'Targets[].[Arn,Input]' --output text
 aws dynamodb describe-table --table-name GlobalPerspectiveBreakingAlerts --region ap-northeast-1 --query 'Table.[TableStatus,ItemCount]'
 ```
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

@@ -3,7 +3,7 @@
 Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of topic archives, takes the top `WEEKLY_TOP_THREADS` (default 6) threads by entry count and the top `WEEKLY_TOP_COUNTRIES` (default 6) real countries, and asks an LLM for per-signal text only (lede, fact, so-what, related) plus a watch list. Risk level, region, `iso3[]` (via `resolveIso3`), sources, as-of dates and `relatedThreadIds` (this week's other signals linked to it, derived from the story web) are joined in from stored data, never from the model; `threadIds[]` is stored on the brief. Served by newsSensitiveData `weekly_brief` (latest, or a past week with `week=YYYY-MM-DD`). A successfully read empty week skips without publishing. Unusable generated output and configuration/read/model/publish failures throw, with a failed-run marker; an absent optional record remains a normal omission. Event: `weekKey` (default today), `mode: 'grounded'` (default `free`).
 
 ## Deployment
-- Deployed name `newsWeeklyBrief` · runtime `nodejs20.x` · group `distribution` (scripts/functions.json)
+- Deployed name `newsWeeklyBrief` · runtime `nodejs22.x` · group `distribution` (scripts/functions.json)
 - Trigger: `TriggerWeeklyBrief` `cron(0 6 ? * SUN *)` UTC, ENABLED, EventBridge rule
 - Deploy: `scripts/lambda.sh newsWeeklyBrief diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -18,13 +18,8 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 
 ## Gotchas
 - Writes `status: 'published'` directly (auto-publish). To hold a bad brief back, set its status to `draft`; the serving action only serves `published`.
-- The file header and package.json still describe a draft-for-approval, manual-invoke flow; the code auto-publishes and a schedule is ENABLED.
 - Country records that are regions or older than 30 days are skipped (`usableCountryRecord`).
 - `dayZero`, `placeFilter` and `llm` come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
 - `cd backend/distribution/newsWeeklyBrief/src && npm test` (`node --test ../test/*.test.js`) - includes mocked publish/read rejection, no-work skips and country/link rules
-
-Last verified: 2026-10-19
-
-The generator sends no email. Sender send failures belong to newsEmailSender (lane B); lane G requested run-level failure propagation there without editing that Lambda.

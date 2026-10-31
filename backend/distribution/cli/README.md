@@ -12,5 +12,3 @@ breaking scripts also call Resend) and run from the repo root with the operator'
 ## weekly/
 
 - `review.js`: walks `draft` weekly briefs in SummarizeAndPredict and publishes or rejects each. `--list` only lists them. newsWeeklyBrief now writes `published` directly, so this finds a brief only if one was set back to `draft`, the way to hold a bad brief back.
-
-Last verified: 2026-10-20 against code @14dd450d.

@@ -4,7 +4,7 @@ The world's memory, on two clocks: facts appended daily with no model, readings 
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → **5 Facts** → **6 Review** → **7 Views** → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and rebuilds the views (7); newsRecordReview writes the weekly readings (6). Timeline: newsStoryRecord is the only writer of record/facts, record/runs (daily) and record/views; newsRecordReview is the only writer of record/readings and record/runs/review-*; views are rebuilt from both. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and rebuilds the views (7); newsRecordReview writes the weekly readings (6). Timeline: newsStoryRecord is the only writer of record/facts, record/runs (daily) and record/views; newsRecordReview is the only writer of record/readings and record/runs/review-*; views are rebuilt from facts, readings and notes; the facts run from 2026-03-07 (history copy, decision 0047). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed
@@ -24,21 +24,37 @@ An agent working on the record does not write the other groups. Design: `project
 | newsStoryRecord | The facts writer and the only view builder. Appends the day's facts to `record/facts/YYYY-MM-DD.jsonl` (no model), writes the Run in `record/runs/YYYY-MM-DD.json`, then rebuilds `record/views/` from all facts and readings. | EventBridge `TriggerStoryRecord`, 23:45 UTC daily, ENABLED, input `{"shadow":false}` | [README](newsStoryRecord/README.md) |
 | newsRecordReview | The weekly review. One boxed model call per active story; checked answers become readings with hindsight in `record/readings/YYYY-Www.jsonl`, plus the review Run `record/runs/review-YYYY-Www.json` and auto-merges in `record/inbox/merges/`. | EventBridge `TriggerRecordReview`, Monday 01:00 UTC, ENABLED, input `{"shadow":false}` | [README](newsRecordReview/README.md) |
 
-Each is the only writer of its keys. Neither has a Function URL. Inboxes under `record/inbox/` are how other writers hand input to the facts writer: `articles/` (the selector's raw capture), `verdicts/` (the resolver), `merges/` (the review), `assignments/` and `splits/` (operator or review). The operator-owned who's who file `record/operator/aliases.json` is applied to actor ids in the views only (canonical ids are `wd:Q...`; entries marked generic never ground a link).
+Each is the only writer of its keys. Neither has a Function URL. Inboxes under `record/inbox/` are how other writers hand input to the facts writer: `articles/` (the selector's raw capture), `verdicts/` (the resolver), `merges/` (the review), `assignments/` and `splits/` (operator or review), `draws/` (the resolver's weekly commit and draw lines). The operator-owned who's who file `record/operator/aliases.json` is applied to actor ids in the views only (canonical ids are `wd:Q...`; entries marked generic never ground a link).
 
 Views are rebuilt in full after each daily append and the manifest is written last. Dated objects are create-only; latest and index objects are replaceable pointers.
+
+## Notes: the model's daily words
+
+Alongside facts and readings the record keeps notes, the text a model wrote about a thing at a time (decision 0042): one append-only
+file per day and subtype under `record/notes/<subtype>/YYYY-MM-DD.jsonl` with a day manifest, shape `schema/note.schema.json`, one
+builder and writer in `backend/shared/src/notes.js`. Each subtype has one writer: the pipeline Lambdas (`entry`, `story_analysis`,
+`country`, `drift`, `link` and `web`; env `NOTES_PREFIX` is `record/` on them live), the brief writers in the distribution group
+(`daily_brief`, `weekly_brief`, decision 0048; they write only when `NOTES_PREFIX` is set; whether it is set live is in their Lambda env, and what waits is in `project-docs/START_HERE.md`), and the backfill
+scripts in [cli](cli/README.md) for what existed before the writers. `newsStoryRecord` reads notes to build the views and writes none.
+Nothing in `record/notes/` is a fact; a view prefers an exact note over an archive copy (`model` null).
 
 ## What it never writes
 
 DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports proposals; it never merges or splits threads (a merge is a review proposal, applied through the inbox).
 
+## Other prefixes under `record/`
+
+- `legacy/predictions/`: whole copies of old forecast rows that no story could be found for (decision 0047); written by the history copy; no Lambda or page reads it.
+- `shadow/` and `shadow-history/`: rehearsal copies of the record (writers default to `record/shadow/` until switched live; `shadow-history/` held the history rehearsal). Not read by the site.
+- `operator/`: the operator-owned `aliases.json`.
+
 ## Schema
 
-`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; view schemas are in `newsStoryRecord/schema/views/`. Review schemas are in `newsRecordReview/schema/`. See the Lambda READMEs for formats, tests and the local runners.
+`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; view schemas are in `newsStoryRecord/schema/views/`. Notes are in `schema/note.schema.json`. Review schemas are in `newsRecordReview/schema/`. See the Lambda READMEs for formats, tests and the local runners.
 
 ## Operator tools
 
-`cli/` holds scripts that run from a laptop, not Lambdas: day recovery, benchmark assignments and actor reconciliation. See [cli/README.md](cli/README.md).
+`cli/` holds scripts that run from a laptop, not Lambdas: day recovery, the note backfills, the history copy (decision 0047), benchmark assignments and actor reconciliation. See [cli/README.md](cli/README.md).
 
 ## How to check it
 

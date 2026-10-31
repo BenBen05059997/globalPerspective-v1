@@ -10,9 +10,9 @@ Lambdas, schedules, stores and pipeline.
 - [predictions](predictions/README.md): snapshots, resolves and scores the forecasts behind the track record.
 - [distribution](distribution/README.md): daily and weekly briefs, subscriber email, breaking alerts, social posts.
 - [read-api](read-api/README.md): what the browser calls: the content proxy, saved items, preferences, shares, error reports.
-- [membership-studio](membership-studio/README.md): the member Analysis Studio run and Polar billing.
+- [membership-studio](membership-studio/README.md): Polar billing, and the retired Analysis Studio Lambda (no page calls it).
 - [monitoring](monitoring/README.md): alerts to the operator on freshness, errors, model health and summary drift.
-- [record](record/README.md): the world's memory: daily facts, weekly readings and the views built from them.
+- [record](record/README.md): the world's memory: daily facts, weekly readings, the notes the daily Lambdas write, and the static views the pages read.
 - [board](board/README.md): the personal board of a signed-in member.
 - [weekly](weekly/README.md): the analyst's weekly: schema and section model (the scripts are not written yet); not a Lambda.
 - [shared](shared/README.md): helper modules several Lambdas use. Not a Lambda.

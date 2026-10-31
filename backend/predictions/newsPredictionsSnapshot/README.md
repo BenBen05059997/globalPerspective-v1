@@ -10,7 +10,7 @@ Precomputes the forecast track record so `/track-record` does not Scan Predictio
 ## Reads / writes
 - DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): Scan of `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` families (projected attributes only)
 - S3 `WORLD_BUCKET`: writes `TRACK_RECORD_KEY` (default `predictions/track_record.json`) as `{ builtAt, data }`
-- Consumer: the newsSensitiveData proxy reads that object and falls back to a live Scan when it is missing
+- Consumer: the newsSensitiveData proxy (`prediction_track_record`) reads that object and falls back to a live Scan when it is missing. The `/track-record` page itself reads the record view `views/track-record.json` first (decision 0044) and uses this action only as its fallback.
 
 ## Gotchas
 - `trackRecord.js` must stay in sync with the fallback `prediction_track_record` in `newsSensitiveData/src/index.js`.

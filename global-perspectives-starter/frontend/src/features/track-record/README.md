@@ -49,8 +49,9 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
   `questions` plus the pilot-era fields the page reads (`eraCutFrom`, `totalDatedTriggers`, `resolvedTriggers`, `legacyPredictionsExcluded`, `recent`).
   In the view `questions` is built from facts (`newsStoryRecord/src/trackRecord.js`) and the pilot-era fields are a frozen constant
   (`src/trackRecordLegacy.json`, copied 2026-10-31; `legacyPredictionsExcluded` is 2418, the action's 2546 also counted the question scheme's rows).
-  The view has no `settleHealth` (the freshness monitor reads it from the action file), no week `reviewed`, and no week `draw.pool`:
-  "Verify this draw" fetches the week's draw from the action when pressed (`lib/drawPool.js`).
+  The view carries `settleHealth` (the freshness monitor's inputs, not shown on the page) and, on each of the last four drawn weeks the forecast facts reproduce,
+  a `draw` ({K, pool, picked}, decision 0052) that "Verify this draw" uses; it has no week `reviewed`. A week without a `draw` falls back to the action when
+  "Verify this draw" is pressed (`lib/drawPool.js`).
 - `useCorrectionsFeed(limit)` -> `corrections_feed`; localStorage `gp_corrections_feed`, 30 min; returns `{ notes, total, gated }`.
   The cache key ignores `limit`: Home asks 100, these pages 40; the first fetch wins.
 - Neither hook needs sign-in.
@@ -59,7 +60,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 1. `NewsProjectInvokeAgentLambda-dev` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
 2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts verdicts
    (Brave Search evidence) and writes them itself; the operator disputes one with `predictions/settle-correct.js`.
-3. `newsPredictionsSnapshot` (every 30 min) scans the log -> S3 `predictions/track_record.json` (fallback, the draw pools and `settleHealth`). `newsStoryRecord` builds `record/views/track-record.json` from the facts in every views run.
+3. `newsPredictionsSnapshot` (every 30 min) scans the log -> S3 `predictions/track_record.json` (the page's fallback and the freshness monitor's default source until `SETTLE_SOURCE=record`). `newsStoryRecord` builds `record/views/track-record.json` (with the draw pools and `settleHealth`) from the facts in every views run.
 4. `newsDriftCorrector` (05:30 UTC) writes `DRIFT#` notes that become the corrections ledger.
 5. `newsSensitiveData-dev` actions `prediction_track_record` (fallback) and `corrections_feed` (gated, stays on the action).
 6. Hooks `useTrackRecord` (view first) and `useCorrectionsFeed` -> `buildTrackRecordView` -> `TrackRecordPage` (`/track-record`) and `TrackRecordText`.

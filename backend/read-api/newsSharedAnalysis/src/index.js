@@ -159,7 +159,7 @@ async function buildRealDeps() {
     newId: () => randomBytes(16).toString('base64url'),
     log: (label, err) => console.warn('share upstream', label, String(err && err.message || err)),
     store: makeStore({ client, table: process.env.SHARES_TABLE, commands: { GetCommand: lib.GetCommand, PutCommand: lib.PutCommand, DeleteCommand: lib.DeleteCommand, QueryCommand: lib.QueryCommand } }),
-    makeFetchers: (token) => makeProxyFetchers({ proxyUrl, token }),
+    makeFetchers: (token) => makeProxyFetchers({ proxyUrl, token, recordViewsUrl: process.env.RECORD_VIEWS_URL || null }), // RECORD_VIEWS_URL = <site>/data/record/views: the forecast from the record first (0052)
   };
 }
 

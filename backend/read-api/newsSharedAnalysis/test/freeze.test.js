@@ -62,3 +62,46 @@ test('the proxy client sends {action,payload}, adds the reader\'s token only for
   await f.summary('t');
   assert.equal(calls[1].init.headers.Authorization, undefined);
 });
+
+// ---- decision 0052: the forecast from the record's forecasts view, the action as fallback ----
+const fork = (topic, day) => ({ forkId: `PRED#${topic}/${day}`, drawnAt: `${day}T05:00:00.000Z`, branches: [{ branchId: `PRED#${topic}/${day}/0-0`, text: 'Likely', p: 40, trigger: 'Will it', resolutionSource: 'R', due: '2026-12-01', question: true, qid: 'q1', scenarioP: 60, scoring: 'sampled', state: 'awaiting' }] });
+const viewsFetch = (files, calls = []) => async (url) => {
+  calls.push(url);
+  const key = url.replace('https://site.test/data/record/views/', '');
+  if (!(key in files)) return { ok: false, status: 404, json: async () => ({}) };
+  return { ok: true, status: 200, json: async () => files[key] };
+};
+const NOW = Date.parse('2026-10-31T12:00:00Z');
+const fresh = { 'manifest.json': { builtAt: '2026-10-31T08:00:00Z' }, 'forecasts/th-1.json': { threadId: 'th-1', forks: [fork('A-1', '2026-10-20'), fork('B-2', '2026-10-22')] } };
+
+test('forecastFromRecord is wired only with RECORD_VIEWS_URL, answers from the forecasts view while the manifest is under 9 hours old, and maps like the browser', async () => {
+  assert.equal(makeProxyFetchers({ proxyUrl: 'https://p.example/x' }).forecastFromRecord, undefined);
+  const calls = [];
+  const f = makeProxyFetchers({ proxyUrl: 'https://p.example/x', recordViewsUrl: 'https://site.test/data/record/views/', fetchImpl: viewsFetch(fresh, calls), now: () => NOW });
+  assert.equal((await f.forecastFromRecord('th-1', null)).snapshot.topicId, 'B-2');
+  assert.equal((await f.forecastFromRecord('th-1', ['A-1'])).snapshot.topicId, 'A-1');
+  assert.deepEqual(await f.forecastFromRecord('th-none', null), { answered: true, snapshot: null }, 'no file: the story drew no question');
+  assert.ok(calls.every((u) => u.startsWith('https://site.test/data/record/views/')));
+});
+
+test('forecastFromRecord does not answer on stale views, a bad thread id or an unreadable manifest', async () => {
+  const stale = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch({ ...fresh, 'manifest.json': { builtAt: '2026-10-31T02:00:00Z' } }), now: () => NOW });
+  assert.equal((await stale.forecastFromRecord('th-1', null)).answered, false);
+  const f = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch(fresh), now: () => NOW });
+  assert.equal((await f.forecastFromRecord('../x', null)).answered, false);
+  const noManifest = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch({}), now: () => NOW });
+  assert.equal((await noManifest.forecastFromRecord('th-1', null)).answered, false);
+});
+
+test('the context builder uses the record\'s forecast when it answers (the action is not called) and the action when it does not', async () => {
+  const story = stories.slice(0, 1);
+  let actionCalls = 0;
+  const base = goldenFetchers();
+  const withRecord = (answer) => ({ ...base, predictionSnapshot: async () => { actionCalls += 1; return { snapshot: null }; }, forecastFromRecord: async () => answer });
+  const viaRecord = await freezeSources({ stories: story, fetchers: withRecord({ answered: true, snapshot: { topicId: story[0].topicId, generatedAt: '2026-10-20T05:00:00.000Z', scenarios: [{ label: 'Likely', probability: 0.6, triggers: [{ id: '0-0', text: 'Will it', deadline: '2026-12-01', verdict: null }] }] } }) });
+  assert.equal(actionCalls, 0);
+  assert.equal(viaRecord.ok, true);
+  assert.ok(viaRecord.frozen.sources.some((x) => x.kind === 'FORECAST'));
+  await freezeSources({ stories: story, fetchers: withRecord({ answered: false, snapshot: null }) });
+  assert.ok(actionCalls >= 1);
+});

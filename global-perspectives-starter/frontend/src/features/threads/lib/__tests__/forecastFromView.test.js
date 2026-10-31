@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { viewForecast } from '@/features/threads/lib/viewForecast.js';
+import { viewForecast, forecastOfThread, topicIdsOfForks, newestSnapshot } from '@/shared/lib/forecastFromView.js';
 import { mostLikelyScenario } from '@/features/threads/lib/storyMode.js';
 import { chipFor } from '@/shared/lib/questionChips.js';
 import data from './fixtures/viewForecast.json';
@@ -18,7 +18,7 @@ function comparable(s) {
   return out;
 }
 
-describe('viewForecast against live captures', () => {
+describe('forecastFromView against live captures', () => {
   const byKind = (k) => data.fixtures.filter((f) => f.expect === k);
 
   it('captured at least 20 real stories, including ones where the action returns null', () => {
@@ -112,5 +112,40 @@ describe('viewForecast rules', () => {
 
   it('is null when the view does not know an asked topic (newer than the view)', () => {
     expect(viewForecast(view([branch('0-0')]), { topicIds: ['T', 'NEW'] })).toBeNull();
+  });
+});
+
+describe('the forecasts view (decision 0052)', () => {
+  // the fork list of a story, with no entries: the forecasts view
+  const fork = (topic, day, n = 0, extra = {}) => ({
+    forkId: `PRED#${topic}/${day}`, drawnAt: `${day}T05:00:00.000Z`,
+    branches: [{ branchId: `PRED#${topic}/${day}/0-${n}`, text: 'Most Likely', p: 40, trigger: `t ${topic}`, resolutionSource: 'R', due: '2026-12-01', verdict: null, question: true, qid: `q-${topic}-${day}`, scenarioP: 60, scoring: 'sampled', state: 'awaiting', ...extra }],
+  });
+  const forecasts = { threadId: 'th', forks: [fork('A-1', '2026-10-20'), fork('B-2', '2026-10-22')] };
+
+  it('answers for the forks it has, whatever topic is asked; there is no unknown-topic rule without entries', () => {
+    expect(viewForecast(forecasts, { topicIds: ['A-1', 'NEWER-9'] }).topicId).toBe('A-1');
+    expect(viewForecast(forecasts, { topicIds: ['NEWER-9'] })).toBeNull();
+  });
+
+  it('forecastOfThread is the newest forecast among every topic the forks were drawn for (the action asked by thread)', () => {
+    expect(topicIdsOfForks(forecasts)).toEqual(['A-1', 'B-2']);
+    expect(forecastOfThread(forecasts)).toMatchObject({ topicId: 'B-2', threadId: 'th', generatedAt: '2026-10-22T05:00:00.000Z' });
+    expect(forecastOfThread({ threadId: 'x', forks: [] })).toBeNull();
+    expect(forecastOfThread(null)).toBeNull();
+  });
+
+  it('the story view and the forecasts view give the same forecast for the same forks', () => {
+    const story = { ...forecasts, entries: [{ topicId: 'A-1' }, { topicId: 'B-2' }] };
+    expect(viewForecast(forecasts, { topicIds: ['A-1', 'B-2'] })).toEqual(viewForecast(story, { topicIds: ['A-1', 'B-2'] }));
+  });
+
+  it('newestSnapshot picks the latest generatedAt, the first of equals, and ignores nulls', () => {
+    const a = { id: 'a', generatedAt: '2026-10-20T00:00:00.000Z' };
+    const b = { id: 'b', generatedAt: '2026-10-22T00:00:00.000Z' };
+    const c = { id: 'c', generatedAt: '2026-10-22T00:00:00.000Z' };
+    expect(newestSnapshot([a, null, b, c]).id).toBe('b');
+    expect(newestSnapshot([null])).toBeNull();
+    expect(newestSnapshot(undefined)).toBeNull();
   });
 });

@@ -64,7 +64,7 @@ async function fetchJson(url) {
 
 async function recordBoard(nowIso) {
   const base = `${SITE_URL}/data/record/views`;
-  const [view, manifest, heartbeat] = await Promise.all([fetchJson(`${base}/track-record.json`), fetchJson(`${base}/manifest.json`), fetchJson(`${base}/health/settle-tick.json`)]);
+  const [view, manifest, heartbeat] = await Promise.all(['track-record.json', 'manifest.json', 'health/settle-tick.json'].map((name) => fetchJson(`${base}/${name}`)));
   if (!view.json) return { skipped: `track-record view ${view.error || 'not generated'}` };
   if (!manifest.json) return { skipped: `manifest ${manifest.error || 'not generated'}` };
   // No heartbeat yet means the resolver has not been switched on to write it (SETTLE_HEARTBEAT_KEY): without it "no tick for 3 days" cannot be told from "never written", so the check waits instead of alerting.

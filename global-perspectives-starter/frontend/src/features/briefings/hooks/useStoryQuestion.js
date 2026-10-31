@@ -1,4 +1,5 @@
 import { fetchPredictionSnapshotByThread } from '@/shared/api/restProxy.js';
+import { recordForecast } from '@/shared/api/forecastViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 import { hasOwnProbability } from '@/shared/lib/questionChips.js';
@@ -12,10 +13,13 @@ export function pickNextQuestion(snapshot, today = new Date().toISOString().slic
   return open[0] || null;
 }
 
-// Memory-cached per thread for the tab: re-opening a slide does not refetch.
+// Memory-cached per thread for the tab: re-opening a slide does not refetch. The story's forecast comes from the record's forecasts view while the views
+// are fresh (decision 0052); the `prediction_snapshot` action answers only when the record cannot.
 export function useStoryQuestion(threadId) {
   const { data } = useCachedQuery(threadId ? `story_question_${threadId}` : null, async () => {
     try {
+      const fromRecord = await recordForecast(threadId);
+      if (fromRecord.answered) return pickNextQuestion(fromRecord.snapshot);
       const res = await fetchPredictionSnapshotByThread(threadId);
       return res?.success ? pickNextQuestion(res.snapshot) : null;
     } catch (err) {

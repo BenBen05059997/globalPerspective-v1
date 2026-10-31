@@ -114,7 +114,7 @@ function checkAllIdentical(paths) {
 const SHARE_COPIES = [
   ['analysisValidator.js', 'features/analysis-studio/lib/'], ['analysisStruct.js', 'features/analysis-studio/lib/'], ['webCitations.js', 'features/analysis-studio/lib/'],
   ['analysisContext.js', 'features/analysis-studio/lib/'], ['analysisPrompt.js', 'features/analysis-studio/lib/'],
-  ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'],
+  ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'], ['forecastFromView.js', 'shared/lib/'],
 ];
 const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
 const FE_LIB = 'global-perspectives-starter/frontend/src/shared/lib';
@@ -219,7 +219,7 @@ function livePairs() {
     {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
-      name: 'Studio share modules (frontend + newsSharedAnalysis, 7 files + golden fixture)',
+      name: 'Studio share modules (frontend + newsSharedAnalysis, 8 files + golden fixture)',
       run: () => {
         for (const [f, dir] of SHARE_COPIES) {
           const r = checkAllIdentical([abs(`global-perspectives-starter/frontend/src/${dir}${f}`), fnPath('newsSharedAnalysis', `src/${f}`)]);

@@ -1,7 +1,8 @@
-// viewForecast — the story page's forecast board from the record's story view (decision 0042 step 4; scoring and
-// state come from the shared questionState rules, 0043). Returns the shape `prediction_snapshot` returns, so
-// ThreadForecast, mostLikelyScenario, buildDeadlines and chipFor read it unchanged; null when the view cannot
-// answer (the caller then asks the action).
+// forecastFromView — a story's forecast from the record, in the shape `prediction_snapshot` returns, so ThreadForecast, mostLikelyScenario,
+// buildDeadlines and chipFor read it unchanged (decision 0042 step 4; scoring and state come from the shared questionState rules, 0043).
+// The forks come from the story view (`stories/<id>.json`, which also lists the story's entries) or from the forecasts view
+// (`forecasts/<id>.json`, decision 0052: the same forks in a file of their own). Pure and import-free: a byte-identical copy lives in
+// the newsSharedAnalysis Lambda (guarded by scripts/check-shared-sync.mjs). Null when the view cannot answer (the caller then asks the action).
 
 const MAX_TOPICS = 25; // the action reads at most this many topics
 
@@ -47,14 +48,17 @@ function trigger(b, id) {
  * viewForecast(view, { topicIds }) -> snapshot | null
  * topicIds: the story's topic ids as the page holds them (the action is asked with these, first 25). Like the
  * action, the forecast is the newest one among those topics; a topic's newest fork counts only when it carries
- * question ids. Null when the view does not know every asked topic (a topic newer than the view).
+ * question ids. Null when a story view does not know every asked topic (a topic newer than the view).
  */
 export function viewForecast(view, { topicIds } = {}) {
   const forks = Array.isArray(view?.forks) ? view.forks : [];
   const asked = [...new Set((topicIds || []).filter(Boolean))].slice(0, MAX_TOPICS);
   if (!asked.length || !forks.length) return null;
-  const known = new Set((view.entries || []).map((e) => e.topicId).filter(Boolean));
-  if (asked.some((t) => !known.has(t))) return null;
+  // the story view lists its entries, so a topic it does not know is newer than the view; the forecasts view lists none and answers for the forks it has
+  if (Array.isArray(view.entries)) {
+    const known = new Set(view.entries.map((e) => e.topicId).filter(Boolean));
+    if (asked.some((t) => !known.has(t))) return null;
+  }
   const want = new Set(asked);
 
   // Each topic's newest fork; then the newest of those that carry question ids.
@@ -96,4 +100,26 @@ export function viewForecast(view, { topicIds } = {}) {
     status: 'open',
     scenarios: list,
   };
+}
+
+/** The topic ids a view's forks were drawn for, oldest fork first. */
+export function topicIdsOfForks(view) {
+  const ids = [];
+  for (const f of Array.isArray(view?.forks) ? view.forks : []) {
+    const t = parseBranchId(f.branches?.[0]?.branchId)?.topicId;
+    if (t && !ids.includes(t)) ids.push(t);
+  }
+  return ids;
+}
+
+/** The newest forecast of a whole story (what `prediction_snapshot` gives when asked by thread): viewForecast over every topic the forks were drawn for. */
+export function forecastOfThread(view) {
+  return viewForecast(view, { topicIds: topicIdsOfForks(view) });
+}
+
+/** The newest of several snapshots (null entries ignored); the first of equals. */
+export function newestSnapshot(snapshots) {
+  let best = null;
+  for (const s of snapshots || []) if (s && (!best || String(s.generatedAt) > String(best.generatedAt))) best = s;
+  return best;
 }

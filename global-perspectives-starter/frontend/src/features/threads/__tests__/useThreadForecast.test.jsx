@@ -7,7 +7,7 @@ const viewForecast = vi.fn();
 vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchStoryView }) }));
 vi.mock('@/shared/api/restProxy.js', () => ({ fetchPredictionSnapshot: (...a) => fetchPredictionSnapshot(...a) }));
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
-vi.mock('@/features/threads/lib/viewForecast.js', () => ({ viewForecast: (...a) => viewForecast(...a) }));
+vi.mock('@/shared/lib/forecastFromView.js', () => ({ viewForecast: (...a) => viewForecast(...a) }));
 
 const { useThreadForecast } = await import('@/features/threads/hooks/useThreadForecast.js');
 

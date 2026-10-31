@@ -53,8 +53,6 @@ Recovered days never draw forecasts: `newsStoryRecord` refuses `forecast_drawn` 
 
 Offline tests (URL building, GKG zip fixtures built in the test, GDELT JSON and CDX fixtures in `fixtures/`, line shape, dedupe, window split, fake-fetch walk, throttle classification, cool-down, exit code 2): `node --test backend/record/cli/recover.test.mjs`. The shared parser has its own test in `backend/shared/test/rss.test.js`.
 
-Last verified: 2026-10-23.
-
 ## benchmark-assignments.mjs
 
 Turns the gap benchmark's T1 continuations (`out/T1-s*.json`: "this recovered article continues that story") into assignment inbox lines. Local files only, no S3. The article's benchmark id (first 12 chars of `rawId`) is mapped to its `article` fact eventId by reading local copies of the recovered `record/inbox/articles/DAY.jsonl` lines and running `inboxArticleFact` from `newsStoryRecord/src/facts.js`; the target story is the T1 story, or its survivor when `--merges` (JSONL `{from, into}`) says it was merged away. Output lines `{entryId, threadId, by:'operator', at, reason}` (reason = the reader's `why` + " (gap benchmark 2026-10-24)") go to `record/inbox/assignments/DAY.jsonl`, where `entryId` is the article fact's eventId. An article cited by two stories is placed on the first; the other is listed as a conflict. Unmapped ids (no recovered inbox line) are listed and skipped.
@@ -62,3 +60,14 @@ Turns the gap benchmark's T1 continuations (`out/T1-s*.json`: "this recovered ar
 ```
 node backend/record/cli/benchmark-assignments.mjs --t1 'gap-benchmark/out/T1-s*.json' --inbox-dir ./inbox-articles --merges merges.jsonl --at 2026-10-24T12:00:00.000Z --out assignments.jsonl
 ```
+
+## reconcile-actors.mjs
+Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata (`wbsearchentities` and, for offices, one SPARQL query; 1 request/second in total) for the top N (`--top`) or all (`--all`), and keeps a hit only when its description names an allowed class (person, office, government, ministry, armed forces, police, central bank, court, parliament, party, company, NGO, international organisation, armed group, country/region).
+
+Match tiers (`confidence`/`via`): `exact` (top hit's label equals the name, accents folded), `alias` (matched alias equals the name), `near` (spelling variant: label or alias within 2 edits, same word set after folding word order, "of/the", demonyms and "military" = armed forces, or the same surname with a first name within 2 edits or an initial; any of the top 3 hits, but a lower hit sharing the exact name is a namesake and never counts; legal suffixes such as AG/Inc are ignored). A hit with no usable description is judged by its label ("Armed Forces of X"). A "<demonym> <org>" name also searches its entity title ("Government of South Korea").
+
+Offices: when the hit looks like a position, the script probes it (instance of position or public office, not a human) and reads the holders (office P1308, or a person's P39) with P580/P582. The holders overlapping the actor's first to last appearance in the index are the answer: one holder gives a proposal for the person with `title` = the office name and `via: office->holder`; several give one proposal each with `period` and `ambiguous_period: true`; none gives the position item itself flagged `position_item`.
+
+Dry run by default; `--write --out DIR` writes `aliases.candidate.json` (the alias-file schema; variants resolving to one id pool under the commonest name; generic and unresolved names included; `ambiguous` listed apart because one canonical takes one id), `review.md` (ready / check / unresolved / generic, one line per entry), plus `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`, `summary.json`. `--cache FILE` keeps Wikidata answers so a rerun costs no requests. It never writes `record/operator/aliases.json`; the operator copies accepted entries. Tests: `node --test cli/test/*.test.mjs` (no network).
+
+Choices: ready = exact, alias, or an office with exactly one holder; check = near, ambiguous_period, position items. Only the operator promotes a candidate; wrong confident hits are caught in review, not by tightening the rule further.

@@ -25,10 +25,10 @@ Live since 2026-10-30/31:
 
 - Notes now in the record (all live, writers in shadow until checked): entry 3,746; story_analysis 124; drift 222 country + 105 story; country 1,560 (48 briefings + 1,512 history copies); link 330. Writers: the agent, newsThreadAnalysis, newsDriftCorrector, newsCountryIntelligence, newsSystemsAnalysis (policies `entryNotesWriter`, `storyAnalysisNotesWriter`, `driftNotesWriter`, `countryLinkNotesWriter`). Backfill CLIs in `backend/record/cli/` (one per subtype).
 - Views from notes: story views carry `analysis` (with `driftNote`), links views `judgedLinks`, and 48 `countries/<ISO3>` views (only the newest drift note: drift depth is a member perk served by `country_history`; views are public).
-- Built, merged, compared, not yet released: the story page analysis and the country "what changed" band read the views (19 stories and 6 countries match on content; the record adds `from` and `model`). Lists and the cross-country ledger stay on the actions.
+- Released to Pages 2026-10-31 (second release): the story page analysis and the country "what changed" band read the views (19 stories and 6 countries match on content; the record adds `from` and `model`). Lists and the cross-country ledger stay on the actions.
 
 Watch next (the full test checklist, browser checks included, is the "What to test" section of https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd):
-- Agent run 04:25 UTC, `newsThreadAnalysis` 04:40, `newsDriftCorrector` 05:30: a `[notes]` log line each, shadow notes schema-valid; then set `NOTES_PREFIX=record/` on each.
+- Agent entry notes are live (`NOTES_PREFIX=record/` since 2026-10-31 04:35; the 04:25 run's 15 notes copied in). `newsThreadAnalysis` 04:40, `newsSystemsAnalysis` 05:00, `newsCountryIntelligence` 05:15, `newsDriftCorrector` 05:30: check their shadow notes, then set `NOTES_PREFIX=record/` on each.
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.
 - First full review Mon 2026-11-02 01:00 UTC (W44, about 520 stories): Run `ok`, `notReached` 0.
 

@@ -6,7 +6,7 @@ import { dayMonth } from '@/shared/lib/branchWording.js';
 import { placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { stringLabel, mapPinLine } from '@/features/board/lib/graphText.js';
 import {
-  MAP_W, MAP_H, WORLD_PATH, REGION_LABELS, RING_R, placeOfPin, touchesOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
+  MAP_W, RING_R, mapFrame, placeOfPin, touchesOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
 } from '@/features/board/lib/mapPlaces.js';
 import { StringLabel } from '@/features/board/components/BoardGraph.jsx';
 import '@/features/board/boardMap.css';
@@ -24,8 +24,10 @@ const clip = (t, n = 30) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
 export default function BoardMap({ pins, strings, info, stories = {}, selected = [], pickedKey, ghosts = [], failed = [], coverageGap = null, onPickPin, onPickString, onAddGhost }) {
   const now = useMemo(() => new Date(), []);
   const layout = useMemo(() => {
-    const placed = pins.map((p) => ({ pinId: p.pinId, at: placeOfPin(p, stories[p.refId]) })).filter((p) => p.at);
-    const centres = ringCentres(placed);
+    const geo = pins.map((p) => ({ pinId: p.pinId, at: placeOfPin(p, stories[p.refId]), touches: touchesOfPin(p, stories[p.refId]) })).filter((p) => p.at);
+    const frame = mapFrame(geo.flatMap((p) => [p.at, ...p.touches.map((t) => t.at)]));
+    const MAP_H = frame.h;
+    const centres = ringCentres(geo.map((p) => ({ pinId: p.pinId, at: frame.project(p.at) })));
     const text = Object.fromEntries(pins.filter((p) => centres[p.pinId]).map((p) => [p.pinId, { name: clip(info[p.pinId]?.label || p.refId), line: mapPinLine(p, info[p.pinId], now) }]));
     const labels = placeRingLabels(
       Object.entries(text).map(([pinId, t]) => ({ pinId, text: t.name.length > t.line.length ? t.name : t.line })),
@@ -43,8 +45,8 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
       ...Object.values(centres).map((c) => ({ x: c.x, y: c.y, w: RING_R * 2 + 4, h: RING_R * 2 + 4 })),
       ...Object.values(labels),
     ];
-    const touches = Object.fromEntries(pins.filter((p) => centres[p.pinId]).map((p) => [p.pinId, touchesOfPin(p, stories[p.refId])]));
-    return { centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL, { dropBlocked: true }) };
+    const touches = Object.fromEntries(geo.map((p) => [p.pinId, p.touches.map((t) => { const q = frame.project(t.at); return q && { ...t, x: q[0], y: q[1] }; }).filter(Boolean)]));
+    return { frame, centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL, { dropBlocked: true }) };
   }, [pins, strings, failed, info, stories, now]);
 
   // when the map is wider than its box (a phone), open it scrolled to the middle of the pins, not to the Americas
@@ -72,9 +74,9 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
             {coverageGap.note ? <span className="board-fog__note">{coverageGap.note}</span> : null}
           </div>
         ) : null}
-        <svg className="board-svg bm-svg" viewBox={`0 0 ${MAP_W} ${MAP_H}`} width={MAP_W} height={MAP_H} role="group" aria-label="Board map. The pin and string lists below give the same board as text.">
-          <path className="bm-land" d={WORLD_PATH} />
-          {REGION_LABELS.map((r) => <text key={r.name} className="bm-region" x={r.x} y={r.y} aria-hidden="true">{r.name}</text>)}
+        <svg className="board-svg bm-svg" viewBox={`0 0 ${MAP_W} ${layout.frame.h}`} width={MAP_W} height={layout.frame.h} role="group" aria-label="Board map. The pin and string lists below give the same board as text.">
+          <path className="bm-land" d={layout.frame.worldPath} />
+          {layout.frame.regions.map((r) => <text key={r.name} className="bm-region" x={r.x} y={r.y} aria-hidden="true">{r.name}</text>)}
           {/* every other country a story touches: a small mark tied to its ring (a place involved is a place affected) */}
           {Object.entries(layout.touches).flatMap(([pinId, ts]) => ts.map((t) => (
             <g key={`t-${pinId}-${t.iso3}`} className="bm-touch" data-pin-id={pinId}>

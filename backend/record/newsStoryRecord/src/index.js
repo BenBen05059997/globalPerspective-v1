@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -111,8 +111,8 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
         }
       }
     } catch (e) { run.failures.push({stage: 'verdict', message: messageOf(e)}); }
-    // Merges (the weekly review's auto-merges), splits (operator only) and assignments (operator, or the review's applied proposals) come the same way: inbox/merges/, inbox/splits/, inbox/assignments/, same days.
-    for (const [dir, stage, build] of [['merges', 'merge', inboxMergeFact], ['splits', 'split', inboxSplitFact], ['assignments', 'assignment', inboxAssignmentFact]]) {
+    // Draws (the resolver's weekly seed commits and draws, 0043), merges (the weekly review's auto-merges), splits (operator only) and assignments (operator, or the review's applied proposals) come the same way: inbox/draws/, inbox/merges/, inbox/splits/, inbox/assignments/, same days.
+    for (const [dir, stage, build] of [['draws', 'draw', inboxDrawFact], ['merges', 'merge', inboxMergeFact], ['splits', 'split', inboxSplitFact], ['assignments', 'assignment', inboxAssignmentFact]]) {
       try {
         const days = eachDay(inboxFrom || addDays(date, -(INBOX_DAYS - 1)), date);
         const parts = await Promise.all(days.map((d) => s3json.getLines(`${prefix}inbox/${dir}/${d}.jsonl`)));

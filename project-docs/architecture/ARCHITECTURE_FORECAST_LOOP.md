@@ -59,11 +59,13 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 | `forecast_drawn` fact | `record/facts/` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid}; written by `newsStoryRecord` from `PRED#` rows |
 | `verdict` fact | `record/facts/` | qid, result, voidReason, quote, url, at, decidedBy, evidence, revision; `eventId = sha1('verdict' + qid + revision)`; only `newsStoryRecord` writes it, from the inbox |
 | verdict inbox | `record/inbox/verdicts/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/verdicts/`) | one line per final verdict, written only by the resolver |
+| draws inbox | `record/inbox/draws/YYYY-MM-DD.jsonl` (shadow `record/shadow/inbox/draws/`) | one `commit` line per week's seed hash and one `draw` line per week's sample, written only by the resolver (0043) |
+| `question_commit`, `question_draw` facts | `record/facts/` | the week's published seed hash; the revealed seed and the sampled qids; `eventId = sha1(kind + weekId)`; only `newsStoryRecord` writes them, from the draws inbox. The story views derive each branch's `scoring` and `state` from them |
 | `Q#<qid>` `SAMPLED`, `DRAFT#`, `VERDICT`, `VERDICT#<n>` | `GlobalPerspectivePredictionLog` | the resolver's working rows, put-once; a correction appends `VERDICT#<n>` |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its seed commit |
 | `predictions/track_record.json` | S3 | the scored sample only; `newsPredictionsSnapshot` rebuilds it every 30 minutes |
 
-Draw code lives in `backend/pipeline/NewsProjectInvokeAgentLambda`; watch, gather, judge and record in `backend/predictions/newsPredictionResolver`; review in `backend/record`. The resolver writes only `record/inbox/verdicts/` (and its shadow) under `record/`, reads `record/facts/` and `record/runs/` (its role has both), and needs no search key. An operator dispute is `predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`, which appends a correction (0034: no human gate on verdicts).
+Draw code lives in `backend/pipeline/NewsProjectInvokeAgentLambda`; watch, gather, judge and record in `backend/predictions/newsPredictionResolver`; review in `backend/record`. The resolver writes only `record/inbox/verdicts/` and `record/inbox/draws/` (and their shadows) under `record/`, reads `record/facts/` and `record/runs/` (its role has both), and needs no search key. An operator dispute is `predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`, which appends a correction (0034: no human gate on verdicts).
 
 ## 4. Pages (wording)
 Shared in `shared/lib/branchWording.js`; never "not checked yet", never "DEAD".

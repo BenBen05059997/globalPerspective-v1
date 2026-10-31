@@ -9,7 +9,7 @@ const world = require('./_shared/world');
 const SCHEMA_VERSION = 1;
 const MAX_PUBLISHED_AGE_DAYS = 30;
 const producerName = `newsStoryRecord@${require('./package.json').version}`;
-const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'article', 'assignment', 'run'];
+const KINDS = ['entry', 'story_born', 'forecast_drawn', 'verdict', 'correction', 'story_merged', 'story_split', 'article', 'assignment', 'question_commit', 'question_draw', 'run'];
 const ASSIGNERS = ['ingest', 'review', 'operator'];
 const VERDICTS = ['yes', 'no', 'void'];
 const uniqueSorted = (xs) => [...new Set(xs.filter((x) => typeof x === 'string' && x))].sort();
@@ -24,7 +24,7 @@ function makeFact({kind, eventId, sourceKey, at, precision, threadId = null, iso
   if (!when) throw new Error(`facts: ${kind} needs a valid at`);
   if (!['exact', 'day'].includes(precision)) throw new Error('facts: precision must be exact or day');
   if (!sourceRow || !sourceRow.store || sourceRow.key == null) throw new Error(`facts: ${kind} needs a sourceRow`);
-  if (!['run', 'entry', 'article'].includes(kind) && threadId === null) throw new Error(`facts: ${kind} needs a threadId`);
+  if (!['run', 'entry', 'article', 'question_commit', 'question_draw'].includes(kind) && threadId === null) throw new Error(`facts: ${kind} needs a threadId`);
   return {
     schemaVersion: SCHEMA_VERSION,
     eventId: eventId || R.factId(kind, sourceKey),
@@ -113,6 +113,40 @@ function inboxVerdictFact(line, forecast, runId) {
     kind: 'verdict', eventId: R.sha1(`verdict${l.qid}${revision}`), sourceKey, at: l.decidedAt, precision: 'exact', threadId, sourceRow: {store: 'record', key: sourceKey}, runId,
     payload: {qid: l.qid, branchId, result: l.result, revision, decidedBy: l.decidedBy ?? null, evidence: l.evidence ?? null, reason: l.reason ?? null, voidReason: l.voidReason ?? null},
   });
+}
+
+/**
+ * One line of the resolver's draws inbox (record/inbox/draws/DAY.jsonl, decision 0043) -> `question_commit` (type 'commit') or
+ * `question_draw` (type 'draw'). Both belong to a week, not a story (threadId null); eventId = sha1(kind + weekId), so a re-read is
+ * the same fact. The commit carries the published seed hash; the draw the revealed seed and the sampled questions.
+ */
+function inboxDrawFact(line, runId) {
+  const l = line && typeof line === 'object' ? line : {};
+  const WEEK = /^\d{4}-W\d{2}$/;
+  if (typeof l.weekId !== 'string' || !WEEK.test(l.weekId)) throw new Error(`facts: inbox draw line needs a weekId, got ${l.weekId}`);
+  if (typeof l.rule !== 'string' || !l.rule) throw new Error(`facts: inbox draw ${l.weekId} needs a rule`);
+  const common = {threadId: null, precision: 'exact', runId};
+  if (l.type === 'commit') {
+    if (typeof l.commitHash !== 'string' || !/^[0-9a-f]{64}$/.test(l.commitHash)) throw new Error(`facts: commit ${l.weekId} needs a sha-256 commitHash`);
+    const sourceKey = `inbox:draws/commit|${l.weekId}`;
+    return makeFact({
+      ...common, kind: 'question_commit', eventId: R.sha1(`question_commit${l.weekId}`), sourceKey, at: l.committedAt, sourceRow: {store: 'record', key: sourceKey},
+      payload: {weekId: l.weekId, weekStart: l.weekStart ?? null, weekEnd: l.weekEnd ?? null, rule: l.rule, commitHash: l.commitHash},
+    });
+  }
+  if (l.type === 'draw') {
+    const picked = Array.isArray(l.picked) ? l.picked : null;
+    if (!picked || picked.some((p) => !p || typeof p.qid !== 'string' || !p.qid)) throw new Error(`facts: draw ${l.weekId} needs picked: [{qid, hash, clusterKey}]`);
+    const sourceKey = `inbox:draws/draw|${l.weekId}`;
+    return makeFact({
+      ...common, kind: 'question_draw', eventId: R.sha1(`question_draw${l.weekId}`), sourceKey, at: l.drawnAt, sourceRow: {store: 'record', key: sourceKey},
+      payload: {
+        weekId: l.weekId, rule: l.rule, K: l.K ?? null, eligible: l.eligible ?? null, clusters: l.clusters ?? null, seedHex: l.seedHex ?? null,
+        picked: picked.map((p) => ({qid: p.qid, hash: p.hash ?? null, clusterKey: p.clusterKey ?? null})),
+      },
+    });
+  }
+  throw new Error(`facts: inbox draw line has type ${l.type}`);
 }
 
 const LEGACY_VOID_REASON = 'issued_before_method';
@@ -246,4 +280,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "eventId": "6f3c1f0b2f8f0a3e5d0b7a4e9c1d2b3a4f5e6d7c",
+  "kind": "question_commit",
+  "at": "2026-10-22T10:30:00.000Z",
+  "date": "2026-10-22",
+  "precision": "exact",
+  "threadId": null,
+  "iso3": [],
+  "actorIds": [],
+  "sourceIds": [],
+  "payload": {
+    "weekId": "2026-W44",
+    "weekStart": "2026-10-26",
+    "weekEnd": "2026-11-01",
+    "rule": "v1",
+    "commitHash": "9b74c9897bac770ffc029102a200c5de9b74c9897bac770ffc029102a200c5de"
+  },
+  "producer": {
+    "lambda": "newsStoryRecord@0.2.0",
+    "runId": "2026-10-22-1"
+  },
+  "sourceKey": "inbox:draws/commit|2026-W44",
+  "sourceRow": {
+    "store": "record",
+    "key": "inbox:draws/commit|2026-W44"
+  }
+}

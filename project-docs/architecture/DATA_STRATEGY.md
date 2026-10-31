@@ -66,6 +66,7 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` | daily, the one mutable object | `newsPredictionResolver` (coverage guard), operator |
 | `record/inbox/articles/YYYY-MM-DD.jsonl` | the selector `newsInvokeGemini` (before its model call) and the recovery script | each generation | `newsStoryRecord` |
 | `record/inbox/verdicts/YYYY-MM-DD.jsonl` | `newsPredictionResolver` | on each decision | `newsStoryRecord` (run day and six before) |
+| `record/inbox/draws/YYYY-MM-DD.jsonl` | `newsPredictionResolver` | on each weekly commit and draw | `newsStoryRecord` (run day and six before) |
 | `record/inbox/merges/YYYY-MM-DD.jsonl` | `newsRecordReview`; operator lines on demand | weekly | `newsStoryRecord` |
 | `record/inbox/splits/YYYY-MM-DD.jsonl` | operator only | on demand | `newsStoryRecord` |
 | `record/inbox/assignments/YYYY-MM-DD.jsonl` | operator, applying approved review proposals or benchmark placements | on demand | `newsStoryRecord` |

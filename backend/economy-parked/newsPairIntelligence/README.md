@@ -23,5 +23,3 @@ Writes AI analysis of bilateral relationships (country pairs). For each pair it 
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

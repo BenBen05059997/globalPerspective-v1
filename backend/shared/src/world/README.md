@@ -111,14 +111,11 @@ dropped entry never shifts the next one's index.
 12. **Web links**: keep the live names `from`/`to`/`confidence` (record renamed to `a`/`b`/`strength`); a link that only has `a`/`b` is accepted and returned as `from`/`to`.
 
 ## Who imports it
-`newsStoryRecord` (the record's reads), the weekly pull (`backend/weekly/pull.mjs`, `selection.mjs`), `newsBoard`
-(`src/world.js`, live), later `newsConnect`. Each Lambda reaches it as `require('./_shared/world')` through its committed
-`src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The weekly runs from the repo
-and requires it with a relative path. Once the record is live, the weekly and the board read `record/*` and use this
-reader only for what the record does not hold (ARCHITECTURE_TIMELINE §6).
+`newsStoryRecord` (the record's reads) and `newsBoard` (`src/world.js`); the weekly pull (`backend/weekly/pull.mjs`) is not written yet. Each Lambda reaches it as `require('./_shared/world')` through its committed
+`src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The weekly will run from the repo
+and require it with a relative path. The weekly and the board read `record/*` views and use this reader only for what
+the record does not hold (ARCHITECTURE_TIMELINE §6).
 
 ## Test
 `cd backend/shared && node --test test/world.*.test.js` (fixtures in `test/world.fake.js` are shaped like the live rows).
 newsBoard: `cd backend/board/newsBoard/src && npm test`.
-
-Last verified: 2026-10-20 (sampledQuestions, webAt added)

@@ -3,7 +3,7 @@
 Weekly markets report ("what moved this week and why"). Computes each tracked instrument's week-over-week % move deterministically from price history, takes the top `WEEKLY_TOP_MOVERS` (default 10) by absolute move, and grounds each mover in one of three tiers: our own ECONOMIC_IMPACT coverage (short LLM note that must pass an LLM judge), else a cited web-context note, else "No clear driver found." The LLM never supplies a number or direction. Event: `weekKey` (default today).
 
 ## Deployment
-- Deployed name `newsWeeklyMarkets` · runtime `nodejs20.x` · group `economy-parked` (scripts/functions.json)
+- Deployed name `newsWeeklyMarkets` · runtime `nodejs22.x` · group `economy-parked` (scripts/functions.json)
 - Trigger: `TriggerWeeklyMarkets` `cron(30 8 ? * SUN *)` UTC, DISABLED, EventBridge rule
 - Deploy: `scripts/lambda.sh newsWeeklyMarkets diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -25,5 +25,3 @@ Weekly markets report ("what moved this week and why"). Computes each tracked in
 
 ## Tests
 - None
-
-Last verified: 2026-10-19

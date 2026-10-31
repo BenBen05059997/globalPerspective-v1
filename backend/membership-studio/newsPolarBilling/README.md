@@ -19,6 +19,4 @@ Polar.sh billing on one Function URL. A POST with a `webhook-signature` header i
 - Product IDs and credit amounts are server-side env; the client only names a plan or pack key.
 
 ## Tests
-- `cd backend/membership-studio/newsPolarBilling/src && npm test` (`node --test ../test/lib.test.js`, offline): 8/8 passed 2026-10-19. DynamoDB conditional writes are not covered.
-
-Last verified: 2026-10-19
+- `cd backend/membership-studio/newsPolarBilling/src && npm test` (`node --test ../test/lib.test.js`, offline). DynamoDB conditional writes are not covered.

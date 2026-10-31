@@ -3,7 +3,7 @@
 // Notes (decision 0042): the one builder and writer of record/notes/<subtype>/YYYY-MM-DD.jsonl, so every writer (a Lambda or
 // the capture CLI) makes the same object. The shape is backend/record/schema/note.schema.json; buildNote checks the rules that
 // keep notes consistent and throws instead of writing a bad note.
-const {noteId, entryIdentity} = require('./record');
+const {noteId, entryIdentity, pairKey} = require('./record');
 const {makeManifest} = require('./manifest');
 
 const SCHEMA_VERSION = 1;
@@ -22,13 +22,15 @@ function buildNote({subtype, subjectId, part = '', threadId = null, iso3 = [], a
   if (!text(subjectId)) throw new Error(`notes: ${subtype} needs a subject id`);
   if (subtype === 'brief' && !BRIEF_ID.test(subjectId)) throw new Error(`notes: brief subject ${subjectId} is not daily:DATE or weekly:WEEK`);
   if (subtype === 'entry' && !Object.values(ENTRY_PARTS).includes(part)) throw new Error(`notes: entry part ${part}`);
+  if (subtype === 'link' && !ISO3.test(part)) throw new Error(`notes: a link note's part is its country ISO3 (${part})`);
+  if (subtype === 'country' && part !== '') throw new Error(`notes: a country note has no part (${part})`);
   if (subtype === 'entry' && !cites.length) throw new Error('notes: an entry note cites its entry');
   const when = Date.parse(at);
   if (!Number.isFinite(when)) throw new Error(`notes: ${subtype} needs a valid at`);
   if (!Array.isArray(iso3) || !iso3.every((c) => ISO3.test(c))) throw new Error(`notes: iso3 must be ISO3 codes (${iso3})`);
   if (!payload || typeof payload !== 'object') throw new Error('notes: payload must be an object');
-  const archiveCopy = payload && payload.from === 'archive';
-  if (!text(model) && !(archiveCopy && model === null)) throw new Error('notes: model is required (null only on an archive copy)');
+  const copy = payload && (payload.from === 'archive' || payload.from === 'history' || payload.source === 'web-history');
+  if (!text(model) && !(copy && model === null)) throw new Error('notes: model is required (null only on an archive, history or web-history copy)');
   if (!producer || !text(producer.lambda) || !text(producer.runId)) throw new Error('notes: producer {lambda, runId} is required');
   const iso = new Date(when).toISOString();
   return {
@@ -86,6 +88,69 @@ function driftNote({item, iso3, model, producer}) {
   });
 }
 
+/**
+ * The COUNTRY# / COUNTRY_INTELLIGENCE item newsCountryIntelligence stores + the country's ISO3 -> a country note (part ''): the
+ * day's briefing. Payload = the stored fields minus keys, ttl and the envelope's (generatedAt = at, model). The HISTORY# row of
+ * the same run is a subset of this item, so it is not a second note (see countryHistoryNote for the backfill of older days).
+ */
+function countryNote({item, iso3, producer}) {
+  if (!item || !text(item.countryName)) return null;
+  return buildNote({
+    subtype: 'country', subjectId: iso3, iso3: [iso3], at: item.generatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'model']), model: item.model, producer,
+  });
+}
+
+/**
+ * One COUNTRY# / HISTORY#<date> row (the day's risk point: score, level, dimensions, lead, trajectory, headline) -> a country
+ * note copy for a day that has no briefing note: payload.from 'history', model null (the row did not record it). Backfill
+ * only; the writer does not make these. Views prefer an exact note over a copy.
+ */
+function countryHistoryNote({item, iso3, producer}) {
+  if (!item || !text(item.countryName)) return null;
+  return buildNote({
+    subtype: 'country', subjectId: iso3, iso3: [iso3], at: item.generatedAt,
+    payload: {...omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'model', 'dateKey']), from: 'history'}, model: null, producer,
+  });
+}
+
+/** Cited entries of a stored edge as the web records keep them: `cited` [{topicId, date, title}], or the older `citedEntries` ids. */
+function citedOf(edge) {
+  if (Array.isArray(edge.cited) && edge.cited.length) return edge.cited.map(({topicId, date, title}) => omit({topicId, date, title}, []));
+  return (edge.citedEntries || []).map((topicId) => ({topicId}));
+}
+
+/** key of an archive entry in the cite index */
+const citeKey = (date, topicId) => `${date}|${topicId}`;
+
+/** archive entries [{topicId, date, title, sources}] -> Map(`date|topicId` -> eventId), shared entryIdentity as the entry facts use. */
+function entryEventIdIndex(entries) {
+  const index = new Map();
+  for (const e of entries || []) {
+    if (e && e.topicId && e.date) index.set(citeKey(e.date, e.topicId), entryIdentity({sources: e.sources, date: e.date, title: e.title}).eventId);
+  }
+  return index;
+}
+
+/**
+ * One story-to-story edge of a SYSTEMS# country web (from, to = threadIds) -> a link note about the pair. Part = the web's
+ * country ISO3 (the same pair can be read in two countries' webs; latest per country wins). Payload = the edge as the web index
+ * keeps it plus the country name; threadId null (a pair; both ids are in the payload). `at` = the web's generatedAt, `model` its
+ * model; a null `model` marks a copy rebuilt from the dated S3 web history (rows there did not record it): payload.source
+ * 'web-history'. `cites` = eventIds of the cited entries found in `eventIds` (entryEventIdIndex); a cite not found is left out.
+ */
+function linkNote({edge, countryName, iso3, at, model, eventIds = new Map(), producer}) {
+  if (!edge || !text(edge.from) || !text(edge.to) || edge.from === edge.to) return null;
+  const cited = citedOf(edge);
+  const cites = cited.map((c) => eventIds.get(citeKey(c.date, c.topicId))).filter(Boolean);
+  return buildNote({
+    subtype: 'link', subjectId: pairKey(edge.from, edge.to), part: iso3, iso3: [iso3], at,
+    payload: {from: edge.from, to: edge.to, country: countryName, confidence: edge.confidence, lagDays: edge.lagDays ?? 0, mechanism: edge.mechanism, cited,
+      ...(model === null ?{source: 'web-history'} : {})},
+    cites, model, producer,
+  });
+}
+
 // archive ai field -> entry note part
 const ARCHIVE_PARTS = {summary: 'summary', prediction: 'prediction', trace_cause: 'cause'};
 
@@ -132,4 +197,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, countryNote, countryHistoryNote, linkNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};

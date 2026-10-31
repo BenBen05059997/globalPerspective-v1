@@ -5,6 +5,7 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
+const { writeCountryNote } = require('./recordNotes');
 const ISO3_NAMES = require('./_shared/iso3Names.json');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
@@ -74,7 +75,10 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
+let RUN_ID = new Date().toISOString(); // reset per invocation in the handler
+
 exports.handler = async (event = {}) => {
+  RUN_ID = new Date().toISOString();
   const dryRun = Boolean(event && event.dryRun);
   console.log(`Country intelligence started${dryRun ? ' (DRY RUN: no LLM, no writes)' : ''}`);
 
@@ -554,6 +558,7 @@ async function writeAnalysis(countryName, analysis, country) {
   }));
 
   console.log(`Wrote COUNTRY_INTELLIGENCE + HISTORY#${dateKey} for ${countryName} (riskScore: ${riskScore})`);
+  await writeCountryNote({ countryName, item: coreItem, runId: RUN_ID });
 }
 
 // ─── Grok API ────────────────────────────────────────────────────────────────

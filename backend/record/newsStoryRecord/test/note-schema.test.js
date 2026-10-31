@@ -57,7 +57,8 @@ test('entryNote: each TOPIC# part becomes a schema-valid note about the entry fa
 });
 
 test('buildNote refuses what the schema forbids: unknown subtype, a country name, a bad brief id, an entry note without a cite', () => {
-  const base = {subtype: 'country', subjectId: 'UKR', at: '2026-10-30T05:30:00Z', payload: {}, model: 'm', producer};
+  const base = {subtype: 'country', subjectId: 'UKR', at: '2026-10-30T05:30:00Z', iso3: ['UKR'],
+    payload: {countryName: 'Ukraine', bluf: 'b', keyDevelopments: [], whyItMatters: 'w', trajectory: 'stable', riskLevel: 'high', riskScore: 70}, model: 'm', producer};
   assert.equal(valid(N.buildNote(base)), true, JSON.stringify(valid.errors));
   assert.throws(() => N.buildNote({...base, subtype: 'opinion'}), /unknown subtype/);
   assert.throws(() => N.buildNote({...base, iso3: ['Ukraine']}), /ISO3/);
@@ -154,4 +155,101 @@ test('drift archive copies (backfill from DRIFTLOG#): payload.from archive with 
   assert.deepEqual([n.model, n.payload.from], [null, 'archive']);
   assert.throws(() => N.driftNote({iso3: 'UKR', model: null, producer, item}), /model is required/);
   assert.equal(valid({...n, payload: {...n.payload, from: 'elsewhere'}}), false);
+});
+
+// country and link (decision 0042 steps 3-4): the examples were built by the real builders from live items.
+const countryEx = load('examples/note-country.json');
+const linkEx = load('examples/note-link.json');
+
+test('the country and link examples validate and carry the shared noteId', () => {
+  for (const ex of [countryEx, linkEx]) {
+    assert.equal(valid(ex), true, JSON.stringify(valid.errors));
+    assert.equal(ex.noteId, R.noteId(ex.subtype, ex.subject.id, ex.part, ex.at));
+  }
+  assert.deepEqual([countryEx.subject, countryEx.part, countryEx.iso3, countryEx.threadId], [{kind: 'country', id: 'JPN'}, '', ['JPN'], null]);
+  assert.deepEqual([linkEx.subject.kind, linkEx.subject.id, linkEx.part, linkEx.threadId], ['pair', R.pairKey(linkEx.payload.from, linkEx.payload.to), 'JPN', null]);
+});
+
+test('country and link notes breaking their rules are rejected', () => {
+  const cp = countryEx.payload;
+  const lp = linkEx.payload;
+  const {bluf, ...noBluf} = cp;
+  const {mechanism, ...noMechanism} = lp;
+  const bad = [
+    {...countryEx, subject: {kind: 'country', id: 'Japan'}}, // countries are ISO3, never names
+    {...countryEx, subject: {kind: 'story', id: 'JPN'}},
+    {...countryEx, part: 'systems'}, // one text per country; the web nodes are not a country part
+    {...countryEx, iso3: []},
+    {...countryEx, model: null}, // null only on a history copy
+    {...countryEx, payload: noBluf}, // a full briefing has its bluf
+    {...countryEx, payload: {...cp, extra: 1}},
+    {...countryEx, payload: {...cp, riskScore: '72'}},
+    {...countryEx, payload: {countryName: 'Japan', riskLevel: 'high', riskScore: 70, trajectory: 'stable', from: 'archive'}},
+    {...linkEx, subject: {kind: 'story', id: linkEx.subject.id}}, // a link is about a pair
+    {...linkEx, subject: {kind: 'pair', id: 'one-thread'}}, // pairKey(a, b)
+    {...linkEx, part: ''}, // the part is the web's country
+    {...linkEx, part: 'Japan'},
+    {...linkEx, threadId: linkEx.payload.from}, // a pair has no single story
+    {...linkEx, iso3: []},
+    {...linkEx, model: null}, // null only on a web-history copy
+    {...linkEx, payload: noMechanism},
+    {...linkEx, payload: {...lp, confidence: 'certain'}},
+    {...linkEx, payload: {...lp, lagDays: 1.5}},
+    {...linkEx, payload: {...lp, cited: [{date: '2026-10-02'}]}},
+    {...linkEx, payload: {...lp, extra: 1}},
+  ];
+  for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 160));
+});
+
+test('countryNote and countryHistoryNote: the briefing as stored (minus keys, ttl, envelope); an older day is a reduced history copy with model null', () => {
+  const item = {PK: 'COUNTRY#Japan', SK: 'COUNTRY_INTELLIGENCE', ttl: 1, countryName: 'Japan', headline: 'H', bluf: 'B', keyDevelopments: [{date: '2026-10-25', text: 't'}],
+    whyItMatters: 'W', situationSummary: null, backgroundTimeline: [], crossThreadInsight: null, trajectory: 'stable', trajectoryDetail: null, riskSignals: [],
+    riskLevel: 'moderate', riskScore: 40, dimensions: {}, lead: 'political', keyActors: [], dominantCategory: 'society', categories: {society: 1}, totalArticles: 1,
+    activeArcCount: 1, dateRange: {from: '2026-10-25', to: '2026-10-25'}, dayCount: 1, generatedAt: '2026-10-26T05:15:44.865Z', model: 'deepseek-v4-pro', latencyMs: 9};
+  const n = N.countryNote({item, iso3: 'JPN', producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual([n.at, n.date, n.model, n.threadId, n.cites], ['2026-10-26T05:15:44.865Z', '2026-10-26', 'deepseek-v4-pro', null, []]);
+  for (const k of ['PK', 'SK', 'ttl', 'generatedAt', 'model']) assert.equal(k in n.payload, false, k);
+  assert.equal(n.payload.situationSummary, null); // a stored null stays null
+  assert.equal(N.countryNote({item: null, iso3: 'JPN', producer}), null);
+  assert.throws(() => N.countryNote({item, iso3: undefined, producer}), /needs a subject id/);
+
+  const row = {PK: 'COUNTRY#Japan', SK: 'HISTORY#2026-09-01', countryName: 'Japan', dateKey: '2026-09-01', riskLevel: 'high', riskScore: 70, trajectory: 'escalating',
+    headline: 'H', dimensions: {conflict: {score: 70, why: 'w'}}, lead: 'conflict', generatedAt: '2026-09-01T05:16:00.000Z', ttl: 2};
+  const h = N.countryHistoryNote({item: row, iso3: 'JPN', producer});
+  assert.equal(valid(h), true, JSON.stringify(valid.errors));
+  assert.deepEqual([h.model, h.payload.from, h.part, 'dateKey' in h.payload], [null, 'history', '', false]);
+  assert.equal(valid({...h, model: 'm'}), false); // a copy has no model
+  const {dimensions, lead, ...old} = row; // rows older than the risk dimensions
+  assert.equal(valid(N.countryHistoryNote({item: old, iso3: 'JPN', producer})), true);
+});
+
+test('linkNote: one note per edge, subject pairKey whichever way it points, part = the web country, cites = eventIds of the cited entries it can find', () => {
+  const entries = [
+    {topicId: 'A-1', date: '2026-10-02', title: 'A', sources: [{url: 'https://www.reuters.com/a'}]},
+    {topicId: 'B-1', date: '2026-10-03', title: 'B', sources: []},
+  ];
+  const eventIds = N.entryEventIdIndex(entries);
+  const edge = {from: 'thread-b', to: 'thread-a', mechanism: 'm', lagDays: -1, confidence: 'weak', class: 'causal', relation: 'inferred_influence',
+    cited: [{topicId: 'A-1', date: '2026-10-02', title: 'A'}, {topicId: 'B-1', date: '2026-10-03', title: 'B'}, {topicId: 'gone-1', date: '2026-10-03', title: 'G'}],
+    citedEntries: ['A-1', 'B-1', 'gone-1']};
+  const at = '2026-10-30T05:02:09.564Z';
+  const n = N.linkNote({edge, countryName: 'Japan', iso3: 'JPN', at, model: 'deepseek-v4-pro', eventIds, producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual([n.subject, n.part, n.iso3, n.threadId, n.at], [{kind: 'pair', id: 'thread-a__thread-b'}, 'JPN', ['JPN'], null, at]);
+  assert.deepEqual(n.cites, entries.map((e) => R.entryIdentity({sources: e.sources, date: e.date, title: e.title}).eventId)); // the unknown cite is left out
+  assert.deepEqual(Object.keys(n.payload).sort(), ['cited', 'confidence', 'country', 'from', 'lagDays', 'mechanism', 'to']);
+  assert.deepEqual([n.payload.from, n.payload.to, n.payload.lagDays], ['thread-b', 'thread-a', -1]); // direction kept in the payload
+  // an old edge with only citedEntries; the reverse direction is the same pair
+  const old = N.linkNote({edge: {from: 'thread-a', to: 'thread-b', mechanism: 'm', lagDays: 2, confidence: 'strong', citedEntries: ['A-1']}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer});
+  assert.equal(valid(old), true, JSON.stringify(valid.errors));
+  assert.deepEqual([old.subject.id, old.payload.cited, old.cites], ['thread-a__thread-b', [{topicId: 'A-1'}], []]);
+  // a copy rebuilt from the dated web history has no model, and says so
+  const copy = N.linkNote({edge, countryName: 'Japan', iso3: 'JPN', at, model: null, producer});
+  assert.equal(valid(copy), true, JSON.stringify(valid.errors));
+  assert.deepEqual([copy.model, copy.payload.source], [null, 'web-history']);
+  const {source, ...noSource} = copy.payload;
+  assert.equal(valid({...copy, payload: noSource}), false);
+  assert.equal(N.linkNote({edge: {...edge, to: 'thread-b'}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer}), null); // a self-loop is no pair
+  assert.throws(() => N.linkNote({edge, countryName: 'Japan', iso3: 'Japan', at, model: 'm', producer}), /ISO3/);
 });

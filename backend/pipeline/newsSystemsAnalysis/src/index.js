@@ -5,6 +5,7 @@ const { isCountryName } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { pickSpreadEntries } = require('./spreadEntries');
 const { buildWebIndex } = require('./webRecords');
+const { writeLinkNotes } = require('./recordNotes');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -41,6 +42,8 @@ const s3 = new S3Client({ region: REGION });
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 exports.handler = async (event = {}) => {
+  const runStart = new Date().toISOString();
+  const RUN_ID = runStart;
   console.log('Systems analysis started');
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
@@ -83,11 +86,13 @@ exports.handler = async (event = {}) => {
 
   let generated = 0;
   let failed = 0;
+  const written = new Set(); // countries whose web was stored in this run
 
   for (const country of targets) {
     try {
       const graph = await generateSystemsAnalysis(country);
       await writeAnalysis(country.countryName, graph, country);
+      written.add(country.countryName);
       generated++;
       console.log(`Systems analysis done for ${country.countryName}: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
     } catch (err) {
@@ -102,6 +107,8 @@ exports.handler = async (event = {}) => {
     const rows = await readAllSystemsRows();
     const now = new Date();
     const runId = `web-${now.toISOString()}`;
+    // Link notes (decision 0042): the edges of the webs written in this run (older webs have their notes from their own run)
+    await writeLinkNotes({ rows: rows.filter(r => written.has(r.countryName) && r.generatedAt >= runStart), entries, model: GROK_MODEL, runId: RUN_ID });
     const { index, records } = buildWebIndex({ rows, entries, now, targets: targets.map(c => c.countryName), runId, isCountry: isCountryName });
     await writeWebRecords(index, records);
     coverage = index.coverage;
@@ -161,6 +168,7 @@ async function readArchiveEntries(days) {
             title: e.title,
             date: dateStr,
             regions: e.regions || [],
+            sources: (e.sources || []).map(s => ({ url: s && s.url })), // only the url: it gives the entry fact's eventId for link note cites
             category: (e.category || 'other').toLowerCase(),
           });
         }

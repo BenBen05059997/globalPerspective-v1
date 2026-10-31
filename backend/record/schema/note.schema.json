@@ -584,6 +584,344 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "country"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "iso3": {
+            "minItems": 1
+          },
+          "subject": {
+            "properties": {
+              "id": {
+                "pattern": "^[A-Z]{3}$"
+              }
+            }
+          },
+          "part": {
+            "const": ""
+          },
+          "payload": {
+            "description": "the COUNTRY_INTELLIGENCE item newsCountryIntelligence stores, minus keys, ttl, generatedAt (the note's at) and model; or, with from 'history', the reduced HISTORY# row of an older day (backfill only, model null)",
+            "required": [
+              "countryName",
+              "riskLevel",
+              "riskScore",
+              "trajectory"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "countryName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "headline": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bluf": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "keyDevelopments": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "whyItMatters": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "situationSummary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "backgroundTimeline": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "crossThreadInsight": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "trajectory": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trajectoryDetail": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "riskSignals": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "riskLevel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "riskScore": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "dimensions": {
+                "type": "object"
+              },
+              "lead": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "keyActors": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "dominantCategory": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "categories": {
+                "type": "object"
+              },
+              "totalArticles": {
+                "type": "number"
+              },
+              "activeArcCount": {
+                "type": "number"
+              },
+              "threadIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the stories the briefing rests on (threadIds, not eventIds); absent on briefings stored before they were kept"
+              },
+              "dateRange": {
+                "type": "object"
+              },
+              "dayCount": {
+                "type": "number"
+              },
+              "latencyMs": {
+                "type": "number"
+              },
+              "searchResultsCount": {
+                "type": "number",
+                "description": "legacy field of briefings stored by an older version"
+              },
+              "groundingSources": {
+                "type": "array",
+                "description": "legacy field of briefings stored by an older version"
+              },
+              "from": {
+                "enum": [
+                  "history"
+                ],
+                "description": "present on a reduced copy of a HISTORY# row (backfill); views prefer an exact note"
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "payload": {
+                  "required": [
+                    "from"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "payload": {
+                  "required": [
+                    "bluf",
+                    "keyDevelopments",
+                    "whyItMatters"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "link"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "iso3": {
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "subject": {
+            "properties": {
+              "id": {
+                "pattern": "^.+__.+$",
+                "description": "pairKey(from, to) of the two thread ids"
+              }
+            }
+          },
+          "part": {
+            "pattern": "^[A-Z]{3}$",
+            "description": "ISO3 of the country web the link was read in"
+          },
+          "threadId": {
+            "type": "null"
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "null only on a copy rebuilt from the dated S3 web history (payload.source web-history): its rows did not record the model"
+          },
+          "payload": {
+            "description": "one causal edge of a SYSTEMS# country web as the web index keeps it: from -> to (thread ids, the direction of influence), lagDays (to follows from by this many days), the model's mechanism, its confidence, the entries it cited",
+            "required": [
+              "from",
+              "to",
+              "country",
+              "confidence",
+              "lagDays",
+              "mechanism",
+              "cited"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              },
+              "country": {
+                "type": "string",
+                "minLength": 1
+              },
+              "confidence": {
+                "enum": [
+                  "strong",
+                  "medium",
+                  "weak"
+                ]
+              },
+              "lagDays": {
+                "type": "integer"
+              },
+              "mechanism": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cited": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "topicId"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "topicId": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "source": {
+                "enum": [
+                  "web-history"
+                ],
+                "description": "present on a link rebuilt from web/YYYY/MM/DD.json (backfill); views prefer an exact note"
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "payload": {
+                  "required": [
+                    "source"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "model": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

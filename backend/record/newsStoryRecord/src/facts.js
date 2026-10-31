@@ -76,6 +76,15 @@ function entryFact(e, runId) {
   });
 }
 
+/**
+ * One entry of today's archive -> a PROVISIONAL entry fact (0050): the same fact the nightly run would make of it, marked `provisional`.
+ * It lives only in a refresh build's memory, never in a facts file: the agent rewrites today's archive entries during the day (an entry of a
+ * topic seen again is replaced, possibly with a new thread and no assignment line), so only the nightly run may freeze them.
+ */
+function provisionalEntryFact(e, runId) {
+  return {...entryFact(e, runId), provisional: true};
+}
+
 /** The first entry of a thread in the window -> `story_born`. `birth` is world.birthByThread()[threadId]. */
 function bornFact(threadId, birth, first, runId) {
   return makeFact({
@@ -281,4 +290,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, provisionalEntryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};

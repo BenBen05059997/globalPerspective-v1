@@ -14,6 +14,14 @@ function makeStore(client, {env = {}, tables} = {}) {
      * `today-archive` archived on that day (0036 section 5.3); a day with no archive row but such entries comes back
      * with source 'today-archive'. dayRow is null when neither exists (the day is missing).
      */
+    /**
+     * The entries of one UTC day as the nightly run would read them (the day row plus the `today-archive` entries archived that day),
+     * for a refresh (0050): no window, no snapshots, no births. [] when the day has neither.
+     */
+    async loadDay(date) {
+      const day = await world.archiveDay(client, date, {...opts, nowMs: Date.parse(`${date}T12:00:00Z`)});
+      return day ? day.entries : [];
+    },
     async load(date) {
       const from = world.addDays(date, 1 - WINDOW_DAYS);
       const range = await world.archiveRange(client, from, date, {...opts, nowMs: Date.parse(`${date}T12:00:00Z`)});

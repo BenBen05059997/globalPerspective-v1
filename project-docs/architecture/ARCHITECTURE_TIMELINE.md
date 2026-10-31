@@ -33,7 +33,7 @@ WORLD  S3 record/ (one writer per file)              USERS  DynamoDB            
      forecast loop (0038, ARCHITECTURE_FORECAST_LOOP.md): draw, watch, gather, judge, record
 3 REVIEW   backend/record/newsRecordReview · model · weekly, Monday 01:00 UTC (ARCHITECTURE_WEEKLY_REVIEW.md)
      record/readings/WEEK.jsonl  line · chapters · confirmed links · merge, alias and assignment proposals
-4 BUILD    newsStoryRecord, the only view builder · no model · after each daily append
+4 BUILD    newsStoryRecord, the only view builder · no model · after each daily append, and a refresh after each ingest and brief (0050: today's archive entries as provisional entries, no fact appended)
      record/views/  index/active · index/all · stories/{id} · links/{id} · counts/DAY · manifest (written last)
 5 SERVE    Cloudflare Worker, allow-list record/views/* (ETag, 5 min cache) -> the board
 

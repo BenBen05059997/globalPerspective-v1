@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, provisionalEntryFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -236,9 +236,28 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     return result;
   }
 
+  // The refresh of 0050, run after each ingest (and each brief) by {refresh:true, shadow}: today's archive entries join the views as
+  // PROVISIONAL entries and the views are rebuilt. Nothing else is written: no fact, no Run, no run fact, no manifest day. The agent rewrites
+  // today's archive during the day (an entry of a topic seen again is replaced, maybe with a new thread and no assignment line), so only the
+  // nightly run, which appends facts, may freeze them; its facts then replace the provisional entries (same eventId, or the entry is gone).
+  async function refresh({prefix}) {
+    const at = now();
+    const today = at.slice(0, 10);
+    const runId = `refresh-${at}`;
+    const provisional = [];
+    const skipped = [];
+    const rows = await store.loadDay(today);
+    for (const [n, e] of rows.entries()) {
+      try { provisional.push(provisionalEntryFact(e, runId)); } catch (err) { skipped.push({n, topicId: e && e.topicId, message: messageOf(err)}); }
+    }
+    const published = await publisher.publish({prefix, today, builtAt: at, runId, changedDays: [], provisional});
+    return {refresh: true, prefix, runId, today, entries: rows.length, skipped, ...published}; // published.provisional = those not already facts
+  }
+
   return async function handler(event = {}) {
     const shadow = event.shadow ?? true;
     const prefix = shadow ? 'record/shadow/' : 'record/';
+    if (event.refresh === true) return refresh({prefix});
     if (event.legacyVoid === true) return legacyVoid({prefix});
     if (event.assignmentsBackfill === true) return assignmentsBackfill({prefix});
     const bf = event.backfill;

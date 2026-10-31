@@ -47,6 +47,16 @@
         }
       ],
       "description": "newest ISO week among the readings the build used; null when there are none"
+    },
+    "provisionalThrough": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "the newest day of the provisional entries (today's archive before the nightly run has frozen it, 0050); absent when the build had none"
+    },
+    "provisionalEntries": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "how many provisional entries the build used; present with provisionalThrough"
     }
   },
   "definitions": {
@@ -94,6 +104,11 @@
             }
           ],
           "description": "newest ISO week among the readings the build used; null when there are none"
+        },
+        "provisionalThrough": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "the newest day of the provisional entries (today's archive before the nightly run has frozen it, 0050); absent when the build had none"
         }
       }
     }

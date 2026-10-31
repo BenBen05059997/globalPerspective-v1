@@ -48,13 +48,13 @@ function makePublisher({s3json}) {
     return lines;
   }
 
-  /** Build and write all views. `changedDays` = days whose facts changed in this invocation (their counts are rewritten). */
-  async function publish({prefix, today, builtAt, runId, changedDays = []}) {
+  /** Build and write all views. `changedDays` = days whose facts changed in this invocation (their counts are rewritten). `provisional` = today's archive entries as provisional entry facts (a refresh, 0050). */
+  async function publish({prefix, today, builtAt, runId, changedDays = [], provisional = []}) {
     const {facts, manifestDays} = await readFacts(prefix, changedDays);
     const readings = await readReadings(prefix, facts, today);
     const operatorAliases = await s3json.getJson(`${prefix}operator/aliases.json`); // null when the operator wrote none
     const notes = (await Promise.all(NOTE_SUBTYPES.map((t) => readNotes(prefix, t)))).flat();
-    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases, notes});
+    const views = buildViews(facts, {today, builtAt, runId, factsManifestDays: manifestDays, countDays: countDaysFor(today, changedDays), readings, operatorAliases, notes, provisional});
     let written = 0;
     for (const group of writeGroups(views)) {
       for (let i = 0; i < group.length; i += WRITE_BATCH) {
@@ -62,7 +62,7 @@ function makePublisher({s3json}) {
       }
       written += group.length;
     }
-    return {written, stories: views.stories.size, active: views.active.stories.length};
+    return {written, stories: views.stories.size, active: views.active.stories.length, provisional: views.manifest.provisionalEntries || 0};
   }
 
   return {publish, readFacts};

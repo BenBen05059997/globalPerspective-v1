@@ -1,1 +1,0 @@
-import{j as n}from"./index-C4ESgM9W.js";const o={up:"↑",down:"↓",mixed:"↕",flat:"→"};function e({dir:a="flat",size:s="sm"}){const t=`da da-${s} da-${a}`;return n.jsx("span",{className:t,"aria-label":a,children:o[a]||"→"})}export{e as D};

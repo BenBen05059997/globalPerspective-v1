@@ -1,0 +1,1 @@
+import{j as r}from"./index-DFEa5-HK.js";const t={fact:"FACT",inference:"INFERENCE",judgment:"MODEL JUDGMENT",yours:"YOURS"};function n({kind:a}){return t[a]?r.jsx("span",{className:`claim-tag claim-tag--${a}`,children:t[a]}):null}export{n as C};

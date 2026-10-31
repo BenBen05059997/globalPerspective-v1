@@ -1,0 +1,1 @@
+import{H as s,aY as n}from"./index-DFEa5-HK.js";const i=1800*1e3;function f(e=null){const l=e?`gp_weekly_brief_v1:${e}`:"gp_weekly_brief_v1",{data:t,loading:a,error:r,refetch:o}=s(l,async()=>(await n(e))?.data||null,{ttl:i,storage:"local"});return{brief:t??null,loading:a,error:r?r.message||"Failed to load the weekly brief":null,refetch:o}}export{f as u};

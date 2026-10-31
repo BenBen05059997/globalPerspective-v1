@@ -138,3 +138,18 @@ export function arcMid(a, b) {
   const c = control(a, b);
   return { x: 0.25 * a.x + 0.5 * c.x + 0.25 * b.x, y: 0.25 * a.y + 0.5 * c.y + 0.25 * b.y };
 }
+
+/** Where the line from a ring centre `from` toward an off-frame point `to` leaves the w x h frame (inset from the edge),
+ *  with the arrow naming that edge: { x, y, arrow }. */
+export function edgeMarker(from, to, w, h, inset = 8) {
+  const dx = to[0] - from.x;
+  const dy = to[1] - from.y;
+  const t = Math.min(
+    dx > 0 ? (w - inset - from.x) / dx : dx < 0 ? (inset - from.x) / dx : Infinity,
+    dy > 0 ? (h - inset - from.y) / dy : dy < 0 ? (inset - from.y) / dy : Infinity,
+  );
+  const x = from.x + dx * t;
+  const y = from.y + dy * t;
+  const arrow = Math.abs(x - w / 2) / w > Math.abs(y - h / 2) / h ? (x > w / 2 ? '→' : '←') : (y > h / 2 ? '↓' : '↑');
+  return { x, y, arrow };
+}

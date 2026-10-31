@@ -68,6 +68,30 @@ describe('map places', () => {
   });
 });
 
+describe('BoardMap frame', () => {
+  it('keeps the East Asia frame when a story also touches the US, and marks the US at the frame edge', () => {
+    const asia = [
+      { pinId: 'a1', kind: 'thread', refId: 't1' },
+      { pinId: 'a2', kind: 'country', refId: 'KOR' },
+      { pinId: 'a3', kind: 'country', refId: 'CHN' },
+    ];
+    const stories = { t1: { iso3: ['JPN', 'USA'], entries: [{ iso3: ['JPN'] }, { iso3: ['JPN', 'USA'] }] } };
+    const lbl = { a1: { label: 'Strait talks' }, a2: { label: 'South Korea' }, a3: { label: 'China' } };
+    render(<BoardMap pins={asia} strings={[]} info={lbl} stories={stories} onPickPin={() => {}} onPickString={() => {}} />);
+    const xs = [...document.querySelectorAll('.bm-pin__ring')].map((c) => Number(c.getAttribute('cx')));
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(MAP_W / 2);
+    const h = Number(document.querySelector('svg.bm-svg').getAttribute('height'));
+    const edge = document.querySelectorAll('.bm-touch__edge');
+    expect(edge).toHaveLength(1);
+    expect(edge[0].textContent).toMatch(/United States/);
+    expect(Number(edge[0].getAttribute('x'))).toBeGreaterThan(0);
+    expect(Number(edge[0].getAttribute('x'))).toBeLessThan(MAP_W);
+    expect(Number(edge[0].getAttribute('y'))).toBeGreaterThan(0);
+    expect(Number(edge[0].getAttribute('y'))).toBeLessThan(h);
+    expect(document.querySelector('.bm-touch title').textContent).toBe('Strait talks also touches United States');
+  });
+});
+
 describe('BoardMap', () => {
   it('draws placed pins and strings, parks the rest in chips, and opens a pin', () => {
     const onPickPin = vi.fn();

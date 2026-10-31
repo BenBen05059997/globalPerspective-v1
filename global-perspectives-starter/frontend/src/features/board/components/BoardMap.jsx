@@ -6,7 +6,7 @@ import { dayMonth } from '@/shared/lib/branchWording.js';
 import { placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { stringLabel, mapPinLine } from '@/features/board/lib/graphText.js';
 import {
-  MAP_W, RING_R, mapFrame, placeOfPin, touchesOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
+  MAP_W, RING_R, mapFrame, edgeMarker, placeOfPin, touchesOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
 } from '@/features/board/lib/mapPlaces.js';
 import { StringLabel } from '@/features/board/components/BoardGraph.jsx';
 import '@/features/board/boardMap.css';
@@ -25,7 +25,7 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
   const now = useMemo(() => new Date(), []);
   const layout = useMemo(() => {
     const geo = pins.map((p) => ({ pinId: p.pinId, at: placeOfPin(p, stories[p.refId]), touches: touchesOfPin(p, stories[p.refId]) })).filter((p) => p.at);
-    const frame = mapFrame(geo.flatMap((p) => [p.at, ...p.touches.map((t) => t.at)]));
+    const frame = mapFrame(geo.map((p) => p.at)); // rings only: a far-off touch never stretches the frame
     const MAP_H = frame.h;
     const centres = ringCentres(geo.map((p) => ({ pinId: p.pinId, at: frame.project(p.at) })));
     const text = Object.fromEntries(pins.filter((p) => centres[p.pinId]).map((p) => [p.pinId, { name: clip(info[p.pinId]?.label || p.refId), line: mapPinLine(p, info[p.pinId], now) }]));
@@ -45,7 +45,13 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
       ...Object.values(centres).map((c) => ({ x: c.x, y: c.y, w: RING_R * 2 + 4, h: RING_R * 2 + 4 })),
       ...Object.values(labels),
     ];
-    const touches = Object.fromEntries(geo.map((p) => [p.pinId, p.touches.map((t) => { const q = frame.project(t.at); return q && { ...t, x: q[0], y: q[1] }; }).filter(Boolean)]));
+    // a touch inside the frame is a dot; one outside it is an edge marker where its tie leaves the map
+    const touches = Object.fromEntries(geo.map((p) => [p.pinId, p.touches.map((t) => {
+      const q = frame.project(t.at);
+      if (!q) return null;
+      const inside = q[0] >= 0 && q[0] <= MAP_W && q[1] >= 0 && q[1] <= MAP_H;
+      return inside ? { ...t, x: q[0], y: q[1] } : { ...t, ...edgeMarker(centres[p.pinId], q, MAP_W, MAP_H), edge: true };
+    }).filter(Boolean)]));
     return { frame, centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL, { dropBlocked: true }) };
   }, [pins, strings, failed, info, stories, now]);
 
@@ -82,7 +88,9 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
             <g key={`t-${pinId}-${t.iso3}`} className="bm-touch" data-pin-id={pinId}>
               <title>{`${info[pinId]?.label || pinId} also touches ${t.name}`}</title>
               <line className="bm-touch__tie" x1={layout.centres[pinId].x} y1={layout.centres[pinId].y} x2={t.x} y2={t.y} />
-              <circle className="bm-touch__dot" cx={t.x} cy={t.y} r={RING_R / 3} />
+              {t.edge ? (
+                <text className="bm-touch__edge" x={t.x} y={t.y} textAnchor={t.x > MAP_W / 2 ? 'end' : 'start'} dominantBaseline="middle">{t.arrow === '←' || t.arrow === '↑' ? `${t.arrow} ${t.name}` : `${t.name} ${t.arrow}`}</text>
+              ) : <circle className="bm-touch__dot" cx={t.x} cy={t.y} r={RING_R / 3} />}
             </g>
           )))}
           {strings.map((s) => {

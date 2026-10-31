@@ -183,3 +183,17 @@ Offices: when the hit looks like a position, the script probes it (instance of p
 Dry run by default; `--write --out DIR` writes `aliases.candidate.json` (the alias-file schema; variants resolving to one id pool under the commonest name; generic and unresolved names included; `ambiguous` listed apart because one canonical takes one id), `review.md` (ready / check / unresolved / generic, one line per entry), plus `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`, `summary.json`. `--cache FILE` keeps Wikidata answers so a rerun costs no requests. It never writes `record/operator/aliases.json`; the operator copies accepted entries. Tests: `node --test cli/test/*.test.mjs` (no network).
 
 Choices: ready = exact, alias, or an office with exactly one holder; check = near, ambiguous_period, position items. Only the operator promotes a candidate; wrong confident hits are caught in review, not by tightening the rule further.
+
+## backfill-forecasts.mjs
+
+Appends the `forecast_drawn` facts the facts run missed: a PredictionLog `PRED#` row whose topic was not among its day's archive
+entries (the run used to find rows only through the day's entry topics). Reads every `PRED#` row from the record's first day to
+today (a Scan, run as the operator) and every stored fact; a row with no fact becomes one through `forecastFact` (same eventId as
+the facts run). threadId: the row's own, else the latest `entry` fact of the topic; a row with neither is reported `unresolved` and
+not written. **Dry run by default**; `--write` adds the days to the manifest and appends to `record/facts/DAY.jsonl` (`--prefix` for a shadow
+copy). A re-run appends nothing. The views pick the facts up on the next facts run.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-forecasts.mjs [--write] [--prefix record/]
+```
+Test: `node --test backend/record/cli/backfill-forecasts.test.mjs`.

@@ -14,7 +14,7 @@ const Private = () => <span className="al-mark al-mark--private">Private</span>;
 const Public = () => <span className="al-mark">Ours · public</span>;
 const CHANGE = { held: 'held', kept: 'kept by you', cut: 'cut by you' };
 
-export default function MonthlyCard({ board, stories, today, labelOf, onRetire }) {
+export default function MonthlyCard({ board, stories, today, labelOf, storyLabel, onRetire }) {
   const m = monthlyView(board, stories, today);
   const parts = [m.arc.length, m.previous.length, m.strings.length, m.ours, m.yours, m.missed, m.quiet.length, m.dates.length];
   if (!parts.some(Boolean)) return null;
@@ -72,7 +72,7 @@ export default function MonthlyCard({ board, stories, today, labelOf, onRetire }
         <section className="al-sec" aria-label="Next dates">
           <h3 className="pn-kicker">Next dates</h3>
           <ul className="al-rows">{m.dates.map((d) => (
-            <li key={d.id} className="al-row"><time className="al-when" dateTime={d.due}>{dayMonth(d.due)}{d.p != null ? ` · ${d.p}%` : ''}</time><span>{d.text}</span></li>
+            <li key={d.id} className="al-row"><time className="al-when" dateTime={d.due}>{dayMonth(d.due)}{d.p != null ? ` · ${d.p}%` : ''}{d.late ? ' · past due' : ''}</time><span>{storyLabel ? `${storyLabel(d.threadId)}: ` : ''}{d.line}{d.scenario ? ` (${d.scenario})` : ''}</span></li>
           ))}</ul>
         </section>
       ) : null}

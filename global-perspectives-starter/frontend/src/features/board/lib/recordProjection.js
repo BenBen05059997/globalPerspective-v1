@@ -1,4 +1,5 @@
-import { branchStatus } from '@/shared/lib/branchWording.js';
+import { branchStatus, VOID_REASON_WORDS } from '@/shared/lib/branchWording.js';
+import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 // ISO week label of a date, e.g. '2026-W43' (UTC).
 export function isoWeekOf(date) {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -17,7 +18,7 @@ export function boardWeek(board, stories, links = {}, now = new Date()) {
   return {
     moved: board.pins.filter((p) => inWeek(p.lastMoved)),
     strings: board.strings.flatMap((s) => ['keptAt', 'cutAt'].filter((k) => inWeek(s[k])).map((k) => ({ ...s, change: k === 'cutAt' ? 'cut' : 'kept', date: s[k] }))),
-    branches: Object.values(stories).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches.filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, text: b.text, threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result, status: branchStatus(b).text })))),
+    branches: Object.values(stories).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches.filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, line: branchLine(b), scenario: branchScenario(b), threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result, kind: branchStatus(b).kind, why: VOID_REASON_WORDS[b.verdict.voidReason] || null, status: branchStatus(b).text })))),
     links: Object.entries(links).flatMap(([threadId, v]) => (v?.confirmedLinks || []).filter((l) => l.week === isoWeek).map((l) => ({ ...l, threadId }))),
   };
 }

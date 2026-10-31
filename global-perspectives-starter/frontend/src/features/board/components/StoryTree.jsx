@@ -4,8 +4,9 @@ import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import StoryTreeDrawing from '@/features/board/components/StoryTreeDrawing.jsx';
 import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordText.js';
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
+import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
 import { weekMonday } from '@/features/board/lib/recordViews.js';
 import '@/features/board/storyTree.css';
 
@@ -41,8 +42,8 @@ export default function StoryTree({ story, loading, error }) {
     return <details key={f.forkId}><summary>
       <span className={closed ? 'story-tree__kicker' : 'story-tree__kicker story-tree__kicker--accent'}>{closed ? `${dayMonth(f.drawnAt) || f.drawnAt} fork · closed` : `open fork · ${dayMonth(f.drawnAt) || f.drawnAt} · provisional`}</span>
       <span>{outcomeText(o)}</span></summary>
-      {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary><span>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</span>{isLate(b, present) ? <span className="story-tree__stamp">▸ late · past {dayMonth(b.due)}</span> : null}{b.trigger ? <span className="board-branch__text">{b.trigger}</span> : null}</summary>
-        <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${dayMonth(b.due)}` : ''}</p>
+      {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary><span>{branchLine(b)}{branchPercent(b) != null ? ` · ${branchPercent(b)}%` : ''} · {st.text}</span>{isLate(b, present) ? <span className="story-tree__stamp">▸ late · past {dayMonth(b.due)}</span> : null}{branchScenario(b) ? <span className="board-branch__text">{branchScenario(b)}</span> : null}</summary>
+        <p className="board-line"><ClaimTag kind="judgment" /> {branchLine(b)}{b.due ? ` · due ${dayMonth(b.due)}` : ''}</p>
         {b.verdict ? <p className="board-line"><time dateTime={b.verdict.at.slice(0, 10)}>{dayMonth(b.verdict.at.slice(0, 10))}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
       </details>; })}
     </details>;
@@ -55,7 +56,7 @@ export default function StoryTree({ story, loading, error }) {
     return <>
       {chapter ? <p className="board-line"><span className="story-tree__kicker story-tree__kicker--accent">{chapter.title} · opened</span> <Button compact onClick={() => setChapter(null)}>whole story</Button></p> : null}
       {folded ? <Button compact aria-expanded={unfolded} onClick={() => setUnfolded(!unfolded)}>{`Before ${dayMonth(folded.before)}${folded.branches ? ` · ${plural(folded.branches, 'branch', 'branches')}${folded.taken ? `, ${folded.taken} happened` : ''}` : ''} ${unfolded ? '▾' : '▸'}`}</Button> : null}
-      <StoryTreeDrawing shown={unfolded ? all : shown} branches={liveBranches(scoped.forks)} present={present} />
+      <StoryTreeDrawing shown={unfolded ? all : shown} branches={drawnBranches(scoped.forks)} present={present} />
       {trunk}
       {scoped.forks.length ? <><h3>Forks</h3>{scoped.forks.map(forkRow)}</> : null}
       {empty ? <p className="board-line">No dated event or forecast branch has been recorded for this story.</p> : null}
@@ -69,7 +70,7 @@ export default function StoryTree({ story, loading, error }) {
       {event.recovered ? <p className="board-line">{RECOVERED_LABEL} · {RECOVERED_DETAIL}</p> : null}
       {event.summary ? <p className="board-line">{event.summary}</p> : null}
       {event.sources?.map((s, i) => s.url ? <a className="board-link" key={i} href={s.url} target="_blank" rel="noreferrer">{s.outlet || s.title || s.url}</a> : null)}
-      {drawn.length ? <><h3>Branches drawn this day</h3><ul>{drawn.map((b) => <li key={b.branchId}>{b.text}{b.p != null ? ` · ${b.p}%` : ''}</li>)}</ul></> : null}
+      {drawn.length ? <><h3>Branches drawn this day</h3><ul>{drawn.map((b) => <li key={b.branchId}>{branchLine(b)}{branchPercent(b) != null ? ` · ${branchPercent(b)}%` : ''}</li>)}</ul></> : null}
       {story.threadId ? <p className="board-line"><Button compact to={storyHref(story.threadId)}>Open story page</Button></p> : null}
     </div>;
   };

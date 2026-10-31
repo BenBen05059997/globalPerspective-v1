@@ -1,25 +1,48 @@
-// mapPlaces — the board map's geography and layout. Pure apart from the projection built at load.
-// Outlines are the site's own coastlines (shared/map/landGeometry) in an equal-earth projection; a place is a
-// country's centre from the shared coordinate table. A pin with no country gets no place: it is never guessed.
+// mapPlaces — the board map's geography and layout. Pure: the frame (projection) is built per render from the pins.
+// Outlines are the site's own coastlines (shared/map/landGeometry) in an equal-earth projection fitted to the pins'
+// extent; a place is a country's centre from the shared coordinate table, as [lng, lat] until a frame projects it.
+// A pin with no country gets no place: it is never guessed.
 import { geoEqualEarth, geoPath } from 'd3-geo';
 import { land, FRAME } from '@/shared/map/landGeometry.js';
 import { COUNTRY_COORDINATES } from '@/shared/map/countryCoordinates.js';
 import { COUNTRIES, resolveCountry } from '@/shared/lib/countries.js';
 
 export const MAP_W = 900;
-const projection = geoEqualEarth().fitWidth(MAP_W, FRAME);
-const path = geoPath(projection);
-export const MAP_H = Math.ceil(path.bounds(FRAME)[1][1]);
-export const WORLD_PATH = path(land) || '';
+const MIN_LNG = 40; // degrees, padded: one or two pins never zoom closer than this
+const MIN_LAT = 25;
+const PAD_LNG = 0.15; // of the span on each side (ring labels sit beside their rings and flip inward at the edge)
+const PAD_LAT = 0.3;
 
-const REGIONS = [['Americas', -92, 14], ['Europe', 14, 56], ['Africa', 20, 2]];
-export const REGION_LABELS = REGIONS.map(([name, lng, lat]) => { const [x, y] = projection([lng, lat]); return { name, x, y }; });
+const REGIONS = [['Americas', -92, 14], ['Europe', 14, 56], ['Africa', 20, 2], ['Asia', 100, 45], ['Middle East', 45, 27]];
 
-/** [x, y] on the map for an ISO3 country, or null when the country table has no position for it. */
+/** The map frame for a set of [lng, lat] points: { h, project, worldPath, regions }. The projection is fitted to the
+ *  points' bounding box, padded and kept at least MIN_LNG x MIN_LAT wide; no points -> the whole world. */
+export function mapFrame(points = []) {
+  const lngs = points.map((p) => p[0]);
+  const lats = points.map((p) => p[1]);
+  let box = FRAME;
+  if (points.length) {
+    const cx = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+    const cy = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const dLat = Math.max((Math.max(...lats) - Math.min(...lats)) * (1 + 2 * PAD_LAT), MIN_LAT);
+    const dLng = Math.max((Math.max(...lngs) - Math.min(...lngs)) * (1 + 2 * PAD_LNG), MIN_LNG);
+    const hw = Math.max(dLng, dLat * 1.5) / 2; // never taller than 2:3, however far apart north-south
+    const hh = Math.min(dLat / 2, 85);
+    const [w, e, s, n] = [Math.max(cx - hw, -180), Math.min(cx + hw, 180), Math.max(cy - hh, -85), Math.min(cy + hh, 85)];
+    box = { type: 'MultiPoint', coordinates: [[w, s], [e, s], [e, n], [w, n], [(w + e) / 2, s], [(w + e) / 2, n], [w, (s + n) / 2], [e, (s + n) / 2]] };
+  }
+  const projection = geoEqualEarth().fitWidth(MAP_W, box);
+  const h = Math.ceil(geoPath(projection).bounds(box)[1][1]);
+  projection.clipExtent([[0, 0], [MAP_W, h]]);
+  const project = (p) => { const at = projection(p); return at && Number.isFinite(at[0]) && Number.isFinite(at[1]) ? at : null; };
+  const regions = REGIONS.map(([name, lng, lat]) => { const at = project([lng, lat]); return at && at[0] > 0 && at[0] < MAP_W && at[1] > 0 && at[1] < h ? { name, x: at[0], y: at[1] } : null; }).filter(Boolean);
+  return { h, project, worldPath: geoPath(projection)(land) || '', regions };
+}
+
+/** [lng, lat] for an ISO3 country, or null when the country table has no position for it. */
 export function placeOfCountry(iso3) {
   const c = COUNTRY_COORDINATES[COUNTRIES[iso3]?.iso2];
-  const at = c ? projection([c.lng, c.lat]) : null;
-  return at && Number.isFinite(at[0]) && Number.isFinite(at[1]) ? at : null;
+  return c && Number.isFinite(c.lng) && Number.isFinite(c.lat) ? [c.lng, c.lat] : null;
 }
 
 /** A story's countries, most-named first: how many of its entries name each country (the story view's own `iso3` list
@@ -33,7 +56,7 @@ export function storyCountries(story, pin = {}) {
 }
 
 /** Where a pin sits: a country pin on its country; a story on its most-named country with a place; an actor nowhere.
- *  -> [x, y] or null. */
+ *  -> [lng, lat] or null. */
 export function placeOfPin(pin, story) {
   if (pin.kind === 'country') { const iso3 = resolveCountry(pin.refId)?.iso3; return iso3 ? placeOfCountry(iso3) : null; }
   if (pin.kind !== 'thread') return null;
@@ -41,14 +64,14 @@ export function placeOfPin(pin, story) {
   return null;
 }
 
-/** The other countries a story pin touches, as map points: [{ iso3, name, x, y }] (the ring's own country left out). */
+/** The other countries a story pin touches, as places: [{ iso3, name, at: [lng, lat] }] (the ring's own country left out). */
 export function touchesOfPin(pin, story) {
   if (pin.kind !== 'thread') return [];
   const at = placeOfPin(pin, story);
   return storyCountries(story, pin)
     .map((iso3) => ({ iso3, name: COUNTRIES[iso3]?.name || iso3, p: placeOfCountry(iso3) }))
     .filter((t) => t.p && !(at && t.p[0] === at[0] && t.p[1] === at[1]))
-    .map((t) => ({ iso3: t.iso3, name: t.name, x: t.p[0], y: t.p[1] }));
+    .map((t) => ({ iso3: t.iso3, name: t.name, at: t.p }));
 }
 
 export const RING_R = 9;
@@ -114,4 +137,19 @@ export function arcPath(a, b) {
 export function arcMid(a, b) {
   const c = control(a, b);
   return { x: 0.25 * a.x + 0.5 * c.x + 0.25 * b.x, y: 0.25 * a.y + 0.5 * c.y + 0.25 * b.y };
+}
+
+/** Where the line from a ring centre `from` toward an off-frame point `to` leaves the w x h frame (inset from the edge),
+ *  with the arrow naming that edge: { x, y, arrow }. */
+export function edgeMarker(from, to, w, h, inset = 8) {
+  const dx = to[0] - from.x;
+  const dy = to[1] - from.y;
+  const t = Math.min(
+    dx > 0 ? (w - inset - from.x) / dx : dx < 0 ? (inset - from.x) / dx : Infinity,
+    dy > 0 ? (h - inset - from.y) / dy : dy < 0 ? (inset - from.y) / dy : Infinity,
+  );
+  const x = from.x + dx * t;
+  const y = from.y + dy * t;
+  const arrow = Math.abs(x - w / 2) / w > Math.abs(y - h / 2) / h ? (x > w / 2 ? '→' : '←') : (y > h / 2 ? '↓' : '↑');
+  return { x, y, arrow };
 }

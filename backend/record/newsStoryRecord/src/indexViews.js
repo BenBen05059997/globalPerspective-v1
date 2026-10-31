@@ -105,9 +105,9 @@ function weeklyIndex(stories, refs, today, builtFrom) {
   return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, days: out};
 }
 
-/** All five indexes, keyed by file name under index/ (`briefs` is built by briefViews.js, decision 0048). Throws when one is over INDEX_MAX_BYTES. */
-function buildIndexViews({builtFrom, stories, countries, web, weekly, briefs}) {
-  const out = {'analyses.json': analysesIndex(stories, builtFrom), 'web.json': webIndex(web, builtFrom), 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, builtFrom), 'briefs.json': briefs};
+/** All indexes, keyed by file name under index/ (`briefs` is built by briefViews.js, decision 0048; `today` by todayView.js, decision 0051, only when the entries inbox has lines). Throws when one is over INDEX_MAX_BYTES. */
+function buildIndexViews({builtFrom, stories, countries, web, weekly, briefs, today = null}) {
+  const out = {'analyses.json': analysesIndex(stories, builtFrom), 'web.json': webIndex(web, builtFrom), 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, builtFrom), 'briefs.json': briefs, ...(today ? {'today.json': today} : {})};
   for (const [name, obj] of Object.entries(out)) {
     const size = bytesOf(obj);
     if (size > INDEX_MAX_BYTES) throw new Error(`views: index/${name} is ${size} bytes, over the ${INDEX_MAX_BYTES} cap`);

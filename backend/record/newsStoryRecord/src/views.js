@@ -13,6 +13,7 @@ const {COUNTRIES} = require('./_shared/countries');
 const {iso3List} = require('./_shared/resolveIso3');
 const {buildIndexViews, archiveRefOf} = require('./indexViews');
 const {buildBriefViews} = require('./briefViews');
+const {todayIndex} = require('./todayView');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -453,7 +454,7 @@ function countDaysFor(today, changedDays = []) {
 /**
  * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count),  countDays (default
  * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
- * (record/operator/aliases.json or null), provisional (0050: entry facts of today's archive marked `provisional`, in memory only; one
+ * (record/operator/aliases.json or null), todayDays (0051: the entries inbox of the last two UTC days, [{day, lines}]; with none, no index/today.json), provisional (0050: entry facts of today's archive marked `provisional`, in memory only; one
  * whose eventId is already a fact is dropped). Throws when all.json is over its hard cap.
  * Views stay a pure function of (facts, notes, readings, provisional entries): `factsThrough` is the newest day of the real facts, and
  * `provisionalThrough` (builtFrom and manifest, only when there are provisional entries) the newest day of the provisional ones.
@@ -463,7 +464,7 @@ function countDaysFor(today, changedDays = []) {
 const withPlaces = (f) => (f.kind === 'entry' && !(f.iso3 || []).length && f.payload && Array.isArray(f.payload.regions) && f.payload.regions.length
   ? {...f, iso3: iso3List(f.payload.regions).sort()} : f);
 
-function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = [], provisional = []}) {
+function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = [], provisional = [], todayDays = []}) {
   const known = new Set(allFacts.map((f) => f.eventId));
   const extra = provisional.filter((f) => f.kind === 'entry' && f.provisional && !known.has(f.eventId) && known.add(f.eventId));
   const sorted = ordered([...allFacts, ...extra].map(withPlaces));
@@ -477,7 +478,8 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy: entryNotesBy(noteLines), analysisBy: storyAnalysisBy(noteLines)});
+  const notesBy = entryNotesBy(noteLines);
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy: storyAnalysisBy(noteLines)});
 
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
@@ -512,7 +514,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
-  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index}); // the many-at-once readers' indexes (indexViews.js)
+  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, builtFrom)}); // the many-at-once readers' indexes (indexViews.js)
   return {stories, links, counts, active, all: everything, manifest, countries, briefs, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
 }
 
@@ -529,4 +531,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};
+module.exports = {entryNotesBy, SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};

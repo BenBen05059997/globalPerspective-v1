@@ -229,3 +229,12 @@ The handler writes `record/shadow/`; the CLI maps that prefix onto the target, s
 ## check-history.mjs
 
 `node backend/record/cli/check-history.mjs --record <dir> [--fallback <dir>] --ddb <dir> [--live-views <dir>]` prints the measurements of 0047 as JSON, from local files only: every archive entry as a fact or as "the same article is the fact of another listing" (same day, earlier, later), stories, the forecast rows as facts or legacy copies, analyses and notes the CLIs would write, view sizes, and what changed against the live views (stories, track record, weekly index). `--record` is a directory with `facts/` and `views/` (the dry run's `<out>/record/shadow/`, or an `aws s3 sync` of `record/`); `--ddb` holds `archive.json`, `pred.json` and optionally `thread_analysis.json` (what `--ddb-cache` writes; the last is a Scan with `SK = THREAD_ANALYSIS`).
+
+## build-entries-inbox.mjs
+
+Builds the entries inbox (decision 0051) for the last N days from the NewsCache `archive#DAY` rows into **local files** and proves that the facts built from them are byte-identical to the facts built from the archive. DynamoDB is only read (`GetItem`, as the nightly run does); nothing is written to AWS.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/build-entries-inbox.mjs [--days 30] [--to YYYY-MM-DD] [--out DIR]
+```
+Writes `<out>/record/inbox/entries/DAY.jsonl` (one batch per run, in the row's order, so the replay is the row), reads them back through `newsStoryRecord`'s own reader (`ENTRIES_SOURCE=inbox`) and prints the inbox path and the proof: days and entries compared, entry facts compared (whole JSON, `sourceKey`, `sourceRow` and position included), story births, thread of each topic, the provisional facts a refresh builds for the last day, and any difference (exit code 2). The only tolerated difference, named in the output, is a `today-archive` entry the day row lacks on the last day (day-zero rule). The output directory is also the 30-day start for the live inbox: upload it to `record/shadow/inbox/entries/` then `record/inbox/entries/` (coordinator). Test: `node --test backend/record/cli/build-entries-inbox.test.mjs`.

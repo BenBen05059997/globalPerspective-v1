@@ -5,7 +5,7 @@ place a page address, a country name, a claim label, a freshness line or a backe
 import from here; here imports from no feature and not from `app/`.
 
 ## Subfolders
-- `api/` - the single door to the backend (`restProxy.js`), the record view readers (`recordViews.js`, `archiveRange.js`, `briefViews.js`, `countryBriefingsIndex.js`, `storyAnalysis.js`), the error reporter, and `useCachedQuery` (the one cached-fetch hook every data hook builds on).
+- `api/` - the single door to the backend (`restProxy.js`), the record view readers (`recordViews.js`, `archiveRange.js`, `briefViews.js`, `todayView.js` (the today view's mappers and `viewFirst`, decision 0051), `countryBriefingsIndex.js`, `storyAnalysis.js`), the error reporter, and `useCachedQuery` (the one cached-fetch hook every data hook builds on).
 - `contexts/` - app-wide React context: `AuthContext.jsx` (Firebase sign-in, `useAuth`, `getIdToken`).
 - `data/` - story-list loading (`contentService.js`, `useGeminiTopics.js`) and the one country table, `iso3Names.json`.
 - `hooks/` - hooks used by more than one feature: membership, saved items, preferences, daily brief, the 30-day archive day map (`useArchiveDayMap`), peek, viewport (`useIsMobile`, `useIsPhone`), `useNoIndex`.

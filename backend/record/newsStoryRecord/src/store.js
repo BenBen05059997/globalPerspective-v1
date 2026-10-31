@@ -3,28 +3,68 @@
 // The facts writer's reads. Everything comes through shared world/; nothing here parses a raw row,
 // scans a table or lists a bucket.
 const world = require('./_shared/world');
+const {readInboxDays, dayOfLines, rangeOfDays, compareEntries} = require('./inboxEntries');
 
 const WINDOW_DAYS = 30; // archive days read for a run: date-29 .. date (birth needs the earlier days)
+const ENTRY_SOURCES = ['archive', 'inbox', 'compare'];
 
-function makeStore(client, {env = {}, tables} = {}) {
+/**
+ * ENTRIES_SOURCE (decision 0051) says where the day's entries come from:
+ *   archive  NewsCache `archive#DAY` + `today-archive` (default)
+ *   inbox    record/inbox/entries/DAY.jsonl (the agent's lines, replayed to what the archive row ends the day as)
+ *   compare  both are read; the ARCHIVE is used, and every difference is logged as [entries-compare]. Nothing inbox-derived is written.
+ */
+function makeStore(client, {env = {}, tables, s3json = null, log = console} = {}) {
   const opts = {env, tables};
+  const source = env.ENTRIES_SOURCE || 'archive';
+  if (!ENTRY_SOURCES.includes(source)) throw new Error(`newsStoryRecord: ENTRIES_SOURCE must be one of ${ENTRY_SOURCES.join(', ')}, got ${source}`);
+  const needsInbox = source !== 'archive';
+  const inboxPrefix = (prefix) => {
+    if (!s3json) throw new Error(`newsStoryRecord: ENTRIES_SOURCE=${source} needs the record bucket`);
+    return prefix || 'record/';
+  };
+  const report = (what, diff, skipDays) => {
+    const line = JSON.stringify({what, days: diff.days, entries: diff.entries, differing: diff.differing, skippedDays: skipDays.length, differences: diff.differences.slice(0, 20)});
+    if (diff.differing) log.warn(`[entries-compare] ${line}`); else log.log(`[entries-compare] ${line}`);
+  };
+
   return {
+    source,
+    /**
+     * The entries of one UTC day as the nightly run would read them (the day row plus the `today-archive` entries archived that day),
+     * for a refresh (0050): no window, no snapshots, no births. [] when the day has neither.
+     */
+    async loadDay(date, {prefix} = {}) {
+      const nowMs = Date.parse(`${date}T12:00:00Z`);
+      const fromArchive = source === 'inbox' ? null : await world.archiveDay(client, date, {...opts, nowMs});
+      if (!needsInbox) return fromArchive ? fromArchive.entries : [];
+      const days = await readInboxDays(s3json, inboxPrefix(prefix), date, date);
+      const fromInbox = dayOfLines(date, days.get(date));
+      if (source === 'inbox') return fromInbox ? fromInbox.entries : [];
+      report('refresh', compareEntries({days: fromArchive ? [fromArchive] : []}, {days: fromInbox ? [fromInbox] : []}), []);
+      return fromArchive ? fromArchive.entries : [];
+    },
     /**
      * The inputs of one UTC day. nowMs is set to noon of `date`, so world.archiveDay also merges the entries of
      * `today-archive` archived on that day (0036 section 5.3); a day with no archive row but such entries comes back
      * with source 'today-archive'. dayRow is null when neither exists (the day is missing).
      */
-    /**
-     * The entries of one UTC day as the nightly run would read them (the day row plus the `today-archive` entries archived that day),
-     * for a refresh (0050): no window, no snapshots, no births. [] when the day has neither.
-     */
-    async loadDay(date) {
-      const day = await world.archiveDay(client, date, {...opts, nowMs: Date.parse(`${date}T12:00:00Z`)});
-      return day ? day.entries : [];
-    },
-    async load(date) {
+    async load(date, {prefix} = {}) {
       const from = world.addDays(date, 1 - WINDOW_DAYS);
-      const range = await world.archiveRange(client, from, date, {...opts, nowMs: Date.parse(`${date}T12:00:00Z`)});
+      const nowMs = Date.parse(`${date}T12:00:00Z`);
+      const archived = source === 'inbox' ? null : await world.archiveRange(client, from, date, {...opts, nowMs});
+      let range = archived;
+      if (needsInbox) {
+        const fromInbox = rangeOfDays(await readInboxDays(s3json, inboxPrefix(prefix), from, date), from, date);
+        if (source === 'compare') {
+          // the inbox starts on the day the agent first wrote it: days before it are missing there by construction, not a difference
+          const first = fromInbox.days.length ? fromInbox.days[0].date : null;
+          const skipDays = world.eachDay(from, date).filter((d) => !first || d < first);
+          report('nightly', compareEntries(archived, fromInbox, {skipDays}), skipDays);
+        } else {
+          range = fromInbox;
+        }
+      }
       const dayRow = range.days.find((d) => d.date === date) || null;
       const entries = dayRow ? dayRow.entries : [];
       // Every PRED# row of the window, not only those of the day's archive topics: the forecaster also draws topics the archive never
@@ -38,4 +78,4 @@ function makeStore(client, {env = {}, tables} = {}) {
   };
 }
 
-module.exports = {makeStore, WINDOW_DAYS};
+module.exports = {makeStore, WINDOW_DAYS, ENTRY_SOURCES};

@@ -75,7 +75,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
 
   // The stages of one day. Each failure is recorded on the Run; the run goes on where the next stage does not depend on it.
   async function stages(date, {prefix, run, inboxFrom, recovery}) {
-    const input = await store.load(date);
+    const input = await store.load(date, {prefix});
     Object.assign(run.inputs, inputsOf(input));
     const articles = await articleFacts(date, {prefix, run, inboxFrom});
     // A missing archive fails the Run for inputs but only the archive-derived kinds (entry, story_born, forecast_drawn) depend on it:
@@ -246,7 +246,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const runId = `refresh-${at}`;
     const provisional = [];
     const skipped = [];
-    const rows = await store.loadDay(today);
+    const rows = await store.loadDay(today, {prefix});
     for (const [n, e] of rows.entries()) {
       try { provisional.push(provisionalEntryFact(e, runId)); } catch (err) { skipped.push({n, topicId: e && e.topicId, message: messageOf(err)}); }
     }

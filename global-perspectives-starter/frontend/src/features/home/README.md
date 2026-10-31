@@ -40,6 +40,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
   publishes the list; `newsPredictionsSnapshot` (every 30 min) writes the track record; `newsSensitiveData-dev` serves all of it.
 
 ## Data
+- The five calls below (`topics`, `today`, `summary`, `prediction`, `trace_cause`) go through `contentService`, which answers from the record's today view (`index/today.json`, `@/shared/api/todayView.js`, decision 0051) while the views are fresh (0050) and asks the action when the view is missing, stale, unreadable (reported as `today-view`) or cannot answer that call (a topic outside the latest run, a note the run did not write).
 - `useGeminiTopics()` (`@/shared/data`) -> `topics` (asks for 13); localStorage `gemini_topics_cache_v2`, 1-hour TTL. A stale cache is served and flagged.
 - `useTodayArchive()` -> `contentService.getTodayArchive()` -> `today`; localStorage `today_archive_cache_v1`, 10 min; an empty day is not cached.
 - On click: `contentService.getTopicSummary` / `getTopicPrediction` / `getTopicTraceCause` -> `summary` / `prediction` / `trace_cause`.

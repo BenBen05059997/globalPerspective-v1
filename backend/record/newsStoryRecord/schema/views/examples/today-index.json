@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-31"
+  },
+  "updatedAt": "2026-10-31T04:26:16.042Z",
+  "latest": {
+    "batch": "2026-10-31T04:26:16.042Z",
+    "generationId": "gen-1793420169805",
+    "model": "deepseek-v4-pro",
+    "limit": 13,
+    "updatedAt": "2026-10-31T04:16:09.805Z",
+    "generatedDate": "October 31, 2026",
+    "generatedYear": 2026,
+    "topicIds": [
+      "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion-0"
+    ]
+  },
+  "entries": [
+    {
+      "actors": [
+        "Novaya Gazeta"
+      ],
+      "ai": {
+        "prediction": "{\"precedents\":[{\"case\":\"Closure of TV Rain (Dozhd) in Russia, 2022\",\"ended\":\"TV Rain was forced to suspend operations after being blocked by Roskomnadzor and later had its license revoked; it relocate...",
+        "summary": "- Novaya Gazeta, described as one of the last independent and critical media outlets in Russia, has announced it is closing under pressure from state authorities, according to the outlet and multiple ...",
+        "trace_cause": "{\"proximate\": {\"what\": \"Novaya Gazeta, one of Russia's last independent critical outlets, announced it is closing down, citing pressure from state authorities after authorities searched the home of it..."
+      },
+      "archivedAt": "2026-10-30T12:26:19.657Z",
+      "category": "politics",
+      "event_type": "policy",
+      "generationId": "gen-1793362564597",
+      "iso3": [
+        "RUS"
+      ],
+      "regions": [
+        "Russia"
+      ],
+      "search_keywords": [
+        "Novaya Gazeta",
+        "Russia",
+        "media freedom",
+        "closure",
+        "foreign agent"
+      ],
+      "sources": [
+        {
+          "age": "1 hour ago",
+          "outlet": "Al Jazeera",
+          "outletCountry": "QA",
+          "outletType": "national",
+          "publishedAt": "2026-10-30T11:08:00.000Z",
+          "snippet": "A symbol of independent journalism, Novaya Gazeta has been classed as a 'foreign agent' by Moscow.",
+          "source": "aljazeera.com",
+          "tier": "primary",
+          "title": "Russia ‘forces’ closure of investigative newspaper Novaya Gazeta",
+          "url": "https://www.aljazeera.com/news/2026/10/30/russia-forces-closure-of-investigative-newspaper-novaya-gazeta?traffic_source=rss"
+        }
+      ],
+      "threadId": "thread-russia-forces-closure-of-novay-566ffe",
+      "title": "Russia Forces Closure of Novaya Gazeta, Independent Newspaper",
+      "topicId": "Russia Forces Closure of Novaya Gazeta, Independent Newspaper-0",
+      "eventId": "b10136585f03900d09315ed744054e5a6990cda5"
+    },
+    {
+      "actors": [
+        "Volodymyr Zelenskyy",
+        "US State Department"
+      ],
+      "ai": {
+        "prediction": "{\"precedents\":[{\"case\":\"US sale of 250 Patriot missiles to Saudi Arabia, 2015\",\"ended\":\"Deliveries completed over several years; no cancellation\",\"took\":\"3 years from approval to final delivery\"},{\"ca...",
+        "summary": "- The US approved the sale of 500 Patriot PAC-3 missiles to Ukraine for $2.1 billion, per the headline.\n- Ukraine's president called the US decision strong but said delivery of the 500 missiles could ...",
+        "trace_cause": "{\"proximate\": {\"what\": \"The US approved the sale of 500 Patriot PAC-3 missiles to Ukraine for $2.1 billion, a decision the Ukrainian president called strong while noting delivery could take years.\", \"..."
+      },
+      "archivedAt": "2026-10-31T04:26:16.762Z",
+      "category": "military",
+      "event_type": "diplomacy",
+      "generationId": "gen-1793420169805",
+      "iso3": [
+        "USA",
+        "UKR"
+      ],
+      "regions": [
+        "United States",
+        "Ukraine"
+      ],
+      "search_keywords": [
+        "Patriot missiles",
+        "Ukraine",
+        "US arms sale",
+        "air defense"
+      ],
+      "sources": [
+        {
+          "age": "1 hour ago",
+          "outlet": "The Guardian",
+          "outletCountry": "GB",
+          "outletType": "national",
+          "publishedAt": "2026-10-31T02:18:17.000Z",
+          "snippet": "The Ukrainian president called the US decision strong, but added that delivery of 500 Patriot PAC-3 missiles could take years.",
+          "source": "theguardian.com",
+          "tier": "primary",
+          "title": "Ukraine’s Zelenskyy praises US over $2.1bn Patriot missile deal but warns it could take years",
+          "url": "https://www.theguardian.com/world/2026/oct/31/ukraines-zelenskyy-praises-us-over-21bn-patriot-missile-deal-but-warns-it-could-take-years"
+        }
+      ],
+      "threadId": "thread-us-approves-sale-of-500-patrio-1d1f7c",
+      "title": "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion",
+      "topicId": "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion-0",
+      "eventId": "b00de1b50cfb16efee29a1903eb37332e6d805b0",
+      "latest": {
+        "urgency": "high",
+        "urgencyReason": "The sale was approved within the last 24 hours and is a major military development in the ongoing Ukraine conflict.",
+        "significance": "high",
+        "x_trending": true,
+        "primaryCountry": "United States",
+        "mentionedCountries": [
+          "Ukraine",
+          "Russia"
+        ]
+      },
+      "notes": {
+        "summary": {
+          "format": "markdown",
+          "content": "- The US approved the sale of 500 Patriot PAC-3 missiles to Ukraine for $2.1 billion, per the headline.\n- Ukraine's president called the US decision strong but said delivery of the 500 missiles could ...",
+          "at": "2026-10-31T04:25:38.082Z",
+          "model": "deepseek-flash"
+        },
+        "trace_cause": {
+          "format": "json",
+          "content": {
+            "note": "parsed JSON, cut"
+          },
+          "at": "2026-10-31T04:25:41.084Z",
+          "model": "deepseek-flash"
+        },
+        "prediction": {
+          "format": "json",
+          "content": {
+            "note": "parsed JSON, cut"
+          },
+          "at": "2026-10-31T04:25:48.645Z",
+          "model": "deepseek-v4-pro"
+        }
+      }
+    }
+  ]
+}

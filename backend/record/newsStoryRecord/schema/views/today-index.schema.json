@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Today index (record/views/index/today.json)",
+  "description": "Decision 0051. What the pages that still read DynamoDB for 'today' need: the entries archived in the last 24 hours of the newest write (the `today` action's entries, in the today-archive item's order and with its replacement rule), the latest run's selection (the `topics` action: `latest` names its topics in order, and the entries of that run carry `latest`, the fields only the latest item holds), and the full model text of the latest run's entries (`notes`, from the entry notes of decision 0042; the summary, prediction and trace_cause actions). Built by todayView.js from record/inbox/entries/ (the agent's lines of the last two UTC days) and the entry notes; absent until the agent writes the inbox. Public data only: everything here is what those five actions answer to an anonymous caller. The page cuts the entries at its own read time (24 h).",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "updatedAt", "latest", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "updatedAt": {"type": "string", "description": "the time of the agent's newest archive write (the today-archive item's updatedAt)"},
+    "latest": {
+      "description": "The newest run when its lines are all there; null when the newest run carries no selection (an older agent, or a single-topic manual run): the page then asks the topics action.",
+      "type": ["object", "null"],
+      "required": ["batch", "generationId", "model", "limit", "updatedAt", "generatedDate", "generatedYear", "topicIds"],
+      "additionalProperties": false,
+      "properties": {
+        "batch": {"type": "string"},
+        "generationId": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "limit": {"type": ["integer", "null"]},
+        "updatedAt": {"type": ["string", "null"], "description": "when the ingest wrote the staging item; the page's 'as of'"},
+        "generatedDate": {"type": ["string", "null"]},
+        "generatedYear": {"type": ["integer", "null"]},
+        "topicIds": {"type": "array", "items": {"type": "string"}, "description": "the topics of the run, in the order of the latest item"}
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["topicId", "threadId", "title", "archivedAt", "sources", "eventId"],
+        "properties": {
+          "topicId": {"type": "string"},
+          "threadId": {"type": ["string", "null"]},
+          "title": {"type": "string"},
+          "category": {"type": "string"},
+          "regions": {"type": "array", "items": {"type": "string"}},
+          "search_keywords": {"type": "array", "items": {"type": "string"}},
+          "iso3": {"type": "array", "items": {"type": "string"}},
+          "actors": {"type": "array", "items": {"type": "string"}},
+          "event_type": {"type": "string"},
+          "continues_topic": {"type": "string"},
+          "sources": {"type": "array", "items": {"type": "object"}, "maxItems": 10},
+          "archivedAt": {"type": "string"},
+          "generationId": {"type": "string"},
+          "ai": {"type": ["object", "null"], "description": "the archive's own text, each part cut at 1,500 characters (the today action's ai)"},
+          "eventId": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "latest": {
+            "type": "object",
+            "description": "only on the entries of the latest run: what the latest item holds of the topic that an archive entry does not",
+            "additionalProperties": false,
+            "properties": {
+              "urgency": {"type": "string"}, "urgencyReason": {"type": "string"}, "significance": {"type": "string"}, "x_trending": {"type": "boolean"},
+              "primaryCountry": {"type": "string"}, "mentionedCountries": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "notes": {
+            "type": "object",
+            "description": "only on the entries of the latest run: the latest entry note per part, keyed by the action's name; model text",
+            "additionalProperties": false,
+            "properties": {
+              "summary": {"$ref": "#/definitions/note"}, "prediction": {"$ref": "#/definitions/note"}, "trace_cause": {"$ref": "#/definitions/note"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "note": {
+      "type": "object",
+      "required": ["format", "content", "at", "model"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {"enum": ["markdown", "json", "text"]},
+        "content": {"description": "markdown text, or the parsed object for format json"},
+        "at": {"type": "string"},
+        "model": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

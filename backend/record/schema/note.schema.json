@@ -298,7 +298,7 @@
             "const": ""
           },
           "payload": {
-            "description": "the THREAD_ANALYSIS item as newsThreadAnalysis stores it, minus keys, ttl and what the envelope carries (threadId, iso3, generatedAt as at, model)",
+            "description": "the THREAD_ANALYSIS item as newsThreadAnalysis stores it, minus keys, ttl and what the envelope carries (threadId, iso3, generatedAt as at, model). Backfilled analyses may lack entryTopicIds (then no cites) and carry groundingSources/searchResultsCount.",
             "required": [
               "threadTitle",
               "entryShortTitles",
@@ -313,7 +313,6 @@
               "sentiment",
               "keyActors",
               "entryCount",
-              "entryTopicIds",
               "latencyMs"
             ],
             "additionalProperties": false,
@@ -341,8 +340,10 @@
               "rootCauseChain": {
                 "type": [
                   "string",
+                  "object",
                   "null"
-                ]
+                ],
+                "description": "a string, or the structured chain older analyses stored"
               },
               "watchQuestions": {
                 "type": "array",
@@ -394,6 +395,14 @@
               },
               "latencyMs": {
                 "type": "number"
+              },
+              "groundingSources": {
+                "type": "array",
+                "description": "stored by analyses from the search-grounded era (before the record); absent on current ones"
+              },
+              "searchResultsCount": {
+                "type": "number",
+                "description": "as groundingSources"
               }
             }
           }
@@ -424,13 +433,12 @@
             "const": ""
           },
           "payload": {
-            "description": "the DRIFT# item as newsDriftCorrector stores it for a country, minus keys, ttl and generatedAt (the note's at)",
+            "description": "the DRIFT# item as newsDriftCorrector stores it for a country, minus keys, ttl and generatedAt (the note's at). Older DRIFTLOG# items (backfill) lack currentRiskScore.",
             "required": [
               "countryName",
               "asOf",
               "since",
               "changeScore",
-              "currentRiskScore",
               "whyChanged",
               "noSingleDriver"
             ],
@@ -499,6 +507,12 @@
               },
               "directionFlag": {
                 "type": "object"
+              },
+              "from": {
+                "enum": [
+                  "archive"
+                ],
+                "description": "present on a copy taken from the permanent DRIFTLOG# archive (backfill), which stored no model: the note's model is then null"
               }
             }
           }

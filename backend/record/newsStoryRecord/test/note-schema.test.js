@@ -145,3 +145,13 @@ test('archive copies (backfill): one note per stored ai text, format text, model
   assert.throws(() => N.buildNote({subtype: 'entry', subjectId: 'e', part: 'summary', at: entry.archivedAt, payload: {format: 'markdown', content: 'x', topicId: 't'}, cites: ['e'], model: null, producer}), /model is required/);
   assert.equal(valid({...notes[0], payload: {format: 'text', content: 'x', topicId: 't'}}), false);
 });
+
+test('drift archive copies (backfill from DRIFTLOG#): payload.from archive with model null is valid; a null model without the mark throws', () => {
+  const item = {countryName: 'Ukraine', asOf: '2026-10-30', since: '2026-10-29', changeScore: {from: 1, to: 2, delta: 1}, currentRiskScore: 2, whyChanged: 'x',
+    noSingleDriver: true, generatedAt: '2026-10-30T05:30:00.000Z'};
+  const n = N.driftNote({iso3: 'UKR', model: null, producer, item: {...item, from: 'archive'}});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual([n.model, n.payload.from], [null, 'archive']);
+  assert.throws(() => N.driftNote({iso3: 'UKR', model: null, producer, item}), /model is required/);
+  assert.equal(valid({...n, payload: {...n.payload, from: 'elsewhere'}}), false);
+});

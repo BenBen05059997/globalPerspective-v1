@@ -41,7 +41,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
   All are served by `newsSensitiveData-dev`.
 
 ## Data
-- `useWeeklyArchive()` -> `archive_range` (30 days, auth header sent when signed in); localStorage `gp_weekly_archive_v1`, 30 min.
+- `useWeeklyArchive()` -> `loadArchiveDayMap` (`shared/api/archiveRange.js`, decision 0046): the record's weekly index (`/data/record/views/index/weekly.json`) for the recorded days, `archive_range` for the newest recorded day and after, and for all 30 days when the index is missing or unreadable (reported); localStorage `gp_weekly_archive_v2`, 30 min. `useWeeklyArchive({ source: 'action' })` reads only the action (`gp_weekly_archive_action`; the countries list).
   It stores `uid` but does not check it on read. It needs `AuthProvider`.
 - `useNarrativeThread(id)` -> the record's story view (`/data/record/views/stories/<id>.json`, decision 0042 step 4) for every day up to its `factsThrough`, plus `narrative_thread` for later days (the views rebuild nightly, the archive each agent run); no view yet means `narrative_thread` alone. `lib/viewEntries.js` maps view entries to the archive shape (entry notes become `ai` text as the archive held it). sessionStorage `gp_narrative_thread_v2_<id>`, 30 min.
 - `useStoryAnalysis(id)` (the story page) -> the record's story view `analysis` (decision 0042 step 4: the latest story analysis note, in the shape `thread_analysis` returns, `@/shared/api/storyAnalysis.js`); no view or no analysis yet falls back to `thread_analysis`. sessionStorage `gp_story_analysis_v1_<id>`, 30 min. The map's story card reads the same way.

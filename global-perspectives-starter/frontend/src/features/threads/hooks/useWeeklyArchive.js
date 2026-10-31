@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchArchiveRange } from '@/shared/api/restProxy';
+import { loadArchiveDayMap, loadArchiveDayMapFromAction } from '@/shared/api/archiveRange';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
-const CACHE_KEY = 'gp_weekly_archive_v1';
+const CACHE_KEYS = {
+  record: 'gp_weekly_archive_v2', // v2: days read from the record's weekly index (shape of the action's days)
+  action: 'gp_weekly_archive_action',
+};
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-export function useWeeklyArchive() {
+// `source: 'action'` keeps a reader on the `archive_range` action (the countries list keeps its old counts, operator 2026-10-31).
+export function useWeeklyArchive({ source = 'record' } = {}) {
+  const CACHE_KEY = CACHE_KEYS[source] || CACHE_KEYS.record;
   const { user } = useAuth();
   const [dayMap, setDayMap] = useState({});
   const [loading, setLoading] = useState(false);
@@ -41,8 +46,7 @@ export function useWeeklyArchive() {
     setLoading(true);
     window.dispatchEvent(new CustomEvent('gp-loading-start'));
     try {
-      const result = await fetchArchiveRange(30);
-      const data = result?.data || {};
+      const data = source === 'action' ? await loadArchiveDayMapFromAction() : await loadArchiveDayMap();
       const dayCount = Object.keys(data).length;
       const resolvedTier = dayCount > 7 ? 'enterprise' : 'member';
       const now = Date.now();
@@ -64,7 +68,7 @@ export function useWeeklyArchive() {
       setSettled(true);
       window.dispatchEvent(new CustomEvent('gp-loading-end'));
     }
-  }, [user]);
+  }, [user, source, CACHE_KEY]);
 
   useEffect(() => {
     load();

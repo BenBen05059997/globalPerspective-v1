@@ -10,7 +10,7 @@ const {buildTrackRecord} = require('./trackRecord');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
-const {buildIndexViews} = require('./indexViews');
+const {buildIndexViews, archiveRefOf} = require('./indexViews');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -496,7 +496,8 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
   const countries = countryViews(noteLines, builtFrom);
-  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}}); // the many-at-once readers' indexes (indexViews.js)
+  const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
+  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}}); // the many-at-once readers' indexes (indexViews.js)
   return {stories, links, counts, active, all: everything, manifest, countries, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
 }
 

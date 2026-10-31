@@ -33,5 +33,7 @@ export function makeRecordViews(getView = fetchRecordView) {
     fetchAnalysesIndex() { return getView('index/analyses.json'); },
     fetchWebIndexView() { return getView('index/web.json'); },
     fetchCountriesIndex() { return getView('index/countries.json'); },
+    // The last 30 archive days (the `archive_range` action's days: topic, story, category, countries, sources).
+    fetchWeeklyIndex() { return getView('index/weekly.json'); },
   };
 }

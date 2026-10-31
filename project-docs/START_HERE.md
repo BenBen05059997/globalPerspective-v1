@@ -28,7 +28,8 @@ Live since 2026-10-30/31:
 - Released to Pages 2026-10-31 (second release): the story page analysis and the country "what changed" band read the views (19 stories and 6 countries match on content; the record adds `from` and `model`). Lists and the cross-country ledger stay on the actions.
 
 Watch next (the full test checklist, browser checks included, is the "What to test" section of https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd):
-- Agent entry notes are live (`NOTES_PREFIX=record/` since 2026-10-31 04:35; the 04:25 run's 15 notes copied in). `newsThreadAnalysis` 04:40, `newsSystemsAnalysis` 05:00, `newsCountryIntelligence` 05:15, `newsDriftCorrector` 05:30: check their shadow notes, then set `NOTES_PREFIX=record/` on each.
+- Note writers live (`NOTES_PREFIX=record/`, first shadow runs checked 2026-10-31): the agent (entry), `newsThreadAnalysis` (story_analysis), `newsSystemsAnalysis` (link + web; web notes from its next 05:00 run), `newsDriftCorrector` (drift). Still shadow: `newsCountryIntelligence` (its 2026-10-31 run generated nothing, so its writer is untested; switch after the first run that writes a briefing).
+- Third release 2026-10-31: the story page forecast (record views with draw facts, decision 0043; a forecast stays with its own story) and "fed into" links (links view `judgedLinks` + `web`) read the record. Resolver writes draws to `record/inbox/draws/` (policy `newsPredictionResolver-record` extended).
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.
 - First full review Mon 2026-11-02 01:00 UTC (W44, about 520 stories): Run `ok`, `notReached` 0.
 

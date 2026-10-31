@@ -18,7 +18,7 @@ const reasons = (r) => r.rejected.map((x) => `${x.subtype}:${x.reason}`);
 test('an item with no citation, or with an eventId that is not in the bundle, is rejected', async () => {
   const r = await run({
     line: {text: 'ok', cites: [], confidence: 'high'},
-    chapters: [{title: 'T', from: '2026-10-13', to: '2026-10-15', summary: 's', cites: ['nope'], confidence: 'high'}],
+    chapters: [{title: 'T', summary: 's', cites: ['nope'], confidence: 'high'}],
   });
   assert.deepEqual(reasons(r), ['line:no_citation', 'chapter:unknown_eventId']);
   assert.equal(r.accepted.length, 0);
@@ -36,22 +36,20 @@ test('a line with valid cites is accepted; text over 200 chars is rejected', asy
   assert.deepEqual(reasons(long), ['line:bad_shape']);
 });
 
-test('chapter dates must lie inside the dates of the cited facts', async () => {
-  const good = await run({chapters: [{title: 'T', from: '2026-10-13', to: '2026-10-15', summary: 's', cites: ['a1', 'a2'], confidence: 'medium'}]});
-  assert.equal(good.accepted.length, 1);
-  const early = await run({chapters: [{title: 'T', from: '2026-10-12', to: '2026-10-15', summary: 's', cites: ['a1', 'a2'], confidence: 'medium'}]});
-  const late = await run({chapters: [{title: 'T', from: '2026-10-13', to: '2026-10-16', summary: 's', cites: ['a1', 'a2'], confidence: 'medium'}]});
-  const backwards = await run({chapters: [{title: 'T', from: '2026-10-15', to: '2026-10-13', summary: 's', cites: ['a1', 'a2'], confidence: 'medium'}]});
-  assert.deepEqual([reasons(early), reasons(late), reasons(backwards)], [['chapter:dates_outside_cited_facts'], ['chapter:dates_outside_cited_facts'], ['chapter:bad_shape']]);
+test('a chapter spans the dates of the facts it cites; dates the model writes are ignored; two chapters from one day are a duplicate', async () => {
+  const ch = (cites, over = {}) => ({title: 'T', summary: 's', cites, confidence: 'medium', ...over});
+  const good = await run({chapters: [ch(['a2', 'a1'], {from: '2026-10-01', to: '2026-10-30'})]});
+  assert.deepEqual(good.accepted.map((a) => [a.payload.from, a.payload.to]), [['2026-10-13', '2026-10-15']]);
+  const one = await run({chapters: [ch(['a2'])]});
+  assert.deepEqual(one.accepted.map((a) => [a.payload.from, a.payload.to]), [['2026-10-15', '2026-10-15']]);
+  const dup = await run({chapters: [ch(['a1']), ch(['a1', 'a2'], {title: 'U'})]});
+  assert.deepEqual(reasons(dup), ['chapter:duplicate']);
+  assert.deepEqual(reasons(await run({chapters: [ch([])]})), ['chapter:no_citation']);
 });
 
-test('branch status must agree with verdict facts: yes is fired, no is dead, void takes none, open takes holding or late only', async () => {
-  const mk = (branchId, status) => ({branchId, status, why: 'because', cites: ['fa'], confidence: 'high'});
-  const r = await run({branchStatus: [mk('b1', 'fired'), mk('b3', 'dead'), mk('b2', 'holding'), mk('b2x', 'late')]});
-  assert.deepEqual(r.accepted.map((a) => `${a.payload.branchId}:${a.payload.status}`), ['b1:fired', 'b3:dead', 'b2:holding']);
-  assert.deepEqual(reasons(r), ['branch_status:unknown_branch']);
-  const bad = await run({branchStatus: [mk('b1', 'dead'), mk('b3', 'fired'), mk('b4', 'dead'), mk('b2', 'fired'), mk('b2', 'dead')]});
-  assert.deepEqual(reasons(bad), ['branch_status:status_contradicts_verdict', 'branch_status:status_contradicts_verdict', 'branch_status:branch_void', 'branch_status:status_not_allowed_for_open_branch', 'branch_status:duplicate'.replace('duplicate', 'status_not_allowed_for_open_branch')]);
+test('the model writes no branch status: a branchStatus answer part is ignored', async () => {
+  const r = await run({branchStatus: [{branchId: 'b1', status: 'fired', why: 'because', cites: ['fa'], confidence: 'high'}]});
+  assert.deepEqual([r.accepted, r.rejected], [[], []]);
 });
 
 test('a link needs a citation from each story and a known other story', async () => {
@@ -126,8 +124,8 @@ test('alias rule: needs a wikidata Q-number, known actors, and no conflict with 
 });
 
 test('a missing or malformed answer part is rejected, not thrown; a repeated item is a duplicate', async () => {
-  const r = await run({chapters: 'none', branchStatus: [null], line: 'text'});
-  assert.deepEqual(reasons(r).sort(), ['branch_status:bad_shape', 'chapter:bad_shape', 'line:bad_shape']);
+  const r = await run({chapters: 'none', line: 'text'});
+  assert.deepEqual(reasons(r).sort(), ['chapter:bad_shape', 'line:bad_shape']);
   const dup = await run({links: [1, 2].map(() => ({otherThreadId: 'thread-b', mechanism: 'm', direction: 'drives', cites: ['a1', 'b1e'], confidence: 'high'}))});
   assert.deepEqual(reasons(dup), ['link:duplicate']);
   assert.equal((await run({})).accepted.length, 0);

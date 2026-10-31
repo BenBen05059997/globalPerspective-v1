@@ -1,7 +1,6 @@
 {
   "line": { "text": "Poland and Ukraine settled the grain dispute; the border reopened on 15 October.", "cites": ["a2"], "confidence": "high" },
-  "chapters": [{ "title": "The dispute", "from": "2026-10-13", "to": "2026-10-15", "summary": "The border closure and its end.", "cites": ["a1", "a2"], "confidence": "medium" }],
-  "branchStatus": [{ "branchId": "b1", "status": "fired", "why": "The verdict is yes.", "cites": ["va1"], "confidence": "high" }],
+  "chapters": [{ "title": "The dispute", "summary": "The border closure and its end.", "cites": ["a1", "a2"], "confidence": "medium" }],
   "links": [{ "otherThreadId": "thread-b", "mechanism": "The closure drove the diplomatic exchange covered in thread-b.", "direction": "drives", "cites": ["a1", "b1e"], "confidence": "medium" }],
   "mergeProposals": [],
   "assignments": [{ "entryId": "a2", "threadId": "thread-b", "why": "The entry describes the diplomatic exchange, not the border dispute.", "cites": ["a2", "b1e"], "confidence": "medium" }],

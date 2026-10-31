@@ -20,8 +20,7 @@ const NOW = '2026-10-23T22:00:00.000Z'; // Friday; the week that ended before is
 const answers = {
   'thread-a': {
     line: {text: 'The dispute ended; the border reopened.', cites: ['a2'], confidence: 'high'},
-    chapters: [{title: 'The dispute', from: '2026-10-13', to: '2026-10-15', summary: 'Closure and end.', cites: ['a1', 'a2'], confidence: 'medium'}],
-    branchStatus: [{branchId: 'b1', status: 'fired', why: 'verdict yes', cites: ['va1'], confidence: 'high'}, {branchId: 'b2', status: 'fired', why: 'wrongly', cites: ['fa'], confidence: 'high'}],
+    chapters: [{title: 'The dispute', summary: 'Closure and end.', cites: ['a1', 'a2'], confidence: 'medium'}],
     mergeProposals: [{otherThreadId: 'thread-b', why: 'same event', cites: ['a1', 'b1e'], confidence: 'high'}],
     links: [], aliases: [{variants: ['name:tusk'], canonical: 'name:donald tusk', wikidataId: null, cites: ['a1'], confidence: 'high'}],
   },
@@ -43,18 +42,18 @@ test('end to end with a stub model: readings, Run and the merge inbox are writte
   const out = await make(f, stub(answers, calls))({...only});
   assert.deepEqual([out.week, out.status, out.runId], [WEEK, 'ok', `review-${WEEK}-1`]);
   assert.equal(calls.length, 3);
-  assert.deepEqual(calls[0].opts, {step: 'review', provider: 'deepseek', model: 'deepseek-large', system: calls[0].opts.system, user: calls[0].opts.user, maxTokens: 3000, temperature: 0, json: true});
+  assert.deepEqual(calls[0].opts, {step: 'review', provider: 'deepseek', model: 'deepseek-large', system: calls[0].opts.system, user: calls[0].opts.user, maxTokens: 6000, temperature: 0, json: true});
   const lines = f.lines(`${P}readings/${WEEK}.jsonl`);
   assert.ok(lines.every((l) => validReading(l)), JSON.stringify(lines.map((l) => validReading.errors)));
-  assert.deepEqual(lines.map((l) => `${l.threadId}:${l.subtype}`).sort(), ['thread-a:branch_status', 'thread-a:chapter', 'thread-a:line', 'thread-a:merge_proposal', 'thread-b:line', 'thread-b:merge_proposal']);
+  assert.deepEqual(lines.map((l) => `${l.threadId}:${l.subtype}`).sort(), ['thread-a:chapter', 'thread-a:line', 'thread-a:merge_proposal', 'thread-b:line', 'thread-b:merge_proposal']);
   assert.ok(lines.every((l) => l.model === 'stub-model' && l.promptVersion === PROMPT_VERSION && l.run === `review-${WEEK}-1` && l.supersedes === null));
   assert.deepEqual(lines.find((l) => l.subtype === 'line' && l.threadId === 'thread-a').covers, {from: '2026-10-13', to: '2026-10-18'});
   const run = f.json(`${P}runs/review-${WEEK}.json`);
   assert.equal(validRun(run), true, JSON.stringify(validRun.errors));
-  assert.deepEqual([run.status, run.counts.read, run.counts.failed, run.counts.autoMerges, run.counts.rejected], ['ok', 3, 0, 1, 3]);
+  assert.deepEqual([run.status, run.counts.read, run.counts.failed, run.counts.autoMerges, run.counts.rejected], ['ok', 3, 0, 1, 2]);
   assert.deepEqual(run.rejections.map((r) => `${r.threadId}:${r.subtype}:${r.reason}`).sort(), [
-    'thread-a:alias:alias_no_wikidata', 'thread-a:branch_status:status_not_allowed_for_open_branch', 'thread-c:line:unknown_eventId']);
-  assert.deepEqual(run.counts.readings, {line: 2, chapter: 1, branch_status: 1, link: 0, merge_proposal: 2, alias: 0, assignment: 0});
+    'thread-a:alias:alias_no_wikidata', 'thread-c:line:unknown_eventId']);
+  assert.deepEqual(run.counts.readings, {line: 2, chapter: 1, link: 0, merge_proposal: 2, alias: 0, assignment: 0});
   assert.deepEqual(run.skipped, []);
   // both stories proposed the same merge: one inbox line, the older story (thread-a, born first) survives
   const inbox = f.lines(`${P}inbox/merges/2026-10-23.jsonl`);

@@ -78,7 +78,6 @@ test('assemble: eventIds on every fact, verdicts attached to branches, legacy-vo
   assert.deepEqual(a.bundle.forks[0].branches.map((b) => [b.branchId, b.verdict && b.verdict.result]), [['b1', 'yes']]);
   assert.ok(a.citable.has('a1') && a.citable.has('fa') && a.citable.has('va1') && !a.citable.has('late'));
   assert.deepEqual(a.covers, {from: '2026-10-13', to: '2026-10-18'});
-  assert.equal(a.branches.get('b1').result, 'yes');
 });
 
 test('assemble caps entries at the newest 60 and reports the omitted count', async () => {

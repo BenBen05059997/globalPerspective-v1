@@ -5,12 +5,10 @@
 const {isSpecific, shareIndex, NEAR_DAYS} = require('./select');
 const {daysBetween} = require('./week');
 
-const CAPS = {chapter: 8, branch_status: 20, link: 5, merge_proposal: 3, alias: 5, assignment: 5};
+const CAPS = {chapter: 8, link: 5, merge_proposal: 3, alias: 5, assignment: 5};
 const LIMITS = {line: 200, chapter: 300, mechanism: 200};
 const CONFIDENCE = ['high', 'medium', 'low'];
 const DIRECTIONS = ['drives', 'driven_by', 'shared_cause'];
-const STATUSES = ['fired', 'dead', 'holding', 'late'];
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const NEW_STORY = 'new';
 const QNUM = /^Q[1-9]\d*$/;
 
@@ -91,30 +89,16 @@ function checkAnswer(answer, ctx) {
     else take('line', '', it, ({cites}) => (ownCites('line', cites) ? {payload: {text: it.text.trim()}} : null));
   }
 
-  // chapters
+  // chapters: the model gives title, summary and cites; the span is the dates of the cited facts (so it is the chapter key too)
   each('chapters', 'chapter', (it) => {
-    if (!str(it.title, 120) || !str(it.summary, LIMITS.chapter) || !DAY.test(it.from || '') || !DAY.test(it.to || '') || it.from > it.to) return reject('chapter', 'bad_shape', it.title);
-    return take('chapter', it.from, it, ({cites}) => {
-      if (!ownCites('chapter', cites)) return null;
-      const days = cites.map((c) => mine.dates.get(c)).filter(Boolean).sort();
-      if (it.from < days[0] || it.to > days[days.length - 1]) { reject('chapter', 'dates_outside_cited_facts', `${it.from}..${it.to} vs ${days[0]}..${days[days.length - 1]}`); return null; }
-      return {payload: {title: it.title.trim(), from: it.from, to: it.to, summary: it.summary.trim()}};
-    });
-  });
-
-  // branch status
-  each('branchStatus', 'branch_status', (it) => {
-    if (!str(it.branchId) || !STATUSES.includes(it.status) || !str(it.why, 300)) return reject('branch_status', 'bad_shape', it.branchId);
-    return take('branch_status', it.branchId, it, ({cites}) => {
-      const branch = mine.branches.get(it.branchId);
-      if (!branch) { reject('branch_status', 'unknown_branch', it.branchId); return null; }
-      if (!ownCites('branch_status', cites)) return null;
-      const expect = branch.result === 'yes' ? 'fired' : branch.result === 'no' ? 'dead' : null;
-      if (branch.result === 'void') { reject('branch_status', 'branch_void', it.branchId); return null; }
-      if (expect && it.status !== expect) { reject('branch_status', 'status_contradicts_verdict', `${it.status} but verdict ${branch.result}`); return null; }
-      if (!expect && !['holding', 'late'].includes(it.status)) { reject('branch_status', 'status_not_allowed_for_open_branch', it.status); return null; }
-      return {payload: {branchId: it.branchId, status: it.status, why: it.why.trim()}};
-    });
+    if (!str(it.title, 120) || !str(it.summary, LIMITS.chapter) || !Array.isArray(it.cites) || !strs(it.cites)) return reject('chapter', 'bad_shape', it.title);
+    if (!it.cites.length) return reject('chapter', 'no_citation');
+    if (!ownCites('chapter', it.cites)) return undefined;
+    const days = it.cites.map((c) => mine.dates.get(c)).filter(Boolean).sort();
+    if (!days.length) return reject('chapter', 'no_dated_citation', it.title);
+    const from = days[0];
+    const to = days[days.length - 1];
+    return take('chapter', from, it, () => ({payload: {title: it.title.trim(), from, to, summary: it.summary.trim()}}));
   });
 
   // links and merge proposals share the two-story citation rule

@@ -17,17 +17,17 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-3)
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-4)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
-|  +- rule   : returns JSON only: line, chapters, branch status, links, merge proposal, alias proposals
+|  +- rule   : returns JSON only: line, chapters (no dates), links, merge proposal, alias proposals
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
 |  +- model  : DeepSeek larger model (env); a stub model in tests and in the golden-week run
 |
 +- 4 CHECK      no model            [newsRecordReview]
-|  +- rule   : citations exist and belong to the story (or both stories for a link); dates inside the chapter span;
-|  |           branch status only for branches of the story; merge auto-allowed only under the merge rule below
+|  +- rule   : citations exist and belong to the story (or both stories for a link); chapter dates = the dates of its cited facts;
+|  |           merge auto-allowed only under the merge rule below
 |  +- output : accepted readings, rejected items with reason (kept in the review Run)
 |
 +- 5 WRITE      no model            [newsRecordReview -> record/readings/ ; merges -> record/inbox/merges/]
@@ -36,7 +36,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- record/inbox/merges/YYYY-MM-DD.jsonl  accepted auto-merges, for newsStoryRecord to turn into story_merged facts
 |
 +- 6 BUILD      no model            [newsStoryRecord, nightly]
-|  +- reads readings + inbox merges + operator aliases; fills line, chapters, branchStatus, confirmedLinks in the views;
+|  +- reads readings + inbox merges + operator aliases; fills line, chapters, confirmedLinks in the views;
 |  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
 |
 +- LOOP BACK : new entries all week -> nightly facts and views -> Monday review reads them with hindsight -> views show it
@@ -45,8 +45,8 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 ## 3. Stages in detail
 1. Select. Reads the active index (any fact in 60 days) and the views manifest; if the manifest is not built for the week's last day the run is `failed` and writes nothing. A story with no new fact since its last reading is skipped, unless a branch received a verdict that week.
 2. Assemble. Facts for the story across all its days, entries capped at the newest 60; the story's previous readings; verdict facts; the alias file. Each fact is shown with its `eventId`. No other input: no raw tables, no DynamoDB, no search.
-3. Read. One call, JSON only. The model proposes: a `line` (at most 200 characters), `chapter`s ({title, from, to, summary at most 300}), `branch_status` ({branchId, status fired|dead|holding|late, why}), `link`s ({otherThreadId, mechanism at most 200, direction drives|driven_by|shared_cause}), a `merge_proposal` ({otherThreadId, why}), `alias` ({variants, canonical, wikidataId}), `assignment` ({entryId, threadId, why}: an entry that belongs to another story; a proposal only). Model: DeepSeek larger model, env `REVIEW_MODEL`, through the shared `llm.js`.
-4. Check. Pure code. An item is rejected, with a reason kept in the Run, when: it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter date lies outside the story's span; a branch status names a branch the story does not have; a status contradicts a verdict fact (a `yes` verdict means `fired`, a `no` means `dead`; the model may set `holding` or `late` only for open branches); an auto-merge fails the merge rule.
+3. Read. One call, JSON only. The model proposes: a `line` (one sentence, at most 200 characters), `chapter`s ({title, summary at most 300, cites}; the code sets from/to from the cited facts), `link`s ({otherThreadId, mechanism at most 200, direction drives|driven_by|shared_cause}), a `merge_proposal` ({otherThreadId, why}), `alias` ({variants, canonical, wikidataId}), `assignment` ({entryId, threadId, why}: an entry that belongs to another story; a proposal only). Model: DeepSeek larger model, env `REVIEW_MODEL`, through the shared `llm.js`.
+4. Check. Pure code. An item is rejected, with a reason kept in the Run, when: it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter cites no dated fact; an auto-merge fails the merge rule. Branch status is not a reading: a branch's status is its verdict fact, else open or past due by its `due` date, derived where it is shown.
 5. Write. Accepted readings are appended to the week file; the review Run records counts and rejections; accepted auto-merges go to the inbox. Readings are never edited. A rerun for the same week writes readings whose `supersedes` points at the earlier `readingId`.
 6. Build. Not the review's job: `newsStoryRecord` rebuilds all views nightly and now also reads readings, inbox merges, `story_split` facts and the alias file.
 
@@ -55,7 +55,7 @@ Merge rule (auto-merge only if all hold): the two stories share a specific actor
 ## 4. Objects and where they live
 | Object | Where | Shape and rules |
 |---|---|---|
-| Readings | `record/readings/YYYY-Www.jsonl` | One line: `{schemaVersion:1, readingId: sha1(week+threadId+subtype+key), week, threadId, subtype: line\|chapter\|branch_status\|link\|merge_proposal\|alias\|assignment, payload, cites[eventId], covers{from,to}, supersedes: readingId\|null, run, model, promptVersion, confidence: high\|medium\|low}`. Append-only per week |
+| Readings | `record/readings/YYYY-Www.jsonl` | One line: `{schemaVersion:1, readingId: sha1(week+threadId+subtype+key), week, threadId, subtype: line\|chapter\|link\|merge_proposal\|alias\|assignment, payload, cites[eventId], covers{from,to}, supersedes: readingId\|null, run, model, promptVersion, confidence: high\|medium\|low}`. Append-only per week |
 | Review Run | `record/runs/review-YYYY-Www.json` | started, then ok \| partial \| failed; counts; rejected items with reasons. The one mutable object |
 | Inbox merges | `record/inbox/merges/YYYY-MM-DD.jsonl` | `{from, into, at, reason, cites, readingId}`; `newsStoryRecord` turns each into a `story_merged` fact |
 | Operator aliases (the who's who file) | `record/operator/aliases.json` | `{schemaVersion:1, aliases:[{canonical:'name:...', variants:['name:...'], wikidataId\|null}]}`; written only by the operator |
@@ -81,7 +81,7 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
 - Not run live until a passing golden-week score and a 2-3 story canary (`threadIds`); then the rule (Monday 01:00 UTC) is enabled with the operator's yes.
-- Branch status depends on verdict facts from the forecast loop (0038); until verdicts exist, branches stay `holding` or `late`.
+- Branch status comes from verdict facts of the forecast loop (0038), never from the review.
 - Not now: the weekly report reading the readings (lane weekly), retiring `newsWeeklyBrief`.
 
 ## 8. Decisions

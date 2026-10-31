@@ -56,9 +56,18 @@ Step 5 (retire the DynamoDB world tables; operator 2026-10-31). Audit: [architec
 - Released 2026-10-31 13:40 UTC (operator yes): frontend to Pages (bundle `index-3YR3LAfj`: today view, forecast views and the fresh-views reads, 0050-0052; checked in a browser: /today reads `manifest.json` + `index/today.json` and no `topics` action, the story page renders analysis, forecast, timeline, links) and the Worker `globalperspective-rss` code-only upload of the B4b bot pre-render (version `370449db`; rollback `3745e103`; smoke: /, /briefings, /today, a story and a country page pre-render 200 with titles; `/data/record/views/*` 200, facts 404). Held: newsEmailSender (after Sunday).
 - Still to build before deletions: provisional forecasts in the refresh (so the story page can drop `prediction_snapshot`); the switch-over of each reader (compare, then record) and the deletions.
 
+Step 5 plan from here (set 2026-10-31; times UTC; each switch only at zero differences, each delete with an operator yes after an S3 export):
+1. Sat 31 Oct 20:25 agent run: first `[inbox] forecasts:` shadow line; if it matches, copy the shadow forecasts inbox to `record/inbox/forecasts/`, agent `FORECASTS_INBOX_PREFIX=record/`, newsStoryRecord `FORECASTS_SOURCE=compare`.
+2. Sat 31 Oct 23:45 nightly build: first full 30-day `[entries-compare]`; at 0 differences newsStoryRecord `ENTRIES_SOURCE=inbox`.
+3. Sun 1 Nov 06:00 weekly brief note (shadow); if it equals the row, newsWeeklyBrief `NOTES_PREFIX=record/`. All day: read the `[notes-compare]`, `[record-reads]`, `[questions-compare]`, `[forecasts-compare]` lines; switch each reader at 0 differences (read API, newsPostDevTo, newsBreakingAlert, newsPostLinkedin, newsRecommend, newsCountryIntelligence, newsDriftCorrector, newsSystemsAnalysis, newsWeeklyBrief, resolver, newsBoard). 14:00 weekly email as usual, then newsEmailSender to compare, then record.
+4. Mon 2 Nov 01:00 first full weekly review (about 520 stories: lines and chapters for the board and the story page); 05:00 JST first country facts note (newsCountryFactsUpdater `NOTES_PREFIX=record/` if it matches).
+5. Build (Claude): provisional forecasts in the views refresh; story page and readers off `prediction_snapshot`; retire `newsPredictionsSnapshot` and `PredictionLogScan`.
+6. Midweek, operator yes each: delete the world rows family by family in the STEP5_AUDIT order, each after an export to `backup/`; full rebuild test after each; then remove the DynamoDB read paths and the compare flags (one reader per family).
+Goal at the end: the record is the only store for world data; pages and jobs read views built from it; user data, billing, BreakingAlerts, ClientErrors and the PredictionLog commitment state stay in DynamoDB (operator scope 2026-10-31).
+
 Waiting on the operator:
 1. Analyst weekly: build it on the readings, rewrite, or drop (ARCHITECTURE_WEEKLY_REVIEW.md section 9).
-2. Board design-check answers (117 items, https://claude.ai/artifact/NNBZv4WWDoHFuRGwVXCNGE) and a signed-in look at B0. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo. Overview and checklist: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.
+2. Board: built and live (waves 1 and 2, live-data fixes released 2026-11-01, checked on the operator's signed-in board). Later decisions: a board summary writer (model and price), a schema field for alert choices, a coverage note in the board feed. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo; overview: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.
 3. Countries list: adopt the record's article counts (0046) or keep `archive_range` until step 5.
 4. Selection go (P7d); gap benchmark rebuild or drop; Cloudflare cutover steps; delete the leftover `amplify/` (about 56 files never in git).
 5. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.

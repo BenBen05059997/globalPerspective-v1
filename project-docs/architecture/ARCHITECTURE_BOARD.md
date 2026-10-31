@@ -48,13 +48,13 @@ Alerts come only from what the reader pinned or wrote (branch fired, a date is t
 ## 9. Pricing
 Deferred (operator, 2026-10-20): the board is free for signed-in members until the verdict panel exists. If a seam is needed: verdict plus joint trace free, the rest paid. A business decision for the operator.
 
-## 10. Checklist (data-wiring list; status as of 2026-10-26)
+## 10. Checklist (data-wiring list; status checked against the board feature source 2026-10-31)
 | # | Item | Status |
 |---|---|---|
 | B0 | Live defects (title overlap, repeated "no reading yet", raw ISO dates, strings listed thrice, phone layout) | released 4d31cd28; signed-in look still to do |
 | B1 | Due-soon strip with the late flag | not built |
-| B2 | Weekly header "your board moved · week ending D MON" | not built |
-| B3 | Pin card counts and line | not built |
+| B2 | Weekly header "your board moved · week ending D MON" | the `BoardWeekly` card ("This week on your board") exists; the dated header is not built |
+| B3 | Pin card counts and line | the side sheet (`RecordPinDetails`) shows the line and counts; the pin card itself is not built |
 | B4 | Strings encode strength; "OURS · MEDIUM · NOT CONFIRMED" label | not built |
 | B5 | ClaimTag kinds (OURS, judgment level, PROVISIONAL / SETTLED / PRIVATE) | not built |
 | B6 | Drawn SVG tree (L) | not built |
@@ -62,12 +62,12 @@ Deferred (operator, 2026-10-20): the board is free for signed-in members until t
 | B8 | Verdict panel evidence and "who sits in both" | not built |
 | B9 | Monthly card | not built |
 | B10 | Coverage note on the weekly (needs a views field) | not built |
-| B11 | Arrivals tray states | not built |
+| B11 | Arrivals tray states | the `ArrivalsTray` exists; the face-down card states are not built |
 | B12 | Preset grouping, OURS · READ-ONLY tag | not built |
 | B13 | Reader weights and divergence panel | not built |
 | B14 | Map view of the board (L) | not built |
 
-Waits for data, not UI: pin lines and chapters (first review run), mechanism, direction, "what follows if" and "what would break it" (model plus pricing), summary and monthly arc, alert sends (fresh yes), RESURRECTED, time scrubber. At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs`.
+Waits for data, not UI: pin lines and chapters beyond the stories the weekly review has read so far (the review runs every Monday; read `readings/` for coverage), mechanism, direction, "what follows if" and "what would break it" (model plus pricing), summary and monthly arc, alert sends (fresh yes), RESURRECTED, time scrubber. At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs`.
 
 ## 11. Not now
 Leaderboards across readers, chat with the board, anything that answers without evidence, narrative / calendar / reading-list views, quarterly replay.

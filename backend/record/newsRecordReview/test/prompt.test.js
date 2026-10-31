@@ -16,8 +16,10 @@ const load = (...p) => JSON.parse(readFileSync(resolve(__dirname, '../schema', .
 
 test('the prompt has a version and a token cap, and tells the model to return JSON with the cite rule', () => {
   assert.match(PROMPT_VERSION, /^review-\d+$/);
-  assert.ok(MAX_TOKENS > 0 && MAX_TOKENS <= 4000);
-  for (const needle of ['JSON', 'eventId', 'fired', 'holding', 'neighbours', 'wikidataId', 'assignments', 'does not belong']) assert.ok(SYSTEM.includes(needle), needle);
+  assert.ok(MAX_TOKENS > 0 && MAX_TOKENS <= 8000);
+  for (const needle of ['JSON', 'eventId', 'neighbours', 'wikidataId', 'assignments', 'does not belong']) assert.ok(SYSTEM.includes(needle), needle);
+  // review-4: the record derives branch status and chapter dates; the model writes neither
+  assert.ok(!SYSTEM.includes('branchStatus') && !SYSTEM.includes('"from"'));
 });
 
 test('buildMessages puts the week and the bundle, with every eventId, in the user message', async () => {
@@ -45,9 +47,9 @@ test('the model-output schema accepts the example and rejects shape errors', () 
   assert.equal(valid({}), true);
 });
 
-test('prompt: recovered headlines may be cited for what happened but carry no detail (review-3)', () => {
+test('prompt: recovered headlines may be cited for what happened but carry no detail (review-4)', () => {
   const {SYSTEM, PROMPT_VERSION} = require('../src/prompt');
-  assert.equal(PROMPT_VERSION, 'review-3');
+  assert.equal(PROMPT_VERSION, 'review-4');
   assert.match(SYSTEM, /recovered headlines/);
   assert.match(SYSTEM, /\[recovered headline, no text\]/);
 });

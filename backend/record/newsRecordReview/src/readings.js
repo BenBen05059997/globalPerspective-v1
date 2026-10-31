@@ -5,7 +5,7 @@ const {createHash} = require('node:crypto');
 const {keyOf, latestEarlier} = require('./select');
 
 const SCHEMA_VERSION = 1;
-const SUBTYPES = ['line', 'chapter', 'branch_status', 'link', 'merge_proposal', 'alias', 'assignment'];
+const SUBTYPES = ['line', 'chapter', 'link', 'merge_proposal', 'alias', 'assignment'];
 const sha1 = (s) => createHash('sha1').update(s).digest('hex');
 
 /** readingId = sha1(week + threadId + subtype + key); the same reading of the same week always has the same id. */

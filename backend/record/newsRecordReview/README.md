@@ -15,18 +15,18 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-3)
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-4)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
-|  +- rule   : returns JSON only: line, chapters, branch status, links, merge proposal, alias proposals
+|  +- rule   : returns JSON only: line, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
 |  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
 |  +- model  : DeepSeek larger model (env); a stub model in tests and in the golden-week run
 |
 +- 4 CHECK      no model            [newsRecordReview]
-|  +- rule   : citations exist and belong to the story (or both stories for a link); dates inside the chapter span;
-|  |           branch status only for branches of the story; merge auto-allowed only under the merge rule below;
+|  +- rule   : citations exist and belong to the story (or both stories for a link); a chapter's from/to = the dates of its cited facts;
+|  |           merge auto-allowed only under the merge rule below;
 |  |           assignment: entry of this story, or a cited neighbour entry; target an active story or new; written as a reading, never applied
 |  +- output : accepted readings, rejected items with reason (kept in the review Run)
 |
@@ -36,7 +36,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- record/inbox/merges/YYYY-MM-DD.jsonl  accepted auto-merges, for newsStoryRecord to turn into story_merged facts
 |
 +- 6 BUILD      no model            [newsStoryRecord, nightly]
-|  +- reads readings + inbox merges + operator aliases; fills line, chapters, branchStatus, confirmedLinks in the views;
+|  +- reads readings + inbox merges + operator aliases; fills line, chapters, confirmedLinks in the views;
 |  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
 |
 +- LOOP BACK : new entries all week -> nightly facts and views -> Monday review reads them with hindsight -> views show it
@@ -47,22 +47,21 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 1. Writes `runs/review-WEEK.json` with `status:"started"` (a review Run left at `started` is the alarm).
 2. Select: reads `views/manifest.json` (its `factsThrough` must reach the week's Sunday, else the run fails) and `views/index/active.json`; reads every facts day in `facts/manifest.json` up to that Sunday once; reads the operator aliases (missing = empty) and the readings of the 8 weeks before. Skips a story with no `entry` or `verdict` fact newer than its last reading's `covers.to` (reason `no_new_fact`, listed in the Run).
 3. Assemble: per story, entries (newest 60, `entriesOmitted` says how many were cut), forks (newest 10) with each branch's verdict (legacy `issued_before_method` voids dropped), corrections, merges, the story's latest earlier readings, the operator aliases that touch its actors, and up to 5 neighbouring stories (specific shared actor or country, within 14 days) with their 3 newest entries, so a link or merge can cite both sides.
-4. Read: one call per story through shared `llm.js` (provider `deepseek`, model `REVIEW_MODEL`, `json:true`, `maxTokens` 3000, temperature 0, 6 in flight). `src/prompt.js` holds the prompt and `PROMPT_VERSION`; the answer shape is `schema/model-output.schema.json`. A failed call or a non-JSON answer fails that story only (recorded; its old readings stay).
+4. Read: one call per story through shared `llm.js` (provider `deepseek`, model `REVIEW_MODEL`, `json:true`, `maxTokens` 6000, temperature 0, 6 in flight). `src/prompt.js` holds the prompt and `PROMPT_VERSION`; the answer shape is `schema/model-output.schema.json`. A failed call or a non-JSON answer fails that story only (recorded; its old readings stay).
 5. Check (`src/check.js`), then write: the week's file is rewritten whole (other stories' stored lines kept, the stories read this run replaced), then the inbox, then the Run (`ok`, `partial` or `failed`). The handler throws when the Run is not `ok`, so the schedule's Errors metric moves.
 
 | Check | Rejects with |
 |---|---|
 | no cites / an eventId not in the bundle | `no_citation` / `unknown_eventId` |
 | link or merge not citing both stories, or an unknown other story | `cites_not_from_both` / `unknown_story` |
-| chapter `from`/`to` outside the dates of the cited facts | `dates_outside_cited_facts` |
-| branch status vs verdict facts (yes = fired, no = dead; open branch takes holding/late only; void takes none) | `status_contradicts_verdict`, `status_not_allowed_for_open_branch`, `branch_void`, `unknown_branch` |
+| chapter citing no dated fact (its span comes from the cited facts) | `no_dated_citation` |
 | alias without a Q-number, with an actor not in the bundle, or conflicting with the operator file | `alias_no_wikidata`, `alias_unknown_actor`, `alias_conflicts_operator` |
 | assignment proposal: entry neither shown in this story nor a cited neighbour entry, a target that is not an active story (or `new`), or the entry's own story | `entry_not_in_scope`, `unknown_story`, `already_assigned` (and `unknown_eventId` for any cite the model was not shown) |
 | wrong shape or length (line 200, chapter summary 300, mechanism 200), repeat of the same item, over the per-story cap | `bad_shape`, `duplicate`, `over_cap` |
 
 Merge rule (the 5% rule of 0037): a `merge_proposal` is always a reading; it also goes to the inbox only if the two stories share a specific actor (fewer than 5% of active stories carry it) and a country, their last entries are within 14 days, the reading cites both stories, and confidence is `high`. The older story (earlier `born`) survives. One inbox line per pair and per `from` story.
 
-Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-3` (recovered article headlines placed on a story are bundle items marked `kind:"article"`, citable, no detail); run the golden-week score again before the first live run with it.
+Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-4` (recovered article headlines placed on a story are bundle items marked `kind:"article"`, citable, no detail).
 
 Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, covers:{from,to}, supersedes, run, model, promptVersion, confidence}` ([schema](schema/reading.schema.json)). `readingId = sha1(week + threadId + subtype + key)` with key = chapter `from`, `branchId`, `otherThreadId`, alias `canonical`, empty for a line. `supersedes` is the `readingId` of the newest earlier-week reading of the same story, subtype and key, else null. `covers` is the first fact date of the bundle to the week's Sunday.
 
@@ -89,7 +88,8 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Alias readings that fail the rule (no Q-number, conflict) are not written as readings; they appear as rejections in the Run, which is where the operator sees the proposals.
 - The merge rule's country condition is any shared country (not 5%-specific): the specific actor carries the specificity.
 - Links and merges: the prompt shows the model up to 5 neighbours (cheap, no extra reads); the check accepts any active story the model cites correctly, and assembles that story's citable ids from the facts already in memory.
-- Open branches take `holding`/`late` only; the model may not set `fired`/`dead` without a verdict (the spec's wording).
+- No branch status from the model (0039 amendment 2026-10-31): a branch's status is its verdict fact, else open/past due from its `due` date, derived where it is shown (`shared/lib/branchWording.js`). Forecasts stay in the bundle as context; a verdict may be cited.
+- Chapter dates are not the model's: `from`/`to` are the first and last date of the facts the chapter cites, so `from` (the chapter key) is stable across weeks.
 - Bad answers are not re-asked: one call per story per week. `dryRun` makes no model call.
 - Shadow mode reads and writes under `record/shadow/` only, including `operator/aliases.json`, so a shadow run needs a shadow copy of the views and facts.
 
@@ -101,7 +101,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`.
 - Deploy with `scripts/lambda.sh` (diff first). Deployed; the first live run needs the DeepSeek top-up, the golden-week score and a canary.
 - `newsStoryRecord` (view builder, lane T): read readings and `inbox/merges`, apply aliases, add `story_split`. 900 s may not fit 100+ stories at 6 in flight; watch the first live Run's `notReached` and raise concurrency or split the run by `threadIds`.
-- The golden-week fixture and scored run (lane U) go in `fixtures/golden-week/`.
+- Golden week: `node scripts/golden-week.js capture|real|replay DIR` runs this handler on the frozen fixture in memory; results under `fixtures/golden-week/runs/` (see its README).
 
 ## Tests
 

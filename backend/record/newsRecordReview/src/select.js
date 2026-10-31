@@ -63,7 +63,6 @@ async function loadReadings({store, prefix, week}) {
 function keyOf(subtype, payload) {
   if (subtype === 'line') return '';
   if (subtype === 'chapter') return payload.from;
-  if (subtype === 'branch_status') return payload.branchId;
   if (subtype === 'link' || subtype === 'merge_proposal') return payload.otherThreadId;
   if (subtype === 'alias') return payload.canonical;
   if (subtype === 'assignment') return payload.entryId;
@@ -165,14 +164,7 @@ function assemble(world, row, {withNeighbours = true} = {}) {
   const covers = {from: facts[0].date, to: world.range.to};
   const entryIds = new Set(bundle.entries.filter((e) => e.kind !== 'article').map((e) => e.eventId)); // an assignment proposal names an entry, not an article
   const neighbourEntries = new Map(bundle.neighbours.flatMap((n) => n.entries.map((e) => [e.eventId, n.threadId])));
-  return {bundle, citable, entryIds, neighbourEntries, dates, covers, actorIds, iso3, lastEntry: entries.length ? entries[entries.length - 1].date : null, branches: branchIndex(forks)};
-}
-
-/** branchId -> {verdict: result|null, due} for the branches in the bundle. */
-function branchIndex(forks) {
-  const out = new Map();
-  for (const f of forks) for (const b of f.branches) out.set(b.branchId, {result: b.verdict ? b.verdict.result : null, due: b.due});
-  return out;
+  return {bundle, citable, entryIds, neighbourEntries, dates, covers, actorIds, iso3, lastEntry: entries.length ? entries[entries.length - 1].date : null};
 }
 
 /** Other active stories that share a specific actor or country and are near in time: the model may propose links to them. */

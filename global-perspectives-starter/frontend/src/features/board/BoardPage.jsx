@@ -41,6 +41,8 @@ import DueStrip from '@/features/board/components/DueStrip.jsx';
 import RailBranches from '@/features/board/components/RailBranches.jsx';
 import WeekScrubber from '@/features/board/components/WeekScrubber.jsx';
 import DivergencePanel from '@/features/board/components/DivergencePanel.jsx';
+import AlertsPanel from '@/features/board/components/AlertsPanel.jsx';
+import MonthlyCard from '@/features/board/components/MonthlyCard.jsx';
 import FoldingRules from '@/features/board/components/FoldingRules.jsx';
 import { setWeight } from '@/features/board/lib/divergence.js';
 import { isoWeekEnd } from '@/features/board/lib/recordViews.js';
@@ -383,6 +385,9 @@ export default function BoardPage() {
               });
             }} />
           {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
+          <MonthlyCard board={board} stories={records.stories} today={today} labelOf={labelOf}
+            onRetire={(pinId) => state.edit((b) => removePin(b, pinId))} />
+          {import.meta.env.DEV ? <details className="board-fold"><summary>Alerts (dev harness only: not stored, nothing sent)</summary><AlertsPanel board={board} labelOf={labelOf} /></details> : null}
           <details className="board-fold"><summary>How the board folds</summary><FoldingRules /></details>
         </>
       ) : null}

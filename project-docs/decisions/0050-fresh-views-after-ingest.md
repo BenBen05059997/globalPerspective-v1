@@ -1,6 +1,6 @@
 # 0050. The views are rebuilt after every ingest and brief, with today's entries as provisional entries; pages stop asking for "the newest days"
 
-Status: accepted (operator, 2026-10-31); follows 0035, 0037, 0042, 0046, 0048; amends the "newest days" rules of 0046 and the freshness guards of 0048
+Status: accepted (operator, 2026-10-31); follows 0035, 0037, 0042, 0046, 0048; amends the "newest days" rules of 0046 and the freshness guards of 0048. Deployed 2026-10-31 (newsStoryRecord; first manual refresh 07:32 UTC wrote 8,626 views); rules TriggerStoryRecordRefresh (04:35/12:35/20:35), -Brief (14:15), -Analysis (05:20), -Weekly (Sun 06:15) created ENABLED; the frontend part waits for the release
 Date: 2026-10-31
 
 ## Context

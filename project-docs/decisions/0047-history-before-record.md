@@ -1,6 +1,6 @@
 # 0047. The history before the record's first day is copied into the record
 
-Status: proposed (built and proven on a local copy 2026-10-31; nothing is written to `record/` yet; the coordinator runs the commands below, shadow first); follows 0035, 0036, 0037, 0042, 0043, 0044, 0046
+Status: accepted (operator, 2026-10-31) and run live 2026-10-31 07:25 UTC: shadow under `record/shadow-history/` matched the dry run, live matched the shadow (0 diffs), rebuild test 8,626 of 8,626 views same; backup `backup/record-2026-10-31/`; follows 0035, 0036, 0037, 0042, 0043, 0044, 0046
 Date: 2026-10-31
 
 ## Context

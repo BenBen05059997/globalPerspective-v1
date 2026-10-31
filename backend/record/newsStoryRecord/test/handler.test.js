@@ -247,13 +247,13 @@ const viewKeys = (f) => f.puts.map((p) => p.Key).filter((k) => k.startsWith(`${P
 const fresh = (date, from) => Array.from({length: 20}, (_, n) => entry(date, n + from));
 const dayStore = () => scripted({'2026-10-19': fresh('2026-10-19', 0), '2026-10-20': fresh('2026-10-20', 100)});
 
-test('views are written after the facts, in order: stories, links, counts, then active, all, and the manifest last', async () => {
+test('views are written after the facts, in order: stories, links, counts, then active with the indexes, all, and the manifest last', async () => {
   const {f, handler} = make(dayStore());
   await handler({date: '2026-10-20'});
   const keys = viewKeys(f);
   const at = (k) => keys.indexOf(k);
-  assert.deepEqual(keys.slice(-3), ['index/active.json', 'index/all.json', 'manifest.json']);
-  const groups = keys.slice(0, -3).map((k) => k.split('/')[0]);
+  assert.deepEqual(keys.slice(-6), ['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/all.json', 'manifest.json']);
+  const groups = keys.slice(0, -6).map((k) => k.split('/')[0]);
   assert.deepEqual([...new Set(groups)], ['stories', 'links', 'counts']);
   assert.ok(groups.lastIndexOf('stories') < groups.indexOf('links') && groups.lastIndexOf('links') < groups.indexOf('counts'));
   assert.ok(f.puts.findIndex((p) => p.Key === `${P}facts/2026-10-20.jsonl`) < f.puts.findIndex((p) => p.Key === `${P}views/${keys[0]}`));

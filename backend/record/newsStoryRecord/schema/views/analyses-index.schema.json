@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Analyses index (record/views/index/analyses.json)",
+  "description": "Per story with a story_analysis note, the analysis fields the Stories page and the country page's arc list read (the thread_analysis action's answer, cut to those fields; no drift note, no entry short titles, no trajectory or root-cause text). Built by indexViews.js from the same notes as the story views' `analysis`.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "analyses"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "analyses": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["threadId"],
+        "additionalProperties": false,
+        "properties": {
+          "threadId": {"type": "string"},
+          "threadTitle": {"type": ["string", "null"]},
+          "storyArc": {"type": ["string", "null"]},
+          "watchQuestions": {"type": ["array", "null"], "items": {"type": "string"}},
+          "dimensions": {"type": ["object", "null"]},
+          "riskScore": {"type": ["number", "string", "null"]},
+          "riskLevel": {"type": ["string", "null"]},
+          "generatedAt": {"type": "string"}
+        }
+      }
+    }
+  }
+}

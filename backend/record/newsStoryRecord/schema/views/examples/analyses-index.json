@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "analyses": {
+    "thread-a": {
+      "threadId": "thread-a",
+      "threadTitle": "A title",
+      "storyArc": "A arc",
+      "watchQuestions": [
+        "Q1?"
+      ],
+      "dimensions": {
+        "conflict": {
+          "score": 60,
+          "why": "w"
+        }
+      },
+      "riskScore": 60,
+      "generatedAt": "2026-10-21T05:00:00.000Z"
+    },
+    "thread-b": {
+      "threadId": "thread-b",
+      "threadTitle": "B title",
+      "generatedAt": "2026-10-21T05:00:00.000Z"
+    }
+  }
+}

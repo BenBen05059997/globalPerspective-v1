@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Web index (record/views/index/web.json)",
+  "description": "The story web in the web_index action's shape, built from the link and web notes on the rules of the links views (newest web per country, at most 30 days old). Not in it: the run's `targets`, `coverage` totals and `runId` (no note carries them). `generatedAt` = the newest web's time (null with no web).",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "generatedAt", "maxAgeDays", "websUsed", "links", "shared", "threads"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "generatedAt": {"type": ["string", "null"]},
+    "maxAgeDays": {"const": 30},
+    "websUsed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["country", "generatedAt", "nodes"],
+        "additionalProperties": false,
+        "properties": {"country": {"type": "string"}, "generatedAt": {"type": "string"}, "nodes": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "confidence", "lagDays", "mechanism", "cited", "country", "generatedAt", "iso3"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "confidence": {"type": ["string", "null"]},
+          "lagDays": {"type": ["number", "null"]},
+          "mechanism": {"type": ["string", "null"]},
+          "cited": {"type": "array", "items": {"type": "object"}},
+          "country": {"type": "string"},
+          "generatedAt": {"type": "string"},
+          "iso3": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "shared": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["a", "b", "actors", "weight", "country", "generatedAt", "iso3"],
+        "additionalProperties": false,
+        "properties": {
+          "a": {"type": "string"},
+          "b": {"type": "string"},
+          "actors": {"type": "array", "items": {"type": "string"}},
+          "weight": {"type": "number"},
+          "country": {"type": "string"},
+          "generatedAt": {"type": "string"},
+          "iso3": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "threads": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["state", "title", "entries", "places", "analysedIn", "iso3"],
+        "additionalProperties": false,
+        "properties": {
+          "state": {"enum": ["linked", "analysed_no_links", "single_update", "country_not_analysed"]},
+          "title": {"type": ["string", "null"]},
+          "entries": {"type": "integer", "minimum": 0},
+          "places": {"type": "array", "items": {"type": "object", "required": ["name", "n"], "additionalProperties": false, "properties": {"name": {"type": "string"}, "n": {"type": "integer"}}}},
+          "analysedIn": {"type": "array", "items": {"type": "object", "required": ["country", "generatedAt"], "additionalProperties": false, "properties": {"country": {"type": "string"}, "generatedAt": {"type": "string"}}}},
+          "iso3": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

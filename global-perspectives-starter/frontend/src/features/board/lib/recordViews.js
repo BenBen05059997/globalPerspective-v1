@@ -29,3 +29,12 @@ export function isoWeekStart(date) {
 export function isoWeekEnd(date) {
   return new Date(Date.parse(isoWeekStart(date)) + 6 * 86400000).toISOString().slice(0, 10);
 }
+
+/** '2026-W42' (an ISO week, as readings carry it) -> the Monday of that week, YYYY-MM-DD; anything else -> null. */
+export function weekMonday(week) {
+  const m = /^(\d{4})-W(\d{2})$/.exec(week || '');
+  if (!m) return null;
+  const jan4 = Date.UTC(Number(m[1]), 0, 4);
+  const monday1 = jan4 - ((new Date(jan4).getUTCDay() + 6) % 7) * 86400000;
+  return new Date(monday1 + (Number(m[2]) - 1) * 7 * 86400000).toISOString().slice(0, 10);
+}

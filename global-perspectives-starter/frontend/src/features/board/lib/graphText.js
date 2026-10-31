@@ -33,3 +33,6 @@ export function stringLabel(s) {
   const head = ['Ours', STRENGTH_WORD[s.strength] || 'Inferred', s.cutAt ? 'Cut' : null, s.confirmed === false ? 'Not confirmed' : null].filter(Boolean);
   return { head: head.join(' · '), body: s.mechanism || '' };
 }
+
+/** The short tag of a string label: its first two parts ("Ours · Medium · Not confirmed" -> "Ours · Medium"). */
+export const shortHead = (head) => head.split(' · ').slice(0, 2).join(' · ');

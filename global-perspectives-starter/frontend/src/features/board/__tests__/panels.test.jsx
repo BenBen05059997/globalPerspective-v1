@@ -10,7 +10,7 @@ vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 import VerdictCard from '../components/VerdictCard.jsx';
 import BoardWeekly from '../components/BoardWeekly.jsx';
 import ArrivalsTray from '../components/ArrivalsTray.jsx';
-import { evidenceRows, dueThisWeek, verdictMemo } from '../lib/panelParts.js';
+import { evidenceRows, verdictMemo } from '../lib/panelParts.js';
 import { devVerdict } from '../dev/panelFixtures.js';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); stories.value = {}; });
@@ -25,15 +25,6 @@ describe('panelParts', () => {
     const rows = evidenceRows({ a: record, b: record }, ['BBC', 'Reuters']);
     expect(rows.map((r) => `${r.date} ${r.outlet} ${r.headline}`)).toEqual(['2026-10-17 reuters Reuters headline', '2026-10-16 BBC BBC headline']);
     expect(evidenceRows({ a: record }, [])).toEqual([]);
-  });
-  it('due this week keeps open branches due from today through six days ahead', () => {
-    const s = { x: { threadId: 'x', forks: [{ branches: [
-      { branchId: 'a', text: 'In', p: 70, due: '2026-10-23', verdict: null },
-      { branchId: 'b', text: 'Late', p: 10, due: '2026-10-30', verdict: null },
-      { branchId: 'c', text: 'Settled', p: 10, due: '2026-10-22', verdict: { result: 'yes' } },
-      { branchId: 'd', text: 'Past', p: 10, due: '2026-10-20', verdict: null },
-    ] }] } };
-    expect(dueThisWeek(s, new Date('2026-10-21T12:00:00Z')).map((d) => d.text)).toEqual(['In']);
   });
   it('memo text names the pair, grounds and the line', () => {
     const memo = verdictMemo({ labelA: 'A', labelB: 'B', strengthWord: 'Weak link', note: 'n', shared: ['iran'], evidence: [], line: ' mine ' });
@@ -96,14 +87,14 @@ describe('weekly (artboard 4)', () => {
   const link = { 'story-a': { confirmedLinks: [{ otherThreadId: 'oil', direction: 'drives', mechanism: 'Oil moves it', week: '2026-W43', cites: [] }] } };
   const dueStory = { a: { threadId: 'a', forks: [{ branches: [{ branchId: 'x', text: 'Vessel struck', p: 80, due: '2026-10-23', verdict: null }] }] } };
 
-  it('titles the week, counts the changes and lists moved pins, strings and what is due', () => {
+  it('titles the week, counts the changes and lists moved pins and strings', () => {
     render(<MemoryRouter><BoardWeekly board={board} stories={dueStory} links={link} now={now} info={{ p1: { label: 'Hormuz', risk: 85 } }} /></MemoryRouter>);
-    expect(screen.getByText('Your board moved · week ending 21 Oct')).toBeInTheDocument();
+    expect(screen.getByText('Your board moved · week ending 25 Oct')).toBeInTheDocument();
     expect(screen.getByText('1 pin moved · 1 string changed · 1 new link found')).toBeInTheDocument();
     expect(screen.getByText('85')).toBeInTheDocument();
     expect(screen.getByText(/my note/)).toBeInTheDocument();
-    expect(screen.getByText('Due this week')).toBeInTheDocument();
-    expect(screen.getByText('23 Oct · 80%')).toBeInTheDocument();
+    expect(screen.getByText(/week of 19 Oct/)).toBeInTheDocument();
+    expect(screen.queryByText('Due this week')).toBeNull();
   });
 
   it('a new link has Add pin and Dismiss only when the handlers are given', () => {

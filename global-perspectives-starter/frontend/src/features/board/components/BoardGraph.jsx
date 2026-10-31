@@ -3,8 +3,8 @@ import { stringTexture, pairKey } from '@/shared/lib/board.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { layoutPins, ghostPosition, KIND_WORD } from '@/features/board/lib/boardOps.js';
-import { pinTypeLine, pinCountParts, stringLabel } from '@/features/board/lib/graphText.js';
+import { layoutPins, ghostPosition, placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
+import { pinTypeLine, pinCountParts, stringLabel, shortHead } from '@/features/board/lib/graphText.js';
 
 // The graph view: pins and strings in plain SVG. Pin positions come from layoutPins (an ellipse; pins joined by a
 // string sit next to each other), so they stay put between renders. Strings are drawn by stringTexture: dashed
@@ -20,14 +20,20 @@ const GHOST_W = 150;
 const GHOST_H = 72;
 const LABEL_W = 190;
 const LABEL_H = 52;
+const SMALL_W = 130; // a label with no free room at full size shows only its short tag
+const SMALL_H = 24;
+const PIN_MARGIN = { x: PIN_W / 2 + 12, y: PIN_H / 2 + 12 }; // pin centres stay a card's half-size (and a gap) inside the edges
 const DRAG_PX = 6;
 
-function StringLabel({ x, y, head, body, ghost = false }) {
+// `at` is { x, y, small } from placeLabels. The full text stays in the string's <title> and the string list.
+function StringLabel({ at, head, body, ghost = false }) {
+  const w = at.small ? SMALL_W : LABEL_W;
+  const h = at.small ? SMALL_H : LABEL_H;
   return (
-    <foreignObject x={x - LABEL_W / 2} y={y - LABEL_H / 2} width={LABEL_W} height={LABEL_H} className="board-label-box" aria-hidden="true">
+    <foreignObject x={at.x - w / 2} y={at.y - h / 2} width={w} height={h} className="board-label-box" aria-hidden="true">
       <div className={`board-label${ghost ? ' board-label--ghost' : ''}`}>
-        <span className="board-label__head">{head}</span>
-        {body ? <span className="board-label__body">{body}</span> : null}
+        <span className="board-label__head">{at.small ? shortHead(head) : head}</span>
+        {body && !at.small ? <span className="board-label__body">{body}</span> : null}
       </div>
     </foreignObject>
   );
@@ -53,9 +59,22 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
   const [drag, setDragState] = useState(null);
   const dragRef = useRef(null); // the handlers read the ref: a fast press-move-release can arrive before a re-render
   const setDrag = (d) => { dragRef.current = d; setDragState(d); };
-  const pos = useMemo(() => layoutPins(pins, W, H, strings), [pins, strings]);
+  const pos = useMemo(() => layoutPins(pins, W, H, strings, PIN_MARGIN), [pins, strings]);
   const ghostAt = useMemo(() => Object.fromEntries(ghosts.map((g) => [g.name, ghostPosition(g.pins.map((id) => pos[id]).filter(Boolean), Object.values(pos), W, H)])), [ghosts, pos]);
   const now = useMemo(() => new Date(), []);
+  const labelAt = useMemo(() => {
+    const cards = [
+      ...pins.filter((p) => pos[p.pinId]).map((p) => ({ ...pos[p.pinId], w: PIN_W, h: PIN_H })),
+      ...ghosts.map((g) => ({ ...ghostAt[g.name], w: GHOST_W, h: GHOST_H })),
+    ];
+    const ends = (a, b) => (pos[a] && pos[b] ? { a: pos[a], b: pos[b] } : null);
+    const items = [
+      ...strings.map((s) => ({ id: `s:${pairKey(s.a, s.b)}`, ...ends(s.a, s.b) })),
+      ...failed.map((f) => ({ id: `f:${pairKey(f.a, f.b)}`, ...ends(f.a, f.b) })),
+      ...ghosts.map((g) => ({ id: `g:${g.name}`, a: ghostAt[g.name], b: pos[g.pins[0]] || ghostAt[g.name] })),
+    ].filter((it) => it.a);
+    return placeLabels(items, cards, W, H, { w: LABEL_W, h: LABEL_H }, { w: SMALL_W, h: SMALL_H });
+  }, [pins, strings, failed, ghosts, pos, ghostAt]);
 
   const toSvg = (e) => {
     const r = svgRef.current.getBoundingClientRect();
@@ -97,8 +116,8 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
 
   return (
     <div className="board-graph" data-testid="board-graph">
+      <Legend />
       <div className="board-stage">
-        <Legend />
         {coverageGap ? (
           <div className="board-fog" data-testid="board-fog">
             <span className="board-fog__head">No coverage {dayMonth(coverageGap.date)}</span>
@@ -126,9 +145,10 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
             const { head, body } = stringLabel(s);
             return (
               <g key={key} className={`board-string board-string--${texture}${pickedKey === key ? ' is-picked' : ''}`} data-texture={texture} data-owner={s.owner} data-strength={s.strength}>
+                <title>{[head, body].filter(Boolean).join('. ')}</title>
                 <line className="board-string__line" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />
                 <line className="board-string__hit" x1={p.x} y1={p.y} x2={q.x} y2={q.y} onClick={() => onPickString(s)} />
-                <StringLabel x={(p.x + q.x) / 2} y={(p.y + q.y) / 2} head={head} body={body} />
+                <StringLabel at={labelAt[`s:${key}`]} head={head} body={body} />
               </g>
             );
           })}
@@ -139,7 +159,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
             return (
               <g key={`failed-${pairKey(f.a, f.b)}`} className="board-string board-string--cut" data-texture="cut" data-failed="true">
                 <line className="board-string__line" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />
-                <StringLabel x={(p.x + q.x) / 2} y={(p.y + q.y) / 2} head="Combination failed" body={f.text} ghost />
+                <StringLabel at={labelAt[`f:${pairKey(f.a, f.b)}`]} head="Combination failed" body={f.text} ghost />
               </g>
             );
           })}
@@ -148,7 +168,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
             return (
               <g key={`ghost-${g.name}`} className="board-string board-string--ghost" data-texture="ghost">
                 {g.pins.map((id) => (pos[id] ? <line key={id} className="board-string__line" x1={at.x} y1={at.y} x2={pos[id].x} y2={pos[id].y} /> : null))}
-                <StringLabel x={(at.x + (pos[g.pins[0]]?.x ?? at.x)) / 2} y={(at.y + (pos[g.pins[0]]?.y ?? at.y)) / 2} head="Suggested · Not followed" body={`${g.pins.length} of your pins touch this`} ghost />
+                <StringLabel at={labelAt[`g:${g.name}`]} head="Suggested · Not followed" body={`${g.pins.length} of your pins touch this`} ghost />
               </g>
             );
           })}

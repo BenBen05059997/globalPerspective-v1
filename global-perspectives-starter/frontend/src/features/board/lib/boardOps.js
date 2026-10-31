@@ -64,8 +64,8 @@ export function restoreString(board, idA, idB) {
 /** Pins on an ellipse (a point at the centre for one). The order starts as kind then pin id; with `strings` given,
  *  pins that are joined by an uncut string are walked one after another so they sit next to each other. The order
  *  depends only on the pins and strings, so a pin keeps its place between renders. Returns { pinId: {x, y} }
- *  inside a width x height box. */
-export function layoutPins(pins, width, height, strings = []) {
+ *  inside a width x height box, every centre at least `margin` {x, y} from the edges. */
+export function layoutPins(pins, width, height, strings = [], margin = { x: 0, y: 0 }) {
   const kindOrder = { thread: 0, country: 1, actor: 2 };
   const base = [...pins].sort((p, q) => (kindOrder[p.kind] - kindOrder[q.kind]) || (p.pinId < q.pinId ? -1 : 1));
   const rank = Object.fromEntries(base.map((p, i) => [p.pinId, i]));
@@ -89,8 +89,8 @@ export function layoutPins(pins, width, height, strings = []) {
   const cx = width / 2;
   const cy = height / 2;
   if (n === 1) { out[sorted[0].pinId] = { x: cx, y: cy }; return out; }
-  const rx = width * 0.385;
-  const ry = height * 0.41;
+  const rx = width / 2 - margin.x; // pin centres keep `margin` (a card's half-size) clear of the edges
+  const ry = height / 2 - margin.y;
   sorted.forEach((p, i) => {
     const t = (i / n) * Math.PI * 2 - Math.PI / 2;
     out[p.pinId] = { x: Math.round(cx + rx * Math.cos(t)), y: Math.round(cy + ry * Math.sin(t)) };
@@ -115,6 +115,43 @@ export function ghostPosition(touched, placed, width, height) {
     }
   }
   return best;
+}
+
+const overlaps = (a, b) => Math.abs(a.x - b.x) * 2 < a.w + b.w && Math.abs(a.y - b.y) * 2 < a.h + b.h;
+
+/** Where each string label sits. `items` are { id, a, b } (the string's two ends); `obstacles` are cards { x, y, w, h }
+ *  (centre and size). A label goes at its string's midpoint; if that covers a card, another label or the edge, it
+ *  slides along the string and off to its side. If nothing full-size is free it shrinks to `small` (the short tag);
+ *  if even that has no free spot it stays small at the midpoint. -> { id: { x, y, small } } */
+export function placeLabels(items, obstacles, width, height, full, small) {
+  const slides = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8];
+  const sides = [0, 1, -1, 2, -2];
+  const placed = [];
+  const out = {};
+  for (const it of items) {
+    const dx = it.b.x - it.a.x;
+    const dy = it.b.y - it.a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const spot = (size, side, t) => ({
+      x: Math.round(it.a.x + dx * t - (dy / len) * side * (size.h / 2 + 6)),
+      y: Math.round(it.a.y + dy * t + (dx / len) * side * (size.h / 2 + 6)),
+      ...size,
+    });
+    const free = (r) => r.x - r.w / 2 >= 0 && r.x + r.w / 2 <= width && r.y - r.h / 2 >= 0 && r.y + r.h / 2 <= height
+      && ![...obstacles, ...placed].some((o) => overlaps(r, o));
+    let hit = null;
+    for (const [size, isSmall] of [[full, false], [small, true]]) {
+      for (const side of sides) for (const t of slides) {
+        const r = spot(size, side, t);
+        if (!hit && free(r)) hit = { r, small: isSmall };
+      }
+      if (hit) break;
+    }
+    if (!hit) hit = { r: spot(small, 0, 0.5), small: true };
+    placed.push(hit.r);
+    out[it.id] = { x: hit.r.x, y: hit.r.y, small: hit.small };
+  }
+  return out;
 }
 
 /** The pin's request body for `connect`. */

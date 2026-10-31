@@ -153,7 +153,7 @@ describe('storyTree helpers', () => {
 
 describe('weekMonday', () => {
   it('turns an ISO week into its Monday; anything else is null', async () => {
-    const { weekMonday } = await import('@/features/board/lib/storyTree.js');
+    const { weekMonday } = await import('@/features/board/lib/recordViews.js');
     expect(weekMonday('2026-W42')).toBe('2026-10-12');
     expect(weekMonday('2026-W01')).toBe('2025-12-29');
     expect(weekMonday('2026-10-12')).toBeNull();

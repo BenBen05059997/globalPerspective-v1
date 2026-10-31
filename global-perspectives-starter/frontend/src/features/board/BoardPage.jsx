@@ -188,6 +188,10 @@ export default function BoardPage() {
   const pickedKey = pickedString ? pairKey(pickedString.a, pickedString.b) : null;
   const detailPin = panel?.type === 'pin' ? pinById[panel.pinId] : null;
 
+  // The open story pin's tree: in the bottom sheet on a phone, full width under the graph on a desktop.
+  const storyTree = detailPin?.kind === 'thread'
+    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null;
+
   let sheetBody = null;
   if (panel?.type === 'add') {
     sheetBody = <AddPinPanel topics={topics} followedThreads={follows.threads} followedActors={follows.actors} full={full} notice={notice} onAdd={addToBoard} />;
@@ -226,7 +230,7 @@ export default function BoardPage() {
           {detailPin.kind === 'thread' ? <EntityLink kind="story" id={detailPin.refId}>{i?.label}</EntityLink>
             : detailPin.kind === 'country' ? <EntityLink kind="country" id={detailPin.refId}>{i?.label}</EntityLink> : i?.label}
         </p>
-        {detailPin.kind === 'thread' ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null}
+        {detailPin.kind === 'thread' && isPhone ? storyTree : null}
         <div className="board-actions">
           {detailPin.kind === 'actor' && !follows.actors.some((a) => a.toLowerCase() === detailPin.refId.toLowerCase())
             ? <Button onClick={() => follows.followActor(detailPin.refId)}>Follow actor</Button> : null}
@@ -317,6 +321,12 @@ export default function BoardPage() {
                 />
               )}
               <DueStrip stories={records.stories} today={today} />
+              {storyTree && !isPhone ? (
+                <Card as="section" aria-label={`Story tree: ${labelOf(detailPin.pinId)}`}>
+                  <SectionHeader label={labelOf(detailPin.pinId)} hint="Story tree" as="h2"><Button compact onClick={closePanel}>Close tree</Button></SectionHeader>
+                  {storyTree}
+                </Card>
+              ) : null}
               {coverage?.weeks ? <WeekScrubber weeks={coverage.weeks} note={coverage.note} onChange={setWeekPick} /> : null}
               {board.strings.length ? (
                 <details className="board-strings-disclosure">

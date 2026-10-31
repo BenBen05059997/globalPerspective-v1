@@ -6,7 +6,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { OursBadge } from '@/features/board/components/StringBadges.jsx';
 import { boardWeek } from '@/features/board/lib/recordProjection.js';
-import { dueThisWeek } from '@/features/board/lib/panelParts.js';
+import { isoWeekEnd, weekMonday } from '@/features/board/lib/recordViews.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import { PIN_BUDGET } from '@/shared/lib/board.js';
@@ -23,14 +23,13 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
   const label = (id) => info[id]?.label || pinOf(id)?.line || pinOf(id)?.refId || id;
   const pinnedThread = (threadId) => board.pins.find((p) => p.kind === 'thread' && p.refId === threadId);
   const newLinks = week.links.filter((l) => !(board.dismissed || []).includes(l.otherThreadId));
-  const due = dueThisWeek(stories, now);
   const summary = [
     week.moved.length ? count(week.moved.length, 'pin moved', 'pins moved') : null,
     week.strings.length ? count(week.strings.length, 'string changed', 'strings changed') : null,
     newLinks.length ? count(newLinks.length, 'new link found', 'new links found') : null,
   ].filter(Boolean);
   const changed = week.moved.length || week.strings.length || week.branches.length || newLinks.length;
-  const title = summary.length ? `Your board moved · week ending ${dayMonth(now.toISOString())}` : 'This week on your board';
+  const title = summary.length ? `Your board moved · week ending ${dayMonth(isoWeekEnd(now.toISOString().slice(0, 10)))}` : 'This week on your board';
 
   return <Card as="section" aria-label="This week on your board" className="pn-weekly">
     <SectionHeader label={title} as="h2" />
@@ -59,17 +58,13 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
       return <section key={`${l.threadId}:${l.otherThreadId}`} className="pn-box pn-box--ours" aria-label="New link we found">
         <span className="pn-kicker">New link we found</span>
         <p className="pn-row__head">{mine ? label(mine.pinId) : l.threadId} — {other ? label(other.pinId) : <EntityLink kind="story" id={l.otherThreadId}>linked story</EntityLink>}</p>
-        <p className="board-line"><ClaimTag kind="judgment" />{l.mechanism} <time dateTime={l.week}>{l.week}</time></p>
+        <p className="board-line"><ClaimTag kind="judgment" />{l.mechanism} <time dateTime={weekMonday(l.week) || undefined}>week of {dayMonth(weekMonday(l.week))}</time></p>
         {!other && onAddPin && onDismissLink ? <div className="board-actions">
           <Button disabled={board.pins.length >= PIN_BUDGET} onClick={() => onAddPin(l.otherThreadId)}>Add pin</Button>
           <Button onClick={() => onDismissLink(l.otherThreadId)}>Dismiss</Button>
         </div> : null}
       </section>;
     })}
-
-    {due.length ? <section className="pn-sec"><h3 className="pn-kicker">Due this week</h3><ul className="pn-rows">{due.map((d) => <li key={d.key} className="pn-row pn-row--between">
-      <span>{d.text}</span><span className="pn-row__when">{dayMonth(d.due)}{d.p != null ? ` · ${d.p}%` : ''}</span>
-    </li>)}</ul></section> : null}
 
     {!loading && !changed ?<p className="board-line">Nothing on your board changed in the last seven days.</p> : null}
   </Card>;

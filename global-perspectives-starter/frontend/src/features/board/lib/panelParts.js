@@ -3,7 +3,6 @@ import { dayMonth } from '@/shared/lib/branchWording.js';
 // Pure helpers for the verdict, weekly and arrivals panels (artboards 3, 4, 5).
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
-const DAY = 86400000;
 
 /** Dated headlines from the story records, one row per source of a shared outlet, newest first. */
 export function evidenceRows(stories, outlets, limit = 5) {
@@ -23,16 +22,6 @@ export function evidenceRows(stories, outlets, limit = 5) {
     }
   }
   return rows.sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, limit);
-}
-
-/** Open branches due from today through the next six days: { key, text, due, p }, soonest first. */
-export function dueThisWeek(stories, now = new Date()) {
-  const from = now.toISOString().slice(0, 10);
-  const to = new Date(now.getTime() + 6 * DAY).toISOString().slice(0, 10);
-  return Object.values(stories || {}).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches
-    .filter((b) => !b.verdict && b.due >= from && b.due <= to)
-    .map((b) => ({ key: `${s.threadId}:${b.branchId}`, text: b.text, due: b.due, p: Number.isFinite(b.p) ? b.p : null }))))
-    .sort((a, b) => a.due.localeCompare(b.due) || a.key.localeCompare(b.key));
 }
 
 /** Plain-text memo of a verdict, for copying. */

@@ -5,7 +5,8 @@ import StoryTreeDrawing from '@/features/board/components/StoryTreeDrawing.jsx';
 import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordText.js';
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, outcomeText, inChapter, foldTrunk, weekMonday } from '@/features/board/lib/storyTree.js';
+import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { weekMonday } from '@/features/board/lib/recordViews.js';
 import '@/features/board/storyTree.css';
 
 const evidenceOf = (v) => Array.isArray(v) ? v.map((e, n) => (e?.url ? <a className="board-link" key={n} href={e.url} target="_blank" rel="noreferrer">Evidence {n + 1}</a> : null)) : v ? <span> · {String(v)}</span> : null;

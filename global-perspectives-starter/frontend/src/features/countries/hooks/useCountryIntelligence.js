@@ -1,10 +1,37 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy';
+import { makeRecordViews } from '@/shared/api/recordViews';
+import { reportFetchError } from '@/shared/api/errorSink';
+import { resolveCountry } from '@/shared/lib/countries';
+import { intelligenceFromCountryView } from '@/features/countries/lib/viewIntelligence';
 import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
 
 const CACHE_KEY = 'gp_country_intel_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
+
+const views = makeRecordViews();
+
+/**
+ * One country's briefing, the record first (decision 0042): the country view's `intelligence`; a country without a
+ * view or briefing falls back to the `country_intelligence` action, as does a failed view fetch (reported). Several
+ * countries at once (the list page, the map) stay on the action: one call covers 15 names, where views are one file each.
+ */
+export async function fetchCountryBriefing(name, { getViews = views, fetchAction = fetchCountryIntelligence } = {}) {
+  const iso3 = resolveCountry(name)?.iso3;
+  const view = await getViews.fetchCountryView(iso3).catch((e) => { reportFetchError('country-view-intelligence', e); return null; });
+  const fromView = intelligenceFromCountryView(view);
+  if (fromView) return fromView;
+  const result = await fetchAction([name]);
+  return result?.data?.[name] ?? null;
+}
+
+function cacheMerge(data) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data: { ...existing.data, ...data }, timestamp: Date.now() }));
+  } catch { /* ignore */ }
+}
 
 // A tiny promise pool — mirrors useCountryRiskLayer.js's runPooled so both callers of
 // country_intelligence chunk the same way and neither silently truncates past the
@@ -56,18 +83,18 @@ export function useCountryIntelligence(countryNames) {
       // Never call the proxy with more than MAX_NAMES_PER_CALL names — the backend silently
       // slices anything bigger (CLAUDE.md / countryRiskLayer.js), which used to strand
       // CountryListPage's 24-name ask at the first 15 with no error. Batch + merge instead.
-      const chunks = chunkNames(countryNames, MAX_NAMES_PER_CALL);
       const data = {};
-      await runPooled(chunks, MAX_CONCURRENT_BATCHES, async (chunk) => {
-        const result = await fetchCountryIntelligence(chunk);
-        Object.assign(data, result?.data || {});
-      });
+      if (countryNames.length === 1) {
+        const one = await fetchCountryBriefing(countryNames[0]);
+        if (one) data[countryNames[0]] = one;
+      } else {
+        await runPooled(chunkNames(countryNames, MAX_NAMES_PER_CALL), MAX_CONCURRENT_BATCHES, async (chunk) => {
+          const result = await fetchCountryIntelligence(chunk);
+          Object.assign(data, result?.data || {});
+        });
+      }
       setIntelligence(data);
-      try {
-        const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-        const merged = { ...existing.data, ...data };
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: merged, timestamp: Date.now() }));
-      } catch { /* ignore */ }
+      cacheMerge(data);
     } catch {
       setIntelligence({});
     } finally {

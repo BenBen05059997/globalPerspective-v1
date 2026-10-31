@@ -28,7 +28,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 - `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps; "Map unavailable" without
   `window.GOOGLE_MAPS_API_KEY`)
 - `hooks/` - `useCountryIntelligence`, `useCountryHistory`, `useCountryFacts`, `useCountryStories`, `useMarketsCountry`
-- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `viewDrift` (country view -> drift notes), `countryFacts`, `countryMacro`, `countryMatch`,
+- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `viewDrift` (country view -> drift notes), `viewIntelligence` (country view -> briefing), `countryFacts`, `countryMacro`, `countryMatch`,
   `countryTier`, `countryTriggers`, `countryWatch`; sheet: `countryUnknowns`, `countryConnections` (story-web links, "judged to feed
   into", negative lag = "order unclear"), `countryChange`, `countryText` (plain-text sheet, numbered absolute footnotes), `countryYourView`
 - Public API (`index.js`): `CountryCardV2` (used by `map`)
@@ -46,6 +46,8 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
 ## Data
 - `useCountryIntelligence` -> `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
   localStorage `gp_country_intel_v1`, 30 min. The auth header is sent when signed in; the action is not tier-gated.
+  One country (page, `CountryCardV2`) reads the view's `intelligence` first (0042 step 4, `lib/viewIntelligence.js`; equal to the action's item
+  for all 48 views), falling back to the action on a missing view or failed fetch (reported); the list page and map layer stay on the action.
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h). Drift-note depth is capped by tier on the
   server; the call sends the auth header when signed in, so members get full depth (anonymous: latest note plus a count).
   The drift notes are read from the record's country view (`/data/record/views/countries/<ISO3>.json`, decision 0042 step 4: notes only, as

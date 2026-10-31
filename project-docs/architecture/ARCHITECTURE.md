@@ -194,6 +194,7 @@ flowchart LR
 ```mermaid
 flowchart LR
   ag[Agent Lambda] -->|each forecast| pl[(PredictionLog)]
+  ag -->|forecast and thread lines| fi[(S3 record/inbox/forecasts)]
   r[rule TriggerPredictionResolver 10:30 daily] --> pr[newsPredictionResolver]
   pl --> pr
   pr -->|verdict rows| pl
@@ -202,12 +203,17 @@ flowchart LR
   pl --> sn
   sn -->|predictions/track_record.json| s3[(S3)]
   pr -->|draw lines| dw[(S3 record/inbox/draws)]
-  sr[newsStoryRecord] -->|views/track-record.json| rv[(S3 record/views)]
+  sr[newsStoryRecord] -->|views/track-record.json, forecasts/| rv[(S3 record/views)]
+  fi --> sr
+  pr -->|heartbeat| rv
   rv -->|Worker| tp["/track-record"]
+  rv -->|settle check| fm[newsFreshnessMonitor]
   s3 -->|prediction_track_record fallback| px[newsSensitiveData-dev]
   px --> tp
 ```
 The agent Lambda writes forecasts to `GlobalPerspectivePredictionLog`. `newsPredictionResolver` runs the forecast loop (decision 0038): each night it watches open branches on stories that moved or fell due, gathers the story's own entries after the draw from `record/facts` (no web search), judges with a boxed model, and records a verdict put-once in the log and as a line in `record/inbox/verdicts/`, which `newsStoryRecord` turns into a `verdict` fact. It also commits a weekly random seed and draws the pre-registered sample of 22 questions that the public track record scores. Yes, no and void verdicts are final at once (decision 0034); the operator can append a correction with `predictions/settle-correct.js`. `newsPredictionsSnapshot` (every 30 min) scans the log into `predictions/track_record.json`, which the proxy action `prediction_track_record` serves.
+
+Forecasts reach the record through `record/inbox/forecasts/` (the agent's `PRED#` rows and thread reconciles, decision 0052): `newsStoryRecord` can read the 30-day window from it instead of scanning the log (`FORECASTS_SOURCE`), `newsPredictionResolver` finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) and writes a tick heartbeat for `newsFreshnessMonitor`, which reads the settle alarm's inputs from the track-record view (`SETTLE_SOURCE`). The view also carries the draw pools; `forecasts/<threadId>.json` views serve the briefing's next question, the country card's deadlines and the analysis context. `newsPredictionsSnapshot` and the two prediction actions remain for the page's fallback and the story page until those readers are gone.
 
 The track-record page reads `record/views/track-record.json` first (built by `newsStoryRecord` from the question facts and the frozen pilot-era numbers, decision 0044) and falls back to that action. The weekly draws also go to `record/inbox/draws/`, and a forecast's section on the story page reads the story view (decision 0043). The commitment state (`SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows) stays in `GlobalPerspectivePredictionLog`, as does the draw pool that "Verify this draw" reads.
 

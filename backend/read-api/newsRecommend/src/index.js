@@ -16,6 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { buildInterestProfile, isColdStart, rankRecommendations } = require('./scoring');
 const { storyHref, mapHref, absoluteUrl } = require('./_shared/links');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
@@ -25,6 +26,10 @@ const BREAKING_ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspe
 const USERS_DDB_TABLE = process.env.USERS_DDB_TABLE || 'GlobalPerspectiveUserTable';
 const SITE_URL = process.env.SITE_URL; // optional origin override; _shared/links.js holds the default
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+
+// RECORD_READS=ddb|record|compare (decision 0054): where the topic pool (NewsCache `latest`) comes from
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
 
 const DEFAULT_LIMIT = 8;
 const MAX_LIMIT = 24;
@@ -77,8 +82,12 @@ async function verifyFirebaseToken(authHeader) {
 
 // ── Data loaders ─────────────────────────────────────────────────────────────
 async function loadTopics() {
-  const out = await ddb().send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }));
-  const topics = out.Item?.topics;
+  const Item = await readBy({
+    mode: RECORD_READS, label: 'recommend latest', same: SAME.latest,
+    ddb: async () => (await ddb().send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }))).Item,
+    record: () => records.latestItem(),
+  });
+  const topics = Item?.topics;
   return Array.isArray(topics) ? topics : [];
 }
 
@@ -460,4 +469,5 @@ exports.handler = async (event = {}) => {
   }
 };
 module.exports.listAlerts = listAlerts; // for tests
+module.exports.loadTopics = loadTopics; // for tests
 module.exports.getAlert = getAlert; // for tests

@@ -31,20 +31,20 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 
 ## Backend
 - No Lambda lists this feature.
-- About reads the daily brief written by `newsPostDevTo` (scheduler `InvokeDev`), served by
-  `newsSensitiveData-dev` ([read-api guide](../../../../../backend/read-api/README.md)).
+- About reads the daily brief written by `newsPostDevTo` (scheduler `InvokeDev`): from the record's brief views (decision 0048, built by
+  `newsStoryRecord`), else from `newsSensitiveData-dev` ([read-api guide](../../../../../backend/read-api/README.md)).
 
 ## Data
-- `AboutContact` only: `useDailyBrief()` -> restProxy `latest_daily_brief`, fed to `pausedSince()` with
-  `lookbackDays: MAX_LOOKBACK_DAYS` to render "analysis paused since <date>". Public, no sign-in; the hook caches in
-  localStorage `gp_daily_brief_v1`.
+- `AboutContact` only: `useDailyBrief()` -> the record's `index/briefs.json` and brief view (today's brief from the `daily_brief` action when the
+  record lacks it; the `latest_daily_brief` action when the record holds none), fed to `pausedSince()` with `lookbackDays: MAX_LOOKBACK_DAYS` to render
+  "analysis paused since <date>". Public, no sign-in; the hook caches in localStorage `gp_daily_brief_v1`.
 - The other pages make no requests.
 
 ## Pipeline
 1. `app/App.jsx` lazy-loads the page chunk for the route on first visit.
 2. Four pages are plain JSX: the copy is the content, wrapped by `StaticPage` and styled by `StaticPage.css`.
-3. About also runs `useDailyBrief`: `restProxy.js` posts `latest_daily_brief` to the proxy.
-4. `newsSensitiveData-dev` batch-reads the newest `DAILY_BRIEF#<date>` row from `SummarizeAndPredict` (written daily by `newsPostDevTo`).
+3. About also runs `useDailyBrief`, which reads the record's brief views first (`shared/api/briefViews.js`).
+4. For what the views lack, `restProxy.js` posts `daily_brief` / `latest_daily_brief`; `newsSensitiveData-dev` reads the `DAILY_BRIEF#<date>` rows from `SummarizeAndPredict` (written daily by `newsPostDevTo`).
 5. `pausedSince` (`shared/lib/freshness.js`) gets the brief's `generatedAt`: null when it is under 36 hours old, else "analysis paused since <date>"; with no brief found after a finished search, "no analysis in the last 30 days" (`MAX_LOOKBACK_DAYS`).
 6. `AboutContact` renders that text as the paused note.
 
@@ -57,4 +57,4 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 - Paused-note input (from the repo root):
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"latest_daily_brief","payload":{"lookbackDays":30}}' | head -c 300`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

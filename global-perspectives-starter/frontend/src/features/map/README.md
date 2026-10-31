@@ -45,8 +45,8 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - `useWorld()` -> `/data/world/latest.json`, polled every 5 min while the tab is visible; `useSituationDetail(id)` ->
   `/data/situations/state/<id>.json`. A 404 is an empty state, not an error. Dev override: `VITE_WORLD_URL`. No sign-in.
 - `useGdacsStatus` re-reads the same file (memory cache 5 min), only while analysis is paused.
-- `useGeminiTopics()` -> `topics`; `useStoryCardData` -> `summary` and `thread_analysis`; `useWebIndex()` -> the record's web view (`index/web.json`), `web_index` as fallback
-  (only once `?story=` is set); `useDailyBrief()` -> `latest_daily_brief`; `useWeeklyBrief()` -> `weekly_brief`.
+- `useGeminiTopics()` -> `topics`; `useStoryCardData` -> `summary` and the story analysis (the record's story view `analysis`, `thread_analysis` as fallback, `@/shared/api/storyAnalysis.js`); `useWebIndex()` -> the record's web view (`index/web.json`), `web_index` as fallback
+  (only once `?story=` is set); `useDailyBrief()` and `useWeeklyBrief()` -> the record's brief views, the `latest_daily_brief` / `weekly_brief` actions for what is newer (decision 0048).
 - `useCountryRiskLayer` -> the 30-day archive (via `useArchiveDayMap`, the record's weekly index with `archive_range` for the newest days, decision 0046) for the candidate names, then the record's countries index
   (`index/countries.json`, one request; `@/shared/api/countryBriefingsIndex.js`), `country_intelligence` (15 names per call) only when the index is missing or unreadable (reported), up to 60
   countries, only once the COUNTRY RISK layer is selected. Session cache; it avoids `useWeeklyArchive`, which needs sign-in.
@@ -73,4 +73,4 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
   `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

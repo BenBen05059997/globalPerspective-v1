@@ -35,11 +35,11 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Guides: [distribution](../../../../../backend/distribution/README.md) (`newsBreakingAlert`, `newsEmailSender`),
   [read-api](../../../../../backend/read-api/README.md) (`newsRecommend`)
 - `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(35 4/8 * * ? *)`, ENABLED) writes rows to `GlobalPerspectiveBreakingAlerts`;
-  `newsRecommend` (Function URL) serves `confirmed` and `sent` rows; `newsEmailSender` would email subscribers (cron disabled).
+  `newsRecommend` (Function URL) serves `confirmed` rows only; `newsEmailSender` would email subscribers (cron disabled).
 
 ## Data
 - `fetchAlerts()` -> `window.USER_PREFS_ENDPOINT` (newsRecommend) action `list_alerts`, no sign-in; newest 30 rows.
-- `fetchAlert(id)` -> same endpoint, action `get_alert`, no sign-in; null unless the row is `confirmed` or `sent`.
+- `fetchAlert(id)` -> same endpoint, action `get_alert`, no sign-in; null unless the row is `confirmed` (newsRecommend withholds `proposed`, `sent` and `rejected`).
 - localStorage `gp_notif_read_at` holds the last time the bell was opened (unread = newer alerts).
 - Without `USER_PREFS_ENDPOINT` the bell renders nothing and both hooks skip the fetch; feed errors are swallowed
   (no error UI in the nav). Alert rows carry only the alert key (`threadId` is a legacy alias), so links go through
@@ -66,4 +66,4 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Email cron (expect DISABLED): `aws events describe-rule --name TriggerBreakingEmailSend --region ap-northeast-1 --query State`
 - Live mode (expect `false` for DRY_RUN): `aws lambda get-function-configuration --function-name newsBreakingAlert --region ap-northeast-1 --query 'Environment.Variables.DRY_RUN'`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

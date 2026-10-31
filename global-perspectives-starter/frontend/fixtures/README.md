@@ -14,7 +14,7 @@ dependency, copy this file under `public/` and run `npm run dev` with
 `VITE_WORLD_URL=/fixtures/world.json`. Do **not** commit a `.env` with this (`.env*` is never
 committed in this repo).
 
-The fixture is behind the live contract (checked 2026-10-19): the live bundle also carries
-`_counts`, and situations carry `affected_names` and `tier_changed_at`, which this file lacks;
+The fixture is behind the live contract (checked 2026-10-31): the live bundle also carries
+`_counts`, and situations carry `affected_names`, `aliases` and `tier_changed_at`, which this file lacks;
 the fixture has `_note`, which the live bundle does not. Refresh it from the live bundle when you
 depend on those fields.

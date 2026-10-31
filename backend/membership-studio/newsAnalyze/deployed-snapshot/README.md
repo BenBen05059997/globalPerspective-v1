@@ -18,5 +18,3 @@ Rules:
 - Checked before adding: no API key / token / secret literal (only `process.env.*` names and public URLs).
 - Do not edit these files. To re-verify against AWS: `scripts/audit-lambda-drift.sh newsAnalyze`.
 - Deploy nothing from this directory or `../src/` without a fresh go-live decision (CLAUDE.md).
-
-Last verified: 2026-10-19

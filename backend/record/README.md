@@ -17,13 +17,16 @@ This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and re
 
 An agent working on the record does not write the other groups. Design: `project-docs/architecture/ARCHITECTURE_TIMELINE.md`.
 
-## What the group owns
+## Lambdas
 
-Two writers, each the only writer of its files (design decided 2026-10-21):
-- `newsStoryRecord`: the facts writer and the only view builder, deployed, scheduled daily (rule `TriggerStoryRecord`, cron(45 23 * * ? *), payload `{"shadow":false}`). Appends `record/facts/YYYY-MM-DD.jsonl` per decision 0036 and writes the Run in `record/runs/YYYY-MM-DD.json`; no model. It turns the inboxes into facts: `record/inbox/articles/` (raw capture by the selector, 0040) into `article` facts, `record/inbox/assignments/` into `assignment` facts (the views follow the latest assignment per entry), `record/inbox/verdicts/` (the resolver) into `verdict` facts, and `record/inbox/merges/` (the review) into `story_merged` facts. It also reads `record/readings/` and the who's who file (`record/operator/aliases.json`, operator-owned, applied to actor ids in the views only; canonical ids are `wd:Q...`, entries marked generic never ground a link). On a missing archive day it still converts the articles; the Run reports `inputs.rawDay` and `counts.articles`.
-- `newsRecordReview`: the weekly review (Monday 01:00 UTC, decision 0039). Reads the week's facts per active story and writes `record/readings/YYYY-Www.jsonl` (chapters, branch status, lines, typed links, merge and alias proposals), a review Run in `record/runs/review-YYYY-Www.json` and `record/inbox/merges/`; it may also propose assignments (readings only). Each reading cites facts and may supersede an earlier one; it is accepted or rejected with a reason. Merged in the repo; not created in AWS.
+| Lambda | What it does | Trigger (live) | README |
+|---|---|---|---|
+| newsStoryRecord | The facts writer and the only view builder. Appends the day's facts to `record/facts/YYYY-MM-DD.jsonl` (no model), writes the Run in `record/runs/YYYY-MM-DD.json`, then rebuilds `record/views/` from all facts and readings. | EventBridge `TriggerStoryRecord`, 23:45 UTC daily, ENABLED, input `{"shadow":false}` | [README](newsStoryRecord/README.md) |
+| newsRecordReview | The weekly review. One boxed model call per active story; checked answers become readings with hindsight in `record/readings/YYYY-Www.jsonl`, plus the review Run `record/runs/review-YYYY-Www.json` and auto-merges in `record/inbox/merges/`. | EventBridge `TriggerRecordReview`, Monday 01:00 UTC, ENABLED, input `{"shadow":false}` | [README](newsRecordReview/README.md) |
 
-Views under `record/views/` are rebuilt in full from facts and readings after each daily append; the manifest is written last. Dated objects are create-only; latest and index objects are replaceable pointers.
+Each is the only writer of its keys. Neither has a Function URL. Inboxes under `record/inbox/` are how other writers hand input to the facts writer: `articles/` (the selector's raw capture), `verdicts/` (the resolver), `merges/` (the review), `assignments/` and `splits/` (operator or review). The operator-owned who's who file `record/operator/aliases.json` is applied to actor ids in the views only (canonical ids are `wd:Q...`; entries marked generic never ground a link).
+
+Views are rebuilt in full after each daily append and the manifest is written last. Dated objects are create-only; latest and index objects are replaceable pointers.
 
 ## What it never writes
 
@@ -31,19 +34,16 @@ DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports
 
 ## Schema
 
-`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; the old story and index schema went with the stories product. View schemas are in `newsStoryRecord/schema/views/`. See [newsStoryRecord](newsStoryRecord/README.md) for the format, tests and the local runner.
+`newsStoryRecord/schema/fact.schema.json` and `run.schema.json` (draft-07) with examples; view schemas are in `newsStoryRecord/schema/views/`. Review schemas are in `newsRecordReview/schema/`. See the Lambda READMEs for formats, tests and the local runners.
 
-## Status
+## Operator tools
 
-Live state per stage comes from AWS (`aws lambda get-function`, `aws events describe-rule`); what is stopped or waiting is in `project-docs/START_HERE.md`. No Run alarm exists (parked). Coordinator owns AWS resources and deployment.
+`cli/` holds scripts that run from a laptop, not Lambdas: day recovery, benchmark assignments and actor reconciliation. See [cli/README.md](cli/README.md).
 
-## cli/reconcile-actors.mjs
-Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata (`wbsearchentities` and, for offices, one SPARQL query; 1 request/second in total) for the top N (`--top`) or all (`--all`), and keeps a hit only when its description names an allowed class (person, office, government, ministry, armed forces, police, central bank, court, parliament, party, company, NGO, international organisation, armed group, country/region).
+## How to check it
 
-Match tiers (`confidence`/`via`): `exact` (top hit's label equals the name, accents folded), `alias` (matched alias equals the name), `near` (spelling variant: label or alias within 2 edits, same word set after folding word order, "of/the", demonyms and "military" = armed forces, or the same surname with a first name within 2 edits or an initial; any of the top 3 hits, but a lower hit sharing the exact name is a namesake and never counts; legal suffixes such as AG/Inc are ignored). A hit with no usable description is judged by its label ("Armed Forces of X"). A "<demonym> <org>" name also searches its entity title ("Government of South Korea").
+    aws events list-rules --region ap-northeast-1 --name-prefix TriggerStoryRecord --query 'Rules[].[Name,State,ScheduleExpression]' --output text
+    aws events list-rules --region ap-northeast-1 --name-prefix TriggerRecordReview --query 'Rules[].[Name,State,ScheduleExpression]' --output text
+    aws s3 ls s3://globalperspective-world-280362093938/record/runs/ | tail -3
 
-Offices: when the hit looks like a position, the script probes it (instance of position or public office, not a human) and reads the holders (office P1308, or a person's P39) with P580/P582. The holders overlapping the actor's first to last appearance in the index are the answer: one holder gives a proposal for the person with `title` = the office name and `via: office->holder`; several give one proposal each with `period` and `ambiguous_period: true`; none gives the position item itself flagged `position_item`.
-
-Dry run by default; `--write --out DIR` writes `aliases.candidate.json` (the alias-file schema; variants resolving to one id pool under the commonest name; generic and unresolved names included; `ambiguous` listed apart because one canonical takes one id), `review.md` (ready / check / unresolved / generic, one line per entry), plus `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`, `summary.json`. `--cache FILE` keeps Wikidata answers so a rerun costs no requests. It never writes `record/operator/aliases.json`; the operator copies accepted entries. Tests: `node --test cli/test/*.test.mjs` (no network).
-
-Choices: ready = exact, alias, or an office with exactly one holder; check = near, ambiguous_period, position items. Only the operator promotes a candidate; wrong confident hits are caught in review, not by tightening the rule further.
+A Run left at `started` with no `finishedAt`, or an old `record/views/manifest.json`, means a run did not finish. What is waiting or stopped is in `project-docs/START_HERE.md`.

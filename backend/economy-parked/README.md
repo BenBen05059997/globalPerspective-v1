@@ -24,7 +24,7 @@ This folder is outside the pipeline: parked: markets and economic impact. Timeli
 1. Live: newsMarketsData writes price rows to GlobalPerspectiveMarkets every hour, with extra yield and macro runs on the schedules above.
 2. Parked: newsEconomicImpact would read the day's threads and market prices and write `ECON#THREAD#` records. Records on file are frozen at their last run.
 3. Parked: newsEconomicQuality would score those records. newsPairIntelligence and newsWeeklyMarkets would add pair analyses and the weekly report.
-4. The read proxy serves all of it through actions such as `economic_impact_list`, `markets_global`, `weekly_markets` and `pair_analysis`. The `/economy` page still exists as a direct URL; other surfaces skip these fetches.
+4. The read proxy serves all of it through actions such as `economic_impact`, `economic_impact_list`, `economic_top_movers`, `markets_global`, `markets_country`, `markets_history` and `weekly_markets`. The pair analyses have no proxy action. The `/economy` page still exists as a direct URL; other surfaces skip these fetches.
 5. Other Lambdas still read the frozen `ECON#` rows: newsBreakingAlert (magnitude), newsWeeklyBrief and newsSignals.
 
 ## Shared code
@@ -38,7 +38,6 @@ This folder is outside the pipeline: parked: markets and economic impact. Timeli
 - newsMarketsData's `all` run overlaps the dedicated yield and macro rules, so those feeds run twice at those times.
 - newsEconomicQuality uses a Gemini key under the legacy `XAI_API_KEY` name; check live env before assuming the provider.
 - newsWeeklyMarkets writes `published` directly; its file header and `package.json` still say draft.
-- No frontend reference was found for the `pair_analysis` and `pair_analyses_list` actions.
 
 ## How to check it
 
@@ -47,5 +46,3 @@ aws events list-rules --region ap-northeast-1 --query 'Rules[?contains(Name,`Mar
 aws dynamodb describe-table --table-name GlobalPerspectiveMarkets --region ap-northeast-1 --query 'Table.[TableStatus,ItemCount]'
 grep -n "ECONOMY_PARKED =" global-perspectives-starter/frontend/src/shared/lib/economyFlag.js
 ```
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

@@ -20,5 +20,3 @@ Ingests free economic data into DynamoDB for the economy surfaces. It pulls FX (
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

@@ -19,6 +19,4 @@ Precomputes the forecast track record so `/track-record` does not Scan Predictio
 - Scoring uses a fixed-seed cluster bootstrap so the published interval does not change every 30 minutes.
 
 ## Tests
-- `cd backend/predictions/newsPredictionsSnapshot/src && npm test` (three `node *.test.mjs` scripts, offline): 13 + 10 + 16 passed 2026-10-19.
-
-Last verified: 2026-10-19
+- `cd backend/predictions/newsPredictionsSnapshot/src && npm test` (three `node *.test.mjs` scripts, offline).

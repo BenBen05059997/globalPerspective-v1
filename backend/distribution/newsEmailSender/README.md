@@ -6,7 +6,7 @@ subscribers), `drift_alert` (fresh country `DRIFT#` notes to `driftOptIn` member
 country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 
 ## Deployment
-- Deployed name `newsEmailSender` · runtime `nodejs20.x` · group `distribution` (scripts/functions.json)
+- Deployed name `newsEmailSender` · runtime `nodejs22.x` · group `distribution` (scripts/functions.json)
 - Triggers (EventBridge, UTC): `TriggerWeeklyEmailSend` `cron(0 14 ? * SUN *)` `{"mode":"weekly"}` ENABLED; `TriggerBreakingEmailSend` `rate(15 minutes)` `{"mode":"breaking"}` DISABLED; `TriggerDriftEmailSend` `cron(40 7 * * ? *)` `{"mode":"drift_alert"}` DISABLED.
 - Deploy: `scripts/lambda.sh newsEmailSender diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -25,6 +25,4 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 - `DRIFT#` prefix match excludes the permanent `DRIFTLOG#` archive; `DRIFT_FRESH_HOURS` default 36.
 
 ## Tests
-- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch): 40 pass.
-
-Last verified: 2026-10-19
+- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch).

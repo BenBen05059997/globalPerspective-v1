@@ -21,5 +21,3 @@ Keyless ingest of GDELT 2.0 material-conflict events, used as the open replaceme
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

@@ -20,5 +20,3 @@ Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches th
 
 ## Tests
 - No Lambda-local tests. The situations-core tests: `cd backend/shared && node --test test/situations-core.test.mjs` (passes 2026-10-19).
-
-Last verified: 2026-10-19

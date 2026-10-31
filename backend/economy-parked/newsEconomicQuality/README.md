@@ -24,5 +24,3 @@ back to the record. Judge is a different model family from the producer (DeepSee
 
 ## Tests
 - `node backend/economy-parked/newsEconomicQuality/test/judge.test.js` after `npm install` in `src/`. Not run 2026-10-19: no node_modules locally (fails on `@aws-sdk/client-dynamodb`).
-
-Last verified: 2026-10-19

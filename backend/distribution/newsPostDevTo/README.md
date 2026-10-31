@@ -1,6 +1,6 @@
 # newsPostDevTo
 
-Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-18). It builds the daily brief: loads today's entries from the `today-archive` item, enriches them with up to 20 thread analyses and up to 15 country intelligence records (real countries, last 30 days), asks an LLM for a JSON brief (headline, summary, topStories, ...), resolves real thread ids deterministically, and stores `DAILY_BRIEF#<date>` for the `/daily` page.
+Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-18). It builds the daily brief: loads today's entries from the `today-archive` item, enriches them with up to 20 thread analyses and up to 15 country intelligence records (real countries, last 30 days), asks an LLM for a JSON brief (headline, summary, topStories, ...), resolves real thread ids deterministically, and stores `DAILY_BRIEF#<date>` for the `/briefings` page (`/daily` redirects there).
 
 ## Deployment
 - Deployed name `newsPostDevTo` · runtime `nodejs24.x` · group `distribution` (scripts/functions.json)
@@ -22,6 +22,4 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 - Thinking mode is disabled on purpose (2026-07-26 outage: thinking burned `max_tokens`).
 
 ## Tests
-- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline): 11/11 passed 2026-10-19. `dayZero`, `placeFilter` and `llm` (from `backend/shared/src` via the `src/_shared` symlink) are tested in `backend/shared/test`.
-
-Last verified: 2026-10-19
+- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline). `dayZero`, `placeFilter` and `llm` (from `backend/shared/src` via the `src/_shared` symlink) are tested in `backend/shared/test`.

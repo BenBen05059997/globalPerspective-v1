@@ -22,5 +22,3 @@ Kept off the content proxy on purpose (bursty, untrusted traffic). Read rows bac
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

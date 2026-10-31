@@ -23,5 +23,3 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 
 ## Tests
 - `node --test backend/monitoring/newsSourceAudit/test/*.test.js` (mocked proxy/model/SNS; no live calls).
-
-Last verified: 2026-10-19

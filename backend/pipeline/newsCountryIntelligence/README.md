@@ -25,6 +25,4 @@ then writes a 4-axis risk read (`src/_shared/riskDimensions.js`). `{ "dryRun": t
 - `dayZero`, `riskDimensions`, `llm` and the name tables come from `backend/shared/src` through the `src/_shared` symlink (zipped as real files by `scripts/lambda.sh`). `src/refreshPolicy.js` `isCountryName` must match shared `placeFilter.js`; `scripts/check-shared-sync.mjs` checks it.
 
 ## Tests
-- `cd backend/pipeline/newsCountryIntelligence/src && npm test` (`node --test ../test/*.test.js`): 15 pass.
-
-Last verified: 2026-10-19
+- `cd backend/pipeline/newsCountryIntelligence/src && npm test` (`node --test ../test/*.test.js`).

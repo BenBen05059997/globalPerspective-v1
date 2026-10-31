@@ -3,7 +3,7 @@
 Content-based recommendations (no ML) plus notification preferences. Default action ranks the `latest` topic pool: personalized from the user's saved items when a valid Firebase JWT is sent, else "Trending" (popularity x recency); scorer is `scoring.js`. Other actions: `get_prefs`/`set_prefs` (JWT; email opt-ins, default off), `follow_country`/`unfollow_country` (JWT + member tier, fail-closed), public `list_alerts` (bell feed; each alert's `url` is its story page when it has a thread arc, else the map) and `get_alert` (single alert; `threadUrl` only with an arc), and public token-auth `unsubscribe` (GET or RFC 8058 POST, returns HTML). Direct invoke `{ uid?, limit? }` returns recommendations without HTTP.
 
 ## Deployment
-- Deployed name `newsRecommend` · runtime `nodejs20.x` · group `read-api` (scripts/functions.json)
+- Deployed name `newsRecommend` · runtime `nodejs22.x` · group `read-api` (scripts/functions.json)
 - Trigger: Function URL (frontend via `shared/api/restProxy.js`; newsEmailSender uses it as `UNSUB_BASE_URL`); no schedule
 - Deploy: `scripts/lambda.sh newsRecommend diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -23,6 +23,4 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - Following a country also opts the user into drift email and stamps consent + unsubscribe token.
 
 ## Tests
-- `cd backend/read-api/newsRecommend/src && npm test` (`node test-scoring.mjs`, offline): 14 passed 2026-10-19.
-
-Last verified: 2026-10-19
+- `cd backend/read-api/newsRecommend/src && npm test` (`node test-scoring.mjs`, offline).

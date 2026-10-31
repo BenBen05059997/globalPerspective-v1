@@ -13,6 +13,9 @@ Lambdas, schedules, stores and pipeline.
 - [membership-studio](membership-studio/README.md): the member Analysis Studio run and Polar billing.
 - [monitoring](monitoring/README.md): alerts to the operator on freshness, errors, model health and summary drift.
 - [economy-parked](economy-parked/README.md): economy features, parked; only market data collection still runs.
+- [record](record/README.md): the world's memory: daily facts, weekly readings and the views built from them.
+- [board](board/README.md): the personal board of a signed-in member.
+- [weekly](weekly/README.md): the analyst's weekly: schema and section model (the scripts are not written yet); not a Lambda.
 - [shared](shared/README.md): helper modules several Lambdas use. Not a Lambda.
 
 ## A Lambda folder
@@ -32,5 +35,3 @@ Lambdas, schedules, stores and pipeline.
 ## Storage rule
 
 S3 for the world, DynamoDB for the user: what the pipeline computes about the world is a JSON object in S3; what a person owns or pays for is a DynamoDB row (`project-docs/architecture/DATA_STRATEGY.md`).
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

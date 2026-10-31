@@ -1,6 +1,6 @@
 # newsSignals
 
-PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is DISABLED (2026-10-20). BUILD (`{ action: 'build' }`) maps economic-impact records, the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
+PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is DISABLED. BUILD (`{ action: 'build' }`) maps economic-impact records, the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
 
 ## Deployment
 - Deployed name `newsSignals` · runtime `nodejs22.x` · group `read-api` (scripts/functions.json)
@@ -24,6 +24,4 @@ PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads i
 - `placeFilter` and its name tables come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
-- `cd backend/read-api/newsSignals/src && npm test` runs `node test-adapter.mjs` - 59 passed 2026-10-19 (the `node --test ../test/*.test.js` half finds no files since the placeFilter tests moved to `backend/shared/test`)
-
-Last verified: 2026-10-19
+- `cd backend/read-api/newsSignals/src && npm test` runs `node test-adapter.mjs` (the `node --test ../test/*.test.js` half finds no files since the placeFilter tests moved to `backend/shared/test`)

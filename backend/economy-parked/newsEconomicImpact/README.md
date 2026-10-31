@@ -26,5 +26,3 @@ Parked by `project-docs/decisions/0009-economy-parked.md`.
 
 ## Tests
 - `node backend/economy-parked/newsEconomicImpact/test/validator.test.js` after `npm install` in `src/` (it loads the real `@aws-sdk` modules via a temp `src/_under_test.js`). Not run 2026-10-19: no node_modules locally.
-
-Last verified: 2026-10-19

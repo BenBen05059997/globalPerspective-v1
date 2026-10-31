@@ -18,5 +18,3 @@ Per-user saves/bookmarks. Actions `save_item`, `unsave_item`, `get_saved_items` 
 
 ## Tests
 - None (`src/event.json` is a placeholder sample event).
-
-Last verified: 2026-10-19

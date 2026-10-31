@@ -61,5 +61,3 @@ The `cli/` folder holds an operator tool, not a Lambda: [cli/README.md](cli/READ
     aws events list-rules --region ap-northeast-1 --query 'Rules[?starts_with(Name,`Trigger`)].[Name,State,ScheduleExpression]' --output text
     aws scheduler list-schedules --region ap-northeast-1 --query 'Schedules[].[Name,State]' --output text
     aws lambda get-function-configuration --region ap-northeast-1 --function-name newsThreadAnalysis --query '[Runtime,LastModified]'
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

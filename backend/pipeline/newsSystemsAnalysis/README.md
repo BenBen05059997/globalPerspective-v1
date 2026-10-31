@@ -23,6 +23,4 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 - `dayZero`, `placeFilter` (+ name tables) and `llm` come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
-- `cd backend/pipeline/newsSystemsAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 16 passed 2026-10-19
-
-Last verified: 2026-10-19
+- `cd backend/pipeline/newsSystemsAnalysis/src && npm test` (`node --test ../test/*.test.js`)

@@ -24,5 +24,3 @@ Daily independent audit of the topic selector's impact judgment. It reads the la
 
 ## Tests
 - None.
-
-Last verified: 2026-10-19

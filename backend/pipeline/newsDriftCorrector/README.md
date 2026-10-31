@@ -9,7 +9,7 @@ explanations whose direction contradicts the score delta (one retry, then a numb
 Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` mails fresh country notes.
 
 ## Deployment
-- Deployed name `newsDriftCorrector` · runtime `nodejs20.x` · group `pipeline` (scripts/functions.json)
+- Deployed name `newsDriftCorrector` · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
 - Trigger: EventBridge rule `TriggerDriftCorrector` `cron(30 5 * * ? *)` (UTC, ENABLED). Manual: `{"country":"Ukraine"}`, `{"threadId":"..."}`, `{"dryRun":true}`.
 - Deploy: `scripts/lambda.sh newsDriftCorrector diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -22,9 +22,7 @@ Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` ma
 - `XAI_API_KEY` / `GROK_API_URL` (fallback `https://api.deepseek.com`) / `GROK_MODEL` (fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`: legacy names hold DeepSeek. Thinking is disabled.
 
 ## Gotchas
-- Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink. The prose regexes in `src/directionCheck.js` are a port of the frontend `features/analysis-studio/lib/directionCheck.js`; nothing checks the two stay in step (its header says `check-shared-sync.mjs` does; it does not).
+- Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink. `src/directionCheck.js` holds the direction-check prose rules (the frontend copy no longer exists).
 
 ## Tests
-- `cd backend/pipeline/newsDriftCorrector/src && npm test` (`node --test ../test/*.test.js`): 32 pass.
-
-Last verified: 2026-10-19
+- `cd backend/pipeline/newsDriftCorrector/src && npm test` (`node --test ../test/*.test.js`).

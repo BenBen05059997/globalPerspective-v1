@@ -34,8 +34,8 @@ Proxy actions and the feature that calls each (found by grep in `frontend/src`):
 - Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot`.
 - Track record (`/track-record`): `prediction_track_record`.
 - Economy (`/economy`, parked): `economic_impact`, `economic_top_movers`, `markets_global`, `markets_history`, `weekly_markets`.
-- Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`; `geocode` is called from shared frontend code.
-- No frontend reference found: `country_preview`, `thread_preview`, `dossier_analysis`, `event_dossier`, `pair_analysis`, `pair_analyses_list`, `research_briefing`, `world_overview`, `rss` (GET).
+- Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`.
+- Served but with no frontend caller found: `country_preview`, `thread_preview`, `rss` (GET). Any other action, including the removed dossier, pair, overview, research and geocode actions, answers 400 without touching data.
 
 Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`, `list_alerts`, `get_alert` (both serve only operator-confirmed breaking alerts), `unsubscribe`; newsSavedItems `save_item`, `unsave_item`, `get_saved_items`.
 
@@ -58,5 +58,3 @@ aws lambda get-function-url-config --function-name newsRecommend --region ap-nor
 aws events list-rules --name-prefix TriggerSignalsBuild --region ap-northeast-1 --query 'Rules[].[Name,State]' --output text
 aws apigateway get-resources --rest-api-id ba4q3fnwq6 --region ap-northeast-1 --query 'items[].path' --output text
 ```
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

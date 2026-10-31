@@ -564,8 +564,11 @@ duration, DynamoDB throttles on `NewsCache` and `SummarizeAndPredict`). `GlobalP
 carries the monitor Lambdas and the situation-tracker alarms (`situation-tracker-errors`, and
 `situation-tracker-stalled`, which fires when the `ChecksRun` metric stops, meaning `world/latest.json` stopped
 updating). Billing: `AWS-Bill-Over-5-Dollars` (us-east-1) and budget `Monthly-AWS-Budget` ($20) notify by email.
-`PPA*`, `ppa-*` alarms and budgets belong to another project in the account. Known gaps: no alarm watches `LLM 402` /
-`Insufficient Balance` (stages swallow LLM errors, so Lambda `Errors` stays 0) or the record's Run objects;
+`PPA*`, `ppa-*` alarms and budgets belong to another project in the account. Record and model alarms (2026-10-31, to `GlobalPerspectiveAlerts`):
+`GP-LLM-InsufficientBalance` (metric filter `LlmInsufficientBalance` on the 13 active DeepSeek callers' log groups, namespace
+`GlobalPerspective/Pipeline`; stages swallow LLM errors, so Lambda `Errors` alone stays 0), `GP-StoryRecord-Errors`,
+`GP-StoryRecord-NotRun` (no invocation for 25 h) and `GP-RecordReview-Errors` (the review throws on a partial Run). Known gaps:
+no alarm reads the record's Run objects themselves (an `ok` Run with `archiveDay: missing`);
 expected refusals (LinkedIn `429 share limit`, "no new topics") count as errors; the monitors do not dedupe
 (one mail on break, one on recovery). Open question: one topic or two. Capacity, IAM or code changes are
 operator-asked work (CLAUDE.md, Authorization).

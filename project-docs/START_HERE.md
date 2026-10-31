@@ -20,6 +20,9 @@ Done 2026-10-30/31:
 - Weekly review: prompt review-4 (no branch status from the model, chapter dates from cited facts, 6000-token cap, low-confidence links and operator-held aliases rejected; 0039 amendment 2026-10-31) passed the golden-week gates; live canary on 5 W43 stories; `TriggerRecordReview` ENABLED, `REVIEW_CONCURRENCY` 12. Story views and the board no longer carry `branchStatus` (status = verdict, else due date).
 - Legacy void job run live 2026-10-30: 2,451 void verdicts (`issued_before_method`) over 220 stories.
 - `TriggerFreshnessMonitor` re-enabled with its dedupe marker (env `FRESHNESS_STATE_BUCKET`, inline policy `freshnessStateMarker` on one key).
+- Alarms: DeepSeek 402 (13 callers), `newsStoryRecord` errors and not-run (25 h), review errors; all to `GlobalPerspectiveAlerts`.
+- Rebuild test (views only): `backend/record/newsStoryRecord/scripts/rebuild-test.js` rebuilt 1,252 of 1,252 live views from facts; it found 7 stale links files of merged stories, fixed (every story now gets a links view).
+- Step 4 map: only the board reads the record. Thread pages (entries, forks, links) can switch to views as is; home and weekly lists need entry summaries; track record needs a derived view; story analysis, drift, countries and briefs need new readings first; map and economy need a decision.
 
 Watch next:
 - `newsStoryRecord` nightly 23:45 UTC (first run on the new view code; the 5 canary stories should show a line and chapters).

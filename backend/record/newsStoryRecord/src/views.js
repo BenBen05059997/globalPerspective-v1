@@ -46,7 +46,9 @@ function entryNotesBy(noteLines) {
 
 /** A note as the item its writer stored in DynamoDB (payload + generatedAt + model), so a page switches source, not shape. */
 const asStored = (n) => ({...n.payload, generatedAt: n.at, model: n.model});
-const DRIFT_MAX = 90; // drift notes kept per country view (newest); the count says how many exist
+// Drift depth is a member perk enforced server-side (newsSensitiveData country_history capForTier: 1 note unless member), and
+// views are public: a country view carries only the newest drift note, with the count. Members read depth through the action.
+const DRIFT_MAX = 1;
 
 /** The latest note per key of one subtype (and part, when given). */
 function latestBy(noteLines, subtype, keyOf, part) {

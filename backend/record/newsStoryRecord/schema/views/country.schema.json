@@ -26,13 +26,14 @@
     },
     "drift": {
       "type": "array",
-      "description": "drift notes, newest first, at most 90, each as newsDriftCorrector stored it plus generatedAt and model",
+      "description": "the newest drift note only (public view; deeper history is a member perk served by country_history), as newsDriftCorrector stored it plus generatedAt and model",
       "items": {
         "type": "object",
         "required": [
           "generatedAt"
         ]
-      }
+      },
+      "maxItems": 1
     },
     "driftCount": {
       "type": "integer",

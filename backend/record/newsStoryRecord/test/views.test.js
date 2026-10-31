@@ -368,6 +368,7 @@ test('notes in views (0042): analysis as stored, judged links on both stories, c
   assert.deepEqual(v.links.get('thread-a').judgedLinks, [{otherThreadId: 'thread-b', mechanism: 'drives', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm'}]);
   assert.deepEqual(v.links.get('thread-b').judgedLinks.map((l) => l.otherThreadId), ['thread-a']);
   const c = v.countries.get('UKR');
-  assert.deepEqual([c.drift.map((d) => d.whyChanged), c.driftCount, c.intelligence.riskScore, c.systems.web], [['latest', 'first'], 2, 61, 1]);
+  // public view: only the newest drift note (the anonymous depth of country_history), with the full count
+  assert.deepEqual([c.drift.map((d) => d.whyChanged), c.driftCount, c.intelligence.riskScore, c.systems.web], [['latest'], 2, 61, 1]);
   assert.equal(build([e]).countries.size, 0); // no notes: no country views
 });

@@ -4,6 +4,8 @@ Design of the personal connection board (`/board`, `backend/board/`, `global-per
 
 Design canvas (12 boards, static): https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo. Design-check page (117 items; answers in its `decisions` collection): https://claude.ai/artifact/NNBZv4WWDoHFuRGwVXCNGE.
 
+Design check answered 2026-10-31 by one operator rule: build to design where the data is ready, is the reader's own, or arrives with the weekly review or verdicts (95 items); later for the items that need a model call and a price decision or an alert send (9: board summary and monthly text, the verdict's mechanism sentence, "what follows if", "what would break it", alert delivery); keep what matches, was fixed on 24 Oct, or differs on purpose (13). Any card's answer can be changed on the page; the build follows the page.
+
 ## 1. Purpose
 The story page is state; the weekly is change; neither connects stories to each other. The board answers one question: do these things connect, how, and what follows if they do. Reading is free; asking costs compute; the answer is something a reader can put their name on. It replaces the "your countries" half of the personal weekly.
 
@@ -15,6 +17,8 @@ The board drifted because it was built data-first, so the screen became a list o
 - Wording follows decision 0038 (`shared/lib/branchWording.js`): never "DEAD". A branch that did not happen reads "not reported by D MON", one that cannot be checked "could not be checked · reason", a late one "open · due D MON".
 
 Artboard build order: 1 graph, 6 tree, 11 zoom ladder, 3 verdict, 4 weekly, 5 arrivals, 7 summary + monthly, 8 presets, 10 divergence, 12 folding, 9 alerts (UI only), 2 map.
+
+Build started 2026-10-31 in parallel Sonnet lanes, each in its own worktree and files: A artboard 1 (BoardPage, BoardGraph, board.css); B artboards 6 and 11 (StoryTree, `storyTree.css`); C artboards 3, 4 and 5 (VerdictCard, BoardWeekly, ArrivalsTray, UnsettledZone, `panels.css`); D artboards 8, 10 and 12 (PresetsPanel, divergence, `presets.css`). Only lane A edits BoardPage; the coordinator adds other mounts at merge, eye-checks each artboard in Chrome against the canvas, then releases (operator yes). Second wave: 2 map, 9 alerts UI, the non-model parts of 7. The table in section 11 is updated from the code at each merge.
 
 ## 3. The object
 - Pins: thread (`threadId`), country (ISO3), actor (the id the views carry: `wd:Q...` or `name:`; compared trimmed, whitespace-collapsed, lowercase). Budget 12 per board (schema constant).

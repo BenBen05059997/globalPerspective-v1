@@ -63,7 +63,7 @@ Waiting on the operator:
 4. Selection go (P7d); gap benchmark rebuild or drop; Cloudflare cutover steps; delete the leftover `amplify/` (about 56 files never in git).
 5. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.
 
-Next builds: the board artboards in order (graph, tree, zoom ladder, verdict, weekly, arrivals, summary + monthly, presets, divergence, folding, alerts UI only, map), checklist in ARCHITECTURE_BOARD.md.
+Board artboards: design check answered 2026-10-31 (95 build, 9 later, 13 keep; rule in ARCHITECTURE_BOARD.md); first wave building in four parallel Sonnet lanes (A graph; B tree + zoom ladder; C verdict, weekly, arrivals; D presets, divergence, folding). Next: merge each lane, eye-check in Chrome against the canvas, frontend release (operator yes); second wave map, alerts UI, the non-model parts of summary + monthly.
 
 Open smaller items:
 - Cloudflare: capture DNS/TLS/ruleset state, candidate upload, test host `next.globalperspective.net`, front-Worker `/blog` passthrough, observation window, add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS`.

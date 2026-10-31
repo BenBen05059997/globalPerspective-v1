@@ -1,5 +1,5 @@
 {
-  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>), runtime, feature group, product features served (`features`: site features that read what the Lambda writes or serves, `ops` for monitoring/test-only, empty when nothing on the site reads it), whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
+  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>), runtime, feature group, product features served (`features`: site features that read what the Lambda writes or serves, `ops` for monitoring/test-only, empty when nothing on the site reads it), whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-31; live AWS wins over this file.",
   "functions": {
     "newsAnalyze": {
       "dir": "backend/membership-studio/newsAnalyze",
@@ -84,7 +84,7 @@
     },
     "newsDriftCorrector": {
       "dir": "backend/pipeline/newsDriftCorrector",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "pipeline",
       "features": ["countries", "account", "analysis-studio"],
       "nodeModules": false,
@@ -129,7 +129,7 @@
     },
     "newsEmailSender": {
       "dir": "backend/distribution/newsEmailSender",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "distribution",
       "features": ["briefings", "breaking", "account"],
       "nodeModules": false,
@@ -280,7 +280,7 @@
     },
     "newsModelGuard": {
       "dir": "backend/monitoring/newsModelGuard",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "monitoring",
       "features": ["ops"],
       "nodeModules": false,
@@ -407,7 +407,7 @@
     },
     "newsRecommend": {
       "dir": "backend/read-api/newsRecommend",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "read-api",
       "features": ["account", "breaking"],
       "nodeModules": false,
@@ -524,7 +524,7 @@
           "via": "events",
           "name": "TriggerRecordReview",
           "expr": "cron(0 1 ? * MON *)",
-          "state": "DISABLED"
+          "state": "ENABLED"
         }
       ]
     },
@@ -575,7 +575,7 @@
     },
     "newsWeeklyBrief": {
       "dir": "backend/distribution/newsWeeklyBrief",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "distribution",
       "features": ["briefings"],
       "nodeModules": false,
@@ -590,7 +590,7 @@
     },
     "newsWeeklyMarkets": {
       "dir": "backend/economy-parked/newsWeeklyMarkets",
-      "runtime": "nodejs20.x",
+      "runtime": "nodejs22.x",
       "group": "economy-parked",
       "features": ["economy"],
       "nodeModules": false,

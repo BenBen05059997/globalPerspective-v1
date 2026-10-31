@@ -19,24 +19,26 @@ Live since 2026-10-30/31:
 - DeepSeek credit restored 2026-10-25. Weekly review `newsRecordReview` live: `TriggerRecordReview` ENABLED (Mon 01:00 UTC), prompt review-4, `REVIEW_CONCURRENCY` 12; canary readings for 5 W43 stories in `record/readings/2026-W43.jsonl`. No `branch_status` reading: status = verdict, else due date.
 - Legacy void job: 2,451 void verdicts (2026-10-30). `TriggerFreshnessMonitor` ENABLED with its S3 dedupe marker. No pipeline alarms (operator choice).
 - Rebuild test for views (`backend/record/newsStoryRecord/scripts/rebuild-test.js`): 1,252 of 1,252 live views rebuild from facts; every story now gets a links view.
-- Notes (0042): schema `backend/record/schema/note.schema.json`, shared `notes.js` (`buildNote`, `entryNote`, `makeNoteWriter`), `noteId` in `record.js`, manifest helper in shared. First 33 live entry notes (2026-10-30) from `backend/record/cli/capture-entry-notes.mjs`. The agent writes entry notes after each daily archive (deployed 2026-10-31, `NOTES_PREFIX` = `record/shadow/`, role policy `entryNotesWriter`).
+- Notes (0042): schema `backend/record/schema/note.schema.json`, shared `notes.js` (`buildNote`, `entryNote`, `archiveEntryNotes`, `storyAnalysisNote`, `driftNote`, `makeNoteWriter`), `noteId` in `record.js`. Live entry notes: 33 exact (capture CLI) + 3,713 archive copies (`backfill-entry-notes.mjs`; format `text`, model null, `from: archive`; views prefer an exact note). Writers deployed with `NOTES_PREFIX` = `record/shadow/` until checked: the agent (entry; policy `entryNotesWriter`), `newsThreadAnalysis` (story_analysis; `storyAnalysisNotesWriter`), `newsDriftCorrector` (drift; `driftNotesWriter` on the shared `newsCountryIntelligence-role-xqboqh2y`, also used by `newsCountryIntelligence`, `newsSystemsAnalysis`, `newsEconomicImpact`).
+- Story views carry entry notes, outlet country and type, `topicId` and `iso3`; new entry facts keep source snippet, tier and actor names.
+- **Story page timeline reads the record** (released to Pages 2026-10-31): view entries up to `factsThrough`, `narrative_thread` only for later days or a story with no view. Compared on 10 stories: every shown entry keeps its AI tabs, sources and countries; re-seen headlines show on their first day; same-article duplicates show once; non-country regions are dropped. The Pages script now ships `textures/` (the globe texture 404 is fixed).
 
 Watch next:
-- Agent run 04:25 UTC: a `[notes]` log line, shadow notes valid and matching entries; then set `NOTES_PREFIX=record/`.
+- Agent run 04:25 UTC, `newsThreadAnalysis` 04:40, `newsDriftCorrector` 05:30: a `[notes]` log line each, shadow notes schema-valid; then set `NOTES_PREFIX=record/` on each.
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.
 - First full review Mon 2026-11-02 01:00 UTC (W44, about 520 stories): Run `ok`, `notReached` 0.
 
 Step 4, what each page needs (from the code, 2026-10-31):
-- Story page timeline: entry notes in the views (summary, forecast, cause tabs), outlet tier, type and country from the outlet table at build time, and RSS snippet and actor display names added to new entry facts. Then the page reads views with a fallback.
+- Story page: timeline done; the analysis, drift, forecast and links sections still read DynamoDB (their notes are being written; views and page switch next).
 - Story analysis and drift notes (`newsThreadAnalysis`, `newsDriftCorrector`), country briefings (`newsCountryIntelligence`), story-web links (`newsSystemsAnalysis`) and briefs follow the same pattern: writer through `notes.js`, view field, page switch.
-- Track record needs a derived view from verdict facts; map and economy need a decision; user data stays in DynamoDB (0003).
+- Track record: the page already shows the legacy triggers and the question scheme, labelled. The record holds the forecasts and verdicts but not the weekly draws (seeds, samples) that live in PredictionLog; moving the page needs draw facts (a 0038 design decision). Map and economy need a decision; user data stays in DynamoDB (0003).
 
 Still on the old path: the old Sunday digest (`TriggerWeeklyBrief`, `TriggerWeeklyEmailSend`, 2 recipients); the analyst weekly W1-W3 on unmerged `lane/weekly` and `lane/routine`; `TriggerSelectionShadow` past its end (P7d is an operator decision); `newsInvokeGemini-dev` behind the repo (same behaviour).
 
 Waiting on the operator:
 1. Analyst weekly: build it on the readings, rewrite, or drop (ARCHITECTURE_WEEKLY_REVIEW.md section 9).
 2. Board design-check answers (117 items, https://claude.ai/artifact/NNBZv4WWDoHFuRGwVXCNGE) and a signed-in look at B0. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo. Overview and checklist: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.
-3. Frontend release (yes): ships the board `branchStatus` removal and should fix `/textures/earth-night.jpg` (404 in production: in `public/textures/`, not in `docs/`).
+3. Track record: record the weekly draws as facts (so the page can move) or keep it on PredictionLog for now.
 4. Selection go (P7d); gap benchmark rebuild or drop; Cloudflare cutover steps; delete the leftover `amplify/` (about 56 files never in git).
 5. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.
 

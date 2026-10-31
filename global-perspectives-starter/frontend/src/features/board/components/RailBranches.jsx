@@ -1,5 +1,6 @@
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import { branchStatus } from '@/shared/lib/branchWording.js';
+import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 
 const MAX_STORIES = 2;
 
@@ -27,7 +28,7 @@ export default function RailBranches({ stories, labelOf }) {
           <ul>
             {f.branches.map((b) => (
               <li key={b.branchId}>
-                <span className="board-rail__branch"><span>{b.text}</span>{Number.isFinite(b.p) ? <span className="board-rail__p">{Math.round(b.p)}%</span> : null}</span>
+                <span className="board-rail__branch"><span>{branchScenario(b) || branchLine(b)}</span>{branchPercent(b) != null ? <span className="board-rail__p">{branchPercent(b)}%</span> : null}</span>
                 {b.trigger ? <span className="board-note">trigger: {b.trigger}</span> : null}
               </li>
             ))}

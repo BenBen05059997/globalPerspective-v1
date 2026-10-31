@@ -33,10 +33,10 @@ export default function DivergencePanel({ board, stories, labelOf, onRestore, on
         {forks.map((f) => <fieldset key={f.forkId} className="divergence__fork">
           <legend>{labelOf(f.pinId)}</legend>
           {f.branches.map((b) => <label key={b.branchId} className="divergence__branch">
-            <span>{b.text}</span>
+            <span>{b.line}{b.text !== b.line ? <span className="board-note"> {b.text}</span> : null}</span>
             <span className="divergence__nums">
               <input type="number" min="0" max="100" inputMode="numeric" value={b.yours ?? ''} placeholder="-"
-                aria-label={`Your weight for ${b.text}, percent`}
+                aria-label={`Your weight for ${b.line}, percent`}
                 onChange={(e) => onWeight(f.forkId, b.branchId, e.target.value === '' ? null : Number(e.target.value))} />
               <span className="board-note">vs {b.ours}</span>
             </span>

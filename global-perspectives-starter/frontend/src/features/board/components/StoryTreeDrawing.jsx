@@ -1,5 +1,6 @@
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import { dayMonth } from '@/shared/lib/branchWording.js';
+import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 import { isLate } from '@/features/board/lib/storyTree.js';
 import '@/features/board/storyTree.css';
 
@@ -38,7 +39,7 @@ export default function StoryTreeDrawing({ shown, branches, present }) {
         return <g key={e.eventId}>
           <circle className="st-node" cx={x} cy={mid} r="7" />
           <text className="st-date" x={x} y={mid + 26}>{dayMonth(e.date)}</text>
-          {lines(e.title, 17).map((l, k) => <text className="st-label" key={k} x={x} y={mid + 40 + k * 13}>{l}</text>)}
+          {lines(e.title || dayMonth(e.date), 17).map((l, k) => <text className="st-label" key={k} x={x} y={mid + 40 + k * 13}>{l}</text>)}
         </g>;
       })}
       {present ? <>
@@ -49,12 +50,12 @@ export default function StoryTreeDrawing({ shown, branches, present }) {
         const ty = mid + (i - (branches.length - 1) / 2) * ROW;
         const ex = presentX + REACH;
         const late = isLate(b, present);
-        const w = Math.max(2, (b.p ?? 0) * WEIGHT);
+        const w = Math.max(2, (branchPercent(b) ?? 0) * WEIGHT);
         return <g key={b.branchId}>
           <path className={late ? 'st-branch st-branch--late' : 'st-branch'} strokeWidth={w}
             d={`M${presentX} ${mid} C ${presentX + 56} ${mid}, ${ex - 56} ${ty}, ${ex} ${ty}`} />
-          <text className="st-label st-label--head" x={labelX} y={ty - 6}>{clip(`${b.text}${b.p != null ? ` · ${b.p}%` : ''}`, 40)}</text>
-          {b.trigger ? <text className="st-label st-label--dim" x={labelX} y={ty + 8}>{clip(`trigger: ${b.trigger}`, 44)}</text> : null}
+          <text className="st-label st-label--head" x={labelX} y={ty - 6}>{clip(`${branchLine(b)}${branchPercent(b) != null ? ` · ${branchPercent(b)}%` : ''}`, 40)}</text>
+          {branchScenario(b) ? <text className="st-label st-label--dim" x={labelX} y={ty + 8}>{clip(branchScenario(b), 44)}</text> : null}
           {late ? <text className="st-label st-label--late" x={labelX} y={ty + 22}>{`▸ late · past ${dayMonth(b.due)}`}</text> : null}
         </g>;
       })}

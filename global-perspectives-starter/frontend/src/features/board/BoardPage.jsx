@@ -89,6 +89,7 @@ export default function BoardPage() {
   const full = pins.length >= PIN_BUDGET;
   const pinById = useMemo(() => Object.fromEntries(pins.map((p) => [p.pinId, p])), [pins]);
   const labelOf = (id) => info[id]?.label || pinById[id]?.refId || id;
+  const threadLabel = (threadId) => info[board.pins.find((p) => p.refId === threadId)?.pinId]?.label || threadId;
 
   // With no board in the address, open the newest one.
   useEffect(() => {
@@ -341,7 +342,7 @@ export default function BoardPage() {
                   coverageGap={coverage?.gaps?.[0] || null}
                 />
               )}
-              <DueStrip stories={records.stories} today={today} />
+              <DueStrip stories={records.stories} today={today} labelOf={threadLabel} />
               {storyTree && !isPhone ? (
                 <Card as="section" aria-label={`Story tree: ${labelOf(detailPin.pinId)}`}>
                   <SectionHeader label={labelOf(detailPin.pinId)} hint="Story tree" as="h2"><Button compact onClick={closePanel}>Close tree</Button></SectionHeader>
@@ -388,7 +389,7 @@ export default function BoardPage() {
               <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors}
                 onAddPin={(threadId) => addToBoard({ kind: 'thread', refId: threadId })}
                 onDismissLink={(threadId) => state.edit((b) => ({ ...b, dismissed: [...new Set([...b.dismissed, threadId])] }))} />
-              <RailBranches stories={records.stories} labelOf={(threadId) => info[board.pins.find((p) => p.refId === threadId)?.pinId]?.label || threadId} />
+              <RailBranches stories={records.stories} labelOf={threadLabel} />
               <MissingCard actors={missing} full={full} onFollow={follows.followActor} onAdd={addActor} />
               <DivergencePanel board={board} stories={records.stories} labelOf={labelOf}
                 onRestore={(a, b) => state.edit((bd) => restoreString(bd, a, b))}
@@ -406,7 +407,7 @@ export default function BoardPage() {
               });
             }} />
           {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
-          <MonthlyCard board={board} stories={records.stories} today={today} labelOf={labelOf}
+          <MonthlyCard board={board} stories={records.stories} today={today} labelOf={labelOf} storyLabel={threadLabel}
             onRetire={(pinId) => state.edit((b) => removePin(b, pinId))} />
           {import.meta.env.DEV ? <details className="board-fold"><summary>Alerts (dev harness only: not stored, nothing sent)</summary><AlertsPanel board={board} labelOf={labelOf} /></details> : null}
           <details className="board-fold"><summary>How the board folds</summary><FoldingRules /></details>

@@ -8,7 +8,7 @@ export default function MapRail({ board, stories, links, missing, onOpen }) {
   const counts = week ? [
     [week.moved.length, 'pins moved'],
     [week.strings.length, 'strings changed'],
-    [week.branches.length, 'branches settled'],
+    [week.branches.filter((b) => b.kind !== 'void').length, 'branches settled'],
   ] : [];
   return (
     <aside className="bm-rail" aria-label="This week on your board, collapsed">

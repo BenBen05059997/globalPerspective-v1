@@ -64,9 +64,8 @@ describe('story tree zoom ladder', () => {
     expect(svg).toHaveAttribute('aria-hidden', 'true');
     expect(svg.textContent).toContain('PRESENT · 18 OCT');
     const widths = [...svg.querySelectorAll('path.st-branch')].map((p) => Number(p.getAttribute('stroke-width')));
-    expect(widths).toEqual([14, 22, 12, 6]);
-    expect(svg.querySelectorAll('path.st-branch--late')).toHaveLength(1);
-    expect(svg.textContent).toContain('▸ late · past 15 Oct');
+    expect(widths).toEqual([22, 12, 6]); // only the newest open fork is drawn
+    expect(svg.querySelectorAll('path.st-branch--late')).toHaveLength(0);
     expect(screen.getByText(/OURS · PROVISIONAL/)).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Key' })).toBeInTheDocument();
   });
@@ -97,8 +96,8 @@ describe('story tree zoom ladder', () => {
   it('a branch row shows label, p, status and its trigger on a second line', () => {
     const { container } = show({ ...storyA, forks: [{ forkId: 'f', drawnAt: '2026-09-30T12:26:28.689Z', branches: [{ branchId: 'x', text: 'Most Likely', p: 25, trigger: 'Insurers announce a surcharge', due: '2026-11-30' }] }] });
     expect(screen.getByText('open fork · 30 Sep · provisional')).toBeInTheDocument();
-    expect(screen.getByText('Most Likely · 25% · open · due 30 Nov')).toBeInTheDocument();
-    expect(container.querySelector('summary .board-branch__text').textContent).toBe('Insurers announce a surcharge');
+    expect(screen.getByText('Insurers announce a surcharge · 25% · open · due 30 Nov')).toBeInTheDocument();
+    expect(container.querySelector('summary .board-branch__text').textContent).toBe('Most Likely');
   });
   it('choosing an event opens rung 4: sources, the branches drawn that day, a link to the story page; recovered rows are labelled', () => {
     show(storyA);
@@ -114,15 +113,15 @@ describe('story tree zoom ladder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'First strikes' }));
     expect(screen.getByRole('link', { name: 'Al Jazeera' })).toHaveAttribute('href', 'https://example.org/c4');
     expect(screen.getByText('Branches drawn this day')).toBeInTheDocument();
-    expect(screen.getByText('Another vessel struck · 45%')).toBeInTheDocument();
+    expect(screen.getByText('A vessel struck before 16 Oct · 45%')).toBeInTheDocument();
   });
   it('verdict wording on branches stays in branchWording', () => {
     show(storyA);
-    expect(screen.getByText('Premiums rise again · 65% · happened · 20 Oct')).toBeInTheDocument();
+    expect(screen.getByText('A second insurer announces an increase · 65% · happened · 20 Oct')).toBeInTheDocument();
     expect(screen.getByText(/“Second insurer raises premiums”/)).toBeInTheDocument();
     expect(screen.getByText('Talks restart · 10% · not reported by 12 Oct')).toBeInTheDocument();
     expect(screen.getByText('Sanctions eased · 5% · could not be checked · the source was unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Old question · recorded before scoring began')).toBeInTheDocument();
+    expect(screen.getByText('Old · recorded before scoring began')).toBeInTheDocument();
   });
 });
 

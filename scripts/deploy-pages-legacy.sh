@@ -88,6 +88,10 @@ log "Replacing docs/assets..."
 rm -rf "$DOCS_DIR/assets"
 cp -R "$DIST_DIR/assets" "$DOCS_DIR/assets"
 cp "$DIST_DIR/index.html" "$DOCS_DIR/index.html"
+# public/ directories the app loads at runtime (the globe texture); without this they 404 in production
+for d in textures; do
+  if [[ -d "$DIST_DIR/$d" ]]; then rm -rf "$DOCS_DIR/$d"; cp -R "$DIST_DIR/$d" "$DOCS_DIR/$d"; fi
+done
 
 # 3a. Strip source maps — vite emits .map into dist/ ('hidden' sourcemaps) but
 #     they must NEVER be served publicly. Belt-and-braces: remove from docs/.
@@ -121,7 +125,7 @@ if [[ -n "$COMMIT_MSG" ]]; then
   log "Staging files..."
   (
     cd "$REPO_ROOT"
-    git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/
+    git add docs/assets docs/index.html docs/404.html docs/textures global-perspectives-starter/frontend/src/
     if git diff --cached --quiet; then
       log "Nothing to commit"
     else

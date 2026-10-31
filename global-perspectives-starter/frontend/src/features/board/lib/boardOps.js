@@ -61,11 +61,29 @@ export function restoreString(board, idA, idB) {
   }) };
 }
 
-/** Pins on a circle (a point at the centre for one), ordered by kind then pin id so a pin keeps its place
- *  between renders. Returns { pinId: {x, y} } inside a width x height box. */
-export function layoutPins(pins, width, height) {
-  const order = { thread: 0, country: 1, actor: 2 };
-  const sorted = [...pins].sort((p, q) => (order[p.kind] - order[q.kind]) || (p.pinId < q.pinId ? -1 : 1));
+/** Pins on an ellipse (a point at the centre for one). The order starts as kind then pin id; with `strings` given,
+ *  pins that are joined by an uncut string are walked one after another so they sit next to each other. The order
+ *  depends only on the pins and strings, so a pin keeps its place between renders. Returns { pinId: {x, y} }
+ *  inside a width x height box. */
+export function layoutPins(pins, width, height, strings = []) {
+  const kindOrder = { thread: 0, country: 1, actor: 2 };
+  const base = [...pins].sort((p, q) => (kindOrder[p.kind] - kindOrder[q.kind]) || (p.pinId < q.pinId ? -1 : 1));
+  const rank = Object.fromEntries(base.map((p, i) => [p.pinId, i]));
+  const near = {};
+  for (const s of strings) {
+    if (s.cutAt || !(s.a in rank) || !(s.b in rank)) continue;
+    (near[s.a] ||= []).push(s.b);
+    (near[s.b] ||= []).push(s.a);
+  }
+  const seen = new Set();
+  const sorted = [];
+  const walk = (id) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    sorted.push(base[rank[id]]);
+    (near[id] || []).sort((x, y) => rank[x] - rank[y]).forEach(walk);
+  };
+  base.forEach((p) => walk(p.pinId));
   const out = {};
   const n = sorted.length;
   const cx = width / 2;
@@ -80,11 +98,44 @@ export function layoutPins(pins, width, height) {
   return out;
 }
 
+/** Where a suggested (ghost) pin sits: near the pins it touches, on the free spot farthest from every pin.
+ *  `touched` and `placed` are lists of {x, y}. */
+export function ghostPosition(touched, placed, width, height) {
+  const cx = touched.reduce((t, p) => t + p.x, 0) / (touched.length || 1);
+  const cy = touched.reduce((t, p) => t + p.y, 0) / (touched.length || 1);
+  let best = { x: cx, y: cy };
+  let bestGap = -1;
+  for (let r = 0; r <= 230; r += r ? 70 : 90) {
+    for (let k = 0; k < (r ? 8 : 1); k += 1) {
+      const t = (k / 8) * Math.PI * 2;
+      const x = Math.min(width - 90, Math.max(90, cx + r * Math.cos(t)));
+      const y = Math.min(height - 50, Math.max(50, cy + r * Math.sin(t) * 0.6));
+      const gap = Math.min(...placed.map((p) => Math.hypot((p.x - x) / 1.4, p.y - y)), Infinity) - r * 0.35;
+      if (gap > bestGap) { bestGap = gap; best = { x: Math.round(x), y: Math.round(y) }; }
+    }
+  }
+  return best;
+}
+
 /** The pin's request body for `connect`. */
 export const pinRef = (p) => ({ kind: p.kind, refId: p.refId });
 
 export function countryName(iso3) {
   return COUNTRIES[iso3]?.name || iso3;
+}
+
+/** Tests that found no link between two pins, and where no string joins them yet: [{ a, b, text }] with pin ids and the
+ *  server's own note. */
+export function failedCombos(board, results) {
+  const pinOf = (ref) => board.pins.find((p) => sameRef(p, ref.kind, ref.refId));
+  const out = [];
+  for (const r of results || []) {
+    const a = pinOf(r.a);
+    const b = pinOf(r.b);
+    if (r.strength !== 'none' || !a || !b || findString(board, a.pinId, b.pinId)) continue;
+    out.push({ a: a.pinId, b: b.pinId, text: r.note || '' });
+  }
+  return out;
 }
 
 /** "What is missing": actors that appear on two or more of the board's pins (read from the connect results

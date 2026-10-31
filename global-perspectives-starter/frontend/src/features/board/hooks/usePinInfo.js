@@ -38,9 +38,23 @@ export function usePinInfo(pins, topics) {
       if (a?.threadTitle) titles[id] = a.threadTitle;
       if (a?.riskScore != null && Number.isFinite(Number(a.riskScore))) risks[id] = Number(a.riskScore);
     }
-    for (const t of topics || []) if (t.threadId && t.title) titles[t.threadId] = t.title;
+    const categories = {};
+    for (const p of pins) if (p.kind === 'thread' && p.title) titles[p.refId] = p.title; // a feed that carries the title
+    for (const t of topics || []) {
+      if (t.threadId && t.title) titles[t.threadId] = t.title;
+      if (t.threadId && t.category) categories[t.threadId] = t.category;
+    }
     const out = {};
-    for (const p of pins) out[p.pinId] = { ...pinLabel(p, titles, risks), hasHeadline: Boolean(titles[p.refId]), ...(p.recordAvailable && p.risk != null ? { risk: p.risk } : {}) };
+    for (const p of pins) {
+      const category = p.category || categories[p.refId];
+      const was = Number(p.riskWas);
+      out[p.pinId] = {
+        ...pinLabel(p, titles, risks), hasHeadline: Boolean(titles[p.refId]),
+        ...(p.recordAvailable && p.risk != null ? { risk: p.risk } : {}),
+        ...(category ? { category } : {}),
+        ...(p.riskWas != null && Number.isFinite(was) ? { riskWas: was } : {}),
+      };
+    }
     return out;
   }, [pins, analyses, topics]);
 }

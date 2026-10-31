@@ -31,7 +31,7 @@ Artboard build order: 1 graph, 6 tree, 11 zoom ladder, 3 verdict, 4 weekly, 5 ar
 - Summary (one dated paragraph, rewritten weekly, versioned), weekly (pins moved, strings changed, branches settled, due dates, coverage line) and monthly (the arc, strings, branches settled, the surprise, pins gone quiet, next month's dates).
 
 ## 5. The connection verdict (drop pin A on pin B)
-Grounds tested: shared actor or place; shared mechanism (model-named, labelled); timing and lag; shared source chain (flagged as a coverage artefact); a path through a third story. Panel order: verdict with mechanism and confidence, joint trace with lag, direction, what follows if (labelled judgment), who sits in both, what would break it (falsifier with a date), evidence, the reader's line. The honest negative ("No link found. Shared: nothing but the week.") is a first-class result. Cheap grounds are computed without a model (`cheapGrounds`) and cached per pair; the model writes only the mechanism sentence.
+Grounds tested: shared actor or place; shared mechanism (model-named, labelled); timing and lag; shared source chain (flagged as a coverage artefact); a path through a third story. Panel order: verdict with mechanism and confidence, joint trace with lag, direction, what follows if (labelled judgment), who sits in both, what would break it (falsifier with a date), evidence, the reader's line. The honest negative ("No link found. Shared: nothing but the week.") is a first-class result. Cheap grounds are computed without a model (`cheapGrounds`) and cached per pair; the model writes only the mechanism sentence. Today `connect` computes the cheap grounds only and no model runs (`newsBoard` README).
 
 ## 6. Arrivals
 1. The next event of a pinned story lands on that pin's trunk as a fact; duplicate-story detection is the precondition.
@@ -48,26 +48,38 @@ Alerts come only from what the reader pinned or wrote (branch fired, a date is t
 ## 9. Pricing
 Deferred (operator, 2026-10-20): the board is free for signed-in members until the verdict panel exists. If a seam is needed: verdict plus joint trace free, the rest paid. A business decision for the operator.
 
-## 10. Checklist (data-wiring list; status checked against the board feature source 2026-10-31)
+## 10. Where the build stands (read from the code)
+Live: `newsBoard` is deployed and `window.BOARD_ENDPOINT` is set in `docs/config.js`. The page offers boards, pins up to the budget, drag or keyboard connect with the cheap verdict, keep or cut a string, region presets and fork, the arrivals tray, the story tree for a pinned story, "This week on your board", the unsettled counts and the missing-actors card. It reads the record's story, links and counts views through the Worker, and the active and all indexes through `newsBoard`.
+
+Still on the old stores: pin titles and the add-pin list come from today's topics (`useGeminiTopics`, the `topics` action) and `thread_analysis`; the server-side presets and `connect` read the world through `backend/shared/src/world/` (`WEB#INDEX`, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`, the `latest` topic pool). Step 5 cannot delete those rows until the board reads views for them.
+
+## 11. Checklist (data-wiring list; status checked against the board feature source 2026-10-31)
 | # | Item | Status |
 |---|---|---|
-| B0 | Live defects (title overlap, repeated "no reading yet", raw ISO dates, strings listed thrice, phone layout) | released 4d31cd28; signed-in look still to do |
+| B0 | Live defects (title overlap, repeated "no reading yet", raw ISO dates, strings listed thrice, phone layout) | released (4d31cd28) and checked signed out; the strings list is now one collapsed disclosure. A signed-in look is still to do. ISO dates still print raw in `BoardWeekly` (moved pins, branch dates), the `StoryTree` trunk and chapters, and `ArrivalsTray`; only fork dates use `dayMonth` |
 | B1 | Due-soon strip with the late flag | not built |
-| B2 | Weekly header "your board moved · week ending D MON" | the `BoardWeekly` card ("This week on your board") exists; the dated header is not built |
-| B3 | Pin card counts and line | the side sheet (`RecordPinDetails`) shows the line and counts; the pin card itself is not built |
-| B4 | Strings encode strength; "OURS · MEDIUM · NOT CONFIRMED" label | not built |
-| B5 | ClaimTag kinds (OURS, judgment level, PROVISIONAL / SETTLED / PRIVATE) | not built |
-| B6 | Drawn SVG tree (L) | not built |
-| B7 | Zoom ladder polish, event card with sources | not built |
-| B8 | Verdict panel evidence and "who sits in both" | not built |
+| B2 | Weekly header "your board moved · week ending D MON" | partly built: the `BoardWeekly` card "This week on your board" lists pins moved, strings changed, branch outcomes and confirmed links of the last 7 days; the dated header is not built |
+| B3 | Pin card counts and line | partly built: the pin list rows show the line and counts (`RecordPinDetails`: chapters, live branches, confirmed links); the graph pin card shows kind, title and risk only |
+| B4 | Strings encode strength; "OURS · MEDIUM · NOT CONFIRMED" label | partly built: texture by owner and state (dashed ours, dashed-alt yours, faint cut) with a short tag on the line; strength is not encoded and the full label is not built |
+| B5 | ClaimTag kinds (OURS, judgment level, PROVISIONAL / SETTLED / PRIVATE) | partly built: `ClaimTag` has FACT, INFERENCE, MODEL JUDGMENT and YOURS and the board uses them; OURS, PROVISIONAL, SETTLED and PRIVATE are not built |
+| B6 | Drawn SVG tree (L) | not built: `StoryTree` is a list with collapsible forks |
+| B7 | Zoom ladder polish, event card with sources | partly built: the four rungs exist (line, chapters, forks and events, event) and the event rung links its sources; the day's drift note and the branches drawn that evening are not on it |
+| B8 | Verdict panel evidence and "who sits in both" | partly built: `VerdictCard` shows strength, shared actors, places, outlets and score co-movement with limits; no mechanism, direction, "what follows if", falsifier or evidence list |
 | B9 | Monthly card | not built |
 | B10 | Coverage note on the weekly (needs a views field) | not built |
-| B11 | Arrivals tray states | the `ArrivalsTray` exists; the face-down card states are not built |
-| B12 | Preset grouping, OURS · READ-ONLY tag | not built |
-| B13 | Reader weights and divergence panel | not built |
+| B11 | Arrivals tray states | partly built: `ArrivalsTray` shows strong arrivals (confirmed link plus grounds) with the via line and Keep or Dismiss; the face-down card, the unseen badge and "came back" are not built |
+| B12 | Preset grouping, OURS · READ-ONLY tag | not built: `PresetsPanel` lists region presets with pin and string counts and a Fork button |
+| B13 | Reader weights and divergence panel | not built (the schema carries `weights`; no UI writes or reads them) |
 | B14 | Map view of the board (L) | not built |
 
-Waits for data, not UI: pin lines and chapters beyond the stories the weekly review has read so far (the review runs every Monday; read `readings/` for coverage), mechanism, direction, "what follows if" and "what would break it" (model plus pricing), summary and monthly arc, alert sends (fresh yes), RESURRECTED, time scrubber. At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs`.
+Waits for data, not UI:
+- pin lines and chapters beyond the stories the weekly review has read: the review has read 5 stories so far (canary, 2026-W43); the first full run is Monday 2026-11-02 01:00 UTC;
+- mechanism, direction, "what follows if" and "what would break it" (model plus pricing);
+- summary and monthly arc;
+- alert sends (fresh yes);
+- RESURRECTED and the time scrubber.
 
-## 11. Not now
+At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs` (it is not in the list today).
+
+## 12. Not now
 Leaderboards across readers, chat with the board, anything that answers without evidence, narrative / calendar / reading-list views, quarterly replay.

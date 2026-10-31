@@ -434,6 +434,30 @@
           "name": "TriggerStoryRecord",
           "expr": "cron(45 23 * * ? *)",
           "state": "ENABLED"
+        },
+        {
+          "via": "events",
+          "name": "TriggerStoryRecordRefresh",
+          "expr": "cron(35 4,12,20 * * ? *)",
+          "state": "ENABLED"
+        },
+        {
+          "via": "events",
+          "name": "TriggerStoryRecordRefreshAnalysis",
+          "expr": "cron(20 5 * * ? *)",
+          "state": "ENABLED"
+        },
+        {
+          "via": "events",
+          "name": "TriggerStoryRecordRefreshBrief",
+          "expr": "cron(15 14 * * ? *)",
+          "state": "ENABLED"
+        },
+        {
+          "via": "events",
+          "name": "TriggerStoryRecordRefreshWeekly",
+          "expr": "cron(15 6 ? * SUN *)",
+          "state": "ENABLED"
         }
       ]
     },

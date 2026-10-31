@@ -31,7 +31,7 @@ describe('top bar', () => {
     expect(screen.getByText('Studio board')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Board name: Gulf and the Horn/ })).toBeInTheDocument();
     expect(screen.getByText('Week ending 18 Oct 2026')).toBeInTheDocument();
-    expect(screen.getByLabelText('7 of 12 pins used')).toBeInTheDocument();
+    expect(screen.getByLabelText('Pin budget 7 of 12')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
     expect(props.onAdd).toHaveBeenCalled();
   });

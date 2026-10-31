@@ -40,6 +40,9 @@ import BoardTopBar from '@/features/board/components/BoardTopBar.jsx';
 import DueStrip from '@/features/board/components/DueStrip.jsx';
 import RailBranches from '@/features/board/components/RailBranches.jsx';
 import WeekScrubber from '@/features/board/components/WeekScrubber.jsx';
+import DivergencePanel from '@/features/board/components/DivergencePanel.jsx';
+import FoldingRules from '@/features/board/components/FoldingRules.jsx';
+import { setWeight } from '@/features/board/lib/divergence.js';
 import { isoWeekEnd } from '@/features/board/lib/recordViews.js';
 import '@/features/board/board.css';
 
@@ -349,9 +352,14 @@ export default function BoardPage() {
             </div>
             <div className="board-rail">
               {!isPhone ? sheet : null}
-              <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors} />
+              <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors}
+                onAddPin={(threadId) => addToBoard({ kind: 'thread', refId: threadId })}
+                onDismissLink={(threadId) => state.edit((b) => ({ ...b, dismissed: [...new Set([...b.dismissed, threadId])] }))} />
               <RailBranches stories={records.stories} labelOf={(threadId) => info[board.pins.find((p) => p.refId === threadId)?.pinId]?.label || threadId} />
               <MissingCard actors={missing} full={full} onFollow={follows.followActor} onAdd={addActor} />
+              <DivergencePanel board={board} stories={records.stories} labelOf={labelOf}
+                onRestore={(a, b) => state.edit((bd) => restoreString(bd, a, b))}
+                onWeight={(forkId, branchId, percent) => state.edit((bd) => setWeight(bd, forkId, branchId, percent))} />
             </div>
           </div>
           <ArrivalsTray key={board.boardId} board={board}
@@ -365,6 +373,7 @@ export default function BoardPage() {
               });
             }} />
           {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
+          <details className="board-fold"><summary>How the board folds</summary><FoldingRules /></details>
         </>
       ) : null}
       {board ? null : (state.loading ? <p className="board-line" aria-busy="true">Loading the board.</p> : null)}

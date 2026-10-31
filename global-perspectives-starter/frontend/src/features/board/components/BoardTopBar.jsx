@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PIN_BUDGET } from '@/shared/lib/board.js';
+import PinBudget from '@/features/board/components/PinBudget.jsx';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import Button from '@/shared/ui/Button.jsx';
 import { MAX_NAME } from '@/features/board/lib/boardOps.js';
@@ -50,7 +50,7 @@ export default function BoardTopBar({ board, pinCount, saving, views, view, onVi
           {views.map((v) => <Button key={v} compact selected={v === view} onClick={() => onView(v)}>{VIEW_LABEL[v]}</Button>)}
         </div>
       ) : null}
-      {board ? <span className="board-budget" aria-label={`${pinCount} of ${PIN_BUDGET} pins used`}>{pinCount} / {PIN_BUDGET}<span className="board-budget__unit"> pins</span></span> : null}
+      {board ? <PinBudget used={pinCount} /> : null}
       {saving ? <span className="board-save" role="status">Saving</span> : null}
       <span className="board-head__fill" />
       {board && weekEnd ? <span className="board-head__week">Week ending {dayMonth(weekEnd)} {weekEnd.slice(0, 4)}</span> : null}

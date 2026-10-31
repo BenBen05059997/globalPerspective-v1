@@ -3,7 +3,7 @@ const {makeHandler} = require('./index');
 const {makeStore} = require('./store');
 const world = require('./_shared/world');
 const {makeS3Json} = require('./_shared/s3json');
-const {makeManifest} = require('./manifest');
+const {makeManifest} = require('./_shared/manifest');
 
 exports.handler = async (event = {}) => {
   const {DynamoDBClient} = require('@aws-sdk/client-dynamodb');

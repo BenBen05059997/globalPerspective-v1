@@ -1,6 +1,6 @@
 'use strict';
 
-// record/facts/manifest.json {schemaVersion:1, days:[sorted unique]} (decision 0036 section 1). Rewritten under If-Match
+// A day manifest {schemaVersion:1, days:[sorted unique]}: record/facts/manifest.json (decision 0036 section 1) and each record/notes/<subtype>/manifest.json (0042). Rewritten under If-Match
 // through shared s3json (getJsonEtag, putJsonIf); on 412 the object is re-read and the union recomputed, so two writers
 // cannot lose a day.
 const RETRIES = 5;

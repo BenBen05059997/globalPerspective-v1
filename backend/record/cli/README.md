@@ -2,6 +2,23 @@
 
 Operator tools for the record. They run from a laptop; they are not deployed as Lambdas. Timeline: [ARCHITECTURE_TIMELINE.md](../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 
+## capture-entry-notes.mjs
+
+Copies the agent's per-entry notes (`SummarizeAndPredict` `TOPIC#` items `SUMMARY`, `PREDICTION`, `TRACE_CAUSE`) into
+`record/notes/entry/YYYY-MM-DD.jsonl` (decision 0042) through shared `notes.js`, so these notes are the reference shape every
+note writer follows. Each note's subject is its entry fact's `eventId`, computed with the shared `entryIdentity` from the
+topic's sources in NewsCache `latest`; a note whose `eventId` is not an entry fact within 100 days is reported as `unmatched` and
+not written (an article seen again keeps the eventId of its first day). The agent keeps only the current generation (older
+items are pruned and carry a `ttl`), so a run copies what exists now; a re-run appends nothing (same `noteId`).
+
+```sh
+RECORD_SDK_DIR=<dir with @aws-sdk/client-s3, client-dynamodb, lib-dynamodb> node backend/record/cli/capture-entry-notes.mjs [--dry] [--live]
+```
+Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/capture-entry-notes.test.mjs`.
+First live run 2026-10-31: 33 notes (13 summaries, 13 causes, 7 forecasts) for 2026-10-30, all matched.
+
+`sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
+
 ## recover-day.mjs
 
 Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.

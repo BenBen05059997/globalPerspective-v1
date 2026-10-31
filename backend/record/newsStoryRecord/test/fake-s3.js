@@ -2,7 +2,7 @@
 // A fake S3 client that models ETags: a stale If-Match or an If-None-Match on an existing key answers 412.
 // `beforePut(fake, input)` lets a test race another writer in just before a put. Not a test file.
 const {makeS3Json} = require('../src/_shared/s3json');
-const {makeManifest} = require('../src/manifest');
+const {makeManifest} = require('../src/_shared/manifest');
 
 class Get { constructor(input) { this.input = input; } }
 class Put { constructor(input) { this.input = input; } }

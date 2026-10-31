@@ -3,6 +3,7 @@
 // runs from a laptop with AWS CLI credentials (only for --merge / --write). Dry-run by default: it fetches and writes
 // local files only. See README.md in this folder.
 import fs from 'node:fs';
+import { requireSdk, REGION } from './sdk.mjs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { parseArgs } from 'node:util';
@@ -174,11 +175,8 @@ export async function recoverWayback({ feeds, day, fetchText, now, log = console
 }
 
 async function loadS3(bucket) {
-  const dirs = [process.cwd(), process.env.RECOVER_SDK_DIR].filter(Boolean);
-  for (const d of dirs) {
-    try { const r = createRequire(path.join(d, 'x.js')); const sdk = r('@aws-sdk/client-s3'); return makeS3Json({ client: new sdk.S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' }), GetObjectCommand: sdk.GetObjectCommand, PutObjectCommand: sdk.PutObjectCommand, bucket }); } catch (e) { /* try next */ }
-  }
-  throw new Error('@aws-sdk/client-s3 not found: run `npm i --no-save @aws-sdk/client-s3` in a scratch directory and set RECOVER_SDK_DIR to it');
+  const sdk = requireSdk('@aws-sdk/client-s3');
+  return makeS3Json({ client: new sdk.S3Client({ region: REGION }), GetObjectCommand: sdk.GetObjectCommand, PutObjectCommand: sdk.PutObjectCommand, bucket });
 }
 
 function printCounts(day, lines, dupes, failures) {

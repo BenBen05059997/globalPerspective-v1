@@ -23,7 +23,13 @@ This folder is stage 4: world/, the only reader of the raw tables, plus the shar
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend
   `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`,
   `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
-- `record.js`: the record's and board's pure rules (`canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`,
+- `manifest.js`: `makeManifest(s3json).addDays(key, dates)`, the conditional day-manifest rewrite (412 re-read and union) for
+  `record/facts/manifest.json` and each `record/notes/<subtype>/manifest.json`.
+- `notes.js`: the one builder and writer of notes (decision 0042, schema `backend/record/schema/note.schema.json`):
+  `buildNote` (throws on anything the schema rejects), `entryNote` (a `TOPIC#` item + its topic -> an entry note whose subject
+  is the entry fact's `eventId`), `makeNoteWriter({s3json, prefix}).write(subtype, notes)` (manifest first, then
+  `appendLines` deduped by `noteId`). Every note writer uses it.
+- `record.js`: the record's and board's pure rules (`canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`, `noteId`,
   `pairKey`, `normalizeActor`, `stringTexture`, `PIN_BUDGET`, `pinBudgetOk`, `normalizeBoard`, `cheapGrounds`: shared
   actors/places/outlets and score co-movement, never 'strong'). Used by `newsBoard`, `newsStoryRecord` and the selector's raw
   capture. Frontend mirror of the board block: `shared/lib/board.js`.

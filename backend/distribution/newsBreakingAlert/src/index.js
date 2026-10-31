@@ -18,6 +18,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
+const NR = require('./_shared/noteReads');
 const { usableCountryRecord } = require('./_shared/placeFilter');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 const { sendEmail } = require('./sendEmail');
@@ -69,6 +70,14 @@ async function getRecord(pk, sk) {
   }
 }
 
+// NOTES_READS (decision 0053): the country briefings and story analyses are read from SummarizeAndPredict (ddb, default), the
+// record's notes (notes), or DynamoDB with differences logged [notes-compare] (compare). TOPIC# rows stay on DynamoDB.
+const src = NR.lambdaSource();
+const rows = NR.rowReaders(src, (pk, sk) => getRecord(pk, sk));
+const readRow = (read) => async (key) => { try { return await read(key); } catch (err) { console.warn(`row ${key} failed (non-fatal): ${err.message}`); return null; } };
+const countryRow = readRow(rows.country);
+const threadRow = readRow(rows.thread);
+
 async function getAlertRecord(threadId) {
   try {
     const out = await ddb().send(new GetCommand({ TableName: ALERTS_TABLE, Key: { alertKey: threadId } }));
@@ -111,7 +120,7 @@ function groupByThread(topics) {
 async function maxRegionRisk(regions, category) {
   let max = 0;
   for (const r of regions) {
-    const rec = await getRecord(`COUNTRY#${r}`, 'COUNTRY_INTELLIGENCE');
+    const rec = await countryRow(r);
     // Batch 3 / F: a region key (Europe ...) or a record older than 30 days is not a current country read
     if (!usableCountryRecord(r, rec)) continue;
     const score = regionRiskScore(rec, category);
@@ -145,7 +154,7 @@ async function assembleStory(group, scored) {
   // We only ever link to the story arc when a real multi-entry thread exists.
   const realThreadId = lead.threadId || null;
   const threadAnalysis = realThreadId
-    ? await getRecord(`THREAD#${realThreadId}`, 'THREAD_ANALYSIS')
+    ? await threadRow(realThreadId)
     : null;
   const summaryRec = await getRecord(`TOPIC#${leadId}`, 'SUMMARY');
   const predictionRec = await getRecord(`TOPIC#${leadId}`, 'PREDICTION');
@@ -281,7 +290,7 @@ async function run() {
   const candidates = [];
   for (const g of groups) {
     const riskScore = await maxRegionRisk(g.regions, g.category);
-    const ta = await getRecord(`THREAD#${g.threadId}`, 'THREAD_ANALYSIS');
+    const ta = await threadRow(g.threadId);
     const priorSize = Number(ta?.entryCount) || 0;
     const velocity = priorSize > 0 ? Math.max(0, g.topicCount - priorSize) : g.topicCount;
     const isContinuation = priorSize > 0 || !!(g.leadTopic && g.leadTopic.continues_topic);
@@ -358,6 +367,7 @@ async function run() {
 }
 
 exports.handler = async () => {
+  src.reset();
   try {
     return await run();
   } catch (err) {

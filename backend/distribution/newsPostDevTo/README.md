@@ -9,6 +9,7 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `id = today-archive` (only entries archived today)
+- Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `notes`): the `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` reads come from the record's `story_analysis` and `country` notes instead (shared `noteReads.js` `rowReaders`); `compare` answers from DynamoDB and logs `[notes-compare]` differences. The role needs `s3:GetObject` on those prefixes.
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `DAILY_BRIEF#<date>`/`DAILY_BRIEF` (90-day `ttl`)
 - S3 world bucket, only when env `NOTES_PREFIX` is set (unset = nothing): the brief as a `daily_brief` note under `<NOTES_PREFIX>notes/daily_brief/` (decision 0048; best-effort, never fails the run; the DynamoDB put stays). Needs `s3:GetObject`/`PutObject` on `record/notes/daily_brief/*` and its manifest. Live env has no `NOTES_PREFIX` (read 2026-10-31), so no note is written yet; the notes already in the record came from `backend/record/cli/backfill-brief-notes.mjs`.
 - External APIs: DeepSeek chat completions via `src/_shared/llm.js` (`GROK_API_URL`, fallback `https://api.deepseek.com`)

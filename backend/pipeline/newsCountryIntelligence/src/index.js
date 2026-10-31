@@ -8,6 +8,7 @@ const refreshPolicy = require('./refreshPolicy');
 const { writeCountryNote } = require('./recordNotes');
 const ISO3_NAMES = require('./_shared/iso3Names.json');
 const { resolveIso3 } = require('./_shared/resolveIso3');
+const NR = require('./_shared/noteReads');
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
 
 let EDITORIAL_FACTS = {};
@@ -76,9 +77,14 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 let RUN_ID = new Date().toISOString(); // reset per invocation in the handler
+// NOTES_READS (decision 0053): the story analyses, the previous briefing, the recent corrections and the country facts are read from
+// SummarizeAndPredict (ddb, default), the record's notes (notes), or DynamoDB with differences logged [notes-compare] (compare).
+const src = NR.lambdaSource();
+const iso3Of = (name) => { const r = resolveIso3(name); return r && r.iso3; };
 
 exports.handler = async (event = {}) => {
   RUN_ID = new Date().toISOString();
+  src.reset(); // a run reads the notes as its previous run left them
   const dryRun = Boolean(event && event.dryRun);
   console.log(`Country intelligence started${dryRun ? ' (DRY RUN: no LLM, no writes)' : ''}`);
 
@@ -205,10 +211,16 @@ async function loadThreadAnalyses(entries) {
 
   await Promise.all(threadIds.map(async (threadId) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK },
-      }));
+      const Item = await src.via(`threadAnalysis ${threadId}`, async () => {
+        const { Item: row } = await ddb.send(new GetCommand({
+          TableName: SUMMARY_TABLE,
+          Key: { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK },
+        }));
+        return row || null;
+      }, async () => {
+        const row = NR.storyAnalysis(await src.notes.all('story_analysis'), threadId);
+        return row ? { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK, ...row } : null;
+      });
       if (Item) analyses[threadId] = Item;
     } catch {}
   }));
@@ -289,11 +301,17 @@ function groupByCountry(entries, threadAnalyses) {
 
 async function readExisting(countryName) {
   try {
-    const { Item } = await ddb.send(new GetCommand({
-      TableName: SUMMARY_TABLE,
-      Key: { PK: `${COUNTRY_PK_PREFIX}${countryName}`, SK: COUNTRY_SK },
-    }));
-    return Item || null;
+    return await src.via(`readExisting ${countryName}`, async () => {
+      const { Item } = await ddb.send(new GetCommand({
+        TableName: SUMMARY_TABLE,
+        Key: { PK: `${COUNTRY_PK_PREFIX}${countryName}`, SK: COUNTRY_SK },
+      }));
+      return Item || null;
+    }, async () => {
+      const iso3 = iso3Of(countryName);
+      const row = iso3 && NR.countryIntelligence(await src.notes.all('country'), iso3);
+      return row ? { PK: `${COUNTRY_PK_PREFIX}${countryName}`, SK: COUNTRY_SK, ...row } : null;
+    });
   } catch {
     return null;
   }
@@ -304,13 +322,19 @@ async function readExisting(countryName) {
 // than re-discovering them. Low authority — informational trajectory, update on new evidence.
 async function buildDriftBlock(countryName) {
   try {
-    const { Items } = await ddb.send(new QueryCommand({
-      TableName: SUMMARY_TABLE,
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :d)',
-      ExpressionAttributeValues: { ':pk': `${COUNTRY_PK_PREFIX}${countryName}`, ':d': 'DRIFT#' },
-      ScanIndexForward: false,
-      Limit: 2,
-    }));
+    const Items = await src.via(`recentDrift ${countryName}`, async () => {
+      const { Items: rows } = await ddb.send(new QueryCommand({
+        TableName: SUMMARY_TABLE,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :d)',
+        ExpressionAttributeValues: { ':pk': `${COUNTRY_PK_PREFIX}${countryName}`, ':d': 'DRIFT#' },
+        ScanIndexForward: false,
+        Limit: 2,
+      }));
+      return rows || [];
+    }, async () => {
+      const iso3 = iso3Of(countryName);
+      return iso3 ? NR.countryDrift(await src.notes.all('drift'), iso3, 2) : [];
+    }, (rows) => rows.map(({ PK, SK, ttl, ...r }) => r));
     const notes = (Items || []).filter((n) => n && n.whyChanged);
     if (!notes.length) return '';
     const lines = notes.map((n) => {
@@ -331,11 +355,17 @@ async function buildDriftBlock(countryName) {
 // EDITORIAL_FACTS. JSON operator entries always take precedence over DDB auto-entries.
 async function loadAndMergeDDBFacts(countryName) {
   try {
-    const res = await ddb.send(new GetCommand({
-      TableName: SUMMARY_TABLE,
-      Key: { PK: `FACTS#${countryName}`, SK: 'COUNTRY_FACTS' },
-    }));
-    const record = res.Item;
+    const record = await src.via(`countryFacts ${countryName}`, async () => {
+      const res = await ddb.send(new GetCommand({
+        TableName: SUMMARY_TABLE,
+        Key: { PK: `FACTS#${countryName}`, SK: 'COUNTRY_FACTS' },
+      }));
+      return res.Item || null;
+    }, async () => {
+      const iso3 = iso3Of(countryName);
+      const row = iso3 && NR.countryFacts(await src.notes.all('country_facts'), iso3);
+      return row ? { PK: `FACTS#${countryName}`, SK: 'COUNTRY_FACTS', ...row } : null;
+    });
     if (!record) return;
     const existing = EDITORIAL_FACTS[countryName] || {};
     EDITORIAL_FACTS[countryName] = {
@@ -567,3 +597,5 @@ async function invokeGrok(prompt) {
   const r = await chat({ step: 'country_intel', model: GROK_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P });
   return { modelId: r.model, content: r.content, latencyMs: r.latencyMs };
 }
+
+exports.reads = { loadThreadAnalyses, readExisting, buildDriftBlock, loadAndMergeDDBFacts, editorialFacts: () => EDITORIAL_FACTS }; // for tests (NOTES_READS)

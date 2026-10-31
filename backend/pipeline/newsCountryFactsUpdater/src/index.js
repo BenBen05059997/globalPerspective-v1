@@ -2,6 +2,9 @@ const https = require('https');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const wd = require('./facts');
+const { writeFactsNote } = require('./recordNotes');
+
+const RUN_ID = `facts-${new Date().toISOString()}`;
 
 const REGION = process.env.AWS_REGION || 'us-east-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
@@ -283,17 +286,16 @@ async function readCurrentFacts(countryName) {
 
 async function writeFacts(countryName, facts) {
   const ttl = Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60;
-  await ddb.send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: {
-      PK: `FACTS#${countryName}`,
-      SK: 'COUNTRY_FACTS',
-      countryName,
-      ...facts,
-      lastUpdatedAt: new Date().toISOString(),
-      ttl,
-    },
-  }));
+  const item = {
+    PK: `FACTS#${countryName}`,
+    SK: 'COUNTRY_FACTS',
+    countryName,
+    ...facts,
+    lastUpdatedAt: new Date().toISOString(),
+    ttl,
+  };
+  await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
+  await writeFactsNote({ countryName, item, runId: RUN_ID }); // the record's copy (decision 0053); a no-op until NOTES_PREFIX is set
 }
 
 // ─── Per-country update logic ─────────────────────────────────────────────────

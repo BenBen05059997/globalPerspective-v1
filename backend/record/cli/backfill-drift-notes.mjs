@@ -1,5 +1,5 @@
 // Backfill drift notes (decision 0042): every COUNTRY#<name> / DRIFTLOG#<date> item (the permanent drift archive, no TTL; the
-// DRIFT# rows are the same items with a 60-day TTL) becomes one drift note through shared notes.js (driftNote), ISO3 from the
+// DRIFT# rows are the same items, plus 26 older ones with no DRIFTLOG# copy, decision 0053) becomes one drift note through shared notes.js (driftNote), ISO3 from the
 // shared resolveIso3. A country that does not resolve is reported and skipped. The items store no model, so each note is an
 // archive copy: model null and payload.from 'archive' (as the entry copies), never the Lambda's current configured model,
 // which may not be what wrote an older note. A re-run appends nothing (same noteId).
@@ -18,18 +18,25 @@ const { resolveIso3 } = require('../../shared/src/resolveIso3.js');
 
 const countryOf = (item) => item.countryName || String(item.PK || '').replace(/^COUNTRY#/, '');
 
-/** Pure: DRIFTLOG# items -> {notes, skipped (unresolved country), failed}. */
+/**
+ * Pure: DRIFTLOG# and DRIFT# items -> {notes, skipped (unresolved country), failed}. The two rows of one run carry the same body and
+ * generatedAt (one noteId); 26 older DRIFT# rows (June-July 2026) were written before DRIFTLOG# existed and have no other copy.
+ */
 export function planDriftNotes({ items, producer }) {
   const notes = [];
   const skipped = [];
   const failed = [];
+  const seen = new Set();
   for (const item of items) {
-    if (!item || !String(item.PK || '').startsWith('COUNTRY#') || !String(item.SK || '').startsWith('DRIFTLOG#')) continue;
+    if (!item || !String(item.PK || '').startsWith('COUNTRY#') || !/^DRIFT(LOG)?#/.test(String(item.SK || ''))) continue;
     const name = countryOf(item);
     const r = resolveIso3(name);
     if (!r) { skipped.push({ country: name, asOf: item.asOf }); continue; }
     try {
-      notes.push(N.driftNote({ item: { ...item, from: 'archive' }, iso3: r.iso3, model: null, producer }));
+      const note = N.driftNote({ item: { ...item, from: 'archive' }, iso3: r.iso3, model: null, producer });
+      if (seen.has(note.noteId)) continue;
+      seen.add(note.noteId);
+      notes.push(note);
     } catch (e) { failed.push({ country: name, asOf: item.asOf, error: e.message }); }
   }
   return { notes, skipped, failed };
@@ -49,7 +56,7 @@ async function main() {
   const items = [];
   let ExclusiveStartKey;
   do {
-    const r = await ddb.send(new ScanCommand({ TableName: table, ExclusiveStartKey, FilterExpression: 'begins_with(PK, :p) AND begins_with(SK, :s)', ExpressionAttributeValues: { ':p': 'COUNTRY#', ':s': 'DRIFTLOG#' } }));
+    const r = await ddb.send(new ScanCommand({ TableName: table, ExclusiveStartKey, FilterExpression: 'begins_with(PK, :p) AND (begins_with(SK, :s) OR begins_with(SK, :d))', ExpressionAttributeValues: { ':p': 'COUNTRY#', ':s': 'DRIFTLOG#', ':d': 'DRIFT#' } }));
     items.push(...(r.Items || []));
     ExclusiveStartKey = r.LastEvaluatedKey;
   } while (ExclusiveStartKey);

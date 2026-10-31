@@ -17,6 +17,7 @@ const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat } = require('./_shared/llm');
 const { resolveIso3 } = require('./_shared/resolveIso3');
+const NR = require('./_shared/noteReads');
 const dir = require('./directionCheck');
 const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom, axisMoves } = require('./lib');
 
@@ -43,17 +44,28 @@ const DAY = 86400000;
 function parseDay(s) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; }
 function fmtDay(ms) { const d = new Date(ms); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; }
 
+// NOTES_READS (decision 0053): the history, the "already noted" checks and the thread history read SummarizeAndPredict (ddb, default),
+// the record's notes (notes), or DynamoDB with differences to the notes logged [notes-compare] (compare).
+const src = NR.lambdaSource();
+const sortedByDay = (rows) => rows.slice().sort((a, b) => (a.dateKey < b.dateKey ? -1 : 1));
+
 async function readHistory(country) {
-  const out = await ddb.send(new QueryCommand({
-    TableName: SUMMARY_TABLE,
-    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :h)',
-    ExpressionAttributeValues: { ':pk': COUNTRY_PK(country), ':h': 'HISTORY#' },
-  }));
-  return (out.Items || []).map((it) => ({
+  const shape = (it) => ({
     dateKey: it.dateKey || String(it.SK || '').replace('HISTORY#', ''),
     riskLevel: it.riskLevel, riskScore: it.riskScore, dimensions: it.dimensions, trajectory: it.trajectory, headline: it.headline,
     lead: it.lead,
-  }));
+  });
+  return src.via(`readHistory ${country}`, async () => {
+    const out = await ddb.send(new QueryCommand({
+      TableName: SUMMARY_TABLE,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :h)',
+      ExpressionAttributeValues: { ':pk': COUNTRY_PK(country), ':h': 'HISTORY#' },
+    }));
+    return (out.Items || []).map(shape);
+  }, async () => {
+    const r = resolveIso3(country);
+    return r ? NR.countryHistory(await src.notes.all('country'), r.iso3).map(shape) : [];
+  }, sortedByDay);
 }
 
 // Real archive events for this country between two dates (inclusive). Reads archive#<date>
@@ -81,8 +93,13 @@ async function readCountryEvents(country, fromDate, toDate) {
 }
 
 async function alreadyNoted(country, dateKey) {
-  const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: COUNTRY_PK(country), SK: `DRIFT#${dateKey}` } }));
-  return !!Item;
+  return src.via(`alreadyNoted ${country} ${dateKey}`, async () => {
+    const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: COUNTRY_PK(country), SK: `DRIFT#${dateKey}` } }));
+    return !!Item;
+  }, async () => {
+    const r = resolveIso3(country);
+    return !!r && NR.countryDrift(await src.notes.all('drift'), r.iso3, Infinity).some((n) => n.asOf === dateKey);
+  });
 }
 
 async function callLLM(prompt) {
@@ -179,15 +196,19 @@ async function processCountry(country, dryRun = false) {
 const THREAD_PK = (id) => `THREAD#${id}`;
 
 async function readThreadHistory(threadId) {
-  const out = await ddb.send(new QueryCommand({
-    TableName: SUMMARY_TABLE,
-    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :h)',
-    ExpressionAttributeValues: { ':pk': THREAD_PK(threadId), ':h': 'THREAD_HISTORY#' },
-  }));
-  return (out.Items || []).map((it) => ({
+  const shape = (it) => ({
     dateKey: it.dateKey || String(it.SK || '').replace('THREAD_HISTORY#', ''),
     riskScore: it.riskScore, dimensions: it.dimensions, trajectory: it.trajectory, threadTitle: it.threadTitle,
-  }));
+  });
+  return src.via(`readThreadHistory ${threadId}`, async () => {
+    const out = await ddb.send(new QueryCommand({
+      TableName: SUMMARY_TABLE,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :h)',
+      ExpressionAttributeValues: { ':pk': THREAD_PK(threadId), ':h': 'THREAD_HISTORY#' },
+    }));
+    return (out.Items || []).map(shape);
+    // every story_analysis note carries the day's scalars; story_history copies hold the days before the notes began
+  }, async () => NR.threadHistory(await src.notes.all('story_analysis'), await src.notes.all('story_history'), threadId).map(shape), sortedByDay);
 }
 
 // Archive events belonging to this thread in the window (filter by threadId, not region).
@@ -213,8 +234,13 @@ async function readThreadEvents(threadId, fromDate, toDate) {
 }
 
 async function threadAlreadyNoted(threadId, dateKey) {
-  const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: THREAD_PK(threadId), SK: `DRIFT#${dateKey}` } }));
-  return !!Item;
+  return src.via(`threadAlreadyNoted ${threadId} ${dateKey}`, async () => {
+    const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: THREAD_PK(threadId), SK: `DRIFT#${dateKey}` } }));
+    return !!Item;
+  }, async () => {
+    const drifts = await src.notes.all('drift');
+    return drifts.some((n) => n && n.subtype === 'drift' && n.subject && n.subject.kind === 'story' && n.subject.id === threadId && n.payload && n.payload.asOf === dateKey);
+  });
 }
 
 async function writeThreadNote(threadId, drift, note) {
@@ -273,6 +299,7 @@ async function discoverThreadIds() {
 exports.handler = async (event = {}) => {
   const results = { countries: [], threads: [] };
   RUN_ID = new Date().toISOString();
+  src.reset(); // a run reads the notes as its previous run left them, never an older warm copy
 
   const countries = event.country ? [event.country] : COUNTRIES;
   for (const country of countries) {
@@ -292,5 +319,6 @@ exports.handler = async (event = {}) => {
 
 module.exports.processThread = processThread;
 module.exports.explainMove = explainMove; // for tests
+module.exports.reads = { readHistory, alreadyNoted, readThreadHistory, threadAlreadyNoted }; // for tests (NOTES_READS)
 
 module.exports.processCountry = processCountry; // for local proving

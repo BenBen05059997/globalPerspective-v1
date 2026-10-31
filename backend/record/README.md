@@ -44,7 +44,8 @@ Alongside facts and readings the record keeps notes, the text a model wrote abou
 - `drift`: `newsDriftCorrector`;
 - `country`: `newsCountryIntelligence`;
 - `link` and `web`: `newsSystemsAnalysis`;
-- `daily_brief` and `weekly_brief` (decision 0048): `newsPostDevTo` and `newsWeeklyBrief`.
+- `daily_brief` and `weekly_brief` (decision 0048): `newsPostDevTo` and `newsWeeklyBrief`;
+- `country_facts` (decision 0053): `newsCountryFactsUpdater`, weekly, no model (Wikidata and ACLED); `story_history` (0053): no writer, backfill copies of `THREAD_HISTORY#` rows (every `story_analysis` note already carries the day's scalars). The read API and the Lambdas that used to read these DynamoDB families read these notes through shared `noteReads.js` (`NOTES_READS`).
 
 The writer's env `NOTES_PREFIX` decides where it writes. Live: `record/` on the first five Lambdas. The two brief writers have no `NOTES_PREFIX`, so they write no note, and their roles have no S3 write statement yet (the operator adds it, then sets the env). Until then the briefs reach the record only through `cli/backfill-brief-notes.mjs`. The backfill scripts in [cli](cli/README.md) wrote everything that existed before the writers. `newsStoryRecord` reads notes to build the views and writes none. Nothing in `record/notes/` is a fact; a view prefers an exact note over an archive copy (`model` null).
 

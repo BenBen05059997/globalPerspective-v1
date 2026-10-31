@@ -6,6 +6,10 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { pickSpreadEntries } = require('./spreadEntries');
 const { buildWebIndex } = require('./webRecords');
 const { writeLinkNotes } = require('./recordNotes');
+const NR = require('./_shared/noteReads');
+// NOTES_READS (decision 0053): the story analyses are read from SummarizeAndPredict (ddb, default), the record's notes (notes), or
+// DynamoDB with differences logged [notes-compare] (compare).
+const src = NR.lambdaSource();
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -42,6 +46,7 @@ const s3 = new S3Client({ region: REGION });
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 exports.handler = async (event = {}) => {
+  src.reset();
   const runStart = new Date().toISOString();
   const RUN_ID = runStart;
   console.log('Systems analysis started');
@@ -187,10 +192,16 @@ async function loadThreadAnalyses(entries) {
 
   await Promise.all(threadIds.map(async (threadId) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK },
-      }));
+      const Item = await src.via(`threadAnalysis ${threadId}`, async () => {
+        const { Item: row } = await ddb.send(new GetCommand({
+          TableName: SUMMARY_TABLE,
+          Key: { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK },
+        }));
+        return row || null;
+      }, async () => {
+        const row = NR.storyAnalysis(await src.notes.all('story_analysis'), threadId);
+        return row ? { PK: `${THREAD_PK_PREFIX}${threadId}`, SK: THREAD_SK, ...row } : null;
+      });
       if (Item) analyses[threadId] = Item;
     } catch {}
   }));
@@ -594,3 +605,4 @@ module.exports.normalizeActors = normalizeActors;
 module.exports.buildSystemsPrompt = buildSystemsPrompt; // for tests
 module.exports.validateGraph = validateGraph;
 module.exports.webHistoryKey = webHistoryKey;
+module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests (NOTES_READS)

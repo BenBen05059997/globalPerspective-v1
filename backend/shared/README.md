@@ -48,9 +48,10 @@ The record
   `record/facts/manifest.json` and each `record/notes/<subtype>/manifest.json`.
 - `notes.js`: the one builder and writer of notes (decision 0042, schema `backend/record/schema/note.schema.json`): `buildNote`
   (throws on anything the schema rejects), one builder per subtype (`entryNote`, `archiveEntryNotes`, `storyAnalysisNote`,
-  `driftNote`, `storyDriftNote`, `countryNote`, `countryHistoryNote`, `linkNote`, `webNote`, `dailyBriefNote`, `weeklyBriefNote`),
+  `driftNote`, `storyDriftNote`, `countryNote`, `countryHistoryNote`, `countryFactsNote`, `storyHistoryNote`, `linkNote`, `webNote`, `dailyBriefNote`, `weeklyBriefNote`),
   and `makeNoteWriter({s3json, prefix}).write(subtype, notes)` (manifest first, then `appendLines` deduped by `noteId`). Every note
   writer, Lambda or CLI, uses it.
+- `noteReads.js`: the readers of the notes for the rows SummarizeAndPredict used to hold (decision 0053): `countryIntelligence`, `countryHistory`, `countryDrift`, `storyDrift`, `storyAnalysis`, `threadHistory`, `countryFacts`, `driftFeed` (same field names, no gating), `makeNoteReader` (a subtype's days from its manifest, cached), `s3NoteReader`, `readMode` (env `NOTES_READS` = `ddb` | `compare` | `notes`), `viaMode`/`lambdaSource`/`rowReaders` (a Lambda's read under the flag; `compare` logs `[notes-compare]`) and `diff`. Used by the read API and seven Lambdas.
 - `briefNotes.js`: `writeBriefNote({subtype, item, lambda, runId})`, the brief writers' one helper (decision 0048). Gated by env
   `NOTES_PREFIX`: unset writes nothing; best-effort, a failure logs `[notes]` and never fails the run. Used by `newsPostDevTo` and
   `newsWeeklyBrief`.

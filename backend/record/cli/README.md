@@ -43,6 +43,24 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-notes.mjs [--d
 ```
 Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-country-notes.test.mjs`.
 
+## backfill-country-facts-notes.mjs, backfill-story-history-notes.mjs, compare-reads.mjs (decision 0053)
+
+`backfill-country-facts-notes.mjs` copies the 40 `FACTS#<c>` / `COUNTRY_FACTS` items into `country_facts` notes (model null, `at` the item's `lastUpdatedAt`).
+`backfill-story-history-notes.mjs` copies the `THREAD#<id>` / `THREAD_HISTORY#<date>` rows into `story_history` notes (`payload.from: "history"`, model null; the readers
+prefer the `story_analysis` note of a day that has one). `backfill-drift-notes.mjs` now reads `DRIFT#` as well as `DRIFTLOG#` (26 country `DRIFT#` rows from 23 June to 5 July have no
+`DRIFTLOG#` twin). All three write `record/shadow/` by default, `--live` writes `record/`, `--dry` writes nothing, and a re-run appends nothing.
+
+`compare-reads.mjs` is read only (DynamoDB Get/Query/Scan, S3 Get): it loads the read API's `records.js` and compares every country and story row from DynamoDB with the
+same row rebuilt from the notes (10 countries x `country_history` snapshots, drift chain, signed-out and member shapes, `corrections_feed`, 20 `thread_analysis`, previews, `country_facts`, thread history),
+using the notes the backfills would write for the two subtypes and the drift rows that have none yet. Exit 1 on a difference.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cli/compare-reads.mjs [--countries 10] [--threads 20]
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-facts-notes.mjs [--dry] [--live]
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-history-notes.mjs [--dry] [--live]
+```
+Tests: `node --test backend/record/cli/backfill-country-facts-notes.test.mjs backend/record/cli/backfill-story-history-notes.test.mjs backend/record/cli/backfill-drift-notes.test.mjs`.
+
 ## backfill-brief-notes.mjs
 
 Copies every `SummarizeAndPredict` `DAILY_BRIEF#<date>` / `DAILY_BRIEF` row into a `daily_brief` note and every `WEEKLY_BRIEF#<weekOf>` /

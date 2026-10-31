@@ -363,3 +363,40 @@ test('brief notes breaking their rules are rejected', () => {
   ];
   for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 120));
 });
+
+// country_facts and story_history (decision 0053): the facts a weekly run stored (no model) and the backfill copies of THREAD_HISTORY# rows.
+const factsEx = load('examples/note-country_facts.json');
+const historyEx = load('examples/note-story_history.json');
+
+test('country_facts and story_history: the builders make schema-valid notes with the shared noteId; the examples are what they build', () => {
+  const facts = N.countryFactsNote({item: {PK: 'FACTS#Japan', SK: 'COUNTRY_FACTS', ttl: 9, countryName: 'Japan', lastUpdatedAt: '2026-10-26T20:00:01.500Z',
+    capital: {names: ['Tokyo'], source: 'wikidata', checkedAt: '2026-10-26T20:00:01Z'}, population: {value: 123802000, year: 2024, source: 'wikidata', checkedAt: '2026-10-26T20:00:01Z'}}, iso3: 'JPN', producer});
+  const hist = N.storyHistoryNote({item: {PK: 'THREAD#thread-x', SK: 'THREAD_HISTORY#2026-10-11', ttl: 9, threadId: 'thread-x', dateKey: '2026-10-11', threadTitle: 'X', trajectory: 'escalating', riskScore: 70,
+    dimensions: {conflict: {score: 70, why: 'w'}}, lead: 'conflict', entryCount: 4, generatedAt: '2026-10-11T04:41:00.000Z'}, producer});
+  for (const n of [facts, hist, factsEx, historyEx]) assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(facts, {...factsEx, producer: facts.producer});
+  assert.deepEqual(hist, {...historyEx, producer: hist.producer});
+  for (const n of [facts, hist]) assert.equal(n.noteId, R.noteId(n.subtype, n.subject.id, n.part, n.at));
+  assert.deepEqual([facts.model, facts.subject, facts.at, hist.model, hist.subject, hist.threadId], [null, {kind: 'country', id: 'JPN'}, '2026-10-26T20:00:01.500Z', null, {kind: 'story', id: 'thread-x'}, 'thread-x']);
+  assert.equal(N.countryFactsNote({item: {countryName: 'Japan'}, iso3: 'JPN', producer}), null); // no lastUpdatedAt: no note
+  assert.equal(N.storyHistoryNote({item: {threadId: 'thread-x'}, producer}), null);
+  assert.throws(() => N.buildNote({subtype: 'story_history', subjectId: 'thread-x', at: '2026-10-11T04:41:00Z', payload: {dateKey: '2026-10-11'}, model: null, producer}), /history copy/);
+  assert.throws(() => N.buildNote({subtype: 'country', subjectId: 'JPN', iso3: ['JPN'], at: '2026-10-11T04:41:00Z', payload: {}, model: null, producer}), /model is required/); // only country_facts is model-less
+});
+
+test('country_facts and story_history notes breaking their rules are rejected', () => {
+  const bad = [
+    {...factsEx, model: 'deepseek'}, // no model wrote the facts
+    {...factsEx, subject: {kind: 'story', id: 'JPN'}},
+    {...factsEx, subject: {kind: 'country', id: 'Japan'}}, // an ISO3, never a name
+    {...factsEx, iso3: []},
+    {...factsEx, cites: ['e']},
+    {...factsEx, payload: {capital: {}}}, // the country name stays
+    {...historyEx, model: 'deepseek'},
+    {...historyEx, payload: {...historyEx.payload, from: 'archive'}}, // a history copy
+    {...historyEx, payload: {...historyEx.payload, extra: 1}},
+    {...historyEx, subject: {kind: 'country', id: 'JPN'}},
+    {...historyEx, part: 'summary'},
+  ];
+  for (const n of bad) assert.equal(valid(n), false, JSON.stringify(n).slice(0, 120));
+});

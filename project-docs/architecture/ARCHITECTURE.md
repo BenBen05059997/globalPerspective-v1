@@ -231,7 +231,7 @@ flowchart LR
 ```
 `newsCountryFactsUpdater` (weekly, Mondays 05:00 JST) writes current facts from Wikidata and ACLED to `FACTS#<country>`. `newsCountryIntelligence` (daily) reads thread analyses and facts and writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` plus a dated `HISTORY#<date>` snapshot. `newsDriftCorrector` (daily) compares snapshots; when a risk level, score (change of 8 or more) or trajectory moves, it grounds the move in a real archived event and writes a note (`DRIFT#<date>`, 60-day TTL; permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. Both also write the `country` and `drift` notes. The country page reads the country views and the countries index for the briefing and "what changed"; member drift depth (`country_history`), country facts and the cross-country corrections ledger stay on the proxy actions. No pipeline Lambda runs a web search.
 
-Risk tiers are 0-24 low, 25-49 moderate, 50-74 elevated, 75-100 high: `src/shared/lib/riskTiers.js` on the frontend, `tierFromScore` in `world/tier.js` on the backend.
+Risk tiers are 0-24 low, 25-49 moderate, 50-74 elevated, 75-100 high: `src/shared/lib/riskTiers.js` on the frontend, `tierFromScore` in `backend/shared/src/riskDimensions.js` on the backend (`world/tier.js` wraps it).
 
 **Invariant:** a risk tier is never a traffic-light colour. Risk shows as a number, a tier word and a ring weight; the `--tier-*` tokens are neutral greys that get brighter with the tier, and `TierChip` has no fill. `quality/verify_pages.sh` fails if a `--tier-*` token gets a hue or `TierChip.css` gets a background.
 

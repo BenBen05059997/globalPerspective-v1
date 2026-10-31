@@ -53,7 +53,7 @@ Typed inputs by domain:
 
 Universal counts for every event, never judged: outlets (corroboration), countries (spread), velocity (rate of new coverage). A field with no measured input renders "no data", never a judged substitute presented as measured.
 
-**One display scale:** `low / moderate / elevated / high`. The situation tier (`situations-core.js` `LEVEL_TIER` / `SEV_TIER`) and `riskTiers.js` (bands 0-24, 25-49, 50-74, 75-100; backend `tierFromScore` in `world/tier.js`) are the same vocabulary. A risk tier is never a traffic-light colour (decision 0013).
+**One display scale:** `low / moderate / elevated / high`. The situation tier (`situations-core.js` `LEVEL_TIER` / `SEV_TIER`) and `riskTiers.js` (bands 0-24, 25-49, 50-74, 75-100; backend `tierFromScore` in `riskDimensions.js`, wrapped by `world/tier.js`) are the same vocabulary. A risk tier is never a traffic-light colour (decision 0013).
 
 | Legacy scale | Status |
 |---|---|

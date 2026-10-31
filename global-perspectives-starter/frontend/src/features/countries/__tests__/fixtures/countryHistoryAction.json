@@ -1,0 +1,152 @@
+{
+  "success": true,
+  "countryName": "Iran",
+  "snapshots": [
+    {
+      "riskScore": 95,
+      "riskLevel": "high",
+      "trajectory": "escalating",
+      "headline": "Iran's Hormuz Closure Escalates as Trump Threatens Endgame",
+      "dateKey": "2026-10-25",
+      "dimensions": {
+        "conflict": {
+          "score": 95,
+          "why": "Record vessel strikes near Hormuz, tanker fires, and the deployment of a third US carrier group signal intense armed-actor activity and direct military escalation risk."
+        },
+        "economic": {
+          "score": 90,
+          "why": "The UAE trade embargo, US naval blockade on oil ports, and the physical closure of Hormuz are strangling Iran's oil exports and forcing global buyers to reroute."
+        },
+        "humanitarian": {
+          "score": 70,
+          "why": "Trade disruption from the UAE embargo and Hormuz closure is worsening civilian conditions, though no mass displacement or famine-scale crisis is yet reported."
+        },
+        "political": {
+          "score": 85,
+          "why": "Supreme Leader Mojtaba Khamenei faces an unresolved US ultimatum, UK accusations of IRGC-directed sabotage, and a fragile domestic legitimacy following the succession."
+        }
+      },
+      "countryName": "Iran",
+      "generatedAt": "2026-10-25T05:16:22.580Z",
+      "lead": "conflict"
+    },
+    {
+      "riskScore": 95,
+      "riskLevel": "high",
+      "trajectory": "escalating",
+      "dateKey": "2026-10-16",
+      "headline": "Iran's Hormuz Closure and Proxy Escalations Deepen Global Crisis",
+      "dimensions": {
+        "conflict": {
+          "score": 95,
+          "why": "Active Iran-Israel war, US naval blockade, Hormuz closure, tanker attacks, and proxy operations in Yemen and Europe all point to severe armed-actor intensity."
+        },
+        "economic": {
+          "score": 90,
+          "why": "UAE trade embargo, US naval blockade on oil ports, and Hormuz closure are strangling Iran's export revenue and triggering global market disruption."
+        },
+        "humanitarian": {
+          "score": 75,
+          "why": "Trade disruption from the UAE embargo and blockade is worsening civilian conditions, while multiple nuclear sites have been degraded by strikes."
+        },
+        "political": {
+          "score": 85,
+          "why": "The succession of Mojtaba Khamenei and Trump's expired peace deadline have removed diplomatic buffers, leaving the regime under extreme external pressure with no clear exit."
+        }
+      },
+      "countryName": "Iran",
+      "generatedAt": "2026-10-16T05:16:07.909Z",
+      "lead": "conflict"
+    },
+    {
+      "riskScore": 95,
+      "riskLevel": "high",
+      "trajectory": "escalating",
+      "headline": "Iran Under Mojtaba Khamenei Defies US Ultimatum as Hormuz Stays Shut",
+      "dimensions": {
+        "conflict": {
+          "score": 95,
+          "why": "Active war with Israel and the US, Hormuz closure, third US carrier deployment, and Saudi-Iran proxy escalation in Yemen all signal severe armed conflict intensity."
+        },
+        "economic": {
+          "why": "UAE trade embargo, US naval blockade on oil ports, and Hormuz closure are strangling Iran's economy and driving global oil prices to record highs.",
+          "score": 90
+        },
+        "humanitarian": {
+          "why": "Seven months of war, trade disruption, and proxy conflicts in Yemen and Saudi Arabia are worsening civilian conditions across the region.",
+          "score": 75
+        },
+        "political": {
+          "score": 85,
+          "why": "New Supreme Leader Mojtaba Khamenei faces a legitimacy test amid war, IAEA noncompliance findings, and a US ultimatum with no clear exit strategy."
+        }
+      },
+      "dateKey": "2026-10-09",
+      "countryName": "Iran",
+      "lead": "conflict",
+      "generatedAt": "2026-10-09T05:15:45.622Z"
+    }
+  ],
+  "driftNotes": [
+    {
+      "asOf": "2026-08-19",
+      "changeDimensions": {
+        "economic": {
+          "delta": 10,
+          "from": 80,
+          "to": 90
+        },
+        "humanitarian": {
+          "delta": -20,
+          "from": 90,
+          "to": 70
+        }
+      },
+      "changeScore": {
+        "delta": 0,
+        "from": 95,
+        "to": 95
+      },
+      "countryName": "Iran",
+      "currentDimensions": {
+        "political": {
+          "score": 85,
+          "why": "Internal factional fighting over war direction under Mojtaba Khamenei is weakening institutional coherence as external pressure mounts."
+        },
+        "economic": {
+          "score": 90,
+          "why": "The indefinite UAE trade embargo, US naval blockade on oil ports, and Hormuz oil spill are strangling Iran's export revenue and disrupting regional shipping."
+        },
+        "conflict": {
+          "score": 95,
+          "why": "Direct Iran-UAE missile exchanges, the collapsed US peace-deal deadline, Israeli strikes on Lebanon, and threats to bomb Oman over Hormuz mark a severe multi-front escalation."
+        },
+        "humanitarian": {
+          "score": 70,
+          "why": "The expanding Hormuz oil spill threatens an environmental disaster, while Israeli strikes in Lebanon and the UN rights chief's alarm over rising executions signal civilian harm."
+        }
+      },
+      "currentHeadline": "Iran faces Gulf isolation and US pressure as Hormuz crisis deepens",
+      "currentLead": "conflict",
+      "currentRiskLevel": "high",
+      "currentRiskScore": 95,
+      "directionFlag": {
+        "backfilled": true,
+        "at": "2026-09-30T05:17:04.671Z",
+        "source": "batch3-audit"
+      },
+      "generatedAt": "2026-08-19T07:20:07.439Z",
+      "noSingleDriver": false,
+      "priorHeadline": "Iran's fragile ceasefires strain under Israeli strikes and Gulf escalation",
+      "since": "2026-08-18",
+      "triggerEvent": {
+        "title": "UAE imposes indefinite trade embargo on Iran over alleged missile attacks",
+        "date": "2026-08-19",
+        "topicId": "UAE imposes indefinite trade embargo on Iran over alleged missile attacks-5"
+      },
+      "whyChanged": "The UAE's indefinite trade embargo on Iran directly escalates economic isolation, driving the economic score up from 80 to 90. This action also shifts the humanitarian score down as trade disruption worsens civilian conditions, while the prior missile attack (event 6) is the immediate cause but the embargo is the structural change."
+    }
+  ],
+  "driftNotesTotal": 18,
+  "driftNotesGated": true
+}

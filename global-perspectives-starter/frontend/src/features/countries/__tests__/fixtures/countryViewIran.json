@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-30"
+  },
+  "iso3": "IRN",
+  "drift": [
+    {
+      "asOf": "2026-08-19",
+      "changeDimensions": {
+        "economic": {
+          "delta": 10,
+          "from": 80,
+          "to": 90
+        },
+        "humanitarian": {
+          "delta": -20,
+          "from": 90,
+          "to": 70
+        }
+      },
+      "changeScore": {
+        "delta": 0,
+        "from": 95,
+        "to": 95
+      },
+      "countryName": "Iran",
+      "currentDimensions": {
+        "political": {
+          "score": 85,
+          "why": "Internal factional fighting over war direction under Mojtaba Khamenei is weakening institutional coherence as external pressure mounts."
+        },
+        "economic": {
+          "score": 90,
+          "why": "The indefinite UAE trade embargo, US naval blockade on oil ports, and Hormuz oil spill are strangling Iran's export revenue and disrupting regional shipping."
+        },
+        "conflict": {
+          "score": 95,
+          "why": "Direct Iran-UAE missile exchanges, the collapsed US peace-deal deadline, Israeli strikes on Lebanon, and threats to bomb Oman over Hormuz mark a severe multi-front escalation."
+        },
+        "humanitarian": {
+          "score": 70,
+          "why": "The expanding Hormuz oil spill threatens an environmental disaster, while Israeli strikes in Lebanon and the UN rights chief's alarm over rising executions signal civilian harm."
+        }
+      },
+      "currentHeadline": "Iran faces Gulf isolation and US pressure as Hormuz crisis deepens",
+      "currentLead": "conflict",
+      "currentRiskLevel": "high",
+      "currentRiskScore": 95,
+      "directionFlag": {
+        "backfilled": true,
+        "at": "2026-09-30T05:17:04.671Z",
+        "source": "batch3-audit"
+      },
+      "noSingleDriver": false,
+      "priorHeadline": "Iran's fragile ceasefires strain under Israeli strikes and Gulf escalation",
+      "since": "2026-08-18",
+      "triggerEvent": {
+        "title": "UAE imposes indefinite trade embargo on Iran over alleged missile attacks",
+        "date": "2026-08-19",
+        "topicId": "UAE imposes indefinite trade embargo on Iran over alleged missile attacks-5"
+      },
+      "whyChanged": "The UAE's indefinite trade embargo on Iran directly escalates economic isolation, driving the economic score up from 80 to 90. This action also shifts the humanitarian score down as trade disruption worsens civilian conditions, while the prior missile attack (event 6) is the immediate cause but the embargo is the structural change.",
+      "generatedAt": "2026-08-19T07:20:07.439Z",
+      "model": "deepseek-flash"
+    }
+  ],
+  "driftCount": 1,
+  "intelligence": null,
+  "systems": null
+}

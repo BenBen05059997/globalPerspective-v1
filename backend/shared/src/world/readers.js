@@ -286,6 +286,14 @@ async function scenarios(client, by = {}, opts = {}) {
   } else {
     throw new Error('scenarios needs {topicIds}, {threadId} or {from, to}');
   }
+  return snapshotsOfRows(rows, { threadId, from, to });
+}
+
+/**
+ * PRED# rows (from the table or replayed from the forecasts inbox, decision 0052) -> [snapshot], the filter and order of scenarios():
+ * rows that are not a day's PRED# row or lie outside {from, to} are dropped, a row naming another thread than `threadId` too.
+ */
+function snapshotsOfRows(rows, { threadId, from, to } = {}) {
   return rows
     .filter((r) => r && String(r.PK).startsWith('PRED#') && isDay(String(r.SK)) && inRange(String(r.SK), from, to))
     .filter((r) => !threadId || !r.threadId || r.threadId === threadId)
@@ -458,6 +466,6 @@ async function latestTopics(client, opts = {}) {
 
 module.exports = {
   DEFAULT_TABLES, resolveTables, verdictOrder,
-  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
+  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, snapshotsOfRows, verdicts, sampledQuestions,
   webIndex, webLatest, webAt, latestTopics,
 };

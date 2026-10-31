@@ -106,6 +106,20 @@ function forecastFact(snap, threadId, ctx, runId, threadFrom = null) {
 }
 
 /**
+ * The `forecast_drawn` facts of a day's input ({snapshots, entries, threadOfTopic}): a row's thread is its own `threadId`, else the thread of its topic
+ * among the day's entries, else among the window's (`threadOfTopic`); a row none of them places is no fact. Shared by the facts run and the proof CLI.
+ */
+function forecastFactsFor(input, runId) {
+  const ofDay = new Map(input.entries.filter((e) => e.threadId).map((e) => [e.topicId, e.threadId]));
+  const out = [];
+  for (const snap of input.snapshots) {
+    const threadId = snap.threadId || ofDay.get(snap.topicId) || (input.threadOfTopic && input.threadOfTopic.get(snap.topicId));
+    if (threadId) out.push(forecastFact(snap, threadId, input.entries.filter((e) => e.topicId === snap.topicId), runId));
+  }
+  return out;
+}
+
+/**
  * One line of the resolver's inbox (record/inbox/verdicts/DAY.jsonl) -> `verdict`. `forecast` = {threadId, branchId} from the
  * forecast_drawn fact, used only when the line lacks them. eventId = sha1('verdict' + qid + revision), so a re-read is the same
  * fact and a correction (revision 2) is a second one.
@@ -290,4 +304,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, provisionalEntryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};
+module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, provisionalEntryFact, bornFact, forecastFact, forecastFactsFor, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};

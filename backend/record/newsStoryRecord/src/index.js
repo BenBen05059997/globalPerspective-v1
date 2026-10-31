@@ -3,7 +3,7 @@
 // newsStoryRecord: appends the day's facts to record/facts/YYYY-MM-DD.jsonl and writes the day's Run object
 // (decision 0036), then rebuilds the views from all facts (decision 0037, publish.js). No model. Every run writes a Run, including a failed or empty one, and a run that did
 // not finish cleanly throws after writing it, so the schedule's Errors metric sees it.
-const {entryFact, bornFact, forecastFact, inboxVerdictFact, inboxDrawFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, provisionalEntryFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
+const {entryFact, bornFact, forecastFactsFor, inboxVerdictFact, inboxDrawFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, inboxAssignmentFact, ingestAssignmentFor, provisionalEntryFact, legacyVoidFact, isResolvable, runFact, KINDS} = require('./facts');
 const {isDay, addDays, eachDay} = require('./_shared/world');
 const {makePublisher} = require('./publish');
 
@@ -34,7 +34,6 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
 
   function buildFacts(input, known, runId) {
     const facts = [];
-    const threadOfTopic = new Map(input.entries.filter((e) => e.threadId).map((e) => [e.topicId, e.threadId]));
     const firstOf = new Map();
     const entered = new Set(known.filter((f) => f.kind === 'entry').map((f) => f.eventId));
     for (const e of input.entries) {
@@ -49,10 +48,7 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     for (const [threadId, birth] of Object.entries(input.births)) {
       if (birth.born === input.date && firstOf.has(threadId)) facts.push(bornFact(threadId, birth, firstOf.get(threadId), runId));
     }
-    for (const snap of input.snapshots) {
-      const threadId = snap.threadId || threadOfTopic.get(snap.topicId) || (input.threadOfTopic && input.threadOfTopic.get(snap.topicId));
-      if (threadId) facts.push(forecastFact(snap, threadId, input.entries.filter((e) => e.topicId === snap.topicId), runId));
-    }
+    facts.push(...forecastFactsFor(input, runId));
     return facts;
   }
 

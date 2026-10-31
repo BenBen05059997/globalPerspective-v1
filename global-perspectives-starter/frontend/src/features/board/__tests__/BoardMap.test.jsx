@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import BoardMap from '@/features/board/components/BoardMap.jsx';
 import MapRail from '@/features/board/components/MapRail.jsx';
-import { placeOfPin, ringCentres, placeRingLabels, MAP_W, MAP_H } from '@/features/board/lib/mapPlaces.js';
+import { placeOfPin, placeOfCountry, storyCountries, touchesOfPin, ringCentres, placeRingLabels, MAP_W, MAP_H } from '@/features/board/lib/mapPlaces.js';
 import { mapPinLine } from '@/features/board/lib/graphText.js';
 
 afterEach(cleanup);
@@ -26,6 +26,15 @@ describe('map places', () => {
     expect(placeOfPin(pins[1])).toHaveLength(2);
     expect(placeOfPin(pins[2])).toBeNull();
     expect(placeOfPin(pins[3], { iso3: [] })).toBeNull();
+  });
+  it('a story sits on its most-named country, not the first of its sorted list, and marks every other country it touches', () => {
+    // the Ebola case of 2026-10-31: the story view lists CHE first (sorted), but its entries name COD most
+    const story = { iso3: ['CHE', 'COD', 'NGA'], entries: [{ iso3: ['COD'] }, { iso3: ['COD', 'NGA'] }, { iso3: ['CHE', 'COD'] }] };
+    const pin = { pinId: 'p9', kind: 'thread', refId: 't' };
+    expect(storyCountries(story)).toEqual(['COD', 'CHE', 'NGA']);
+    expect(placeOfPin(pin, story)).toEqual(placeOfCountry('COD'));
+    expect(touchesOfPin(pin, story).map((t) => t.iso3)).toEqual(['CHE', 'NGA']);
+    expect(touchesOfPin({ ...pin, kind: 'country', refId: 'France' }, story)).toEqual([]);
   });
   it('fans pins on one spot apart and keeps labels on the map and apart', () => {
     const centres = ringCentres([{ pinId: 'a', at: [100, 100] }, { pinId: 'b', at: [100, 100] }]);

@@ -22,13 +22,33 @@ export function placeOfCountry(iso3) {
   return at && Number.isFinite(at[0]) && Number.isFinite(at[1]) ? at : null;
 }
 
-/** Where a pin sits: a country pin on its country; a story on the first country of its story view (or of the board
- *  feed's `iso3`); an actor nowhere. -> [x, y] or null. */
+/** A story's countries, most-named first: how many of its entries name each country (the story view's own `iso3` list
+ *  is sorted, so its order means nothing), ties alphabetical. Every one is a place the story touches (operator rule
+ *  2026-10-31: a place involved is a place affected). Falls back to the story's or the feed's `iso3` as given. */
+export function storyCountries(story, pin = {}) {
+  const all = story?.iso3?.length ? story.iso3 : (pin.iso3 || []);
+  const named = {};
+  for (const e of story?.entries || []) for (const c of e.iso3 || []) named[c] = (named[c] || 0) + 1;
+  return [...new Set(all)].sort((a, b) => (named[b] || 0) - (named[a] || 0) || (a < b ? -1 : 1));
+}
+
+/** Where a pin sits: a country pin on its country; a story on its most-named country with a place; an actor nowhere.
+ *  -> [x, y] or null. */
 export function placeOfPin(pin, story) {
   if (pin.kind === 'country') { const iso3 = resolveCountry(pin.refId)?.iso3; return iso3 ? placeOfCountry(iso3) : null; }
   if (pin.kind !== 'thread') return null;
-  const iso3 = (story?.iso3 || pin.iso3 || [])[0];
-  return iso3 ? placeOfCountry(iso3) : null;
+  for (const iso3 of storyCountries(story, pin)) { const at = placeOfCountry(iso3); if (at) return at; }
+  return null;
+}
+
+/** The other countries a story pin touches, as map points: [{ iso3, name, x, y }] (the ring's own country left out). */
+export function touchesOfPin(pin, story) {
+  if (pin.kind !== 'thread') return [];
+  const at = placeOfPin(pin, story);
+  return storyCountries(story, pin)
+    .map((iso3) => ({ iso3, name: COUNTRIES[iso3]?.name || iso3, p: placeOfCountry(iso3) }))
+    .filter((t) => t.p && !(at && t.p[0] === at[0] && t.p[1] === at[1]))
+    .map((t) => ({ iso3: t.iso3, name: t.name, x: t.p[0], y: t.p[1] }));
 }
 
 export const RING_R = 9;

@@ -6,7 +6,7 @@ import { dayMonth } from '@/shared/lib/branchWording.js';
 import { placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { stringLabel, mapPinLine } from '@/features/board/lib/graphText.js';
 import {
-  MAP_W, MAP_H, WORLD_PATH, REGION_LABELS, RING_R, placeOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
+  MAP_W, MAP_H, WORLD_PATH, REGION_LABELS, RING_R, placeOfPin, touchesOfPin, ringCentres, placeRingLabels, arcPath, arcMid,
 } from '@/features/board/lib/mapPlaces.js';
 import { StringLabel } from '@/features/board/components/BoardGraph.jsx';
 import '@/features/board/boardMap.css';
@@ -43,7 +43,8 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
       ...Object.values(centres).map((c) => ({ x: c.x, y: c.y, w: RING_R * 2 + 4, h: RING_R * 2 + 4 })),
       ...Object.values(labels),
     ];
-    return { centres, text, labels, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL) };
+    const touches = Object.fromEntries(pins.filter((p) => centres[p.pinId]).map((p) => [p.pinId, touchesOfPin(p, stories[p.refId])]));
+    return { centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL) };
   }, [pins, strings, failed, info, stories, now]);
 
   if (!pins.length) return <p className="board-empty">No pins yet. Add a story, a country or an actor to start the board.</p>;
@@ -63,6 +64,14 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
         <svg className="board-svg bm-svg" viewBox={`0 0 ${MAP_W} ${MAP_H}`} width={MAP_W} height={MAP_H} role="group" aria-label="Board map. The pin and string lists below give the same board as text.">
           <path className="bm-land" d={WORLD_PATH} />
           {REGION_LABELS.map((r) => <text key={r.name} className="bm-region" x={r.x} y={r.y} aria-hidden="true">{r.name}</text>)}
+          {/* every other country a story touches: a small mark tied to its ring (a place involved is a place affected) */}
+          {Object.entries(layout.touches).flatMap(([pinId, ts]) => ts.map((t) => (
+            <g key={`t-${pinId}-${t.iso3}`} className="bm-touch" data-pin-id={pinId}>
+              <title>{`${info[pinId]?.label || pinId} also touches ${t.name}`}</title>
+              <line className="bm-touch__tie" x1={layout.centres[pinId].x} y1={layout.centres[pinId].y} x2={t.x} y2={t.y} />
+              <circle className="bm-touch__dot" cx={t.x} cy={t.y} r={RING_R / 3} />
+            </g>
+          )))}
           {strings.map((s) => {
             const d = arc(s.a, s.b);
             if (!d) return null;

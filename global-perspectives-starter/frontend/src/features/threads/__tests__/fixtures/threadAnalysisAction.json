@@ -1,0 +1,121 @@
+{
+  "success": true,
+  "data": {
+    "thread-spain-high-speed-train-collisi-e41c9f": {
+      "model": "deepseek-flash",
+      "latencyMs": 10665,
+      "riskScore": 85,
+      "entryShortTitles": [
+        {
+          "shortTitle": "High-speed trains collide in Toledo, killing at least 30",
+          "topicId": "Spain High-Speed Train Collision Kills at Least 30 in Toledo Province-0"
+        },
+        {
+          "shortTitle": "Death toll rises to 68 as red signal ignored",
+          "topicId": "Spain High-Speed Train Collision Kills at Least 68 in Toledo Province-0"
+        },
+        {
+          "shortTitle": "Transport minister cites inexplicable error, investigation launched",
+          "topicId": "Spain High-Speed Train Collision Kills at Least 68 in Toledo Province-0"
+        },
+        {
+          "shortTitle": "Spain begins mourning as toll hits 69",
+          "topicId": "Spain High-Speed Train Collision Kills 69 in Toledo Province-0"
+        },
+        {
+          "shortTitle": "King visits injured as leaked tapes reveal clearance",
+          "topicId": "Spain High-Speed Train Collision Kills 69 in Toledo Province-2"
+        },
+        {
+          "shortTitle": "Grief turns to anger over rail safety ahead of election",
+          "topicId": "Spain High-Speed Train Collision Kills 69 in Toledo Province-2"
+        }
+      ],
+      "trajectory": "In the coming days, the official investigation led by Spanish authorities will focus on the control centre's decision-making and the signalling system failure. Transport Minister Óscar Puente is expected to face parliamentary questioning, and the government may announce emergency safety audits across the high-speed network. The national election, likely in the coming weeks, will see rail safety become a central issue, with opposition parties seizing on the crash to challenge Prime Minister Sánchez's administration. Internationally, Spain may face pressure from the EU to review rail safety standards, especially given the crash's severity.\n\nMost likely, the investigation will confirm that a combination of technical malfunction and human error led to the collision, resulting in resignations of senior transport officials and accelerated safety reforms. A less likely but plausible scenario is that the crash triggers a broader political crisis, with calls for early elections or a no-confidence vote if the government is perceived as negligent. In the longer term, Spain's rail infrastructure investment will be scrutinized, potentially leading to increased funding or EU-level regulatory changes. Key actors to watch include the Spanish government, Adif (the rail infrastructure manager), and the European Union Agency for Railways.",
+      "entryTopicIds": [
+        "Spain High-Speed Train Collision Kills 69 in Toledo Province-0",
+        "Spain High-Speed Train Collision Kills 69 in Toledo Province-2",
+        "Spain High-Speed Train Collision Kills at Least 30 in Toledo Province-0",
+        "Spain High-Speed Train Collision Kills at Least 68 in Toledo Province-0"
+      ],
+      "inflectionTopicId": "Spain High-Speed Train Collision Kills at Least 68 in Toledo Province-0",
+      "threadTitle": "Spain Train Crash Exposes Rail Safety Failures Before Election",
+      "watchQuestions": [
+        "Will Spain's transport minister resign or face a parliamentary inquiry over the control centre's decision to allow a train to proceed despite a red signal?",
+        "How will the upcoming national election reshape rail safety policy, and will opposition parties propose specific investment plans?",
+        "Will the EU launch an investigation into Spain's rail safety standards following this second major crash in a year?"
+      ],
+      "entryCount": 6,
+      "generatedAt": "2026-10-30T04:40:15.481Z",
+      "iso3": [
+        "ESP"
+      ],
+      "rootCauseChain": "The immediate trigger was the collision on October 28, 2026, when a high-speed train struck the rear of another that had stopped near Urda, Toledo province, after a signalling system failure. The transport minister later revealed that a control centre order allowed a train to proceed despite a red signal, indicating a critical breakdown in communication and safety protocols.\n\nThe medium-term condition enabling the disaster was the surge in rail travel in Spain—up 40%—without commensurate investment in infrastructure and safety systems. The January 2026 crash that killed 46 people had already raised concerns about rail safety, but the government's response was seen as inadequate. Ahead of the national election, accusations of underinvestment and neglect of maintenance created a political environment where safety warnings were overlooked.\n\nThe deeper structural factor is Spain's high-speed rail network, the largest in Europe, which has expanded rapidly since the 1990s but has faced aging infrastructure and inconsistent safety oversight. The 2013 Santiago de Compostela derailment, which killed 79 people, led to safety improvements but did not fully address systemic issues. The current crash underscores the challenges of maintaining a sprawling network under financial and political pressures, with Adif and Renfe struggling to balance modernization with operational safety.",
+      "sentiment": -0.9,
+      "storyArc": "On October 28, 2026, a high-speed train slammed into the rear of another that had stopped near Urda in Toledo province, killing at least 30 people in initial reports. The collision, which occurred on the Madrid-Seville line, immediately raised questions about signalling and rail safety, with death toll figures varying widely across outlets. By the next day, the toll had climbed to at least 68, and Spain's transport minister revealed that one train had been ordered to continue despite a red signal, pointing to a critical systems failure. Prime Minister Pedro Sánchez declared the country in mourning and promised a full investigation, as Spain began three days of mourning on October 29.\n\nThe story intensified as leaked recordings emerged, suggesting a control centre gave clearance for a train to proceed at normal speed even though another had stalled ahead. King Felipe VI and Queen Letizia visited injured victims in Toledo University Hospital, where 15 were in intensive care. The crash was quickly framed as Spain's second major rail disaster of the year—following a January crash that killed 46—and the deadliest in Europe since 2013. With a national election looming, the narrative shifted from a tragic accident to a political crisis, as experts and the public accused the government of underinvestment in rail infrastructure. Protests and calls for resignations grew, and the government faced mounting pressure to explain how such a failure could occur.\n\nBy October 30, the death toll stood at 69, and the focus had broadened to systemic safety concerns. The involvement of 42 foreign citizens from seven countries added an international dimension, while the release of victims' names fueled public grief and anger. The story evolved from a breaking news disaster to a political scandal with implications for the upcoming election, as the government struggled to contain the fallout and address long-standing criticisms of the rail network.",
+      "dimensions": {
+        "conflict": null,
+        "economic": null,
+        "humanitarian": {
+          "score": 85,
+          "why": "At least 69 people killed and over 100 injured, with 15 in ICU, and 42 foreign citizens involved, constituting a severe humanitarian disaster."
+        },
+        "political": {
+          "score": 75,
+          "why": "The crash has sparked protests, calls for resignations, and become a central issue ahead of a national election, threatening government stability."
+        }
+      },
+      "threadId": "thread-spain-high-speed-train-collisi-e41c9f",
+      "keyActors": [
+        {
+          "mentionCount": 4,
+          "name": "Pedro Sánchez",
+          "role": "Prime Minister of Spain"
+        },
+        {
+          "mentionCount": 2,
+          "name": "Adif",
+          "role": "Spanish rail infrastructure manager"
+        },
+        {
+          "mentionCount": 2,
+          "name": "Renfe",
+          "role": "Spanish state-owned railway operator"
+        },
+        {
+          "mentionCount": 2,
+          "name": "Iryo",
+          "role": "Spanish private high-speed rail operator"
+        },
+        {
+          "mentionCount": 2,
+          "name": "King Felipe VI",
+          "role": "King of Spain"
+        }
+      ],
+      "lead": "humanitarian",
+      "driftNote": {
+        "changeScore": {
+          "delta": 0,
+          "from": 85,
+          "to": 85
+        },
+        "since": "2026-10-29",
+        "priorTitle": "Spain High-Speed Train Collision Kills Dozens in Toledo Province",
+        "whyChanged": "The only listed events are casualty-count updates of the same collision (68 then 69 deaths); none of them introduces the rail-safety-failure or pre-election political framing that drove the political axis from 65 to 75, so no single listed event explains the move.",
+        "generatedAt": "2026-10-30T05:30:12.434Z",
+        "currentTitle": "Spain Train Crash Exposes Rail Safety Failures Before Election",
+        "asOf": "2026-10-30",
+        "noSingleDriver": true,
+        "changeDimensions": {
+          "political": {
+            "delta": 10,
+            "from": 65,
+            "to": 75
+          }
+        },
+        "threadId": "thread-spain-high-speed-train-collisi-e41c9f"
+      }
+    }
+  }
+}

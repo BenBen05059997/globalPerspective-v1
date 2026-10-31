@@ -26,11 +26,8 @@ vi.mock('@/features/threads/hooks/useNarrativeThread', () => ({
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
   useWeeklyArchive: () => ({ dayMap: {}, sortedDates: [], loading: false, error: null }),
 }));
-vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
-  useThreadAnalyses: () => ({
-    analyses: { [THREAD_ID]: { threadTitle: 'Test story', storyArc: 'A single arc sentence.' } },
-    loading: false, error: null,
-  }),
+vi.mock('@/features/threads/hooks/useStoryAnalysis', () => ({
+  useStoryAnalysis: () => ({ analysis: { threadTitle: 'Test story', storyArc: 'A single arc sentence.' }, loading: false }),
 }));
 vi.mock('@/features/threads/hooks/useThreadForecast', () => ({
   useThreadForecast: () => ({ snapshot: null, loading: false }),

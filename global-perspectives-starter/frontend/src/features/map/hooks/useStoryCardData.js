@@ -10,7 +10,7 @@
 //     the header + "Open full story" link, never a "something went wrong" box.
 import { useEffect, useState } from 'react';
 import { contentService } from '@/shared/data/contentService.js';
-import { fetchThreadAnalyses } from '@/shared/api/restProxy.js';
+import { fetchStoryAnalysis } from '@/shared/api/storyAnalysis.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 
 // Matches an actual transport/server failure, not the everyday "nothing cached for this id yet"
@@ -58,8 +58,7 @@ export function useStoryCardData(topic) {
 
       if (threadId) {
         try {
-          const result = await fetchThreadAnalyses([threadId]);
-          analysis = result?.data?.[threadId] || null;
+          analysis = await fetchStoryAnalysis(threadId);
         } catch (err) {
           // The whole lookup failed (not just a missing key) — that's a real failure.
           analysisError = true;

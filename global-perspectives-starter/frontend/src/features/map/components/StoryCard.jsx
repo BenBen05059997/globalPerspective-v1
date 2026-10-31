@@ -5,7 +5,7 @@
 // placeholder text (CLAUDE.md). Data sources:
 //   - header: the topic record already loaded by the feed (no fetch)
 //   - WHAT IS HAPPENING: SUMMARY cache (action `summary`, topicId) via useStoryCardData
-//   - WHAT IT MEANS: THREAD_ANALYSIS `trajectory` (action `thread_analysis`, threadId)
+//   - WHAT IT MEANS: THREAD_ANALYSIS `trajectory` (story view `analysis`, else action `thread_analysis`)
 //   - WHY: THREAD_ANALYSIS `rootCauseChain`, via the shared rootCauseSteps() parser. Each step is
 //     tagged with its basis using the story page's own rule (StoryMode legend): FACT = cited dated
 //     news, INFERENCE = model judgment. A stored cause step carries no citation, so every step is an

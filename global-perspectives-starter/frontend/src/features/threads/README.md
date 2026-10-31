@@ -24,7 +24,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - `ThreadPage.jsx` - arc page; `components/StoryMode.jsx` (desktop) and `PhoneStoryMode.jsx` (phone); tabs Overview, Timeline, Actors, Sources
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY` is set, else `WeeklyFallbackMap`
 - `components/ThreadForecast.jsx` (outcome wording: open / happened / not reported / awaiting check; the intro promises no check by a deadline, 0038), `ThreadIntelligence.jsx`, `FedIntoList.jsx`, `SharedActorsList.jsx` - forecast, analysis and story-link blocks
-- `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (story links)
+- `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `linksFromView`, `storyLinks`, `linkStates` (story links)
 - Public API (`index.js`): `useWeeklyArchive`, `useThreadAnalyses`, `useWebIndex`,
   `deriveFromIndex` (used by map). `WeeklyMap` is not exported: countries lazy-imports it by path.
 - Imports from other features: `@/features/economy` -> `MechanismCard`, `useEconomicImpact` (ThreadPage only; never countries).
@@ -47,7 +47,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - `useStoryAnalysis(id)` (the story page) -> the record's story view `analysis` (decision 0042 step 4: the latest story analysis note, in the shape `thread_analysis` returns, `@/shared/api/storyAnalysis.js`); no view or no analysis yet falls back to `thread_analysis`. sessionStorage `gp_story_analysis_v1_<id>`, 30 min. The map's story card reads the same way.
 - `useThreadAnalyses(ids)` -> `thread_analysis` (max 20 ids per call), for many stories at once (Stories page, map, country page); localStorage `gp_thread_analyses_v2`, 30 min.
 - `useThreadForecast(topicIds)` -> `prediction_snapshot` (still the only source). `lib/viewForecast.js` maps the story view's forks to that snapshot shape (tested against live captures, `lib/__tests__/fixtures/viewForecast.json`) but is not wired in yet: the action sometimes returns a forecast filed under another story's thread (a topic the archive moved), which the view, keyed by thread, does not carry. `useWebIndex()` -> `web_index` (memory cache, 30 min).
-- `useStoryLinks` calls `systems_analysis` (max 3 regions) only if `web_index` fails; `useLastVisit` is localStorage only.
+- `useStoryLinks(id)` (the story page's "fed into": StoryMode, PhoneStoryMode, ThreadPage) -> the record's links view (`/data/record/views/links/<id>.json`: `judgedLinks` and `web`, decision 0042). `lib/linksFromView.js` (`indexFromView`) builds an index-shaped object from that one view so `deriveFromIndex` and `linkNote` run unchanged; tested against live captures (`lib/__tests__/fixtures/linksFromView.json`, 2026-10-31). A missing view (404), a failed read (reported as `links-view`) or a view without `web` falls back to `web_index`, and that to `systems_analysis` (max 3 regions) if it fails too. Known differences from the action: neighbour titles and the top place come from the record; the empty-state "Last refresh" date is the story's newest web (absent when it sits in no web); the view has no run-wide `targets.count`, so `web_index` is read only in the `country_not_analysed` state for the "N most-covered countries" wording; a story the record calls unknown (no web, no entry in 14 days) is "unknown" where the index said `single_update`; reverse-direction judged rows appear once the views are rebuilt. Still on `web_index`: the Stories web view (`StoriesWeb`) and the map (`SituationHome`) read the whole index (many stories at once). `useLastVisit` is localStorage only.
 
 ## Pipeline
 1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) selects topics -> NewsCache `staging`.
@@ -71,4 +71,4 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 - Story web index: same command with `-d '{"action":"web_index"}'`
 - Analysis job: `aws events describe-rule --name TriggerDailyAnalysis --region ap-northeast-1 --query State`
 
-Last verified: 2026-10-20
+Last verified: 2026-10-31

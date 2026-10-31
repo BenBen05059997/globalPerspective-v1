@@ -284,18 +284,18 @@ test('webNote: the example validates; nodes with or without an edge, the backbon
   assert.equal(valid(webEx), true, JSON.stringify(valid.errors));
   assert.equal(webEx.noteId, R.noteId('web', webEx.subject.id, '', webEx.at));
   assert.deepEqual([webEx.subject, webEx.part, webEx.iso3, webEx.threadId], [{kind: 'country', id: 'JPN'}, '', ['JPN'], null]);
-  const row = {countryName: 'Japan', generatedAt: '2026-10-30T05:02:09.564Z', nodes: [{threadId: 't1'}, {threadId: 't2'}, {threadId: 't1'}, {summary: 'no id'}],
+  const row = {countryName: 'Japan', generatedAt: '2026-10-30T05:02:09.564Z', nodes: [{threadId: 't1', summary: 'one'}, {threadId: 't2'}, {threadId: 't1'}, {summary: 'no id'}],
     backbone: [{from: 't1', to: 't2', sharedActors: ['G7', 'diesel']}, {from: 't1'}], edges: []};
   const n = N.webNote({row, iso3: 'JPN', at: row.generatedAt, model: 'deepseek-v4-pro', producer});
   assert.equal(valid(n), true, JSON.stringify(valid.errors));
-  assert.deepEqual(n.payload, {country: 'Japan', nodes: ['t1', 't2'], backbone: [{from: 't1', to: 't2', sharedActors: ['G7', 'diesel'], weight: 2}]}); // weight defaults to the actor count
+  assert.deepEqual(n.payload, {country: 'Japan', nodes: [{threadId: 't1', summary: 'one'}, {threadId: 't2'}], backbone: [{from: 't1', to: 't2', sharedActors: ['G7', 'diesel'], weight: 2}]}); // weight defaults to the actor count
   const copy = N.webNote({row, iso3: 'JPN', at: row.generatedAt, model: null, producer});
   assert.equal(valid(copy), true, JSON.stringify(valid.errors));
   assert.deepEqual([copy.model, copy.payload.source], [null, 'web-history']);
   assert.equal(N.webNote({row: null, iso3: 'JPN', at: row.generatedAt, model: 'm', producer}), null);
   assert.throws(() => N.webNote({row, iso3: 'Japan', at: row.generatedAt, model: 'm', producer}), /ISO3/);
   const bad = [{...webEx, part: 'JPN'}, {...webEx, subject: {kind: 'pair', id: 'JPN'}}, {...webEx, model: null}, {...webEx, payload: {...webEx.payload, extra: 1}},
-    {...webEx, payload: {...webEx.payload, nodes: 'a'}}, {...webEx, payload: {country: 'Japan', nodes: []}}];
+    {...webEx, payload: {...webEx.payload, nodes: ['t1']}}, {...webEx, payload: {country: 'Japan', nodes: []}}];
   for (const b of bad) assert.equal(valid(b), false, JSON.stringify(b).slice(0, 160));
 });
 

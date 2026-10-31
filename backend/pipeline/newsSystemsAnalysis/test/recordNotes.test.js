@@ -37,13 +37,13 @@ test('one link note per edge: subject pairKey, part = the web country, both thre
 
 test('one web note per web, a web with no edge too: country, node ids, the deterministic backbone; the link notes are unchanged', quiet(async () => {
   const writer = fakeWriter();
-  const webRows = [{ ...rows[0], nodes: [{ threadId: 't1' }, { threadId: 't2' }, { threadId: 't9' }], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] },
+  const webRows = [{ ...rows[0], nodes: [{ threadId: 't1', summary: 'one' }, { threadId: 't2' }, { threadId: 't9' }], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] },
     { countryName: 'India', generatedAt: '2026-10-29T05:02:11.316Z', nodes: [{ threadId: 't5' }], edges: [], backbone: [] }];
   await writeLinkNotes({ rows: webRows, entries, model: 'deepseek-v4-pro', runId: 'run-1', writer });
   const webs = writer.calls[0][1];
   assert.deepEqual(webs.map((n) => [n.subtype, n.subject, n.part, n.at, n.model]), [['web', { kind: 'country', id: 'JPN' }, '', webRows[0].generatedAt, 'deepseek-v4-pro'], ['web', { kind: 'country', id: 'IND' }, '', webRows[1].generatedAt, 'deepseek-v4-pro']]);
-  assert.deepEqual(webs[0].payload, { country: 'Japan', nodes: ['t1', 't2', 't9'], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] });
-  assert.deepEqual(webs[1].payload.nodes, ['t5']);
+  assert.deepEqual(webs[0].payload, { country: 'Japan', nodes: [{ threadId: 't1', summary: 'one' }, { threadId: 't2' }, { threadId: 't9' }], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] });
+  assert.deepEqual(webs[1].payload.nodes, [{ threadId: 't5' }]);
   assert.equal(writer.calls[1][1].length, 2); // India has no edge, so no link note
   assert.deepEqual(planWebNotes({ rows: [{ countryName: 'Europe', generatedAt: '2026-10-30T05:00:00Z' }], model: 'm', runId: 'r' }).skipped, [{ country: 'Europe', reason: 'no_iso3' }]);
   // a web write that fails still never throws, and the link notes are not attempted after it

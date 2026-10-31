@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "noteId": "5d204f2cf3ee9f009984279ddd93eaf658def048",
+  "noteId": "c42454ebdbcb28e3dfc854db81f3f00b5c2fe821",
   "subtype": "web",
   "subject": {
     "kind": "country",
@@ -11,17 +11,35 @@
   "iso3": [
     "JPN"
   ],
-  "at": "2026-10-30T05:02:09.564Z",
-  "date": "2026-10-30",
+  "at": "2026-10-31T05:01:45.542Z",
+  "date": "2026-10-31",
   "payload": {
     "country": "Japan",
     "nodes": [
-      "thread-us-marine-arrested-for-alleged-8c8f50",
-      "thread-north-korea-rejects-south-s-ac-15dfe3",
-      "thread-us-pressures-europe-to-release-baec0d",
-      "thread-el-nino-reaches-record-strengt-ef8f93",
-      "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
-      "thread-g7-agrees-to-release-100-milli-4e524e"
+      {
+        "threadId": "thread-us-marine-arrested-for-alleged-8c8f50",
+        "summary": "A US Marine's arrest for murder in Okinawa strains the US-Japan alliance and tests the new governor's response."
+      },
+      {
+        "threadId": "thread-north-korea-rejects-south-s-ac-15dfe3",
+        "summary": "North Korea escalates missile tests amid tensions with South Korea over border mine blasts."
+      },
+      {
+        "threadId": "thread-us-pressures-europe-to-release-baec0d",
+        "summary": "G7 releases 100 million barrels of oil and diesel amid US pressure and energy crunch."
+      },
+      {
+        "threadId": "thread-el-nino-reaches-record-strengt-ef8f93",
+        "summary": "El Niño reaches record strength, raising global drought and flood risks according to Japan's weather agency."
+      },
+      {
+        "threadId": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+        "summary": "US deploys NMESIS anti-ship system to a Japanese island near Taiwan."
+      },
+      {
+        "threadId": "thread-g7-agrees-to-release-100-milli-4e524e",
+        "summary": "G7 agrees to release 100 million barrels of oil and diesel amid US pressure."
+      }
     ],
     "backbone": [
       {
@@ -29,11 +47,28 @@
         "to": "thread-us-pressures-europe-to-release-baec0d",
         "sharedActors": [
           "G7",
+          "United States",
           "Europe",
-          "crude oil",
+          "oil",
           "diesel"
         ],
-        "weight": 4
+        "weight": 5
+      },
+      {
+        "from": "thread-us-pressures-europe-to-release-baec0d",
+        "to": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+        "sharedActors": [
+          "United States"
+        ],
+        "weight": 1
+      },
+      {
+        "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+        "to": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+        "sharedActors": [
+          "United States"
+        ],
+        "weight": 1
       }
     ]
   },

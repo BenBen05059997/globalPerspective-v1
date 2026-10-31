@@ -1128,7 +1128,7 @@
             "description": "null only on a copy rebuilt from the dated S3 web history (payload.source web-history)"
           },
           "payload": {
-            "description": "one SYSTEMS# country web: its nodes (threadIds, with or without an edge) and its deterministic shared-actor backbone",
+            "description": "one SYSTEMS# country web: its nodes (stories, with or without an edge; summary = the model's one-line summary) and its deterministic shared-actor backbone",
             "required": [
               "country",
               "nodes",
@@ -1143,8 +1143,21 @@
               "nodes": {
                 "type": "array",
                 "items": {
-                  "type": "string",
-                  "minLength": 1
+                  "type": "object",
+                  "required": [
+                    "threadId"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "threadId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
                 }
               },
               "backbone": {

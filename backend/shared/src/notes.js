@@ -171,14 +171,17 @@ function linkNote({edge, countryName, iso3, at, model, eventIds = new Map(), pro
 
 /**
  * One SYSTEMS# country web (a row of newsSystemsAnalysis) -> a web note about its country (part ''): the web as a whole, which the
- * link notes cannot say. Payload = `country`, `nodes` (the threadIds in the web, whether or not they have an edge) and `backbone`
+ * link notes cannot say. Payload = `country`, `nodes` (the stories in the web, whether or not they have an edge: threadId and the model's one-line summary, which titles a story the archive no longer has) and `backbone`
  * (the deterministic shared-actor edges, no model: from, to, sharedActors, weight). One per web and run, even a web with no edges,
  * so the newest web of a country is known and a story in it with no link is 'analysed, no links'. `at` = the web's generatedAt;
  * model as for linkNote (null only on a copy rebuilt from the dated web history: payload.source 'web-history').
  */
 function webNote({row, iso3, at, model, producer}) {
   if (!row || !text(row.countryName)) return null;
-  const nodes = [...new Set((row.nodes || []).map((n) => n && n.threadId).filter(text))];
+  const nodes = [];
+  for (const n of row.nodes || []) { // a story once, its first entry
+    if (n && text(n.threadId) && !nodes.some((x) => x.threadId === n.threadId)) nodes.push({threadId: n.threadId, ...(text(n.summary) ? {summary: n.summary} : {})});
+  }
   const backbone = (row.backbone || []).filter((b) => b && text(b.from) && text(b.to))
     .map((b) => ({from: b.from, to: b.to, sharedActors: (b.sharedActors || []).filter(text), weight: b.weight || (b.sharedActors || []).length}));
   return buildNote({

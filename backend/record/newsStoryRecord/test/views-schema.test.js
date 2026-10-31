@@ -82,7 +82,7 @@ test('notes views (0042): a story analysis, judged links and a country view buil
   const note = (subtype, kind, id, part, at, payload) => ({subtype, subject: {kind, id}, part, at, model: 'deepseek-v4-pro', noteId: `${subtype}${id}${part}${at}`, iso3: [], payload});
   const notes = [note('story_analysis', 'story', 'thread-a', '', '2026-10-21T05:00:00.000Z', {lead: 'L', storyArc: 'A'}),
     note('link', 'pair', 'thread-a__thread-b', '', '2026-10-21T05:00:00.000Z', {mechanism: 'drives', strength: 'moderate'}),
-    note('web', 'country', 'UKR', '', '2026-10-21T05:00:00.000Z', {country: 'Ukraine', nodes: ['thread-a', 'thread-b'], backbone: [{from: 'thread-a', to: 'thread-b', sharedActors: ['G7'], weight: 1}]}),
+    note('web', 'country', 'UKR', '', '2026-10-21T05:00:00.000Z', {country: 'Ukraine', nodes: [{threadId: 'thread-a', summary: 'A'}, {threadId: 'thread-b'}], backbone: [{from: 'thread-a', to: 'thread-b', sharedActors: ['G7'], weight: 1}]}),
     note('drift', 'country', 'UKR', '', '2026-10-21T05:30:00.000Z', {countryName: 'Ukraine', whyChanged: 'x'}),
     note('country', 'country', 'UKR', '', '2026-10-21T05:15:00.000Z', {riskScore: 61})];
   const v = V.buildViews([e, f], {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1, notes});

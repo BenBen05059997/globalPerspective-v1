@@ -158,18 +158,18 @@ function windowInfos(facts, today) {
  * in no web). analysedIn: the webs the story is a node of; backbone: the web's deterministic shared-actor edges (both ends nodes of
  * the web), one row per web and other story; otherPlaces: top places of every story in judgedLinks or backbone.
  */
-function webCoverageBy(webs, judged, info, today) {
+function webCoverageBy(webs, judged, info, today, titleOf) {
   const analysed = new Map();
   const backbone = new Map();
   const add = (map, id, row) => (map.get(id) || map.set(id, []).get(id)).push(row);
   for (const [iso3, w] of [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
-    const nodes = new Set(w.payload.nodes);
+    const nodes = new Set(w.payload.nodes.map((x) => x.threadId));
     for (const id of nodes) add(analysed, id, {iso3, country: w.payload.country, generatedAt: w.at, nodes: nodes.size});
     for (const b of w.payload.backbone) {
       if (!nodes.has(b.from) || !nodes.has(b.to)) continue;
       const row = {iso3, country: w.payload.country, generatedAt: w.at, actors: b.sharedActors, weight: b.weight};
-      add(backbone, b.from, {otherThreadId: b.to, otherTitle: (info.get(b.to) || {}).title ?? null, ...row});
-      add(backbone, b.to, {otherThreadId: b.from, otherTitle: (info.get(b.from) || {}).title ?? null, ...row});
+      add(backbone, b.from, {otherThreadId: b.to, otherTitle: titleOf(b.to), ...row});
+      add(backbone, b.to, {otherThreadId: b.from, otherTitle: titleOf(b.from), ...row});
     }
   }
   const scopeFrom = addDays(today, -SCOPE_DAYS);
@@ -458,10 +458,13 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   // titles and places as the web index keeps them (newest entry of the last 30 days), not the story row's first title
   const info = windowInfos(facts, today);
   const rowTitles = new Map(all.map((r) => [r.threadId, r.title || null]));
-  for (const [id, i] of info) i.title = i.title ?? rowTitles.get(id) ?? null;
   const {newest, webs} = newestWebs(noteLines, today);
-  const judged = judgedLinksBy(noteLines, newest, (id) => (info.get(id) || {}).title ?? rowTitles.get(id) ?? null);
-  const coverage = webCoverageBy(webs, judged, info, today);
+  // a story with no entry in the window is titled by its node summary in the web (the index's titleOf), then by the record's row
+  const summaries = new Map();
+  for (const [, w] of [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1))) for (const x of w.payload.nodes) if (x.summary && !summaries.has(x.threadId)) summaries.set(x.threadId, x.summary);
+  const titleOf = (id) => (info.get(id) || {}).title ?? summaries.get(id) ?? rowTitles.get(id) ?? null;
+  const judged = judgedLinksBy(noteLines, newest, titleOf);
+  const coverage = webCoverageBy(webs, judged, info, today, titleOf);
   for (const [id, view] of links) {
     view.judgedLinks = judged.get(id) || [];
     view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};

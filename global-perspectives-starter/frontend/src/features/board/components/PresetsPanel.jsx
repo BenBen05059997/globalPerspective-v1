@@ -9,7 +9,7 @@ const H = 56;
 
 // A small picture of the preset: its pins on the board's circle, its strings between them.
 function MiniGraph({ pins, strings }) {
-  const at = layoutPins(pins, W, H);
+  const at = layoutPins(pins, W, H, strings, { x: 4, y: 4 }); // inset by a dot (r 3) so no pin is cut at the edge
   return (
     <svg className="preset-card__mini" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
       {strings.filter((s) => at[s.a] && at[s.b]).map((s) => <line key={`${s.a}-${s.b}`} x1={at[s.a].x} y1={at[s.a].y} x2={at[s.b].x} y2={at[s.b].y} className="preset-card__line" />)}

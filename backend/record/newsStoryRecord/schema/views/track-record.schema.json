@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Track record view",
+  "description": "record/views/track-record.json: the public /track-record page. `questions` is the weekly sampled-question scheme (the shape of predictions/track_record.json data.questions without settleHealth, a week's reviewed and draw.pool); `legacy` is the frozen pilot era, a constant.",
+  "type": "object",
+  "required": ["schemaVersion", "asOf", "builtFrom", "questions", "legacy"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "asOf": {"$ref": "#/definitions/day", "description": "the UTC day the question states (awaiting / past deadline) were computed for"},
+    "builtFrom": {
+      "type": "object",
+      "required": ["factsThrough"],
+      "additionalProperties": false,
+      "properties": {"factsThrough": {"anyOf": [{"$ref": "#/definitions/day"}, {"type": "null"}]}}
+    },
+    "questions": {
+      "type": "object",
+      "required": ["method", "firstIssuedAt", "firstCommit", "firstDrawWeek", "issued", "sampledTotal", "warmUp", "weeks", "sampled", "counts", "scoring"],
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "object",
+          "required": ["K", "leadDays", "rule", "graceDays"],
+          "additionalProperties": false,
+          "properties": {
+            "K": {"type": "integer", "minimum": 1},
+            "leadDays": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+            "rule": {"type": "string"},
+            "graceDays": {"type": "integer", "minimum": 0}
+          }
+        },
+        "firstIssuedAt": {"anyOf": [{"$ref": "#/definitions/iso"}, {"type": "null"}]},
+        "firstCommit": {
+          "anyOf": [
+            {"type": "object", "required": ["weekId", "committedAt"], "additionalProperties": false, "properties": {"weekId": {"$ref": "#/definitions/week"}, "committedAt": {"$ref": "#/definitions/iso"}}},
+            {"type": "null"}
+          ]
+        },
+        "firstDrawWeek": {"anyOf": [{"$ref": "#/definitions/week"}, {"type": "null"}]},
+        "issued": {"type": "integer", "minimum": 0, "description": "question branches in forecast_drawn facts; a forecast the record never received is not counted"},
+        "sampledTotal": {"type": "integer", "minimum": 0},
+        "warmUp": {"type": "integer", "minimum": 0},
+        "weeks": {"type": "array", "items": {"$ref": "#/definitions/week_row"}},
+        "sampled": {"type": "array", "items": {"$ref": "#/definitions/sampled"}},
+        "counts": {
+          "type": "object",
+          "required": ["locked", "yes", "no", "void", "awaiting", "pastDeadlineUnchecked", "resolved"],
+          "additionalProperties": false,
+          "properties": {
+            "locked": {"type": "integer", "minimum": 0}, "yes": {"type": "integer", "minimum": 0}, "no": {"type": "integer", "minimum": 0},
+            "void": {"type": "integer", "minimum": 0}, "awaiting": {"type": "integer", "minimum": 0}, "pastDeadlineUnchecked": {"type": "integer", "minimum": 0},
+            "resolved": {"type": "integer", "minimum": 0}
+          }
+        },
+        "scoring": {"description": "null below 150 resolved questions", "type": ["object", "null"]}
+      }
+    },
+    "legacy": {
+      "type": "object",
+      "required": ["source", "asOf", "eraCutFrom", "totalDatedTriggers", "resolvedTriggers", "legacyPredictionsExcluded", "recent"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"type": "string"},
+        "asOf": {"$ref": "#/definitions/day"},
+        "eraCutFrom": {"$ref": "#/definitions/day"},
+        "totalDatedTriggers": {"type": "integer", "minimum": 0},
+        "resolvedTriggers": {"type": "integer", "minimum": 0},
+        "legacyPredictionsExcluded": {"type": "integer", "minimum": 0},
+        "recent": {"type": "array", "items": {"type": "object"}}
+      }
+    }
+  },
+  "definitions": {
+    "day": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "iso": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"},
+    "week": {"type": "string", "pattern": "^\\d{4}-W\\d{2}$"},
+    "week_row": {
+      "type": "object",
+      "required": ["weekId", "weekStart", "commit", "reveal", "drawn", "eligible", "clusters", "picked", "due", "settled", "void"],
+      "additionalProperties": false,
+      "properties": {
+        "weekId": {"$ref": "#/definitions/week"},
+        "weekStart": {"$ref": "#/definitions/day"},
+        "commit": {"anyOf": [{"type": "object", "required": ["hash", "committedAt"], "additionalProperties": false, "properties": {"hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "committedAt": {"$ref": "#/definitions/iso"}}}, {"type": "null"}]},
+        "reveal": {"anyOf": [{"type": "object", "required": ["seedHex", "revealedAt"], "additionalProperties": false, "properties": {"seedHex": {"type": ["string", "null"]}, "revealedAt": {"$ref": "#/definitions/iso"}}}, {"type": "null"}]},
+        "drawn": {"type": "boolean"},
+        "eligible": {"type": ["integer", "null"]},
+        "clusters": {"type": ["integer", "null"]},
+        "picked": {"type": ["integer", "null"]},
+        "due": {"type": "integer", "minimum": 0},
+        "settled": {"type": "integer", "minimum": 0},
+        "void": {"type": "integer", "minimum": 0}
+      }
+    },
+    "sampled": {
+      "type": "object",
+      "required": ["qid", "weekId", "storyTitle", "question", "resolutionSource", "p", "deadline", "issuedAt", "clusterKey", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "qid": {"type": "string"},
+        "weekId": {"$ref": "#/definitions/week"},
+        "storyTitle": {"type": ["string", "null"]},
+        "question": {"type": "string"},
+        "resolutionSource": {"type": ["string", "null"]},
+        "p": {"type": ["number", "null"]},
+        "deadline": {"$ref": "#/definitions/day"},
+        "issuedAt": {"$ref": "#/definitions/iso"},
+        "clusterKey": {"type": ["string", "null"]},
+        "state": {"enum": ["yes", "no", "void", "awaiting", "past_deadline_unchecked"]},
+        "verdict": {
+          "type": "object",
+          "required": ["decidedAt", "url", "quote"],
+          "additionalProperties": false,
+          "properties": {"decidedAt": {"$ref": "#/definitions/iso"}, "url": {"type": ["string", "null"]}, "quote": {"type": ["string", "null"]}}
+        },
+        "voidReason": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

@@ -48,3 +48,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0041](0041-docs-slimmed-to-architecture-decisions-readmes.md) | 2026-10-26 | Docs slimmed to architecture, decisions, READMEs and one start file | accepted |
 | [0042](0042-notes-move-to-the-record.md) | 2026-10-31 | The daily model notes move to the record (`record/notes/`), one schema and ID rule | accepted; amends 0040 |
 | [0043](0043-question-draws-in-the-record.md) | 2026-10-31 | The weekly question draws move to the record (`question_commit`, `question_draw`), views carry scoring and state | accepted; follows 0035, 0038, 0042 |
+| [0044](0044-track-record-view.md) | 2026-10-31 | The track record page reads `views/track-record.json` built from facts; legacy pilot stats are a constant; corrections stay gated on the action | accepted; follows 0037, 0043 |

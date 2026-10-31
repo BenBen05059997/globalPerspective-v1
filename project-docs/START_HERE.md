@@ -23,7 +23,7 @@ Live since 2026-10-30/31:
 - Story views carry entry notes, outlet country and type, `topicId` and `iso3`; new entry facts keep source snippet, tier and actor names.
 - **Story page timeline reads the record** (released to Pages 2026-10-31): view entries up to `factsThrough`, `narrative_thread` only for later days or a story with no view. Compared on 10 stories: every shown entry keeps its AI tabs, sources and countries; re-seen headlines show on their first day; same-article duplicates show once; non-country regions are dropped. The Pages script now ships `textures/` (the globe texture 404 is fixed).
 
-Watch next:
+Watch next (the full test checklist, browser checks included, is the "What to test" section of https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd):
 - Agent run 04:25 UTC, `newsThreadAnalysis` 04:40, `newsDriftCorrector` 05:30: a `[notes]` log line each, shadow notes schema-valid; then set `NOTES_PREFIX=record/` on each.
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.
 - First full review Mon 2026-11-02 01:00 UTC (W44, about 520 stories): Run `ok`, `notReached` 0.

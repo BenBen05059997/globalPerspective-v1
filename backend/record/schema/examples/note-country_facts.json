@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "noteId": "89aa2e4dddca6f9f24fab92ef57ea7fb82752d89",
+  "subtype": "country_facts",
+  "subject": {
+    "kind": "country",
+    "id": "JPN"
+  },
+  "part": "",
+  "threadId": null,
+  "iso3": [
+    "JPN"
+  ],
+  "at": "2026-10-26T20:00:01.500Z",
+  "date": "2026-10-26",
+  "payload": {
+    "countryName": "Japan",
+    "capital": {
+      "names": [
+        "Tokyo"
+      ],
+      "source": "wikidata",
+      "checkedAt": "2026-10-26T20:00:01Z"
+    },
+    "population": {
+      "value": 123802000,
+      "year": 2024,
+      "source": "wikidata",
+      "checkedAt": "2026-10-26T20:00:01Z"
+    }
+  },
+  "cites": [],
+  "model": null,
+  "promptVersion": null,
+  "producer": {
+    "lambda": "capture-entry-notes",
+    "runId": "test-1"
+  }
+}

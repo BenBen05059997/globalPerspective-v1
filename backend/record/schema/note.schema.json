@@ -38,7 +38,9 @@
         "link",
         "web",
         "daily_brief",
-        "weekly_brief"
+        "weekly_brief",
+        "country_facts",
+        "story_history"
       ]
     },
     "subject": {
@@ -106,7 +108,7 @@
         "string",
         "null"
       ],
-      "description": "the model that wrote the note; null only on an archive copy (payload.from = archive), whose writer did not record it"
+      "description": "the model that wrote the note; null only on an archive or history copy (payload.from = archive | history) and on country_facts (fetched from Wikidata and ACLED, no model)"
     },
     "promptVersion": {
       "type": [
@@ -1518,6 +1520,158 @@
             }
           }
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "country_facts"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "kind": {
+                "const": "country"
+              },
+              "id": {
+                "pattern": "^[A-Z]{3}$"
+              }
+            }
+          },
+          "part": {
+            "const": ""
+          },
+          "iso3": {
+            "minItems": 1
+          },
+          "model": {
+            "type": "null"
+          },
+          "cites": {
+            "maxItems": 0
+          },
+          "payload": {
+            "description": "the FACTS#<country> / COUNTRY_FACTS item newsCountryFactsUpdater stores, minus keys, ttl and lastUpdatedAt (the note's at): leadership (the original 12 countries), capital and population, each with its source and as-of; acledData for the original 12",
+            "required": [
+              "countryName"
+            ],
+            "properties": {
+              "countryName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "capital": {
+                "type": "object"
+              },
+              "population": {
+                "type": "object"
+              },
+              "headOfState": {
+                "type": "object"
+              },
+              "headOfGovernment": {
+                "type": "object"
+              },
+              "leadershipSource": {
+                "type": "string"
+              },
+              "leadershipString": {
+                "type": "string"
+              },
+              "acledData": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subtype": {
+            "const": "story_history"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "kind": {
+                "const": "story"
+              }
+            }
+          },
+          "part": {
+            "const": ""
+          },
+          "model": {
+            "type": "null"
+          },
+          "cites": {
+            "maxItems": 0
+          },
+          "threadId": {
+            "type": "string"
+          },
+          "payload": {
+            "description": "a THREAD_HISTORY#<date> row (the day's scalar read of a story), minus keys, ttl, threadId and generatedAt (the note's at); a backfill copy only, so from is always history",
+            "required": [
+              "from",
+              "dateKey",
+              "threadTitle",
+              "riskScore"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "const": "history"
+              },
+              "dateKey": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "threadTitle": {
+                "type": "string"
+              },
+              "trajectory": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "riskScore": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "dimensions": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "lead": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "entryCount": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
       }
     }
   ]

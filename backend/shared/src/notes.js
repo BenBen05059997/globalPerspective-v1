@@ -8,7 +8,9 @@ const {makeManifest} = require('./manifest');
 const {briefWithIso3, weeklyWithIso3, briefCountries} = require('./briefs');
 
 const SCHEMA_VERSION = 1;
-const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', web: 'country', daily_brief: 'brief', weekly_brief: 'brief'};
+const SUBJECT_KIND = {entry: 'entry', story_analysis: 'story', drift: 'country', country: 'country', link: 'pair', web: 'country', daily_brief: 'brief', weekly_brief: 'brief', country_facts: 'country', story_history: 'story'};
+// subtypes no model writes: country_facts is fetched from Wikidata and ACLED (model null)
+const NO_MODEL = new Set(['country_facts']);
 // TOPIC# sort key -> the entry note part
 const ENTRY_PARTS = {SUMMARY: 'summary', PREDICTION: 'prediction', TRACE_CAUSE: 'cause'};
 const ISO3 = /^[A-Z]{3}$/;
@@ -25,13 +27,14 @@ function buildNote({subtype, subjectId, kind: subjectKind, part = '', threadId =
   if (BRIEF_ID[subtype] && !BRIEF_ID[subtype].test(subjectId)) throw new Error(`notes: ${subtype} subject ${subjectId} is not ${subtype === 'daily_brief' ? 'daily:DATE' : 'weekly:DATE'}`);
   if (subtype === 'entry' && !Object.values(ENTRY_PARTS).includes(part)) throw new Error(`notes: entry part ${part}`);
   if (subtype === 'link' && !ISO3.test(part)) throw new Error(`notes: a link note's part is its country ISO3 (${part})`);
-  if ((subtype === 'country' || subtype === 'web') && part !== '') throw new Error(`notes: a country or web note has no part (${part})`);
+  if (['country', 'web', 'country_facts', 'story_history'].includes(subtype) && part !== '') throw new Error(`notes: a country or web note has no part (${part})`);
   if (subtype === 'entry' && !cites.length) throw new Error('notes: an entry note cites its entry');
   const when = Date.parse(at);
   if (!Number.isFinite(when)) throw new Error(`notes: ${subtype} needs a valid at`);
   if (!Array.isArray(iso3) || !iso3.every((c) => ISO3.test(c))) throw new Error(`notes: iso3 must be ISO3 codes (${iso3})`);
   if (!payload || typeof payload !== 'object') throw new Error('notes: payload must be an object');
-  const copy = payload && (payload.from === 'archive' || payload.from === 'history' || payload.source === 'web-history');
+  if (subtype === 'story_history' && !(payload && payload.from === 'history')) throw new Error('notes: a story_history note is a history copy (payload.from history)');
+  const copy = payload && (payload.from === 'archive' || payload.from === 'history' || payload.source === 'web-history' || NO_MODEL.has(subtype));
   if (!text(model) && !(copy && model === null)) throw new Error('notes: model is required (null only on an archive, history or web-history copy)');
   if (!producer || !text(producer.lambda) || !text(producer.runId)) throw new Error('notes: producer {lambda, runId} is required');
   const iso = new Date(when).toISOString();
@@ -126,6 +129,33 @@ function countryHistoryNote({item, iso3, producer}) {
   return buildNote({
     subtype: 'country', subjectId: iso3, iso3: [iso3], at: item.generatedAt,
     payload: {...omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'model', 'dateKey']), from: 'history'}, model: null, producer,
+  });
+}
+
+/**
+ * The FACTS# / COUNTRY_FACTS item newsCountryFactsUpdater stores + the country's ISO3 -> a country_facts note (part ''): the
+ * country's leader, capital and population as Wikidata and ACLED gave them that run. No model wrote it (model null). `at` = the
+ * item's lastUpdatedAt; payload = the stored item minus keys, ttl and lastUpdatedAt. One note per weekly run; readers take the latest.
+ */
+function countryFactsNote({item, iso3, producer}) {
+  if (!item || !text(item.countryName) || !text(item.lastUpdatedAt)) return null;
+  return buildNote({
+    subtype: 'country_facts', subjectId: iso3, iso3: [iso3], at: item.lastUpdatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'lastUpdatedAt']), model: null, producer,
+  });
+}
+
+/**
+ * One THREAD# / THREAD_HISTORY#<date> row (the day's scalar read of a story: title, trajectory, score, dimensions, lead, entry
+ * count) -> a story_history note copy for a day that has no story_analysis note: payload.from 'history', model null. Backfill only;
+ * every story_analysis note written from now on carries these fields, so the writer makes no second note. A separate subtype so a
+ * copy can never be taken for the story's latest analysis.
+ */
+function storyHistoryNote({item, producer}) {
+  if (!item || !text(item.threadId) || !text(item.generatedAt)) return null;
+  return buildNote({
+    subtype: 'story_history', subjectId: item.threadId, threadId: item.threadId, at: item.generatedAt,
+    payload: {...omit(item, ['PK', 'SK', 'ttl', 'generatedAt', 'threadId']), from: 'history'}, model: null, producer,
   });
 }
 
@@ -263,4 +293,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, webNote, dailyBriefNote, weeklyBriefNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, countryFactsNote, storyHistoryNote, linkNote, webNote, dailyBriefNote, weeklyBriefNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};

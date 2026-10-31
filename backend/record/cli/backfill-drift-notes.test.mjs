@@ -20,3 +20,10 @@ test('planDriftNotes: the trigger story gives threadId; a re-plan gives the same
   const b = planDriftNotes({ items: [it], producer: { ...producer, runId: 'other' } }).notes[0];
   assert.deepEqual([a.threadId, a.noteId === b.noteId], ['thread-x', true]);
 });
+
+test('planDriftNotes: a DRIFT# row with no DRIFTLOG# copy (written before the archive existed) is a note too; the pair of one run is one note (0053)', () => {
+  const only = { ...log('Japan', '2026-06-24'), SK: 'DRIFT#2026-06-24' };
+  const pair = [log('Iran', '2026-10-11'), { ...log('Iran', '2026-10-11'), SK: 'DRIFT#2026-10-11', ttl: 1 }];
+  const plan = planDriftNotes({ items: [only, ...pair], producer });
+  assert.deepEqual(plan.notes.map((n) => [n.subject.id, n.payload.asOf]).sort(), [['IRN', '2026-10-11'], ['JPN', '2026-06-24']]);
+});

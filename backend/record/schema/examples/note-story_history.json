@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "noteId": "66d75dd7ed88df020d7fe559bc209418bc762409",
+  "subtype": "story_history",
+  "subject": {
+    "kind": "story",
+    "id": "thread-x"
+  },
+  "part": "",
+  "threadId": "thread-x",
+  "iso3": [],
+  "at": "2026-10-11T04:41:00.000Z",
+  "date": "2026-10-11",
+  "payload": {
+    "dateKey": "2026-10-11",
+    "threadTitle": "X",
+    "trajectory": "escalating",
+    "riskScore": 70,
+    "dimensions": {
+      "conflict": {
+        "score": 70,
+        "why": "w"
+      }
+    },
+    "lead": "conflict",
+    "entryCount": 4,
+    "from": "history"
+  },
+  "cites": [],
+  "model": null,
+  "promptVersion": null,
+  "producer": {
+    "lambda": "capture-entry-notes",
+    "runId": "test-1"
+  }
+}

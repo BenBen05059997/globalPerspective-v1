@@ -48,3 +48,23 @@ test('planForecastGaps: a re-plan after the facts are stored finds nothing, and 
   const { forecastFact } = require('../newsStoryRecord/src/facts.js');
   assert.equal(first.facts[0].eventId, forecastFact(snaps[0], 't-own', [], 'other').eventId);
 });
+
+test('planForecastGaps: a topic id with no entry is placed by the entry whose title equals the forecast title within 3 days (marked threadFrom), the nearest entry of a topic wins, the rest is unresolved (0047)', async () => {
+  const titled = (title, threadId, date) => ({ kind: 'entry', eventId: `e-${title}-${date}`, threadId, date, at: `${date}T08:00:00Z`, payload: { title, topicId: `${title}-3` } });
+  const snaps = await snapshots([
+    row('Big storm hits coast-7', '2026-07-10', { title: 'Big storm hits coast' }), // topic id unknown, title equals an entry 1 day away
+    row('Far away-2', '2026-07-10', { title: 'Far away' }), // the only entry with that title is 9 days away
+    row('Shared topic-1', '2026-07-10'), // the same topic id on two days: the nearer one
+    row('Nobody-5', '2026-07-10'),
+  ]);
+  const facts = [
+    titled('Big storm hits coast', 't-storm', '2026-07-11'),
+    titled('Far away', 't-far', '2026-07-19'),
+    { kind: 'entry', eventId: 'a', threadId: 't-old', date: '2026-07-01', at: '2026-07-01T08:00:00Z', payload: { topicId: 'Shared topic-1', title: 'x' } },
+    { kind: 'entry', eventId: 'b', threadId: 't-near', date: '2026-07-12', at: '2026-07-12T08:00:00Z', payload: { topicId: 'Shared topic-1', title: 'y' } },
+  ];
+  const plan = planForecastGaps({ snapshots: snaps, facts, firstDay: '2026-06-01', runId: 'r' });
+  assert.deepEqual(plan.facts.map((f) => [f.payload.topicId, f.threadId, f.payload.threadFrom]).sort(), [['Big storm hits coast-7', 't-storm', 'title'], ['Shared topic-1', 't-near', undefined]]);
+  assert.deepEqual(plan.unresolved.map((u) => u.pk).sort(), ['PRED#Far away-2', 'PRED#Nobody-5']);
+  assert.deepEqual(plan.counts.byRule, { thread: 0, topic: 1, title: 1 });
+});

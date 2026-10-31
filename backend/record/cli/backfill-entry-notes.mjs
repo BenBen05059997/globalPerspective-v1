@@ -3,8 +3,9 @@
 // (format 'text', model null, payload.from 'archive') through shared notes.js. A note whose subject is not an entry fact is
 // reported and not written; a re-run appends nothing (same noteId). Views prefer an exact note over a copy.
 //
-//   node backfill-entry-notes.mjs [--live] [--dry] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--bucket B]
-//   default writes under record/shadow/; --live writes record/. SDK: see sdk.mjs (RECORD_SDK_DIR).
+//   node backfill-entry-notes.mjs [--live] [--dry] [--prefix record/<name>/] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--bucket B]
+//   default writes under record/shadow/ and reads the facts of record/; --live writes record/; --prefix reads the facts of that prefix and writes
+//   its notes there (a rehearsal of the history copy, 0047). The days are the facts manifest's, so the pre-record days are covered once their facts exist. SDK: see sdk.mjs (RECORD_SDK_DIR).
 import { createRequire } from 'node:module';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
@@ -34,18 +35,19 @@ export function planArchiveNotes({ rows, knownEventIds, producer }) {
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, from: { type: 'string' }, to: { type: 'string' }, bucket: { type: 'string' } } });
+  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, prefix: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, bucket: { type: 'string' } } });
   const bucket = values.bucket || process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-  const prefix = values.live ? 'record/' : 'record/shadow/';
+  const prefix = values.prefix || (values.live ? 'record/' : 'record/shadow/');
+  const readPrefix = values.prefix || 'record/';
   const s3sdk = requireSdk('@aws-sdk/client-s3');
   const { DynamoDBClient } = requireSdk('@aws-sdk/client-dynamodb');
   const { DynamoDBDocumentClient, GetCommand } = requireSdk('@aws-sdk/lib-dynamodb');
   const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }));
   const s3json = makeS3Json({ client: new s3sdk.S3Client({ region: REGION }), GetObjectCommand: s3sdk.GetObjectCommand, PutObjectCommand: s3sdk.PutObjectCommand, bucket });
 
-  const factDays = ((await s3json.getJson('record/facts/manifest.json')) || { days: [] }).days;
+  const factDays = ((await s3json.getJson(`${readPrefix}facts/manifest.json`)) || { days: [] }).days;
   const knownEventIds = new Set();
-  for (const d of factDays) for (const f of (await s3json.getLines(`record/facts/${d}.jsonl`)).lines) if (f.kind === 'entry') knownEventIds.add(f.eventId);
+  for (const d of factDays) for (const f of (await s3json.getLines(`${readPrefix}facts/${d}.jsonl`)).lines) if (f.kind === 'entry') knownEventIds.add(f.eventId);
 
   const days = factDays.filter((d) => (!values.from || d >= values.from) && (!values.to || d <= values.to));
   const rows = [];

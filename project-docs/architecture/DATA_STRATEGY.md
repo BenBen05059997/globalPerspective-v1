@@ -72,6 +72,7 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `record/inbox/assignments/YYYY-MM-DD.jsonl` | operator, applying approved review proposals or benchmark placements | on demand | `newsStoryRecord` |
 | `record/operator/aliases.json` (the who's who file) | operator only | on demand | `newsStoryRecord`, `newsRecordReview` |
 | `record/notes/entry/YYYY-MM-DD.jsonl`, `record/notes/entry/manifest.json` | `NewsProjectInvokeAgentLambda` after its daily archive (env `NOTES_PREFIX`; `record/shadow/` until switched), and `backend/record/cli/capture-entry-notes.mjs` (one-off capture) | each agent run (04:25, 12:25, 20:25 UTC), append-only, model text, deduped by `noteId` | view rebuilds (next) |
+| `record/legacy/predictions/YYYY-MM-DD.jsonl`, `record/legacy/predictions/manifest.json` | `backend/record/cli/backfill-history.mjs` (one-off, decision 0047) | once; whole `PRED#` rows from before the record that no story can be found for (no thread, so no fact) | nothing reads it; the only copy once PredictionLog `PRED#` is deleted |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` | weekly, Monday 01:00 UTC, append-only, model | view rebuilds |
 | `record/runs/review-YYYY-Www.json` | `newsRecordReview` | weekly, the review Run | operator |
 | `record/views/…` (stories, index/active, index/all, links, counts, countries, manifest) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | `newsBoard`, the Worker (`/data/record/views/`) |

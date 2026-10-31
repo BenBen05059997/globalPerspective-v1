@@ -126,11 +126,11 @@ Views choices (step 2, 0037 left these open; narrowest reading):
 - Every story has a `links/` file: computed links for active stories; an empty one (`links: []`, `confirmedLinks: []`) for a merged or idle story, so its old file is overwritten rather than left stale (nothing deletes views; the rebuild test found 7 merged stories still carrying 2026-10-23 links, fixed 2026-10-31).
 - `entriesOmitted` is always present (0 when nothing was cut). Entries carry `fromThreadId` only when merged in, and `corrected: true` only when a correction names them.
 
-```sh
-node backend/record/newsStoryRecord/dryrun.mjs --from 2026-09-06 --to 2026-10-20 --out <outDir>/
-```
+A dry run of the facts writer against live DynamoDB (reads only; the would-be S3 objects go to local files through the real shared helpers) is `backend/record/cli/backfill-history.mjs` (decision 0047; it replaced `dryrun.mjs`): it replays any range of archive days through this handler with `strict:false`, optionally on top of a local copy of the live record (`--seed`).
 
-The dry run reads live DynamoDB (`get-item`, `query`, `batch-get-item` through the aws CLI; nothing else is allowed) and writes the would-be S3 objects to local files with local ETags through the real shared helpers.
+```sh
+node backend/record/cli/backfill-history.mjs --from 2026-03-07 --to 2026-09-05 --out <outDir> --seed <local copy of record/> [--ddb-cache <dir>]
+```
 
 The views dry run needs no DynamoDB: sync the facts read-only and build locally (nothing is written to S3).
 

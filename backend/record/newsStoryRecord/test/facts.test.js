@@ -34,6 +34,12 @@ test('entry fact keeps the raw capture the pages show: source snippet and tier, 
   assert.equal('actors' in F.entryFact({...entry, actors: []}, 'r').payload, false);
 });
 
+test('entry fact keeps the archive row\'s places text as payload.regions (0047); absent when the row has none', () => {
+  assert.deepEqual(F.entryFact({...entry, regions: ['Iran', '', 'UAE']}, 'r').payload.regions, ['Iran', 'UAE']);
+  assert.equal('regions' in F.entryFact({...entry, regions: []}, 'r').payload, false);
+  assert.equal('regions' in F.entryFact(entry, 'r').payload, false);
+});
+
 test('entry without a usable url uses title basis; without archivedAt the day is the archive day', () => {
   const f = F.entryFact({...entry, sources: [], archivedAt: null}, 'r');
   assert.equal(f.idBasis, 'title');

@@ -70,7 +70,8 @@ function entryFact(e, runId) {
     kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: exact || e.archivedAt || `${e.date}T00:00:00Z`, precision: exact ? 'exact' : 'day', threadId: e.threadId,
     iso3: e.iso3, actorIds: actorIdsOf(e.actors), sourceIds: sources.map((s) => s.sourceId), sourceRow: e.sourceRow, runId,
     payload: {title: e.title, summary: null, category: e.category, eventType: e.eventType, continuesTopic: e.continuesTopic, topicId: e.topicId,
-      ...(Array.isArray(e.actors) && e.actors.length ? {actors: e.actors.filter((a) => typeof a === 'string' && a)} : {})}, // display names, as captured
+      ...(Array.isArray(e.actors) && e.actors.length ? {actors: e.actors.filter((a) => typeof a === 'string' && a)} : {}), // display names, as captured
+      ...(Array.isArray(e.regions) && e.regions.length ? {regions: e.regions.filter((r) => typeof r === 'string' && r)} : {})}, // the places text of the archive row, as captured (0047: before 2026-09-12 no row carries iso3)
     extra: {idBasis: identity.idBasis, sources},
   });
 }
@@ -84,14 +85,14 @@ function bornFact(threadId, birth, first, runId) {
   });
 }
 
-/** One PRED# snapshot -> `forecast_drawn`. `ctx` = the day's entries drawn on the same topic (iso3, actors, sources). */
-function forecastFact(snap, threadId, ctx, runId) {
+/** One PRED# snapshot -> `forecast_drawn`. `ctx` = the day's entries drawn on the same topic (iso3, actors, sources). `threadFrom` ('title') marks a thread found by the forecast's title, not by its own thread id or topic id (0047). */
+function forecastFact(snap, threadId, ctx, runId, threadFrom = null) {
   const fork = world.branchesFromScenarios([snap])[0];
   const branches = fork.branches.map((b) => ({branchId: b.branchId, text: b.text, p: b.p, trigger: b.trigger, resolutionSource: b.resolutionSource, due: b.due, question: b.question, qid: b.qid, scenarioP: b.scenarioP}));
   return makeFact({
     kind: 'forecast_drawn', sourceKey: snap.sourceKey, at: snap.generatedAt || `${snap.date}T00:00:00Z`, precision: snap.generatedAt ? 'exact' : 'day', threadId,
     iso3: ctx.flatMap((e) => e.iso3), actorIds: ctx.flatMap((e) => actorIdsOf(e.actors)), sourceIds: ctx.flatMap(sourceIdsOf),
-    sourceRow: snap.sourceRow, runId, payload: {forkId: fork.forkId, topicId: snap.topicId, branches},
+    sourceRow: snap.sourceRow, runId, payload: {forkId: fork.forkId, topicId: snap.topicId, branches, ...(threadFrom ? {threadFrom} : {})},
   });
 }
 

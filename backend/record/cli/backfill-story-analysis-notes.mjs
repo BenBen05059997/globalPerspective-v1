@@ -5,8 +5,10 @@
 // appends nothing (same noteId). Only the current analysis exists: THREAD_HISTORY# rows are scalar snapshots (no storyArc,
 // watch questions or actors; 60-day TTL; no model), too thin for a story_analysis note, so they are not backfilled.
 //
-//   node backfill-story-analysis-notes.mjs [--live] [--dry] [--table T] [--bucket B]
-//   default writes under record/shadow/; --live writes record/. SDK: see sdk.mjs (RECORD_SDK_DIR).
+//   node backfill-story-analysis-notes.mjs [--live] [--dry] [--prefix record/<name>/] [--table T] [--bucket B]
+//   default writes under record/shadow/ and reads the views and facts of record/; --live writes record/; --prefix reads the views and facts of that
+//   prefix and writes its notes there (a rehearsal of the history copy, 0047). Run it after the history facts and their views exist: the 202 stories
+//   from before 2026-09-05 are matched then. SDK: see sdk.mjs (RECORD_SDK_DIR).
 import { createRequire } from 'node:module';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
@@ -41,10 +43,11 @@ export function planStoryAnalysisNotes({ items, rows, storyIds, producer }) {
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, table: { type: 'string' }, bucket: { type: 'string' } } });
+  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, prefix: { type: 'string' }, table: { type: 'string' }, bucket: { type: 'string' } } });
   const bucket = values.bucket || process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
   const table = values.table || process.env.SUMMARIZE_PREDICT_TABLE || 'SummarizeAndPredict';
-  const prefix = values.live ? 'record/' : 'record/shadow/';
+  const prefix = values.prefix || (values.live ? 'record/' : 'record/shadow/');
+  const readPrefix = values.prefix || 'record/';
   const s3sdk = requireSdk('@aws-sdk/client-s3');
   const { DynamoDBClient } = requireSdk('@aws-sdk/client-dynamodb');
   const { DynamoDBDocumentClient, GetCommand, ScanCommand } = requireSdk('@aws-sdk/lib-dynamodb');
@@ -59,8 +62,8 @@ async function main() {
     ExclusiveStartKey = r.LastEvaluatedKey;
   } while (ExclusiveStartKey);
 
-  const storyIds = new Set(((await s3json.getJson('record/views/index/all.json')) || { stories: [] }).stories.map((s) => s.threadId));
-  const days = ((await s3json.getJson('record/facts/manifest.json')) || { days: [] }).days;
+  const storyIds = new Set(((await s3json.getJson(`${readPrefix}views/index/all.json`)) || { stories: [] }).stories.map((s) => s.threadId));
+  const days = ((await s3json.getJson(`${readPrefix}facts/manifest.json`)) || { days: [] }).days;
   const rows = [];
   for (const date of days) {
     const { Item } = await ddb.send(new GetCommand({ TableName: 'NewsCache', Key: { id: `archive#${date}` } }));

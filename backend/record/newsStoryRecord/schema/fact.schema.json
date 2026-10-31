@@ -19,7 +19,7 @@
     "producer": {
       "type": "object",
       "required": ["lambda", "runId"],
-      "properties": { "lambda": { "type": "string", "pattern": "^newsStoryRecord@" }, "runId": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2}-\\d+|legacy-void-\\d{4}-\\d{2}-\\d{2}|assignments-backfill-\\d{4}-\\d{2}-\\d{2})$" } },
+      "properties": { "lambda": { "type": "string", "pattern": "^newsStoryRecord@" }, "runId": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2}-\\d+|legacy-void-\\d{4}-\\d{2}-\\d{2}|assignments-backfill-\\d{4}-\\d{2}-\\d{2}|forecasts-backfill-\\d{4}-\\d{2}-\\d{2})$" } },
       "additionalProperties": false
     },
     "sourceKey": { "type": "string", "minLength": 1 },
@@ -54,7 +54,7 @@
         "properties": {
           "payload": {
             "required": ["title", "summary", "category", "eventType", "continuesTopic", "topicId"],
-            "properties": { "title": { "type": "string" }, "summary": { "type": ["string", "null"] }, "category": { "type": ["string", "null"] }, "eventType": { "type": ["string", "null"] }, "continuesTopic": { "type": ["string", "null"] }, "topicId": { "type": "string" }, "actors": { "type": "array", "items": { "type": "string" }, "description": "actor display names as captured (from 2026-10-31); actorIds holds the normalized ids" } }
+            "properties": { "title": { "type": "string" }, "summary": { "type": ["string", "null"] }, "category": { "type": ["string", "null"] }, "eventType": { "type": ["string", "null"] }, "continuesTopic": { "type": ["string", "null"] }, "topicId": { "type": "string" }, "actors": { "type": "array", "items": { "type": "string" }, "description": "actor display names as captured (from 2026-10-31); actorIds holds the normalized ids" }, "regions": { "type": "array", "items": { "type": "string" }, "description": "the archive row's places text as captured (from 2026-10-31 and in the pre-record history, 0047); iso3 holds the resolved countries, empty before about 2026-09-12" } }
           }
         }
       }

@@ -4,8 +4,9 @@
 // the Lambda's current configured model. A story that is not in record/views/index/all.json is reported and not written; a
 // re-run appends nothing (same noteId). Country drift is backfill-drift-notes.mjs (same notes/drift/ files).
 //
-//   node backfill-story-drift-notes.mjs [--live] [--dry] [--table T] [--bucket B]
-//   default writes under record/shadow/; --live writes record/. SDK: see sdk.mjs (RECORD_SDK_DIR).
+//   node backfill-story-drift-notes.mjs [--live] [--dry] [--prefix record/<name>/] [--table T] [--bucket B]
+//   default writes under record/shadow/ and reads the views of record/; --live writes record/; --prefix reads the views of that prefix and writes
+//   its notes there (a rehearsal of the history copy, 0047). SDK: see sdk.mjs (RECORD_SDK_DIR).
 import { createRequire } from 'node:module';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
@@ -34,10 +35,10 @@ export function planStoryDriftNotes({ items, storyIds, producer }) {
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, table: { type: 'string' }, bucket: { type: 'string' } } });
+  const { values } = parseArgs({ options: { live: { type: 'boolean' }, dry: { type: 'boolean' }, prefix: { type: 'string' }, table: { type: 'string' }, bucket: { type: 'string' } } });
   const bucket = values.bucket || process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
   const table = values.table || process.env.SUMMARIZE_PREDICT_TABLE || 'SummarizeAndPredict';
-  const prefix = values.live ? 'record/' : 'record/shadow/';
+  const prefix = values.prefix || (values.live ? 'record/' : 'record/shadow/');
   const s3sdk = requireSdk('@aws-sdk/client-s3');
   const { DynamoDBClient } = requireSdk('@aws-sdk/client-dynamodb');
   const { DynamoDBDocumentClient, ScanCommand } = requireSdk('@aws-sdk/lib-dynamodb');
@@ -52,7 +53,7 @@ async function main() {
     ExclusiveStartKey = r.LastEvaluatedKey;
   } while (ExclusiveStartKey);
 
-  const storyIds = new Set(((await s3json.getJson('record/views/index/all.json')) || { stories: [] }).stories.map((s) => s.threadId));
+  const storyIds = new Set(((await s3json.getJson(`${values.prefix || 'record/'}views/index/all.json`)) || { stories: [] }).stories.map((s) => s.threadId));
   const producer = { lambda: 'record/cli/backfill-story-drift-notes', runId: `backfill-${new Date().toISOString()}` };
   const plan = planStoryDriftNotes({ items, storyIds, producer });
   const result = values.dry ? { dry: true } : await N.makeNoteWriter({ s3json, prefix }).write('drift', plan.notes);

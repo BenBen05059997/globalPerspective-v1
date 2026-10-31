@@ -22,35 +22,71 @@ const { forecastFact } = require('../newsStoryRecord/src/facts.js');
 
 const isQuestion = (b) => b.question === true && Boolean(b.qid);
 
+const TITLE_DAYS = 3; // a title match counts only for an entry within this many days of the forecast
+const normTitle = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const dayMs = (d) => Date.parse(`${d}T00:00:00Z`);
+
 /**
  * Pure: world snapshots (world.scenarios) + every fact line already stored -> {facts, byDay, counts, unresolved}.
- * `firstDay` = the record's first day; snapshots dated before it are only counted.
+ * `firstDay` = the first day to cover; snapshots dated before it are only counted (the record's first day for the nightly gap,
+ * the history's first day for the pre-record range, 0047).
+ *
+ * threadId of a row, first rule that answers: its own `threadId`; the entry fact of the same topicId nearest in time (the archive
+ * thread at ingest); an entry fact whose title equals the forecast's title (case and punctuation folded) within TITLE_DAYS days,
+ * nearest first (marked `payload.threadFrom: 'title'`: the forecaster also draws topics under a title-rank id the archive never kept).
+ * A row none of these places is `unresolved`: it has no story, so it is no fact (a fact needs a thread).
  */
 export function planForecastGaps({ snapshots, facts, firstDay, runId }) {
   const have = new Set(facts.filter((f) => f.kind === 'forecast_drawn').map((f) => f.sourceKey));
-  const threadOfTopic = new Map();
-  for (const f of facts.filter((x) => x.kind === 'entry' && x.threadId && x.payload && x.payload.topicId).sort((a, b) => (a.at < b.at ? -1 : 1))) threadOfTopic.set(f.payload.topicId, f.threadId);
+  const byTopic = new Map();
+  const byTitle = new Map();
+  for (const f of facts) {
+    if (f.kind !== 'entry' || !f.threadId || !f.payload) continue;
+    if (f.payload.topicId) (byTopic.get(f.payload.topicId) || byTopic.set(f.payload.topicId, []).get(f.payload.topicId)).push(f);
+    const t = normTitle(f.payload.title);
+    if (t) (byTitle.get(t) || byTitle.set(t, []).get(t)).push(f);
+  }
+  const nearest = (list, date, within = Infinity) => {
+    let best = null;
+    let gap = Infinity;
+    for (const f of list || []) {
+      const g = Math.abs(dayMs(f.date || String(f.at).slice(0, 10)) - dayMs(date)) / 86400000;
+      if (g <= within && (g < gap || (g === gap && f.at > best.at))) { best = f; gap = g; }
+    }
+    return best;
+  };
   const out = [];
   const unresolved = [];
+  const byRule = { thread: 0, topic: 0, title: 0 };
   let beforeRecord = 0;
   for (const snap of snapshots) {
     if (have.has(snap.sourceKey)) continue;
     if (snap.date < firstDay) { beforeRecord += 1; continue; }
-    const threadId = snap.threadId || threadOfTopic.get(snap.topicId);
+    let threadId = snap.threadId;
+    let rule = 'thread';
+    if (!threadId) {
+      const topic = nearest(byTopic.get(snap.topicId), snap.date);
+      if (topic) { threadId = topic.threadId; rule = 'topic'; }
+    }
+    if (!threadId) {
+      const title = nearest(byTitle.get(normTitle(snap.title || String(snap.topicId).replace(/-\d+$/, ''))), snap.date, TITLE_DAYS);
+      if (title) { threadId = title.threadId; rule = 'title'; }
+    }
     if (!threadId) { unresolved.push({ pk: snap.pk, date: snap.date }); continue; }
-    out.push(forecastFact(snap, threadId, [], runId));
+    byRule[rule] += 1;
+    out.push(forecastFact(snap, threadId, [], runId, rule === 'title' ? 'title' : null));
   }
   const byDay = {};
   for (const f of out) (byDay[f.date] ||= []).push(f);
   const branches = out.flatMap((f) => f.payload.branches);
   return {
     facts: out, byDay, unresolved,
-    counts: { snapshots: snapshots.length, beforeRecord, unresolved: unresolved.length, facts: out.length, questionBranches: branches.filter(isQuestion).length, otherBranches: branches.filter((b) => !isQuestion(b)).length },
+    counts: { snapshots: snapshots.length, beforeRecord, unresolved: unresolved.length, facts: out.length, byRule, questionBranches: branches.filter(isQuestion).length, otherBranches: branches.filter((b) => !isQuestion(b)).length },
   };
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { write: { type: 'boolean' }, prefix: { type: 'string' }, bucket: { type: 'string' }, table: { type: 'string' } } });
+  const { values } = parseArgs({ options: { from: { type: 'string' }, write: { type: 'boolean' }, prefix: { type: 'string' }, bucket: { type: 'string' }, table: { type: 'string' } } });
   const bucket = values.bucket || process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
   const prefix = values.prefix || 'record/';
   const table = values.table || process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
@@ -66,8 +102,9 @@ async function main() {
   for (const d of days) facts.push(...(await s3json.getLines(`${prefix}facts/${d}.jsonl`)).lines);
   const to = new Date().toISOString().slice(0, 10);
   const client = world.makeDynamoClient({ client: ddb, ScanCommand });
-  const snapshots = await world.scenarios(client, { from: days[0], to }, { tables: { predictions: table } });
-  const plan = planForecastGaps({ snapshots, facts, firstDay: days[0], runId: `backfill-forecasts-${new Date().toISOString()}` });
+  const firstDay = values.from || days[0]; // --from reaches back before the record's first day (0047: the history's first day)
+  const snapshots = await world.scenarios(client, { from: firstDay, to }, { tables: { predictions: table } });
+  const plan = planForecastGaps({ snapshots, facts, firstDay, runId: `forecasts-backfill-${to}` });
 
   const factDays = Object.keys(plan.byDay).sort();
   let appended = 0;

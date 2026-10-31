@@ -91,8 +91,8 @@ describe('B0 list fixes', () => {
   it('presets count pins and strings in the singular and plural', () => {
     const preset = (id, pins, strings) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: Array.from({ length: strings }, () => ({})) });
     render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork signInHref="/signin" onFork={() => {}} /></MemoryRouter>);
-    expect(screen.getByText('8 pins, 1 string')).toBeInTheDocument();
-    expect(screen.getByText('1 pin, 0 strings')).toBeInTheDocument();
+    expect(screen.getByText('8 pins · 1 string')).toBeInTheDocument();
+    expect(screen.getByText('1 pin · 0 strings')).toBeInTheDocument();
   });
   it('the strings list sits under a disclosure with its count; the pin list gives the headline tag its own element', async () => {
     boardStore = { ...baseBoard(), strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] };

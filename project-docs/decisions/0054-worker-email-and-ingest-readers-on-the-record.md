@@ -54,10 +54,13 @@ Several of these post externally or send mail, so each switch has to be provably
   sources above; `newsPostDevTo` 13 entries equal, 4 of 4 thread analyses and 11 of 11 country briefings equal; `newsPostLinkedin` and `newsRecommend` pools equal except the same two sources.
 - **Weekly email**: 13 published weeks: the view's brief equals the row (the view adds `iso3` to signals and stories, 0048; the email does not read it), and the rendered subject, text and html are
   identical for all 13 (the newest, 2026-10-25, is 11,511 bytes of html), also in `newsEmailSender/test/recordReads.test.js` on the checked-in live rows. Latest published week: 2026-10-25 both ways.
-- **Not equal: `newsBoard` presets.** `iso3` order picks a story's region (`threadIso3` takes the first code that has a region), and 10 of 326 analyses changed order: presets computed from the
-  record are 8, from DynamoDB 7 (two Ebola stories move from the Africa preset to a Europe one: `["COD","NGA","CHE"]` against sorted `["CHE","COD","NGA"]`). Fix, if the order matters: keep the
-  ordered list in the `story_analysis` note payload (new notes; the 330 backfilled have only the sorted one, so also a re-derivation from the story's entries), or accept sorted order. Operator
-  call; until then `newsBoard` stays on `ddb`.
+- **Was not equal: `newsBoard` presets.** `iso3` order picked a story's region (`threadIso3` took the first code that has a region), and 10 of 326 analyses changed order: presets computed from the
+  record were 8, from DynamoDB 7 (two Ebola stories moved from the Africa preset to a Europe one: `["COD","NGA","CHE"]` against sorted `["CHE","COD","NGA"]`). Settled 2026-10-31
+  (operator): a preset takes every region a story's countries fall in, a place involved being a place affected, so the order never matters and the note stays sorted; the ordered compare
+  (`threadAnalysisOrdered`) is gone. The check then showed the second difference: two stories the operator merged on 2026-10-24 (`inbox/merges`) kept being analysed under their pre-merge ids by
+  the DynamoDB world, and the views dropped those notes (an alias view has no analysis). `storyAnalysisBy` now files a story note through the alias map onto the surviving story, and the view reader
+  `threadAnalysisRow` follows an alias view to the survivor, so the record's preset pins name the survivor where DynamoDB names the pre-merge id. After that, 9 presets both ways, the same stories in
+  the same places, those two ids aside.
 
 ## Consequences
 - With every flag on `record` and the views fresh, none of these readers reads NewsCache `latest`, `today-archive`, `archive#`, `THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `WEEKLY_BRIEF#` or `DAILY_BRIEF#`
@@ -73,10 +76,10 @@ Several of these post externally or send mail, so each switch has to be provably
 ## Hand-off (the coordinator; nothing here was deployed, uploaded or set). Each Lambda runs with the default `ddb` until its flag is set, so steps 3 to 5 change nothing by themselves
 1. `scripts/lambda.sh NewsProjectInvokeAgentLambda-dev diff`, deploy (the inbox now keeps `latest.sources`; the repo is ahead of the deployed `_shared/notes.js` as STEP5_AUDIT 5 says: that deploy brings both). After the next ingest run `compare-record-reads.mjs --only today` and expect no `sources` difference.
 2. IAM (operator yes), `s3:GetObject` on `arn:aws:s3:::globalperspective-world-280362093938/record/views/*`: add to `newsprojectLambdaRolefcb19312-dev` (read API `rss`, `newsEmailSender`; the role also serves other Lambdas), `newsPostDevTo-role-uek0owwd`, `newsPostLinkedin-role-20u9u4ef`,
-   `newsBreakingAlert-role`, `newsRecommend-role`. `newsBoard-role` already has `index/active.json`, `index/all.json`, `links/*`: add `manifest.json`, `index/today.json`, `stories/*` only if the order question is settled. No `ListBucket` is needed: a missing view answers 403, which reads as a failed read and falls back.
+   `newsBreakingAlert-role`, `newsRecommend-role`. `newsBoard-role` already has `index/active.json`, `index/all.json`, `links/*`: add `manifest.json`, `index/today.json`, `stories/*` (the order question is settled, see above). No `ListBucket` is needed: a missing view answers 403, which reads as a failed read and falls back.
 3. Diff and deploy, one at a time: `newsSensitiveData-dev`, `newsEmailSender`, `newsPostDevTo`, `newsPostLinkedin`, `newsBreakingAlert`, `newsRecommend`, `newsBoard`. Worker: record the deployed version, upload code-only (operator yes); rollback = that version.
-4. Env, per Lambda (fetch, merge, write the full map): `RECORD_READS=compare`. Read the `[record-reads]` lines for a day (three ingest cycles, the 14:00 UTC brief) and, for the email, one Sunday 14:00 UTC run: expect `equal` (or `DIFFER` only on `iso3` order, which `compare` ignores except for the board). Order: `newsSensitiveData-dev` (read-only, cached), `newsRecommend`, `newsPostDevTo`, `newsBreakingAlert`, `newsPostLinkedin`, `newsEmailSender`.
-5. Then `RECORD_READS=record` in the same order. Rollback for any of them is deleting the variable. Leave `newsBoard` on `ddb`.
+4. Env, per Lambda (fetch, merge, write the full map): `RECORD_READS=compare`. Read the `[record-reads]` lines for a day (three ingest cycles, the 14:00 UTC brief) and, for the email, one Sunday 14:00 UTC run: expect `equal` (or `DIFFER` only on `iso3` order, which `compare` ignores; the board logs a DIFFER for a pin whose id the record merged, the survivor against the pre-merge id). Order: `newsSensitiveData-dev` (read-only, cached), `newsRecommend`, `newsPostDevTo`, `newsBreakingAlert`, `newsPostLinkedin`, `newsEmailSender`.
+5. Then `RECORD_READS=record` in the same order, `newsBoard` last (after its IAM and a day of compare).
 6. Step 5 then needs: the remaining list above, the drift email move, and the deletes (a fresh yes each).
 
 Amendment (coordinator, 2026-10-31, at the merge with 0053): one reader per family. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` in newsPostDevTo and newsBreakingAlert follow `NOTES_READS` (0053, the notes); `RECORD_READS` there covers only NewsCache (`latest`, `today-archive`). The 0054 view readers for those two families were removed from both Lambdas.

@@ -172,7 +172,14 @@ function makeRecordReads({ getJson, now = Date.now, ttlMs = 60000 }) {
     todayView: () => whileFresh(() => get('index/today.json')),
     latestItem: async () => latestItemOfView(await whileFresh(() => get('index/today.json'))),
     todayArchiveItem: async () => todayArchiveItemOfView(await whileFresh(() => get('index/today.json'))),
-    threadAnalysisRow: async (threadId) => (ID.test(threadId || '') ? threadAnalysisRowOfView(await whileFresh(() => get(`stories/${threadId}.json`)), threadId) : null),
+    /** The analysis of the story `threadId` is, or merged into (an alias view is followed, at most 5 hops): the row of the surviving story. */
+    threadAnalysisRow: async (threadId) => {
+      if (!ID.test(threadId || '')) return null;
+      let id = threadId;
+      let view = await whileFresh(() => get(`stories/${id}.json`));
+      for (let hop = 0; view && view.aliasOf && hop < 5; hop++) { id = view.aliasOf; view = ID.test(id) ? await get(`stories/${id}.json`) : null; }
+      return threadAnalysisRowOfView(view, id);
+    },
     /** `name` as the COUNTRY# key spells it (France, United States); a place that is no country has no view. */
     countryIntelligenceRow: async (name) => {
       const r = resolveIso3(name);
@@ -193,7 +200,7 @@ function makeRecordReads({ getJson, now = Date.now, ttlMs = 60000 }) {
 
 // What "the same" means for each row, per consumer (decision 0054). Times the two copies stamp separately (the daily row and the today-archive item,
 // under a second apart) are compared to the second; `ttl` is derived (a view has none); `activatedAt` is not in the view (no reader uses it); the story
-// analysis note keeps `iso3` sorted, DynamoDB kept the order the entries gave, so only a reader that needs the order compares it (threadAnalysisOrdered).
+// analysis note keeps `iso3` sorted, DynamoDB kept the order the entries gave, and no reader needs the order, so it is not compared.
 const trunc = (v) => (typeof v === 'string' ? v.slice(0, 19) : v);
 const times = (x) => {
   if (Array.isArray(x)) return x.map(times);
@@ -204,7 +211,6 @@ const SAME = {
   latest: (a, b) => diffValues(times(a), times(b), { ignore: ['activatedAt', 'ttl'] }),
   todayArchive: (a, b) => diffValues(times(a), times(b), { ignore: ['ttl'] }),
   threadAnalysis: (a, b) => diffValues(a, b, { ignore: ['ttl', 'iso3'] }),
-  threadAnalysisOrdered: (a, b) => diffValues(a, b, { ignore: ['ttl'] }),
   countryIntelligence: (a, b) => diffValues(a, b, { ignore: ['ttl'] }),
   weeklyBrief: (a, b) => diffValues(a, b, { ignore: ['ttl', 'PK', 'SK', 'iso3'] }),
 };

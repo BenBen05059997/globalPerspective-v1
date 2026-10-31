@@ -75,10 +75,12 @@ const isKind = (kind) => (n) => n && n.subject && n.subject.kind === kind;
  * Story analysis notes (0042) -> threadId -> the analysis as stored, plus `driftNote` (the story's latest drift note as stored)
  * when it has one: only an analysis carries it, as the old thread_analysis action only attached it to an existing analysis.
  */
-function storyAnalysisBy(noteLines) {
+function storyAnalysisBy(noteLines, aliases = new Map()) {
   const out = new Map();
-  const drift = latestBy(noteLines.filter(isKind('story')), 'drift', (x) => x.subject.id);
-  for (const [id, n] of latestBy(noteLines, 'story_analysis', (x) => x.subject.id)) {
+  // a note filed under a merged-away story id (the DynamoDB world knows no merges) belongs to the story it merged into; the latest wins
+  const storyOf = (x) => aliases.get(x.subject.id) || x.subject.id;
+  const drift = latestBy(noteLines.filter(isKind('story')), 'drift', storyOf);
+  for (const [id, n] of latestBy(noteLines, 'story_analysis', storyOf)) {
     out.set(id, {...asStored(n), threadId: id, iso3: n.iso3, ...(drift.has(id) ? {driftNote: asStored(drift.get(id))} : {})});
   }
   return out;
@@ -495,7 +497,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
   const notesBy = entryNotesBy(noteLines);
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy: storyAnalysisBy(noteLines)});
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy: storyAnalysisBy(noteLines, aliases)});
 
   const forecasts = forecastViews(facts, stories, builtFrom);
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);

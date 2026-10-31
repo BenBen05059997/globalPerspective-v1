@@ -44,3 +44,20 @@ test('presets skip an analysis that has no risk score instead of ranking it as 0
   const presets = await computePresets(store, ENV, NOW);
   assert.deepStrictEqual(presets.map((p) => p.pins.map((x) => x.refId)), [['scored-a', 'scored-b']]);
 });
+
+test('presets: a story is in every region its countries fall in, whatever the order of its list', async () => {
+  for (const iso3 of [['COD', 'NGA', 'CHE'], ['CHE', 'COD', 'NGA']]) { // most-mentioned first (DynamoDB) and sorted (the record's note)
+    const store = fakeStore();
+    const analysis = (id, risk, extra) => store.put('world', `THREAD#${id}`, 'THREAD_ANALYSIS', { threadId: id, threadTitle: id, riskScore: risk, ...extra });
+    analysis('ebola', 70, { iso3 });
+    analysis('sahel', 60, { iso3: ['MLI'] });
+    analysis('paris', 50, { iso3: ['FRA'] });
+    analysis('geneva-only', 40, { iso3: ['CHE', 'CHE'] });
+    store.put('world', 'WEB#INDEX', 'LATEST', { links: [], shared: [], threads: { ebola: {}, sahel: {}, paris: {}, 'geneva-only': {} } });
+    const presets = await computePresets(store, ENV, NOW);
+    assert.deepStrictEqual(presets.map((p) => [p.region, p.pins.map((x) => x.refId)]), [
+      ['Africa', ['ebola', 'sahel']],
+      ['Europe', ['ebola', 'paris', 'geneva-only']],
+    ]);
+  }
+});

@@ -448,3 +448,15 @@ test('an entry with no iso3 takes the countries of its archive places text; regi
   const kept = V.buildViews(X.golden(), {today: '2026-10-22', builtAt: '2026-10-22T05:45:00.000Z', runId: 'r', factsManifestDays: 1});
   assert.deepEqual(JSON.parse(JSON.stringify(kept.stories.get(old.threadId).entries.find((e) => e.eventId === old.eventId).iso3)), old.iso3); // an entry with iso3 is unchanged
 });
+
+test('an analysis or drift note filed under a merged-away story id is served on the story it merged into; the latest wins', () => {
+  const note = (subtype, id, at, payload) => ({subtype, subject: {kind: 'story', id}, part: '', at, model: 'm', noteId: `${subtype}${id}${at}`, iso3: [], payload});
+  const notes = [
+    note('story_analysis', 'thread-b', '2026-10-20T05:00:00.000Z', {lead: 'survivor, older'}),
+    note('story_analysis', 'thread-c', '2026-10-22T05:00:00.000Z', {lead: 'filed under the merged id, newer'}),
+    note('drift', 'thread-c', '2026-10-22T05:30:00.000Z', {whyChanged: 'also under the merged id'})];
+  const v = build(X.golden(), {notes});
+  assert.equal(v.stories.get('thread-b').analysis.lead, 'filed under the merged id, newer');
+  assert.equal(v.stories.get('thread-b').analysis.driftNote.whyChanged, 'also under the merged id');
+  assert.equal(v.stories.get('thread-c').analysis, undefined); // the alias view stays a stub
+});

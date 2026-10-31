@@ -153,3 +153,19 @@ test('readBy compare: returns the DynamoDB answer, logs equal or the differing p
   assert.match(l.lines[2][1], /compare failed \(boom\)/);
   assert.match(l.lines[3][1], /the record has no answer/);
 });
+
+test('threadAnalysisRow follows an alias view to the surviving story and answers with that story\'s row', async () => {
+  const files = {
+    ...manifest('2026-10-31T10:00:00.000Z'),
+    'record/views/stories/thread-old.json': { threadId: 'thread-old', aliasOf: 'thread-new' },
+    'record/views/stories/thread-new.json': { threadId: 'thread-new', analysis: { threadId: 'thread-new', threadTitle: 'Survivor', generatedAt: '2026-10-30T05:00:00.000Z', iso3: ['COD'] } },
+    'record/views/stories/thread-loop.json': { threadId: 'thread-loop', aliasOf: 'thread-loop' },
+  };
+  const row = await reads(files).threadAnalysisRow('thread-old');
+  assert.equal(row.threadId, 'thread-new');
+  assert.equal(row.PK, 'THREAD#thread-new');
+  assert.equal(row.threadTitle, 'Survivor');
+  assert.equal((await reads(files).threadAnalysisRow('thread-new')).threadTitle, 'Survivor');
+  assert.equal(await reads(files).threadAnalysisRow('thread-loop'), null);
+  assert.equal(await reads(files).threadAnalysisRow('thread-none'), null);
+});

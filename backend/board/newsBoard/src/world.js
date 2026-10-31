@@ -29,8 +29,7 @@ async function analyses(store, env, threadIds, nowMs) {
   const ids = [...new Set((threadIds || []).filter((id) => typeof id === 'string' && id))];
   const found = await readBy({
     mode: readMode(env), label: 'board thread_analysis',
-    // the thread order of iso3 is kept by DynamoDB only (the note stores it sorted): compared whole so a difference in order shows
-    same: (a, b) => SAME.threadAnalysisOrdered(a, b),
+    same: SAME.threadAnalysis, // iso3 order is not compared: a preset takes every region of the list, so the order never matters
     ddb: () => world.threadAnalysis(store, ids, { env, nowMs }),
     record: async () => {
       const records = recordsFor(store, env);

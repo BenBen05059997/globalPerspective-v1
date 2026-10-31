@@ -22,6 +22,7 @@ const NR = require('./_shared/noteReads');
 const { usableCountryRecord } = require('./_shared/placeFilter');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 const { sendEmail } = require('./sendEmail');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
@@ -39,6 +40,11 @@ const DEDUPE_DAYS = Number(process.env.DEDUPE_DAYS) || 5;
 const DEDUPE_TTL_DAYS = Number(process.env.DEDUPE_TTL_DAYS) || 14;
 const DAY_MS = 86400000;
 
+// RECORD_READS=ddb|record|compare (decision 0054): where the topic pool (NewsCache `latest`) comes from; analyses and briefings follow NOTES_READS (0053).
+// A record read that cannot answer reads DynamoDB, so a missing view never means "no alert risk data". TOPIC# rows (summary, prediction, cause) stay in DynamoDB.
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
+
 let _ddb = null;
 function ddb() {
   if (!_ddb) {
@@ -55,15 +61,18 @@ function norm(s) {
 
 // ── Loaders ───────────────────────────────────────────────────────────────────
 async function loadLatestTopics() {
-  const out = await ddb().send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }));
-  const topics = out.Item?.topics;
+  const Item = await readBy({
+    mode: RECORD_READS, label: 'breaking latest', same: SAME.latest,
+    ddb: async () => (await ddb().send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }))).Item,
+    record: () => records.latestItem(),
+  });
+  const topics = Item?.topics;
   return Array.isArray(topics) ? topics : [];
 }
 
 async function getRecord(pk, sk) {
   try {
-    const out = await ddb().send(new GetCommand({ TableName: SUMM_TABLE, Key: { PK: pk, SK: sk } }));
-    return out.Item || null;
+    return (await ddb().send(new GetCommand({ TableName: SUMM_TABLE, Key: { PK: pk, SK: sk } }))).Item || null;
   } catch (err) {
     console.warn(`getRecord ${pk}/${sk} failed (non-fatal): ${err.message}`);
     return null;
@@ -385,4 +394,6 @@ if (require.main === module) {
   });
 }
 module.exports.maxRegionRisk = maxRegionRisk; // for tests
+module.exports.loadLatestTopics = loadLatestTopics; // for tests
+module.exports.getRecord = getRecord; // for tests
 module.exports.operatorCopy = operatorCopy; // for tests

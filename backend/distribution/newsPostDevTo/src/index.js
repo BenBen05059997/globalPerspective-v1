@@ -13,6 +13,7 @@ const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
 const NR = require('./_shared/noteReads');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
@@ -28,6 +29,10 @@ const PLATFORM           = 'DEVTO';
 const POST_TTL_DAYS      = 90;
 const BRIEF_TTL_DAYS     = 90;
 const AI_MODEL           = process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free';
+
+// RECORD_READS=ddb|record|compare (decision 0054): where the day's entries come from; the analyses and briefings follow NOTES_READS (0053)
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, {
@@ -285,10 +290,11 @@ function todayDateKey() {
 }
 
 async function loadTodayArchive() {
-  const { Item } = await ddb.send(new GetCommand({
-    TableName: TOPICS_TABLE,
-    Key: { id: 'today-archive' },
-  }));
+  const Item = await readBy({
+    mode: RECORD_READS, label: 'devto today-archive', same: SAME.todayArchive,
+    ddb: async () => (await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'today-archive' } }))).Item,
+    record: () => records.todayArchiveItem(),
+  });
   if (!Item || !Array.isArray(Item.entries)) return null;
   // Only entries archived today count (a stalled pipeline leaves old ones in today-archive).
   return { ...Item, entries: keepDayZero(Item.entries) };
@@ -361,4 +367,5 @@ function resp(statusCode, body) {
   };
 }
 module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
-module.exports.loadThreadAnalyses = loadThreadAnalyses;
+module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests
+module.exports.loadTodayArchive = loadTodayArchive; // for tests

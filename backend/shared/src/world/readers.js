@@ -146,8 +146,13 @@ async function threadAnalysis(client, threadIds, opts = {}) {
   const ids = [...new Set(arr(threadIds).filter((id) => typeof id === 'string' && id))];
   if (!ids.length) return {};
   const rows = await need(client, 'batchGet')(resolveTables(opts).world, ids.map((id) => ({ PK: `THREAD#${id}`, SK: 'THREAD_ANALYSIS' })));
+  return threadAnalysisOfRows(rows, opts);
+}
+
+/** The same normalisation for rows already read (THREAD_ANALYSIS-shaped, e.g. built from the record's story views, recordReads.js) -> { [threadId]: analysis }. */
+function threadAnalysisOfRows(rows, opts = {}) {
   const out = {};
-  for (const r of rows) {
+  for (const r of arr(rows)) {
     if (!r) continue;
     const a = analysis(r);
     if (!a.threadId) continue;
@@ -447,7 +452,11 @@ async function webAt(client, date, { fallback = 'none' } = {}) {
 
 /** The topic pool of the latest run -> [{topicId, threadId, title, category, actors, iso3, regions, sources}] ([] when there is no row). */
 async function latestTopics(client, opts = {}) {
-  const row = await need(client, 'getItem')(resolveTables(opts).cache, { id: 'latest' });
+  return latestTopicsOfItem(await need(client, 'getItem')(resolveTables(opts).cache, { id: 'latest' }));
+}
+
+/** The same normalisation for a `latest` item already read (e.g. built from the record's today view, recordReads.js). */
+function latestTopicsOfItem(row) {
   return arr(row && row.topics).map((t, i) => [t, i]).filter(([t]) => t && typeof t === 'object').map(([t, i]) => ({
     ...prov(S.cache, { id: 'latest' }, `latest|${str(t.topicId) || str(t.id)}`, i),
     topicId: str(t.topicId) || str(t.id), threadId: str(t.threadId), title: str(t.title) || '', category: str(t.category),
@@ -458,6 +467,6 @@ async function latestTopics(client, opts = {}) {
 
 module.exports = {
   DEFAULT_TABLES, resolveTables, verdictOrder,
-  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
+  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadAnalysisOfRows, latestTopicsOfItem, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
   webIndex, webLatest, webAt, latestTopics,
 };

@@ -52,7 +52,8 @@
             "additionalProperties": false,
             "properties": {
               "urgency": {"type": "string"}, "urgencyReason": {"type": "string"}, "significance": {"type": "string"}, "x_trending": {"type": "boolean"},
-              "primaryCountry": {"type": "string"}, "mentionedCountries": {"type": "array", "items": {"type": "string"}}
+              "primaryCountry": {"type": "string"}, "mentionedCountries": {"type": "array", "items": {"type": "string"}},
+              "sources": {"type": "array", "description": "only when the topic holds more sources than the entry's 10: all of them (decision 0054; the breaking-alert score and the feed count them)", "items": {"type": "object"}}
             }
           },
           "notes": {

@@ -139,16 +139,87 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
   });
 }
 
-async function renderThreadPage(threadId) {
+// --- The record's views (decisions 0037, 0048, 0051, 0054) ----------------------------------------------------
+// The bot pre-render reads the record's public view files straight from the world bucket (the same objects /data/record/views/* serves; the
+// Worker's own S3 path, no self-fetch) and asks the DynamoDB-backed read API action only where no view answers. A view that is missing,
+// unreadable, or (for "the newest") built more than MAX_VIEW_AGE_MS ago answers null and the action is asked, as before.
+const MAX_VIEW_AGE_MS = 9 * 60 * 60 * 1000;
+const VIEW_ID = /^[A-Za-z0-9_-]{1,200}$/;
+
+async function viewJson(path, env) {
   try {
-    const res = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'thread_preview', payload: { threadId } }),
-      cf: { cacheTtl: 1800, cacheEverything: true },
-    });
-    const json = await res.json();
-    const data = json?.data;
+    const res = await s3Get(`record/views/${path}`, env);
+    if (!res.ok) return null; // 404/403 = not generated; anything else is no answer either
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+async function viewsFresh(env) {
+  const built = Date.parse((await viewJson('manifest.json', env))?.builtAt);
+  return Number.isFinite(built) && Date.now() - built <= MAX_VIEW_AGE_MS;
+}
+
+// the `topics` answer from index/today.json: the latest run's topics in its order, or null when the view has no complete latest run
+async function viewTopics(env) {
+  if (!(await viewsFresh(env))) return null;
+  const view = await viewJson('index/today.json', env);
+  if (!view || view.schemaVersion !== 1 || !Array.isArray(view.entries) || !Array.isArray(view.latest?.topicIds)) return null;
+  const byId = new Map(view.entries.map((e) => [e.topicId, e]));
+  const topics = view.latest.topicIds.map((id) => byId.get(id));
+  if (!topics.length || topics.some((t) => !t)) return null;
+  return { topics, generatedDate: view.latest.generatedDate, updatedAt: view.latest.updatedAt };
+}
+
+// the `daily_brief` (dateKey) / `latest_daily_brief` (no dateKey) answer: the brief view, or null
+async function viewDailyBrief(dateKey, env) {
+  let key = dateKey;
+  if (!key) {
+    if (!(await viewsFresh(env))) return null;
+    key = (await viewJson('index/briefs.json', env))?.daily?.[0]?.dateKey;
+  }
+  if (!dateKeyOrNull(key)) return null;
+  const brief = (await viewJson(`briefs/daily/${key}.json`, env))?.brief;
+  return brief && brief.dateKey === key ? brief : null;
+}
+
+// the `weekly_brief` answer (published weeks only, as the action serves them): week = the weekOf asked for, none = the newest
+async function viewWeeklyBrief(week, env) {
+  let key = week;
+  if (!key) {
+    if (!(await viewsFresh(env))) return null;
+    key = (await viewJson('index/briefs.json', env))?.weekly?.[0]?.weekOf;
+  }
+  if (!dateKeyOrNull(key)) return null;
+  const brief = (await viewJson(`briefs/weekly/${key}.json`, env))?.brief;
+  return brief && brief.weekOf === key && brief.status === 'published' ? brief : null;
+}
+
+// the `thread_preview` answer: the story view's analysis (a merged story's alias has none: the action answers)
+async function viewThreadPreview(threadId, env) {
+  if (!VIEW_ID.test(threadId) || !(await viewsFresh(env))) return null;
+  const a = (await viewJson(`stories/${threadId}.json`, env))?.analysis;
+  return a?.threadTitle ? { threadTitle: a.threadTitle, entryShortTitles: a.entryShortTitles || [], generatedAt: a.generatedAt || null } : null;
+}
+
+// the `country_preview` answer: the page names the country, the countries index finds its ISO3, the country view holds the briefing
+async function viewCountryPreview(countryName, env) {
+  if (!(await viewsFresh(env))) return null;
+  const countries = (await viewJson('index/countries.json', env))?.countries;
+  const want = String(countryName).trim().toLowerCase();
+  const iso3 = Object.keys(countries || {}).find((k) => String(countries[k].countryName || '').trim().toLowerCase() === want);
+  if (!iso3) return null;
+  const i = (await viewJson(`countries/${iso3}.json`, env))?.intelligence;
+  return i?.headline ? {
+    headline: i.headline || null, bluf: i.bluf || null, keyDevelopments: i.keyDevelopments || [], riskLevel: i.riskLevel || null,
+    trajectory: i.trajectory || null, totalArticles: i.totalArticles || 0, dayCount: i.dayCount || 0, generatedAt: i.generatedAt || null,
+  } : null;
+}
+
+async function renderThreadPage(threadId, env) {
+  try {
+    const data = (await viewThreadPreview(threadId, env)) || (await proxyData('thread_preview', { threadId }));
     if (!data || !data.threadTitle) return null;
 
     const title = data.threadTitle;
@@ -166,16 +237,9 @@ async function renderThreadPage(threadId) {
   }
 }
 
-async function renderCountryPage(countryName) {
+async function renderCountryPage(countryName, env) {
   try {
-    const res = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'country_preview', payload: { countryName } }),
-      cf: { cacheTtl: 1800, cacheEverything: true },
-    });
-    const json = await res.json();
-    const data = json?.data;
+    const data = (await viewCountryPreview(countryName, env)) || (await proxyData('country_preview', { countryName }));
     if (!data || !data.headline) return null;
 
     const title = `${data.headline} — ${countryName}`;
@@ -226,16 +290,17 @@ const threadLink = (threadId, text) => (typeof threadId === 'string' && /^thread
   : escapeHtml(text));
 const countryLink = (name) => `<a href="${SITE_URL}/weekly/country/${encodeURIComponent(name)}">${escapeHtml(name)}</a>`;
 
-async function renderDailyBrief(dateParam) {
+async function renderDailyBrief(dateParam, env) {
   // A requested date walks back up to 7 days to the nearest earlier edition (as the page does).
   let data = null;
   if (dateParam) {
     for (let back = 0; back <= 7 && !data; back++) {
-      const d = await proxyData('daily_brief', { dateKey: addDaysKey(dateParam, -back) });
+      const key = addDaysKey(dateParam, -back);
+      const d = (await viewDailyBrief(key, env)) || (await proxyData('daily_brief', { dateKey: key }));
       if (d && d.headline) data = d;
     }
   } else {
-    data = await proxyData('latest_daily_brief', {});
+    data = (await viewDailyBrief(null, env)) || (await proxyData('latest_daily_brief', {}));
   }
   if (!data || !data.headline || !dateKeyOrNull(data.dateKey)) return null;
 
@@ -265,8 +330,8 @@ async function renderDailyBrief(dateParam) {
   });
 }
 
-async function renderWeeklyBrief(weekParam) {
-  const data = await proxyData('weekly_brief', weekParam ? { week: weekParam } : {});
+async function renderWeeklyBrief(weekParam, env) {
+  const data = (await viewWeeklyBrief(weekParam, env)) || (await proxyData('weekly_brief', weekParam ? { week: weekParam } : {}));
   const signals = Array.isArray(data?.signals) ? data.signals.filter(s => s && (s.lede || s.fact)) : [];
   if (!data || !dateKeyOrNull(data.weekOf) || !signals.length) return null;
   const title = `Weekly Signals Brief — week of ${data.weekOf}`;
@@ -287,13 +352,13 @@ async function renderWeeklyBrief(weekParam) {
   });
 }
 
-async function renderBriefingsPage(searchParams) {
+async function renderBriefingsPage(searchParams, env) {
   try {
     const mode = searchParams.get('mode');
     const weekly = mode === 'weekly' || (mode === 'present' && searchParams.get('deck') === 'weekly');
     return weekly
-      ? await renderWeeklyBrief(dateKeyOrNull(searchParams.get('week')))
-      : await renderDailyBrief(dateKeyOrNull(searchParams.get('date')));
+      ? await renderWeeklyBrief(dateKeyOrNull(searchParams.get('week')), env)
+      : await renderDailyBrief(dateKeyOrNull(searchParams.get('date')), env);
   } catch (err) {
     return null;
   }
@@ -301,9 +366,9 @@ async function renderBriefingsPage(searchParams) {
 
 // /today — today's topics (the `topics` proxy action the page reads): each topic with its regions,
 // linked to its story page only when it carries a real thread id.
-async function renderTodayPage() {
+async function renderTodayPage(env) {
   try {
-    const data = await proxyData('topics', {});
+    const data = (await viewTopics(env)) || (await proxyData('topics', {}));
     const topics = Array.isArray(data?.topics) ? data.topics.filter(t => t && t.title) : [];
     if (!topics.length) return null;
     const when = data.generatedDate || (data.updatedAt ? String(data.updatedAt).slice(0, 10) : '');
@@ -457,27 +522,27 @@ export default {
       // Thread page: /weekly/thread/:threadId
       const threadMatch = url.pathname.match(/^\/weekly\/thread\/([^/]+)\/?$/);
       if (threadMatch) {
-        const html = await renderThreadPage(decodeURIComponent(threadMatch[1]));
+        const html = await renderThreadPage(decodeURIComponent(threadMatch[1]), env);
         if (html) return botHtmlResponse(html);
       }
 
       // Country page: /weekly/country/:countryName
       const countryMatch = url.pathname.match(/^\/weekly\/country\/([^/]+)\/?$/);
       if (countryMatch) {
-        const html = await renderCountryPage(decodeURIComponent(countryMatch[1]));
+        const html = await renderCountryPage(decodeURIComponent(countryMatch[1]), env);
         if (html) return botHtmlResponse(html);
       }
 
       // Briefings: /briefings with ?mode=read|weekly|present, ?date=, ?week=, ?deck= (query strings are
       // read from url.searchParams; url.pathname never contains them, so one match serves every variant)
       if (/^\/briefings\/?$/.test(url.pathname)) {
-        const html = await renderBriefingsPage(url.searchParams);
+        const html = await renderBriefingsPage(url.searchParams, env);
         if (html) return botHtmlResponse(html);
       }
 
       // Today's topics: /today
       if (/^\/today\/?$/.test(url.pathname)) {
-        const html = await renderTodayPage();
+        const html = await renderTodayPage(env);
         if (html) return botHtmlResponse(html);
       }
     }

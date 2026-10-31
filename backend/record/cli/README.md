@@ -256,3 +256,12 @@ Builds the entries inbox (decision 0051) for the last N days from the NewsCache 
 RECORD_SDK_DIR=<sdk dir> node backend/record/cli/build-entries-inbox.mjs [--days 30] [--to YYYY-MM-DD] [--out DIR]
 ```
 Writes `<out>/record/inbox/entries/DAY.jsonl` (one batch per run, in the row's order, so the replay is the row), reads them back through `newsStoryRecord`'s own reader (`ENTRIES_SOURCE=inbox`) and prints the inbox path and the proof: days and entries compared, entry facts compared (whole JSON, `sourceKey`, `sourceRow` and position included), story births, thread of each topic, the provisional facts a refresh builds for the last day, and any difference (exit code 2). The only tolerated difference, named in the output, is a `today-archive` entry the day row lacks on the last day (day-zero rule). The output directory is also the 30-day start for the live inbox: upload it to `record/shadow/inbox/entries/` then `record/inbox/entries/` (coordinator). Test: `node --test backend/record/cli/build-entries-inbox.test.mjs`.
+
+## compare-record-reads.mjs
+
+Equality of the record readers with the DynamoDB rows they replace (decision 0054), on live data, read only (GetItem, BatchGetItem, GetObject and one GET of the public `/rss`; nothing is written or sent). Sections: `today` (NewsCache `latest` and `today-archive` against `index/today.json`; simulated from the live archive rows when the view does not exist yet), `analyses` (every `THREAD_ANALYSIS` row against its story view), `countries` (every `COUNTRY_INTELLIGENCE` row), `weekly` (every published `WEEKLY_BRIEF#` row against its view, and the weekly email rendered from both), `rss` (the feed from DynamoDB, from the record, and as served).
+
+```sh
+RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cli/compare-record-reads.mjs [--only today,analyses,countries,weekly,rss] [--rss-url URL]
+```
+Test: `node --test backend/record/cli/compare-record-reads.test.mjs`.

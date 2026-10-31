@@ -113,3 +113,14 @@ test('inboxLines needs a batch time and keeps the entry whole', () => {
   assert.equal(l.ai.summary.length, 1503);
   assert.deepEqual(I.entryOfLine(l), I.trimAi(entry));
 });
+
+test('a topic with more sources than the entry carries (the daily row caps at 10) keeps them whole in latest.sources', () => {
+  const src = (n) => ({ source: `s${n}`, url: `https://x/${n}` });
+  const entry = { topicId: 'A', threadId: 't', title: 'A', sources: [...Array(10).keys()].map(src), archivedAt: '2026-10-10T04:00:01.000Z', generationId: 'g' };
+  const full = [...Array(12).keys()].map(src);
+  const [line] = I.inboxLines([entry], { batch: '2026-10-10T04:00:00.000Z', selection: { topics: { A: { urgency: 'high', sources: full } }, run: { of: 1 } } });
+  assert.deepEqual(line.latest, { urgency: 'high', sources: full });
+  assert.equal(line.sources.length, 10);
+  const [same] = I.inboxLines([entry], { batch: '2026-10-10T04:00:00.000Z', selection: { topics: { A: { urgency: 'high', sources: entry.sources } }, run: { of: 1 } } });
+  assert.deepEqual(same.latest, { urgency: 'high' }, 'nothing is duplicated when the entry already holds every source');
+});

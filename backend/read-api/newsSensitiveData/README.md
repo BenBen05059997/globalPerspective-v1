@@ -16,6 +16,7 @@ Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `da
 - S3 `WORLD_BUCKET`: `TRACK_RECORD_KEY` (default `predictions/track_record.json`, built by newsPredictionsSnapshot); with `NOTES_READS=notes|compare` also `record/notes/{country,drift,story_analysis,story_history,country_facts}/` (decision 0053)
 - External: Google securetoken certs (`FIREBASE_PROJECT_ID`) for optional member-depth checks
 - No model key is needed. The live env still carries many names the code no longer reads (for example `GROK_*`, `XAI_API_KEY`, `MAPBOX_GEOCODING_KEY`, Firebase service-account fields); pruning them is an operator change after checking the deployed code.
+- `rss`: env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` builds the feed from `index/today.json` (the entries of the last 24 h, then the latest run when there are none) while the views are under 9 h old; the XML is byte-identical to the DynamoDB feed (live check 2026-10-31: 26 items, 31,923 bytes, equal to the served `/rss`). Needs `s3:GetObject` on `record/views/*` on the shared role `newsprojectLambdaRolefcb19312-dev`. The other actions are unchanged.
 
 ## Gotchas
 - CORS: code emits `Access-Control-Allow-Origin` (own allow-list; `rss` sends `*`) and answers OPTIONS itself.

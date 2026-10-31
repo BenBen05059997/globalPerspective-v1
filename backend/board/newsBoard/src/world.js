@@ -8,15 +8,38 @@
 
 const world = require('./_shared/world');
 const { resolveIso3 } = require('./_shared/resolveIso3');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
+
+// RECORD_READS=ddb|record|compare in `env` (decision 0054): the topic pool (NewsCache `latest`) and the thread analyses (THREAD_ANALYSIS) come from the
+// record's views. The record's rows go through the same normalisers as DynamoDB's (world/readers.js), so the board logic below sees one shape.
+// `store.recordReads` is for tests; the Lambda builds the S3 readers on first use.
+const recordsFor = (store, env) => store.recordReads || lazyRecordReads(env);
 
 const webIndex = (store, env) => world.webIndex(store, { env });
-const latestTopics = (store, env) => world.latestTopics(store, { env });
+const latestTopics = (store, env) => readBy({
+  mode: readMode(env), label: 'board latest', same: SAME.latest,
+  ddb: () => world.latestTopics(store, { env }),
+  record: async () => { const item = await recordsFor(store, env).latestItem(); return item ? world.latestTopicsOfItem(item) : null; },
+});
 const threadHistory = (store, env, id) => world.threadHistory(store, id, undefined, undefined, { env });
 const countryHistory = (store, env, name) => world.countryHistory(store, name, undefined, undefined, { env });
 
 /** { threadId -> analysis } as a Map; analyses past their TTL are dropped. */
 async function analyses(store, env, threadIds, nowMs) {
-  return new Map(Object.entries(await world.threadAnalysis(store, threadIds, { env, nowMs })));
+  const ids = [...new Set((threadIds || []).filter((id) => typeof id === 'string' && id))];
+  const found = await readBy({
+    mode: readMode(env), label: 'board thread_analysis',
+    // the thread order of iso3 is kept by DynamoDB only (the note stores it sorted): compared whole so a difference in order shows
+    same: (a, b) => SAME.threadAnalysisOrdered(a, b),
+    ddb: () => world.threadAnalysis(store, ids, { env, nowMs }),
+    record: async () => {
+      const records = recordsFor(store, env);
+      if (!ids.length || !(await records.fresh())) return null; // stale views: DynamoDB answers; fresh views are the whole record, a thread without an analysis has none
+      const rows = (await Promise.all(ids.map((id) => records.threadAnalysisRow(id)))).filter(Boolean);
+      return world.threadAnalysisOfRows(rows, { nowMs });
+    },
+  });
+  return new Map(Object.entries(found));
 }
 
 /** ISO3 codes of a thread, most reliable first: the analysis, the web's top places, the topic pool's tags. */

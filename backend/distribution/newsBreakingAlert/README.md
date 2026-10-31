@@ -16,6 +16,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 - Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `notes`): the `COUNTRY_INTELLIGENCE` and `THREAD_ANALYSIS` reads come from the record's `country` and `story_analysis` notes instead (`TOPIC#` stays on DynamoDB); `compare` logs `[notes-compare]` differences. The role needs `s3:GetObject` on those prefixes.
 - DynamoDB write: `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`), key `alertKey` = threadId; doubles as dedupe row (`DEDUPE_DAYS` 5, `ttl` `DEDUPE_TTL_DAYS` 14).
 - External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Story links come from `src/_shared/links.js` (`storyHref` + `absoluteUrl`; env `SITE_URL` only overrides the origin), and only when the story has a real thread arc.
+- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` reads the topic pool (`latest`) from the record's view `index/today.json` and DynamoDB when it cannot answer; `compare` logs and decides from DynamoDB. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` follow `NOTES_READS` (0053). `TOPIC#` rows (summary, prediction, cause) and the alerts table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*` (role `newsBreakingAlert-role`).
 
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.

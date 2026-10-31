@@ -15,13 +15,19 @@ or `wrangler versions list`); it is not recorded here.
 - `/data/<key>` reads the private world bucket with SigV4. Only keys matching `DATA_ALLOWED` are served: `world/*.json`,
   `situations/state/*.json`, `stories/state/*.json` and `record/views/*.json`. Facts, runs, inboxes and readings are not
   in the allowlist.
-- `/rss` proxies the RSS action of the read API.
+- `/rss` proxies the RSS action of the read API (which builds the feed from the record's today view when its `RECORD_READS` says so, decision 0054).
 - Real 301s (query string kept) for retired addresses: `/daily`, `/daily/:date`, `/weekly-brief` (to `/briefings?mode=read|weekly`),
   `/spider-demo` (to `/weekly?view=web`), `/map` (to `/`),
   `/weekly?section=countries` (to `/weekly/countries`) and `/analyze` (to the first `?stories=` thread's story page, else
   `/weekly/countries`). The client redirects in `src/app/LegacyRedirects.jsx` and `MapRedirect.jsx` are the fallback.
 - Bot pre-render: story and country pages, every `/briefings` mode (canonical = the edition served) and `/today`. Shared runs
   (`/analyze/s/*`) are never pre-rendered. The root page lists the briefings modes.
+- Where the pre-render reads (decision 0054): the record's public view files first, through the Worker's own SigV4 path (the objects `/data/record/views/*`
+  serves), and the read API action only when no view answers. `/today` reads `index/today.json` (the latest run's topics); a daily brief
+  `briefs/daily/<date>.json` (the newest through `index/briefs.json`); a weekly brief `briefs/weekly/<weekOf>.json` (published weeks only); a story
+  `stories/<id>.json` (its `analysis`); a country `index/countries.json` (name to ISO3) and `countries/<ISO3>.json`. "The newest", the today view, the story
+  and the country read only while `manifest.builtAt` is under 9 hours old. A missing, unreadable or stale view is not an error: the action (`topics`,
+  `daily_brief`, `latest_daily_brief`, `weekly_brief`, `thread_preview`, `country_preview`) answers as before. The Worker reads no DynamoDB.
 - GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static pages in `docs/blog/`).
 - Everything else falls back to the SPA shell.
 

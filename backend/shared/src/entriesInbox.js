@@ -10,7 +10,7 @@
 //   batch    the ISO time of the agent's archive write, shared by every line of one run (the row's `updatedAt`)
 //   n        the line's position in that run
 //   latest   what the `latest` item holds of this topic that an archive entry does not: {urgency, urgencyReason, significance, x_trending,
-//            primaryCountry, mentionedCountries}
+//            primaryCountry, mentionedCountries} and, when the topic has more sources than the entry's 10, all of them as `sources`
 //   run      what the `latest` item says about the run: {of (topics in the staging item), model, updatedAt, generatedDate, generatedYear, limit}
 //
 // The replacement rule is the agent's own merge, kept in mergeArchiveDay: within one archive day the entries of a run replace an earlier entry
@@ -51,6 +51,8 @@ function inboxLines(entries, { batch, selection = null } = {}) {
   return entries.map(trimAi).map((e, n) => {
     const t = topics[e.topicId] || null;
     const latest = t ? Object.fromEntries(LATEST_FIELDS.filter((k) => t[k] !== undefined).map((k) => [k, t[k]])) : null;
+    // the daily row caps an entry's sources at 10; the topic in `latest` can hold more, and its readers count them (the breaking-alert score, the feed): keep them whole (decision 0054)
+    if (latest && Array.isArray(t.sources) && t.sources.length > (Array.isArray(e.sources) ? e.sources.length : 0)) latest.sources = t.sources;
     return { ...e, inboxId: `${batch}|${n}`, batch, n, ...(latest && Object.keys(latest).length ? { latest } : {}), ...(run ? { run } : {}) };
   });
 }

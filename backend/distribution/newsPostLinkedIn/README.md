@@ -13,6 +13,7 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 - DynamoDB `SOCIAL_POSTS_TABLE` (or `LINKEDIN_POSTS_TABLE`): `POSTED#<PLATFORM>#<fingerprint>` (30-day `ttl`); legacy `POSTED#<fingerprint>` also checked for LinkedIn; daily count is a Scan
 - External APIs: `api.linkedin.com/rest/images` and `/rest/posts` (version `202601`); `bsky.social/xrpc` (createSession, uploadBlob, createRecord)
 - Env names: `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `MAX_POSTS_PER_RUN` (default 5), `MAX_POSTS_PER_DAY` (default 100), `SITE_URL` (home link; a LinkedIn post links its story page via `src/_shared/links.js` `storyHref` when the topic has a `threadId`)
+- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` reads the topic pool from `index/today.json` (the latest run, with the sources past ten kept whole) instead of `id = latest`, falling back to DynamoDB when the view is missing or older than 9 h; `compare` logs `[record-reads]` and posts from DynamoDB. The `TOPIC#` summaries and the dedupe table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*`.
 
 ## Gotchas
 - Throws if any of the three table env names is missing; with no platform credentials it returns `skipped`.

@@ -14,6 +14,7 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - DynamoDB `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`): Scan for status `confirmed` only (`sent` and `proposed` stay hidden until the operator confirms with `cli/breaking/review.js`); GetItem by `alertKey`
 - DynamoDB `USERS_DDB_TABLE` (default `GlobalPerspectiveUserTable`): reads `tier` (written by newsPolarBilling)
 - External APIs: Google securetoken x509 certs (JWT verify, `FIREBASE_PROJECT_ID`)
+- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` ranks the topic pool from `index/today.json` instead of `id = latest` (DynamoDB when the view is missing or older than 9 h); `compare` logs and ranks DynamoDB's. Needs `s3:GetObject` on `record/views/*` (role `newsRecommend-role`).
 
 ## Gotchas
 - CORS: code does not emit `Access-Control-Allow-Origin`, so the Function-URL CORS config must stay populated.

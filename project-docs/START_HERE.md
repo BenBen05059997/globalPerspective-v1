@@ -23,6 +23,10 @@ Live since 2026-10-30/31:
 - Story views carry entry notes, outlet country and type, `topicId` and `iso3`; new entry facts keep source snippet, tier and actor names.
 - **Story page timeline reads the record** (released to Pages 2026-10-31): view entries up to `factsThrough`, `narrative_thread` only for later days or a story with no view. Compared on 10 stories: every shown entry keeps its AI tabs, sources and countries; re-seen headlines show on their first day; same-article duplicates show once; non-country regions are dropped. The Pages script now ships `textures/` (the globe texture 404 is fixed).
 
+- Notes now in the record (all live, writers in shadow until checked): entry 3,746; story_analysis 124; drift 222 country + 105 story; country 1,560 (48 briefings + 1,512 history copies); link 330. Writers: the agent, newsThreadAnalysis, newsDriftCorrector, newsCountryIntelligence, newsSystemsAnalysis (policies `entryNotesWriter`, `storyAnalysisNotesWriter`, `driftNotesWriter`, `countryLinkNotesWriter`). Backfill CLIs in `backend/record/cli/` (one per subtype).
+- Views from notes: story views carry `analysis` (with `driftNote`), links views `judgedLinks`, and 48 `countries/<ISO3>` views (only the newest drift note: drift depth is a member perk served by `country_history`; views are public).
+- Built, merged, compared, not yet released: the story page analysis and the country "what changed" band read the views (19 stories and 6 countries match on content; the record adds `from` and `model`). Lists and the cross-country ledger stay on the actions.
+
 Watch next (the full test checklist, browser checks included, is the "What to test" section of https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd):
 - Agent run 04:25 UTC, `newsThreadAnalysis` 04:40, `newsDriftCorrector` 05:30: a `[notes]` log line each, shadow notes schema-valid; then set `NOTES_PREFIX=record/` on each.
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.

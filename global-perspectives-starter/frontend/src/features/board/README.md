@@ -20,10 +20,13 @@ This folder is stage 9: the board page (/board). Timeline: reads boards via news
   `boardAvailable()` is true.
 
 ## Frontend
-- `BoardPage.jsx` - header (inline rename, board switcher, New board, From preset, pin budget n / 12), graph, side sheet
-  (bottom sheet on phones), pin and string lists for keyboard and screen-reader use; `board.css` (tokens only).
-- `components/BoardGraph.jsx` - SVG graph: pins on a fixed circle ordered by kind then id; strings drawn by `stringTexture`
-  (dashed = ours inferred, dashed-alt = yours, faint = cut). Drag a pin onto another, or select two pins and press `c` / Connect.
+- `BoardPage.jsx` - `BoardTopBar` (Studio board, inline rename, Map / Graph switch in the dev harness only, pin budget n / 12, week ending, + Add pin),
+  board switcher, graph, `DueStrip`, `WeekScrubber`, a right rail (`BoardWeekly`, `RailBranches`, `MissingCard`; the side sheet sits at its top,
+  a bottom sheet on phones), folded pin and string lists for keyboard and screen-reader use; `board.css` (tokens only).
+- `components/BoardGraph.jsx` - SVG graph: pin cards (crisis-type dot, type line, title, line, counts, risk, "was"), pins on an ellipse
+  with linked pins adjacent (`layoutPins`); strings drawn by `stringTexture` (dashed = ours inferred, dashed-alt = yours, faint = cut,
+  thickness by strength) with a label each; suggested pins and "Combination failed" strings from this session's connect tests; the
+  no-coverage fog when `board.coverage.gaps` exists. Words come from `lib/graphText.js`. Drag a pin onto another, or select two pins and press `c` / Connect.
 - `VerdictCard` (the `connect` result: strength word, grounds, `limits[]`, the honest none; Keep string with an optional
   line up to 280, or Dismiss), `StringDetail` (cut sets `cutAt`, never deletes; Restore clears it), `AddPinPanel`,
   `PresetsPanel` (region presets, fork), `MissingCard` (actors on 2+ of your pins that you do not follow).
@@ -72,7 +75,7 @@ This folder is stage 9: the board page (/board). Timeline: reads boards via news
 
 ## How to check it
 - `npx vitest run src/features/board` - `boardOps.test.js`, `BoardGraph.test.jsx`, `BoardPage.test.jsx`, `recordViews.test.jsx`, `ArrivalsTray.test.jsx`.
-- Dev fakes: `?devBoard=1` for boards; add `&devRecord=1` (or open `/board/dev-record`) to serve `dev/recordViews/`; `devRecord=missing`
+- Dev fakes: `?devBoard=1` for boards (with `&devRecord=1` the "Gulf and the Horn" board in `dev/devGraphBoard.js` opens first and shows every graph element; connect its Hormuz and sanctions pins for a suggested pin, Sudan and Albanian protests for a failed combination); add `&devRecord=1` (or open `/board/dev-record`) to serve `dev/recordViews/`; `devRecord=missing`
   shows the not-generated paths.
 - Browser: presets and fork, drag-connect, keyboard connect, keep and dismiss, cut, rename, add pin up to 12, switch and delete
   boards; on a phone the connect result opens the bottom sheet.

@@ -24,3 +24,8 @@ export function isoWeekStart(date) {
   const d = new Date(`${date}T00:00:00Z`);
   return new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
 }
+
+/** Sunday of the ISO week holding `date` (UTC, YYYY-MM-DD): the day the board's week ends. */
+export function isoWeekEnd(date) {
+  return new Date(Date.parse(isoWeekStart(date)) + 6 * 86400000).toISOString().slice(0, 10);
+}

@@ -140,7 +140,8 @@ describe('connect and the verdict card', () => {
     await selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(await screen.findByText('No link found')).toBeInTheDocument();
-    expect(screen.getByText(NO_LINK)).toBeInTheDocument();
+    expect(screen.getAllByText(NO_LINK)).toHaveLength(2); // the verdict card, and the "Combination failed" string on the graph
+    expect(screen.getByText('Combination failed')).toBeInTheDocument();
   });
 
   it('the c key connects two selected pins', async () => {
@@ -169,7 +170,7 @@ describe('connect and the verdict card', () => {
     await screen.findByText('Medium link');
     fireEvent.click(screen.getByRole('button', { name: 'Drop it' }));
     expect(screen.queryByText('Medium link')).toBeNull();
-    expect(document.querySelector('.board-string')).toBeNull();
+    expect(document.querySelector('.board-string:not(.board-string--ghost)')).toBeNull();
   });
 });
 
@@ -192,7 +193,7 @@ describe('pin budget', () => {
     boardStore.pins = Array.from({ length: 12 }, (_, i) => thread(i + 1, `thread-${i + 1}`));
     renderPage();
     await screen.findByText(/12 \/ 12/);
-    fireEvent.click(screen.getByRole('button', { name: 'Add pin' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
     expect(await screen.findByText(/Pin budget reached/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Add Oil price/ })).toBeDisabled();
     expect(calls.some(([a]) => a === 'update_board')).toBe(false);
@@ -201,7 +202,7 @@ describe('pin budget', () => {
   it('adds a followed story as a pin and saves', async () => {
     renderPage();
     await screen.findByText(/2 \/ 12/);
-    fireEvent.click(screen.getByRole('button', { name: 'Add pin' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
     fireEvent.click(await screen.findByRole('button', { name: /^Add Oil price/ }));
     await screen.findByText(/3 \/ 12/);
     await waitFor(() => expect(lastUpdate()?.pins).toHaveLength(3), { timeout: 3000 });

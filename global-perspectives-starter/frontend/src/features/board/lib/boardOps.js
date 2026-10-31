@@ -123,7 +123,7 @@ const overlaps = (a, b) => Math.abs(a.x - b.x) * 2 < a.w + b.w && Math.abs(a.y -
  *  (centre and size). A label goes at its string's midpoint; if that covers a card, another label or the edge, it
  *  slides along the string and off to its side. If nothing full-size is free it shrinks to `small` (the short tag);
  *  if even that has no free spot it stays small at the midpoint. -> { id: { x, y, small } } */
-export function placeLabels(items, obstacles, width, height, full, small) {
+export function placeLabels(items, obstacles, width, height, full, small, { dropBlocked = false } = {}) {
   const slides = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8];
   const sides = [0, 1, -1, 2, -2];
   const placed = [];
@@ -147,6 +147,7 @@ export function placeLabels(items, obstacles, width, height, full, small) {
       }
       if (hit) break;
     }
+    if (!hit && dropBlocked) continue; // no clear spot: no label (the string's title and the string list carry its text)
     if (!hit) hit = { r: spot(small, 0, 0.5), small: true };
     placed.push(hit.r);
     out[it.id] = { x: hit.r.x, y: hit.r.y, small: hit.small };

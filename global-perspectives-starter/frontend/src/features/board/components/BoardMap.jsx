@@ -44,7 +44,7 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
       ...Object.values(labels),
     ];
     const touches = Object.fromEntries(pins.filter((p) => centres[p.pinId]).map((p) => [p.pinId, touchesOfPin(p, stories[p.refId])]));
-    return { centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL) };
+    return { centres, text, labels, touches, strings: placeLabels(shown, obstacles, MAP_W, MAP_H, LABEL, SMALL, { dropBlocked: true }) };
   }, [pins, strings, failed, info, stories, now]);
 
   if (!pins.length) return <p className="board-empty">No pins yet. Add a story, a country or an actor to start the board.</p>;

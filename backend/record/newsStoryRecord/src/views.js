@@ -77,15 +77,29 @@ function storyAnalysisBy(noteLines) {
   return out;
 }
 
-/** Link notes (pair subjects, record.js pairKey a__b) -> threadId -> judged links [{otherThreadId, ...as stored}], model judgment. */
-function judgedLinksBy(noteLines) {
+/**
+ * Link notes (pair subjects, record.js pairKey a__b; part = the web's country) -> threadId -> judged links, on the story web
+ * index's own rules (newsSystemsAnalysis buildWebIndex): only each country's newest web, at most WEB_MAX_AGE_DAYS old, one row
+ * per pair per country. Model judgment; `otherTitle` from the record's rows.
+ */
+const WEB_MAX_AGE_DAYS = 30;
+function judgedLinksBy(noteLines, today, titleOf = () => null) {
+  const links = noteLines.filter((n) => n && n.subtype === 'link' && n.subject && n.payload);
+  const newest = new Map();
+  for (const n of links) if (!newest.has(n.part) || n.at > newest.get(n.part)) newest.set(n.part, n.at);
+  const cutoff = `${addDays(today, -WEB_MAX_AGE_DAYS)}T00:00:00.000Z`;
   const out = new Map();
-  for (const [pair, n] of latestBy(noteLines, 'link', (x) => x.subject.id)) {
-    const ids = pair.split('__');
+  const seen = new Set();
+  for (const n of links) {
+    if (n.at !== newest.get(n.part) || n.at < cutoff || seen.has(`${n.subject.id}|${n.part}`)) continue;
+    seen.add(`${n.subject.id}|${n.part}`);
+    const ids = n.subject.id.split('__');
     if (ids.length !== 2) continue;
-    for (const [me, other] of [[ids[0], ids[1]], [ids[1], ids[0]]]) (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, ...asStored(n)});
+    for (const [me, other] of [[ids[0], ids[1]], [ids[1], ids[0]]]) {
+      (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, otherTitle: titleOf(other), iso3: n.part, ...asStored(n)});
+    }
   }
-  for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId));
+  for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId, (l) => l.iso3));
   return out;
 }
 
@@ -142,6 +156,8 @@ function forkRows(facts) {
       const v = verdicts.get(b.branchId);
       return {
         branchId: b.branchId, text: b.text, p: b.p, trigger: b.trigger, resolutionSource: b.resolutionSource, due: b.due,
+        // the question scheme (0038): the page links a branch to /track-record?q=<qid> and shows the scenario's probability
+        question: b.question === true, qid: b.qid || null, scenarioP: b.scenarioP ?? null,
         verdict: v ? {at: v.at, result: v.payload.result, decidedBy: v.payload.decidedBy, evidence: v.payload.evidence ?? null, voidReason: v.payload.voidReason ?? null} : null,
         ...(resolvable(b) ? {} : {legacy: true}),
       };
@@ -352,7 +368,8 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
     if (!links.has(id)) links.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: [], confirmedLinks: [], confirmedLinksReason: NO_READING});
   }
   // the story web's model-judged links (link notes, 0042) beside the computed shared-fact links
-  const judged = judgedLinksBy(noteLines);
+  const titles = new Map(all.map((r) => [r.threadId, r.title || null]));
+  const judged = judgedLinksBy(noteLines, today, (id) => titles.get(id) ?? null);
   for (const [id, view] of links) view.judgedLinks = judged.get(id) || [];
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};

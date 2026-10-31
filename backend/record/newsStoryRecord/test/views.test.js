@@ -365,7 +365,7 @@ test('notes in views (0042): analysis as stored, judged links on both stories, c
   const v = build([e, f], {notes});
   assert.deepEqual(v.stories.get('thread-a').analysis, {lead: 'new', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm', threadId: 'thread-a', iso3: ['UKR']});
   assert.equal(v.stories.get('thread-b').analysis, null);
-  assert.deepEqual(v.links.get('thread-a').judgedLinks, [{otherThreadId: 'thread-b', mechanism: 'drives', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm'}]);
+  assert.deepEqual(v.links.get('thread-a').judgedLinks, [{otherThreadId: 'thread-b', otherTitle: 'Story B', iso3: '', mechanism: 'drives', generatedAt: '2026-10-21T05:00:00.000Z', model: 'm'}]);
   assert.deepEqual(v.links.get('thread-b').judgedLinks.map((l) => l.otherThreadId), ['thread-a']);
   const c = v.countries.get('UKR');
   // public view: only the newest drift note (the anonymous depth of country_history), with the full count
@@ -388,4 +388,14 @@ test('story drift notes (0042): the latest one rides on the story analysis as st
   assert.equal('driftNote' in build([e], {notes: notes.slice(0, 1)}).stories.get('thread-a').analysis, false);
   assert.deepEqual([...v.countries.keys()], ['thread-a']); // only the country-kind drift note makes a country view
   assert.equal(v.countries.get('thread-a').driftCount, 1);
+});
+
+test('judged links follow the web index rules: the newest web of each country only, one row per pair per country, 30 days', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const link = (part, at, mechanism) => ({subtype: 'link', subject: {kind: 'pair', id: 'thread-a__thread-b'}, part, at, model: 'm', noteId: `${part}${at}`, iso3: [part], payload: {mechanism}});
+  const notes = [link('UKR', '2026-10-15T05:00:00.000Z', 'older web'), link('UKR', '2026-10-21T05:00:00.000Z', 'newest UKR web'), link('POL', '2026-10-20T05:00:00.000Z', 'newest POL web'),
+    link('FRA', '2026-09-01T05:00:00.000Z', 'over 30 days')];
+  const rows = build([e, f], {notes}).links.get('thread-a').judgedLinks;
+  assert.deepEqual(rows.map((r) => [r.iso3, r.mechanism]), [['POL', 'newest POL web'], ['UKR', 'newest UKR web']]);
 });

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "noteId": "0065b624bb62534d8f0623ca83ea2ca3e8016b76",
+  "subtype": "drift",
+  "subject": {
+    "kind": "country",
+    "id": "IRN"
+  },
+  "part": "",
+  "threadId": "thread-shipping-disrupted-in-gulf-after-41b2c7",
+  "iso3": [
+    "IRN"
+  ],
+  "at": "2026-07-31T05:30:02.114Z",
+  "date": "2026-07-31",
+  "payload": {
+    "countryName": "Iran",
+    "asOf": "2026-07-30",
+    "since": "2026-07-29",
+    "changeScore": {
+      "from": 90,
+      "to": 95,
+      "delta": 5
+    },
+    "changeDimensions": {
+      "economic": {
+        "from": 80,
+        "to": 90,
+        "delta": 10
+      }
+    },
+    "priorHeadline": "Iran faces renewed strikes as talks stall",
+    "currentHeadline": "Iran economy hit as shipping disruption widens",
+    "currentDimensions": {
+      "conflict": {
+        "score": 90,
+        "why": "Strikes continue."
+      },
+      "economic": {
+        "score": 90,
+        "why": "Shipping disrupted."
+      }
+    },
+    "currentRiskScore": 95,
+    "currentRiskLevel": "severe",
+    "currentLead": "conflict",
+    "triggerEvent": {
+      "topicId": "Shipping Disrupted In Gulf After Strikes-1",
+      "threadId": "thread-shipping-disrupted-in-gulf-after-41b2c7",
+      "title": "Shipping Disrupted In Gulf After Strikes",
+      "date": "2026-07-30"
+    },
+    "whyChanged": "Strikes disrupted Gulf shipping, raising economic risk.",
+    "noSingleDriver": false
+  },
+  "cites": [],
+  "model": "deepseek-flash",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsDriftCorrector",
+    "runId": "2026-07-31T05:30:02.114Z"
+  }
+}

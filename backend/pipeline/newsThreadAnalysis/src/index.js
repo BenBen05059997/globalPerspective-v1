@@ -6,6 +6,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { normalizeDimensions, deriveRisk, clampScore } = require('./_shared/riskDimensions');
 const policy = require('./threadPolicy');
+const { writeStoryNote } = require('./recordNotes');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model
@@ -31,6 +32,7 @@ const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '0', 10)
 
 exports.handler = async (event = {}) => {
   const dryRun = Boolean(event && event.dryRun);
+  const runId = new Date().toISOString();
   console.log(`Thread analysis started${dryRun ? ' (DRY RUN: no LLM, no writes)' : ''}`);
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
@@ -69,7 +71,8 @@ exports.handler = async (event = {}) => {
     try {
       if (INTER_CALL_DELAY_MS > 0 && generated + failed > 0) await sleep(INTER_CALL_DELAY_MS);
       const analysis = await generateThreadAnalysis(thread);
-      await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS), policy.threadIso3(thread.entries));
+      const item = await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS), policy.threadIso3(thread.entries));
+      await writeStoryNote({ item, entries: thread.entries, runId });
       generated++;
       console.log(`Generated analysis for ${thread.threadId} [${p.reason}] (${thread.entries.length} entries, ${analysis.modelId})`);
     } catch (err) {
@@ -231,9 +234,7 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [],
     riskScore = clampScore(analysis.riskScore);
   }
 
-  await ddb.send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: {
+  const item = {
       PK: `${THREAD_PK_PREFIX}${threadId}`,
       SK: THREAD_SK,
       threadId,
@@ -256,8 +257,8 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [],
       model: analysis.modelId || GROK_MODEL,
       latencyMs: analysis.latencyMs || 0,
       ttl,
-    },
-  }));
+  };
+  await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
 
   // Point-in-time snapshot for the living-analysis loop (THREAD_HISTORY#<date>): lets
   // newsDriftCorrector diff a thread's read over time. Scalars only (title/trajectory/risk),
@@ -279,6 +280,7 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [],
       ttl: Math.floor(Date.now() / 1000) + 60 * 86400,
     },
   }));
+  return item;
 }
 
 async function invokeGrok(prompt) {

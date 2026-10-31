@@ -33,7 +33,10 @@ const COUNTRIES = (process.env.DRIFT_COUNTRIES
   || 'Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,DR Congo,South Africa')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
-const COUNTRY_PK = (n) => `COUNTRY#${n}`;
+const { writeDriftNote } = require('./recordNotes');
+let RUN_ID = new Date().toISOString(); // reset per invocation in the handler
+
+const COUNTRY_PK =(n) => `COUNTRY#${n}`;
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), { marshallOptions: { removeUndefinedValues: true } });
 
 const DAY = 86400000;
@@ -142,6 +145,7 @@ async function writeNote(country, drift, note) {
     generatedAt: new Date().toISOString(),
   };
   await putDriftNote(COUNTRY_PK(country), cur.dateKey, base, ttl);
+  await writeDriftNote({ country, item: base, model: LLM_MODEL, runId: RUN_ID });
 }
 
 async function processCountry(country, dryRun = false) {
@@ -267,6 +271,7 @@ async function discoverThreadIds() {
 
 exports.handler = async (event = {}) => {
   const results = { countries: [], threads: [] };
+  RUN_ID = new Date().toISOString();
 
   const countries = event.country ? [event.country] : COUNTRIES;
   for (const country of countries) {

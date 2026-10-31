@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "noteId": "efb3559d0c2b64a82486c810b8eeebe85ac1dcde",
+  "subtype": "story_analysis",
+  "subject": {
+    "kind": "story",
+    "id": "thread-ukraine-says-us-intelligence-s-3af551"
+  },
+  "part": "",
+  "threadId": "thread-ukraine-says-us-intelligence-s-3af551",
+  "iso3": [
+    "UKR",
+    "USA"
+  ],
+  "at": "2026-10-30T04:41:12.318Z",
+  "date": "2026-10-30",
+  "payload": {
+    "threadTitle": "US Intelligence Limits Strain Ukraine Defence",
+    "entryShortTitles": [
+      {
+        "topicId": "Ukraine Says US Intelligence Sharing Restrictions Causing Deaths-1",
+        "shortTitle": "Kyiv blames US limits for front-line deaths"
+      },
+      {
+        "topicId": "US Pauses Some Intelligence Sharing With Kyiv-2",
+        "shortTitle": "Washington confirms a partial sharing pause"
+      }
+    ],
+    "storyArc": "On 29 October Ukraine said limits on US intelligence sharing were costing lives. A day later Washington confirmed a partial pause.",
+    "trajectory": "Expect talks between Kyiv and Washington over the next two weeks; the most likely outcome is a partial restoration.",
+    "rootCauseChain": "The immediate trigger was the pause; behind it sits a wider US review of aid; deeper still, a shift in US priorities.",
+    "watchQuestions": [
+      "Will the US restore full targeting data before the November aid review?",
+      "Will European partners offer replacement intelligence?",
+      "Will Kyiv change its front-line posture?"
+    ],
+    "inflectionTopicId": "US Pauses Some Intelligence Sharing With Kyiv-2",
+    "riskScore": 72,
+    "dimensions": {
+      "conflict": {
+        "score": 72,
+        "why": "Strikes continued across the border this week."
+      },
+      "political": {
+        "score": 55,
+        "why": "Talks stalled."
+      },
+      "economic": null,
+      "humanitarian": {
+        "score": 60,
+        "why": "Displacement is rising."
+      }
+    },
+    "lead": "conflict",
+    "sentiment": -0.6,
+    "keyActors": [
+      {
+        "name": "Volodymyr Zelensky",
+        "role": "Ukraine · President",
+        "mentionCount": 6
+      }
+    ],
+    "entryCount": 2,
+    "entryTopicIds": [
+      "US Pauses Some Intelligence Sharing With Kyiv-2",
+      "Ukraine Says US Intelligence Sharing Restrictions Causing Deaths-1"
+    ],
+    "latencyMs": 41234
+  },
+  "cites": [
+    "973edf31b7f7b0e02a21df1070e79c58936991cc",
+    "c3d277785af7a946dbf15c9dc906a52eff1944af"
+  ],
+  "model": "deepseek-flash",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsThreadAnalysis",
+    "runId": "2026-10-30T04:40:00.000Z"
+  }
+}

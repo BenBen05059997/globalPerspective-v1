@@ -668,6 +668,7 @@
     "runId": "2026-10-22-1",
     "factsManifestDays": 7,
     "factsThrough": "2026-10-22",
-    "readingsThrough": null
+    "readingsThrough": null,
+    "forecastViews": 2
   }
 }

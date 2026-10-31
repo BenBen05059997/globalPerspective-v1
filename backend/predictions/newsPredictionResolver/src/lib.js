@@ -7,17 +7,15 @@
 // recompute (predictions/verify-draw.mjs).
 
 const crypto = require('crypto');
+// The pool and draw rules (eligibility, lead window, the draw) are shared with the record's track-record view: _shared/questionPool.js.
+const { SAMPLE_K, LEAD_MIN, LEAD_MAX, sha256hex, rankKey, eligibleQuestions, draw } = require('./_shared/questionPool');
 
 const RULE = 'v1';
-const SAMPLE_K = 22;
-const LEAD_MIN = 7;
-const LEAD_MAX = 90;
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
 const NO_REASON = 'not_reported_by_due'; // the reason recorded on every `no`
 const COVERAGE_GAP = 'coverage_gap'; // a `no` blocked because our own record has holes in the window (not a judgment)
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
-const sha256hex = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 const day = (iso) => String(iso).slice(0, 10);
 const ms = (d) => Date.parse(`${day(d)}T00:00:00Z`);
 const addDays = (d, n) => new Date(ms(d) + n * 86400000).toISOString().slice(0, 10);
@@ -46,54 +44,6 @@ const isMonday = (d) => new Date(ms(d)).getUTCDay() === 1;
 
 const newSeed = () => crypto.randomBytes(32).toString('hex');
 const commitOf = (seedHex) => sha256hex(seedHex);
-const rankKey = (seedHex, qid) => sha256hex(`${seedHex}|${qid}`);
-
-/**
- * Questions eligible for a week's sample, from PRED rows (never reads or copies `p`).
- * Eligible: question:true, issued (row SK day) inside the week, lead 7-90 days.
- */
-function eligibleQuestions(rows, weekId) {
-  const a = weekStart(weekId);
-  const b = weekEnd(weekId);
-  const out = [];
-  for (const row of rows || []) {
-    const issued = day(row.SK || row.generatedAt || '');
-    if (!(issued >= a && issued <= b)) continue;
-    for (const s of row.scenarios || []) {
-      for (const t of s.triggers || []) {
-        if (!t || t.question !== true || !t.qid || !t.deadline) continue;
-        const lead = daysBetween(issued, t.deadline);
-        if (lead < LEAD_MIN || lead > LEAD_MAX) continue;
-        out.push({
-          qid: t.qid,
-          pk: row.PK, sk: row.SK, triggerId: t.id,
-          question: t.text, deadline: t.deadline, resolutionSource: t.resolutionSource || null,
-          storyTitle: row.title || null, issuedAt: row.generatedAt || issued,
-          threadId: row.threadId || null,
-          clusterKey: row.threadId || row.topicId || row.PK,
-        });
-      }
-    }
-  }
-  // the same question can appear once only
-  const seen = new Set();
-  return out.filter((q) => (seen.has(q.qid) ? false : (seen.add(q.qid), true)));
-}
-
-/**
- * The draw. pool: [{qid, clusterKey}]. Per story keep only the lowest hash, sort by hash,
- * take the first K (fewer if fewer stories; never padded).
- */
-function draw(seedHex, pool, K = SAMPLE_K) {
-  const best = new Map();
-  for (const q of pool) {
-    const h = rankKey(seedHex, q.qid);
-    const cur = best.get(q.clusterKey);
-    if (!cur || h < cur.h || (h === cur.h && q.qid < cur.qid)) best.set(q.clusterKey, { qid: q.qid, h, clusterKey: q.clusterKey });
-  }
-  const reps = [...best.values()].sort((x, y) => (x.h < y.h ? -1 : x.h > y.h ? 1 : x.qid < y.qid ? -1 : 1));
-  return { picked: reps.slice(0, K), eligible: pool.length, clusters: best.size };
-}
 
 // ---- verdict windows ----
 const canConcludeNo = (deadline, today) => day(today) >= addDays(deadline, GRACE_DAYS);

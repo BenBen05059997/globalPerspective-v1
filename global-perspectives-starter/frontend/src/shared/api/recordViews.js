@@ -27,6 +27,8 @@ export function makeRecordViews(getView = fetchRecordView) {
     },
     // When the views were built and from which facts (`builtAt`, `factsThrough`, `provisionalThrough`): the freshness rule of viewsFresh.js (0050).
     fetchManifest() { return getView('manifest.json'); },
+    // A story's forks in a file of their own (decision 0052): the forecast readers that do not need the story's timeline. 404 = the story has drawn no question.
+    fetchForecastsView(id) { return ID.test(id || '') ? getView(`forecasts/${id}.json`) : Promise.resolve(null); },
     fetchLinksView(id) { return ID.test(id || '') ? getView(`links/${id}.json`) : Promise.resolve(null); },
     fetchCountryView(iso3) { return ISO3.test(iso3 || '') ? getView(`countries/${iso3}.json`) : Promise.resolve(null); },
     fetchCounts(date) { return DAY.test(date || '') ? getView(`counts/${date}.json`) : Promise.resolve(null); },

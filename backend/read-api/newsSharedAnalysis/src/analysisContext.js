@@ -6,7 +6,9 @@
 //
 // createContextBuilder({ fetchers, assembly, helpers, onError }) -> buildAnalysisContext(selectedTopics)
 //   fetchers: { summary(topicId), prediction(topicId), traceCause(topicId), narrativeThread(threadId),
-//               threadAnalyses(threadIds), predictionSnapshot(topicIds) }   (same response shapes as restProxy)
+//               threadAnalyses(threadIds), predictionSnapshot(topicIds), forecastFromRecord?(threadId, topicIds) }   (same response shapes as restProxy)
+//     forecastFromRecord is optional (decision 0052): it reads the story's forecast from the record's forecasts view and answers {answered, snapshot}; when it
+//     answers, predictionSnapshot is not called; when it is absent, throws or does not answer, predictionSnapshot is the fallback, as before.
 //   assembly: { assembleContext, buildStorySources, pickText, clip, MAX_NEWS_PER_STORY }   (analysisPrompt.js)
 //   helpers:  { safeWhy, safeTriggerEvent, dropRedatedRepeats }
 //   onError:  (label, err) => void   (the browser reports to the error sink; the Lambda logs)
@@ -29,7 +31,19 @@ export function createContextBuilder({ fetchers, assembly, helpers, onError = ()
   const fetchNarrativeThread = fetchers.narrativeThread;
   const fetchThreadAnalyses = fetchers.threadAnalyses;
   const fetchPredictionSnapshot = fetchers.predictionSnapshot;
+  const fetchRecordForecast = fetchers.forecastFromRecord;
   const reportFetchError = onError;
+
+  // The story's forecast: the record first when the caller wired it, else (or when it cannot answer) the prediction_snapshot action.
+  async function snapshotFor(threadId, topicIds) {
+    if (typeof fetchRecordForecast === 'function') {
+      try {
+        const r = await fetchRecordForecast(threadId, topicIds);
+        if (r && r.answered) return { success: true, snapshot: r.snapshot };
+      } catch (err) { reportFetchError('analysis-studio-forecast-view', err); }
+    }
+    return fetchPredictionSnapshot(topicIds);
+  }
 
   // Turn a narrative_thread entry list into typed NEWS candidates (headline + outlet +
   // date, verbatim snippet). Drops re-dated repeats first (an archive re-write of an old
@@ -120,7 +134,7 @@ export function createContextBuilder({ fetchers, assembly, helpers, onError = ()
     const [threadRes, analysesRes, snapshotRes] = await Promise.allSettled([
       fetchNarrativeThread(threadId),
       fetchThreadAnalyses([threadId]),
-      fetchPredictionSnapshot([t.topicId].filter(Boolean)),
+      snapshotFor(threadId, [t.topicId].filter(Boolean)),
     ]);
 
     let news = [];
@@ -158,7 +172,7 @@ export function createContextBuilder({ fetchers, assembly, helpers, onError = ()
       const tried = new Set([t.topicId].filter(Boolean));
       if (extraTopicIds.some((id) => !tried.has(id))) {
         snapshotOutcome = await Promise.allSettled([
-          fetchPredictionSnapshot([...tried, ...extraTopicIds]),
+          snapshotFor(threadId, [...tried, ...extraTopicIds]),
         ]).then((r) => r[0]);
       }
     }

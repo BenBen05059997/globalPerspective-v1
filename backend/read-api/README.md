@@ -31,8 +31,8 @@ Proxy actions and the feature that calls each (found by grep in `frontend/src`).
 - Home and Today (`/today`): `topics`, `today`, `corrections_feed`.
 - Thread pages (`/weekly/thread/:id`): `narrative_thread`, `thread_analysis`, `systems_analysis`, `web_index`, `summary`, `prediction`, `trace_cause`, `archive_range`.
 - Country pages (`/weekly/country/:name`): `country_intelligence`, `country_facts`, `country_history`.
-- Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot`.
-- Track record (`/track-record`): `prediction_track_record`.
+- Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot` (the next question: the record's forecasts view first while the views are fresh, decision 0052; the action is the fallback).
+- Track record (`/track-record`): `prediction_track_record` (the page's fallback; the page reads the record view first, decision 0044/0052).
 - Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`.
 - Served but with no frontend caller found: `country_preview`, `thread_preview`, `rss` (GET). Any other action, including the removed dossier, pair, overview, research, geocode, economy and markets actions, answers 400 without touching data.
 

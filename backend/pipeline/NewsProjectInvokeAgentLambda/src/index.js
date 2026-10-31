@@ -46,6 +46,7 @@ const ARC_DIGEST_DAYS = parseInt(process.env.ARC_DIGEST_DAYS || '7', 10);
 const ARC_DIGEST_MAX = parseInt(process.env.ARC_DIGEST_MAX || '12', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const { mergeArchiveDay, inboxLines } = require('./_shared/entriesInbox');
+const forecastsInbox = require('./_shared/forecastsInbox');
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
 const DAILY_ARCHIVE_TTL_DAYS = 90;
@@ -67,6 +68,10 @@ const NOTES_PREFIX = process.env.NOTES_PREFIX || 'record/shadow/';
 // Entries inbox (decision 0051): <ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl, one line per archived entry. Unset = nothing is written;
 // the coordinator sets record/shadow/ first, then record/.
 const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
+// Forecasts inbox (decision 0052): <FORECASTS_INBOX_PREFIX>inbox/forecasts/DAY.jsonl, a line for each PRED# row put and for each thread reconcile. Unset = nothing
+// is written. The lines of a run wait here and are appended once, after the reconcile (flushForecastsInbox).
+const FORECASTS_INBOX_PREFIX = process.env.FORECASTS_INBOX_PREFIX || '';
+let pendingForecastLines = [];
 const STORY_MAP_KEY = 'threads/story-map.json';
 const ENABLE_R3_TIER = String(process.env.ENABLE_R3_TIER || 'false').toLowerCase() === 'true'; // gated until real-tag re-measurement
 let _s3;
@@ -281,6 +286,7 @@ exports.handler = async (event) => {
       await writeThreadPointers(filteredTopics, threadIdById, generationId);
       await reconcilePredictionThreads(filteredTopics, threadIdById, generatedAtDay);
     }
+    await flushForecastsInbox();
 
     if (!readOnly && CACHE_CLEANUP_ENABLED && swapped) {
       try {
@@ -594,6 +600,7 @@ async function reconcilePredictionThreads(topics, threadIdById, day) {
       if (!fix) return;
       await ddb.send(new UpdateCommand({ TableName: PREDICTION_LOG_TABLE, ...fix }));
       fixed++;
+      noteForecastLine(() => forecastsInbox.threadLine({ PK: Item.PK, SK: Item.SK, threadId: threadIdById[topic.id], was: Item.threadId, at: new Date().toISOString() }));
       console.log(`[pred-thread] ${topic.id} ${Item.threadId} -> ${threadIdById[topic.id]}`);
     } catch (e) { console.warn(`PRED# thread reconcile failed for ${topic.id}: ${e.message}`); }
   });
@@ -1049,6 +1056,7 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     };
 
     await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
+    noteForecastLine(() => forecastsInbox.drawnLine(item));
     console.log(`Logged prediction snapshot ${item.PK}/${day} v${lib.METHODOLOGY_VERSION}/p${lib.PROMPT_VERSION} (${capture.kept} triggers kept, ${capture.dropped.length} gated out)`);
   } catch (err) {
     if (err.name === 'ConditionalCheckFailedException') { console.log(`Prediction snapshot for ${topic.id} already logged today; first of the day stands`); return; }
@@ -1353,6 +1361,33 @@ async function writeEntriesInbox({ dailyEntries, archiveDate, batch }, stagingIt
   }
 }
 
+// Forecasts inbox (decision 0052): a line is queued when the DynamoDB write it mirrors has succeeded, and a line that cannot be built is logged, never thrown.
+function noteForecastLine(build) {
+  if (!FORECASTS_INBOX_PREFIX) return;
+  try { pendingForecastLines.push(build()); } catch (e) { console.error(`[inbox] forecast line not built: ${e.message}`); }
+}
+
+// Appends the queued lines (a run's drawn lines, then its thread reconciles, in that order) to record/inbox/forecasts/DAY.jsonl, one file per row day.
+// Off unless FORECASTS_INBOX_PREFIX is set. Best-effort while DynamoDB stays the primary copy: a failure is logged as [inbox] and never fails the run.
+async function flushForecastsInbox() {
+  const lines = pendingForecastLines;
+  pendingForecastLines = [];
+  if (!FORECASTS_INBOX_PREFIX || !lines.length) return;
+  try {
+    const { makeS3Json } = require('./_shared/s3json');
+    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+    const s3json = makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET });
+    const byDay = new Map();
+    for (const l of lines) (byDay.get(l.day) || byDay.set(l.day, []).get(l.day)).push(l);
+    for (const [day, dayLines] of byDay) {
+      const r = await s3json.appendLines(`${FORECASTS_INBOX_PREFIX}inbox/forecasts/${day}.jsonl`, dayLines, { idKey: 'inboxId' });
+      console.log(`[inbox] forecasts: ${dayLines.length} lines for ${day}, ${r.appended} appended, ${r.skipped} already stored (${FORECASTS_INBOX_PREFIX})`);
+    }
+  } catch (e) {
+    console.error(`[inbox] forecasts not written: ${e.message}`);
+  }
+}
+
 function normalizeList(input) {
   if (!Array.isArray(input)) {
     return [];
@@ -1400,4 +1435,4 @@ function http(statusCode, body) {
   };
 }
 
-exports._internal = { buildArchiveEntry, logPredictionSnapshot, writeEntriesInbox };
+exports._internal = { buildArchiveEntry, logPredictionSnapshot, writeEntriesInbox, flushForecastsInbox, reconcilePredictionThreads };

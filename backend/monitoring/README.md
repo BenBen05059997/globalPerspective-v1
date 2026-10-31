@@ -23,7 +23,7 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits. T
 
 1. Readers' browsers post uncaught errors to newsClientErrors (read-api group), which counts them per day and fingerprint.
 2. Every 6 hours newsErrorDigest compares those counts with its last run and alerts on new or growing fingerprints. Its first run only stores a baseline.
-3. Every 2 hours newsFreshnessMonitor calls the public topics action and alerts once on an unhealthy transition and once on recovery (dedupe kept in the S3 marker) when it fails or is older than `STALE_HOURS`. The 12:30 UTC run also sends the settle alert if the weekly prediction flow is behind.
+3. Every 2 hours newsFreshnessMonitor calls the public topics action and alerts once on an unhealthy transition and once on recovery (dedupe kept in the S3 marker) when it fails or is older than `STALE_HOURS`. The 12:30 UTC run also sends the settle alert if the weekly prediction flow is behind (read from the snapshot file through the proxy, or, with `SETTLE_SOURCE=record`, from the record's track-record view, manifest and the resolver's heartbeat, decision 0052).
 4. At 12:00 UTC newsModelGuard checks the DeepSeek balance and the model ids set on every Lambda.
 5. On Monday, Wednesday and Friday newsSourceAudit audits the top live topics against their sources.
 6. newsImpactAudit would run daily at 09:00 UTC but its schedule is DISABLED, so it runs only when invoked by hand.

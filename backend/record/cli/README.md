@@ -265,3 +265,20 @@ Equality of the record readers with the DynamoDB rows they replace (decision 005
 RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cli/compare-record-reads.mjs [--only today,analyses,countries,weekly,rss] [--rss-url URL]
 ```
 Test: `node --test backend/record/cli/compare-record-reads.test.mjs`.
+## build-forecasts-inbox.mjs
+
+Builds the forecasts inbox (decision 0052) for the last N days from the PredictionLog `PRED#` rows into **local files**, and proves that the `forecast_drawn` facts built from the inbox are byte-identical to the facts built from the log. Read only: one Scan of the window's `PRED#` rows and GetItem on the archive rows (the day's entries are the context `forecastFact` takes); the inbox is written under `--out`.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/build-forecasts-inbox.mjs [--days 30] [--to YYYY-MM-DD] [--out DIR]
+```
+Writes `<out>/record/inbox/forecasts/DAY.jsonl` (a `drawn` line for each row, the thread it was drawn under; a row the reconcile moved also gets a later `thread` line, so the last-wins replay is exercised), reads them back through `newsStoryRecord`'s own reader (`FORECASTS_SOURCE=inbox`) and prints the files and lines, the rows moved by the reconcile, orphan thread lines, the snapshots that differ (whole JSON, provenance included), the fact builds compared for each day of the window (with that day's archive entries) and their bytes, and the real nightly path for the last day (`store.load` in both modes). Exit code 2 on any difference. 2026-10-31: 669 rows, 23 files, 0 differences, 20,070 fact builds and 78,262,264 bytes identical. The output is the 30-day start for the live inbox: upload `record/inbox/forecasts/` to `record/shadow/inbox/forecasts/` then `record/inbox/forecasts/` (coordinator); only days before the agent's first line, then once more for the switch-on day after it has ended (decision 0052 hand-off). Test: `node --test backend/record/cli/build-forecasts-inbox.test.mjs`.
+
+## check-eligible.mjs
+
+Checks that the resolver finds the same questions in the record as in the PredictionLog (decision 0052, `QUESTIONS_SOURCE`). Read only: one Scan of the `PRED#` rows with `questionSchema`, GetItem on `SAMPLE#<week>/DRAW` (never a seed row), and the facts and Runs from S3 or from a local copy.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/check-eligible.mjs [--days 120] [--facts-dir DIR]
+```
+`--facts-dir` reads `DIR/record/facts/DAY.jsonl` and `DIR/record/runs/DAY.json` (a copy of the bucket) instead of S3. Prints, from the resolver's own code and the shared pool rules: the watch's question list from the log against the facts' (qids on one side only, fields that differ); for every committed week the eligible set from both; for every drawn week the stored `pool` and `eligible` against the pool rebuilt from the facts, and whether the draw is reproduced (under the current 7-90 lead window or the 7-84 one before 0045; `picksReproducedIgnoringClusterKeys` when only a story key changed after the draw); and the facts Run of each day of the week. Today's forecasts are left out of both sides (the record lags the log until the 23:45 UTC run). Exit code 2 on any difference. 2026-10-31: 5,276 questions on both sides, eligible sets of W41-W46 equal, W42 and W43 pools equal the stored ones, W41 reproduced but for one cluster key. Test: `node --test backend/record/cli/check-eligible.test.mjs`.

@@ -10,7 +10,7 @@ Precomputes the forecast track record so `/track-record` does not Scan Predictio
 ## Reads / writes
 - DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): Scan of `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` families (projected attributes only)
 - S3 `WORLD_BUCKET`: writes `TRACK_RECORD_KEY` (default `predictions/track_record.json`) as `{ builtAt, data }`
-- Consumer: the newsSensitiveData proxy (`prediction_track_record`) reads that object and falls back to a live Scan when it is missing. The `/track-record` page itself reads the record view `views/track-record.json` first (decision 0044) and uses this action only as its fallback.
+- Consumer: the newsSensitiveData proxy (`prediction_track_record`) reads that object and falls back to a live Scan when it is missing. The `/track-record` page itself reads the record view `views/track-record.json` first (decision 0044) and uses this action only as its fallback (the view carries the draw pools and `settleHealth` since decision 0052). Readers left on 2026-10-31: that page fallback (`useTrackRecord`, and "Verify this draw" for a week the view has no `draw` for), `newsFreshnessMonitor` until `SETTLE_SOURCE=record`, and `predictions/verify-draw.mjs --public`. When those are gone this job and the `prediction_track_record` action can retire (one yes each).
 
 ## Gotchas
 - `trackRecord.js` must stay in sync with the fallback `prediction_track_record` in `newsSensitiveData/src/index.js`.

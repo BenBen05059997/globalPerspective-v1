@@ -8,11 +8,42 @@ import * as promptLib from './analysisPrompt.js';
 import { safeWhy, safeTriggerEvent } from './driftNote.js';
 import { dropRedatedRepeats } from './dropRedatedRepeats.js';
 import { safeHttpUrl } from './urls.js';
+import { viewForecast, forecastOfThread } from './forecastFromView.js';
 
 const clip = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, n);
 
-/** Plain HTTP client for the public proxy, same request shape as the browser's restProxy. */
-export function makeProxyFetchers({ proxyUrl, token = null, fetchImpl = fetch, timeoutMs = 8000 }) {
+const VIEWS_MAX_AGE_MS = 9 * 60 * 60 * 1000; // the record's views are rebuilt at least every 8 hours (decision 0050); older is stale
+const THREAD_ID = /^[A-Za-z0-9_-]{1,200}$/;
+
+/**
+ * A story's forecast from the record's forecasts view (decision 0052), the browser's rule (shared/api/forecastViews.js): answered while the manifest is under 9 hours old,
+ * a story with no file has drawn no question; not answered (stale, unreadable) and the caller asks the prediction_snapshot action. `viewsUrl` = <site>/data/record/views.
+ */
+function makeRecordForecast({ viewsUrl, fetchImpl, timeoutMs, now = Date.now }) {
+  async function getView(path) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetchImpl(`${viewsUrl}/${path}`, { headers: { Accept: 'application/json' }, signal: ctrl.signal });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`record view HTTP ${res.status} for ${path}`);
+      return await res.json();
+    } finally { clearTimeout(timer); }
+  }
+  return async function forecastFromRecord(threadId, topicIds) {
+    if (!THREAD_ID.test(threadId || '')) return { answered: false, snapshot: null };
+    const manifest = await getView('manifest.json');
+    const built = Date.parse(manifest && manifest.builtAt);
+    // stale, or a build that wrote no forecasts views (then a missing file would not mean "no forecast")
+    if (!Number.isFinite(built) || now() - built > VIEWS_MAX_AGE_MS || !Number.isInteger(manifest.forecastViews)) return { answered: false, snapshot: null };
+    const view = await getView(`forecasts/${threadId}.json`);
+    if (!view) return { answered: true, snapshot: null };
+    return { answered: true, snapshot: topicIds ? viewForecast(view, { topicIds }) : forecastOfThread(view) };
+  };
+}
+
+/** Plain HTTP client for the public proxy, same request shape as the browser's restProxy. `recordViewsUrl` (optional) lets the forecast come from the record first. */
+export function makeProxyFetchers({ proxyUrl, token = null, fetchImpl = fetch, timeoutMs = 8000, recordViewsUrl = null, now = Date.now }) {
   async function call(action, payload, auth) {
     const headers = { 'Content-Type': 'application/json' };
     if (auth && token) headers.Authorization = `Bearer ${token}`;
@@ -38,6 +69,7 @@ export function makeProxyFetchers({ proxyUrl, token = null, fetchImpl = fetch, t
     narrativeThread: (threadId) => call('narrative_thread', { threadId }, true),
     threadAnalyses: (threadIds) => call('thread_analysis', { threadIds }, true),
     predictionSnapshot: (topicIds) => call('prediction_snapshot', { topicIds }, false),
+    ...(recordViewsUrl ? { forecastFromRecord: makeRecordForecast({ viewsUrl: recordViewsUrl.replace(/\/+$/, ''), fetchImpl, timeoutMs, now }) } : {}),
   };
 }
 

@@ -55,7 +55,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - `useWeeklyBrief(week)` -> the record's copy; the action when that week is missing or, for the latest, once the record's is a week old
   (the newer wins). localStorage `gp_weekly_brief_v1[:week]`, 30 min. A read API without the lookup answers latest and the page says so.
 - `useDailyEditionsIndex` -> the record's index, then `latest_daily_brief` editions, then `daily_brief` probes for dates still unknown,
-  at most 14 days (sessionStorage `gp_briefings_daily_editions_v1`); `useStoryQuestion(threadId)` -> `prediction_snapshot` (memory). No sign-in.
+  at most 14 days (sessionStorage `gp_briefings_daily_editions_v1`); `useStoryQuestion(threadId)` -> the record's `forecasts/<threadId>.json` view while the views are fresh (`shared/api/forecastViews.js`, decision 0052), `prediction_snapshot` when the record cannot answer (memory). No sign-in.
 
 ## Pipeline
 1. `newsPostDevTo` (23:00 Tokyo) builds the daily brief from `today-archive`, thread analyses and country rows ->

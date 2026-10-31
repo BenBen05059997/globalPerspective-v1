@@ -108,7 +108,7 @@ describe('useTrackRecord', () => {
   });
 });
 
-describe('Verify this draw with a record-view week (no pool in the view)', () => {
+describe('Verify this draw with a record-view week (no draw on the week: the action is the fallback)', () => {
   const weeks = trackRecordFromView(view).questions.weeks;
 
   it('loadDrawPool takes the week\'s draw from the action payload', async () => {
@@ -132,5 +132,23 @@ describe('Verify this draw with a record-view week (no pool in the view)', () =>
   it('without a way to load the pool, a week with no draw offers no Verify control', () => {
     render(<DrawRow weeks={weeks} now={NOW} />);
     expect(screen.queryByRole('button', { name: /Verify this draw/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Verify this draw with a draw in the view (decision 0052)', () => {
+  it('a week that carries its draw is verified from the view, without asking the action', async () => {
+    const { drawFromPool, sha256Hex } = await import('@/features/track-record/lib/sampleRule.js');
+    const seedHex = 'ab'.repeat(32);
+    const pool = [{ q: 'q1', c: 'th-a' }, { q: 'q2', c: 'th-a' }, { q: 'q3', c: 'th-b' }];
+    const drawn = await drawFromPool(seedHex, pool, 22);
+    const week = {
+      weekId: '2026-W43', weekStart: '2026-10-19', commit: { hash: await sha256Hex(seedHex), committedAt: '2026-10-05T10:30:00.000Z' }, reveal: { seedHex, revealedAt: '2026-10-26T10:30:00.000Z' },
+      drawn: true, eligible: 3, clusters: 2, picked: drawn.picked.length, due: 0, settled: 0, void: 0, draw: { K: 22, pool, picked: drawn.picked },
+    };
+    const loadDraw = vi.fn();
+    render(<DrawRow weeks={[week]} now={NOW} loadDraw={loadDraw} />);
+    fireEvent.click(screen.getByRole('button', { name: /Verify this draw/ }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/verified|matches|confirmed|recomputed/i));
+    expect(loadDraw).not.toHaveBeenCalled();
   });
 });

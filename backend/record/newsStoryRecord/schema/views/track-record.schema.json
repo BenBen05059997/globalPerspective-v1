@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Track record view",
-  "description": "record/views/track-record.json: the public /track-record page. `questions` is the weekly sampled-question scheme (the shape of predictions/track_record.json data.questions without settleHealth, a week's reviewed and draw.pool); `legacy` is the frozen pilot era, a constant.",
+  "description": "record/views/track-record.json: the public /track-record page. `questions` is the weekly sampled-question scheme (the shape of predictions/track_record.json data.questions without a week's reviewed; with settleHealth, the alarm's inputs from the facts, and a draw with its pool for the last drawn weeks it can reproduce, decision 0052); `legacy` is the frozen pilot era, a constant.",
   "type": "object",
   "required": ["schemaVersion", "asOf", "builtFrom", "questions", "legacy"],
   "additionalProperties": false,
@@ -16,7 +16,7 @@
     },
     "questions": {
       "type": "object",
-      "required": ["method", "firstIssuedAt", "firstCommit", "firstDrawWeek", "issued", "sampledTotal", "warmUp", "weeks", "sampled", "counts", "scoring"],
+      "required": ["method", "firstIssuedAt", "firstCommit", "firstDrawWeek", "issued", "sampledTotal", "warmUp", "weeks", "sampled", "counts", "scoring", "settleHealth"],
       "additionalProperties": false,
       "properties": {
         "method": {
@@ -53,7 +53,21 @@
             "resolved": {"type": "integer", "minimum": 0}
           }
         },
-        "scoring": {"description": "null below 150 resolved questions", "type": ["object", "null"]}
+        "scoring": {"description": "null below 150 resolved questions", "type": ["object", "null"]},
+        "settleHealth": {
+          "description": "what the freshness monitor's settle alarm reads, as of the build (the daily tick is the resolver's heartbeat, not a fact)",
+          "type": "object",
+          "required": ["expectedDrawWeek", "drawMissed", "commitMissing", "lastVerdictAt", "dueUnsettled", "oldestDueUnsettledDays"],
+          "additionalProperties": false,
+          "properties": {
+            "expectedDrawWeek": {"anyOf": [{"$ref": "#/definitions/week"}, {"type": "null"}]},
+            "drawMissed": {"type": "boolean"},
+            "commitMissing": {"type": "boolean"},
+            "lastVerdictAt": {"anyOf": [{"$ref": "#/definitions/iso"}, {"type": "null"}]},
+            "dueUnsettled": {"type": "integer", "minimum": 0},
+            "oldestDueUnsettledDays": {"type": ["integer", "null"]}
+          }
+        }
       }
     },
     "legacy": {
@@ -90,7 +104,18 @@
         "picked": {"type": ["integer", "null"]},
         "due": {"type": "integer", "minimum": 0},
         "settled": {"type": "integer", "minimum": 0},
-        "void": {"type": "integer", "minimum": 0}
+        "void": {"type": "integer", "minimum": 0},
+        "draw": {
+          "description": "the draw with its eligible pool, for the last drawn weeks the forecast facts reproduce (the page's Verify this draw recomputes the picks from it)",
+          "type": "object",
+          "required": ["K", "pool", "picked"],
+          "additionalProperties": false,
+          "properties": {
+            "K": {"type": "integer", "minimum": 1},
+            "pool": {"type": "array", "items": {"type": "object", "required": ["q", "c"], "additionalProperties": false, "properties": {"q": {"type": "string"}, "c": {"type": ["string", "null"]}}}},
+            "picked": {"type": "array", "items": {"type": "object", "required": ["qid", "h", "clusterKey"], "additionalProperties": false, "properties": {"qid": {"type": "string"}, "h": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "clusterKey": {"type": ["string", "null"]}}}}
+          }
+        }
       }
     },
     "sampled": {

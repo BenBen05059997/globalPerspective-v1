@@ -23,6 +23,7 @@ const { draftQuestion } = require('./draft');
 const watch = require('./watch');
 const gather = require('./gather');
 const inbox = require('./inbox');
+const questionSources = require('./questions');
 const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -84,14 +85,17 @@ async function ensureCommits(deps, today, dryRun, out) {
   }
 }
 
+// Where the questions come from (QUESTIONS_SOURCE, decision 0052): the PRED# rows (default), the record's forecast facts, or both compared. Tests inject deps.store only.
+const questionsOf = (deps) => deps.questions || (deps.questions = questionSources.logSource(deps.store));
+
 async function drawWeek(deps, commit, dryRun, out) {
   const wk = commit.weekId;
   if (await deps.store.get(`SAMPLE#${wk}`, 'DRAW')) return;
   const secret = await deps.store.get(`SEED#${wk}`, 'SECRET');
   if (!secret) { out.errors.push(`${wk}: seed secret missing, cannot draw (a new seed is never invented)`); return; }
   if (lib.commitOf(secret.seedHex) !== commit.commitHash) { out.errors.push(`${wk}: seed does not match the published commitment`); return; }
-  const rows = await deps.store.predRows(commit.weekStart, commit.weekEnd);
-  const eligible = lib.eligibleQuestions(rows, wk);
+  let eligible;
+  try { eligible = await questionsOf(deps).eligible(commit); } catch (e) { out.errors.push(`${wk}: draw postponed (${String(e.message).slice(0, 200)})`); return; }
   const res = lib.draw(secret.seedHex, eligible.map((q) => ({ qid: q.qid, clusterKey: q.clusterKey })), lib.SAMPLE_K);
   const summary = { weekId: wk, eligible: res.eligible, clusters: res.clusters, picked: res.picked.length };
   if (dryRun) { out.wouldDraw.push(summary); return; }
@@ -210,9 +214,9 @@ async function correct(deps, event, out) {
 // the SAMPLED rows (same fields; a sampled question is just a flagged one). A failing facts read (for example the
 // role lacks s3:GetObject on record/facts/*) is reported and the pass goes on with the age rule alone.
 async function watchSelect(deps, today, limit, out) {
-  const [preds, qrows] = await Promise.all([deps.store.allQuestionPreds(), deps.store.listQuestionRows()]);
+  const [fromPreds, qrows] = await Promise.all([questionsOf(deps).all(), deps.store.listQuestionRows()]);
   const groups = new Map(groupQuestions(qrows).map((g) => [g.qid, g]));
-  const questions = watch.questionsFromPreds(preds);
+  const questions = fromPreds;
   const known = new Set(questions.map((q) => q.qid));
   for (const g of groups.values()) if (g.sampled && !known.has(g.qid)) questions.push({ ...watch.questionFromSampled(g.sampled), qid: g.qid });
   // GATHER's reader: the story's entry facts since each open question's draw (one read per facts day, shared)
@@ -249,6 +253,17 @@ async function checkPass(deps, today, limit, dryRun, out) {
     g.drafts.push({ PK: `Q#${q.qid}`, SK: `DRAFT#${at}`, ...d, model: d.model || deps.draftModel });
     await settleQuestion(deps, g, false, out);
   });
+}
+
+// The tick is not a fact, so the freshness monitor cannot read it from the record (decision 0052): the resolver also writes the time of its last tick to
+// SETTLE_HEARTBEAT_KEY (record/views/health/settle-tick.json, served under /data like the views). Off unless the key is set; best-effort, a failure is logged.
+async function heartbeat(deps, now, out) {
+  if (!deps.heartbeatKey || !deps.inbox || typeof deps.inbox.putLatest !== 'function') return;
+  try {
+    await deps.inbox.putLatest(deps.heartbeatKey, { schemaVersion: 1, at: now, committed: out.committed.length, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, errors: out.errors.length });
+  } catch (e) {
+    console.error(`[heartbeat] not written: ${String(e.message).slice(0, 200)}`);
+  }
 }
 
 async function run(event, deps) {
@@ -309,6 +324,7 @@ async function run(event, deps) {
       PK: `SETTLE#${lib.weekOf(today)}`, SK: `TICK#${now}`, at: now,
       committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, settled: out.settled.length, watch: out.watch || null, errors: out.errors,
     });
+    await heartbeat(deps, now, out);
   }
   if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
   console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, candidates: out.watch ? out.watch.total : 0, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
@@ -326,11 +342,14 @@ function defaultDeps() {
   const s3 = makeFacts();
   const { makeStore } = require('./store');
   const usage = { llmCalls: 0, promptTokens: 0, completionTokens: 0 };
+  const store = makeStore(LOG_TABLE, REGION);
   return {
     now: () => new Date().toISOString(),
-    store: makeStore(LOG_TABLE, REGION),
+    store,
+    questions: questionSources.makeQuestions(process.env.QUESTIONS_SOURCE, { store, facts: s3 }),
     facts: s3,
     inbox: s3,
+    heartbeatKey: process.env.SETTLE_HEARTBEAT_KEY || '',
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
     async llm(prompt) {

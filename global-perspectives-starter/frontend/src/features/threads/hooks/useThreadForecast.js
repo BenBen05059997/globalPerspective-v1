@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink';
-import { viewForecast } from '@/features/threads/lib/viewForecast.js';
+import { viewForecast } from '@/shared/lib/forecastFromView.js';
 
 const views = makeRecordViews();
 
 /**
  * useThreadForecast — the "Living forecast" board data for a story.
  * Reads the record's story view first (decisions 0042, 0043: forks with question, scoring and state), mapped by
- * `viewForecast` to the snapshot shape for the page's topicIds; falls back to the `prediction_snapshot` action when the
+ * `viewForecast` (shared/lib/forecastFromView.js) to the snapshot shape for the page's topicIds; falls back to the `prediction_snapshot` action when the
  * view yields nothing. The view keeps each forecast with the story it was drawn for, so a topic moved in from another
  * story no longer brings that story's forecast (operator, 2026-10-31). Honest-empty (snapshot: null) when neither has one.
  * Returns: { snapshot, loading }

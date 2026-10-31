@@ -1008,6 +1008,54 @@
                   "web-history"
                 ],
                 "description": "present on a link rebuilt from web/YYYY/MM/DD.json (backfill); views prefer an exact note"
+              },
+              "reverse": {
+                "type": "object",
+                "description": "the other direction of the pair in the same web (to -> from), when the web held both: the weaker one",
+                "required": [
+                  "confidence",
+                  "lagDays",
+                  "mechanism",
+                  "cited"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "confidence": {
+                    "enum": [
+                      "strong",
+                      "medium",
+                      "weak"
+                    ]
+                  },
+                  "lagDays": {
+                    "type": "integer"
+                  },
+                  "mechanism": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "cited": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "topicId"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "topicId": {
+                          "type": "string"
+                        },
+                        "date": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
           }

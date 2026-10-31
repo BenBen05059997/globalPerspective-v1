@@ -422,3 +422,14 @@ test('web notes (0042): the story web beside the judged links: state, webs a sto
   assert.deepEqual([v.get('thread-old').web.state, v.get('thread-old').web.analysedIn], [null, []]); // no recent entry, in no web
   assert.equal(build(X.golden()).links.get('thread-a').web.state, 'country_not_analysed'); // no notes: two entries, in no web
 });
+
+test('judged links: a pair held both ways in one web is two rows (the weaker is the note\'s payload.reverse), on both stories', () => {
+  const e = X.entry('thread-a', '2026-10-21T09:00:00.000Z', 'Story A');
+  const f = X.entry('thread-b', '2026-10-21T10:00:00.000Z', 'Story B');
+  const n = {subtype: 'link', subject: {kind: 'pair', id: 'thread-a__thread-b'}, part: 'UKR', at: '2026-10-21T05:00:00.000Z', model: 'm', noteId: 'x', iso3: ['UKR'],
+    payload: {from: 'thread-a', to: 'thread-b', confidence: 'strong', mechanism: 'forward', reverse: {confidence: 'weak', mechanism: 'back', lagDays: 2, cited: []}}};
+  for (const id of ['thread-a', 'thread-b']) {
+    const rows = build([e, f], {notes: [n]}).links.get(id).judgedLinks;
+    assert.deepEqual(rows.map((r) => [r.from, r.to, r.confidence, r.mechanism, 'reverse' in r]).sort(), [['thread-a', 'thread-b', 'strong', 'forward', false], ['thread-b', 'thread-a', 'weak', 'back', false]]);
+  }
+});

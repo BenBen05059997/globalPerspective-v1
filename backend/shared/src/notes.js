@@ -152,15 +152,19 @@ function entryEventIdIndex(entries) {
  * keeps it plus the country name; threadId null (a pair; both ids are in the payload). `at` = the web's generatedAt, `model` its
  * model; a null `model` marks a copy rebuilt from the dated S3 web history (rows there did not record it): payload.source
  * 'web-history'. `cites` = eventIds of the cited entries found in `eventIds` (entryEventIdIndex); a cite not found is left out.
+ * A web holding both directions of the pair passes the weaker one as `edge.reverse` (to -> from): it rides in `payload.reverse`
+ * (confidence, lagDays, mechanism, cited) and its cites join `cites`.
  */
 function linkNote({edge, countryName, iso3, at, model, eventIds = new Map(), producer}) {
   if (!edge || !text(edge.from) || !text(edge.to) || edge.from === edge.to) return null;
   const cited = citedOf(edge);
-  const cites = cited.map((c) => eventIds.get(citeKey(c.date, c.topicId))).filter(Boolean);
+  const back = edge.reverse && edge.reverse.from === edge.to && edge.reverse.to === edge.from ? edge.reverse : null;
+  const reverse = back ? {confidence: back.confidence, lagDays: back.lagDays ?? 0, mechanism: back.mechanism, cited: citedOf(back)} : null;
+  const cites = [...cited, ...(reverse ? reverse.cited : [])].map((c) => eventIds.get(citeKey(c.date, c.topicId))).filter(Boolean);
   return buildNote({
     subtype: 'link', subjectId: pairKey(edge.from, edge.to), part: iso3, iso3: [iso3], at,
     payload: {from: edge.from, to: edge.to, country: countryName, confidence: edge.confidence, lagDays: edge.lagDays ?? 0, mechanism: edge.mechanism, cited,
-      ...(model === null ?{source: 'web-history'} : {})},
+      ...(reverse ? {reverse} : {}), ...(model === null ?{source: 'web-history'} : {})},
     cites, model, producer,
   });
 }

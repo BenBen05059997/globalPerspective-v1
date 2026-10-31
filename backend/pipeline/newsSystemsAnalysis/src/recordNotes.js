@@ -22,18 +22,24 @@ function s3Writer() {
 const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
 
 /**
- * A web can hold both directions of one pair (a -> b and b -> a). A note is keyed by pair, country and time, so only one can be
- * stored: keep the stronger confidence (the first on a tie). The dropped edge stays in SYSTEMS#; `dropped` lists it.
+ * A web can hold both directions of one pair (a -> b and b -> a). A note is keyed by pair, country and time, so one note holds the
+ * stronger edge (the first on a tie) and carries the other direction as `reverse` (the story page shows both, as the web index
+ * does). Anything else dropped (a second edge in the same direction) stays in SYSTEMS#; `dropped` lists it.
  */
 function oneEdgePerPair(edges, dropped = []) {
   const best = new Map();
   const bad = []; // self-loops and edges without ends go on to the builder, which refuses them and reports
+  const pair = (win, lose) => {
+    if (lose.from === win.to && lose.to === win.from && !win.reverse) return { ...win, reverse: lose };
+    dropped.push(lose);
+    return win;
+  };
   for (const e of edges || []) {
     if (!e || !e.from || !e.to || e.from === e.to) { bad.push(e); continue; }
     const k = [e.from, e.to].sort().join('__');
     const prev = best.get(k);
     if (!prev) best.set(k, e);
-    else if ((CONF_RANK[e.confidence] || 0) > (CONF_RANK[prev.confidence] || 0)) { dropped.push(prev); best.set(k, e); } else dropped.push(e);
+    else best.set(k, (CONF_RANK[e.confidence] || 0) > (CONF_RANK[prev.confidence] || 0) ? pair(e, prev) : pair(prev, e));
   }
   return [...best.values(), ...bad];
 }
@@ -51,7 +57,7 @@ function planLinkNotes({ rows, entries, model, runId, lambda = LAMBDA }) {
     if (!resolved) { skipped.push({ country: row.countryName, reason: 'no_iso3' }); continue; }
     const dropped = [];
     const edges = oneEdgePerPair(row.edges, dropped);
-    for (const e of dropped) skipped.push({ country: row.countryName, from: e.from, to: e.to, reason: 'pair_both_ways' });
+    for (const e of dropped) skipped.push({ country: row.countryName, from: e.from, to: e.to, reason: 'pair_same_way' });
     for (const edge of edges) {
       try {
         const note = notes.linkNote({ edge, countryName: row.countryName, iso3: resolved.iso3, at: row.generatedAt, model: row.model === undefined ? model : row.model, eventIds, producer: { lambda, runId } });

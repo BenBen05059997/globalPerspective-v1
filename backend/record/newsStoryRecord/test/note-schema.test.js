@@ -298,3 +298,17 @@ test('webNote: the example validates; nodes with or without an edge, the backbon
     {...webEx, payload: {...webEx.payload, nodes: 'a'}}, {...webEx, payload: {country: 'Japan', nodes: []}}];
   for (const b of bad) assert.equal(valid(b), false, JSON.stringify(b).slice(0, 160));
 });
+
+test('linkNote: the other direction of a pair rides in payload.reverse, its cites join the note; a reverse that is not the opposite edge is ignored', () => {
+  const entries = [{topicId: 'A-1', date: '2026-10-02', title: 'A', sources: [{url: 'https://www.reuters.com/a'}]}, {topicId: 'B-1', date: '2026-10-03', title: 'B', sources: [{url: 'https://www.bbc.com/b'}]}];
+  const eventIds = N.entryEventIdIndex(entries);
+  const at = '2026-10-30T05:02:09.564Z';
+  const back = {from: 'thread-a', to: 'thread-b', mechanism: 'back', lagDays: 3, confidence: 'weak', cited: [{topicId: 'B-1', date: '2026-10-03', title: 'B'}]};
+  const edge = {from: 'thread-b', to: 'thread-a', mechanism: 'm', lagDays: 1, confidence: 'strong', cited: [{topicId: 'A-1', date: '2026-10-02', title: 'A'}], reverse: back};
+  const n = N.linkNote({edge, countryName: 'Japan', iso3: 'JPN', at, model: 'deepseek-v4-pro', eventIds, producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(n.payload.reverse, {confidence: 'weak', lagDays: 3, mechanism: 'back', cited: back.cited});
+  assert.equal(n.cites.length, 2);
+  assert.equal('reverse' in N.linkNote({edge: {...edge, reverse: {...back, to: 'thread-c'}}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer}).payload, false);
+  assert.equal(valid({...n, payload: {...n.payload, reverse: {...n.payload.reverse, extra: 1}}}), false);
+});

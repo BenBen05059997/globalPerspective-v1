@@ -111,11 +111,14 @@ function judgedLinksBy(noteLines, newest, titleOf = () => null) {
     seen.add(`${n.subject.id}|${n.part}`);
     const ids = n.subject.id.split('__');
     if (ids.length !== 2) continue;
+    // a web that held both directions of the pair: the note carries the weaker one as `reverse`, which is a row of its own
+    const {reverse, ...edge} = n.payload;
+    const stored = [asStored({...n, payload: edge}), ...(reverse ? [asStored({...n, payload: {...edge, from: edge.to, to: edge.from, ...reverse}})] : [])];
     for (const [me, other] of [[ids[0], ids[1]], [ids[1], ids[0]]]) {
-      (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, otherTitle: titleOf(other), iso3: n.part, ...asStored(n)});
+      for (const row of stored) (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, otherTitle: titleOf(other), iso3: n.part, ...row});
     }
   }
-  for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId, (l) => l.iso3));
+  for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId, (l) => l.iso3, (l) => (l.from === l.otherThreadId ? 1 : 0)));
   return out;
 }
 

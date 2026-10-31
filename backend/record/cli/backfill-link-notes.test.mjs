@@ -30,3 +30,13 @@ test('planBackfillLinks: a re-plan gives the same noteIds; unknown countries are
   assert.deepEqual(a.skipped.map((s) => s.reason), ['no_iso3']);
   assert.deepEqual(citedDays(rows), ['2026-10-02']);
 });
+
+test('planBackfillLinks: every web, with or without an edge, current or history, is one web note; a history-only web is a copy with model null', () => {
+  const now = web('Japan', '2026-10-30T05:02:00.000Z', [edge('t1', 't2')], { model: 'deepseek-v4-pro', nodes: [{ threadId: 't1' }, { threadId: 't2' }], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] });
+  const empty = web('India', '2026-10-29T05:02:00.000Z', [], { model: 'deepseek-v4-pro', nodes: [{ threadId: 't5' }] });
+  const old = web('Japan', '2026-10-29T05:02:00.000Z', [edge('t1', 't2')], { nodes: [{ threadId: 't1' }] });
+  const plan = planBackfillLinks({ current: [now, empty], entries, runId: 'r', history: [{ date: '2026-10-29', webs: [now, empty, old] }, { date: '2026-10-30', webs: [old] }] });
+  assert.deepEqual(plan.webNotes.map((n) => [n.subject.id, n.at.slice(0, 10), n.model, n.payload.source]), [['JPN', '2026-10-30', 'deepseek-v4-pro', undefined], ['IND', '2026-10-29', 'deepseek-v4-pro', undefined], ['JPN', '2026-10-29', null, 'web-history']]);
+  assert.deepEqual(plan.webNotes[0].payload.backbone, [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }]);
+  assert.equal(plan.notes.length, 2); // India has no edge: a web note, no link note
+});

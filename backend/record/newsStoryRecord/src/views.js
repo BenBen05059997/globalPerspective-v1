@@ -7,6 +7,7 @@ const {isResolvable: resolvable} = require('./facts'); // a question with a ques
 const Rd = require('./readings');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
+const {COUNTRIES} = require('./_shared/countries');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -78,20 +79,35 @@ function storyAnalysisBy(noteLines) {
 }
 
 /**
- * Link notes (pair subjects, record.js pairKey a__b; part = the web's country) -> threadId -> judged links, on the story web
- * index's own rules (newsSystemsAnalysis buildWebIndex): only each country's newest web, at most WEB_MAX_AGE_DAYS old, one row
- * per pair per country. Model judgment; `otherTitle` from the record's rows.
+ * The story web (newsSystemsAnalysis buildWebIndex) from its notes: per country the newest web at most WEB_MAX_AGE_DAYS old.
+ * `web` notes (one per country web, even one with no edge) say which webs there are; a country with link notes but no web note
+ * (a web written before web notes) is read from its link notes alone. Returns {newest: iso3 -> at, webs: iso3 -> web note}.
  */
 const WEB_MAX_AGE_DAYS = 30;
-function judgedLinksBy(noteLines, today, titleOf = () => null) {
-  const links = noteLines.filter((n) => n && n.subtype === 'link' && n.subject && n.payload);
-  const newest = new Map();
-  for (const n of links) if (!newest.has(n.part) || n.at > newest.get(n.part)) newest.set(n.part, n.at);
+function newestWebs(noteLines, today) {
   const cutoff = `${addDays(today, -WEB_MAX_AGE_DAYS)}T00:00:00.000Z`;
+  const newest = new Map();
+  const webs = new Map();
+  for (const n of noteLines) {
+    if (!n || !n.subject || !n.payload || (n.subtype !== 'link' && n.subtype !== 'web')) continue;
+    const iso3 = n.subtype === 'web' ? n.subject.id : n.part;
+    if (!newest.has(iso3) || n.at > newest.get(iso3)) newest.set(iso3, n.at);
+    if (n.subtype === 'web' && (!webs.has(iso3) || n.at > webs.get(iso3).at)) webs.set(iso3, n);
+  }
+  for (const [iso3, at] of newest) if (at < cutoff) { newest.delete(iso3); webs.delete(iso3); }
+  return {newest, webs: new Map([...webs].filter(([iso3, n]) => n.at === newest.get(iso3)))};
+}
+
+/**
+ * Link notes (pair subjects, record.js pairKey a__b; part = the web's country) -> threadId -> judged links, on the story web
+ * index's own rules: only each country's newest web, at most WEB_MAX_AGE_DAYS old, one row per pair per country. Model judgment;
+ * `otherTitle` from the record's rows.
+ */
+function judgedLinksBy(noteLines, newest, titleOf = () => null) {
   const out = new Map();
   const seen = new Set();
-  for (const n of links) {
-    if (n.at !== newest.get(n.part) || n.at < cutoff || seen.has(`${n.subject.id}|${n.part}`)) continue;
+  for (const n of noteLines) {
+    if (!n || n.subtype !== 'link' || !n.subject || !n.payload || n.at !== newest.get(n.part) || seen.has(`${n.subject.id}|${n.part}`)) continue;
     seen.add(`${n.subject.id}|${n.part}`);
     const ids = n.subject.id.split('__');
     if (ids.length !== 2) continue;
@@ -100,6 +116,74 @@ function judgedLinksBy(noteLines, today, titleOf = () => null) {
     }
   }
   for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId, (l) => l.iso3));
+  return out;
+}
+
+const WINDOW_DAYS = 30; // the archive days newsSystemsAnalysis reads (ARCHIVE_DAYS); its titles, entry counts and places come from them
+const SCOPE_DAYS = 14; // a story is in the index's scope when its newest entry is at most this old
+const PLACES_MAX = 3;
+
+/**
+ * Entry facts -> threadId -> what the web index keeps of that thread id (the archive groups by the thread id an entry carried, so a
+ * merged story's entries stay under its old id here): entry count in the web's window, newest day, title of the newest entry, and
+ * the three most-mentioned countries (real countries only, ties by name).
+ */
+function windowInfos(facts, today) {
+  const from = addDays(today, -WINDOW_DAYS);
+  const by = new Map();
+  for (const f of facts) {
+    if (f.kind !== 'entry' || !f.threadId || f.date < from || f.date > today) continue;
+    (by.get(f.threadId) || by.set(f.threadId, []).get(f.threadId)).push(f);
+  }
+  const out = new Map();
+  for (const [id, es] of by) {
+    es.sort(byKey((f) => f.date, (f) => f.at, (f) => f.eventId));
+    const places = new Map();
+    for (const f of es) for (const c of f.iso3 || []) if (COUNTRIES[c]) places.set(c, (places.get(c) || 0) + 1);
+    out.set(id, {
+      n: new Set(es.map((f) => f.payload.topicId || f.eventId)).size, lastDate: es[es.length - 1].date, title: es[es.length - 1].payload.title ?? null,
+      places: [...places].map(([iso3, n]) => ({iso3, name: COUNTRIES[iso3].name, n})).sort(byKey((p) => -p.n, (p) => p.name)).slice(0, PLACES_MAX),
+    });
+  }
+  return out;
+}
+
+/**
+ * Web notes -> threadId -> `web`: how the story sits in the country webs (the part of the old web_index read the judged links do not
+ * carry). state mirrors buildWebIndex stateOf: linked (a judged link), analysed_no_links (a node of a web), single_update (under 2
+ * entries in the window), country_not_analysed; null when the story is not in the index at all (no entry in the last SCOPE_DAYS and
+ * in no web). analysedIn: the webs the story is a node of; backbone: the web's deterministic shared-actor edges (both ends nodes of
+ * the web), one row per web and other story; otherPlaces: top places of every story in judgedLinks or backbone.
+ */
+function webCoverageBy(webs, judged, info, today) {
+  const analysed = new Map();
+  const backbone = new Map();
+  const add = (map, id, row) => (map.get(id) || map.set(id, []).get(id)).push(row);
+  for (const [iso3, w] of [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+    const nodes = new Set(w.payload.nodes);
+    for (const id of nodes) add(analysed, id, {iso3, country: w.payload.country, generatedAt: w.at, nodes: nodes.size});
+    for (const b of w.payload.backbone) {
+      if (!nodes.has(b.from) || !nodes.has(b.to)) continue;
+      const row = {iso3, country: w.payload.country, generatedAt: w.at, actors: b.sharedActors, weight: b.weight};
+      add(backbone, b.from, {otherThreadId: b.to, otherTitle: (info.get(b.to) || {}).title ?? null, ...row});
+      add(backbone, b.to, {otherThreadId: b.from, otherTitle: (info.get(b.from) || {}).title ?? null, ...row});
+    }
+  }
+  const scopeFrom = addDays(today, -SCOPE_DAYS);
+  const placesOf = (id) => (info.get(id) || {}).places || [];
+  const out = new Map();
+  // a story in a web or a link that the record no longer has as its own (a merged one) has no entries here: its state rests on the web alone
+  const none = {n: 0, lastDate: '', title: null, places: []};
+  for (const id of unique([...info.keys(), ...analysed.keys(), ...judged.keys()])) {
+    const i = info.get(id) || none;
+    const inWeb = analysed.has(id);
+    const inScope = i.lastDate >= scopeFrom;
+    const links = judged.get(id) || [];
+    const state = !(inWeb || inScope) ? null : links.length ? 'linked' : inWeb ? 'analysed_no_links' : i.n < 2 ? 'single_update' : 'country_not_analysed';
+    const sh = (backbone.get(id) || []).sort(byKey((r) => -r.weight, (r) => r.otherThreadId, (r) => r.iso3));
+    const others = unique([...links.map((l) => l.otherThreadId), ...sh.map((r) => r.otherThreadId)]);
+    out.set(id, {state, entries: i.n, places: i.places, analysedIn: analysed.get(id) || [], backbone: sh, otherPlaces: Object.fromEntries(others.map((o) => [o, placesOf(o)]))});
+  }
   return out;
 }
 
@@ -368,9 +452,17 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
     if (!links.has(id)) links.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: [], confirmedLinks: [], confirmedLinksReason: NO_READING});
   }
   // the story web's model-judged links (link notes, 0042) beside the computed shared-fact links
-  const titles = new Map(all.map((r) => [r.threadId, r.title || null]));
-  const judged = judgedLinksBy(noteLines, today, (id) => titles.get(id) ?? null);
-  for (const [id, view] of links) view.judgedLinks = judged.get(id) || [];
+  // titles and places as the web index keeps them (newest entry of the last 30 days), not the story row's first title
+  const info = windowInfos(facts, today);
+  const rowTitles = new Map(all.map((r) => [r.threadId, r.title || null]));
+  for (const [id, i] of info) i.title = i.title ?? rowTitles.get(id) ?? null;
+  const {newest, webs} = newestWebs(noteLines, today);
+  const judged = judgedLinksBy(noteLines, newest, (id) => (info.get(id) || {}).title ?? rowTitles.get(id) ?? null);
+  const coverage = webCoverageBy(webs, judged, info, today);
+  for (const [id, view] of links) {
+    view.judgedLinks = judged.get(id) || [];
+    view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};
+  }
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};

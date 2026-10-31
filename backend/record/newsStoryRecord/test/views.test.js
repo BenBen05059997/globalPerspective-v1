@@ -399,3 +399,26 @@ test('judged links follow the web index rules: the newest web of each country on
   const rows = build([e, f], {notes}).links.get('thread-a').judgedLinks;
   assert.deepEqual(rows.map((r) => [r.iso3, r.mechanism]), [['POL', 'newest POL web'], ['UKR', 'newest UKR web']]);
 });
+
+test('web notes (0042): the story web beside the judged links: state, webs a story is a node of, backbone, places; a newer web without edges hides the older links', () => {
+  const note = (subtype, subject, part, at, payload) => ({subtype, subject, part, at, model: 'm', noteId: `${subtype}${subject.id}${part}${at}`, iso3: [], payload});
+  const web = (iso3, at, nodes, backbone = []) => note('web', {kind: 'country', id: iso3}, '', at, {country: iso3, nodes, backbone});
+  const pair = (iso3, at) => note('link', {kind: 'pair', id: 'thread-a__thread-b'}, iso3, at, {from: 'thread-a', to: 'thread-b', mechanism: 'drives'});
+  const notes = [
+    web('FRA', '2026-10-21T05:00:00.000Z', ['thread-a', 'thread-b'], [{from: 'thread-a', to: 'thread-b', sharedActors: ['Macron'], weight: 1}, {from: 'thread-a', to: 'thread-gone', sharedActors: ['X'], weight: 1}]),
+    pair('FRA', '2026-10-21T05:00:00.000Z'),
+    pair('UKR', '2026-10-15T05:00:00.000Z'), web('UKR', '2026-10-21T05:00:00.000Z', ['thread-c']), // the newer UKR web has no edge: the old UKR link is no longer in the web
+    web('POL', '2026-08-01T05:00:00.000Z', ['thread-old']), // over 30 days: not a web any more
+  ];
+  const v = build(X.golden(), {notes}).links;
+  const a = v.get('thread-a');
+  assert.deepEqual(a.judgedLinks.map((l) => l.iso3), ['FRA']);
+  assert.deepEqual(a.web.analysedIn, [{iso3: 'FRA', country: 'FRA', generatedAt: '2026-10-21T05:00:00.000Z', nodes: 2}]);
+  assert.deepEqual(a.web.backbone, [{otherThreadId: 'thread-b', otherTitle: 'B first', iso3: 'FRA', country: 'FRA', generatedAt: '2026-10-21T05:00:00.000Z', actors: ['Macron'], weight: 1}]);
+  assert.deepEqual([a.web.state, a.web.entries, a.web.places.map((p) => [p.iso3, p.name, p.n])], ['linked', 2, [['FRA', 'France', 2], ['DEU', 'Germany', 1]]]);
+  assert.deepEqual(a.web.otherPlaces, {'thread-b': [{iso3: 'FRA', name: 'France', n: 1}]});
+  assert.equal(v.get('thread-b').web.backbone[0].otherThreadId, 'thread-a'); // both ends carry the edge
+  assert.deepEqual([v.get('thread-c').web.state, v.get('thread-c').web.analysedIn.map((w) => w.iso3)], ['analysed_no_links', ['UKR']]); // a node with no edge
+  assert.deepEqual([v.get('thread-old').web.state, v.get('thread-old').web.analysedIn], [null, []]); // no recent entry, in no web
+  assert.equal(build(X.golden()).links.get('thread-a').web.state, 'country_not_analysed'); // no notes: two entries, in no web
+});

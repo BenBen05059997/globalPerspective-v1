@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "noteId": "5d204f2cf3ee9f009984279ddd93eaf658def048",
+  "subtype": "web",
+  "subject": {
+    "kind": "country",
+    "id": "JPN"
+  },
+  "part": "",
+  "threadId": null,
+  "iso3": [
+    "JPN"
+  ],
+  "at": "2026-10-30T05:02:09.564Z",
+  "date": "2026-10-30",
+  "payload": {
+    "country": "Japan",
+    "nodes": [
+      "thread-us-marine-arrested-for-alleged-8c8f50",
+      "thread-north-korea-rejects-south-s-ac-15dfe3",
+      "thread-us-pressures-europe-to-release-baec0d",
+      "thread-el-nino-reaches-record-strengt-ef8f93",
+      "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+      "thread-g7-agrees-to-release-100-milli-4e524e"
+    ],
+    "backbone": [
+      {
+        "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+        "to": "thread-us-pressures-europe-to-release-baec0d",
+        "sharedActors": [
+          "G7",
+          "Europe",
+          "crude oil",
+          "diesel"
+        ],
+        "weight": 4
+      }
+    ]
+  },
+  "cites": [],
+  "model": "deepseek-v4-pro",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsSystemsAnalysis",
+    "runId": "built from the live item SummarizeAndPredict SYSTEMS#Japan / SYSTEMS_ANALYSIS, first link note of the web (generatedAt 2026-10-30T05:02:09.564Z); cites from NewsCache archive#2026-10-02..04; 2026-10-31"
+  }
+}

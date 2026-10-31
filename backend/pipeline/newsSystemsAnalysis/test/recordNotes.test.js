@@ -2,7 +2,7 @@
 // Link notes (decision 0042): each edge of the country webs written in a run becomes one link note; the writer is injected.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { writeLinkNotes, planLinkNotes } = require('../src/recordNotes');
+const { writeLinkNotes, planLinkNotes, planWebNotes } = require('../src/recordNotes');
 const { entryIdentity, pairKey } = require('../src/_shared/record');
 
 const entries = [
@@ -21,9 +21,8 @@ const quiet = (fn) => async (...a) => { const l = console.log; const w = console
 test('one link note per edge: subject pairKey, part = the web country, both thread ids in the payload, cites = the cited entries eventIds', quiet(async () => {
   const writer = fakeWriter();
   const notes = await writeLinkNotes({ rows, entries, model: 'deepseek-v4-pro', runId: 'run-1', writer });
-  assert.equal(writer.calls.length, 1);
-  assert.equal(writer.calls[0][0], 'link');
-  assert.equal(notes.length, 3); // the backbone (shared actors) is not a note
+  assert.deepEqual(writer.calls.map((c) => c[0]), ['web', 'link']); // the webs first
+  assert.equal(notes.length, 3); // the returned notes are the links; the backbone rides on the web note
   const [a, b, c] = notes;
   assert.deepEqual([a.subject, a.part, a.iso3, a.threadId, a.at, a.model], [{ kind: 'pair', id: pairKey('t1', 't2') }, 'JPN', ['JPN'], null, rows[0].generatedAt, 'deepseek-v4-pro']);
   assert.deepEqual([a.payload.from, a.payload.to, a.payload.country], ['t1', 't2', 'Japan']);
@@ -34,6 +33,21 @@ test('one link note per edge: subject pairKey, part = the web country, both thre
   assert.deepEqual([a.part, c.part], ['JPN', 'KOR']);
   assert.notEqual(a.noteId, c.noteId);
   assert.equal(b.payload.from, 't3');
+}));
+
+test('one web note per web, a web with no edge too: country, node ids, the deterministic backbone; the link notes are unchanged', quiet(async () => {
+  const writer = fakeWriter();
+  const webRows = [{ ...rows[0], nodes: [{ threadId: 't1' }, { threadId: 't2' }, { threadId: 't9' }], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] },
+    { countryName: 'India', generatedAt: '2026-10-29T05:02:11.316Z', nodes: [{ threadId: 't5' }], edges: [], backbone: [] }];
+  await writeLinkNotes({ rows: webRows, entries, model: 'deepseek-v4-pro', runId: 'run-1', writer });
+  const webs = writer.calls[0][1];
+  assert.deepEqual(webs.map((n) => [n.subtype, n.subject, n.part, n.at, n.model]), [['web', { kind: 'country', id: 'JPN' }, '', webRows[0].generatedAt, 'deepseek-v4-pro'], ['web', { kind: 'country', id: 'IND' }, '', webRows[1].generatedAt, 'deepseek-v4-pro']]);
+  assert.deepEqual(webs[0].payload, { country: 'Japan', nodes: ['t1', 't2', 't9'], backbone: [{ from: 't1', to: 't2', sharedActors: ['G7'], weight: 1 }] });
+  assert.deepEqual(webs[1].payload.nodes, ['t5']);
+  assert.equal(writer.calls[1][1].length, 2); // India has no edge, so no link note
+  assert.deepEqual(planWebNotes({ rows: [{ countryName: 'Europe', generatedAt: '2026-10-30T05:00:00Z' }], model: 'm', runId: 'r' }).skipped, [{ country: 'Europe', reason: 'no_iso3' }]);
+  // a web write that fails still never throws, and the link notes are not attempted after it
+  assert.deepEqual(await writeLinkNotes({ rows: webRows, entries, model: 'm', runId: 'r', writer: { write: async () => { throw new Error('s3 down'); } } }), []);
 }));
 
 test('a web holding both directions of a pair keeps the stronger one (a note is keyed by pair); the other is reported', quiet(async () => {

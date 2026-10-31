@@ -36,8 +36,8 @@ or GitHub Pages legacy release needs explicit current-message authorization, per
 
 For Pages rollback, stage the prior artifact with `stage-pages`, then review, commit and push
 the staged `docs/` under Pages-release authorization. Do not run `legacy-pages` afterward: it
-would replace the selected archive with current build output. For Cloudflare, roll back the recorded Worker version and artifact as described in the
-migration plan. A new code push alone is not a rollback.
+would replace the selected archive with current build output. For Cloudflare, roll back the recorded Worker version and artifact as described in
+`project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover). A new code push alone is not a rollback.
 
 ## Notes
 

@@ -54,8 +54,9 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |---|---|
 | no cites / an eventId not in the bundle | `no_citation` / `unknown_eventId` |
 | link or merge not citing both stories, or an unknown other story | `cites_not_from_both` / `unknown_story` |
+| link the model rates `low` confidence | `low_confidence` |
 | chapter citing no dated fact (its span comes from the cited facts) | `no_dated_citation` |
-| alias without a Q-number, with an actor not in the bundle, or conflicting with the operator file | `alias_no_wikidata`, `alias_unknown_actor`, `alias_conflicts_operator` |
+| alias without a Q-number, with an actor not in the bundle, conflicting with the operator file, or already in it | `alias_no_wikidata`, `alias_unknown_actor`, `alias_conflicts_operator`, `alias_in_operator_file` |
 | assignment proposal: entry neither shown in this story nor a cited neighbour entry, a target that is not an active story (or `new`), or the entry's own story | `entry_not_in_scope`, `unknown_story`, `already_assigned` (and `unknown_eventId` for any cite the model was not shown) |
 | wrong shape or length (line 200, chapter summary 300, mechanism 200), repeat of the same item, over the per-story cap | `bad_shape`, `duplicate`, `over_cap` |
 

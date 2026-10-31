@@ -61,6 +61,7 @@ test('a link needs a citation from each story and a known other story', async ()
   assert.deepEqual(reasons(await run(link({otherThreadId: 'thread-zz'}))), ['link:unknown_story']);
   assert.deepEqual(reasons(await run(link({otherThreadId: 'thread-a'}))), ['link:bad_shape']);
   assert.deepEqual(reasons(await run(link({direction: 'causes'}))), ['link:bad_shape']);
+  assert.deepEqual(reasons(await run(link({confidence: 'low'}))), ['link:low_confidence']);
 });
 
 const proposal = (over = {}) => ({mergeProposals: [{otherThreadId: 'thread-b', why: 'same event', cites: ['a1', 'b1e'], confidence: 'high', ...over}]});
@@ -117,7 +118,7 @@ test('alias rule: needs a wikidata Q-number, known actors, and no conflict with 
   assert.deepEqual(reasons(await run(alias(), f)), ['alias:alias_conflicts_operator']);
   const same = mkWorld();
   same.put(`${P}operator/aliases.json`, {schemaVersion: 1, aliases: [{canonical: 'name:donald tusk', variants: ['name:tusk'], wikidataId: 'Q946'}]});
-  assert.equal((await run(alias(), same)).accepted.length, 1);
+  assert.deepEqual(reasons(await run(alias(), same)), ['alias:alias_in_operator_file']);
   const reverse = mkWorld();
   reverse.put(`${P}operator/aliases.json`, {schemaVersion: 1, aliases: [{canonical: 'name:other', variants: ['name:donald tusk'], wikidataId: null}]});
   assert.deepEqual(reasons(await run(alias(), reverse)), ['alias:alias_conflicts_operator']);

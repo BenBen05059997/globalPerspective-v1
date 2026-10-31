@@ -114,8 +114,11 @@ function checkAnswer(answer, ctx) {
 
   each('links', 'link', (it) => {
     if (!validOther(it) || !str(it.mechanism, LIMITS.mechanism) || !DIRECTIONS.includes(it.direction)) return reject('link', 'bad_shape', it.otherThreadId);
-    return take('link', it.otherThreadId, it, ({cites}) => (twoStory('link', it, cites)
-      ? {payload: {otherThreadId: it.otherThreadId, mechanism: it.mechanism.trim(), direction: it.direction}} : null));
+    return take('link', it.otherThreadId, it, ({cites, confidence}) => {
+      // a link the model itself rates low is a guess (canary 2026-10-31: "both are Trump's foreign policy"); the views would show it as a connection
+      if (confidence === 'low') { reject('link', 'low_confidence', it.otherThreadId); return null; }
+      return twoStory('link', it, cites) ? {payload: {otherThreadId: it.otherThreadId, mechanism: it.mechanism.trim(), direction: it.direction}} : null;
+    });
   });
 
   each('mergeProposals', 'merge_proposal', (it) => {
@@ -160,6 +163,7 @@ function checkAnswer(answer, ctx) {
       if (!it.variants.every((v) => mine.actorIds.includes(v))) { reject('alias', 'alias_unknown_actor', it.variants.join(',')); return null; }
       const clash = it.variants.find((v) => op.has(v) && op.get(v) !== it.canonical) || (op.has(it.canonical) && op.get(it.canonical) !== it.canonical ? it.canonical : null);
       if (clash) { reject('alias', 'alias_conflicts_operator', clash); return null; }
+      if (it.variants.every((v) => op.get(v) === it.canonical)) { reject('alias', 'alias_in_operator_file', it.canonical); return null; }
       return {payload: {variants: [...it.variants].sort(), canonical: it.canonical, wikidataId: it.wikidataId}};
     });
   });

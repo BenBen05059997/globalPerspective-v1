@@ -30,7 +30,8 @@ export default function VerdictCard({ labelA, labelB, state, kept, onKeep, onDis
   const places = (groundOf(r.grounds, 'place') || []).map(countryName);
   const outlet = groundOf(r.grounds, 'outlet');
   const move = groundOf(r.grounds, 'comovement');
-  const sitInBoth = [...actors, ...places];
+  // one chip per name: an actor tag and a place often name the same country in different case ("iran", "Iran"); the place's spelling wins
+  const sitInBoth = [...new Map([...actors, ...places].map((name) => [String(name).toLowerCase(), name])).values()];
   const evidence = evidenceRows(stories, outlet?.outlets);
   const strengthWord = STRENGTH[r.strength] || r.strength;
 

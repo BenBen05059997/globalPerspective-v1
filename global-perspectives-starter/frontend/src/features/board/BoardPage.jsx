@@ -372,7 +372,7 @@ export default function BoardPage() {
                 onWeight={(forkId, branchId, percent) => state.edit((bd) => setWeight(bd, forkId, branchId, percent))} />
             </div>
           </div>
-          <ArrivalsTray key={board.boardId} board={board}
+          <ArrivalsTray key={board.boardId} board={board} labelOf={labelOf}
             onDismiss={(id) => state.edit((b) => ({...b, dismissed: [...new Set([...b.dismissed, id])]}))}
             onKeep={(card) => {
               state.edit((b) => {

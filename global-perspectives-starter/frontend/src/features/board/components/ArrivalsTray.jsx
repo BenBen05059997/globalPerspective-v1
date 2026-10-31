@@ -17,7 +17,7 @@ import '@/features/board/panels.css';
 const DIRECTION = { drives: 'drives', driven_by: 'driven by', shared_cause: 'shared cause' };
 const FADE_MS = 1200;
 
-export default function ArrivalsTray({ board, onDismiss, onKeep }) {
+export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
   const [state, setState] = useState({loading:true});
   const [seen, setSeen] = useState(() => new Set());
   const [fading, setFading] = useState({});
@@ -43,7 +43,7 @@ export default function ArrivalsTray({ board, onDismiss, onKeep }) {
   const cards = (state.arrivals || []).filter((c) => (!board.dismissed.includes(c.threadId) || fading[c.threadId]) && !board.pins.some((p) => p.kind === 'thread' && p.refId === c.threadId));
   const unseen = cards.filter((c) => !fading[c.threadId] && !seen.has(c.threadId)).length;
   if (!state.loading && !state.error && !state.recordAvailable) return null; // no story record yet: nothing to show
-  const viaLabel = (v) => board.pins.find((p) => p.pinId === v.pinId)?.line || v.threadId;
+  const viaLabel = (v) => (labelOf ? labelOf(v.pinId) : v.threadId); // the pin's name as the board shows it
   return <Card as="section" aria-label="Arrivals"><SectionHeader label="Clue pool" hint={cards.length ? `${unseen} unseen` : null} as="h2" />
     {state.loading ? <p className="board-line">Checking new stories against your board.</p> : state.error ? <p className="board-line">New arrivals could not be checked. Reopen the board to try again.</p> : cards.length ? <>
       <p className="board-note">Cards wait here. Nothing is on the board until you place it.</p>

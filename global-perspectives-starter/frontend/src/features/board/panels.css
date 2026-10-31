@@ -43,6 +43,7 @@
 .pn-trace__rail--axis { min-height: var(--space-10); border-top-style: dotted; }
 .pn-trace__mark { position: absolute; top: calc(-1 * var(--space-2)); width: var(--space-4); height: var(--space-4); margin-left: calc(-1 * var(--space-2)); box-sizing: border-box; border: 2px solid var(--text-head); border-radius: var(--r-pill); background: var(--text-body); }
 .pn-trace__bracket { position: absolute; top: var(--space-1); display: flex; justify-content: center; border: 1px solid var(--text-head); border-top: 0; font-family: var(--mono); font-size: var(--text-xs); color: var(--text-head); }
+.pn-trace__bracket > span { position: absolute; top: 100%; white-space: nowrap; padding-top: var(--space-1); background: var(--panel-2); } /* under the bracket, on one line */
 .pn-trace__tick { position: absolute; bottom: 0; transform: translateX(-50%); font-family: var(--mono); font-size: var(--text-2xs); color: var(--text-dim); white-space: nowrap; }
 
 /* weekly */

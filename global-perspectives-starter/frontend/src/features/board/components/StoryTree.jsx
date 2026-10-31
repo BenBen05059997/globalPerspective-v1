@@ -33,7 +33,7 @@ export default function StoryTree({ story, loading, error }) {
   const scoped = inChapter(story, level === 3 ? chapter : null);
   const pickEvent = (e) => { setEvent(e); setLevel(4); };
 
-  const trunk = scoped.entries.length ? <><h3>Trunk</h3><ol>{scoped.entries.map((e) => <li key={e.eventId}><time>{e.date}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => pickEvent(e)}>{e.title}</button>{e.recovered ? <span className="board-line"> · {RECOVERED_LABEL}</span> : null}</li>)}</ol></> : null;
+  const trunk = scoped.entries.length ? <><h3>Trunk</h3><ol>{scoped.entries.map((e) => <li key={e.eventId}><time dateTime={e.date}>{dayMonth(e.date)}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => pickEvent(e)}>{e.title}</button>{e.recovered ? <span className="board-line"> · {RECOVERED_LABEL}</span> : null}</li>)}</ol></> : null;
 
   const forkRow = (f) => {
     const o = forkOutcome(f, present);
@@ -43,7 +43,7 @@ export default function StoryTree({ story, loading, error }) {
       <span>{outcomeText(o)}</span></summary>
       {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary><span>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</span>{isLate(b, present) ? <span className="story-tree__stamp">▸ late · past {dayMonth(b.due)}</span> : null}{b.trigger ? <span className="board-branch__text">{b.trigger}</span> : null}</summary>
         <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${b.due}` : ''}</p>
-        {b.verdict ? <p className="board-line"><time>{b.verdict.at.slice(0, 10)}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
+        {b.verdict ? <p className="board-line"><time dateTime={b.verdict.at.slice(0, 10)}>{dayMonth(b.verdict.at.slice(0, 10))}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
       </details>; })}
     </details>;
   };
@@ -65,7 +65,7 @@ export default function StoryTree({ story, loading, error }) {
   const rung4 = () => {
     const drawn = (story.forks || []).filter((f) => f.drawnAt?.slice(0, 10) === event.date).flatMap((f) => f.branches);
     return <div className="story-tree__body">
-      <p className="board-line"><ClaimTag kind="fact" /> <time>{event.date}</time> {event.title}</p>
+      <p className="board-line"><ClaimTag kind="fact" /> <time dateTime={event.date}>{dayMonth(event.date)}</time> {event.title}</p>
       {event.recovered ? <p className="board-line">{RECOVERED_LABEL} · {RECOVERED_DETAIL}</p> : null}
       {event.summary ? <p className="board-line">{event.summary}</p> : null}
       {event.sources?.map((s, i) => s.url ? <a className="board-link" key={i} href={s.url} target="_blank" rel="noreferrer">{s.outlet || s.title || s.url}</a> : null)}

@@ -22,7 +22,7 @@
 .story-tree__ours { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); color: var(--accent); }
 .story-tree__scroll { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-2); }
 .story-tree__scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.story-tree__svg { display: block; max-width: none; }
+.story-tree__svg { display: block; max-width: 100%; min-width: 36rem; height: auto; } /* fits the column; scrolls only when the column is narrower than 36rem (phones) */
 .story-tree__legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
 .story-tree__legend li { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-dim); }
 .story-tree__swatch { display: inline-block; width: var(--space-6); border-top: 1px solid var(--text-head); }

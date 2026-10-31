@@ -125,9 +125,9 @@ describe('connect and the verdict card', () => {
     const card = await screen.findByText('Medium link');
     expect(card).toBeInTheDocument();
     const both = screen.getByRole('region', { name: 'Who sits in both' });
-    expect(both.textContent).toContain('iran');
+    // the actor tag "iran" and the place Iran are one chip, spelled as the place
+    expect([...both.querySelectorAll('li, .pn-chip, span')].map((x) => x.textContent).filter((t) => /^iran$/i.test(t))).toEqual(['Iran']);
     expect(both.textContent).toContain('oman');
-    expect(both.textContent).toContain('Iran');
     expect(screen.getByText(/Shared outlets:/).parentElement.textContent).toMatch(/Reuters.*coverage artefact possible/);
     expect(screen.getByText(/Scores moved together:/).parentElement.textContent).toMatch(/1 pairing, up to 2 days apart.*one pairing is not a pattern/);
     expect(screen.getByText('no analysis row for thread thread-b')).toBeInTheDocument();

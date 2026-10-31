@@ -121,10 +121,11 @@ describe('arrivals clue pool (artboard 5)', () => {
     { threadId: 't1', title: 'First story', date: '2026-10-19', strength: 'strong', via: [{ pinId: 'p1', threadId: 'x', mechanism: 'm1', direction: 'drives' }, { pinId: 'p2', threadId: 'y', mechanism: 'm2' }] },
     { threadId: 't2', title: 'Second story', date: '2026-10-18', strength: 'medium', via: [{ pinId: 'p1', threadId: 'x', mechanism: 'm3' }] },
   ];
-  const board = { boardId: 'b', pins: [{ pinId: 'p1', kind: 'thread', refId: 'x', line: 'Pin one' }], dismissed: [] };
+  const board = { boardId: 'b', pins: [{ pinId: 'p1', kind: 'thread', refId: 'x' }], dismissed: [] };
+  const labelOf = (id) => ({ p1: 'Pin one' })[id] || id;
   const setup = (props = {}) => {
     call.mockResolvedValue({ recordAvailable: true, since: '2026-10-18', arrivals: cards });
-    return render(<MemoryRouter><ArrivalsTray board={board} onKeep={vi.fn()} onDismiss={vi.fn()} {...props} /></MemoryRouter>);
+    return render(<MemoryRouter><ArrivalsTray board={board} labelOf={labelOf} onKeep={vi.fn()} onDismiss={vi.fn()} {...props} /></MemoryRouter>);
   };
 
   it('counts unseen cards, shows them face down with only a teaser, and turns one over', async () => {
@@ -153,7 +154,7 @@ describe('arrivals clue pool (artboard 5)', () => {
     fireEvent.click((await screen.findAllByRole('button', { name: 'Turn over' }))[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss arrival' }));
     expect(onDismiss).toHaveBeenCalledWith('t1');
-    rerender(<MemoryRouter><ArrivalsTray board={{ ...board, dismissed: ['t1'] }} onKeep={vi.fn()} onDismiss={onDismiss} /></MemoryRouter>);
+    rerender(<MemoryRouter><ArrivalsTray board={{ ...board, dismissed: ['t1'] }} labelOf={labelOf} onKeep={vi.fn()} onDismiss={onDismiss} /></MemoryRouter>);
     expect(screen.getByText('Dismissed · fading')).toBeInTheDocument();
     expect(screen.getByText('1 unseen')).toBeInTheDocument();
   });

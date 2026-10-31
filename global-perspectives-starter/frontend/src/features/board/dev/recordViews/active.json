@@ -1,3 +1,68 @@
-{"schemaVersion":1,"builtFrom":{"factsThrough":"2026-10-21","readingsThrough":null},"stories":[
-{"threadId":"story-a","born":"2026-10-19","lastFactAt":"2026-10-21","iso3":["IRN"],"actorIds":["a1"],"sourceCount":2,"entryCount":2,"forkCount":1,"branchCount":2,"liveBranchCount":1,"latestVerdictAt":"2026-10-20","aliasOf":null,"title":"Shipping through the Strait of Hormuz"},
-{"threadId":"story-b","born":"2026-10-19","lastFactAt":"2026-10-21","iso3":["IRN"],"actorIds":["a1"],"sourceCount":1,"entryCount":1,"forkCount":1,"branchCount":2,"liveBranchCount":2,"latestVerdictAt":null,"aliasOf":null,"title":"Tanker insurance after the reroute","line":"Shipping adapts around the strait while insurers hold back."}]}
+{
+ "schemaVersion": 1,
+ "builtFrom": {
+  "factsThrough": "2026-10-21",
+  "readingsThrough": null
+ },
+ "stories": [
+  {
+   "threadId": "story-a",
+   "born": "2026-10-19",
+   "lastFactAt": "2026-10-21",
+   "iso3": [
+    "IRN"
+   ],
+   "actorIds": [
+    "a1"
+   ],
+   "sourceCount": 2,
+   "entryCount": 2,
+   "forkCount": 1,
+   "branchCount": 2,
+   "liveBranchCount": 1,
+   "latestVerdictAt": "2026-10-20",
+   "aliasOf": null,
+   "title": "Shipping through the Strait of Hormuz"
+  },
+  {
+   "threadId": "story-b",
+   "born": "2026-10-19",
+   "lastFactAt": "2026-10-21",
+   "iso3": [
+    "IRN"
+   ],
+   "actorIds": [
+    "a1"
+   ],
+   "sourceCount": 1,
+   "entryCount": 1,
+   "forkCount": 1,
+   "branchCount": 2,
+   "liveBranchCount": 2,
+   "latestVerdictAt": null,
+   "aliasOf": null,
+   "title": "Tanker insurance after the reroute",
+   "line": "Shipping adapts around the strait while insurers hold back."
+  },
+  {
+   "threadId": "story-c",
+   "born": "2026-09-07",
+   "lastFactAt": "2026-10-16",
+   "iso3": [
+    "IRN"
+   ],
+   "actorIds": [
+    "a1"
+   ],
+   "sourceCount": 5,
+   "entryCount": 5,
+   "forkCount": 3,
+   "branchCount": 9,
+   "liveBranchCount": 4,
+   "latestVerdictAt": "2026-10-16",
+   "aliasOf": null,
+   "title": "Hormuz, six weeks",
+   "line": "Closure is leverage, not a seal; another strike by 1 Nov is the test."
+  }
+ ]
+}

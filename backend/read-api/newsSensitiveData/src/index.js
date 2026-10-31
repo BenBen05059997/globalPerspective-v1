@@ -6,6 +6,7 @@ const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { iso3List } = require('./_shared/resolveIso3');
 const { storyHref, absoluteUrl } = require('./_shared/links');
+const { readMode, readBy, liveRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -1341,18 +1342,15 @@ function buildItemDescription(entry) {
   return parts.join('<br/>') || escapeXml(entry.title);
 }
 
-async function generateRssFeed(event) {
-  const client = getDynamoClient();
-
+// Where the feed's entries come from: DynamoDB (NewsCache `today-archive`, then `latest`) or the record's today view (decision 0054,
+// RECORD_READS). One builder, two item getters; the feed is byte-for-byte the same XML when the two sources hold the same entries.
+async function buildRssFeed(event, { getToday, getLatest }) {
   // Read today-archive (has AI summaries) with fallback to latest
   let entries = [];
   let lastUpdated = new Date().toISOString();
 
   try {
-    const { Item } = await client.send(new GetCommand({
-      TableName: TOPICS_TABLE,
-      Key: { id: 'today-archive' },
-    }));
+    const Item = await getToday();
     if (Item && Array.isArray(Item.entries) && Item.entries.length > 0) {
       const cutoff = Date.now() - (24 * 60 * 60 * 1000);
       entries = Item.entries.filter(e => new Date(e.archivedAt).getTime() > cutoff);
@@ -1365,10 +1363,7 @@ async function generateRssFeed(event) {
   // Fallback to latest if no archive entries
   if (entries.length === 0) {
     try {
-      const { Item } = await client.send(new GetCommand({
-        TableName: TOPICS_TABLE,
-        Key: { id: TOPICS_ITEM_ID },
-      }));
+      const Item = await getLatest();
       if (Item && Array.isArray(Item.topics)) {
         entries = Item.topics.map(t => ({
           topicId: t.topicId || t.id,
@@ -1384,7 +1379,34 @@ async function generateRssFeed(event) {
       console.warn('RSS: latest read failed:', err.message);
     }
   }
+  return { count: entries.length, xml: renderRss(event, entries, lastUpdated) };
+}
 
+function firstDifference(a, b) {
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i += 1;
+  return [{ path: `xml@${i}`, a: JSON.stringify(a.slice(i, i + 60)), b: JSON.stringify(b.slice(i, i + 60)) }];
+}
+
+async function generateRssFeed(event) {
+  const ddbItem = (id) => async () => {
+    const { Item } = await getDynamoClient().send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }));
+    return Item || null;
+  };
+  return readBy({
+    mode: readMode(),
+    label: 'rss',
+    ddb: async () => (await buildRssFeed(event, { getToday: ddbItem('today-archive'), getLatest: ddbItem(TOPICS_ITEM_ID) })).xml,
+    record: async () => {
+      const reads = liveRecordReads(); // per call: its memo shares the manifest and the today view inside one request only
+      const feed = await buildRssFeed(event, { getToday: reads.todayArchiveItem, getLatest: reads.latestItem });
+      return feed.count ? feed.xml : null; // the views hold nothing yet: DynamoDB answers
+    },
+    same: (a, b) => (a === b ? [] : firstDifference(a, b)),
+  });
+}
+
+function renderRss(event, entries, lastUpdated) {
   // Build self URL from request context
   const domainName = event.requestContext?.domainName || '';
   const stage = event.requestContext?.stage || '';
@@ -1432,3 +1454,5 @@ ${items}
   </channel>
 </rss>`;
 }
+
+module.exports.buildRssFeed = buildRssFeed; // for the compare CLI (backend/record/cli/compare-record-reads.mjs)

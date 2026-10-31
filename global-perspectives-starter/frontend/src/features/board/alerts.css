@@ -1,0 +1,13 @@
+/* Alerts settings (artboard 9) and the monthly (artboard 7). Tokens only. */
+.al-card { gap: var(--space-4); }
+.al-sec { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.al-rows { list-style: none; margin: 0; padding: 0; }
+.al-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--hairline); min-width: 0; font-size: var(--text-sm); color: var(--text-body); overflow-wrap: anywhere; }
+.al-row:last-child { border-bottom: 1px solid var(--hairline); }
+.al-what { display: flex; flex-direction: column; flex: 1 1 14rem; min-width: 0; color: var(--text-muted); }
+.al-what strong { color: var(--text-head); font-weight: var(--weight-medium); }
+.al-delivery { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.al-line { margin: 0; font-size: var(--text-sm); color: var(--text-body); display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
+.al-when { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; }
+.al-mark { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.05em; text-transform: uppercase; padding: 0 var(--space-1); border-radius: var(--r-xs); border: 1px dashed var(--text-body); color: var(--text-head); white-space: nowrap; }
+.al-mark--private { border-style: solid; }

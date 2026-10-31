@@ -97,36 +97,6 @@
         }
       ]
     },
-    "newsEconomicImpact": {
-      "dir": "backend/economy-parked/newsEconomicImpact",
-      "runtime": "nodejs22.x",
-      "group": "economy-parked",
-      "features": ["economy"],
-      "nodeModules": true,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerNewsEconomicImpact",
-          "expr": "cron(30 7 * * ? *)",
-          "state": "DISABLED"
-        }
-      ]
-    },
-    "newsEconomicQuality": {
-      "dir": "backend/economy-parked/newsEconomicQuality",
-      "runtime": "nodejs22.x",
-      "group": "economy-parked",
-      "features": ["economy"],
-      "nodeModules": true,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerNewsEconomicQuality",
-          "expr": "cron(0 8 * * ? *)",
-          "state": "DISABLED"
-        }
-      ]
-    },
     "newsEmailSender": {
       "dir": "backend/distribution/newsEmailSender",
       "runtime": "nodejs22.x",
@@ -248,36 +218,6 @@
         }
       ]
     },
-    "newsMarketsData": {
-      "dir": "backend/economy-parked/newsMarketsData",
-      "runtime": "nodejs24.x",
-      "group": "economy-parked",
-      "features": ["economy"],
-      "nodeModules": false,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "MarketsDataHourly",
-          "expr": "rate(1 hour)",
-          "state": "ENABLED",
-          "input": "{\"source\":\"all\"}"
-        },
-        {
-          "via": "events",
-          "name": "MarketsMacrosWeekly",
-          "expr": "cron(0 2 ? * SUN *)",
-          "state": "ENABLED",
-          "input": "{\"source\":\"macros\"}"
-        },
-        {
-          "via": "events",
-          "name": "MarketsYieldsDaily",
-          "expr": "cron(0 6 ? * MON-FRI *)",
-          "state": "ENABLED",
-          "input": "{\"source\":\"yields\"}"
-        }
-      ]
-    },
     "newsModelGuard": {
       "dir": "backend/monitoring/newsModelGuard",
       "runtime": "nodejs22.x",
@@ -290,22 +230,6 @@
           "name": "TriggerModelGuard",
           "expr": "cron(0 12 * * ? *)",
           "state": "ENABLED"
-        }
-      ]
-    },
-    "newsPairIntelligence": {
-      "dir": "backend/economy-parked/newsPairIntelligence",
-      "runtime": "nodejs24.x",
-      "group": "economy-parked",
-      "features": [],
-      "nodeModules": true,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerPairIntelligenceWeekly",
-          "expr": "cron(0 8 ? * MON *)",
-          "state": "DISABLED",
-          "input": "{}"
         }
       ]
     },
@@ -440,7 +364,7 @@
       "dir": "backend/read-api/newsSensitiveData",
       "runtime": "nodejs22.x",
       "group": "read-api",
-      "features": ["home", "threads", "map", "countries", "briefings", "analysis-studio", "track-record", "account", "economy"],
+      "features": ["home", "threads", "map", "countries", "briefings", "analysis-studio", "track-record", "account"],
       "nodeModules": false,
       "schedules": []
     },
@@ -585,21 +509,6 @@
           "name": "TriggerWeeklyBrief",
           "expr": "cron(0 6 ? * SUN *)",
           "state": "ENABLED"
-        }
-      ]
-    },
-    "newsWeeklyMarkets": {
-      "dir": "backend/economy-parked/newsWeeklyMarkets",
-      "runtime": "nodejs22.x",
-      "group": "economy-parked",
-      "features": ["economy"],
-      "nodeModules": false,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerWeeklyMarkets",
-          "expr": "cron(30 8 ? * SUN *)",
-          "state": "DISABLED"
         }
       ]
     }

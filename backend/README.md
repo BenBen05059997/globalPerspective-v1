@@ -12,7 +12,6 @@ Lambdas, schedules, stores and pipeline.
 - [read-api](read-api/README.md): what the browser calls: the content proxy, saved items, preferences, shares, error reports.
 - [membership-studio](membership-studio/README.md): the member Analysis Studio run and Polar billing.
 - [monitoring](monitoring/README.md): alerts to the operator on freshness, errors, model health and summary drift.
-- [economy-parked](economy-parked/README.md): economy features, parked; only market data collection still runs.
 - [record](record/README.md): the world's memory: daily facts, weekly readings and the views built from them.
 - [board](board/README.md): the personal board of a signed-in member.
 - [weekly](weekly/README.md): the analyst's weekly: schema and section model (the scripts are not written yet); not a Lambda.

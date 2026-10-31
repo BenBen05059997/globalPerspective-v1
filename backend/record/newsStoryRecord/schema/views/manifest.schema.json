@@ -53,6 +53,11 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
       "description": "the newest day of the provisional entries (today's archive before the nightly run has frozen it, 0050); absent when the build had none"
     },
+    "forecastViews": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "forecasts/{threadId}.json files this build wrote (decision 0052). Absent in a manifest written before the build existed: a page then does not take a missing forecasts file to mean no forecast"
+    },
     "provisionalEntries": {
       "type": "integer",
       "minimum": 1,

@@ -72,7 +72,7 @@ const viewsFetch = (files, calls = []) => async (url) => {
   return { ok: true, status: 200, json: async () => files[key] };
 };
 const NOW = Date.parse('2026-10-31T12:00:00Z');
-const fresh = { 'manifest.json': { builtAt: '2026-10-31T08:00:00Z' }, 'forecasts/th-1.json': { threadId: 'th-1', forks: [fork('A-1', '2026-10-20'), fork('B-2', '2026-10-22')] } };
+const fresh = { 'manifest.json': { builtAt: '2026-10-31T08:00:00Z', forecastViews: 5 }, 'forecasts/th-1.json': { threadId: 'th-1', forks: [fork('A-1', '2026-10-20'), fork('B-2', '2026-10-22')] } };
 
 test('forecastFromRecord is wired only with RECORD_VIEWS_URL, answers from the forecasts view while the manifest is under 9 hours old, and maps like the browser', async () => {
   assert.equal(makeProxyFetchers({ proxyUrl: 'https://p.example/x' }).forecastFromRecord, undefined);
@@ -89,6 +89,8 @@ test('forecastFromRecord does not answer on stale views, a bad thread id or an u
   assert.equal((await stale.forecastFromRecord('th-1', null)).answered, false);
   const f = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch(fresh), now: () => NOW });
   assert.equal((await f.forecastFromRecord('../x', null)).answered, false);
+  const oldBuild = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch({ ...fresh, 'manifest.json': { builtAt: '2026-10-31T08:00:00Z' } }), now: () => NOW });
+  assert.equal((await oldBuild.forecastFromRecord('th-1', null)).answered, false, 'a build without forecasts views: a missing file is not "no forecast"');
   const noManifest = makeProxyFetchers({ proxyUrl: 'x', recordViewsUrl: 'https://site.test/data/record/views', fetchImpl: viewsFetch({}), now: () => NOW });
   assert.equal((await noManifest.forecastFromRecord('th-1', null)).answered, false);
 });

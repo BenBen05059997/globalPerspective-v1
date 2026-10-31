@@ -527,7 +527,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
-  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, ...(provisionalThrough ? {provisionalThrough, provisionalEntries: extra.length} : {})};
+  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough, provisionalEntries: extra.length} : {})};
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)

@@ -1,7 +1,8 @@
 // A story's forecast from the record while the views are fresh (decision 0052), in the shape `prediction_snapshot` returns. The pages that read a forecast
 // without the story page (the briefing's next question, the country card's deadlines) ask here first and the action only when the record cannot answer.
 //   answered: true  - the views are fresh (0050) and the forecasts view was read: a story with no file has drawn no question, and `snapshot` is null.
-//   answered: false - the views are stale, the manifest or the file cannot be read (reported): the caller asks the action as it did before.
+//   answered: false - the views are stale, the manifest says the build did not write forecasts views (`forecastViews` absent: an older build, where a missing
+//                     file would not mean "no forecast"), or the file cannot be read (reported): the caller asks the action as it did before.
 import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
@@ -16,8 +17,8 @@ const views = makeRecordViews();
  */
 export async function recordForecast(threadId, topicIds = null, { fresh = loadViewsFresh, getViews = views } = {}) {
   if (!threadId) return { answered: false, snapshot: null };
-  const { fresh: ok } = await fresh();
-  if (!ok) return { answered: false, snapshot: null };
+  const { fresh: ok, manifest } = await fresh();
+  if (!ok || !Number.isInteger(manifest?.forecastViews)) return { answered: false, snapshot: null };
   try {
     const view = await getViews.fetchForecastsView(threadId);
     if (!view) return { answered: true, snapshot: null };

@@ -34,7 +34,8 @@ function makeRecordForecast({ viewsUrl, fetchImpl, timeoutMs, now = Date.now }) 
     if (!THREAD_ID.test(threadId || '')) return { answered: false, snapshot: null };
     const manifest = await getView('manifest.json');
     const built = Date.parse(manifest && manifest.builtAt);
-    if (!Number.isFinite(built) || now() - built > VIEWS_MAX_AGE_MS) return { answered: false, snapshot: null };
+    // stale, or a build that wrote no forecasts views (then a missing file would not mean "no forecast")
+    if (!Number.isFinite(built) || now() - built > VIEWS_MAX_AGE_MS || !Number.isInteger(manifest.forecastViews)) return { answered: false, snapshot: null };
     const view = await getView(`forecasts/${threadId}.json`);
     if (!view) return { answered: true, snapshot: null };
     return { answered: true, snapshot: topicIds ? viewForecast(view, { topicIds }) : forecastOfThread(view) };

@@ -5,7 +5,7 @@ const { recordForecast } = await import('@/shared/api/forecastViews.js');
 const { reportFetchError } = await import('@/shared/api/errorSink.js');
 
 const fork = (topic, day) => ({ forkId: `PRED#${topic}/${day}`, drawnAt: `${day}T05:00:00.000Z`, branches: [{ branchId: `PRED#${topic}/${day}/0-0`, text: 'Likely', p: 40, trigger: 't', resolutionSource: 'R', due: '2026-12-01', question: true, qid: 'q1', scenarioP: 60, scoring: 'sampled', state: 'awaiting' }] });
-const fresh = (ok) => async () => ({ fresh: ok, manifest: null });
+const fresh = (ok, manifest = { forecastViews: 12 }) => async () => ({ fresh: ok, manifest });
 const views = (impl) => ({ fetchForecastsView: vi.fn(impl) });
 
 describe('recordForecast', () => {
@@ -24,6 +24,13 @@ describe('recordForecast', () => {
     const v = views(async () => null);
     expect(await recordForecast('th', null, { fresh: fresh(false), getViews: v })).toEqual({ answered: false, snapshot: null });
     expect(await recordForecast('', null, { fresh: fresh(true), getViews: v })).toEqual({ answered: false, snapshot: null });
+    expect(v.fetchForecastsView).not.toHaveBeenCalled();
+  });
+
+  it('a manifest from a build without forecasts views does not make a missing file mean no forecast', async () => {
+    const v = views(async () => null);
+    expect(await recordForecast('th', null, { fresh: fresh(true, { builtAt: 'x' }), getViews: v })).toEqual({ answered: false, snapshot: null });
+    expect(await recordForecast('th', null, { fresh: fresh(true, null), getViews: v })).toEqual({ answered: false, snapshot: null });
     expect(v.fetchForecastsView).not.toHaveBeenCalled();
   });
 

@@ -46,4 +46,4 @@
 .bm-touch__dot { fill: none; stroke: var(--text-dim); stroke-width: 1; }
 
 /* the map fills its box's width (no blank bands beside the land); the frame's wide aspect keeps its height in check */
-.bm-svg { max-height: none; }
+.board-svg.bm-svg { max-height: none; }

@@ -92,6 +92,18 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-drift-notes.mjs [--dry
 ```
 Test: `node --test backend/record/cli/backfill-drift-notes.test.mjs`.
 
+## backfill-story-drift-notes.mjs
+
+Turns every `THREAD#<threadId>` / `DRIFT#<date>` item (the story's "what changed" row from `newsDriftCorrector`; 60-day TTL, so only
+the recent weeks exist) into one `drift` note about the story through `storyDriftNote` (subject kind `story`, same `notes/drift/` files
+as the country notes). Archive copies like the country ones: `model` null, `payload.from: "archive"`. A story missing from
+`record/views/index/all.json` is reported as `unmatched` and not written. The story view's `analysis.driftNote` is the latest of these.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-drift-notes.mjs [--dry] [--live]
+```
+Test: `node --test backend/record/cli/backfill-story-drift-notes.test.mjs`.
+
 ## recover-day.mjs
 
 Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.

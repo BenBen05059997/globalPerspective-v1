@@ -62,10 +62,18 @@ function latestBy(noteLines, subtype, keyOf, part) {
   return out;
 }
 
-/** Story analysis notes (0042) -> threadId -> the analysis as stored. */
+const isKind = (kind) => (n) => n && n.subject && n.subject.kind === kind;
+
+/**
+ * Story analysis notes (0042) -> threadId -> the analysis as stored, plus `driftNote` (the story's latest drift note as stored)
+ * when it has one: only an analysis carries it, as the old thread_analysis action only attached it to an existing analysis.
+ */
 function storyAnalysisBy(noteLines) {
   const out = new Map();
-  for (const [id, n] of latestBy(noteLines, 'story_analysis', (x) => x.subject.id)) out.set(id, {...asStored(n), threadId: id, iso3: n.iso3});
+  const drift = latestBy(noteLines.filter(isKind('story')), 'drift', (x) => x.subject.id);
+  for (const [id, n] of latestBy(noteLines, 'story_analysis', (x) => x.subject.id)) {
+    out.set(id, {...asStored(n), threadId: id, iso3: n.iso3, ...(drift.has(id) ? {driftNote: asStored(drift.get(id))} : {})});
+  }
   return out;
 }
 
@@ -85,7 +93,7 @@ function judgedLinksBy(noteLines) {
 function countryViews(noteLines, builtFrom) {
   const out = new Map();
   const view = (iso3) => out.get(iso3) || out.set(iso3, {schemaVersion: SCHEMA_VERSION, builtFrom, iso3, drift: [], driftCount: 0, intelligence: null, systems: null}).get(iso3);
-  const drift = noteLines.filter((n) => n && n.subtype === 'drift' && n.subject && n.payload).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  const drift = noteLines.filter((n) => n && n.subtype === 'drift' && n.subject && n.subject.kind === 'country' && n.payload).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
   const seen = new Set();
   for (const n of drift) {
     if (seen.has(n.noteId)) continue;

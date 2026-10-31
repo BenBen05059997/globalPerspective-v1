@@ -12,7 +12,7 @@ import data from './fixtures/linksFromView.json';
 const sortKeys = (v) => (Array.isArray(v) ? v.map(sortKeys) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys(v[k])])) : v);
 const rows = (a) => a.map((r) => JSON.stringify(sortKeys(r))).sort();
 const shared = (a) => rows(a.map((r) => ({ ...r, actors: [...r.actors].sort(), webs: [...r.webs].sort((x, y) => x.country.localeCompare(y.country)) })));
-const strip = (a, k) => a.map(({ [k]: _t, ...r }) => r);
+const strip = (a, k) => a.map((r) => { const o = { ...r }; delete o[k]; return o; });
 const core = (d) => ({ fedInto: rows(strip(d.fedInto, 'targetTitle')), fedFrom: rows(strip(d.fedFrom, 'sourceTitle')), shared: shared(strip(d.shared, 'otherTitle')), hiddenOlder: d.hiddenOlder, provenance: d.provenance, state: d.state });
 const titles = (d) => [...d.fedInto.map((r) => r.targetTitle), ...d.fedFrom.map((r) => r.sourceTitle), ...d.shared.map((r) => r.otherTitle)].sort();
 const NOW = data.now;

@@ -43,7 +43,7 @@ This folder is stage 9: the story page and the stories list. Timeline: rebuilds 
 ## Data
 - `useWeeklyArchive()` -> `archive_range` (30 days, auth header sent when signed in); localStorage `gp_weekly_archive_v1`, 30 min.
   It stores `uid` but does not check it on read. It needs `AuthProvider`.
-- `useNarrativeThread(id)` -> `narrative_thread`; sessionStorage `gp_narrative_thread_<id>`, 30 min.
+- `useNarrativeThread(id)` -> the record's story view (`/data/record/views/stories/<id>.json`, decision 0042 step 4) for every day up to its `factsThrough`, plus `narrative_thread` for later days (the views rebuild nightly, the archive each agent run); no view yet means `narrative_thread` alone. `lib/viewEntries.js` maps view entries to the archive shape (entry notes become `ai` text as the archive held it). sessionStorage `gp_narrative_thread_v2_<id>`, 30 min.
 - `useThreadAnalyses(ids)` -> `thread_analysis` (max 20 ids per call); localStorage `gp_thread_analyses_v2`, 30 min.
 - `useThreadForecast(topicIds)` -> `prediction_snapshot`; `useWebIndex()` -> `web_index` (memory cache, 30 min).
 - `useStoryLinks` calls `systems_analysis` (max 3 regions) only if `web_index` fails; `useLastVisit` is localStorage only.

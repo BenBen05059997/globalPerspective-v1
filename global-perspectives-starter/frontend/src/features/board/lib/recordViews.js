@@ -1,30 +1,16 @@
-// The board's reads of the record views (decision 0037), straight from the Worker's /data/* route: story, links and
-// daily counts files. A 404 means "not generated yet" and answers null; any other failure throws for the caller to
-// report. (Same shape as the map's worldData getJson; features do not import each other.)
-const BASE = '/data/record/views';
-const ID = /^[A-Za-z0-9_-]{1,200}$/;
+// The board's reads of the record views go through the shared reader (shared/api/recordViews.js); in dev with
+// ?devRecord=1 they come from the board's fixtures instead.
+import { fetchRecordView, makeRecordViews } from '@/shared/api/recordViews.js';
 
 async function getView(path) {
   if (import.meta.env.DEV) {
     const fake = await import('../dev/fakeRecordViews.js');
     if (fake.devRecordMode()) return fake.fakeView(path);
   }
-  const res = await fetch(`${BASE}/${path}`, { headers: { Accept: 'application/json' } });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`record view ${res.status} for ${path}`);
-  return res.json();
+  return fetchRecordView(path);
 }
 
-/** The story view, or null when not generated. A merged story's view is an alias: the survivor is fetched. */
-export async function fetchStoryView(id) {
-  if (!ID.test(id)) return null;
-  const view = await getView(`stories/${id}.json`);
-  return view?.aliasOf && ID.test(view.aliasOf) ? getView(`stories/${view.aliasOf}.json`) : view;
-}
-
-export function fetchLinksView(id) { return ID.test(id) ? getView(`links/${id}.json`) : Promise.resolve(null); }
-
-export function fetchCounts(date) { return /^\d{4}-\d{2}-\d{2}$/.test(date) ? getView(`counts/${date}.json`) : Promise.resolve(null); }
+export const { fetchStoryView, fetchLinksView, fetchCounts } = makeRecordViews(getView);
 
 /** UTC dates from `from` to `to` inclusive (YYYY-MM-DD). */
 export function datesBetween(from, to) {

@@ -34,7 +34,7 @@ This folder is stage 9: the board page (/board). Timeline: reads boards via news
   `usePresets`, `usePinInfo`, `useMember` (signed-in, non-guest), `useStoryViews`, `useWeekCounts`.
 - `lib/boardApi.js` - the one call path: `boardAction` from `@/shared/api/restProxy.js` when `BOARD_ENDPOINT` is set; in a dev
   build only, the in-memory fake `dev/fakeBoardApi.js` (dynamic import behind `import.meta.env.DEV`). `?devBoard=1` acts as a
-  signed-in member. `lib/boardOps.js` (pure pin and string edits), `lib/recordViews.js` (view fetchers, ISO-week helpers),
+  signed-in member. `lib/boardOps.js` (pure pin and string edits), `lib/recordViews.js` (the shared view reader `shared/api/recordViews.js` with the board's dev fixtures, ISO-week helpers),
   `lib/recordProjection.js` (`boardWeek`, `sumCounts`), `lib/recordText.js`.
 - Branch status is worded only by `@/shared/lib/branchWording.js` from the branch's verdict and due date (open, happened with the
   evidence quote, not reported by the due date, could not be checked, recorded before scoring began). A "no" is a claim about

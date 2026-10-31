@@ -12,6 +12,7 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
+const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
@@ -28,6 +29,10 @@ const POST_TTL_DAYS      = 90;
 const BRIEF_TTL_DAYS     = 90;
 const AI_MODEL           = process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free';
 
+// RECORD_READS=ddb|record|compare (decision 0054): where the day's entries, the thread analyses and the country briefings come from
+const RECORD_READS = readMode();
+const records = lazyRecordReads();
+
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, {
   marshallOptions: { removeUndefinedValues: true },
@@ -41,10 +46,11 @@ async function loadThreadAnalyses(entries) {
   const analyses = {};
   await Promise.all(threadIds.slice(0, 20).map(async (tid) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
-      }));
+      const Item = await readBy({
+        mode: RECORD_READS, label: `devto thread_analysis ${tid}`, same: SAME.threadAnalysis,
+        ddb: async () => (await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' } }))).Item,
+        record: () => records.threadAnalysisRow(tid),
+      });
       if (Item) analyses[tid] = Item;
     } catch {}
   }));
@@ -59,10 +65,11 @@ async function loadCountryIntelligence(entries) {
   const intel = {};
   await Promise.all(countries.slice(0, 15).map(async (name) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
-      }));
+      const Item = await readBy({
+        mode: RECORD_READS, label: `devto country_intelligence ${name}`, same: SAME.countryIntelligence,
+        ddb: async () => (await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' } }))).Item,
+        record: () => records.countryIntelligenceRow(name),
+      });
       if (Item && usableCountryRecord(name, Item)) intel[name] = Item;
     } catch {}
   }));
@@ -284,10 +291,11 @@ function todayDateKey() {
 }
 
 async function loadTodayArchive() {
-  const { Item } = await ddb.send(new GetCommand({
-    TableName: TOPICS_TABLE,
-    Key: { id: 'today-archive' },
-  }));
+  const Item = await readBy({
+    mode: RECORD_READS, label: 'devto today-archive', same: SAME.todayArchive,
+    ddb: async () => (await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'today-archive' } }))).Item,
+    record: () => records.todayArchiveItem(),
+  });
   if (!Item || !Array.isArray(Item.entries)) return null;
   // Only entries archived today count (a stalled pipeline leaves old ones in today-archive).
   return { ...Item, entries: keepDayZero(Item.entries) };
@@ -360,3 +368,5 @@ function resp(statusCode, body) {
   };
 }
 module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
+module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests
+module.exports.loadTodayArchive = loadTodayArchive; // for tests

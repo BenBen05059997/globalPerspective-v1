@@ -1,9 +1,9 @@
 // The 30-day archive as { [YYYY-MM-DD]: { entries, updatedAt } } for the Stories page, the Stories map, the countries list and
 // page, the story page's related stories and the map's country card and risk layer. It reads the record's weekly index
-// (/data/record/views/index/weekly.json) for the recorded days and the `archive_range` action for the newest recorded day and
-// every day after it (the record is built nightly and its newest day can be part-way; like the story timeline, the action
-// supplies what the record has not caught up with), or for all 30 days when the index is missing or unreadable (reported).
-// A failed action call for those last days leaves the recorded days.
+// (/data/record/views/index/weekly.json) for every day, today included: newsStoryRecord rebuilds the views after each ingest
+// (decision 0050). Only when the views are not fresh (viewsFresh.js: manifest older than 9 h, missing or unreadable; reported) does it
+// ask the `archive_range` action for the newest recorded day and every day after it, and for all 30 days when the index is missing or
+// unreadable (reported). A failed action call for those last days leaves the recorded days.
 //
 // What the record changes against the action (measured 2026-10-31): an article listed again on a later archive day is shown
 // once, on its first day; an entry sits under the story it belongs to now (merges and reassignments applied); places are the
@@ -12,6 +12,7 @@
 import { fetchArchiveRange } from '@/shared/api/restProxy.js';
 import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
+import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
 
 const WINDOW_DAYS = 30;
@@ -72,7 +73,8 @@ export const loadArchiveDayMapFromAction = () => actionDays(WINDOW_DAYS);
 
 /**
  * The 30-day archive, record first. When the index is missing the action's answer is returned (or its error thrown, as the
- * hooks always handled it); a failed action call for the newest days only is reported and the recorded days are kept.
+ * hooks always handled it); when the views are not fresh the action supplies the newest days, and a failed call for those is
+ * reported and the recorded days are kept.
  */
 export async function loadArchiveDayMap(now = new Date()) {
   const today = now.toISOString().slice(0, 10);
@@ -81,6 +83,7 @@ export async function loadArchiveDayMap(now = new Date()) {
   const recorded = dayMapFromIndex(index, today);
   const newest = Object.keys(recorded).sort().at(-1);
   if (!newest) return actionDays(WINDOW_DAYS);
+  if ((await loadViewsFresh()).fresh) return recorded; // the views carry today: no action call
   try {
     const fresh = await actionDays(daysFrom(newest, today) + 1);
     return { ...recorded, ...Object.fromEntries(Object.entries(fresh).filter(([day]) => day >= newest)) };

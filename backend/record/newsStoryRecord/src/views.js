@@ -230,6 +230,7 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
     topicId: f.payload.topicId ?? null, iso3: f.iso3 || [], // the story page looks up forecasts and analysis by topicId and shows countries
     ...(f.payload.actors ? {actors: f.payload.actors} : {}), ...(notesBy.has(f.eventId) ? {notes: notesBy.get(f.eventId)} : {}),
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
+    ...(f.provisional ? {provisional: true} : {}), // today's archive entry before the nightly run has frozen it (0050)
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
 
@@ -451,15 +452,21 @@ function countDaysFor(today, changedDays = []) {
 /**
  * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count),  countDays (default
  * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
- * (record/operator/aliases.json or null). Throws when all.json is over its hard cap.
+ * (record/operator/aliases.json or null), provisional (0050: entry facts of today's archive marked `provisional`, in memory only; one
+ * whose eventId is already a fact is dropped). Throws when all.json is over its hard cap.
+ * Views stay a pure function of (facts, notes, readings, provisional entries): `factsThrough` is the newest day of the real facts, and
+ * `provisionalThrough` (builtFrom and manifest, only when there are provisional entries) the newest day of the provisional ones.
  */
-function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = []}) {
-  const sorted = ordered(allFacts);
+function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = [], provisional = []}) {
+  const known = new Set(allFacts.map((f) => f.eventId));
+  const extra = provisional.filter((f) => f.kind === 'entry' && f.provisional && !known.has(f.eventId) && known.add(f.eventId));
+  const sorted = ordered([...allFacts, ...extra]);
   const {placed: facts, reassigned, keep} = placeEntries(sorted);
-  const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run').map((f) => f.date));
+  const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run' && !f.provisional).map((f) => f.date));
+  const provisionalThrough = maxOf(extra.map((f) => f.date));
   const standingReadings = Rd.standing(readingLines);
   const readingsThrough = Rd.maxWeek(standingReadings);
-  const builtFrom = {factsThrough, readingsThrough};
+  const builtFrom = {factsThrough, readingsThrough, ...(provisionalThrough ? {provisionalThrough} : {})};
   const readings = Rd.byThread(standingReadings);
   const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
@@ -495,7 +502,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
-  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough};
+  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, ...(provisionalThrough ? {provisionalThrough, provisionalEntries: extra.length} : {})};
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)

@@ -25,6 +25,8 @@ export function makeRecordViews(getView = fetchRecordView) {
       const view = await getView(`stories/${id}.json`);
       return view?.aliasOf && ID.test(view.aliasOf) ? getView(`stories/${view.aliasOf}.json`) : view;
     },
+    // When the views were built and from which facts (`builtAt`, `factsThrough`, `provisionalThrough`): the freshness rule of viewsFresh.js (0050).
+    fetchManifest() { return getView('manifest.json'); },
     fetchLinksView(id) { return ID.test(id || '') ? getView(`links/${id}.json`) : Promise.resolve(null); },
     fetchCountryView(iso3) { return ISO3.test(iso3 || '') ? getView(`countries/${iso3}.json`) : Promise.resolve(null); },
     fetchCounts(date) { return DAY.test(date || '') ? getView(`counts/${date}.json`) : Promise.resolve(null); },

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchDailyBrief } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { loadBriefsIndex } from '@/shared/api/briefViews.js';
+import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { lastNDateKeys, todayKey, addDaysKey } from '@/features/briefings/lib/editions.js';
 import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief.js';
 
@@ -36,10 +37,12 @@ export function useDailyEditionsIndex(anchorDateKey) {
       const cache = readCache();
       // The record's index lists every daily brief up to its last nightly build (decision 0048): those dates need no probe.
       // Today (and a date the build has not seen) comes from the latest lookup below, or the probe.
+      // While the views are fresh (viewsFresh.js, decision 0050) the index covers today too: a date it lacks has no brief.
       const recorded = await loadBriefsIndex();
       if (recorded) {
         const known = new Set(recorded.daily.map((d) => d.dateKey));
-        for (const dk of dateKeys) if (dk < todayKey()) cache[dk] = known.has(dk);
+        const upTo = (await loadViewsFresh()).fresh ? todayKey() : addDaysKey(todayKey(), -1);
+        for (const dk of dateKeys) if (dk <= upTo) cache[dk] = known.has(dk);
       }
       // Batch 3 / B: the `latest_daily_brief` response already lists every date that has a brief in
       // the last MAX_LOOKBACK_DAYS days, so those dates need no probe. A date outside that window,

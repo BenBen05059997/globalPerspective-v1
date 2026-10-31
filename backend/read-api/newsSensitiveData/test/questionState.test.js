@@ -10,11 +10,11 @@ test('isoWeekOfDay matches the settle Lambda rule', () => {
   assert.equal(isoWeekOfDay('2027-01-04'), '2027-W01');
 });
 
-test('sample state: sampled wins; lead outside 7-84 is not eligible; then warm-up / awaiting draw / not sampled', () => {
+test('sample state: sampled wins; lead outside 7-90 is not eligible; then warm-up / awaiting draw / not sampled', () => {
   const base = { issueDay: '2026-10-06', deadline: '2026-11-06', sampled: false, commitExists: true, drawExists: true };
   assert.equal(questionSampleState({ ...base, sampled: true }), 'sampled');
   assert.equal(questionSampleState({ ...base, deadline: '2026-10-10' }), 'not_eligible');   // 4 days
-  assert.equal(questionSampleState({ ...base, deadline: '2027-03-01' }), 'not_eligible');   // > 84 days
+  assert.equal(questionSampleState({ ...base, deadline: '2027-03-01' }), 'not_eligible');   // > 90 days
   assert.equal(questionSampleState({ ...base, commitExists: false, drawExists: false }), 'warm_up');
   assert.equal(questionSampleState({ ...base, drawExists: false }), 'awaiting_draw');
   assert.equal(questionSampleState(base), 'not_sampled');

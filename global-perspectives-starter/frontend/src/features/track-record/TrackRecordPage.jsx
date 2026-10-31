@@ -282,7 +282,7 @@ export default function TrackRecordPage() {
             <strong>A random sample is locked each week, in advance.</strong> Before a week starts we publish a
             commitment (a hash of a secret seed). After the week closes we reveal the seed; up to {q?.method?.K ?? 22} questions
             are ranked by a hash of the seed and the question, at most one per story. Anyone can re-run the
-            draw (&ldquo;Verify this draw&rdquo;). Only questions with a lead time of 7 to 84 days are eligible; the rest are
+            draw (&ldquo;Verify this draw&rdquo;). Only questions with a lead time of 7 to 90 days are eligible; the rest are
             published but not scored.
           </li>
           <li>

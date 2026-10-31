@@ -6,16 +6,16 @@ const weeks = (n, start = '2026-10-05') => Array.from({ length: n }, (_, i) => (
 }));
 
 describe('estimateAccuracyWindow', () => {
-  it('reproduces the plan arithmetic: first week 2026-10-05, K 22, published 7-84 day window -> 2027-01-11 to 2027-01-25', () => {
+  it('reproduces the plan arithmetic: first week 2026-10-05, K 22, published 7-90 day window -> 2027-01-18 to 2027-02-01', () => {
     const est = estimateAccuracyWindow({ sampled: [], weeks: weeks(2), target: 150, now: new Date('2026-10-01T10:00:00Z'), plannedK: 22 });
-    expect(est.earliest).toBe('2027-01-11');
-    expect(est.latest).toBe('2027-01-25');
+    expect(est.earliest).toBe('2027-01-18');
+    expect(est.latest).toBe('2027-02-01');
     expect(est.basis).toMatchObject({ locked: 0, perWeek: 22, perWeekSource: 'published', leadSource: 'published' });
   });
 
   it('a smaller weekly sample moves the date later; a larger one earlier', () => {
     const at = (K) => estimateAccuracyWindow({ sampled: [], weeks: weeks(1), target: 150, now: new Date('2026-10-01T00:00:00Z'), plannedK: K }).earliest;
-    expect(at(20) > at(22)).toBe(true);
+    expect(at(18) > at(22)).toBe(true); // dates land on Mondays, so 20 and 22 can share one
     expect(at(25) < at(22)).toBe(true);
   });
 

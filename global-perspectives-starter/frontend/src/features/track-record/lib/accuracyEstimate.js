@@ -8,7 +8,7 @@
 //   - every not-yet-drawn week (the committed ones, then later weeks up to the horizon) adds K
 //     questions: K = the observed average sample size once 2 weeks are drawn, else the published K;
 //     their deadlines follow the observed lead times (once 10 are observed), else the published
-//     7-84 day window; they settle at the first Monday on/after max(deadline + 3 days, the draw);
+//     7-90 day window; they settle at the first Monday on/after max(deadline + 3 days, the draw);
 //   - the earliest date assumes no voids, the latest assumes `voidHigh` (25%) voids.
 // Returns null when there is nothing to base it on (no committed week).
 
@@ -20,7 +20,7 @@ const nextMondayOnOrAfter = (t) => t + ((8 - new Date(t).getUTCDay()) % 7) * DAY
 
 export function estimateAccuracyWindow({
   sampled = [], weeks = [], target = 150, now = new Date(), plannedK = 22,
-  voidLow = 0, voidHigh = 0.25, minLead = 7, maxLead = 84, horizonWeeks = 90,
+  voidLow = 0, voidHigh = 0.25, minLead = 7, maxLead = 90, horizonWeeks = 90,
 } = {}) {
   if (!Array.isArray(weeks) || weeks.length === 0) return null;
   const nowDay = ms(iso(new Date(now).getTime()));

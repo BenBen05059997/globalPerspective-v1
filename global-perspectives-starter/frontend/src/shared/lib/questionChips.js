@@ -9,7 +9,7 @@ const SCORING_TEXT = {
   awaiting_draw: 'not drawn yet (this week’s sample is drawn after the week closes)',
   not_sampled: 'not in a scored sample',
   warm_up: 'issued before scoring began; not scored',
-  not_eligible: 'not sampled (lead time outside 7–84 days); not scored',
+  not_eligible: 'not sampled (lead time outside 7–90 days); not scored',
   sampled: 'in a scored sample',
 };
 

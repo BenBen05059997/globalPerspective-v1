@@ -80,4 +80,4 @@ draw day. A page may use `scoring` / `state` from the views only after the live 
   (`newsPredictionResolver-record`); `newsStoryRecord` already reads `record/*`.
 - The snapshot's eligibility window is 7-84 days, the resolver's draw rule is 7-90 (`LEAD_MAX`, 0038). A question issued 85-90 days
   before its deadline can be drawn, so it is `sampled`; one that was not drawn is labelled `not_eligible` by the snapshot and by the
-  views, although the rule made it eligible. The views keep the snapshot's labels until the operator decides (open question).
+  views, although the rule made it eligible. Resolved 2026-10-31 by 0045: 7-90 everywhere.

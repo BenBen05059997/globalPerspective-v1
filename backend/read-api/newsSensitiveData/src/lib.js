@@ -134,7 +134,7 @@ function isoWeekOfDay(d) {
 function questionSampleState({ issueDay, deadline, sampled, commitExists, drawExists }) {
   if (sampled) return 'sampled';
   const lead = _days(issueDay, deadline);
-  if (lead < 7 || lead > 84) return 'not_eligible';
+  if (lead < 7 || lead > 90) return 'not_eligible';
   if (!commitExists) return 'warm_up';
   if (!drawExists) return 'awaiting_draw';
   return 'not_sampled';

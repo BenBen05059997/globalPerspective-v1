@@ -181,7 +181,7 @@ export default function TrackRecordText() {
         <h2>How this works</h2>
         <ol>
           <li>Each question carries its own probability and a named source, fixed when it is published; the record is written once.</li>
-          <li>Before each week we publish a commitment (a hash of a secret seed); after the week closes the seed is revealed and up to {q?.method?.K ?? 22} questions are drawn by hash, at most one per story. Only questions with a 7 to 84 day lead time are eligible.</li>
+          <li>Before each week we publish a commitment (a hash of a secret seed); after the week closes the seed is revealed and up to {q?.method?.K ?? 22} questions are drawn by hash, at most one per story. Only questions with a 7 to 90 day lead time are eligible.</li>
           <li>An agent that is not shown the probability drafts a verdict with a quote and a link; a person confirms it. A NO is only allowed after the deadline plus 3 days; anything unjudgeable is marked void with a reason and excluded.</li>
           <li>Scored against a guess of the overall base rate, with an interval resampled by story. No accuracy before 150 resolved; calibration by band only after 400 over six months.</li>
           <li>

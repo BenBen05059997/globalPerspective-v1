@@ -9,7 +9,7 @@ const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / 86400000);
 
 // the eligibility window of the snapshot, in days from the issue day to the deadline
 const LEAD_MIN = 7;
-const LEAD_MAX = 84;
+const LEAD_MAX = 90;
 
 /** ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41" (same rule as the resolver's lib.weekOf). */
 function isoWeekOfDay(d) {

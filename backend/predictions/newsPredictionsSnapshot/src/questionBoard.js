@@ -11,7 +11,7 @@ const { computeScoring } = require('./scoring');
 const GRACE_DAYS = 3;
 const SAMPLED_WEEKS_SHOWN = 26;
 const POOL_WEEKS_PUBLISHED = 4;
-const METHOD = { K: 22, leadDays: [7, 84], rule: 'v1', graceDays: GRACE_DAYS };
+const METHOD = { K: 22, leadDays: [7, 90], rule: 'v1', graceDays: GRACE_DAYS };
 
 const day = (s) => String(s || '').slice(0, 10);
 

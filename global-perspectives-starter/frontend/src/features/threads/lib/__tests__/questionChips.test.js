@@ -13,7 +13,7 @@ describe('chipFor', () => {
   });
   it('not sampled / warm-up / not eligible / awaiting draw are each named honestly', () => {
     expect(chipFor(q({ state: null, scoring: 'warm_up' })).text).toMatch(/before scoring began; not scored/);
-    expect(chipFor(q({ state: null, scoring: 'not_eligible' })).text).toMatch(/lead time outside 7–84 days/);
+    expect(chipFor(q({ state: null, scoring: 'not_eligible' })).text).toMatch(/lead time outside 7–90 days/);
     expect(chipFor(q({ state: null, scoring: 'not_sampled' })).text).toBe('not in a scored sample');
     expect(chipFor(q({ state: null, scoring: 'awaiting_draw' })).text).toMatch(/not drawn yet/);
   });

@@ -85,10 +85,10 @@ test('countries index: the briefing fields and the first risk signal only; no dr
 
 test('no notes: every index is empty but valid; the write groups carry them beside index/active.json', () => {
   const v = build([]);
-  assert.deepEqual(Object.keys(v.indexes).sort(), ['analyses.json', 'countries.json', 'web.json']);
+  assert.deepEqual(Object.keys(v.indexes).sort(), ['analyses.json', 'countries.json', 'web.json', 'weekly.json']);
   assert.deepEqual([v.indexes['web.json'].links, v.indexes['web.json'].shared, v.indexes['web.json'].websUsed, v.indexes['web.json'].generatedAt], [[], [], [], null]);
   const keys = V.writeGroups(build()).map((g) => g.map(([k]) => k));
-  assert.deepEqual(keys[1].sort(), ['index/active.json', 'index/analyses.json', 'index/countries.json', 'index/web.json']);
+  assert.deepEqual(keys[1].sort(), ['index/active.json', 'index/analyses.json', 'index/countries.json', 'index/web.json', 'index/weekly.json']);
   assert.deepEqual(keys.slice(3), [['track-record.json'], ['manifest.json']]);
 });
 
@@ -110,7 +110,7 @@ test('golden: the indexes of the notes fixture are exactly the reviewed JSON, an
   assert.deepEqual(actual, JSON.parse(readFileSync(file, 'utf8')));
   const ajv = new Ajv({allErrors: true, strict: false});
   const load = (n) => JSON.parse(readFileSync(resolve(__dirname, '../schema/views', n), 'utf8'));
-  for (const [name, schema] of [['analyses.json', 'analyses-index'], ['web.json', 'web-index'], ['countries.json', 'countries-index']]) {
+  for (const [name, schema] of [['analyses.json', 'analyses-index'], ['web.json', 'web-index'], ['countries.json', 'countries-index'], ['weekly.json', 'weekly-index']]) {
     const validate = ajv.compile(load(`${schema}.schema.json`));
     assert.equal(validate(actual[name]), true, `${name}: ${JSON.stringify(validate.errors)}`);
     assert.deepEqual(load(`examples/${schema}.json`), actual[name]); // the example is the golden

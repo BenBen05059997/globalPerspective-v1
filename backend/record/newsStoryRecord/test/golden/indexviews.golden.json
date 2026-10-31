@@ -195,5 +195,101 @@
         ]
       }
     }
+  },
+  "weekly.json": {
+    "schemaVersion": 1,
+    "builtFrom": {
+      "factsThrough": "2026-10-22",
+      "readingsThrough": null
+    },
+    "from": "2026-09-23",
+    "to": "2026-10-22",
+    "days": {
+      "2026-10-17": {
+        "updatedAt": "2026-10-17T04:00:00.000Z",
+        "entries": [
+          {
+            "topicId": "C first-1",
+            "threadId": "thread-b",
+            "title": "C first",
+            "category": "conflict",
+            "iso3": [
+              "UKR"
+            ],
+            "sources": [
+              {
+                "outlet": "S3",
+                "url": "https://s3.test/a"
+              }
+            ]
+          }
+        ]
+      },
+      "2026-10-18": {
+        "updatedAt": "2026-10-18T04:00:00.000Z",
+        "entries": [
+          {
+            "topicId": "A first-1",
+            "threadId": "thread-a",
+            "title": "A first",
+            "category": "conflict",
+            "iso3": [
+              "FRA"
+            ],
+            "sources": [
+              {
+                "outlet": "S1",
+                "url": "https://s1.test/a"
+              },
+              {
+                "outlet": "S2",
+                "url": "https://s2.test/a"
+              }
+            ]
+          }
+        ]
+      },
+      "2026-10-19": {
+        "updatedAt": "2026-10-19T04:00:00.000Z",
+        "entries": [
+          {
+            "topicId": "B first-1",
+            "threadId": "thread-b",
+            "title": "B first",
+            "category": "conflict",
+            "iso3": [
+              "FRA"
+            ],
+            "sources": [
+              {
+                "outlet": "S1",
+                "url": "https://s1.test/a"
+              }
+            ]
+          }
+        ]
+      },
+      "2026-10-20": {
+        "updatedAt": "2026-10-20T04:00:00.000Z",
+        "entries": [
+          {
+            "topicId": "A second-1",
+            "threadId": "thread-a",
+            "title": "A second",
+            "category": "conflict",
+            "iso3": [
+              "FRA",
+              "DEU"
+            ],
+            "sources": [
+              {
+                "outlet": "S1",
+                "url": "https://s1.test/a"
+              }
+            ]
+          }
+        ]
+      }
+    }
   }
 }

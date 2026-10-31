@@ -9,8 +9,8 @@ const Ajv = requireFrontend('ajv');
 const dir = resolve(__dirname, '../schema/views');
 const load = (...p) => JSON.parse(readFileSync(resolve(dir, ...p), 'utf8'));
 const ajv = new Ajv({allErrors: true, strict: false});
-const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest', 'country', 'analyses-index', 'web-index', 'countries-index'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
-const examples = {story: ['story', 'story-alias', 'story-read'], index: ['index-active', 'index-all'], links: ['links', 'links-confirmed'], counts: ['counts'], manifest: ['manifest'], 'analyses-index': ['analyses-index'], 'web-index': ['web-index'], 'countries-index': ['countries-index']};
+const validate = Object.fromEntries(['story', 'index', 'links', 'counts', 'manifest', 'country', 'analyses-index', 'web-index', 'countries-index', 'weekly-index'].map((n) => [n, ajv.compile(load(`${n}.schema.json`))]));
+const examples = {story: ['story', 'story-alias', 'story-read'], index: ['index-active', 'index-all'], links: ['links', 'links-confirmed'], counts: ['counts'], manifest: ['manifest'], 'analyses-index': ['analyses-index'], 'web-index': ['web-index'], 'countries-index': ['countries-index'], 'weekly-index': ['weekly-index']};
 
 for (const [type, files] of Object.entries(examples)) {
   for (const file of files) {

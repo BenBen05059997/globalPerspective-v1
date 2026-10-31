@@ -1,8 +1,8 @@
 # newsSensitiveData
 
-The site's public REST read proxy: one handler, many `action` values. It serves topics, per-topic SUMMARY / PREDICTION / TRACE_CAUSE, today / archive / story reads, thread and country facts and history, corrections, web and systems analysis, briefs, forecasts and the track record, previews, RSS, and the parked economy and markets actions. It is read-only. Any action not in the code answers 400 without database or network work.
+The site's public REST read proxy: one handler, many `action` values. It serves topics, per-topic SUMMARY / PREDICTION / TRACE_CAUSE, today / archive / story reads, thread and country facts and history, corrections, web and systems analysis, briefs, forecasts and the track record, previews, RSS. It is read-only. The economy and markets actions are removed (decision 0049) and answer 400. Any action not in the code answers 400 without database or network work.
 
-Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `daily_brief`, `latest_daily_brief`, `weekly_brief` (`week=YYYY-MM-DD` for a past published brief), `weekly_markets`, `narrative_thread`, `archive_range`, `thread_analysis`, `country_intelligence`, `country_facts`, `country_history`, `corrections_feed`, `prediction_snapshot`, `systems_analysis`, `web_index`, `prediction_track_record`, `economic_impact`, `economic_impact_list`, `economic_top_movers`, `country_preview`, `thread_preview`, `markets_global`, `markets_country`, `markets_history`. Which page calls which is in the group README.
+Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `daily_brief`, `latest_daily_brief`, `weekly_brief` (`week=YYYY-MM-DD` for a past published brief), `narrative_thread`, `archive_range`, `thread_analysis`, `country_intelligence`, `country_facts`, `country_history`, `corrections_feed`, `prediction_snapshot`, `systems_analysis`, `web_index`, `prediction_track_record`, `country_preview`, `thread_preview`. Which page calls which is in the group README.
 
 ## Deployment
 - Deployed name `newsSensitiveData-dev` (the `-dev` name is prod) · runtime `nodejs22.x` · 85 s · 512 MB · group `read-api` (scripts/functions.json)
@@ -11,8 +11,8 @@ Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `da
 
 ## Reads / writes (read-only: no DynamoDB or S3 writes)
 - DynamoDB `TOPICS_DDB_TABLE`: `latest` (`TOPICS_CACHE_ITEM_ID`), `today-archive`, `archive#YYYY-MM-DD`
-- DynamoDB `SUMMARIZE_PREDICT_TABLE`: `TOPIC#`, `THREAD#`, `COUNTRY#` (SKs incl. `DRIFT#`, `DRIFTLOG#`), `FACTS#`, `SYSTEMS#`, `ECON#THREAD#`, `DAILY_BRIEF#`, `WEB#INDEX`; weekly brief and markets via paginated Scan for published rows
-- DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): `PRED#`, `SEED#`, `SAMPLE#`, `Q#`; `GlobalPerspectiveMarkets` (hard-coded name); `USERS_DDB_TABLE` (`tier` only)
+- DynamoDB `SUMMARIZE_PREDICT_TABLE`: `TOPIC#`, `THREAD#`, `COUNTRY#` (SKs incl. `DRIFT#`, `DRIFTLOG#`), `FACTS#`, `SYSTEMS#`, `DAILY_BRIEF#`, `WEB#INDEX`; weekly brief via paginated Scan for published rows
+- DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): `PRED#`, `SEED#`, `SAMPLE#`, `Q#`; `USERS_DDB_TABLE` (`tier` only)
 - S3 `WORLD_BUCKET`: `TRACK_RECORD_KEY` (default `predictions/track_record.json`, built by newsPredictionsSnapshot)
 - External: Google securetoken certs (`FIREBASE_PROJECT_ID`) for optional member-depth checks
 - No model key is needed. The live env still carries many names the code no longer reads (for example `GROK_*`, `XAI_API_KEY`, `MAPBOX_GEOCODING_KEY`, Firebase service-account fields); pruning them is an operator change after checking the deployed code.

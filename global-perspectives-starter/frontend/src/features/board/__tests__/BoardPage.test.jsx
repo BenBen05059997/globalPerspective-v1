@@ -124,8 +124,10 @@ describe('connect and the verdict card', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     const card = await screen.findByText('Medium link');
     expect(card).toBeInTheDocument();
-    expect(screen.getByText(/Shared actors:/).parentElement.textContent).toContain('iran, oman');
-    expect(screen.getByText(/Shared places:/).parentElement.textContent).toContain('Iran');
+    const both = screen.getByRole('region', { name: 'Who sits in both' });
+    expect(both.textContent).toContain('iran');
+    expect(both.textContent).toContain('oman');
+    expect(both.textContent).toContain('Iran');
     expect(screen.getByText(/Shared outlets:/).parentElement.textContent).toMatch(/Reuters.*coverage artefact possible/);
     expect(screen.getByText(/Scores moved together:/).parentElement.textContent).toMatch(/1 pairing, up to 2 days apart.*one pairing is not a pattern/);
     expect(screen.getByText('no analysis row for thread thread-b')).toBeInTheDocument();
@@ -165,7 +167,7 @@ describe('connect and the verdict card', () => {
     await selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await screen.findByText('Medium link');
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Drop it' }));
     expect(screen.queryByText('Medium link')).toBeNull();
     expect(document.querySelector('.board-string')).toBeNull();
   });

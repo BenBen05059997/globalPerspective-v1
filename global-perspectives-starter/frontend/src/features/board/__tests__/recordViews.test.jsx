@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import RecordPinDetails from '../components/RecordPinDetails.jsx';
 import BoardWeekly from '../components/BoardWeekly.jsx';
 import UnsettledZone from '../components/UnsettledZone.jsx';
@@ -25,8 +26,8 @@ describe('weekly', () => {
     expect(boardWeek(board, { a: story }, {}, new Date('2026-11-30T12:00:00Z')).branches).toHaveLength(0);
   });
   it('renders recorded verdicts and confirmed links', () => {
-    render(<BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
-      links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', direction: 'drives', mechanism: 'Recorded transmission', week: '2026-W43', cites: [] }] } }} now={new Date('2026-10-21T12:00:00Z')} />);
+    render(<MemoryRouter><BoardWeekly board={{ recordAvailable: true, pins: [{ pinId: 'p1', lastMoved: '2026-10-21' }], strings: [] }} stories={{ a: story }}
+      links={{ 'story-a': { confirmedLinks: [{ otherThreadId: 'b', direction: 'drives', mechanism: 'Recorded transmission', week: '2026-W43', cites: [] }] } }} now={new Date('2026-10-21T12:00:00Z')} /></MemoryRouter>);
     expect(screen.getByText(/Premiums rise again: happened · 20 Oct/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded transmission/)).toBeInTheDocument();
   });

@@ -13,7 +13,7 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
-| newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; GlobalPerspectivePredictionLog; GlobalPerspectiveMarkets; UserTable `tier`; S3 `predictions/track_record.json`; Mapbox; DeepSeek | Nothing | [README](newsSensitiveData/README.md) |
+| newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; GlobalPerspectivePredictionLog; UserTable `tier`; S3 `predictions/track_record.json`; Mapbox; DeepSeek | Nothing | [README](newsSensitiveData/README.md) |
 | newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | Function URL (no schedule) | NewsCache `latest`; SavedItems; UserPrefs; BreakingAlerts; UserTable `tier` | UserPrefs | [README](newsRecommend/README.md) |
 | newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL, or AppSync resolver | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
 | newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
@@ -28,14 +28,13 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 4. The map feature reads the S3 world store through the Cloudflare Worker `/data/*` route instead; that path does not touch this group.
 
 Proxy actions and the feature that calls each (found by grep in `frontend/src`):
-- Home and Today (`/today`): `topics`, `today`, `corrections_feed`, `economic_impact_list`.
+- Home and Today (`/today`): `topics`, `today`, `corrections_feed`.
 - Thread pages (`/weekly/thread/:id`): `narrative_thread`, `thread_analysis`, `systems_analysis`, `web_index`, `summary`, `prediction`, `trace_cause`, `archive_range`.
-- Country pages (`/weekly/country/:name`): `country_intelligence`, `country_facts`, `country_history`, `markets_country`.
+- Country pages (`/weekly/country/:name`): `country_intelligence`, `country_facts`, `country_history`.
 - Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot`.
 - Track record (`/track-record`): `prediction_track_record`.
-- Economy (`/economy`, parked): `economic_impact`, `economic_top_movers`, `markets_global`, `markets_history`, `weekly_markets`.
 - Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`.
-- Served but with no frontend caller found: `country_preview`, `thread_preview`, `rss` (GET). Any other action, including the removed dossier, pair, overview, research and geocode actions, answers 400 without touching data.
+- Served but with no frontend caller found: `country_preview`, `thread_preview`, `rss` (GET). Any other action, including the removed dossier, pair, overview, research, geocode, economy and markets actions, answers 400 without touching data.
 
 Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`, `list_alerts`, `get_alert` (both serve only operator-confirmed breaking alerts), `unsubscribe`; newsSavedItems `save_item`, `unsave_item`, `get_saved_items`.
 

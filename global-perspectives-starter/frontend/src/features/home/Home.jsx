@@ -15,13 +15,10 @@ import { reportFetchError } from '@/shared/api/errorSink';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import EditorialShell from '@/shared/ui/EditorialShell';
-import SeverityBadge from '@/shared/ui/SeverityBadge';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
 import LedeBand from '@/features/home/components/LedeBand';
 import { BreakingStrip } from '@/features/breaking';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
-import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
-import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
 import '@/features/home/AIComponents.css';
@@ -72,12 +69,6 @@ function getTopicId(t, idx) {
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
-  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 100 }, { enabled: !ECONOMY_PARKED });
-  const disruptionByThread = React.useMemo(() => {
-    const m = {};
-    for (const d of allDisruptions) { if (d.scopeId) m[d.scopeId] = d; }
-    return m;
-  }, [allDisruptions]);
   const { entries: archiveEntries } = useTodayArchive();
 
   const filteredArchiveEntries = React.useMemo(() => {
@@ -92,8 +83,8 @@ function Home() {
   const categorizedTopics = React.useMemo(() => categorizeTopicsByRegion(topics), [topics]);
 
   const lede = React.useMemo(
-    () => composeTopicsLede({ topics, disruptions: allDisruptions }),
-    [topics, allDisruptions],
+    () => composeTopicsLede({ topics }),
+    [topics],
   );
 
   // Trust strip — the "why this is different" proof, built ONLY from real returned
@@ -458,15 +449,6 @@ function Home() {
                   <CategoryTag category={t.category} />
                   {t.x_trending && <span className="home-flag-tag home-flag-tag--trend">Trending</span>}
                   {t.urgency === 'high' && <span className="home-flag-tag">Urgent</span>}
-                  {!ECONOMY_PARKED && t.threadId && disruptionByThread[t.threadId]?.severity && (
-                    <Link
-                      to={storyHref(t.threadId, { tab: 'economy' })}
-                      className="home-topic-sev"
-                      title="Economic disruption — click for analysis"
-                    >
-                      <SeverityBadge level={disruptionByThread[t.threadId].severity} size="sm" />
-                    </Link>
-                  )}
                   {country && (
                     <EntityLink kind="country" id={country} className="home-topic-country-link">{country}</EntityLink>
                   )}
@@ -479,10 +461,10 @@ function Home() {
                   }
                   {t.threadId && (
                     <Link
-                      to={storyHref(t.threadId, !ECONOMY_PARKED && disruptionByThread[t.threadId] ? { tab: 'economy' } : undefined)}
+                      to={storyHref(t.threadId)}
                       className="home-thread-badge"
                     >
-                      {!ECONOMY_PARKED && disruptionByThread[t.threadId] ? 'Economic impact →' : 'Story arc →'}
+                      Story arc →
                     </Link>
                   )}
                 </h3>

@@ -37,24 +37,6 @@
       "deployBlocked": false
     },
     {
-      "functionName": "newsEconomicImpact",
-      "logGroupName": "/aws/lambda/newsEconomicImpact",
-      "sources": [
-        "backend/economy-parked/newsEconomicImpact/src/index.js"
-      ],
-      "parked": true,
-      "deployBlocked": false
-    },
-    {
-      "functionName": "newsEconomicQuality",
-      "logGroupName": "/aws/lambda/newsEconomicQuality",
-      "sources": [
-        "backend/economy-parked/newsEconomicQuality/src/index.js"
-      ],
-      "parked": true,
-      "deployBlocked": false
-    },
-    {
       "functionName": "newsImpactAudit",
       "logGroupName": "/aws/lambda/newsImpactAudit",
       "sources": [
@@ -70,15 +52,6 @@
         "backend/pipeline/newsInvokeGemini/src/index.js"
       ],
       "parked": false,
-      "deployBlocked": false
-    },
-    {
-      "functionName": "newsPairIntelligence",
-      "logGroupName": "/aws/lambda/newsPairIntelligence",
-      "sources": [
-        "backend/economy-parked/newsPairIntelligence/src/index.js"
-      ],
-      "parked": true,
       "deployBlocked": false
     },
     {
@@ -161,15 +134,6 @@
         "backend/distribution/newsWeeklyBrief/src/index.js"
       ],
       "parked": false,
-      "deployBlocked": false
-    },
-    {
-      "functionName": "newsWeeklyMarkets",
-      "logGroupName": "/aws/lambda/newsWeeklyMarkets",
-      "sources": [
-        "backend/economy-parked/newsWeeklyMarkets/src/index.js"
-      ],
-      "parked": true,
       "deployBlocked": false
     }
   ],
@@ -305,30 +269,6 @@
     },
     {
       "filterName": "LLM-insufficient-balance",
-      "logGroupName": "/aws/lambda/newsEconomicImpact",
-      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "LlmInsufficientBalance",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "LLM-insufficient-balance",
-      "logGroupName": "/aws/lambda/newsEconomicQuality",
-      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "LlmInsufficientBalance",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "LLM-insufficient-balance",
       "logGroupName": "/aws/lambda/newsImpactAudit",
       "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
       "metricTransformations": [
@@ -342,18 +282,6 @@
     {
       "filterName": "LLM-insufficient-balance",
       "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
-      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "LlmInsufficientBalance",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "LLM-insufficient-balance",
-      "logGroupName": "/aws/lambda/newsPairIntelligence",
       "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
       "metricTransformations": [
         {
@@ -462,18 +390,6 @@
     {
       "filterName": "LLM-insufficient-balance",
       "logGroupName": "/aws/lambda/newsWeeklyBrief",
-      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "LlmInsufficientBalance",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "LLM-insufficient-balance",
-      "logGroupName": "/aws/lambda/newsWeeklyMarkets",
       "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
       "metricTransformations": [
         {

@@ -28,7 +28,6 @@ import from here; here imports from no feature and not from `app/`.
 - Record views: `api/recordViews.js` (`fetchRecordView`, `fetchTrackRecordView` (`track-record.json`, decision 0044), `makeRecordViews(getView)` -> `fetchStoryView` (follows a merged story to its survivor), `fetchLinksView`, `fetchCountryView` (`^[A-Z]{3}$`), `fetchCounts`, and the many-at-once files `fetchAnalysesIndex`, `fetchWebIndexView`, `fetchCountriesIndex` under `index/`), read from the Worker's `/data/record/views/`; a 404 is null. Used by the board and the story page. `api/storyAnalysis.js` `fetchStoryAnalysis(id)`: one story's analysis from the story view's `analysis` (`lib/viewAnalysis.js`), else the `thread_analysis` action.
 - Error sink: `api/errorSink.js` (`installErrorSink`, `reportBoundaryError`, `reportFetchError`). It posts to `window.CLIENT_ERRORS_ENDPOINT` (the `newsClientErrors` Lambda); read the log with `node scripts/errors.mjs`.
 - LLM providers: `lib/llmProviders.js` (pure data for `analysis-studio/lib/llm.js` and the eval harness; no page uses it).
-- Economy switch: `lib/economyFlag.js` (`ECONOMY_PARKED`).
 
 ## Rules
 - Shared never imports `features/` or `app/` (eslint and `quality/check_feature_cycles.mjs`).

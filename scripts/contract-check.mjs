@@ -58,24 +58,6 @@ const SCHEMAS = {
     }),
   }),
 
-  markets_global: z.object({
-    success: z.literal(true),
-    data: z.object({
-      fx: z.object({
-        rates: z.record(z.string(), z.number()),
-        base: z.string(),
-      }),
-      commodities: z.record(z.string(), z.union([z.number(), z.string()])),
-    }),
-  }),
-
-  // The /economy + disruption links are built from scopeId — a missing/renamed
-  // scopeId here is BOTH a class-4 drift AND a class-1 dead-link source.
-  economic_impact_list: z.object({
-    success: z.literal(true),
-    data: z.array(z.object({ scopeId: z.string() })),
-  }),
-
   // data is null when no brief has been generated yet (valid empty state, class 6).
   // When present, risingThread.threadId must be a string (the /daily bug field).
   daily_brief: z.object({
@@ -152,25 +134,18 @@ const SCHEMAS = {
   console.log(`  ${EP}`);
   console.log('='.repeat(72));
 
-  // A real threadId for the parameterized actions.
-  let tid = '';
-  try {
-    const list = await call('economic_impact_list', {});
-    tid = (list?.data?.[0]?.scopeId) || (list?.data?.[0]?.threadId) || '';
-  } catch { /* ignore */ }
-
-  // A real topicId to probe the prediction contract.
+  // A real topicId (prediction contract) and threadId (parameterized actions) from today's topics.
   let topicId = '';
+  let tid = '';
   try {
     const t = await call('topics', {});
     const first = t?.data?.topics?.[0];
     topicId = first?.topicId || first?.id || '';
+    tid = (t?.data?.topics || []).find((x) => x?.threadId)?.threadId || '';
   } catch { /* ignore */ }
 
   const PAYLOADS = {
     topics: {},
-    markets_global: {},
-    economic_impact_list: {},
     daily_brief: {},
     narrative_thread: { threadId: tid },
     thread_analysis: { threadIds: [tid] },

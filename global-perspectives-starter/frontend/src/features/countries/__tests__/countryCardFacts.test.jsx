@@ -8,7 +8,6 @@ const factsHolder = vi.hoisted(() => ({ value: null }));
 vi.mock('@/features/countries/hooks/useCountryFacts.js', () => ({ useCountryFacts: () => ({ facts: factsHolder.value }) }));
 vi.mock('@/features/countries/hooks/useCountryIntelligence.js', () => ({ useCountryIntelligence: () => ({ intelligence: {}, loading: false }) }));
 vi.mock('@/features/countries/hooks/useCountryHistory.js', () => ({ useCountryHistory: () => ({ snapshots: [], driftNotes: [], loading: false }) }));
-vi.mock('@/features/countries/hooks/useMarketsCountry.js', () => ({ useMarketsCountry: () => ({ data: null }) }));
 const deadlinesHolder = vi.hoisted(() => ({ value: [] }));
 vi.mock('@/features/countries/hooks/useCountryStories.js', () => ({ useCountryStories: () => ({ stories: [], deadlines: deadlinesHolder.value, topicIdToThreadId: new Map(), loading: false }) }));
 

@@ -8,7 +8,6 @@ let topicsState;
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/data/useGeminiTopics', () => ({ useGeminiTopics: () => topicsState }));
 vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () => ({ entries: [] }) }));
-vi.mock('@/shared/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));

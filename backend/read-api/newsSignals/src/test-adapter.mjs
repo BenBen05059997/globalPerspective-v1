@@ -11,7 +11,7 @@ function ok(name, cond) {
   if (cond) { pass++; console.log(`  ✓ ${name}`); }
   else { fail++; console.error(`  ✗ ${name}`); }
 }
-const { normConfidence, severityBand, toEntityCountry, scoreToSeverity, instrumentKind } = adapter._internals;
+const { normConfidence, severityBand, toEntityCountry, scoreToSeverity } = adapter._internals;
 
 console.log('normalization');
 ok('confidence enum high → 0.9', normConfidence('high') === 0.9);
@@ -30,27 +30,6 @@ ok('null name → null', toEntityCountry(null) === null);
 console.log('scoreToSeverity (breaking)');
 ok('score 5 → ~100', scoreToSeverity(5) === 100);
 ok('score 0/negative → null', scoreToSeverity(0) === null && scoreToSeverity(-1) === null);
-ok('instrumentKind', instrumentKind('BTC') === 'crypto' && instrumentKind('BRENT') === 'commodity');
-
-console.log('fromEconomicImpact');
-const econ = adapter.fromEconomicImpact({
-  scopeId: 'thread-oil-a1', hasImpact: true, headline: 'Oil spikes on strait threat',
-  severity: 'severe', severityScore: 82, confidence: 'high', horizon: 'days',
-  mechanism: 'Closure risk to the Strait of Hormuz lifts crude [topic-x].',
-  instruments: [{ instrumentId: 'BRENT', direction: 'up', magnitude: 'large', rationale: 'supply risk [topic-x]', citedTopicIds: ['topic-x'] }],
-  winners: [{ name: 'Saudi Arabia', type: 'country', why: 'higher export revenue' }],
-  losers: [{ name: 'India', type: 'country', why: 'import bill' }],
-  marketContext: { BRENT: { value: 82.4, asOf: '2026-06-23T00:00:00Z' } },
-  citedTopicIds: ['topic-x'], generatedAt: '2026-06-23T08:00:00Z',
-}, { emittedAt: '2026-06-23T09:00:00Z' });
-ok('econ type', econ.type === 'economic_impact');
-ok('econ severity passthrough + band', econ.severity === 82 && econ.severity_band === 'high');
-ok('econ confidence normalized', econ.confidence === 0.9);
-ok('econ instruments entity has kind', econ.entities.instruments[0].id === 'BRENT' && econ.entities.instruments[0].kind === 'commodity');
-ok('econ winners/losers → country entities', econ.entities.countries.some(c => c.iso === 'SAU') && econ.entities.countries.some(c => c.iso === 'IND'));
-ok('econ signal_id deterministic + dated', econ.signal_id === 'sig_2026-06-23_economic_impact_thread-oil-a1');
-ok('econ market snapshot carried', econ.analysis.market_snapshot.BRENT.value === 82.4);
-ok('econ tombstone → null', adapter.fromEconomicImpact({ hasImpact: false }) === null);
 
 console.log('fromPredictionLog (calibration stamp = the differentiator)');
 const fc = adapter.fromPredictionLog({
@@ -85,9 +64,9 @@ ok('breaking type + severity from score', ba.type === 'breaking' && ba.severity 
 ok('breaking carries reasons', ba.analysis.reasons[0].includes('country risk'));
 
 console.log('envelope invariants');
-ok('version is 1', econ.version === '1' && fc.version === '1');
-ok('confidence always present (number|null)', [econ, fc, ci, ba].every(s => s.confidence === null || typeof s.confidence === 'number'));
-ok('entities always shaped', [econ, fc, ci, ba].every(s => Array.isArray(s.entities.countries) && Array.isArray(s.entities.categories)));
+ok('version is 1', fc.version === '1');
+ok('confidence always present (number|null)', [fc, ci, ba].every(s => s.confidence === null || typeof s.confidence === 'number'));
+ok('entities always shaped', [fc, ci, ba].every(s => Array.isArray(s.entities.countries) && Array.isArray(s.entities.categories)));
 
 console.log('signalStore (S3 projection + list — S8·T1)');
 const baseEnv = {

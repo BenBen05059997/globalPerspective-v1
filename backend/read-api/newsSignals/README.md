@@ -1,6 +1,6 @@
 # newsSignals
 
-PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is DISABLED. BUILD (`{ action: 'build' }`) maps economic-impact records, the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
+PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads it. Code, Function URL and key table stay; `TriggerSignalsBuild` is DISABLED. BUILD (`{ action: 'build' }`) maps the prediction log, country intelligence and confirmed breaking alerts into the v1 signal envelope (`src/signalAdapter.js`) and writes one S3 document. SERVE (HTTP GET) answers `/v1/signals`, `/v1/signals/{signal_id}` and `/v1/track-record` for a valid API key, with a per-minute rate limit; free keys see signals delayed by `FREE_DELAY_HOURS` (default 24).
 
 ## Deployment
 - Deployed name `newsSignals` · runtime `nodejs22.x` · group `read-api` (scripts/functions.json)
@@ -9,7 +9,7 @@ PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads i
 
 ## Reads / writes
 - S3: `WORLD_BUCKET`, writes `signals/latest.json` + `signals/snapshots/<YYYY-MM-DD>.json` (prefix `SIGNALS_PREFIX`); SERVE reads latest.json, cached by ETag. Not exposed via the Worker `/data/*` route.
-- DynamoDB: `SUMMARIZE_PREDICT_TABLE` scans `ECON#THREAD#`/`ECONOMIC_IMPACT` (hasImpact) and `COUNTRY#`/`COUNTRY_INTELLIGENCE`; `PREDICTION_LOG_TABLE` full scan; `BREAKING_ALERTS_TABLE` status confirmed only (operator-confirmed alerts); `API_KEYS_TABLE` (GlobalPerspectiveApiKeys) GetItem on `keyHash` plus `RL#<hash>#<minute>` rate-limit counters (TTL 120s)
+- DynamoDB: `SUMMARIZE_PREDICT_TABLE` scans `COUNTRY#`/`COUNTRY_INTELLIGENCE`; `PREDICTION_LOG_TABLE` full scan; `BREAKING_ALERTS_TABLE` status confirmed only (operator-confirmed alerts); `API_KEYS_TABLE` (GlobalPerspectiveApiKeys) GetItem on `keyHash` plus `RL#<hash>#<minute>` rate-limit counters (TTL 120s)
 - Other env names: `SITE_URL`, `SIGNAL_TTL_DAYS` (default 120, event_time retention)
 
 ## Minting a key

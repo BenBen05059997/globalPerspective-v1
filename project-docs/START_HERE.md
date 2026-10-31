@@ -60,6 +60,6 @@ Open smaller items:
 - Record data: over-joined threads (us-court ae75a8 holds about 20 unrelated entries) and duplicate stories the review cannot merge without neighbours (Amazon 35a31e/c5bce9/da86ee, Canadian base fire 6822c0/bf3dd0); the review flags off-story entries as assignment proposals in the readings for the operator to apply.
 - Backend hygiene: `newsAnalyze` and `newsPolarBilling` (each with sandbox) stay on `nodejs20.x`; `deepseek-v4-flash` default string in `newsPostDevTo`; deployed `newsAnalyze` differs from the repo by about 126 lines (parked credits code): leave it or remove the Lambda (billing code: needs yes).
 
-Parked (each has a decision record): analysis credits (0002); economy, jobs DISABLED and surfaces hidden, `newsMarketsData` still runs (0009, 0031); impact audit (0015); Signals API (0032); breaking and drift email rules DISABLED until the first follower; the hidden economy tab on story pages is undecided.
+Parked (each has a decision record): analysis credits (0002); impact audit (0015); Signals API (0032, without the economic signal); breaking and drift email rules DISABLED until the first follower. Retired 2026-10-31 (0049): the economy product (page, story tab, FX box, markets actions, five Lambdas); its AWS resources and DynamoDB data wait for the coordinator's deletes.
 
 Open decisions: the hosting cutover (confirmed, steps pending); newsAnalyze versus repo; selection go; whether to merge the unmerged weekly branches; the five test users.

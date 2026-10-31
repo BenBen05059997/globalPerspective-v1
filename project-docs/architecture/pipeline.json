@@ -24,7 +24,6 @@
     "backend/distribution": { "stages": [9], "part": "the weekly email, the old weekly brief, breaking alerts and social posts", "timeline": "writes no facts or readings; consumers moving to the weekly report and the record views" },
     "backend/monitoring": { "stages": [10], "part": "model guard, freshness monitor, error digest, audits", "timeline": "writes no facts or readings; Run objects are the record's own signal and the operator does not want pipeline alarms (2026-10-31)" },
     "backend/membership-studio": { "stages": [9], "part": "billing (Polar) and the retired Studio Lambda", "timeline": "writes no facts or readings; reads none" },
-    "backend/economy-parked": { "stages": [], "part": "parked: markets and economic impact", "timeline": "parked; writes no facts or readings; reads none" },
     "features/home": { "stages": [9], "part": "the today page (/today)", "timeline": "reads today's topics from raw tables; target: the daily facts and counts" },
     "features/map": { "stages": [9], "part": "the home map (/)", "timeline": "reads world/latest.json from the map pipeline; target: a map view of the facts" },
     "features/threads": { "stages": [9], "part": "the story page and the stories list", "timeline": "rebuilds story history from raw tables; target: the story view (facts plus readings)" },
@@ -36,7 +35,6 @@
     "features/account": { "stages": [9], "part": "the account desk", "timeline": "reads country history and prefs from raw tables; target: board and record views" },
     "features/breaking": { "stages": [9], "part": "breaking-alert redirects and the bell", "timeline": "reads breaking alerts; not a record view" },
     "features/static": { "stages": [9], "part": "static pages", "timeline": "reads the daily brief only; not a record view" },
-    "features/analysis-studio": { "stages": [9], "part": "shared-run pages of the retired Studio", "timeline": "reads none of the record" },
-    "features/economy": { "stages": [], "part": "parked economy page", "timeline": "parked; reads none" }
+    "features/analysis-studio": { "stages": [9], "part": "shared-run pages of the retired Studio", "timeline": "reads none of the record" }
   }
 }

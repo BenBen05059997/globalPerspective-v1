@@ -2,7 +2,7 @@
 
 // newsWeeklyBrief — generates a professional, analyst-grade WEEKLY INTELLIGENCE BRIEF
 // by synthesizing the week's already-generated, already-cited analysis (THREAD_ANALYSIS,
-// COUNTRY_INTELLIGENCE, ECONOMIC_IMPACT). The LLM connects + elevates grounded analysis;
+// COUNTRY_INTELLIGENCE). The LLM connects + elevates grounded analysis;
 // it never mints new facts. Writes a `status:'draft'` record for one-click human approval
 // (weekly/review.js) before publish/send. See WEEKLY_DIGEST_PLAN.md.
 //
@@ -55,8 +55,7 @@ const generateBrief = async (event = {}) => {
   const threadCtx = [];
   for (const t of threads) {
     const ta = await getRecord(`THREAD#${t.threadId}`, 'THREAD_ANALYSIS');
-    const econ = await getRecord(`ECON#THREAD#${t.threadId}`, 'ECONOMIC_IMPACT');
-    threadCtx.push({ ...t, analysis: ta, econ: econ && econ.hasImpact !== false ? econ : null });
+    threadCtx.push({ ...t, analysis: ta });
   }
 
   // Top countries this week (by article volume), enriched with country intelligence.
@@ -268,9 +267,6 @@ function buildSignalsPrompt(weekKey, threadCtx) {
   const threadBlock = threadCtx.map((t, i) => {
     const a = t.analysis || {};
     const outlets = (t.sources || []).map((s) => s.source || s.title).filter(Boolean).slice(0, 5).join(', ');
-    const econ = t.econ
-      ? `\n  Economic read (already computed): ${(t.econ.instruments || []).map((x) => `${x.instrumentId} ${x.direction}/${x.magnitude}`).slice(0, 4).join(', ') || 'flagged'}`
-      : '';
     return [
       `SIGNAL ${i + 1} [threadId: ${t.threadId}] — ${a.threadTitle || t.latestTitle}`,
       `  Latest development: ${t.latestTitle} (as of ${t.latestDate})`,
@@ -278,7 +274,6 @@ function buildSignalsPrompt(weekKey, threadCtx) {
       a.trajectory ? `  Trajectory (already assessed): ${a.trajectory}` : '',
       Array.isArray(a.watchQuestions) && a.watchQuestions.length ? `  Watch questions: ${a.watchQuestions.join(' | ')}` : '',
       outlets ? `  Covered by: ${outlets}` : '',
-      econ,
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 

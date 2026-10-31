@@ -2,8 +2,7 @@
   "_meta": {
     "description": "Operator-verified facts about countries. Injected into country intelligence prompts as the highest-authority source. Use this to correct or supplement archive data that is stale or missing pre-window context.",
     "instructions": "Each entry should be operator-verified (via trusted news source, primary document, etc.). If you do not know a fact, leave the field out — do not guess. The 'verified' flag indicates whether the entry has been manually reviewed.",
-    "lastReviewed": "2026-04-18",
-    "sync": "Keep this file in sync with ../newsPairIntelligence/src/country_facts.json"
+    "lastReviewed": "2026-04-18"
   },
   "Iran": {
     "verified": true,

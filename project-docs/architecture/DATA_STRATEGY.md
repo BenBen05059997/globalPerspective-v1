@@ -111,7 +111,7 @@ Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `
 - Tiers are `low | moderate | elevated | high` (`src/shared/lib/riskTiers.js`). There is no `critical`; the map renders "critical" as `tier:high && escalating:true`.
 - Per-situation detail is in `situations/state/<key>.json`, fetched on click, where `<key>` is the situation id made URL- and S3-safe (`gdacs#FL#1104081` becomes `gdacs_FL_1104081`). The tracker (writer) and `worldData.js` (reader) apply the same sanitization.
 - The Worker returns `Access-Control-Allow-Origin` on every `/data/*` response including 404 and 401, so a missing object reads as a clean 404 client-side, not a CORS failure.
-- The scrubber fetches `world/YYYY/MM/DD/HHMM.json`. `state` is one of `emerging | escalating | peak | cooling | closed`. `systemic` is empty while the economy is parked (decision 0009).
+- The scrubber fetches `world/YYYY/MM/DD/HHMM.json`. `state` is one of `emerging | escalating | peak | cooling | closed`. `systemic` is empty (the economy product is retired, decision 0049).
 - `signals/` is excluded from the Worker allow-list (`DATA_ALLOWED`): it is the key-gated Signals product and stays behind the `newsSignals` Function URL.
 
 ## 6. Migration of existing tables (incremental, never big-bang)
@@ -123,7 +123,7 @@ Flipping a proxy (`newsSensitiveData`) action from DynamoDB to S3 is backend-onl
 | `UserTable`, `SavedItems`, `UserPrefs`, `ApiKeys`, `Shares` | stay DynamoDB |
 | `GlobalPerspectiveSituations`, `Signals`, `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | done: moved to S3 (§4), tables dropped |
 | `GlobalPerspectivePredictionLog` | stays DynamoDB as the per-record store (the resolver appends write-once `Q#` rows; a correction appends `VERDICT#<n>`); `/track-record` reads the `predictions/track_record.json` aggregate |
-| `GlobalPerspectiveMarkets` | not started (target `markets/YYYY/MM/DD/HH.json`); economy parked, `newsMarketsData` still writes hourly |
+| `GlobalPerspectiveMarkets` | retired (decision 0049): no writer, no reader; the table is deleted after an operator yes |
 | `GlobalPerspectiveClientErrors` | not started (target append-only `logs/errors/YYYY/MM/DD.jsonl`) |
 | `GlobalPerspectiveBreakingAlerts` | not started; `review.js` mutates rows, so it waits for an inbox-event review flow |
 | `NewsCache`, `SummarizeAndPredict` | last: their world data moves into the record (facts and notes), then readers flip one action at a time, then the rows retire |

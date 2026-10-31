@@ -35,13 +35,6 @@ vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
 vi.mock('@/features/countries/hooks/useCountryHistory', () => ({
   useCountryHistory: () => ({ snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false, loading: false, error: null }),
 }));
-vi.mock('@/features/countries/hooks/useMarketsCountry', () => ({
-  useMarketsCountry: () => ({ data: null, loading: false, error: null }),
-}));
-const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
-vi.mock('@/shared/hooks/useDisruptionsList', () => ({
-  useDisruptionsList: (...args) => useDisruptionsListMock(...args),
-}));
 vi.mock('@/shared/contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
@@ -68,29 +61,5 @@ describe('CountryPage — views', () => {
       fireEvent.click(tab);
       expect(tab.getAttribute('aria-selected')).toBe('true');
     }
-  });
-});
-
-describe('CountryPage — economy parked (2026-09-28)', () => {
-  it('does not fetch disruptions, and never renders the Economic Disruption rail', async () => {
-    useDisruptionsListMock.mockClear();
-    // Even a hook that misbehaves and returns data anyway must not surface it —
-    // the render is gated on ECONOMY_PARKED directly, not just on empty data.
-    useDisruptionsListMock.mockReturnValue({
-      data: [{ scopeId: 'thread-a', severity: 'severe', instruments: [] }],
-      loading: false, error: null,
-    });
-    const CountryPage = (await import('@/features/countries/CountryPage')).default;
-    render(
-      <MemoryRouter initialEntries={['/weekly/country/United%20States']}>
-        <Routes><Route path="/weekly/country/:countryName" element={<CountryPage />} /></Routes>
-      </MemoryRouter>,
-    );
-    expect(useDisruptionsListMock).toHaveBeenCalledWith(
-      expect.anything(),
-      { enabled: false },
-    );
-    expect(screen.queryByText('Economic Disruption')).not.toBeInTheDocument();
-    useDisruptionsListMock.mockReturnValue({ data: [], loading: false, error: null });
   });
 });

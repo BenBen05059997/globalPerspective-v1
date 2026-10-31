@@ -15,7 +15,6 @@
 //     threadUrl,                   // link to the thread deep-dive on the site
 //     summary,                     // lead topic SUMMARY (bullet text) — optional
 //     prediction,                  // lead topic PREDICTION text — optional
-//     economic,                    // { direction, magnitude } — optional
 //     sources: [{ title, url }],   // real article links
 //     editorNote,                  // human-written commentary added at review time — optional
 //     unsubscribeUrl,              // one-click unsubscribe (compliance) — optional
@@ -43,10 +42,6 @@ function escapeHtml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function directionArrow(dir) {
-  return dir === 'up' ? '▲' : dir === 'down' ? '▼' : '◆';
 }
 
 // Normalize the structured TRACE_CAUSE object into the few fields worth showing in an
@@ -104,11 +99,6 @@ function renderText(story) {
 
   const prediction = clean(story.prediction);
   if (prediction) { lines.push('OUR READ — WHAT COMES NEXT'); lines.push(prediction); lines.push(''); }
-
-  if (story.economic && story.economic.direction && story.economic.magnitude) {
-    lines.push(`MARKET IMPACT: ${story.economic.magnitude} move, ${story.economic.direction}`);
-    lines.push('');
-  }
 
   if (story.threadUrl) { lines.push(`Full analysis: ${story.threadUrl}`); lines.push(''); }
 
@@ -189,7 +179,6 @@ function renderHtml(story) {
   const note = clean(story.editorNote);
   const summary = clean(story.summary);
   const prediction = clean(story.prediction);
-  const econ = story.economic && story.economic.direction && story.economic.magnitude ? story.economic : null;
   const sources = Array.isArray(story.sources) ? story.sources.filter((s) => s && s.url) : [];
 
   // Hidden preheader (inbox preview text).
@@ -229,13 +218,6 @@ ${tagLine ? `<p style="margin:0 0 10px;font-family:${SANS};font-size:12px;font-w
 
   if (prediction) {
     blocks.push(`<tr><td style="padding:24px 32px 0;">${sectionLabel('Our read — what comes next')}${blockToHtml(prediction)}</td></tr>`);
-  }
-
-  if (econ) {
-    blocks.push(`<tr><td style="padding:22px 32px 0;">
-<span style="display:inline-block;padding:7px 13px;border:1px solid ${C.line};border-radius:6px;font-family:${SANS};font-size:13px;font-weight:700;color:${C.ink};">
-${directionArrow(econ.direction)}&nbsp; Market impact: ${escapeHtml(econ.magnitude)} move, ${escapeHtml(econ.direction)}</span>
-</td></tr>`);
   }
 
   if (story.threadUrl) {

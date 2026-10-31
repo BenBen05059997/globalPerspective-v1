@@ -1,8 +1,8 @@
 {
   "note": "Per-file count of hand-made tier chips / tab lists / section headers outside shared/ui (see quality/check_shared_blocks.mjs). Counts may only fall; lower them with --lower after moving to the shared block.",
   "totals": {
-    "sectionHeader": 5,
-    "tabs": 5
+    "sectionHeader": 3,
+    "tabs": 4
   },
   "files": {
     "features/account/Account.css": {
@@ -12,15 +12,6 @@
       "tabs": 1
     },
     "features/briefings/components/PhoneBriefingMode.jsx": {
-      "tabs": 1
-    },
-    "features/economy/components/economyBlocks.css": {
-      "sectionHeader": 1
-    },
-    "features/economy/EconomyPage.css": {
-      "sectionHeader": 1
-    },
-    "features/economy/EconomyPage.jsx": {
       "tabs": 1
     },
     "features/threads/components/PhoneStoryMode.jsx": {

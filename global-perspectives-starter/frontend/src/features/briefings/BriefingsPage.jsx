@@ -71,8 +71,6 @@ function PresentMode({ deck, dateParam, weekParam }) {
 //   read (default)  the daily brief as a long-form read          ?date=YYYY-MM-DD
 //   weekly          the weekly signals brief as a long-form read  ?week=YYYY-MM-DD
 //   present         the slide deck (map + slides + editions)      ?deck=weekly, ?date=, ?week=
-// `?from=markets` (the retired /weekly-markets redirect) adds a one-line paused note; briefings
-// never carries a markets line while economy stays parked (REDESIGN_MASTER_PLAN.md §3.6).
 // Old addresses (/daily, /daily/:date, /weekly-brief) redirect here (app/LegacyRedirects.jsx).
 export default function BriefingsPage() {
   const [searchParams] = useSearchParams();
@@ -82,7 +80,6 @@ export default function BriefingsPage() {
   const dateParam = dateKeyOrNull(searchParams.get('date'));
   const weekParam = dateKeyOrNull(searchParams.get('week'));
   const deck = searchParams.get('deck') === 'weekly' ? 'weekly' : 'daily';
-  const fromMarkets = searchParams.get('from') === 'markets';
 
   // Switching mode keeps the edition that applies to the new mode (date for read, week for weekly).
   const setMode = useCallback((next) => {
@@ -95,11 +92,6 @@ export default function BriefingsPage() {
 
   return (
     <div className="bm-page">
-      {fromMarkets && (
-        <div className="bm-markets-note">
-          Weekly markets briefings are paused while the economy section is parked — no markets line here.
-        </div>
-      )}
       <div className="bm-page-head">
         <Tabs variant="segmented" idBase="brf-mode" label="Briefing mode" tabs={MODES} active={mode} onChange={setMode} />
       </div>

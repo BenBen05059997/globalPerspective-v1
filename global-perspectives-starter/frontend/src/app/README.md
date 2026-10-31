@@ -34,7 +34,6 @@ retired addresses. Every page itself lives in a folder under `features/`.
 | `/track-record`, `/track-record/text` | `track-record` | `TrackRecordPage`, `TrackRecordText` |
 | `/board`, `/board/:boardId` | `board` | `BoardPage` (members' personal board) |
 | `/analyze/s/:id` | `analysis-studio` | `SharedAnalysisPage` (read-only shared run) |
-| `/economy` | `economy` | `EconomyPage` (parked, hidden) |
 | `/signin`, `/auth/callback`, `/account`, `/membership` | `account` | `SignIn`, `AuthCallback`, `Account`, `MembershipPage` |
 | `/about`, `/contact`, `/disclosures`, `/privacy`, `/whitepaper` | `static` | `AboutContact`, `Contact`, `Disclosures`, `PrivacyTerms`, `WhitepaperPage` |
 | `/__boom` | app | deliberate render crash for the smoke test (not linked) |
@@ -42,7 +41,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 
 ## Legacy redirects (client fallback; the Cloudflare Worker sends real 301s)
 `/map` -> `/` (keeps the query, `MapRedirect.jsx`); `/daily`, `/daily/:dateKey`, `/weekly-brief` -> `/briefings` modes;
-`/weekly-markets` -> `/briefings?from=markets`; `/spider-demo` -> `/weekly?view=web`; `/breaking` -> `/`;
+`/spider-demo` -> `/weekly?view=web`; `/breaking` -> `/`;
 `/breaking/:id` -> the alert's story or `/`; `/analyze?stories=<id,...>` -> the first id's story page when it is a thread id (`thread-...`), else `/weekly/countries` (`AnalyzeRedirect`). All in `LegacyRedirects.jsx`.
 
 ## Import direction

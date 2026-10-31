@@ -16,7 +16,7 @@ function ok(name, cond) {
 console.log('significance.scoreStory');
 
 // An ordinary, low-signal story must NOT clear the threshold (silence is correct).
-const ordinary = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 10, econMagnitude: null });
+const ordinary = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 10 });
 ok('ordinary story stays below threshold', !isBreaking(ordinary));
 
 // STAGE-1: country risk is CAPPED at 0.5 of its normalized signal (RISK_CAP=50).
@@ -24,18 +24,18 @@ ok('risk(88) caps at 0.5', risk(88) === 0.5);
 ok('risk(100) caps at 0.5', risk(100) === 0.5);
 ok('risk(40) is uncapped (0.4)', risk(40) === 0.4);
 
-// A high-risk but otherwise routine story (1 source-thin, single angle, no econ) must
+// A high-risk but otherwise routine story (1 source-thin, single angle) must
 // NOT clear on standing country risk alone — it previously did under the old weight.
-const highRiskRoutine = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 88, econMagnitude: null });
+const highRiskRoutine = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 88 });
 ok('high-risk routine story stays below threshold', !isBreaking(highRiskRoutine));
 
-// A genuine multi-signal story (broad, well-sourced, market-moving) still clears.
-const multiSignal = scoreStory({ sourceCount: 9, topicCount: 4, riskScore: 30, econMagnitude: 'large' });
+// A genuine multi-signal story (broad, well-sourced) still clears.
+const multiSignal = scoreStory({ sourceCount: 9, topicCount: 4, riskScore: 30 });
 ok('genuine multi-signal story still clears', isBreaking(multiSignal));
 
 // A war/crisis story now needs REAL event signals too — high risk only tilts it.
-// (Well-sourced + multi-angle + market-moving in a high-risk country.)
-const crisis = scoreStory({ sourceCount: 8, topicCount: 4, riskScore: 85, econMagnitude: 'large' });
+// (Well-sourced + multi-angle in a high-risk country.)
+const crisis = scoreStory({ sourceCount: 8, topicCount: 4, riskScore: 85 });
 ok('high-risk crisis with real signals clears threshold', isBreaking(crisis));
 
 console.log('significance.regionRiskScore — category-aware (dominance fix)');
@@ -54,22 +54,10 @@ ok('scalar-only record falls back to blended riskScore', regionRiskScore({ riskS
 ok('axis selection lowers an economic story\'s risk input', regionRiskScore(warCountry, 'economy') < regionRiskScore(warCountry, 'conflict'));
 ok('crisis reasons mention country risk', crisis.reasons.some((r) => r.includes('risk')));
 
-// A widely-covered, multi-angle market shock should clear via popularity+breadth+econ.
-const shock = scoreStory({ sourceCount: 9, topicCount: 4, riskScore: 30, econMagnitude: 'large' });
-ok('broad market shock clears threshold', isBreaking(shock));
-ok('shock reasons mention market impact', shock.reasons.some((r) => r.includes('market')));
-
 // Monotonicity: more sources never lowers the score.
-const a = scoreStory({ sourceCount: 3, topicCount: 1, riskScore: 0, econMagnitude: null });
-const b = scoreStory({ sourceCount: 8, topicCount: 1, riskScore: 0, econMagnitude: null });
+const a = scoreStory({ sourceCount: 3, topicCount: 1, riskScore: 0 });
+const b = scoreStory({ sourceCount: 8, topicCount: 1, riskScore: 0 });
 ok('more sources → higher (or equal) score', b.score >= a.score);
-
-// Magnitude ordering: large > moderate > small > none.
-const mNone = scoreStory({ econMagnitude: null }).score;
-const mSmall = scoreStory({ econMagnitude: 'small' }).score;
-const mMod = scoreStory({ econMagnitude: 'moderate' }).score;
-const mLarge = scoreStory({ econMagnitude: 'large' }).score;
-ok('magnitude ordering large>moderate>small>none', mLarge > mMod && mMod > mSmall && mSmall > mNone);
 
 // Empty input must not throw and must be below threshold.
 const empty = scoreStory({});
@@ -96,7 +84,7 @@ const escalating = scoreStory({ sourceCount: 9, topicCount: 6, riskScore: 70, ve
 ok('escalating continuation still clears the raised bar', escalating.score >= effectiveThreshold(SIGNIFICANCE_THRESHOLD, true));
 
 console.log(`\nthreshold = ${SIGNIFICANCE_THRESHOLD}`);
-console.log('  ordinary:', ordinary.score, '| crisis:', crisis.score, '| shock:', shock.score);
+console.log('  ordinary:', ordinary.score, '| crisis:', crisis.score);
 
 console.log('\nrender.renderAlert');
 
@@ -108,7 +96,6 @@ const full = renderAlert({
   threadUrl: 'https://globalperspective.net/weekly/thread/thread-hormuz-abc',
   summary: '- Iran announced a partial closure.\n- Brent jumped on the open.',
   prediction: 'Expect coordinated naval response within days.',
-  economic: { direction: 'up', magnitude: 'large' },
   traceCause: {
     proximate: { what: 'New sanctions took effect', when: 'this week' },
     contributing: [{ factor: 'Talks stalled', evidence: 'Vienna lapsed' }],
@@ -123,7 +110,6 @@ ok('subject is prefixed Breaking:', full.subject.startsWith('Breaking:'));
 ok('body includes editor note', full.text.includes('story to watch'));
 ok('body includes WHAT HAPPENED', full.text.includes('WHAT HAPPENED'));
 ok('body includes OUR READ', full.text.includes('OUR READ'));
-ok('body includes market impact', full.text.includes('MARKET IMPACT'));
 ok('body includes source link', full.text.includes('reuters.com/x'));
 ok('text includes HOW WE GOT HERE (trace)', full.text.includes('HOW WE GOT HERE'));
 ok('text trace shows root cause', full.text.includes('Root cause:') && full.text.includes('no substitute'));

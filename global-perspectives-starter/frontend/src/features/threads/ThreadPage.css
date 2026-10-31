@@ -36,7 +36,6 @@
   line-height: var(--leading-normal);
   color: var(--text-body);
 }
-.tp-fallback-econ { margin-bottom: var(--space-6); }
 .tp-fallback-analysis { margin-top: var(--space-1); }
 .tp-fallback-text { margin: 0 0 var(--space-5); font-size: var(--text-md); line-height: 1.6; color: var(--text-head); }
 .tp-notfound { padding-top: var(--space-16); text-align: center; }

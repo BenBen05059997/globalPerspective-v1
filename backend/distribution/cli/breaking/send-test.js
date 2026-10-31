@@ -39,7 +39,6 @@ const sample = renderAlert({
   prediction:
     'A coordinated naval escort response is likely within days. If transit is not restored ' +
     'inside two weeks, expect sustained upward pressure on oil and a hit to Asian importers.',
-  economic: { direction: 'up', magnitude: 'large' },
   traceCause: {
     proximate: { what: 'A new round of sanctions targeting Iranian oil exports took effect this week.', when: 'this week' },
     contributing: [

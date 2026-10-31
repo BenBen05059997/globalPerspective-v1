@@ -120,18 +120,6 @@ async function maxRegionRisk(regions, category) {
   return max;
 }
 
-// Max economic magnitude across the story's instruments (ECONOMIC_IMPACT).
-async function econMagnitude(threadId) {
-  const rec = await getRecord(`ECON#THREAD#${threadId}`, 'ECONOMIC_IMPACT');
-  if (!rec || rec.hasImpact === false || !Array.isArray(rec.instruments)) return null;
-  const order = { small: 1, moderate: 2, large: 3 };
-  let best = null;
-  for (const inst of rec.instruments) {
-    if (order[inst.magnitude] && (!best || order[inst.magnitude] > order[best])) best = inst.magnitude;
-  }
-  return best ? { magnitude: best, direction: rec.instruments[0]?.direction || rec.direction || null } : null;
-}
-
 // Already alerted within the dedupe window?
 function recentlyAlerted(rec, now) {
   if (!rec || !rec.alertedAt) return false;
@@ -162,8 +150,6 @@ async function assembleStory(group, scored) {
   const summaryRec = await getRecord(`TOPIC#${leadId}`, 'SUMMARY');
   const predictionRec = await getRecord(`TOPIC#${leadId}`, 'PREDICTION');
   const traceRec = await getRecord(`TOPIC#${leadId}`, 'TRACE_CAUSE');
-  const econ = await econMagnitude(group.threadId);
-
   // SUMMARY is markdown; PREDICTION is sometimes stored as a JSON blob — only surface
   // human-readable markdown, never dump raw JSON into an email.
   const summaryText = summaryRec?.contentFormat === 'json' ? '' : summaryRec?.content || '';
@@ -195,7 +181,6 @@ async function assembleStory(group, scored) {
     summary: summaryText,
     prediction: predictionText,
     traceCause,
-    economic: econ ? { direction: econ.direction, magnitude: econ.magnitude } : null,
     sources,
     outletCount: distinctOutlets(lead.sources),
     sourceCount: group.sourceCount,
@@ -204,7 +189,7 @@ async function assembleStory(group, scored) {
 }
 
 // ── Verify step (LLM-as-judge) — STUB, Phase 3. ─────────────────────────────────
-// Will mirror newsEconomicQuality: a DIFFERENT model family (Gemini) judges whether
+// Will use a DIFFERENT model family (Gemini) judges whether
 // the flagged story is real and our analysis matches the cited sources, returning a
 // verdict + confidence. Until built, proposals carry verify:{ status:'pending' } and a
 // human is the only gate.
@@ -235,7 +220,6 @@ async function writeProposal(group, scored, story, verify, email) {
       summary: story.summary || '',
       prediction: story.prediction || '',
       traceCause: story.traceCause || null,
-      economic: story.economic || null,
       sources: story.sources || [],
     },
     cycle: now.toISOString(),
@@ -297,7 +281,6 @@ async function run() {
   const candidates = [];
   for (const g of groups) {
     const riskScore = await maxRegionRisk(g.regions, g.category);
-    const econ = await econMagnitude(g.threadId);
     const ta = await getRecord(`THREAD#${g.threadId}`, 'THREAD_ANALYSIS');
     const priorSize = Number(ta?.entryCount) || 0;
     const velocity = priorSize > 0 ? Math.max(0, g.topicCount - priorSize) : g.topicCount;
@@ -306,7 +289,6 @@ async function run() {
       sourceCount: g.sourceCount,
       topicCount: g.topicCount,
       riskScore,
-      econMagnitude: econ?.magnitude || null,
       velocity,
     });
     if (scored.score >= effectiveThreshold(THRESHOLD, isContinuation)) {

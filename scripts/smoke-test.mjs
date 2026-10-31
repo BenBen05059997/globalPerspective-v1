@@ -8,7 +8,7 @@
  *                                     Pages 404.html SPA-fallback path) and the
  *                                     app re-boots instead of going blank
  *   (c) Key content renders         — a route-specific selector with REAL data
- *                                     appears (e.g. /economy shows leaderboard rows)
+ *                                     appears (e.g. /weekly/countries shows country cards)
  *   (d) Data / network OK           — no failed document/script/style loads,
  *                                     no 5xx (aborted in-flight XHRs are ignored)
  *   (e) Accessibility (axe-core)    — no serious/critical WCAG violations
@@ -16,8 +16,7 @@
  *                                     [object Object] / error-boundary text
  * It also writes a screenshot per route+viewport for quick visual eyeballing.
  *
- * Two aggregate checks run after the per-route table:
- *   • ECONOMY STORY-LINK INTEGRITY — every /economy disruption opens a full thread (class 1)
+ * Aggregate checks run after the per-route table:
  *   • MAP LAYER RENDER — /map's data-backed layers (Pulse, Connections) must each draw
  *                        >0 SVG elements, guarding the "silent empty render" bug (class 7)
  *   • VISUAL PAINT — each route's key content region must render visible "ink" and not
@@ -107,7 +106,6 @@ const STATIC_ROUTES = [
   { name: 'Briefings',   path: '/briefings?mode=read', content: ['.daily-masthead'] },
   { name: 'WeeklyBrief', path: '/briefings?mode=weekly', content: ['.wb-sig'] },
   { name: 'Present',     path: '/briefings?mode=present', content: ['.bm-root'] },
-  { name: 'Economy',     path: '/economy',          content: ['.ep-row-l1'] },
   { name: 'Weekly',      path: '/weekly',           content: ['.weekly-feed', '.arc-dots', '.weekly-empty-state'], skipPaint: true },
   { name: 'CountryList', path: '/weekly/countries', content: ['.clp-card'] },
   { name: 'About',       path: '/about',            content: ['.card'] },
@@ -343,61 +341,6 @@ async function discover(browser, listPath, linkSelector) {
 const passed = (r) =>
   r.loads && r.content && r.refresh && r.network && r.consoleClean && r.a11y && r.garbageClean;
 
-// ---- /economy story-arc link integrity ----------------------------------
-// /economy lists "economic disruptions" that deep-link to /weekly/thread/:id.
-// Those threads can be older than the 30-day rolling archive, so ThreadPage
-// must rebuild them from the durable 90-day `narrative_thread` endpoint.
-// Regression guard: every economy story link must resolve to the FULL thread
-// page (`.tp-content-tabs` only renders on the full-render path — it comes
-// AFTER both the "Story arc not found" dead-end and the analysis-only fallback
-// return early), never the dead-end and never the aged-out fallback.
-const STORY_DEAD_TEXT = 'Story arc not found';
-const STORY_FALLBACK_TEXT = 'aged out of the';
-
-const STORY_LINK_CAP = Number(process.env.SMOKE_STORY_CAP) || 20;
-
-async function checkEconomyStoryLinks(browser, cap = STORY_LINK_CAP) {
-  const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
-  const page = await context.newPage();
-  const out = { total: 0, ok: 0, dead: [] };
-  try {
-    await page.goto(urlFor('/economy'), { waitUntil: 'load', timeout: 30000 });
-    await page.locator('a[href*="/weekly/thread/"]').first()
-      .waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT }).catch(() => {});
-    const hrefs = await page.locator('a[href*="/weekly/thread/"]').evaluateAll(
-      (els) => els.map((e) => e.getAttribute('href')).filter(Boolean)
-    );
-    // dedupe by thread path (ignore query string), cap to bound runtime
-    const seen = new Set();
-    const paths = [];
-    for (const h of hrefs) {
-      let p;
-      try { p = new URL(h, BASE).pathname.replace(/^\/globalPerspective-v1/, ''); }
-      catch { p = h; }
-      if (seen.has(p)) continue;
-      seen.add(p);
-      paths.push(p);
-    }
-    out.total = paths.length;
-    for (const p of paths.slice(0, cap)) {
-      await page.goto(urlFor(p), { waitUntil: 'load', timeout: 30000 });
-      const rendered = await page.locator('.tp-content-tabs').first()
-        .waitFor({ state: 'visible', timeout: CONTENT_TIMEOUT })
-        .then(() => true).catch(() => false);
-      if (rendered) { out.ok++; continue; }
-      const body = await page.evaluate(() => document.body.innerText || '');
-      const reason = body.includes(STORY_DEAD_TEXT) ? 'dead-end (Story arc not found)'
-        : body.includes(STORY_FALLBACK_TEXT) ? 'analysis-only fallback (timeline aged out)'
-        : 'no full thread page rendered';
-      out.dead.push({ path: p, reason });
-    }
-  } catch (e) {
-    out.error = (e.message || String(e)).slice(0, 160);
-  }
-  await context.close();
-  return out;
-}
-
 // ---- /map layer-render integrity (class 7) -------------------------------
 // Class 7 = "silent empty render": a data-backed, toggleable view draws ZERO
 // items though the data is present (a mis-keyed or over-aggressive client
@@ -519,11 +462,6 @@ async function checkErrorBoundary(browser) {
     }
   }
 
-  process.stdout.write(`  • ${'EconomyStoryLinks'.padEnd(22)} /economy → /weekly/thread/* ... `);
-  const story = await checkEconomyStoryLinks(browser);
-  const storyOk = !story.error && story.dead.length === 0;
-  console.log(storyOk ? `PASS (${story.ok}/${Math.min(story.total, STORY_LINK_CAP)})` : 'FAIL');
-
   process.stdout.write(`  • ${'MapLayers'.padEnd(22)} /map pulse + connections render ... `);
   const mapLayers = await checkMapLayers(browser);
   const mapEmpty = mapLayers.ran
@@ -604,17 +542,6 @@ async function checkErrorBoundary(browser) {
     [...new Set(minorA11y.map((v) => `  ${v.page}: ${v.id} [${v.impact}] (${v.n})`))].forEach((l) => console.log(l));
   }
 
-  // ---- economy story-link integrity ----
-  console.log(`\n${'-'.repeat(90)}\nECONOMY STORY-LINK INTEGRITY (every /economy disruption must open a full thread page)`);
-  if (story.error) {
-    console.log(`  error: ${story.error}`);
-  } else {
-    const checked = Math.min(story.total, STORY_LINK_CAP);
-    console.log(`  ${story.ok}/${checked} resolved to a full thread page (of ${story.total} unique links)`);
-    story.dead.forEach((d) => console.log(`  DEAD: ${d.path} — ${d.reason}`));
-  }
-  const storyFailed = story.error ? 1 : story.dead.length;
-
   // ---- /map layer-render integrity (class 7) ----
   console.log(`\n${'-'.repeat(90)}\nMAP LAYER RENDER (class 7 — data-backed layers must not silently render empty)`);
   if (!mapLayers.ran || mapLayers.error) {
@@ -663,11 +590,10 @@ async function checkErrorBoundary(browser) {
   }
   const ebFailed = ebOk ? 0 : 1;
 
-  const totalChecks = results.length + 4;
-  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed + paintFailed + ebFailed;
+  const totalChecks = results.length + 3;
+  const totalFailed = failed + mapFailed + paintFailed + ebFailed;
   console.log(`\n${'='.repeat(72)}`);
   console.log(totalFailed === 0 ? `ALL ${totalChecks} CHECKS HEALTHY` : `${totalFailed}/${totalChecks} CHECKS FAILED`);
-  if (storyFailed) console.log(`  (${storyFailed} economy story link${storyFailed === 1 ? '' : 's'} dead)`);
   if (mapFailed) console.log(`  (/map: ${mapEmpty.length ? mapEmpty.join(' + ') + ' layer empty' : 'did not load'})`);
   if (paintFailed) console.log(`  (${paintBlank.length} region${paintBlank.length === 1 ? '' : 's'} painted blank: ${paintBlank.map((r) => r.name).join(', ')})`);
   if (ebFailed) console.log(`  (error boundary: ${!eb.caught ? 'white-screened instead of catching' : 'crash not reported to sink'})`);

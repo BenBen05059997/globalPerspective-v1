@@ -11,8 +11,6 @@
  * Lambda) or differ by design; when one is edited and its sibling isn't, the two
  * silently diverge with no build step or import graph to catch it. This script
  * is the catch:
- *   (a) country_facts.json              — structural JSON compare, excluding
- *                                          only _meta.description / _meta.sync
  *   (b) entity-normalization block      — require() both + compare exports
  *                                          (normalizeEntity source; ACTOR_ALIASES
  *                                          and the two regexes are NOT exported
@@ -78,40 +76,6 @@ function textDiff(labelA, contentA, labelB, contentB) {
   const d = unifiedDiff(fa, fb);
   fs.rmSync(dir, { recursive: true, force: true });
   return d;
-}
-
-/** Deep-compare two JSON-parsed values, excluding `description`/`sync` keys
- *  anywhere in the tree (those must merely exist on both sides, not match). */
-function jsonStructuralDiff(a, b, pathPrefix = '') {
-  const diffs = [];
-  const walk = (x, y, p) => {
-    const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
-    if (isObj(x) && isObj(y)) {
-      const keys = new Set([...Object.keys(x), ...Object.keys(y)]);
-      for (const k of keys) {
-        const kp = p ? `${p}.${k}` : k;
-        if (k === 'description' || k === 'sync') {
-          const hasA = Object.prototype.hasOwnProperty.call(x, k);
-          const hasB = Object.prototype.hasOwnProperty.call(y, k);
-          if (!hasA || !hasB) diffs.push(`${kp}: must exist on both sides (present: A=${hasA} B=${hasB})`);
-          continue;
-        }
-        if (!(k in x)) { diffs.push(`${kp}: missing on A`); continue; }
-        if (!(k in y)) { diffs.push(`${kp}: missing on B`); continue; }
-        walk(x[k], y[k], kp);
-      }
-    } else if (Array.isArray(x) && Array.isArray(y)) {
-      if (x.length !== y.length) {
-        diffs.push(`${p}: array length differs (A=${x.length} B=${y.length})`);
-        return;
-      }
-      x.forEach((v, i) => walk(v, y[i], `${p}[${i}]`));
-    } else if (JSON.stringify(x) !== JSON.stringify(y)) {
-      diffs.push(`${p}: A=${JSON.stringify(x)} !== B=${JSON.stringify(y)}`);
-    }
-  };
-  walk(a, b, pathPrefix);
-  return diffs;
 }
 
 /** Marker-based extraction for symbols that exist in source but are NOT
@@ -180,14 +144,6 @@ function checkCountryIdentity(backendPath = abs(`${SHARED}/countries.js`), front
   return checkMarkedCore(backendPath, frontendPath, 'country resolver core');
 }
 
-function checkCountryFacts(pathA, pathB) {
-  const a = JSON.parse(fs.readFileSync(pathA, 'utf8'));
-  const b = JSON.parse(fs.readFileSync(pathB, 'utf8'));
-  const diffs = jsonStructuralDiff(a, b);
-  if (!diffs.length) return { pass: true };
-  return { pass: false, diff: diffs.join('\n') };
-}
-
 function checkEntityNormalization(classifierCorePath, entityNormalizePath) {
   // classifier-core.js is documented "NO AWS, NO network" — safe to require().
   // Clear any stale cache from a previous --self-test iteration (temp paths
@@ -247,13 +203,6 @@ function checkEntityNormalization(classifierCorePath, entityNormalizePath) {
 
 function livePairs() {
   return [
-    {
-      name: 'country_facts.json',
-      run: () => checkCountryFacts(
-        fnPath('newsCountryIntelligence', 'src/country_facts.json'),
-        fnPath('newsPairIntelligence', 'src/country_facts.json'),
-      ),
-    },
     { name: 'country identity (name tables + resolver core, backend vs frontend)', run: () => checkCountryIdentity() },
     {
       name: 'link rules (backend/shared/src/links.js vs frontend shared/lib/links.js)',
@@ -335,25 +284,6 @@ async function main() {
 
 function mkTmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'check-shared-sync-selftest-'));
-}
-
-async function selfTestCountryFacts() {
-  const dir = mkTmp();
-  const srcA = fnPath('newsCountryIntelligence', 'src/country_facts.json');
-  const a = path.join(dir, 'a.json');
-  const b = path.join(dir, 'b.json');
-  fs.copyFileSync(srcA, a);
-  const raw = fs.readFileSync(srcA, 'utf8');
-  const parsed = JSON.parse(raw);
-  // Perturb one character in a real (non-_meta) data value, keeping valid JSON.
-  const firstCountryKey = Object.keys(parsed).find((k) => k !== '_meta');
-  const country = parsed[firstCountryKey];
-  const factKey = Object.keys(country).find((k) => typeof country[k] === 'string');
-  if (factKey) country[factKey] = `${country[factKey]}x`;
-  fs.writeFileSync(b, JSON.stringify(parsed, null, 2));
-  const result = checkCountryFacts(a, b);
-  fs.rmSync(dir, { recursive: true, force: true });
-  return result;
 }
 
 async function selfTestCountryIdentity() {
@@ -440,7 +370,6 @@ async function selfTestShareModules() {
 async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
-    ['country_facts.json', selfTestCountryFacts],
     ['country identity', selfTestCountryIdentity],
     ['link rules', selfTestLinkRules],
     ['board rules', selfTestBoardRules],

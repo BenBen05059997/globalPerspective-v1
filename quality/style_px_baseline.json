@@ -1,9 +1,9 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 415,
-    "fontSize": 176,
-    "radius": 44
+    "spacing": 182,
+    "fontSize": 54,
+    "radius": 15
   },
   "files": {
     "app/App.jsx": {
@@ -20,21 +20,6 @@
     },
     "features/countries/components/CountryCardV2.css": {
       "spacing": 1
-    },
-    "features/economy/components/economyBlocks.css": {
-      "fontSize": 18,
-      "radius": 4,
-      "spacing": 39
-    },
-    "features/economy/components/WeeklyMarketsView.css": {
-      "fontSize": 26,
-      "radius": 4,
-      "spacing": 26
-    },
-    "features/economy/EconomyPage.css": {
-      "fontSize": 75,
-      "radius": 20,
-      "spacing": 157
     },
     "features/map/SituationHome.css": {
       "spacing": 14
@@ -69,9 +54,9 @@
       "fontSize": 1
     },
     "shared/ui/atoms.css": {
-      "fontSize": 14,
-      "radius": 4,
-      "spacing": 37
+      "fontSize": 11,
+      "radius": 3,
+      "spacing": 26
     },
     "shared/ui/blocks.css": {
       "fontSize": 9,

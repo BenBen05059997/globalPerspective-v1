@@ -22,8 +22,7 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
   `StaticSection` (prose block); styles in `StaticPage.css` (`sp-*` classes)
 - `AboutContact.jsx` - what the site does, how it works, source outlets, contact email, computed "paused since" note
 - `Contact.jsx` - contact cards (general, account/data, partnerships), all mailto links
-- `Disclosures.jsx` - AI content, liability, data sources, economic disruption analysis (still shown although
-  economy is parked), accuracy and bias, access and pricing, affiliate links; `PrivacyTerms.jsx` - privacy and terms
+- `Disclosures.jsx` - AI content, liability, data sources, accuracy and bias, access and pricing, affiliate links; `PrivacyTerms.jsx` - privacy and terms
 - `WhitepaperPage.jsx` - white paper Parts I-VI; uses the `sp-*` classes without the outer shell (local helpers)
 - Public API: no `index.js`; only `app/App.jsx` (and `app/__tests__/routes.test.jsx`) import the pages by path.
 - Imports from other features: none. Shared: `ui/Card`, `ui/SectionHeader`, `ui/Button`, `hooks/useDailyBrief`,

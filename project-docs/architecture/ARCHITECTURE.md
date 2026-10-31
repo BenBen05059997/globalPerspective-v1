@@ -114,7 +114,7 @@ Country names are canonical at the writers (United States, DR Congo, UAE; `resol
 ### Frontend: `global-perspectives-starter/frontend/`
 React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `src/app/`: routing (`App.jsx`), redirects for retired URLs, layout and chrome, the error boundary.
-- `src/features/<name>/`: 13 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `economy`, `home`, `map`, `static`, `threads`, `track-record`, `weekly`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `weekly` is the planned analyst-weekly page and has no route yet. `/weekly`'s Countries section is `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as a prop so `threads` never imports `countries`. Routes: `App.jsx`.
+- `src/features/<name>/`: 13 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `static`, `threads`, `track-record`, `weekly`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `weekly` is the planned analyst-weekly page and has no route yet. `/weekly`'s Countries section is `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as a prop so `threads` never imports `countries`. Routes: `App.jsx`.
 - `src/features/<name>/index.js`: a feature's public API, only what other features and `app/` import (route pages are not in it; `App.jsx` lazy-loads them by path). `account`, `analysis-studio`, `static` and `weekly` have none.
 - `src/shared/`: `api/restProxy.js` (the one client for the proxy and the Function-URL endpoints), `contexts/AuthContext.jsx`, `styles/` tokens, `lib/` pure helpers, `hooks/` shared data hooks, `ui/` shared blocks, `map/` the map drawing kit.
 - `worker/` + `wrangler.jsonc`: the Workers Static Assets site (`globalperspective-site`), prepared but not the production path.
@@ -130,7 +130,7 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `scripts/`: `lambda.sh` (diff, package, deploy, rollback one Lambda, driven by functions.json), `audit-lambda-drift.sh`, `errors.mjs`, and on-demand checks (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`, `situations-log.mjs`).
 - `quality/`: the frontend verify gate (`verify_pages.sh` and ratchets such as `check_color_literals.mjs`, `check_shared_blocks.mjs`, `check_docs.mjs`), eval harnesses.
 - `predictions/`: `settle-correct.js` (list settled and due questions; correct a verdict with a reason), `verify-draw.mjs`.
-- `backend/<group>/cli/`: operator CLIs next to their Lambdas: `distribution/cli/`, `pipeline/cli/threads.mjs` (list-joins, merge, split; print-only without `--apply`), `record/cli/` (recovery, actor reconciliation, assignment benchmark), `economy-parked/cli/`.
+- `backend/<group>/cli/`: operator CLIs next to their Lambdas: `distribution/cli/`, `pipeline/cli/threads.mjs` (list-joins, merge, split; print-only without `--apply`), `record/cli/` (recovery, actor reconciliation, assignment benchmark).
 - `deploy.sh` (repo root): frontend verify, build, package and release targets.
 
 ## Data flows
@@ -328,7 +328,7 @@ Active checks (the `scripts/` list above) are run by hand. There is no CI by des
 - No read paywall: content is free; membership buys following countries and deeper history.
 - No Amplify, no CI, no secrets manager (Lambda env holds secrets by choice).
 - No direct browser access to S3, and no public bucket.
-- Economy is parked (decision 0009): `newsEconomicImpact`, `newsEconomicQuality`, `newsWeeklyMarkets` and `newsPairIntelligence` rules are DISABLED, `/weekly-markets` redirects to `/briefings`, and the country FX box is labelled raw quotes (decision 0031). Still running: `newsMarketsData` (rules ENABLED) and the `/economy` route, reachable by URL though not in the nav.
+- No economy product (decision 0049, supersedes 0009 and 0031): no `/economy` route, no economy tab, FX box or markets read actions, and the economy Lambdas (`newsMarketsData`, `newsEconomicImpact`, `newsEconomicQuality`, `newsPairIntelligence`, `newsWeeklyMarkets`) are out of the repo. Their AWS resources and the data (`GlobalPerspectiveMarkets`, `ECON#THREAD#`, `PAIR#`, `WEEKLY_MARKETS#`) are deleted one yes at a time by the coordinator.
 
 ## Tables and storage
 DynamoDB tables in use: `NewsCache`, `SummarizeAndPredict`, `GlobalPerspectivePredictionLog`, `GlobalPerspectiveUserTable`, `GlobalPerspectiveUserPrefs`, `GlobalPerspectiveSavedItems`, `GlobalPerspectiveShares`, `GlobalPerspectiveBreakingAlerts`, `GlobalPerspectiveClientErrors`, `GlobalPerspectiveApiKeys`, `GlobalPerspectiveMarkets`, `NewsProject-linkedin-posts`. S3 prefixes, writers and IAM: [DATA_STRATEGY.md](DATA_STRATEGY.md). Story-web history is kept daily in S3 (`web/YYYY/MM/DD.json`).

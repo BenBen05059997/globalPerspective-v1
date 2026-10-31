@@ -148,7 +148,6 @@ const REDIRECTS = [
   ['/daily?utm_source=x', '/briefings?mode=read&utm_source=x'],
   ['/weekly-brief', '/briefings?mode=weekly'],
   ['/weekly-brief?utm_source=email', '/briefings?mode=weekly&utm_source=email'],
-  ['/weekly-markets', '/briefings?from=markets'],
   ['/spider-demo', '/weekly?view=web'],
   ['/map', '/'],
   ['/map?story=thread-a&layer=b', '/?story=thread-a&layer=b'],

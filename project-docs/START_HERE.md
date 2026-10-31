@@ -20,7 +20,6 @@ Done 2026-10-30/31:
 - Weekly review: prompt review-4 (no branch status from the model, chapter dates from cited facts, 6000-token cap, low-confidence links and operator-held aliases rejected; 0039 amendment 2026-10-31) passed the golden-week gates; live canary on 5 W43 stories; `TriggerRecordReview` ENABLED, `REVIEW_CONCURRENCY` 12. Story views and the board no longer carry `branchStatus` (status = verdict, else due date).
 - Legacy void job run live 2026-10-30: 2,451 void verdicts (`issued_before_method`) over 220 stories.
 - `TriggerFreshnessMonitor` re-enabled with its dedupe marker (env `FRESHNESS_STATE_BUCKET`, inline policy `freshnessStateMarker` on one key).
-- Alarms: DeepSeek 402 (13 callers), `newsStoryRecord` errors and not-run (25 h), review errors; all to `GlobalPerspectiveAlerts`.
 - Rebuild test (views only): `backend/record/newsStoryRecord/scripts/rebuild-test.js` rebuilt 1,252 of 1,252 live views from facts; it found 7 stale links files of merged stories, fixed (every story now gets a links view).
 - Step 4 map: only the board reads the record. Thread pages (entries, forks, links) can switch to views as is; home and weekly lists need entry summaries; track record needs a derived view; story analysis, drift, countries and briefs need new readings first; map and economy need a decision.
 
@@ -41,7 +40,7 @@ Next builds: the board artboards in order (graph, tree, zoom ladder, verdict, we
 
 Open smaller items:
 - Cloudflare: capture DNS/TLS/ruleset state, candidate upload, test host `next.globalperspective.net`, front-Worker `/blog` passthrough, observation window, add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS`.
-- Foundation leftovers (ARCHITECTURE_TIMELINE.md section 7): Run and 402 alarms, the rebuild test, parser moves to `world/`, the retire list, LatAm and SEA feeds, 2 of 83 `NewsProjectInvokeAgentLambda` tests failing on main.
+- Foundation leftovers (ARCHITECTURE_TIMELINE.md section 7): the full rebuild test (after step 4), parser moves to `world/`, the retire list, LatAm and SEA feeds, 2 of 83 `NewsProjectInvokeAgentLambda` tests failing on main.
 - Colour bugs still unverified: map labels clip at the right edge and Europe labels overlap; Alerts list and Intel feed show the same stories on home; the country list "Highest Risk" rail should sort by score (`features/countries/CountryListPage.jsx`; the default sort is by risk, the filtered case is unchecked).
 - Record data: over-joined threads (us-court ae75a8 holds about 20 unrelated entries) and duplicate stories the review cannot merge without neighbours (Amazon 35a31e/c5bce9/da86ee, Canadian base fire 6822c0/bf3dd0); the review flags off-story entries as assignment proposals in the readings for the operator to apply.
 - Backend hygiene: `newsAnalyze` and `newsPolarBilling` (each with sandbox) stay on `nodejs20.x`; `deepseek-v4-flash` default string in `newsPostDevTo`; deployed `newsAnalyze` differs from the repo by about 126 lines (parked credits code): leave it or remove the Lambda (billing code: needs yes).

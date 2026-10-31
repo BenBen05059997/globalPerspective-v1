@@ -254,7 +254,7 @@ next run catches up (idempotent per date and per period).
 
 ## 7. Open design items
 Design that is not built or not settled. Dated state (what is deployed, which rule is disabled) comes from AWS.
-- **Run alarms**: since 2026-10-31 alarms cover `LLM 402`, `newsStoryRecord` errors or no run in 25 h, and review errors (ARCHITECTURE.md, Monitoring). Still uncovered: an `ok` Run that reports `archiveDay: missing` or an empty day. The rest of `backend/monitoring/alarms/spec.json` (per-stage `GP-stage-*`) is a proposal, not applied. Two alert topics exist.
+- **Run alarms**: not wanted (operator, 2026-10-31). No alarm watches a missing `record/facts/DATE.jsonl`, a `started` or `archiveDay: missing` Run, an empty Run, or `LLM 402`; `backend/monitoring/alarms/spec.json` stays a proposal. Two alert topics exist (see ARCHITECTURE.md, Monitoring).
 - **Other stages swallow model errors**: only `newsInvokeGemini` and the agent fail the run on a model error (cause of the 28 archive days once lost). Others should follow.
 - **Map ingest drops unclassified articles silently**, and the tracker then closes pins for lack of data, so "no data" reads as "ended" (2026-10-20 audit, not re-checked).
 - **Review not yet running live**: until readings exist the reading fields of the views are `null` with a reason. The review's `select.js` reads raw `entry` facts by threadId and does not yet see placed (recovered) articles.

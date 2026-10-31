@@ -1,6 +1,6 @@
 # Pipeline alarm proposal
 
-`spec.json` is a reviewable configuration proposal, not an installer. None of its `GP-stage-*` alarms exist in CloudWatch. Applied separately on 2026-10-31: the `LlmInsufficientBalance` filter (13 log groups) with `GP-LLM-InsufficientBalance`, plus `GP-StoryRecord-Errors`, `GP-StoryRecord-NotRun` and `GP-RecordReview-Errors`, all to `GlobalPerspectiveAlerts` (ARCHITECTURE.md, Monitoring).
+`spec.json` is a reviewable configuration proposal, not an installer. None of its `GP-stage-*` alarms exist in CloudWatch. A 402 filter and record alarms were applied on 2026-10-31 and removed the same day: the operator does not want them.
 
 Stage numbers: the spec uses an 8-stage scheme (1 Ingest, 2 Stories, 3 Daily notes, 4 One reader, 5 Facts, 6 read APIs, 7 Delivery, 8 Watch), not the ten stages of `ARCHITECTURE_TIMELINE.md` §1b. Spec 1-5 are pipeline stages 1-5; spec 6 and 7 (read APIs, delivery) are pipeline stage 9; spec 8 (monitors) is pipeline stage 10. Pipeline stages 6 (Review), 7 (Views) and 8 (Weekly report) have no spec stage yet. Lane G never creates filters, alarms, topics,
 roles or subscriptions. Coordinator applies it after verifying deployed log groups/providers and notification routing.

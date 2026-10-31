@@ -12,6 +12,7 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
+const NR = require('./_shared/noteReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
@@ -33,6 +34,11 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, {
   marshallOptions: { removeUndefinedValues: true },
 });
 
+// NOTES_READS (decision 0053): the story analyses and country briefings are read from SummarizeAndPredict (ddb, default), the
+// record's notes (notes), or DynamoDB with differences logged [notes-compare] (compare).
+const src = NR.lambdaSource();
+const rows = NR.rowReaders(src, async (pk, sk) => (await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: sk } }))).Item || null);
+
 // ── Daily Brief: load enrichment data ───────────────────────────────────────
 
 async function loadThreadAnalyses(entries) {
@@ -41,10 +47,7 @@ async function loadThreadAnalyses(entries) {
   const analyses = {};
   await Promise.all(threadIds.slice(0, 20).map(async (tid) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
-      }));
+      const Item = await rows.thread(tid);
       if (Item) analyses[tid] = Item;
     } catch {}
   }));
@@ -59,10 +62,7 @@ async function loadCountryIntelligence(entries) {
   const intel = {};
   await Promise.all(countries.slice(0, 15).map(async (name) => {
     try {
-      const { Item } = await ddb.send(new GetCommand({
-        TableName: SUMMARY_TABLE,
-        Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
-      }));
+      const Item = await rows.country(name);
       if (Item && usableCountryRecord(name, Item)) intel[name] = Item;
     } catch {}
   }));
@@ -241,6 +241,7 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
 // ── Handler ─────────────────────────────────────────────────────────────────
 
 exports.handler = async (event) => {
+  src.reset();
   console.log('newsPostDevTo invoked', JSON.stringify(event).substring(0, 200));
 
   try {
@@ -360,3 +361,4 @@ function resp(statusCode, body) {
   };
 }
 module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
+module.exports.loadThreadAnalyses = loadThreadAnalyses;

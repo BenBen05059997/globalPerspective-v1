@@ -14,6 +14,7 @@ const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
+const NR = require('./_shared/noteReads');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -36,6 +37,11 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), 
   marshallOptions: { removeUndefinedValues: true },
 });
 
+// NOTES_READS (decision 0053): the story analyses and country briefings are read from SummarizeAndPredict (ddb, default), the
+// record's notes (notes), or DynamoDB with differences logged [notes-compare] (compare). A failed read still fails the run.
+const src = NR.lambdaSource();
+const rows = NR.rowReaders(src, (pk, sk) => getRecord(pk, sk));
+
 const generateBrief = async (event = {}) => {
   if (!TOPICS_TABLE || !SUMMARY_TABLE) return fail('Missing table config');
   if (!LLM_KEY) return fail('Missing LLM key (XAI_API_KEY)');
@@ -55,14 +61,14 @@ const generateBrief = async (event = {}) => {
   const threads = groupByThread(entries).slice(0, TOP_THREADS);
   const threadCtx = [];
   for (const t of threads) {
-    const ta = await getRecord(`THREAD#${t.threadId}`, 'THREAD_ANALYSIS');
+    const ta = await rows.thread(t.threadId);
     threadCtx.push({ ...t, analysis: ta });
   }
 
   // Top countries this week (by article volume), enriched with country intelligence.
   const countryCtx = [];
   for (const name of topCountries(entries, TOP_COUNTRIES)) {
-    const ci = await getRecord(`COUNTRY#${name}`, 'COUNTRY_INTELLIGENCE');
+    const ci = await rows.country(name);
     if (ci && usableCountryRecord(name, ci)) countryCtx.push({ name, ...ci }); // Batch 3 / F: real + < 30 days old
   }
 
@@ -145,6 +151,7 @@ const generateBrief = async (event = {}) => {
 };
 
 exports.handler = async (event = {}) => {
+  src.reset();
   try { return await generateBrief(event); }
   catch (error) {
     console.error('[pipeline-status] ' + JSON.stringify({ status: 'failed', reason: 'weekly-brief-failed', error: error.message }));

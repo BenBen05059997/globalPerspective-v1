@@ -9,6 +9,7 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `today-archive` and `archive#YYYY-MM-DD` (key `id`)
+- Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `notes`): the `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` reads come from the record's `story_analysis` and `country` notes instead (shared `noteReads.js` `rowReaders`; a failed read still fails the run); `compare` logs `[notes-compare]` differences. The role needs `s3:GetObject` on those prefixes.
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `WEEKLY_BRIEF#<weekKey>`/`WEEKLY_BRIEF` (ttl 180 days)
 - S3 world bucket, only when env `NOTES_PREFIX` is set (unset = nothing): the brief as a `weekly_brief` note under `<NOTES_PREFIX>notes/weekly_brief/` (decision 0048; best-effort, never fails the run; the DynamoDB put stays). Needs `s3:GetObject`/`PutObject` on `record/notes/weekly_brief/*` and its manifest. Live env has no `NOTES_PREFIX` (read 2026-10-31), so no note is written yet; the notes already in the record came from `backend/record/cli/backfill-brief-notes.mjs`.
 - Sends no email itself (`newsEmailSender` reads `WEEKLY_BRIEF#` for the weekly email).

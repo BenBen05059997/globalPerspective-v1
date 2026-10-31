@@ -1,0 +1,1 @@
+import{r as n}from"./index-Bry4CiC6.js";function r(t=!0){n.useEffect(()=>{if(!t||typeof document>"u")return;const e=document.createElement("meta");return e.setAttribute("name","robots"),e.setAttribute("content","noindex,nofollow"),e.setAttribute("data-gp-noindex","1"),document.head.appendChild(e),()=>{e.remove()}},[t])}export{r as u};

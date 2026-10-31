@@ -78,12 +78,21 @@ const comparable = (board) => {
   q.sampled.sort((x, y) => x.qid.localeCompare(y.qid));
   return q;
 };
-const viewQuestions = (view) => { const q = JSON.parse(JSON.stringify(view.questions)); q.sampled.sort((x, y) => x.qid.localeCompare(y.qid)); return q; };
+const viewQuestions = (view) => {
+  const q = JSON.parse(JSON.stringify(view.questions));
+  delete q.settleHealth; // compared apart, below
+  for (const w of q.weeks) delete w.draw; // the fixture's draws are not reproducible from its forecasts; the draw tests are apart
+  q.sampled.sort((x, y) => x.qid.localeCompare(y.qid));
+  return q;
+};
+// the alarm's inputs: the same answers as the board, except the daily tick (a heartbeat, not a fact)
+const healthOf = (h) => { const { tickStale, lastTickAt, ...rest } = h; return rest; };
 
 for (const [today, upTo] of [['2026-10-03', '2026-10-03'], ['2026-10-21', '2026-10-21'], ['2026-10-27', '2026-10-27'], ['2026-11-05', '2026-11-05'], ['2026-12-05', '2026-12-05']]) {
   test(`parity with the PredictionLog board on ${today}: questions equal field by field`, () => {
     const {view, board} = build(today, upTo);
     assert.deepEqual(viewQuestions(view), comparable(board));
+    assert.deepEqual(view.questions.settleHealth, healthOf(board.settleHealth));
   });
 }
 
@@ -171,4 +180,52 @@ test('the view scores from 150 resolved questions, the same as the board', () =>
 
 test('the state words come from the shared rule', () => {
   assert.equal(Q.outcomeState({sampled: true, result: null, deadline: '2026-10-20', today: '2026-10-21'}), 'past_deadline_unchecked');
+});
+
+// ---- decision 0052: the draw's pool is rebuilt from the forecast facts, and published only when it reproduces the draw ----
+const P = require('../src/_shared/questionPool');
+function drawWorld({ tamper = false } = {}) {
+  const SEED = 'ab'.repeat(32);
+  const fx = [];
+  const specs = [['p', '2026-10-06', 30], ['q', '2026-10-07', 40], ['r', '2026-10-08', 5], ['s', '2026-10-08', 50]]; // r has a 5-day lead: not eligible
+  for (const [k, day, lead] of specs) {
+    const fc = X.forecast(`thread-${k}`, `${day}T05:00:00.000Z`, `PRED#Story ${k}-1/${day}`, [X.branch(`${k}-0`, P.addDays(day, lead), { qid: `q-${k}`, p: 50, trigger: `Will ${k}` })]);
+    fc.payload.topicId = `Story ${k}-1`;
+    fx.push(fc);
+  }
+  const pool = P.eligibleQuestions(P.rowsOfFacts(fx), '2026-W41');
+  const res = P.draw(SEED, pool.map((x) => ({ qid: x.qid, clusterKey: x.clusterKey })), 22);
+  const picked = res.picked.map((x) => ({ qid: x.qid, hash: tamper ? 'f'.repeat(64) : x.h, clusterKey: x.clusterKey }));
+  fx.push(F.inboxDrawFact({ type: 'commit', weekId: '2026-W41', weekStart: '2026-10-05', weekEnd: '2026-10-11', commitHash: P.sha256hex(SEED), rule: 'v1', committedAt: '2026-10-01T10:30:00.000Z' }, 'r'));
+  fx.push(F.inboxDrawFact({ type: 'draw', weekId: '2026-W41', rule: 'v1', K: 22, eligible: res.eligible, clusters: res.clusters, seedHex: SEED, picked, drawnAt: '2026-10-12T10:30:00.000Z' }, 'r'));
+  return { fx, res, pool };
+}
+
+test('a drawn week carries its pool and picks as the page verifies them, when the forecast facts reproduce the draw', () => {
+  const { fx, res, pool } = drawWorld();
+  const view = buildTrackRecord(fx, { today: '2026-10-20' });
+  const w = view.questions.weeks.find((x) => x.weekId === '2026-W41');
+  assert.equal(pool.length, 3);
+  assert.deepEqual(w.draw.pool, pool.map((x) => ({ q: x.qid, c: x.clusterKey })));
+  assert.deepEqual(w.draw.picked, res.picked.map((x) => ({ qid: x.qid, h: x.h, clusterKey: x.clusterKey })));
+  assert.equal(w.draw.K, 22);
+  assert.equal(validate(view), true, JSON.stringify(validate.errors));
+});
+
+test('a draw the facts cannot reproduce publishes no pool (honest: the page cannot verify it)', () => {
+  const { fx } = drawWorld({ tamper: true });
+  const w = buildTrackRecord(fx, { today: '2026-10-20' }).questions.weeks.find((x) => x.weekId === '2026-W41');
+  assert.equal('draw' in w, false);
+  assert.equal(w.drawn, true);
+});
+
+test('only the last four drawn weeks carry a pool', () => {
+  const { fx } = drawWorld();
+  const more = [];
+  for (const [w, start] of [['2026-W42', '2026-10-12'], ['2026-W43', '2026-10-19'], ['2026-W44', '2026-10-26'], ['2026-W45', '2026-11-02']]) {
+    more.push(F.inboxDrawFact({ type: 'draw', weekId: w, rule: 'v1', K: 22, eligible: 0, clusters: 0, seedHex: 'ab'.repeat(32), picked: [], drawnAt: `${start}T10:30:00.000Z` }, 'r'));
+    more.push(F.inboxDrawFact({ type: 'commit', weekId: w, weekStart: start, weekEnd: start, commitHash: P.sha256hex('ab'.repeat(32)), rule: 'v1', committedAt: `${start}T00:00:01.000Z` }, 'r'));
+  }
+  const weeks = buildTrackRecord([...fx, ...more], { today: '2026-11-10' }).questions.weeks;
+  assert.deepEqual(weeks.filter((w) => w.draw).map((w) => w.weekId), ['2026-W42', '2026-W43', '2026-W44', '2026-W45'], 'W41 is the fifth drawn week back, and an empty pool of an empty draw reproduces');
 });

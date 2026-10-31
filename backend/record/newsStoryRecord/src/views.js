@@ -515,7 +515,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
   const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, builtFrom)}); // the many-at-once readers' indexes (indexViews.js)
-  return {stories, links, counts, active, all: everything, manifest, countries, briefs, indexes, trackRecord: buildTrackRecord(allFacts, {today})};
+  return {stories, links, counts, active, all: everything, manifest, countries, briefs, indexes, trackRecord: buildTrackRecord(allFacts, {today, now: builtAt})};
 }
 
 /** The write order of 0037 section 2 as groups of [key, object]; the groups are written one after another, manifest last. */

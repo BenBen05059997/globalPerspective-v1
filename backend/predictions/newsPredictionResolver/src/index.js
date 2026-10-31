@@ -255,6 +255,17 @@ async function checkPass(deps, today, limit, dryRun, out) {
   });
 }
 
+// The tick is not a fact, so the freshness monitor cannot read it from the record (decision 0052): the resolver also writes the time of its last tick to
+// SETTLE_HEARTBEAT_KEY (record/views/health/settle-tick.json, served under /data like the views). Off unless the key is set; best-effort, a failure is logged.
+async function heartbeat(deps, now, out) {
+  if (!deps.heartbeatKey || !deps.inbox || typeof deps.inbox.putLatest !== 'function') return;
+  try {
+    await deps.inbox.putLatest(deps.heartbeatKey, { schemaVersion: 1, at: now, committed: out.committed.length, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, errors: out.errors.length });
+  } catch (e) {
+    console.error(`[heartbeat] not written: ${String(e.message).slice(0, 200)}`);
+  }
+}
+
 async function run(event, deps) {
   const action = (event && event.action) || 'tick';
   const dryRun = Boolean(event && event.dryRun);
@@ -313,6 +324,7 @@ async function run(event, deps) {
       PK: `SETTLE#${lib.weekOf(today)}`, SK: `TICK#${now}`, at: now,
       committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, settled: out.settled.length, watch: out.watch || null, errors: out.errors,
     });
+    await heartbeat(deps, now, out);
   }
   if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
   console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, settled: out.settled.length, candidates: out.watch ? out.watch.total : 0, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
@@ -337,6 +349,7 @@ function defaultDeps() {
     questions: questionSources.makeQuestions(process.env.QUESTIONS_SOURCE, { store, facts: s3 }),
     facts: s3,
     inbox: s3,
+    heartbeatKey: process.env.SETTLE_HEARTBEAT_KEY || '',
     draftModel: DRAFT_MODEL,
     usage: () => ({ ...usage, model: DRAFT_MODEL }),
     async llm(prompt) {

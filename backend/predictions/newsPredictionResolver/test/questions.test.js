@@ -108,3 +108,17 @@ test('modes: log is the default, record and compare need the bucket, anything el
   assert.throws(() => Q.makeQuestions('nope', { store: fakeStore() }), /must be one of/);
   assert.equal(lib.eligibleQuestions(PREDS, '2026-W41').length, 6);
 });
+
+test('the tick writes its heartbeat to SETTLE_HEARTBEAT_KEY when set (never on a dry run, never failing the tick)', async () => {
+  const written = [];
+  const inbox = { putLatest: async (key, obj) => { written.push([key, obj]); }, getLines: async () => ({ lines: [] }), appendLines: async () => ({}) };
+  const base = { store: fakeStore(), inbox, now: () => '2026-10-01T10:30:00.000Z', llm: async () => ({}), draftModel: 'm' };
+  await run({ action: 'tick' }, base);
+  assert.deepEqual(written, [], 'unset: nothing');
+  await run({ action: 'tick', dryRun: true }, { ...base, heartbeatKey: 'record/views/health/settle-tick.json' });
+  assert.deepEqual(written, []);
+  await run({ action: 'tick' }, { ...base, store: fakeStore(), heartbeatKey: 'record/views/health/settle-tick.json' });
+  assert.deepEqual(written.map(([k, o]) => [k, o.at, o.committed, o.errors]), [['record/views/health/settle-tick.json', '2026-10-01T10:30:00.000Z', 2, 0]]);
+  const out = await run({ action: 'tick' }, { ...base, store: fakeStore(), inbox: { ...inbox, putLatest: async () => { throw new Error('AccessDenied'); } }, heartbeatKey: 'k' });
+  assert.deepEqual(out.errors, []);
+});

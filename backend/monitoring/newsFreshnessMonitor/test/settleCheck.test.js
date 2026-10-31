@@ -51,3 +51,36 @@ test('the message names what is wrong, the board counts and what to do; no secre
   assert.match(buildMessage(ev, q, { siteUrl: 'https://staging.example', nowIso: NOW }).body, /Public page: https:\/\/staging\.example\/track-record\n/);
   assert.ok(m.subject.length <= 100);
 });
+
+// ---- the record's board (decision 0052) ----
+const { settleFromRecord } = require('../src/settleCheck');
+const view = (h = {}, extra = {}) => ({
+  schemaVersion: 1, questions: { firstCommit: { weekId: '2026-W41', committedAt: '2026-10-01T10:30:00.000Z' }, counts: { locked: 3, resolved: 1, void: 1, awaiting: 1, pastDeadlineUnchecked: 0 },
+    settleHealth: { expectedDrawWeek: null, drawMissed: false, commitMissing: false, lastVerdictAt: null, dueUnsettled: 0, oldestDueUnsettledDays: null, ...h }, ...extra },
+});
+const manifest = { builtAt: '2026-10-27T11:00:00Z' };
+const beat = { at: '2026-10-27T10:30:00Z' };
+
+test('record board: the view\'s health plus the heartbeat\'s tick and the manifest\'s build time; a healthy one is silent', () => {
+  const q = settleFromRecord({ view: view(), manifest, heartbeat: beat }, NOW);
+  assert.deepEqual([q.builtAt, q.builder, q.staleAfterHours, q.settleHealth.tickStale, q.settleHealth.lastTickAt], [manifest.builtAt, 'newsStoryRecord', 9, false, beat.at]);
+  assert.equal(evaluateSettle(q, NOW).alert, false);
+});
+
+test('record board: the view\'s flags alarm as the board\'s do, the tick is stale after 3 days, the views after 9 hours', () => {
+  assert.deepEqual(evaluateSettle(settleFromRecord({ view: view({ drawMissed: true, expectedDrawWeek: '2026-W41' }), manifest, heartbeat: beat }, NOW), NOW).reasons.map((r) => r.code), ['draw_missed']);
+  assert.deepEqual(evaluateSettle(settleFromRecord({ view: view({ dueUnsettled: 2, oldestDueUnsettledDays: 12 }), manifest, heartbeat: beat }, NOW), NOW).reasons.map((r) => r.code), ['verdicts_overdue']);
+  const stale = settleFromRecord({ view: view(), manifest, heartbeat: { at: '2026-10-24T10:29:00Z' } }, NOW);
+  assert.deepEqual(evaluateSettle(stale, NOW).reasons.map((r) => r.code), ['tick_stale']);
+  assert.equal(evaluateSettle(settleFromRecord({ view: view(), manifest: { builtAt: '2026-10-27T04:00:00Z' }, heartbeat: beat }, NOW), NOW).alert, false, '8.5 hours is inside the views\' own rhythm');
+  const old = evaluateSettle(settleFromRecord({ view: view(), manifest: { builtAt: '2026-10-27T02:00:00Z' }, heartbeat: beat }, NOW), NOW);
+  assert.deepEqual(old.reasons.map((r) => r.code), ['board_stale']);
+  assert.match(old.reasons[0].text, /newsStoryRecord should rebuild it at least every 9 hours/);
+});
+
+test('record board: with nothing committed yet the tick cannot be stale; a view without settleHealth is no board', () => {
+  const q = settleFromRecord({ view: view({}, { firstCommit: null }), manifest, heartbeat: null }, NOW);
+  assert.equal(q.settleHealth.tickStale, false);
+  assert.equal(settleFromRecord({ view: { questions: { counts: {} } }, manifest, heartbeat: beat }, NOW), null);
+  assert.equal(settleFromRecord({ view: null, manifest, heartbeat: beat }, NOW), null);
+});

@@ -70,13 +70,14 @@ Live there are 12 Global Perspectives tables: the five above plus seven world ta
 | `record/inbox/splits/YYYY-MM-DD.jsonl` | operator only | on demand | `newsStoryRecord` |
 | `record/inbox/assignments/YYYY-MM-DD.jsonl` | operator, applying approved review proposals or benchmark placements | on demand | `newsStoryRecord` |
 | `record/operator/aliases.json` (the who's who file) | operator only | on demand | `newsStoryRecord`, `newsRecordReview` |
+| `record/notes/entry/YYYY-MM-DD.jsonl`, `record/notes/entry/manifest.json` | `NewsProjectInvokeAgentLambda` after its daily archive (env `NOTES_PREFIX`; `record/shadow/` until switched), and `backend/record/cli/capture-entry-notes.mjs` (one-off capture) | each agent run (04:25, 12:25, 20:25 UTC), append-only, model text, deduped by `noteId` | view rebuilds (next) |
 | `record/readings/YYYY-Www.jsonl` | `newsRecordReview` | weekly, Monday 01:00 UTC, append-only, model | view rebuilds |
 | `record/runs/review-YYYY-Www.json` | `newsRecordReview` | weekly, the review Run | operator |
 | `record/views/…` (stories, index/active, index/all, links, counts, manifest) | `newsStoryRecord` only | full rebuild after each daily append, manifest last | `newsBoard`, the Worker (`/data/record/views/`) |
 | `record/shadow/…` | `newsStoryRecord`, the selector, the resolver and the review on a manual `shadow:true` invoke; also the retired old dry-run output | manual only | humans, tuning |
 | `weekly/YYYY-MM-DD.json`, `weekly/latest.json` | the weekly run (planned; no objects yet) | weekly | email, weekly page |
 
-The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Daily model notes are moving into the record as `record/notes/<subtype>/YYYY-MM-DD.jsonl` (decision 0042).
+The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Daily model notes move into the record as `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, schema `backend/record/schema/note.schema.json`, built and written only through shared `notes.js` (decision 0042). Entry notes are written; story analysis, drift, country, link and brief notes follow.
 
 IAM: one inline policy set per Lambda, `s3:PutObject` scoped to its own prefix(es); readers get `s3:GetObject` on what they read, plus a `ListBucket` so a missing object returns 404, not 403. The Worker's credentials (user `gp-worker-s3-reader`) are read-only on `world/*`, `situations/state/*`, `stories/state/*` and `record/views/*`, never facts, runs, inboxes or readings. Record roles: `newsStoryRecord-role` reads `web/*` and `record/*` and writes `record/shadow/*`, `facts/*`, `runs/*`, `views/*`; the selector's role writes `record/inbox/articles/*`; `newsPredictionResolver-role` reads `record/facts/*` and `record/runs/*` and reads and writes `record/inbox/verdicts/*` (and its shadow); `newsRecordReview-role` reads `record/*` and writes `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` (and their shadow copies); `newsBoard-role` reads `record/views/index/active.json`, `index/all.json` and `links/*`; `newsFreshnessMonitor-role` reads and writes the one key `monitoring/freshness/state.json`.
 

@@ -30,20 +30,22 @@ Live since 2026-10-30/31:
 Watch next (the full test checklist, browser checks included, is the "What to test" section of https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd):
 - Note writers live (`NOTES_PREFIX=record/`, first shadow runs checked 2026-10-31): the agent (entry), `newsThreadAnalysis` (story_analysis), `newsSystemsAnalysis` (link + web; web notes from its next 05:00 run), `newsDriftCorrector` (drift). Still shadow: `newsCountryIntelligence` (its 2026-10-31 run generated nothing, so its writer is untested; switch after the first run that writes a briefing).
 - Third release 2026-10-31: the story page forecast (record views with draw facts, decision 0043; a forecast stays with its own story) and "fed into" links (links view `judgedLinks` + `web`) read the record. Resolver writes draws to `record/inbox/draws/` (policy `newsPredictionResolver-record` extended).
+- Fourth release 2026-10-31: the track record page reads `track-record.json` (decision 0044; issued 5,283 and all 66 sampled questions match the old file; legacy count 2,418 = PRED rows without `methodologyVersion`), and the list pages read the index views `index/analyses.json`, `index/web.json`, `index/countries.json` (Stories page analyses and country arcs, stories web and map story card, countries list, map risk layer; each falls back to its action). Weekly Stories' `archive_range` list stays on the action (entry facts lack `regions`; operator decision).
+- Forecast facts: the facts run now scans PredictionLog for the 30-day window (policy statement `PredictionLogScan` on `newsStoryRecord-role`) instead of reading only the day's entry topics; `backend/record/cli/backfill-forecasts.mjs` added 5 missed forecasts. 348 early-September PRED rows (no thread, no question branches) are not in the record and go with step 5.
 - `newsStoryRecord` 23:45 UTC: the 5 canary stories get a line and chapters; the 7 stale merged-story links files are overwritten.
 - First full review Mon 2026-11-02 01:00 UTC (W44, about 520 stories): Run `ok`, `notReached` 0.
 
 Step 4, what each page needs (from the code, 2026-10-31):
 - Story page: timeline done; the analysis, drift, forecast and links sections still read DynamoDB (their notes are being written; views and page switch next).
 - Story analysis and drift notes (`newsThreadAnalysis`, `newsDriftCorrector`), country briefings (`newsCountryIntelligence`), story-web links (`newsSystemsAnalysis`) and briefs follow the same pattern: writer through `notes.js`, view field, page switch.
-- Track record: the page already shows the legacy triggers and the question scheme, labelled. The record holds the forecasts and verdicts but not the weekly draws (seeds, samples) that live in PredictionLog; moving the page needs draw facts (a 0038 design decision). Map and economy need a decision; user data stays in DynamoDB (0003).
+- Track record: on the record (0044); `settleHealth` (freshness monitor) and the draw pool stay in PredictionLog. Map and economy need a decision; user data stays in DynamoDB (0003).
 
 Still on the old path: the old Sunday digest (`TriggerWeeklyBrief`, `TriggerWeeklyEmailSend`, 2 recipients); the analyst weekly W1-W3 on unmerged `lane/weekly` and `lane/routine`; `TriggerSelectionShadow` past its end (P7d is an operator decision); `newsInvokeGemini-dev` behind the repo (same behaviour).
 
 Waiting on the operator:
 1. Analyst weekly: build it on the readings, rewrite, or drop (ARCHITECTURE_WEEKLY_REVIEW.md section 9).
 2. Board design-check answers (117 items, https://claude.ai/artifact/NNBZv4WWDoHFuRGwVXCNGE) and a signed-in look at B0. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo. Overview and checklist: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.
-3. Track record: record the weekly draws as facts (so the page can move) or keep it on PredictionLog for now.
+3. Weekly Stories article list: add `regions` to entry facts so `archive_range` can move, or accept the differences. Question states on the track record now update nightly (accept or not).
 4. Selection go (P7d); gap benchmark rebuild or drop; Cloudflare cutover steps; delete the leftover `amplify/` (about 56 files never in git).
 5. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.
 

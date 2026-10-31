@@ -259,6 +259,11 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const all = [...rows.values()].sort(rowOrder);
   const activeRows = all.filter((r) => !r.aliasOf && r.lastFactAt && r.lastFactAt.slice(0, 10) >= cutoff);
   const links = buildLinks(activeRows, survivors, builtFrom, readings, aliases, isGeneric);
+  // Every story gets a links view, so a story that was merged or went inactive overwrites its old file instead of leaving it stale
+  // (views are never deleted; the rebuild test found 7 merged stories still showing links from 2026-10-23).
+  for (const id of stories.keys()) {
+    if (!links.has(id)) links.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: [], confirmedLinks: [], confirmedLinksReason: NO_READING});
+  }
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};

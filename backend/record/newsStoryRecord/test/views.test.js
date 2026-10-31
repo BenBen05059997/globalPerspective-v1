@@ -81,7 +81,7 @@ test('active index: a fact 59 days back is active, 60 days back is only in all.j
   const v = build(f);
   assert.deepEqual(v.active.stories.map((r) => r.threadId), ['a-new', 'b-new', 'in']);
   assert.deepEqual(v.all.stories.map((r) => r.threadId), ['a-new', 'b-new', 'in', 'out']);
-  assert.equal(v.links.has('out'), false);
+  assert.deepEqual([v.links.get('out').links, v.links.get('out').confirmedLinks], [[], []]); // inactive: an empty links view overwrites any old file
 });
 
 // Links need 5% specificity, so these tests pad the active index with unrelated stories: 100 fillers make one carrier 1% and two 2%.

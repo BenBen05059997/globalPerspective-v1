@@ -115,7 +115,7 @@ Views choices (step 2, 0037 left these open; narrowest reading):
 - A branch's `verdict` is the newest verdict fact for its `branchId` (by `at`, then revision), any result (`yes`, `no`, `void`) ends it being live.
 - A repeated `eventId` across facts days keeps the earliest by `at`; facts are read in `(at, eventId)` order so file order never matters.
 - Links rule (0037 amendment 2026-10-22): grounds are actors and countries only, each counted only if fewer than 5% of the active stories carry it (`SPECIFIC_SHARE`, share = carriers / active stories, so with fewer than 41 active stories no shared ID can be specific and every links file is empty); both stories' `lastFactAt` dates at most 14 days apart (`LINK_WINDOW_DAYS`), gap in `daysApart`. `sharedActorIds` and `sharedIso3` list only the specific IDs, `sharedSourceIds` lists every shared source for information. Sort: rarest shared specific ID (lowest share), then `otherThreadId`; cap 50. The golden set has 3 active stories, so its links are empty; the links tests pad the active index.
-- `links/` files exist for active stories only; a story that goes idle keeps its last file until a later cleanup (nothing deletes views).
+- Every story has a `links/` file: computed links for active stories; an empty one (`links: []`, `confirmedLinks: []`) for a merged or idle story, so its old file is overwritten rather than left stale (nothing deletes views; the rebuild test found 7 merged stories still carrying 2026-10-23 links, fixed 2026-10-31).
 - `entriesOmitted` is always present (0 when nothing was cut). Entries carry `fromThreadId` only when merged in, and `corrected: true` only when a correction names them.
 
 ```sh

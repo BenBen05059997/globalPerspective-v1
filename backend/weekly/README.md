@@ -4,7 +4,7 @@ The analyst's weekly: one brief per week, the same for every reader. It is the o
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → **8 Weekly report** → 9 Delivery → 10 Watch
-This folder is stage 8: the analyst's weekly: schema, section model, pull, check, publish. Timeline: writes the weekly report (weekly/), a view of the week's readings; reads through world/ until the readings exist. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 8: the analyst's weekly: schema, section model, pull, check, publish. Timeline: writes the weekly report (weekly/), a view of the week's readings; today only the content model exists, the pull, check and publish scripts are on unmerged branches. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed

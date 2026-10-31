@@ -4,7 +4,7 @@ The member's personal connection board (`/board`). A signed-in reader pins stori
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the board page (/board). Timeline: reads boards via newsBoard; target: story views, readings for the settled past and daily counts for the unsettled present. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the board page (/board). Timeline: reads boards via newsBoard and the record views (stories, links, counts) through the Worker; reading fields fill as the weekly review runs. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

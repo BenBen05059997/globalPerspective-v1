@@ -4,7 +4,7 @@ The world's memory, on two clocks: facts appended daily with no model, readings 
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → **5 Facts** → **6 Review** → **7 Views** → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and rebuilds the views (7); newsRecordReview (planned) writes the weekly readings (6). Timeline: newsStoryRecord is the only writer of record/facts; newsRecordReview (planned) is the only writer of record/readings and record/runs; views are rebuilt from both. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and rebuilds the views (7); newsRecordReview writes the weekly readings (6). Timeline: newsStoryRecord is the only writer of record/facts, record/runs (daily) and record/views; newsRecordReview is the only writer of record/readings and record/runs/review-*; views are rebuilt from both. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Three names, never mixed

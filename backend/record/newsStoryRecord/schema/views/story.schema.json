@@ -517,6 +517,24 @@
               }
             }
           }
+        },
+        "topicId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the archive topic of the entry (tracing and the page's forecast and analysis lookups)"
+        },
+        "iso3": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "countries of the entry (ISO3), as recorded on the fact"
         }
       }
     },

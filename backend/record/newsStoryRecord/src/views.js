@@ -56,6 +56,7 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
   return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.kind === 'article' ? {...articleRow(f, corrected), ...(own ? {} : {fromThreadId: threadId})} : ({
     eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: f.payload.title, summary: f.payload.summary ?? null,
     category: f.payload.category ?? null, eventType: f.payload.eventType ?? null, sources: sourcesOf(f),
+    topicId: f.payload.topicId ?? null, iso3: f.iso3 || [], // the story page looks up forecasts and analysis by topicId and shows countries
     ...(f.payload.actors ? {actors: f.payload.actors} : {}), ...(notesBy.has(f.eventId) ? {notes: notesBy.get(f.eventId)} : {}),
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));

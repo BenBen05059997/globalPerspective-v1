@@ -48,6 +48,10 @@
               "outletType": null
             }
           ],
+          "topicId": "A first-1",
+          "iso3": [
+            "FRA"
+          ],
           "corrected": true
         },
         {
@@ -68,6 +72,11 @@
               "outletCountry": null,
               "outletType": null
             }
+          ],
+          "topicId": "A second-1",
+          "iso3": [
+            "FRA",
+            "DEU"
           ]
         }
       ],
@@ -187,6 +196,10 @@
               "outletType": null
             }
           ],
+          "topicId": "C first-1",
+          "iso3": [
+            "UKR"
+          ],
           "fromThreadId": "thread-c"
         },
         {
@@ -207,6 +220,10 @@
               "outletCountry": null,
               "outletType": null
             }
+          ],
+          "topicId": "B first-1",
+          "iso3": [
+            "FRA"
           ]
         }
       ],
@@ -272,6 +289,10 @@
               "outletCountry": null,
               "outletType": null
             }
+          ],
+          "topicId": "Old first-1",
+          "iso3": [
+            "FRA"
           ]
         }
       ],

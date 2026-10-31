@@ -9,6 +9,7 @@ import { StrengthBadge } from '@/features/board/components/StringBadges.jsx';
 import { callBoard } from '@/features/board/lib/boardApi.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { dayMonth } from '@/shared/lib/branchWording.js';
+import { strongestArrivals } from '@/features/board/lib/folding.js';
 import '@/features/board/panels.css';
 
 // Arrivals as a clue pool (artboard 5): new stories linked to your pins wait face down until you turn them over;
@@ -40,7 +41,7 @@ export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
     onDismiss(id);
     timers.current.push(setTimeout(() => setFading((f) => Object.fromEntries(Object.entries(f).filter(([k]) => k !== id))), FADE_MS));
   };
-  const cards = (state.arrivals || []).filter((c) => (!board.dismissed.includes(c.threadId) || fading[c.threadId]) && !board.pins.some((p) => p.kind === 'thread' && p.refId === c.threadId));
+  const { shown: cards } = strongestArrivals((state.arrivals || []).filter((c) => (!board.dismissed.includes(c.threadId) || fading[c.threadId]) && !board.pins.some((p) => p.kind === 'thread' && p.refId === c.threadId)));
   const unseen = cards.filter((c) => !fading[c.threadId] && !seen.has(c.threadId)).length;
   if (!state.loading && !state.error && !state.recordAvailable) return null; // no story record yet: nothing to show
   const viaLabel = (v) => (labelOf ? labelOf(v.pinId) : v.threadId); // the pin's name as the board shows it

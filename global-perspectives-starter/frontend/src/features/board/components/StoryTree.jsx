@@ -42,15 +42,15 @@ export default function StoryTree({ story, loading, error }) {
       <span className={closed ? 'story-tree__kicker' : 'story-tree__kicker story-tree__kicker--accent'}>{closed ? `${dayMonth(f.drawnAt) || f.drawnAt} fork · closed` : `open fork · ${dayMonth(f.drawnAt) || f.drawnAt} · provisional`}</span>
       <span>{outcomeText(o)}</span></summary>
       {f.branches.map((b) => { const st = branchStatus(b); return <details key={b.branchId}><summary><span>{b.text}{b.p != null ? ` · ${b.p}%` : ''} · {st.text}</span>{isLate(b, present) ? <span className="story-tree__stamp">▸ late · past {dayMonth(b.due)}</span> : null}{b.trigger ? <span className="board-branch__text">{b.trigger}</span> : null}</summary>
-        <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${b.due}` : ''}</p>
+        <p className="board-line"><ClaimTag kind="judgment" /> {b.trigger}{b.due ? ` · due ${dayMonth(b.due)}` : ''}</p>
         {b.verdict ? <p className="board-line"><time dateTime={b.verdict.at.slice(0, 10)}>{dayMonth(b.verdict.at.slice(0, 10))}</time> {st.text}{st.quote ? <> · “{st.quote}”</> : null}{evidenceOf(b.verdict.evidence)}</p> : null}
       </details>; })}
     </details>;
   };
 
   const rung3 = () => {
-    const { shown, folded } = foldTrunk(scoped.entries, scoped.forks);
-    const all = foldTrunk(scoped.entries, scoped.forks, Infinity).shown;
+    const { shown, folded } = foldTrunk(scoped.entries, scoped.forks, present);
+    const all = foldTrunk(scoped.entries, scoped.forks).shown;
     const empty = !scoped.entries.length && !scoped.forks.length;
     return <>
       {chapter ? <p className="board-line"><span className="story-tree__kicker story-tree__kicker--accent">{chapter.title} · opened</span> <Button compact onClick={() => setChapter(null)}>whole story</Button></p> : null}

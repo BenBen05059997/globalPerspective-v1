@@ -140,11 +140,13 @@ describe('storyTree helpers', () => {
     expect(outcomeText(forkOutcome(storyC.forks[0], '2026-10-18'))).toBe('3 branches · 1 happened · 2 not reported');
     expect(outcomeText(forkOutcome({ branches: [{ due: '2026-11-01' }] }, '2026-10-18'))).toBe('1 branch · 1 open');
   });
-  it('fold keeps the last four; chapters scope events and forks by date', () => {
-    const { shown, folded } = foldTrunk(storyC.entries, storyC.forks);
+  it('fold hides events more than 4 weeks before the present; chapters scope events and forks by date', () => {
+    const { shown, folded } = foldTrunk(storyC.entries, storyC.forks, '2026-10-18');
     expect(shown).toHaveLength(4);
     expect(folded).toEqual({ before: '2026-09-21', branches: 0, taken: 0 });
-    expect(foldTrunk(storyC.entries.slice(0, 3), storyC.forks).folded).toBeNull();
+    expect(foldTrunk(storyC.entries.slice(1), storyC.forks, '2026-10-18').folded).toBeNull();
+    expect(foldTrunk(storyC.entries, storyC.forks).folded).toBeNull(); // no present: nothing folds
+    expect(foldTrunk(storyC.entries, storyC.forks, '2027-01-01').shown.map((e) => e.date)).toEqual(['2026-10-16']); // all old: the newest stays
     const c = inChapter(storyC, storyC.chapters[2]);
     expect(c.entries.map((e) => e.eventId)).toEqual(['c4', 'c5']);
     expect(c.forks.map((f) => f.forkId)).toEqual(['cf2', 'cf3']);

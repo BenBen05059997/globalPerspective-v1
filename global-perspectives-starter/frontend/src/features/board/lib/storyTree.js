@@ -1,5 +1,6 @@
 // Pure helpers behind the drawn story tree and the zoom ladder (artboards 6 and 11). Dates are ISO day strings and are compared as
 // strings, never through the local timezone. A branch's wording stays in shared/lib/branchWording.js.
+import { isOldNode } from '@/features/board/lib/folding.js';
 const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
 
 /** The day the facts run to ('2026-10-18'), or '' when the view does not say. It is the "present" of the tree. */
@@ -52,12 +53,15 @@ export function inChapter(story, chapter) {
   };
 }
 
-/** The trunk is drawn with its last `keep` events; older ones fold into one button.
+/** The trunk is drawn with the events of the last FOLD_AFTER_DAYS before `present` (the board's folding rule, lib/folding.js);
+ *  older ones fold into one button. The newest event always shows. No `present`: nothing folds.
  *  -> { shown, folded: { before: 'YYYY-MM-DD', branches, taken } | null } */
-export function foldTrunk(entries, forks, keep = 4) {
+export function foldTrunk(entries, forks, present) {
   const sorted = [...entries].sort((a, b) => day(a.date).localeCompare(day(b.date)));
-  if (sorted.length <= keep) return { shown: sorted, folded: null };
-  const shown = sorted.slice(-keep);
+  const now = Date.parse(present);
+  const recent = Number.isFinite(now) ? sorted.filter((e) => !isOldNode(day(e.date), now)) : sorted;
+  const shown = recent.length ? recent : sorted.slice(-1);
+  if (shown.length === sorted.length) return { shown: sorted, folded: null };
   const before = day(shown[0].date);
   const older = (forks || []).filter((f) => day(f.drawnAt) < before).flatMap((f) => f.branches || []);
   return { shown, folded: { before, branches: older.length, taken: older.filter((b) => b.verdict?.result === 'yes').length } };

@@ -96,7 +96,9 @@
               "question": true,
               "qid": "q-a-0",
               "scenarioP": 50,
-              "verdict": null
+              "verdict": null,
+              "scoring": "not_eligible",
+              "state": null
             },
             {
               "branchId": "a-1",
@@ -108,7 +110,9 @@
               "question": true,
               "qid": "q-a-1",
               "scenarioP": 50,
-              "verdict": null
+              "verdict": null,
+              "scoring": "not_eligible",
+              "state": null
             },
             {
               "branchId": "a-2",
@@ -128,7 +132,9 @@
                   "url": "https://e.test"
                 },
                 "voidReason": null
-              }
+              },
+              "scoring": "not_eligible",
+              "state": null
             },
             {
               "branchId": "a-3",
@@ -148,7 +154,9 @@
                   "url": "https://e.test"
                 },
                 "voidReason": null
-              }
+              },
+              "scoring": "not_eligible",
+              "state": null
             }
           ]
         }

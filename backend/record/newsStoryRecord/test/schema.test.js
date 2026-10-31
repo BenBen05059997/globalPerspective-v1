@@ -12,7 +12,7 @@ const ajv = new Ajv({allErrors: true, strict: false});
 const validFact = ajv.compile(load('fact.schema.json'));
 const validRun = ajv.compile(load('run.schema.json'));
 
-const facts = {entry: 'entry', story_born: 'story_born', forecast_drawn: 'forecast_drawn', verdict: 'verdict', correction: 'correction', story_merged: 'story_merged', story_split: 'story_split', article: 'article', assignment: 'assignment', run: 'run-fact'};
+const facts = {entry: 'entry', story_born: 'story_born', forecast_drawn: 'forecast_drawn', verdict: 'verdict', correction: 'correction', story_merged: 'story_merged', story_split: 'story_split', article: 'article', assignment: 'assignment', question_commit: 'question_commit', question_draw: 'question_draw', run: 'run-fact'};
 for (const [kind, file] of Object.entries(facts)) {
   test(`example ${file}.json is a valid ${kind} fact`, () => {
     const example = load('examples', `${file}.json`);

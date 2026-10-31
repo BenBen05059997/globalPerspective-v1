@@ -147,7 +147,7 @@ test('a verdict produces one inbox line with ids, evidence and revision 1', asyn
   const store = fakeStore([PRED]);
   const s3 = fakeS3();
   await run({ action: 'tick' }, deps(store, async () => YES, { inbox: s3.s3json }));
-  assert.deepEqual([...s3.objects.keys()], [`record/inbox/verdicts/${TODAY}.jsonl`]);
+  assert.deepEqual([...s3.objects.keys()].filter((k) => k.includes('/verdicts/')), [`record/inbox/verdicts/${TODAY}.jsonl`]);
   const [l] = s3.lines(`record/inbox/verdicts/${TODAY}.jsonl`);
   assert.deepEqual(l, {
     schemaVersion: 1, qid: QID, threadId: 'tA', forkId: `PRED#a/2026-10-20`, branchId: 'PRED#a/2026-10-20/0-0',
@@ -164,7 +164,7 @@ test('a second verdict the same day is line 2; an unclear check writes no line',
   const facts = fakeFacts({ [TODAY]: [entryFact('tA', TODAY), entryFact('tB', TODAY)] });
   let n = 0;
   await run({ action: 'tick' }, deps(store, async () => (n++ < 2 ? { verdict: 'not_yet' } : { verdict: 'not_yet' }), { inbox: s3.s3json, facts }));
-  assert.equal(s3.objects.size, 0);
+  assert.equal([...s3.objects.keys()].filter((k) => k.includes('/verdicts/')).length, 0);
   const s4 = fakeS3();
   await run({ action: 'tick' }, deps(fakeStore([PRED, other]), async (p) => ({ verdict: 'yes', quote: 'New development for', event_id: /\[(ev[^\]]+)\]/.exec(p)[1] }), { inbox: s4.s3json, facts }));
   assert.deepEqual(s4.lines(`record/inbox/verdicts/${TODAY}.jsonl`).map((l) => l.sourceKey), [`inbox:verdicts/${TODAY}#1`, `inbox:verdicts/${TODAY}#2`]);
@@ -184,7 +184,8 @@ test('a correction appends a line with revision 2 and decidedBy operator', async
 test('shadow run writes under record/shadow/inbox/verdicts/; dry run writes no line', async () => {
   const s3 = fakeS3();
   await run({ action: 'tick', shadow: true }, deps(fakeStore([PRED]), async () => YES, { inbox: s3.s3json }));
-  assert.deepEqual([...s3.objects.keys()], [`record/shadow/inbox/verdicts/${TODAY}.jsonl`]);
+  assert.deepEqual([...s3.objects.keys()].filter((k) => k.includes('/verdicts/')), [`record/shadow/inbox/verdicts/${TODAY}.jsonl`]);
+  assert.ok([...s3.objects.keys()].every((k) => k.startsWith('record/shadow/')));
   const dry = fakeS3();
   await run({ action: 'tick', dryRun: true }, deps(fakeStore([PRED]), async () => YES, { inbox: dry.s3json }));
   assert.equal(dry.objects.size, 0);

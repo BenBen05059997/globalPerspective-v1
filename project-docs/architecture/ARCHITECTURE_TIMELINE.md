@@ -90,6 +90,7 @@ Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status `started|ok|parti
 | `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid} | `PredictionLog PRED#` |
 | `verdict` | qid, result yes/no/void, voidReason, decidedBy, evidence {eventId, quote, date}, revision | resolver lines in `record/inbox/verdicts/`; the legacy void job writes `issued_before_method` voids |
 | `correction` | `corrects` (eventId), what was wrong, reason | builder exists; no input feeds it yet |
+| `question_commit`, `question_draw` | the week's seed hash; the revealed seed and sampled qids (threadId null, 0043) | resolver lines in `record/inbox/draws/` |
 | `story_merged` | from, into (threadIds), reason, evidence; readers resolve transitively | review auto-merges via `record/inbox/merges/` |
 | `story_split` | from, into, reason; cancels the matching merge in the views | operator, `record/inbox/splits/` |
 | `run` | runId, status, counts | the writer itself |

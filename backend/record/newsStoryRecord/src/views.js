@@ -5,6 +5,7 @@
 const {addDays} = require('./_shared/world');
 const {isResolvable: resolvable} = require('./facts'); // a question with a question id (0038); anything else is legacy
 const Rd = require('./readings');
+const Q = require('./_shared/questionState');
 const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 
@@ -142,8 +143,19 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
 }
 
-/** forecast_drawn facts of one thread -> forks with each branch's latest verdict attached (null when none). */
-function forkRows(facts) {
+/** The weekly sample on record (0043): weeks with a commit, weeks with a draw, and every sampled qid. Built once from all facts. */
+function sampleLedger(facts) {
+  const draws = facts.filter((f) => f.kind === 'question_draw');
+  return {
+    committed: new Set(facts.filter((f) => f.kind === 'question_commit').map((f) => f.payload.weekId)),
+    drawn: new Set(draws.map((f) => f.payload.weekId)),
+    sampled: new Set(draws.flatMap((f) => f.payload.picked.map((p) => p.qid))),
+  };
+}
+
+/** forecast_drawn facts of one thread -> forks with each branch's latest verdict attached (null when none), and for a question its
+ *  `scoring` (where it stands in the weekly sample) and `state` (its outcome once sampled), the rules of prediction_snapshot (0043). */
+function forkRows(facts, ledger, today) {
   const verdicts = new Map();
   for (const v of facts.filter((f) => f.kind === 'verdict')) {
     const key = v.payload.branchId;
@@ -154,11 +166,16 @@ function forkRows(facts) {
     forkId: f.payload.forkId, drawnAt: f.at,
     branches: f.payload.branches.map((b) => {
       const v = verdicts.get(b.branchId);
+      const issueDay = f.payload.forkId.slice(f.payload.forkId.lastIndexOf('/') + 1); // forkId = '<PRED pk>/<issue day>'
+      const sampled = resolvable(b) && ledger.sampled.has(b.qid);
+      const week = Q.isoWeekOfDay(issueDay);
       return {
         branchId: b.branchId, text: b.text, p: b.p, trigger: b.trigger, resolutionSource: b.resolutionSource, due: b.due,
         // the question scheme (0038): the page links a branch to /track-record?q=<qid> and shows the scenario's probability
         question: b.question === true, qid: b.qid || null, scenarioP: b.scenarioP ?? null,
         verdict: v ? {at: v.at, result: v.payload.result, decidedBy: v.payload.decidedBy, evidence: v.payload.evidence ?? null, voidReason: v.payload.voidReason ?? null} : null,
+        scoring: resolvable(b) ? Q.sampleState({issueDay, deadline: b.due, sampled, commitExists: ledger.committed.has(week), drawExists: ledger.drawn.has(week)}) : null,
+        state: resolvable(b) ? Q.outcomeState({sampled, result: v ? v.payload.result : null, deadline: b.due, today}) : null,
         ...(resolvable(b) ? {} : {legacy: true}),
       };
     }),
@@ -182,6 +199,7 @@ function groupStories(facts, aliases, keep = new Set()) {
  */
 function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy = new Map()}) {
   const {own, merged} = groupStories(facts, aliases, keep);
+  const ledger = sampleLedger(facts);
   const stories = new Map();
   const rows = new Map();
   const survivors = new Map();
@@ -210,7 +228,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
     const entries = entryRows(group, corrected, reassigned, notesBy);
     const kept = entries.slice(-ENTRY_CAP);
-    const forks = forkRows(mine);
+    const forks = forkRows(mine, ledger, today);
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));
     const iso3 = unique(group.flatMap((g) => g.facts.flatMap((f) => f.iso3)));

@@ -800,6 +800,40 @@
             }
           ],
           "description": "the probability of the branch's scenario, as drawn"
+        },
+        "scoring": {
+          "anyOf": [
+            {
+              "enum": [
+                "sampled",
+                "not_eligible",
+                "warm_up",
+                "awaiting_draw",
+                "not_sampled"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "where the question stands in the weekly sample (0043); null on a legacy branch"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no",
+                "void",
+                "awaiting",
+                "past_deadline_unchecked"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the outcome of a sampled question (0043); null when the question was not sampled or the branch is legacy"
         }
       }
     },

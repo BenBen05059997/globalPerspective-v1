@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const lib = require('../src/lib');
 const { run } = require('../src/index');
-const { fakeStore, predRow } = require('./helpers');
+const { fakeStore, predRow, fakeS3 } = require('./helpers');
 
 const SEED = 'ab'.repeat(32);
 
@@ -120,4 +120,47 @@ test('new sampled questions keep the PRED threadId, with legacy null and unchang
  assert.equal(sampled.find(r=>r.pk===legacy.PK).threadId,null);
  assert.equal(sampled.find(r=>r.pk===legacy.PK).clusterKey,legacy.topicId);
  assert.ok(sampled.every(r=>!('p' in r)&&!('probability' in r)));
+});
+
+// ---- record/inbox/draws (decision 0043) ----
+test('tick appends one commit line per new week to the draws inbox; the Monday draw appends the draw line with the revealed seed and the picks', async () => {
+  const preds = [];
+  for (let i = 0; i < 30; i++) preds.push(predRow(`t${i}`, `2026-10-0${5 + (i % 5)}`, 3));
+  const store = fakeStore(preds);
+  const s3 = fakeS3();
+  const mk = (iso, extra = {}) => ({ store, inbox: s3.s3json, now: () => iso, llm: async () => ({}), draftModel: 'm', ...extra });
+  await run({ action: 'tick' }, mk('2026-10-01T10:30:00.000Z'));
+  const first = s3.lines('record/inbox/draws/2026-10-01.jsonl');
+  const commit = await store.get('SEED#2026-W41', 'COMMIT');
+  assert.deepEqual(first.map((l) => [l.type, l.weekId]), [['commit', '2026-W41'], ['commit', '2026-W42']]);
+  assert.deepEqual(first[0], {
+    schemaVersion: 1, type: 'commit', weekId: '2026-W41', weekStart: '2026-10-05', weekEnd: '2026-10-11', commitHash: commit.commitHash, rule: 'v1',
+    committedAt: '2026-10-01T10:30:00.000Z', sourceKey: 'inbox:draws/2026-10-01#1',
+  });
+  await run({ action: 'tick' }, mk('2026-10-01T11:30:00.000Z')); // known weeks again: no new line
+  assert.equal(s3.lines('record/inbox/draws/2026-10-01.jsonl').length, 2);
+  await run({ action: 'tick' }, mk('2026-10-12T10:30:00.000Z'));
+  const day = s3.lines('record/inbox/draws/2026-10-12.jsonl');
+  const draw = day.find((l) => l.type === 'draw');
+  const row = await store.get('SAMPLE#2026-W41', 'DRAW');
+  const reveal = await store.get('SEED#2026-W41', 'REVEAL');
+  assert.deepEqual([draw.weekId, draw.rule, draw.K, draw.eligible, draw.clusters, draw.seedHex, draw.drawnAt], ['2026-W41', 'v1', 22, row.eligible, row.clusters, reveal.seedHex, row.drawnAt]);
+  assert.deepEqual(draw.picked, row.picked.map((p) => ({ qid: p.qid, hash: p.h, clusterKey: p.clusterKey })));
+  assert.equal(lib.commitOf(draw.seedHex), commit.commitHash);
+  await run({ action: 'draw', weekId: '2026-W41' }, mk('2026-10-13T10:30:00.000Z')); // already drawn: nothing new
+  assert.equal(s3.lines('record/inbox/draws/2026-10-13.jsonl').length, 0);
+});
+
+test('draws inbox: shadow prefix, dry run writes nothing, a failed append is reported and the rows stay', async () => {
+  const store = fakeStore([predRow('t', '2026-10-06', 1)]);
+  const s3 = fakeS3();
+  await run({ action: 'tick', shadow: true }, { store, inbox: s3.s3json, now: () => '2026-10-01T10:30:00.000Z', llm: async () => ({}), draftModel: 'm' });
+  assert.deepEqual([...s3.objects.keys()], ['record/shadow/inbox/draws/2026-10-01.jsonl']);
+  const dry = fakeS3();
+  await run({ action: 'tick', dryRun: true }, { store: fakeStore([]), inbox: dry.s3json, now: () => '2026-10-01T10:30:00.000Z', llm: async () => ({}), draftModel: 'm' });
+  assert.equal(dry.objects.size, 0);
+  const bad = fakeStore([]);
+  const out = await run({ action: 'tick' }, { store: bad, inbox: { async getLines() { throw new Error('AccessDenied'); } }, now: () => '2026-10-01T10:30:00.000Z', llm: async () => ({}), draftModel: 'm' });
+  assert.ok(await bad.get('SEED#2026-W41', 'COMMIT'));
+  assert.match(out.errors[0], /commit inbox line not written/);
 });

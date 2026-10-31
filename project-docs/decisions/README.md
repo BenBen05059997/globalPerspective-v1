@@ -46,3 +46,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0039](0039-weekly-review.md) | 2026-10-22 | Weekly review: DeepSeek per story, narrow auto-merge, operator aliases, golden week | accepted (implements step 3 of 0035; amends 0036 kinds and 0037 §2) |
 | [0040](0040-raw-before-model.md) | 2026-10-22 | Raw before model, recovered days, re-assignable stories, canonical actors | accepted (amends 0036, 0037, 0038, 0039) |
 | [0041](0041-docs-slimmed-to-architecture-decisions-readmes.md) | 2026-10-26 | Docs slimmed to architecture, decisions, READMEs and one start file | accepted |
+| [0042](0042-notes-move-to-the-record.md) | 2026-10-31 | The daily model notes move to the record (`record/notes/`), one schema and ID rule | accepted; amends 0040 |

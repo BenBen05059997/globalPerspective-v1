@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "noteId": "f4618022e9a1224455766094f3074d631e3a7d6e",
+  "subtype": "entry",
+  "subject": {
+    "kind": "entry",
+    "id": "5b1c0d7e2a9f4c3b8e6d1a0f9c8b7a6e5d4c3b2a"
+  },
+  "part": "summary",
+  "threadId": "thread-ukraine-says-us-intelligence-s-3af551",
+  "iso3": [
+    "UKR",
+    "USA"
+  ],
+  "at": "2026-10-30T12:16:04.597Z",
+  "date": "2026-10-30",
+  "payload": {
+    "text": "Ukraine says limits on US intelligence sharing are slowing its response and costing lives at the front.",
+    "topicId": "Ukraine Says US Intelligence Sharing Restrictions Causing Deaths-1"
+  },
+  "cites": [
+    "5b1c0d7e2a9f4c3b8e6d1a0f9c8b7a6e5d4c3b2a"
+  ],
+  "model": "deepseek-flash",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "NewsProjectInvokeAgentLambda-dev",
+    "runId": "2026-10-30T12:15:00Z"
+  }
+}

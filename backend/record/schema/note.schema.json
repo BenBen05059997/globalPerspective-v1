@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/record-note.json",
+  "title": "Note (one line of record/notes/<subtype>/YYYY-MM-DD.jsonl), decision 0042",
+  "type": "object",
+  "required": ["schemaVersion", "noteId", "subtype", "subject", "part", "threadId", "iso3", "at", "date", "payload", "cites", "model", "promptVersion", "producer"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "noteId": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "sha1('note|' + subtype + '|' + subject.id + '|' + part + '|' + at), shared record.js noteId" },
+    "subtype": { "enum": ["entry", "story_analysis", "drift", "country", "link", "brief"] },
+    "subject": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["entry", "story", "country", "pair", "brief"] },
+        "id": { "type": "string", "minLength": 1, "description": "an entry eventId, a threadId, an ISO3 code, pairKey(a, b), or daily:YYYY-MM-DD / weekly:YYYY-Www; never a title or topicId" }
+      }
+    },
+    "part": { "type": "string", "description": "which text of the subject: summary | prediction | cause for an entry; '' when the subtype has one text" },
+    "threadId": { "type": ["string", "null"] },
+    "iso3": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z]{3}$" } },
+    "at": { "type": "string", "format": "date-time", "description": "when the model wrote it" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "UTC date of at; the file the note is in" },
+    "payload": { "type": "object" },
+    "cites": { "type": "array", "items": { "type": "string" } },
+    "model": { "type": "string" },
+    "promptVersion": { "type": ["string", "null"] },
+    "producer": {
+      "type": "object",
+      "required": ["lambda", "runId"],
+      "additionalProperties": false,
+      "properties": { "lambda": { "type": "string" }, "runId": { "type": "string" } }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "subtype": { "const": "entry" } } },
+      "then": { "properties": {
+        "subject": { "properties": { "kind": { "const": "entry" } } },
+        "part": { "enum": ["summary", "prediction", "cause"] },
+        "cites": { "minItems": 1 },
+        "payload": { "required": ["text", "topicId"], "additionalProperties": false, "properties": {
+          "text": { "type": "string", "minLength": 1 },
+          "topicId": { "type": "string", "description": "the archive topic the agent wrote it for; tracing only" } } } } } },
+    { "if": { "properties": { "subtype": { "const": "story_analysis" } } }, "then": { "properties": { "subject": { "properties": { "kind": { "const": "story" } } } } } },
+    { "if": { "properties": { "subtype": { "enum": ["drift", "country"] } } }, "then": { "properties": { "subject": { "properties": { "kind": { "const": "country" } } } } } },
+    { "if": { "properties": { "subtype": { "const": "link" } } }, "then": { "properties": { "subject": { "properties": { "kind": { "const": "pair" } } } } } },
+    { "if": { "properties": { "subtype": { "const": "brief" } } }, "then": { "properties": { "subject": { "properties": { "kind": { "const": "brief" }, "id": { "pattern": "^(daily:\\d{4}-\\d{2}-\\d{2}|weekly:\\d{4}-W\\d{2})$" } } } } } }
+  ]
+}

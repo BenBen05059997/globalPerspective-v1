@@ -168,4 +168,9 @@ test('sourceIdOf: the registrable domain, www/m/amp dropped, two-level suffixes 
   assert.strictEqual(R.actorIdOf('  Vladimir \t PUTIN '), 'name:vladimir putin');
   assert.strictEqual(R.actorIdOf('  '), null);
   assert.strictEqual(R.factId('verdict', 'Q#1|VERDICT'), R.sha1('verdictQ#1|VERDICT'));
+  // noteId (0042): every part of the key changes the id; the same note always gets the same id
+  const at = '2026-10-31T04:20:00.000Z';
+  assert.strictEqual(R.noteId('entry', 'e1', 'summary', at), R.sha1(`note|entry|e1|summary|${at}`));
+  assert.notStrictEqual(R.noteId('entry', 'e1', 'summary', at), R.noteId('entry', 'e1', 'cause', at));
+  assert.notStrictEqual(R.noteId('entry', 'e1', 'summary', at), R.noteId('entry', 'e2', 'summary', at));
 });

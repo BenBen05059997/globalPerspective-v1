@@ -193,8 +193,11 @@ function actorIdOf(name) {
 /** The ID of every other fact kind: sha1(kind + sourceKey). */
 const factId = (kind, sourceKey) => sha1(kind + sourceKey);
 
+/** The ID of a note (decision 0042): sha1('note|' + subtype + '|' + subject id + '|' + part + '|' + at). Same note, same ID. */
+const noteId = (subtype, subjectId, part, at) => sha1(`note|${subtype}|${subjectId}|${part}|${at}`);
+
 module.exports = {
-  canonicalUrl, entryIdentity, sourceIdOf, actorIdOf, factId, sha1,
+  canonicalUrl, entryIdentity, sourceIdOf, actorIdOf, factId, noteId, sha1,
   PIN_BUDGET, MOVE_MIN, LAG_MAX_DAYS, COMOVE_WINDOW_DAYS, COMOVE_MIN_PAIRS,
   pairKey, normalizeActor, stringTexture, pinBudgetOk, normalizeBoard, cheapGrounds,
 };

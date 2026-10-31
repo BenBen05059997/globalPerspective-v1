@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchArchiveRange } from '@/shared/api/restProxy';
+import { loadArchiveDayMap } from '@/shared/api/archiveRange';
 import { useAuth } from '@/shared/contexts/AuthContext';
 
-const CACHE_KEY = 'gp_weekly_archive_v1';
+const CACHE_KEY = 'gp_weekly_archive_v2'; // v2: days read from the record's weekly index (shape of the action's days)
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 export function useWeeklyArchive() {
@@ -41,8 +41,7 @@ export function useWeeklyArchive() {
     setLoading(true);
     window.dispatchEvent(new CustomEvent('gp-loading-start'));
     try {
-      const result = await fetchArchiveRange(30);
-      const data = result?.data || {};
+      const data = await loadArchiveDayMap();
       const dayCount = Object.keys(data).length;
       const resolvedTier = dayCount > 7 ? 'enterprise' : 'member';
       const now = Date.now();

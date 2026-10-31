@@ -54,9 +54,9 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   `newsDriftCorrector` stored them) when it holds at least as many as the action returned, cut to that many (`lib/viewDrift.js`); a 404, a
   failed view fetch or a shorter view keeps the action's notes. Snapshots, the total and the gate always come from `country_history`.
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
-- `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
+- `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (the record's weekly index, `archive_range` for the newest days; decision 0045) + `prediction_snapshot`.
 - `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
-- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
+- `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0045); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
   (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).
 
 ## Pipeline

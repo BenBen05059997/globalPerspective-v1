@@ -30,3 +30,17 @@ test('a country with no ISO3 is skipped (logged); a failing writer never throws'
   assert.equal(writer.calls.length, 0);
   assert.equal(await writeDriftNote({ country: 'Iran', item, model: 'm', runId: 'r', writer: { write: async () => { throw new Error('s3 down'); } } }), null);
 }));
+
+test('a story DRIFT# item becomes a drift note about the story (kind story, thread = the story, no countries); a failing writer never throws', quiet(async () => {
+  const { writeStoryDriftNote } = require('../src/recordNotes');
+  const story = { threadId: 'thread-x', asOf: '2026-10-11', since: '2026-10-10', changeScore: { from: 70, to: 75, delta: 5 }, priorTitle: 'a', currentTitle: 'b', triggerEvent: undefined,
+    whyChanged: 'Because X.', noSingleDriver: false, generatedAt: '2026-10-11T05:30:00.000Z' };
+  const writer = fakeWriter();
+  const note = await writeStoryDriftNote({ threadId: 'thread-x', item: story, model: 'deepseek-flash', runId: 'run-1', writer });
+  assert.equal(writer.calls[0][0], 'drift');
+  assert.deepEqual([note.subject, note.threadId, note.iso3, note.at, note.model], [{ kind: 'story', id: 'thread-x' }, 'thread-x', [], story.generatedAt, 'deepseek-flash']);
+  assert.deepEqual(note.producer, { lambda: 'newsDriftCorrector', runId: 'run-1' });
+  assert.equal('generatedAt' in note.payload, false);
+  assert.equal('triggerEvent' in note.payload, false);
+  assert.equal(await writeStoryDriftNote({ threadId: 'thread-x', item: story, model: 'm', runId: 'r', writer: { write: async () => { throw new Error('s3 down'); } } }), null);
+}));

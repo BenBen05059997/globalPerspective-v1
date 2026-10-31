@@ -253,3 +253,26 @@ test('linkNote: one note per edge, subject pairKey whichever way it points, part
   assert.equal(N.linkNote({edge: {...edge, to: 'thread-b'}, countryName: 'Japan', iso3: 'JPN', at, model: 'm', producer}), null); // a self-loop is no pair
   assert.throws(() => N.linkNote({edge, countryName: 'Japan', iso3: 'Japan', at, model: 'm', producer}), /ISO3/);
 });
+
+// story-level drift (the story page's "what changed" line): the same drift subtype and file, subject kind story.
+const storyDriftEx = load('examples/note-drift-story.json');
+
+test('storyDriftNote: the example validates; subject and thread are the story; the stored fields are the payload; an archive copy has model null', () => {
+  assert.equal(valid(storyDriftEx), true, JSON.stringify(valid.errors));
+  assert.equal(storyDriftEx.noteId, R.noteId('drift', storyDriftEx.subject.id, '', storyDriftEx.at));
+  assert.deepEqual([storyDriftEx.subject.kind, storyDriftEx.threadId, storyDriftEx.iso3], ['story', storyDriftEx.subject.id, []]);
+  const item = {threadId: 'thread-x', asOf: '2026-10-11', since: '2026-10-10', changeScore: {from: 70, to: 75, delta: 5}, priorTitle: 'a', currentTitle: 'b',
+    whyChanged: 'Because.', noSingleDriver: true, directionFlag: {kinds: ['axisEffect']}, PK: 'THREAD#thread-x', SK: 'DRIFT#2026-10-11', ttl: 1, generatedAt: '2026-10-11T05:30:00.000Z'};
+  const n = N.storyDriftNote({item, threadId: 'thread-x', model: 'deepseek-flash', producer});
+  assert.equal(valid(n), true, JSON.stringify(valid.errors));
+  assert.deepEqual(Object.keys(n.payload).sort(), ['asOf', 'changeScore', 'currentTitle', 'directionFlag', 'noSingleDriver', 'priorTitle', 'since', 'threadId', 'whyChanged']);
+  const copy = N.storyDriftNote({item: {...item, from: 'archive'}, threadId: 'thread-x', model: null, producer});
+  assert.equal(valid(copy), true, JSON.stringify(valid.errors));
+  assert.equal(N.storyDriftNote({item, threadId: 'thread-x', model: 'm', iso3: ['IND'], producer}).iso3[0], 'IND');
+  assert.throws(() => N.storyDriftNote({item, threadId: 'thread-x', model: null, producer}), /model/);
+  assert.equal(valid({...storyDriftEx, threadId: null}), false); // the story is the thread
+  assert.equal(valid({...storyDriftEx, subject: {kind: 'pair', id: storyDriftEx.subject.id}}), false);
+  assert.equal(valid({...storyDriftEx, payload: {...storyDriftEx.payload, countryName: 'India'}}), false); // a story payload has no country fields
+  assert.equal(valid({...driftEx, subject: {kind: 'story', id: 'thread-x'}}), false); // a country payload is not a story's
+  assert.equal(valid({...countryEx, subject: {kind: 'story', id: 'thread-x'}}), false);
+});

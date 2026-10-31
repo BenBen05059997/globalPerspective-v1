@@ -16,9 +16,10 @@ const BRIEF_ID = /^(daily:\d{4}-\d{2}-\d{2}|weekly:\d{4}-W\d{2})$/;
 const text = (v) => typeof v === 'string' && v.length > 0;
 
 /** -> a note object; throws on anything the schema would reject. `at` is when the model wrote it. */
-function buildNote({subtype, subjectId, part = '', threadId = null, iso3 = [], at, payload, cites = [], model, promptVersion = null, producer}) {
-  const kind = SUBJECT_KIND[subtype];
-  if (!kind) throw new Error(`notes: unknown subtype ${subtype}`);
+function buildNote({subtype, subjectId, kind: subjectKind, part = '', threadId = null, iso3 = [], at, payload, cites = [], model, promptVersion = null, producer}) {
+  const kind = subjectKind || SUBJECT_KIND[subtype];
+  if (!SUBJECT_KIND[subtype]) throw new Error(`notes: unknown subtype ${subtype}`);
+  if (subjectKind && subjectKind !== SUBJECT_KIND[subtype] && !(subtype === 'drift' && subjectKind === 'story')) throw new Error(`notes: a ${subtype} note's subject is not a ${subjectKind}`);
   if (!text(subjectId)) throw new Error(`notes: ${subtype} needs a subject id`);
   if (subtype === 'brief' && !BRIEF_ID.test(subjectId)) throw new Error(`notes: brief subject ${subjectId} is not daily:DATE or weekly:WEEK`);
   if (subtype === 'entry' && !Object.values(ENTRY_PARTS).includes(part)) throw new Error(`notes: entry part ${part}`);
@@ -84,6 +85,19 @@ function storyAnalysisNote({item, entries = [], producer}) {
 function driftNote({item, iso3, model, producer}) {
   return buildNote({
     subtype: 'drift', subjectId: iso3, threadId: item.triggerEvent && item.triggerEvent.threadId, iso3: [iso3], at: item.generatedAt,
+    payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt']), model, producer,
+  });
+}
+
+/**
+ * The THREAD# / DRIFT# item newsDriftCorrector stores for a story (before PK/SK/ttl) + its threadId -> a drift note about the story
+ * (same subtype and file as the country ones; subject kind 'story'). Payload = the stored fields (titles, scores, trigger event,
+ * why; threadId stays, as the site read it); the stored items carry no countries, so iso3 is the item's if it has one, else [].
+ * An archive copy (payload.from 'archive') has model null, as the country copies.
+ */
+function storyDriftNote({item, threadId, iso3, model, producer}) {
+  return buildNote({
+    subtype: 'drift', kind: 'story', subjectId: threadId, threadId, iso3: (item.iso3 || iso3 || []).filter((c) => ISO3.test(c)), at: item.generatedAt,
     payload: omit(item, ['PK', 'SK', 'ttl', 'generatedAt']), model, producer,
   });
 }
@@ -197,4 +211,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, countryNote, countryHistoryNote, linkNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, linkNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};

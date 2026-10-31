@@ -419,114 +419,231 @@
       },
       "then": {
         "properties": {
-          "iso3": {
-            "minItems": 1
-          },
-          "subject": {
-            "properties": {
-              "id": {
-                "pattern": "^[A-Z]{3}$"
+          "part": {
+            "const": ""
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subject": {
+                  "properties": {
+                    "kind": {
+                      "const": "country"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "iso3": {
+                  "minItems": 1
+                },
+                "subject": {
+                  "properties": {
+                    "id": {
+                      "pattern": "^[A-Z]{3}$"
+                    }
+                  }
+                },
+                "payload": {
+                  "description": "the DRIFT# item as newsDriftCorrector stores it for a country, minus keys, ttl and generatedAt (the note's at). Older DRIFTLOG# items (backfill) lack currentRiskScore.",
+                  "required": [
+                    "countryName",
+                    "asOf",
+                    "since",
+                    "changeScore",
+                    "whyChanged",
+                    "noSingleDriver"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "countryName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "asOf": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "since": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "changeLevel": {
+                      "type": "object"
+                    },
+                    "changeScore": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to",
+                        "delta"
+                      ]
+                    },
+                    "changeDimensions": {
+                      "type": "object"
+                    },
+                    "priorHeadline": {
+                      "type": "string"
+                    },
+                    "currentHeadline": {
+                      "type": "string"
+                    },
+                    "currentDimensions": {
+                      "type": "object"
+                    },
+                    "currentRiskScore": {
+                      "type": "number"
+                    },
+                    "currentRiskLevel": {
+                      "type": "string"
+                    },
+                    "currentLead": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "triggerEvent": {
+                      "type": "object",
+                      "required": [
+                        "topicId",
+                        "title"
+                      ]
+                    },
+                    "whyChanged": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "noSingleDriver": {
+                      "type": "boolean"
+                    },
+                    "directionFlag": {
+                      "type": "object"
+                    },
+                    "from": {
+                      "enum": [
+                        "archive"
+                      ],
+                      "description": "present on a copy taken from the permanent DRIFTLOG# archive (backfill), which stored no model: the note's model is then null"
+                    }
+                  }
+                }
               }
             }
           },
-          "part": {
-            "const": ""
+          {
+            "if": {
+              "properties": {
+                "subject": {
+                  "properties": {
+                    "kind": {
+                      "const": "story"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "threadId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "payload": {
+                  "description": "the THREAD# DRIFT# item as newsDriftCorrector stores it for a story, minus keys, ttl and generatedAt (the note's at); threadId stays. The stored items carry no countries (iso3 may be empty).",
+                  "required": [
+                    "threadId",
+                    "asOf",
+                    "since",
+                    "changeScore",
+                    "whyChanged",
+                    "noSingleDriver"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "threadId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "asOf": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "since": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "changeScore": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to",
+                        "delta"
+                      ]
+                    },
+                    "changeDimensions": {
+                      "type": "object"
+                    },
+                    "priorTitle": {
+                      "type": "string"
+                    },
+                    "currentTitle": {
+                      "type": "string"
+                    },
+                    "triggerEvent": {
+                      "type": "object",
+                      "required": [
+                        "topicId",
+                        "title"
+                      ]
+                    },
+                    "whyChanged": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "noSingleDriver": {
+                      "type": "boolean"
+                    },
+                    "directionFlag": {
+                      "type": "object"
+                    },
+                    "from": {
+                      "enum": [
+                        "archive"
+                      ],
+                      "description": "a copy taken from the stored THREAD# DRIFT# item by the backfill, which stored no model: the note's model is then null"
+                    }
+                  }
+                }
+              }
+            }
           },
-          "payload": {
-            "description": "the DRIFT# item as newsDriftCorrector stores it for a country, minus keys, ttl and generatedAt (the note's at). Older DRIFTLOG# items (backfill) lack currentRiskScore.",
-            "required": [
-              "countryName",
-              "asOf",
-              "since",
-              "changeScore",
-              "whyChanged",
-              "noSingleDriver"
-            ],
-            "additionalProperties": false,
+          {
             "properties": {
-              "countryName": {
-                "type": "string",
-                "minLength": 1
-              },
-              "asOf": {
-                "type": "string",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-              },
-              "since": {
-                "type": "string",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-              },
-              "changeLevel": {
-                "type": "object"
-              },
-              "changeScore": {
-                "type": "object",
-                "required": [
-                  "from",
-                  "to",
-                  "delta"
-                ]
-              },
-              "changeDimensions": {
-                "type": "object"
-              },
-              "priorHeadline": {
-                "type": "string"
-              },
-              "currentHeadline": {
-                "type": "string"
-              },
-              "currentDimensions": {
-                "type": "object"
-              },
-              "currentRiskScore": {
-                "type": "number"
-              },
-              "currentRiskLevel": {
-                "type": "string"
-              },
-              "currentLead": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "triggerEvent": {
-                "type": "object",
-                "required": [
-                  "topicId",
-                  "title"
-                ]
-              },
-              "whyChanged": {
-                "type": "string",
-                "minLength": 1
-              },
-              "noSingleDriver": {
-                "type": "boolean"
-              },
-              "directionFlag": {
-                "type": "object"
-              },
-              "from": {
-                "enum": [
-                  "archive"
-                ],
-                "description": "present on a copy taken from the permanent DRIFTLOG# archive (backfill), which stored no model: the note's model is then null"
+              "subject": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "country",
+                      "story"
+                    ]
+                  }
+                }
               }
             }
           }
-        }
+        ]
       }
     },
     {
       "if": {
         "properties": {
           "subtype": {
-            "enum": [
-              "drift",
-              "country"
-            ]
+            "const": "country"
           }
         }
       },

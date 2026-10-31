@@ -47,3 +47,4 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0040](0040-raw-before-model.md) | 2026-10-22 | Raw before model, recovered days, re-assignable stories, canonical actors | accepted (amends 0036, 0037, 0038, 0039) |
 | [0041](0041-docs-slimmed-to-architecture-decisions-readmes.md) | 2026-10-26 | Docs slimmed to architecture, decisions, READMEs and one start file | accepted |
 | [0042](0042-notes-move-to-the-record.md) | 2026-10-31 | The daily model notes move to the record (`record/notes/`), one schema and ID rule | accepted; amends 0040 |
+| [0043](0043-question-draws-in-the-record.md) | 2026-10-31 | The weekly question draws move to the record (`question_commit`, `question_draw`), views carry scoring and state | accepted; follows 0035, 0038, 0042 |

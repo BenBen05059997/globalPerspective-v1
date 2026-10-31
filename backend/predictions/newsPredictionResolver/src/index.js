@@ -72,11 +72,15 @@ async function ensureCommits(deps, today, dryRun, out) {
       await deps.store.putOnce({ PK: `SEED#${wk}`, SK: 'SECRET', seedHex, createdAt: deps.now() });
       secret = await deps.store.get(`SEED#${wk}`, 'SECRET');
     }
-    const ok = await deps.store.putOnce({
-      PK: `SEED#${wk}`, SK: 'COMMIT', weekId: wk, weekStart: lib.weekStart(wk), weekEnd: lib.weekEnd(wk),
+    const row = {
+      weekId: wk, weekStart: lib.weekStart(wk), weekEnd: lib.weekEnd(wk),
       commitHash: lib.commitOf(secret.seedHex), rule: lib.RULE, committedAt: deps.now(),
-    });
-    if (ok) out.committed.push(wk);
+    };
+    const ok = await deps.store.putOnce({ PK: `SEED#${wk}`, SK: 'COMMIT', ...row });
+    if (ok) {
+      out.committed.push(wk);
+      await inbox.appendDraw(deps, out, 'commit', inbox.commitLine(row));
+    }
   }
 }
 
@@ -93,12 +97,13 @@ async function drawWeek(deps, commit, dryRun, out) {
   if (dryRun) { out.wouldDraw.push(summary); return; }
   const now = deps.now();
   await deps.store.putOnce({ PK: `SEED#${wk}`, SK: 'REVEAL', weekId: wk, seedHex: secret.seedHex, revealedAt: now });
-  await deps.store.putOnce({
-    PK: `SAMPLE#${wk}`, SK: 'DRAW', weekId: wk, rule: lib.RULE, K: lib.SAMPLE_K,
+  const drawRow = {
+    weekId: wk, rule: lib.RULE, K: lib.SAMPLE_K,
     eligible: res.eligible, clusters: res.clusters,
     pool: eligible.map((q) => ({ q: q.qid, c: q.clusterKey })),
     picked: res.picked, drawnAt: now,
-  });
+  };
+  await deps.store.putOnce({ PK: `SAMPLE#${wk}`, SK: 'DRAW', ...drawRow });
   const byQ = new Map(eligible.map((q) => [q.qid, q]));
   for (const p of res.picked) {
     const q = byQ.get(p.qid);
@@ -110,6 +115,7 @@ async function drawWeek(deps, commit, dryRun, out) {
     });
   }
   out.drawn.push(summary);
+  await inbox.appendDraw(deps, out, 'draw', inbox.drawLine(drawRow, secret.seedHex));
 }
 
 // Verdict rows have no probability and are never replaced: VERDICT is number 1, corrections are VERDICT#2, #3, ...
@@ -309,7 +315,7 @@ async function run(event, deps) {
   return out;
 }
 
-// s3json over the world bucket (the SDK ships with the Lambda runtime): reads record/facts/* (WATCH) and appends to record/inbox/verdicts/* (RECORD).
+// s3json over the world bucket (the SDK ships with the Lambda runtime): reads record/facts/* (WATCH) and appends to record/inbox/verdicts/* and record/inbox/draws/* (RECORD).
 function makeFacts() {
   const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
   const { makeS3Json } = require('./_shared/s3json');

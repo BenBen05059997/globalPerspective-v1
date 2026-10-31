@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "noteId": "b28338658948fd5e9adb39923944348ca3b689c1",
+  "subtype": "link",
+  "subject": {
+    "kind": "pair",
+    "id": "thread-g7-agrees-to-release-100-milli-4e524e__thread-us-pressures-europe-to-release-baec0d"
+  },
+  "part": "JPN",
+  "threadId": null,
+  "iso3": [
+    "JPN"
+  ],
+  "at": "2026-10-30T05:02:09.564Z",
+  "date": "2026-10-30",
+  "payload": {
+    "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "country": "Japan",
+    "confidence": "medium",
+    "lagDays": 1,
+    "mechanism": "The G7 agreement to release oil and diesel reserves, initially reported on 2026-10-02, is followed by continued US pressure on Europe and a subsequent G7 release announcement on 2026-10-04, indicating an ongoing energy crisis response.",
+    "cited": [
+      {
+        "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-5",
+        "date": "2026-10-02",
+        "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+      },
+      {
+        "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-3",
+        "date": "2026-10-03",
+        "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+      },
+      {
+        "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3",
+        "date": "2026-10-04",
+        "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+      },
+      {
+        "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-7",
+        "date": "2026-10-04",
+        "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+      }
+    ]
+  },
+  "cites": [
+    "f637c7d50e6e53600bbeee372e5d9e560444f943",
+    "e49c85b47a2ff402d268e39e1290ec5bd95dbf64",
+    "3f5c4ab6c139bef4956be4bfb831d86098ea629d"
+  ],
+  "model": "deepseek-v4-pro",
+  "promptVersion": null,
+  "producer": {
+    "lambda": "newsSystemsAnalysis",
+    "runId": "built from the live item SummarizeAndPredict SYSTEMS#Japan / SYSTEMS_ANALYSIS, first link note of the web (generatedAt 2026-10-30T05:02:09.564Z); cites from NewsCache archive#2026-10-02..04; 2026-10-31"
+  }
+}

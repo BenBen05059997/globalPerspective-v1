@@ -26,6 +26,4 @@ A degraded/failed or missing news index freezes prior news situations: no coolin
 
 ## Tests
 - `node --test src/degraded.test.js` (offline; fold and full handler with fake S3).
-- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` - 13 passed; degraded-input regressions: 4 passed 2026-10-20
-
-Last verified: 2026-10-19
+- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` (plus the degraded-input regression tests)

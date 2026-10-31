@@ -29,6 +29,4 @@ If more than half of attempted new classifications are missing, the run returns 
 
 ## Tests
 - `node --test src/outage.test.js` (offline; fake classifier and store).
-- `cd backend/situations/newsSituationIngest/src && node classifier-core.test.mjs` - 10 passed 2026-10-19
-
-Last verified: 2026-10-19
+- `cd backend/situations/newsSituationIngest/src && node classifier-core.test.mjs`

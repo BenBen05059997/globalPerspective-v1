@@ -48,5 +48,3 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
     aws events list-rules --region ap-northeast-1 --query 'Rules[?contains(Name,`Gdacs`)||contains(Name,`Situation`)||contains(Name,`Gdelt`)].[Name,State,ScheduleExpression]' --output text
     aws s3 ls s3://globalperspective-world-280362093938/world/ --recursive | head -3
     aws lambda get-function-configuration --region ap-northeast-1 --function-name newsSituationTracker --query 'Environment.Variables.DRY_RUN'
-
-Last verified: 2026-10-20 against code @14dd450d and live AWS.

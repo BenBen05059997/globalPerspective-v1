@@ -1,6 +1,6 @@
 # weekly
 
-The analyst's weekly: one brief per week, the same for every reader. It is the one backend source of truth for the weekly's content: schema, section model, and (later) the pull, check, publish and hold scripts. The agent procedure lives in `.claude/skills/weekly-brief/SKILL.md` and holds only the steps; every rule, field and path comes from here.
+The analyst's weekly: one brief per week, the same for every reader. It is the one backend source of truth for the weekly's content: schema, section model, and (later) the pull, check, publish and hold scripts. The weekly agent procedure is not in the repo yet; every rule, field and path will come from here.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → **8 Weekly report** → 9 Delivery → 10 Watch
@@ -21,15 +21,14 @@ An agent working on the weekly does not write `record/` or board data. See `proj
 
 S3 `weekly/` only: `weekly/YYYY-MM-DD.json` (week ending; status `draft`, `published` or `held` is carried in the file) and `weekly/latest.json` (the newest published week).
 
-## Reads (W1, not yet written)
+## Reads (planned; the pull is not written)
 
 NewsCache `archive#` (7 days, plus 30 for story births), `THREAD_ANALYSIS`, `DRIFT#` / `DRIFTLOG#` (thread and country), `PRED#` scenarios with triggers, `Q#` due dates and verdicts, `web/latest.json` (S3). This live-table pull is interim; final design: the weekly is a view of the week's readings (`record/readings/`), run after the review (stage 8). It does not write `record/` or board data.
 
 ## Read by
 
-- `newsEmailSender` (`backend/distribution/newsEmailSender`), through the `src/_weekly` symlink (W3): renders the email from `sections.js` and `weekly/latest.json`.
-- `features/weekly/` (W5), through a mirrored copy of the sections core block, kept identical by `scripts/check-shared-sync.mjs`.
-- The board, later.
+- `features/weekly/`, through a mirrored copy of the sections core block, kept identical by `scripts/check-shared-sync.mjs`.
+- Planned, not built: `newsEmailSender` (it still renders the old `WEEKLY_BRIEF` row today) and the board.
 
 ## Files
 
@@ -50,4 +49,4 @@ Tests: `node --test backend/weekly/test/*.test.*` (the schema test borrows ajv f
 
 ## Status
 
-W0: schema and section model frozen. Design: `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9.
+Schema and section model are frozen; pull, check, publish and hold are not written (nothing writes `weekly/` from this folder yet). Design: `project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md` section 9.

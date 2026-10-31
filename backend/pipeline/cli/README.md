@@ -3,12 +3,9 @@
 Operator tools for the content pipeline. They run from a laptop with the AWS CLI configured; they are not deployed as Lambdas.
 
 
-Historical repair policy (coordinator timeline decision, 2026-10-20): `merge`, `move` and `split` are legacy in-place
-repairs. Their `--apply` paths rewrite source rows and are not the preferred repair once history is captured by the
-timeline. Prefer canonical thread aliases backed by appended correction events, and entry-scoped membership corrections
-for mixed threads; rebuild current views without rewriting timeline or source history. This alias/correction path is a
-coordinator design request, not an implemented CLI command. See the lane D mailbox `artifacts/pipeline/CLEANUP.md` and
-`DESIGN.md`. An original-list condition or S3 ETag does not make a historical rewrite append-only.
+Repair policy: `merge`, `move` and `split` are legacy in-place repairs. Their `--apply` paths rewrite source rows, and a
+conditional write (original-list check or S3 ETag) does not make a historical rewrite append-only. Corrections that should
+survive in the record are assignment and merge facts (`backend/record/`), not these commands.
 
 ## threads.mjs
 
@@ -28,8 +25,6 @@ GlobalPerspectivePredictionLog, S3 `threads/story-map.json` and S3 `situations/s
 ## threads.test.mjs
 
 Offline tests for the planning half (`listJoins`, `planMerge`, `planSplit`); no AWS calls. Run with `node --test backend/pipeline/cli/threads.test.mjs`.
-
-Last verified: 2026-10-20 against code @14dd450d.
 
 ## dupes.mjs (read-only)
 

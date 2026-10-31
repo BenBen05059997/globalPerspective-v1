@@ -21,6 +21,4 @@ Daily thread-level AI analysis. Reads 30 days of topic archives, groups entries 
 - Threads ageing out of the 30-day window never trigger a re-analysis.
 
 ## Tests
-- `cd backend/pipeline/newsThreadAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 8 passed 2026-10-19
-
-Last verified: 2026-10-19
+- `cd backend/pipeline/newsThreadAnalysis/src && npm test` (`node --test ../test/*.test.js`)

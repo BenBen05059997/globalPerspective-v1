@@ -23,6 +23,4 @@ without an end time; unparseable values dropped). Optional `event.countries` lim
 - Missing `SUMMARIZE_PREDICT_TABLE` throws.
 
 ## Tests
-- `cd backend/pipeline/newsCountryFactsUpdater/src && npm test` (`node --test ../test/*.test.js`): 7 pass.
-
-Last verified: 2026-10-19
+- `cd backend/pipeline/newsCountryFactsUpdater/src && npm test` (`node --test ../test/*.test.js`).

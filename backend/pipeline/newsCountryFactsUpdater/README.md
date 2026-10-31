@@ -13,6 +13,7 @@ without an end time; unparseable values dropped). Optional `event.countries` lim
 
 ## Reads / writes
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: Get then Put `PK FACTS#<country>` / `SK COUNTRY_FACTS` (whole-record replace, `ttl` +90 days).
+- S3 `WORLD_BUCKET`, only when env `NOTES_PREFIX` is set (unset = nothing; decision 0053): each stored item is also written as a `country_facts` note (no model) to `<NOTES_PREFIX>notes/country_facts/DAY.jsonl` through shared `notes.js` (`src/recordNotes.js`); best-effort, a failure logs `[notes]` and never fails the run. The role needs Get/Put on `record/notes/country_facts/*` plus `ListBucket` before the env is set.
 - External: `query.wikidata.org` (SPARQL), `www.wikidata.org`, `acleddata.com` (OAuth token + read; `ACLED_USERNAME`/`ACLED_PASSWORD`, skipped when unset).
 
 ## Gotchas

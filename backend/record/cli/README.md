@@ -30,6 +30,33 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-entry-notes.mjs [--dry
 First live run 2026-10-31: 3,713 notes from 1,325 archived entries over 35 days (126 unmatched, mostly 2026-09-05, the record's
 first day). Test: `node --test backend/record/cli/backfill-entry-notes.test.mjs`.
 
+## backfill-country-notes.mjs
+
+Copies every current `SummarizeAndPredict` `COUNTRY#<c>` / `COUNTRY_INTELLIGENCE` item into a full `country` note (its own `generatedAt`
+and `model`; subject the ISO3 from the shared `resolveIso3`, a name with none is reported and skipped), and every `HISTORY#<date>` row
+into a reduced history copy (`payload.from: "history"`, `model` null: the row did not record it) through shared `notes.js`. A
+`HISTORY#` row written by the same run as a briefing item (same `generatedAt`) is that briefing's subset and is not planned. Views prefer
+an exact note over a copy. A re-run appends nothing (same `noteId`).
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-notes.mjs [--dry] [--live] [--no-history]
+```
+Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-country-notes.test.mjs`.
+
+## backfill-link-notes.mjs
+
+Turns the causal edges of the country webs into `link` notes through the same planner `newsSystemsAnalysis` uses (`recordNotes.js`
+`planLinkNotes`). Sources (read-only): the current `SYSTEMS#` / `SYSTEMS_ANALYSIS` rows (the webs `WEB#INDEX/LATEST` is built from; they carry
+the model) and the dated S3 web history `web/YYYY/MM/DD.json` (`webs`): a web there that is not also a current row has no recorded model, so its
+notes are copies (`model` null, `payload.source: "web-history"`). Cites are the eventIds of the cited entries found in the NewsCache archive
+rows of the cited days. Region rows (Europe, Asia ...) have no ISO3 and are reported and skipped; a web holding both directions of a pair
+keeps the stronger edge. `WEB#INDEX/LATEST` is read only to print its link count beside the planned notes. A re-run appends nothing.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-link-notes.mjs [--dry] [--live] [--no-history]
+```
+Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-link-notes.test.mjs`.
+
 `sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
 
 ## recover-day.mjs

@@ -3,8 +3,9 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
-const { iso3List } = require('./_shared/resolveIso3');
+const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys } = require('./lib');
+const { readMode, s3NoteReader } = require('./_shared/noteReads');
+const { makeRecords, correctionOf } = require('./records');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -72,6 +73,15 @@ async function verifyFirebaseToken(authHeader) {
     return null;
   }
 }
+
+// Country and story rows (decision 0053): NOTES_READS=ddb (default) reads SummarizeAndPredict, notes reads the record's notes,
+// compare answers from DynamoDB and logs [notes-compare] differences. Notes are cached NOTES_CACHE_SECONDS (default 300) per warm Lambda.
+let _notes;
+let _records;
+const getRecords = () => _records || (_records = makeRecords({
+  getClient: () => getDynamoClient(), table: SUMMARIZE_PREDICT_TABLE, mode: readMode(),
+  notes: { all: (...a) => (_notes || (_notes = s3NoteReader({ bucket: WORLD_BUCKET, prefix: process.env.NOTES_READ_PREFIX || 'record/', region: REGION, ttlMs: Number(process.env.NOTES_CACHE_SECONDS || '300') * 1000 }))).all(...a) },
+}));
 
 let dynamoDocClient = null;
 
@@ -364,29 +374,10 @@ exports.handler = async (event) => {
     if (action === 'thread_analysis') {
       const threadIds = Array.isArray(payload?.threadIds) ? payload.threadIds.slice(0, 20) : [];
       const data = {};
-      const client = getDynamoClient();
       await Promise.all(threadIds.map(async (tid) => {
         try {
-          const [analysisOut, driftOut] = await Promise.all([
-            client.send(new GetCommand({
-              TableName: SUMMARIZE_PREDICT_TABLE,
-              Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
-            })),
-            // Living-analysis Phase 3: the latest grounded "what changed" note for this thread.
-            client.send(new QueryCommand({
-              TableName: SUMMARIZE_PREDICT_TABLE,
-              KeyConditionExpression: 'PK = :pk AND begins_with(SK, :d)',
-              ExpressionAttributeValues: { ':pk': `THREAD#${tid}`, ':d': 'DRIFT#' },
-              ScanIndexForward: false,
-              Limit: 1,
-            })),
-          ]);
-          if (analysisOut.Item) {
-            const { PK, SK, ttl, ...rest } = analysisOut.Item;
-            const driftItem = (driftOut.Items || [])[0];
-            if (driftItem) { const { PK: _p, SK: _s, ttl: _t, ...dn } = driftItem; rest.driftNote = dn; }
-            data[tid] = rest;
-          }
+          const analysis = await getRecords().threadAnalysis(tid); // the analysis plus its latest "what changed" note, or null
+          if (analysis) data[tid] = analysis;
         } catch {}
       }));
       console.info('newsSensitiveData thread_analysis response', {
@@ -402,20 +393,10 @@ exports.handler = async (event) => {
     if (action === 'country_intelligence') {
       const countryNames = Array.isArray(payload?.countryNames) ? payload.countryNames.slice(0, 15) : [];
       const data = {};
-      const client = getDynamoClient();
       await Promise.all(countryNames.map(async (name) => {
         try {
-          for (const key of countryKeys(name)) { // canonical record first, then the requested spelling
-            const { Item } = await client.send(new GetCommand({
-              TableName: SUMMARIZE_PREDICT_TABLE,
-              Key: { PK: `COUNTRY#${key}`, SK: 'COUNTRY_INTELLIGENCE' },
-            }));
-            if (Item) {
-              const { PK, SK, ttl, ...rest } = Item;
-              data[name] = rest;
-              break;
-            }
-          }
+          const row = await getRecords().countryIntelligence(name);
+          if (row) data[name] = row;
         } catch {}
       }));
       console.info('newsSensitiveData country_intelligence response', {
@@ -433,17 +414,10 @@ exports.handler = async (event) => {
       // source and as-of date; rows or parts without both are omitted (never an undated value).
       const countryNames = Array.isArray(payload?.countryNames) ? payload.countryNames.slice(0, 15).map(String) : [];
       const data = {};
-      const client = getDynamoClient();
       await Promise.all(countryNames.map(async (name) => {
         try {
-          for (const key of countryKeys(name)) { // canonical record first, then the requested spelling
-            const { Item } = await client.send(new GetCommand({
-              TableName: SUMMARIZE_PREDICT_TABLE,
-              Key: { PK: `FACTS#${key}`, SK: 'COUNTRY_FACTS' },
-            }));
-            const shaped = shapeCountryFacts(Item);
-            if (shaped) { data[name] = shaped; break; }
-          }
+          const shaped = await getRecords().countryFacts(name);
+          if (shaped) data[name] = shaped;
         } catch {}
       }));
       console.info('newsSensitiveData country_facts response', { requested: countryNames.length, found: Object.keys(data).length });
@@ -455,50 +429,12 @@ exports.handler = async (event) => {
       if (!countryName) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName' }) };
       }
-      const client = getDynamoClient();
       try {
-        const readCountry = (key) => Promise.all([
-          client.send(new QueryCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'HISTORY#' },
-            ScanIndexForward: false,
-            Limit: 90,
-          })),
-          // Live drift notes (60d TTL) — grounded "what changed & why". Newest first, few.
-          client.send(new QueryCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'DRIFT#' },
-            ScanIndexForward: false,
-            Limit: 10,
-          })),
-          // Permanent archive (no TTL) — the full correction history members unlock (P3). Empty
-          // until newsDriftCorrector runs post-deploy; unioned below so the live band is unaffected.
-          client.send(new QueryCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'DRIFTLOG#' },
-            ScanIndexForward: false,
-            Limit: 90,
-          })),
-        ]);
-        // canonical record first, then the requested spelling (records not yet merged)
-        let histOut, driftOut, archiveOut;
-        for (const key of countryKeys(countryName)) {
-          [histOut, driftOut, archiveOut] = await readCountry(key);
-          if ([histOut, driftOut, archiveOut].some((o) => (o.Items || []).length)) break;
-        }
-        const snapshots = (histOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        const { snapshots, driftNotes: allDriftNotes } = await getRecords().countryHistory(countryName);
         // Correction-history DEPTH is the member perk (MEMBER_GATING_PLAN.md): non-members get the
         // latest note free + an honest count of how many more; members get the full chain. The
         // snapshots (the analysis itself) are always fully public — only the drift depth caps.
-        // Union archive (DRIFTLOG#, superset) + live (DRIFT#), dedup by asOf, newest first.
-        const strip = ({ PK, SK, ttl, ...rest }) => rest;
-        const allDriftNotes = dedupeByAsOf([
-          ...(archiveOut.Items || []).map(strip),
-          ...(driftOut.Items || []).map(strip),
-        ]);
+        // The cap is applied here, on the full list, whatever the source: gated depth never goes into a view.
         const tier = await resolveTier(event);
         const capped = capForTier(allDriftNotes, tier, 1);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots,
@@ -510,49 +446,12 @@ exports.handler = async (event) => {
     }
 
     // Site-wide corrections ledger — the living-analysis loop's aggregate view. Recent grounded
-    // drift notes across ALL countries + threads ("<name>: elevated → high · Because: <event>").
-    // Scans DRIFT# rows (60d-TTL, bounded; same Scan pattern as economic_impact_list). Cached 30min
-    // on the client. (Future optimization: have newsDriftCorrector append to one CORRECTIONS_FEED
-    // row so the serve is a single GetItem — see PREDICTION_METHODOLOGY_V1_PLAN.md §5.)
+    // drift notes across ALL countries + threads ("<name>: elevated → high · Because: <event>"),
+    // within the 60-day window the live DRIFT# rows had. Cached 30min on the client.
     if (action === 'corrections_feed') {
-      const client = getDynamoClient();
       try {
         const limit = Math.min(Number(payload?.limit || qs?.limit || 40), 100);
-        const items = [];
-        let ExclusiveStartKey;
-        do {
-          const res = await client.send(new ScanCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            FilterExpression: 'begins_with(SK, :d)',
-            ExpressionAttributeValues: { ':d': 'DRIFT#' },
-            ProjectionExpression: 'PK, SK, threadId, asOf, changeLevel, changeScore, changeDimensions, triggerEvent, whyChanged, noSingleDriver, directionFlag',
-            ExclusiveStartKey,
-          }));
-          items.push(...(res.Items || []));
-          ExclusiveStartKey = res.LastEvaluatedKey;
-        } while (ExclusiveStartKey);
-
-        const notes = items.map((it) => {
-          const pk = String(it.PK || '');
-          const scope = pk.startsWith('COUNTRY#') ? 'country' : pk.startsWith('THREAD#') ? 'thread' : 'other';
-          const name = pk.replace(/^(COUNTRY#|THREAD#)/, '');
-          return {
-            scope,
-            name,
-            // links: a country note's iso3 (resolver over its name), the thread (a thread note's own, else the
-            // trigger event's thread)
-            iso3: scope === 'country' ? iso3List([name]) : [],
-            threadId: it.threadId || it.triggerEvent?.threadId || null,
-            asOf: it.asOf || String(it.SK || '').replace(/^DRIFT#/, ''),
-            changeLevel: it.changeLevel || null,
-            changeScore: it.changeScore || null,
-            changeDimensions: it.changeDimensions || null,
-            triggerEvent: it.triggerEvent || null,
-            whyChanged: it.whyChanged || null,
-            noSingleDriver: !!it.noSingleDriver,
-            directionFlag: it.directionFlag || null, // D9: the client shows numbers only for a flagged note
-          };
-        }).filter(n => n.asOf && n.scope !== 'other');
+        const notes = (await getRecords().driftRows()).map(correctionOf).filter(n => n.asOf && n.scope !== 'other');
         notes.sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
         // Ledger DEPTH is the member perk: non-members see the newest few + the honest total;
         // members see the full history. The total is always the real full count (feeds the
@@ -853,10 +752,7 @@ exports.handler = async (event) => {
       const name = payload?.countryName;
       if (!name) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName' }) };
       try {
-        const { Item } = await getDynamoClient().send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
-        }));
+        const Item = await getRecords().countryPreview(name);
         if (!Item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
         return {
           statusCode: 200, headers,
@@ -878,10 +774,7 @@ exports.handler = async (event) => {
       const tid = payload?.threadId;
       if (!tid) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing threadId' }) };
       try {
-        const { Item } = await getDynamoClient().send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
-        }));
+        const Item = await getRecords().threadPreview(tid);
         if (!Item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
         return {
           statusCode: 200, headers,

@@ -50,7 +50,8 @@ async function main() {
   const s3json = makeS3Json({ client: new s3sdk.S3Client({ region: REGION }), GetObjectCommand: s3sdk.GetObjectCommand, PutObjectCommand: s3sdk.PutObjectCommand, bucket });
   const reader = NR.makeNoteReader({ s3json, prefix, ttlMs: 3600000 });
 
-  const { makeRecords, correctionOf, diff } = require('../../read-api/newsSensitiveData/src/records.js');
+  const { makeRecords, correctionOf } = require('../../read-api/newsSensitiveData/src/records.js');
+  const { diff } = NR;
   const { capForTier } = require('../../read-api/newsSensitiveData/src/lib.js');
   // the in-memory notes of the two subtypes that have none yet
   const inMemory = {};

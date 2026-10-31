@@ -103,3 +103,31 @@ test('makeNoteReader: reads the days of the manifest once per window; a subtype 
   assert.deepEqual(await reader.all('country_facts'), []);
   assert.deepEqual((await reader.all('drift', 1)).map((x) => x.noteId), ['record/notes/drift/2026-10-02.jsonl']);
 });
+
+test('rowReaders: the country briefing is matched by the exact name its record was keyed by; the story analysis by threadId; compare logs a difference', async () => {
+  const item = briefing();
+  const analysis = { PK: 'THREAD#t1', SK: 'THREAD_ANALYSIS', ttl: 1, threadId: 't1', threadTitle: 'T', entryShortTitles: [], storyArc: 'a', trajectory: 'stable', rootCauseChain: null, watchQuestions: [], inflectionTopicId: null,
+    riskScore: 50, dimensions: { conflict: { score: 50, why: 'w' } }, lead: 'conflict', sentiment: 0, keyActors: [], entryCount: 2, entryTopicIds: [], iso3: ['JPN'], generatedAt: '2026-10-12T04:40:00.000Z', model: 'm', latencyMs: 3 };
+  const noteSet = { country: [N.countryNote({ item, iso3: 'JPN', producer })], story_analysis: [N.storyAnalysisNote({ item: analysis, producer })] };
+  const reader = { all: async (s) => noteSet[s] || [] };
+  const store = { 'COUNTRY#Japan|COUNTRY_INTELLIGENCE': item, 'THREAD#t1|THREAD_ANALYSIS': analysis };
+  const ddbGet = async (pk, sk) => store[`${pk}|${sk}`] || null;
+  const logs = { info: [], warn: [] };
+  const log = { info: (m) => logs.info.push(m), warn: (m) => logs.warn.push(m) };
+  const make = (mode, g = ddbGet) => NR.rowReaders(NR.lambdaSource({ env: { NOTES_READS: mode }, reader, log }), g);
+  const strip = ({ ttl, ...r }) => r;
+  assert.deepEqual(strip(await make('notes').country('Japan')), strip(item));
+  assert.equal(await make('notes').country('USA'), null); // an alias has no record, as in DynamoDB
+  assert.equal(await make('ddb').country('USA'), null);
+  assert.deepEqual(strip(await make('notes').thread('t1')), strip(analysis));
+  assert.equal(await make('notes').thread('gone'), null);
+  await make('compare').country('Japan');
+  assert.ok(logs.info.some((l) => l.includes('[notes-compare] COUNTRY_INTELLIGENCE Japan: same')), logs.info.join('\n'));
+  const skewed = await make('compare', async (pk, sk) => ({ ...(await ddbGet(pk, sk)), headline: 'other' })).country('Japan');
+  assert.equal(skewed.headline, 'other'); // DynamoDB answers
+  assert.ok(logs.warn.some((l) => l.includes('headline')), logs.warn.join('\n'));
+  // a failing notes read in compare mode never breaks the answer
+  const broken = NR.rowReaders(NR.lambdaSource({ env: { NOTES_READS: 'compare' }, reader: { all: async () => { throw new Error('s3 down'); } }, log }), ddbGet);
+  assert.equal((await broken.country('Japan')).headline, 'H');
+  assert.ok(logs.warn.some((l) => l.includes('notes read failed: s3 down')));
+});

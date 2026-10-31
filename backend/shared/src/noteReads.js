@@ -147,7 +147,91 @@ function makeNoteReader({ s3json, prefix = 'record/', ttlMs = 300000, now = Date
   return { all, clear: () => cache.clear() };
 }
 
+/** The notes reader of the live bucket (the AWS SDK is required here, so a caller in `ddb` mode never loads it). */
+function s3NoteReader({ bucket = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938', prefix = process.env.NOTES_READ_PREFIX || 'record/', region = process.env.AWS_REGION || 'ap-northeast-1', ttlMs }) {
+  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  const { makeS3Json } = require('./s3json');
+  return makeNoteReader({ s3json: makeS3Json({ client: new S3Client({ region }), GetObjectCommand, PutObjectCommand, bucket }), prefix, ttlMs });
+}
+
+/** A change description between two JSON-able values, '' when equal. Key order, iso3 order, ttl and undefined fields do not count. */
+function diff(a, b) {
+  const norm = (v, key) => {
+    if (Array.isArray(v)) { const out = v.map((x) => norm(x)); return key === 'iso3' ? out.slice().sort() : out; }
+    if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort().filter((k) => v[k] !== undefined && k !== 'ttl').map((k) => [k, norm(v[k], k)]));
+    return v;
+  };
+  const na = norm(a === undefined ? null : a);
+  const nb = norm(b === undefined ? null : b);
+  if (JSON.stringify(na) === JSON.stringify(nb)) return '';
+  // the first place they part, so a log line says what differs rather than printing both rows
+  const where = (p, q, path) => {
+    if (JSON.stringify(p) === JSON.stringify(q)) return null;
+    if (Array.isArray(p) && Array.isArray(q)) {
+      if (p.length !== q.length) return `${path}.length ddb=${p.length} notes=${q.length}`;
+      for (let i = 0; i < p.length; i += 1) { const w = where(p[i], q[i], `${path}[${i}]`); if (w) return w; }
+    }
+    if (p && q && typeof p === 'object' && typeof q === 'object' && !Array.isArray(p) && !Array.isArray(q)) {
+      for (const k of new Set([...Object.keys(p), ...Object.keys(q)])) { const w = where(p[k], q[k], `${path}.${k}`); if (w) return w; }
+    }
+    return `${path} ddb=${JSON.stringify(p)?.slice(0, 100)} notes=${JSON.stringify(q)?.slice(0, 100)}`;
+  };
+  return where(na, nb, '$');
+}
+
+/**
+ * Runs a read under NOTES_READS: `ddb` -> fromDdb(); `notes` -> fromNotes(); `compare` -> fromDdb() answers and every difference to
+ * fromNotes() (or a failed notes read) is logged as `[notes-compare] <label>`. `normalise` shapes both sides before the comparison.
+ */
+async function viaMode({ mode, label, fromDdb, fromNotes, normalise = (x) => x, log = console }) {
+  if (mode === 'notes') return fromNotes();
+  const out = await fromDdb();
+  if (mode === 'compare') {
+    try {
+      const d = diff(normalise(out), normalise(await fromNotes()));
+      if (d) log.warn(`[notes-compare] ${label}: ${d}`); else log.info(`[notes-compare] ${label}: same`);
+    } catch (e) { log.warn(`[notes-compare] ${label}: notes read failed: ${e.message}`); }
+  }
+  return out;
+}
+
+/**
+ * What a Lambda needs to read these rows from the record: `mode` (env NOTES_READS), `notes.all(subtype)` (built on first use,
+ * cached `ttlMs`, default 60 s; `reset()` drops it, called at the start of an invocation so a run never reads older notes than its
+ * own previous run wrote), and `via(label, fromDdb, fromNotes, normalise)`.
+ */
+function lambdaSource({ env = process.env, log = console, ttlMs = Number(env.NOTES_CACHE_SECONDS || '60') * 1000, reader } = {}) {
+  const mode = readMode(env);
+  let live = reader || null;
+  const notes = { all: (...a) => (live || (live = s3NoteReader({ ttlMs }))).all(...a) };
+  return {
+    mode, notes,
+    reset: () => { if (!reader) live = null; },
+    via: (label, fromDdb, fromNotes, normalise) => viaMode({ mode, label, fromDdb, fromNotes, normalise, log }),
+  };
+}
+
+/**
+ * The two rows the distribution Lambdas read, `COUNTRY#<name>/COUNTRY_INTELLIGENCE` and `THREAD#<id>/THREAD_ANALYSIS`, under
+ * NOTES_READS. `ddbGet(pk, sk)` -> the stored item or null (the Lambda's own read). A country is matched by the exact name its record
+ * was keyed by, as the DynamoDB key was: an alias ("USA") has no record there, so none here. -> {country(name), thread(threadId)}.
+ */
+function rowReaders(src, ddbGet) {
+  return {
+    country: (name) => src.via(`COUNTRY_INTELLIGENCE ${name}`, () => ddbGet(`COUNTRY#${name}`, 'COUNTRY_INTELLIGENCE'), async () => {
+      const iso3 = iso3Of(name);
+      const row = iso3 && countryIntelligence(await src.notes.all('country'), iso3);
+      return row && row.countryName === name ? { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE', ...row } : null;
+    }),
+    thread: (threadId) => src.via(`THREAD_ANALYSIS ${threadId}`, () => ddbGet(`THREAD#${threadId}`, 'THREAD_ANALYSIS'), async () => {
+      const row = storyAnalysis(await src.notes.all('story_analysis'), threadId);
+      return row ? { PK: `THREAD#${threadId}`, SK: 'THREAD_ANALYSIS', ...row } : null;
+    }),
+  };
+}
+
 module.exports = {
+  s3NoteReader, diff, viaMode, lambdaSource, rowReaders,
   readMode, iso3Of, makeNoteReader,
   countryIntelligence, countryHistory, countryDrift, storyDrift, storyAnalysis, threadHistory, countryFacts, driftFeed,
 };

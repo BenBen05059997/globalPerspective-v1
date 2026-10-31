@@ -55,7 +55,7 @@ This folder is stage 9: the country pages. Timeline: reads country rows from raw
   failed view fetch or a shorter view keeps the action's notes. Snapshots, the total and the gate always come from `country_history`.
   The Desk (`account` `useDeskChanges`) and the corrections ledger (`track-record` `useCorrectionsFeed`, `corrections_feed`) stay on actions.
 - `useCountryFacts` -> `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` (`archive_range`) + `prediction_snapshot`.
-- `useWebIndex` -> `web_index` (memory, 30 min): How it connects and the story-web coverage line.
+- `useWebIndex` -> the record's web view (`index/web.json`), `web_index` as fallback (memory, 30 min): How it connects and the story-web coverage line.
 - `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback; `useMarketsCountry` -> `markets_country`
   (localStorage, 1 h); `useDisruptionsList` -> `economic_impact_list` (off while parked).
 

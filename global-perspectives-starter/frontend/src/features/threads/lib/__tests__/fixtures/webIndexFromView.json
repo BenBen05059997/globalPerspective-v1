@@ -1,0 +1,2263 @@
+{
+ "note": "Captured live 2026-10-31: the web_index action and the record index/web.json built locally from a copy of the live record, both cut to the webs of Japan, China, South Korea and France and the stories those link.",
+ "countries": [
+  "Japan",
+  "China",
+  "South Korea",
+  "France"
+ ],
+ "action": {
+  "generatedAt": "2026-10-31T05:01:53.873Z",
+  "maxAgeDays": 30,
+  "targets": {
+   "count": 10,
+   "countries": [
+    "United States",
+    "Russia",
+    "Ukraine",
+    "France",
+    "Israel",
+    "China",
+    "Yemen",
+    "Saudi Arabia",
+    "Japan",
+    "Iran"
+   ]
+  },
+  "websUsed": [
+   {
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "nodes": 6
+   },
+   {
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "nodes": 8
+   },
+   {
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "nodes": 6
+   },
+   {
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "nodes": 9
+   }
+  ],
+  "links": [
+   {
+    "cited": [
+     {
+      "date": "2026-10-02",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-5"
+     },
+     {
+      "date": "2026-10-03",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-3"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-7"
+     }
+    ],
+    "confidence": "strong",
+    "country": "Japan",
+    "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "lagDays": 1,
+    "mechanism": "The G7 agreement to release oil and diesel reserves (thread 6) directly leads to the G7 release action reported in thread 3, as the US pressures Europe to release reserves.",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-02",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-5"
+     },
+     {
+      "date": "2026-10-03",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-3"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-7"
+     }
+    ],
+    "confidence": "strong",
+    "country": "France",
+    "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": 1,
+    "mechanism": "The G7 agreement to release oil and diesel (thread 8) directly leads to the actual release of 100 million barrels (thread 2), as the latter reports the implementation of the former's decision.",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3"
+     },
+     {
+      "date": "2026-10-17",
+      "title": "France Faces Nationwide Cost-of-Living Protests",
+      "topicId": "France Faces Nationwide Cost-of-Living Protests-2"
+     },
+     {
+      "date": "2026-10-19",
+      "title": "France Reels After Cost-of-Living Protests Turn Violent with Widespread Looting and 1,800 Arrests",
+      "topicId": "France Reels After Cost-of-Living Protests Turn Violent with Widespread Looting and 1,800 Arrests-1"
+     }
+    ],
+    "confidence": "medium",
+    "country": "France",
+    "from": "thread-us-pressures-europe-to-release-baec0d",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": 2,
+    "mechanism": "The energy crunch and diesel crisis (thread 2) contribute to rising cost-of-living pressures, which fuel the nationwide cost-of-living protests that emerge within the student protest thread (thread 1).",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-06",
+      "title": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons",
+      "topicId": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons-0"
+     },
+     {
+      "date": "2026-10-09",
+      "title": "France Promises 3,000 Extra Teachers to Calm Student Protests",
+      "topicId": "France Promises 3,000 Extra Teachers to Calm Student Protests-2"
+     },
+     {
+      "date": "2026-10-20",
+      "title": "Protesters Block Louvre Museum in Support of French Student Movement",
+      "topicId": "Protesters Block Louvre Museum in Support of French Student Movement-12"
+     }
+    ],
+    "confidence": "strong",
+    "country": "France",
+    "from": "thread-french-student-protests-turn-v-68e0fb",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": 14,
+    "mechanism": "The escalating student protest movement (thread 1) inspires supporters to blockade the Louvre Museum (thread 4) as a show of solidarity.",
+    "to": "thread-protesters-block-louvre-museum-9c3194",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-12",
+      "title": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down",
+      "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-4"
+     },
+     {
+      "date": "2026-10-17",
+      "title": "France Faces Nationwide Cost-of-Living Protests",
+      "topicId": "France Faces Nationwide Cost-of-Living Protests-2"
+     }
+    ],
+    "confidence": "weak",
+    "country": "France",
+    "from": "thread-french-supermarkets-hit-by-cyb-172642",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": -7,
+    "mechanism": "The cyberattack on supermarkets (thread 5) disrupts food supply and refrigeration, exacerbating cost-of-living pressures and contributing to the unrest seen in the student protest thread (thread 1).",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-12",
+      "title": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says",
+      "topicId": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says-8"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3"
+     }
+    ],
+    "confidence": "weak",
+    "country": "France",
+    "from": "thread-french-navy-intercepts-and-boa-610b32",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": -9,
+    "mechanism": "The French Navy's interception of a shadow fleet ship (thread 6) highlights energy security concerns, which may have influenced the G7's decision to release oil reserves (thread 2).",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-11",
+      "title": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%",
+      "topicId": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%-9"
+     },
+     {
+      "date": "2026-10-06",
+      "title": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons",
+      "topicId": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons-0"
+     }
+    ],
+    "confidence": "weak",
+    "country": "France",
+    "from": "thread-raphael-glucksmann-wins-french-cf27da",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "lagDays": -6,
+    "mechanism": "Glucksmann's victory in the left-wing primary (thread 7) may have galvanized left-leaning protesters, including students, contributing to the protest movement (thread 1).",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-09-30",
+      "title": "South Korea Demands Apology from North Korea for Landmine Blasts Injuring Three Soldiers in DMZ",
+      "topicId": "South Korea Demands Apology from North Korea for Landmine Blasts Injuring Three Soldiers in DMZ-1"
+     },
+     {
+      "date": "2026-10-02",
+      "title": "North Korea Rejects South's Accusation Over DMZ Mine Blast, Calls Seoul 'Despicable'",
+      "topicId": "North Korea Rejects South's Accusation Over DMZ Mine Blast, Calls Seoul 'Despicable'-12"
+     },
+     {
+      "date": "2026-10-03",
+      "title": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts",
+      "topicId": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts-6"
+     },
+     {
+      "date": "2026-10-04",
+      "title": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features",
+      "topicId": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features-8"
+     }
+    ],
+    "confidence": "strong",
+    "country": "South Korea",
+    "from": "thread-south-korea-demands-apology-fr-0aec8f",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "lagDays": 5,
+    "mechanism": "The DMZ landmine incident led South Korea to demand an apology, which North Korea rejected, escalating into missile tests.",
+    "to": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-04",
+      "title": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features",
+      "topicId": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features-8"
+     },
+     {
+      "date": "2026-10-08",
+      "title": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon",
+      "topicId": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon-2"
+     },
+     {
+      "date": "2026-10-10",
+      "title": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon",
+      "topicId": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon-14"
+     }
+    ],
+    "confidence": "medium",
+    "country": "South Korea",
+    "from": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "lagDays": 7,
+    "mechanism": "North Korea's missile tests prompted South Korea to accelerate its own missile development, leading to the hypersonic weapon test.",
+    "to": "thread-south-korea-test-flies-first-d-1811b9",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-10",
+      "title": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon",
+      "topicId": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon-14"
+     },
+     {
+      "date": "2026-10-12",
+      "title": "North Korea Fires Multiple Ballistic Missiles Towards Sea, Fourth Launch in a Month",
+      "topicId": "North Korea Fires Multiple Ballistic Missiles Towards Sea, Fourth Launch in a Month-2"
+     }
+    ],
+    "confidence": "weak",
+    "country": "South Korea",
+    "from": "thread-south-korea-test-flies-first-d-1811b9",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "lagDays": -7,
+    "mechanism": "South Korea's hypersonic test may have been a response to North Korea's earlier missile launches, but the causal direction is ambiguous as both are part of an ongoing missile race.",
+    "to": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-03",
+      "title": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts",
+      "topicId": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts-6"
+     },
+     {
+      "date": "2026-10-02",
+      "title": "South Korea Warns Ukraine Over Prisoner-of-War Row, Demands Apology",
+      "topicId": "South Korea Warns Ukraine Over Prisoner-of-War Row, Demands Apology-3"
+     }
+    ],
+    "confidence": "weak",
+    "country": "South Korea",
+    "from": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "lagDays": 9,
+    "mechanism": "North Korea's involvement in the Ukraine conflict, possibly through soldiers, led to Ukraine disclosing North Korean POWs, which angered South Korea.",
+    "to": "thread-south-korea-warns-ukraine-over-aef176",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-12",
+      "title": "China and EU Reach Surprise Trade Deal Imposing Quotas on Chinese Hybrid Car Exports",
+      "topicId": "China and EU Reach Surprise Trade Deal Imposing Quotas on Chinese Hybrid Car Exports-8"
+     },
+     {
+      "date": "2026-10-10",
+      "title": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China",
+      "topicId": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China-12"
+     }
+    ],
+    "confidence": "weak",
+    "country": "China",
+    "from": "thread-eu-china-trade-tensions-escala-16cf3f",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "lagDays": 2,
+    "mechanism": "EU-China trade tensions and the hybrid vehicle quota deal may increase competition for Chinese tech talent, prompting Samsung to offer bonuses to retain engineers.",
+    "to": "thread-samsung-dangles-560-000-bonuse-5ef610",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-02",
+      "title": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent",
+      "topicId": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent-10"
+     },
+     {
+      "date": "2026-10-05",
+      "title": "China Develops Plant to Extract Hydrogen, Fresh Water and Uranium from Sea",
+      "topicId": "China Develops Plant to Extract Hydrogen, Fresh Water and Uranium from Sea-12"
+     }
+    ],
+    "confidence": "weak",
+    "country": "China",
+    "from": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "lagDays": 8,
+    "mechanism": "US export bans on data center gear and AI talent restrictions may accelerate China's domestic tech development, including AI tools like Kimi and seawater extraction technology.",
+    "to": "thread-chinese-ai-tool-kimi-provided--a3e779",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-16",
+      "title": "US in 'Denuclearisation' Talks with Russia and China: Trump",
+      "topicId": "US in 'Denuclearisation' Talks with Russia and China: Trump-4"
+     },
+     {
+      "date": "2026-10-16",
+      "title": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements",
+      "topicId": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements-3"
+     }
+    ],
+    "confidence": "weak",
+    "country": "China",
+    "from": "thread-trump-announces-us-to-import-r-8c45a3",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "lagDays": -2,
+    "mechanism": "US easing sanctions on Russia and China-Russia Arctic cooperation may shift geopolitical alignments, influencing China's stance on Israel.",
+    "to": "thread-china-tells-israel-to-stop-for-91f79d",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "cited": [
+     {
+      "date": "2026-10-12",
+      "title": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences",
+      "topicId": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences-11"
+     },
+     {
+      "date": "2026-10-02",
+      "title": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent",
+      "topicId": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent-10"
+     }
+    ],
+    "confidence": "weak",
+    "country": "China",
+    "from": "thread-us-navy-develops-low-cost-blac-00516c",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "lagDays": -11,
+    "mechanism": "US military developments like the Blackbeard missile may intensify US-China tech competition, leading to export bans and AI restrictions.",
+    "to": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "iso3": [
+     "CHN"
+    ]
+   }
+  ],
+  "shared": [
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "actors": [
+     "G7",
+     "United States",
+     "Europe",
+     "oil",
+     "diesel"
+    ],
+    "b": "thread-us-pressures-europe-to-release-baec0d",
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "weight": 5,
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "a": "thread-us-pressures-europe-to-release-baec0d",
+    "actors": [
+     "United States"
+    ],
+    "b": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "weight": 1,
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "actors": [
+     "United States"
+    ],
+    "b": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "weight": 1,
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "actors": [
+     "G7",
+     "United States",
+     "Europe",
+     "oil",
+     "diesel"
+    ],
+    "b": "thread-us-pressures-europe-to-release-baec0d",
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "weight": 5,
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-french-student-protests-turn-v-68e0fb",
+    "actors": [
+     "French students"
+    ],
+    "b": "thread-protesters-block-louvre-museum-9c3194",
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "weight": 1,
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-french-student-protests-turn-v-68e0fb",
+    "actors": [
+     "Emmanuel Macron"
+    ],
+    "b": "thread-french-navy-intercepts-and-boa-610b32",
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "weight": 1,
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-south-korea-demands-apology-fr-0aec8f",
+    "actors": [
+     "Korean People's Army",
+     "Republic of Korea Armed Forces",
+     "DMZ"
+    ],
+    "b": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "weight": 3,
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "actors": [
+     "Korean People's Army",
+     "Republic of Korea Armed Forces"
+    ],
+    "b": "thread-south-korea-test-flies-first-d-1811b9",
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "weight": 2,
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-south-korea-demands-apology-fr-0aec8f",
+    "actors": [
+     "Republic of Korea Armed Forces",
+     "Korean People's Army"
+    ],
+    "b": "thread-south-korea-test-flies-first-d-1811b9",
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "weight": 2,
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "actors": [
+     "United States"
+    ],
+    "b": "thread-trump-announces-us-to-import-r-8c45a3",
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "weight": 1,
+    "iso3": [
+     "CHN"
+    ]
+   }
+  ],
+  "threads": {
+   "thread-g7-agrees-to-release-100-milli-4e524e": {
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     },
+     {
+      "country": "United Kingdom",
+      "generatedAt": "2026-10-30T05:02:00.677Z"
+     },
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "Germany",
+      "generatedAt": "2026-10-05T05:01:44.297Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "Canada"
+     },
+     {
+      "n": 2,
+      "name": "France"
+     },
+     {
+      "n": 2,
+      "name": "Germany"
+     }
+    ],
+    "state": "linked",
+    "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+    "iso3": [
+     "CAN",
+     "FRA",
+     "DEU"
+    ]
+   },
+   "thread-us-pressures-europe-to-release-baec0d": {
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     },
+     {
+      "country": "United Kingdom",
+      "generatedAt": "2026-10-30T05:02:00.677Z"
+     },
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "United States",
+      "generatedAt": "2026-10-31T05:00:32.562Z"
+     },
+     {
+      "country": "Germany",
+      "generatedAt": "2026-10-05T05:01:44.297Z"
+     }
+    ],
+    "entries": 6,
+    "places": [
+     {
+      "n": 6,
+      "name": "United States"
+     },
+     {
+      "n": 3,
+      "name": "Canada"
+     },
+     {
+      "n": 3,
+      "name": "France"
+     }
+    ],
+    "state": "linked",
+    "title": "G7 Plans to Release Emergency Fuel Stocks to Ease Diesel Crisis",
+    "iso3": [
+     "USA",
+     "CAN",
+     "FRA"
+    ]
+   },
+   "thread-french-student-protests-turn-v-68e0fb": {
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "entries": 31,
+    "places": [
+     {
+      "n": 34,
+      "name": "France"
+     },
+     {
+      "n": 1,
+      "name": "Germany"
+     }
+    ],
+    "state": "linked",
+    "title": "France and Germany Brace for Halloween Weekend Protests Over Rising Prices",
+    "iso3": [
+     "FRA",
+     "DEU"
+    ]
+   },
+   "thread-protesters-block-louvre-museum-9c3194": {
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "entries": 1,
+    "places": [
+     {
+      "n": 2,
+      "name": "France"
+     }
+    ],
+    "state": "linked",
+    "title": "Protesters Block Louvre Museum in Support of French Student Movement",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-french-supermarkets-hit-by-cyb-172642": {
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "France"
+     }
+    ],
+    "state": "linked",
+    "title": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-french-navy-intercepts-and-boa-610b32": {
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "Russia",
+      "generatedAt": "2026-10-31T05:00:47.993Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "France"
+     },
+     {
+      "n": 2,
+      "name": "Russia"
+     }
+    ],
+    "state": "linked",
+    "title": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says",
+    "iso3": [
+     "FRA",
+     "RUS"
+    ]
+   },
+   "thread-raphael-glucksmann-wins-french-cf27da": {
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "France"
+     }
+    ],
+    "state": "linked",
+    "title": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-south-korea-demands-apology-fr-0aec8f": {
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "entries": null,
+    "places": [],
+    "state": "linked",
+    "title": "South Korea demands an apology from North Korea for landmine blasts in the DMZ that injured three soldiers.",
+    "iso3": []
+   },
+   "thread-north-korea-rejects-south-s-ac-15dfe3": {
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     },
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "entries": 5,
+    "places": [
+     {
+      "n": 6,
+      "name": "South Korea"
+     },
+     {
+      "n": 5,
+      "name": "North Korea"
+     },
+     {
+      "n": 4,
+      "name": "Japan"
+     }
+    ],
+    "state": "linked",
+    "title": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon",
+    "iso3": [
+     "KOR",
+     "PRK",
+     "JPN"
+    ]
+   },
+   "thread-south-korea-test-flies-first-d-1811b9": {
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "entries": 6,
+    "places": [
+     {
+      "n": 5,
+      "name": "North Korea"
+     },
+     {
+      "n": 5,
+      "name": "South Korea"
+     },
+     {
+      "n": 1,
+      "name": "Japan"
+     }
+    ],
+    "state": "linked",
+    "title": "North Korea Tests AI-Assisted Torpedo System",
+    "iso3": [
+     "PRK",
+     "KOR",
+     "JPN"
+    ]
+   },
+   "thread-south-korea-warns-ukraine-over-aef176": {
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     },
+     {
+      "country": "Ukraine",
+      "generatedAt": "2026-10-31T05:00:57.760Z"
+     }
+    ],
+    "entries": 5,
+    "places": [
+     {
+      "n": 5,
+      "name": "South Korea"
+     },
+     {
+      "n": 5,
+      "name": "Ukraine"
+     },
+     {
+      "n": 2,
+      "name": "North Korea"
+     }
+    ],
+    "state": "linked",
+    "title": "South Korea Recalls Ambassador from Ukraine Over North Korean POW Disclosure",
+    "iso3": [
+     "KOR",
+     "UKR",
+     "PRK"
+    ]
+   },
+   "thread-eu-china-trade-tensions-escala-16cf3f": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "entries": 7,
+    "places": [
+     {
+      "n": 7,
+      "name": "China"
+     }
+    ],
+    "state": "linked",
+    "title": "EU Open to Creating 'Kill Switch' Weapon to Kick Chinese Firms Out of Market",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   "thread-samsung-dangles-560-000-bonuse-5ef610": {
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     },
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "entries": 4,
+    "places": [
+     {
+      "n": 4,
+      "name": "China"
+     },
+     {
+      "n": 4,
+      "name": "South Korea"
+     }
+    ],
+    "state": "linked",
+    "title": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China",
+    "iso3": [
+     "CHN",
+     "KOR"
+    ]
+   },
+   "thread-anthropic-raises-alarm-over-ch-7b6374": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "entries": 3,
+    "places": [
+     {
+      "n": 3,
+      "name": "China"
+     },
+     {
+      "n": 3,
+      "name": "United States"
+     },
+     {
+      "n": 1,
+      "name": "Netherlands"
+     }
+    ],
+    "state": "linked",
+    "title": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent",
+    "iso3": [
+     "CHN",
+     "USA",
+     "NLD"
+    ]
+   },
+   "thread-chinese-ai-tool-kimi-provided--a3e779": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "entries": 3,
+    "places": [
+     {
+      "n": 3,
+      "name": "China"
+     }
+    ],
+    "state": "linked",
+    "title": "China's Zhejiang Province Calls to Limit Tech Giants' Power Over Online Traffic",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   "thread-trump-announces-us-to-import-r-8c45a3": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     },
+     {
+      "country": "United States",
+      "generatedAt": "2026-10-31T05:00:32.562Z"
+     },
+     {
+      "country": "Russia",
+      "generatedAt": "2026-10-31T05:00:47.993Z"
+     },
+     {
+      "country": "Ukraine",
+      "generatedAt": "2026-10-31T05:00:57.760Z"
+     }
+    ],
+    "entries": 23,
+    "places": [
+     {
+      "n": 21,
+      "name": "Russia"
+     },
+     {
+      "n": 19,
+      "name": "United States"
+     },
+     {
+      "n": 10,
+      "name": "Ukraine"
+     }
+    ],
+    "state": "linked",
+    "title": "Trump Waives Russia Sanctions Under New Law, Citing National Interest",
+    "iso3": [
+     "RUS",
+     "USA",
+     "UKR"
+    ]
+   },
+   "thread-china-tells-israel-to-stop-for-91f79d": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     },
+     {
+      "country": "Israel",
+      "generatedAt": "2026-10-31T05:01:20.789Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "China"
+     },
+     {
+      "n": 2,
+      "name": "Israel"
+     },
+     {
+      "n": 2,
+      "name": "Palestine"
+     }
+    ],
+    "state": "linked",
+    "title": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements",
+    "iso3": [
+     "CHN",
+     "ISR",
+     "PSE"
+    ]
+   },
+   "thread-us-navy-develops-low-cost-blac-00516c": {
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "China"
+     },
+     {
+      "n": 1,
+      "name": "USA"
+     },
+     {
+      "n": 1,
+      "name": "United States"
+     }
+    ],
+    "state": "linked",
+    "title": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences",
+    "iso3": [
+     "CHN",
+     "USA"
+    ]
+   },
+   "thread-us-deploys-nmesis-anti-ship-sy-c47e10": {
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     }
+    ],
+    "entries": 2,
+    "places": [
+     {
+      "n": 2,
+      "name": "Japan"
+     },
+     {
+      "n": 2,
+      "name": "Taiwan"
+     },
+     {
+      "n": 2,
+      "name": "United States"
+     }
+    ],
+    "state": "analysed_no_links",
+    "title": "US Deploys NMESIS Anti-Ship System to Japanese Island Near Taiwan",
+    "iso3": [
+     "JPN",
+     "TWN",
+     "USA"
+    ]
+   }
+  }
+ },
+ "view": {
+  "schemaVersion": 1,
+  "builtFrom": {
+   "factsThrough": "2026-10-30",
+   "readingsThrough": "2026-W43"
+  },
+  "generatedAt": "2026-10-31T05:01:53.701Z",
+  "maxAgeDays": 30,
+  "websUsed": [
+   {
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "nodes": 9
+   },
+   {
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "nodes": 8
+   },
+   {
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "nodes": 6
+   },
+   {
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "nodes": 6
+   }
+  ],
+  "links": [
+   {
+    "from": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "to": "thread-chinese-ai-tool-kimi-provided--a3e779",
+    "confidence": "weak",
+    "lagDays": 8,
+    "mechanism": "US export bans on data center gear and AI talent restrictions may accelerate China's domestic tech development, including AI tools like Kimi and seawater extraction technology.",
+    "cited": [
+     {
+      "topicId": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent-10",
+      "date": "2026-10-02",
+      "title": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent"
+     },
+     {
+      "topicId": "China Develops Plant to Extract Hydrogen, Fresh Water and Uranium from Sea-12",
+      "date": "2026-10-05",
+      "title": "China Develops Plant to Extract Hydrogen, Fresh Water and Uranium from Sea"
+     }
+    ],
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "from": "thread-eu-china-trade-tensions-escala-16cf3f",
+    "to": "thread-samsung-dangles-560-000-bonuse-5ef610",
+    "confidence": "weak",
+    "lagDays": 2,
+    "mechanism": "EU-China trade tensions and the hybrid vehicle quota deal may increase competition for Chinese tech talent, prompting Samsung to offer bonuses to retain engineers.",
+    "cited": [
+     {
+      "topicId": "China and EU Reach Surprise Trade Deal Imposing Quotas on Chinese Hybrid Car Exports-8",
+      "date": "2026-10-12",
+      "title": "China and EU Reach Surprise Trade Deal Imposing Quotas on Chinese Hybrid Car Exports"
+     },
+     {
+      "topicId": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China-12",
+      "date": "2026-10-10",
+      "title": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China"
+     }
+    ],
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "from": "thread-french-navy-intercepts-and-boa-610b32",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "confidence": "weak",
+    "lagDays": -9,
+    "mechanism": "The French Navy's interception of a shadow fleet ship (thread 6) highlights energy security concerns, which may have influenced the G7's decision to release oil reserves (thread 2).",
+    "cited": [
+     {
+      "topicId": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says-8",
+      "date": "2026-10-12",
+      "title": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "from": "thread-french-student-protests-turn-v-68e0fb",
+    "to": "thread-protesters-block-louvre-museum-9c3194",
+    "confidence": "strong",
+    "lagDays": 14,
+    "mechanism": "The escalating student protest movement (thread 1) inspires supporters to blockade the Louvre Museum (thread 4) as a show of solidarity.",
+    "cited": [
+     {
+      "topicId": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons-0",
+      "date": "2026-10-06",
+      "title": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons"
+     },
+     {
+      "topicId": "France Promises 3,000 Extra Teachers to Calm Student Protests-2",
+      "date": "2026-10-09",
+      "title": "France Promises 3,000 Extra Teachers to Calm Student Protests"
+     },
+     {
+      "topicId": "Protesters Block Louvre Museum in Support of French Student Movement-12",
+      "date": "2026-10-20",
+      "title": "Protesters Block Louvre Museum in Support of French Student Movement"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "from": "thread-french-supermarkets-hit-by-cyb-172642",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "confidence": "weak",
+    "lagDays": -7,
+    "mechanism": "The cyberattack on supermarkets (thread 5) disrupts food supply and refrigeration, exacerbating cost-of-living pressures and contributing to the unrest seen in the student protest thread (thread 1).",
+    "cited": [
+     {
+      "topicId": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down-4",
+      "date": "2026-10-12",
+      "title": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down"
+     },
+     {
+      "topicId": "France Faces Nationwide Cost-of-Living Protests-2",
+      "date": "2026-10-17",
+      "title": "France Faces Nationwide Cost-of-Living Protests"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "confidence": "strong",
+    "lagDays": 1,
+    "mechanism": "The G7 agreement to release oil and diesel (thread 8) directly leads to the actual release of 100 million barrels (thread 2), as the latter reports the implementation of the former's decision.",
+    "cited": [
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-5",
+      "date": "2026-10-02",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-3",
+      "date": "2026-10-03",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-7",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "from": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "to": "thread-us-pressures-europe-to-release-baec0d",
+    "confidence": "strong",
+    "lagDays": 1,
+    "mechanism": "The G7 agreement to release oil and diesel reserves (thread 6) directly leads to the G7 release action reported in thread 3, as the US pressures Europe to release reserves.",
+    "cited": [
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-5",
+      "date": "2026-10-02",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure-3",
+      "date": "2026-10-03",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     },
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-7",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     }
+    ],
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "from": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "to": "thread-south-korea-test-flies-first-d-1811b9",
+    "confidence": "medium",
+    "lagDays": 7,
+    "mechanism": "North Korea's missile tests prompted South Korea to accelerate its own missile development, leading to the hypersonic weapon test.",
+    "cited": [
+     {
+      "topicId": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features-8",
+      "date": "2026-10-04",
+      "title": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features"
+     },
+     {
+      "topicId": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon-2",
+      "date": "2026-10-08",
+      "title": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon"
+     },
+     {
+      "topicId": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon-14",
+      "date": "2026-10-10",
+      "title": "South Korea Test-Flies First Domestically Developed Hypersonic Weapon"
+     }
+    ],
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "from": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "to": "thread-south-korea-warns-ukraine-over-aef176",
+    "confidence": "weak",
+    "lagDays": 9,
+    "mechanism": "North Korea's involvement in the Ukraine conflict, possibly through soldiers, led to Ukraine disclosing North Korean POWs, which angered South Korea.",
+    "cited": [
+     {
+      "topicId": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts-6",
+      "date": "2026-10-03",
+      "title": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts"
+     },
+     {
+      "topicId": "South Korea Warns Ukraine Over Prisoner-of-War Row, Demands Apology-3",
+      "date": "2026-10-02",
+      "title": "South Korea Warns Ukraine Over Prisoner-of-War Row, Demands Apology"
+     }
+    ],
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "from": "thread-raphael-glucksmann-wins-french-cf27da",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "confidence": "weak",
+    "lagDays": -6,
+    "mechanism": "Glucksmann's victory in the left-wing primary (thread 7) may have galvanized left-leaning protesters, including students, contributing to the protest movement (thread 1).",
+    "cited": [
+     {
+      "topicId": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%-9",
+      "date": "2026-10-11",
+      "title": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%"
+     },
+     {
+      "topicId": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons-0",
+      "date": "2026-10-06",
+      "title": "France Erupts in Nationwide Student Protests Over School Conditions, Police Use Tear Gas and Water Cannons"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "from": "thread-south-korea-demands-apology-fr-0aec8f",
+    "to": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "confidence": "strong",
+    "lagDays": 5,
+    "mechanism": "The DMZ landmine incident led South Korea to demand an apology, which North Korea rejected, escalating into missile tests.",
+    "cited": [
+     {
+      "topicId": "South Korea Demands Apology from North Korea for Landmine Blasts Injuring Three Soldiers in DMZ-1",
+      "date": "2026-09-30",
+      "title": "South Korea Demands Apology from North Korea for Landmine Blasts Injuring Three Soldiers in DMZ"
+     },
+     {
+      "topicId": "North Korea Rejects South's Accusation Over DMZ Mine Blast, Calls Seoul 'Despicable'-12",
+      "date": "2026-10-02",
+      "title": "North Korea Rejects South's Accusation Over DMZ Mine Blast, Calls Seoul 'Despicable'"
+     },
+     {
+      "topicId": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts-6",
+      "date": "2026-10-03",
+      "title": "North Korea Launches Ballistic Missile Amid Tensions with Seoul Over Border Mine Blasts"
+     },
+     {
+      "topicId": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features-8",
+      "date": "2026-10-04",
+      "title": "North Korea Fires Intermediate-Range Missile, Claiming Evasive Flight and AI Features"
+     }
+    ],
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "from": "thread-trump-announces-us-to-import-r-8c45a3",
+    "to": "thread-china-tells-israel-to-stop-for-91f79d",
+    "confidence": "weak",
+    "lagDays": -2,
+    "mechanism": "US easing sanctions on Russia and China-Russia Arctic cooperation may shift geopolitical alignments, influencing China's stance on Israel.",
+    "cited": [
+     {
+      "topicId": "US in 'Denuclearisation' Talks with Russia and China: Trump-4",
+      "date": "2026-10-16",
+      "title": "US in 'Denuclearisation' Talks with Russia and China: Trump"
+     },
+     {
+      "topicId": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements-3",
+      "date": "2026-10-16",
+      "title": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements"
+     }
+    ],
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "from": "thread-us-navy-develops-low-cost-blac-00516c",
+    "to": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "confidence": "weak",
+    "lagDays": -11,
+    "mechanism": "US military developments like the Blackbeard missile may intensify US-China tech competition, leading to export bans and AI restrictions.",
+    "cited": [
+     {
+      "topicId": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences-11",
+      "date": "2026-10-12",
+      "title": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences"
+     },
+     {
+      "topicId": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent-10",
+      "date": "2026-10-02",
+      "title": "US Bans Chinese Data Center Gear as Beijing Grounds Its AI Talent"
+     }
+    ],
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "from": "thread-us-pressures-europe-to-release-baec0d",
+    "to": "thread-french-student-protests-turn-v-68e0fb",
+    "confidence": "medium",
+    "lagDays": 2,
+    "mechanism": "The energy crunch and diesel crisis (thread 2) contribute to rising cost-of-living pressures, which fuel the nationwide cost-of-living protests that emerge within the student protest thread (thread 1).",
+    "cited": [
+     {
+      "topicId": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch-3",
+      "date": "2026-10-04",
+      "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch"
+     },
+     {
+      "topicId": "France Faces Nationwide Cost-of-Living Protests-2",
+      "date": "2026-10-17",
+      "title": "France Faces Nationwide Cost-of-Living Protests"
+     },
+     {
+      "topicId": "France Reels After Cost-of-Living Protests Turn Violent with Widespread Looting and 1,800 Arrests-1",
+      "date": "2026-10-19",
+      "title": "France Reels After Cost-of-Living Protests Turn Violent with Widespread Looting and 1,800 Arrests"
+     }
+    ],
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   }
+  ],
+  "shared": [
+   {
+    "a": "thread-anthropic-raises-alarm-over-ch-7b6374",
+    "b": "thread-trump-announces-us-to-import-r-8c45a3",
+    "actors": [
+     "United States"
+    ],
+    "weight": 1,
+    "country": "China",
+    "generatedAt": "2026-10-31T05:01:30.438Z",
+    "iso3": [
+     "CHN"
+    ]
+   },
+   {
+    "a": "thread-french-navy-intercepts-and-boa-610b32",
+    "b": "thread-french-student-protests-turn-v-68e0fb",
+    "actors": [
+     "Emmanuel Macron"
+    ],
+    "weight": 1,
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-french-student-protests-turn-v-68e0fb",
+    "b": "thread-protesters-block-louvre-museum-9c3194",
+    "actors": [
+     "French students"
+    ],
+    "weight": 1,
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "b": "thread-us-pressures-europe-to-release-baec0d",
+    "actors": [
+     "G7",
+     "United States",
+     "Europe",
+     "oil",
+     "diesel"
+    ],
+    "weight": 5,
+    "country": "France",
+    "generatedAt": "2026-10-31T05:01:08.222Z",
+    "iso3": [
+     "FRA"
+    ]
+   },
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "b": "thread-us-pressures-europe-to-release-baec0d",
+    "actors": [
+     "G7",
+     "United States",
+     "Europe",
+     "oil",
+     "diesel"
+    ],
+    "weight": 5,
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "a": "thread-g7-agrees-to-release-100-milli-4e524e",
+    "b": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+    "actors": [
+     "United States"
+    ],
+    "weight": 1,
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "iso3": [
+     "JPN"
+    ]
+   },
+   {
+    "a": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "b": "thread-south-korea-demands-apology-fr-0aec8f",
+    "actors": [
+     "Korean People's Army",
+     "Republic of Korea Armed Forces",
+     "DMZ"
+    ],
+    "weight": 3,
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-north-korea-rejects-south-s-ac-15dfe3",
+    "b": "thread-south-korea-test-flies-first-d-1811b9",
+    "actors": [
+     "Korean People's Army",
+     "Republic of Korea Armed Forces"
+    ],
+    "weight": 2,
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-south-korea-demands-apology-fr-0aec8f",
+    "b": "thread-south-korea-test-flies-first-d-1811b9",
+    "actors": [
+     "Republic of Korea Armed Forces",
+     "Korean People's Army"
+    ],
+    "weight": 2,
+    "country": "South Korea",
+    "generatedAt": "2026-10-18T05:01:47.839Z",
+    "iso3": [
+     "KOR"
+    ]
+   },
+   {
+    "a": "thread-us-deploys-nmesis-anti-ship-sy-c47e10",
+    "b": "thread-us-pressures-europe-to-release-baec0d",
+    "actors": [
+     "United States"
+    ],
+    "weight": 1,
+    "country": "Japan",
+    "generatedAt": "2026-10-31T05:01:45.542Z",
+    "iso3": [
+     "JPN"
+    ]
+   }
+  ],
+  "threads": {
+   "thread-g7-agrees-to-release-100-milli-4e524e": {
+    "state": "linked",
+    "title": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+    "entries": 2,
+    "places": [
+     {
+      "name": "Canada",
+      "n": 2
+     },
+     {
+      "name": "Germany",
+      "n": 2
+     },
+     {
+      "name": "United Kingdom",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "Germany",
+      "generatedAt": "2026-10-05T05:01:44.297Z"
+     },
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "United Kingdom",
+      "generatedAt": "2026-10-30T05:02:00.677Z"
+     },
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     }
+    ],
+    "iso3": [
+     "CAN",
+     "DEU",
+     "GBR"
+    ]
+   },
+   "thread-us-pressures-europe-to-release-baec0d": {
+    "state": "linked",
+    "title": "G7 Plans to Release Emergency Fuel Stocks to Ease Diesel Crisis",
+    "entries": 5,
+    "places": [
+     {
+      "name": "United States",
+      "n": 5
+     },
+     {
+      "name": "Canada",
+      "n": 3
+     },
+     {
+      "name": "Germany",
+      "n": 3
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "Germany",
+      "generatedAt": "2026-10-05T05:01:44.297Z"
+     },
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "United Kingdom",
+      "generatedAt": "2026-10-30T05:02:00.677Z"
+     },
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     },
+     {
+      "country": "United States",
+      "generatedAt": "2026-10-31T05:00:32.562Z"
+     }
+    ],
+    "iso3": [
+     "USA",
+     "CAN",
+     "DEU"
+    ]
+   },
+   "thread-french-student-protests-turn-v-68e0fb": {
+    "state": "linked",
+    "title": "Macron Vows 'Strong Measures' to Combat Protests in France",
+    "entries": 28,
+    "places": [
+     {
+      "name": "France",
+      "n": 30
+     },
+     {
+      "name": "Belgium",
+      "n": 2
+     },
+     {
+      "name": "Hungary",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "iso3": [
+     "FRA",
+     "BEL",
+     "HUN"
+    ]
+   },
+   "thread-protesters-block-louvre-museum-9c3194": {
+    "state": "linked",
+    "title": "Protesters Block Louvre Museum in Support of French Student Movement",
+    "entries": 1,
+    "places": [
+     {
+      "name": "France",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-french-supermarkets-hit-by-cyb-172642": {
+    "state": "linked",
+    "title": "French Supermarkets Hit by Cyberattack, Refrigerators Shut Down",
+    "entries": 2,
+    "places": [
+     {
+      "name": "France",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-french-navy-intercepts-and-boa-610b32": {
+    "state": "linked",
+    "title": "French Navy Intercepts and Boards 'Shadow Fleet' Ship, Macron Says",
+    "entries": 1,
+    "places": [
+     {
+      "name": "France",
+      "n": 1
+     },
+     {
+      "name": "Russia",
+      "n": 1
+     },
+     {
+      "name": "Ukraine",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     },
+     {
+      "country": "Russia",
+      "generatedAt": "2026-10-31T05:00:47.993Z"
+     }
+    ],
+    "iso3": [
+     "FRA",
+     "RUS",
+     "UKR"
+    ]
+   },
+   "thread-raphael-glucksmann-wins-french-cf27da": {
+    "state": "linked",
+    "title": "Raphaël Glucksmann Wins French Left-Wing Primary with 66%",
+    "entries": 1,
+    "places": [
+     {
+      "name": "France",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "France",
+      "generatedAt": "2026-10-31T05:01:08.222Z"
+     }
+    ],
+    "iso3": [
+     "FRA"
+    ]
+   },
+   "thread-south-korea-demands-apology-fr-0aec8f": {
+    "state": "linked",
+    "title": "South Korea demands an apology from North Korea for landmine blasts in the DMZ that injured three soldiers.",
+    "entries": 0,
+    "places": [],
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "iso3": []
+   },
+   "thread-north-korea-rejects-south-s-ac-15dfe3": {
+    "state": "linked",
+    "title": "South Korea Test-Fires First Domestically Developed Hypersonic Weapon",
+    "entries": 5,
+    "places": [
+     {
+      "name": "North Korea",
+      "n": 6
+     },
+     {
+      "name": "South Korea",
+      "n": 6
+     },
+     {
+      "name": "Japan",
+      "n": 4
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     },
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "iso3": [
+     "PRK",
+     "KOR",
+     "JPN"
+    ]
+   },
+   "thread-south-korea-test-flies-first-d-1811b9": {
+    "state": "linked",
+    "title": "North Korea Tests AI-Assisted Torpedo System",
+    "entries": 5,
+    "places": [
+     {
+      "name": "North Korea",
+      "n": 5
+     },
+     {
+      "name": "South Korea",
+      "n": 4
+     },
+     {
+      "name": "Japan",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "iso3": [
+     "PRK",
+     "KOR",
+     "JPN"
+    ]
+   },
+   "thread-south-korea-warns-ukraine-over-aef176": {
+    "state": "linked",
+    "title": "South Korea Recalls Ambassador from Ukraine Over North Korean POW Disclosure",
+    "entries": 5,
+    "places": [
+     {
+      "name": "North Korea",
+      "n": 5
+     },
+     {
+      "name": "South Korea",
+      "n": 5
+     },
+     {
+      "name": "Ukraine",
+      "n": 5
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     },
+     {
+      "country": "Ukraine",
+      "generatedAt": "2026-10-31T05:00:57.760Z"
+     }
+    ],
+    "iso3": [
+     "PRK",
+     "KOR",
+     "UKR"
+    ]
+   },
+   "thread-eu-china-trade-tensions-escala-16cf3f": {
+    "state": "linked",
+    "title": "EU Open to Creating 'Kill Switch' Weapon to Kick Chinese Firms Out of Market",
+    "entries": 5,
+    "places": [
+     {
+      "name": "China",
+      "n": 5
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "iso3": [
+     "CHN"
+    ]
+   },
+   "thread-samsung-dangles-560-000-bonuse-5ef610": {
+    "state": "linked",
+    "title": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China",
+    "entries": 1,
+    "places": [
+     {
+      "name": "China",
+      "n": 1
+     },
+     {
+      "name": "South Korea",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     },
+     {
+      "country": "South Korea",
+      "generatedAt": "2026-10-18T05:01:47.839Z"
+     }
+    ],
+    "iso3": [
+     "CHN",
+     "KOR"
+    ]
+   },
+   "thread-anthropic-raises-alarm-over-ch-7b6374": {
+    "state": "linked",
+    "title": "China Stockpiles ASML Lithography Tools, Spurring US Calls for Complete Export Ban",
+    "entries": 2,
+    "places": [
+     {
+      "name": "China",
+      "n": 2
+     },
+     {
+      "name": "United States",
+      "n": 2
+     },
+     {
+      "name": "Netherlands",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "iso3": [
+     "CHN",
+     "USA",
+     "NLD"
+    ]
+   },
+   "thread-chinese-ai-tool-kimi-provided--a3e779": {
+    "state": "linked",
+    "title": "China's Zhejiang Province Calls to Limit Tech Giants' Power Over Online Traffic",
+    "entries": 2,
+    "places": [
+     {
+      "name": "China",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "iso3": [
+     "CHN"
+    ]
+   },
+   "thread-trump-announces-us-to-import-r-8c45a3": {
+    "state": "linked",
+    "title": "Trump Waives Russia Sanctions Under New Law, Citing National Interest",
+    "entries": 16,
+    "places": [
+     {
+      "name": "United States",
+      "n": 15
+     },
+     {
+      "name": "Russia",
+      "n": 14
+     },
+     {
+      "name": "Ukraine",
+      "n": 9
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     },
+     {
+      "country": "Russia",
+      "generatedAt": "2026-10-31T05:00:47.993Z"
+     },
+     {
+      "country": "Ukraine",
+      "generatedAt": "2026-10-31T05:00:57.760Z"
+     },
+     {
+      "country": "United States",
+      "generatedAt": "2026-10-31T05:00:32.562Z"
+     }
+    ],
+    "iso3": [
+     "USA",
+     "RUS",
+     "UKR"
+    ]
+   },
+   "thread-china-tells-israel-to-stop-for-91f79d": {
+    "state": "linked",
+    "title": "China Tells Israel to Stop 'Forced Establishment' of West Bank Settlements",
+    "entries": 1,
+    "places": [
+     {
+      "name": "China",
+      "n": 1
+     },
+     {
+      "name": "Israel",
+      "n": 1
+     },
+     {
+      "name": "Palestine",
+      "n": 1
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     },
+     {
+      "country": "Israel",
+      "generatedAt": "2026-10-31T05:01:20.789Z"
+     }
+    ],
+    "iso3": [
+     "CHN",
+     "ISR",
+     "PSE"
+    ]
+   },
+   "thread-us-navy-develops-low-cost-blac-00516c": {
+    "state": "linked",
+    "title": "US Navy Develops Low-Cost Blackbeard Hypersonic Missile to Overwhelm Chinese Defences",
+    "entries": 2,
+    "places": [
+     {
+      "name": "China",
+      "n": 2
+     },
+     {
+      "name": "United States",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "China",
+      "generatedAt": "2026-10-31T05:01:30.438Z"
+     }
+    ],
+    "iso3": [
+     "CHN",
+     "USA"
+    ]
+   },
+   "thread-us-deploys-nmesis-anti-ship-sy-c47e10": {
+    "state": "analysed_no_links",
+    "title": "US Deploys NMESIS Anti-Ship System to Japanese Island Near Taiwan",
+    "entries": 2,
+    "places": [
+     {
+      "name": "Japan",
+      "n": 2
+     },
+     {
+      "name": "Taiwan",
+      "n": 2
+     },
+     {
+      "name": "United States",
+      "n": 2
+     }
+    ],
+    "analysedIn": [
+     {
+      "country": "Japan",
+      "generatedAt": "2026-10-31T05:01:45.542Z"
+     }
+    ],
+    "iso3": [
+     "JPN",
+     "TWN",
+     "USA"
+    ]
+   }
+  }
+ }
+}

@@ -45,7 +45,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - `useWorld()` -> `/data/world/latest.json`, polled every 5 min while the tab is visible; `useSituationDetail(id)` ->
   `/data/situations/state/<id>.json`. A 404 is an empty state, not an error. Dev override: `VITE_WORLD_URL`. No sign-in.
 - `useGdacsStatus` re-reads the same file (memory cache 5 min), only while analysis is paused.
-- `useGeminiTopics()` -> `topics`; `useStoryCardData` -> `summary` and `thread_analysis`; `useWebIndex()` -> `web_index`
+- `useGeminiTopics()` -> `topics`; `useStoryCardData` -> `summary` and `thread_analysis`; `useWebIndex()` -> the record's web view (`index/web.json`), `web_index` as fallback
   (only once `?story=` is set); `useDailyBrief()` -> `latest_daily_brief`; `useWeeklyBrief()` -> `weekly_brief`.
 - `useCountryRiskLayer` -> `archive_range` (via `useArchiveDayMap`) then `country_intelligence`, 15 names per call, up to 60
   countries, only once the COUNTRY RISK layer is selected. Session cache; it avoids `useWeeklyArchive`, which needs sign-in.

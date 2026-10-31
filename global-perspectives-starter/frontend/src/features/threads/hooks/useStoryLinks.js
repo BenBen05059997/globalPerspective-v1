@@ -59,7 +59,7 @@ export function useStoryLinks(threadId, regions) {
   const { data: view, loading: viewLoading } = useCachedQuery(threadId ? `gp_links_view_v1_${threadId}` : null, () => loadLinksView(threadId), { ttl: VIEW_TTL_MS });
   const viewSettled = Boolean(threadId) && !viewLoading;
   const fromView = viewSettled && viewHasLinks(view) && view.threadId === threadId;
-  const { index: actionIndex, loading: actionLoading, failed } = useWebIndex(viewSettled && (!fromView || needsTargets(view)));
+  const { index: actionIndex, loading: actionLoading, failed } = useWebIndex(viewSettled && (!fromView || needsTargets(view)), { source: 'action' }); // the action alone has the run's country count
   const legacy = useLegacyLinks(threadId, regions, failed && !fromView);
 
   const index = useMemo(() => (fromView ? indexFromView(view, actionIndex?.targets) : actionIndex), [fromView, view, actionIndex]);

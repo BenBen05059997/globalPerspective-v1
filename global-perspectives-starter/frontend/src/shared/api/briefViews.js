@@ -1,8 +1,8 @@
 // The briefs in the record (decision 0048): record/views/index/briefs.json (which daily and weekly briefs exist), briefs/daily/DATE.json
 // and briefs/weekly/WEEKOF.json (`brief` = what the `daily_brief` / `weekly_brief` actions answer in `data`). The briefs are public:
-// the actions have no membership gate, and drafts are in no view. The views are rebuilt nightly (23:45 UTC), so a brief written
-// after the last build is not in them yet: the readers below answer null for anything the views do not hold, and the hooks then
-// ask the action (they also ask it for today's daily and for a weekly that should be newer). A failed read is reported and answers
+// the actions have no membership gate, and drafts are in no view. The views are rebuilt after every ingest, after each brief and
+// nightly (decision 0050): the readers below answer null for anything the views do not hold, and the hooks then ask the action
+// (and ask it for the newest brief only when the views are not fresh, viewsFresh.js). A failed read is reported and answers
 // null, never a made-up "no brief".
 import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
@@ -39,9 +39,6 @@ export function dailyEditions(index, today, lookbackDays) {
   const oldest = new Date(Date.parse(`${today}T00:00:00Z`) - (lookbackDays - 1) * DAY_MS).toISOString().slice(0, 10);
   return index.daily.map((d) => d.dateKey).filter((k) => k >= oldest && k <= today).sort().reverse();
 }
-
-/** Whole days from the weekly brief's `weekOf` to `today`. */
-export const weekAgeDays = (weekOf, today) => Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${weekOf}T00:00:00Z`)) / DAY_MS);
 
 async function readView(read, what) {
   try { return await read(); } catch (err) { reportFetchError(what, err); return null; }

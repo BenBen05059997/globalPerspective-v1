@@ -8,7 +8,7 @@ import fx from './fixtures/briefs.json';
 const sink = vi.hoisted(() => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/api/errorSink.js', () => sink);
 
-import { loadBriefsIndex, clearBriefsIndexCache, briefsIndexUsable, dailyEditions, weekAgeDays, readDailyBrief, readLatestDaily, readWeeklyBrief } from '@/shared/api/briefViews.js';
+import { loadBriefsIndex, clearBriefsIndexCache, briefsIndexUsable, dailyEditions, readDailyBrief, readLatestDaily, readWeeklyBrief } from '@/shared/api/briefViews.js';
 
 const views = (over = {}) => ({
   fetchBriefsIndex: vi.fn(async () => fx.index),
@@ -110,10 +110,8 @@ describe('the index', () => {
     expect(sink.reportFetchError).toHaveBeenCalledWith('briefs-index', expect.any(Error));
   });
 
-  it('dailyEditions bounds the window by days, weekAgeDays counts whole days', () => {
+  it('dailyEditions bounds the window by days', () => {
     expect(dailyEditions(fx.index, '2026-10-31', 7)).toEqual(['2026-10-30', '2026-10-29', '2026-10-28', '2026-10-27', '2026-10-26', '2026-10-25']);
     expect(dailyEditions(fx.index, '2026-10-31', 30)[0]).toBe('2026-10-30');
-    expect(weekAgeDays('2026-10-25', '2026-10-31')).toBe(6);
-    expect(weekAgeDays('2026-10-25', '2026-11-01')).toBe(7);
   });
 });

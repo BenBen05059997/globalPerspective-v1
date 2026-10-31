@@ -7,21 +7,24 @@ import action from './fixtures/archiveRangeAction.json';
 import weekly from './fixtures/weeklyIndex.json';
 
 const api = vi.hoisted(() => ({ fetchArchiveRange: vi.fn() }));
-const rv = vi.hoisted(() => ({ fetchWeeklyIndex: vi.fn() }));
+const rv = vi.hoisted(() => ({ fetchWeeklyIndex: vi.fn(), fetchManifest: vi.fn() }));
 const sink = vi.hoisted(() => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/api/restProxy.js', () => api);
-vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchWeeklyIndex: (...a) => rv.fetchWeeklyIndex(...a) }) }));
+vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchWeeklyIndex: (...a) => rv.fetchWeeklyIndex(...a), fetchManifest: (...a) => rv.fetchManifest(...a) }) }));
 vi.mock('@/shared/api/errorSink.js', () => sink);
 
+import { clearViewsFreshCache, MAX_VIEW_AGE_MS } from '@/shared/api/viewsFresh.js';
 import { loadArchiveDayMap, loadArchiveDayMapFromAction, dayMapFromIndex, weeklyIndexUsable, daysFrom } from '@/shared/api/archiveRange.js';
 
 const NOW = new Date('2026-10-31T15:05:00Z');
+const built = (ageMs) => ({ schemaVersion: 1, builtAt: new Date(Date.now() - ageMs).toISOString(), factsThrough: '2026-10-31' });
 const actionDays = (days) => ({ success: true, data: Object.fromEntries(Object.entries(action.data).filter(([d]) => d >= days)) });
 
 beforeEach(() => {
   api.fetchArchiveRange.mockReset(); api.fetchArchiveRange.mockResolvedValue(action);
   rv.fetchWeeklyIndex.mockReset(); rv.fetchWeeklyIndex.mockResolvedValue(weekly);
   sink.reportFetchError.mockReset();
+  clearViewsFreshCache(); rv.fetchManifest.mockReset(); rv.fetchManifest.mockResolvedValue(built(0)); // fresh views unless a test says otherwise
 });
 
 describe('the index as the action\'s day map', () => {
@@ -71,16 +74,44 @@ describe('the index as the action\'s day map', () => {
 });
 
 describe('loadArchiveDayMap', () => {
-  it('reads the record for the recorded days and the action for the newest recorded day and after', async () => {
+  it('fresh views answer for every day, today included: no action call (decision 0050)', async () => {
+    const out = await loadArchiveDayMap(NOW);
+    expect(api.fetchArchiveRange).not.toHaveBeenCalled();
+    expect(out).toEqual(dayMapFromIndex(weekly, '2026-10-31'));
+    expect(out['2026-10-31'].source).toBe('record');
+    expect(sink.reportFetchError).not.toHaveBeenCalled();
+  });
+
+  it('views older than 9 hours are reported and the action supplies the newest days again', async () => {
+    rv.fetchManifest.mockResolvedValue(built(MAX_VIEW_AGE_MS + 60000));
+    await loadArchiveDayMap(NOW);
+    expect(api.fetchArchiveRange).toHaveBeenCalledWith(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('record-views-stale', expect.any(Error));
+  });
+
+  it('a missing or unreadable manifest is not fresh: the action is asked and the reason reported', async () => {
+    rv.fetchManifest.mockResolvedValue(null);
+    await loadArchiveDayMap(NOW);
+    expect(api.fetchArchiveRange).toHaveBeenCalledWith(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('record-views-stale', expect.any(Error));
+    clearViewsFreshCache(); api.fetchArchiveRange.mockClear(); sink.reportFetchError.mockClear();
+    rv.fetchManifest.mockRejectedValue(new Error('record view 500 for manifest.json'));
+    await loadArchiveDayMap(NOW);
+    expect(api.fetchArchiveRange).toHaveBeenCalledWith(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('record-manifest', expect.any(Error));
+  });
+
+  it('reads the record for the recorded days and the action for the newest recorded day and after when the views are stale', async () => {
+    rv.fetchManifest.mockResolvedValue(built(10 * 3600000));
     const out = await loadArchiveDayMap(NOW);
     expect(api.fetchArchiveRange).toHaveBeenCalledWith(1); // newest recorded day 2026-10-31 is today: that day only
     expect(Object.keys(out).sort()).toEqual(Object.keys(action.data).sort());
     expect(out['2026-10-31']).toEqual(action.data['2026-10-31']); // the action's day, as it is
     expect(out['2026-10-30'].source).toBe('record');
-    expect(sink.reportFetchError).not.toHaveBeenCalled();
   });
 
-  it('asks the action for every day since the newest recorded day when the record is behind', async () => {
+  it('asks the action for every day since the newest recorded day when the record is behind (stale views)', async () => {
+    rv.fetchManifest.mockResolvedValue(built(10 * 3600000));
     api.fetchArchiveRange.mockResolvedValue(actionDays('2026-10-29'));
     const behind = { ...weekly, days: Object.fromEntries(Object.entries(weekly.days).filter(([d]) => d <= '2026-10-29')) };
     rv.fetchWeeklyIndex.mockResolvedValue(behind);
@@ -91,6 +122,7 @@ describe('loadArchiveDayMap', () => {
   });
 
   it('keeps the recorded days when the action fails for the newest days, and reports it', async () => {
+    rv.fetchManifest.mockResolvedValue(built(10 * 3600000));
     api.fetchArchiveRange.mockRejectedValue(new Error('Proxy HTTP 502'));
     const out = await loadArchiveDayMap(NOW);
     expect(Object.keys(out).sort()).toEqual(Object.keys(weekly.days).sort());

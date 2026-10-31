@@ -8,8 +8,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 import fx from '@/shared/api/__tests__/fixtures/briefs.json';
 
-const rv = vi.hoisted(() => ({ fetchBriefsIndex: vi.fn() }));
-vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchBriefsIndex: (...a) => rv.fetchBriefsIndex(...a) }) }));
+const rv = vi.hoisted(() => ({ fetchBriefsIndex: vi.fn(), fetchManifest: vi.fn() }));
+vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchBriefsIndex: (...a) => rv.fetchBriefsIndex(...a), fetchManifest: (...a) => rv.fetchManifest(...a) }) }));
 vi.mock('@/shared/api/restProxy', () => ({ fetchDailyBrief: vi.fn(), fetchLatestDailyBrief: vi.fn() }));
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 
@@ -22,7 +22,7 @@ async function freshModule() {
 }
 
 describe('useDailyEditionsIndex', () => {
-  beforeEach(() => { vi.resetAllMocks(); sessionStorage.clear(); localStorage.clear(); rv.fetchBriefsIndex.mockResolvedValue(null); }); // the record is not generated unless a test says so
+  beforeEach(() => { vi.resetAllMocks(); sessionStorage.clear(); localStorage.clear(); rv.fetchBriefsIndex.mockResolvedValue(null); rv.fetchManifest.mockResolvedValue(null); }); // the record is not generated unless a test says so
 
   it('probes at most LOOKBACK_DAYS dates for one anchor', async () => {
     const { useDailyEditionsIndex, fetchDailyBrief, fetchLatestDailyBrief, LOOKBACK_DAYS } = await freshModule();
@@ -81,7 +81,24 @@ describe('useDailyEditionsIndex', () => {
     expect(fetchLatestDailyBrief).toHaveBeenCalledTimes(1);
   });
 
-  it('the record\'s briefs index answers every date before today, so a failed latest lookup costs one probe (today), not 14', async () => {
+  it('fresh views: the record\'s briefs index answers today too, so a failed latest lookup costs no probe at all (decision 0050)', async () => {
+    rv.fetchBriefsIndex.mockResolvedValue(fx.index);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-31T08:00:00Z'));
+    rv.fetchManifest.mockResolvedValue({ builtAt: '2026-10-31T04:40:00.000Z' });
+    try {
+      const { useDailyEditionsIndex, fetchDailyBrief, fetchLatestDailyBrief } = await freshModule();
+      fetchLatestDailyBrief.mockRejectedValue(new Error('unavailable'));
+      fetchDailyBrief.mockResolvedValue({ data: null });
+      const { result } = renderHook(() => useDailyEditionsIndex('2026-10-31'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.index['2026-10-30']).toBe(true);
+      expect(result.current.index['2026-10-31']).toBe(false); // no brief yet today: the record says so
+      expect(fetchDailyBrief).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('stale views: the record\'s briefs index answers every date before today, so a failed latest lookup costs one probe (today), not 14', async () => {
     rv.fetchBriefsIndex.mockResolvedValue(fx.index); // live index of 2026-10-31: briefs on 10-30, 10-29, ... 10-25, none 10-20 to 10-24
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-31T08:00:00Z'));

@@ -80,7 +80,7 @@ describe('webIndexFromView against live captures', () => {
     const arcs = Object.keys(action.threads).filter((id) => !touchesMissing(id)).map((threadId) => ({ threadId, latestTitle: null }));
     const viewRows = connectionRows(index, arcs, { limit: 100, now: NOW });
     const liveRows = connectionRows(action, arcs, { limit: 100, now: NOW });
-    const strip = (r) => r.map(({ fromTitle, toTitle, ...rest }) => rest);
+    const strip = (r) => r.map((x) => ({ fromId: x.fromId, toId: x.toId, mechanism: x.mechanism, asOf: x.asOf, confidence: x.confidence, lag: x.lag, cited: x.cited }));
     // the same (from, to) pairs with the same strength; a pair judged by two webs at the same strength shows the web that comes first in the
     // list, which the action orders by its own row order and the view by country code: each row shown is still one the action holds
     expect(viewRows.map((r) => `${r.fromId}>${r.toId}|${r.confidence}`).sort()).toEqual(liveRows.map((r) => `${r.fromId}>${r.toId}|${r.confidence}`).sort());

@@ -12,6 +12,7 @@ import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordVie
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
 import DrawRow from '@/features/track-record/components/DrawRow.jsx';
+import { loadDrawPool } from '@/features/track-record/lib/drawPool.js';
 import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import '@/features/track-record/TrackRecordPage.css';
@@ -170,7 +171,7 @@ export default function TrackRecordPage() {
       {q?.weeks?.length > 0 && (
         <section className="tr-section">
           <SectionHeader label="This week&apos;s draw"><span className="tr-section-tag">pre-registered</span></SectionHeader>
-          <DrawRow weeks={q.weeks} />
+          <DrawRow weeks={q.weeks} loadDraw={loadDrawPool} />
           {view.drawNotes.map((t) => <p key={t} className="tr-gap-note">{t}</p>)}
         </section>
       )}

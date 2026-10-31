@@ -30,7 +30,7 @@
     "features/threads": { "stages": [9], "part": "the story page and the stories list", "timeline": "rebuilds story history from raw tables; target: the story view (facts plus readings)" },
     "features/countries": { "stages": [9], "part": "the country pages", "timeline": "reads country rows from raw tables; country views are not needed now" },
     "features/briefings": { "stages": [9], "part": "the daily and weekly briefs page", "timeline": "reads the briefs; target: daily facts and the weekly report" },
-    "features/track-record": { "stages": [9], "part": "the track record page", "timeline": "reads predictions/track_record.json; target: forecast and verdict facts" },
+    "features/track-record": { "stages": [9], "part": "the track record page", "timeline": "reads views/track-record.json (the question scheme from facts, decision 0044; pilot stats a constant); the corrections ledger stays on the gated action" },
     "features/board": { "stages": [9], "part": "the board page (/board)", "timeline": "reads boards via newsBoard and the record views (stories, links, counts) through the Worker; reading fields fill as the weekly review runs" },
     "features/weekly": { "stages": [9], "part": "the weekly page (planned /briefings/weekly)", "timeline": "will render the weekly report (weekly/)" },
     "features/account": { "stages": [9], "part": "the account desk", "timeline": "reads country history and prefs from raw tables; target: board and record views" },

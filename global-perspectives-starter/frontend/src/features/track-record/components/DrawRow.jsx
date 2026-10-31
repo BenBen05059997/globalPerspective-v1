@@ -10,7 +10,8 @@ import '@/features/track-record/components/DrawRow.css';
 // Everything comes from questions.weeks[]; with no commitment yet, the caller does not render it.
 const short = (h) => (h ? `${String(h).slice(0, 8)}…${String(h).slice(-6)}` : '');
 
-export default function DrawRow({ weeks = [], now = new Date() }) {
+// `loadDraw(weekId)` supplies a week's published draw ({ K, pool, picked }) when the week came without one (the record view has no pool).
+export default function DrawRow({ weeks = [], now = new Date(), loadDraw = null }) {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const today = new Date(now).toISOString().slice(0, 10);
@@ -18,7 +19,7 @@ export default function DrawRow({ weeks = [], now = new Date() }) {
   const view = useMemo(() => {
     const current = weeks.find((w) => w.weekStart <= today && today < new Date(Date.parse(`${w.weekStart}T00:00:00Z`) + 7 * 86400000).toISOString().slice(0, 10)) || null;
     const next = weeks.find((w) => w.weekStart > today) || null;
-    const lastDrawn = [...weeks].reverse().find((w) => w.drawn && w.reveal && w.draw) || null;
+    const lastDrawn = [...weeks].reverse().find((w) => w.drawn && w.reveal && (w.draw || loadDraw)) || null;
     return { current, next, lastDrawn };
   }, [weeks, today]);
 
@@ -27,7 +28,7 @@ export default function DrawRow({ weeks = [], now = new Date() }) {
 
   async function onVerify() {
     setBusy(true);
-    try { setResult(await verifyDraw(lastDrawn)); } catch { setResult({ ok: false, problems: ['this browser could not compute the hash'] }); } finally { setBusy(false); }
+    try { setResult(await verifyDraw(lastDrawn.draw ? lastDrawn : { ...lastDrawn, draw: await loadDraw(lastDrawn.weekId) })); } catch { setResult({ ok: false, problems: ['this browser could not compute the hash'] }); } finally { setBusy(false); }
   }
 
   return (

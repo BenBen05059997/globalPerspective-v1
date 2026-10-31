@@ -14,6 +14,9 @@ export async function fetchRecordView(path) {
   return res.json();
 }
 
+/** The track record view (decision 0044): the weekly question scheme and the frozen pilot stats; null when not generated. */
+export function fetchTrackRecordView() { return fetchRecordView('track-record.json'); }
+
 export function makeRecordViews(getView = fetchRecordView) {
   return {
     /** The story view, or null when not generated. A merged story's view is an alias: the survivor is fetched. */

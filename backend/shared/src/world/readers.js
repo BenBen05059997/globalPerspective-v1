@@ -106,6 +106,16 @@ async function archiveDay(client, date, opts = {}) {
   return { date, updatedAt: str(row && row.updatedAt), source: src, entries };
 }
 
+/**
+ * An archive day from raw entries instead of the DynamoDB row (the entries inbox, decision 0051): the same shape archiveDay answers for a
+ * day row, with the same provenance (`archive#DATE`, position in the list), so a fact built from it is byte-identical to the one built
+ * from the row. `updatedAt` is when the list was last written. No day-zero extras (those come from the `today-archive` item).
+ */
+function archiveDayOfEntries(date, rawEntries, { updatedAt = null, withAi = false } = {}) {
+  if (!isDay(date)) throw new Error('archiveDayOfEntries needs a YYYY-MM-DD date');
+  return { date, updatedAt: str(updatedAt), source: 'archive', entries: entriesOf(rawEntries, null, date, withAi, `archive#${date}`) };
+}
+
 /** Archive days from..to inclusive -> { from, to, days:[{date, entries, ...}] (days that exist, ascending), missingDays:[date] }. */
 async function archiveRange(client, from, to, opts = {}) {
   const dates = eachDay(from, to);
@@ -448,6 +458,6 @@ async function latestTopics(client, opts = {}) {
 
 module.exports = {
   DEFAULT_TABLES, resolveTables, verdictOrder,
-  archiveDay, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
+  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadHistory, countryHistory, driftNotes, scenarios, verdicts, sampledQuestions,
   webIndex, webLatest, webAt, latestTopics,
 };

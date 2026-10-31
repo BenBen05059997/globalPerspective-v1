@@ -45,6 +45,7 @@ const FACTS_SK = 'COUNTRY_FACTS';
 const ARC_DIGEST_DAYS = parseInt(process.env.ARC_DIGEST_DAYS || '7', 10);
 const ARC_DIGEST_MAX = parseInt(process.env.ARC_DIGEST_MAX || '12', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
+const { mergeArchiveDay, inboxLines } = require('./_shared/entriesInbox');
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
 const DAILY_ARCHIVE_TTL_DAYS = 90;
@@ -63,6 +64,9 @@ const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362
 // Entry notes (decision 0042): each summary, cause chain and forecast this run stored is also written to
 // <NOTES_PREFIX>notes/entry/ through shared notes.js; record/shadow/ until the switch is checked.
 const NOTES_PREFIX = process.env.NOTES_PREFIX || 'record/shadow/';
+// Entries inbox (decision 0051): <ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl, one line per archived entry. Unset = nothing is written;
+// the coordinator sets record/shadow/ first, then record/.
+const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
 const STORY_MAP_KEY = 'threads/story-map.json';
 const ENABLE_R3_TIER = String(process.env.ENABLE_R3_TIER || 'false').toLowerCase() === 'true'; // gated until real-tag re-measurement
 let _s3;
@@ -270,6 +274,7 @@ exports.handler = async (event) => {
       try {
         const archived = await buildAndWriteArchive(filteredTopics, generationId, threadIdById);
         if (archived) await writeEntryNotes([...outputs, ...reused], archived, generationId);
+        if (archived) await writeEntriesInbox(archived, stagingItem, generationId);
       } catch (archiveErr) {
         console.warn('Archive write encountered an issue:', archiveErr);
       }
@@ -1160,20 +1165,6 @@ function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
   };
 }
 
-const MAX_ARCHIVE_ENTRIES = 50;
-const MAX_AI_CHARS = 1500;
-
-function trimAi(entry) {
-  if (!entry.ai) return entry;
-  const trimmed = {};
-  for (const [k, v] of Object.entries(entry.ai)) {
-    trimmed[k] = typeof v === 'string' && v.length > MAX_AI_CHARS
-      ? v.slice(0, MAX_AI_CHARS) + '...'
-      : v;
-  }
-  return { ...entry, ai: trimmed };
-}
-
 function formatDateKey(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -1269,15 +1260,8 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
       : [];
 
     const todayEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, 3, threadIdByTopic[t.id]));
-    const newTopicIds = new Set(todayEntries.map(e => e.topicId));
     const cutoff = Date.now() - (ARCHIVE_TTL_HOURS * 60 * 60 * 1000);
-    const mergedToday = [
-      ...existingEntries.filter(e =>
-        !newTopicIds.has(e.topicId) &&
-        new Date(e.archivedAt).getTime() > cutoff
-      ),
-      ...todayEntries,
-    ].map(trimAi).slice(-MAX_ARCHIVE_ENTRIES);
+    const mergedToday = mergeArchiveDay(existingEntries, todayEntries, { keep: e => new Date(e.archivedAt).getTime() > cutoff });
 
     const todayTtl = Math.floor(now.getTime() / 1000) + (ARCHIVE_TTL_HOURS * 3600);
     await ddb.send(
@@ -1303,11 +1287,7 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
       : [];
 
     const dailyEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, DAILY_ARCHIVE_MAX_SOURCES, threadIdByTopic[t.id]));
-    const dailyTopicIds = new Set(dailyEntries.map(e => e.topicId));
-    const mergedDaily = [
-      ...existingDailyEntries.filter(e => !dailyTopicIds.has(e.topicId)),
-      ...dailyEntries,
-    ].map(trimAi).slice(-MAX_ARCHIVE_ENTRIES);
+    const mergedDaily = mergeArchiveDay(existingDailyEntries, dailyEntries);
 
     const dailyTtl = Math.floor(now.getTime() / 1000) + (DAILY_ARCHIVE_TTL_DAYS * 24 * 3600);
     await ddb.send(
@@ -1324,7 +1304,7 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
     console.log(`Daily archive written (${dailyKey}): ${dailyEntries.length} new + ${mergedDaily.length - dailyEntries.length} existing = ${mergedDaily.length} total`);
 
     // the entries as archived (sources capped), so an entry note's subject is the eventId newsStoryRecord computes from them
-    return { dailyEntries, archiveDate: dailyKey.slice('archive#'.length) };
+    return { dailyEntries, archiveDate: dailyKey.slice('archive#'.length), batch: now.toISOString() };
   } catch (err) {
     console.error('Failed to write archive:', err);
     return false;
@@ -1346,6 +1326,30 @@ async function writeEntryNotes(items, { dailyEntries, archiveDate }, generationI
     console.log(`[notes] entry: ${built.length} built from ${items.length} items, ${r.appended} appended, ${r.skipped} already stored (${NOTES_PREFIX})`);
   } catch (e) {
     console.error(`[notes] entry notes not written: ${e.message}`);
+  }
+}
+
+// The run's archived entries -> record/inbox/entries/DAY.jsonl (decision 0051), so the record needs no `archive#DAY` row. One line per entry with the
+// fields of `latest` an archive entry lacks (urgency, x_trending, primaryCountry...). Off unless ENTRIES_INBOX_PREFIX is set. Best-effort while DynamoDB
+// stays the primary copy: a failure is logged as [inbox] and never fails the run.
+async function writeEntriesInbox({ dailyEntries, archiveDate, batch }, stagingItem, generationId) {
+  if (!ENTRIES_INBOX_PREFIX) return;
+  try {
+    const { makeS3Json } = require('./_shared/s3json');
+    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+    const raw = Array.isArray(stagingItem?.topics) ? stagingItem.topics : [];
+    const topics = {};
+    raw.forEach((t, idx) => { topics[buildStableTopicId(t, idx)] = t; });
+    const run = {
+      of: raw.length, model: stagingItem?.model ?? null, limit: stagingItem?.limit ?? null, updatedAt: stagingItem?.updatedAt ?? null,
+      generatedDate: stagingItem?.generatedDate ?? null, generatedYear: stagingItem?.generatedYear ?? null, generationId,
+    };
+    const lines = inboxLines(dailyEntries, { batch, selection: { topics, run } });
+    const s3json = makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET });
+    const r = await s3json.appendLines(`${ENTRIES_INBOX_PREFIX}inbox/entries/${archiveDate}.jsonl`, lines, { idKey: 'inboxId' });
+    console.log(`[inbox] entries: ${lines.length} lines, ${r.appended} appended, ${r.skipped} already stored (${ENTRIES_INBOX_PREFIX})`);
+  } catch (e) {
+    console.error(`[inbox] entries not written: ${e.message}`);
   }
 }
 
@@ -1396,4 +1400,4 @@ function http(statusCode, body) {
   };
 }
 
-exports._internal = { buildArchiveEntry, logPredictionSnapshot };
+exports._internal = { buildArchiveEntry, logPredictionSnapshot, writeEntriesInbox };

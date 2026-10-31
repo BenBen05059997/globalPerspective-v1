@@ -84,6 +84,7 @@ test('countryIntelligenceRowOfView: the briefing as stored under the COUNTRY# ke
   const row = R.countryIntelligenceRowOfView({ intelligence: { countryName: 'France', riskLevel: 'high', generatedAt: '2026-10-30T05:15:00.000Z' } }, 'France');
   assert.deepEqual(row, { PK: 'COUNTRY#France', SK: 'COUNTRY_INTELLIGENCE', countryName: 'France', riskLevel: 'high', generatedAt: '2026-10-30T05:15:00.000Z' });
   assert.equal(R.countryIntelligenceRowOfView({ intelligence: null }, 'France'), null);
+  assert.equal(R.countryIntelligenceRowOfView({ intelligence: { countryName: 'United States' } }, 'USA'), null, 'a spelling DynamoDB has no row for');
 });
 
 test('diffValues: nested paths, a missing key equals undefined, ignore skips a key at any depth', () => {

@@ -78,10 +78,13 @@ function threadAnalysisRowOfView(storyView, threadId) {
   };
 }
 
-/** A COUNTRY_INTELLIGENCE row from a country view's `intelligence` (as stored), or null. */
+/**
+ * A COUNTRY_INTELLIGENCE row from a country view's `intelligence` (as stored), or null. The row is keyed by the name it was stored under
+ * (COUNTRY#France): a spelling the view's briefing is not stored under (USA for United States) has no row in DynamoDB, so it has none here.
+ */
 function countryIntelligenceRowOfView(countryView, name) {
   const i = countryView && countryView.intelligence;
-  if (!i || typeof i !== 'object') return null;
+  if (!i || typeof i !== 'object' || i.countryName !== name) return null;
   return { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE', ...i };
 }
 
@@ -188,6 +191,31 @@ function makeRecordReads({ getJson, now = Date.now, ttlMs = 60000 }) {
   };
 }
 
+// What "the same" means for each row, per consumer (decision 0054). Times the two copies stamp separately (the daily row and the today-archive item,
+// under a second apart) are compared to the second; `ttl` is derived (a view has none); `activatedAt` is not in the view (no reader uses it); the story
+// analysis note keeps `iso3` sorted, DynamoDB kept the order the entries gave, so only a reader that needs the order compares it (threadAnalysisOrdered).
+const trunc = (v) => (typeof v === 'string' ? v.slice(0, 19) : v);
+const times = (x) => {
+  if (Array.isArray(x)) return x.map(times);
+  if (!x || typeof x !== 'object') return x;
+  return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === 'archivedAt' || k === 'updatedAt' ? trunc(v) : times(v)]));
+};
+const SAME = {
+  latest: (a, b) => diffValues(times(a), times(b), { ignore: ['activatedAt', 'ttl'] }),
+  todayArchive: (a, b) => diffValues(times(a), times(b), { ignore: ['ttl'] }),
+  threadAnalysis: (a, b) => diffValues(a, b, { ignore: ['ttl', 'iso3'] }),
+  threadAnalysisOrdered: (a, b) => diffValues(a, b, { ignore: ['ttl'] }),
+  countryIntelligence: (a, b) => diffValues(a, b, { ignore: ['ttl'] }),
+  weeklyBrief: (a, b) => diffValues(a, b, { ignore: ['ttl', 'PK', 'SK', 'iso3'] }),
+};
+
+const READS = ['fresh', 'todayView', 'latestItem', 'todayArchiveItem', 'threadAnalysisRow', 'countryIntelligenceRow', 'latestWeeklyBrief'];
+/** The readers, built on first call: a Lambda in mode 'ddb' never loads the S3 client. */
+function lazyRecordReads(env = process.env) {
+  let live;
+  return Object.fromEntries(READS.map((m) => [m, (...args) => (live = live || liveRecordReads(env))[m](...args)]));
+}
+
 /** The readers over the world bucket with the Lambda runtime's S3 client (built on first use, so mode 'ddb' never loads it). */
 function liveRecordReads(env = process.env) {
   const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
@@ -198,6 +226,6 @@ function liveRecordReads(env = process.env) {
 }
 
 module.exports = {
-  liveRecordReads, MODES, MAX_VIEW_AGE_MS, TODAY_SOURCES, DAY_MS, readMode, readBy, diffValues, makeRecordReads,
+  SAME, lazyRecordReads, liveRecordReads, MODES, MAX_VIEW_AGE_MS, TODAY_SOURCES, DAY_MS, readMode, readBy, diffValues, makeRecordReads,
   latestItemOfView, todayArchiveItemOfView, threadAnalysisRowOfView, countryIntelligenceRowOfView,
 };

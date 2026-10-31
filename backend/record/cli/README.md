@@ -32,6 +32,39 @@ first day). Test: `node --test backend/record/cli/backfill-entry-notes.test.mjs`
 
 `sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
 
+## backfill-story-analysis-notes.mjs
+
+Turns every current `SummarizeAndPredict` item `PK THREAD#<id>`, `SK THREAD_ANALYSIS` (scan) into one `story_analysis` note through
+shared `notes.js` `storyAnalysisNote`: `at` the item's `generatedAt`, `model` the stored model, payload the stored analysis. `cites`
+= eventIds of the thread's archive entries it was built from (the stored `entryTopicIds`), found by reading NewsCache
+`archive#DAY` for every day in `record/facts/manifest.json`; an item without `entryTopicIds` gets no cites. A thread with no story
+in `record/views/index/all.json` is reported as unmatched and not written (the 202 of 326 are threads from before the record's
+first day, 2026-09-05); a re-run appends nothing.
+
+History: only the current analysis is stored (one item per thread, overwritten on each run). `THREAD_HISTORY#<date>` rows (about
+330, 60-day TTL) hold scalars and the trajectory text only (no storyArc, watch questions, actors or model), so they cannot
+make a valid `story_analysis` note and are not backfilled. Older analyses carry `groundingSources`/`searchResultsCount` (search-grounded
+era); the schema allows them.
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-analysis-notes.mjs [--dry] [--live]
+```
+Test: `node --test backend/record/cli/backfill-story-analysis-notes.test.mjs`.
+
+## backfill-drift-notes.mjs
+
+Turns every `COUNTRY#<name>` / `DRIFTLOG#<date>` item (the permanent drift archive; `DRIFT#` is the same item with a 60-day TTL) into
+one `drift` note through `driftNote`, ISO3 from `resolveIso3` (unresolved: reported, skipped). The items store no model, so the notes
+are archive copies like the entry copies: `model` null and `payload.from: "archive"` (the schema's drift payload allows `from`).
+The Lambda's configured model (`GROK_MODEL`, now `deepseek-flash`) is not used: it is what writes today, not necessarily what wrote
+a note months ago, and a made-up attribution would be worse than none. Currently 222 items, all resolved; the oldest lack `currentRiskScore`
+(optional in the schema).
+
+```sh
+RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-drift-notes.mjs [--dry] [--live]
+```
+Test: `node --test backend/record/cli/backfill-drift-notes.test.mjs`.
+
 ## recover-day.mjs
 
 Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.

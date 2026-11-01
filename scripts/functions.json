@@ -309,7 +309,7 @@
           "via": "events",
           "name": "TriggerPredictionsSnapshot",
           "expr": "rate(30 minutes)",
-          "state": "ENABLED"
+          "state": "DISABLED"
         }
       ]
     },

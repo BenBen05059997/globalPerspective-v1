@@ -12,7 +12,7 @@ Module._load=function(name,...args){
 const{handler}=require('../src/index.js');Module._load=original;
 const event=(action,payload={})=>({headers:{},httpMethod:'POST',body:JSON.stringify({action,payload})});
 test('all removed actions reject without database, object or network work',async()=>{
- for(const action of ['event_dossier','dossier_analysis','pair_analysis','pair_analyses_list','world_overview','research_briefing','geocode','economic_impact','economic_impact_list','economic_top_movers','weekly_markets','markets_global','markets_country','markets_history']){
+ for(const action of ['event_dossier','dossier_analysis','pair_analysis','pair_analyses_list','world_overview','research_briefing','geocode','economic_impact','economic_impact_list','economic_top_movers','weekly_markets','markets_global','markets_country','markets_history','prediction_snapshot','prediction_track_record']){
   const result=await handler(event(action,{topicId:'topic',address:'Kyiv',pair:'A-B',threadId:'story',countryName:'Iran'}));
   assert.equal(result.statusCode,400);assert.equal(JSON.parse(result.body).error,'Unsupported action');
  }

@@ -1,9 +1,8 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
-const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys } = require('./lib');
+const { DynamoDBDocumentClient, GetCommand, ScanCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
+const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, capForTier, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys } = require('./lib');
 const { readMode: notesReadMode, s3NoteReader } = require('./_shared/noteReads');
 const { makeRecords, correctionOf } = require('./records');
 const { storyHref, absoluteUrl } = require('./_shared/links');
@@ -11,24 +10,12 @@ const { readMode: recordReadMode, readBy, liveRecordReads } = require('./_shared
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
-// S8·T3: the /track-record aggregate is precomputed to S3 by newsPredictionsSnapshot every 30 min,
-// so this proxy serves a cached object instead of Scanning ~5.5k PredictionLog items per page load.
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-const TRACK_RECORD_KEY = process.env.TRACK_RECORD_KEY || 'predictions/track_record.json';
-let _s3;
-async function getTrackRecordCache() {
-  if (!_s3) _s3 = new S3Client({ region: REGION });
-  const r = await _s3.send(new GetObjectCommand({ Bucket: WORLD_BUCKET, Key: TRACK_RECORD_KEY }));
-  const doc = JSON.parse(await r.Body.transformToString());
-  return doc && doc.data ? doc.data : null;
-}
-
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
 const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '9000');
 
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
-const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
@@ -467,112 +454,6 @@ exports.handler = async (event) => {
       }
     }
 
-    // Phase 4 — per-thread "Living forecast" board. Given the thread's topicIds, returns the
-    // single NEWEST methodologyVersion>=1 prediction snapshot among them (scenarios + dated
-    // triggers with their verdicts). v1-only: legacy snapshots (retrodiction-prone) never surface.
-    // Triggers render pending today and strike/check as verdicts land (Phase 2 resolution loop).
-    if (action === 'prediction_snapshot') {
-      const client = getDynamoClient();
-      try {
-        let topicIds = payload?.topicIds ?? qs?.topicIds ?? payload?.topicId ?? qs?.topicId;
-        if (typeof topicIds === 'string') topicIds = topicIds.split(',').map(s => s.trim()).filter(Boolean);
-        if (!Array.isArray(topicIds)) topicIds = topicIds ? [topicIds] : [];
-        // Batch 4 / C: a story can be asked for by threadId (briefings only know the thread); its
-        // topic ids come from the same narrative_thread read the story page uses (14 days).
-        const askedThreadId = payload?.threadId ?? qs?.threadId;
-        if (!topicIds.length && typeof askedThreadId === 'string' && askedThreadId) {
-          const tr = await readNarrativeThread(askedThreadId, 14);
-          topicIds = tr?.body?.success ? (tr.body.data || []).map(e => e.topicId).filter(Boolean) : [];
-        }
-        topicIds = [...new Set(topicIds.filter(Boolean))].slice(0, 25);
-        if (!topicIds.length) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'topicIds required' }) };
-
-        // Newest snapshot per topic (SK = date, newest first). Best-effort per topic.
-        const latest = await Promise.all(topicIds.map(tid =>
-          client.send(new QueryCommand({
-            TableName: PREDICTION_LOG_TABLE,
-            KeyConditionExpression: 'PK = :pk',
-            ExpressionAttributeValues: { ':pk': `PRED#${tid}` },
-            ScanIndexForward: false,
-            Limit: 1,
-          })).then(r => (r.Items || [])[0] || null).catch(() => null)
-        ));
-
-        const v1 = latest.filter(Boolean).filter(it => Number(it.methodologyVersion || 0) >= 1);
-        if (!v1.length) return { statusCode: 200, headers, body: JSON.stringify({ success: true, snapshot: null }) };
-        v1.sort((a, b) => String(b.generatedAt || b.SK || '').localeCompare(String(a.generatedAt || a.SK || '')));
-        const it = v1[0];
-
-        // Batch 4 / C: per-question facts. Legacy triggers (no `question` field) are returned exactly as before.
-        const issueDay = String(it.SK || it.generatedAt || '').slice(0, 10);
-        const today = new Date().toISOString().slice(0, 10);
-        const qTriggers = (it.scenarios || []).flatMap(s => (s.triggers || []).filter(t => t && t.question === true && t.qid));
-        const qInfo = new Map();
-        if (qTriggers.length) {
-          let commitExists = false;
-          let drawExists = false;
-          try {
-            const wk = isoWeekOfDay(issueDay);
-            const [c, d] = await Promise.all([
-              client.send(new GetCommand({ TableName: PREDICTION_LOG_TABLE, Key: { PK: `SEED#${wk}`, SK: 'COMMIT' } })),
-              client.send(new GetCommand({ TableName: PREDICTION_LOG_TABLE, Key: { PK: `SAMPLE#${wk}`, SK: 'DRAW' } })),
-            ]);
-            commitExists = Boolean(c.Item); drawExists = Boolean(d.Item);
-          } catch (e) { console.warn('prediction_snapshot week lookup failed', e.message); }
-          await Promise.all(qTriggers.map(async (t) => {
-            try {
-              // SAMPLED and VERDICT rows only: 'SAMPLED' <= SK sorts after every DRAFT# row (operator-only, never read here)
-              const r = await client.send(new QueryCommand({
-                TableName: PREDICTION_LOG_TABLE, KeyConditionExpression: 'PK = :pk AND SK >= :s',
-                ExpressionAttributeValues: { ':pk': `Q#${t.qid}`, ':s': 'SAMPLED' },
-              }));
-              const rows = r.Items || [];
-              const sampled = rows.some(x => x.SK === 'SAMPLED');
-              const verdictRows = rows.filter(x => String(x.SK).startsWith('VERDICT'));
-              const v = latestVerdictRow(verdictRows);
-              qInfo.set(t.qid, {
-                scoring: questionSampleState({ issueDay, deadline: t.deadline, sampled, commitExists, drawExists }),
-                state: questionOutcomeState({ sampled, verdictRows, deadline: t.deadline, today }),
-                verdictUrl: v?.evidence?.url || null, verdictQuote: v?.evidence?.quote || null, voidReason: v?.voidReason || null,
-              });
-            } catch (e) { console.warn('prediction_snapshot question lookup failed', e.message); }
-          }));
-        }
-
-        const scenarios = (it.scenarios || []).map(s => ({
-          label: s.label,
-          probability: typeof s.probability === 'number' ? s.probability : null,
-          triggers: (s.triggers || []).filter(t => t.deadline).map(t => ({
-            id: t.id,
-            text: t.text,
-            deadline: t.deadline,
-            verdict: triggerVerdict(t.finalVerdict, t.question === true && t.qid ? qInfo.get(t.qid)?.state : null),
-            confirmedBy: t.confirmedBy || null,
-            citation: t.agentVerdict?.evidence?.[0]?.url || t.agentVerdict?.evidence?.[0]?.title || null,
-            ...(t.question === false ? { question: false } : {}),
-            ...(t.question === true && t.qid ? {
-              question: true, qid: t.qid, p: typeof t.p === 'number' ? t.p : null, source: t.resolutionSource || null,
-              ...(qInfo.get(t.qid) || { scoring: null, state: null }),
-            } : {}),
-          })),
-        })).filter(s => s.triggers.length);
-
-        const snapshot = scenarios.length ? {
-          topicId: it.topicId,
-          threadId: it.threadId || (typeof askedThreadId === 'string' && askedThreadId) || null,
-          title: it.title || null,
-          generatedAt: it.generatedAt || it.SK || null,
-          status: it.status || 'open',
-          questionSchema: it.questionSchema || null,
-          scenarios,
-        } : null;
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, snapshot }) };
-      } catch (err) {
-        console.error('prediction_snapshot error', err);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };
-      }
-    }
-
     if (action === 'systems_analysis') {
       const countryName = payload?.countryName || qs?.countryName;
       if (!countryName) {
@@ -624,127 +505,6 @@ exports.handler = async (event) => {
       } catch (err) {
         console.error('web_index error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
-      }
-    }
-
-    if (action === 'prediction_track_record') {
-      // S8·T3: serve the precomputed aggregate from S3 (newsPredictionsSnapshot writes it every
-      // 30 min). Only if the cache is missing/unreadable do we fall through to the live Scan below,
-      // so correctness is preserved even if the builder hasn't run yet.
-      try {
-        const cached = await getTrackRecordCache();
-        if (cached) {
-          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: cached }) };
-        }
-      } catch (e) {
-        console.warn('prediction_track_record cache miss, falling back to scan:', e.message);
-      }
-
-      const client = getDynamoClient();
-      try {
-        const items = [];
-        let ExclusiveStartKey;
-        do {
-          const res = await client.send(new ScanCommand({
-            TableName: PREDICTION_LOG_TABLE,
-            ProjectionExpression: 'PK, topicId, threadId, title, category, generatedAt, scenarios, methodologyVersion',
-            ExclusiveStartKey,
-          }));
-          items.push(...(res.Items || []));
-          ExclusiveStartKey = res.LastEvaluatedKey;
-        } while (ExclusiveStartKey);
-
-        // Methodology-v1 era cut (2026-07-04): only records written by the rebuilt,
-        // gated capture (methodologyVersion >= 1) are scored. The legacy backlog is kept
-        // immutable but excluded — it carries the trigger-generation defects the pilot
-        // found (retrodictions, false premises). See PREDICTION_METHODOLOGY_V1_PLAN.md.
-        const ERA_CUT_FROM = '2026-07-04';
-        const v1Items = items.filter(it => Number(it.methodologyVersion || 0) >= 1);
-        const legacyExcluded = items.length - v1Items.length;
-
-        // A "resolved" trigger is one confirmed as fired/not_fired (unclear is excluded from
-        // scoring). Score each against its parent scenario's probability midpoint:
-        // Brier = mean((p - outcome)^2).
-        const buckets = [0, 0.2, 0.4, 0.6, 0.8, 1.0001];
-        const cal = buckets.slice(0, -1).map((lo, i) => ({ lo, hi: buckets[i + 1], n: 0, predicted: 0, fired: 0 }));
-        const resolved = [];
-        let totalTriggers = 0;
-        let pendingCount = 0;
-        let brierSum = 0;
-        let scored = 0;
-        let firedCount = 0;
-
-        for (const it of v1Items) {
-          for (const s of it.scenarios || []) {
-            const p = typeof s.probability === 'number' ? s.probability : null;
-            for (const t of s.triggers || []) {
-              if (t.question === true) continue; // scored by the question board (newsPredictionsSnapshot), as in trackRecord.js
-              if (!t.deadline) continue;
-              totalTriggers++;
-              const v = t.finalVerdict;
-              if (v !== 'fired' && v !== 'not_fired') {
-                if (!v) pendingCount++;
-                continue;
-              }
-              const outcome = v === 'fired' ? 1 : 0;
-              if (v === 'fired') firedCount++;
-              if (p != null) {
-                brierSum += (p - outcome) ** 2;
-                scored++;
-                const b = cal.find(c => p >= c.lo && p < c.hi);
-                if (b) { b.n++; b.predicted += p; b.fired += outcome; }
-              }
-              // v1 verdicts carry the agent's cited evidence; fall back to a legacy proposal citation.
-              const citation = t.agentVerdict?.evidence?.[0]?.url
-                || t.agentVerdict?.evidence?.[0]?.title
-                || t.proposal?.citation
-                || null;
-              resolved.push({
-                title: it.title,
-                category: it.category || null,
-                scenario: s.label,
-                probability: p,
-                trigger: t.text,
-                deadline: t.deadline,
-                verdict: v,
-                citation,
-                confirmedBy: t.confirmedBy || null,
-                confirmedAt: t.confirmedAt || null,
-                qid: t.qid || null,
-                clusterKey: it.threadId || it.topicId || it.PK || null,
-              });
-            }
-          }
-        }
-
-        resolved.sort((a, b) => (b.confirmedAt || '').localeCompare(a.confirmedAt || ''));
-        const calibration = cal
-          .filter(c => c.n > 0)
-          .map(c => ({
-            bucket: `${Math.round(c.lo * 100)}-${Math.round(c.hi * 100)}%`,
-            n: c.n,
-            meanPredicted: Math.round((c.predicted / c.n) * 1000) / 1000,
-            actualFiredRate: Math.round((c.fired / c.n) * 1000) / 1000,
-          }));
-
-        const data = {
-          methodologyVersion: 1,
-          eraCutFrom: ERA_CUT_FROM,
-          totalPredictionsLogged: v1Items.length,
-          legacyPredictionsExcluded: legacyExcluded,
-          totalDatedTriggers: totalTriggers,
-          resolvedTriggers: scored,
-          pendingTriggers: pendingCount,
-          firedTriggers: firedCount,
-          brierScore: scored ? Math.round((brierSum / scored) * 1000) / 1000 : null,
-          calibration,
-          recent: resolved.slice(0, 30),
-        };
-        console.info('prediction_track_record', { v1Logged: data.totalPredictionsLogged, legacyExcluded, resolved: data.resolvedTriggers });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
-      } catch (e) {
-        console.error('prediction_track_record error', e);
-        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
       }
     }
 

@@ -96,23 +96,6 @@ test('corrections_feed: country notes carry iso3, every note its threadId', asyn
   assert.deepStrictEqual([th.iso3, th.threadId], [[], 'thread-q']);
 });
 
-test('prediction_snapshot: returns threadId; a question trigger\'s verdict comes from its Q# verdict row', async () => {
-  put({ PK: 'PRED#t-0', SK: '2026-10-01', topicId: 't-0', threadId: 'thread-t', methodologyVersion: 1, questionSchema: 1, generatedAt: '2026-10-01T04:00:00Z',
-    scenarios: [{ label: 'Most Likely', probability: 0.6, triggers: [
-      { id: '0-0', text: 'q yes', deadline: '2026-10-10', question: true, qid: 'q1', p: 70 },
-      { id: '0-1', text: 'q open', deadline: '2026-12-10', question: true, qid: 'q2', p: 40 },
-      { id: '0-2', text: 'legacy', deadline: '2026-10-10', finalVerdict: 'not_fired' },
-    ] }] });
-  put({ PK: 'Q#q1', SK: 'SAMPLED', qid: 'q1' });
-  put({ PK: 'Q#q1', SK: 'VERDICT', qid: 'q1', verdict: 'yes', evidence: { url: 'https://example.org/a' } });
-  const b = await call('prediction_snapshot', { topicIds: ['t-0'] });
-  assert.strictEqual(b.snapshot.threadId, 'thread-t');
-  const [yes, open, legacy] = b.snapshot.scenarios[0].triggers;
-  assert.deepStrictEqual([yes.state, yes.verdict], ['yes', 'fired']);
-  assert.strictEqual(open.verdict, null);
-  assert.strictEqual(legacy.verdict, 'not_fired');
-});
-
 test('archive light entries carry iso3 from their regions', () => {
   assert.deepStrictEqual(L.lightEntry({ topicId: 't', regions: ['USA', 'Europe', 'Russia'] }).iso3, ['USA', 'RUS']);
 });

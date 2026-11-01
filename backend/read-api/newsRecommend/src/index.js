@@ -16,6 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { buildInterestProfile, isColdStart, rankRecommendations } = require('./scoring');
 const { storyHref, mapHref, absoluteUrl } = require('./_shared/links');
+const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -44,41 +45,8 @@ function ddb() {
   return _ddb;
 }
 
-// ── Firebase JWT verify (lightweight, mirrors newsSavedItems) ────────────────
-let _certCache = null;
-let _certCacheExpiry = 0;
-async function getGoogleCerts() {
-  const now = Date.now();
-  if (_certCache && now < _certCacheExpiry) return _certCache;
-  const res = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
-  _certCache = await res.json();
-  _certCacheExpiry = now + 3600 * 1000;
-  return _certCache;
-}
-async function verifyFirebaseToken(authHeader) {
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    const { createVerify } = require('crypto');
-    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp < now) return null;
-    if (FIREBASE_PROJECT_ID && payload.aud !== FIREBASE_PROJECT_ID) return null;
-    if (FIREBASE_PROJECT_ID && payload.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) return null;
-    const certs = await getGoogleCerts();
-    const cert = certs[header.kid];
-    if (!cert) return null;
-    const verifier = createVerify('SHA256');
-    verifier.update(`${parts[0]}.${parts[1]}`);
-    return verifier.verify(cert, parts[2], 'base64url') ? payload : null;
-  } catch (err) {
-    console.warn('verifyFirebaseToken failed', err.message);
-    return null;
-  }
-}
+// ── Firebase JWT verify (lightweight; one copy in _shared/firebaseAuth.js) ──────
+const verifyFirebaseToken = makeFirebaseVerifier({ projectId: FIREBASE_PROJECT_ID, logLabel: 'verifyFirebaseToken failed' });
 
 // ── Data loaders ─────────────────────────────────────────────────────────────
 async function loadTopics() {

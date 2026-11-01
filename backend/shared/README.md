@@ -18,6 +18,7 @@ LLM and time
   `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `openrouter`, `gemini`, `other`. Thinking is off
   unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API.
+- `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as

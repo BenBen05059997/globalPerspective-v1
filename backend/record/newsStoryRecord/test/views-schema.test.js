@@ -43,6 +43,22 @@ test('built views with readings satisfy the schemas', () => {
   assert.equal(validate.manifest(v.manifest), true, JSON.stringify(validate.manifest.errors));
   assert.equal(v.manifest.readingsThrough, '2026-W43');
 });
+test('a refresh build with a provisional entry and a provisional forecast (0050, 0052) satisfies the schemas', () => {
+  const X = require('./views-fixture');
+  const V = require('../src/views');
+  const provisional = [
+    {...X.entry('thread-a', '2026-10-22T04:00:00.000Z', 'Prov 1'), provisional: true},
+    {...X.forecast('thread-a', '2026-10-22T05:00:00.000Z', 'PRED#P/2026-10-22', [X.branch('p-0', '2026-11-30')]), provisional: true},
+  ];
+  const v = V.buildViews(X.golden(), {today: '2026-10-22', builtAt: '2026-10-22T12:35:00.000Z', runId: 'refresh-x', factsManifestDays: 1, provisional});
+  const story = v.stories.get('thread-a');
+  assert.deepEqual(story.forks.map((k) => Boolean(k.provisional)), [false, true]);
+  assert.equal(validate.story(story), true, JSON.stringify(validate.story.errors));
+  assert.equal(validate.forecasts(v.forecasts.get('thread-a')), true, JSON.stringify(validate.forecasts.errors));
+  assert.deepEqual([v.manifest.provisionalThrough, v.manifest.provisionalEntries, v.manifest.provisionalForecasts], ['2026-10-22', 1, 1]);
+  assert.equal(validate.manifest(v.manifest), true, JSON.stringify(validate.manifest.errors));
+  for (const s of [v.active, v.all]) assert.equal(validate.index(s), true, JSON.stringify(validate.index.errors));
+});
 test('the schemas reject what 0037 forbids', () => {
   const story = load('examples', 'story.json');
   const links = load('examples', 'links.json');

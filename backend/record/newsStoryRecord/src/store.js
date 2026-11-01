@@ -27,7 +27,7 @@ function makeStore(client, {env = {}, tables, s3json = null, log = console} = {}
   if (!FORECAST_SOURCES.includes(forecastSource)) throw new Error(`newsStoryRecord: FORECASTS_SOURCE must be one of ${FORECAST_SOURCES.join(', ')}, got ${forecastSource}`);
   if (forecastSource !== 'log' && !s3json) throw new Error(`newsStoryRecord: FORECASTS_SOURCE=${forecastSource} needs the record bucket`);
   const inboxPrefix = (prefix) => {
-    if (!s3json) throw new Error(`newsStoryRecord: ENTRIES_SOURCE=${source} needs the record bucket`);
+    if (!s3json) throw new Error('newsStoryRecord: reading an inbox needs the record bucket');
     return prefix || 'record/';
   };
   const report = (what, diff, skipDays) => {
@@ -37,11 +37,15 @@ function makeStore(client, {env = {}, tables, s3json = null, log = console} = {}
 
   // Every PRED# row of the window, not only those of the day's archive topics: the forecaster also draws topics the archive never keeps (a different
   // run's topic id). From the log this needs dynamodb:Scan on the PredictionLog table; from the inbox, only the bucket.
+  async function inboxSnapshots(from, to, prefix) {
+    return snapshotsOfDays(await readForecastDays(s3json, inboxPrefix(prefix), from, to), {from, to});
+  }
+  const warnOrphans = (fromInbox) => { if (fromInbox.orphans) log.warn(`[forecasts-inbox] ${fromInbox.orphans} thread line(s) without their forecast line`); };
   async function loadSnapshots(from, to, prefix) {
     if (forecastSource === 'log') return world.scenarios(client, {from, to}, opts);
-    const fromInbox = snapshotsOfDays(await readForecastDays(s3json, inboxPrefix(prefix), from, to), {from, to});
+    const fromInbox = await inboxSnapshots(from, to, prefix);
     if (forecastSource === 'inbox') {
-      if (fromInbox.orphans) log.warn(`[forecasts-inbox] ${fromInbox.orphans} thread line(s) without their forecast line`);
+      warnOrphans(fromInbox);
       return fromInbox.snapshots;
     }
     const fromLog = await world.scenarios(client, {from, to}, opts);
@@ -70,6 +74,15 @@ function makeStore(client, {env = {}, tables, s3json = null, log = console} = {}
       if (source === 'inbox') return fromInbox ? fromInbox.entries : [];
       report('refresh', compareEntries({days: fromArchive ? [fromArchive] : []}, {days: fromInbox ? [fromInbox] : []}), []);
       return fromArchive ? fromArchive.entries : [];
+    },
+    /**
+     * The forecasts drawn on one UTC day, for a refresh: the day's forecasts-inbox lines (<prefix>inbox/forecasts/DAY.jsonl) replayed to snapshots.
+     * Always the inbox, whatever FORECASTS_SOURCE says: a refresh never scans the PredictionLog. [] when the day has no line; a read error throws.
+     */
+    async loadDayForecasts(date, {prefix} = {}) {
+      const fromInbox = await inboxSnapshots(date, date, prefix);
+      warnOrphans(fromInbox);
+      return fromInbox.snapshots;
     },
     /**
      * The inputs of one UTC day. nowMs is set to noon of `date`, so world.archiveDay also merges the entries of

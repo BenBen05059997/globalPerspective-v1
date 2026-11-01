@@ -259,6 +259,7 @@ function forkRows(facts, ledger, today) {
   }
   return facts.filter((f) => f.kind === 'forecast_drawn').sort(byKey((f) => f.at, (f) => f.payload.forkId || f.eventId)).map((f) => ({
     forkId: f.payload.forkId, drawnAt: f.at,
+    ...(f.provisional ? {provisional: true} : {}), // today's forecast before the nightly run has frozen it (0052 follow-up of 0050)
     branches: f.payload.branches.map((b) => {
       const v = verdicts.get(b.branchId);
       const issueDay = f.payload.forkId.slice(f.payload.forkId.lastIndexOf('/') + 1); // forkId = '<PRED pk>/<issue day>'
@@ -472,19 +473,25 @@ function countDaysFor(today, changedDays = []) {
 /**
  * Everything 0037 section 1 lists. Options: today (UTC day), builtAt, runId, factsManifestDays (count),  countDays (default
  * countDaysFor(today)), readings (the lines of record/readings/*.jsonl, any order), operatorAliases
- * (record/operator/aliases.json or null), todayDays (0051: the entries inbox of the last two UTC days, [{day, lines}]; with none, no index/today.json), provisional (0050: entry facts of today's archive marked `provisional`, in memory only; one
- * whose eventId is already a fact is dropped). Throws when all.json is over its hard cap.
- * Views stay a pure function of (facts, notes, readings, provisional entries): `factsThrough` is the newest day of the real facts, and
- * `provisionalThrough` (builtFrom and manifest, only when there are provisional entries) the newest day of the provisional ones.
+ * (record/operator/aliases.json or null), todayDays (0051: the entries inbox of the last two UTC days, [{day, lines}]; with none, no index/today.json), provisional (0050: entry facts of today's archive
+ * and forecast_drawn facts of today's forecasts inbox (0052), marked `provisional`, in memory only; one whose eventId is already a fact is dropped). Throws when all.json is over its hard cap.
+ * Views stay a pure function of (facts, notes, readings, provisional facts): `factsThrough` is the newest day of the real facts, and
+ * `provisionalThrough` (builtFrom and manifest, only when there are provisional facts) the newest day of the provisional ones; the manifest counts
+ * them as `provisionalEntries` and `provisionalForecasts` (each only when nonzero). The track record is built from the real facts alone.
  */
 // An entry with no iso3 (archive rows before 2026-09-12, 0047) takes the countries named in its archive row's places text
 // (`payload.regions`) by the one country resolver; regions and unknown places add nothing (operator 2026-10-31, 0047 open problem 4).
 const withPlaces = (f) => (f.kind === 'entry' && !(f.iso3 || []).length && f.payload && Array.isArray(f.payload.regions) && f.payload.regions.length
   ? {...f, iso3: iso3List(f.payload.regions).sort()} : f);
 
+const provisionalCounts = (extra) => {
+  const n = (kind) => extra.filter((f) => f.kind === kind).length;
+  return {...(n('entry') ? {provisionalEntries: n('entry')} : {}), ...(n('forecast_drawn') ? {provisionalForecasts: n('forecast_drawn')} : {})};
+};
+
 function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDays = countDaysFor(today), readings: readingLines = [], operatorAliases = null, notes: noteLines = [], provisional = [], todayDays = []}) {
   const known = new Set(allFacts.map((f) => f.eventId));
-  const extra = provisional.filter((f) => f.kind === 'entry' && f.provisional && !known.has(f.eventId) && known.add(f.eventId));
+  const extra = provisional.filter((f) => (f.kind === 'entry' || f.kind === 'forecast_drawn') && f.provisional && !known.has(f.eventId) && known.add(f.eventId));
   const sorted = ordered([...allFacts, ...extra].map(withPlaces));
   const {placed: facts, reassigned, keep} = placeEntries(sorted);
   const factsThrough = maxOf(sorted.filter((f) => f.kind !== 'run' && !f.provisional).map((f) => f.date));
@@ -529,7 +536,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
-  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough, provisionalEntries: extra.length} : {})};
+  const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough} : {}), ...provisionalCounts(extra)};
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)

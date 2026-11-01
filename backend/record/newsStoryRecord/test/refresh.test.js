@@ -17,7 +17,7 @@ const entry = (n, extra = {}) => ({
   sources: [{source: 'www.bbc.co.uk', title: 't', url: `https://www.bbc.co.uk/news/a${n}`, tier: null, outletCountry: null, outletType: null, snippet: null}],
   sourceKey: `today-archive|gen-1|Topic ${n}-${n}`, sourceRow: {store: 'NewsCache', key: {id: 'today-archive'}, index: n}, ...extra,
 });
-const store = (entries) => ({async loadDay(d) { assert.equal(d, TODAY); return entries; }, async load() { throw new Error('a refresh reads no window'); }});
+const store = (entries) => ({async loadDay(d) { assert.equal(d, TODAY); return entries; }, async loadDayForecasts() { return []; }, async load() { throw new Error('a refresh reads no window'); }});
 const make = (entries, f = fakeS3()) => ({f, handler: makeHandler({store: store(entries), s3json: f.s3json, manifest: f.manifest, now: () => at})});
 // real facts as lines of their day files, with the manifest
 function withFacts(f, facts) {

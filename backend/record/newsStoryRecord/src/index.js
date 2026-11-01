@@ -236,6 +236,10 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
   // PROVISIONAL entries and the views are rebuilt. Nothing else is written: no fact, no Run, no run fact, no manifest day. The agent rewrites
   // today's archive during the day (an entry of a topic seen again is replaced, maybe with a new thread and no assignment line), so only the
   // nightly run, which appends facts, may freeze them; its facts then replace the provisional entries (same eventId, or the entry is gone).
+  // Today's forecasts join the same way (0052 follow-up): the day's forecasts-inbox lines, never a PredictionLog Scan, become provisional
+  // forecast_drawn facts placed as forecastFactsFor places them (the row's own thread, else today's entries; no window, so an unplaced row is
+  // no fact). Their eventId is sha1(kind + sourceKey) with sourceKey = the row key `PRED#<topic>|<day>`, so the nightly fact of the same row,
+  // read from the log or the inbox, has the same eventId and replaces it. A failed inbox read is in `skipped` and the entries still publish.
   async function refresh({prefix}) {
     const at = now();
     const today = at.slice(0, 10);
@@ -244,10 +248,20 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     const skipped = [];
     const rows = await store.loadDay(today, {prefix});
     for (const [n, e] of rows.entries()) {
-      try { provisional.push(provisionalEntryFact(e, runId)); } catch (err) { skipped.push({n, topicId: e && e.topicId, message: messageOf(err)}); }
+      try { provisional.push(provisionalEntryFact(e, runId)); } catch (err) { skipped.push({what: 'entry', n, topicId: e && e.topicId, message: messageOf(err)}); }
+    }
+    let snapshots = [];
+    try { snapshots = await store.loadDayForecasts(today, {prefix}); } catch (err) { skipped.push({what: 'forecasts', message: messageOf(err)}); }
+    let unplaced = 0;
+    for (const snap of snapshots) {
+      try {
+        const [fact] = forecastFactsFor({snapshots: [snap], entries: rows}, runId);
+        if (fact) provisional.push({...fact, provisional: true}); else unplaced += 1;
+      } catch (err) { skipped.push({what: 'forecast', sourceKey: snap && snap.sourceKey, message: messageOf(err)}); }
     }
     const published = await publisher.publish({prefix, today, builtAt: at, runId, changedDays: [], provisional});
-    return {refresh: true, prefix, runId, today, entries: rows.length, skipped, ...published}; // published.provisional = those not already facts
+    // published.provisional / provisionalForecasts = those not already facts
+    return {refresh: true, prefix, runId, today, entries: rows.length, forecasts: snapshots.length, unplacedForecasts: unplaced, skipped, ...published};
   }
 
   return async function handler(event = {}) {

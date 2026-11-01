@@ -56,7 +56,7 @@ function makePublisher({s3json}) {
     return days.map((day, i) => ({day, lines: parts[i].lines}));
   }
 
-  /** Build and write all views. `changedDays` = days whose facts changed in this invocation (their counts are rewritten). `provisional` = today's archive entries as provisional entry facts (a refresh, 0050). */
+  /** Build and write all views. `changedDays` = days whose facts changed in this invocation (their counts are rewritten). `provisional` = today's archive entries and forecasts as provisional entry and forecast_drawn facts (a refresh, 0050, 0052). */
   async function publish({prefix, today, builtAt, runId, changedDays = [], provisional = []}) {
     const {facts, manifestDays} = await readFacts(prefix, changedDays);
     const readings = await readReadings(prefix, facts, today);
@@ -71,7 +71,7 @@ function makePublisher({s3json}) {
       }
       written += group.length;
     }
-    return {written, stories: views.stories.size, active: views.active.stories.length, provisional: views.manifest.provisionalEntries || 0};
+    return {written, stories: views.stories.size, active: views.active.stories.length, provisional: views.manifest.provisionalEntries || 0, provisionalForecasts: views.manifest.provisionalForecasts || 0};
   }
 
   return {publish, readFacts};

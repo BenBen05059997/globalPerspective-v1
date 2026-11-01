@@ -95,15 +95,15 @@ test('forecastFromRecord does not answer on stale views, a bad thread id or an u
   assert.equal((await noManifest.forecastFromRecord('th-1', null)).answered, false);
 });
 
-test('the context builder uses the record\'s forecast when it answers (the action is not called) and the action when it does not', async () => {
+test('the context builder takes the forecast from the record only: none when the record does not answer, throws or is not wired', async () => {
   const story = stories.slice(0, 1);
-  let actionCalls = 0;
   const base = goldenFetchers();
-  const withRecord = (answer) => ({ ...base, predictionSnapshot: async () => { actionCalls += 1; return { snapshot: null }; }, forecastFromRecord: async () => answer });
+  const withRecord = (answer) => ({ ...base, forecastFromRecord: async () => answer });
   const viaRecord = await freezeSources({ stories: story, fetchers: withRecord({ answered: true, snapshot: { topicId: story[0].topicId, generatedAt: '2026-10-20T05:00:00.000Z', scenarios: [{ label: 'Likely', probability: 0.6, triggers: [{ id: '0-0', text: 'Will it', deadline: '2026-12-01', verdict: null }] }] } }) });
-  assert.equal(actionCalls, 0);
   assert.equal(viaRecord.ok, true);
   assert.ok(viaRecord.frozen.sources.some((x) => x.kind === 'FORECAST'));
-  await freezeSources({ stories: story, fetchers: withRecord({ answered: false, snapshot: null }) });
-  assert.ok(actionCalls >= 1);
+  for (const fetchers of [withRecord({ answered: false, snapshot: null }), { ...base, forecastFromRecord: async () => { throw new Error('down'); } }, (({ forecastFromRecord, ...rest }) => rest)(base)]) {
+    const r = await freezeSources({ stories: story, fetchers });
+    if (r.ok) assert.ok(!r.frozen.sources.some((x) => x.kind === 'FORECAST'));
+  }
 });

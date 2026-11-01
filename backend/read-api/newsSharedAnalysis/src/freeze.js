@@ -17,7 +17,7 @@ const THREAD_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 /**
  * A story's forecast from the record's forecasts view (decision 0052), the browser's rule (shared/api/forecastViews.js): answered while the manifest is under 9 hours old,
- * a story with no file has drawn no question; not answered (stale, unreadable) and the caller asks the prediction_snapshot action. `viewsUrl` = <site>/data/record/views.
+ * a story with no file has drawn no question; not answered (stale, unreadable) and the story has no forecast (prediction_snapshot is retired, 0052). `viewsUrl` = <site>/data/record/views.
  */
 function makeRecordForecast({ viewsUrl, fetchImpl, timeoutMs, now = Date.now }) {
   async function getView(path) {
@@ -42,7 +42,7 @@ function makeRecordForecast({ viewsUrl, fetchImpl, timeoutMs, now = Date.now }) 
   };
 }
 
-/** Plain HTTP client for the public proxy, same request shape as the browser's restProxy. `recordViewsUrl` (optional) lets the forecast come from the record first. */
+/** Plain HTTP client for the public proxy, same request shape as the browser's restProxy. `recordViewsUrl` is where the story's forecast comes from (the record's views); without it no forecast is read. */
 export function makeProxyFetchers({ proxyUrl, token = null, fetchImpl = fetch, timeoutMs = 8000, recordViewsUrl = null, now = Date.now }) {
   async function call(action, payload, auth) {
     const headers = { 'Content-Type': 'application/json' };
@@ -68,7 +68,6 @@ export function makeProxyFetchers({ proxyUrl, token = null, fetchImpl = fetch, t
     traceCause: (topicId) => call('trace_cause', { topicId }, false),
     narrativeThread: (threadId) => call('narrative_thread', { threadId }, true),
     threadAnalyses: (threadIds) => call('thread_analysis', { threadIds }, true),
-    predictionSnapshot: (topicIds) => call('prediction_snapshot', { topicIds }, false),
     ...(recordViewsUrl ? { forecastFromRecord: makeRecordForecast({ viewsUrl: recordViewsUrl.replace(/\/+$/, ''), fetchImpl, timeoutMs, now }) } : {}),
   };
 }

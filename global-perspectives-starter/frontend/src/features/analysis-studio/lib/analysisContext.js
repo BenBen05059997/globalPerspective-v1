@@ -6,9 +6,9 @@
 //
 // createContextBuilder({ fetchers, assembly, helpers, onError }) -> buildAnalysisContext(selectedTopics)
 //   fetchers: { summary(topicId), prediction(topicId), traceCause(topicId), narrativeThread(threadId),
-//               threadAnalyses(threadIds), predictionSnapshot(topicIds), forecastFromRecord?(threadId, topicIds) }   (same response shapes as restProxy)
-//     forecastFromRecord is optional (decision 0052): it reads the story's forecast from the record's forecasts view and answers {answered, snapshot}; when it
-//     answers, predictionSnapshot is not called; when it is absent, throws or does not answer, predictionSnapshot is the fallback, as before.
+//               threadAnalyses(threadIds), forecastFromRecord?(threadId, topicIds) }   (same response shapes as restProxy)
+//     forecastFromRecord (decision 0052) reads the story's forecast from the record's forecasts view and answers {answered, snapshot}. It is the only
+//     source: when it is absent, throws or does not answer (stale views), the story has no forecast source (prediction_snapshot is retired).
 //   assembly: { assembleContext, buildStorySources, pickText, clip, MAX_NEWS_PER_STORY }   (analysisPrompt.js)
 //   helpers:  { safeWhy, safeTriggerEvent, dropRedatedRepeats }
 //   onError:  (label, err) => void   (the browser reports to the error sink; the Lambda logs)
@@ -30,19 +30,19 @@ export function createContextBuilder({ fetchers, assembly, helpers, onError = ()
   const fetchTraceCauseCache = fetchers.traceCause;
   const fetchNarrativeThread = fetchers.narrativeThread;
   const fetchThreadAnalyses = fetchers.threadAnalyses;
-  const fetchPredictionSnapshot = fetchers.predictionSnapshot;
   const fetchRecordForecast = fetchers.forecastFromRecord;
   const reportFetchError = onError;
 
-  // The story's forecast: the record first when the caller wired it, else (or when it cannot answer) the prediction_snapshot action.
+  // The story's forecast, from the record only: none when the caller wired no record reader or the record cannot answer (stale views).
   async function snapshotFor(threadId, topicIds) {
-    if (typeof fetchRecordForecast === 'function') {
-      try {
-        const r = await fetchRecordForecast(threadId, topicIds);
-        if (r && r.answered) return { success: true, snapshot: r.snapshot };
-      } catch (err) { reportFetchError('analysis-studio-forecast-view', err); }
+    if (typeof fetchRecordForecast !== 'function') return { success: false, snapshot: null };
+    try {
+      const r = await fetchRecordForecast(threadId, topicIds);
+      return r && r.answered ? { success: true, snapshot: r.snapshot } : { success: false, snapshot: null };
+    } catch (err) {
+      reportFetchError('analysis-studio-forecast-view', err);
+      return { success: false, snapshot: null };
     }
-    return fetchPredictionSnapshot(topicIds);
   }
 
   // Turn a narrative_thread entry list into typed NEWS candidates (headline + outlet +
@@ -162,7 +162,7 @@ export function createContextBuilder({ fetchers, assembly, helpers, onError = ()
       reportFetchError('analysis-studio-thread-analysis', analysesRes.reason);
     }
 
-    // The first prediction_snapshot call only tried the story's own topicId — a thread
+    // The first forecast read only tried the story's own topicId — a thread
     // usually has several dated entries, each its own topicId, and the forecast log is
     // keyed by topicId. Retry with the fuller set from thread_analysis when it added
     // topicIds we didn't already try (best-effort; never blocks the run on failure).

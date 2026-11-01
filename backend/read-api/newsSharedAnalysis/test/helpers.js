@@ -27,7 +27,7 @@ export function goldenFetchers(overrides = {}) {
   return {
     topics: async () => ({ data: { topics } }),
     summary: async (id) => p.summary[id], prediction: async (id) => p.prediction[id], traceCause: async (id) => p.trace_cause[id],
-    narrativeThread: async (id) => p.narrative_thread[id], threadAnalyses: async (ids) => p.thread_analysis[ids[0]], predictionSnapshot: async () => p.prediction_snapshot.any,
+    narrativeThread: async (id) => p.narrative_thread[id], threadAnalyses: async (ids) => p.thread_analysis[ids[0]], forecastFromRecord: async () => ({ answered: true, snapshot: p.prediction_snapshot.any?.snapshot ?? null }),
     ...overrides,
   };
 }

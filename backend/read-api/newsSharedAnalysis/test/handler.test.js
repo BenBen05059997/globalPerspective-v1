@@ -60,7 +60,7 @@ test('a scenario lens without its structured block is refused (schema_invalid)',
   assert.match(r.json.failures[0].reasons.join(' '), /structured summary/);
 });
 test('the sources changed since the run: 409, nothing stored', async () => {
-  const deps = makeDeps({ makeFetchers: () => ({ ...makeDeps().makeFetchers(), narrativeThread: async () => ({ data: [] }), threadAnalyses: async () => ({ data: {} }), predictionSnapshot: async () => ({ snapshot: null }) }) });
+  const deps = makeDeps({ makeFetchers: () => ({ ...makeDeps().makeFetchers(), narrativeThread: async () => ({ data: [] }), threadAnalyses: async () => ({ data: {} }), forecastFromRecord: async () => ({ answered: true, snapshot: null }) }) });
   const r = await call(deps, 'POST', { token: T, body: goodBody() });
   assert.equal(r.statusCode, 409);
   assert.equal(r.json.error, 'sources_changed');

@@ -12,6 +12,7 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
+const { httpReply: resp } = require('./_shared/httpReply');
 const NR = require('./_shared/noteReads');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
@@ -359,13 +360,6 @@ async function postToDevTo({ title, body_markdown, description }) {
   return { id: data.id, url: data.url };
 }
 
-function resp(statusCode, body) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  };
-}
 module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
 module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests
 module.exports.loadTodayArchive = loadTodayArchive; // for tests

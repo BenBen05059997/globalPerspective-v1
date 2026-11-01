@@ -2,6 +2,7 @@
 
 const { generateTopicMapImage } = require('./mapImageGenerator');
 const { storyHref, absoluteUrl } = require('./_shared/links');
+const { httpReply: response } = require('./_shared/httpReply');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
@@ -720,17 +721,5 @@ async function postToBluesky(identifier, appPassword, text, imageBuffer) {
   return { success: true, postId: result.uri || null };
 }
 
-
-// ---------------------------------------------------------------------------
-// Response helper
-// ---------------------------------------------------------------------------
-
-function response(statusCode, body) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  };
-}
 
 exports.loadLatestTopics = loadLatestTopics; // for tests

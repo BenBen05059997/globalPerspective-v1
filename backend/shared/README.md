@@ -32,7 +32,7 @@ Countries and places
 - `situations-core.js`: GDACS observation and situation fold (`buildSituation`, `coolSituation`, `buildStorySituation`; a threaded
   story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS. Used by the GDACS ingest and the tracker.
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend `shared/lib/links.js` (`storyHref`,
-  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
+  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`. `escapeHtml.js`: `escapeHtml(s)` (& < > "), the email renderers' text escape.
 
 The record
 - `record.js`: the record's and board's pure rules: `canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`, `noteId`,

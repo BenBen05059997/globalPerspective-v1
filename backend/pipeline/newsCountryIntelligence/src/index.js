@@ -1,6 +1,6 @@
 'use strict';
 
-const { keepDayZero, archiveRowKey } = require('./_shared/dayZero');
+const archive = require('./_shared/archiveEntries');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
@@ -163,39 +163,21 @@ exports.handler = async (event = {}) => {
 
 // ─── Data loading ────────────────────────────────────────────────────────────
 
-async function readArchiveEntries(days) {
-  const entries = [];
-  const now = new Date();
-
-  for (let i = 0; i <= days; i++) {
-    const date = new Date(now);
-    date.setUTCDate(date.getUTCDate() - i);
-
-    const key = i === 0 ? 'today-archive' : archiveRowKey(date);
-    const dateStr = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
-
-    try {
-      const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
-      if (Item && Array.isArray(Item.entries)) {
-        for (const e of (i === 0 ? keepDayZero(Item.entries) : Item.entries)) {
-          entries.push({
-            topicId: e.topicId,
-            threadId: e.threadId || null,
-            title: e.title,
-            date: dateStr,
-            regions: e.regions || [],
-            category: e.category || '',
-            sources: e.sources || [],
-            ai: e.ai || {},
-          });
-        }
-      }
-    } catch (err) {
-      console.warn(`Failed to read ${key}:`, err.message);
-    }
-  }
-
-  return entries;
+function readArchiveEntries(days) {
+  return archive.readArchiveEntries({
+    days,
+    getRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    project: (e, date) => ({
+      topicId: e.topicId,
+      threadId: e.threadId || null,
+      title: e.title,
+      date,
+      regions: e.regions || [],
+      category: e.category || '',
+      sources: e.sources || [],
+      ai: e.ai || {},
+    }),
+  });
 }
 
 async function loadThreadAnalyses(entries) {

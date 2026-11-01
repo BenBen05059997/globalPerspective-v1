@@ -9,6 +9,7 @@ const { storyHref, absoluteUrl } = require('./_shared/links');
 const { archiveRowKey } = require('./_shared/dayZero');
 const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
 const { readMode: recordReadMode, readBy, liveRecordReads } = require('./_shared/recordReads');
+const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -902,11 +903,6 @@ async function readNarrativeThread(threadId, days) {
 const SITE_URL = 'https://globalperspective.net';
 const RSS_TITLE = 'Global Perspectives — AI-Powered World News Intelligence';
 const RSS_DESCRIPTION = 'Daily AI-curated global news topics with summaries, predictions, and root cause analysis. Covering politics, economy, conflict, technology, and more across every region.';
-const CATEGORY_LABEL = {
-  politics: 'Politics', economy: 'Economy', military: 'Military',
-  conflict: 'Conflict', disaster: 'Disaster', technology: 'Technology', health: 'Health',
-  business: 'Business', society: 'Society', energy: 'Energy', climate: 'Climate', science: 'Science',
-};
 
 function escapeXml(str) {
   if (!str) return '';

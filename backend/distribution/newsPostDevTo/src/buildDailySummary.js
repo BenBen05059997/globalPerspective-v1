@@ -1,19 +1,6 @@
 'use strict';
 
-const CATEGORY_LABEL = {
-  politics:   'Politics',
-  economy:    'Economy',
-  military:   'Military',
-  conflict:   'Conflict',
-  disaster:   'Disaster',
-  technology: 'Technology',
-  health:     'Health',
-  business:   'Business',
-  society:    'Society',
-  energy:     'Energy',
-  climate:    'Climate',
-  science:    'Science',
-};
+const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
 
 const CATEGORY_EMOJI = {
   politics:   '\u{1F3DB}',

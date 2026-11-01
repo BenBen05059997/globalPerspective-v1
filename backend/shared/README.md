@@ -63,7 +63,7 @@ The record
   Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure, used by
   `newsStoryRecord`'s views and track-record view.
 - `outlets.js`: the one outlet table (`OUTLET_METADATA`, `getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
-  `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`.
+  `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`. `categoryLabels.js`: `CATEGORY_LABEL`, the twelve category display names (digest, posts, RSS).
 - `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by
   `newsInvokeGemini` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
 

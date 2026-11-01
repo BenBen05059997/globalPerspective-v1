@@ -17,6 +17,7 @@ byte-identical copies in `backend/read-api/newsSharedAnalysis/src/` (`node scrip
 | `compare.mjs` | A/B free-form vs grounded-lens on one story-set, full text + verdict. |
 | `judge.mjs` | **Layer C** — LLM-as-judge: grades live output on faithfulness/overreach/calibration/citations/insight. Needs a key. |
 | `check.mjs` | The fabrication check: a few live analyses, the validator, and a one-line faithfulness flag per case (optionally emailed). Needs a key. |
+| `samples/` | Two saved example outputs (HTML) of `check.mjs`; nothing reads them. |
 | `source_check.mjs` | Source-truth check: outlet corroboration (no key with `--l1-only`) and summary-vs-snippet drift (needs a key). |
 
 ## What the validator flags

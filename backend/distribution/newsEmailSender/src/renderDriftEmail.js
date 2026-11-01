@@ -53,7 +53,7 @@ function axisScore(dims, axis) {
   const n = Number(typeof v === 'object' ? v.score : v);
   return Number.isFinite(n) ? n : null;
 }
-function currentAxisRow(currentDimensions, lead) {
+function currentAxisRow(currentDimensions) {
   const present = AXES
     .map((axis) => ({ axis, score: axisScore(currentDimensions, axis) }))
     .filter((a) => a.score != null);
@@ -105,7 +105,7 @@ function renderDriftEmail(country, notes, { siteUrl, unsubUrl } = {}) {
   list.forEach((note) => {
     tLines.push(`• ${entryLabel(note)}  ·  ${fmtDay(note.asOf)}`);
     if (note.currentDimensions) {
-      const { present, showBreadth, elevated } = currentAxisRow(note.currentDimensions, note.currentLead);
+      const { present, showBreadth, elevated } = currentAxisRow(note.currentDimensions);
       const axisRow = present.map((a) => `${AXIS_LABEL[a.axis]} ${a.score}`).join(' · ');
       tLines.push(`  ${axisRow}${showBreadth ? `  ⚠ ${elevated}/4 elevated` : ''}`);
     }
@@ -122,7 +122,7 @@ function renderDriftEmail(country, notes, { siteUrl, unsubUrl } = {}) {
     const why = whyLine(note);
     let axisRowHtml = '';
     if (note.currentDimensions) {
-      const { present, showBreadth, elevated } = currentAxisRow(note.currentDimensions, note.currentLead);
+      const { present, showBreadth, elevated } = currentAxisRow(note.currentDimensions);
       const parts = present.map((a) => {
         const label = `${AXIS_LABEL[a.axis]} ${a.score}`;
         return a.axis === note.currentLead ? `<b>${esc(label)}</b>` : esc(label);

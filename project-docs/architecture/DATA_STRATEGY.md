@@ -59,7 +59,7 @@ Besides the five, these Global Perspectives tables exist (§6 says which stay): 
 | `audit/impact/…` | `newsImpactAudit` | parked (rule DISABLED, decision 0015) | operator |
 | `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation | `newsSelectionShadow`, `newsImpactAudit` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json`, `latest.json` | `newsSelectionShadow` | 3x/day (rule ENABLED) | operator review only |
-| `predictions/track_record.json` | `newsPredictionsSnapshot` | 30 min | the proxy action `prediction_track_record` (the page's fallback and "Verify this draw" for a week with no `draw` in the view; the page reads the record view first), `newsFreshnessMonitor` until `SETTLE_SOURCE=record` (decision 0052) |
+| `predictions/track_record.json` | `newsPredictionsSnapshot` (retired 2026-11-01, rule DISABLED) | no longer refreshed | nothing (the proxy action `prediction_track_record` was removed; the page, "Verify this draw" and `newsFreshnessMonitor` read the record views, decision 0052); deleted at the midweek deletes |
 | `monitoring/freshness/state.json` (alert dedupe marker) | `newsFreshnessMonitor` | each run | `newsFreshnessMonitor` |
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord`, 23:45 UTC, `{"shadow":false}`), append-only, no model | `newsRecordReview`, view rebuilds, `newsPredictionResolver` |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` | daily, the one mutable object | `newsPredictionResolver` (coverage guard), operator |
@@ -130,7 +130,7 @@ Flipping a proxy (`newsSensitiveData`) action from DynamoDB to S3 is backend-onl
 |---|---|
 | `UserTable`, `SavedItems`, `UserPrefs`, `ApiKeys`, `Shares` | stay DynamoDB |
 | `GlobalPerspectiveSituations`, `Signals`, `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | done: moved to S3 (§4), tables dropped |
-| `GlobalPerspectivePredictionLog` | `PRED#` rows (forecast inputs to the record) are retired in step 5; the history copy of decision 0047 is done. The commitment state stays DynamoDB (decision 0003): `SEED#`, `SAMPLE#`, `SETTLE#` and the write-once `Q#` rows, a correction appending `VERDICT#<n>`. `/track-record` reads the record's `track-record.json` view, falling back to the `predictions/track_record.json` aggregate |
+| `GlobalPerspectivePredictionLog` | `PRED#` rows (forecast inputs to the record) are retired in step 5; the history copy of decision 0047 is done. The commitment state stays DynamoDB (decision 0003): `SEED#`, `SAMPLE#`, `SETTLE#` and the write-once `Q#` rows, a correction appending `VERDICT#<n>`. `/track-record` reads the record's `track-record.json` view only; the old `predictions/track_record.json` aggregate is no longer refreshed or read |
 | `GlobalPerspectiveMarkets` | retired (decision 0049): no writer, no reader; the table and the `ECON#`/`PAIR#`/`WEEKLY_MARKETS#` rows go after the next frontend release and a read-API deploy, each on an operator yes (backup in `backup/economy-2026-10-31/`) |
 | `GlobalPerspectiveClientErrors` | stays (outside step 5's scope, operator 2026-10-31) |
 | `GlobalPerspectiveBreakingAlerts` | stays (outside step 5's scope); `review.js` mutates rows, so it would need an inbox-event review flow to move |

@@ -65,7 +65,7 @@ flowchart LR
   end
   pipe[pipeline: selection, agent, analyses, countries]
   sit[situations: ingest, tracker, GDACS, GDELT]
-  pred[predictions: resolver, snapshot]
+  pred[predictions: resolver]
   rec[record: newsStoryRecord, newsRecordReview]
   dist[distribution: weekly brief, email, posters, breaking alert]
   mon[monitoring: monitors and audits]
@@ -90,7 +90,7 @@ flowchart LR
   pipe -->|story-map, audit, article inbox, notes| s3
   sit --> s3
   pred --> ddb
-  pred -->|track_record.json, verdict and draw inbox| s3
+  pred -->|verdict and draw inbox, heartbeat| s3
   rec -->|facts, readings, views| s3
   dist -->|reads briefs and prefs| ddb
   mon -->|alerts| sns[SNS]
@@ -109,7 +109,7 @@ Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `s
 - `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling` (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is what actually runs; `newsAnalyze/src/` is not.
 
-Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver, snapshot), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`. `backend/weekly/` (the analyst's weekly) holds the schema and section model only, no Lambda.
+Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver; the snapshot Lambda is retired from schedule), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`. `backend/weekly/` (the analyst's weekly) holds the schema and section model only, no Lambda.
 
 **Invariant:** code shared between Lambdas lives once, in `backend/shared/src/` (see its README). Each consumer reaches it through a committed `src/_shared` symlink; `scripts/lambda.sh` copies the real files into the zip. Never copy these into a Lambda.
 
@@ -199,23 +199,18 @@ flowchart LR
   pl --> pr
   pr -->|verdict rows| pl
   pr -->|verdict lines| ib[(S3 record/inbox/verdicts)]
-  q[rule TriggerPredictionsSnapshot every 30 min] --> sn[newsPredictionsSnapshot]
-  pl --> sn
-  sn -->|predictions/track_record.json| s3[(S3)]
   pr -->|draw lines| dw[(S3 record/inbox/draws)]
   sr[newsStoryRecord] -->|views/track-record.json, forecasts/| rv[(S3 record/views)]
   fi --> sr
   pr -->|heartbeat| rv
   rv -->|Worker| tp["/track-record"]
   rv -->|settle check| fm[newsFreshnessMonitor]
-  s3 -->|prediction_track_record fallback| px[newsSensitiveData-dev]
-  px --> tp
 ```
-The agent Lambda writes forecasts to `GlobalPerspectivePredictionLog`. `newsPredictionResolver` runs the forecast loop (decision 0038): each night it watches open branches on stories that moved or fell due, gathers the story's own entries after the draw from `record/facts` (no web search), judges with a boxed model, and records a verdict put-once in the log and as a line in `record/inbox/verdicts/`, which `newsStoryRecord` turns into a `verdict` fact. It also commits a weekly random seed and draws the pre-registered sample of 22 questions that the public track record scores. Yes, no and void verdicts are final at once (decision 0034); the operator can append a correction with `predictions/settle-correct.js`. `newsPredictionsSnapshot` (every 30 min) scans the log into `predictions/track_record.json`, which the proxy action `prediction_track_record` serves.
+The agent Lambda writes forecasts to `GlobalPerspectivePredictionLog`. `newsPredictionResolver` runs the forecast loop (decision 0038): each night it watches open branches on stories that moved or fell due, gathers the story's own entries after the draw from `record/facts` (no web search), judges with a boxed model, and records a verdict put-once in the log and as a line in `record/inbox/verdicts/`, which `newsStoryRecord` turns into a `verdict` fact. It also commits a weekly random seed and draws the pre-registered sample of 22 questions that the public track record scores. Yes, no and void verdicts are final at once (decision 0034); the operator can append a correction with `predictions/settle-correct.js`.
 
-Forecasts reach the record through `record/inbox/forecasts/` (the agent's `PRED#` rows and thread reconciles, decision 0052): `newsStoryRecord` can read the 30-day window from it instead of scanning the log (`FORECASTS_SOURCE`), `newsPredictionResolver` finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) and writes a tick heartbeat for `newsFreshnessMonitor`, which reads the settle alarm's inputs from the track-record view (`SETTLE_SOURCE`). The view also carries the draw pools; `forecasts/<threadId>.json` views serve the briefing's next question, the country card's deadlines and the analysis context. `newsPredictionsSnapshot` and the two prediction actions remain for the page's fallback and the story page until those readers are gone.
+Forecasts reach the record through `record/inbox/forecasts/` (the agent's `PRED#` rows and thread reconciles, decision 0052): `newsStoryRecord` can read the 30-day window from it instead of scanning the log (`FORECASTS_SOURCE`), `newsPredictionResolver` finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) and writes a tick heartbeat for `newsFreshnessMonitor`, which reads the settle alarm's inputs from the track-record view (`SETTLE_SOURCE`). The view also carries the draw pools; `forecasts/<threadId>.json` views serve the briefing's next question, the country card's deadlines and the analysis context. The views refresh of `newsStoryRecord` (after each ingest, decision 0050) also adds today's forecasts from the inbox as provisional forks (decision 0052). Every former reader of the snapshot path is on the record: the story page, briefing, country card, `newsSharedAnalysis` (`RECORD_VIEWS_URL`), the track-record page and "Verify this draw", `predictions/verify-draw.mjs --public` and the monitor. `newsPredictionsSnapshot` is retired (rule `TriggerPredictionsSnapshot` DISABLED 2026-11-01; `predictions/track_record.json` is no longer refreshed), and the read API's `prediction_snapshot` and `prediction_track_record` actions are removed (400).
 
-The track-record page reads `record/views/track-record.json` first (built by `newsStoryRecord` from the question facts and the frozen pilot-era numbers, decision 0044) and falls back to that action. The weekly draws also go to `record/inbox/draws/`, and a forecast's section on the story page reads the story view (decision 0043). The commitment state (`SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows) stays in `GlobalPerspectivePredictionLog`, as does the draw pool that "Verify this draw" reads.
+The track-record page reads `record/views/track-record.json` only (built by `newsStoryRecord` from the question facts and the frozen pilot-era numbers, decision 0044), with no fallback. The weekly draws also go to `record/inbox/draws/`, and a forecast's section on the story page reads the story view (decision 0043). The commitment state (`SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows) stays in `GlobalPerspectivePredictionLog`; the draw pool that "Verify this draw" reads is in the track-record view.
 
 ### 4. Country risk and living analysis
 ```mermaid

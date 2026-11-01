@@ -13,7 +13,7 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
-| newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; GlobalPerspectivePredictionLog; UserTable `tier`; S3 `predictions/track_record.json`; Mapbox; DeepSeek | Nothing | [README](newsSensitiveData/README.md) |
+| newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; UserTable `tier`; S3 `record/` notes and views (per the read flags) | Nothing | [README](newsSensitiveData/README.md) |
 | newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | Function URL (no schedule) | NewsCache `latest`; SavedItems; UserPrefs; BreakingAlerts; UserTable `tier` | UserPrefs | [README](newsRecommend/README.md) |
 | newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL, or AppSync resolver | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
 | newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
@@ -24,15 +24,15 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 
 1. A page hook in the browser calls `restProxy.js` with an `action` and payload. The address comes from `docs/config.js`: `SENSITIVE_PROXY_ENDPOINT` for the proxy, and one Function URL each for saved items, preferences, share links and error reports.
 2. The proxy URL is the API Gateway `/proxy` resource, which invokes newsSensitiveData-dev. It reads the Firebase token if sent; no token or a bad token means the free tier, never a refusal.
-3. The handler fetches from DynamoDB (or the S3 track-record file) and returns JSON. Account calls go to their own Lambda, which checks the Firebase token first.
+3. The handler fetches from DynamoDB (or the record's notes and views in S3, per the read flags) and returns JSON. Account calls go to their own Lambda, which checks the Firebase token first.
 4. The map feature reads the S3 world store through the Cloudflare Worker `/data/*` route instead; that path does not touch this group.
 
-Proxy actions and the feature that calls each (found by grep in `frontend/src`). Where the record holds a view of the same thing, the page reads the view first and calls the action only as its fallback: the track record (0044), the list pages (analyses, web, countries, weekly archive index; 0046) and the briefs (0048, as released; `project-docs/START_HERE.md` says which release is live). The actions stay served until the world tables retire (step 5).
+Proxy actions and the feature that calls each (found by grep in `frontend/src`). Where the record holds a view of the same thing, the page reads the view first and calls the action only as its fallback: the track record (0044), the list pages (analyses, web, countries, weekly archive index; 0046) and the briefs (0048, as released; `project-docs/START_HERE.md` says which release is live). The actions stay served until the world tables retire (step 5). Forecasts and the track record have no action: `prediction_snapshot` and `prediction_track_record` were removed on 2026-11-01 (400 "Unsupported action"); pages read the record's `forecasts/<threadId>.json` and `track-record.json` views (decisions 0044, 0052).
 - Home and Today (`/today`): `topics`, `today`, `corrections_feed`.
 - Thread pages (`/weekly/thread/:id`): `narrative_thread`, `thread_analysis`, `systems_analysis`, `web_index`, `summary`, `prediction`, `trace_cause`, `archive_range`.
 - Country pages (`/weekly/country/:name`): `country_intelligence`, `country_facts`, `country_history`.
-- Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`, `prediction_snapshot` (the next question: the record's forecasts view first while the views are fresh, decision 0052; the action is the fallback).
-- Track record (`/track-record`): `prediction_track_record` (the page's fallback; the page reads the record view first, decision 0044/0052).
+- Briefings (`/briefings`): `daily_brief`, `latest_daily_brief`, `weekly_brief`; the next question comes from the record's forecasts view.
+- Track record (`/track-record`): no action; the page reads the record view `track-record.json` only (decisions 0044, 0052).
 - Map reuses `topics`, `archive_range`, `narrative_thread`, `summary`.
 - Served but with no frontend caller found: `country_preview`, `thread_preview`, `rss` (GET). Any other action, including the removed dossier, pair, overview, research, geocode, economy and markets actions, answers 400 without touching data.
 

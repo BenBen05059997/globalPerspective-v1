@@ -1,22 +1,22 @@
 # newsPredictionsSnapshot
 
-Precomputes the forecast track record so `/track-record` does not Scan PredictionLog on every load. One full Scan of the log (excluding seed `SECRET` rows and operator-only `DRAFT#` rows), then `computeTrackRecord` (methodology-v1 era, from 2026-07-04) plus `buildQuestionBoard` (weekly sampled-question view: commits, draws, reveals, verdicts, health alarms; Brier scoring stays null below 150 resolved questions), written as one JSON object to S3. Each `recent[]` item carries `qid` (the forecast's question, when it has one) and `clusterKey` (threadId, else topicId, else the PRED key: the same rule as the resolver's `Q#` SAMPLED row), so a result links to its story.
+RETIRED from service (2026-11-01). The Lambda still exists, but its schedule is off and nothing reads what it wrote. It used to precompute the forecast track record so `/track-record` did not Scan PredictionLog on every load: one full Scan of the log (excluding seed `SECRET` rows and operator-only `DRAFT#` rows), then `computeTrackRecord` (methodology-v1 era, from 2026-07-04) plus `buildQuestionBoard` (weekly sampled-question view: commits, draws, reveals, verdicts, health alarms; Brier scoring stays null below 150 resolved questions), written as one JSON object to S3. Each `recent[]` item carried `qid` and `clusterKey` (threadId, else topicId, else the PRED key: the same rule as the resolver's `Q#` SAMPLED row).
+
+Why it is retired: the record now holds everything it computed (decision 0052). `newsStoryRecord` builds the public `record/views/track-record.json` (question scheme, draw pools, `settleHealth`) and `record/views/forecasts/<threadId>.json` from the facts, and the resolver writes the settle heartbeat. Every former reader moved to those views, and the proxy actions `prediction_snapshot` and `prediction_track_record` were removed. Do not re-enable the rule.
 
 ## Deployment
 - Deployed name `newsPredictionsSnapshot` · runtime `nodejs22.x` · group `predictions` (scripts/functions.json)
-- Trigger: EventBridge rule `TriggerPredictionsSnapshot` `rate(30 minutes)` (ENABLED)
+- Trigger: EventBridge rule `TriggerPredictionsSnapshot` `rate(30 minutes)` (DISABLED since 2026-11-01)
 - Deploy: `scripts/lambda.sh newsPredictionsSnapshot diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
-## Reads / writes
+## Reads / writes (while it ran)
 - DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): Scan of `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` families (projected attributes only)
-- S3 `WORLD_BUCKET`: writes `TRACK_RECORD_KEY` (default `predictions/track_record.json`) as `{ builtAt, data }`
-- Consumer: the newsSensitiveData proxy (`prediction_track_record`) reads that object and falls back to a live Scan when it is missing. The `/track-record` page itself reads the record view `views/track-record.json` first (decision 0044) and uses this action only as its fallback (the view carries the draw pools and `settleHealth` since decision 0052). Readers left on 2026-10-31: that page fallback (`useTrackRecord`, and "Verify this draw" for a week the view has no `draw` for), `newsFreshnessMonitor` until `SETTLE_SOURCE=record`, and `predictions/verify-draw.mjs --public`. When those are gone this job and the `prediction_track_record` action can retire (one yes each).
+- S3 `WORLD_BUCKET`: wrote `TRACK_RECORD_KEY` (default `predictions/track_record.json`) as `{ builtAt, data }`. The file is no longer refreshed and has no reader; it stays in S3 until the midweek deletes.
 
 ## Gotchas
-- `trackRecord.js` must stay in sync with the fallback `prediction_track_record` in `newsSensitiveData/src/index.js`.
-- `weeks.js` is a copy of the settle Lambda's ISO-week helpers; `newsPredictionResolver/test/weeksParity.test.js` guards drift.
-- If the question board throws, the legacy aggregate is still written with `questions: null`, then the Lambda errors so the failure is visible.
-- Scoring uses a fixed-seed cluster bootstrap so the published interval does not change every 30 minutes.
+- `weeks.js` is a copy of the settle Lambda's ISO-week helpers; `newsPredictionResolver/test/weeksParity.test.js` guards drift (it still expects the proxy's `isoWeekOfDay`, which was removed, so it fails until that line is dropped).
+- If the question board threw, the legacy aggregate was still written with `questions: null`, then the Lambda errored so the failure was visible.
+- Scoring used a fixed-seed cluster bootstrap so the published interval did not change every 30 minutes.
 
 ## Tests
 - `cd backend/predictions/newsPredictionsSnapshot/src && npm test` (three `node *.test.mjs` scripts, offline).

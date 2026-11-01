@@ -37,7 +37,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [predictions](../../../../../backend/predictions/README.md)
 - `newsInvokeGemini-dev` (Scheduler `InvokeGoogleGemini`, 04:15 / 12:15 / 20:15 UTC) picks the topics;
   `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 25 min later) writes summaries, trace causes and forecasts and
-  publishes the list; `newsPredictionsSnapshot` (every 30 min) writes the track record; `newsSensitiveData-dev` serves all of it.
+  publishes the list; `newsSensitiveData-dev` serves the list data (forecasts and the track record come from the record views, not the proxy).
 
 ## Data
 - The five calls below (`topics`, `today`, `summary`, `prediction`, `trace_cause`) go through `contentService`, which answers from the record's today view (`index/today.json`, `@/shared/api/todayView.js`, decision 0051) while the views are fresh (0050) and asks the action when the view is missing, stale, unreadable (reported as `today-view`) or cannot answer that call (a topic outside the latest run, a note the run did not write).

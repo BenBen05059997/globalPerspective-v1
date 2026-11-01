@@ -1,7 +1,7 @@
 # predictions
 
-The forecast scoring group. Forecasts are written by the content pipeline; the two Lambdas here settle them under methodology v1
-and publish the public track record. It serves readers of the track-record page and the operator who may correct a verdict.
+The forecast scoring group. Forecasts are written by the content pipeline; the resolver here settles them under methodology v1.
+The public track record is a record view built by newsStoryRecord; the group's second Lambda, newsPredictionsSnapshot, is retired from schedule. The group serves readers of the track-record page and the operator who may correct a verdict.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
@@ -13,27 +13,27 @@ This folder is stage 3: the forecast watch, gather, judge and record (newsPredic
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
 | newsPredictionResolver | Commits weekly seeds, draws the sampled questions, and every night watches for open question branches to check (story moved or due + 3 days), judges them and writes the verdicts itself. | Rule `TriggerPredictionResolver`, cron(30 10 * * ? *) UTC, input action `tick`, ENABLED | PredictionLog `PRED#` rows, `Q#`/`VERDICT`; S3 `record/facts/` entry facts; DeepSeek endpoint | PredictionLog `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows, written once and never replaced; S3 `record/inbox/verdicts/` and `record/inbox/draws/` lines for newsStoryRecord | [link](newsPredictionResolver/README.md) |
-| newsPredictionsSnapshot | Scans the log, computes the track record and question board, and saves one JSON file. | Rule `TriggerPredictionsSnapshot`, rate(30 minutes), ENABLED | PredictionLog `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` (seed secrets and `DRAFT#` rows filtered out) | S3 `predictions/track_record.json` | [link](newsPredictionsSnapshot/README.md) |
+| newsPredictionsSnapshot | RETIRED from service 2026-11-01: it scanned the log into `predictions/track_record.json`; nothing reads that file now. The Lambda still exists. | Rule `TriggerPredictionsSnapshot`, rate(30 minutes), DISABLED | PredictionLog `PRED#`, `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` (seed secrets and `DRAFT#` rows filtered out) | Nothing now (the file `predictions/track_record.json` stays in S3, no longer refreshed, until the midweek deletes) | [link](newsPredictionsSnapshot/README.md) |
 
 ## Pipeline
 
 Design of the forecast loop (draw, watch, gather, judge, record, review) and how it is verified: [ARCHITECTURE_FORECAST_LOOP.md](../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md) (decision 0038).
 
-1. NewsProjectInvokeAgentLambda-dev (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle.
+1. NewsProjectInvokeAgentLambda-dev (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle, and a line to `record/inbox/forecasts/` (decision 0052).
 2. Each day at 10:30 UTC newsPredictionResolver runs `tick`: it commits seed hashes for upcoming weeks and draws a sample from every ended week.
 3. The same run then does WATCH, GATHER, JUDGE and RECORD (tree below) for any open question, not only the sample, using only the story's own entry facts dated after the draw as evidence. The judge is not shown the question's probability.
 4. A yes/no/void judgment is written at once as the `Q#`/`VERDICT` row (`decidedBy` the model id, `confirmedBy: 'resolver'`); unclear checks stay open and, once counted after due + 3 days and 5 days apart, become void after three. The operator disputes a verdict with `predictions/settle-correct.js --correct` (appends `VERDICT#<n>` with a reason). Decision 0034.
-5. Every 30 minutes newsPredictionsSnapshot scans the log and writes `predictions/track_record.json` to the world bucket (the action's source and the view's legacy comparison; the page's fallback and, until `SETTLE_SOURCE=record`, the freshness monitor's source, decision 0052).
-6. The `/track-record` page (hook `useTrackRecord`) reads the record view `record/views/track-record.json` first (decision 0044, built by newsStoryRecord) and asks the `prediction_track_record` action on `newsSensitiveData-dev` only when the view is missing. The action returns this Lambda's file and falls back to a live Scan if the file is missing.
+5. The resolver writes a tick heartbeat to `record/views/health/settle-tick.json`; newsFreshnessMonitor (`SETTLE_SOURCE=record`) reads it with the track-record view and the manifest (decision 0052). newsPredictionsSnapshot no longer runs (rule DISABLED 2026-11-01), so `predictions/track_record.json` is not refreshed.
+6. The `/track-record` page (hook `useTrackRecord`) and "Verify this draw" read the record view `record/views/track-record.json` only (decisions 0044, 0052; built by newsStoryRecord, with the draw pools and `settleHealth`); there is no fallback, and a missing view shows the empty state.
 7. The page shows it. The corrections feed on the same page comes from the `corrections_feed` action, which reads drift notes from the pipeline group.
-8. Story pages read the latest forecast per topic through the `prediction_snapshot` action (`/weekly/thread/:threadId`).
+8. Story pages, the briefing's next question, the country card and `newsSharedAnalysis` read forecasts from the record's `forecasts/<threadId>.json` views (decision 0052). The `prediction_snapshot` and `prediction_track_record` actions were removed from the read API on 2026-11-01.
 
 The nightly stages (WATCH, GATHER, JUDGE, RECORD) and their rules are in [newsPredictionResolver/README.md](newsPredictionResolver/README.md).
 
 ## Shared code
 
 - newsPredictionResolver uses `llm.js` and `s3json.js` from `backend/shared/src`.
-- newsPredictionsSnapshot has no `_shared` link. It keeps its own copy of the ISO-week helpers in `weeks.js`; a parity test guards drift against the resolver and the proxy.
+- newsPredictionsSnapshot (retired) has no `_shared` link. It keeps its own copy of the ISO-week helpers in `weeks.js`; a parity test guards drift against the resolver and the proxy.
 
 ## Known limits
 
@@ -42,7 +42,6 @@ The nightly stages (WATCH, GATHER, JUDGE, RECORD) and their rules are in [newsPr
 - Resolver rows are conditional put-once; nothing is overwritten.
 - A question is checked at most once a day; an age-only candidate waits 5 days between checks.
 - Live TTL on the PredictionLog table is DISABLED, so rows do not expire.
-- If the question board fails, newsPredictionsSnapshot still writes the aggregate with `questions: null`, then errors.
 
 ## How to check it
 

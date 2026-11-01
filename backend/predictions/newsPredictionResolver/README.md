@@ -45,7 +45,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
    |           for newsStoryRecord; the resolver never writes record/facts/
    +- draws  : the weekly seed commit and the weekly draw are appended as lines to record/inbox/draws/YYYY-MM-DD.jsonl (shadow: record/shadow/inbox/draws/)
    |           (decision 0043): newsStoryRecord turns them into question_commit / question_draw facts, the views derive each branch's scoring and state
-   +- output : the weekly sample (sampled:true) still feeds track_record.json unchanged
+   +- output : the weekly sample (sampled:true) reaches the public track record through the record (draws and verdicts inboxes -> newsStoryRecord -> views/track-record.json); `predictions/track_record.json` is no longer refreshed
 ```
 
 ## Deployment
@@ -72,7 +72,7 @@ At the end of a non-dry `tick` the resolver also writes `{schemaVersion, at, com
 - A missing seed secret or a commit-hash mismatch blocks that week's draw; a new seed is never invented.
 - A question is checked once a day at most; an age-only candidate waits 5 days; three counted unclear drafts make it void. The first correction of a settled question is `VERDICT#2` (the original `VERDICT` counts as 1).
 - Settle rows carry no `methodologyVersion`, so legacy aggregators ignore them.
-- ISO-week helpers are copied in `newsPredictionsSnapshot/src/weeks.js` and `newsSensitiveData/src/lib.js`; `test/weeksParity.test.js` guards drift.
+- ISO-week helpers are also copied in `newsPredictionsSnapshot/src/weeks.js` (retired job). The proxy's copy (`isoWeekOfDay` in `newsSensitiveData/src/lib.js`) went with the removed actions on 2026-11-01, but `test/weeksParity.test.js` still requires it and fails until the test drops that line (known, code not changed here).
 
 ## Source field contract
 

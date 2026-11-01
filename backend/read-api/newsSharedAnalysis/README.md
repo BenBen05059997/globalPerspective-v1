@@ -9,7 +9,7 @@ Analysis Studio share links. POST (Firebase JWT) re-fetches and freezes a run's 
 
 ## Reads / writes
 - DynamoDB: `SHARES_TABLE` (GlobalPerspectiveShares, PK `id`; GSI `uid-createdAt-index` used to count a user's shares per UTC day)
-- External: `PROXY_URL` (public restProxy actions `topics`, `summary`, `prediction`, `trace_cause`, `narrative_thread`, `thread_analysis`, `prediction_snapshot`, called with the reader's own bearer token); Google x509 certs for JWT verification
+- External: `PROXY_URL` (public restProxy actions `topics`, `summary`, `prediction`, `trace_cause`, `narrative_thread`, `thread_analysis`, called with the reader's own bearer token); Google x509 certs for JWT verification
 - Env names: `FIREBASE_PROJECT_ID`, `CORS_ORIGINS`, `DAILY_SHARE_CAP` (default 20), `PROXY_URL`, `SHARES_TABLE`, `RECORD_VIEWS_URL` (`<site>/data/record/views`, live `https://globalperspective.net/data/record/views`: the story's forecast is read only from the record's `forecasts/<threadId>.json` view while the manifest is under 9 hours old and says it has forecasts views; otherwise, or unset, the story has no forecast source, since `prediction_snapshot` is no longer called; decision 0052; `src/forecastFromView.js` is a byte-identical copy of the frontend's `shared/lib/forecastFromView.js`)
 
 ## Gotchas

@@ -68,13 +68,13 @@ The per-run cap on candidates is 60 in code (`MAX_CANDIDATES`, `watch.js`); the 
 | `question_commit`, `question_draw` facts | `record/facts/` | the week's published seed hash; the revealed seed and the sampled qids; `eventId = sha1(kind + weekId)`; only `newsStoryRecord` writes them, from the draws inbox. The story views derive each branch's `scoring` and `state` from them |
 | `Q#<qid>` `SAMPLED`, `DRAFT#`, `VERDICT`, `VERDICT#<n>` | `GlobalPerspectivePredictionLog` | the resolver's working rows, put-once; a correction appends `VERDICT#<n>` |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its seed commit |
-| `predictions/track_record.json` | S3 | the scored sample only; `newsPredictionsSnapshot` rebuilds it every 30 minutes |
-| `record/views/track-record.json` | S3 | the public `/track-record` page's source (decision 0044): the question scheme counted from the `forecast_drawn`, `question_*` and `verdict` facts, plus the frozen pilot-era constants. Built by `newsStoryRecord` with the other views; the settle health and the draw pool stay in the prediction log The view also carries `settleHealth` and the draw pool of the last four drawn weeks (0052), and the resolver finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) |
+| `predictions/track_record.json` | S3 | the scored sample only; the last build of the retired `newsPredictionsSnapshot` (2026-11-01), no longer refreshed and not read |
+| `record/views/track-record.json` | S3 | the public `/track-record` page's source (decision 0044): the question scheme counted from the `forecast_drawn`, `question_*` and `verdict` facts, plus the frozen pilot-era constants. Built by `newsStoryRecord` with the other views. The view also carries `settleHealth` and the draw pool of the last four drawn weeks (0052), and the resolver finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) |
 | `record/legacy/predictions/` | S3 | whole `PRED#` rows from before the record that no rule places on a story, copied once (decision 0047); not facts, and none carries a question id, so none is scored |
 
 Draw code lives in `backend/pipeline/NewsProjectInvokeAgentLambda`; watch, gather, judge and record in `backend/predictions/newsPredictionResolver`; review in `backend/record`. The resolver writes only `record/inbox/verdicts/` and `record/inbox/draws/` (and their shadows) under `record/`, reads `record/facts/` and `record/runs/` (its role has both), and needs no search key. Its `BRAVE_SEARCH_API_KEY` env, if present, is unused by the code. An operator dispute is `predictions/settle-correct.js --correct <qid> <yes|no|void> "<reason>"`, which appends a correction (0034: no human gate on verdicts).
 
-Eligibility for the scored sample is the same 7-90 day lead as the draw (decision 0045), in the views, the snapshot, the read API and the page text.
+Eligibility for the scored sample is the same 7-90 day lead as the draw (decision 0045), in the views and the page text (the snapshot job and the read API's track-record action are retired).
 
 ## 4. Pages (wording)
 Shared in `shared/lib/branchWording.js`; never "not checked yet", never "DEAD".

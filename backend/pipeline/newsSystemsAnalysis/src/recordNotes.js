@@ -6,18 +6,11 @@
 // shared-actor `backbone`, no model): a web with no edge has no link note, and the story page reads coverage and shared actors
 // from it. The node summaries stay in SYSTEMS#. Best-effort while DynamoDB stays the primary copy: a failure logs [notes] and never fails the run.
 const notes = require('./_shared/notes');
+const { s3NoteWriter } = require('./_shared/s3NoteWriter');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 
-const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const NOTES_PREFIX = process.env.NOTES_PREFIX || 'record/shadow/';
 const LAMBDA = 'newsSystemsAnalysis';
-
-function s3Writer() {
-  const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
-  const { makeS3Json } = require('./_shared/s3json');
-  const client = new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' });
-  return notes.makeNoteWriter({ s3json: makeS3Json({ client, GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET }), prefix: NOTES_PREFIX });
-}
 
 const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
 
@@ -94,7 +87,7 @@ async function writeLinkNotes({ rows, entries, model, runId, writer }) {
     for (const s of plan.skipped) console.warn(`[notes] link skipped: ${JSON.stringify(s)}`);
     const webs = planWebNotes({ rows, model, runId });
     for (const s of webs.skipped) console.warn(`[notes] web skipped: ${JSON.stringify(s)}`);
-    const w = writer || s3Writer();
+    const w = writer || s3NoteWriter(NOTES_PREFIX);
     // the web notes go first: a reader that finds a web's links can then find the web
     if (webs.notes.length) {
       const r = await w.write('web', webs.notes);

@@ -54,7 +54,7 @@ The record
 - `noteReads.js`: the readers of the notes for the rows SummarizeAndPredict used to hold (decision 0053): `countryIntelligence`, `countryHistory`, `countryDrift`, `storyDrift`, `storyAnalysis`, `threadHistory`, `countryFacts`, `driftFeed` (same field names, no gating), `makeNoteReader` (a subtype's days from its manifest, cached), `s3NoteReader`, `readMode` (env `NOTES_READS` = `ddb` | `compare` | `notes`), `viaMode`/`lambdaSource`/`rowReaders` (a Lambda's read under the flag; `compare` logs `[notes-compare]`) and `diff`. Used by the read API and seven Lambdas.
 - `briefNotes.js`: `writeBriefNote({subtype, item, lambda, runId})`, the brief writers' one helper (decision 0048). Gated by env
   `NOTES_PREFIX`: unset writes nothing; best-effort, a failure logs `[notes]` and never fails the run. Used by `newsPostDevTo` and
-  `newsWeeklyBrief`.
+  `newsWeeklyBrief`. The brief writers and the analysis Lambdas' `recordNotes.js` build their S3 writer with `s3NoteWriter(prefix)` (`s3NoteWriter.js`; env `WORLD_BUCKET`, `AWS_REGION`).
 - `briefs.js`: `briefWithIso3`, `weeklyWithIso3`, `briefCountries`: the countries every reader gets on the daily and weekly brief
   (filled from names when the stored row has no `iso3`). Used by the read API's brief actions and by the record's brief views, so
   they answer the same.

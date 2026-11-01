@@ -284,7 +284,6 @@ function groupByCountry(entries, threadAnalyses) {
 // ─── AI generation ────────────────────────────────────────────────────────────
 
 function buildSystemsPrompt(country) {
-  const validThreadIds = country.threads.map(t => t.threadId);
   const threadList = country.threads.map((t, i) =>
     `[${i + 1}] threadId: "${t.threadId}"
      category: ${t.category}

@@ -5,7 +5,6 @@ const {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  ScanCommand,
 } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat, stripCodeFence } = require('./_shared/llm');
@@ -15,20 +14,14 @@ const { writeBriefNote } = require('./_shared/briefNotes');
 const NR = require('./_shared/noteReads');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
-const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
+const { formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
 const TOPICS_TABLE  = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
-const POSTS_TABLE   = process.env.SOCIAL_POSTS_TABLE;
-const DEVTO_API_KEY = process.env.DEVTO_API_KEY || '';
 const XAI_API_KEY   = process.env.XAI_API_KEY || '';
 const GROK_MODEL    = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
-const SITE_URL           = process.env.SITE_URL || 'https://globalperspective.net';
-const PLATFORM           = 'DEVTO';
-const POST_TTL_DAYS      = 90;
 const BRIEF_TTL_DAYS     = 90;
-const AI_MODEL           = process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free';
 
 // RECORD_READS=ddb|record|compare (decision 0054): where the day's entries come from; the analyses and briefings follow NOTES_READS (0053)
 const RECORD_READS = readMode();
@@ -298,65 +291,6 @@ async function loadTodayArchive() {
   if (!Item || !Array.isArray(Item.entries)) return null;
   // Only entries archived today count (a stalled pipeline leaves old ones in today-archive).
   return { ...Item, entries: keepDayZero(Item.entries) };
-}
-
-async function checkAlreadyPosted(dedupPK) {
-  const { Item } = await ddb.send(new GetCommand({
-    TableName: POSTS_TABLE,
-    Key: { PK: dedupPK },
-  }));
-  return !!Item;
-}
-
-async function recordPosted(dedupPK, dateKey, articleId, articleUrl, entryCount) {
-  const ttl = Math.floor(Date.now() / 1000) + POST_TTL_DAYS * 24 * 60 * 60;
-  await ddb.send(new PutCommand({
-    TableName: POSTS_TABLE,
-    Item: {
-      PK: dedupPK,
-      platform: PLATFORM,
-      dateKey,
-      articleId: articleId || null,
-      articleUrl: articleUrl || null,
-      entryCount,
-      postedAt: new Date().toISOString(),
-      ttl,
-    },
-  }));
-}
-
-async function callAi(prompt) {
-  // OpenRouter (OPENROUTER_API_KEY), no thinking field.
-  const { content } = await chat({ step: 'devto_article_openrouter', provider: 'openrouter', model: AI_MODEL, user: prompt, maxTokens: 400, temperature: 0.7 });
-  return content.trim();
-}
-
-async function postToDevTo({ title, body_markdown, description }) {
-  const res = await fetch('https://dev.to/api/articles', {
-    method: 'POST',
-    headers: {
-      'api-key': DEVTO_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      article: {
-        title,
-        body_markdown,
-        description,
-        published: true,
-        tags: ['news', 'ai', 'worldnews', 'globalperspectives'],
-        series: 'Global Perspectives Daily',
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Dev.to API error ${res.status}: ${errText}`);
-  }
-
-  const data = await res.json();
-  return { id: data.id, url: data.url };
 }
 
 function resp(statusCode, body) {

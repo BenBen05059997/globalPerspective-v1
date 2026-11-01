@@ -45,7 +45,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - `useTodayArchive()` -> `contentService.getTodayArchive()` -> `today`; localStorage `today_archive_cache_v1`, 10 min; an empty day is not cached.
 - On click: `contentService.getTopicSummary` / `getTopicPrediction` / `getTopicTraceCause` -> `summary` / `prediction` / `trace_cause`.
   These read stored results by `topicId`; nothing is generated on view.
-- `useTrackRecord()` -> the record's `track-record.json` view, `prediction_track_record` as fallback (decision 0044); `useCorrectionsFeed(100)` ->
+- `useTrackRecord()` -> the record's `track-record.json` view only (decision 0044); `useCorrectionsFeed(100)` ->
   `corrections_feed` (the trust strip uses the server's `total`). Both hooks belong to `features/track-record`.
 
 ## Pipeline
@@ -55,8 +55,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 4. `newsSensitiveData-dev` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
 5. `useGeminiTopics` -> `Home.jsx` groups by region and renders the topic cards on `/today`.
 6. A click calls `summary`, `prediction` or `trace_cause` -> `SummaryDisplay` / `PredictionDisplay` / `TraceCauseDisplay`.
-7. Trust strip: `newsStoryRecord` builds `record/views/track-record.json` from the forecast facts -> `useTrackRecord` (fallback: `newsPredictionsSnapshot`
-   -> S3 `predictions/track_record.json` -> `prediction_track_record`).
+7. Trust strip: `newsStoryRecord` builds `record/views/track-record.json` from the forecast facts -> `useTrackRecord` (no fallback).
 
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md) (map is home, this moved to `/today`),

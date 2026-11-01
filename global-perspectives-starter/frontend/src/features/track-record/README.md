@@ -39,19 +39,17 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
 - `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily, input `tick`): commits seeds for upcoming weeks, draws the
   sample for each ended week, drafts verdicts on Mondays and writes them itself (decision 0034; none written as of 2026-10-22). The operator only corrects.
-- `newsPredictionsSnapshot` (rule `TriggerPredictionsSnapshot`, every 30 min) writes `predictions/track_record.json`;
-  `newsSensitiveData-dev` serves it and the corrections feed.
+- `newsSensitiveData-dev` serves the corrections feed (gated).
 
 ## Data
 - `useTrackRecord()` -> the record view `views/track-record.json` (`fetchTrackRecordView`, `/data/record/views/`, decision 0044) via
-  `lib/trackRecordFromView.js`; when the view is missing (404) or cannot be read (reported to the error sink) it falls back to
-  `prediction_track_record` (the S3 file, with a live Scan fallback). localStorage `gp_track_record`, 30 min. Same data shape either way:
+  `lib/trackRecordFromView.js`, the only source: when the view is missing, unreadable or of another shape the hook returns no data (the page's
+  honest empty state) and reports once to the error sink. localStorage `gp_track_record`, 30 min. Data shape:
   `questions` plus the pilot-era fields the page reads (`eraCutFrom`, `totalDatedTriggers`, `resolvedTriggers`, `legacyPredictionsExcluded`, `recent`).
   In the view `questions` is built from facts (`newsStoryRecord/src/trackRecord.js`) and the pilot-era fields are a frozen constant
-  (`src/trackRecordLegacy.json`, copied 2026-10-31; `legacyPredictionsExcluded` is 2418, the action's 2546 also counted the question scheme's rows).
+  (`src/trackRecordLegacy.json`, copied 2026-10-31; `legacyPredictionsExcluded` is 2418).
   The view carries `settleHealth` (the freshness monitor's inputs, not shown on the page) and, on each of the last four drawn weeks the forecast facts reproduce,
-  a `draw` ({K, pool, picked}, decision 0052) that "Verify this draw" uses; it has no week `reviewed`. A week without a `draw` falls back to the action when
-  "Verify this draw" is pressed (`lib/drawPool.js`).
+  a `draw` ({K, pool, picked}, decision 0052) that "Verify this draw" uses; it has no week `reviewed`. A week without a `draw` has no verify control.
 - `useCorrectionsFeed(limit)` -> `corrections_feed`; localStorage `gp_corrections_feed`, 30 min; returns `{ notes, total, gated }`.
   The cache key ignores `limit`: Home asks 100, these pages 40; the first fetch wins.
 - Neither hook needs sign-in.
@@ -60,10 +58,10 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 1. `NewsProjectInvokeAgentLambda-dev` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
 2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts verdicts
    (Brave Search evidence) and writes them itself; the operator disputes one with `predictions/settle-correct.js`.
-3. `newsPredictionsSnapshot` (every 30 min) scans the log -> S3 `predictions/track_record.json` (the page's fallback and the freshness monitor's default source until `SETTLE_SOURCE=record`). `newsStoryRecord` builds `record/views/track-record.json` (with the draw pools and `settleHealth`) from the facts in every views run.
+3. `newsStoryRecord` builds `record/views/track-record.json` (with the draw pools and `settleHealth`) from the facts in every views run.
 4. `newsDriftCorrector` (05:30 UTC) writes `DRIFT#` notes that become the corrections ledger.
-5. `newsSensitiveData-dev` actions `prediction_track_record` (fallback) and `corrections_feed` (gated, stays on the action).
-6. Hooks `useTrackRecord` (view first) and `useCorrectionsFeed` -> `buildTrackRecordView` -> `TrackRecordPage` (`/track-record`) and `TrackRecordText`.
+5. `newsSensitiveData-dev` action `corrections_feed` (gated, stays on the action).
+6. Hooks `useTrackRecord` (view only) and `useCorrectionsFeed` -> `buildTrackRecordView` -> `TrackRecordPage` (`/track-record`) and `TrackRecordText`.
 
 ## Docs
 - Decisions: [0011](../../../../../project-docs/decisions/0011-track-record-and-studio.md) (lean and sampled),
@@ -72,8 +70,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/track-record`; parity: `node scripts/check-shared-sync.mjs`
-- View served: `curl -s https://globalperspective.net/data/record/views/track-record.json | head -c 300`; the action (from the repo root):
-  `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"prediction_track_record"}' | head -c 300`
+- View served: `curl -s https://globalperspective.net/data/record/views/track-record.json | head -c 300`; the draw check: `node predictions/verify-draw.mjs --public`
 - Settle ran: `aws logs tail /aws/lambda/newsPredictionResolver --since 3d --region ap-northeast-1 --filter-pattern '"settle"' --format short`
 - Schedules: `aws events describe-rule --name TriggerPredictionResolver --region ap-northeast-1 --query State`
   (and `TriggerPredictionsSnapshot`)

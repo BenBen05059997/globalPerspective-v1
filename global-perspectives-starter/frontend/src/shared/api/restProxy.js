@@ -219,11 +219,6 @@ export async function fetchSystemsAnalysis(countryName) {
   return proxyAction('systems_analysis', { countryName });
 }
 
-// ── Prediction track record (calibration / forecast accountability) ──────────
-export async function fetchPredictionTrackRecord() {
-  return proxyAction('prediction_track_record');
-}
-
 export async function fetchCorrectionsFeed(limit = 40) {
   return proxyActionWithAuth('corrections_feed', { limit });
 }

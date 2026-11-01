@@ -12,8 +12,9 @@
  *   --file draw.json      { "commit": {weekId, weekStart, commitHash, committedAt},
  *                           "reveal": {seedHex, revealedAt}, "draw": {K, pool:[{q,c}], picked:[{qid,h,clusterKey}]} }
  *   --week 2026-W41       reads the three rows from DynamoDB with the AWS CLI (operator credentials)
- *   --public <proxy-url> --week 2026-W41   reads them from the PUBLIC aggregate (prediction_track_record, `questions.weeks[]`;
- *                         the pool is published for the latest 4 drawn weeks) — needs no credentials
+ *   --public [site-url] --week 2026-W41   reads them from the record's public track-record view
+ *                         (<site>/data/record/views/track-record.json, `questions.weeks[]`, the file the page reads; default
+ *                         https://globalperspective.net; the pool is published for the latest 4 drawn weeks) — needs no credentials
  *
  * Exit: 0 verified, 1 NOT VERIFIED, 3 not revealed yet (commitment only; the seed is revealed after the week).
  *
@@ -49,7 +50,7 @@ function getRow(pk, sk) {
   return parseItem(execFileSync('aws', ['dynamodb', 'get-item', '--table-name', 'GlobalPerspectivePredictionLog', '--region', 'ap-northeast-1', '--key', key, '--output', 'json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
 }
 
-// Shape the public aggregate's week entry like the three DynamoDB rows.
+// Shape the public view's week entry like the three DynamoDB rows.
 export function fromPublicWeek(week) {
   if (!week) return { commit: null, reveal: null, draw: null };
   return {
@@ -79,13 +80,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   let input;
   if (arg('--file')) input = JSON.parse(fs.readFileSync(arg('--file'), 'utf8'));
   else if (arg('--public') && arg('--week')) {
-    const res = await (await fetch(`${arg('--public')}${arg('--public').includes('?') ? '&' : '?'}action=prediction_track_record`)).json();
-    const data = (res.body ? JSON.parse(res.body) : res).data;
-    input = fromPublicWeek(((data.questions || {}).weeks || []).find((w) => w.weekId === arg('--week')));
+    const given = arg('--public');
+    const site = (given && !given.startsWith('--') ? given : 'https://globalperspective.net').replace(/\/$/, '');
+    const res = await fetch(`${site}/data/record/views/track-record.json`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) { console.error(`track-record view: HTTP ${res.status}`); process.exit(2); }
+    const view = await res.json();
+    input = fromPublicWeek(((view.questions || {}).weeks || []).find((w) => w.weekId === arg('--week')));
   } else if (arg('--week')) {
     const wk = arg('--week');
     input = { commit: getRow(`SEED#${wk}`, 'COMMIT'), reveal: getRow(`SEED#${wk}`, 'REVEAL'), draw: getRow(`SAMPLE#${wk}`, 'DRAW') };
-  } else { console.error('usage: verify-draw.mjs --file draw.json | --week 2026-W41'); process.exit(2); }
+  } else { console.error('usage: verify-draw.mjs --file draw.json | --week 2026-W41 | --public [site-url] --week 2026-W41'); process.exit(2); }
   const r = verify(input);
   if (r.notRevealed) { console.log(`NOT REVEALED YET: ${r.problems[0]}.`); process.exit(3); }
   else if (r.ok) console.log(`OK: commitment matches the seed, and the ${r.picked} picks (from ${r.eligible} eligible questions in ${r.clusters} stories) are exactly what the published rule gives.`);

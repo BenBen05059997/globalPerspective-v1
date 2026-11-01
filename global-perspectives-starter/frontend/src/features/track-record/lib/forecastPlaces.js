@@ -1,5 +1,5 @@
 // forecastPlaces — "every question placed at the country it is about, with counts per place"
-// (TRACK_RECORD_AND_STUDIO_RULING.md). The `prediction_track_record` action carries no place/
+// (TRACK_RECORD_AND_STUDIO_RULING.md). The record view carries no place/
 // region field on a resolved trigger, so this derives a place the only honest way available:
 // matching a real country's display name against the item's own stored story title and question
 // text — the one country table (shared/lib/countries.js), never a second, hand-typed list, and

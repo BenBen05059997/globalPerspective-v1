@@ -1,5 +1,5 @@
 // trackRecordView — one pure view-model for /track-record and /track-record/text, so both pages
-// show the same facts with the same wording. Input: the public `prediction_track_record` data
+// show the same facts with the same wording. Input: the track-record data of `useTrackRecord`
 // (legacy pilot fields + `questions`). Nothing here fetches; `now` is passed in.
 import { splitPilot } from '@/features/track-record/lib/pilotExclusion.js';
 import { stageWording } from '@/features/track-record/lib/stageWording.js';

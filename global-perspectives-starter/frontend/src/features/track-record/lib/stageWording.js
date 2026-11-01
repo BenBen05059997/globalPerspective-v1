@@ -9,7 +9,7 @@ const SIX_MONTHS_MS = 183 * 86400000;
 
 /**
  * @param {object} args
- * @param {object|null} args.questions  data.questions from prediction_track_record (null if absent)
+ * @param {object|null} args.questions  data.questions from the track-record view (null if absent)
  * @param {string|null} args.lastResolvedAt  newest confirmedAt of the archived pilot
  * @param {string} args.eraCutFrom
  * @param {number} args.pilotCount

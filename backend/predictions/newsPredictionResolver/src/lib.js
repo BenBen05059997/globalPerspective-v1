@@ -40,7 +40,6 @@ function weekStart(weekId) {
 }
 const weekEnd = (weekId) => addDays(weekStart(weekId), 6);
 const addWeeks = (weekId, n) => weekOf(addDays(weekStart(weekId), 7 * n));
-const isMonday = (d) => new Date(ms(d)).getUTCDay() === 1;
 
 const newSeed = () => crypto.randomBytes(32).toString('hex');
 const commitOf = (seedHex) => sha256hex(seedHex);
@@ -96,8 +95,8 @@ function combinePasses(a, b) {
 }
 
 module.exports = {
-  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, NO_REASON, COVERAGE_GAP, VOID_REASONS,
-  sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks, isMonday,
+  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, COVERAGE_GAP, VOID_REASONS,
+  sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks,
   newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
   quoteInEntry, validateDraft, combinePasses,
 };

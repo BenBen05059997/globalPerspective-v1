@@ -28,9 +28,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { normalizeDimensions } = require('../backend/shared/src/riskDimensions');
+const { AXES, tierFromScore: band, normalizeDimensions } = require('../backend/shared/src/riskDimensions');
 
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const REGION = 'ap-northeast-1';
 const GOLD_SET_PATH = path.join(__dirname, 'severity_gold_set.json');
 
@@ -247,13 +246,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── grading — same definitions as severity_agreement.js, plus inflation counters ──────────────
 
-function band(score) {
-  if (score == null) return null;
-  if (score >= 75) return 'high';
-  if (score >= 50) return 'elevated';
-  if (score >= 25) return 'moderate';
-  return 'low';
-}
 const BAND_ORDER = { low: 0, moderate: 1, elevated: 2, high: 3 };
 function bandDistance(a, b) {
   if (a == null || b == null) return null;

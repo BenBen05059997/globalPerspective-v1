@@ -28,6 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { stripCodeFence } = require('../backend/shared/src/llm'); // the generators' fence strip
 const { AXES, tierFromScore: band, normalizeDimensions } = require('../backend/shared/src/riskDimensions');
 
 const REGION = 'ap-northeast-1';
@@ -173,21 +174,12 @@ Return ONLY valid JSON of the form {"dimensions": {...}}. No markdown fences, no
 
 // ─── model invocation — mirrors each Lambda's invokeGrok() exactly ─────────────────────────────
 
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```$/i, '')
-    .replace(/,(\s*[\]}])/g, '$1')
-    .trim();
-}
-
 function extractContent(payload) {
   if (!payload) return '';
   const msg = payload && payload.choices && payload.choices[0] && payload.choices[0].message
     ? payload.choices[0].message.content
     : undefined;
-  if (typeof msg === 'string') return stripCodeFence(msg);
+  if (typeof msg === 'string') return stripCodeFence(msg, { trailingCommas: true });
   if (typeof payload === 'string') return payload.trim();
   return JSON.stringify(payload);
 }

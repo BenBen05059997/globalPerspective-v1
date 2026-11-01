@@ -22,6 +22,7 @@ const {
   UpdateCommand,
 } = require('@aws-sdk/lib-dynamodb');
 const { createHash } = require('crypto');
+const { httpReply } = require('./_shared/httpReply');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const ERRORS_TABLE = process.env.CLIENT_ERRORS_TABLE;
@@ -43,14 +44,6 @@ function getDynamoClient() {
     });
   }
   return _ddb;
-}
-
-function httpReply(statusCode, body) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  };
 }
 
 function clamp(v, max) {

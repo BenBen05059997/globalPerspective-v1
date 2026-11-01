@@ -25,6 +25,7 @@ const {
   QueryCommand,
 } = require('@aws-sdk/lib-dynamodb');
 const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
+const { httpReply } = require('./_shared/httpReply');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const SAVED_ITEMS_TABLE = process.env.SAVED_ITEMS_TABLE;
@@ -59,14 +60,6 @@ const verifyFirebaseToken = makeFirebaseVerifier({ projectId: FIREBASE_PROJECT_I
 // CORS is handled by AWS Lambda Function URL config (set via aws lambda
 // update-function-url-config). The Lambda must NOT emit Access-Control-*
 // headers itself or the browser will reject the duplicated values.
-
-function httpReply(statusCode, body) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  };
-}
 
 // ── Validation ──────────────────────────────────────────────────────────────
 function validateItemType(itemType) {

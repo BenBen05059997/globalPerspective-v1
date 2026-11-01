@@ -19,6 +19,7 @@ LLM and time
   unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API.
 - `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
+- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`.
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as

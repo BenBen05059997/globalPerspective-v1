@@ -17,6 +17,7 @@ const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCom
 const { buildInterestProfile, isColdStart, rankRecommendations } = require('./scoring');
 const { storyHref, mapHref, absoluteUrl } = require('./_shared/links');
 const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
+const { httpReply } = require('./_shared/httpReply');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -310,10 +311,6 @@ async function getAlert(alertKey) {
     console.warn('getAlert failed (returning null):', err.message);
     return null;
   }
-}
-
-function httpReply(statusCode, body) {
-  return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
 
 // ── Public one-click unsubscribe (the token IS the auth; no sign-in) ──────────

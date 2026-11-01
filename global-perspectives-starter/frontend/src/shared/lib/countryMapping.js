@@ -3,7 +3,7 @@
 import { COUNTRIES, parentCountry } from '@/shared/lib/countries.js';
 
 // Broad region names to the specific countries they include
-export const BROAD_REGION_COUNTRIES = {
+const BROAD_REGION_COUNTRIES = {
     'EU': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
     'European Union': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
     'Europe': ['United Kingdom', 'France', 'Germany', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czech Republic', 'Greece', 'Portugal', 'Ireland', 'Romania', 'Hungary', 'Ukraine', 'Serbia', 'Croatia', 'Bulgaria', 'Slovakia', 'Slovenia', 'Lithuania', 'Latvia', 'Estonia'],
@@ -40,7 +40,7 @@ export function getBroadRegionsForCountry(countryName) {
 
 // ISO country code to geographic region mapping
 // Used to categorize news topics by region
-export const ISO_CODE_TO_REGION = {
+const ISO_CODE_TO_REGION = {
     // Asia (50 countries)
     'AF': 'Asia',
     'AM': 'Asia',

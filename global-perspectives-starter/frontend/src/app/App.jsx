@@ -1,6 +1,5 @@
 // global-perspectives-starter/frontend/src/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
-import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
 // Home (the old topics page, now at /today since the 2026-10-01 S6 swap) stays an eager import

@@ -16,7 +16,6 @@
 .story-tree__card { border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel-2); padding: var(--space-2) var(--space-3); display: grid; gap: var(--space-1); }
 .story-tree__card--now { border-color: var(--hairline-3); }
 .story-tree__card-head { display: flex; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
-.story-tree__title { font-family: var(--serif); font-weight: var(--weight-semibold); font-size: var(--text-md); color: var(--text-head); }
 
 .story-tree__draw { display: grid; gap: var(--space-2); min-width: 0; }
 .story-tree__ours { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); color: var(--accent); }

@@ -6,7 +6,7 @@
 //   Disaster alerts the world bundle (world/latest.json) arrived carrying a checked GDACS source
 //   Map             the globe / radar really drew its first frame
 
-export const BOOT_SENSOR_LABELS = { news: 'News desk', disaster: 'Disaster alerts', map: 'Map' };
+const BOOT_SENSOR_LABELS = { news: 'News desk', disaster: 'Disaster alerts', map: 'Map' };
 
 /** The three sensors, all waiting: the state before anything has arrived (also the Suspense fallback). */
 export const WAITING_SENSORS = [

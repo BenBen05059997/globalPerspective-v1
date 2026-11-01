@@ -67,7 +67,7 @@ export const AXIS_LABELS = {
 };
 
 // An axis with score >= this reads "elevated" (matches the elevated band).
-export const AXIS_ELEVATED = 50;
+const AXIS_ELEVATED = 50;
 // Surface the compound breadth flag when at least this many axes are elevated.
 export const BREADTH_MIN = 3;
 

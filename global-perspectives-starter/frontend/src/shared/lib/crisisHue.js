@@ -77,7 +77,3 @@ export function crisisDotVar(category) {
   const t = crisisTypeForCategory(category);
   return t === 'neutral' ? undefined : `var(--hue-${t})`;
 }
-
-export function crisisRgbForCategory(category) {
-  return CRISIS_RGB[crisisTypeForCategory(category)];
-}

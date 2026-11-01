@@ -14,7 +14,7 @@ export const isLate = (b, present) => isOpen(b) && Boolean(present) && Boolean(d
 
 export const liveBranches = (forks) => (forks || []).flatMap((f) => f.branches || []).filter(isOpen);
 
-export const DRAWN_BRANCHES = 6;
+const DRAWN_BRANCHES = 6;
 
 /** The branches the drawing shows: the open ones of the newest fork that still has any (the "open fork"), at most
  *  DRAWN_BRANCHES. Older forks stay in the text list. */

@@ -20,7 +20,7 @@ function placeOf(s) {
   return null;
 }
 
-export function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
+function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
   const kind = markerKind(s);
   const fresh = situationFreshness(s, now);
   const glyph = statusGlyph(s);

@@ -3,7 +3,7 @@
 // import behind import.meta.env.DEV, so a production build drops it entirely.
 import { boardAction, boardConfigured } from '@/shared/api/restProxy';
 
-export const DEV_MEMBER_KEY = 'gp_dev_board';
+const DEV_MEMBER_KEY = 'gp_dev_board';
 
 /** True in a dev build opened with ?devBoard=1 (remembered for the tab): the page acts as a signed-in member. */
 export function devMember() {

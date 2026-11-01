@@ -15,7 +15,7 @@ export function shareConfigured() {
 const base = () => String(window.NEWS_SHARE_ENDPOINT).replace(/\/$/, '');
 
 // Words for a refused delete (never "something went wrong").
-export function shareErrorMessage(status, body) {
+function shareErrorMessage(status, body) {
   if (status === 401) return 'Sign in to delete a shared analysis.';
   if (body && body.message) return body.message;
   return `The share service answered with an error (HTTP ${status}).`;

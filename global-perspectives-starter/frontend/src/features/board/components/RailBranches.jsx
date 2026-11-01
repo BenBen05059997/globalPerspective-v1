@@ -5,7 +5,7 @@ import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/
 const MAX_STORIES = 2;
 
 /** The open branches of the newest fork of each pinned story that has one: [{ threadId, forkId, title, branches }]. */
-export function railForks(stories, labelOf) {
+function railForks(stories, labelOf) {
   const out = [];
   for (const story of Object.values(stories || {})) {
     const fork = [...(story?.forks || [])].sort((x, y) => String(y.drawnAt).localeCompare(String(x.drawnAt)))[0];

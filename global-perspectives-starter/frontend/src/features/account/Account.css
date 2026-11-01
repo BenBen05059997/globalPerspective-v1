@@ -94,8 +94,6 @@
 .acct-card .gp-sec { margin-bottom: var(--space-3); }
 .acct-card__action { margin-top: var(--space-3); }
 
-.acct-desc { color: var(--text-dim); font-size: var(--text-base); line-height: var(--leading-normal); margin: 0 0 var(--space-4); max-width: 60ch; }
-.acct-desc a { color: var(--accent); }
 .acct-muted { font-size: var(--text-base); color: var(--text-dim); line-height: var(--leading-normal); }
 .acct-fine { font-size: var(--text-ui); color: var(--text-dim); margin-top: var(--space-1); line-height: 1.45; }
 .acct-fine--lead { margin: 0 0 var(--space-3); line-height: var(--leading-normal); }

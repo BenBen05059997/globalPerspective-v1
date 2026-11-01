@@ -11,7 +11,7 @@ function ts(iso) {
 }
 
 /** Most recent of last_change_at / opened_at, as epoch ms (0 when neither parses). */
-export function lastActivity(s) {
+function lastActivity(s) {
   return Math.max(ts(s?.last_change_at), ts(s?.opened_at));
 }
 

@@ -10,7 +10,7 @@ const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
 const ago = (today, n) => new Date(Date.parse(today) - n * DAY).toISOString().slice(0, 10);
 
 /** The stored weekly summaries, newest first: [{ text, date }]. */
-export function summaryVersions(board) {
+function summaryVersions(board) {
   return (board?.summary?.versions || []).filter((v) => v?.text && day(v.writtenAt))
     .map((v) => ({ text: v.text, date: day(v.writtenAt) })).sort((a, b) => (a.date < b.date ? 1 : -1));
 }

@@ -13,7 +13,7 @@ export const MS_DAY = 86400000;
 
 // Coverage trend from the story's own per-day article counts: the recent half of its days vs the
 // older half ('new' with one day). Only 'rising' is shown (StoryLine's "▲ rising" mark).
-export function getTrend(entries) {
+function getTrend(entries) {
   if (!entries || entries.length === 0) return 'new';
   const dates = [...new Set(entries.map(e => e.date))].sort();
   if (dates.length <= 1) return 'new';
@@ -50,7 +50,6 @@ export const SORTS = [
   { value: 'recent', label: 'Most recent' },
   { value: 'rising', label: 'Rising first' },
 ];
-export const TIER_FILTERS = ['high', 'elevated', 'moderate', 'low', 'none'];
 
 const windowOf = (value) => WINDOWS.find((w) => w.value === value) || WINDOWS[WINDOWS.length - 1];
 
@@ -200,7 +199,7 @@ export function inWindow(thread, windowValue, now = Date.now()) {
   return days === Infinity || ageDaysOf(thread, now) < days;
 }
 
-export function matchesSearch(thread, q, analysis = null) {
+function matchesSearch(thread, q, analysis = null) {
   const s = String(q || '').trim().toLowerCase();
   if (!s) return true;
   return (
@@ -382,9 +381,9 @@ export function timelineTicks(span, now = Date.now(), count = 6) {
 // "quieter", and the page prints the rule (BOARD_RULE) next to the board. Counts are the story's own
 // archive entries per day key; "last 3 days" = today and the 2 days before, "previous 3" = the 3
 // before that.
-export const BOARD_NEW_DAYS = 3; // new: first covered this many days ago or fewer
-export const BOARD_WINDOW = 3; // days compared: last 3 vs the 3 before
-export const BOARD_MIN = 2; // a rise / fall needs at least this many articles on the larger side
+const BOARD_NEW_DAYS = 3; // new: first covered this many days ago or fewer
+const BOARD_WINDOW = 3; // days compared: last 3 vs the 3 before
+const BOARD_MIN = 2; // a rise / fall needs at least this many articles on the larger side
 export const BOARD_SPARK_DAYS = 14;
 
 export const BOARD_COLUMNS = [

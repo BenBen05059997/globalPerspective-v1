@@ -52,7 +52,7 @@ function featureFor(name, lat, lng) {
 }
 
 /** Bounds of the feature's main landmass + near, sizeable parts: { west, south, east, north }. */
-export function featureBounds(feature) {
+function featureBounds(feature) {
   const boxes = polysOf(feature.geometry).map((p) => {
     const b = ringBox(p[0]);
     return { ...b, area: Math.max(0.01, (b.e - b.w) * (b.n - b.s)), cx: (b.e + b.w) / 2, cy: (b.n + b.s) / 2 };

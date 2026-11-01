@@ -41,7 +41,7 @@ function Peekable({ id, item, children }) {
 
 // ── Daily ─────────────────────────────────────────────────────────────────────
 
-export function DaySlide({ brief }) {
+function DaySlide({ brief }) {
   return (
     <div className="bm-slide bm-slide-day">
       <div className="bm-slide-kicker">
@@ -138,7 +138,7 @@ export function WatchSlide({ countryToWatch, risingThread }) {
 
 // ── Weekly ────────────────────────────────────────────────────────────────────
 
-export function WeekSlide({ brief }) {
+function WeekSlide({ brief }) {
   return (
     <div className="bm-slide bm-slide-week">
       <div className="bm-slide-kicker">
@@ -175,7 +175,7 @@ export function SignalSlide({ signal, index }) {
   );
 }
 
-export function NextWeekSlide({ watch }) {
+function NextWeekSlide({ watch }) {
   return (
     <div className="bm-slide bm-slide-next">
       <div className="bm-slide-kicker">NEXT WEEK · {watch.length} to watch</div>

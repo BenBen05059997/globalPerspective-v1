@@ -5,16 +5,12 @@
 // loop: it only ever explains a *deterministically-detected* conclusion move by pointing at
 // a REAL, dated archive event (never invents a cause). See LIVING_ANALYSIS_PLAN.md.
 
+const { jaccard } = require('./_shared/jaccard');
+
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with']);
 function tokens(s) {
   return new Set(String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/)
     .filter((w) => w.length > 2 && !STOP.has(w)));
-}
-function jaccard(a, b) {
-  if (!a.size || !b.size) return 0;
-  let i = 0;
-  for (const t of a) if (b.has(t)) i++;
-  return i / (a.size + b.size - i);
 }
 
 const SCORE_MOVE = 8;

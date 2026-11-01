@@ -37,7 +37,7 @@
         {
           "via": "events",
           "name": "TriggerBreakingAlert",
-          "expr": "cron(35 4/8 * * ? *)",
+          "expr": "cron(45 4/8 * * ? *)",
           "state": "ENABLED"
         }
       ]

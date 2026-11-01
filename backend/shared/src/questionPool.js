@@ -119,4 +119,4 @@ function rowOfFact(f) {
 /** Facts (any days, any kinds) -> row-shaped objects of the forecasts that carry questions, in fact order. */
 const rowsOfFacts = (facts) => (facts || []).map(rowOfFact).filter(Boolean);
 
-module.exports = { SAMPLE_K, LEAD_MIN, LEAD_MAX, LEGACY_LEAD_MAX, sha256hex, rankKey, addDays, daysBetween, weekStart, weekEnd, eligibleQuestions, draw, poolOfDraw, rowOfFact, rowsOfFacts };
+module.exports = { SAMPLE_K, LEAD_MIN, LEAD_MAX, LEGACY_LEAD_MAX, sha256hex, rankKey, day, ms, addDays, daysBetween, weekStart, weekEnd, eligibleQuestions, draw, poolOfDraw, rowOfFact, rowsOfFacts };

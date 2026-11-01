@@ -49,3 +49,18 @@ test('rowOfFact: a forecast fact stands in for its PRED# row (title from the top
   assert.equal(P.rowOfFact({ ...fact, payload: { ...fact.payload, branches: [fact.payload.branches[1]] } }), null);
   assert.equal(P.rowOfFact({ kind: 'entry' }), null);
 });
+
+test('the UTC day helpers the resolver and questionState share: day, ms, addDays, daysBetween, weekStart, weekEnd', () => {
+  const S = require('../src/questionState');
+  assert.equal(P.day('2026-10-05T23:59:59Z'), '2026-10-05');
+  assert.equal(P.ms('2026-10-05T23:59:59Z'), Date.UTC(2026, 9, 5));
+  assert.equal(P.addDays('2026-02-27', 2), '2026-03-01');
+  assert.equal(P.daysBetween('2026-10-05', '2026-11-04'), 30);
+  assert.equal(P.weekStart('2020-W53'), '2020-12-28');
+  assert.equal(P.weekEnd('2020-W53'), '2021-01-03');
+  assert.throws(() => P.weekStart('2026-41'), /bad week id/);
+  // questionState reads the same lead window and the same day arithmetic
+  assert.deepEqual([S.LEAD_MIN, S.LEAD_MAX], [P.LEAD_MIN, P.LEAD_MAX]);
+  assert.equal(S.isoWeekOfDay('2020-12-31'), '2020-W53');
+  assert.equal(S.isoWeekOfDay(P.weekStart('2026-W41')), '2026-W41');
+});

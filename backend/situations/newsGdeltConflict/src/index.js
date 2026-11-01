@@ -1,35 +1,26 @@
 'use strict';
 
-// newsGdeltConflict — SHADOW ingest of GDELT 2.0 MATERIAL-CONFLICT events (open, no account, free).
+// newsGdeltConflict — ingest of GDELT 2.0 MATERIAL-CONFLICT events (open, no account, free).
 // Pulls the latest GDELT events export (15-min file), keeps QuadClass==4 (material conflict =
 // actual violence) events with enough mentions, aggregates by COUNTRY, and stores a country-level
-// conflict-intensity snapshot to GlobalPerspectiveGdeltConflict. This is the OPEN replacement for
+// conflict-intensity snapshot to s3://<world>/corpus/gdelt/<day>.json. This is the OPEN replacement for
 // ACLED (dropped — not openly accessible): the conflict analogue of the GDACS disaster feed.
 //
-// SHADOW: writes only to its own table; never touches the live news feed.
 // Column layout VERIFIED 2026-06-24 against a live export (GDELT 2.0, 61 cols, tab-delimited):
 //   26 EventCode · 28 EventRootCode · 29 QuadClass · 30 GoldsteinScale · 31 NumMentions ·
 //   34 AvgTone · 52 ActionGeo_FullName · 53 ActionGeo_CountryCode · 60 SOURCEURL
 
 const AdmZip = require('adm-zip');
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const TABLE = process.env.GDELT_TABLE || 'GlobalPerspectiveGdeltConflict';
 const LASTUPDATE = process.env.GDELT_LASTUPDATE || 'http://data.gdeltproject.org/gdeltv2/lastupdate.txt';
 const MIN_MENTIONS = Number(process.env.GDELT_MIN_MENTIONS) || 10;
 const TOP_N = Number(process.env.GDELT_TOP_N) || 30;
-const TTL_DAYS = Number(process.env.GDELT_TTL_DAYS) || 10;
 
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const CORPUS_PREFIX = process.env.GDELT_CORPUS_PREFIX || 'corpus/gdelt';
 
 const ROOT_LABEL = { 17: 'Coerce', 18: 'Assault', 19: 'Fight/Combat', 20: 'Mass violence' };
-
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
-  marshallOptions: { removeUndefinedValues: true },
-});
 
 let _s3;
 function s3() {
@@ -93,7 +84,6 @@ exports.handler = async () => {
   }
 
   const top = [...byCountry.values()].sort((a, b) => b.mentions - a.mentions).slice(0, TOP_N);
-  const ttl = Math.floor(Date.now() / 1000) + TTL_DAYS * 86400;
   const day = new Date().toISOString().slice(0, 10);
   const nowIso = new Date().toISOString();
   const items = top.map((r) => ({

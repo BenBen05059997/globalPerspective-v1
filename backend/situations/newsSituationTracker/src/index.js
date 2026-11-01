@@ -9,13 +9,12 @@
 //   4. write changed state/<id>.json, situations/index.json, situations/history/<...>.json
 //   5. assemble world/latest.json (+ member + timestamped snapshot) — situations + freshness + lede
 //      + ranked + systemic
-//   6. (live only) move processed inbox snapshots to situations/inbox/processed/
 // NO LLM in S2 (what_changed is templated by the fold). DRY_RUN writes a parallel shadow universe
 // under world/shadow/ and shadow/situations/ and never consumes the inbox.
 
 const core = require('./_shared/situations-core');
 const { storyHref, mapHref } = require('./_shared/links');
-const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories, LEVEL_TIER } = core;
+const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
@@ -220,29 +219,13 @@ async function putJson(key, obj, cacheSeconds) {
     CacheControl: cacheSeconds ? `public, max-age=${cacheSeconds}` : undefined,
   }));
 }
-async function listKeys(prefix, stopAtProcessed = true) {
-  const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
-  const out = [];
-  let token;
-  do {
-    const r = await s3().send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix, ContinuationToken: token }));
-    for (const o of r.Contents || []) {
-      if (stopAtProcessed && o.Key.startsWith(`${prefix}processed/`)) continue;
-      if (o.Key.endsWith('.json')) out.push(o.Key);
-    }
-    token = r.IsTruncated ? r.NextContinuationToken : undefined;
-  } while (token);
-  return out;
-}
-
 // GDACS is a full-snapshot source: read its STABLE current pointer every sweep (never consumed), so
-// an empty inbox never spuriously cools live situations. (Per-event sources like breaking-alert append
-// timestamped events under INBOX_PREFIX; those are read + moved to processed/ — added with S3.)
+// an empty inbox never spuriously cools live situations.
 async function readObservations() {
   const snap = await getJson(`${INBOX_PREFIX}gdacs-latest.json`);
   const observations = (snap && snap.events) || [];
   const gdacsObservedAt = (snap && snap.observed_at) || null;
-  return { observations, gdacsObservedAt, processedKeys: [] };
+  return { observations, gdacsObservedAt };
 }
 
 // News stories worth showing on the map (higher bar than persistence): ≥3 outlets or severity ≥4.
@@ -293,7 +276,7 @@ exports.handler = async () => {
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
-  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt, newsDegraded }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
+  const [{ observations, gdacsObservedAt }, { stories, storiesAt, newsDegraded }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
 
   // Build news situations from stories (planNewsSituations: country + thread keys, GDACS merge rule).
   const gdacsIso = new Set();
@@ -337,20 +320,6 @@ exports.handler = async () => {
   await putJson(`${P.worldSnap}/${hk}/${now.slice(11, 16).replace(':', '')}.json`, world);
   await putJson(`${P.history}/${hk}/${now.slice(11, 16).replace(':', '')}.json`, { updated_at: now, situations: summaries });
 
-  // Live mode consumes the inbox; shadow leaves it for the real run.
-  let moved = 0;
-  if (!DRY_RUN && processedKeys.length) {
-    const { CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-    for (const key of processedKeys) {
-      const dest = key.replace(INBOX_PREFIX, `${INBOX_PREFIX}processed/`);
-      try {
-        await s3().send(new CopyObjectCommand({ Bucket: BUCKET, CopySource: `${BUCKET}/${key}`, Key: dest, ContentType: 'application/json' }));
-        await s3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
-        moved++;
-      } catch (e) { console.warn('[tracker] inbox move failed', key, e.message); }
-    }
-  }
-
   const openCount = summaries.filter((s) => s.state !== 'closed').length;
   // Per-transition counts make the cooling/close rule tunable against live churn (CLOSE_AFTER_COOL_CHECKS,
   // GDACS_STALE_MIN are env knobs — no redeploy needed to tune).
@@ -360,9 +329,9 @@ exports.handler = async () => {
     putMetric('Cooled', counts.cooled || 0), putMetric('Closed', counts.closed || 0),
     putMetric('Observations', observations.length), putMetric('Stale', world.stale ? 1 : 0), putMetric('LLMCallsToday', 0),
   ]);
-  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, movedInbox: moved, stale: world.stale, newsDegraded };
+  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, stale: world.stale, newsDegraded };
   console.log(`[tracker] ${JSON.stringify(result)}`);
   return result;
 };
 
-exports._internal = { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale, summarize, situationHref, planNewsSituations, readStories };
+exports._internal = { foldSweep, assembleWorld, deriveLede, computeStale, summarize, situationHref, planNewsSituations, readStories };

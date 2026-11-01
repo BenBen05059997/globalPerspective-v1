@@ -11,7 +11,7 @@
 
 const core = require('./classifier-core');
 const { chat } = require('./_shared/llm');
-const { buildMessages, parseClassification, normalizeClassified, clusterStories, slug, splitByCache, nextCache } = core;
+const { buildMessages, parseClassification, normalizeClassified, clusterStories, splitByCache, nextCache } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';

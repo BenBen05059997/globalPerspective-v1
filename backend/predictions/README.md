@@ -5,7 +5,7 @@ The public track record is a record view built by newsStoryRecord; the group's s
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 3: the forecast watch, gather, judge and record (newsPredictionResolver), forecast settling and the track-record snapshot. Timeline: writes no facts; the resolver appends verdict and draw lines to record/inbox/verdicts/ and record/inbox/draws/ for newsStoryRecord, and PRED# rows are still the source of forecast_drawn facts. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 3: the forecast watch, gather, judge and record (newsPredictionResolver), and forecast settling (the track-record snapshot job is retired; the record's track-record view replaces it). Timeline: writes no facts; the resolver appends verdict and draw lines to record/inbox/verdicts/ and record/inbox/draws/ for newsStoryRecord, and PRED# rows are still the source of forecast_drawn facts. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

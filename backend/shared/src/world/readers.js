@@ -175,16 +175,29 @@ function points(rows, prefix, from, to, shape) {
     .map((p) => ({ ...rowProv(S.world, p.r), date: p.date, score: p.score, tier: tierFromScore(p.score), trajectory: str(p.r.trajectory), generatedAt: str(p.r.generatedAt), ...shape(p.r) }));
 }
 
+// A row rebuilt from the record's notes (noteReads.js threadHistory / countryHistory) has no key: it gets the key of the row it replaces.
+const keyed = (r, pk, sk) => (r && r.PK !== undefined ? r : { PK: pk, SK: sk, ...r });
+
+/** THREAD_HISTORY#-shaped rows already read (DynamoDB's, or noteReads.threadHistory's) -> the points threadHistory returns. */
+function threadHistoryOfRows(rows, from, to) {
+  const withKeys = arr(rows).filter(Boolean).map((r) => keyed(r, `THREAD#${r.threadId}`, `THREAD_HISTORY#${r.dateKey}`));
+  return points(withKeys, 'THREAD_HISTORY#', from, to, (r) => ({ title: str(r.threadTitle), lead: str(r.lead), dimensions: r.dimensions || null }));
+}
+
+/** HISTORY#-shaped rows already read (DynamoDB's, or noteReads.countryHistory's) -> the points countryHistory returns. */
+function countryHistoryOfRows(rows, from, to) {
+  const withKeys = arr(rows).filter(Boolean).map((r) => keyed(r, `COUNTRY#${r.countryName}`, `HISTORY#${r.dateKey}`));
+  return points(withKeys, 'HISTORY#', from, to, (r) => ({ level: str(r.riskLevel), headline: str(r.headline) }));
+}
+
 /** Daily scores of a thread, ascending, optionally from..to (inclusive) -> [{date, score, tier, trajectory, title, lead, dimensions, generatedAt}]. */
 async function threadHistory(client, threadId, from, to, opts = {}) {
-  const rows = await need(client, 'query')(resolveTables(opts).world, `THREAD#${threadId}`, 'THREAD_HISTORY#');
-  return points(rows, 'THREAD_HISTORY#', from, to, (r) => ({ title: str(r.threadTitle), lead: str(r.lead), dimensions: r.dimensions || null }));
+  return threadHistoryOfRows(await need(client, 'query')(resolveTables(opts).world, `THREAD#${threadId}`, 'THREAD_HISTORY#'), from, to);
 }
 
 /** Daily scores of a country (name as stored, e.g. 'Iran') -> [{date, score, tier, level, trajectory, headline, generatedAt}]. `level` is the stored riskLevel word; `tier` is always from the score. */
 async function countryHistory(client, country, from, to, opts = {}) {
-  const rows = await need(client, 'query')(resolveTables(opts).world, `COUNTRY#${country}`, 'HISTORY#');
-  return points(rows, 'HISTORY#', from, to, (r) => ({ level: str(r.riskLevel), headline: str(r.headline) }));
+  return countryHistoryOfRows(await need(client, 'query')(resolveTables(opts).world, `COUNTRY#${country}`, 'HISTORY#'), from, to);
 }
 
 // ---- DRIFT# and DRIFTLOG# ----------------------------------------------------------------------------------------
@@ -421,6 +434,15 @@ async function webIndex(client, opts = {}) {
   return bundle(await need(client, 'getItem')(resolveTables(opts).world, key), { store: S.world, key });
 }
 
+const WEB_VIEW = 'record/views/index/web.json';
+
+/** The record's story web (record/views/index/web.json, built by newsStoryRecord indexViews.js: the WEB#INDEX bundle's fields plus
+ *  schemaVersion, builtFrom, maxAgeDays, websUsed and an iso3 list per link, pair and thread) -> what webIndex returns, or null when the view is unusable. */
+function webIndexOfView(view) {
+  if (!view || typeof view !== 'object' || view.schemaVersion !== 1) return null;
+  return bundle(view, { store: S.s3, key: WEB_VIEW });
+}
+
 // One S3 web object -> { runId, generatedAt, index:{ generatedAt, links, shared, threads } } or null; `key` is stamped
 // into every link's sourceRow, so provenance names the object actually read.
 function webObject(raw, key) {
@@ -475,6 +497,6 @@ function latestTopicsOfItem(row) {
 
 module.exports = {
   DEFAULT_TABLES, resolveTables, verdictOrder,
-  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadAnalysisOfRows, latestTopicsOfItem, threadHistory, countryHistory, driftNotes, scenarios, snapshotsOfRows, verdicts, sampledQuestions,
-  webIndex, webLatest, webAt, latestTopics,
+  archiveDay, archiveDayOfEntries, archiveRange, threadAnalysis, threadAnalysisOfRows, latestTopicsOfItem, threadHistory, countryHistory, threadHistoryOfRows, countryHistoryOfRows, driftNotes, scenarios, snapshotsOfRows, verdicts, sampledQuestions,
+  webIndex, webIndexOfView, webLatest, webAt, latestTopics,
 };

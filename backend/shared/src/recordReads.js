@@ -170,6 +170,8 @@ function makeRecordReads({ getJson, now = Date.now, ttlMs = 60000 }) {
     fresh,
     /** index/today.json while the views are fresh, else null. */
     todayView: () => whileFresh(() => get('index/today.json')),
+    /** index/web.json (the story web, in the WEB#INDEX bundle's fields; world/readers.js webIndexOfView normalises it) while the views are fresh, else null. */
+    webIndexView: () => whileFresh(() => get('index/web.json')),
     latestItem: async () => latestItemOfView(await whileFresh(() => get('index/today.json'))),
     todayArchiveItem: async () => todayArchiveItemOfView(await whileFresh(() => get('index/today.json'))),
     /** The analysis of the story `threadId` is, or merged into (an alias view is followed, at most 5 hops): the row of the surviving story. */
@@ -207,7 +209,21 @@ const times = (x) => {
   if (!x || typeof x !== 'object') return x;
   return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === 'archivedAt' || k === 'updatedAt' ? trunc(v) : times(v)]));
 };
+// The story web: the view lists links, pairs and analysedIn sorted (by story id, country) where WEB#INDEX kept the run's order, writes a shared
+// pair with the smaller id first, and every object names the row it came from (sourceRow). So lists are compared in one order, pairs with
+// a < b, and sourceRow is not compared. History points: generatedAt is not compared (a story_analysis note carries the analysis's time,
+// the THREAD_HISTORY# row its own stamp a few ms later); date, score and the fields a reader uses are.
+const sortBy = (list, keyOf) => (list || []).slice().sort((x, y) => (keyOf(x) < keyOf(y) ? -1 : keyOf(x) > keyOf(y) ? 1 : 0));
+const pairUp = (s) => (s.a <= s.b ? s : { ...s, a: s.b, b: s.a, sourceKey: `web-shared|${s.b}|${s.a}` });
+const webSorted = (w) => ({
+  ...w,
+  links: sortBy(w.links, (l) => `${l.sourceKey}|${l.country}|${l.generatedAt}`),
+  shared: sortBy((w.shared || []).map(pairUp), (x) => `${x.sourceKey}|${x.country}|${x.generatedAt}`),
+  threads: Object.fromEntries(Object.entries(w.threads || {}).map(([id, t]) => [id, { ...t, analysedIn: sortBy(t.analysedIn, (x) => `${x.country}|${x.generatedAt}`) }])),
+});
 const SAME = {
+  webIndex: (a, b) => diffValues(webSorted(a), webSorted(b), { ignore: ['sourceRow'] }),
+  history: (a, b) => diffValues(a, b, { ignore: ['sourceRow', 'generatedAt'] }),
   latest: (a, b) => diffValues(times(a), times(b), { ignore: ['activatedAt', 'ttl'] }),
   todayArchive: (a, b) => diffValues(times(a), times(b), { ignore: ['ttl'] }),
   threadAnalysis: (a, b) => diffValues(a, b, { ignore: ['ttl', 'iso3'] }),
@@ -215,7 +231,7 @@ const SAME = {
   weeklyBrief: (a, b) => diffValues(a, b, { ignore: ['ttl', 'PK', 'SK', 'iso3'] }),
 };
 
-const READS = ['fresh', 'todayView', 'latestItem', 'todayArchiveItem', 'threadAnalysisRow', 'countryIntelligenceRow', 'latestWeeklyBrief'];
+const READS = ['fresh', 'todayView', 'webIndexView', 'latestItem', 'todayArchiveItem', 'threadAnalysisRow', 'countryIntelligenceRow', 'latestWeeklyBrief'];
 /** The readers, built on first call: a Lambda in mode 'ddb' never loads the S3 client. */
 function lazyRecordReads(env = process.env) {
   let live;

@@ -9,20 +9,54 @@
 const world = require('./_shared/world');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { readMode, readBy, SAME, lazyRecordReads } = require('./_shared/recordReads');
+const NR = require('./_shared/noteReads');
 
-// RECORD_READS=ddb|record|compare in `env` (decision 0054): the topic pool (NewsCache `latest`) and the thread analyses (THREAD_ANALYSIS) come from the
-// record's views. The record's rows go through the same normalisers as DynamoDB's (world/readers.js), so the board logic below sees one shape.
-// `store.recordReads` is for tests; the Lambda builds the S3 readers on first use.
-const recordsFor = (store, env) => store.recordReads || lazyRecordReads(env);
+// RECORD_READS=ddb|record|compare in `env` (decision 0054): the topic pool (NewsCache `latest`), the thread analyses (THREAD_ANALYSIS), the story
+// web (WEB#INDEX/LATEST) and the score histories (THREAD_HISTORY#, COUNTRY# HISTORY#) come from the record. The record's rows go through the same
+// normalisers as DynamoDB's (world/readers.js), so the board logic below sees one shape. Views older than 9 h answer nothing (recordReads fresh()),
+// and DynamoDB answers, for every family. `store.recordReads` / `store.noteReader` are for tests; the Lambda builds the S3 readers on first use,
+// once per env, so a warm instance keeps the notes it loaded (s3NoteReader caches each subtype 5 minutes).
+const built = new WeakMap();
+const once = (env, name, make) => {
+  const m = built.get(env) || {};
+  built.set(env, m);
+  return m[name] || (m[name] = make());
+};
+const recordsFor = (store, env) => store.recordReads || once(env, 'views', () => lazyRecordReads(env));
+const notesFor = (store, env) => store.noteReader || once(env, 'notes', () => NR.s3NoteReader({ ...(env.WORLD_BUCKET ? { bucket: env.WORLD_BUCKET } : {}), prefix: 'record/' }));
+/** `read(records)` while the views are fresh, else null (so DynamoDB answers). */
+const whileFresh = async (store, env, read) => { const records = recordsFor(store, env); return (await records.fresh()) ? read(records) : null; };
 
-const webIndex = (store, env) => world.webIndex(store, { env });
+const webIndex = (store, env) => readBy({
+  mode: readMode(env), label: 'board web_index', same: SAME.webIndex,
+  ddb: () => world.webIndex(store, { env }),
+  record: async () => world.webIndexOfView(await recordsFor(store, env).webIndexView()),
+});
 const latestTopics = (store, env) => readBy({
   mode: readMode(env), label: 'board latest', same: SAME.latest,
   ddb: () => world.latestTopics(store, { env }),
   record: async () => { const item = await recordsFor(store, env).latestItem(); return item ? world.latestTopicsOfItem(item) : null; },
 });
-const threadHistory = (store, env, id) => world.threadHistory(store, id, undefined, undefined, { env });
-const countryHistory = (store, env, name) => world.countryHistory(store, name, undefined, undefined, { env });
+// A story's history is every story_analysis note of it plus the story_history copies of the days before (noteReads.threadHistory).
+const threadHistory = (store, env, id) => readBy({
+  mode: readMode(env), label: `board thread_history ${id}`, same: SAME.history,
+  ddb: () => world.threadHistory(store, id, undefined, undefined, { env }),
+  record: () => whileFresh(store, env, async () => {
+    const notes = notesFor(store, env);
+    const [analysisNotes, historyNotes] = await Promise.all([notes.all('story_analysis'), notes.all('story_history')]);
+    return world.threadHistoryOfRows(NR.threadHistory(analysisNotes, historyNotes, id));
+  }),
+});
+// `name` is the COUNTRY# key spelling (resolveIso3's name, connect.js); the country notes are keyed by ISO3. A name that is no country has none.
+// Every day, as the HISTORY# query returns them (noteReads caps at 90 days unless told otherwise).
+const countryHistory = (store, env, name) => readBy({
+  mode: readMode(env), label: `board country_history ${name}`, same: SAME.history,
+  ddb: () => world.countryHistory(store, name, undefined, undefined, { env }),
+  record: () => whileFresh(store, env, async () => {
+    const r = resolveIso3(name);
+    return r ? world.countryHistoryOfRows(NR.countryHistory(await notesFor(store, env).all('country'), r.iso3, Infinity)) : [];
+  }),
+});
 
 /** { threadId -> analysis } as a Map; analyses past their TTL are dropped. */
 async function analyses(store, env, threadIds, nowMs) {
@@ -32,10 +66,12 @@ async function analyses(store, env, threadIds, nowMs) {
     same: SAME.threadAnalysis, // iso3 order is not compared: a preset takes every region of the list, so the order never matters
     ddb: () => world.threadAnalysis(store, ids, { env, nowMs }),
     record: async () => {
-      const records = recordsFor(store, env);
-      if (!ids.length || !(await records.fresh())) return null; // stale views: DynamoDB answers; fresh views are the whole record, a thread without an analysis has none
-      const rows = (await Promise.all(ids.map((id) => records.threadAnalysisRow(id)))).filter(Boolean);
-      return world.threadAnalysisOfRows(rows, { nowMs });
+      if (!ids.length) return null;
+      // stale views: DynamoDB answers; fresh views are the whole record, a thread without an analysis has none
+      return whileFresh(store, env, async (records) => {
+        const rows = (await Promise.all(ids.map((id) => records.threadAnalysisRow(id)))).filter(Boolean);
+        return world.threadAnalysisOfRows(rows, { nowMs });
+      });
     },
   });
   return new Map(Object.entries(found));

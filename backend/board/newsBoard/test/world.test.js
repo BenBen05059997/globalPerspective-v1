@@ -61,3 +61,19 @@ test('presets: a story is in every region its countries fall in, whatever the or
     ]);
   }
 });
+
+test('presets: a pair judged by two country webs shows the newest judgement, whatever order the web lists them in', async () => {
+  const links = [
+    { from: 'x', to: 'y', mechanism: 'older', country: 'Iran', generatedAt: '2026-10-01T00:00:00.000Z' },
+    { from: 'y', to: 'x', mechanism: 'newer', country: 'Iraq', generatedAt: '2026-10-02T00:00:00.000Z' },
+  ];
+  const out = [];
+  for (const order of [links, [...links].reverse()]) {
+    const store = fakeStore();
+    for (const [id, risk] of [['x', 60], ['y', 50]]) store.put('world', `THREAD#${id}`, 'THREAD_ANALYSIS', { threadId: id, threadTitle: id, riskScore: risk, iso3: ['IRN'] });
+    store.put('world', 'WEB#INDEX', 'LATEST', { links: order, shared: [], threads: { x: {}, y: {} } });
+    out.push(await computePresets(store, ENV, NOW));
+  }
+  assert.deepStrictEqual(out[0][0].strings.map((s) => s.mechanism), ['newer']);
+  assert.deepStrictEqual(out[1], out[0]);
+});

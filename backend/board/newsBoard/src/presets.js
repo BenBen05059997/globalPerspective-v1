@@ -14,6 +14,11 @@ const PRESET_TTL_MS = 10 * 60 * 1000;
 
 const pinIdAt = (i) => `p${String(i + 1).padStart(2, '0')}`;
 
+// The web lists a pair once per country web that judged it, in no fixed order (WEB#INDEX keeps the run's, the record's view sorts by story id):
+// oldest first, so the newest judgement is the later string, which normalizeBoard keeps, whichever store answered.
+const keyOf = (x) => [x.generatedAt || '', x.country || '', x.from || x.a, x.to || x.b].join('|');
+const oldestFirst = (list) => list.slice().sort((x, y) => (keyOf(x) < keyOf(y) ? -1 : keyOf(x) > keyOf(y) ? 1 : 0));
+
 async function computePresets(store, env, nowMs) {
   const index = await world.webIndex(store, env);
   const topics = await world.latestTopics(store, env);
@@ -41,12 +46,12 @@ async function computePresets(store, env, nowMs) {
     const top = list.sort((x, y) => y.riskScore - x.riskScore || (x.threadId < y.threadId ? -1 : 1)).slice(0, PRESET_THREADS);
     const pinOf = new Map(top.map((t, i) => [t.threadId, pinIdAt(i)]));
     const strings = [];
-    for (const s of index.shared) {
+    for (const s of oldestFirst(index.shared)) {
       if (!pinOf.has(s.a) || !pinOf.has(s.b)) continue;
       const actors = (s.actors || []).slice(0, 4).join(', ');
       strings.push({ a: pinOf.get(s.a), b: pinOf.get(s.b), owner: 'ours', strength: 'inferred', ...(actors ? { mechanism: `Shared actors: ${actors}`.slice(0, 280) } : {}) });
     }
-    for (const l of index.links) { // after the shared pairs: normalizeBoard keeps the later string, which has the mechanism
+    for (const l of oldestFirst(index.links)) { // after the shared pairs: normalizeBoard keeps the later string, which has the mechanism
       if (!pinOf.has(l.from) || !pinOf.has(l.to)) continue;
       strings.push({ a: pinOf.get(l.from), b: pinOf.get(l.to), owner: 'ours', strength: 'inferred', ...(l.mechanism ? { mechanism: String(l.mechanism).slice(0, 280) } : {}) });
     }

@@ -14,7 +14,7 @@ Why it is retired: the record now holds everything it computed (decision 0052). 
 - S3 `WORLD_BUCKET`: wrote `TRACK_RECORD_KEY` (default `predictions/track_record.json`) as `{ builtAt, data }`. The file is no longer refreshed and has no reader; it stays in S3 until the midweek deletes.
 
 ## Gotchas
-- `weeks.js` is a copy of the settle Lambda's ISO-week helpers; `newsPredictionResolver/test/weeksParity.test.js` guards drift (it still expects the proxy's `isoWeekOfDay`, which was removed, so it fails until that line is dropped).
+- `weeks.js` is a copy of the settle Lambda's ISO-week helpers; `newsPredictionResolver/test/weeksParity.test.js` guards drift.
 - If the question board threw, the legacy aggregate was still written with `questions: null`, then the Lambda errored so the failure was visible.
 - Scoring used a fixed-seed cluster bootstrap so the published interval did not change every 30 minutes.
 

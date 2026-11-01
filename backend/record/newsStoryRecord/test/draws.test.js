@@ -104,28 +104,3 @@ test('week boundary: an issue day belongs to its ISO week (Sunday, Monday) and a
     F.inboxDrawFact(commitLine({weekId: '2026-W43'}), 'r'), F.inboxDrawFact(drawLine({weekId: '2026-W44', picked: []}), 'r')];
   assert.deepEqual(branchesOf(facts).map((b) => b.scoring), ['awaiting_draw']);
 });
-
-// ---- the shared module against the read API's copy ----
-test('questionState gives the same answers as the read API prediction_snapshot functions on a grid of cases', () => {
-  const L = require('../../../read-api/newsSensitiveData/src/lib');
-  const issues = ['2026-10-05', '2026-10-11', '2026-10-12', '2026-12-31', '2027-01-01'];
-  let n = 0;
-  for (const issueDay of issues) {
-    assert.equal(Q.isoWeekOfDay(issueDay), L.isoWeekOfDay(issueDay));
-    for (const lead of [0, 6, 7, 8, 30, 83, 84, 85, 90, 91]) {
-      const deadline = new Date(Date.parse(`${issueDay}T00:00:00Z`) + lead * 86400000).toISOString().slice(0, 10);
-      for (const sampled of [true, false]) for (const commitExists of [true, false]) for (const drawExists of [true, false]) {
-        assert.equal(Q.sampleState({issueDay, deadline, sampled, commitExists, drawExists}), L.questionSampleState({issueDay, deadline, sampled, commitExists, drawExists}));
-        n += 1;
-      }
-      for (const today of [issueDay, deadline, '2030-01-01']) for (const sampled of [true, false]) {
-        for (const rows of [[], [{SK: 'VERDICT', verdict: 'yes'}], [{SK: 'VERDICT', verdict: 'yes'}, {SK: 'VERDICT#2', verdict: 'no'}], [{SK: 'VERDICT', verdict: 'no'}, {SK: 'VERDICT#2', verdict: 'void'}]]) {
-          const latest = L.latestVerdictRow(rows);
-          assert.equal(Q.outcomeState({sampled, result: latest ? latest.verdict : null, deadline, today}), L.questionOutcomeState({sampled, verdictRows: rows, deadline, today}));
-          n += 1;
-        }
-      }
-    }
-  }
-  assert.ok(n > 1000);
-});

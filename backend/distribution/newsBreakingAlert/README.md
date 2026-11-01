@@ -8,15 +8,15 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 
 ## Deployment
 - Deployed name `newsBreakingAlert` · runtime `nodejs22.x` · group `distribution` (scripts/functions.json)
-- Trigger: EventBridge rule `TriggerBreakingAlert` `cron(35 4/8 * * ? *)` (UTC, ENABLED)
+- Trigger: EventBridge rule `TriggerBreakingAlert` `cron(45 4/8 * * ? *)` (UTC, ENABLED). It runs at :45, not :35, so it reads the record after the :35 `TriggerStoryRecordRefresh` has finished (about 50 s); at :35 it read at :35:18 and got the previous run
 - Deploy: `scripts/lambda.sh newsBreakingAlert diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes
 - DynamoDB read: `TOPICS_DDB_TABLE` (`id: 'latest'`); `SUMMARIZE_PREDICT_TABLE` `COUNTRY#<r>`/`COUNTRY_INTELLIGENCE`, `THREAD#<id>`/`THREAD_ANALYSIS`, `TOPIC#<id>`/`SUMMARY|PREDICTION|TRACE_CAUSE`.
-- Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `notes`): the `COUNTRY_INTELLIGENCE` and `THREAD_ANALYSIS` reads come from the record's `country` and `story_analysis` notes instead (`TOPIC#` stays on DynamoDB); `compare` logs `[notes-compare]` differences. The role needs `s3:GetObject` on those prefixes.
+- Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `record`; live value `record`): the `COUNTRY_INTELLIGENCE` and `THREAD_ANALYSIS` reads come from the record's `country` and `story_analysis` notes instead when `record` (`TOPIC#` stays on DynamoDB); `compare` logs `[notes-compare]` differences. The role needs `s3:GetObject` on those prefixes.
 - DynamoDB write: `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`), key `alertKey` = threadId; doubles as dedupe row (`DEDUPE_DAYS` 5, `ttl` `DEDUPE_TTL_DAYS` 14).
 - External: Resend `api.resend.com` (`src/sendEmail.js`), only when `DRY_RUN === 'false'`. Story links come from `src/_shared/links.js` (`storyHref` + `absoluteUrl`; env `SITE_URL` only overrides the origin), and only when the story has a real thread arc.
-- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` reads the topic pool (`latest`) from the record's view `index/today.json` and DynamoDB when it cannot answer; `compare` logs and decides from DynamoDB. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` follow `NOTES_READS` (0053). `TOPIC#` rows (summary, prediction, cause) and the alerts table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*` (role `newsBreakingAlert-role`).
+- env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054); live value `record`. `record` reads the topic pool (`latest`) from the record's view `index/today.json` and DynamoDB when it cannot answer; `compare` logs and decides from DynamoDB. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` follow `NOTES_READS` (0053). `TOPIC#` rows (summary, prediction, cause) and the alerts table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*` (role `newsBreakingAlert-role`).
 
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.

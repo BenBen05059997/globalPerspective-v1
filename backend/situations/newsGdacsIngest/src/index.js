@@ -132,7 +132,7 @@ exports.handler = async () => {
   }
   const stored = items.length;
   // S8·T2 (2026-09-09): the GlobalPerspectiveGdacsEvents DDB mirror was DROPPED — its only reader
-  // (newsImpactAudit) now reads the S3 corpus below, and the tracker reads the S3 inbox. This used
+  // (newsImpactAudit, removed 2026-11-01) read the S3 corpus below, and the tracker reads the S3 inbox. This used
   // to PutItem each event (~1,100 writes/day). The events now live only in `corpus/gdacs/latest.json`.
   console.log(`[gdacs] ${stored}/${feats.length} events (${withGeo} with coordinates) | levels=${JSON.stringify(byLevel)}`);
 

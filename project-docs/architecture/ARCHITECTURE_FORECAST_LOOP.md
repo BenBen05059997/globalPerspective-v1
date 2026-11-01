@@ -68,7 +68,6 @@ The per-run cap on candidates is 60 in code (`MAX_CANDIDATES`, `watch.js`); the 
 | `question_commit`, `question_draw` facts | `record/facts/` | the week's published seed hash; the revealed seed and the sampled qids; `eventId = sha1(kind + weekId)`; only `newsStoryRecord` writes them, from the draws inbox. The story views derive each branch's `scoring` and `state` from them |
 | `Q#<qid>` `SAMPLED`, `DRAFT#`, `VERDICT`, `VERDICT#<n>` | `GlobalPerspectivePredictionLog` | the resolver's working rows, put-once; a correction appends `VERDICT#<n>` |
 | `SAMPLE#<week>`, `SEED#<week>` | same table | the pre-registered draw of 22 and its seed commit |
-| `predictions/track_record.json` | S3 | the scored sample only; the last build of the retired `newsPredictionsSnapshot` (2026-11-01), no longer refreshed and not read |
 | `record/views/track-record.json` | S3 | the public `/track-record` page's source (decision 0044): the question scheme counted from the `forecast_drawn`, `question_*` and `verdict` facts, plus the frozen pilot-era constants. Built by `newsStoryRecord` with the other views. The view also carries `settleHealth` and the draw pool of the last four drawn weeks (0052), and the resolver finds its questions in the `forecast_drawn` facts (`QUESTIONS_SOURCE`) |
 | `record/legacy/predictions/` | S3 | whole `PRED#` rows from before the record that no rule places on a story, copied once (decision 0047); not facts, and none carries a question id, so none is scored |
 

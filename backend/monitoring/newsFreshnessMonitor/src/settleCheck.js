@@ -26,7 +26,7 @@ function evaluateSettle(questions, nowIso) {
   }
   const staleHours = questions.staleAfterHours || STALE_BOARD_HOURS;
   if (questions.builtAt && Number.isFinite(Date.parse(questions.builtAt)) && Date.parse(nowIso) - Date.parse(questions.builtAt) > staleHours * 3600 * 1000) {
-    reasons.push({ code: 'board_stale', text: `The settling board was last built at ${questions.builtAt} (${questions.builder || 'newsPredictionsSnapshot'} should rebuild it at least every ${staleHours} hours).` });
+    reasons.push({ code: 'board_stale', text: `The settling board was last built at ${questions.builtAt} (${questions.builder || 'the track-record view'} should rebuild it at least every ${staleHours} hours).` });
   }
   return { alert: reasons.length > 0, reasons };
 }

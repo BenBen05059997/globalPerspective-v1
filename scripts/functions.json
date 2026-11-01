@@ -187,21 +187,6 @@
         }
       ]
     },
-    "newsImpactAudit": {
-      "dir": "backend/monitoring/newsImpactAudit",
-      "runtime": "nodejs22.x",
-      "group": "monitoring",
-      "features": ["ops"],
-      "nodeModules": false,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerImpactAudit",
-          "expr": "cron(0 9 * * ? *)",
-          "state": "DISABLED"
-        }
-      ]
-    },
     "newsInvokeGemini-dev": {
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",
@@ -298,21 +283,6 @@
         }
       ]
     },
-    "newsPredictionsSnapshot": {
-      "dir": "backend/predictions/newsPredictionsSnapshot",
-      "runtime": "nodejs22.x",
-      "group": "predictions",
-      "features": ["track-record", "home"],
-      "nodeModules": false,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerPredictionsSnapshot",
-          "expr": "rate(30 minutes)",
-          "state": "DISABLED"
-        }
-      ]
-    },
     "NewsProjectInvokeAgentLambda-dev": {
       "dir": "backend/pipeline/NewsProjectInvokeAgentLambda",
       "runtime": "nodejs22.x",
@@ -375,22 +345,6 @@
       "features": ["analysis-studio"],
       "nodeModules": false,
       "schedules": []
-    },
-    "newsSignals": {
-      "dir": "backend/read-api/newsSignals",
-      "runtime": "nodejs22.x",
-      "group": "read-api",
-      "features": [],
-      "nodeModules": false,
-      "schedules": [
-        {
-          "via": "events",
-          "name": "TriggerSignalsBuild",
-          "expr": "cron(0 10 * * ? *)",
-          "state": "DISABLED",
-          "input": "{\"action\":\"build\"}"
-        }
-      ]
     },
     "newsSituationIngest": {
       "dir": "backend/situations/newsSituationIngest",

@@ -73,6 +73,5 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - View served: `curl -s https://globalperspective.net/data/record/views/track-record.json | head -c 300`; the draw check: `node predictions/verify-draw.mjs --public`
 - Settle ran: `aws logs tail /aws/lambda/newsPredictionResolver --since 3d --region ap-northeast-1 --filter-pattern '"settle"' --format short`
 - Schedules: `aws events describe-rule --name TriggerPredictionResolver --region ap-northeast-1 --query State`
-  (`TriggerPredictionsSnapshot` is DISABLED: the snapshot job is retired)
 
 Last verified: 2026-10-31

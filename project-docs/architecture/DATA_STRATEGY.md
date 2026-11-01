@@ -53,13 +53,10 @@ Besides the five, these Global Perspectives tables exist (§6 says which stay): 
 | `web/latest.json`, `web/YYYY/MM/DD.json` (story web snapshot) | `newsSystemsAnalysis` | daily 05:00 UTC | `newsStoryRecord` (world reader) |
 | `threads/story-map.json` (storyId and threadId pairs) | `NewsProjectInvokeAgentLambda` | each story run | `newsSituationTracker` |
 | `tags/backfill/2026-09-11.json` | one-off backfill, writer not in the repo | | none |
-| `signals/latest.json`, `signals/snapshots/` | `newsSignals` (rule disabled; parked, decision 0032) | | `newsSignals` only; never the Worker |
-| `corpus/gdacs/latest.json` | `newsGdacsIngest` | each run | `newsImpactAudit` (parked) |
-| `corpus/gdelt/<day>.json` | `newsGdeltConflict` | every 6 h | `newsImpactAudit` (parked) |
-| `audit/impact/…` | `newsImpactAudit` | parked (rule DISABLED, decision 0015) | operator |
-| `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation | `newsSelectionShadow`, `newsImpactAudit` |
+| `corpus/gdacs/latest.json` | `newsGdacsIngest` | each run | nothing (its reader `newsImpactAudit` was removed 2026-11-01) |
+| `corpus/gdelt/<day>.json` | `newsGdeltConflict` | every 6 h | nothing (its reader `newsImpactAudit` was removed 2026-11-01) |
+| `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation | `newsSelectionShadow`, `predictions/jev-backtest` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json`, `latest.json` | `newsSelectionShadow` | 3x/day (rule ENABLED) | operator review only |
-| `predictions/track_record.json` | `newsPredictionsSnapshot` (retired 2026-11-01, rule DISABLED) | no longer refreshed | nothing (the proxy action `prediction_track_record` was removed; the page, "Verify this draw" and `newsFreshnessMonitor` read the record views, decision 0052); deleted at the midweek deletes |
 | `monitoring/freshness/state.json` (alert dedupe marker) | `newsFreshnessMonitor` | each run | `newsFreshnessMonitor` |
 | `record/facts/YYYY-MM-DD.jsonl`, `record/facts/manifest.json` | `newsStoryRecord` | daily (rule `TriggerStoryRecord`, 23:45 UTC, `{"shadow":false}`), append-only, no model | `newsRecordReview`, view rebuilds, `newsPredictionResolver` |
 | `record/runs/YYYY-MM-DD.json` | `newsStoryRecord` | daily, the one mutable object | `newsPredictionResolver` (coverage guard), operator |
@@ -90,7 +87,7 @@ The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Model notes li
 
 IAM: one inline policy set per Lambda, `s3:PutObject` scoped to its own prefix(es); readers get `s3:GetObject` on what they read, plus a `ListBucket` so a missing object returns 404, not 403. The Worker's credentials (user `gp-worker-s3-reader`) are read-only on `world/*`, `situations/state/*`, `stories/state/*` and `record/views/*`, never facts, runs, inboxes, notes or readings. Record roles follow the ownership table: `newsStoryRecord-role` reads `web/*` and `record/*` and writes `record/facts`, `runs`, `views` and `shadow`; each inbox writer (selector, resolver, review) writes only its own inbox prefix; each note writer's policy adds `record/notes/<its subtype>/*`. The two brief writers' roles have no S3 write statement yet, so a new writer needs its statement added first (operator yes), then `NOTES_PREFIX`. Read the live policies with `aws iam get-role-policy`.
 
-Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `world/` go to Infrequent Access at 30 days and expire at 400 days; `stories/` goes to Infrequent Access at 15 days and expires at 45; `signals/snapshots/` goes to Glacier IR at 30 days and expires at 365; `audit/impact/` expires at 400 days; `situations/inbox/processed/` expires at 30 days; `situations/history/` and `situations/archive/` move to Infrequent Access at 30 days; incomplete multipart uploads abort. `record/` and `backup/` have no rule and no expiry. Never apply a rule to `record/`, and fetch and merge the configuration rather than appending blindly.
+Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `world/` go to Infrequent Access at 30 days and expire at 400 days; `stories/` goes to Infrequent Access at 15 days and expires at 45; `signals/snapshots/` (no writer since 2026-11-01) goes to Glacier IR at 30 days and expires at 365; `audit/impact/` (no writer since 2026-11-01) expires at 400 days; `situations/inbox/processed/` expires at 30 days; `situations/history/` and `situations/archive/` move to Infrequent Access at 30 days; incomplete multipart uploads abort. `record/` and `backup/` have no rule and no expiry. Never apply a rule to `record/`, and fetch and merge the configuration rather than appending blindly.
 
 ## 5. The frontend contract: `world/latest.json`
 
@@ -120,7 +117,6 @@ Lifecycle (read `aws s3api get-bucket-lifecycle-configuration`): `corpus/` and `
 - Per-situation detail is in `situations/state/<key>.json`, fetched on click, where `<key>` is the situation id made URL- and S3-safe (`gdacs#FL#1104081` becomes `gdacs_FL_1104081`). The tracker (writer) and `worldData.js` (reader) apply the same sanitization.
 - The Worker returns `Access-Control-Allow-Origin` on every `/data/*` response including 404 and 401, so a missing object reads as a clean 404 client-side, not a CORS failure.
 - The scrubber fetches `world/YYYY/MM/DD/HHMM.json`. `state` is one of `emerging | escalating | peak | cooling | closed`. `systemic` is an empty array (the economy product is retired, decision 0049).
-- `signals/` is excluded from the Worker allow-list (`DATA_ALLOWED`): it is the key-gated Signals product and stays behind the `newsSignals` Function URL.
 
 ## 6. Migration of existing tables (incremental, never big-bang)
 

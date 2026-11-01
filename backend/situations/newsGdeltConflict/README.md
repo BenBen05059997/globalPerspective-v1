@@ -1,6 +1,6 @@
 # newsGdeltConflict
 
-Keyless ingest of GDELT 2.0 material-conflict events, used as the open replacement for ACLED. Each run downloads the latest 15-minute GDELT events export (zip), keeps QuadClass 4 (material conflict) rows with at least `GDELT_MIN_MENTIONS` mentions (default 10), and aggregates them by country (mentions, event count, worst Goldstein, worst tone, top event, source URL). It stores the top `GDELT_TOP_N` countries (default 30) as a per-day S3 file, which newsImpactAudit reads. No LLM.
+Keyless ingest of GDELT 2.0 material-conflict events, used as the open replacement for ACLED. Each run downloads the latest 15-minute GDELT events export (zip), keeps QuadClass 4 (material conflict) rows with at least `GDELT_MIN_MENTIONS` mentions (default 10), and aggregates them by country (mentions, event count, worst Goldstein, worst tone, top event, source URL). It stores the top `GDELT_TOP_N` countries (default 30) as a per-day S3 file. Nothing reads it since newsImpactAudit was removed 2026-11-01. No LLM.
 
 ## Deployment
 - Deployed name `newsGdeltConflict` · runtime `nodejs22.x` · group `situations` (scripts/functions.json)

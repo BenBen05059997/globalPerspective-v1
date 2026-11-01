@@ -49,7 +49,7 @@ Typed inputs by domain:
 | disaster | affected population | known gap: the feed does not carry it |
 | conflict, humanitarian | fatalities | per-event gap; country level only: `newsCountryFactsUpdater` collects ACLED `fatalities30d` / `eventCount30d` for its first 12 countries into `FACTS#<country>`. ReliefWeb and the INFORM Severity Index are not wired |
 | economy | none | the economic-impact product is retired (decision 0049); economy events take the editorial rubric |
-| everything else | editorial rubric: reach, severity, irreversibility, novelty | the vocabulary exists as QA tags in `newsImpactAudit` (parked, decision 0015); not yet populating a record |
+| everything else | editorial rubric: reach, severity, irreversibility, novelty | the vocabulary existed as QA tags in `newsImpactAudit` (removed 2026-11-01); not yet populating a record |
 
 Universal counts for every event, never judged: outlets (corroboration), countries (spread), velocity (rate of new coverage). A field with no measured input renders "no data", never a judged substitute presented as measured.
 

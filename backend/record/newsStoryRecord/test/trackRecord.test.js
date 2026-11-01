@@ -1,5 +1,5 @@
 'use strict';
-// record/views/track-record.json (decision 0044): built from facts, the same questions the PredictionLog board gives.
+// record/views/track-record.json (decision 0044): built from facts.
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {readFileSync} = require('node:fs');
@@ -9,8 +9,6 @@ const F = require('../src/facts');
 const V = require('../src/views');
 const X = require('./views-fixture');
 const {buildTrackRecord} = require('../src/trackRecord');
-const {buildQuestionBoard} = require('../../../predictions/newsPredictionsSnapshot/src/questionBoard');
-const OldScoring = require('../../../predictions/newsPredictionsSnapshot/src/scoring');
 const NewScoring = require('../src/_shared/questionScoring');
 const Q = require('../src/_shared/questionState');
 
@@ -18,7 +16,7 @@ const requireFrontend = createRequire(resolve(process.env.FRONTEND_NODE_MODULES 
 const Ajv = requireFrontend('ajv');
 const validate = new Ajv({allErrors: true, strict: false}).compile(JSON.parse(readFileSync(resolve(__dirname, '../schema/views/track-record.schema.json'), 'utf8')));
 
-// ---- one history, written twice: as PredictionLog rows (the old board) and as facts (the view) ----
+// ---- one history, written as facts ----
 const THREAD = {a: 'thread-a', b: 'thread-b', c: 'thread-c', d: 'thread-d'};
 const issue = {a: '2026-10-06', b: '2026-10-06', c: '2026-10-07', d: '2026-10-14'};
 const due = {a: '2026-10-20', b: '2026-10-20', c: '2026-11-30', d: '2026-11-20'};
@@ -26,23 +24,18 @@ const p = {a: 62, b: 40, c: 25, d: 70};
 const title = (k) => `Story ${k}`;
 const gen = (k) => `${issue[k]}T05:00:00.000Z`;
 
-const rows = [];
 const facts = [];
 for (const k of ['a', 'b', 'c', 'd']) {
-  rows.push({PK: `PRED#${title(k)}-1`, SK: issue[k], generatedAt: gen(k), questionSchema: 1, methodologyVersion: 1, threadId: THREAD[k], scenarios: [{label: 'Likely', probability: 0.5, triggers: [
-    {id: '0-0', qid: `q-${k}`, text: `Will ${k} happen`, deadline: due[k], question: true, p: p[k], resolutionSource: `Source ${k}`}]}]});
   const fc = X.forecast(THREAD[k], gen(k), `PRED#${title(k)}-1/${issue[k]}`, [X.branch(`${k}-0`, due[k], {qid: `q-${k}`, text: 'Likely', trigger: `Will ${k} happen`, p: p[k], resolutionSource: `Source ${k}`})]);
   fc.payload.topicId = `${title(k)}-1`;
   facts.push(fc);
 }
-rows.push({PK: 'PRED#Old-1', SK: '2026-10-01', generatedAt: '2026-10-01T05:00:00.000Z', questionSchema: 1, methodologyVersion: 1, scenarios: [{triggers: [{qid: 'q-old', question: true, text: 'warm', deadline: '2026-12-01', p: 50}]}]});
 facts.push(Object.assign(X.forecast('thread-old', '2026-10-01T05:00:00.000Z', 'PRED#Old-1/2026-10-01', [X.branch('old-0', '2026-12-01', {qid: 'q-old', p: 50})]), {}));
 facts[facts.length - 1].payload.topicId = 'Old-1';
 
 const commitLines = [['2026-W41', '2026-10-05', '2026-10-01T10:30:00.000Z'], ['2026-W42', '2026-10-12', '2026-10-01T10:30:00.000Z'], ['2026-W43', '2026-10-19', '2026-10-12T10:30:00.000Z'], ['2026-W44', '2026-10-26', '2026-10-19T10:30:00.000Z'], ['2026-W45', '2026-11-02', '2026-10-26T10:30:00.000Z']];
 for (const [w, start, at] of commitLines) {
   const hash = w.replace(/\D/g, '').padEnd(64, 'a');
-  rows.push({PK: `SEED#${w}`, SK: 'COMMIT', weekId: w, weekStart: start, weekEnd: start, commitHash: hash, committedAt: at});
   facts.push(F.inboxDrawFact({type: 'commit', weekId: w, weekStart: start, weekEnd: start, commitHash: hash, rule: 'v1', committedAt: at}, 'r'));
 }
 const draws = [
@@ -50,51 +43,20 @@ const draws = [
   {weekId: '2026-W42', at: '2026-10-19T10:30:24.000Z', eligible: 1, clusters: 1, picked: [{qid: 'q-d', clusterKey: THREAD.d, hash: 'h4'}]},
 ];
 for (const d of draws) {
-  rows.push({PK: `SEED#${d.weekId}`, SK: 'REVEAL', weekId: d.weekId, seedHex: 'ab', revealedAt: d.at});
-  rows.push({PK: `SAMPLE#${d.weekId}`, SK: 'DRAW', weekId: d.weekId, K: 22, eligible: d.eligible, clusters: d.clusters, pool: [{q: 'x', c: 'y'}], picked: d.picked.map((x) => ({qid: x.qid, h: x.hash, clusterKey: x.clusterKey}))});
   facts.push(F.inboxDrawFact({type: 'draw', weekId: d.weekId, rule: 'v1', K: 22, eligible: d.eligible, clusters: d.clusters, seedHex: 'ab', picked: d.picked, drawnAt: d.at}, 'r'));
-  for (const x of d.picked) {
-    const k = x.qid.slice(2);
-    rows.push({PK: `Q#${x.qid}`, SK: 'SAMPLED', qid: x.qid, weekId: d.weekId, clusterKey: x.clusterKey, question: `Will ${k} happen`, deadline: due[k], resolutionSource: `Source ${k}`, storyTitle: title(k), issuedAt: gen(k)});
-  }
 }
 // q-a: yes, then corrected to no; q-b: void; q-c: none yet; q-d: none yet; q-old is not in a sample
 const verdictLine = (qid, k, result, revision, at, extra = {}) => ({qid, threadId: THREAD[k], branchId: `${k}-0`, result, revision, decidedAt: at, decidedBy: 'agent', evidence: extra.evidence ?? null, voidReason: extra.voidReason ?? null, reason: null});
 const verdicts = [
-  [verdictLine('q-a', 'a', 'yes', 1, '2026-10-26T09:00:00.000Z', {evidence: {quote: 'a quote', url: 'https://x.test'}}), {PK: 'Q#q-a', SK: 'VERDICT', qid: 'q-a', verdict: 'yes', decidedAt: '2026-10-26T09:00:00.000Z', evidence: {quote: 'a quote', url: 'https://x.test'}}],
-  [verdictLine('q-a', 'a', 'no', 2, '2026-11-02T09:00:00.000Z', {evidence: {quote: 'fixed', url: null}}), {PK: 'Q#q-a', SK: 'VERDICT#2', qid: 'q-a', verdict: 'no', decidedAt: '2026-11-02T09:00:00.000Z', evidence: {quote: 'fixed'}}],
-  [verdictLine('q-b', 'b', 'void', 1, '2026-10-26T09:05:00.000Z', {voidReason: 'event_moot'}), {PK: 'Q#q-b', SK: 'VERDICT', qid: 'q-b', verdict: 'void', voidReason: 'event_moot', decidedAt: '2026-10-26T09:05:00.000Z'}],
+  [verdictLine('q-a', 'a', 'yes', 1, '2026-10-26T09:00:00.000Z', {evidence: {quote: 'a quote', url: 'https://x.test'}})],
+  [verdictLine('q-a', 'a', 'no', 2, '2026-11-02T09:00:00.000Z', {evidence: {quote: 'fixed', url: null}})],
+  [verdictLine('q-b', 'b', 'void', 1, '2026-10-26T09:05:00.000Z', {voidReason: 'event_moot'})],
 ];
 const build = (today, upTo) => {
   const vs = verdicts.filter(([l]) => l.decidedAt.slice(0, 10) <= upTo);
   const fx = [...facts, ...vs.map(([l]) => F.inboxVerdictFact(l, null, 'r'))];
-  const rs = [...rows, ...vs.map(([, r]) => r)];
-  return {view: buildTrackRecord(fx, {today}), board: buildQuestionBoard(rs, `${today}T12:00:00.000Z`)};
+  return {view: buildTrackRecord(fx, {today})};
 };
-const comparable = (board) => {
-  const q = JSON.parse(JSON.stringify(board));
-  for (const k of ['schema', 'builtAt', 'settleHealth']) delete q[k];
-  for (const w of q.weeks) { delete w.reviewed; delete w.draw; }
-  q.sampled.sort((x, y) => x.qid.localeCompare(y.qid));
-  return q;
-};
-const viewQuestions = (view) => {
-  const q = JSON.parse(JSON.stringify(view.questions));
-  delete q.settleHealth; // compared apart, below
-  for (const w of q.weeks) delete w.draw; // the fixture's draws are not reproducible from its forecasts; the draw tests are apart
-  q.sampled.sort((x, y) => x.qid.localeCompare(y.qid));
-  return q;
-};
-// the alarm's inputs: the same answers as the board, except the daily tick (a heartbeat, not a fact)
-const healthOf = (h) => { const { tickStale, lastTickAt, ...rest } = h; return rest; };
-
-for (const [today, upTo] of [['2026-10-03', '2026-10-03'], ['2026-10-21', '2026-10-21'], ['2026-10-27', '2026-10-27'], ['2026-11-05', '2026-11-05'], ['2026-12-05', '2026-12-05']]) {
-  test(`parity with the PredictionLog board on ${today}: questions equal field by field`, () => {
-    const {view, board} = build(today, upTo);
-    assert.deepEqual(viewQuestions(view), comparable(board));
-    assert.deepEqual(view.questions.settleHealth, healthOf(board.settleHealth));
-  });
-}
 
 test('the view states what it computed: counts, a corrected verdict, the void reason, weeks and warm-up', () => {
   const {view} = build('2026-11-05', '2026-11-05');
@@ -142,16 +104,14 @@ test('the view is part of buildViews and writeGroups, before the manifest', () =
   assert.ok(keys.indexOf('track-record.json') > keys.indexOf('index/all.json') && keys.indexOf('track-record.json') < keys.indexOf('manifest.json'));
 });
 
-test('scoring: the shared module is the snapshot module (same answers on a grid)', () => {
+test('scoring: below 150 resolved questions there is no score; at 150 there is one', () => {
   const items = Array.from({length: 160}, (_, i) => ({p: (i * 7) % 100, y: i % 3 === 0 ? 1 : 0, cluster: `c${i % 40}`}));
-  assert.deepEqual(NewScoring.computeScoring(items, {voidCount: 5}), OldScoring.computeScoring(items, {voidCount: 5}));
   assert.equal(NewScoring.computeScoring(items.slice(0, 149)), null);
   assert.notEqual(NewScoring.computeScoring(items, {}), null);
 });
 
-test('the view scores from 150 resolved questions, the same as the board', () => {
+test('the view scores from 150 resolved questions', () => {
   const many = [];
-  const rs = [];
   const fx = [];
   for (let i = 0; i < 150; i++) {
     const qid = `s-${i}`;
@@ -159,22 +119,15 @@ test('the view scores from 150 resolved questions, the same as the board', () =>
     const fc = X.forecast(thread, '2026-10-06T05:00:00.000Z', `PRED#S${i}-1/2026-10-06`, [X.branch(`s${i}-0`, '2026-10-20', {qid, p: (i * 13) % 100, trigger: `Q ${i}`})]);
     fc.payload.topicId = `S${i}-1`;
     fx.push(fc);
-    rs.push({PK: `PRED#S${i}-1`, SK: '2026-10-06', generatedAt: '2026-10-06T05:00:00.000Z', questionSchema: 1, methodologyVersion: 1, scenarios: [{triggers: [{qid, text: `Q ${i}`, deadline: '2026-10-20', question: true, p: (i * 13) % 100, resolutionSource: 'r'}]}]});
-    rs.push({PK: `Q#${qid}`, SK: 'SAMPLED', qid, weekId: '2026-W41', clusterKey: thread, question: `Q ${i}`, deadline: '2026-10-20', resolutionSource: 'r', storyTitle: `S${i}`, issuedAt: '2026-10-06T05:00:00.000Z'});
     const res = i % 4 === 0 ? 'yes' : 'no';
     fx.push(F.inboxVerdictFact({qid, threadId: thread, branchId: `s${i}-0`, result: res, revision: 1, decidedAt: '2026-10-27T09:00:00.000Z', evidence: null}, null, 'r'));
-    rs.push({PK: `Q#${qid}`, SK: 'VERDICT', qid, verdict: res, decidedAt: '2026-10-27T09:00:00.000Z'});
     many.push(qid);
   }
   fx.push(F.inboxDrawFact({type: 'commit', weekId: '2026-W41', weekStart: '2026-10-05', weekEnd: '2026-10-11', commitHash: 'c'.repeat(64), rule: 'v1', committedAt: '2026-10-01T10:30:00.000Z'}, 'r'));
-  rs.push({PK: 'SEED#2026-W41', SK: 'COMMIT', weekId: '2026-W41', weekStart: '2026-10-05', commitHash: 'c'.repeat(64), committedAt: '2026-10-01T10:30:00.000Z'});
   const picked = many.map((qid, i) => ({qid, hash: 'h', clusterKey: `thread-s${i % 30}`}));
   fx.push(F.inboxDrawFact({type: 'draw', weekId: '2026-W41', rule: 'v1', K: 150, eligible: 150, clusters: 30, seedHex: 'ab', picked, drawnAt: '2026-10-12T10:30:00.000Z'}, 'r'));
-  rs.push({PK: 'SAMPLE#2026-W41', SK: 'DRAW', weekId: '2026-W41', K: 150, eligible: 150, clusters: 30, pool: [], picked: picked.map((x) => ({qid: x.qid, h: 'h', clusterKey: x.clusterKey}))});
   const view = buildTrackRecord(fx, {today: '2026-11-05'});
-  const board = buildQuestionBoard(rs, '2026-11-05T12:00:00.000Z');
-  assert.notEqual(board.scoring, null);
-  assert.deepEqual(view.questions.scoring, board.scoring);
+  assert.notEqual(view.questions.scoring, null);
   assert.equal(validate(view), true, JSON.stringify(validate.errors));
 });
 

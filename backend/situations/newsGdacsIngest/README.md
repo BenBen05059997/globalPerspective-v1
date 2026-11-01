@@ -1,6 +1,6 @@
 # newsGdacsIngest
 
-Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches the current event list, writes the full current set to the S3 corpus (read by newsImpactAudit), and writes one observation snapshot of all current Orange/Red events to the situations inbox. It holds no situation state: the tracker folds the observations. The pure helpers (`buildObservation`, `buildSituation`, `coolSituation`, `buildStorySituation`) live in `backend/shared/src/situations-core.js`, reached through the `src/_shared` symlink and shared with newsSituationTracker.
+Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches the current event list, writes the full current set to the S3 corpus (no reader since newsImpactAudit was removed 2026-11-01), and writes one observation snapshot of all current Orange/Red events to the situations inbox. It holds no situation state: the tracker folds the observations. The pure helpers (`buildObservation`, `buildSituation`, `coolSituation`, `buildStorySituation`) live in `backend/shared/src/situations-core.js`, reached through the `src/_shared` symlink and shared with newsSituationTracker.
 
 ## Deployment
 - Deployed name `newsGdacsIngest` · runtime `nodejs22.x` · group `situations` (scripts/functions.json)

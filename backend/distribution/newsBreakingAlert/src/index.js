@@ -5,7 +5,7 @@
 // `status: 'proposed'` row. With DRY_RUN=false and RESEND_API_KEY set it ALSO emails the
 // operator (ALERT_EMAIL_TO) the rendered alert and flips the row to `status: 'sent'`.
 // That email is operator-only: neither `proposed` nor `sent` is shown to readers. The site
-// bell/strip (newsRecommend) and the signal API (newsSignals) serve only `confirmed` rows,
+// bell/strip (newsRecommend) serves only `confirmed` rows (the signal API, newsSignals, did too before it was removed 2026-11-01),
 // which the operator sets with breaking/review.js after reading the email.
 //
 // Pipeline:  detect (deterministic, significance.js) → propose → verify (LLM)

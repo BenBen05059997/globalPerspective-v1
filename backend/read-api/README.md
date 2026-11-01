@@ -2,7 +2,7 @@
 
 This group answers the browser. It serves topics, analysis, briefs and forecasts to every visitor, and
 account features (saved items, notification settings, country follows, share links) to signed-in members. It also
-takes browser error reports and holds a parked, key-gated signal API.
+takes browser error reports.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
@@ -18,7 +18,6 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 | newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL, or AppSync resolver | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
 | newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
 | newsClientErrors | Public sink that counts uncaught browser errors. | Function URL | Nothing | GlobalPerspectiveClientErrors | [README](newsClientErrors/README.md) |
-| newsSignals | Parked signal API: builds one S3 document, serves it to API-key holders. | Function URL to serve; EventBridge `TriggerSignalsBuild`, 10:00 UTC, DISABLED | SummarizeAndPredict; PredictionLog; BreakingAlerts; GlobalPerspectiveApiKeys; S3 `signals/latest.json` | S3 `signals/latest.json`, `signals/snapshots/<date>.json`; rate-limit rows in ApiKeys | [README](newsSignals/README.md) |
 
 ## Pipeline
 
@@ -40,20 +39,18 @@ Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`
 
 ## Shared code
 
-- newsSensitiveData-dev: `links`, `llm`, `placeFilter`, `resolveIso3`. newsRecommend: `links`. newsSignals: `links`, `placeFilter`.
+- newsSensitiveData-dev: `links`, `llm`, `placeFilter`, `resolveIso3`. newsRecommend: `links`.
 - newsSavedItems, newsSharedAnalysis and newsClientErrors use none. See the [shared README](../shared/README.md).
 
 ## Known limits
 
 - newsSensitiveData-dev has no write path; the tier only caps depth, never gates access.
 - CORS differs by Lambda. newsSharedAnalysis sends its own headers and its live Function-URL CORS is empty. newsClientErrors, newsRecommend and newsSavedItems rely on Function-URL CORS, which is populated live. newsSensitiveData-dev has no Function URL and sends its own headers.
-- newsSignals has no page reading it and its build rule is DISABLED.
 - `archive_range` returns light entries because of the 6 MB payload limit.
 
 ## How to check it
 
 ```
 aws lambda get-function-url-config --function-name newsRecommend --region ap-northeast-1 --query 'Cors.AllowOrigins'
-aws events list-rules --name-prefix TriggerSignalsBuild --region ap-northeast-1 --query 'Rules[].[Name,State]' --output text
 aws apigateway get-resources --rest-api-id ba4q3fnwq6 --region ap-northeast-1 --query 'items[].path' --output text
 ```

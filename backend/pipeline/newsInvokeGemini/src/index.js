@@ -517,7 +517,7 @@ function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTi
 // Log the cycle's input (every fetched article the selector saw) + output (chosen topics) to the
 // capture store. Fully fenced: any failure is swallowed so it can never break ingestion.
 // S8·T2b (2026-09-09): writes the selector's saw-vs-chose snapshot to S3
-// (audit/ingest-capture/latest.json), read by newsImpactAudit — replaces the
+// (audit/ingest-capture/latest.json; its former reader, newsImpactAudit, was removed 2026-11-01), replaces the
 // GlobalPerspectiveIngestCapture DDB table (dropped). A stable pointer overwritten each run
 // (the audit only ever needs the latest capture).
 async function captureIngestion(inputArticles, chosenTopics, generationId) {
@@ -547,7 +547,7 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
       input,   // what the selector SAW (the audit basis for "missed high-impact?")
       chosen,  // what it CHOSE
     });
-    // latest.json (read by newsImpactAudit) + a dated copy per run, so past runs can be replayed
+    // latest.json (its former reader newsImpactAudit was removed 2026-11-01) + a dated copy per run, so past runs can be replayed
     // (e.g. the Jev selection backtest). Path: <prefix>/YYYY-MM-DD/HHMM.json.
     const prefix = process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture';
     for (const Key of [`${prefix}/latest.json`, `${prefix}/${runId.slice(0, 10)}/${runId.slice(11, 16).replace(':', '')}.json`]) {

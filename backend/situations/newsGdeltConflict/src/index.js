@@ -112,7 +112,7 @@ exports.handler = async () => {
   }));
   const stored = items.length;
   // S8·T2 (2026-09-09): the GlobalPerspectiveGdeltConflict DDB mirror was DROPPED — its only reader
-  // (newsImpactAudit) now reads the per-day S3 corpus below. Events live only in `corpus/gdelt/<day>.json`.
+  // (newsImpactAudit, removed 2026-11-01) read the per-day S3 corpus below. Events live only in `corpus/gdelt/<day>.json`.
 
   // S8·T2 (2026-09-09): the impact audit reads GDELT from S3 instead of scanning the DDB mirror.
   // One file per day, overwritten each run (last-run-wins, same as the DDB `day#country` upserts);

@@ -37,15 +37,6 @@
       "deployBlocked": false
     },
     {
-      "functionName": "newsImpactAudit",
-      "logGroupName": "/aws/lambda/newsImpactAudit",
-      "sources": [
-        "backend/monitoring/newsImpactAudit/src/index.js"
-      ],
-      "parked": false,
-      "deployBlocked": false
-    },
-    {
       "functionName": "newsInvokeGemini-dev",
       "logGroupName": "/aws/lambda/newsInvokeGemini-dev",
       "sources": [
@@ -190,8 +181,7 @@
         "newsRecommend",
         "newsSavedItems",
         "newsSensitiveData-dev",
-        "newsSharedAnalysis",
-        "newsSignals"
+        "newsSharedAnalysis"
       ]
     },
     {
@@ -213,7 +203,6 @@
       "functions": [
         "newsErrorDigest",
         "newsFreshnessMonitor",
-        "newsImpactAudit",
         "newsModelGuard",
         "newsSourceAudit"
       ]
@@ -257,18 +246,6 @@
     {
       "filterName": "LLM-insufficient-balance",
       "logGroupName": "/aws/lambda/newsDriftCorrector",
-      "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "LlmInsufficientBalance",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "LLM-insufficient-balance",
-      "logGroupName": "/aws/lambda/newsImpactAudit",
       "filterPattern": "?\"LLM 402\" ?\"Insufficient Balance\" ?\"Insufficient balance\" ?\"insufficient balance\"",
       "metricTransformations": [
         {
@@ -628,18 +605,6 @@
     },
     {
       "filterName": "Pipeline-failed-run",
-      "logGroupName": "/aws/lambda/newsSignals",
-      "filterPattern": "\"[pipeline-status]\" \"failed\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "Stage6Failed",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "Pipeline-failed-run",
       "logGroupName": "/aws/lambda/newsAnalyze",
       "filterPattern": "\"[pipeline-status]\" \"failed\"",
       "metricTransformations": [
@@ -737,18 +702,6 @@
     {
       "filterName": "Pipeline-failed-run",
       "logGroupName": "/aws/lambda/newsFreshnessMonitor",
-      "filterPattern": "\"[pipeline-status]\" \"failed\"",
-      "metricTransformations": [
-        {
-          "metricNamespace": "GlobalPerspective/Pipeline",
-          "metricName": "Stage8Failed",
-          "metricValue": "1"
-        }
-      ]
-    },
-    {
-      "filterName": "Pipeline-failed-run",
-      "logGroupName": "/aws/lambda/newsImpactAudit",
       "filterPattern": "\"[pipeline-status]\" \"failed\"",
       "metricTransformations": [
         {
@@ -1310,27 +1263,6 @@
       ]
     },
     {
-      "AlarmName": "GP-newsSignals-Errors",
-      "Namespace": "AWS/Lambda",
-      "MetricName": "Errors",
-      "Statistic": "Sum",
-      "Period": 300,
-      "EvaluationPeriods": 1,
-      "DatapointsToAlarm": 1,
-      "Threshold": 1,
-      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
-      "TreatMissingData": "notBreaching",
-      "AlarmActions": [
-        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
-      ],
-      "Dimensions": [
-        {
-          "Name": "FunctionName",
-          "Value": "newsSignals"
-        }
-      ]
-    },
-    {
       "AlarmName": "GP-stage-6-failed",
       "Namespace": "GlobalPerspective/Pipeline",
       "MetricName": "Stage6Failed",
@@ -1546,27 +1478,6 @@
         {
           "Name": "FunctionName",
           "Value": "newsFreshnessMonitor"
-        }
-      ]
-    },
-    {
-      "AlarmName": "GP-newsImpactAudit-Errors",
-      "Namespace": "AWS/Lambda",
-      "MetricName": "Errors",
-      "Statistic": "Sum",
-      "Period": 300,
-      "EvaluationPeriods": 1,
-      "DatapointsToAlarm": 1,
-      "Threshold": 1,
-      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
-      "TreatMissingData": "notBreaching",
-      "AlarmActions": [
-        "arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectivesAlerts"
-      ],
-      "Dimensions": [
-        {
-          "Name": "FunctionName",
-          "Value": "newsImpactAudit"
         }
       ]
     },

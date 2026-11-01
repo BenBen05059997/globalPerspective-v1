@@ -1,7 +1,7 @@
 # situations
 
 The map's data group. It ingests disaster alerts and world news, folds them into open situations, and publishes one bundle
-for the home map. It serves readers of the home page. Two of the Lambdas also leave raw data for audits and other jobs.
+for the home map. It serves readers of the home page. Two of the Lambdas also leave raw corpus files; only one of those has a reader left.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
@@ -25,8 +25,8 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 4. It opens, raises, spreads, cools and closes situations, archives closed ones, and writes `world/latest.json`.
 5. The Cloudflare Worker serves `/data/world/*.json`, `/data/situations/state/*.json` and `/data/stories/state/*.json` from the private world bucket. Other prefixes are refused.
 6. The home page `/` fetches `world/latest.json` (hook `useWorld`) and a situation's state file when one is opened. This path does not use the API proxy.
-7. newsGdeltConflict runs separately every six hours. Its file is read by newsImpactAudit, not by the map.
-8. The corpus files from steps 1 and 2 are read by newsSelectionShadow (pipeline group) and newsImpactAudit (monitoring group).
+7. newsGdeltConflict runs separately every six hours. Nothing reads its file now (its reader, newsImpactAudit, was removed 2026-11-01); the map does not.
+8. newsSelectionShadow (pipeline group) reads the hourly story corpus from step 2, not the GDACS or GDELT files.
 
 ## Shared code
 
@@ -37,7 +37,7 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 ## Known limits
 
 - The tracker writes to `shadow/situations/` and `world/shadow/` unless env `DRY_RUN` is exactly `false`. The live value is `false`.
-- newsImpactAudit, the reader of the GDACS and GDELT corpus, has its schedule `TriggerImpactAudit` DISABLED.
+- `corpus/gdacs/latest.json` and `corpus/gdelt/<day>.json` have no reader since newsImpactAudit was removed 2026-11-01; newsGdeltConflict's only output is that unread file.
 - newsGdeltConflict samples one 15-minute export per run, and the last run of the day overwrites the day file.
 - newsGdacsIngest and newsGdeltConflict no longer write DynamoDB; some header comments and env names in their code are stale.
 - newsSituationIngest returns without fetching if its LLM key is unset. GDELT queries inside it are off unless `GDELT_ENABLED=true`.

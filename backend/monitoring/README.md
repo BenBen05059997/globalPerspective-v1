@@ -1,6 +1,6 @@
 # monitoring
 
-This group watches the site and the pipeline and tells the operator when something is wrong. It serves only the operator:
+This group watches the site and the pipeline and tells the operator when something is wrong. (The impact audit, newsImpactAudit, was removed 2026-11-01.) It serves only the operator:
 publishers use the SNS topic `GlobalPerspectiveAlerts`. None of these Lambdas changes site content, and a quiet
 run sends nothing. CloudWatch alarm proposals and the client-error CORS config are in [alarms/README.md](alarms/README.md).
 
@@ -15,7 +15,6 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits. T
 |---|---|---|---|---|---|
 | newsErrorDigest | Folds browser error rows into fingerprints and alerts on new or spiking ones. | EventBridge `TriggerErrorDigest`, minute 15 every 6 hours UTC, ENABLED | DynamoDB GlobalPerspectiveClientErrors (full scan) | Its own baseline row `DIGEST#STATE` in the same table; SNS | [README](newsErrorDigest/README.md) |
 | newsFreshnessMonitor | Alerts when the topics feed is stale or the proxy fails; once a day also checks the prediction-settling flow. | EventBridge `TriggerFreshnessMonitor`, minute 30 every 2 hours UTC, ENABLED | Public proxy action `topics`; the record's public view files (`track-record.json`, `manifest.json`, `health/settle-tick.json`); S3 dedupe marker `monitoring/freshness/state.json` | SNS; the marker | [README](newsFreshnessMonitor/README.md) |
-| newsImpactAudit | Asks an LLM which high-impact events the topic selector missed, plus disaster and conflict coverage gaps. | EventBridge `TriggerImpactAudit`, 09:00 UTC, DISABLED | S3 world bucket `audit/ingest-capture/latest.json`, `corpus/gdacs/latest.json`, `corpus/gdelt/<day>.json`; DeepSeek | S3 `audit/impact/<date>.json` and `latest.json`; SNS | [README](newsImpactAudit/README.md) |
 | newsModelGuard | Checks the DeepSeek balance and flags retired or unknown model ids in other Lambdas' env. | EventBridge `TriggerModelGuard`, 12:00 UTC, ENABLED | `lambda:ListFunctions` env; `api.deepseek.com` `/models` and `/user/balance` | SNS | [README](newsModelGuard/README.md) |
 | newsSourceAudit | Compares the top live summaries against their source articles and counts drift. | EventBridge `newsSourceAuditDaily`, Mon, Wed, Fri 11:30 UTC, ENABLED | Public proxy actions `topics`, `summary`; source article pages; DeepSeek | SNS when drift reaches the threshold | [README](newsSourceAudit/README.md) |
 
@@ -26,27 +25,23 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits. T
 3. Every 2 hours newsFreshnessMonitor calls the public topics action and alerts once on an unhealthy transition and once on recovery (dedupe kept in the S3 marker) when it fails or is older than `STALE_HOURS`. The 12:30 UTC run also sends the settle alert if the weekly prediction flow is behind (read from the record's track-record view, manifest and the resolver's heartbeat, `SETTLE_SOURCE=record`, decision 0052; the old snapshot-file source through the removed `prediction_track_record` action no longer works).
 4. At 12:00 UTC newsModelGuard checks the DeepSeek balance and the model ids set on every Lambda.
 5. On Monday, Wednesday and Friday newsSourceAudit audits the top live topics against their sources.
-6. newsImpactAudit would run daily at 09:00 UTC but its schedule is DISABLED, so it runs only when invoked by hand.
 
 ## Shared code
 
-- newsFreshnessMonitor: `links`. newsImpactAudit and newsSourceAudit: `llm`.
+- newsFreshnessMonitor: `links`. newsSourceAudit: `llm`.
 - newsErrorDigest and newsModelGuard use no shared module.
 - See the [shared README](../shared/README.md).
 
 ## Known limits
 
-- newsImpactAudit is dormant until its rule is enabled.
 - newsErrorDigest scans the whole errors table on every run.
 - newsModelGuard's "days left" line uses a fixed burn rate in code, not real spend.
 - newsFreshnessMonitor needs its S3 marker (see its README); live `STALE_HOURS` is 9, the code default too.
-- newsImpactAudit's live env still names two dropped DynamoDB tables; the code reads S3 only.
 - newsSourceAudit's rule name says Daily but runs three days a week.
 
 ## How to check it
 
 ```
-aws events list-rules --region ap-northeast-1 --query 'Rules[?contains(Name,`ErrorDigest`)||contains(Name,`Freshness`)||contains(Name,`ModelGuard`)||contains(Name,`ImpactAudit`)||contains(Name,`SourceAudit`)].[Name,State,ScheduleExpression]' --output text
+aws events list-rules --region ap-northeast-1 --query 'Rules[?contains(Name,`ErrorDigest`)||contains(Name,`Freshness`)||contains(Name,`ModelGuard`)||contains(Name,`SourceAudit`)].[Name,State,ScheduleExpression]' --output text
 aws sns list-subscriptions-by-topic --topic-arn arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts --region ap-northeast-1 --query 'Subscriptions[].Protocol' --output text
-aws s3 ls s3://globalperspective-world-280362093938/audit/impact/
 ```

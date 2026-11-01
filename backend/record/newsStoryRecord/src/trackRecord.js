@@ -4,7 +4,7 @@
 // 0044). Pure: facts in, one view object out; `today` and `builtAt` come in, no I/O.
 //
 // `questions` is the weekly sampled-question scheme, the same shape the page read from predictions/track_record.json
-// (`data.questions`, built by newsPredictionsSnapshot/questionBoard.js from PredictionLog rows), computed here from
+// (`data.questions`, built by the retired newsPredictionsSnapshot's questionBoard.js from PredictionLog rows; removed 2026-11-01), computed here from
 // forecast_drawn, question_commit, question_draw and verdict facts with the shared rules (questionState.js, questionScoring.js).
 //   `settleHealth` (decision 0052): what the freshness monitor's alarm reads, from the same facts (the old board read the PredictionLog): the draw due
 //   but not written, the next commitment missing, the sampled questions past deadline + 3 days with no verdict, the newest verdict. The daily tick is not

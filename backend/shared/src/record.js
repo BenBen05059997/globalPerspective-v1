@@ -198,6 +198,6 @@ const noteId = (subtype, subjectId, part, at) => sha1(`note|${subtype}|${subject
 
 module.exports = {
   canonicalUrl, entryIdentity, sourceIdOf, actorIdOf, factId, noteId, sha1,
-  PIN_BUDGET, MOVE_MIN, LAG_MAX_DAYS, COMOVE_WINDOW_DAYS, COMOVE_MIN_PAIRS,
+  PIN_BUDGET,
   pairKey, normalizeActor, stringTexture, pinBudgetOk, normalizeBoard, cheapGrounds,
 };

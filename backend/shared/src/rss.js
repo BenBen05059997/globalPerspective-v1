@@ -79,4 +79,4 @@ function parseRssXml(xml, sourceName, nowMs = Date.now()) {
   return articles;
 }
 
-module.exports = { parseRssXml, itemLink, tagText, stripMarkup, decodeEntities };
+module.exports = { parseRssXml, itemLink, decodeEntities };

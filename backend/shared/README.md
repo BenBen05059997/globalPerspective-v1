@@ -27,8 +27,7 @@ Countries and places
   Palestine). Frontend copy: `shared/lib/countries.js` + `shared/data`.
 - `resolveIso3.js`: `resolveIso3(text) -> {iso3, name}` (a place resolves to its country) and `iso3List(names)` for the Lambda
   writers; a thin wrapper over `countries.js`.
-- `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`. `placeNames.json`
-  is still in `src/`, but no backend code reads it.
+- `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
 - `riskDimensions.js`: the 4-axis risk vector -> headline score and level (worst axis leads), and `tierFromScore`.
 - `situations-core.js`: GDACS observation and situation fold (`buildSituation`, `coolSituation`, `buildStorySituation`; a threaded
   story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS. Used by the GDACS ingest and the tracker.
@@ -65,7 +64,7 @@ The record
   `newsStoryRecord`'s views and track-record view.
 - `outlets.js`: the one outlet table (`OUTLET_METADATA`, `getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
   `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`.
-- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `tagText`, `stripMarkup`, `decodeEntities`), shared by
+- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by
   `newsInvokeGemini` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
 
 The raw-table reader

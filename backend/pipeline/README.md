@@ -47,7 +47,7 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 - `llm.js` (chat client): newsInvokeGemini, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `dayZero.js`: newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsThreadAnalysis, newsCountryIntelligence, newsDriftCorrector.
-- `placeFilter.js` (with `placeNames.json`): newsSystemsAnalysis, newsCountryIntelligence. `riskDimensions.js`: newsThreadAnalysis, newsCountryIntelligence.
+- `placeFilter.js`: newsSystemsAnalysis, newsCountryIntelligence. `riskDimensions.js`: newsThreadAnalysis, newsCountryIntelligence.
 - NewsProjectInvokeAgentLambda, newsCountryFactsUpdater and newsSelectionShadow have no `_shared` link. newsSelectionShadow symlinks `classifier-core.js` from newsSituationIngest.
 
 ## Known limits

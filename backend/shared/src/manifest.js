@@ -20,4 +20,4 @@ function makeManifest(s3json) {
   return {addDays};
 }
 
-module.exports = {makeManifest, RETRIES};
+module.exports = {makeManifest};

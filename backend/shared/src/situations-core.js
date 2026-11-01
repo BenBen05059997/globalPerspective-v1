@@ -13,7 +13,6 @@
 // Tiers are canonical utils/riskTiers.js bands: low · moderate · elevated · high. No 'critical'
 // ("critical" on the map is display-only = high + escalating). GDACS Red→high, Orange→elevated.
 
-const OPEN_STATES = ['emerging', 'escalating', 'peak', 'cooling'];
 const OPENING_LEVELS = new Set(['Orange', 'Red']);
 const LEVEL_RANK = { Green: 0, Orange: 1, Red: 2 };
 const LEVEL_TIER = { Red: 'high', Orange: 'elevated', Green: 'low' };
@@ -346,8 +345,8 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
 }
 
 module.exports = {
-  OPEN_STATES, OPENING_LEVELS, LEVEL_RANK, LEVEL_TIER, TIER_CADENCE_MIN,
-  parseGeometry, eventKeyOf, eventLabel, affectedIso3, cleanSeverity, verbLabel,
-  buildObservation, nextCheckAt, appendHistory, buildSituation, coolSituation, buildStorySituation,
-  capTierByOutlets, storyCountry, newsSituationId, mergeStories,
+  OPENING_LEVELS, LEVEL_TIER,
+  parseGeometry, eventKeyOf, affectedIso3,
+  buildObservation, nextCheckAt, buildSituation, coolSituation, buildStorySituation,
+  storyCountry, newsSituationId, mergeStories,
 };

@@ -29,4 +29,4 @@ function usableCountryRecord(name, rec, nowMs = Date.now()) {
   return Number.isFinite(t) && nowMs - t <= RECORD_MAX_AGE_MS && t <= nowMs + 86400000;
 }
 
-module.exports = { isCountryName, usableCountryRecord, normKey, canonicalName, RECORD_MAX_AGE_MS };
+module.exports = { isCountryName, usableCountryRecord, normKey, canonicalName };

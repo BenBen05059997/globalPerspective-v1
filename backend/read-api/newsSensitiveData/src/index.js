@@ -6,6 +6,7 @@ const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, capForTier, lat
 const { readMode: notesReadMode, s3NoteReader } = require('./_shared/noteReads');
 const { makeRecords, correctionOf } = require('./records');
 const { storyHref, absoluteUrl } = require('./_shared/links');
+const { archiveRowKey } = require('./_shared/dayZero');
 const { readMode: recordReadMode, readBy, liveRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -796,13 +797,6 @@ function normalizeSummaryPrediction(item) {
   };
 }
 
-function formatArchiveDateKey(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `archive#${y}-${m}-${d}`;
-}
-
 function formatDateLabel(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -834,7 +828,7 @@ async function readArchiveRange(days) {
     // `latest` is only the NEWEST generation; today's archive row holds every run of the day, so a story from an
     // earlier run today is served too (union by topicId, `latest` first).
     const todayDate = formatDateLabel(now);
-    const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(now) } }));
+    const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: archiveRowKey(now) } }));
     const todayEntries = Array.isArray(todayRow?.entries) ? todayRow.entries.map(lightEntry) : [];
     if (latestEntries.length) {
       const merged = latestLabel === todayDate ? unionByTopicId(latestEntries, todayEntries) : latestEntries;
@@ -850,7 +844,7 @@ async function readArchiveRange(days) {
       const date = new Date(now);
       date.setUTCDate(date.getUTCDate() - i);
       const dateLabel = formatDateLabel(date);
-      const archiveKey = formatArchiveDateKey(date);
+      const archiveKey = archiveRowKey(date);
 
       const { Item } = await client.send(new GetCommand({
         TableName: TOPICS_TABLE,
@@ -912,12 +906,12 @@ async function readNarrativeThread(threadId, days) {
         entries.push(...matched.map(t => ({ ...t, date: latestLabel, source: 'latest' })));
         // Today's archive row holds EVERY run of today (`latest` only the newest generation), so a story
         // from an earlier run today stays reachable until midnight (post-deploy fix, 2026-09-30).
-        const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(date) } }));
+        const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: archiveRowKey(date) } }));
         const fromToday = (todayRow?.entries || []).filter(e => e.threadId === threadId);
         entries.push(...fromToday.map(e => ({ ...e, date: dateLabel, source: 'archive' })));
       } else {
         // Past days: read from archive#YYYY-MM-DD
-        const archiveKey = formatArchiveDateKey(date);
+        const archiveKey = archiveRowKey(date);
         const { Item } = await client.send(new GetCommand({
           TableName: TOPICS_TABLE,
           Key: { id: archiveKey },

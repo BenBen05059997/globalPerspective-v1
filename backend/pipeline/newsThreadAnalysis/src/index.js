@@ -1,6 +1,6 @@
 'use strict';
 
-const { keepDayZero } = require('./_shared/dayZero');
+const { keepDayZero, archiveRowKey } = require('./_shared/dayZero');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
@@ -86,13 +86,6 @@ exports.handler = async (event = {}) => {
   return { statusCode: 200, body: summary };
 };
 
-function formatDateKey(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `archive#${y}-${m}-${d}`;
-}
-
 async function readArchiveEntries(days) {
   const entries = [];
   const now = new Date();
@@ -101,7 +94,7 @@ async function readArchiveEntries(days) {
     const date = new Date(now);
     date.setUTCDate(date.getUTCDate() - i);
 
-    const key = i === 0 ? 'today-archive' : formatDateKey(date);
+    const key = i === 0 ? 'today-archive' : archiveRowKey(date);
     const dateStr = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 
     try {

@@ -9,6 +9,14 @@
 
 function utcDay(ms) { return new Date(ms).toISOString().slice(0, 10); }
 
+// The NewsCache key of the archive row for the UTC day of `date` (a Date): `archive#YYYY-MM-DD`.
+function archiveRowKey(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `archive#${y}-${m}-${d}`;
+}
+
 function keepDayZero(entries, nowMs = Date.now()) {
   const today = utcDay(nowMs);
   return (Array.isArray(entries) ? entries : []).filter((e) => {
@@ -17,4 +25,4 @@ function keepDayZero(entries, nowMs = Date.now()) {
   });
 }
 
-module.exports = { keepDayZero, utcDay };
+module.exports = { keepDayZero, utcDay, archiveRowKey };

@@ -9,7 +9,7 @@
 // Manual-invoke first (no EventBridge schedule) until output quality is trusted —
 // mirrors the breaking-detector dry-run approach.
 
-const { keepDayZero } = require('./_shared/dayZero');
+const { keepDayZero, archiveRowKey } = require('./_shared/dayZero');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
@@ -165,20 +165,13 @@ function fail(msg) {
 }
 
 // ── Data gather (mirrors newsThreadAnalysis) ───────────────────────────────────
-function dateKey(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `archive#${y}-${m}-${d}`;
-}
-
 async function readArchiveEntries(days) {
   const entries = [];
   const now = new Date();
   for (let i = 0; i <= days; i++) {
     const date = new Date(now);
     date.setUTCDate(date.getUTCDate() - i);
-    const key = i === 0 ? 'today-archive' : dateKey(date);
+    const key = i === 0 ? 'today-archive' : archiveRowKey(date);
     const dateStr = date.toISOString().slice(0, 10);
     try {
       const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));

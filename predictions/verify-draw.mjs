@@ -16,7 +16,7 @@
  *                         (<site>/data/record/views/track-record.json, `questions.weeks[]`, the file the page reads; default
  *                         https://globalperspective.net; the pool is published for the latest 4 drawn weeks) — needs no credentials
  *
- * Exit: 0 verified, 1 NOT VERIFIED, 3 not revealed yet (commitment only; the seed is revealed after the week).
+ * Exit: 0 verified, 1 NOT VERIFIED, 3 cannot verify yet (seed not revealed, or no draw pool for the week in the source).
  *
  * The ranking rule is the Lambda's own module (backend/predictions/newsPredictionResolver/src/lib.js).
  */
@@ -66,7 +66,8 @@ const pickKey = (p) => JSON.stringify([p.qid, p.h, p.clusterKey]);
 export function verify({ commit, reveal, draw }) {
   const problems = [];
   if (!commit) return { ok: false, problems: ['no commitment published for this week'] };
-  if (!reveal || !draw) return { ok: false, notRevealed: true, problems: ['seed not revealed yet: the commitment is published; the seed and draw are revealed after the week ends'] };
+  if (!reveal) return { ok: false, notRevealed: true, problems: ['seed not revealed yet: the commitment is published; the seed and draw are revealed after the week ends'] };
+  if (!draw) return { ok: false, notRevealed: true, problems: ['the seed is revealed but the source holds no draw pool for this week, so the picks cannot be recomputed here'] };
   if (lib.commitOf(reveal.seedHex) !== commit.commitHash) problems.push('sha256(seed) does not equal the published commitment');
   if (String(commit.committedAt).slice(0, 10) >= commit.weekStart) problems.push(`commitment (${commit.committedAt}) was not published before the week started (${commit.weekStart})`);
   const again = lib.draw(reveal.seedHex, draw.pool.map((x) => ({ qid: x.q, clusterKey: x.c })), draw.K);
@@ -91,7 +92,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     input = { commit: getRow(`SEED#${wk}`, 'COMMIT'), reveal: getRow(`SEED#${wk}`, 'REVEAL'), draw: getRow(`SAMPLE#${wk}`, 'DRAW') };
   } else { console.error('usage: verify-draw.mjs --file draw.json | --week 2026-W41 | --public [site-url] --week 2026-W41'); process.exit(2); }
   const r = verify(input);
-  if (r.notRevealed) { console.log(`NOT REVEALED YET: ${r.problems[0]}.`); process.exit(3); }
+  if (r.notRevealed) { console.log(`CANNOT VERIFY: ${r.problems[0]}.`); process.exit(3); }
   else if (r.ok) console.log(`OK: commitment matches the seed, and the ${r.picked} picks (from ${r.eligible} eligible questions in ${r.clusters} stories) are exactly what the published rule gives.`);
   else { console.log('NOT VERIFIED:'); r.problems.forEach((p) => console.log(' - ' + p)); process.exit(1); }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import ArchiveTopicModal from '@/features/home/components/ArchiveTopicModal';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';

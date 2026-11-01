@@ -1,5 +1,5 @@
 import { branchStatus, VOID_REASON_WORDS } from '@/shared/lib/branchWording.js';
-import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
+import { branchLine, branchScenario } from '@/features/board/lib/branchView.js';
 // ISO week label of a date, e.g. '2026-W43' (UTC).
 export function isoWeekOf(date) {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));

@@ -674,89 +674,6 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
   );
 }
 
-function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onStep }) {
-  const countryByDate = useMemo(() => {
-    if (!thread?.dates) return {};
-    const byDate = {};
-    const seen = new Set();
-    for (const date of thread.dates) {
-      const newCountries = [];
-      for (const m of markers) {
-        if (m.date !== date) continue;
-        if (!seen.has(m.code)) {
-          seen.add(m.code);
-          newCountries.push(m.name);
-        }
-      }
-      byDate[date] = newCountries;
-    }
-    return byDate;
-  }, [markers, thread?.dates]);
-
-  const dateIdx = storyPlay?.dateIdx ?? 0;
-
-  const allCountriesSoFar = useMemo(() => {
-    if (!thread?.dates) return [];
-    const names = new Set();
-    for (let i = 0; i <= dateIdx; i++) {
-      for (const m of markers) {
-        if (m.date === thread.dates[i]) names.add(m.name);
-      }
-    }
-    return [...names];
-  }, [markers, thread?.dates, dateIdx]);
-
-  if (!storyPlay || !thread) return null;
-  const { currentDate, paused } = storyPlay;
-  const progress = ((dateIdx + 1) / thread.dates.length) * 100;
-  const isFirst = dateIdx === 0;
-  const isLast = dateIdx >= thread.dates.length - 1;
-
-  const newToday = countryByDate[currentDate] || [];
-  const articlesOnDate = thread.entries.filter(e => e.date === currentDate).length;
-
-  return (
-    <div className="wmap-playback-overlay">
-      <div className="wmap-playback-title">{thread.latestTitle}</div>
-      <div className="wmap-playback-date">{formatDateLabel(currentDate)}</div>
-      <div className="wmap-playback-progress">
-        <div className="wmap-playback-bar" style={{ width: `${progress}%`, background: thread.color }} />
-      </div>
-      <div className="wmap-playback-step">
-        Day {dateIdx + 1} of {thread.dates.length} · {articlesOnDate} article{articlesOnDate !== 1 ? 's' : ''}
-      </div>
-      <div className="wmap-playback-controls">
-        <Button compact className="wmap-playback-btn" label="Previous day" title="Previous day" onClick={() => onStep(-1)} disabled={isFirst}>◀</Button>
-        <Button compact variant="primary" className="wmap-playback-btn" label={paused ? 'Resume' : 'Pause'} title={paused ? 'Resume' : 'Pause'} onClick={onPause}>
-          {paused || isLast ? '▶' : '❚❚'}
-        </Button>
-        <Button compact className="wmap-playback-btn" label="Next day" title="Next day" onClick={() => onStep(1)} disabled={isLast}>▶</Button>
-        <Button compact label="Stop" title="Stop" onClick={onStop}>✕</Button>
-      </div>
-      {newToday.length > 0 && (
-        <div className="wmap-playback-new">
-          <span className="wmap-playback-label">New today</span>
-          <div className="wmap-playback-countries">
-            {newToday.map(c => (
-              <span key={c} className="wmap-playback-country new">{c}</span>
-            ))}
-          </div>
-        </div>
-      )}
-      {allCountriesSoFar.length > 0 && (
-        <div className="wmap-playback-involved">
-          <span className="wmap-playback-label">{allCountriesSoFar.length} countries involved</span>
-          <div className="wmap-playback-countries">
-            {allCountriesSoFar.map(c => (
-              <span key={c} className={`wmap-playback-country ${newToday.includes(c) ? 'new' : ''}`}>{c}</span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function MapLegend() {
   const [open, setOpen] = useState(false);
   return (
@@ -794,7 +711,7 @@ function MapLegend() {
 
 // frameInsets = { top, right, bottom, left } px of the map covered by an overlay (the country page's
 // header bar): with `defaultCountry` the map frames that country in the remaining visible band.
-export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, defaultThread = null, onCountryClick = null, frameInsets = null }) {
+export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, onCountryClick = null, frameInsets = null }) {
   const isEmbedded = embedded;
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -989,20 +906,6 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
     }
     googleMapRef.current.fitBounds(unique);
   }, [allMarkers]);
-
-  // Sync defaultThread prop → highlightThread + zoom
-  useEffect(() => {
-    if (!defaultThread) return;
-    setHighlightThread(defaultThread);
-    function tryZoom() {
-      if (googleMapRef.current) {
-        zoomToThread(defaultThread);
-      } else {
-        setTimeout(tryZoom, 200);
-      }
-    }
-    tryZoom();
-  }, [defaultThread, zoomToThread]);
 
   function handleEntryFocus(entry) {
     const thread = allThreads.find(t => t.threadId === highlightThread);

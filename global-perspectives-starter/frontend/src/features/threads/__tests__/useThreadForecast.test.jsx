@@ -1,41 +1,43 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
-const fetchStoryView = vi.fn();
-const fetchPredictionSnapshot = vi.fn();
-const viewForecast = vi.fn();
-vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchStoryView }) }));
-vi.mock('@/shared/api/restProxy.js', () => ({ fetchPredictionSnapshot: (...a) => fetchPredictionSnapshot(...a) }));
-vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
-vi.mock('@/shared/lib/forecastFromView.js', () => ({ viewForecast: (...a) => viewForecast(...a) }));
+const recordForecast = vi.fn();
+vi.mock('@/shared/api/forecastViews.js', () => ({ recordForecast: (...a) => recordForecast(...a) }));
 
 const { useThreadForecast } = await import('@/features/threads/hooks/useThreadForecast.js');
 
-describe('useThreadForecast', () => {
-  beforeEach(() => { fetchStoryView.mockReset(); fetchPredictionSnapshot.mockReset(); viewForecast.mockReset(); });
+describe('useThreadForecast reads the record only (decision 0052)', () => {
+  beforeEach(() => { recordForecast.mockReset(); });
 
-  it('uses the story view when it yields a forecast, without calling the action', async () => {
-    fetchStoryView.mockResolvedValue({ threadId: 't' });
-    viewForecast.mockReturnValue({ topicId: 'A-1', scenarios: [{ label: 'Most Likely' }] });
-    const { result } = renderHook(() => useThreadForecast(['A-1'], 't'));
+  it('returns the record forecast for the page topicIds', async () => {
+    recordForecast.mockResolvedValue({ answered: true, snapshot: { topicId: 'A-1', scenarios: [{ label: 'Most Likely' }] } });
+    const { result } = renderHook(() => useThreadForecast(['A-1', 'A-2'], 't'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.snapshot.topicId).toBe('A-1');
-    expect(viewForecast).toHaveBeenCalledWith({ threadId: 't' }, { topicIds: ['A-1'] });
-    expect(fetchPredictionSnapshot).not.toHaveBeenCalled();
+    expect(recordForecast).toHaveBeenCalledWith('t', ['A-1', 'A-2']);
   });
 
-  it('falls back to prediction_snapshot when the view yields nothing or fails', async () => {
-    fetchStoryView.mockRejectedValue(new Error('500'));
-    fetchPredictionSnapshot.mockResolvedValue({ success: true, snapshot: { topicId: 'old' } });
+  it('a story that drew no question is empty', async () => {
+    recordForecast.mockResolvedValue({ answered: true, snapshot: null });
     const { result } = renderHook(() => useThreadForecast(['A-1'], 't'));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.snapshot.topicId).toBe('old');
-    expect(fetchPredictionSnapshot).toHaveBeenCalledWith(['A-1']);
+    expect(result.current.snapshot).toBeNull();
   });
 
-  it('is empty without topics', async () => {
-    const { result } = renderHook(() => useThreadForecast([], 't'));
+  it('the record not answering (stale views, unreadable file) is empty, with no other source', async () => {
+    recordForecast.mockResolvedValue({ answered: false, snapshot: null });
+    const { result } = renderHook(() => useThreadForecast(['A-1'], 't'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.snapshot).toBeNull();
+  });
+
+  it('is empty without topics or without a thread, and asks nothing', async () => {
+    const a = renderHook(() => useThreadForecast([], 't'));
+    const b = renderHook(() => useThreadForecast(['A-1'], null));
+    await waitFor(() => expect(a.result.current.loading).toBe(false));
+    await waitFor(() => expect(b.result.current.loading).toBe(false));
+    expect(a.result.current.snapshot).toBeNull();
+    expect(b.result.current.snapshot).toBeNull();
+    expect(recordForecast).not.toHaveBeenCalled();
   });
 });

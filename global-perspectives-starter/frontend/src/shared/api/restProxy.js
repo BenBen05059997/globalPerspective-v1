@@ -228,16 +228,6 @@ export async function fetchCorrectionsFeed(limit = 40) {
   return proxyActionWithAuth('corrections_feed', { limit });
 }
 
-export async function fetchPredictionSnapshot(topicIds) {
-  const list = Array.isArray(topicIds) ? topicIds : [topicIds];
-  return proxyAction('prediction_snapshot', { topicIds: list.filter(Boolean) });
-}
-
-// Same action, asked by story: the proxy resolves the thread's topic ids itself (briefings only know the threadId).
-export async function fetchPredictionSnapshotByThread(threadId) {
-  return proxyAction('prediction_snapshot', { threadId });
-}
-
 // Batch 4 / F: the story web in one read. No argument = the whole index (links, per-story state, coverage);
 // with a threadId = that story's record + state (the frontend uses the whole index, shared by every surface).
 export async function fetchWebIndex(threadId) {

@@ -5,7 +5,6 @@
 // the shared public archive (useArchiveDayMap, one cached read per tab) so re-selecting a country
 // doesn't re-fetch the 30-day archive every time.
 import { useEffect, useMemo, useState } from 'react';
-import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 import { recordForecast } from '@/shared/api/forecastViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
@@ -59,8 +58,8 @@ export function useCountryStories(countryName) {
   useEffect(() => {
     let cancelled = false;
     if (!topicKey) { setSnapshot(null); return undefined; }
-    // the record's forecasts views while they are fresh (decision 0052); the `prediction_snapshot` action when the record cannot answer
-    countryForecast({ topicIds, topicIdToThreadId }, { recordForecast, fetchAction: fetchPredictionSnapshot })
+    // the record's forecasts views while they are fresh (decision 0052); no forecast when it cannot
+    countryForecast({ topicIds, topicIdToThreadId }, { recordForecast })
       .then((snap) => { if (!cancelled) setSnapshot(snap); })
       .catch((err) => { if (!cancelled) { reportFetchError('country-card-forecast', err); setSnapshot(null); } });
     return () => { cancelled = true; };

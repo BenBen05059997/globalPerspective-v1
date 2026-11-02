@@ -12,11 +12,44 @@ import '@/features/home/components/TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {
   const overlayRef = useRef(null);
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
   const [activeSection, setActiveSection] = useState('summary');
+  const isOpen = !!entry;
+
+  // Modal focus: move focus to Close on open, keep Tab/Shift+Tab inside the dialog, give focus back
+  // to whatever opened it on close (BottomSheet does the same at its full stop).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const opener = document.activeElement;
+    closeRef.current?.focus();
+    return () => {
+      if (opener && typeof opener.focus === 'function' && document.body.contains(opener)) opener.focus();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const node = dialogRef.current;
+      if (!node) return;
+      const focusable = Array.from(
+        node.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!node.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -46,7 +79,7 @@ function ArchiveTopicModal({ entry, onClose }) {
   // Portalled to <body>: inside the sticky rail it sat in a lower stacking context than the topics rail.
   return createPortal(
     <div className="archive-modal-overlay" ref={overlayRef} onClick={handleOverlayClick}>
-      <div className="archive-modal" role="dialog" aria-modal="true" aria-label={entry.title}>
+      <div className="archive-modal" ref={dialogRef} role="dialog" aria-modal="true" aria-label={entry.title}>
         <div className="archive-modal-header">
           <div>
             <h3 className="archive-modal-title">
@@ -63,7 +96,7 @@ function ArchiveTopicModal({ entry, onClose }) {
               )}
             </div>
           </div>
-          <Button variant="icon" label="Close" onClick={onClose}>&times;</Button>
+          <Button ref={closeRef} variant="icon" label="Close" onClick={onClose}>&times;</Button>
         </div>
 
         {sections.length > 0 && (

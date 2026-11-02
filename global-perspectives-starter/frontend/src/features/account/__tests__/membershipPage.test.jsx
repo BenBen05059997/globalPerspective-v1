@@ -186,14 +186,14 @@ describe('MembershipPage — checkout failure', () => {
     await waitFor(() => expect(window.location.href).toBe('https://polar.example/checkout/ok'));
   });
 
-  // CLAUDE.md product rule: "fail empty/honest and report to the error sink". The page shows the
-  // error but never calls reportFetchError, so a failed checkout is invisible to the operator.
-  it.skip('BUG: reports a failed checkout to the error sink (MembershipPage.jsx subscribe catch does not)', async () => {
+  // CLAUDE.md product rule: "fail empty/honest and report to the error sink".
+  it('reports a failed checkout to the error sink', async () => {
     createCheckout.mockRejectedValue(new Error('Polar HTTP 502'));
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Subscribe $15/month' }));
     await screen.findByText('Polar HTTP 502');
     expect(reportFetchError).toHaveBeenCalledTimes(1);
+    expect(reportFetchError.mock.calls[0][0]).toBe('membership-checkout');
     expect(reportFetchError.mock.calls[0][1].message).toBe('Polar HTTP 502');
   });
 });

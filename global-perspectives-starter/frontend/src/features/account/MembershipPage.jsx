@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { createCheckout } from '@/shared/api/restProxy';
+import { reportFetchError } from '@/shared/api/errorSink';
 import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import '@/features/account/MembershipPage.css';
@@ -37,6 +38,7 @@ export default function MembershipPage() {
       if (url) window.location.href = url;
       else throw new Error('No checkout URL returned');
     } catch (err) {
+      reportFetchError('membership-checkout', err);
       setError(err?.message || 'Could not start checkout.');
       setBusy(null);
     }

@@ -11,7 +11,7 @@
  * This script walks every `proposed` and `sent` row (anything not yet confirmed or rejected),
  * lets the operator optionally add their own words (an editor note that leads the stored
  * draft), and either CONFIRM it (status → 'confirmed', which publishes it to readers) or
- * REJECT it. Mirrors predictions/review.js — AWS CLI, no public auth surface, no npm deps.
+ * REJECT it. AWS CLI, no public auth surface, no npm deps.
  *
  * Usage:
  *   node backend/distribution/cli/breaking/review.js            # interactive: walk unconfirmed (proposed/sent) alerts

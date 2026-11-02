@@ -54,7 +54,13 @@ export default defineConfig([
     files: ['**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      // eslint-plugin-react-hooks 7 added React-Compiler rules (set-state-in-effect, refs, purity,
+      // preserve-manual-memoization, immutability, ...) to its presets; they flag ~96 existing
+      // spots. Keep the two rules this repo has always enforced and adopt the rest in a separate pass.
+      {
+        plugins: { 'react-hooks': reactHooks },
+        rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'warn' },
+      },
       reactRefresh.configs.vite,
     ],
     languageOptions: {

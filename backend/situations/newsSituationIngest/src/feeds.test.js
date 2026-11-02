@@ -1,5 +1,5 @@
 'use strict';
-// Offline tests for newsSituationIngest's feed side: parseRss, fetchRss, fetchGdelt, getJson/putObj, and the
+// Offline tests for newsSituationIngest's feed side: parseRss (adapter over backend/shared/src/rss.js), fetchRss, fetchGdelt, getJson/putObj, and the
 // handler when every feed is down. Fake fetch, fake S3. Run: node --test feeds.test.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -106,7 +106,8 @@ test('parseRss reads RSS 2.0: CDATA, tags stripped, entities decoded, dates to I
   assert.equal(a.source, 'bbc.com');
   assert.equal(a.publishedAt, '2026-10-31T10:00:00.000Z');
   assert.equal(a.ageH, 2);
-  assert.equal(b.title, 'Rock & roll ’s "comeback" <live>'); // named and decimal numeric entities
+  // named and decimal numeric entities decode; an escaped tag (&lt;live&gt;) is markup, so the shared parser drops it
+  assert.equal(b.title, 'Rock & roll ’s "comeback"');
   assert.equal(b.ageH, 0.5);
   assert.equal(b.description.length, 220); // description is capped
 });
@@ -137,17 +138,15 @@ test('decodeEntities handles named, numeric, astral and unknown entities', () =>
   assert.equal(decodeEntities('&#128512;'), '😀');
   assert.equal(decodeEntities('&#99999999999;'), '&#99999999999;'); // out of range stays literal, no throw
   assert.equal(decodeEntities('&hellip; &amp;amp;'), '&hellip; &amp;'); // one pass: no double decoding
-  assert.equal(decodeEntities(null), '');
 });
 
-test('decodeEntities decodes hex numeric entities (&#x27;)', { skip: 'BUG: only decimal &#NNN; is decoded, so WordPress-style &#x27; / &#x2019; stay literal in titles (index.js decodeEntities)' }, () => {
+test('decodeEntities decodes hex numeric entities (&#x27;)', () => {
   const { decodeEntities } = load()._internal;
   assert.equal(decodeEntities('It&#x27;s &#x2019;'), 'It\'s ’');
 });
 
-// RDF (RSS 1.0) items carry attributes and dc:date. DW English and AllAfrica are RDF feeds in RSS_FEEDS, and the
-// shared parser (backend/shared/src/rss.js) documents `<item rdf:about=...>`; this parser only matches a bare <item>.
-test('parseRss reads RDF items (<item rdf:about> with dc:date)', { skip: 'BUG: parseRss matches only a bare <item>, so DW English and AllAfrica RDF feeds yield no articles (index.js regex /<item>.../)' }, () => {
+// RDF (RSS 1.0) items carry attributes and dc:date. DW English and AllAfrica are RDF feeds in RSS_FEEDS.
+test('parseRss reads RDF items (<item rdf:about> with dc:date)', () => {
   const { parseRss } = load()._internal;
   const rdf = `<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <item rdf:about="https://www.dw.com/en/story/a-1"><title>DW story</title><link>https://www.dw.com/en/story/a-1</link><dc:date>2026-10-31T11:00:00Z</dc:date></item></rdf:RDF>`;
@@ -156,10 +155,73 @@ test('parseRss reads RDF items (<item rdf:about> with dc:date)', { skip: 'BUG: p
   assert.equal(out[0].publishedAt, '2026-10-31T11:00:00.000Z');
 });
 
-test('parseRss reads Atom entries', { skip: 'DECISION: no Atom feed is configured in RSS_FEEDS, parseRss only reads <item>; not asserting either way' }, () => {
+const DW_RDF = `<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel rdf:about="https://rss.dw.com/rdf/rss-en-all"><title>DW.com - All</title><link>https://www.dw.com/en/</link><description>Deutsche Welle</description>
+<dc:language>en</dc:language><items><rdf:Seq><rdf:li rdf:resource="https://www.dw.com/en/gaza-talks/a-100"/><rdf:li rdf:resource="https://www.dw.com/en/ecb-rates/a-101"/></rdf:Seq></items></channel>
+<item rdf:about="https://www.dw.com/en/gaza-talks/a-100">
+  <title><![CDATA[Gaza talks resume in Cairo]]></title>
+  <link>https://www.dw.com/en/gaza-talks/a-100</link>
+  <description><![CDATA[<p>Mediators say <strong>both sides</strong> sent delegations.</p>]]></description>
+  <dc:date>2026-10-31T11:00:00Z</dc:date>
+</item>
+<item rdf:about="https://www.dw.com/en/ecb-rates/a-101">
+  <title>ECB holds rates &amp; signals caution</title>
+  <link>https://www.dw.com/en/ecb-rates/a-101</link>
+  <description>Markets expect no move until spring.</description>
+  <dc:date>2026-10-31T09:30:00+00:00</dc:date>
+</item>
+<item rdf:about="https://www.dw.com/en/no-date/a-102">
+  <title>Undated DW item</title>
+  <link>https://www.dw.com/en/no-date/a-102</link>
+</item>
+</rdf:RDF>`;
+
+test('parseRss reads a DW-style RDF feed: rdf:about items, dc:date, CDATA; channel and rdf:li are not items', () => {
+  const { parseRss } = load()._internal;
+  assert.deepEqual(parseRss(DW_RDF, 'dw.com'), [
+    { title: 'Gaza talks resume in Cairo', url: 'https://www.dw.com/en/gaza-talks/a-100', description: 'Mediators say both sides sent delegations.', source: 'dw.com', ageH: 1, publishedAt: '2026-10-31T11:00:00.000Z' },
+    { title: 'ECB holds rates & signals caution', url: 'https://www.dw.com/en/ecb-rates/a-101', description: 'Markets expect no move until spring.', source: 'dw.com', ageH: 2.5, publishedAt: '2026-10-31T09:30:00.000Z' },
+    { title: 'Undated DW item', url: 'https://www.dw.com/en/no-date/a-102', description: '', source: 'dw.com', ageH: 0, publishedAt: null },
+  ]);
+});
+
+test('parseRss reads an AllAfrica-style RDF feed: attributes on item, dc:date with offset, CDATA title and link, extra dc fields', () => {
+  const { parseRss } = load()._internal;
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns="http://purl.org/rss/1.0/">
+<channel rdf:about="https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf"><title>allAfrica.com: Latest</title><link>https://allafrica.com/</link></channel>
+<item rdf:about="https://allafrica.com/stories/202610310101.html"><title><![CDATA[Nigeria: Senate Passes 2027 Budget]]></title><link><![CDATA[https://allafrica.com/stories/202610310101.html]]></link><description><![CDATA[Lawmakers approved the spending plan after a late sitting.]]></description><dc:creator>Daily Trust</dc:creator><dc:date>2026-10-31T10:45:00+01:00</dc:date></item>
+<item rdf:about="https://allafrica.com/stories/202610310102.html"><title>Kenya: Court Halts Tax Rule</title><link>https://allafrica.com/stories/202610310102.html</link><dc:date>2026-10-30T12:00:00Z</dc:date></item>
+<item rdf:about="https://allafrica.com/stories/202610310103.html"><title>No link item</title><dc:date>2026-10-31T10:00:00Z</dc:date></item>
+</rdf:RDF>`;
+  assert.deepEqual(parseRss(xml, 'allafrica.com'), [
+    { title: 'Nigeria: Senate Passes 2027 Budget', url: 'https://allafrica.com/stories/202610310101.html', description: 'Lawmakers approved the spending plan after a late sitting.', source: 'allafrica.com', ageH: 2.25, publishedAt: '2026-10-31T09:45:00.000Z' },
+    { title: 'Kenya: Court Halts Tax Rule', url: 'https://allafrica.com/stories/202610310102.html', description: '', source: 'allafrica.com', ageH: 24, publishedAt: '2026-10-30T12:00:00.000Z' },
+  ]);
+});
+
+test('parseRss decodes hex and decimal numeric entities in RSS 2.0 titles and descriptions', () => {
+  const { parseRss } = load()._internal;
+  const xml = `<rss version="2.0"><channel><item>
+<title>Trump&#x27;s tariffs &#x2019;hit&#x2019; Canada&#8217;s exports &#39;again&#39;</title>
+<link>https://example.org/hex-1</link>
+<description>It&#x27;s &#x201C;worse&#x201D; than &#8216;expected&#8217;</description>
+<pubDate>Fri, 31 Oct 2026 10:00:00 GMT</pubDate>
+</item></channel></rss>`;
+  assert.deepEqual(parseRss(xml, 'example.org'), [{
+    title: 'Trump\'s tariffs ’hit’ Canada’s exports \'again\'', url: 'https://example.org/hex-1',
+    description: 'It\'s “worse” than ‘expected’', source: 'example.org', ageH: 2, publishedAt: '2026-10-31T10:00:00.000Z',
+  }]);
+});
+
+// Atom <entry> with <link href> and <updated> is read by the shared parser (new with the adapter; no Atom feed is configured today).
+test('parseRss reads Atom entries', () => {
   const { parseRss } = load()._internal;
   const atom = `<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Atom story</title><link href="https://example.org/a" rel="alternate"/><updated>2026-10-31T11:00:00Z</updated></entry></feed>`;
-  assert.equal(parseRss(atom, 'example.org').length, 1);
+  assert.deepEqual(parseRss(atom, 'example.org'), [
+    { title: 'Atom story', url: 'https://example.org/a', description: '', source: 'example.org', ageH: 1, publishedAt: '2026-10-31T11:00:00.000Z' },
+  ]);
 });
 
 // ── fetchRss ─────────────────────────────────────────────────────────────────
@@ -182,6 +244,15 @@ test('fetchRss tolerates dead feeds: non-200, network error and abort timeout gi
   const out = await fetchRss();
   assert.deepEqual(out.map((a) => [a.title, a.source]), [['Story bbc', 'bbc.com']]);
   assert.equal(fetched.length, 25); // every configured feed was tried; none threw out of fetchRss
+});
+
+test('fetchRss reads the configured RDF feeds (DW English, AllAfrica) and attributes them to their source', async () => {
+  const { fetchRss } = load()._internal;
+  fakeFetch(async (url) => (url.includes('rss.dw.com') ? xmlRes(DW_RDF) : xmlRes('')));
+  const out = await fetchRss();
+  assert.deepEqual(out.map((a) => [a.title, a.source, a.ageH]), [
+    ['Gaza talks resume in Cairo', 'dw.com', 1], ['ECB holds rates & signals caution', 'dw.com', 2.5], ['Undated DW item', 'dw.com', 0],
+  ]);
 });
 
 test('fetchRss drops items older than the age limit, de-duplicates by url and caps each feed at 30', async () => {

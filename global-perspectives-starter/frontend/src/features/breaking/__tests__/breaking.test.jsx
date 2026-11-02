@@ -156,13 +156,13 @@ describe('NotificationBell', () => {
     await settle();
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
 
-    const quake = screen.getByRole('menuitem', { name: /Quake strikes coastal city/ });
+    const quake = screen.getByRole('link', { name: /Quake strikes coastal city/ });
     expect(quake).toHaveAttribute('href', '/breaking/al-3');
     expect(quake).toHaveTextContent('5m ago');
-    expect(screen.getByRole('menuitem', { name: /Ceasefire collapses/ })).toHaveTextContent('3h ago');
+    expect(screen.getByRole('link', { name: /Ceasefire collapses/ })).toHaveTextContent('3h ago');
     // a week or older falls back to a calendar date
-    expect(screen.getByRole('menuitem', { name: /Old story/ })).toHaveTextContent(/Oct 25/);
-    expect(screen.getByRole('menuitem', { name: /See the alerts on the map/ })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /Old story/ })).toHaveTextContent(/Oct 25/);
+    expect(screen.getByRole('link', { name: /See the alerts on the map/ })).toHaveAttribute('href', '/');
 
     // opening cleared the badge
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('NotificationBell', () => {
     mount(<NotificationBell />);
     await settle();
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
-    expect(screen.getByRole('menuitem', { name: /Legacy row/ })).toHaveAttribute('href', '/breaking/legacy-9');
+    expect(screen.getByRole('link', { name: /Legacy row/ })).toHaveAttribute('href', '/breaking/legacy-9');
   });
 
   it('an empty feed shows the caught-up message and no map link, never a badge', async () => {
@@ -184,7 +184,7 @@ describe('NotificationBell', () => {
     expect(screen.queryByText(/^\d/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(screen.getByText(/all caught up/)).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('a failed fetch looks like an empty feed with no error text', async () => {
@@ -196,24 +196,53 @@ describe('NotificationBell', () => {
     expect(document.body.textContent).not.toMatch(/something went wrong|HTTP 500/i);
   });
 
-  it('Escape and a click outside close the panel; clicking an alert closes it too', async () => {
+  it('is a disclosure, not a menu: aria-expanded + aria-controls on the button, a plain list of links', async () => {
+    fetchAlerts.mockResolvedValue({ alerts: alertsFixture });
+    mount(<NotificationBell />);
+    await settle();
+    const button = screen.getByRole('button', { name: /Notifications/ });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).not.toHaveAttribute('aria-haspopup');
+
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    const panel = document.getElementById(button.getAttribute('aria-controls'));
+    expect(panel).not.toBeNull();
+    expect(panel).toContainElement(screen.getByRole('list'));
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.getAllByRole('link')).toHaveLength(alertsFixture.length + 1);
+  });
+
+  it('Escape closes the panel and returns focus to the bell button, also from a link inside it', async () => {
     fetchAlerts.mockResolvedValue({ alerts: alertsFixture });
     mount(<NotificationBell />);
     await settle();
     const button = screen.getByRole('button', { name: /Notifications/ });
 
     fireEvent.click(button);
-    expect(screen.getByRole('menu')).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('menu')).toBeNull();
+    const first = screen.getByRole('link', { name: /Quake/ });
+    first.focus();
+    expect(first).toHaveFocus();
+    fireEvent.keyDown(first, { key: 'Escape' });
+    expect(screen.queryByRole('list')).toBeNull();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+  });
+
+  it('a click outside closes the panel; clicking an alert closes it too', async () => {
+    fetchAlerts.mockResolvedValue({ alerts: alertsFixture });
+    mount(<NotificationBell />);
+    await settle();
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
+    expect(screen.getByRole('list')).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.queryByRole('list')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Quake/ }));
-    expect(screen.queryByRole('menu')).toBeNull();
+    fireEvent.click(screen.getByRole('link', { name: /Quake/ }));
+    expect(screen.queryByRole('list')).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
@@ -23,11 +23,18 @@ export default function NotificationBell() {
   const { alerts, unread, markAllRead, endpointMissing } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const btnRef = useRef(null);
+  const panelId = useId();
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    // Escape closes and hands focus back to the bell, so it never falls to <body>.
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      btnRef.current?.focus();
+    };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -49,10 +56,11 @@ export default function NotificationBell() {
     <div className="gp-bell-wrap" ref={ref}>
       <button
         type="button"
+        ref={btnRef}
         className="gp-bell"
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-        aria-haspopup="true"
         aria-expanded={open}
+        aria-controls={panelId}
         onClick={toggle}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -63,7 +71,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="gp-bell-panel" role="menu">
+        <div className="gp-bell-panel" id={panelId}>
           <SectionHeader as="div" className="gp-bell-head" label="Breaking alerts" />
           {alerts.length === 0 ? (
             <div className="gp-bell-empty">
@@ -77,7 +85,6 @@ export default function NotificationBell() {
                     <Link
                       to={breakingHref(a.id || a.threadId)}
                       className="gp-bell-item"
-                      role="menuitem"
                       onClick={() => setOpen(false)}
                     >
                       <span className="gp-bell-title">{a.title}</span>
@@ -89,7 +96,6 @@ export default function NotificationBell() {
               <Link
                 to={mapHref()}
                 className="gp-bell-all"
-                role="menuitem"
                 onClick={() => setOpen(false)}
               >
                 See the alerts on the map →

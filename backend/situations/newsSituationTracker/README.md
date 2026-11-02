@@ -25,5 +25,4 @@ Sole writer of situation state and the map bundle. Each sweep reads the GDACS sn
 A degraded/failed or missing news index freezes prior news situations: no cooling, closure, archival, regrouping or synthetic history transition. News resumes normal folding on a healthy index; legacy indexes without a marker remain compatible. GDACS folds independently. The world bundle exposes `sources.newsDegraded` and marks itself stale while news is degraded.
 
 ## Tests
-- `node --test src/degraded.test.js` (offline; fold and full handler with fake S3).
-- `cd backend/situations/newsSituationTracker/src && node index.test.mjs` (plus the degraded-input regression tests)
+- `cd src && npm test` runs `degraded.test.js`, `handler.test.js` (fake S3: live vs shadow write set, archive-then-delete) and `index.test.mjs`. All offline.

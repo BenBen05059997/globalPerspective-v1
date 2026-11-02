@@ -151,3 +151,5 @@ exports.handler = async () => {
 
   return { ok: true, stored, withGeo, byLevel, inbox, corpus };
 };
+
+exports._internal = { buildEventItem, writeInboxSnapshot, writeCorpusSnapshot }; // for tests

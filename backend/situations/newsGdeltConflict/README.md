@@ -20,4 +20,4 @@ Keyless ingest of GDELT 2.0 material-conflict events, used as the open replaceme
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- None.
+- `cd src && npm test` (offline: fixture export, fake fetch and S3; adm-zip is stubbed, so the real zip format is not exercised).

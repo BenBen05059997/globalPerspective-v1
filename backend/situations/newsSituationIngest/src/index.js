@@ -233,4 +233,4 @@ function makeHandler(deps = {}) {
 exports.makeHandler = makeHandler;
 exports.handler = makeHandler();
 
-exports._internal = { parseRss, storyKey, classifyBatch };
+exports._internal = { parseRss, storyKey, classifyBatch, decodeEntities, fetchRss, fetchGdelt, getJson, putObj }; // for tests

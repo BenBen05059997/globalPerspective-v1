@@ -303,3 +303,4 @@ function resp(statusCode, body) {
 module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
 module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests
 module.exports.loadTodayArchive = loadTodayArchive; // for tests
+module.exports.buildBriefPrompt = buildBriefPrompt; // for tests

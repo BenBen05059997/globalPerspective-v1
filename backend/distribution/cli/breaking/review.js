@@ -8,7 +8,7 @@
  * `status: 'proposed'` row to GlobalPerspectiveBreakingAlerts. With DRY_RUN=false (live) it
  * also emails the operator and flips the row to `status: 'sent'`. Neither status is public:
  * the site bell and strip (newsRecommend list_alerts) show only `confirmed` rows.
- * This script walks every `proposed` and `sent` row (anything not yet confirmed or rejected),
+ * This script walks every `proposed` and `sent` row never confirmed (anything not yet confirmed or rejected),
  * lets the operator optionally add their own words (an editor note that leads the stored
  * draft), and either CONFIRM it (status → 'confirmed', which publishes it to readers) or
  * REJECT it. AWS CLI, no public auth surface, no npm deps.
@@ -60,6 +60,11 @@ function marshal(v) {
   return { S: String(v) };
 }
 
+// Rows awaiting review: `proposed`, or `sent` (newsBreakingAlert emailed the operator the proposal).
+// `attribute_not_exists(confirmedAt)` drops rows review.js already confirmed once. send.js used to
+// demote a confirmed alert to status `sent` after emailing it; those legacy rows are already public
+// history, not proposals. Do not filter on `sent = true` or on status alone: the Lambda's own
+// operator email also writes status `sent`, sent=true, and those rows must still be offered.
 function scanProposed() {
   const items = [];
   let startKey = '';
@@ -67,7 +72,7 @@ function scanProposed() {
     const skArg = startKey ? `--starting-token '${startKey}'` : '';
     const out = aws(
       `dynamodb scan --table-name ${TABLE} --region ${REGION} ` +
-      `--filter-expression "#s = :p OR #s = :s" ` +
+      `--filter-expression "(#s = :p OR #s = :s) AND attribute_not_exists(confirmedAt)" ` +
       `--expression-attribute-names '{"#s":"status"}' ` +
       `--expression-attribute-values '{":p":{"S":"proposed"},":s":{"S":"sent"}}' ` +
       `--output json ${skArg}`,

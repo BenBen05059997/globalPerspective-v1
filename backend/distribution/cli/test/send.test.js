@@ -33,29 +33,30 @@ test('a confirmed alert is posted to Resend once, with the bearer key, the store
   assert.deepEqual(JSON.parse(get.flags.key), { alertKey: { S: 'k1' } });
 });
 
-test('afterwards the row is marked sent: update-item on the alerts table, keyed by alertKey, setting sent=true and sentAt', async () => {
+test('afterwards the send is recorded: update-item on the alerts table, keyed by alertKey, setting only sent=true and sentAt (no status)', async () => {
   const r = await send(['k1', 'ops@example.test'], { items: [alert('k1')] });
   assert.equal(updates(r).length, 1);
   const u = updates(r)[0];
   assert.equal(u.flags['table-name'], TABLE);
   assert.deepEqual(JSON.parse(u.flags.key), { alertKey: { S: 'k1' } });
-  assert.equal(u.flags['update-expression'], 'SET #s = :sent, sent = :true, sentAt = :now');
-  assert.deepEqual(u.names, { '#s': 'status' });
-  assert.equal(u.values[':sent'].S, 'sent');
+  assert.equal(u.flags['update-expression'], 'SET sent = :true, sentAt = :now');
+  assert.deepEqual(u.names, {});
+  assert.deepEqual(Object.keys(u.values).sort(), [':now', ':true']);
   assert.deepEqual(u.values[':true'], { BOOL: true });
   assert.ok(Math.abs(Date.now() - Date.parse(u.values[':now'].S)) < 60000);
 });
 
 // A confirmed alert is the public one (newsRecommend list_alerts / get_alert show status 'confirmed' only, and newsEmailSender's breaking
-// mode selects status 'confirmed' with no emailedAt). send.js writes status 'sent' after sending, which makes the alert disappear from
-// both. See the "Bugs found" section of the PR.
-test('sending a confirmed alert leaves it public',
-  { skip: 'BUG: send.js:92 sets status=sent on a confirmed alert, but readers publish status=confirmed only (newsRecommend index.js:253,293)' },
-  async () => {
-    const r = await send(['pub', 'ops@example.test'], { items: [alert('pub')] });
-    const u = updates(r)[0];
-    assert.notEqual(u.values[':sent'].S, 'sent');
-  });
+// mode selects status 'confirmed' with no emailedAt). send.js must not change status, and must not touch newsEmailSender's
+// emailedAt / emailedCount (the subscriber path).
+test('sending a confirmed alert leaves it public', async () => {
+  const r = await send(['pub', 'ops@example.test'], { items: [alert('pub')] });
+  const u = updates(r)[0];
+  const expr = u.flags['update-expression'];
+  assert.doesNotMatch(expr, /status|#s/);
+  assert.doesNotMatch(expr, /emailedAt|emailedCount/);
+  assert.ok(!Object.values(u.values).some((v) => v.S === 'sent'), 'no value sets status to "sent"');
+});
 
 test('a proposed alert is refused without --force: nothing is sent and nothing is written', async () => {
   const r = await send(['p1'], { items: [alert('p1', { status: 'proposed' })] });
@@ -128,7 +129,7 @@ test('when marking sent fails after a successful send, the CLI warns but still e
   const r = await send(['k1'], { items: [alert('k1')], fail: 'update-item' });
   assert.equal(r.code, 0);
   assert.equal(r.fetchCalls.length, 1);
-  assert.match(r.stderr + r.stdout, /sent, but failed to mark status=sent/);
+  assert.match(r.stderr + r.stdout, /sent, but failed to mark sent=true/);
 });
 
 test('when the alert cannot be read the CLI exits 1 without sending', async () => {

@@ -3,7 +3,7 @@
 
 /**
  * backend/distribution/cli/breaking/send.js — send a REAL detected breaking alert (not the sample) to your inbox
- * via Resend, then mark it sent. This is the production sender the pipeline was missing:
+ * via Resend, then record sent/sentAt (status stays as it was). This is the production sender the pipeline was missing:
  * the newsBreakingAlert Lambda detects + writes a `proposed` row (with a fully-rendered
  * draft {subject, html, text}); review.js confirms it; THIS sends the stored draft.
  *
@@ -85,17 +85,18 @@ function fail(msg) { console.error('✗ ' + msg); process.exit(1); }
   }
   console.log(`✓ Sent (id: ${result.id || 'n/a'}). Check ${to} (incl. spam if from the test sender).`);
 
-  // Mark it sent so it isn't re-sent and the in-app feed/list can reflect it.
+  // Record the send (sent / sentAt) so it isn't re-sent. Leave `status` alone: readers publish
+  // status 'confirmed' only, so flipping it to 'sent' would un-publish the alert and put it back
+  // in review.js. Not emailedAt / emailedCount: those belong to newsEmailSender's subscriber path.
   try {
     aws(['dynamodb', 'update-item', '--table-name', TABLE, '--region', REGION,
       '--key', JSON.stringify({ alertKey: { S: alertKey } }),
-      '--update-expression', 'SET #s = :sent, sent = :true, sentAt = :now',
-      '--expression-attribute-names', JSON.stringify({ '#s': 'status' }),
+      '--update-expression', 'SET sent = :true, sentAt = :now',
       '--expression-attribute-values', JSON.stringify({
-        ':sent': { S: 'sent' }, ':true': { BOOL: true }, ':now': { S: new Date().toISOString() },
+        ':true': { BOOL: true }, ':now': { S: new Date().toISOString() },
       })]);
-    console.log('  marked status=sent.');
+    console.log('  marked sent=true (status unchanged).');
   } catch (e) {
-    console.warn('  (sent, but failed to mark status=sent: ' + e.message + ')');
+    console.warn('  (sent, but failed to mark sent=true: ' + e.message + ')');
   }
 })();

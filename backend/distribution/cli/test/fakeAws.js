@@ -28,7 +28,9 @@ if (service !== 'dynamodb') { log({ unexpected: true }); console.error(`fake aws
 if (op === 'scan') {
   // Apply the filter the caller asked for: status IN every :value in --expression-attribute-values.
   const wanted = Object.values(JSON.parse(flags['expression-attribute-values'] || '{}')).map((v) => v.S);
-  const all = state.items.filter((it) => wanted.includes(it.status && it.status.S));
+  // ...and, when the filter says attribute_not_exists(confirmedAt), only rows without a confirmedAt.
+  const needsNoConfirmedAt = /attribute_not_exists\(confirmedAt\)/.test(flags['filter-expression'] || '');
+  const all = state.items.filter((it) => wanted.includes(it.status && it.status.S) && !(needsNoConfirmedAt && it.confirmedAt));
   const pageSize = state.pageSize || all.length || 1;
   const offset = Number(flags['starting-token'] || 0);
   const page = all.slice(offset, offset + pageSize);

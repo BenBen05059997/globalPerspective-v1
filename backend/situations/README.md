@@ -30,7 +30,8 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 
 ## Shared code
 
-- `situations-core.js`: newsGdacsIngest and newsSituationTracker. `links.js`: newsSituationTracker. `llm.js`: newsSituationIngest.
+- `situations-core.js`: newsGdacsIngest and newsSituationTracker. `links.js`: newsSituationTracker.
+- newsSituationIngest: `llm.js`, `rss.js` (shared with newsInvokeGemini), `outlets.js`, `resolveIso3.js`.
 - newsSituationIngest's `classifier-core.js` is also linked into newsSelectionShadow.
 - newsGdeltConflict has no `_shared` link.
 

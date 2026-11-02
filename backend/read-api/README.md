@@ -39,8 +39,9 @@ Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`
 
 ## Shared code
 
-- newsSensitiveData-dev: `briefs`, `links`, `noteReads`, `recordReads`, `resolveIso3`. newsRecommend: `links`, `recordReads`.
-- newsSavedItems, newsSharedAnalysis and newsClientErrors use none. See the [shared README](../shared/README.md).
+- newsSensitiveData-dev: `briefs`, `categoryLabels`, `dayZero`, `firebaseAuth`, `links`, `noteReads`, `recordReads`, `resolveIso3`.
+- newsRecommend: `firebaseAuth`, `httpReply`, `links`, `recordReads`. newsSavedItems: `firebaseAuth`, `httpReply`. newsClientErrors: `httpReply`.
+- newsSharedAnalysis uses none. See the [shared README](../shared/README.md).
 
 ## Known limits
 

@@ -28,7 +28,7 @@ read until step 5 retires them; the design is in `project-docs/architecture/ARCH
 ## A Lambda folder
 
 - `backend/<group>/<name>/src/` holds the deployed code (`index.js`, `package.json`).
-- `src/_shared` is a committed symlink to `backend/shared/src`; the deploy script zips it as real files.
+- Most Lambdas have `src/_shared`, a committed symlink to `backend/shared/src`; the deploy script zips it as real files. Six do not: newsAnalyze, newsPolarBilling, newsErrorDigest, newsModelGuard, newsSharedAnalysis and newsGdeltConflict.
 - Tests sit in `test/` beside `src/` (a few keep a test script inside `src/`). Each folder has its own `README.md`.
 - The folder name and the deployed name can differ (for example `newsInvokeGemini` is deployed as `newsInvokeGemini-dev`).
 - Operator tools that run from a laptop sit in a group's `cli/` folder (`pipeline`, `distribution`, `record`), not in a Lambda.

@@ -34,7 +34,7 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 ## Backend
 - Guides: [distribution](../../../../../backend/distribution/README.md) (`newsBreakingAlert`, `newsEmailSender`),
   [read-api](../../../../../backend/read-api/README.md) (`newsRecommend`)
-- `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(35 4/8 * * ? *)`, ENABLED) writes rows to `GlobalPerspectiveBreakingAlerts`;
+- `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(45 4/8 * * ? *)`, ENABLED) writes rows to `GlobalPerspectiveBreakingAlerts`;
   `newsRecommend` (Function URL) serves `confirmed` rows only; `newsEmailSender` would email subscribers (cron disabled).
 
 ## Data
@@ -65,5 +65,3 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Detection job: `aws events describe-rule --name TriggerBreakingAlert --region ap-northeast-1 --query State`
 - Email cron (expect DISABLED): `aws events describe-rule --name TriggerBreakingEmailSend --region ap-northeast-1 --query State`
 - Live mode (expect `false` for DRY_RUN): `aws lambda get-function-configuration --function-name newsBreakingAlert --region ap-northeast-1 --query 'Environment.Variables.DRY_RUN'`
-
-Last verified: 2026-10-31

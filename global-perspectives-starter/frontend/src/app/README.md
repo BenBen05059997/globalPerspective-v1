@@ -7,7 +7,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 ## What it does
 - `main.jsx` (one level up) loads `index.css`, runs `bootstrapProxy.js`, installs the error sink, then renders `App`.
 - `bootstrapProxy.js` reads `window.SENSITIVE_PROXY_ENDPOINT` (set by the runtime `config.js`) and calls `configureProxy`,
-  so `shared/api/restProxy.js` knows the one backend door. It also adds a console test hook, `window.testProxyGeocode`.
+  so `shared/api/restProxy.js` knows the one backend door. It also adds a console test hook, `window.testProxyGeocode`, which calls the removed `geocode` action (the read API answers 400).
 - `App.jsx` wraps everything in `AuthProvider` and a router, then `Layout`, `ErrorBoundary`, `Suspense` and the `Routes`.
   `AuthBridge` hands Firebase's `getIdToken` to `restProxy` so gated requests carry the token.
 - Lazy pages: every page except Today (`features/home`, eager) is `lazy(import(...))`, a chunk fetched on first visit.

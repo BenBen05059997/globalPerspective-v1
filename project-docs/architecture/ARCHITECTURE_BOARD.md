@@ -112,8 +112,7 @@ Waits for data, not UI:
 - feed fields `risk`, `riskWas`, `category` and `coverage` on `get_board`;
 - score and strength history (old to new scores, a string strengthening, the replay behind the scrubber);
 - dated moves in the `connect` reply for the joint trace;
-- a writer for `summary.versions` and a schema field for alert choices;
-- RESURRECTED.
+- a writer for `summary.versions` and a schema field for alert choices.
 
 Waits for a model call and a price decision: the verdict's mechanism sentence, direction, "what follows if" and "what would break it"; the board summary paragraph, "the surprise" and the monthly text. Alert delivery waits on a fresh yes for user-facing sends.
 

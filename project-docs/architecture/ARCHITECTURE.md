@@ -128,7 +128,7 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
 **Invariant:** imports inside `src/` use the `@/` alias. The exceptions are the few files that Node tooling outside `src/` imports by relative path; they carry a header comment saying so.
 
 ### Edge: `cloudflare/front-worker/`
-`production/worker.mjs` is the repo copy of the `globalperspective-rss` Worker that fronts production; `baseline/worker2.mjs` is the captured deployed source; `candidate.mjs` wraps it for `next.globalperspective.net`. The Worker SigV4-signs GETs to the private S3 world bucket for `/data/*`, allow-listed (`DATA_ALLOWED`) to `world/*.json`, `situations/state/`, `stories/state/` and `record/views/`, never facts, runs, inboxes, notes or readings. It also proxies `/rss` to the proxy's `rss` action, pre-renders pages for bot user-agents (calling proxy actions), and returns the SPA shell with a 200 for other GET paths.
+`production/worker.mjs` is the repo copy of the `globalperspective-rss` Worker that fronts production; `baseline/worker2.mjs` is the captured deployed source; `candidate.mjs` wraps it for `next.globalperspective.net`. The Worker SigV4-signs GETs to the private S3 world bucket for `/data/*`, allow-listed (`DATA_ALLOWED`) to `world/*.json`, `situations/state/`, `stories/state/` and `record/views/`, never facts, runs, inboxes, notes or readings. It also proxies `/rss` to the proxy's `rss` action, pre-renders pages for bot user-agents (from the record's view files first, calling proxy actions only when no view answers), and returns the SPA shell with a 200 for other GET paths.
 
 ### Operator tools
 - `scripts/`: `lambda.sh` (diff, package, deploy, rollback one Lambda, driven by functions.json), `audit-lambda-drift.sh`, `errors.mjs`, `gen-pipeline-blocks.mjs`, and on-demand checks (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`, `situations-log.mjs`, `check-shared-sync.mjs`).
@@ -163,7 +163,7 @@ flowchart LR
 3. `newsThreadAnalysis` (daily) writes per-thread analysis and dated history (`THREAD#…` / `THREAD_ANALYSIS`, `THREAD_HISTORY#<date>`); `newsSystemsAnalysis` (daily) reads those and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`), plus a daily snapshot to `web/YYYY/MM/DD.json` and `web/latest.json`. Both also write their output as notes into the record (`story_analysis`; `link` and `web`) through shared `notes.js` (decision 0042).
 4. `newsSelectionShadow` (rule `TriggerSelectionShadow`, 04:20, 12:20, 20:20, ENABLED) runs a candidate layered selector (corpus plus GDACS, scored by the external model "Jev") against what was published and writes only `audit/selection-shadow/`. Nothing on the site reads it; whether it continues is an operator decision.
 
-The record's views carry the entries, analyses and links these produce. `newsSensitiveData-dev` still answers what the views do not hold: today's topics, the home map's topic card, the board's pin titles, member extras.
+The record's views carry the entries, analyses and links these produce. `newsSensitiveData-dev` still answers what the views do not hold: member extras, country history depth, corrections, and the fallback when a view is stale or cannot answer.
 
 ### 2. Situations and the map (S3)
 ```mermaid
@@ -281,7 +281,7 @@ Pages read the views first and keep the old action as a fallback for what a view
 
 Hand-off rule: other writers never write facts. The selector appends raw articles, the resolver verdicts and draws, the review merges, and the operator assignments, splits and the who's who file (`record/operator/aliases.json`) to prefixes `newsStoryRecord` reads; it converts them into facts and views. Stories keep `threadId`; an `assignment` fact moves an entry between stories (latest wins); actors carry canonical `wd:Q…` ids once the who's who file names them, and generic actors never ground a link. The board (`/board`, `newsBoard`) keeps boards in `GlobalPerspectiveSavedItems` as `board#<id>` and follows in `GlobalPerspectiveUserPrefs`, and reads the views.
 
-Decisions: facts are the system of record (0035), facts format (0036), views (0037), forecast loop (0038), weekly review (0039), raw before model (0040), notes in the record (0042), question draws (0043), track-record view (0044), eligibility window (0045), weekly index (0046), history before the record (0047), briefs (0048), fresh views (0050). Design, ten stages, object model and open items: ARCHITECTURE_TIMELINE.md. Rebuild test: `backend/record/newsStoryRecord/scripts/rebuild-test.js`.
+Decisions: facts are the system of record (0035), facts format (0036), views (0037), forecast loop (0038), weekly review (0039), raw before model (0040), notes in the record (0042), question draws (0043), track-record view (0044), eligibility window (0045), weekly index (0046), history before the record (0047), briefs (0048), fresh views (0050), entries inbox and today view (0051), forecasts inbox (0052), country and story readers on notes (0053), Worker, email and ingest readers on the record (`RECORD_READS`, 0054). Design, ten stages, object model and open items: ARCHITECTURE_TIMELINE.md. Rebuild test: `backend/record/newsStoryRecord/scripts/rebuild-test.js`.
 
 ## Links, identity and product rules
 ### One link system

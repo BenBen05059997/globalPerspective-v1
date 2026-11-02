@@ -9,7 +9,7 @@ Everything the site knows about the world is dated and append-only, and is one o
   selector --> record/inbox/articles/ ----+
   raw pipeline tables --> world reader ---+--> facts writer --> record/facts/YYYY-MM-DD.jsonl   (daily, no model)
   (existing Lambdas)      (shared/world)      (newsStoryRecord)     record/runs/YYYY-MM-DD.json  (the Run)
-  resolver --> record/inbox/verdicts|draws/ +                  ^ inbox: merges, assignments, splits
+  agent, resolver --> record/inbox/entries|forecasts|verdicts|draws/ +   ^ inbox: merges, assignments, splits
                                                                 |
   week's facts --> review (newsRecordReview) --> record/readings/YYYY-Www.jsonl, record/runs/review-YYYY-Www.json
                                                                 |
@@ -89,11 +89,11 @@ Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status `started|ok|parti
 ### Facts
 | kind | payload (essentials) | comes from |
 |---|---|---|
-| `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID), source snippet, tier and actor names on newer entries, `regions` on history entries | `NewsCache archive#` rows (agent Lambda) |
+| `entry` | title, summary, category, eventType, continuesTopic, `topicId` as seen (not an ID), source snippet, tier and actor names on newer entries, `regions` on history entries | `NewsCache archive#` rows (agent Lambda), or the agent's lines in `record/inbox/entries/` when `ENTRIES_SOURCE=inbox` |
 | `article` | url, outlet, title, snippet, publishedAt, feed; recovered ones carry `recoveredAt`, `recoveredFrom`. In no story until assigned | selector inbox `record/inbox/articles/`; recovery script |
 | `assignment` | entryId (an `entry` or `article` fact), threadId, by (ingest, review, operator), supersedes; the views follow the latest per entry | derived from every `entry` (by ingest); operator and approved review proposals through `record/inbox/assignments/` |
 | `story_born` | first title | derived: earliest `entry` per threadId |
-| `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid}; a history forecast placed by title carries `threadFrom: "title"` | `PredictionLog PRED#` (the facts run scans the 30-day window) |
+| `forecast_drawn` | forkId, branches {branchId, text, p, trigger, resolutionSource, due, qid}; a history forecast placed by title carries `threadFrom: "title"` | the agent's lines in `record/inbox/forecasts/` when `FORECASTS_SOURCE=inbox`; the `PredictionLog PRED#` scan of the 30-day window when `log` |
 | `verdict` | qid, result yes/no/void, voidReason, decidedBy, evidence {eventId, quote, date}, revision | resolver lines in `record/inbox/verdicts/`; the legacy void job writes `issued_before_method` voids |
 | `correction` | `corrects` (eventId), what was wrong, reason | builder exists; no input feeds it yet |
 | `question_commit`, `question_draw` | the week's seed hash; the revealed seed and sampled qids (threadId null, 0043) | resolver lines in `record/inbox/draws/` |
@@ -167,7 +167,7 @@ Stores (one writer per file; the full prefix table is `DATA_STRATEGY.md`):
 - `record/facts/`, `record/runs/YYYY-MM-DD.json`, `record/views/`: `newsStoryRecord`.
 - `record/readings/`, `record/runs/review-*`, `record/inbox/merges/`: `newsRecordReview`.
 - `record/notes/<subtype>/`: the writer of that subtype (§3).
-- `record/inbox/articles/`: the selector (and the recovery script); `verdicts/` and `draws/`: the resolver; `splits/` and `assignments/`: the operator (and approved review proposals). `newsStoryRecord` reads each inbox for the run day and six days before.
+- `record/inbox/articles/`: the selector (and the recovery script); `entries/` and `forecasts/`: the agent (`ENTRIES_INBOX_PREFIX`, `FORECASTS_INBOX_PREFIX`); `verdicts/` and `draws/`: the resolver; `splits/` and `assignments/`: the operator (and approved review proposals). `newsStoryRecord` reads each inbox for the run day and six days before.
 - `record/operator/aliases.json`: the operator.
 - `record/legacy/predictions/DAY.jsonl` (+ manifest): whole DynamoDB `PRED#` rows from before the record that no rule places on a story, copied once by the history job (0047) with the reason; not facts, not read by the views, kept so the table can be deleted.
 - `record/shadow/` and `record/shadow-history/`: rehearsal copies written by manual shadow invokes and the history job; never served.
@@ -193,7 +193,7 @@ Invariants: (1) one writer per prefix and per table field. (2) Facts, readings a
 Dated state (what is deployed, which rule is enabled, which release is live) comes from AWS and `START_HERE.md`.
 - **Step 4, pages onto views:** what is left is listed in `START_HERE.md` (Step 5 order of work, item e: record paths for the remaining read API actions). Each page keeps its action as a fallback until its view is live.
 - **Step 5, retire the world tables** (`STEP5_AUDIT.md`): SummarizeAndPredict, NewsCache, GlobalPerspectiveMarkets and the PredictionLog `PRED#` rows go once no reader is left, each deletion on its own operator yes. User tables, EMAILLOG, BreakingAlerts, ClientErrors and the PredictionLog commitment state stay. The economy product is retired (decision 0049): its Lambdas and rules are deleted, and only its data awaits deletion. Before the rows go, the full rebuild test: delete the world rows in a copy and prove the site rebuilds from the record.
-- **Briefs writers:** `newsPostDevTo` and `newsWeeklyBrief` write briefs to the record when their `NOTES_PREFIX` is set (live values: `STEP5_AUDIT.md` section 1); the email sender and the Worker read the DynamoDB rows until each reads the record or is retired (0048).
+- **Briefs writers:** `newsPostDevTo` and `newsWeeklyBrief` write briefs to the record when their `NOTES_PREFIX` is set (live values: `STEP5_AUDIT.md` section 1); the Worker pre-render reads the brief views first, the email sender reads the weekly brief view when `RECORD_READS=record` (default `ddb`; 0054), and the read proxy still reads the DynamoDB rows, so the rows stay until step 5 retires them (0048).
 - **Alarms:** the operator does not want pipeline alarms; Run objects are the record's own signal and the freshness monitor watches the public topics.
 - **Weekly report** still has to be built on the readings (ARCHITECTURE_WEEKLY_REVIEW.md §9).
 - **History `iso3`:** entries before 2026-09-12 carry `iso3:[]`/`actorIds:[]`; deriving countries from `regions` is open (operator).
@@ -205,7 +205,7 @@ Dated state (what is deployed, which rule is enabled, which release is live) com
 - **Raw-row parsers outside `world/`:** some Lambdas still parse raw rows themselves, so a concept (risk tier, story title, freshness, outlet from host, Firebase JWT check) can be defined more than once; they move to `world/` as touched.
 - **Retire list** (each deletion needs its own operator yes, after the rebuild test): `DRIFTLOG#`, `situations/history`, `WEB#INDEX` / `LATEST`, `tags/backfill`, `world/shadow`, the Scans in `newsSensitiveData`.
 - **Open questions:** one ingest or two; consolidate the five user tables.
-- **Source gaps the facts inherit:** `topicId` is unstable across runs; a legacy script still edits verdicts in place; `backend/pipeline/cli/threads.mjs merge/split` rewrites rows in place (on the record a merge is a `story_merged` fact).
+- **Source gaps the facts inherit:** `topicId` is unstable across runs; `backend/pipeline/cli/threads.mjs merge/split` rewrites rows in place (on the record a merge is a `story_merged` fact).
 
 ## 8. Decided (operator, 2026-10-21)
 Two clocks, ten stages, the object model and the stores. Facts are the system of record; the five-stage picture is the top level and the ten stages are the detailed mapping. Notes (0042) are the third object, added 2026-10-31. A design discussion is not a build go-ahead: each step waits for its own go.

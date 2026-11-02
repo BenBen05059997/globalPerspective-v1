@@ -77,5 +77,3 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"country_intelligence","payload":{"countryNames":["Japan"]}}' | head -c 300`
 - Facts: same command with `-d '{"action":"country_facts","payload":{"countryNames":["Japan"]}}'`
 - Daily job: `aws scheduler get-schedule --name countryIntelliegence --region ap-northeast-1 --query State`
-
-Last verified: 2026-10-31

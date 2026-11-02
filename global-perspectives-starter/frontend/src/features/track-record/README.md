@@ -29,7 +29,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - `lib/trackRecordView.js` - pure view model for both pages; `stageWording`, `accuracyLock`, `accuracyEstimate`, `notReadyCopy`,
   `pilotExclusion`, `settlingLog`, `forecastPlaces` support it
 - `lib/sampleRule.js` - browser re-check of the weekly draw (`verifyDraw`, WebCrypto sha256); mirrors
-  `backend/predictions/newsPredictionResolver/src/lib.js`; parity through `sampleRuleGolden.json`, guarded by `scripts/check-shared-sync.mjs`
+  `backend/shared/src/questionPool.js` (`rankKey`, `draw`; the resolver's `lib.js` imports them); parity through `sampleRuleGolden.json`, guarded by `scripts/check-shared-sync.mjs`
 - Public API (`index.js`): `useTrackRecord`, `useCorrectionsFeed` (used by `home` for the trust strip)
 - Imports from other features: none. Shared: `FollowButton`, `EntityLink`, `RadarMap`, `@/shared/lib/links.js`, `questionStates.js` (state words: happened / not reported / could not be checked / awaiting check; void reasons come from `branchWording.js`),
   `trFormatDate.js`, `driftNote.js`
@@ -38,7 +38,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - Group guides: [predictions](../../../../../backend/predictions/README.md); the forecasts and drift notes come from [pipeline](../../../../../backend/pipeline/README.md)
 - `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
 - `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily, input `tick`): commits seeds for upcoming weeks, draws the
-  sample for each ended week, drafts verdicts on Mondays and writes them itself (decision 0034; none written as of 2026-10-22). The operator only corrects.
+  sample for each ended week, then nightly watches open question branches and writes verdicts itself from the story's own entries (decisions 0034, 0038). The operator only corrects.
 - `newsSensitiveData-dev` serves the corrections feed (gated).
 
 ## Data
@@ -56,8 +56,8 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 
 ## Pipeline
 1. `NewsProjectInvokeAgentLambda-dev` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
-2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts verdicts
-   (Brave Search evidence) and writes them itself; the operator disputes one with `predictions/settle-correct.js`.
+2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and nightly judges open branches from the story's
+   own entries and writes verdicts itself; the operator disputes one with `predictions/settle-correct.js`.
 3. `newsStoryRecord` builds `record/views/track-record.json` (with the draw pools and `settleHealth`) from the facts in every views run.
 4. `newsDriftCorrector` (05:30 UTC) writes `DRIFT#` notes that become the corrections ledger.
 5. `newsSensitiveData-dev` action `corrections_feed` (gated, stays on the action).
@@ -73,5 +73,3 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - View served: `curl -s https://globalperspective.net/data/record/views/track-record.json | head -c 300`; the draw check: `node predictions/verify-draw.mjs --public`
 - Settle ran: `aws logs tail /aws/lambda/newsPredictionResolver --since 3d --region ap-northeast-1 --filter-pattern '"settle"' --format short`
 - Schedules: `aws events describe-rule --name TriggerPredictionResolver --region ap-northeast-1 --query State`
-
-Last verified: 2026-10-31

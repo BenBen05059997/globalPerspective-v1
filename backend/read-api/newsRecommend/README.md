@@ -24,4 +24,4 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - Following a country also opts the user into drift email and stamps consent + unsubscribe token.
 
 ## Tests
-- `cd backend/read-api/newsRecommend/src && npm test` (`node test-scoring.mjs`, offline).
+- `cd backend/read-api/newsRecommend/src && npm test` runs `node test-scoring.mjs` and `node --test ../test/*.test.js` (offline, 43 tests: preferences, follows, unsubscribe kinds, alerts, recommend, record reads).

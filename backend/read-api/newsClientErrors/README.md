@@ -21,4 +21,4 @@ Kept off the content proxy on purpose (bursty, untrusted traffic). Read rows bac
 - Missing `CLIENT_ERRORS_TABLE` env -> 500 on every request.
 
 ## Tests
-- None.
+- `cd backend/read-api/newsClientErrors/src && npm test` (`node --test ../test/*.test.js`; offline, 16 tests): the method gate, the 16 KB body cap, field clamps, fingerprint grouping and the TTL, failure replies, and no CORS headers.

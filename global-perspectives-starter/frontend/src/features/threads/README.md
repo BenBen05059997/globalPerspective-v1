@@ -70,5 +70,3 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"archive_range","payload":{"days":2}}' | head -c 300`
 - Story web index: same command with `-d '{"action":"web_index"}'`
 - Analysis job: `aws events describe-rule --name TriggerDailyAnalysis --region ap-northeast-1 --query State`
-
-Last verified: 2026-10-31

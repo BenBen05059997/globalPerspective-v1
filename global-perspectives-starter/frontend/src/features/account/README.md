@@ -73,5 +73,3 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
 - Function URLs exist: `aws lambda get-function-url-config --function-name newsSavedItems --region ap-northeast-1 --query AuthType` (same for `newsRecommend`, `newsPolarBilling`)
 - Saved-items traffic: `aws logs tail /aws/lambda/newsSavedItems --since 7d --region ap-northeast-1 --format short`
 - Drift email still off: `aws events describe-rule --name TriggerDriftEmailSend --region ap-northeast-1 --query State`
-
-Last verified: 2026-10-31

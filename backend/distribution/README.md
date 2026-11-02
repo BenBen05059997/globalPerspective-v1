@@ -44,7 +44,6 @@ The two brief writers also copy each brief into the record as a `daily_brief` / 
 
 - Subscriber breaking emails only include alerts a human set to `confirmed`.
 - The live newsPostLinkedin env carries Mastodon, Telegram, Farcaster and Nostr settings, but the code posts only to LinkedIn and Bluesky.
-- `newsPostDevTo` keeps dead Dev.to and OpenRouter code that the handler never calls.
 
 ## How to check it
 

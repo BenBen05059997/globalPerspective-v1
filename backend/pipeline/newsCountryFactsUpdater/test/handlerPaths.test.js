@@ -306,6 +306,23 @@ test('without credentials, or when ACLED login or read fails, the previously sto
   assert.deepEqual(facts(badRead, 'Iran').acledData, old);
 });
 
+test('a network error talking to ACLED (login or read) keeps the stored ACLED data and does not fail the country', async () => {
+  const old = { eventCount30d: 99, source: 'ACLED', retrievedAt: '2026-09-01T00:00:00.000Z' };
+  for (const failOn of ['POST', 'GET']) {
+    const ddb = fakeDdb([existing('Iran', { acledData: old })]);
+    const https = fakeHttps((i) => {
+      if (i.hostname !== 'acleddata.com') return undefined;
+      if (i.method === failOn) throw new Error('ECONNRESET');
+      return i.method === 'POST' ? TOKEN_OK : { status: 200, body: { data: [] } };
+    });
+    await run({ https, ddb, env: CREDS }, { countries: ['Iran'] }, async ({ logs }, out) => {
+      assert.deepEqual(JSON.parse((await out).body).updated, ['Iran']);
+      assert.ok(logs.error.some((l) => /ACLED (auth )?error.*ECONNRESET/.test(l)), logs.error.join('\n'));
+    });
+    assert.deepEqual(facts(ddb, 'Iran').acledData, old, failOn);
+  }
+});
+
 test('ACLED is only asked for the original 12; a country without ACLED never gets conflict data', async () => {
   const https = fakeHttps(acled([{ event_date: '2026-10-30', fatalities: '1', actor1: 'A' }]));
   const ddb = fakeDdb();

@@ -58,8 +58,8 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Rules: [DATA_STRATEGY.md](../../../../../project-docs/architecture/DATA_STRATEGY.md)
 
 ## How to check it
-- Tests: none cover this feature (`home/__tests__/todayErrors.test.jsx` mocks the strip out); lint only:
-  `cd global-perspectives-starter/frontend && npx eslint src/features/breaking`
+- Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/breaking` (bell, strip, both hooks;
+  `fetchAlerts` / `fetchAlert` faked), plus `npx eslint src/features/breaking`
 - Public feed (from the repo root):
   `U=$(sed -n "s/^window.USER_PREFS_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$U" -H 'Content-Type: application/json' -d '{"action":"list_alerts"}' | head -c 300`
 - Detection job: `aws events describe-rule --name TriggerBreakingAlert --region ap-northeast-1 --query State`

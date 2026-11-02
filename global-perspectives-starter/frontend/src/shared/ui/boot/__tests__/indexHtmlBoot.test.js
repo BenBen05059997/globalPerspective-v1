@@ -21,6 +21,11 @@ describe('index.html pre-JS boot', () => {
     expect(m[1]).toBe(min(css));
   });
 
+  it('puts the boot node on <body>, outside #root (so inert on #root never disables its RETRY button)', () => {
+    expect(html).toContain('<div id="root"></div>');
+    expect(html).toMatch(/document\.body\.insertAdjacentHTML\('beforeend',\s*'<div id="gp-boot"/);
+  });
+
   it('builds a #gp-boot node from a tiny inline script, full on "/" and compact elsewhere, both dark', () => {
     expect(html).toContain('id="gp-boot"');
     expect(html).toMatch(/location\.pathname === '\/'/);

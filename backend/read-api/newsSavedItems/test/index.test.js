@@ -282,30 +282,3 @@ test('no response on any path carries an Access-Control-* header (success, valid
   assert.equal(failed.statusCode, 500);
   noCors(failed);
 });
-
-// ── AppSync resolver mode (event.info.fieldName) ───────────────────────────────────────────────────────────────
-const appsync = (fieldName, args, headers = auth()) => ({ info: { fieldName }, arguments: args, request: { headers } });
-
-test('AppSync: saveItem / unsaveItem / getSavedItems return the GraphQL result shapes', async () => {
-  const h = load();
-  const saved = await h(appsync('saveItem', { itemType: 'daily', itemId: '2026-10-01' }));
-  assert.equal(saved.success, true);
-  assert.equal(saved.error, null);
-  assert.equal(saved.savedAt, sent[0].input.Item.savedAt);
-  assert.deepEqual(await h(appsync('unsaveItem', { itemType: 'daily', itemId: '2026-10-01' })), { success: true, error: null, savedAt: null });
-  assert.equal(sent[1].name, 'DeleteCommand');
-  respond = () => ({ Items: [{ uid: 'user-1', savedKey: 'daily#d', itemType: 'daily', itemId: 'd', savedAt: '2026-10-01T00:00:00.000Z' }] });
-  const list = await h(appsync('getSavedItems', {}));
-  assert.deepEqual(list, { success: true, items: [{ itemType: 'daily', itemId: 'd', savedAt: '2026-10-01T00:00:00.000Z' }], count: 1 });
-});
-
-test('AppSync: no token, an unknown field, a validation error and a missing table all throw (surfaced as ctx.error); nothing is written', async () => {
-  const h = load();
-  await assert.rejects(h(appsync('saveItem', { itemType: 'thread', itemId: 'a' }, {})), /Sign in required/);
-  await assert.rejects(h(appsync('saveItem', { itemType: 'thread', itemId: 'a' }, { authorization: fb.bearer({}, { key: fb.otherKey }) })), /Sign in required/);
-  await assert.rejects(h(appsync('dropTable', {})), /Unsupported field: dropTable/);
-  await assert.rejects(h(appsync('saveItem', { itemType: 'thread', itemId: 'a#b' })), /itemId cannot contain "#"/);
-  assert.deepEqual(sent, []);
-  const noTable = load({ FIREBASE_PROJECT_ID: fb.PROJECT });
-  await assert.rejects(noTable(appsync('getSavedItems', {})), /Server misconfiguration/);
-});

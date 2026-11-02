@@ -91,7 +91,7 @@ exports.handler = async (event) => {
   }
 
   // A platform that attempted posts and landed none (expired token, API change) must not return
-  // normally: throwing counts as a Lambda error, so the lambda-errors-newsPostLinkedin alarm fires.
+  // normally: throwing counts as a Lambda error, so the Lambda Errors metric counts it.
   // Partial success on a platform is a normal return.
   const allFailed = allPostsFailed(aggregateResults);
   if (allFailed.length) {

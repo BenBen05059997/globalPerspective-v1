@@ -1,21 +1,9 @@
 'use strict';
 
-// newsSavedItems — per-user save/bookmark Lambda.
-//
-// Supports two invocation modes:
-//   1. AppSync resolver — event = { info, arguments, request, ... } (the AppSync ctx)
-//      Return shape matches the GraphQL types directly:
-//        saveItem / unsaveItem  → SavedItemResult { success, error, savedAt }
-//        getSavedItems          → SavedItemsListResult { success, items, count }
-//
-//   2. Lambda Function URL — event = { body, headers, requestContext, ... }
-//      Returns HTTP-style { statusCode, headers, body } responses.
-//
-// The Lambda auto-detects the mode by checking for `event.info?.fieldName`.
+// newsSavedItems — per-user save/bookmark Lambda, invoked through its Lambda Function URL.
+// event = { body, headers, requestContext, ... }; returns HTTP-style { statusCode, headers, body }.
 //
 // Auth: all actions require a Firebase JWT in `Authorization: Bearer <token>`.
-// For AppSync, the frontend must send the token in the GraphQL request headers
-// (AppSync passes them through to the Lambda as `event.request.headers`).
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
@@ -34,13 +22,6 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 const ALLOWED_ITEM_TYPES = new Set(['thread', 'country', 'daily', 'weekly', 'pair']);
 const MAX_SAVED_ITEMS = 500;
 const MAX_METADATA_BYTES = 4096;
-
-// Map AppSync GraphQL field names → internal action names
-const FIELD_TO_ACTION = {
-  saveItem: 'save_item',
-  unsaveItem: 'unsave_item',
-  getSavedItems: 'get_saved_items',
-};
 
 // ── DynamoDB client (singleton) ─────────────────────────────────────────────
 let _ddb = null;
@@ -178,65 +159,6 @@ async function getSavedItemsCore(uid, args) {
   }
 }
 
-// ── AppSync handler ─────────────────────────────────────────────────────────
-async function handleAppSync(event) {
-  const fieldName = event.info?.fieldName;
-  const action = FIELD_TO_ACTION[fieldName];
-  if (!action) {
-    throw new Error(`Unsupported field: ${fieldName}`);
-  }
-
-  if (!SAVED_ITEMS_TABLE) {
-    console.error('newsSavedItems misconfigured: SAVED_ITEMS_TABLE env var missing');
-    throw new Error('Server misconfiguration');
-  }
-
-  // Auth
-  const reqHeaders = event.request?.headers || {};
-  const authHeader = reqHeaders.authorization || reqHeaders.Authorization || '';
-  const jwtPayload = await verifyFirebaseToken(authHeader);
-  if (!jwtPayload) {
-    throw new Error('Sign in required');
-  }
-  const uid = jwtPayload.sub;
-  const args = event.arguments || {};
-
-  console.info('newsSavedItems (AppSync) received', { fieldName, action, uid, argKeys: Object.keys(args) });
-
-  if (action === 'save_item') {
-    const result = await saveItemCore(uid, args);
-    if (!result.ok) throw new Error(result.error);
-    return {
-      success: true,
-      error: null,
-      savedAt: result.data?.savedAt || null,
-    };
-  }
-
-  if (action === 'unsave_item') {
-    const result = await unsaveItemCore(uid, args);
-    if (!result.ok) throw new Error(result.error);
-    return {
-      success: true,
-      error: null,
-      savedAt: null,
-    };
-  }
-
-  if (action === 'get_saved_items') {
-    const result = await getSavedItemsCore(uid, args);
-    if (!result.ok) throw new Error(result.error);
-    const items = result.data || [];
-    return {
-      success: true,
-      items,
-      count: items.length,
-    };
-  }
-
-  throw new Error(`Unhandled action: ${action}`);
-}
-
 // ── Function URL handler ────────────────────────────────────────────────────
 async function handleFunctionUrl(event) {
   // OPTIONS preflight is handled by AWS Function URL CORS config — this
@@ -294,19 +216,12 @@ async function handleFunctionUrl(event) {
   }
 }
 
-// ── Handler — auto-detects AppSync vs Function URL ──────────────────────────
+// ── Handler ─────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   try {
-    if (event?.info?.fieldName) {
-      return await handleAppSync(event);
-    }
     return await handleFunctionUrl(event);
   } catch (err) {
     console.error('newsSavedItems unhandled error', err);
-    if (event?.info?.fieldName) {
-      // AppSync — re-throw so the resolver surfaces it as ctx.error
-      throw err;
-    }
     return {
       statusCode: 502,
       headers: { 'Content-Type': 'application/json' },

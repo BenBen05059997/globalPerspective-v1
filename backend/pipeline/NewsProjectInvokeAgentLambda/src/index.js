@@ -151,7 +151,7 @@ exports.handler = async (event) => {
     // story succeeded; Gemini rewrites `staging` with a full Put, so a new staging clears it).
     if (!force && !topicId && !readOnly && !dryRun && stagingItem?.agentProcessedAt) {
       // Processed but generated before this slot: gemini produced nothing new, so today's archive is
-      // never written. Fail loudly (rethrown below) so Errors fires lambda-errors-*.
+      // never written. Fail loudly (rethrown below) so the Lambda Errors metric counts it.
       const stale = staleProcessedRun(stagingItem, new Date());
       if (stale) {
         console.error(`[pipeline-status] ${JSON.stringify({ status: 'failed', reason: 'stale-processed-staging', ...stale, agentProcessedAt: stagingItem.agentProcessedAt })}`);

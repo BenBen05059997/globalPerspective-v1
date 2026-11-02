@@ -18,6 +18,7 @@ The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h 
 
 ## Gotchas
 - Returns `{ ok: false }` without fetching anything when `XAI_API_KEY` is unset.
+- RSS is parsed by `src/_shared/rss.js` (shared with newsInvokeGemini) through a small `parseRss` adapter in `src/index.js`: RSS 2.0, RDF (`<item rdf:about>`, `<dc:date>`: DW English, AllAfrica) and Atom; decimal and hex entities. The adapter keeps the article shape `{title, url, description (<=220), source, ageH, publishedAt}`; undated items get `ageH` 0.
 - GDELT is off because Lambda egress IPs get throttled or refused by GDELT (code comment, 2026-09-09).
 - `classifier-core.js` entity normalization is checked against NewsProjectInvokeAgentLambda's `entity-normalize.js` by `scripts/check-shared-sync.mjs`.
 

@@ -11,6 +11,7 @@
 
 const core = require('./classifier-core');
 const { chat } = require('./_shared/llm');
+const { parseRssXml, decodeEntities } = require('./_shared/rss');
 const { buildMessages, parseClassification, normalizeClassified, clusterStories, splitByCache, nextCache } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -58,29 +59,14 @@ let _s3, _cw;
 function s3() { if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); } return _s3; }
 function cw() { if (!_cw) { const { CloudWatchClient } = require('@aws-sdk/client-cloudwatch'); _cw = new CloudWatchClient({ region: REGION }); } return _cw; }
 
-// ── RSS (trimmed from newsInvokeGemini) ──────────────────────────────────────
-const ENTS = { '&amp;': '&', '&apos;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>', '&nbsp;': ' ', '&#39;': "'", '&#8217;': '’', '&#8216;': '‘', '&#8220;': '“', '&#8221;': '”', '&#8230;': '…', '&#8211;': '–', '&#8212;': '—' };
-function decodeEntities(s) {
-  return String(s || '').replace(/&(?:amp|apos|quot|lt|gt|nbsp|#39|#8217|#8216|#8220|#8221|#8230|#8211|#8212);/g, (m) => ENTS[m] || m).replace(/&#(\d+);/g, (_, n) => { try { return String.fromCodePoint(+n); } catch { return _; } });
-}
+// ── RSS (shared parser: RSS 2.0, RDF/RSS 1.0 and Atom; hex and decimal entities) ─────────────────
+// Adapter keeps this Lambda's article shape: {title, url, description (<=220), source, ageH, publishedAt}.
+// An undated item has ageH 0 (treated as fresh) and publishedAt null.
 function parseRss(xml, source) {
-  const out = [];
-  const re = /<item>([\s\S]*?)<\/item>/gi;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const c = m[1];
-    const tt = c.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
-    let title = tt ? tt[1] : ''; title = decodeEntities(title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').trim());
-    const lk = c.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
-    let url = lk ? lk[1] : ''; url = url.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
-    const dd = c.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
-    let description = dd ? dd[1] : ''; description = decodeEntities(description.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').slice(0, 220).trim());
-    const pd = c.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
-    let ageH = 0; let publishedAt = null;
-    if (pd) { const tms = new Date(pd[1].trim()).getTime(); if (!isNaN(tms)) { ageH = (Date.now() - tms) / 3.6e6; publishedAt = new Date(tms).toISOString(); } }
-    if (title && url) out.push({ title, url, description, source, ageH, publishedAt });
-  }
-  return out;
+  return parseRssXml(xml, source).map((a) => ({
+    title: a.title, url: a.url, description: a.description.slice(0, 220).trim(), source,
+    ageH: a.publishedAt ? (Date.now() - Date.parse(a.publishedAt)) / 3.6e6 : 0, publishedAt: a.publishedAt,
+  }));
 }
 // ── GDELT DOC 2.0 — DISABLED by default: unreliable from Lambda (shared egress IPs are IP-throttled
 // / connection-refused / 429'd by GDELT; verified 2026-09-09). Global coverage is instead achieved by

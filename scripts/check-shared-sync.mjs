@@ -337,6 +337,8 @@ async function selfTestEntityNormalization() {
   const a = path.join(dir, 'classifier-core.js');
   const b = path.join(dir, 'entity-normalize.js');
   fs.copyFileSync(srcA, a);
+  // classifier-core.js requires ./_shared/* (a Lambda's committed link to backend/shared/src); the temp copy needs the same.
+  fs.symlinkSync(abs(SHARED), path.join(dir, '_shared'), 'dir');
   let raw = fs.readFileSync(srcB, 'utf8');
   // Perturb one character inside an ACTOR_ALIASES value (still valid JS/JSON literal).
   const perturbed = raw.replace("'trump'", "'trumpx'");

@@ -203,11 +203,10 @@ test('country_history and corrections_feed: a failed read is a 500 with a plain 
   assert.deepEqual([c.status, c.body.error], [400, 'Missing countryName']);
 });
 
-test('a POST whose body is not valid JSON is a 400 JSON reply carrying the allowed-origin header, not an unhandled throw',
-  { skip: 'BUG: index.js:114 JSON.parse runs before the try; invalid JSON throws (Function URL 502) instead of 400' }, async () => {
-    const { handler } = loadProxy();
-    const res = await handler({ httpMethod: 'POST', headers: { origin: ALLOWED[2] }, body: '{not json' });
-    assert.equal(res.statusCode, 400);
-    assert.equal(res.headers[ACAO], ALLOWED[2]);
-    assert.equal(JSON.parse(res.body).success, false);
-  });
+test('a POST whose body is not valid JSON is a 400 JSON reply carrying the allowed-origin header, not an unhandled throw', async () => {
+  const { handler } = loadProxy();
+  const res = await handler({ httpMethod: 'POST', headers: { origin: ALLOWED[2] }, body: '{not json' });
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.headers[ACAO], ALLOWED[2]);
+  assert.equal(JSON.parse(res.body).success, false);
+});

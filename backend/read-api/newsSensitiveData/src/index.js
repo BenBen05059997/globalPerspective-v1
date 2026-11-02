@@ -111,14 +111,18 @@ exports.handler = async (event) => {
 
   // Support GET query params (for RSS readers) and POST body
   const qs = event.queryStringParameters || {};
-  const body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
-  const action = qs.action || body?.action;
-  const payload = body?.payload || {};
-
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
     'Content-Type': 'application/json',
   };
+  let body;
+  try {
+    body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
+  } catch {
+    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Invalid JSON body' }) };
+  }
+  const action = qs.action || body?.action;
+  const payload = body?.payload || {};
 
   console.info('newsSensitiveData received event', {
     action,

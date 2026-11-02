@@ -1,7 +1,7 @@
 // check_links — ratchet on hand-built page addresses (engine: quality/ratchet.mjs).
 //
 // Every reader destination has one canonical address built in shared/lib/links.js (frontend) or
-// backend/shared/src/links.js (emails) — PLAN_2026-10-19_linking_and_pages.md. A route string typed
+// backend/shared/src/links.js (emails). A route string typed
 // anywhere else is a copy that drifts, so per file and per route the count may only go DOWN (target 0).
 // Counted in frontend src and backend/ (.js/.jsx/.mjs; code comments ignored): each occurrence of a route
 // prefix below that is not part of a longer path segment ('/weekly/countries' is not '/weekly/country').

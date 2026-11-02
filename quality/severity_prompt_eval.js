@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // severity_prompt_eval.js — Phase 4 Step 4.1 offline eval harness.
-// See project-docs/architecture/ONE_TRUTH_EXECUTION_PLAN.md Phase 4 for the full spec.
+// Spec: ONE_TRUTH_EXECUTION_PLAN.md Phase 4 (deleted 2026-10-19; git history keeps it).
 //
 // Runs a candidate "dimensions" rubric block over the frozen 28 narratives in
 // quality/severity_gold_set.json, through the SAME two model APIs the live generators use

@@ -12,7 +12,7 @@ generators, plus an anchored expansion for human labeling. No prompt or rubric c
 
 ## 1. Current rubric (baseline) — quoted verbatim from the live prompts
 
-### `backend/pipeline/newsCountryIntelligence/src/index.js` (~line 540-545)
+### `backend/pipeline/newsCountryIntelligence/src/index.js` (~line 490)
 
 > 10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event
@@ -26,7 +26,7 @@ generators, plus an anchored expansion for human labeling. No prompt or rubric c
 > Per-axis calibration: 0-24 = low, 25-49 = moderate, 50-74 = elevated, 75-100 = severe.
 > (riskScore and riskLevel are derived from these — do NOT output them separately.)
 
-### `backend/pipeline/newsThreadAnalysis/src/index.js` (~line 271)
+### `backend/pipeline/newsThreadAnalysis/src/index.js` (~line 201)
 
 > 8. "dimensions": Object scoring THIS thread's current risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific development

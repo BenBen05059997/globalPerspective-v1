@@ -1,9 +1,9 @@
 // Analysis Studio eval — quality/analysis/run.mjs
 //
-// Two layers, like the economic-quality evals:
+// Two layers:
 //   Layer A (always, no key): run the guardrail validator against frozen GOLDEN
 //     fixtures and assert the EXACT warning codes. This is the regression net for
-//     utils/analysisValidator.js — the same module the live Studio uses.
+//     features/analysis-studio/lib/analysisValidator.js — the module newsSharedAnalysis copies byte for byte.
 //   Layer B (only with a key): build the REAL prompt (same SYSTEM_PROMPT + lenses +
 //     buildUserMessage the app ships), call the chosen provider, validate the output,
 //     and print a per-case report. This is the live quality check.

@@ -21,8 +21,7 @@ const __dir = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dir, '../global-perspectives-starter/frontend/src');
 
 // Basename search under src/ (not a fixed src/hooks/ path) — hooks may live in
-// any feature folder after the frontend restructure (see
-// project-docs/archive/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md P0).
+// any feature folder after the frontend restructure (decision 0006).
 function findByBasename(dir, basename) {
   let entries;
   try {

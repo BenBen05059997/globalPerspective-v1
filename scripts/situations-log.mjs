@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // situations-log.mjs — readable day-by-day digest of the situation tracker's history, for tuning
-// the cool/close rule (DATA_STRATEGY.md / MAP_HOME_SITUATION_PLAN.md S2). Read-only.
+// the cool/close rule (DATA_STRATEGY.md). Read-only.
 //
 //   node scripts/situations-log.mjs [--days 3] [--shadow]
 //

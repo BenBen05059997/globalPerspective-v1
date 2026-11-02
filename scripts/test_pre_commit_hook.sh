@@ -42,7 +42,7 @@ if commit_ok "config"; then fail "(a) docs/config.js should be blocked"; else
 fi
 g reset -q; rm -f "$WORK/docs/config.js"
 
-# (b) code change without a CHANGES.md entry passes (CHANGES.md is frozen; no changelog rule)
+# (b) a code change passes with no changelog entry (there is no changelog rule; CHANGES.md was deleted 2026-10-19)
 echo "console.log(1)" > "$WORK/backend/pipeline/newsFoo/src/index.js"
 g add backend/pipeline/newsFoo/src/index.js
 commit_ok "lambda code only" && pass "(b) code change without CHANGES.md passes" || fail "(b) should pass: $(cat "$WORK/.log")"

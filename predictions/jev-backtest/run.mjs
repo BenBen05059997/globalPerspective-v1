@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// P6 Jev story-selection backtest, v9 (plan: project-docs/prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md).
+// P6 Jev story-selection backtest, v9 (plan: TASK_2026-10-17_grounded_forecast_and_cost.md, deleted 2026-10-19; git history keeps it).
 // Read-only on AWS (S3 corpus + DynamoDB archive via the AWS CLI). Spends Jev tokens (operator-approved 2026-10-17).
 //
 //   node predictions/jev-backtest/run.mjs --dry     # build candidates + matching only

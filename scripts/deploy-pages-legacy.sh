@@ -6,10 +6,11 @@
 # (globalperspective.net) picks it up. Refuses to touch docs/config.js, which
 # holds runtime config (Firebase, API endpoint, Google Maps key).
 #
-# Usage:   ./deploy.sh
-#          ./deploy.sh --skip-build      # copy already-built dist/ only
-#          ./deploy.sh --commit "msg"    # build, copy, and commit
-#          ./deploy.sh --commit "msg" --push   # ...and push to origin
+# Usage (through the repo-root ./deploy.sh, which needs explicit authorization for this target):
+#          ./deploy.sh --target legacy-pages
+#          ./deploy.sh --target legacy-pages --skip-build      # copy already-built dist/ only
+#          ./deploy.sh --target legacy-pages --commit "msg"    # build, copy, and commit
+#          ./deploy.sh --target legacy-pages --commit "msg" --push   # ...and push to origin
 #
 # Each run: builds, copies dist/ → docs/, STRIPS docs/assets/*.map (sourcemaps
 # are 'hidden' and must never be served), and resyncs docs/404.html byte-for-byte

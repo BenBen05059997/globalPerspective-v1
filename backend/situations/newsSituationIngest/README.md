@@ -23,7 +23,7 @@ The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h 
 
 ## Source field contract
 
-Corpus rows retain RSS `publishedAt` in ISO UTC (null if unavailable) and a deterministic `outlet` display name from the selector’s single metadata table (linked pending its coordinator-owned shared move). Unknown domains keep null. Shared `resolveIso3` canonicalizes new and cached countries, dropping and counting unknown codes.
+Corpus rows retain RSS `publishedAt` in ISO UTC (null if unavailable) and a deterministic `outlet` display name from the selector’s single outlet table (`backend/shared/src/outlets.js`, shared with the selector). Unknown domains keep null. Shared `resolveIso3` canonicalizes new and cached countries, dropping and counting unknown codes.
 
 If more than half of attempted new classifications are missing, the run returns `ok:false`, `status:failed`, `degraded:true` with counts and emits `[pipeline-status]`. Cache hits do not hide an outage. No feeds or no API key also produces a failure marker. `stories/index.json` retains its last good stories and `updated_at`, adding the degraded marker and `attempted_at`; partial results do not replace story state or corpus. A successful run clears the marker, including a legitimately empty significant-story set. The tracker must be updated alongside this change.
 

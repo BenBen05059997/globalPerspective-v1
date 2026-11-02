@@ -1,8 +1,7 @@
 # pipeline
 
 The content pipeline. It picks the day's news topics from RSS feeds, writes the story text and forecasts, links stories into threads,
-and then builds the thread, country and cause-web analyses that the site shows. It serves readers of the site pages and the
-analysts who use the Analysis Studio. Every job runs on a schedule; all model calls go to a DeepSeek endpoint set in each Lambda's live env.
+and then builds the thread, country and cause-web analyses that the site shows. It serves readers of the site pages. Every job runs on a schedule; all model calls go to a DeepSeek endpoint set in each Lambda's live env.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
@@ -40,7 +39,7 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 8. newsCountryIntelligence (05:15) writes country briefings for countries its refresh policy selects.
 9. newsDriftCorrector (05:30) compares the daily history rows and writes drift notes.
 10. The browser reads these rows through the `newsSensitiveData-dev` API proxy (pages that already have a record view read the view first and use the action as the fallback; see the read-api group). The actions are `topics` and `today` (home), `summary`, `prediction`, `trace_cause`, `narrative_thread` and `thread_analysis` (story pages), `country_intelligence`, `country_facts`, `country_history` (country pages), `systems_analysis`, `web_index`, `corrections_feed`.
-11. Pages that call them: `/today` and `/` (topics), `/weekly/thread/:threadId` (narrative thread, forecast, web), `/weekly/country/:countryName` (country intelligence, facts, history), `/analyze` (summary, prediction, trace cause, thread and country history), `/track-record` (corrections feed).
+11. Pages that call them: `/today` and `/` (topics), `/weekly/thread/:threadId` (narrative thread, forecast, web), `/weekly/country/:countryName` (country intelligence, facts, history), `/track-record` (corrections feed).
 
 ## Shared code
 

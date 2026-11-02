@@ -24,7 +24,7 @@ then writes a 4-axis risk read (`src/_shared/riskDimensions.js`). `{ "dryRun": t
 
 ## Gotchas
 - A failed world-file fetch means no alert refreshes; the weekly baseline still runs. Region / aggregate keys are not briefed (`isCountryName`); aliases (USA/US) canonicalize for alerts only, record keys stay verbatim.
-- `dayZero`, `riskDimensions`, `llm` and the name tables come from `backend/shared/src` through the `src/_shared` symlink (zipped as real files by `scripts/lambda.sh`). `src/refreshPolicy.js` `isCountryName` must match shared `placeFilter.js`; `scripts/check-shared-sync.mjs` checks it.
+- `dayZero`, `riskDimensions`, `llm` and the name tables come from `backend/shared/src` through the `src/_shared` symlink (zipped as real files by `scripts/lambda.sh`). `src/refreshPolicy.js` re-exports `isCountryName` from shared `placeFilter.js`, so there is no copy to keep in sync.
 
 ## Tests
 - `cd backend/pipeline/newsCountryIntelligence/src && npm test` (`node --test ../test/*.test.js`).

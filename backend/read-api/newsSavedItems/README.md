@@ -17,4 +17,4 @@ Per-user saves/bookmarks. Actions `save_item`, `unsave_item`, `get_saved_items` 
 - OPTIONS returns a bare 200 only as a fallback; preflight is normally answered by the Function URL config.
 
 ## Tests
-- None (`src/event.json` is a placeholder sample event).
+- None.

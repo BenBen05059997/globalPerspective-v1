@@ -32,7 +32,7 @@ The nightly stages (WATCH, GATHER, JUDGE, RECORD) and their rules are in [newsPr
 ## Shared code
 
 - newsPredictionResolver uses `llm.js` and `s3json.js` from `backend/shared/src`.
-- The resolver holds the only copy of the ISO-week helpers (`weeks.js`); the snapshot and proxy copies are gone.
+- The resolver's ISO-week helpers (`weekOf`, `weekStart`) are in `src/lib.js`; the snapshot and proxy copies are gone.
 
 ## Known limits
 

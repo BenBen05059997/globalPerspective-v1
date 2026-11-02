@@ -11,7 +11,7 @@ Read order: `CLAUDE.md` -> this file -> [architecture/ARCHITECTURE.md](architect
 - Facts come from code and live AWS: `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `App.jsx`, the served bundle hash. Never trust a doc for state.
 
 ## 2. Where we left off (2026-11-02)
-Working model: one coordinator session reviews, merges and deploys; lanes (git worktrees) or Sonnet agents build. Stale docs are found and rewritten whole by Sonnet agents, checked against code and AWS. Lane briefs go in `.board/` (ignored via `.git/info/exclude`). Dev machine is an Apple-silicon Mac; Lambdas stay x86_64 (`scripts/lambda.sh` cross-installs linux/x64 deps). Pages serves bundle `index-Upg1U2VW`.
+Working model: one coordinator session reviews, merges and deploys; lanes (git worktrees) or Sonnet agents build. Stale docs are found and rewritten whole by Sonnet agents, checked against code and AWS. Lane briefs go in `.board/` (ignored via `.git/info/exclude`). Dev machine is an Apple-silicon Mac; Lambdas stay x86_64 (`scripts/lambda.sh` cross-installs linux/x64 deps). Pages serves the bundle `docs/index.html` names.
 
 Foundation (goal: the site rebuilds from the record alone, decision 0035): steps 0-4 are done. Notes live in the record (0042), and the story, country, track record, list and archive pages read views (0043 to 0046). Weekly review `newsRecordReview` is live (`TriggerRecordReview`, Mon 01:00 UTC); the first full run (W44, about 520 stories) is Mon 2026-11-02. Pipeline alarms were removed by the operator choice. The countries list still reads `archive_range`.
 
@@ -21,7 +21,7 @@ Step 5 (retire the DynamoDB world tables; operator 2026-10-31; audit of 2026-11-
 - Readers have flags (0053, 0054). `NOTES_READS` accepts only `ddb`, `notes` or `compare` (`backend/shared/src/noteReads.js`); the value `record` silently meant `ddb`. At about 12:15Z on 2026-11-01 it was set to `notes` on newsSensitiveData-dev, newsBreakingAlert, newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector and newsSystemsAnalysis (checked live); the read API answers from notes. `RECORD_READS=record` on newsBoard, newsRecommend, newsPostLinkedin, newsPostDevTo, newsSensitiveData-dev and newsBreakingAlert still falls back to DynamoDB when a view has no answer or is over 9 h old.
 - Other live flags: `newsStoryRecord` `ENTRIES_SOURCE=inbox` and `FORECASTS_SOURCE=inbox` (the 11-01 23:45Z compare had 0 differences over 647 snapshots; `PredictionLogScan` removed from its role; first nightly without it is 2026-11-02 23:45Z); newsPredictionResolver `QUESTIONS_SOURCE=compare`; agent `FORECASTS_INBOX_PREFIX=record/`; `NOTES_PREFIX=record/` on newsWeeklyBrief, newsCountryFactsUpdater and the daily Lambdas; `newsEmailSender` deployed 2026-11-02 with a record path, `RECORD_READS=compare` (first compare Sun 14:00Z); `newsBoard` presets and connect read the record (grant live). Read `[notes-compare]`, `[record-reads]`, `[questions-compare]`, `[entries-compare]`, `[forecasts-compare]` log lines; switch only at zero differences.
 - Scope: world tables go (SummarizeAndPredict, NewsCache, PredictionLog `PRED#`); user tables (0003), EMAILLOG, BreakingAlerts, ClientErrors and the PredictionLog commitment state stay.
-- Board: built and live (design rule in ARCHITECTURE_BOARD.md); live-data fixes released 2026-11-01 (bundle `index-Upg1U2VW`); presets settled (0054).
+- Board: built and live (design rule in ARCHITECTURE_BOARD.md); live-data fixes released 2026-11-01; presets settled (0054).
 
 The deletes of NewsCache and SummarizeAndPredict are not a midweek item: each needs code work first (blockers in STEP5_AUDIT.md sections 4 and 6). Order of work from here (times UTC; each switch only at zero differences, each delete with an operator yes after an S3 export):
 Monday checks: 2 Nov 01:00 first full weekly review (about 520 stories; read its result).
@@ -46,10 +46,10 @@ Waiting on the operator:
 
 Open smaller items:
 - Cloudflare: capture DNS/TLS/ruleset state, candidate upload, test host `next.globalperspective.net`, front-Worker `/blog` passthrough, observation window, add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS`.
-- Foundation leftovers (ARCHITECTURE_TIMELINE.md section 7): the full rebuild test, parser moves to `world/`, the retire list, LatAm and SEA feeds, 2 of 83 `NewsProjectInvokeAgent` tests failing on main, 41 archive days missing everywhere.
+- Foundation leftovers (ARCHITECTURE_TIMELINE.md section 7): the full rebuild test, parser moves to `world/`, the retire list, LatAm and SEA feeds, 2 of 115 `NewsProjectInvokeAgent` tests failing on main, 41 archive days missing everywhere.
 - Colour bugs unverified: map labels clip at the right edge and Europe labels overlap; Alerts list and Intel feed show the same stories on home; the country list "Highest Risk" rail should sort by score (`features/countries/CountryListPage.jsx`).
 - Record data: over-joined threads (us-court ae75a8 holds about 20 unrelated entries) and duplicate stories the review cannot merge without neighbours (Amazon 35a31e/c5bce9/da86ee, Canadian base fire 6822c0/bf3dd0); the review flags off-story entries as assignment proposals in the readings.
-- Backend hygiene: `newsAnalyze` and `newsPolarBilling` (each with sandbox) stay on `nodejs20.x`; `deepseek-v4-flash` default string in `newsPostDevTo`; deployed `newsAnalyze` differs from the repo by about 126 lines (parked credits code): leave it or remove the Lambda (billing code: needs yes).
+- Backend hygiene: `newsAnalyze` and `newsPolarBilling` (each with sandbox) stay on `nodejs20.x`; deployed `newsAnalyze` differs from the repo by about 126 lines (parked credits code): leave it or remove the Lambda (billing code: needs yes).
 
 Parked (each has a decision record): analysis credits (0002); breaking and drift email rules DISABLED until the first follower (`TriggerBreakingEmailSend`, `TriggerDriftEmailSend`).
 

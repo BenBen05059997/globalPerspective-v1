@@ -1,7 +1,7 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 182,
+    "spacing": 181,
     "fontSize": 54,
     "radius": 15
   },
@@ -31,7 +31,7 @@
       "spacing": 3
     },
     "features/threads/components/WeeklyMap.css": {
-      "spacing": 7
+      "spacing": 6
     },
     "features/threads/components/WeeklyMap.jsx": {
       "fontSize": 1

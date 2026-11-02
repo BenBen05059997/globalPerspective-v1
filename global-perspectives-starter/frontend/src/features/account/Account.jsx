@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/shared/hooks/useSavedItems';
 import { usePreferences } from '@/shared/hooks/usePreferences';
@@ -14,7 +14,6 @@ import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
-import { ROUTE } from '@/shared/lib/links.js';
 import '@/features/account/Account.css';
 
 function formatMemberSince(isoString) {

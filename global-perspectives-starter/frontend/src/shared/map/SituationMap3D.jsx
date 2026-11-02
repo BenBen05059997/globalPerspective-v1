@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
-import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
+import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController } from '@deck.gl/core';
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, PathLayer, IconLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';

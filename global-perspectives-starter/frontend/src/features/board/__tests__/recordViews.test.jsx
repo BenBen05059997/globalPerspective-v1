@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import RecordPinDetails from '../components/RecordPinDetails.jsx';
 import BoardWeekly from '../components/BoardWeekly.jsx';

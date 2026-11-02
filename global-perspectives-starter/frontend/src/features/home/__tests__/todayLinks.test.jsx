@@ -1,7 +1,7 @@
 // /today links through shared/lib/links.js: "Story arc" opens the story itself (only with a real
 // threadId), a topic's country goes to its country page, a region is plain text.
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 let topicsState;

@@ -22,17 +22,6 @@ beforeEach(() => {
   rv.fetchTrackRecordView.mockReset(); sink.reportFetchError.mockReset();
 });
 
-// what the record does not hold, or holds differently on the day of capture: see the decision (0044)
-const stripped = (m) => {
-  const out = JSON.parse(JSON.stringify(m));
-  for (const w of out.q.weeks) { delete w.draw; delete w.reviewed; }
-  delete out.q.schema; delete out.q.builtAt; delete out.q.settleHealth;
-  // questions due on the same day in one week come in scan order from the action and in draw order from the record
-  const byQid = (x, y) => x.qid.localeCompare(y.qid);
-  out.q.sampled.sort(byQid); out.boardItems.sort(byQid);
-  return out;
-};
-
 describe('the page model from the record view', () => {
   const data = trackRecordFromView(view);
 

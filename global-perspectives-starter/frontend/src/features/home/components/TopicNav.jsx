@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';

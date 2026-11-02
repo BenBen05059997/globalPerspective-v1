@@ -1,5 +1,5 @@
-/* Scoring-model-v2 risk scorecard (Phase C). Themes via the app's --ink/--line/
-   --paper tokens + the --risk-* vars from riskScoreToVar, so it follows light/dark. */
+/* Scoring-model-v2 risk scorecard (Phase C). Paints from the role tokens + the
+   --tier-* vars from riskScoreToVar. */
 .riskcard {
   border: 1px solid var(--hairline);
   border-radius: 8px;

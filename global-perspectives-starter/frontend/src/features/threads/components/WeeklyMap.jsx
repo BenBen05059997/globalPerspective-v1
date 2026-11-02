@@ -626,17 +626,17 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                           const canPlay = t.dates && t.dates.length > 1;
                           return (
                             <div key={t.threadId} className="wmap-thread-item">
-                              <div className="wmap-thread-info" onClick={() => onThreadClick(t.threadId)}>
-                                <div className="wmap-thread-title">{t.latestTitle}</div>
-                                <div className="wmap-thread-meta">
+                              <button type="button" className="wmap-thread-info" onClick={() => onThreadClick(t.threadId)}>
+                                <span className="wmap-thread-title">{t.latestTitle}</span>
+                                <span className="wmap-thread-meta">
                                   {t.articleCount} article{t.articleCount !== 1 ? 's' : ''} · {t.dates.length}d · {t.regions.slice(0, 3).join(', ')}
-                                </div>
+                                </span>
                                 {canPlay && (
-                                  <div className="wmap-thread-badges">
+                                  <span className="wmap-thread-badges">
                                     <span className="wmap-thread-badge multi-day">{t.dates.length} days</span>
-                                  </div>
+                                  </span>
                                 )}
-                              </div>
+                              </button>
                               {canPlay && (
                                 <Button
                                   variant="icon"

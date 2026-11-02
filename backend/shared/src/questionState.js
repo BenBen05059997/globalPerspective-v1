@@ -4,14 +4,11 @@
 // views use; pure, no I/O. Ported rule for rule from the read API's prediction_snapshot (read-api/newsSensitiveData/src/lib.js
 // questionSampleState / questionOutcomeState / isoWeekOfDay); that copy stays until the read API is retired, and
 // newsStoryRecord/test/questionState.test.js pins the two to the same answers.
-const ms = (d) => Date.parse(`${String(d).slice(0, 10)}T00:00:00Z`);
-const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / 86400000);
 
-// the eligibility window of the snapshot, in days from the issue day to the deadline
-const LEAD_MIN = 7;
-const LEAD_MAX = 90;
+// the eligibility window of the snapshot (days from the issue day to the deadline) and the day arithmetic are questionPool's
+const { LEAD_MIN, LEAD_MAX, ms, daysBetween } = require('./questionPool');
 
-/** ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41" (same rule as the resolver's lib.weekOf). */
+/** ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41" (the resolver's lib.weekOf is this function). */
 function isoWeekOfDay(d) {
   const t = new Date(ms(d));
   t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));

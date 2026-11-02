@@ -5,12 +5,7 @@
 // No new facts minted — this only formats fields newsDriftCorrector already wrote to the
 // DRIFT#<date> rows: the change (risk level / score) + the grounded, cited reason.
 
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
+const { escapeHtml: esc } = require('./_shared/escapeHtml');
 const { countryHref, absoluteUrl } = require('./_shared/links');
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

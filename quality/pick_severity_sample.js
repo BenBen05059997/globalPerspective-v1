@@ -17,10 +17,10 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { AXES, tierFromScore: band } = require('../backend/shared/src/riskDimensions'); // the generators' axes and 25/50/75 bands
 
 const TABLE = 'SummarizeAndPredict';
 const REGION = 'ap-northeast-1';
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 
 // The DeepSeek-outage window (Step 3.2 constraint #2) — records generated in this window are
 // excluded as unrepresentative of normal generator behavior.
@@ -108,14 +108,6 @@ function worstAxisScore(dimensions) {
     if (s != null && (worst == null || s > worst)) worst = s;
   }
   return worst;
-}
-
-function band(score) {
-  if (score == null) return null;
-  if (score >= 75) return 'high';
-  if (score >= 50) return 'elevated';
-  if (score >= 25) return 'moderate';
-  return 'low';
 }
 
 function inOutageWindow(generatedAt) {

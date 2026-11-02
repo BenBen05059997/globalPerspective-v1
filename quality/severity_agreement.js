@@ -24,8 +24,8 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
+// the axes and the 25/50/75 bands are the generators' (riskDimensions: AXES, tierFromScore); the grader reads the same ones
+const { AXES, tierFromScore: band } = require('../backend/shared/src/riskDimensions');
 
 let inputPath = path.join('quality', 'severity_gold_set.json');
 let rubricVersion = 'v1 (pre-Phase-4 prompt)';
@@ -39,14 +39,6 @@ if (process.argv[2] && !process.argv[2].startsWith('--')) {
 const rubricVersionIdx = process.argv.indexOf('--rubric-version');
 if (rubricVersionIdx !== -1 && rubricVersionIdx + 1 < process.argv.length) {
   rubricVersion = process.argv[rubricVersionIdx + 1];
-}
-
-function band(score) {
-  if (score == null) return null;
-  if (score >= 75) return 'high';
-  if (score >= 50) return 'elevated';
-  if (score >= 25) return 'moderate';
-  return 'low';
 }
 
 const BAND_ORDER = { low: 0, moderate: 1, elevated: 2, high: 3 };

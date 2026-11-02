@@ -9,7 +9,7 @@
 // Manual-invoke first (no EventBridge schedule) until output quality is trusted —
 // mirrors the breaking-detector dry-run approach.
 
-const { keepDayZero, archiveRowKey } = require('./_shared/dayZero');
+const archive = require('./_shared/archiveEntries');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
@@ -165,32 +165,17 @@ function fail(msg) {
 }
 
 // ── Data gather (mirrors newsThreadAnalysis) ───────────────────────────────────
-async function readArchiveEntries(days) {
-  const entries = [];
-  const now = new Date();
-  for (let i = 0; i <= days; i++) {
-    const date = new Date(now);
-    date.setUTCDate(date.getUTCDate() - i);
-    const key = i === 0 ? 'today-archive' : archiveRowKey(date);
-    const dateStr = date.toISOString().slice(0, 10);
-    try {
-      const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
-      if (Item && Array.isArray(Item.entries)) {
-        for (const e of (i === 0 ? keepDayZero(Item.entries) : Item.entries)) {
-          if (e.threadId) {
-            entries.push({
-              topicId: e.topicId, threadId: e.threadId, title: e.title, date: dateStr,
-              regions: e.regions || [], category: e.category || '', ai: e.ai || {},
-              sources: Array.isArray(e.sources) ? e.sources : [],
-            });
-          }
-        }
-      }
-    } catch (err) {
-      throw new Error(`[weekly] read ${key} failed: ${err.message}`, { cause: err });
-    }
-  }
-  return entries;
+function readArchiveEntries(days) {
+  return archive.readArchiveEntries({
+    days,
+    getRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    project: (e, date) => (e.threadId ? {
+      topicId: e.topicId, threadId: e.threadId, title: e.title, date,
+      regions: e.regions || [], category: e.category || '', ai: e.ai || {},
+      sources: Array.isArray(e.sources) ? e.sources : [],
+    } : null),
+    onError: (key, err) => { throw new Error(`[weekly] read ${key} failed: ${err.message}`, { cause: err }); },
+  });
 }
 
 function groupByThread(entries) {

@@ -5,13 +5,8 @@
 // risk/development kind marked) + a "what to watch" list. No new facts minted —
 // this only formats fields the generator already wrote.
 
+const { escapeHtml: esc } = require('./_shared/escapeHtml');
 const { briefingHref, absoluteUrl } = require('./_shared/links');
-
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function fmtWeekOf(weekOf) {
   // weekOf is 'YYYY-MM-DD'; render "June 28, 2026" without Date parsing surprises.

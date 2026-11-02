@@ -28,9 +28,9 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { normalizeDimensions } = require('../backend/shared/src/riskDimensions');
+const { stripCodeFence } = require('../backend/shared/src/llm'); // the generators' fence strip
+const { AXES, tierFromScore: band, normalizeDimensions } = require('../backend/shared/src/riskDimensions');
 
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const REGION = 'ap-northeast-1';
 const GOLD_SET_PATH = path.join(__dirname, 'severity_gold_set.json');
 
@@ -174,21 +174,12 @@ Return ONLY valid JSON of the form {"dimensions": {...}}. No markdown fences, no
 
 // ─── model invocation — mirrors each Lambda's invokeGrok() exactly ─────────────────────────────
 
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```$/i, '')
-    .replace(/,(\s*[\]}])/g, '$1')
-    .trim();
-}
-
 function extractContent(payload) {
   if (!payload) return '';
   const msg = payload && payload.choices && payload.choices[0] && payload.choices[0].message
     ? payload.choices[0].message.content
     : undefined;
-  if (typeof msg === 'string') return stripCodeFence(msg);
+  if (typeof msg === 'string') return stripCodeFence(msg, { trailingCommas: true });
   if (typeof payload === 'string') return payload.trim();
   return JSON.stringify(payload);
 }
@@ -247,13 +238,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── grading — same definitions as severity_agreement.js, plus inflation counters ──────────────
 
-function band(score) {
-  if (score == null) return null;
-  if (score >= 75) return 'high';
-  if (score >= 50) return 'elevated';
-  if (score >= 25) return 'moderate';
-  return 'low';
-}
 const BAND_ORDER = { low: 0, moderate: 1, elevated: 2, high: 3 };
 function bandDistance(a, b) {
   if (a == null || b == null) return null;

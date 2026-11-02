@@ -8,7 +8,8 @@
 
 const crypto = require('crypto');
 // The pool and draw rules (eligibility, lead window, the draw) are shared with the record's track-record view: _shared/questionPool.js.
-const { SAMPLE_K, LEAD_MIN, LEAD_MAX, sha256hex, rankKey, eligibleQuestions, draw } = require('./_shared/questionPool');
+const { SAMPLE_K, LEAD_MIN, LEAD_MAX, sha256hex, rankKey, eligibleQuestions, draw, day, addDays, daysBetween, weekStart, weekEnd } = require('./_shared/questionPool');
+const { isoWeekOfDay: weekOf } = require('./_shared/questionState'); // ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41"
 
 const RULE = 'v1';
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
@@ -16,29 +17,6 @@ const NO_REASON = 'not_reported_by_due'; // the reason recorded on every `no`
 const COVERAGE_GAP = 'coverage_gap'; // a `no` blocked because our own record has holes in the window (not a judgment)
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
-const day = (iso) => String(iso).slice(0, 10);
-const ms = (d) => Date.parse(`${day(d)}T00:00:00Z`);
-const addDays = (d, n) => new Date(ms(d) + n * 86400000).toISOString().slice(0, 10);
-const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / 86400000);
-
-// ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41".
-function weekOf(d) {
-  const t = new Date(ms(d));
-  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
-  const y0 = Date.UTC(t.getUTCFullYear(), 0, 1);
-  const w = Math.ceil(((t.getTime() - y0) / 86400000 + 1) / 7);
-  return `${t.getUTCFullYear()}-W${String(w).padStart(2, '0')}`;
-}
-
-// Monday (YYYY-MM-DD) of an ISO week id.
-function weekStart(weekId) {
-  const m = /^(\d{4})-W(\d{2})$/.exec(weekId);
-  if (!m) throw new Error(`bad week id ${weekId}`);
-  const jan4 = new Date(Date.UTC(Number(m[1]), 0, 4));
-  const mondayW1 = jan4.getTime() - ((jan4.getUTCDay() || 7) - 1) * 86400000;
-  return new Date(mondayW1 + (Number(m[2]) - 1) * 7 * 86400000).toISOString().slice(0, 10);
-}
-const weekEnd = (weekId) => addDays(weekStart(weekId), 6);
 const addWeeks = (weekId, n) => weekOf(addDays(weekStart(weekId), 7 * n));
 
 const newSeed = () => crypto.randomBytes(32).toString('hex');

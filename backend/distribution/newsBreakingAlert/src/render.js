@@ -20,6 +20,8 @@
 //     unsubscribeUrl,              // one-click unsubscribe (compliance) — optional
 //   }
 
+const { escapeHtml } = require('./_shared/escapeHtml');
+
 // Brand palette (matches the site's design tokens).
 const C = {
   paper: '#fbfbf9',
@@ -34,14 +36,6 @@ const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, 
 
 function clean(s) {
   return typeof s === 'string' ? s.trim() : '';
-}
-
-function escapeHtml(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 // Normalize the structured TRACE_CAUSE object into the few fields worth showing in an

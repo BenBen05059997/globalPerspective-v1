@@ -17,9 +17,9 @@ LLM and time
 - `llm.js`: OpenAI-compatible `chat()` over fetch, no deps. Providers `deepseek` (`GROK_API_URL`, fallback
   `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `openrouter`, `gemini`, `other`. Thinking is off
   unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
-- `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API.
+- `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API. `archiveEntries.js`: `readArchiveEntries({days, getRow, project, onError})`, the archive walk (`today-archive`, then `archive#<day>`) of the thread, country, systems and weekly Lambdas.
 - `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
-- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
+- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`, `newsPostDevTo`, `newsPostLinkedIn`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as
@@ -32,7 +32,7 @@ Countries and places
 - `situations-core.js`: GDACS observation and situation fold (`buildSituation`, `coolSituation`, `buildStorySituation`; a threaded
   story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS. Used by the GDACS ingest and the tracker.
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend `shared/lib/links.js` (`storyHref`,
-  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
+  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`. `escapeHtml.js`: `escapeHtml(s)` (& < > "), the email renderers' text escape.
 
 The record
 - `record.js`: the record's and board's pure rules: `canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`, `noteId`,
@@ -63,7 +63,7 @@ The record
   Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure, used by
   `newsStoryRecord`'s views and track-record view.
 - `outlets.js`: the one outlet table (`OUTLET_METADATA`, `getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
-  `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`.
+  `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`. `categoryLabels.js`: `CATEGORY_LABEL`, the twelve category display names (digest, posts, RSS).
 - `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by
   `newsInvokeGemini` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
 

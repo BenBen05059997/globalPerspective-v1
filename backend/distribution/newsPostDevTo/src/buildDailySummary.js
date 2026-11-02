@@ -1,19 +1,6 @@
 'use strict';
 
-const CATEGORY_LABEL = {
-  politics:   'Politics',
-  economy:    'Economy',
-  military:   'Military',
-  conflict:   'Conflict',
-  disaster:   'Disaster',
-  technology: 'Technology',
-  health:     'Health',
-  business:   'Business',
-  society:    'Society',
-  energy:     'Energy',
-  climate:    'Climate',
-  science:    'Science',
-};
+const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
 
 function formatDisplayDate(dateKey) {
   const [year, month, day] = dateKey.split('-').map(Number);

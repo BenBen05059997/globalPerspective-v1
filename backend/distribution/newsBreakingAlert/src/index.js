@@ -247,7 +247,10 @@ async function writeProposal(group, scored, story, verify, email) {
   try {
     await ddb().send(new PutCommand({ TableName: ALERTS_TABLE, Item: item }));
   } catch (err) {
-    console.error(`writeProposal failed for ${group.threadId}: ${err.message}`);
+    // No proposal row means review.js has nothing to confirm, so do not email the operator: fail the run.
+    console.error('[pipeline-status] ' + JSON.stringify({ status: 'failed', reason: 'proposal-write-failed', threadId: group.threadId, error: err.message }));
+    err.rethrow = true; // the handler envelope returns { ok: false } for other errors; this one must reject so Lambda Errors moves
+    throw err;
   }
   return item;
 }
@@ -377,6 +380,7 @@ exports.handler = async () => {
     return await run();
   } catch (err) {
     console.error('[breaking] run failed', err);
+    if (err.rethrow) throw err;
     return { ok: false, error: err.message };
   }
 };

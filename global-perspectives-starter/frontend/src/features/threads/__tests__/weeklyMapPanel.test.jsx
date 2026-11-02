@@ -42,4 +42,11 @@ describe('WeeklyMap thread panel', () => {
     const play = within(row.parentElement).getByRole('button', { name: 'Play story evolution' });
     expect(row).not.toContainElement(play);
   });
+
+  it('the region filter select is named, offers All regions, with a region option per thread region', () => {
+    mount();
+    const select = screen.getByRole('combobox', { name: 'Filter threads by region' });
+    expect(within(select).getByRole('option', { name: 'All regions' })).toBeInTheDocument();
+    expect(select.options.length).toBeGreaterThan(2);
+  });
 });

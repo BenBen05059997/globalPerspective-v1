@@ -519,6 +519,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
             <div className="wmap-panel-filter">
               <select
                 className="wmap-region-filter"
+                aria-label="Filter threads by region"
                 value={mapRegion || ''}
                 onChange={e => onRegionChange(e.target.value || null)}
               >

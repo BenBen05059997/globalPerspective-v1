@@ -229,8 +229,9 @@ function NotificationsPanel() {
 
             {prefs.digestOptIn && (
               <div className="acct-row acct-row--inline">
-                <span className="acct-row__label">Frequency</span>
+                <label className="acct-row__label" htmlFor="acct-digest-cadence">Frequency</label>
                 <select
+                  id="acct-digest-cadence"
                   className="acct-select"
                   value={prefs.digestCadence}
                   disabled={saving}

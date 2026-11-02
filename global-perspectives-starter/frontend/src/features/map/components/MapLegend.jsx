@@ -21,10 +21,10 @@ function Swatch({ children, w = SW }) {
   return <svg className="lg-sw" width={w} height={SW} viewBox={`0 0 ${w} ${SW}`} aria-hidden="true">{children}</svg>;
 }
 
-export function DiamondMark({ color = CRISIS_HUE.humanitarian, k = 6 }) {
+function DiamondMark({ color = CRISIS_HUE.humanitarian, k = 6 }) {
   return <Swatch><path d={`M${C} ${C - k}L${C + k} ${C}L${C} ${C + k}L${C - k} ${C}Z`} fill={color} stroke={TOKENS.bg} strokeWidth="1" /></Swatch>;
 }
-export function SoftDotMark({ color = CRISIS_HUE.political }) {
+function SoftDotMark({ color = CRISIS_HUE.political }) {
   return (
     <Swatch>
       <circle cx={C} cy={C} r="10" fill={color} fillOpacity="0.16" />

@@ -18,7 +18,6 @@
 
 .sp-list { padding-left: var(--space-5); line-height: 1.8; }
 .sp-note { font-size: var(--text-base); color: var(--text-muted); }
-.sp-fine { font-size: var(--text-ui); color: var(--text-dim); }
 .sp-updated { margin-top: var(--space-4); font-size: var(--text-base); color: var(--text-muted); }
 
 .sp-links { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-2); }

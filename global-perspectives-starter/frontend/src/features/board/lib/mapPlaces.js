@@ -97,7 +97,7 @@ export function ringCentres(placed) {
 
 export const LABEL_H = 30;
 const CHAR_W = 6.6;
-export const labelWidth = (text) => Math.min(text.length, 30) * CHAR_W;
+const labelWidth = (text) => Math.min(text.length, 30) * CHAR_W;
 
 /** Each ring's label: right or left of the ring, slid up or down until it clears the rings and the labels already
  *  placed. `labels` is [{ pinId, text }] in the order to place. -> { pinId: { x, y, w, h, side } } (x, y = centre) */

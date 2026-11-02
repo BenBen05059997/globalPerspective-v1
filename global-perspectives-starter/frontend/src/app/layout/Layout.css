@@ -6,36 +6,6 @@
   font-family: var(--sans);
 }
 
-/* Maintenance overlay */
-.gp-maintenance {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-}
-.gp-maintenance-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.gp-maintenance h1 {
-  color: var(--text-head);
-  font-size: 1.75rem;
-  font-weight: 700;
-  font-family: var(--sans);
-  margin: 0 0 0.75rem;
-}
-.gp-maintenance p {
-  color: var(--text-muted);
-  font-size: 1.05rem;
-  max-width: 420px;
-  line-height: 1.6;
-  margin: 0 0 0.5rem;
-}
-.gp-maintenance-sub { color: var(--text-dim) !important; font-size: 0.9rem !important; }
-
 /* ── Primary nav — the console bar, on every page (one token set, 2026-10-01) ───────── */
 .gp-nav {
   display: flex;

@@ -27,7 +27,7 @@ export function iso3Name(code) {
   return COUNTRIES[code]?.name || code;
 }
 
-export function regionOf(iso3List = []) {
+function regionOf(iso3List = []) {
   for (const c of iso3List) { if (REGION_BY_ISO3[c]) return REGION_BY_ISO3[c]; }
   return null;
 }

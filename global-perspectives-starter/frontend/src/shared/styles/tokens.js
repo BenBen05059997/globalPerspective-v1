@@ -89,9 +89,6 @@ export const riskScoreToVar = (score) => {
   return tier ? TIER_VAR[tier] : 'var(--text-head)';
 };
 
-// tier string → editorial CSS var (for when you already have a tier, not a score).
-export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--text-head)');
-
 // ── Category ────────────────────────────────────────────────────────────────
 
 

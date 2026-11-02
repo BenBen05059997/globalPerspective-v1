@@ -28,9 +28,8 @@
 .pn-row { display: flex; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--hairline); min-width: 0; }
 .pn-row:last-child { border-bottom: 1px solid var(--hairline); }
 .pn-row--stack { flex-direction: column; gap: var(--space-1); }
-.pn-row--between { justify-content: space-between; align-items: baseline; }
 .pn-row__head { color: var(--text-head); overflow-wrap: anywhere; }
-.pn-row__date, .pn-row__when { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
+.pn-row__date { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
 .pn-row__date { flex: none; width: var(--space-16); }
 .pn-actions { align-items: center; }
 .pn-actions__drop { margin-left: auto; border-color: transparent; color: var(--text-dim); }

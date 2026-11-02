@@ -115,7 +115,7 @@ export function desaturateRgb(rgb, amount = 0.6) {
   return [r, g, b].map((c) => Math.round(c + (l - c) * amount));
 }
 
-export function rgbToHex(rgb) {
+function rgbToHex(rgb) {
   return `#${rgb.map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')}`;
 }
 

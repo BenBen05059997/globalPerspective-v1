@@ -8,7 +8,7 @@ import { reportFetchError } from '@/shared/api/errorSink.js';
 import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 
 // newsSensitiveData marks `topics` stale when the latest run is older than TOPICS_CACHE_MAX_AGE_SECONDS (live value 32400 = 9 h).
-export const TOPICS_MAX_AGE_MS = 32400 * 1000;
+const TOPICS_MAX_AGE_MS = 32400 * 1000;
 const DAY_MS = 86400000;
 const TODAY_SOURCES = 3; // the today-archive item keeps the first 3 sources of an entry; the view keeps up to 10
 const KIND = { summary: 'SUMMARY', prediction: 'PREDICTION', trace_cause: 'TRACE_CAUSE' };

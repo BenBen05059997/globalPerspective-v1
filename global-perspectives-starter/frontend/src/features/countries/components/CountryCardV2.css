@@ -121,5 +121,3 @@
 .ccv2-triggers b { color: var(--text-head); }
 .ccv2-trigger-note { font-size: var(--text-xs); color: var(--text-body); }
 
-/* Phone bottom-sheet variant — 44px targets already covered above; a bit tighter padding. */
-.ccv2-sheet { padding: var(--space-2) var(--space-3) var(--space-4); }

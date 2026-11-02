@@ -10,7 +10,7 @@
 // "Lambda #1/#2"), so a strip is still describing genuinely fresh data up to roughly one missed
 // cycle later. Named constant so the threshold is a one-line follow-up to tune, per
 // STAGE0_FIXES_PLAN.md item (b).
-export const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours
+const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 function timeAgo(ts) {
   if (!ts) return null;

@@ -4,7 +4,7 @@
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import { ACCURACY_UNLOCK_AT } from '@/features/track-record/lib/accuracyLock.js';
 
-export const STAGE3_AT = 400;
+const STAGE3_AT = 400;
 const SIX_MONTHS_MS = 183 * 86400000;
 
 /**

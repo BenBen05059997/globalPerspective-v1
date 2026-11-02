@@ -11,9 +11,9 @@
 // atlas drawn here; the layer tints them per marker (`mask`), so hue/dimming stay data-driven.
 
 /** Atlas pixels per logical (CSS) pixel: sprites are drawn 4x and minified, so they stay crisp. */
-export const ATLAS_K = 4;
+const ATLAS_K = 4;
 /** Glyph cells span this many logical px (badge shapes are <= 9px wide; the dark edge is 1.45x). */
-export const GLYPH_SPAN = 16;
+const GLYPH_SPAN = 16;
 const CELL = GLYPH_SPAN * ATLAS_K; // 64
 const DIAMOND_FILL = 28 / 32; // diamond half-diagonal as a share of the half-cell (AA margin)
 const CORNER_CELL = 48;

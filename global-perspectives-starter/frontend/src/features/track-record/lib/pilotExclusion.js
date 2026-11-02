@@ -8,7 +8,7 @@
 // PILOT_CUTOFF is exclusive-below: anything confirmed strictly before it is the pilot. The pilot
 // run's own timestamp is 2026-07-24T22:22:14.709Z (verified live); the cutoff sits one day after
 // it so a single shared confirmedAt across the whole run reads unambiguously as "before".
-export const PILOT_CUTOFF = '2026-07-25T00:00:00.000Z';
+const PILOT_CUTOFF = '2026-07-25T00:00:00.000Z';
 
 export function isPilotItem(item) {
   const at = item?.confirmedAt;

@@ -12,3 +12,7 @@ breaking scripts also call Resend) and run from the repo root with the operator'
 ## weekly/
 
 - `review.js`: walks `draft` weekly briefs in SummarizeAndPredict and publishes or rejects each. `--list` only lists them. newsWeeklyBrief now writes `published` directly, so this finds a brief only if one was set back to `draft`, the way to hold a bad brief back.
+
+## Tests
+
+`node --test "backend/distribution/cli/test/*.test.js"` from the repo root. Offline: each CLI runs as a child process against a fake `aws` first on PATH (`test/fakeAws.js`) and, for `send.js`, a preloaded fake `fetch` (`test/fakeFetch.js`); stdin answers are fed one per prompt. Covers `breaking/review.js` (what is listed, confirm / note / reject writes, nothing written without an explicit answer, agreement with newsRecommend `list_alerts` / `get_alert`) and `breaking/send.js`. `send-test.js` and `weekly/` have no tests.

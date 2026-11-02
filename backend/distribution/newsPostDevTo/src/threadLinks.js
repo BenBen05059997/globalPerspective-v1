@@ -6,16 +6,11 @@
 // carries a threadId. Pure: no AWS, no network. Unit-tested in ../test/threadLinks.test.js.
 
 const { iso3List } = require('./_shared/resolveIso3');
+const { jaccard } = require('./_shared/jaccard');
 
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with', 'by', 'is', 'are', 'its']);
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const tokens = (s) => new Set(norm(s).split(' ').filter((w) => w.length > 2 && !STOP.has(w)));
-function jaccard(a, b) {
-  if (!a.size || !b.size) return 0;
-  let i = 0;
-  for (const t of a) if (b.has(t)) i++;
-  return i / (a.size + b.size - i);
-}
 
 const MIN_CONTAIN_CHARS = 12;
 const MIN_JACCARD = 0.6;

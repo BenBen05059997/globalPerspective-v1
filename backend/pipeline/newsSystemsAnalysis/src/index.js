@@ -1,6 +1,6 @@
 'use strict';
 
-const { keepDayZero } = require('./_shared/dayZero');
+const { keepDayZero, archiveRowKey } = require('./_shared/dayZero');
 const { isCountryName } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { pickSpreadEntries } = require('./spreadEntries');
@@ -143,11 +143,6 @@ function utcDateParts(date) {
   };
 }
 
-function formatDateKey(date) {
-  const { y, m, d } = utcDateParts(date);
-  return `archive#${y}-${m}-${d}`;
-}
-
 function webHistoryKey(date) {
   const { y, m, d } = utcDateParts(date);
   return `web/${y}/${m}/${d}.json`;
@@ -160,7 +155,7 @@ async function readArchiveEntries(days) {
   for (let i = 0; i <= days; i++) {
     const date = new Date(now);
     date.setUTCDate(date.getUTCDate() - i);
-    const key = i === 0 ? 'today-archive' : formatDateKey(date);
+    const key = i === 0 ? 'today-archive' : archiveRowKey(date);
     const dateStr = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 
     try {

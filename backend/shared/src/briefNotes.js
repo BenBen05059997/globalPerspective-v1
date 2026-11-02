@@ -5,16 +5,9 @@
 // coordinator sets record/shadow/ and then record/. Best-effort while DynamoDB stays the primary copy: a failure logs [notes]
 // and never fails the run. One helper for both writers (newsPostDevTo, newsWeeklyBrief): they differ only in subtype and builder.
 const notes = require('./notes');
+const {s3NoteWriter} = require('./s3NoteWriter');
 
 const BUILDERS = {daily_brief: notes.dailyBriefNote, weekly_brief: notes.weeklyBriefNote};
-
-function s3Writer(prefix) {
-  const {S3Client, GetObjectCommand, PutObjectCommand} = require('@aws-sdk/client-s3');
-  const {makeS3Json} = require('./s3json');
-  const client = new S3Client({region: process.env.AWS_REGION || 'ap-northeast-1'});
-  const bucket = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-  return notes.makeNoteWriter({s3json: makeS3Json({client, GetObjectCommand, PutObjectCommand, bucket}), prefix});
-}
 
 /**
  * `subtype` daily_brief | weekly_brief, `item` the stored row, `lambda` the writer's name. `prefix` (default env NOTES_PREFIX) and
@@ -25,7 +18,7 @@ async function writeBriefNote({subtype, item, lambda, runId, prefix = process.en
   try {
     const note = BUILDERS[subtype]({item, producer: {lambda, runId}});
     if (!note) return null;
-    const r = await (writer || s3Writer(prefix)).write(subtype, [note]);
+    const r = await (writer || s3NoteWriter(prefix)).write(subtype, [note]);
     console.log(`[notes] ${subtype}: ${note.subject.id} ${r.appended} appended, ${r.skipped} already stored (${prefix})`);
     return note;
   } catch (e) {

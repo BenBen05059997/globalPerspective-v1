@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { keepDayZero, utcDay } = require('../src/dayZero');
+const { keepDayZero, utcDay, archiveRowKey } = require('../src/dayZero');
 
 const NOW = Date.parse('2026-09-30T12:00:00Z');
 const e = (id, at) => ({ topicId: id, archivedAt: at });
@@ -23,4 +23,17 @@ test('UTC midnight boundary: 23:55 yesterday is not day 0 (it lives in archive#y
 test('non-array input', () => {
   assert.deepStrictEqual(keepDayZero(undefined, NOW), []);
   assert.strictEqual(utcDay(NOW), '2026-09-30');
+});
+
+test('archiveRowKey: archive#YYYY-MM-DD of the UTC day, zero-padded', () => {
+  assert.strictEqual(archiveRowKey(new Date('2026-09-05T00:00:00Z')), 'archive#2026-09-05');
+  assert.strictEqual(archiveRowKey(new Date('2026-12-31T23:59:59.999Z')), 'archive#2026-12-31');
+  assert.strictEqual(archiveRowKey(new Date(Date.UTC(2026, 0, 1))), 'archive#2026-01-01');
+});
+test('archiveRowKey equals the old per-Lambda formatDateKey for every day of two years (UTC parts, no local-time drift)', () => {
+  const old = (date) => `archive#${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  for (let ms = Date.UTC(2025, 0, 1, 23, 59); ms < Date.UTC(2027, 0, 1); ms += 86400000) {
+    assert.strictEqual(archiveRowKey(new Date(ms)), old(new Date(ms)));
+    assert.strictEqual(archiveRowKey(new Date(ms)), `archive#${utcDay(ms)}`);
+  }
 });

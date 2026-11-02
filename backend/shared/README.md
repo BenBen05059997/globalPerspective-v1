@@ -17,7 +17,9 @@ LLM and time
 - `llm.js`: OpenAI-compatible `chat()` over fetch, no deps. Providers `deepseek` (`GROK_API_URL`, fallback
   `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `openrouter`, `gemini`, `other`. Thinking is off
   unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
-- `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC). Used by the analysis and brief Lambdas.
+- `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API.
+- `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
+- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as
@@ -54,7 +56,7 @@ The record
 - `noteReads.js`: the readers of the notes for the rows SummarizeAndPredict used to hold (decision 0053): `countryIntelligence`, `countryHistory`, `countryDrift`, `storyDrift`, `storyAnalysis`, `threadHistory`, `countryFacts`, `driftFeed` (same field names, no gating), `makeNoteReader` (a subtype's days from its manifest, cached), `s3NoteReader`, `readMode` (env `NOTES_READS` = `ddb` | `compare` | `notes`), `viaMode`/`lambdaSource`/`rowReaders` (a Lambda's read under the flag; `compare` logs `[notes-compare]`) and `diff`. Used by the read API and seven Lambdas.
 - `briefNotes.js`: `writeBriefNote({subtype, item, lambda, runId})`, the brief writers' one helper (decision 0048). Gated by env
   `NOTES_PREFIX`: unset writes nothing; best-effort, a failure logs `[notes]` and never fails the run. Used by `newsPostDevTo` and
-  `newsWeeklyBrief`.
+  `newsWeeklyBrief`. The brief writers and the analysis Lambdas' `recordNotes.js` build their S3 writer with `s3NoteWriter(prefix)` (`s3NoteWriter.js`; env `WORLD_BUCKET`, `AWS_REGION`).
 - `briefs.js`: `briefWithIso3`, `weeklyWithIso3`, `briefCountries`: the countries every reader gets on the daily and weekly brief
   (filled from names when the stored row has no `iso3`). Used by the read API's brief actions and by the record's brief views, so
   they answer the same.

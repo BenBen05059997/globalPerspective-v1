@@ -6,6 +6,8 @@ const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, capForTier, lat
 const { readMode: notesReadMode, s3NoteReader } = require('./_shared/noteReads');
 const { makeRecords, correctionOf } = require('./records');
 const { storyHref, absoluteUrl } = require('./_shared/links');
+const { archiveRowKey } = require('./_shared/dayZero');
+const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
 const { readMode: recordReadMode, readBy, liveRecordReads } = require('./_shared/recordReads');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -24,43 +26,8 @@ const ENTERPRISE_MAX_DAYS = 90;
 
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
-// ── Firebase JWT verification (lightweight, no firebase-admin) ──────────────
-let _certCache = null;
-let _certCacheExpiry = 0;
-
-async function getGoogleCerts() {
-  const now = Date.now();
-  if (_certCache && now < _certCacheExpiry) return _certCache;
-  const res = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
-  _certCache = await res.json();
-  _certCacheExpiry = now + 3600 * 1000;
-  return _certCache;
-}
-
-async function verifyFirebaseToken(authHeader) {
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    const { createVerify } = require('crypto');
-    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp < now) return null;
-    if (FIREBASE_PROJECT_ID && payload.aud !== FIREBASE_PROJECT_ID) return null;
-    if (FIREBASE_PROJECT_ID && payload.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) return null;
-    const certs = await getGoogleCerts();
-    const cert = certs[header.kid];
-    if (!cert) return null;
-    const verifier = createVerify('SHA256');
-    verifier.update(`${parts[0]}.${parts[1]}`);
-    const isValid = verifier.verify(cert, parts[2], 'base64url');
-    return isValid ? payload : null;
-  } catch {
-    return null;
-  }
-}
+// ── Firebase JWT verification (lightweight, no firebase-admin; one copy in _shared/firebaseAuth.js; silent on failure) ──
+const verifyFirebaseToken = makeFirebaseVerifier({ projectId: FIREBASE_PROJECT_ID });
 
 // Country and story rows (decision 0053): NOTES_READS=ddb (default) reads SummarizeAndPredict, notes reads the record's notes,
 // compare answers from DynamoDB and logs [notes-compare] differences. Notes are cached NOTES_CACHE_SECONDS (default 300) per warm Lambda.
@@ -796,13 +763,6 @@ function normalizeSummaryPrediction(item) {
   };
 }
 
-function formatArchiveDateKey(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `archive#${y}-${m}-${d}`;
-}
-
 function formatDateLabel(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -834,7 +794,7 @@ async function readArchiveRange(days) {
     // `latest` is only the NEWEST generation; today's archive row holds every run of the day, so a story from an
     // earlier run today is served too (union by topicId, `latest` first).
     const todayDate = formatDateLabel(now);
-    const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(now) } }));
+    const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: archiveRowKey(now) } }));
     const todayEntries = Array.isArray(todayRow?.entries) ? todayRow.entries.map(lightEntry) : [];
     if (latestEntries.length) {
       const merged = latestLabel === todayDate ? unionByTopicId(latestEntries, todayEntries) : latestEntries;
@@ -850,7 +810,7 @@ async function readArchiveRange(days) {
       const date = new Date(now);
       date.setUTCDate(date.getUTCDate() - i);
       const dateLabel = formatDateLabel(date);
-      const archiveKey = formatArchiveDateKey(date);
+      const archiveKey = archiveRowKey(date);
 
       const { Item } = await client.send(new GetCommand({
         TableName: TOPICS_TABLE,
@@ -912,12 +872,12 @@ async function readNarrativeThread(threadId, days) {
         entries.push(...matched.map(t => ({ ...t, date: latestLabel, source: 'latest' })));
         // Today's archive row holds EVERY run of today (`latest` only the newest generation), so a story
         // from an earlier run today stays reachable until midnight (post-deploy fix, 2026-09-30).
-        const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(date) } }));
+        const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: archiveRowKey(date) } }));
         const fromToday = (todayRow?.entries || []).filter(e => e.threadId === threadId);
         entries.push(...fromToday.map(e => ({ ...e, date: dateLabel, source: 'archive' })));
       } else {
         // Past days: read from archive#YYYY-MM-DD
-        const archiveKey = formatArchiveDateKey(date);
+        const archiveKey = archiveRowKey(date);
         const { Item } = await client.send(new GetCommand({
           TableName: TOPICS_TABLE,
           Key: { id: archiveKey },

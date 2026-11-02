@@ -2,8 +2,7 @@
 
 One copy of the helpers several news Lambdas use. Not a Lambda and not a layer: each Lambda reaches
 these files through its committed `src/_shared -> ../../../shared/src` symlink, and
-`scripts/lambda.sh package|diff` stages `src` with links followed, so the zip carries real files
-under `_shared/`. An edit here changes every Lambda that requires the file on its next deploy.
+`scripts/lambda.sh package|diff` stages `src` with links followed, so the zip carries real files under `_shared/`. An edit here changes every Lambda that requires the file on its next deploy.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → **4 One reader** → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
@@ -73,10 +72,8 @@ The raw-table reader
   derivations (story birth, branches, coverage and missing days (which days have archive data; not the Run object's coverage),
   `tierFromScore`, outlets). **Rule: nobody else parses these rows.** Consumers require `./_shared/world` and pass an injected client
   (`makeDynamoClient` / `makeS3Client`, no SDK import, no aws CLI). Today `newsStoryRecord` and `newsBoard` use it; other Lambdas
-  still parse their own rows and move to it as they are touched. Front door: `src/world/README.md` (row table, exact derivation
-  rules, decisions). When step 5 retires a table, its reader here is what changes.
+  still parse their own rows and move to it as they are touched. Front door: `src/world/README.md` (row table, exact derivation rules, decisions). When step 5 retires a table, its reader here is what changes.
 
 ## Checks
 - Tests: `cd backend/shared && node --test test/*.test.*` (world fixtures are in `test/world.fake.js`).
-- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core, the board rules core)
-  are compared by `node scripts/check-shared-sync.mjs`.
+- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core, the board rules core) are compared by `node scripts/check-shared-sync.mjs`.

@@ -15,8 +15,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - The briefs are in the record (decision 0048): the hooks read `record/views/` first and ask the `daily_brief`, `latest_daily_brief` and
   `weekly_brief` actions only for what the views lack. The brief writers' notes are on (`NOTES_PREFIX=record/` on
   `newsPostDevTo` and `newsWeeklyBrief`): the views hold the briefs (the earlier ones backfilled), the refresh rules add each new one, and the actions serve what the views lack.
-- The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`); the action and the views serve
-  only published briefs, so a bad one is held back by setting its status to `draft`.
+- The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`); the action and the views serve only published briefs, so a bad one is held back by setting its status to `draft`.
 
 ## Routes
 - `/briefings?mode=read|weekly|present` -> `BriefingsPage` (no or unknown `mode` = read). `&date=YYYY-MM-DD` picks the daily edition
@@ -26,8 +25,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 
 ## Frontend
 - `BriefingsPage.jsx` - URL parsing, mode switch (`Tabs`), `PresentMode` (`BriefingMode` desktop / `PhoneBriefingMode` phone)
-- `components/ReadMode.jsx` - date prev/next, fallback note, takeaways, stats, top stories, rising thread, country to watch,
-  Share / Copy / Save (`itemType: daily`), empty state
+- `components/ReadMode.jsx` - date prev/next, fallback note, takeaways, stats, top stories, rising thread, country to watch, Share / Copy / Save (`itemType: daily`), empty state
 - `components/WeeklyMode.jsx` - KPIs, signal cards, watch list, method note, `SubscribeCard`, Save (`itemType: weekly`), week navigation
 - `components/BriefingSlides.jsx` (slide bodies; the weekly deck ends with `SubscribeCard`), `EditionsStrip.jsx`, `BriefingError.jsx`
   (failed request: reported, with retry), `Trajectory.jsx`, `PlaceLinks.jsx`

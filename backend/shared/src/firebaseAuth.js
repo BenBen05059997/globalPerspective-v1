@@ -3,9 +3,10 @@
 // Firebase ID-token check without firebase-admin, one copy for newsRecommend, newsSavedItems and newsSensitiveData:
 //   const verifyFirebaseToken = makeFirebaseVerifier({ projectId: process.env.FIREBASE_PROJECT_ID, logLabel: '...' });
 //   await verifyFirebaseToken('Bearer <jwt>')  -> the token's payload, or null
-// Checks: three-part token, exp, then (only when a projectId is given) aud and iss, then the RS256-style SHA256 signature against
-// Google's public securetoken certs (fetched with global fetch, kept 1 h per warm Lambda). With no projectId the aud and iss
-// checks are skipped, as they always were here; newsSharedAnalysis/src/auth.js is the strict variant (fails closed).
+// Checks: three-part token, exp, aud and iss against the projectId, then the RS256-style SHA256 signature against
+// Google's public securetoken certs (fetched with global fetch, kept 1 h per warm Lambda). With no projectId it FAILS CLOSED:
+// every token is refused (null) without fetching certs, and one console.warn names FIREBASE_PROJECT_ID when the verifier is built;
+// newsSharedAnalysis/src/auth.js is the same rule in its own strict copy.
 // A parse or verify failure returns null; `logLabel`, when given, is printed with the error message (console.warn), else it is silent.
 const { createVerify } = require('crypto');
 
@@ -24,7 +25,9 @@ async function getGoogleCerts() {
 }
 
 function makeFirebaseVerifier({ projectId, logLabel } = {}) {
+  if (!projectId) console.warn(`${logLabel || 'firebaseAuth'}: FIREBASE_PROJECT_ID is not set, every Firebase token will be refused`);
   return async function verifyFirebaseToken(authHeader) {
+    if (!projectId) return null; // fail closed: without a project id any Google-signed token from any Firebase project would pass
     if (!authHeader?.startsWith('Bearer ')) return null;
     const token = authHeader.slice(7);
     const parts = token.split('.');
@@ -34,8 +37,8 @@ function makeFirebaseVerifier({ projectId, logLabel } = {}) {
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
       const now = Math.floor(Date.now() / 1000);
       if (payload.exp < now) return null;
-      if (projectId && payload.aud !== projectId) return null;
-      if (projectId && payload.iss !== `https://securetoken.google.com/${projectId}`) return null;
+      if (payload.aud !== projectId) return null;
+      if (payload.iss !== `https://securetoken.google.com/${projectId}`) return null;
       const certs = await getGoogleCerts();
       const cert = certs[header.kid];
       if (!cert) return null;

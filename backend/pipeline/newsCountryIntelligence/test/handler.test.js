@@ -210,6 +210,14 @@ test('a country briefed today, or whose article count is unchanged, is skipped w
   });
 });
 
+test('a failed read of the previous briefing counts as "none yet": the country is briefed as new', async () => {
+  const ddb = fakeDdb(archiveRows({ 1: [entry('j-2', ['Japan'])], 2: [entry('j-1', ['Japan'])] }), {
+    fail: (name, input) => (input.Key && input.Key.SK === 'COUNTRY_INTELLIGENCE' ? new Error('throttled') : null),
+  });
+  await run({ ddb, s3: fakeS3(), llm: fakeLlm(reply(GOOD)) }, {}, (_, out) => assert.match(out.body, /1 generated \(new 1\)/));
+  assert.ok(row(ddb, 'Japan'));
+});
+
 test('COUNTRY_TOP_N limits the briefings; a country beyond it is briefed only when a HIGH situation names it', async () => {
   const twoSits = (names) => world(names.map((n, i) => ({ id: `s${i}`, state: 'escalating', tier: 'high', affected_names: [n], opened_at: hoursAgo(1) })));
   const ddb = fakeDdb(archiveRows({ 1: [entry('j-2', ['Japan']), entry('j-3', ['Japan']), entry('f-2', ['France'])], 2: [entry('j-1', ['Japan']), entry('f-1', ['France'])] }));

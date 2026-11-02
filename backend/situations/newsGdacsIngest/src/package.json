@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Shadow ingest of GDACS (UN+EU) disaster alerts \u2014 direct-impact feed for the impact-first pipeline. Keyless, never touches the live feed. See IMPACT_FIRST_REDESIGN_PLAN.md",
   "main": "index.js",
+  "scripts": {
+    "test": "node --test index.test.js"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",

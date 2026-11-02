@@ -19,4 +19,4 @@ Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches th
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- No Lambda-local tests. The situations-core tests: `cd backend/shared && node --test test/situations-core.test.mjs` (passes 2026-10-19).
+- `cd src && npm test` (offline: fixture GeoJSON, fake fetch and S3; includes a check that the inbox snapshot folds in the tracker). The situations-core tests: `cd backend/shared && node --test test/situations-core.test.mjs`.

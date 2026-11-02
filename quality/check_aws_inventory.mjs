@@ -4,7 +4,9 @@
 //   - a deployed Lambda named news*/News* is missing from functions.json,
 //   - a functions.json entry has no deployed Lambda (unless it is marked `"planned": true`: written, not yet created),
 //   - an EventBridge rule or Scheduler schedule targets a news*/News* Lambda that is not in functions.json.
-// Needs AWS credentials, so it is NOT in the pre-commit hook. Run it by hand.
+// Runs in the pre-commit hook (with the other quality/check_*.mjs) when frontend source is staged.
+// Skips (exit 0, notice on stderr) when the AWS CLI is not installed. Any other AWS failure
+// (credentials, network, throttling) exits 2; drift exits 1.
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +24,11 @@ try {
   deployed = (await listLambdas()).map(([n]) => n);
   refs = (await liveSchedules(known)).refs;
 } catch (e) {
+  // Only "the `aws` binary is missing" skips; a CLI that runs and fails stays a hard error.
+  if (e.code === 'ENOENT' && e.path === 'aws') {
+    console.error('check_aws_inventory: skipped, AWS CLI not installed');
+    process.exit(0);
+  }
   console.error(`check_aws_inventory: AWS call failed (${String(e.message).split('\n')[0]}). Credentials or network?`);
   process.exit(2);
 }

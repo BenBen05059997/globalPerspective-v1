@@ -72,5 +72,3 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Bundle fresh: `curl -s https://globalperspective.net/data/world/latest.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['generated_at'], d['stale'], len(d['situations']))"`
 - Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
   `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
-
-Last verified: 2026-10-31

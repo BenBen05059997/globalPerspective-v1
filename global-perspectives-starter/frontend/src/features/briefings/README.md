@@ -14,7 +14,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - Live, public. No markets line (economy retired, decision 0049); `/weekly-markets` no longer exists.
 - The briefs are in the record (decision 0048): the hooks read `record/views/` first and ask the `daily_brief`, `latest_daily_brief` and
   `weekly_brief` actions only for what the views lack. The brief writers' notes are on (`NOTES_PREFIX=record/` on
-  `newsPostDevTo` and `newsWeeklyBrief`): the views hold the backfilled briefs and the actions still serve every new one.
+  `newsPostDevTo` and `newsWeeklyBrief`): the views hold the briefs (the earlier ones backfilled), the refresh rules add each new one, and the actions serve what the views lack.
 - The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`); the action and the views serve
   only published briefs, so a bad one is held back by setting its status to `draft`.
 
@@ -42,13 +42,13 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - Group guide: [distribution](../../../../../backend/distribution/README.md); inputs come from [pipeline](../../../../../backend/pipeline/README.md)
 - `newsPostDevTo` (Scheduler `InvokeDev`, 23:00 Asia/Tokyo daily) writes `DAILY_BRIEF#<date>`; `newsWeeklyBrief` (rule `TriggerWeeklyBrief`,
   Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`. Both also call `writeBriefNote`, a no-op while `NOTES_PREFIX` is unset (live `record/`).
-- `newsStoryRecord` (rule `TriggerStoryRecord`, 23:45 UTC) builds the brief views from the notes; `newsSensitiveData-dev` serves the actions.
+- `newsStoryRecord` builds the brief views from the notes: `TriggerStoryRecordRefreshBrief` 14:15 UTC daily, `TriggerStoryRecordRefreshWeekly` Sunday 06:15 UTC and the nightly `TriggerStoryRecord` 23:45 UTC; `newsSensitiveData-dev` serves the actions.
 - `newsEmailSender` (rule `TriggerWeeklyEmailSend`, Sunday 14:00 UTC) emails the weekly brief from `WEEKLY_BRIEF#`; its text mirrors
   `?mode=weekly`. `newsSavedItems` accepts `daily` and `weekly` as saved item types.
 
 ## Data
 - Record views (`/data/record/views/`): `index/briefs.json` (which briefs exist), `briefs/daily/<date>.json`, `briefs/weekly/<weekOf>.json`.
-  Rebuilt nightly, so today's daily and a newer weekly are not in them yet. A failed read is reported and answers null, never "no brief".
+  Rebuilt after each ingest and brief (refresh rules) and nightly, so a newer day or week can still be missing for a few hours. A failed read is reported and answers null, never "no brief".
 - `useDailyBrief(date)` -> no date: the record's newest in the 30-day window plus `daily_brief` for today alone unless the record already
   has it, and `latest_daily_brief` when the record holds none; a date: the record, else `daily_brief`. localStorage `gp_daily_brief_v1`,
   30 min. A date with no edition falls back to the nearest earlier one and says so.
@@ -61,7 +61,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 1. `newsPostDevTo` (23:00 Tokyo) builds the daily brief from `today-archive`, thread analyses and country rows ->
    `SummarizeAndPredict` `DAILY_BRIEF#<date>` (and a `daily_brief` note, `NOTES_PREFIX=record/` live).
 2. `newsWeeklyBrief` (Sunday 06:00 UTC) builds the weekly brief from seven days of archives -> `WEEKLY_BRIEF#<weekOf>`, published.
-3. `newsStoryRecord` (23:45 UTC) turns the brief notes into `briefs/` views and `index/briefs.json`.
+3. `newsStoryRecord` (refresh rules after each brief, nightly 23:45 UTC) turns the brief notes into `briefs/` views and `index/briefs.json`.
 4. `useDailyBrief`, `useWeeklyBrief`, `useDailyEditionsIndex` read the views, then the actions for what is newer -> `ReadMode`,
    `WeeklyMode`, `PresentMode` on `/briefings`.
 5. Sunday 14:00 UTC `newsEmailSender` emails the weekly brief to opted-in subscribers, linking back to `?mode=weekly`.
@@ -80,5 +80,3 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"latest_daily_brief","payload":{"lookbackDays":7}}' | head -c 300`
 - Weekly: same command with `-d '{"action":"weekly_brief","payload":{"week":"YYYY-MM-DD"}}'` (omit payload for latest)
 - Weekly job ran: `aws logs tail /aws/lambda/newsWeeklyBrief --since 7d --region ap-northeast-1 --filter-pattern '"[weekly] published:"'`
-
-Last verified: 2026-10-31

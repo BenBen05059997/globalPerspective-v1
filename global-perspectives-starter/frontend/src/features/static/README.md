@@ -7,7 +7,7 @@ data, to say whether analysis is paused.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: static pages. Timeline: reads the daily brief only; not a record view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: static pages. Timeline: reads the daily brief from the record's brief views, with the read API action as the fallback. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -56,5 +56,3 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 - Pages served: `for p in about contact disclosures privacy whitepaper; do curl -s -o /dev/null -w "$p %{http_code}\n" https://globalperspective.net/$p; done`
 - Paused-note input (from the repo root):
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"latest_daily_brief","payload":{"lookbackDays":30}}' | head -c 300`
-
-Last verified: 2026-10-31

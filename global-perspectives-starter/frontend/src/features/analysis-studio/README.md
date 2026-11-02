@@ -69,5 +69,3 @@ This folder is stage 9: shared-run pages of the retired Studio. Timeline: reads 
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/analysis-studio`
 - Sync with the share Lambda: `node scripts/check-shared-sync.mjs`
 - Function URL exists: `aws lambda get-function-url-config --function-name newsSharedAnalysis --region ap-northeast-1 --query AuthType`
-
-Last verified: 2026-10-20

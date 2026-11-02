@@ -6,7 +6,7 @@ and to open a stored Summary, Prediction or Trace Cause for any topic.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the today page (/today). Timeline: reads today's topics from raw tables; target: a today view of the daily facts. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the today page (/today). Timeline: reads the record's today view (index/today.json) while it is fresh, with the read API actions as the fallback. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
@@ -52,7 +52,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) picks topics -> NewsCache `staging`.
 2. `NewsProjectInvokeAgentLambda-dev` writes per-topic summary, trace cause and forecast to `SummarizeAndPredict` (`TOPIC#`), gives each topic a `threadId`.
 3. It copies `staging` to NewsCache `latest` and adds the entries to `today-archive`.
-4. `newsSensitiveData-dev` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
+4. While the record's views are fresh, `contentService` answers from the today view; otherwise `newsSensitiveData-dev` action `topics` returns `latest` and action `today` returns `today-archive` entries from the last 24 hours.
 5. `useGeminiTopics` -> `Home.jsx` groups by region and renders the topic cards on `/today`.
 6. A click calls `summary`, `prediction` or `trace_cause` -> `SummaryDisplay` / `PredictionDisplay` / `TraceCauseDisplay`.
 7. Trust strip: `newsStoryRecord` builds `record/views/track-record.json` from the forecast facts -> `useTrackRecord` (no fallback).
@@ -67,5 +67,3 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - Topics served (from the repo root):
   `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"topics"}' | head -c 300`
 - Selection schedule: `aws scheduler get-schedule --name InvokeGoogleGemini --region ap-northeast-1 --query State`
-
-Last verified: 2026-10-31

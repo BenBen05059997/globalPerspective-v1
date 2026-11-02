@@ -26,4 +26,4 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 - `DRIFT#` prefix match excludes the permanent `DRIFTLOG#` archive; `DRIFT_FRESH_HOURS` default 36.
 
 ## Tests
-- `cd backend/distribution/newsEmailSender/src && node test-sender.js` (hermetic, stubs AWS + fetch).
+- `cd backend/distribution/newsEmailSender/src && npm test` runs `test-sender.js` (hermetic, stubs AWS + fetch) and `test/*.test.js` (drift_alert mode, send-failure markers, record reads).

@@ -19,4 +19,4 @@ Alerting layer over the client-error sink (newsClientErrors). Each run scans the
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- None.
+- `cd backend/monitoring/newsErrorDigest/src && npm test` (or `node --test "backend/monitoring/newsErrorDigest/test/*.test.js"` from the repo root). Offline: the AWS SDK is stubbed and DynamoDB and SNS are fakes. Covers the paged scan, fingerprint folding, the baseline / quiet / spike-threshold paths, the SNS subject and body (no stacks or user fields), the misconfigured guard, and DynamoDB/SNS failures.

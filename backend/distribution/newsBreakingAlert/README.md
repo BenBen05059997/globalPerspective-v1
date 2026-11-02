@@ -21,6 +21,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.
 - Live it emails the operator when `DRY_RUN` is off, but the alert stays hidden from readers until `backend/distribution/cli/breaking/review.js` sets it `confirmed`.
+- A failed proposal Put emails nothing, logs `[pipeline-status]` `failed` (`reason: proposal-write-failed`) and rethrows past the handler's `{ ok: false }` envelope, so Lambda `Errors` and the stage 7 failed-run filter both move. Every other error still returns `{ ok: false, error }`.
 - `placeFilter` (`usableCountryRecord`) comes from `backend/shared/src` through the `src/_shared` symlink.
 - Tune via `SIGNIFICANCE_THRESHOLD` (code default 2.0). `node index.js` runs a local pass against prod tables (writes the proposal row).
 - Subscriber breaking sends live in `newsEmailSender` (its breaking rule is DISABLED).

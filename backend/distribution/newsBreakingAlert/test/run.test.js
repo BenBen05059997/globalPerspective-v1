@@ -295,12 +295,16 @@ test('a failed send leaves the dedupe row, so the same story is not proposed aga
   }, 500);
 });
 
-test('a failed proposal write is swallowed and the operator is still emailed about an alert that has no row (current behaviour, see "Left for a decision")', async () => {
+test('a failed proposal write sends no email, logs [pipeline-status] failed and rejects the invocation', async () => {
   await withRun({ DRY_RUN: 'false', RESEND_API_KEY: 'k' }, (s) => { s.topics = strong('big'); s.putThrows = true; }, async (handler, { store, calls }) => {
-    const r = await handler();
-    assert.deepEqual([r.ok, r.proposed, r.sent], [true, 1, true]);
-    assert.equal(calls.length, 1);
+    const logged = [];
+    console.error = (...a) => logged.push(a.map(String).join(' '));
+    await assert.rejects(handler(), { message: 'put failed' });
+    assert.equal(calls.length, 0);
     assert.equal(store.puts.length, 0);
+    assert.equal(store.updates.length, 0);
+    const marker = logged.find((l) => l.startsWith('[pipeline-status] '));
+    assert.deepEqual(JSON.parse(marker.slice('[pipeline-status] '.length)), { status: 'failed', reason: 'proposal-write-failed', threadId: 'big', error: 'put failed' });
   });
 });
 

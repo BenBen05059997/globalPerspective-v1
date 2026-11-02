@@ -19,7 +19,7 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 - `GROK_MODEL` (fallback `deepseek-v4-pro`) with key `XAI_API_KEY`, through the shared client `src/_shared/llm.js` (thinking disabled). The GROK_*/XAI_* names hold DeepSeek values.
 
 ## Gotchas
-- Brief is skipped (logged, not an error) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset.
+- The handler rejects (`Missing required env vars: <names>`, never the values) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset, so the Errors metric moves; it checks after the no-entries skip, so an empty day still answers 200 skipped. Other failures (unset `TOPICS_DDB_TABLE`, a bad model reply, a failed put) are returned as `500` and do not move Errors.
 - `topStories[]` carry `threadId` (matched to an archive entry, never from the model; ambiguous or unmatched = `null`) and `iso3[]` (their regions through `resolveIso3`); `countryToWatch` carries `iso3[]` and the `threadId` of today's thread with most entries in that country.
 - Thinking mode is disabled on purpose (2026-07-26 outage: thinking burned `max_tokens`).
 

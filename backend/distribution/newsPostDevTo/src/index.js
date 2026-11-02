@@ -168,9 +168,10 @@ async function callGrok(prompt) {
 }
 
 async function generateAndStoreDailyBrief(entries, dateKey) {
-  if (!SUMMARY_TABLE || !XAI_API_KEY) {
-    console.log('[DAILY_BRIEF] Skipping: missing SUMMARIZE_PREDICT_TABLE or XAI_API_KEY');
-    return null;
+  const missing = [['SUMMARIZE_PREDICT_TABLE', SUMMARY_TABLE], ['XAI_API_KEY', XAI_API_KEY]].filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length) {
+    // a misconfigured function must fail the run (Errors metric), not report ok
+    throw Object.assign(new Error(`Missing required env vars: ${missing.join(', ')}`), { missingConfig: true });
   }
 
   const displayDate = formatDisplayDate(dateKey);
@@ -274,6 +275,7 @@ exports.handler = async (event) => {
     });
   } catch (err) {
     console.error('newsPostDevTo error:', err);
+    if (err.missingConfig) throw err; // reject, so a scheduled run counts as an error (a returned 500 does not)
     return resp(500, { status: 'error', error: err.message });
   }
 };

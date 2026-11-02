@@ -251,21 +251,33 @@ test('no entries archived today (empty archive, or only older entries): 200 skip
   }
 });
 
-test('XAI_API_KEY unset: nothing is generated or stored and the handler answers 200 ok with stored:false (current behaviour, see "Left for a decision")', async () => {
+// A missing variable fails the run: the handler must reject (a returned 500 does not move the Lambda Errors metric).
+test('XAI_API_KEY unset: the handler rejects naming the variable, nothing is generated or stored', async () => {
   await withHandler({ XAI_API_KEY: undefined }, () => {}, JSON.stringify(brief()), async (mod, { store, chats }) => {
-    const r = await mod.handler({});
-    assert.equal(r.statusCode, 200);
-    assert.deepEqual(body(r), { status: 'ok', dateKey: TODAY, dailyBrief: { stored: false } });
+    await assert.rejects(mod.handler({}), (e) => /Missing required env vars: XAI_API_KEY$/.test(e.message));
     assert.equal(chats.length + store.puts.length, 0);
   });
 });
 
-test('SUMMARIZE_PREDICT_TABLE unset: same skip, nothing stored', async () => {
+test('SUMMARIZE_PREDICT_TABLE unset: the handler rejects naming the variable, nothing is generated or stored', async () => {
   await withHandler({ SUMMARIZE_PREDICT_TABLE: undefined }, () => {}, JSON.stringify(brief()), async (mod, { store, chats }) => {
+    await assert.rejects(mod.handler({}), (e) => /Missing required env vars: SUMMARIZE_PREDICT_TABLE$/.test(e.message));
+    assert.equal(chats.length + store.puts.length, 0);
+  });
+});
+
+test('both unset: one rejection names both variables and never a value', async () => {
+  await withHandler({ SUMMARIZE_PREDICT_TABLE: undefined, XAI_API_KEY: undefined }, () => {}, JSON.stringify(brief()), async (mod, { store, chats }) => {
+    await assert.rejects(mod.handler({}), (e) => e.message === 'Missing required env vars: SUMMARIZE_PREDICT_TABLE, XAI_API_KEY');
+    assert.equal(chats.length + store.puts.length, 0);
+  });
+});
+
+test('a missing variable on a day with no entries is still the normal 200 skipped (the empty-day skip is not a misconfiguration)', async () => {
+  await withHandler({ XAI_API_KEY: undefined }, (s) => { s.entries = []; }, JSON.stringify(brief()), async (mod) => {
     const r = await mod.handler({});
     assert.equal(r.statusCode, 200);
-    assert.deepEqual(body(r).dailyBrief, { stored: false });
-    assert.equal(chats.length + store.puts.length, 0);
+    assert.deepEqual(body(r), { status: 'skipped', reason: 'no archive entries' });
   });
 });
 

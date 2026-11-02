@@ -100,6 +100,6 @@ Shared in `shared/lib/branchWording.js`; never "not checked yet", never "DEAD".
 - A badly written outcome cannot be judged; draw quality is the largest lever.
 - The loop needs the pipeline to keep writing entries: while the model provider is down nothing can be judged `yes`.
 - Forecasts from before the question scheme (it starts 2026-09-30) have no question id and cannot be scored; they show on story pages as legacy branches. The 1,513 `PRED#` rows that no story could be found for are kept whole under `record/legacy/predictions/` (decision 0047).
-- The `PRED#` rows are still the source of `forecast_drawn` facts. Until a forecasts inbox exists, the prediction log cannot be retired (STEP5_AUDIT.md).
+- The `PRED#` rows are still the source of `forecast_drawn` facts unless `FORECASTS_SOURCE=inbox`; the forecasts inbox (decision 0052) exists, and `STEP5_AUDIT.md` holds what is left before the `PRED#` rows can be retired.
 
 Decisions: [0038](../decisions/0038-forecast-loop.md) (this loop), [0011](../decisions/0011-track-record-and-studio.md) (sampled track record), [0034](../decisions/0034-auto-verdicts-no-human-gate.md) (resolver writes verdicts), [0036](../decisions/0036-facts-file-format.md) (fact formats), [0043](../decisions/0043-question-draws-in-the-record.md) (draws in the record), [0044](../decisions/0044-track-record-view.md) (track-record view), [0045](../decisions/0045-eligibility-window-90-days.md) (eligibility window).

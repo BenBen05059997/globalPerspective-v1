@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Shared-module drift guard (ONE_TRUTH_EXECUTION_PLAN.md Phase 1).
+ * Shared-module drift guard.
  *
  * This repo has no Lambda layers — each function is a separate manual-deploy
  * unit. Backend helpers used by several Lambdas (llm.js, placeFilter.js + name

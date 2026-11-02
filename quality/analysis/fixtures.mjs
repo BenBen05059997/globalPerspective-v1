@@ -203,9 +203,9 @@ export const RICHNESS_CASES = [
 // ── LIVE story-sets ──────────────────────────────────────────────────────────
 // D2 (S5b): each story now supplies typed raw material — analysis/forecast/drift
 // (each `{ text, generatedAt } | null`) plus `news` (archive snippets) — matching
-// buildStorySources()'s input shape exactly what analysis.js hands it after
+// buildStorySources()'s input shape exactly what the Studio page (retired 2026-10-20) handed it after
 // fetching. run.mjs runs each through buildStorySources() + assembleContext(),
-// so the eval exercises the SAME typed-numbering pipeline the live Studio ships.
+// so the eval exercises the SAME typed-numbering pipeline the Studio shipped (it is still in analysisPrompt.js).
 export const LIVE_FIXTURES = [
   {
     name: 'strait-tension + diplomacy (2 stories, both RICH)',
@@ -255,8 +255,8 @@ export const LIVE_FIXTURES = [
 ];
 
 // ── D4 gp-struct scenario places/by regression (S5c) — extractStruct/validateStruct
-//    is the anti-invention gate for the Studio deck's Scenario picture (scenarioBands.js)
-//    and its "our data vs this run" map (oursVsRun.js); this net catches a regression in
+//    is the anti-invention gate for the retired Studio deck's Scenario picture and its
+//    "our data vs this run" map (scenarioBands.js and oursVsRun.js are gone); this net catches a regression in
 //    that gate directly, the same way RICHNESS_CASES nets buildStorySources above. ──────
 export const STRUCT_CASES = [
   {

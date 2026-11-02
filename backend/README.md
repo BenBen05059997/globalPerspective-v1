@@ -1,16 +1,16 @@
 # backend
 
 The AWS Lambdas (region ap-northeast-1) behind globalperspective.net, grouped by job. Each group has a README with its
-Lambdas, schedules, stores and pipeline. `scripts/functions.json` lists 37 news Lambdas (two are `-sandbox` twins with their own deploy script); live AWS is the truth for
+Lambdas, schedules, stores and pipeline. `scripts/functions.json` lists 34 entries (two are `-sandbox` twins with their own deploy script); live AWS is the truth for
 what exists and what runs (`aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`).
 
 ## Groups
 
 - [pipeline](pipeline/README.md): fetches and analyses the news, and writes the topics, threads and country records. Its Lambdas also write the daily model notes into the record.
 - [situations](situations/README.md): ingests disaster and conflict feeds and tracks ongoing situations for the map.
-- [predictions](predictions/README.md): snapshots, resolves and scores the forecasts behind the track record.
+- [predictions](predictions/README.md): draws the weekly sample and settles the forecasts behind the track record.
 - [distribution](distribution/README.md): daily and weekly briefs, subscriber email, breaking alerts, social posts.
-- [read-api](read-api/README.md): what the browser calls: the content proxy, saved items, preferences, shares, error reports, and the parked Signals API.
+- [read-api](read-api/README.md): what the browser calls: the content proxy, saved items, preferences, shares and error reports.
 - [membership-studio](membership-studio/README.md): Polar billing, and the retired Analysis Studio Lambda (no page calls it).
 - [monitoring](monitoring/README.md): alerts to the operator on freshness, errors, model health and summary drift.
 - [record](record/README.md): the world's memory: daily facts, weekly readings, the notes the Lambdas write, and the static views the pages read.

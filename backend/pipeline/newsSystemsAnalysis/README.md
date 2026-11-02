@@ -1,6 +1,6 @@
 # newsSystemsAnalysis
 
-Daily cross-domain causal "web" per country. Reads 30 days of topic archives plus thread analyses, groups threads by country (real countries only, `src/placeFilter.js`), and asks an LLM for a node/edge graph for the top `SYSTEMS_TOP_N` (default 5) countries. Then rebuilds per-story web records and one index from all current webs (`src/webRecords.js`). Event `{ countries: [...] }` overrides the targets; `{ dryRun: true }` returns prompt sizes and coverage with no LLM call and no writes.
+Daily cross-domain causal "web" per country. Reads 30 days of topic archives plus thread analyses, groups threads by country (real countries only, `src/_shared/placeFilter.js`), and asks an LLM for a node/edge graph for the top `SYSTEMS_TOP_N` (default 5) countries. Then rebuilds per-story web records and one index from all current webs (`src/webRecords.js`). Event `{ countries: [...] }` overrides the targets; `{ dryRun: true }` returns prompt sizes and coverage with no LLM call and no writes.
 
 ## Deployment
 - Deployed name `newsSystemsAnalysis` · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)

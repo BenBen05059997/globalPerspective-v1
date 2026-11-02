@@ -1,6 +1,6 @@
 # newsThreadAnalysis
 
-Daily thread-level AI analysis. Reads 30 days of topic archives, groups entries into narrative threads (2+ entries), and re-analyses up to `MAX_THREADS` (default 10) threads, but only those with a new event the stored analysis has not seen (`src/threadPolicy.js`). Each analysis carries a multi-axis risk vector reduced to a legacy score by `src/riskDimensions.js`. Event `{ dryRun: true }` returns the selection plan with no LLM call or writes.
+Daily thread-level AI analysis. Reads 30 days of topic archives, groups entries into narrative threads (2+ entries), and re-analyses up to `MAX_THREADS` (default 10) threads, but only those with a new event the stored analysis has not seen (`src/threadPolicy.js`). Each analysis carries a multi-axis risk vector reduced to a legacy score by `src/_shared/riskDimensions.js`. Event `{ dryRun: true }` returns the selection plan with no LLM call or writes.
 
 ## Deployment
 - Deployed name `newsThreadAnalysis` · runtime `nodejs24.x` · group `pipeline` (scripts/functions.json)

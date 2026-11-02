@@ -39,7 +39,7 @@ Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`
 
 ## Shared code
 
-- newsSensitiveData-dev: `links`, `llm`, `placeFilter`, `resolveIso3`. newsRecommend: `links`.
+- newsSensitiveData-dev: `briefs`, `links`, `noteReads`, `recordReads`, `resolveIso3`. newsRecommend: `links`, `recordReads`.
 - newsSavedItems, newsSharedAnalysis and newsClientErrors use none. See the [shared README](../shared/README.md).
 
 ## Known limits

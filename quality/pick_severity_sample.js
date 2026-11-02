@@ -4,8 +4,8 @@
 // read per record (these items are overwritten daily — a second read could silently swap in a
 // different record's data under the same id).
 //
-// See project-docs/architecture/ONE_TRUTH_EXECUTION_PLAN.md Phase 3 Step 3.2 for the full spec
-// this script implements, and quality/SEVERITY_CODEBOOK.md for the rubric the
+// The spec this script implements (ONE_TRUTH_EXECUTION_PLAN.md Phase 3 Step 3.2) was deleted
+// 2026-10-19; git history keeps it. quality/SEVERITY_CODEBOOK.md is the rubric the
 // operator will use to label the output.
 //
 // Usage:
@@ -37,7 +37,7 @@ function arg(name, def) {
 const TARGET_N = parseInt(arg('n', '28'), 10);
 const outPath = arg('out', path.join('quality', 'severity_gold_set.json'));
 
-// ─── DDB helpers (shell out to aws cli; unmarshal types) — modeled on pick_weekly_review.js ──
+// ─── DDB helpers (shell out to aws cli; unmarshal types) — modeled on a script no longer in the repo ──
 function awsJson(cmd) {
   const raw = execSync(cmd, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   return JSON.parse(raw);
@@ -83,7 +83,7 @@ function scanBySk(sk) {
   return items;
 }
 
-// ─── shuffle (Fisher-Yates, same as pick_weekly_review.js) ────────────────────
+// ─── shuffle (Fisher-Yates) ────────────────────
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

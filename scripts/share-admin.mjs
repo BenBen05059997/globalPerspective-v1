@@ -10,7 +10,6 @@
  *   node scripts/share-admin.mjs --id <share id> --delete [--commit]   the same for one share
  *
  * Uses the AWS CLI with your credentials (table GlobalPerspectiveShares, GSI uid-createdAt-index, ap-northeast-1).
- * The table and index must exist first (phase G, gate Y1); until then every call reports "table not found".
  */
 import { execFileSync } from 'node:child_process';
 

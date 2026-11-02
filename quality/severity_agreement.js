@@ -3,7 +3,7 @@
 
 /**
  * severity_agreement.js — Phase 3 severity-benchmark agreement baseline.
- * See project-docs/architecture/ONE_TRUTH_EXECUTION_PLAN.md Phase 3 Step 3.3.
+ * Spec: ONE_TRUTH_EXECUTION_PLAN.md Phase 3 Step 3.3 (deleted 2026-10-19; git history keeps it).
  *
  * Reads ONLY quality/severity_gold_set.json (or a path given as the first positional arg, for
  * the toy-example self-check). No live DDB reads — the frozen model_dimensions vs. the

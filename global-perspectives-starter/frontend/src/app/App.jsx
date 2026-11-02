@@ -1,4 +1,4 @@
-// global-perspectives-starter/frontend/src/App.jsx
+// global-perspectives-starter/frontend/src/app/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';

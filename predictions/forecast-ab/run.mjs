@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// P0 before/after harness for the grounded-forecast change (plan: project-docs/prediction/_active/
-// TASK_2026-10-17_grounded_forecast_and_cost.md). Read-only against AWS; spends a few cents of DeepSeek.
+// P0 before/after harness for the grounded-forecast change (plan: TASK_2026-10-17_grounded_forecast_and_cost.md,
+// deleted 2026-10-19; git history keeps it). Read-only against AWS; spends a few cents of DeepSeek.
 //
 //   A = the old path: research briefing call + forecast call, old prompts, old gates G1-G12
 //   B = the new path: one grounded forecast call, new prompt, gates G1-G12 + G13

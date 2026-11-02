@@ -1,7 +1,7 @@
 # situations
 
 The map's data group. It ingests disaster alerts and world news, folds them into open situations, and publishes one bundle
-for the home map. It serves readers of the home page. Two of the Lambdas also leave raw corpus files; only one of those has a reader left.
+for the home map. It serves readers of the home page. Two of the Lambdas also leave raw corpus files; nothing reads them now.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch

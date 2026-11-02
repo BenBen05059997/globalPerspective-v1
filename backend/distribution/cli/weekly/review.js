@@ -8,7 +8,7 @@
  * (the public weekly_brief action serves only 'published'). This script is now a spot-check /
  * retraction tool: it walks any record still at status 'draft' (e.g. one the operator held back
  * by hand) and publishes it (status → 'published'), or holds/rejects. No public auth
- * surface — AWS CLI, no npm deps. Mirrors backend/distribution/cli/breaking/review.js + predictions/review.js.
+ * surface — AWS CLI, no npm deps. Mirrors backend/distribution/cli/breaking/review.js.
  *
  * Usage:
  *   node backend/distribution/cli/weekly/review.js            # interactive: walk draft briefs

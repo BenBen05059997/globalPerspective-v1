@@ -5,7 +5,7 @@ The public track record is a record view built by newsStoryRecord; the snapshot 
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 3: the forecast watch, gather, judge and record (newsPredictionResolver), and forecast settling (the track-record snapshot job is retired; the record's track-record view replaces it). Timeline: writes no facts; the resolver appends verdict and draw lines to record/inbox/verdicts/ and record/inbox/draws/ for newsStoryRecord, and PRED# rows are still the source of forecast_drawn facts. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 3: the forecast watch, gather, judge and record (newsPredictionResolver), and forecast settling (the track-record snapshot job is retired; the record's track-record view replaces it). Timeline: writes no facts; the resolver appends verdict and draw lines to record/inbox/verdicts/ and record/inbox/draws/ for newsStoryRecord, and forecast_drawn facts come from the forecasts inbox when FORECASTS_SOURCE is inbox, otherwise from the PRED# rows (the resolver reads its own questions from the PRED# rows or the facts, QUESTIONS_SOURCE). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -32,7 +32,7 @@ The nightly stages (WATCH, GATHER, JUDGE, RECORD) and their rules are in [newsPr
 ## Shared code
 
 - newsPredictionResolver uses `llm.js` and `s3json.js` from `backend/shared/src`.
-- The resolver's ISO-week helpers (`weekOf`, `weekStart`) are in `src/lib.js`; the snapshot and proxy copies are gone.
+- The resolver's ISO-week helpers come from shared modules: `weekStart` from `questionPool.js` (with `rankKey` and `draw`, shared with the record's track-record view) and `isoWeekOfDay` (as `weekOf`) from `questionState.js`; `src/lib.js` re-exports them. The snapshot and proxy copies are gone.
 
 ## Known limits
 

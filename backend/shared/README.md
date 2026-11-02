@@ -18,8 +18,8 @@ LLM and time
   `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `openrouter`, `gemini`, `other`. Thinking is off
   unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API. `archiveEntries.js`: `readArchiveEntries({days, getRow, project, onError})`, the archive walk (`today-archive`, then `archive#<day>`) of the thread, country, systems and weekly Lambdas.
-- `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
-- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`, `newsPostDevTo`, `newsPostLinkedIn`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
+- `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null: verifies a Firebase ID token against `FIREBASE_PROJECT_ID` (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
+- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`, `newsPostLinkedIn`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as
@@ -59,13 +59,13 @@ The record
 - `briefs.js`: `briefWithIso3`, `weeklyWithIso3`, `briefCountries`: the countries every reader gets on the daily and weekly brief
   (filled from names when the stored row has no `iso3`). Used by the read API's brief actions and by the record's brief views, so
   they answer the same.
-- `questionState.js`: where a forecast question stands in the weekly sample and in its outcome (decision 0043). `questionScoring.js`:
-  Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure, used by
-  `newsStoryRecord`'s views and track-record view.
+- `questionState.js`: where a forecast question stands in the weekly sample and in its outcome (decision 0043). `questionScoring.js`: Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure, used by `newsStoryRecord`'s views and track-record view.
+- `questionPool.js`: the weekly sample's pool and draw rule (decisions 0038, 0043, 0045, 0052): `eligibleQuestions`, `rankKey`, `draw`, `poolOfDraw`, `rowOfFact`, the ISO-week helpers. One rule for `newsPredictionResolver` (draws) and the track-record view (republishes a draw's pool).
+- `entriesInbox.js`, `forecastsInbox.js`: the line format and replay rule of the agent's inboxes `record/inbox/entries/` and `record/inbox/forecasts/` (decisions 0051, 0052). The agent appends with them, `newsStoryRecord` replays them (`replayDay`, `replay`).
+- `recordReads.js`: the readers of the record's views in the shape of the DynamoDB rows they replace (`latest`, `today-archive`, `THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `WEEKLY_BRIEF`; decision 0054) and the flag `readMode` (env `RECORD_READS` = `ddb` | `record` | `compare`, `readBy`). Used by newsSensitiveData, newsRecommend, newsPostDevTo, newsPostLinkedIn, newsBreakingAlert and newsEmailSender.
 - `outlets.js`: the one outlet table (`OUTLET_METADATA`, `getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
   `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`. `categoryLabels.js`: `CATEGORY_LABEL`, the twelve category display names (digest, posts, RSS).
-- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by
-  `newsInvokeGemini` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
+- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by `newsInvokeGemini`, `newsSituationIngest` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
 
 The raw-table reader
 - `world/`: the one reader of the world's raw tables (`archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`,

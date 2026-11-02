@@ -5,7 +5,7 @@ and then builds the thread, country and cause-web analyses that the site shows. 
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3, daily notes). Timeline: writes no facts or readings; writes the entry, story_analysis, drift, country, link and web notes into record/notes/ (NOTES_PREFIX); its raw rows are still the source of entry, story_born and forecast_drawn facts, read only through world/ until the entries and forecasts inboxes exist. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3, daily notes). Timeline: writes no facts or readings; writes the entry, story_analysis, drift, country, country_facts, link and web notes into record/notes/ (NOTES_PREFIX); the agent also appends the entries and forecasts inboxes (record/inbox/entries/ and record/inbox/forecasts/, ENTRIES_INBOX_PREFIX and FORECASTS_INBOX_PREFIX), which newsStoryRecord reads for the entry, story_born and forecast_drawn facts when ENTRIES_SOURCE and FORECASTS_SOURCE are inbox; otherwise it reads the raw rows through world/. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -13,11 +13,11 @@ This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
 | newsInvokeGemini-dev | Fetches RSS feeds, asks one LLM call to pick the topics, and stores them as the pending list. | Scheduler `InvokeGoogleGemini`, cron(15 4/8 * * ? *) UTC, ENABLED | RSS hosts; DynamoDB NewsCache `seen-today`, `archive#<date>` | NewsCache `staging`, `seen-today`; S3 `record/inbox/articles/` (raw capture of every fetched item), `audit/ingest-capture/` | [link](newsInvokeGemini/README.md) |
-| NewsProjectInvokeAgentLambda-dev | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`, archive rows; SummarizeAndPredict `FACTS#`; S3 `stories/state/` | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/` | [link](NewsProjectInvokeAgentLambda/README.md) |
+| NewsProjectInvokeAgentLambda-dev | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`, archive rows; SummarizeAndPredict `FACTS#`; S3 `stories/state/` | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/`, `record/inbox/entries/`, `record/inbox/forecasts/` | [link](NewsProjectInvokeAgentLambda/README.md) |
 | newsSelectionShadow | Logs what a layered selector would have picked beside the live pick; nothing reads it. | Rule `TriggerSelectionShadow`, cron(20 4,12,20 * * ? *) UTC, ENABLED | S3 `audit/ingest-capture/`, `corpus/`, `situations/state/gdacs_*`; Jev API | S3 `audit/selection-shadow/` | [link](newsSelectionShadow/README.md) |
 | newsThreadAnalysis | Re-analyses threads that have a new event, with a multi-axis risk read. | Rule `TriggerDailyAnalysis`, cron(40 4 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD#` | SummarizeAndPredict `THREAD#`/`THREAD_ANALYSIS`, `THREAD_HISTORY#`; S3 `record/notes/story_analysis/` | [link](newsThreadAnalysis/README.md) |
 | newsSystemsAnalysis | Builds a cause-and-effect web for the top countries and per-story web records. | Rule `TriggerNewsSystemsAnalysis`, cron(0 5 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD_ANALYSIS` | SummarizeAndPredict `SYSTEMS#`, `WEB#INDEX`, `THREAD#`/`WEB`; S3 `web/`, `record/notes/link/`, `record/notes/web/` | [link](newsSystemsAnalysis/README.md) |
-| newsCountryFactsUpdater | Refreshes capital, population and leadership facts per country from Wikidata and ACLED. | Scheduler `Fact`, cron(0 5 ? * MON *) Asia/Tokyo, ENABLED | wikidata.org, acleddata.com | SummarizeAndPredict `FACTS#<country>`/`COUNTRY_FACTS` | [link](newsCountryFactsUpdater/README.md) |
+| newsCountryFactsUpdater | Refreshes capital, population and leadership facts per country from Wikidata and ACLED. | Scheduler `Fact`, cron(0 5 ? * MON *) Asia/Tokyo, ENABLED | wikidata.org, acleddata.com | SummarizeAndPredict `FACTS#<country>`/`COUNTRY_FACTS`; S3 `record/notes/country_facts/` | [link](newsCountryFactsUpdater/README.md) |
 | newsCountryIntelligence | Writes the country briefings and 4-axis risk read for countries that need a refresh. | Scheduler `countryIntelliegence`, cron(15 5 * * ? *) UTC, ENABLED | NewsCache archives; `THREAD_ANALYSIS`, `FACTS#`, `DRIFT#`; public `data/world/latest.json` | SummarizeAndPredict `COUNTRY#`/`COUNTRY_INTELLIGENCE`, `HISTORY#<date>`; S3 `record/notes/country/` | [link](newsCountryIntelligence/README.md) |
 | newsDriftCorrector | Checks whether a conclusion moved and, if so, writes a note naming the event that explains it. | Rule `TriggerDriftCorrector`, cron(30 5 * * ? *) UTC, ENABLED | SummarizeAndPredict `HISTORY#`, `THREAD_HISTORY#`; NewsCache archives | SummarizeAndPredict `DRIFT#<date>`, `DRIFTLOG#<date>`; S3 `record/notes/drift/` | [link](newsDriftCorrector/README.md) |
 
@@ -25,7 +25,7 @@ The `cli/` folder holds an operator tool, not a Lambda: [cli/README.md](cli/READ
 
 ## Notes in the record (decision 0042)
 
-The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector) each also copy what they stored into the record as notes (`backend/shared/src/notes.js`, best-effort, never failing the run). The prefix is env `NOTES_PREFIX`: the code defaults to `record/shadow/`, and the live env of all five sets `record/`. The DynamoDB rows stay the primary copy until the world tables retire (step 5, `project-docs/architecture/STEP5_AUDIT.md`).
+Six Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector and newsCountryFactsUpdater, which uses no model) each also copy what they stored into the record as notes (`backend/shared/src/notes.js`, best-effort, never failing the run). The prefix is env `NOTES_PREFIX`: the code defaults to `record/shadow/` (the facts updater writes nothing when it is unset), and the live env of all six sets `record/`. The agent also appends the entries and forecasts inboxes (`ENTRIES_INBOX_PREFIX`, `FORECASTS_INBOX_PREFIX`). The DynamoDB rows stay the primary copy until the world tables retire (step 5, `project-docs/architecture/STEP5_AUDIT.md`).
 
 ## Pipeline
 
@@ -45,9 +45,9 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 
 - `llm.js` (chat client): newsInvokeGemini, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `dayZero.js`: newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
-- `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsThreadAnalysis, newsCountryIntelligence, newsDriftCorrector.
+- `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsInvokeGemini, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector, newsCountryFactsUpdater.
 - `placeFilter.js`: newsSystemsAnalysis, newsCountryIntelligence. `riskDimensions.js`: newsThreadAnalysis, newsCountryIntelligence.
-- NewsProjectInvokeAgentLambda, newsCountryFactsUpdater and newsSelectionShadow have no `_shared` link. newsSelectionShadow symlinks `classifier-core.js` from newsSituationIngest.
+- Every Lambda here has a `src/_shared` link. newsSelectionShadow also symlinks `classifier-core.js` from newsSituationIngest.
 
 ## Known limits
 

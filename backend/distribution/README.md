@@ -6,7 +6,7 @@ is emailed each breaking alert. It reads what the pipeline group wrote and write
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no facts or readings; newsPostDevTo and newsWeeklyBrief write the daily_brief and weekly_brief notes (decision 0048, when NOTES_PREFIX is set); the email sender still reads WEEKLY_BRIEF# rows. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no facts or readings; newsPostDevTo and newsWeeklyBrief write the daily_brief and weekly_brief notes (decision 0048, when NOTES_PREFIX is set); the email sender reads the WEEKLY_BRIEF# rows unless RECORD_READS is record, which reads the weekly brief view (decision 0054). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -31,12 +31,14 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 
 ## Briefs and the record (decision 0048)
 
-The two brief writers also copy each brief into the record as a `daily_brief` / `weekly_brief` note (`backend/shared/src/briefNotes.js`), from which `newsStoryRecord` builds `record/views/briefs/` and `index/briefs.json`. The copy is gated by env `NOTES_PREFIX`: unset writes nothing, and the DynamoDB row stays the primary copy. Live state is in the two Lambdas' env (`aws lambda get-function-configuration`), and what waits on the operator is in `project-docs/START_HERE.md`; the notes already in the record were made by `backend/record/cli/backfill-brief-notes.mjs`. The `DAILY_BRIEF#` and `WEEKLY_BRIEF#` rows are still read by the read proxy, the Cloudflare Worker pre-render and newsEmailSender (weekly mode), so they stay until those read the record.
+The two brief writers also copy each brief into the record as a `daily_brief` / `weekly_brief` note (`backend/shared/src/briefNotes.js`), from which `newsStoryRecord` builds `record/views/briefs/` and `index/briefs.json`. The copy is gated by env `NOTES_PREFIX`: unset writes nothing, and the DynamoDB row stays the primary copy. Live state is in the two Lambdas' env (`aws lambda get-function-configuration`), and what waits on the operator is in `project-docs/START_HERE.md`; the notes already in the record were made by `backend/record/cli/backfill-brief-notes.mjs`. The `DAILY_BRIEF#` and `WEEKLY_BRIEF#` rows are still read by the read proxy. The Cloudflare Worker pre-render reads the brief views first and falls back to the proxy actions. newsEmailSender (weekly mode) reads the weekly brief view only with `RECORD_READS=record` (default `ddb`; `compare` sends from the row and logs differences, decision 0054), so the rows stay until the proxy and the sender read the record.
 
 ## Shared code
 
-- newsBreakingAlert: `links`, `placeFilter`. newsEmailSender: `links`. newsPostLinkedin: `links`.
-- newsPostDevTo and newsWeeklyBrief: `dayZero`, `llm`, `placeFilter`, `resolveIso3`, `briefNotes` (with `notes`, `briefs`, `s3json`).
+- newsBreakingAlert: `escapeHtml`, `links`, `noteReads`, `placeFilter`, `recordReads`. newsEmailSender: `escapeHtml`, `links`, `recordReads`.
+- newsPostLinkedin: `categoryLabels`, `httpReply`, `links`, `recordReads`.
+- newsPostDevTo: `briefNotes` (with `notes`, `briefs`, `s3json`), `categoryLabels`, `dayZero`, `jaccard`, `llm`, `noteReads`, `placeFilter`, `recordReads`, `resolveIso3`.
+- newsWeeklyBrief: `archiveEntries`, `briefNotes`, `llm`, `noteReads`, `placeFilter`, `resolveIso3`.
 - Each reaches them through its `src/_shared` link to `backend/shared/src`. Details: [shared README](../shared/README.md).
 - Operator scripts live in [cli](cli/README.md).
 

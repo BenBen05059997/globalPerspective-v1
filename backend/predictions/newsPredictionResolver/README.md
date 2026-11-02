@@ -72,7 +72,7 @@ At the end of a non-dry `tick` the resolver also writes `{schemaVersion, at, com
 - A missing seed secret or a commit-hash mismatch blocks that week's draw; a new seed is never invented.
 - A question is checked once a day at most; an age-only candidate waits 5 days; three counted unclear drafts make it void. The first correction of a settled question is `VERDICT#2` (the original `VERDICT` counts as 1).
 - Settle rows carry no `methodologyVersion`, so legacy aggregators ignore them.
-- The ISO-week helpers (`weekOf`, `weekStart` in `src/lib.js`) lost the snapshot job's copy: it was removed with that Lambda and the proxy's (`isoWeekOfDay`) with the removed actions, both on 2026-11-01, and `test/weeksParity.test.js` went with them.
+- The ISO-week helpers are shared: `weekStart` is in `_shared/questionPool.js` and `isoWeekOfDay` (as `weekOf`) in `_shared/questionState.js`; `src/lib.js` re-exports them. The snapshot job's copy was removed with that Lambda and the proxy's (`isoWeekOfDay`) with the removed actions, both on 2026-11-01, and `test/weeksParity.test.js` went with them.
 
 ## Source field contract
 

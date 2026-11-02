@@ -17,4 +17,4 @@ Per-user saves/bookmarks. Actions `save_item`, `unsave_item`, `get_saved_items` 
 - OPTIONS returns a bare 200 only as a fallback; preflight is normally answered by the Function URL config.
 
 ## Tests
-- None.
+- `cd backend/read-api/newsSavedItems/src && npm test` (`node --test ../test/*.test.js`; offline, 19 tests): the auth gate, validation of item types and ids, the DynamoDB command shapes, AppSync and Function URL replies, and no CORS headers on any reply.

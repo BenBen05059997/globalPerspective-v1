@@ -90,6 +90,10 @@ function fakeSend(cmd) {
     return Promise.resolve({});
   }
   if (name === 'UpdateCommand') {
+    if (String(p.Key.PK).startsWith('EMAILLOG#')) { // the weekly marker: SET weekOf/recipients/sentAt ADD sentTo
+      const v = p.ExpressionAttributeValues; const m = store.marker[p.Key.PK] || { PK: p.Key.PK, SK: p.Key.SK };
+      store.marker[p.Key.PK] = { ...m, weekOf: v[':w'], recipients: v[':r'], sentAt: v[':t'], sentTo: new Set([...(m.sentTo || []), ...v[':s']]) };
+    }
     if (p.TableName === T.ALERTS) {
       const a = store.alerts.find((x) => x.alertKey === p.Key.alertKey);
       if (a) { a.emailedAt = new Date().toISOString(); a.emailedCount = p.ExpressionAttributeValues[':n']; }

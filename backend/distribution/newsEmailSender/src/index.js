@@ -16,7 +16,7 @@
 // No bundled deps — nodejs20 runtime provides @aws-sdk; fetch is global.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, ScanCommand, GetCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { sendEmail } = require('./sendEmail');
 const { renderWeeklyEmail } = require('./renderWeeklyEmail');
 const { renderDriftEmail } = require('./renderDriftEmail');
@@ -142,20 +142,27 @@ async function loadLatestBrief() {
   return readBy({ mode: RECORD_READS, label: 'email weekly_brief', same: SAME.weeklyBrief, ddb: loadLatestBriefFromDdb, record: loadLatestBriefFromRecord });
 }
 
-async function weeklyAlreadySent(weekOf) {
+// The per-week marker EMAILLOG#weekly#<weekOf> lists who already has that week's brief in `sentTo` (a string set of user ids; an email
+// address only for a recipient without a uid, i.e. a TEST_RECIPIENT that is not a subscriber). A marker without `sentTo` was written before
+// this field existed and means the whole week was sent.
+const recipientKey = (r) => r.uid || `email:${r.email}`;
+
+async function loadWeeklyMarker(weekOf) {
   const out = await ddb().send(new GetCommand({
     TableName: SUMMARY_TABLE, Key: { PK: `EMAILLOG#weekly#${weekOf}`, SK: 'EMAIL_LOG' },
   }));
-  return !!out.Item;
+  return out.Item || null;
 }
 
-async function markWeeklySent(weekOf, count) {
-  await ddb().send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: {
-      PK: `EMAILLOG#weekly#${weekOf}`, SK: 'EMAIL_LOG',
-      weekOf, recipients: count, sentAt: new Date().toISOString(),
-      ttl: Math.floor(Date.now() / 1000) + 180 * 86400,
+// ADD accumulates across runs; `covered` is how many recipients the marker holds after this write (the `recipients` field).
+async function markWeeklySent(weekOf, sentKeys, covered) {
+  await ddb().send(new UpdateCommand({
+    TableName: SUMMARY_TABLE, Key: { PK: `EMAILLOG#weekly#${weekOf}`, SK: 'EMAIL_LOG' },
+    UpdateExpression: 'SET #w = :w, #r = :r, #t = :t, #ttl = :ttl ADD #s :s',
+    ExpressionAttributeNames: { '#w': 'weekOf', '#r': 'recipients', '#t': 'sentAt', '#ttl': 'ttl', '#s': 'sentTo' },
+    ExpressionAttributeValues: {
+      ':w': weekOf, ':r': covered, ':t': new Date().toISOString(),
+      ':ttl': Math.floor(Date.now() / 1000) + 180 * 86400, ':s': new Set(sentKeys),
     },
   }));
 }
@@ -163,14 +170,26 @@ async function markWeeklySent(weekOf, count) {
 async function runWeekly(event) {
   const brief = await loadLatestBrief();
   if (!brief) { console.log('[email:weekly] no published brief; nothing to send'); return { ok: true, mode: 'weekly', sent: 0, reason: 'no_brief' }; }
-  if (!event.force && await weeklyAlreadySent(brief.weekOf)) {
+  const marker = await loadWeeklyMarker(brief.weekOf);
+  const alreadySent = () => {
     console.log(`[email:weekly] week ${brief.weekOf} already emailed; skipping (pass {force:true} to resend)`);
     return { ok: true, mode: 'weekly', sent: 0, reason: 'already_sent', weekOf: brief.weekOf };
-  }
-  const recipients = await audience('digestOptIn');
-  console.log(`[email:weekly] week ${brief.weekOf} · ${recipients.length} recipient(s) · DRY_RUN=${DRY_RUN} · from=${FROM}`);
+  };
+  if (marker && !marker.sentTo && !event.force) return alreadySent();
+  // force resends to the whole audience; otherwise skip whoever the marker already lists.
+  const done = new Set(marker && marker.sentTo && !event.force ? marker.sentTo : []);
+  const everyone = await audience('digestOptIn');
+  const recipients = everyone.filter((r) => !done.has(recipientKey(r)));
+  if (marker && !event.force && !recipients.length) return alreadySent();
+  console.log(`[email:weekly] week ${brief.weekOf} · ${recipients.length} recipient(s)${done.size ? ` (${everyone.length - recipients.length} already sent)` : ''} · DRY_RUN=${DRY_RUN} · from=${FROM}`);
   const { sent, errors } = await deliver(recipients, (uUrl) => renderWeeklyEmail(brief, { siteUrl: SITE_URL, unsubUrl: uUrl }), 'digest');
-  if (!DRY_RUN && sent > 0) await markWeeklySent(brief.weekOf, sent);
+  if (!DRY_RUN && sent > 0) {
+    // Record only the recipients whose send went through; a failed one stays out so a later run reaches it.
+    const failed = new Set(errors.map((e) => e.email));
+    const sentKeys = recipients.filter((r) => !failed.has(r.email)).map(recipientKey);
+    const before = marker && marker.sentTo ? marker.sentTo : [];
+    await markWeeklySent(brief.weekOf, sentKeys, new Set([...before, ...sentKeys]).size);
+  }
   return { ok: true, mode: 'weekly', weekOf: brief.weekOf, recipients: recipients.length, sent, errors, dryRun: DRY_RUN };
 }
 
@@ -217,7 +236,7 @@ async function runBreaking() {
     const { sent, errors } = await deliver(recipients, (uUrl) => appendUnsub(a.draft, uUrl), 'breaking');
     totalSent += sent;
     perAlert.push({ alertKey: a.alertKey, sent, errors });
-    if (!DRY_RUN && recipients.length > 0) await markAlertEmailed(a.alertKey, sent);
+    if (!DRY_RUN && sent > 0) await markAlertEmailed(a.alertKey, sent);
   }
   return { ok: true, mode: 'breaking', alerts: alerts.length, recipients: recipients.length, sent: totalSent, perAlert, dryRun: DRY_RUN };
 }

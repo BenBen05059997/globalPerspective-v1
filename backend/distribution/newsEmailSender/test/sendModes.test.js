@@ -19,7 +19,7 @@ const drift = (country, asOf, extra = {}) => ({
 // The tables the Lambda scans, filtered the way the real FilterExpressions filter (only the parts the code depends on).
 function makeStore() {
   const store = {
-    notes: [], prefs: [], alerts: [], briefs: [], markers: new Map(), updates: [], puts: [],
+    notes: [], prefs: [], alerts: [], briefs: [], markers: new Map(), updates: [], puts: [], markerWrites: [],
   };
   store.ddb = (input, cmd) => {
     if (cmd === 'ScanCommand') {
@@ -39,6 +39,12 @@ function makeStore() {
     }
     if (cmd === 'GetCommand') return { Item: store.markers.get(input.Key.PK) };
     if (cmd === 'PutCommand') { store.puts.push(input.Item); store.markers.set(input.Item.PK, input.Item); return {}; }
+    if (cmd === 'UpdateCommand' && String(input.Key.PK).startsWith('EMAILLOG#')) { // the weekly marker: SET weekOf/recipients/sentAt/ttl ADD sentTo
+      const v = input.ExpressionAttributeValues; const m = store.markers.get(input.Key.PK) || { ...input.Key };
+      store.markerWrites.push({ key: input.Key, values: v });
+      store.markers.set(input.Key.PK, { ...m, weekOf: v[':w'], recipients: v[':r'], sentAt: v[':t'], ttl: v[':ttl'], sentTo: new Set([...(m.sentTo || []), ...v[':s']]) });
+      return {};
+    }
     if (cmd === 'UpdateCommand') { store.updates.push({ table: input.TableName, key: input.Key, values: input.ExpressionAttributeValues }); return {}; }
     throw new Error(`unexpected ${cmd} on ${input.TableName}`);
   };
@@ -255,7 +261,7 @@ test('drift_alert with TEST_RECIPIENT and a real send stamps the notes emailed (
 test('an unknown mode is refused without touching the tables or Resend', async () => {
   await withSender({}, { fill: fillDrift }, async (handler, { store, resend }) => {
     assert.deepEqual(await handler({ mode: 'nope' }), { ok: false, error: 'unknown mode: nope' });
-    assert.equal(resend.calls.length + store.updates.length + store.puts.length, 0);
+    assert.equal(resend.calls.length + store.updates.length + store.puts.length + store.markerWrites.length, 0);
   });
 });
 
@@ -277,22 +283,134 @@ const weeklyBrief = {
 const subs = (n) => Array.from({ length: n }, (_, i) => ({ uid: `u${i}`, email: `r${i}@example.test`, digestOptIn: true, breakingOptIn: true, unsubToken: `t${i}` }));
 const confirmedAlert = (key) => ({ alertKey: key, status: 'confirmed', alertedAt: hoursAgo(1), draft: { subject: `Breaking ${key}`, text: 'body', html: '<body>x</body>' } });
 
-test('weekly: with some sends failing, the failures are listed and the week marker records only the successful count', async () => {
-  await withSender({}, {
-    fill: (s) => { s.briefs = [weeklyBrief]; s.prefs = subs(3); },
-    fail: (to) => to === 'r1@example.test',
-  }, async (handler, { store, resend }) => {
+const WEEK_KEY = 'EMAILLOG#weekly#2026-11-01';
+const marker = (store) => store.markers.get(WEEK_KEY);
+const seedMarker = (store, sentTo) => store.markers.set(WEEK_KEY, { PK: WEEK_KEY, SK: 'EMAIL_LOG', weekOf: '2026-11-01', recipients: 3, sentAt: hoursAgo(5), ...(sentTo ? { sentTo: new Set(sentTo) } : {}) });
+const fillWeekly = (n) => (s) => { s.briefs = [weeklyBrief]; s.prefs = subs(n); };
+const sentList = (resend) => resend.calls.map((c) => c.to[0]).sort();
+
+test('weekly: with some sends failing, the failures are listed and the week marker records only the recipients that got the email', async () => {
+  await withSender({}, { fill: fillWeekly(3), fail: (to) => to === 'r1@example.test' }, async (handler, { store, resend }) => {
     const r = await handler({ mode: 'weekly' });
     assert.equal(r.recipients, 3);
     assert.equal(r.sent, 2);
     assert.deepEqual(r.errors.map((e) => e.email), ['r1@example.test']);
     assert.equal(resend.calls.length, 3);
-    assert.equal(store.puts.length, 1);
-    assert.equal(store.puts[0].PK, 'EMAILLOG#weekly#2026-11-01');
-    assert.equal(store.puts[0].recipients, 2);
-    assert.equal(typeof store.puts[0].ttl, 'number');
-    // current behaviour: the marker makes the next run report already_sent, so the failed recipient is not retried (see "Left for a decision")
-    assert.equal((await handler({ mode: 'weekly' })).reason, 'already_sent');
+    assert.equal(store.markerWrites.length, 1);
+    assert.equal(store.puts.length, 0);
+    assert.deepEqual(store.markerWrites[0].key, { PK: WEEK_KEY, SK: 'EMAIL_LOG' });
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u2']); // u1's send failed, so u1 is not recorded
+    assert.equal(marker(store).recipients, 2);
+    assert.equal(marker(store).weekOf, '2026-11-01');
+    assert.equal(typeof marker(store).ttl, 'number');
+  });
+});
+
+test('weekly: the next run sends only to the recipient that failed, then the week is covered and a third run reports already_sent', async () => {
+  let down = true;
+  await withSender({}, { fill: fillWeekly(3), fail: (to) => down && to === 'r1@example.test' }, async (handler, { store, resend }) => {
+    await handler({ mode: 'weekly' });
+    down = false;
+    resend.calls.length = 0;
+    const retry = await handler({ mode: 'weekly' });
+    assert.deepEqual(sentList(resend), ['r1@example.test']); // u0 and u2 are NOT sent the same brief again
+    assert.deepEqual([retry.recipients, retry.sent, retry.errors], [1, 1, []]);
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u1', 'u2']);
+    assert.equal(marker(store).recipients, 3);
+    resend.calls.length = 0;
+    const third = await handler({ mode: 'weekly' });
+    assert.deepEqual([third.reason, third.sent, third.weekOf], ['already_sent', 0, '2026-11-01']);
+    assert.equal(resend.calls.length, 0);
+    assert.equal(store.markerWrites.length, 2);
+  });
+});
+
+test('weekly: a retry that fails again records nothing new and leaves the earlier recipients recorded', async () => {
+  await withSender({}, { fill: fillWeekly(3), fail: (to) => to === 'r1@example.test' }, async (handler, { store, resend }) => {
+    await handler({ mode: 'weekly' });
+    resend.calls.length = 0;
+    const retry = await handler({ mode: 'weekly' });
+    assert.deepEqual([retry.reason, retry.recipients, retry.sent, retry.errors.length], [undefined, 1, 0, 1]);
+    assert.deepEqual(sentList(resend), ['r1@example.test']);
+    assert.equal(store.markerWrites.length, 1); // sent 0: no write
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u2']);
+  });
+});
+
+test('weekly: a marker that already lists the whole audience reports already_sent and sends and writes nothing', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(3)(s); seedMarker(s, ['u0', 'u1', 'u2']); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly' });
+    assert.deepEqual(r, { ok: true, mode: 'weekly', sent: 0, reason: 'already_sent', weekOf: '2026-11-01' });
+    assert.equal(resend.calls.length + store.markerWrites.length, 0);
+  });
+});
+
+test('weekly: a marker written by the old code (no sentTo) still means the whole week was sent, whoever is in the audience now', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(3)(s); seedMarker(s); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly' });
+    assert.deepEqual([r.reason, r.sent], ['already_sent', 0]);
+    assert.equal(resend.calls.length + store.markerWrites.length, 0);
+    assert.equal(marker(store).sentTo, undefined);
+  });
+});
+
+test('weekly: someone who subscribed after the week was sent gets it on the next run, the recorded recipients do not', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(3)(s); seedMarker(s, ['u0', 'u1']); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly' });
+    assert.deepEqual([r.recipients, r.sent], [1, 1]);
+    assert.deepEqual(sentList(resend), ['r2@example.test']);
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u1', 'u2']);
+  });
+});
+
+test('weekly force: sends to the whole audience whatever the marker lists, and the marker then lists everyone who got it', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(3)(s); seedMarker(s, ['u0', 'u1', 'u2']); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly', force: true });
+    assert.deepEqual([r.reason, r.recipients, r.sent], [undefined, 3, 3]);
+    assert.deepEqual(sentList(resend), ['r0@example.test', 'r1@example.test', 'r2@example.test']);
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u1', 'u2']);
+  });
+});
+
+test('weekly force over an old marker (no sentTo): sends to everyone, and the marker is then in the new shape with those who got it', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(2)(s); seedMarker(s); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly', force: true });
+    assert.equal(r.sent, 2);
+    assert.equal(resend.calls.length, 2);
+    assert.deepEqual([...marker(store).sentTo].sort(), ['u0', 'u1']);
+  });
+});
+
+test('weekly dry run: reports who would be sent (skipping the recorded ones), sends nothing and writes nothing', async () => {
+  await withSender({ EMAIL_SEND_DRY_RUN: undefined }, { fill: (s) => { fillWeekly(3)(s); seedMarker(s, ['u0']); } }, async (handler, { store, resend }) => {
+    const r = await handler({ mode: 'weekly' });
+    assert.deepEqual([r.dryRun, r.recipients, r.sent], [true, 2, 2]);
+    assert.equal(resend.calls.length + store.markerWrites.length + store.puts.length + store.updates.length, 0);
+    assert.deepEqual([...marker(store).sentTo], ['u0']);
+  });
+  await withSender({ EMAIL_SEND_DRY_RUN: undefined }, { fill: fillWeekly(3) }, async (handler, { store }) => {
+    await handler({ mode: 'weekly' });
+    assert.equal(store.markers.size, 0);
+  });
+});
+
+test('weekly with TEST_RECIPIENT and a real send: a subscriber address is recorded by its uid, any other address as "email:<address>"', async () => {
+  await withSender({ TEST_RECIPIENT: 'r1@example.test' }, { fill: fillWeekly(3) }, async (handler, { store, resend }) => {
+    await handler({ mode: 'weekly' });
+    assert.deepEqual(sentList(resend), ['r1@example.test']);
+    assert.deepEqual([...marker(store).sentTo], ['u1']);
+  });
+  await withSender({ TEST_RECIPIENT: 'me@example.test' }, { fill: fillWeekly(3) }, async (handler, { store }) => {
+    await handler({ mode: 'weekly' });
+    assert.deepEqual([...marker(store).sentTo], ['email:me@example.test']);
+  });
+});
+
+test('weekly: a smoke-test send to TEST_RECIPIENT no longer uses up the week, the real subscribers still get it', async () => {
+  await withSender({}, { fill: (s) => { fillWeekly(3)(s); seedMarker(s, ['email:me@example.test']); } }, async (handler, { resend }) => {
+    const r = await handler({ mode: 'weekly' });
+    assert.deepEqual([r.reason, r.sent], [undefined, 3]);
+    assert.equal(resend.calls.length, 3);
   });
 });
 
@@ -304,7 +422,7 @@ test('weekly: when every send fails no marker is written, so the next run tries 
     const r = await handler({ mode: 'weekly' });
     assert.equal(r.sent, 0);
     assert.equal(r.errors.length, 2);
-    assert.equal(store.puts.length, 0);
+    assert.equal(store.markerWrites.length + store.puts.length, 0);
   });
 });
 
@@ -316,7 +434,7 @@ test('weekly: a missing RESEND_API_KEY fails every recipient with a clear error 
     assert.equal(r.sent, 0);
     assert.equal(r.errors[0].error, 'RESEND_API_KEY missing');
     assert.equal(resend.calls.length, 0);
-    assert.equal(store.puts.length, 0);
+    assert.equal(store.markerWrites.length + store.puts.length, 0);
   });
 });
 
@@ -335,8 +453,6 @@ test('breaking: a partial failure stamps the alert emailed with the successful c
   });
 });
 
-const BREAKING_MARK_BUG = 'BUG: newsEmailSender/src/index.js:220 marks a breaking alert emailed when recipients > 0 even if every send failed (weekly :173 and drift :284 use sent > 0)';
-
 test('breaking: when every send fails the failures are reported per recipient', async () => {
   await withSender({}, {
     fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
@@ -348,7 +464,7 @@ test('breaking: when every send fails the failures are reported per recipient', 
   });
 });
 
-test('breaking: when every send fails the alert is NOT marked emailed, so the next run retries it', { skip: BREAKING_MARK_BUG }, async () => {
+test('breaking: when every send fails the alert is NOT marked emailed, so the next run retries it', async () => {
   await withSender({}, {
     fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
     fail: () => true,

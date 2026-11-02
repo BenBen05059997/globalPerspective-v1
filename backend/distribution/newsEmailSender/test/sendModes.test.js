@@ -335,19 +335,26 @@ test('breaking: a partial failure stamps the alert emailed with the successful c
   });
 });
 
-test('breaking: when every send fails the alert is still stamped emailed with count 0 (current behaviour, see "Left for a decision")', async () => {
+const BREAKING_MARK_BUG = 'BUG: newsEmailSender/src/index.js:220 marks a breaking alert emailed when recipients > 0 even if every send failed (weekly :173 and drift :284 use sent > 0)';
+
+test('breaking: when every send fails the failures are reported per recipient', async () => {
+  await withSender({}, {
+    fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
+    fail: () => true,
+  }, async (handler) => {
+    const r = await handler({ mode: 'breaking' });
+    assert.equal(r.sent, 0);
+    assert.equal(r.perAlert[0].errors.length, 2);
+  });
+});
+
+test('breaking: when every send fails the alert is NOT marked emailed, so the next run retries it', { skip: BREAKING_MARK_BUG }, async () => {
   await withSender({}, {
     fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
     fail: () => true,
   }, async (handler, { store }) => {
-    const r = await handler({ mode: 'breaking' });
-    assert.equal(r.sent, 0);
-    assert.equal(r.perAlert[0].errors.length, 2);
-    assert.equal(store.updates.length, 1);
-    assert.equal(store.updates[0].values[':n'], 0);
-    // so the next run no longer sees it: nobody is ever told about this alert
-    store.alerts[0].emailedAt = store.updates[0].values[':t'];
-    assert.equal((await handler({ mode: 'breaking' })).alerts, 0);
+    await handler({ mode: 'breaking' });
+    assert.equal(store.updates.length, 0); // no emailedAt / emailedCount write
   });
 });
 

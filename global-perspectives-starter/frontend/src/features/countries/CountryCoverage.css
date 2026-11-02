@@ -23,13 +23,16 @@
 .cp-day-count { font-size: var(--text-xs); color: var(--text-dim); }
 .cp-day-chevron, .cp-coverage-chevron, .cp-deep-chevron { font-size: var(--text-2xs); color: var(--text-muted); transition: transform var(--fast); flex-shrink: 0; }
 .cp-day-chevron.open, .cp-coverage-chevron.open, .cp-deep-chevron.open { transform: rotate(180deg); }
-.cp-coverage-toggle:focus-visible, .cp-day-header:focus-visible, .cp-deep-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.cp-coverage-toggle:focus-visible, .cp-day-header:focus-visible, .cp-coverage-row:focus-visible, .cp-deep-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 .cp-coverage-item { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--hairline); }
 .cp-coverage-item:last-child { border-bottom: none; }
 .cp-coverage-item.highlight-flash { animation: coverageFlash 2s ease-out; }
 @keyframes coverageFlash { 0% { background: var(--accent-wash); } 100% { background: transparent; } }
 .cp-coverage-item.expanded { background: var(--panel-2); }
-.cp-coverage-row { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; min-height: 32px; }
+.cp-coverage-row {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 32px; padding: 0;
+  background: none; border: none; cursor: pointer; font: inherit; color: inherit; text-align: left;
+}
 .cp-coverage-title { flex: 1; font-size: var(--text-ui); color: var(--text-head); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-arc-hint {
   font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted);

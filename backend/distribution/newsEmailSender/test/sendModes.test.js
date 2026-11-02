@@ -335,8 +335,6 @@ test('breaking: a partial failure stamps the alert emailed with the successful c
   });
 });
 
-const BREAKING_MARK_BUG = 'BUG: newsEmailSender/src/index.js:220 marks a breaking alert emailed when recipients > 0 even if every send failed (weekly :173 and drift :284 use sent > 0)';
-
 test('breaking: when every send fails the failures are reported per recipient', async () => {
   await withSender({}, {
     fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
@@ -348,7 +346,7 @@ test('breaking: when every send fails the failures are reported per recipient', 
   });
 });
 
-test('breaking: when every send fails the alert is NOT marked emailed, so the next run retries it', { skip: BREAKING_MARK_BUG }, async () => {
+test('breaking: when every send fails the alert is NOT marked emailed, so the next run retries it', async () => {
   await withSender({}, {
     fill: (s) => { s.alerts = [confirmedAlert('a1')]; s.prefs = subs(2); },
     fail: () => true,

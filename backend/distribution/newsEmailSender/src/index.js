@@ -217,7 +217,7 @@ async function runBreaking() {
     const { sent, errors } = await deliver(recipients, (uUrl) => appendUnsub(a.draft, uUrl), 'breaking');
     totalSent += sent;
     perAlert.push({ alertKey: a.alertKey, sent, errors });
-    if (!DRY_RUN && recipients.length > 0) await markAlertEmailed(a.alertKey, sent);
+    if (!DRY_RUN && sent > 0) await markAlertEmailed(a.alertKey, sent);
   }
   return { ok: true, mode: 'breaking', alerts: alerts.length, recipients: recipients.length, sent: totalSent, perAlert, dryRun: DRY_RUN };
 }

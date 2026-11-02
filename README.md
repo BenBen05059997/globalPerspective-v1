@@ -20,7 +20,7 @@ what is stopped or waiting is in `project-docs/START_HERE.md`; what is deployed 
 | System overview (Lambdas, stores, routes) | `project-docs/architecture/ARCHITECTURE.md` and the area designs beside it. Code and deployed AWS beat any doc. |
 | Storage rules and decisions | `project-docs/architecture/DATA_STRATEGY.md`, `project-docs/decisions/` |
 | How to run / check a job | the README next to the code (`backend/<group>/<name>/README.md`) |
-| Frontend source | `global-perspectives-starter/frontend/src/` — `app/` (chrome/routing) + `shared/` (cross-feature) + `features/<name>/`; see ARCHITECTURE.md's Frontend Path map |
+| Frontend source | `global-perspectives-starter/frontend/src/` — `app/` (chrome/routing) + `shared/` (cross-feature) + `features/<name>/`; see the Codemap, Frontend section of `ARCHITECTURE.md` |
 | Lambda source | `backend/<group>/<name>/src/` (path per Lambda: `scripts/functions.json` `dir`) |
 
 ## Traps — do NOT assume

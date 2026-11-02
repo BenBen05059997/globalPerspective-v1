@@ -1,18 +1,18 @@
 # Severity codebook — anchored labeling rubric
 
-**Status:** in use — the labeling standard for `quality/severity_gold_set.json`; the 2026-09-14 baseline report is in git history; `severity_agreement.js` regenerates one. Last verified: 2026-10-19 (prompts below re-read from the repo source).
-**Purpose:** give a human labeler a concrete, repeatable standard for scoring the same four risk
+**Status:** in use — the labeling standard for `quality/severity_gold_set.json`; the 2026-09-14 baseline report is in git history; `severity_agreement.js` regenerates one.**Purpose:** give a human labeler a concrete, repeatable standard for scoring the same four risk
 axes the generators score, so `quality/severity_agreement.js` can measure model/human agreement.
 **The prompt is not touched by this doc.** This is read-only source material quoted from the live
 generators, plus an anchored expansion for human labeling. No prompt or rubric change to
-`newsCountryIntelligence` or `newsThreadAnalysis` may happen before the Phase 3 baseline
-(`quality/calibration/severity-YYYY-MM-DD.md`) exists.
+`newsCountryIntelligence` or `newsThreadAnalysis` may happen before a baseline report exists: the
+2026-09-14 one is in git history (`quality/calibration/` is not committed), and `severity_agreement.js` writes
+a new `quality/calibration/severity-YYYY-MM-DD.md`.
 
 ---
 
 ## 1. Current rubric (baseline) — quoted verbatim from the live prompts
 
-### `backend/pipeline/newsCountryIntelligence/src/index.js` (~line 490)
+### `backend/pipeline/newsCountryIntelligence/src/index.js` (search `INDEPENDENT axes`)
 
 > 10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event
@@ -26,7 +26,7 @@ generators, plus an anchored expansion for human labeling. No prompt or rubric c
 > Per-axis calibration: 0-24 = low, 25-49 = moderate, 50-74 = elevated, 75-100 = severe.
 > (riskScore and riskLevel are derived from these — do NOT output them separately.)
 
-### `backend/pipeline/newsThreadAnalysis/src/index.js` (~line 201)
+### `backend/pipeline/newsThreadAnalysis/src/index.js` (search `INDEPENDENT axes`)
 
 > 8. "dimensions": Object scoring THIS thread's current risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific development

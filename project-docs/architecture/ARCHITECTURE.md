@@ -2,7 +2,7 @@
 
 This is the map, not the inventory. Lambdas, schedules, env keys, routes, feature folders and S3 prefixes are read from the source of truth: `scripts/functions.json`, `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `src/app/App.jsx`, `ls src/features`, `aws s3 ls`. When this file and those disagree, they win. Area designs: [the record](ARCHITECTURE_TIMELINE.md), [forecast loop](ARCHITECTURE_FORECAST_LOOP.md), [weekly review and analyst weekly](ARCHITECTURE_WEEKLY_REVIEW.md), [board](ARCHITECTURE_BOARD.md), [ingest proposal](ARCHITECTURE_INGEST_DESIGN.md), [storage rules](DATA_STRATEGY.md), [world model](WORLD_MODEL.md). What is stopped or waiting right now: `project-docs/START_HERE.md`.
 
-Where the repo and the live site differ, this file says "after the next release". The live frontend is the build before decisions 0048 to 0050 (briefs page on the record, economy removed, views-freshness rule).
+The live frontend is the build in `docs/` (the bundle `docs/index.html` names); a change in `src/` reaches the site only through a release. That build already has decisions 0048 to 0050 (briefs page on the record, economy removed, views-freshness rule).
 
 ## Purpose
 Global Perspectives (globalperspective.net) is an AI global-news intelligence site. Scheduled Lambdas pull news (RSS) and hazard feeds (GDACS, GDELT), use an LLM to select and explain the stories that matter, track situations on a world map, score country risk, make forecasts that are settled later in public, and send a weekly brief. Reading is free and needs no account. A paid membership (Polar) buys following countries and deeper history, not access to content.
@@ -29,7 +29,7 @@ flowchart LR
   llm[DeepSeek LLM API]
   jev[Jev scorer, shadow only]
   mail[Resend email]
-  soc[LinkedIn and dev.to]
+  soc[LinkedIn and Bluesky]
   reader --> cf
   cf -->|SPA files| pages
   cf -->|world and record JSON| back
@@ -44,7 +44,7 @@ flowchart LR
   back -->|prompts| llm
   back -->|shadow scoring| jev
   back -->|weekly brief, operator alerts| mail
-  back -->|daily posts| soc
+  back -->|posts| soc
   operator -->|deploys, corrections| back
 ```
 Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`); the exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsPostDevTo` (daily 23:00 JST) are ENABLED.
@@ -109,7 +109,7 @@ Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `s
 - `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling` (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is what actually runs; `newsAnalyze/src/` is not.
 
-Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver; the snapshot Lambda is retired from schedule), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`. `backend/weekly/` (the analyst's weekly) holds the schema and section model only, no Lambda.
+Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`. `backend/weekly/` (the analyst's weekly) holds the schema and section model only, no Lambda.
 
 **Invariant:** code shared between Lambdas lives once, in `backend/shared/src/` (see its README). Each consumer reaches it through a committed `src/_shared` symlink; `scripts/lambda.sh` copies the real files into the zip. Never copy these into a Lambda.
 
@@ -118,7 +118,7 @@ Country names are canonical at the writers (United States, DR Congo, UAE; `resol
 ### Frontend: `global-perspectives-starter/frontend/`
 React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `src/app/`: routing (`App.jsx`), redirects for retired URLs, layout and chrome, the error boundary.
-- `src/features/<name>/`: 12 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `static`, `threads`, `track-record`, `weekly`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `briefings` `/briefings`, `track-record` `/track-record`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `weekly` is the planned analyst-weekly page and has no route. `/weekly`'s Countries section is `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as a prop so `threads` never imports `countries`. Routes: `App.jsx`.
+- `src/features/<name>/`: 12 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `static`, `threads`, `track-record`, `weekly`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `briefings` `/briefings`, `track-record` `/track-record`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `weekly` is the planned analyst-weekly page and has no route. `/weekly`'s Countries tab links to `/weekly/countries`, which `App.jsx` routes to `countries`' `CountryListPage`, so `threads` never imports `countries`. Routes: `App.jsx`.
 - `src/features/<name>/index.js`: a feature's public API, only what other features and `app/` import (route pages are not in it; `App.jsx` lazy-loads them by path). `account`, `analysis-studio`, `static` and `weekly` have none.
 - `src/shared/`: `api/` (`restProxy.js` the one client for the proxy and the Function-URL endpoints; `recordViews.js` the one reader of `/data/record/views/`; `viewsFresh.js` the 9-hour freshness rule; the per-view readers), `contexts/AuthContext.jsx`, `styles/` tokens, `lib/` pure helpers, `hooks/` shared data hooks, `ui/` shared blocks, `map/` the map drawing kit.
 - `worker/` + `wrangler.jsonc`: the Workers Static Assets site (`globalperspective-site`), prepared but not the production path.
@@ -179,7 +179,7 @@ flowchart LR
   w --> m["Map page /"]
 ```
 1. `newsGdacsIngest` (every 20 min, no LLM) overwrites the Orange/Red observations to `situations/inbox/gdacs-latest.json` and the full snapshot to `corpus/gdacs/latest.json`. It is the only inbox opener.
-2. `newsGdeltConflict` (every 6 h, no LLM) writes conflict events to `corpus/gdelt/<day>.json`; only the parked impact audit reads them.
+2. `newsGdeltConflict` (every 6 h, no LLM) writes conflict events to `corpus/gdelt/<day>.json`; nothing reads them since `newsImpactAudit` was removed 2026-11-01.
 3. `newsSituationIngest` (hourly) reads RSS, classifies each headline with the LLM (country, location, axis, severity; cached in `stories/classify-cache.json`), clusters deterministically, and writes `corpus/<date>/<hour>.jsonl`, `stories/state/`, `stories/index.json`.
 4. `newsSituationTracker` (every 30 min, no LLM) is the only writer of `situations/` state and `world/`: it folds the inbox, clusters and the thread story-map into `situations/state/`, `situations/index.json` (news situations keyed `news#<ISO3>#<threadId>`), `situations/history/`, closed situations into `situations/archive/`, and assembles `world/latest.json` (plus dated snapshots and `world/latest.member.json`).
 5. The map feature fetches `/data/world/latest.json` and `/data/situations/state/<id>.json` (`src/features/map/api/worldData.js`) through the Worker.
@@ -245,16 +245,16 @@ flowchart LR
   es -->|Resend| sub([Subscribers])
   l[Scheduler InvokeLinkedIn, InvokeDev JST] --> po[newsPostLinkedin, newsPostDevTo]
   d --> po
-  po --> soc([LinkedIn, dev.to])
+  po -->|newsPostLinkedin| soc([LinkedIn, Bluesky])
   po -->|DAILY_BRIEF| d
   d -->|actions| px[newsSensitiveData-dev]
   px --> bp["/briefings"]
-  rv[(S3 record/views/briefs)] -.->|after the next release| bp
+  rv[(S3 record/views/briefs)] -->|while fresh| bp
 ```
 - `newsWeeklyBrief` (Sunday 06:00) writes `WEEKLY_BRIEF#<week>` to `SummarizeAndPredict`, published directly. `newsEmailSender` mode `weekly` (Sunday 14:00) sends it with Resend to subscribers in `GlobalPerspectiveUserPrefs` (`digestOptIn`), logging each week (`EMAILLOG#`) so it is never sent twice. Its `breaking` and `drift_alert` rules are DISABLED. This is the old digest; the analyst's weekly (ARCHITECTURE_WEEKLY_REVIEW.md §9) is meant to replace it, and then `newsWeeklyBrief` retires.
-- `newsBreakingAlert` (every 8 h, 04:35 12:35 20:35) scores stories deterministically, records proposals in `GlobalPerspectiveBreakingAlerts`, and with live `DRY_RUN=false` emails each detection to one operator address. It does not email subscribers. A breaking alert shows on the site only when the operator has `confirmed` it (`review.js`); the operator email is marked "[Unconfirmed] NOT PUBLIC YET". This is separate from verdicts, which have no human gate.
-- `newsPostDevTo` builds the daily brief (`DAILY_BRIEF#<date>`) and publishes it to dev.to; `newsPostLinkedin` posts to LinkedIn. Both log to `NewsProject-linkedin-posts`.
-- The record holds both briefs as `daily_brief` and `weekly_brief` notes (decision 0048), backfilled for every existing brief. The two writers call `briefNotes.writeBriefNote`, which writes nothing while `NOTES_PREFIX` is unset; it is unset live, and their roles have no S3 write statement yet, so new briefs reach the record only through the backfill CLI until the operator adds the statements. `newsStoryRecord` builds `record/views/briefs/` and `index/briefs.json` from the notes. After the next release the briefs page reads those views and asks the actions only when the views are not fresh. Until then the page uses the actions. The email sender and the Worker's bot pre-render read the DynamoDB rows either way.
+- `newsBreakingAlert` (every 8 h, 04:45 12:45 20:45) scores stories deterministically, records proposals in `GlobalPerspectiveBreakingAlerts`, and with live `DRY_RUN=false` emails each detection to one operator address. It does not email subscribers. A breaking alert shows on the site only when the operator has `confirmed` it (`review.js`); the operator email is marked "[Unconfirmed] NOT PUBLIC YET". This is separate from verdicts, which have no human gate.
+- `newsPostDevTo` builds the daily brief (`DAILY_BRIEF#<date>`) for `/briefings`; despite the name it no longer posts to dev.to (publish path removed 2026-05-18). `newsPostLinkedin` posts to LinkedIn and Bluesky and logs to `NewsProject-linkedin-posts`.
+- The record holds both briefs as `daily_brief` and `weekly_brief` notes (decision 0048), backfilled for every existing brief. The two writers call `briefNotes.writeBriefNote`, which writes nothing while `NOTES_PREFIX` is unset (the live values are in `STEP5_AUDIT.md` section 1). `newsStoryRecord` builds `record/views/briefs/` and `index/briefs.json` from the notes. The briefs page reads those views and asks the actions only when the views are not fresh. The Worker's bot pre-render reads the brief views first and the email sender's weekly mode does too behind its `RECORD_READS` flag (decision 0054); both fall back to the DynamoDB rows.
 - Subscription preferences and unsubscribe go through `newsRecommend` (Function URL).
 
 **Invariant:** user-facing sends are switched on only by the operator. A disabled email rule stays disabled until an explicit decision.
@@ -274,10 +274,10 @@ The lens Studio is gone from the site (decisions 0030, 0033). `/analyze?stories=
 The site's memory is one append-only record in the world bucket (`record/`), in three kinds of object plus views built from them.
 - **Facts** (what happened) are appended daily with no model by `newsStoryRecord` to `record/facts/YYYY-MM-DD.jsonl` (rule `TriggerStoryRecord`, 23:45 UTC). They run from 2026-03-07: the part before September was copied in from the old archive by a one-off replay through the nightly code (decision 0047), and the forecasts that no story could be found for are kept whole under `record/legacy/predictions/`.
 - **Readings** (what it meant) are written weekly, with hindsight, by `newsRecordReview` (`record/readings/YYYY-Www.jsonl`; rule `TriggerRecordReview`, Mondays 01:00 UTC, one model call per active story). Each reading cites facts and can supersede an earlier one.
-- **Notes** (what a model wrote about something the record names) go to `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, all through shared `notes.js` against `backend/record/schema/note.schema.json` (decision 0042): `entry` (the agent), `story_analysis` (`newsThreadAnalysis`), `drift` (`newsDriftCorrector`), `country` (`newsCountryIntelligence`), `link` and `web` (`newsSystemsAnalysis`), and `daily_brief` / `weekly_brief` (`newsPostDevTo`, `newsWeeklyBrief`; decision 0048), `country_facts` (`newsCountryFactsUpdater`) and `story_history` (backfill copies only; decision 0053). The read API's country and story actions and seven Lambdas read these notes, instead of the DynamoDB rows, when `NOTES_READS` says so (decision 0053). A writer writes only where its `NOTES_PREFIX` env points. Live today: `record/` on the agent and the four analysis Lambdas; unset on the two brief writers. The agent and the four analysis Lambdas default to `record/shadow/` when unset; the brief writers write nothing.
+- **Notes** (what a model wrote about something the record names) go to `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, all through shared `notes.js` against `backend/record/schema/note.schema.json` (decision 0042): `entry` (the agent), `story_analysis` (`newsThreadAnalysis`), `drift` (`newsDriftCorrector`), `country` (`newsCountryIntelligence`), `link` and `web` (`newsSystemsAnalysis`), and `daily_brief` / `weekly_brief` (`newsPostDevTo`, `newsWeeklyBrief`; decision 0048), `country_facts` (`newsCountryFactsUpdater`) and `story_history` (backfill copies only; decision 0053). The read API's country and story actions and seven Lambdas read these notes, instead of the DynamoDB rows, when `NOTES_READS` says so (decision 0053). A writer writes only where its `NOTES_PREFIX` env points (live values: `STEP5_AUDIT.md` section 1). The agent and the four analysis Lambdas default to `record/shadow/` when unset; the brief writers write nothing when unset.
 - **Views** under `record/views/` (stories, countries, links, briefs, counts, `index/*.json`, `track-record.json`, `manifest.json`) are rebuilt from facts, readings and notes by `newsStoryRecord`, the only builder, and served through the Worker (`/data/record/views/`). They are rebuilt in full after the nightly append and, since decision 0050, after every ingest and brief by a refresh: `{"refresh":true,"shadow":false}` on rules `TriggerStoryRecordRefresh` (04:35, 12:35, 20:35), `-Brief` (14:15), `-Analysis` (05:20) and `-Weekly` (Sunday 06:15). A refresh appends no fact. It adds today's archive entries as provisional entries in the views, because the agent may rewrite a day's entries before the day ends. The nightly run replaces them with real facts. `newsStoryRecord` has reserved concurrency 1, so a refresh and the nightly run never overlap. Nothing is edited in place.
 
-Pages read the views first and keep the old action as a fallback for what a view does not hold: the story page (timeline, analysis, forecast, links), the track record, the list pages, the country pages, and the board. After the next release the pages also answer the newest days from the views while `manifest.json` `builtAt` is under 9 hours old (`shared/api/viewsFresh.js`) and ask the actions otherwise, and the briefs page reads the briefs views. The home map, `/today`, the board's pin titles and member extras still read DynamoDB through the proxy. The remaining readers and what step 5 waits on are in [STEP5_AUDIT.md](STEP5_AUDIT.md) and `project-docs/START_HERE.md`.
+Pages read the views first and keep the old action as a fallback for what a view does not hold: the story page (timeline, analysis, forecast, links), the track record, the list pages, the country pages, and the board. The pages also answer the newest days from the views while `manifest.json` `builtAt` is under 9 hours old (`shared/api/viewsFresh.js`) and ask the actions otherwise, and the briefs page reads the briefs views. The home map's topic card, `/today` and the board's pin titles read the record's today view first (`index/today.json`, decision 0051) and the proxy when it is stale or cannot answer; member extras still read DynamoDB through the proxy. The remaining readers and what step 5 waits on are in [STEP5_AUDIT.md](STEP5_AUDIT.md) and `project-docs/START_HERE.md`.
 
 Hand-off rule: other writers never write facts. The selector appends raw articles, the resolver verdicts and draws, the review merges, and the operator assignments, splits and the who's who file (`record/operator/aliases.json`) to prefixes `newsStoryRecord` reads; it converts them into facts and views. Stories keep `threadId`; an `assignment` fact moves an entry between stories (latest wins); actors carry canonical `wd:Q…` ids once the who's who file names them, and generic actors never ground a link. The board (`/board`, `newsBoard`) keeps boards in `GlobalPerspectiveSavedItems` as `board#<id>` and follows in `GlobalPerspectiveUserPrefs`, and reads the views.
 
@@ -325,7 +325,7 @@ Every LLM-calling Lambda calls DeepSeek (`api.deepseek.com`) through shared `llm
 **Invariant:** env names lie. `GROK_*` and `XAI_*` keys hold DeepSeek settings; read the live value (`aws lambda get-function-configuration`), never infer the provider from the name.
 
 ### Cost and usage logs
-There is no central cost store. Callers of `backend/shared/src/llm.js`, `NewsProjectInvokeAgentLambda` and `newsSelectionShadow` `console.log` a `[usage]` JSON line (function, step, model, tokens) into CloudWatch Logs. `newsModelGuard` turns the measured daily burn into a runway alert; `newsAnalyze` logs no usage.
+There is no central cost store. Callers of `backend/shared/src/llm.js`, `NewsProjectInvokeAgentLambda` and `newsSelectionShadow` `console.log` a `[usage]` JSON line (function, step, model, tokens) into CloudWatch Logs. `newsModelGuard` turns a fixed daily-burn constant (`DAILY_BURN_USD`, measured once from these logs on 2026-10-18) into a runway estimate in its balance alert; `newsAnalyze` logs no usage.
 
 ### Monitoring
 Passive monitors publish to SNS `GlobalPerspectiveAlerts` (email): `newsFreshnessMonitor` (every 2 hours: proxy reachable, topics fresh; a dedupe marker in S3 `monitoring/freshness/state.json` gives one mail on break and one on recovery), `newsErrorDigest` (every 6 hours: new or spiking browser errors from `GlobalPerspectiveClientErrors`), `newsModelGuard` (daily: a Lambda env pointing at a deprecated model, and balance runway), `newsSourceAudit` (Mon/Wed/Fri: summaries drifting from their sources). The impact audit (`newsImpactAudit`) was removed 2026-11-01.
@@ -351,12 +351,12 @@ Active checks (the `scripts/` list above) are run by hand. There is no CI by des
 - No read paywall: content is free; membership buys following countries and deeper history.
 - No Amplify, no CI, no secrets manager (Lambda env holds secrets by choice).
 - No direct browser access to S3, and no public bucket.
-- No economy product (decision 0049, supersedes 0009 and 0031). The five economy Lambdas, their rules, roles and log groups are deleted from AWS. After the next release the repo has no `/economy` route, economy tab, FX box or markets read actions; the live site still has them until then. What remains in AWS is data with no writer: the table `GlobalPerspectiveMarkets` and the `ECON#THREAD#`, `PAIR#` and `WEEKLY_MARKETS#` rows in `SummarizeAndPredict` (backed up under `backup/economy-2026-10-31/` in the world bucket). The read proxy's markets actions and the table go after the release, each on an operator yes.
+- No economy product (decision 0049, supersedes 0009 and 0031). The five economy Lambdas, their rules, roles and log groups are deleted from AWS. The repo and the live build have no `/economy` route, economy tab, FX box or markets read actions (the read proxy answers 400 for the markets actions). The table `GlobalPerspectiveMarkets` was deleted from AWS on 2026-11-01 (`STEP5_AUDIT.md`). What remains is data with no writer: the `ECON#THREAD#`, `PAIR#` and `WEEKLY_MARKETS#` rows in `SummarizeAndPredict` (backed up under `backup/economy-2026-10-31/` in the world bucket); they go on an operator yes.
 
 ## Tables and storage
 DynamoDB, by what happens to it in step 5 (scope set by the operator 2026-10-31; order and preconditions in [STEP5_AUDIT.md](STEP5_AUDIT.md)):
 - Stays: the user tables (`GlobalPerspectiveUserTable`, `GlobalPerspectiveUserPrefs`, `GlobalPerspectiveSavedItems`, `GlobalPerspectiveShares`, `GlobalPerspectiveApiKeys`), `GlobalPerspectiveBreakingAlerts`, `GlobalPerspectiveClientErrors`, `NewsProject-linkedin-posts`, the `EMAILLOG#` rows in `SummarizeAndPredict`, and the commitment state in `GlobalPerspectivePredictionLog`.
 - World tables, still live and still read until step 5 runs: `NewsCache`, `SummarizeAndPredict`, and the `PRED#` rows of `GlobalPerspectivePredictionLog`. The record already holds their history from 2026-03-07; what is left to build before they go is in `START_HERE.md`.
-- Retired, awaiting deletion: `GlobalPerspectiveMarkets`.
+- Deleted 2026-11-01: `GlobalPerspectiveMarkets` (`STEP5_AUDIT.md`).
 
 S3 prefixes, writers and IAM: [DATA_STRATEGY.md](DATA_STRATEGY.md). Story-web history is kept daily in S3 (`web/YYYY/MM/DD.json`).

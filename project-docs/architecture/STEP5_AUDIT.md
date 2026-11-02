@@ -39,7 +39,7 @@ SummarizeAndPredict families (31 Oct counts): country `HISTORY#` 1,560, `DRIFT#`
 ## 4. SummarizeAndPredict and PredictionLog `PRED#`: blockers
 SummarizeAndPredict:
 - The writers read their own existing rows for refresh policy and merges (`newsThreadAnalysis`, `newsCountryIntelligence`, the `newsSystemsAnalysis` `SYSTEMS#` scan, the `newsCountryFactsUpdater` merge). Without the rows they regenerate everything (paid LLM).
-- `newsBoard` reads `WEB#INDEX`, `THREAD_HISTORY#` and country `HISTORY#` with no switch (being moved now). `newsWeeklyBrief` reads `WEB#INDEX`.
+- `newsBoard` read `WEB#INDEX`, `THREAD_HISTORY#` and country `HISTORY#` with no switch when this audit was written; the code on main now reads them behind `RECORD_READS` (commit 54788ebb), deploy pending (ARCHITECTURE_BOARD.md section 10). `newsWeeklyBrief` reads `WEB#INDEX`.
 - Read API actions with no record path: `daily_brief`, `latest_daily_brief`, `weekly_brief`, `web_index`, `systems_analysis`, `summary` / `prediction` / `trace_cause`. The front Worker pre-render calls the brief actions and `topics`.
 - The agent's `TOPIC#` cache and the `THREAD#/TOPICS` pointer.
 - `newsEmailSender` (weekly email, ENABLED Sun 14:00Z) reads `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; its deployed build has no record path. Deploy after today's 14:00Z send.

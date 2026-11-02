@@ -305,3 +305,7 @@ async function invokeLLM(prompt) {
 }
 module.exports.topCountries = topCountries; // for tests
 module.exports.linkRelated = linkRelated;
+module.exports.buildSignalsPrompt = buildSignalsPrompt; // for tests
+module.exports.groupByThread = groupByThread; // for tests
+module.exports.riskLevelFromScore = riskLevelFromScore; // for tests
+module.exports.parseJson = parseJson; // for tests

@@ -13,7 +13,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 ## Status
 - Live, public. No markets line (economy retired, decision 0049); `/weekly-markets` no longer exists.
 - The briefs are in the record (decision 0048): the hooks read `record/views/` first and ask the `daily_brief`, `latest_daily_brief` and
-  `weekly_brief` actions only for what the views lack. The brief writers' own notes are not switched on yet (`NOTES_PREFIX` is unset on
+  `weekly_brief` actions only for what the views lack. The brief writers' notes are on (`NOTES_PREFIX=record/` on
   `newsPostDevTo` and `newsWeeklyBrief`): the views hold the backfilled briefs and the actions still serve every new one.
 - The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`); the action and the views serve
   only published briefs, so a bad one is held back by setting its status to `draft`.
@@ -41,7 +41,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 ## Backend
 - Group guide: [distribution](../../../../../backend/distribution/README.md); inputs come from [pipeline](../../../../../backend/pipeline/README.md)
 - `newsPostDevTo` (Scheduler `InvokeDev`, 23:00 Asia/Tokyo daily) writes `DAILY_BRIEF#<date>`; `newsWeeklyBrief` (rule `TriggerWeeklyBrief`,
-  Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`. Both also call `writeBriefNote`, a no-op until `NOTES_PREFIX` is set.
+  Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`. Both also call `writeBriefNote`, a no-op while `NOTES_PREFIX` is unset (live `record/`).
 - `newsStoryRecord` (rule `TriggerStoryRecord`, 23:45 UTC) builds the brief views from the notes; `newsSensitiveData-dev` serves the actions.
 - `newsEmailSender` (rule `TriggerWeeklyEmailSend`, Sunday 14:00 UTC) emails the weekly brief from `WEEKLY_BRIEF#`; its text mirrors
   `?mode=weekly`. `newsSavedItems` accepts `daily` and `weekly` as saved item types.
@@ -59,7 +59,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 
 ## Pipeline
 1. `newsPostDevTo` (23:00 Tokyo) builds the daily brief from `today-archive`, thread analyses and country rows ->
-   `SummarizeAndPredict` `DAILY_BRIEF#<date>` (and a `daily_brief` note once `NOTES_PREFIX` is set).
+   `SummarizeAndPredict` `DAILY_BRIEF#<date>` (and a `daily_brief` note, `NOTES_PREFIX=record/` live).
 2. `newsWeeklyBrief` (Sunday 06:00 UTC) builds the weekly brief from seven days of archives -> `WEEKLY_BRIEF#<weekOf>`, published.
 3. `newsStoryRecord` (23:45 UTC) turns the brief notes into `briefs/` views and `index/briefs.json`.
 4. `useDailyBrief`, `useWeeklyBrief`, `useDailyEditionsIndex` read the views, then the actions for what is newer -> `ReadMode`,

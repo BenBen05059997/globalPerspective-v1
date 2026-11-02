@@ -52,7 +52,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 - Deployed name `newsPredictionResolver` · runtime `nodejs22.x` · group `predictions` (scripts/functions.json)
 - Trigger: EventBridge rule `TriggerPredictionResolver` `cron(30 10 * * ? *)` (UTC, ENABLED), input `{"action":"tick"}`
 - Deploy: `scripts/lambda.sh newsPredictionResolver diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
-- Env names: `PREDICTION_LOG_TABLE`, `WORLD_BUCKET`, `QUESTIONS_SOURCE` (`log` default | `record` | `compare`, decision 0052), `SETTLE_HEARTBEAT_KEY` (unset = no heartbeat), `GROK_API_URL`, `XAI_API_KEY`, `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN`; `BRAVE_SEARCH_API_KEY` is set but unused. Timeout 600 s, 512 MB.
+- Env names: `PREDICTION_LOG_TABLE`, `WORLD_BUCKET`, `QUESTIONS_SOURCE` (`log` default | `record` | `compare`, decision 0052; live `compare`: the 11-01 10:30Z compare had 11 differences, all questions drawn that day and not yet in the facts; `record` after the 11-02 10:30Z compare), `SETTLE_HEARTBEAT_KEY` (unset = no heartbeat), `GROK_API_URL`, `XAI_API_KEY`, `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN`; `BRAVE_SEARCH_API_KEY` is set but unused. Timeout 600 s, 512 MB.
 - IAM inline policies (the heartbeat needs `s3:PutObject` on `record/views/health/settle-tick.json`, decision 0052): `ddb-predictionlog` (PredictionLog), `newsPredictionResolver-record` (GetObject `record/facts/*`; GetObject and PutObject `record/inbox/verdicts/*`, `record/inbox/draws/*` and the shadow prefixes) and `newsPredictionResolver-runs` (GetObject `record/runs/*`, ListBucket).
 
 ## Reads / writes

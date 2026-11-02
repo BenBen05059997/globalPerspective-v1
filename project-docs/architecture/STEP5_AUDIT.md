@@ -1,6 +1,6 @@
-# Step 5 audit: what stands between the DynamoDB world tables and their deletion (2026-11-01, about 13:00 UTC)
+# Step 5 audit: what stands between the DynamoDB world tables and their deletion (updated 2026-11-02, about 03:40 UTC)
 
-Replaces the 2026-10-31 audit. Method: live `aws lambda get-function-configuration` (one named variable at a time), `aws dynamodb describe-table`, `aws events` / `aws scheduler`, `aws s3`, and grep of `backend/`. Row counts and the file:line references below come from the 31 Oct key scans and greps unless marked "re-checked"; line numbers drift, grep the symbol. Git history keeps the 31 Oct text.
+Replaces the 2026-10-31 audit; flags re-read live 2026-11-02. Method: live `aws lambda get-function-configuration` (one named variable at a time), `aws dynamodb describe-table`, `aws events` / `aws scheduler`, `aws s3`, and grep of `backend/`. Row counts and the file:line references below come from the 31 Oct key scans and greps unless marked "re-checked"; line numbers drift, grep the symbol. Git history keeps the 31 Oct text.
 
 ## 0. Headline
 1. **NewsCache and SummarizeAndPredict cannot be deleted midweek.** Each needs code work first (sections 3 and 4). The order of work is in section 6 and in `START_HERE.md`.
@@ -9,11 +9,11 @@ Replaces the 2026-10-31 audit. Method: live `aws lambda get-function-configurati
 4. **The record does not hold history before 2026-09-05** for entries, `THREAD_ANALYSIS` (202 of 330 rows are Mar-Sep stories not in the record), `THREAD_HISTORY#` and the older `PRED#` rows. Deleting loses it unless exported first (destructive, operator decision).
 5. **Several "world" rows are send guards or commitment state**: `EMAILLOG#weekly#`, the `DRIFT#` emailed flag, `WEEKLY_BRIEF#` (feeds the Sunday email), PredictionLog `SEED#` (unrevealed secret), `Q#`, `SAMPLE#`, `SETTLE#`. They stay.
 
-## 1. Reader switches, live (re-checked 2026-11-01 about 13:00Z)
-- `NOTES_READS` accepts only `ddb` (default), `notes` or `compare` (`backend/shared/src/noteReads.js:14-17`); any other value, including `record`, silently means `ddb`. It was `record` until about 12:15Z today, so those readers answered from DynamoDB. Now `notes` on newsSensitiveData-dev, newsBreakingAlert, newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector and newsSystemsAnalysis (each read live). The read API was checked afterwards and answers from notes.
-- `RECORD_READS=record` on newsBoard, newsRecommend, newsPostLinkedin, newsPostDevTo, newsSensitiveData-dev and newsBreakingAlert. It still falls back to DynamoDB when a view has no answer or is over 9 h old, so these readers are not DynamoDB-free.
-- `NOTES_PREFIX=record/` on newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector, newsSystemsAnalysis and the agent. `newsCountryFactsUpdater` is still `record/shadow/` (Monday's check).
-- `newsStoryRecord`: `ENTRIES_SOURCE=inbox`, `FORECASTS_SOURCE=compare`. `newsPredictionResolver`: `QUESTIONS_SOURCE=compare`. Agent: `FORECASTS_INBOX_PREFIX=record/`. `newsEmailSender`: no flags, deployed build from 2026-10-20, no record path.
+## 1. Reader switches, live (re-checked 2026-11-02 about 03:40Z)
+- `NOTES_READS` accepts only `ddb` (default), `notes` or `compare` (`backend/shared/src/noteReads.js:14-17`); any other value, including `record`, silently means `ddb`. It was `record` until about 12:15Z today, so those readers answered from DynamoDB. Now `notes` on newsSensitiveData-dev, newsBreakingAlert, newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector and newsSystemsAnalysis (each read live), with no errors from them since. The read API answers from notes.
+- `RECORD_READS=record` on newsBoard, newsRecommend, newsPostLinkedin, newsPostDevTo, newsSensitiveData-dev and newsBreakingAlert; `compare` on newsEmailSender (deployed 2026-11-02 with the record path for the weekly brief; the 11-01 14:00Z send went to 2 recipients with no errors; first compare Sun 8 Nov 14:00Z). It still falls back to DynamoDB when a view has no answer or is over 9 h old, so these readers are not DynamoDB-free. newsBoard now reads the story web and the histories from the record (role policy `newsBoard-record` grants `record/views/index/web.json` and `record/notes/{story_analysis,story_history,country}/*`, operator yes 2026-11-01; checked after a cold start and two live `connect` calls).
+- `NOTES_PREFIX=record/` on newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector, newsSystemsAnalysis and the agent. `newsCountryFactsUpdater` too since 2026-11-02 (the 11-01 20:00Z run's 40 `country_facts` notes equalled their `FACTS#` rows; the 11-01 file and the manifest were copied to `record/notes/country_facts/`).
+- `newsStoryRecord`: `ENTRIES_SOURCE=inbox`, `FORECASTS_SOURCE=inbox` (the 11-01 23:45Z compare: 0 differences over 647 snapshots). `newsPredictionResolver`: `QUESTIONS_SOURCE=compare` (the 11-01 10:30Z compare had 11 differences, all questions drawn that day and not yet in the facts; switch to `record` after the 2 Nov 10:30Z compare). Agent: `FORECASTS_INBOX_PREFIX=record/`.
 
 ## 2. Tables and families (what is left)
 Other projects are out of scope (BestWaifuChatLogs, Currecy-past, Currency, Polybot*, ppa-*). `NewsProject-linkedin-posts` (about 16k rows) is the social dedupe table: operational, leave.
@@ -24,6 +24,8 @@ Other projects are out of scope (BestWaifuChatLogs, Currecy-past, Currency, Poly
 | NewsCache (id) | ingest working store plus `archive#` days (2026-03-07 onward) |
 | GlobalPerspectivePredictionLog (PK,SK) | `PRED#` forecasts (world) plus commitment state (`Q#`, `SEED#`, `SAMPLE#`, `SETTLE#`) |
 | BreakingAlerts, ClientErrors, UserTable, UserPrefs, SavedItems (also boards), Shares, ApiKeys | operational or user data: stay (0003) |
+
+Key scan 2026-11-02: SummarizeAndPredict 3,541 items, PredictionLog 7,170; every family is still read or written (PredictionLog `PRED#` by the agent), so no family is deletable yet. `GlobalPerspectiveMarkets` is gone.
 
 SummarizeAndPredict families (31 Oct counts): country `HISTORY#` 1,560, `DRIFT#` 248, `DRIFTLOG#` 222, `COUNTRY_INTELLIGENCE` 48, `FACTS#` 40; thread `THREAD_HISTORY#` 338, `THREAD_ANALYSIS` 330, `TOPICS` pointer 135, `DRIFT#`/`DRIFTLOG#` 121 each, `WEB` 119; `WEB#INDEX` 1; `SYSTEMS#` 22; `DAILY_BRIEF#` 137; `WEEKLY_BRIEF#` 15; `TOPIC#` cache (short-lived, the agent prunes); `EMAILLOG#weekly#` 11. The parked economy rows (`ECON#`, `PAIR#`, `WEEKLY_MARKETS#`) belong to retired code (0049): export if wanted, then delete with a yes.
 
@@ -39,20 +41,20 @@ SummarizeAndPredict families (31 Oct counts): country `HISTORY#` 1,560, `DRIFT#`
 ## 4. SummarizeAndPredict and PredictionLog `PRED#`: blockers
 SummarizeAndPredict:
 - The writers read their own existing rows for refresh policy and merges (`newsThreadAnalysis`, `newsCountryIntelligence`, the `newsSystemsAnalysis` `SYSTEMS#` scan, the `newsCountryFactsUpdater` merge). Without the rows they regenerate everything (paid LLM).
-- `newsBoard` reads `WEB#INDEX`, `THREAD_HISTORY#` and country `HISTORY#` with no switch (being moved now). `newsWeeklyBrief` reads `WEB#INDEX`.
+- `newsBoard` now reads the web and the histories from the record behind `RECORD_READS` (DynamoDB only as the fallback). `newsWeeklyBrief` reads `WEB#INDEX`.
 - Read API actions with no record path: `daily_brief`, `latest_daily_brief`, `weekly_brief`, `web_index`, `systems_analysis`, `summary` / `prediction` / `trace_cause`. The front Worker pre-render calls the brief actions and `topics`.
 - The agent's `TOPIC#` cache and the `THREAD#/TOPICS` pointer.
-- `newsEmailSender` (weekly email, ENABLED Sun 14:00Z) reads `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; its deployed build has no record path. Deploy after today's 14:00Z send.
-- `newsCountryFactsUpdater` writes notes to `record/shadow/` still; `FACTS#` has no note subtype or view.
+- `newsEmailSender` (weekly email, ENABLED Sun 14:00Z) reads `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; the deployed build (2026-11-02) has the record path for the brief in `compare`; the sent marker stays in DynamoDB.
+- `newsCountryFactsUpdater` writes `country_facts` notes to `record/notes/`; its merge still reads `FACTS#`, and there is no view.
 - No record shape yet: `THREAD_HISTORY#`, `FACTS#`, `DAILY_BRIEF#`, `WEEKLY_BRIEF#`, `TOPIC#`.
 
 PredictionLog `PRED#`:
 - The agent's `readThreadForks` (90-day `PRED#` query for draw cadence and the duplicate gate).
-- `newsStoryRecord` `FORECASTS_SOURCE=compare`, decided by tonight's 23:45Z compare; then `inbox`; then remove the `PredictionLogScan` IAM statement (needs an operator yes).
+- `newsStoryRecord` `FORECASTS_SOURCE=inbox` and the `PredictionLogScan` statement removed (operator yes); the first nightly without the scan is 2026-11-02 23:45Z.
 - `newsPredictionResolver` `QUESTIONS_SOURCE=compare`.
 - The agent's `PRED#` put and thread reconcile.
 - About 1,513 Jun-Sep `PRED#` rows are not in the facts: operator decision, export and drop, or backfill.
-- Forecasts inbox matched the log on 2026-11-01 (639 rows, 0 differences); inbox at `record/inbox/forecasts/`.
+- Forecasts inbox matched the log on 2026-11-01 (639 rows, then 647 snapshots in the 23:45Z compare, 0 differences); inbox at `record/inbox/forecasts/`.
 - `Q#`, `SEED#`, `SAMPLE#`, `SETTLE#` stay in PredictionLog (resolver state, unrevealed seed). `draw.pool` and `settleHealth` lived in the deleted track-record snapshot; the record views and the freshness monitor (`SETTLE_SOURCE=record`) now carry what the pages need.
 
 ## 5. Record coverage (31 Oct measurements, not re-run)
@@ -64,10 +66,9 @@ PredictionLog `PRED#`:
 - Not verified: entry-by-entry equality of facts and archive; why 2026-09-05 has 0 entry facts; why 4 of 22 SYSTEMS countries lack a web note; owner of `Currency`, `Currecy-past` and `so-v3-engine`; deployed diffs of about 35 Lambdas.
 
 ## 6. Order of work from here (each switch at zero differences; each delete after an S3 export, with an operator yes)
-Monday first: 2 Nov 01:00Z full weekly review; 05:00 JST first country facts note (`newsCountryFactsUpdater` to `NOTES_PREFIX=record/` if it matches).
-a. Tonight's forecasts compare, then `FORECASTS_SOURCE=inbox` and `QUESTIONS_SOURCE=record`.
-b. `newsEmailSender` deploy after the 14:00Z send, then its `RECORD_READS`.
-c. `newsBoard` server side on the record.
+Done 1-2 Nov: forecasts nightly on the inbox and the scan removed; country facts notes live; `newsEmailSender` deployed in `compare`; `newsBoard` on the record.
+a. `QUESTIONS_SOURCE=record` after the 2 Nov 10:30Z compare. 2 Nov 01:00Z first full weekly review: read its result.
+b. `newsEmailSender` `RECORD_READS=record` after the first compare (Sun 8 Nov 14:00Z).
 d. The agent and the five daily Lambdas read the record (entries inbox/facts, forecasts inbox) instead of `archive#` and `PRED#`.
 e. Record paths for the read API actions in sections 3 and 4; a design for `staging` / `seen-today`; the freshness monitor off `topics`; frontend fallbacks removed after each matching step.
 f. Writers stop their DynamoDB puts.
@@ -79,4 +80,4 @@ Renames approved 2026-11-01 (after Monday's checks; create new, move trigger, te
 - Weekly email (ENABLED): `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; deleting either gives no mail or a duplicate.
 - `newsBreakingAlert` (every 8 h, `cron(45 4/8)`) reads thread analysis and country intelligence; breaking and drift email rules are DISABLED but their code still reads `DRIFT#` and sets a sent flag.
 - `newsPostDevTo` and `newsPostLinkedin` post externally; dedupe rows live in `NewsProject-linkedin-posts` (leave).
-- Billing and user tables are untouched by every step. IAM changes (the `PredictionLogScan` statement) need a fresh yes.
+- Billing and user tables are untouched by every step. IAM changes need a fresh yes.

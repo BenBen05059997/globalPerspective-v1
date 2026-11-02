@@ -293,4 +293,4 @@ function makeNoteWriter({s3json, prefix = 'record/'}) {
   return {write};
 }
 
-module.exports = {SCHEMA_VERSION, SUBJECT_KIND, ENTRY_PARTS, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, countryFactsNote, storyHistoryNote, linkNote, webNote, dailyBriefNote, weeklyBriefNote, entryEventIdIndex, citedOf, makeNoteWriter, notesKey};
+module.exports = {SCHEMA_VERSION, buildNote, entryNote, archiveEntryNotes, storyAnalysisNote, driftNote, storyDriftNote, countryNote, countryHistoryNote, countryFactsNote, storyHistoryNote, linkNote, webNote, dailyBriefNote, weeklyBriefNote, entryEventIdIndex, makeNoteWriter};

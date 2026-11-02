@@ -531,33 +531,6 @@ function formatShortPost(topic, maxLen) {
   return `[${category}] ${trimmedTitle}\n\n${link}\n\n${hashtags}`;
 }
 
-function formatThreadsPost(topic, summary) {
-  const category = CATEGORY_LABEL[topic.category] || 'World';
-  const MAX_CHARS = 500;
-  const hashtags = buildHashtags(topic);
-  const link = SITE_URL;
-
-  const header = `[${category}] ${topic.title}\n\n`;
-  const footer = `\n\n${link}\n\n${hashtags}`;
-
-  const reservedChars = header.length + footer.length;
-  const availableChars = MAX_CHARS - reservedChars;
-
-  let body = '';
-  if (summary && availableChars > 30) {
-    const cleanSummary = stripMarkdown(summary);
-    body = truncateAtSentence(cleanSummary, availableChars);
-  }
-
-  let post = `${header}${body}${footer}`.trim();
-
-  if (post.length > MAX_CHARS) {
-    post = post.substring(0, MAX_CHARS - 3) + '...';
-  }
-
-  return post;
-}
-
 // ---------------------------------------------------------------------------
 // Platform poster: LinkedIn
 // ---------------------------------------------------------------------------

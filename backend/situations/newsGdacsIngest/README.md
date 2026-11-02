@@ -14,7 +14,7 @@ Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches th
 
 ## Gotchas
 - `SITUATIONS_INBOX_DISABLED=true` skips the inbox write. Corpus and inbox writes are best-effort: a failure is logged and never fails the run.
-- The file header still says it "mirrors ... into GlobalPerspectiveGdacsEvents". That is stale: the handler no longer writes DynamoDB, and `GDACS_TABLE` and `ddb()` are unused.
+- The code no longer reads `GDACS_TABLE` (the DynamoDB mirror is gone); a leftover value in the live env does nothing.
 - `coolSituation` keeps the pre-cool tier (audit F3); its doc comment still says "cooling at tier 'low'".
 - Not a Function URL; the code emits no CORS headers.
 

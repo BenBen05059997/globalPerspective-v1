@@ -76,4 +76,4 @@ function computeScoring(items, { voidCount = 0 } = {}) {
   };
 }
 
-module.exports = { STAGE2_AT, RESAMPLES, brier, skillOf, clusterBootstrap, reliability, computeScoring };
+module.exports = { brier, reliability, computeScoring };

@@ -17,7 +17,6 @@ const MODES = ['log', 'record', 'compare'];
 const FACT_DAYS = 120; // WATCH reads this many days of facts: a question lives at most LEAD_MAX (90) days to its deadline plus its grace and re-draft days
 const factsKey = (day) => `record/facts/${day}.jsonl`;
 const runKey = (day) => `record/runs/${day}.json`;
-const day = (s) => String(s).slice(0, 10);
 
 const addDays = (d, n) => lib.addDays(d, n);
 const eachDay = (from, to) => { const out = []; for (let d = from; d <= to; d = addDays(d, 1)) out.push(d); return out; };
@@ -99,4 +98,4 @@ function makeQuestions(mode, {store, facts, today, log = console} = {}) {
   return m === 'record' ? recordSource(facts, {today}) : m === 'compare' ? compareSource(store, facts, {today, log}) : logSource(store);
 }
 
-module.exports = {MODES, FACT_DAYS, logSource, recordSource, compareSource, compareQuestions, makeQuestions};
+module.exports = {MODES, logSource, recordSource, compareQuestions, makeQuestions};

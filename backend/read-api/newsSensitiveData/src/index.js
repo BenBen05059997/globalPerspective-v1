@@ -662,7 +662,7 @@ async function readSummaryPredictionCache(action, topicId) {
         success: true,
         cached: true,
         data: normalized,
-        stale: summaryPredictionFresh(Item) ? false : true,
+        stale: false,
       },
     };
   } catch (err) {
@@ -726,10 +726,6 @@ function cacheEntryFresh(updatedAt, maxAgeSeconds) {
   if (Number.isNaN(updated)) return false;
   const ageSeconds = (Date.now() - updated) / 1000;
   return ageSeconds <= maxAgeSeconds;
-}
-
-function summaryPredictionFresh(item) {
-  return true;
 }
 
 function normalizeSummaryPrediction(item) {

@@ -209,4 +209,4 @@ function nextCache(cache, classified, nowIso, keepHours) {
   return { updated_at: nowIso, count: Object.keys(entries).length, entries };
 }
 
-module.exports = { canonicalIso3, AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity, cacheKey, splitByCache, nextCache };
+module.exports = { canonicalIso3, AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, normalizeEntity, cacheKey, splitByCache, nextCache };

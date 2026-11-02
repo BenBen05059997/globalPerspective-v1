@@ -71,4 +71,4 @@ function buildMessage(evaluation, questions, { siteUrl, nowIso } = {}) {
   return { subject: '[GP] Prediction settling overdue', body: lines.join('\n') };
 }
 
-module.exports = { evaluateSettle, settleFromRecord, shouldSendNow, buildMessage, OVERDUE_DAYS, STALE_BOARD_HOURS, STALE_VIEWS_HOURS, TICK_STALE_DAYS, SEND_HOUR_UTC };
+module.exports = { evaluateSettle, settleFromRecord, shouldSendNow, buildMessage };

@@ -2,8 +2,7 @@
 
 // newsGdacsIngest — ingest of GDACS (UN+EU Global Disaster Alert & Coordination System).
 // Free, keyless, NO LLM. Every run (rate(20 minutes)):
-//   1. Mirrors current disaster events into GlobalPerspectiveGdacsEvents (alert level, severity,
-//      coordinates) — the existing impact-pipeline feed (migrates to S3 corpus in S8).
+//   1. Mirrors the full current event set (alert level, severity, coordinates) to s3://<world>/corpus/gdacs/latest.json.
 //   2. Acts as a deterministic situation OPENER: writes ONE observation snapshot of all current
 //      Orange/Red events to s3://<world>/situations/inbox/<ts>-gdacs.json. It holds NO situation
 //      state — the tracker (S2) folds observations into situation state and is the sole writer of it
@@ -17,7 +16,6 @@ const {
 } = require('./_shared/situations-core');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const TABLE = process.env.GDACS_TABLE || 'GlobalPerspectiveGdacsEvents';
 const FEED = process.env.GDACS_FEED || 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP';
 const TTL_DAYS = Number(process.env.GDACS_TTL_DAYS) || 30;
 
@@ -26,21 +24,12 @@ const INBOX_PREFIX = process.env.SITUATIONS_INBOX_PREFIX || 'situations/inbox';
 const INBOX_DISABLED = process.env.SITUATIONS_INBOX_DISABLED === 'true';
 const CORPUS_PREFIX = process.env.GDACS_CORPUS_PREFIX || 'corpus/gdacs';
 
-// Lazy clients so pure helpers (and tests) load without the AWS SDK.
-let _ddb, _s3;
-function ddb() {
-  if (!_ddb) {
-    const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-    const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
-    _ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), { marshallOptions: { removeUndefinedValues: true } });
-  }
-  return _ddb;
-}
+// Lazy client so pure helpers (and tests) load without the AWS SDK.
+let _s3;
 function s3() {
   if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); }
   return _s3;
 }
-function ddbCmd(name) { return require('@aws-sdk/lib-dynamodb')[name]; }
 
 function buildEventItem(feature, nowIso, ttl) {
   const p = feature.properties || {};
@@ -162,5 +151,3 @@ exports.handler = async () => {
 
   return { ok: true, stored, withGeo, byLevel, inbox, corpus };
 };
-
-exports._internal = { buildEventItem, writeInboxSnapshot };

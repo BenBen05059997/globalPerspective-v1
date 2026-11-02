@@ -77,4 +77,4 @@ function appendDraw(deps, out, type, v) {
   });
 }
 
-module.exports = { inboxKey, drawsKey, appendVerdict, appendDraw, commitLine, drawLine };
+module.exports = { appendVerdict, appendDraw, commitLine, drawLine };

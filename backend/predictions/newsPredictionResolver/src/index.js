@@ -364,7 +364,6 @@ function defaultDeps() {
 }
 
 exports.run = run;
-exports.groupQuestions = groupQuestions;
 exports.MAX_UNCLEAR_DRAFTS = MAX_UNCLEAR_DRAFTS;
 exports.REDRAFT_AFTER_DAYS = REDRAFT_AFTER_DAYS;
 exports.handler = async (event = {}) => run(event, defaultDeps());

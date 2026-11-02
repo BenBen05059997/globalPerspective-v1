@@ -55,10 +55,6 @@ function ddb() {
   return _ddb;
 }
 
-function norm(s) {
-  return typeof s === 'string' ? s.trim().toLowerCase() : '';
-}
-
 // ── Loaders ───────────────────────────────────────────────────────────────────
 async function loadLatestTopics() {
   const Item = await readBy({
@@ -341,7 +337,7 @@ async function run() {
   const story = await assembleStory(chosen.group, chosen.scored);
   const email = renderAlert(story);
   const verify = await verifyStory(story);
-  const proposal = await writeProposal(chosen.group, chosen.scored, story, verify, email);
+  await writeProposal(chosen.group, chosen.scored, story, verify, email);
 
   console.log('──────── BREAKING ALERT PROPOSED ────────');
   console.log(`thread:   ${chosen.group.threadId}`);

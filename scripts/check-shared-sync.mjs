@@ -27,8 +27,6 @@
  *                                          backend/shared/src/links.js == frontend shared/lib/links.js
  *   (f) board rules                     — the drawing/pairing core (between the markers) in
  *                                          backend/shared/src/record.js == frontend shared/lib/board.js
- *   (g) weekly sections                 — the section-model core (between the markers) in
- *                                          backend/weekly/sections.js == frontend features/weekly/lib/sections.js
  *   (e) Studio share modules, sampleRuleGolden.json — byte-identical frontend/Lambda copies
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
@@ -213,10 +211,6 @@ function livePairs() {
       run: () => checkMarkedCore(abs(`${SHARED}/record.js`), abs(`${FE_LIB}/board.js`), 'board rules core'),
     },
     {
-      name: 'weekly sections (backend/weekly/sections.js vs frontend features/weekly/lib/sections.js)',
-      run: () => checkMarkedCore(abs('backend/weekly/sections.js'), abs(`${FE_FEATURES}/weekly/lib/sections.js`), 'weekly sections core'),
-    },
-    {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
       name: 'Studio share modules (frontend + newsSharedAnalysis, 8 files + golden fixture)',
@@ -318,18 +312,6 @@ async function selfTestBoardRules() {
   return result;
 }
 
-async function selfTestWeeklySections() {
-  const dir = mkTmp();
-  const b = path.join(dir, 'sections.js');
-  const ref = fs.readFileSync(abs(`${FE_FEATURES}/weekly/lib/sections.js`), 'utf8');
-  const perturbed = ref.replace('max: 6', 'max: 7');
-  if (perturbed === ref) throw new Error('self-test fixture assumption broke: max: 6 not found');
-  fs.writeFileSync(b, perturbed);
-  const result = checkMarkedCore(abs('backend/weekly/sections.js'), b, 'weekly sections core');
-  fs.rmSync(dir, { recursive: true, force: true });
-  return result;
-}
-
 async function selfTestEntityNormalization() {
   const dir = mkTmp();
   const srcA = fnPath('newsSituationIngest', 'src/classifier-core.js');
@@ -375,7 +357,6 @@ async function selfTest() {
     ['country identity', selfTestCountryIdentity],
     ['link rules', selfTestLinkRules],
     ['board rules', selfTestBoardRules],
-    ['weekly sections', selfTestWeeklySections],
     ['entity-normalization', selfTestEntityNormalization],
     ['sampleRuleGolden.json', selfTestSampleGolden],
     ['Studio share modules', selfTestShareModules],

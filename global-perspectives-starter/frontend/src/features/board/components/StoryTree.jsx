@@ -16,6 +16,13 @@ const evidenceOf = (v) => Array.isArray(v) ? v.map((e, n) => (e?.url ? <a classN
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // The four rungs of the zoom ladder. Rung 1 and 2 are readings of the weekly review and exist only once the story has one.
 const RUNGS = { 1: 'story line', 2: 'chapters', 3: 'forks and events', 4: 'the event' };
+// The canvas captions (artboard 11): what the rung shows and how you get to it.
+const CAPTIONS = {
+  1: ['the pin as it sits on the board', 'default on the board'],
+  2: ['three chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step'],
+  3: ['one chapter opened: its events and its forks, open or closed', 'zoom into a chapter'],
+  4: ['one event opened as a card', 'zoom into an event; the only level with raw sources'],
+};
 
 // Facts view of one story (0037 story view) as a zoom ladder: 1 line, 2 chapters, 3 forks and events (the drawn tree), 4 one event.
 // The tree's present is `today` (UTC); late is judged against it. A story record that could not be read shows nothing (the
@@ -109,6 +116,7 @@ export default function StoryTree({ story, loading, error, today = todayUTC() })
       <span className="story-tree__zoom">ZOOM</span>
     </div>
     <div className="story-tree__body">
+      <p className="story-tree__caption"><span className="story-tree__kicker">Level {level} · {RUNGS[level]}</span> {CAPTIONS[level][0]} <span className="story-tree__kicker">How you get here</span> {CAPTIONS[level][1]}</p>
       {level === 1 && hasLine ? <>
         <p className="board-line"><ClaimTag kind="judgment" /> <span className="story-tree__stamp">ours</span> {story.line.text}</p>
         {weekMonday(story.line.week) ? <span className="story-tree__stamp">written week of {dayMonth(weekMonday(story.line.week))} · never rewritten</span> : null}

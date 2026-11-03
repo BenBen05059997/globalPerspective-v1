@@ -9,6 +9,7 @@
 
 .story-tree__kicker { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
 .story-tree__kicker--accent { color: var(--accent); }
+.story-tree__caption { font-size: var(--text-xs); color: var(--text-muted); margin: 0; }
 .story-tree__counts { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
 .story-tree__stamp { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
 

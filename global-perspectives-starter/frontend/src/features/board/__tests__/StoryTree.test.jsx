@@ -12,6 +12,20 @@ const show = (story, today = TODAY) => render(<MemoryRouter><StoryTree story={st
 const rung = (n) => screen.getByRole('button', { name: new RegExp(`^Level ${n},`) });
 
 describe('story tree zoom ladder', () => {
+  it('each rung shows its canvas caption: what it is and how you get there', () => {
+    show(storyC);
+    const caption = (n, what, how) => {
+      fireEvent.click(rung(n));
+      const text = document.querySelector('.story-tree__caption').textContent;
+      expect(text).toContain(what);
+      expect(text).toContain(`How you get here ${how}`);
+    };
+    caption(1, 'Level 1 · story line the pin as it sits on the board', 'default on the board');
+    caption(2, 'Level 2 · chapters three chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step');
+    caption(3, 'Level 3 · forks and events one chapter opened: its events and its forks, open or closed', 'zoom into a chapter');
+    fireEvent.click(screen.getAllByRole('button', { name: /./ }).find((b) => b.closest('.board-tree') && b.className.includes('board-strings__btn')));
+    caption(4, 'Level 4 · the event one event opened as a card', 'zoom into an event; the only level with raw sources');
+  });
   it('missing story renders nothing', () => {
     const { container } = render(<StoryTree />);
     expect(container.textContent).toBe('');

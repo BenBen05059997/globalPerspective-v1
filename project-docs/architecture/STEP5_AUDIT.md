@@ -13,7 +13,7 @@ Replaces the 2026-10-31 audit; flags re-read live 2026-11-02. Method: live `aws 
 - `NOTES_READS` accepts only `ddb` (default), `notes` or `compare` (`backend/shared/src/noteReads.js:14-17`); any other value, including `record`, silently means `ddb`. It was `record` until about 12:15Z today, so those readers answered from DynamoDB. Now `notes` on newsSensitiveData-dev, newsBreakingAlert, newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector and newsSystemsAnalysis (each read live), with no errors from them since. The read API answers from notes.
 - `RECORD_READS=record` on newsBoard, newsRecommend, newsPostLinkedin, newsPostDevTo, newsSensitiveData-dev and newsBreakingAlert; `compare` on newsEmailSender (deployed 2026-11-02 with the record path for the weekly brief; the 11-01 14:00Z send went to 2 recipients with no errors; first compare Sun 8 Nov 14:00Z). It still falls back to DynamoDB when a view has no answer or is over 9 h old, so these readers are not DynamoDB-free. newsBoard now reads the story web and the histories from the record (role policy `newsBoard-record` grants `record/views/index/web.json` and `record/notes/{story_analysis,story_history,country}/*`, operator yes 2026-11-01; checked after a cold start and two live `connect` calls).
 - `NOTES_PREFIX=record/` on newsPostDevTo, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector, newsSystemsAnalysis and the agent. `newsCountryFactsUpdater` too since 2026-11-02 (the 11-01 20:00Z run's 40 `country_facts` notes equalled their `FACTS#` rows; the 11-01 file and the manifest were copied to `record/notes/country_facts/`).
-- `newsStoryRecord`: `ENTRIES_SOURCE=inbox`, `FORECASTS_SOURCE=inbox` (the 11-01 23:45Z compare: 0 differences over 647 snapshots). `newsPredictionResolver`: `QUESTIONS_SOURCE=compare` (the 11-01 10:30Z compare had 11 differences, all questions drawn that day and not yet in the facts; switch to `record` after the 2 Nov 10:30Z compare). Agent: `FORECASTS_INBOX_PREFIX=record/`.
+- `newsStoryRecord`: `ENTRIES_SOURCE=inbox`, `FORECASTS_SOURCE=inbox` (the 11-01 23:45Z compare: 0 differences over 647 snapshots). `newsPredictionResolver`: `QUESTIONS_SOURCE=record` (set 2026-11-02 ~13:40Z; the 10:30Z compare had W44's eligible pool identical, 295 = 295, and 16 differences in the full list, all questions drawn that day before the nightly put them in the facts). Agent: `FORECASTS_INBOX_PREFIX=record/`.
 
 ## 2. Tables and families (what is left)
 Other projects are out of scope (BestWaifuChatLogs, Currecy-past, Currency, Polybot*, ppa-*). `NewsProject-linkedin-posts` (about 16k rows) is the social dedupe table: operational, leave.
@@ -51,7 +51,7 @@ SummarizeAndPredict:
 PredictionLog `PRED#`:
 - The agent's `readThreadForks` (90-day `PRED#` query for draw cadence and the duplicate gate).
 - `newsStoryRecord` `FORECASTS_SOURCE=inbox` and the `PredictionLogScan` statement removed (operator yes); the first nightly without the scan is 2026-11-02 23:45Z.
-- `newsPredictionResolver` `QUESTIONS_SOURCE=compare`.
+- Done 2026-11-02: `newsPredictionResolver` `QUESTIONS_SOURCE=record`. The 2026-11-02 nightly (`record/runs/2026-11-02.json`) is ok with no failures, the first without the scan: 21 `forecast_drawn` facts, a `question_commit`, a `question_draw`. Only the agent still reads `PRED#`.
 - The agent's `PRED#` put and thread reconcile.
 - About 1,513 Jun-Sep `PRED#` rows are not in the facts: operator decision, export and drop, or backfill.
 - Forecasts inbox matched the log on 2026-11-01 (639 rows, then 647 snapshots in the 23:45Z compare, 0 differences); inbox at `record/inbox/forecasts/`.
@@ -67,7 +67,7 @@ PredictionLog `PRED#`:
 
 ## 6. Order of work from here (each switch at zero differences; each delete after an S3 export, with an operator yes)
 Done 1-2 Nov: forecasts nightly on the inbox and the scan removed; country facts notes live; `newsEmailSender` deployed in `compare`; `newsBoard` on the record.
-a. `QUESTIONS_SOURCE=record` after the 2 Nov 10:30Z compare. 2 Nov 01:00Z first full weekly review: read its result.
+a. Done 2 Nov: `QUESTIONS_SOURCE=record`. Renames next (3 Nov daytime, one at a time), then the agent onto the record.
 b. `newsEmailSender` `RECORD_READS=record` after the first compare (Sun 8 Nov 14:00Z).
 d. The agent and the five daily Lambdas read the record (entries inbox/facts, forecasts inbox) instead of `archive#` and `PRED#`.
 e. Record paths for the read API actions in sections 3 and 4; a design for `staging` / `seen-today`; the freshness monitor off `topics`; frontend fallbacks removed after each matching step.

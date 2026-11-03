@@ -152,12 +152,12 @@ function CoverageList({ entries, country }) {
                   const cat = (entry.category || 'other').toLowerCase();
                   return (
                     <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
-                      <div className="cp-coverage-row" onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
+                      <button type="button" className="cp-coverage-row" aria-expanded={isExpanded} onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
                         <CategoryTag category={cat} />
                         <span className="cp-coverage-title">{entry.title}</span>
                         {entry.threadId && <span className="cp-arc-hint">arc</span>}
-                        <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`}>▾</span>
-                      </div>
+                        <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`} aria-hidden="true">▾</span>
+                      </button>
                       {isExpanded && (
                         <div className="cp-coverage-body">
                           {entry.sources?.length > 0 && (

@@ -161,6 +161,62 @@ describe('ArchiveTopicModal via the sidebar', () => {
   });
 });
 
+describe('ArchiveTopicModal focus management', () => {
+  const entry = {
+    ...ENTRIES[1],
+    ai: { summary: '- First takeaway', prediction: JSON.stringify({ scenarios: [{ label: 'Stalemate', probability_range: '40-55%', rationale: 'Talks stall.' }] }) },
+  };
+  const openFromKeyboard = () => {
+    mount(<TodayArchiveSidebar entries={[entry]} />);
+    const opener = screen.getByRole('button', { name: new RegExp(entry.title.slice(0, 20)) });
+    opener.focus();
+    fireEvent.click(opener);
+    return opener;
+  };
+
+  it('moves focus into the dialog (the Close button) when it opens', () => {
+    openFromKeyboard();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toContainElement(document.activeElement);
+    expect(document.activeElement).toBe(within(dialog).getAllByRole('button', { name: 'Close' })[0]);
+  });
+
+  it('keeps Tab and Shift+Tab inside the dialog (wraps last to first and first to last)', () => {
+    openFromKeyboard();
+    const dialog = screen.getByRole('dialog');
+    const tabbable = Array.from(dialog.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+    const first = tabbable[0];
+    const last = tabbable[tabbable.length - 1];
+    expect(tabbable.length).toBeGreaterThan(2);
+
+    last.focus();
+    fireEvent.keyDown(last, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+
+    first.focus();
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+
+    // focus that slipped out (e.g. a click on the backdrop) is pulled back in
+    document.body.focus();
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    expect(dialog).toContainElement(document.activeElement);
+  });
+
+  it('restores focus to the row that opened it on Escape and on Close', () => {
+    const opener = openFromKeyboard();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(opener).toHaveFocus();
+
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: 'Close' })[0]);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(opener).toHaveFocus();
+  });
+});
+
 describe('Home with an archive', () => {
   const liveTopic = { topicId: ENTRIES[0].topicId, title: ENTRIES[0].title, category: 'politics', sources: [] };
   const otherTopic = { topicId: 'live-2', title: 'A story only in today list', category: 'economy', sources: [] };

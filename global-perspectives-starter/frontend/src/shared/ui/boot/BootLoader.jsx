@@ -105,6 +105,17 @@ export default function BootLoader({
 
   useEffect(() => { if (showFailure) retryRef.current?.focus(); }, [showFailure]);
 
+  // While the full-screen failure screen is up, the app behind it is out of the Tab order and the
+  // accessibility tree. The overlay lives on <body> (a portal here, an injected node in index.html),
+  // outside #root, so RETRY / OPEN ANYWAY stay live. Released when the failure clears or the overlay unmounts.
+  useEffect(() => {
+    if (!showFailure || variant !== 'full') return undefined;
+    const root = document.getElementById('root');
+    if (!root) return undefined;
+    root.setAttribute('inert', '');
+    return () => root.removeAttribute('inert');
+  }, [showFailure, variant]);
+
   const finish = (e) => {
     if (e.target !== e.currentTarget || e.propertyName !== 'opacity' || !isReady || doneRef.current) return;
     doneRef.current = true;

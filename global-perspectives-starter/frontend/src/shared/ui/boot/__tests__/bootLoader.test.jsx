@@ -119,6 +119,52 @@ describe('BootLoader failure + retry', () => {
   });
 });
 
+describe('failure state makes the app behind it inert', () => {
+  const mountApp = () => {
+    document.body.insertAdjacentHTML('beforeend', '<div id="root"><button type="button">behind</button></div>');
+    return document.getElementById('root');
+  };
+
+  it('sets inert on #root while the full-screen failure shows; RETRY and OPEN ANYWAY stay outside it', () => {
+    const root = mountApp();
+    render(<BootLoader sensors={S('ok', 'fail', 'ok')} onRetry={() => {}} onContinue={() => {}} />);
+    expect(root).toHaveAttribute('inert');
+    expect(root).not.toContainElement(screen.getByRole('button', { name: 'RETRY' }));
+    expect(root).not.toContainElement(screen.getByRole('button', { name: 'OPEN ANYWAY' }));
+    expect(screen.getByRole('button', { name: 'RETRY' })).toHaveFocus();
+  });
+
+  it('is not inert while sensors are still connecting or all fine', () => {
+    const root = mountApp();
+    const { rerender } = render(<BootLoader sensors={S('fail', 'wait', 'ok')} onRetry={() => {}} />);
+    expect(root).not.toHaveAttribute('inert');
+    rerender(<BootLoader sensors={S('ok', 'ok', 'ok')} />);
+    expect(root).not.toHaveAttribute('inert');
+  });
+
+  it('is removed when the failure clears (retry succeeded, or OPEN ANYWAY forces ready)', () => {
+    const root = mountApp();
+    const { rerender } = render(<BootLoader sensors={S('ok', 'fail', 'ok')} onRetry={() => {}} />);
+    expect(root).toHaveAttribute('inert');
+    rerender(<BootLoader sensors={S('ok', 'wait', 'ok')} onRetry={() => {}} />);
+    expect(root).not.toHaveAttribute('inert');
+    rerender(<BootLoader sensors={S('ok', 'fail', 'ok')} onRetry={() => {}} />);
+    expect(root).toHaveAttribute('inert');
+    rerender(<BootLoader sensors={S('ok', 'fail', 'ok')} ready onRetry={() => {}} />);
+    expect(root).not.toHaveAttribute('inert');
+  });
+
+  it('is removed when the overlay unmounts, and an inline loader never sets it', () => {
+    const root = mountApp();
+    const { unmount } = render(<BootLoader sensors={S('ok', 'fail', 'ok')} onRetry={() => {}} />);
+    expect(root).toHaveAttribute('inert');
+    unmount();
+    expect(root).not.toHaveAttribute('inert');
+    render(<BootLoader variant="inline" sensors={S('ok', 'fail', 'ok')} />);
+    expect(root).not.toHaveAttribute('inert');
+  });
+});
+
 describe('static boot handoff', () => {
   it('removes the pre-JS #gp-boot node on the first React commit, and leaves nothing behind', () => {
     document.body.insertAdjacentHTML('beforeend', '<div id="gp-boot" class="gp-boot"></div>');

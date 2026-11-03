@@ -52,9 +52,10 @@ describe('one definition of today, live, late and due this week', () => {
     const board = { pins: [], strings: [], weights: {} };
     // pin card
     expect(pinCountParts({ recordAvailable: true, counts: { liveBranches: 99 } }, stories['pin-ref'], TODAY)).toEqual(['6 live branches · 2 late']);
-    // due strip: the same three as the others (due this week, none late), so its count agrees
+    // due strip: this week's three then the two late ones; four shown and "+1 more" make 3 + 2, as the others count
     const strip = render(<DueStrip stories={stories} today={TODAY} />);
-    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getByText('+1 more due this week or past due')).toBeInTheDocument();
     strip.unmount();
     // monthly: due this week and past due
     const m = monthlyView(board, stories, TODAY);
@@ -93,10 +94,15 @@ describe('due strip says how many more are due this week', () => {
     const many = { x: story('nk', [...week, b('far', '2027-01-01'), b('late', '2026-10-01')]) };
     render(<DueStrip stories={many} today={TODAY} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
-    expect(screen.getByText('+3 more due this week')).toBeInTheDocument();
-    expect(dueCounts(many, TODAY).dueThisWeek).toBe(7); // 4 shown + 3 more
+    expect(screen.getByText('+4 more due this week or past due')).toBeInTheDocument();
+    expect(dueCounts(many, TODAY)).toEqual({ dueThisWeek: 7, late: 1 }); // 4 shown + 4 more
     cleanup();
-    render(<DueStrip stories={stories} today={TODAY} />);
+    render(<DueStrip stories={{ x: story('nk', week) }} today={TODAY} />);
+    expect(screen.getByText('+3 more due this week')).toBeInTheDocument();
+    cleanup();
+    render(<DueStrip stories={{ x: story('nk', branches.slice(0, 3)) }} today={TODAY} />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getByText('1 Nov · past due')).toBeInTheDocument();
     expect(screen.queryByText(/more due/)).toBeNull();
   });
 });

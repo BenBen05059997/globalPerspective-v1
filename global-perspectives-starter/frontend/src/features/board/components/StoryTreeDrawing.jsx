@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
@@ -7,12 +8,14 @@ import '@/features/board/storyTree.css';
 // The drawn tree (artboard 6): the dated trunk, the present line, and one future line per open branch whose thickness is its
 // percentage. Dashed = our judgment (every future line), solid = reported (the trunk). Branches that were scored are not drawn:
 // they stay in the lists, worded by branchWording ("not reported by ..."), never as dead stubs (decision 0038).
+// Drawn at its own size, never squeezed to the column: a dense story makes a long drawing that scrolls inside its box,
+// opened at the right end so the newest event and the present line are in view.
 // The drawing is aria-hidden; the trunk and fork lists beside it in StoryTree are its text equivalent.
-const STEP = 112;       // trunk node spacing
+const STEP = 124;       // trunk node spacing
 const LEFT = 60;       // first node x
 const ROW = 64;         // height of one branch row
 const REACH = 96;       // branch reach from the present line to its label
-const LABEL = 250;      // branch label width
+const LABEL = 290;      // branch label width
 const WEIGHT = 0.4;     // line thickness per percent
 const clip = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 const lines = (s, n) => { // two lines of at most n characters, broken at a space
@@ -21,7 +24,10 @@ const lines = (s, n) => { // two lines of at most n characters, broken at a spac
 };
 
 export default function StoryTreeDrawing({ shown, branches, present }) {
-  if (!shown.length && !branches.length) return null;
+  const scroll = useRef(null);
+  const empty = !shown.length && !branches.length;
+  useEffect(() => { const el = scroll.current; if (el) el.scrollLeft = el.scrollWidth; }, [empty, shown.length]);
+  if (empty) return null;
   const n = shown.length;
   const presentX = LEFT + Math.max(n, 1) * STEP;
   const height = Math.max(150, branches.length * ROW + 64);
@@ -31,7 +37,7 @@ export default function StoryTreeDrawing({ shown, branches, present }) {
   const anyLate = branches.some((b) => isLate(b, present));
   return <div className="story-tree__draw">
     {branches.length ? <p className="story-tree__ours"><ClaimTag kind="judgment" /> OURS · PROVISIONAL</p> : null}
-    <div className="story-tree__scroll" tabIndex={0} role="group" aria-label="Story tree drawing">
+    <div className="story-tree__scroll" ref={scroll} tabIndex={0} role="group" aria-label="Story tree drawing">
     <svg className="story-tree__svg" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
       {n ? <line className="st-trunk" x1={LEFT} y1={mid} x2={presentX} y2={mid} /> : null}
       {shown.map((e, i) => {
@@ -39,7 +45,7 @@ export default function StoryTreeDrawing({ shown, branches, present }) {
         return <g key={e.eventId}>
           <circle className="st-node" cx={x} cy={mid} r="7" />
           <text className="st-date" x={x} y={mid + 26}>{dayMonth(e.date)}</text>
-          {lines(e.title || dayMonth(e.date), 17).map((l, k) => <text className="st-label" key={k} x={x} y={mid + 40 + k * 13}>{l}</text>)}
+          {lines(e.title || dayMonth(e.date), 18).map((l, k) => <text className="st-label" key={k} x={x} y={mid + 40 + k * 13}>{l}</text>)}
         </g>;
       })}
       {present ? <>

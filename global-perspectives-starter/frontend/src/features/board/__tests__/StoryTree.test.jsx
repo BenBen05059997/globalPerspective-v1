@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import StoryTree from '../components/StoryTree.jsx';
@@ -189,5 +189,20 @@ describe('weekMonday', () => {
     expect(weekMonday('2026-W01')).toBe('2025-12-29');
     expect(weekMonday('2026-10-12')).toBeNull();
     expect(weekMonday(undefined)).toBeNull();
+  });
+});
+
+describe('the drawn tree for a dense story', () => {
+  it('keeps its own size (it scrolls in its box, never shrinks) and opens at the right end, on the newest event and the present line', async () => {
+    const { default: StoryTreeDrawing } = await import('../components/StoryTreeDrawing.jsx');
+    const shown = Array.from({ length: 20 }, (_, i) => ({ eventId: `e${i}`, date: `2026-10-${String(i + 1).padStart(2, '0')}`, title: `Event number ${i}` }));
+    const spy = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(4000);
+    const { container } = render(<StoryTreeDrawing shown={shown} branches={[]} present="2026-10-21" />);
+    const svg = container.querySelector('svg');
+    expect(Number(svg.getAttribute('width'))).toBeGreaterThanOrEqual(20 * 100); // about 20 steps wide, not the column's width
+    expect(container.querySelector('.story-tree__scroll').scrollLeft).toBe(4000);
+    expect(svg.querySelectorAll('.st-node')).toHaveLength(20);
+    expect(svg.querySelector('.st-present')).not.toBeNull();
+    spy.mockRestore();
   });
 });

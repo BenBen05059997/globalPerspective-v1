@@ -21,7 +21,7 @@
 .story-tree__ours { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); color: var(--accent); }
 .story-tree__scroll { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-2); }
 .story-tree__scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.story-tree__svg { display: block; max-width: 100%; min-width: 36rem; height: auto; } /* fits the column; scrolls only when the column is narrower than 36rem (phones) */
+.story-tree__svg { display: block; max-width: none; flex: none; } /* drawn at its own size so labels keep their size; the box above scrolls */
 .story-tree__legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
 .story-tree__legend li { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-dim); }
 .story-tree__swatch { display: inline-block; width: var(--space-6); border-top: 1px solid var(--text-head); }
@@ -32,10 +32,10 @@
 .st-node { fill: var(--bg); stroke: var(--text-head); stroke-width: 3; }
 .st-present { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 4; }
 .st-now { fill: var(--accent); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); }
-.st-date { fill: var(--text-head); font-family: var(--mono); font-size: var(--text-2xs); text-anchor: middle; }
-.st-label { fill: var(--text-body); font-size: var(--text-2xs); text-anchor: middle; }
+.st-date { fill: var(--text-head); font-family: var(--mono); font-size: var(--text-sm); text-anchor: middle; }
+.st-label { fill: var(--text-body); font-size: var(--text-sm); text-anchor: middle; } /* never below the body small size */
 .st-label--head, .st-label--dim, .st-label--late { text-anchor: start; }
-.st-label--head { fill: var(--text-head); font-size: var(--text-xs); }
+.st-label--head { fill: var(--text-head); }
 .st-label--dim { fill: var(--text-dim); }
 .st-label--late { fill: var(--text-head); font-family: var(--mono); }
 .st-branch { fill: none; stroke: var(--accent); stroke-dasharray: 16 8; opacity: 0.7; }

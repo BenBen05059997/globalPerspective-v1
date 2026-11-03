@@ -21,7 +21,11 @@ function fakeStore() {
       if (!old) throw new Error('Board missing');
       rows.set(key,{...old,lastVisitedAt:stamp});
     },
-    async putBoard(item) { calls.push(['putBoard', item.savedKey]); rows.set(k('saved', item.uid, item.savedKey), item); },
+    async putBoard(item, expectedUpdatedAt) {
+      const old = rows.get(k('saved', item.uid, item.savedKey));
+      if (expectedUpdatedAt && (!old || old.updatedAt !== expectedUpdatedAt)) throw Object.assign(new Error('conditional'), { name: 'ConditionalCheckFailedException' });
+      calls.push(['putBoard', item.savedKey, expectedUpdatedAt || null]); rows.set(k('saved', item.uid, item.savedKey), item);
+    },
     async deleteBoard(uid, boardId) { calls.push(['deleteBoard', boardId]); rows.delete(k('saved', uid, `board#${boardId}`)); },
     async getFollows(uid) {
       const it = rows.get(k('prefs', uid, '')) || {};

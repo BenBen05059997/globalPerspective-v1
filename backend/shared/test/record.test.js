@@ -29,6 +29,12 @@ test('pin budget is 12', () => {
   assert.strictEqual(R.pinBudgetOk({ pins: pins(12) }), true);
   assert.strictEqual(R.pinBudgetOk({ pins: pins(13) }), false);
   assert.strictEqual(R.pinBudgetOk({}), false);
+  assert.strictEqual(R.pinBudgetOk({ pins: [...pins(12), { pinId: 'old', retiredAt: '2026-10-21T00:00:00Z' }] }), true, 'a retired pin is outside the budget');
+});
+
+test('normalizeBoard dedupes actor pins by the normalised name', () => {
+  const out = R.normalizeBoard({ pins: [{ pinId: 'p1', kind: 'actor', refId: 'Putin' }, { pinId: 'p2', kind: 'actor', refId: '  putin ' }, { pinId: 'p3', kind: 'thread', refId: 'Putin' }], strings: [] });
+  assert.deepStrictEqual(out.pins.map((p) => p.pinId), ['p1', 'p3']);
 });
 
 test('normalizeBoard orders strings, collapses duplicate pairs, dedupes pins, does not mutate', () => {

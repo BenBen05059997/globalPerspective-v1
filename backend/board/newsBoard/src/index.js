@@ -9,7 +9,7 @@
 
 const crypto = require('crypto');
 const { pinBudgetOk, PIN_BUDGET, normalizeBoard, normalizeActor } = require('./_shared/record');
-const { validateBoard } = require('./validate');
+const { validateBoard, PIN_FIELDS } = require('./validate');
 const { presetCache } = require('./presets');
 const { connect } = require('./connect');
 const { enrichBoard } = require('./recordViews');
@@ -17,6 +17,8 @@ const { arrivals } = require('./arrivals');
 
 const MAX_FOLLOWS = 300;
 const MAX_NAME = 80;
+const MAX_BOARDS = 20; // boards per member
+const ISO3 = /^[A-Z]{3}$/;
 
 const httpReply = (statusCode, body) => ({ statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const ok = (data) => httpReply(200, { success: true, data });
@@ -33,6 +35,8 @@ function boardProblem(board) {
   if (!v.ok) return { error: `Invalid board: ${v.errors.slice(0, 5).join('; ')}`, code: 'invalid_board' };
   const ids = new Set(board.pins.map((p) => p.pinId));
   if (ids.size !== board.pins.length) return { error: 'Invalid board: pinId must be unique', code: 'invalid_board' };
+  const badCountry = board.pins.find((p) => p.kind === 'country' && !ISO3.test(p.refId));
+  if (badCountry) return { error: "Invalid board: a country pin's refId must be a 3-letter ISO3 code", code: 'invalid_board' };
   for (const s of board.strings) {
     if (s.owner === 'ours' && s.strength !== 'inferred') return { error: "Invalid board: every ours-string must have strength 'inferred'", code: 'ours_must_be_inferred' };
     if (!ids.has(s.a) || !ids.has(s.b)) return { error: 'Invalid board: a string must join two pins on the board', code: 'invalid_board' };
@@ -40,6 +44,7 @@ function boardProblem(board) {
   return null;
 }
 
+const staleBoard = () => fail(409, 'This board changed somewhere else. Reload it.', { code: 'stale_board' });
 const problemReply = (p) => fail(400, p.error, { code: p.code, ...(p.budget ? { budget: p.budget } : {}) });
 
 function createHandler({ store, verify, records = {active: async () => null, all: async () => null, links: async () => null}, now = () => Date.now(), env = process.env }) {
@@ -53,6 +58,9 @@ function createHandler({ store, verify, records = {active: async () => null, all
   }
 
   async function saveNew(uid, name, extra) {
+    if ((await store.getBoards(uid)).length >= MAX_BOARDS) {
+      return { problem: { error: `You can have at most ${MAX_BOARDS} boards. Delete one to make a new one.`, code: 'board_limit' } };
+    }
     const t = iso();
     const board = normalizeBoard({
       boardId: crypto.randomUUID(), uid, name, pins: [], strings: [], weights: {}, dismissed: [],
@@ -106,19 +114,22 @@ function createHandler({ store, verify, records = {active: async () => null, all
       if (incoming) {
         delete incoming.recordAvailable;
         delete incoming.lastVisitedAt;
-        if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map(p => {
-          const copy = {...p};
-          for (const key of ['recordAvailable','line','risk','born','entryCount','counts','lastMoved']) delete copy[key];
-          return copy;
-        });
+        // Only the stored pin fields come in: the board feed decorates pins with more (risk, title, coverage ...),
+        // and the client echoes them back.
+        if (Array.isArray(incoming.pins)) incoming.pins = incoming.pins.map((p) => (isObj(p) ? Object.fromEntries(Object.entries(p).filter(([k]) => PIN_FIELDS.includes(k))) : p));
       }
       if (!isObj(incoming)) return fail(400, 'board is required');
       if (incoming.uid !== undefined && incoming.uid !== uid) return fail(400, 'uid cannot change', { code: 'immutable_field' });
       if (incoming.boardId !== undefined && incoming.boardId !== stored.boardId) return fail(400, 'boardId cannot change', { code: 'immutable_field' });
+      // Optimistic concurrency: a client that says which version it last saw is refused when the board has moved on
+      // (another tab or device). A client that sends none (the older frontend) saves unconditionally.
+      const expected = typeof body.expectedUpdatedAt === 'string' ? body.expectedUpdatedAt : null;
+      if (expected && expected !== stored.updatedAt) return staleBoard();
       const board = normalizeBoard({ ...incoming, ...(stored.lastVisitedAt ? {lastVisitedAt: stored.lastVisitedAt} : {}), boardId: stored.boardId, uid, createdAt: stored.createdAt, updatedAt: iso() });
       const problem = boardProblem(board);
       if (problem) return problemReply(problem);
-      await store.putBoard({ ...board, savedKey: stored.savedKey, kind: 'board' });
+      try { await store.putBoard({ ...board, savedKey: stored.savedKey, kind: 'board' }, expected ? stored.updatedAt : undefined); }
+      catch (e) { if (e.name === 'ConditionalCheckFailedException') return staleBoard(); throw e; }
       return ok(await enrichBoard(board, records));
     },
 

@@ -21,9 +21,20 @@ const validate = ajv.compile(load('board.schema.json'));
 test('valid example passes', () => {
   assert.equal(validate(load('examples/valid-board.json')), true, JSON.stringify(validate.errors));
 });
-test('13 pins is rejected (budget 12)', () => {
-  assert.equal(validate(load('examples/invalid-13-pins.json')), false);
+const pinsOf = (n) => Array.from({ length: n }, (_, i) => ({ pinId: `p${i}`, kind: 'thread', refId: `t-${i}`, addedAt: '2026-10-20T08:00:00.000Z' }));
+test('more than 40 pins is rejected (12 live + retired headroom; the live budget is checked in code)', () => {
+  const base = load('examples/valid-board.json');
+  assert.equal(validate({ ...base, pins: pinsOf(40), strings: [] }), true, JSON.stringify(validate.errors));
+  assert.equal(validate({ ...base, pins: pinsOf(41), strings: [] }), false);
   assert.ok(validate.errors.some((e) => e.keyword === 'maxItems'));
+});
+test('a retired pin carries retiredAt; list sizes are capped', () => {
+  const base = load('examples/valid-board.json');
+  assert.equal(validate({ ...base, pins: [{ ...pinsOf(1)[0], retiredAt: '2026-10-21T08:00:00.000Z' }], strings: [] }), true);
+  assert.equal(validate({ ...base, pins: [{ ...pinsOf(1)[0], retiredAt: 'soon' }], strings: [] }), false);
+  assert.equal(validate({ ...base, dismissed: Array.from({ length: 501 }, (_, i) => `t${i}`) }), false);
+  assert.equal(validate({ ...base, summary: { versions: Array.from({ length: 61 }, () => ({ text: 'x', writtenAt: '2026-10-20T09:00:00.000Z' })) } }), false);
+  assert.equal(validate({ ...base, weights: Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`f${i}`, {}])) }), false);
 });
 test('unknown string owner is rejected', () => {
   assert.equal(validate(load('examples/invalid-unknown-owner.json')), false);

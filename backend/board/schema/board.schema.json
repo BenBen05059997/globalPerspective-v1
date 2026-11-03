@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://globalperspective.net/schemas/board.schema.json",
   "title": "Board",
-  "description": "A member's personal board (DynamoDB GlobalPerspectiveSavedItems item kind:'board'). Pins are things the member follows (a story thread, a country, an actor); strings are the links between two pins, drawn by us (owner ours) or by the member (owner yours). Pin budget is 12. String endpoints a and b are pinIds and MUST satisfy a < b lexically so there is one key per pair; JSON Schema cannot enforce ordering, so newsBoard normalises it with pairKey. refId by kind: thread = threadId, country = ISO3, actor = the actor name as written in WEB#INDEX (trimmed, whitespace collapsed; compared case-insensitively).",
+  "description": "A member's personal board (DynamoDB GlobalPerspectiveSavedItems item kind:'board'). Pins are things the member follows (a story thread, a country, an actor); strings are the links between two pins, drawn by us (owner ours) or by the member (owner yours). Pin budget is 12 live pins; a retired pin (retiredAt) is greyed, keeps its strings and does not count toward it. String endpoints a and b are pinIds and MUST satisfy a < b lexically so there is one key per pair; JSON Schema cannot enforce ordering, so newsBoard normalises it with pairKey. refId by kind: thread = threadId, country = ISO3, actor = the actor name as written in WEB#INDEX (trimmed, whitespace collapsed; compared case-insensitively).",
   "type": "object",
   "additionalProperties": false,
   "required": ["boardId", "uid", "name", "pins", "strings", "weights", "dismissed", "summary", "createdAt", "updatedAt"],
@@ -12,8 +12,8 @@
     "name": { "type": "string", "minLength": 1, "maxLength": 80 },
     "pins": {
       "type": "array",
-      "maxItems": 12,
-      "description": "Pin budget: at most 12.",
+      "maxItems": 40,
+      "description": "At most 12 live pins (checked in code: retired pins do not count); the array may also hold up to 28 retired ones.",
       "items": { "$ref": "#/definitions/pin" }
     },
     "strings": {
@@ -23,14 +23,17 @@
     "weights": {
       "type": "object",
       "description": "The member's own branch weights: {forkId: {branchId: number 0..1}}.",
+      "maxProperties": 200,
       "additionalProperties": {
         "type": "object",
+        "maxProperties": 50,
         "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
       }
     },
     "dismissed": {
       "type": "array",
       "description": "refIds the member dismissed from suggestions.",
+      "maxItems": 500,
       "items": { "type": "string", "minLength": 1, "maxLength": 200 }
     },
     "summary": {
@@ -40,6 +43,7 @@
       "properties": {
         "versions": {
           "type": "array",
+          "maxItems": 60,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -66,7 +70,8 @@
         "pinId": { "type": "string", "minLength": 1, "maxLength": 64 },
         "kind": { "enum": ["thread", "country", "actor"] },
         "refId": { "type": "string", "minLength": 1, "maxLength": 200, "description": "threadId, ISO3, or actor name as in WEB#INDEX." },
-        "addedAt": { "type": "string", "format": "date-time" }
+        "addedAt": { "type": "string", "format": "date-time" },
+        "retiredAt": { "type": "string", "format": "date-time", "description": "Set when the member retires the pin: it is drawn greyed, keeps its strings and lines, and does not count toward the pin budget. Restore clears it." }
       }
     },
     "string": {

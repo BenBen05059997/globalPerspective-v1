@@ -2,7 +2,7 @@
 
 // The DynamoDB access newsBoard needs, behind one small interface so tests inject an in-memory store.
 //   store.getBoards(uid) -> item[]            store.getBoard(uid, boardId) -> item | null
-//   store.putBoard(item)                      store.deleteBoard(uid, boardId)
+//   store.putBoard(item, expectedUpdatedAt?)                      store.deleteBoard(uid, boardId)
 //   store.getFollows(uid) -> {followedThreads, followedActors}
 //   store.setFollows(uid, {followedThreads?, followedActors?})   SET on exactly the attributes given
 //   store.getItem(table, key) -> item | null  store.batchGet(table, keys) -> item[]
@@ -50,7 +50,14 @@ function makeStoreOn(send, C, env = process.env) {
         UpdateExpression:'SET lastVisitedAt = :stamp', ExpressionAttributeValues:{':stamp':stamp},
         ConditionExpression:'attribute_exists(uid) AND attribute_exists(savedKey)'}));
     },
-    async putBoard(item) { await send(new C.PutCommand({ TableName: SAVED, Item: item })); },
+    // With `expectedUpdatedAt` the put only happens while the stored board still carries that updatedAt
+    // (ConditionalCheckFailedException otherwise): a save made from an older copy cannot overwrite a newer one.
+    async putBoard(item, expectedUpdatedAt) {
+      await send(new C.PutCommand({
+        TableName: SAVED, Item: item,
+        ...(expectedUpdatedAt ? { ConditionExpression: 'updatedAt = :prev', ExpressionAttributeValues: { ':prev': expectedUpdatedAt } } : {}),
+      }));
+    },
     async deleteBoard(uid, boardId) { await send(new C.DeleteCommand({ TableName: SAVED, Key: { uid, savedKey: `${BOARD_PREFIX}${boardId}` } })); },
     async getFollows(uid) {
       const out = await send(new C.GetCommand({ TableName: PREFS, Key: { uid }, ProjectionExpression: 'followedThreads, followedActors' }));

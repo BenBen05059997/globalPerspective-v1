@@ -43,18 +43,22 @@ const NO_LINK_NOTE = 'No link found. Shared: nothing but the week.';
 const OUTLET_NOTE = 'coverage artefact possible';
 const ONE_PAIRING_NOTE = 'one pairing is not a pattern';
 
+/** Pins that count toward the budget: a retired pin (retiredAt) is greyed and does not. */
+const livePins = (board) => ((board && board.pins) || []).filter((p) => !p.retiredAt);
+
 function pinBudgetOk(board) {
-  return Array.isArray(board && board.pins) && board.pins.length <= PIN_BUDGET;
+  return Array.isArray(board && board.pins) && livePins(board).length <= PIN_BUDGET;
 }
 
 const time = (s) => (s ? Date.parse(s) || 0 : 0);
 
 /** A copy of the board with strings' a/b ordered (a < b), one string per pair (the latest keptAt wins; a tie keeps
- *  the later one in the list) and pins unique by kind + refId (first wins). The input is not changed. */
+ *  the later one in the list) and pins unique by kind + refId (first wins; an actor's name compares as normalizeActor
+ *  does). The input is not changed. */
 function normalizeBoard(board) {
   const seenPins = new Set();
   const pins = (board.pins || []).filter((p) => {
-    const k = `${p.kind}:${p.refId}`;
+    const k = `${p.kind}:${p.kind === 'actor' ? normalizeActor(p.refId) : p.refId}`;
     if (seenPins.has(k)) return false;
     seenPins.add(k);
     return true;

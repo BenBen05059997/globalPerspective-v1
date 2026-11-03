@@ -3,7 +3,7 @@
 // A small JSON Schema (draft-07 subset) validator for the board schema, so the Lambda ships no ajv. The schema
 // file is the single source (src/board.schema.json is a symlink to backend/board/schema/board.schema.json).
 // Supported keywords: type, enum, required, properties, additionalProperties (false | schema), items, $ref
-// (#/definitions/..), minLength, maxLength, minItems, maxItems, minimum, maximum, format date-time. Anything
+// (#/definitions/..), minLength, maxLength, minItems, maxItems, maxProperties, minimum, maximum, format date-time. Anything
 // else in the schema is ignored, and the test (validate.test.js) checks this agrees with ajv on the examples
 // and on mutated boards, so a new keyword in the schema that is not handled here shows up there.
 
@@ -50,6 +50,7 @@ function walk(schema, value, path, errors, root) {
   }
   if (typeOk('object', value)) {
     for (const k of schema.required || []) if (!(k in value)) errors.push(`${path ? `${path}.` : ''}${k}: required`);
+    if (schema.maxProperties != null && Object.keys(value).length > schema.maxProperties) errors.push(`${at}: at most ${schema.maxProperties} keys`);
     const props = schema.properties || {};
     for (const [k, v] of Object.entries(value)) {
       const sub = `${path ? `${path}.` : ''}${k}`;
@@ -67,4 +68,7 @@ function validateBoard(board) {
   return { ok: errors.length === 0, errors };
 }
 
-module.exports = { validateBoard };
+/** The stored fields of a pin, read from the schema: anything else on an incoming pin is dropped before validation. */
+const PIN_FIELDS = Object.keys(SCHEMA.definitions.pin.properties);
+
+module.exports = { validateBoard, PIN_FIELDS };

@@ -309,3 +309,107 @@ test('listing boards never mixes in other items of the saved-items table', async
   const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
   assert.deepEqual(ids(await call('u1', { action: 'list_boards' })), [b.boardId]);
 });
+
+const NEW_PIN = (n, extra = {}) => ({ pinId: `p${String(n).padStart(2, '0')}`, kind: 'thread', refId: `t-${n}`, addedAt: '2026-10-20T08:00:00.000Z', ...extra });
+
+test('stale save: expectedUpdatedAt that is not the stored version is 409 stale_board and writes nothing', async () => {
+  const { call, store, setNow } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  setNow(Date.parse('2026-10-21T00:00:00.000Z'));
+  const first = await call('u1', { action: 'update_board', boardId: b.boardId, expectedUpdatedAt: b.updatedAt, board: validBoardBody({ name: 'Tab one' }) });
+  assert.equal(first.status, 200);
+  assert.notEqual(first.data.updatedAt, b.updatedAt);
+  const puts = store.calls.length;
+  const stale = await call('u1', { action: 'update_board', boardId: b.boardId, expectedUpdatedAt: b.updatedAt, board: validBoardBody({ name: 'Tab two' }) });
+  assert.equal(stale.status, 409);
+  assert.equal(stale.code, 'stale_board');
+  assert.equal(store.calls.length, puts);
+  assert.equal((await call('u1', { action: 'get_board', boardId: b.boardId })).data.name, 'Tab one');
+  const fresh = await call('u1', { action: 'update_board', boardId: b.boardId, expectedUpdatedAt: first.data.updatedAt, board: validBoardBody({ name: 'Tab two' }) });
+  assert.equal(fresh.status, 200);
+});
+
+test('the put itself is conditional: a write that lands between the read and the put is 409, not an overwrite', async () => {
+  const { call, store } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const key = `saved|u1|board#${b.boardId}`;
+  const realPut = store.putBoard;
+  store.putBoard = async (item, expected) => { store.rows.set(key, { ...store.rows.get(key), updatedAt: '2026-10-20T13:00:00.000Z' }); return realPut(item, expected); };
+  const r = await call('u1', { action: 'update_board', boardId: b.boardId, expectedUpdatedAt: b.updatedAt, board: validBoardBody() });
+  assert.equal(r.status, 409);
+  assert.equal(r.code, 'stale_board');
+});
+
+test('an older client that sends no expectedUpdatedAt still saves, with no condition on the put', async () => {
+  const { call, store } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const r = await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody() });
+  assert.equal(r.status, 200);
+  assert.deepEqual(store.calls.filter((c) => c[0] === 'putBoard').pop(), ['putBoard', `board#${b.boardId}`, null]);
+});
+
+test('pins keep only the stored fields: a pin carrying feed fields saves; retiredAt is stored', async () => {
+  const { call, store } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const decorated = NEW_PIN(1, { riskWas: 40, category: 'conflict', iso3: ['IRN'], title: 'Hormuz', coverage: { days: 3 }, risk: 70, line: 'x', born: '2026-10-01', entryCount: 3, counts: {}, lastMoved: '2026-10-19', recordAvailable: true, retiredAt: '2026-10-21T08:00:00.000Z' });
+  const r = await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody({ pins: [decorated], strings: [] }) });
+  assert.equal(r.status, 200, r.error);
+  assert.deepEqual(Object.keys(store.rows.get(`saved|u1|board#${b.boardId}`).pins[0]).sort(), ['addedAt', 'kind', 'pinId', 'refId', 'retiredAt']);
+});
+
+test('retired pins do not count toward the 12-pin budget', async () => {
+  const { call } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const retired = Array.from({ length: 5 }, (_, i) => NEW_PIN(i + 20, { retiredAt: '2026-10-21T08:00:00.000Z' }));
+  const twelve = Array.from({ length: 12 }, (_, i) => NEW_PIN(i + 1));
+  assert.equal((await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody({ pins: [...twelve, ...retired], strings: [] }) })).status, 200);
+  const over = await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody({ pins: [...twelve, NEW_PIN(40), ...retired], strings: [] }) });
+  assert.equal(over.code, 'pin_budget_exceeded');
+});
+
+test('a retired pin keeps the strings that touch it', async () => {
+  const { call } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const body = validBoardBody();
+  body.pins[0].retiredAt = '2026-10-21T08:00:00.000Z';
+  body.strings = [{ a: 'p1', b: 'p2', owner: 'yours', line: 'why I keep this' }];
+  const r = await call('u1', { action: 'update_board', boardId: b.boardId, board: body });
+  assert.equal(r.status, 200);
+  assert.equal(r.data.strings[0].line, 'why I keep this');
+});
+
+test('actor pins are one pin whatever the case or spacing; country pins must be ISO3', async () => {
+  const { call } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const actors = [{ pinId: 'p1', kind: 'actor', refId: 'Putin', addedAt: '2026-10-20T08:00:00.000Z' }, { pinId: 'p2', kind: 'actor', refId: '  putin ', addedAt: '2026-10-20T08:00:00.000Z' }];
+  const r = await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody({ pins: actors, strings: [] }) });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.data.pins.map((p) => p.refId), ['Putin']);
+  for (const refId of ['Iran', 'usa', 'US', 'USAA']) {
+    const bad = await call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody({ pins: [{ pinId: 'p1', kind: 'country', refId, addedAt: '2026-10-20T08:00:00.000Z' }], strings: [] }) });
+    assert.equal(bad.status, 400, refId);
+    assert.match(bad.error, /ISO3/);
+  }
+});
+
+test('lists are capped: weights 200 forks, dismissed 500, summary versions 60', async () => {
+  const { call } = setup();
+  const b = (await call('u1', { action: 'create_board', name: 'A' })).data;
+  const save = (over) => call('u1', { action: 'update_board', boardId: b.boardId, board: validBoardBody(over) });
+  assert.equal((await save({ dismissed: Array.from({ length: 500 }, (_, i) => `t${i}`) })).status, 200);
+  assert.equal((await save({ dismissed: Array.from({ length: 501 }, (_, i) => `t${i}`) })).status, 400);
+  const version = { text: 'x', writtenAt: '2026-10-20T09:00:00.000Z' };
+  assert.equal((await save({ summary: { versions: Array.from({ length: 61 }, () => version) } })).status, 400);
+  assert.equal((await save({ weights: Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`f${i}`, { b: 0.5 }])) })).status, 400);
+  assert.equal((await save({ weights: Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`f${i}`, { b: 0.5 }])) })).status, 200);
+});
+
+test('a member holds at most 20 boards; the 21st create or fork is an honest 400', async () => {
+  const { call } = setup();
+  for (let i = 0; i < 20; i += 1) assert.equal((await call('u1', { action: 'create_board', name: `B${i}` })).status, 200);
+  const over = await call('u1', { action: 'create_board', name: 'one more' });
+  assert.equal(over.status, 400);
+  assert.equal(over.code, 'board_limit');
+  assert.match(over.error, /at most 20 boards/);
+  assert.equal((await call('u2', { action: 'create_board', name: 'other member' })).status, 200);
+});

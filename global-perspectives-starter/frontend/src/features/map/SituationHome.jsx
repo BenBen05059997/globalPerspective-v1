@@ -254,6 +254,9 @@ export default function SituationHome() {
     [situations],
   );
   const alertStack = useMemo(() => alertStackItems(situations), [situations]);
+  // ONE open count for every "All situations (N)", "N open" and badge: the Alerts rows, which already
+  // apply the one-row-per-thread rule (lib/alertStack.js). Don't recount from `open` / `ranked`.
+  const openCount = alertStack.items.length;
   const ranked = useMemo(() => {
     return [...open].sort((a, b) => {
       const t = (TIER_WEIGHT[b.tier] || 0) - (TIER_WEIGHT[a.tier] || 0);
@@ -263,6 +266,10 @@ export default function SituationHome() {
     });
   }, [open]);
   const hero = ranked[0] || null;
+  const listedRanked = useMemo(() => {
+    const ids = new Set(alertStack.items.map((s) => s.id));
+    return ranked.filter((s) => ids.has(s.id));
+  }, [ranked, alertStack]);
 
   // "Since you last looked" — compare each situation's opened_at against the last visit stamp
   // (this browser only). v1 is new-only; "escalated since your visit" needs a tier_changed_at
@@ -850,22 +857,22 @@ export default function SituationHome() {
   // only the situation/story detail's "back" affordance differs (the sheet has Collapse/Close).
   const railContent = focusMissing ? (
     <div className="sh-detail sh-gone">
-      <button className="sh-back" onClick={() => select(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+      <button className="sh-back" onClick={() => select(null)}>← All situations{openCount ? ` (${openCount})` : ''}</button>
       <p className="sh-muted sh-gone-text">{GONE_TEXT} Browse the active situations instead.</p>
     </div>
   ) : (storyMissing || storyUnavailable) ? (
     <div className="sh-detail sh-gone">
-      <button className="sh-back" onClick={() => selectStory(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+      <button className="sh-back" onClick={() => selectStory(null)}>← All situations{openCount ? ` (${openCount})` : ''}</button>
       <p className="sh-muted sh-gone-text">{storyMissing ? STORY_GONE_TEXT : STORY_UNAVAILABLE_TEXT}</p>
     </div>
   ) : selected ? (
-    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={ranked.length} onBack={closeSelection} />
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={openCount} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
   ) : countryParam ? (
     countryUnknown ? (
       <div className="sh-detail sh-gone">
-        <button className="sh-back" onClick={() => selectCountryName(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+        <button className="sh-back" onClick={() => selectCountryName(null)}>← All situations{openCount ? ` (${openCount})` : ''}</button>
         <p className="sh-muted sh-gone-text">{unknownCountryText}</p>
       </div>
     ) : (
@@ -891,9 +898,9 @@ export default function SituationHome() {
   ) : (storyMissing || storyUnavailable) ? (
     <p className="sh-muted sh-gone-text">{storyMissing ? STORY_GONE_TEXT : STORY_UNAVAILABLE_TEXT}</p>
   ) : selected ? (
-    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={openCount} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
   ) : countryParam ? (
     countryUnknown ? (
       <p className="sh-muted sh-gone-text">{unknownCountryText}</p>
@@ -909,7 +916,7 @@ export default function SituationHome() {
   const aboutContent = (
     <MapAbout
       paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}
-      ranked={ranked} onSelect={select} coverageNote={isPhone ? null : coverageNote}
+      ranked={listedRanked} onSelect={select} coverageNote={isPhone ? null : coverageNote}
     />
   );
   const staleBanner = stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null;
@@ -1014,7 +1021,7 @@ export default function SituationHome() {
         tabs={[
           { key: 'map', label: 'Map' },
           { key: 'list', label: 'List' },
-          { key: 'alerts', label: 'Alerts', count: alertStack.items.length || undefined },
+          { key: 'alerts', label: 'Alerts', count: openCount || undefined },
         ]}
       />
 

@@ -123,4 +123,45 @@ t('B1 snippet: kept, truncated to 200, omitted when empty; headlines carry it', 
   assert.strictEqual('snippet' in s.headlines[1], false);
 });
 
+// ---- story pin (storyCentroid) ----
+const { storyCentroid } = core;
+const boxes = require('./countryBoxes.json');
+const inBox = (p, iso) => boxes[iso].b.some(([s, w, n, e]) => p.lat >= s && p.lat <= n && p.lon >= w && p.lon <= e);
+const art = (lat, lon, severity = 3) => ({ latlon: { lat, lon }, severity });
+
+t('storyCentroid: Qeshm case drops the Washington article, pin lands in Iran', () => {
+  const c = storyCentroid([art(26.95, 56.27), art(35.7, 51.42), art(38.9, -77.04)], ['USA', 'IRN']);
+  console.log('    qeshm pin', JSON.stringify(c));
+  assert.ok(inBox(c, 'IRN'));
+  assert.ok(c.lon > 50 && c.lon < 57);
+});
+t('storyCentroid: clustered result outside every listed country -> first country centre', () => {
+  const c = storyCentroid([art(10, -30), art(11, -31)], ['IRN', 'USA']); // mid-Atlantic
+  assert.deepStrictEqual(c, { lat: boxes.IRN.c[0], lon: boxes.IRN.c[1] });
+  assert.ok(inBox(c, 'IRN'));
+});
+t('storyCentroid: single article inside its country stays put', () => {
+  assert.deepStrictEqual(storyCentroid([art(35.7, 51.42)], ['IRN']), { lat: 35.7, lon: 51.42 });
+});
+t('storyCentroid: no positions -> null; no iso3 -> plain cluster mean', () => {
+  assert.strictEqual(storyCentroid([{ severity: 3 }], ['IRN']), null);
+  assert.deepStrictEqual(storyCentroid([art(10, 20)], []), { lat: 10, lon: 20 });
+});
+t('storyCentroid: biggest group wins; equal groups go to the higher severity', () => {
+  const c = storyCentroid([art(48.85, 2.35, 2), art(51.5, -0.12, 2), art(35.7, 51.42, 4)], ['FRA', 'GBR']);
+  assert.ok(c.lon < 5); // two European articles beat one Tehran article
+  const tie = storyCentroid([art(48.85, 2.35, 2), art(35.7, 51.42, 4)], ['IRN']);
+  assert.ok(inBox(tie, 'IRN') && tie.lon > 50);
+});
+t('storyCentroid: antimeridian group averages across 180; country boxes never span the world', () => {
+  const c = storyCentroid([art(-17, 179.5), art(-17, -179.5)], ['FJI']);
+  assert.ok(Math.abs(Math.abs(c.lon) - 180) < 1);
+  assert.ok(inBox(c, 'FJI'));
+  for (const iso of ['USA', 'RUS', 'FJI']) for (const [, w, , e] of boxes[iso].b) assert.ok(e - w < 160, `${iso} box spans ${e - w} deg lon`);
+  assert.ok(inBox({ lat: 21.3, lon: -157.8 }, 'USA')); // Hawaii
+  assert.ok(inBox({ lat: 64.8, lon: -147.7 }, 'USA')); // Alaska
+  assert.ok(!inBox({ lat: 40, lon: 100 }, 'USA'));
+  for (const iso of ['USA', 'IRN']) assert.ok(inBox({ lat: boxes[iso].c[0], lon: boxes[iso].c[1] }, iso));
+});
+
 console.log(`\n${pass} tests passed`);

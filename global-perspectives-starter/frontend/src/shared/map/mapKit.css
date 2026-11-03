@@ -8,7 +8,7 @@
 .sm-wrap canvas:focus-visible,
 .sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; }
 /* radar marker hover card: the shared Tooltip look (gp-tip), shown/placed by RadarMap.jsx */
-.sm-tip { position: absolute; opacity: 0; transition: opacity var(--fast); z-index: 5; max-width: 240px; }
+.sm-tip { position: absolute; opacity: 0; transition: opacity var(--fast); z-index: 5; max-width: 240px; overflow-wrap: anywhere; }
 
 /* map foot: imagery credit + spin / "Scan again" control (globe and radar) */
 .sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }

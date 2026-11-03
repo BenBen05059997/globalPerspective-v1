@@ -677,6 +677,26 @@ export default function SituationHome() {
     else if (storyParam) selectStory(null);
     else if (countryParam) selectCountryName(null);
   }, [focus, storyParam, countryParam, select, selectStory, selectCountryName]);
+  // Desktop: Esc closes the open card (situation, story or country) through the same close action as
+  // its back button, and puts focus back on that situation's Alerts row (the first row when the
+  // card has no row, e.g. a deep link to an unlisted situation or a story with no situation). Phone:
+  // the BottomSheet already closes on Esc, so this stays out of its way. Anything else that owns
+  // Esc (inputs, dialogs/menus, the Key legend, the About drawer, a handler that already ran) wins.
+  const escSelectedId = selected ? selected.id : null;
+  useEffect(() => {
+    if (isPhone || !selectionId) return undefined;
+    const onKey = (e) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || legendOpen || aboutOpen) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="menu"], [role="listbox"]')) return;
+      closeSelection();
+      const rows = Array.from(document.querySelectorAll('.al-stack [data-situation-id]'));
+      const row = rows.find((r) => r.getAttribute('data-situation-id') === escSelectedId) || rows[0];
+      row?.focus?.();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isPhone, selectionId, escSelectedId, closeSelection, legendOpen, aboutOpen]);
   const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryName || null));
   const sheetSubtitle = selected
     ? (AXIS_LABEL[selected.axis] || selected.axis)

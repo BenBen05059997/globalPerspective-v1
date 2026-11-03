@@ -36,6 +36,7 @@ function AlertCard({ s, selected = false, isNew = false, scanned = false, onSele
         type="button"
         className={`al-card al-fresh-${fresh}`}
         aria-pressed={selected}
+        data-situation-id={s.id}
         onClick={() => onSelect && onSelect(s.id)}
         style={{ '--pin': pin }}
       >

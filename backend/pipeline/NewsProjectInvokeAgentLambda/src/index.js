@@ -72,12 +72,28 @@ const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
 // is written. The lines of a run wait here and are appended once, after the reconcile (flushForecastsInbox).
 const FORECASTS_INBOX_PREFIX = process.env.FORECASTS_INBOX_PREFIX || '';
 let pendingForecastLines = [];
+// Where the threading window / freshness gate and the thread forks are read from (decision 0035 step 5d, src/inbox-reads.js):
+// ddb (default) | inbox (the inboxes above, under the same prefixes) | compare (both, DynamoDB used, differences logged).
+const reads = require('./inbox-reads');
+const ARCHIVE_READS = reads.readMode('ARCHIVE_READS', process.env.ARCHIVE_READS, ENTRIES_INBOX_PREFIX, console);
+const FORKS_READS = reads.readMode('FORKS_READS', process.env.FORKS_READS, FORECASTS_INBOX_PREFIX, console);
 const STORY_MAP_KEY = 'threads/story-map.json';
 const ENABLE_R3_TIER = String(process.env.ENABLE_R3_TIER || 'false').toLowerCase() === 'true'; // gated until real-tag re-measurement
 let _s3;
 function s3() {
   if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); }
   return _s3;
+}
+// JSON / JSONL objects of the record bucket (shared s3json: conditional appends, a missing key reads as empty).
+function recordJson() {
+  const { makeS3Json } = require('./_shared/s3json');
+  const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  return makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET });
+}
+// The lines of <prefix>inbox/<kind>/DAY.jsonl ([] when the day has no file); a read error throws.
+async function readInboxDay(kind, day) {
+  const prefix = kind === 'entries' ? ENTRIES_INBOX_PREFIX : FORECASTS_INBOX_PREFIX;
+  return (await recordJson().getLines(`${prefix}inbox/${kind}/${day}.jsonl`)).lines;
 }
 // Read every stories/state/*.json (the full registry, per Phase 0's measured surface — NOT the
 // 80-cap stories/index.json). Best-effort: any failure returns [] so the matcher no-ops safely.
@@ -199,7 +215,7 @@ exports.handler = async (event) => {
     }
     const generatedAtDay = new Date().toISOString().slice(0, 10);
     const todayArchiveEntries = needsPrediction && !force ? pastEntries.filter(e => e.date === generatedAtDay) : [];
-    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay, force, dryRun, plan: [] };
+    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay, force, dryRun, plan: [], reads: {} };
 
     const outputs = [];
     const reused = [];
@@ -333,13 +349,19 @@ function failedRun(reason, generationId, detail = {}) {
   return http(503, { success: false, ...marker });
 }
 
+// The archive items the freshness gate (run-guard.staleReason) reads. From the inbox: today's and yesterday's day files replayed to their
+// `archive#DAY` items (the today-archive item adds nothing the gate reads, see inbox-reads.diffFreshness); S3 reads are strongly consistent.
 async function readFreshnessArchives() {
   const today = new Date();
   const yesterday = new Date(today); yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  return Promise.all([ARCHIVE_ITEM_ID, formatDateKey(today), formatDateKey(yesterday)].map(async id => {
-    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id }, ConsistentRead: true }));
-    return Item;
-  }));
+  return reads.readBy({
+    mode: ARCHIVE_READS, log: console, tag: 'archive-compare', label: 'freshness', diff: reads.diffFreshness,
+    ddb: () => Promise.all([ARCHIVE_ITEM_ID, formatDateKey(today), formatDateKey(yesterday)].map(async id => {
+      const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id }, ConsistentRead: true }));
+      return Item;
+    })),
+    inbox: () => Promise.all([today, yesterday].map(async d => reads.archiveOfLines(await readInboxDay('entries', isoDay(d))))),
+  });
 }
 
 function parseEvent(event) {
@@ -563,7 +585,7 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
   if (kind === 'prediction') {
     // Draw cadence (decision 0038): a forecast is drawn only when the story moved (decideReuse says
     // generate) and its thread has no fork in the last 7 days; otherwise keep the stored forecast, if any.
-    if (!decision.reuse && !ctx.force) forks = await readThreadForks(topic, threadAttr.threadId, today);
+    if (!decision.reuse && !ctx.force) forks = await readThreadForks(topic, threadAttr.threadId, today, ctx);
     const d = draw.drawDecision({ decision, existing, lastForkDay: forks ? draw.latestForkDay(forks) : null, today, force: ctx.force });
     if (!d.draw) {
       decision = d.reuse ? { reuse: true, reason: d.reason } : { reuse: false, skip: true, reason: d.reason };
@@ -630,10 +652,26 @@ async function writeThreadPointers(topics, threadIdById, generationId) {
   console.log(`Thread pointers written: ${written}/${byThread.size}`);
 }
 
-// The PRED# rows of a story's thread from the last 90 days (every topicId the thread has had, from the
-// THREAD# pointer, plus this topic): the draw cadence reads the newest fork day, the near-duplicate gate
-// reads the open branches. Best-effort: a failed read returns [] (draw proceeds, gates see no prior).
-async function readThreadForks(topic, threadId, today) {
+// The PRED# rows of a story's thread from the last 90 days: the draw cadence reads the newest fork day, the near-duplicate gate reads
+// the open branches. Best-effort: a failed read returns what it has (draw proceeds, gates see no prior).
+//   ddb: every topicId the thread has had (the THREAD# pointer) plus this topic, one PRED# query each.
+//   inbox: the forecasts-inbox days replayed (thread lines included), the rows of this topic or naming the thread; no pointer. The day
+//   files are read once per run (ctx.reads); this run's own drawn lines, already in DynamoDB but appended only at the end of the run,
+//   are added from the queue, so both sources hold the same rows at read time. Two known differences, both the inbox seeing more: rows of
+//   topic ids the pointer never listed (drawn before it existed, 2026-10-19) and a row drawn earlier in this run by a topic new to the thread.
+async function readThreadForks(topic, threadId, today, ctx = {}) {
+  const from = lib.addDays(today, -draw.OPEN_LOOKBACK_DAYS);
+  return reads.readBy({
+    mode: FORKS_READS, log: console, tag: 'forks-compare', label: `${topic.id} ${threadId || '-'}`, diff: reads.diffForks(today),
+    ddb: () => readThreadForksDdb(topic, threadId, from),
+    inbox: async () => {
+      const lines = await forecastInboxLines(ctx, from, today);
+      return reads.forkRows(forecastsInbox.replay([...lines, ...pendingForecastLines]).rows, { topicId: topic.id, threadId, from });
+    },
+  });
+}
+
+async function readThreadForksDdb(topic, threadId, from) {
   const ids = new Set([topic.id]);
   if (threadId && SUMMARY_TABLE) {
     try {
@@ -642,7 +680,6 @@ async function readThreadForks(topic, threadId, today) {
       for (const id of set ? [...set] : []) ids.add(id);
     } catch (e) { console.warn(`thread pointer read failed for ${threadId}: ${e.message}`); }
   }
-  const from = lib.addDays(today, -draw.OPEN_LOOKBACK_DAYS);
   const rows = [];
   for (const id of ids) {
     try {
@@ -650,12 +687,26 @@ async function readThreadForks(topic, threadId, today) {
         TableName: PREDICTION_LOG_TABLE,
         KeyConditionExpression: 'PK = :pk AND SK >= :from',
         ExpressionAttributeValues: { ':pk': `PRED#${id}`, ':from': from },
-        ProjectionExpression: 'SK, scenarios',
+        ProjectionExpression: 'PK, SK, scenarios',
       }));
       rows.push(...(r.Items || []));
     } catch (e) { console.warn(`thread forks read failed for ${id}: ${e.message}`); }
   }
   return rows;
+}
+
+// The forecasts-inbox lines of from..today in day order, read once per run (the promise is kept in ctx.reads). A day that cannot be read is left out.
+function forecastInboxLines(ctx, from, today) {
+  const cache = ctx.reads || {};
+  const key = `forecasts ${from}..${today}`;
+  if (!cache[key]) {
+    const days = [];
+    for (let d = from; d <= today; d = lib.addDays(d, 1)) days.push(d);
+    cache[key] = mapWithConcurrency(days, 16, async (day) => {
+      try { return await readInboxDay('forecasts', day); } catch (e) { console.warn(`[inbox] forecasts ${day} not read: ${e.message}`); return []; }
+    }).then((perDay) => perDay.flat());
+  }
+  return cache[key];
 }
 
 // Newest stored item of this kind for the same title at another list position (see
@@ -1010,7 +1061,7 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     const pk = `PRED#${topic.id}`;
     const snippets = [topic.title, topic.description, ...((topic.sources || []).map(s => s && s.snippet))].filter(Boolean).map(String);
     // Near-duplicates are checked against every OPEN branch of the story's thread, not just the last rows.
-    const forks = ctx.forks || await readThreadForks(topic, (ctx.threadIdById || {})[topic.id], day);
+    const forks = ctx.forks || await readThreadForks(topic, (ctx.threadIdById || {})[topic.id], day, ctx);
     const priorTexts = draw.openBranchTexts(forks, day);
     // G15: this story's own archive entries dated on or before the draw (the digest's source, with summaries)
     const priorEntries = threading.relatedEntries(topic, ctx.pastEntries || []).filter((e) => e.title);
@@ -1173,11 +1224,14 @@ function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
   };
 }
 
-function formatDateKey(date) {
+function isoDay(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
   const d = String(date.getUTCDate()).padStart(2, '0');
-  return `archive#${y}-${m}-${d}`;
+  return `${y}-${m}-${d}`;
+}
+function formatDateKey(date) {
+  return `archive#${isoDay(date)}`;
 }
 
 // ============================================================
@@ -1191,43 +1245,46 @@ function assignThreadId(topic, pastEntries) {
   return rec.threadId;
 }
 
+// The threading window: today's earlier runs and the past `days` days, newest day first, each day newest generation first.
+// i = 0 is today: earlier generations of the same day, so a same-day re-run of a story joins its thread instead of forking. This run's
+// own topics are archived (and appended to the inbox) only after assignment, so both sources hold exactly the earlier runs; a forced
+// re-run of the same generation finds its own rows and keeps their threadIds. A day that cannot be read is left out.
 async function readPastArchiveEntries(days) {
-  if (!TOPICS_TABLE) return [];
-  try {
-    const entries = [];
-    const now = new Date();
-    // i = 0 is today: earlier generations of the same day, so a same-day re-run of a story joins its
-    // thread instead of forking. This run's own topics are archived only after assignment; a forced
-    // re-run of the same generation finds its own rows and keeps their threadIds.
-    for (let i = 0; i <= days; i++) {
-      const date = new Date(now);
-      date.setUTCDate(date.getUTCDate() - i);
-      const key = formatDateKey(date);
-      try {
-        const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
-        if (Item && Array.isArray(Item.entries)) {
-          // A day's rows are stored oldest generation first; reversed, the whole list is newest first.
-          entries.push(...Item.entries.slice().reverse().map(e => ({
-            topicId: e.topicId,
-            threadId: e.threadId,
-            title: e.title,
-            summary: e.summary || '',
-            search_keywords: e.search_keywords || [],
-            regions: e.regions || [],
-            category: e.category || '',
-            archivedAt: e.archivedAt,
-            generationId: e.generationId,
-            date: key.replace(/^archive#/, ''), // for the v1 arc digest (buildArcDigest)
-          })));
-        }
-      } catch (_) {}
-    }
-    console.log(`Past archive entries for threading: ${entries.length} across ${days} days`);
-    return entries;
-  } catch (err) {
-    console.warn('Failed to read past archive entries:', err.message);
-    return [];
+  const now = new Date();
+  const dates = [];
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(now);
+    date.setUTCDate(date.getUTCDate() - i);
+    dates.push(isoDay(date));
   }
+  const entries = await reads.readBy({
+    mode: ARCHIVE_READS, log: console, tag: 'archive-compare', label: `window ${dates[dates.length - 1]}..${dates[0]}`, diff: reads.diffWindow,
+    ddb: async () => {
+      if (!TOPICS_TABLE) return [];
+      const out = [];
+      for (const day of dates) {
+        try {
+          const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: `archive#${day}` } }));
+          if (Item && Array.isArray(Item.entries)) out.push(...reads.pastEntriesOfDay(day, Item.entries));
+        } catch (_) {}
+      }
+      return out;
+    },
+    inbox: async () => {
+      const perDay = await Promise.all(dates.map(async (day) => {
+        try {
+          const item = reads.archiveOfLines(await readInboxDay('entries', day));
+          return item ? reads.pastEntriesOfDay(day, item.entries) : [];
+        } catch (e) {
+          console.warn(`[inbox] entries ${day} not read: ${e.message}`);
+          return [];
+        }
+      }));
+      return perDay.flat();
+    },
+  });
+  console.log(`Past archive entries for threading: ${entries.length} across ${days} days (${ARCHIVE_READS})`);
+  return entries;
 }
 
 async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {}) {
@@ -1324,12 +1381,10 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
 async function writeEntryNotes(items, { dailyEntries, archiveDate }, generationId) {
   try {
     const notes = require('./_shared/notes');
-    const { makeS3Json } = require('./_shared/s3json');
-    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
     const entryByTopic = new Map(dailyEntries.map((e) => [e.topicId, e]));
     const producer = { lambda: 'NewsProjectInvokeAgentLambda', runId: generationId };
     const built = items.map((item) => notes.entryNote({ item, topic: entryByTopic.get(item.topicId), archiveDate, producer })).filter(Boolean);
-    const writer = notes.makeNoteWriter({ s3json: makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET }), prefix: NOTES_PREFIX });
+    const writer = notes.makeNoteWriter({ s3json: recordJson(), prefix: NOTES_PREFIX });
     const r = await writer.write('entry', built);
     console.log(`[notes] entry: ${built.length} built from ${items.length} items, ${r.appended} appended, ${r.skipped} already stored (${NOTES_PREFIX})`);
   } catch (e) {
@@ -1343,8 +1398,6 @@ async function writeEntryNotes(items, { dailyEntries, archiveDate }, generationI
 async function writeEntriesInbox({ dailyEntries, archiveDate, batch }, stagingItem, generationId) {
   if (!ENTRIES_INBOX_PREFIX) return;
   try {
-    const { makeS3Json } = require('./_shared/s3json');
-    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
     const raw = Array.isArray(stagingItem?.topics) ? stagingItem.topics : [];
     const topics = {};
     raw.forEach((t, idx) => { topics[buildStableTopicId(t, idx)] = t; });
@@ -1353,8 +1406,7 @@ async function writeEntriesInbox({ dailyEntries, archiveDate, batch }, stagingIt
       generatedDate: stagingItem?.generatedDate ?? null, generatedYear: stagingItem?.generatedYear ?? null, generationId,
     };
     const lines = inboxLines(dailyEntries, { batch, selection: { topics, run } });
-    const s3json = makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET });
-    const r = await s3json.appendLines(`${ENTRIES_INBOX_PREFIX}inbox/entries/${archiveDate}.jsonl`, lines, { idKey: 'inboxId' });
+    const r = await recordJson().appendLines(`${ENTRIES_INBOX_PREFIX}inbox/entries/${archiveDate}.jsonl`, lines, { idKey: 'inboxId' });
     console.log(`[inbox] entries: ${lines.length} lines, ${r.appended} appended, ${r.skipped} already stored (${ENTRIES_INBOX_PREFIX})`);
   } catch (e) {
     console.error(`[inbox] entries not written: ${e.message}`);
@@ -1374,9 +1426,7 @@ async function flushForecastsInbox() {
   pendingForecastLines = [];
   if (!FORECASTS_INBOX_PREFIX || !lines.length) return;
   try {
-    const { makeS3Json } = require('./_shared/s3json');
-    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
-    const s3json = makeS3Json({ client: s3(), GetObjectCommand, PutObjectCommand, bucket: WORLD_BUCKET });
+    const s3json = recordJson();
     const byDay = new Map();
     for (const l of lines) (byDay.get(l.day) || byDay.set(l.day, []).get(l.day)).push(l);
     for (const [day, dayLines] of byDay) {
@@ -1435,4 +1485,7 @@ function http(statusCode, body) {
   };
 }
 
-exports._internal = { buildArchiveEntry, logPredictionSnapshot, writeEntriesInbox, flushForecastsInbox, reconcilePredictionThreads };
+exports._internal = {
+  buildArchiveEntry, logPredictionSnapshot, writeEntriesInbox, flushForecastsInbox, reconcilePredictionThreads,
+  buildAndWriteArchive, writeThreadPointers, readPastArchiveEntries, readFreshnessArchives, readThreadForks,
+};

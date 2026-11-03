@@ -7,14 +7,17 @@ function generationTime(item) {
   const value = m ? Number(m[1]) : Date.parse(item?.updatedAt || '');
   return Number.isFinite(value) ? value : null;
 }
+// The newest archive write the archive items show: their updatedAt and every entry's archivedAt (0 when none).
+function lastArchiveWrite(archives = []) {
+  return Math.max(0, ...archives.flatMap(a => [a?.updatedAt, ...(a?.entries || []).map(e => e.archivedAt)]).map(t => Date.parse(t || '')).filter(Number.isFinite));
+}
 function staleReason(staging, archives = [], now = new Date()) {
   if (staging?.id !== 'staging') return 'staging-missing';
   const generated = generationTime(staging);
   if (generated === null) return 'generation-time-missing';
   if (generated > now.getTime()) return 'generation-in-future';
   if (new Date(generated).toISOString().slice(0, 10) < now.toISOString().slice(0, 10)) return 'generation-prior-day';
-  const previousWrite = Math.max(0, ...archives.flatMap(a => [a?.updatedAt, ...(a?.entries || []).map(e => e.archivedAt)]).map(t => Date.parse(t || '')).filter(Number.isFinite));
-  return generated <= previousWrite ? 'generation-already-archived' : null;
+  return generated <= lastArchiveWrite(archives) ? 'generation-already-archived' : null;
 }
 // newsInvokeGemini runs cron(15 4/8) UTC (04:15, 12:15, 20:15; scripts/functions.json) and this agent
 // follows at :25. Staging already processed is a quiet duplicate only if gemini wrote it in the current
@@ -36,4 +39,4 @@ function staleProcessedRun(staging, now = new Date()) {
   if (generated === null || slot === null || generated >= slot) return null;
   return { generationId: staging.generationId, generatedAt: new Date(generated).toISOString(), ageMinutes: Math.round((now.getTime() - generated) / 60000), slotStart: new Date(slot).toISOString() };
 }
-module.exports = { generationTime, staleReason, staleProcessedRun };
+module.exports = { generationTime, lastArchiveWrite, staleReason, staleProcessedRun };

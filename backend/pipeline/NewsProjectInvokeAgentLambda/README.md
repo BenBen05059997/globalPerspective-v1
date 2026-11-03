@@ -1,65 +1,77 @@
 # NewsProjectInvokeAgentLambda
 
-Per-cycle story generator. Loads the `staging` topics, generates (or reuses) a summary, trace-cause and
-grounded forecast draw per topic (`action` summary|prediction|trace_cause|both, default both), assigns
-threadIds against 7 days of archive, builds the story-to-thread map, swaps `staging` to `latest`, writes
-the archive rows, prunes old-generation cache rows, and marks `staging` processed (`agentProcessedAt`).
-Forecasts get FACTS# leaders and an arc digest as grounding (no live web search). Payload options: `topicId`, `readOnly`, `force` (ignore processed/cache guard; freshness still enforced), `dryRun` (plan only).
+Per-cycle story generator. Loads the `staging` topics, checks freshness, assigns threadIds against the threading window, generates (or reuses)
+a summary, cause chain and grounded forecast draw per topic (`action` summary|prediction|trace_cause|both, default both), swaps `staging` to
+`latest`, writes the archive rows, the record inboxes and notes, thread pointers, reconciles today's PRED# threads, prunes old-generation
+cache rows and marks `staging` processed (`agentProcessedAt`). Payload: `topicId`, `readOnly`, `force` (ignores the processed/cache guard and
+the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 
 ## Deployment
-- Deployed name `NewsProjectInvokeAgentLambda-dev` · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
-- Trigger: EventBridge Scheduler `InvokeNewsAgent` `cron(25 4/8 * * ? *)` (UTC, ENABLED)
-- Deploy: `scripts/lambda.sh NewsProjectInvokeAgentLambda diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
+- `NewsProjectInvokeAgentLambda-dev`, `nodejs22.x`, group `pipeline` (scripts/functions.json); zip ships no node_modules.
+- EventBridge Scheduler `InvokeNewsAgent` `cron(25 4/8 * * ? *)` UTC, 10 min after newsInvokeGemini.
+- `scripts/lambda.sh NewsProjectInvokeAgentLambda diff|package|deploy` (diff first; deploy needs the operator).
 
-## Reads / writes
-- DynamoDB `TOPICS_DDB_TABLE`: `staging` (read, set `agentProcessedAt`), `latest` (write), `today-archive` + `archive#YYYY-MM-DD` (read/write).
-- DynamoDB `SUMMARIZE_PREDICT_TABLE`: `TOPIC#<id>` / `SUMMARY|PREDICTION|TRACE_CAUSE` (TTL 259200 s; each row carries `threadId`); writes the thread → topic pointer `THREAD#<threadId>` / `TOPICS` (`topicId` = current, `topicIds` string set = every topicId the thread has had, so PRED# rows are reachable by thread); reads `FACTS#<country>`/`COUNTRY_FACTS`; scans and batch-deletes old-generation rows when `CACHE_CLEANUP_ENABLED` (default true).
-- DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): `PRED#<topicId>` / `<YYYY-MM-DD>`.
-- S3 `WORLD_BUCKET`: reads `stories/state/*`, writes `threads/story-map.json` (matcher; R3 tier off unless `ENABLE_R3_TIER=true`).
-- S3 `WORLD_BUCKET`, entry notes (decision 0042): after the daily archive is written, every `TOPIC#` item the run stored (summary, cause chain, forecast; new or reused) is also written to `<NOTES_PREFIX>notes/entry/DAY.jsonl` through shared `notes.js` (`src/_shared` links `backend/shared/src`). The subject is the eventId of the entry as archived (sources capped at 10), so it equals the fact `newsStoryRecord` writes. Best-effort: a failure logs `[notes]` and never fails the run. `NOTES_PREFIX` defaults to `record/shadow/`; set `record/` to go live. Needs role policy `entryNotesWriter` (Get/Put on both `notes/entry/` prefixes, `s3:ListBucket` so a new day file reads as missing).
-- S3 `WORLD_BUCKET`, entries inbox (decision 0051): after the archive is written, the run's daily-row entries (the `archive#DAY` entries, ai text cut, up to 10 sources) are also appended to `<ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl`, one line per entry with `inboxId`, `batch` (the write time), `n`, `latest` (urgency, x_trending, primaryCountry, significance, urgencyReason, mentionedCountries of the raw topic) and `run` (staging item's topic count, model, limit, updatedAt, generatedDate). `ENTRIES_INBOX_PREFIX` unset = nothing is written (`record/shadow/` first, then `record/`); best-effort, logged as `[inbox]`, never fails the run. The merge of a run into the `today-archive` and `archive#DAY` rows is the shared `mergeArchiveDay` (`src/_shared/entriesInbox.js`), which the inbox replay uses too. The role needs `s3:GetObject` and `s3:PutObject` on `record/inbox/entries/*` (and the shadow prefix).
-- S3 `WORLD_BUCKET`, forecasts inbox (decision 0052): each `PRED#` row the run puts (put-once per topic and day) and each thread reconcile update is also appended to `<FORECASTS_INBOX_PREFIX>inbox/forecasts/DAY.jsonl` (day = the row's SK): a `drawn` line holding the row as put, and later, after the reconcile, a `thread` line `{PK, SK, threadId, was, at}`; replaying the file in order (last wins) gives the rows the log holds (`src/_shared/forecastsInbox.js`). The lines wait in memory and are appended once per run, by `inboxId`, so a retry adds nothing. `FORECASTS_INBOX_PREFIX` unset = nothing is written (`record/shadow/` first, then `record/`); best-effort, logged as `[inbox] forecasts`, never fails the run; the DynamoDB put and update stay. The role needs `s3:GetObject` and `s3:PutObject` on `record/inbox/forecasts/*` (and the shadow prefix).
+## Reads (decision 0035 step 5d: two switches)
+| Read | `ddb` (default) | `inbox` | Used by |
+|---|---|---|---|
+| `ARCHIVE_READS` | NewsCache `archive#DAY` today..today-7; freshness: `today-archive`, `archive#today`, `archive#yesterday` (consistent) | `<ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl` replayed (`entriesInbox.replayDay`) to the same rows | threading window, arc digest, G15, same-day siblings, freshness gate |
+| `FORKS_READS` | `THREAD#<id>/TOPICS` pointer, then `PRED#<topicId>` query per id, SK >= today-90 | `<FORECASTS_INBOX_PREFIX>inbox/forecasts/DAY.jsonl` today-90..today replayed (`forecastsInbox.replay`, thread lines included): rows of this topic or naming the thread | draw cadence, G12 near-duplicate gate |
+
+- `compare` reads both, answers from DynamoDB and logs `[archive-compare] window|freshness: equal|DIFFER n [...]` / `[forks-compare] <topicId> <threadId>: ...`.
+  Unknown values, or inbox/compare with the inbox prefix unset, read DynamoDB. Code: `src/inbox-reads.js` (pure) + `index.js`.
+- Timing: the run appends its inbox lines at the end, so at read time both sources hold the earlier runs only (same-day runs included).
+  Forks also replay the run's queued forecast lines (already put to DynamoDB). Forecast day files are read once per run (91 GETs).
+- Freshness from the inbox uses the two day files; the gate only reads the newest write time (`run-guard.lastArchiveWrite`), which a
+  run's today-archive write never exceeds.
+- Known fork differences (the inbox sees more): rows of topic ids the pointer never listed (drawn before it existed, 2026-10-19), and a row
+  drawn earlier in the same run by a topic new to the thread. Rows before the forecasts inbox (2026-10-01) are DynamoDB-only until
+  today-90 passes that day (2026-12-30).
+- Also read: `staging`; `TOPIC#<id>` SUMMARY|PREDICTION|TRACE_CAUSE (reuse, siblings); `FACTS#<country>/COUNTRY_FACTS`; S3 `stories/state/*`
+  (matcher). The archive write still reads `today-archive` and `archive#DAY` to merge into them.
+
+## Writes (unchanged by the switches)
+- NewsCache `latest`, `today-archive` (24 h, 3 sources), `archive#DAY` (90-day TTL, 10 sources, merged by shared `mergeArchiveDay`).
+- SummarizeAndPredict `TOPIC#<id>` rows (TTL 259200 s, carry `threadId`), `THREAD#<id>/TOPICS` pointer (`topicId`, `topicIds` set);
+  old-generation rows pruned when `CACHE_CLEANUP_ENABLED` (default true).
+- PredictionLog (`PREDICTION_LOG_TABLE`, default `GlobalPerspectivePredictionLog`) `PRED#<topicId>/<day>`, put-once; after the archive
+  write `lib.predThreadFix` moves today's row to the entry's final threadId (`drawnThreadId` keeps the first).
+- S3 `WORLD_BUCKET`: `threads/story-map.json` (matcher, R3 off unless `ENABLE_R3_TIER=true`); entry notes `<NOTES_PREFIX>notes/entry/DAY.jsonl`
+  (decision 0042); entries inbox (0051) one line per daily-row entry with `latest` and `run` fields; forecasts inbox (0052) a `drawn` line
+  per put and a `thread` line per reconcile, queued and appended once per run by `inboxId`. Each is best-effort (`[notes]`, `[inbox]`).
+- Live env: `NOTES_PREFIX`, `ENTRIES_INBOX_PREFIX`, `FORECASTS_INBOX_PREFIX` = `record/`. Role `newsprojectLambdaRole1fd679db-dev`:
+  inline `entriesInboxWriter` / `forecastsInboxWriter` grant `s3:GetObject`+`PutObject` on `record/inbox/{entries,forecasts}/*` (and shadow)
+  plus `s3:ListBucket` (a missing day reads as empty); `entryNotesWriter`, `matcher-s3-access`; DynamoDB via `AmazonDynamoDBFullAccess`.
 
 ## Forecast draw (decision 0038)
-The DRAW node of `project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md` (stack tree), as built here:
-```text
-+- 1 DRAW        weekly, model                       [NewsProjectInvokeAgentLambda]
-|  +- inputs : story entry facts of the week + FACTS# premise block + arc digest
-|  +- rule   : only if the story moved this week (new entry facts); at most 3 outcomes per story per week
-|  |           each = an event DONE (not said), due 7-90 days out, own p, a named source that would report it
-|  |           gates drop: no p, vague source, lead outside 7-90, restatement, near-duplicate of an open branch on the story,
-|  |           already true at the draw (matches an entry of the story dated on or before it), vague actor ("the government")
-|  +- model  : yes (writes the outcomes)
-|  +- output : forecast_drawn fact (never changed); branch.text = the event text
-```
-Code: `src/forecast-draw.js` (pure: prompt, cadence `drawDecision`, outcome adapter, open-branch texts), `src/questions.js` (gates G7-G16), `src/lib.js` (`buildGatedScenarios` with `outcomeMode`, `MAX_OUTCOMES = 3`, `HORIZON_DAYS = 90`, `PROMPT_VERSION = 3`), `index.js` (`ensureStored` reads the thread's PRED# rows once via `readThreadForks`).
-- Cadence: `decideReuse` says "generate" only when the story moved (no stored forecast, or its article set changed). A moved story is still not drawn when its thread has a PRED# row dated within the last 7 days; it keeps the stored forecast (or has none). `force` bypasses the cadence. The PRED# write stays `attribute_not_exists`, so the first draw of a day stands. Dry run plans show `skip` / `reuse:fork-within-7d`.
-- Count and shape: the model returns `outcomes[]` (at most 3), not 3 scenarios x 3 triggers. Stored and logged, each outcome is a one-trigger scenario: `label` = the event text (so `branch.text` is the event), `probability_range` = its own p, `horizon` = `by <due>`, `rationale`, and the trigger `{text, deadline, p, resolutionSource, qid, question:true}`; the content carries `unit: 'outcome'`. Home PredictionDisplay, ThreadForecast, `world.scenarios()`, `branchesFromScenarios`, the sampler and LinkedIn read that shape unchanged. qid is `qidFor(PRED#<topic>, <day>, '<i>-0')`.
-- Gates (outcome mode drops, never keeps as narrative): G3 lead > 90 days, G9 lead < 7 days, G7 no/out-of-range p, G8 vague or short source, G10 restates the story, G11 formality at p >= 95, G12 near-duplicate of any OPEN branch of the thread (deadline not passed) or of an outcome kept in the same draw, G13 ungrounded date/event, G14 a statement verb (says, announces, denies, warns, pledges, issues a statement ...) with no action verb (signs, passes, imposes, ...), G15 the outcome text matches (Jaccard >= 0.6, as G10) an entry title+summary of the same story (`threading.relatedEntries`) dated on or before the draw day, G16 a generic actor with no named body, CAP more than 3 kept.
+- `src/forecast-draw.js` (prompt, cadence `drawDecision`, outcome adapter, open-branch texts), `src/questions.js` (gates),
+  `src/lib.js` (`buildGatedScenarios`, `MAX_OUTCOMES = 3`, `HORIZON_DAYS = 90`, `PROMPT_VERSION = 3`).
+- Cadence: draw only when `decideReuse` says generate (no stored forecast or the article set changed) AND the thread has no fork in the last
+  7 days; else keep the stored forecast (or none). Dry-run plans show `skip` / `reuse:fork-within-7d`.
+- Output: up to 3 outcomes, each stored as a one-trigger scenario (`label` = event, own p, `by <due>`, `qid`), `unit: 'outcome'`, so every
+  reader of `scenarios[]` is unchanged. Gates drop: lead > 90 or < 7 days, no/out-of-range p, vague source, restatement, formality at
+  p >= 95, near-duplicate of an open branch of the thread (deadline not passed; verdicts not read), ungrounded date, statement verb
+  without an action verb, already true in a story entry of the window, generic actor, more than 3.
 
-### Choices (narrowest reading of 0038)
-- "Moved this week" = the story's article set changed since the stored forecast, or there is none (`decideReuse` generate). Every story has an archive entry each run, so "has an entry" alone would not filter.
-- "Last fork" = the newest PRED# row of any topicId the thread has had (`THREAD#<id>/TOPICS` set plus this topic), last 90 days; 7 days means a draw is allowed on the 7th day after.
-- "Open branch" = a trigger in those rows whose deadline is today or later; verdicts are not read, so an early-resolved branch counts as open (stricter duplicate gate).
-- Outcomes keep the stored `scenarios[]` field names instead of a new `outcomes` array, so no reader and no shared code changes. `precedents` is kept as the base-rate step; winners and losers are kept.
-- Gate G14 is a verb list, not a model: ambiguous noun senses (strike, order, file, cut, delay) are left out of the action list on purpose, and "announces" alone is a statement.
-- G15: compares against the story's archive entries from `readPastArchiveEntries(7)` (the arc digest's source, now carrying `summary` when the archive row has one), so it sees the last 7 days of the story only; older already-true events are caught by G10 (today's snippets) at best. Entries dated after the draw day cannot match.
-- G16: flags only "the government" (not "of X"), bare "authorities" / "officials" (not "Hamburg port authorities"), and "the EU" / "the UN" with no capitalised body after them ("the EU Commission", "the UN Security Council" pass). A bare "Government ..." or "EU ..." at the start is kept on purpose (existing fixtures); the prompt line asks for the exact body.
-- A story skipped by the cadence with no stored forecast gets no forecast for that run (honest empty). The run is "zero-generated" only if no summary or cause chain was generated either; a `prediction`-only action on a quiet run can therefore return 503.
-
-## Models
-- `XAI_API_KEY` / `GROK_API_URL` (code default `api.x.ai`; set in the live env) / `GROK_MODEL` (fallback `deepseek-flash`): legacy names, live provider is DeepSeek. `PREDICTION_MODEL` overrides the forecast model. All calls share `lib.buildChatBody` with thinking disabled.
 ## Threading
-- `src/threading.js` (pure): a topic joins the thread of an archive entry from today's earlier runs or the past 7 days on its `continues_topic` title or its own title (both compared normalised: case, whitespace, punctuation), else when the composite score (0.5 keywords + 0.3 regions + 0.2 category) is >= 0.4 AND keyword-only Jaccard is >= 0.15; otherwise it founds `thread-<slug>-<sha1>`. The whole run is compared before new ids are minted (including forward explicit continuations); it does not merge two established historical threads. If continues_topic and exact title disagree, the thread's latest archived member wins, with tie retaining continues_topic and conflict evidence logged. Each assignment logs `[join] {topicId, threadId, via, score, kwScore}` (via `continues_topic|title|score|new` or `run-*`; conflict/run-anchor metadata when applicable).
-- After the archive write, today's `PRED#<topicId>` row is moved onto the archive entry's final `threadId` (`lib.predThreadFix`, `drawnThreadId` keeps the first value), so a forecast and its entry never sit under different threads (cross-run re-threading, failed runs).
-- Repair: `node backend/pipeline/cli/threads.mjs list-joins --since <date>` (read-only), `merge <from> <into>`, `split <threadId> <topicId...>` print every DynamoDB/S3 change and write only with `--apply` (operator yes). Tests: `node --test backend/pipeline/cli/threads.test.mjs`.
+- `src/threading.js` (pure): join an entry of the window on `continues_topic` or title (normalised), else composite score >= 0.4 with
+  keyword Jaccard >= 0.15; else found `thread-<slug>-<sha1>`. The whole run is compared before ids are minted. Each assignment logs
+  `[join] {topicId, threadId, via, score, kwScore}`.
+- Repair: `node backend/pipeline/cli/threads.mjs list-joins|merge|split` (writes only with `--apply`, operator yes).
+
 ## Gotchas
-- Freshness guard (`src/run-guard.js`): no generation writes from active fallback, missing/future generation time, a prior UTC day's generation, or a generation older than the latest archive write. Reads rolling/current/prior-day archives consistently before generation and again before publication. `force` cannot bypass freshness; `readOnly` cache inspection and `dryRun` planning remain available. Zero newly generated items returns HTTP 503 with `[pipeline-status] {status:"failed", reason:"zero-generated", generationId, generated, reused, failed}` and does not swap, archive, match or prune (cache reuse may already have restamped topic rows). Stale staging returns the same marker with `reason:"stale-staging"` and `staleReason`.
-- Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. A skipped `staging` generated before the latest gemini slot start (04:15/12:15/20:15 UTC) logs `[pipeline-status] {reason:"stale-processed-staging"}` and throws so the Lambda Errors metric counts it; one generated in the current slot stays a quiet skip. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.
-
-## Source field contract
-
-Archive sources preserve selector `publishedAt`, `outlet`, and `age` unchanged. New PRED rows carry `threadId`, `category` from `categories[0]` (legacy singular category fallback), `forkId = <PK>|<SK>`, and zero-based positional `scenarioIndex` on each scenario. Older rows remain readable without these fields.
+- Freshness (`src/run-guard.js`): no writes from a missing/future/prior-day generation or one older than the latest archive write; checked
+  before generation and again before publication. Zero generated returns 503 `[pipeline-status] {reason:"zero-generated"}`, stale staging
+  `reason:"stale-staging"`; neither swaps or archives. A processed staging from before the current gemini slot throws
+  `stale-processed-staging`; one from the current slot is a quiet skip.
+- A run that returns `stale-staging` at the publication check has already put PRED# rows but does not flush their forecasts-inbox lines
+  (they wait in memory for the next warm invocation, or are lost on a cold start).
+- Source fields: archive sources keep selector `publishedAt`, `outlet`, `age`; PRED# rows carry `threadId`, `category` (`categories[0]`),
+  `forkId = <PK>|<SK>` and `scenarioIndex`; older rows lack them and stay readable.
+- `http()` emits `Access-Control-Allow-Origin: *`. `package.json` lists Bedrock SDK deps the code does not use.
+- Models: `XAI_API_KEY` / `GROK_API_URL` / `GROK_MODEL` are legacy names; the live provider is DeepSeek. `PREDICTION_MODEL` overrides the
+  forecast model. Calls share `lib.buildChatBody` (thinking off).
 
 ## Tests
-- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`). Two handler tests fail today and are unchanged: `handler with zero generated returns failure marker...` and `cache-only run emits zero-generated failure...` (the date-mocked run-guard harness reports `stale-staging`).
+- `cd src && npm test` (`node --test ../test/*.test.js`). `test/inbox-reads.test.js` writes a fixture world with the agent's own code and
+  reads it back per switch value. Two run-guard handler tests fail on main and are unchanged (the date-mocked harness reports `stale-staging`):
+  `handler with zero generated returns failure marker...`, `cache-only run emits zero-generated failure...`.

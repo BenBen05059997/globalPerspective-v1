@@ -47,6 +47,12 @@ describe('legend — freshness → brightness', () => {
     expect(situationFreshness({ last_change_at: hoursAgo(24 * 10) }, NOW)).toBe('older');
     expect(situationFreshness({ last_change_at: hoursAgo(24 * 31) }, NOW)).toBe('hidden');
   });
+  it('keeps a GDACS alert the feed still lists on the map past 30 days (older, never hidden)', () => {
+    expect(situationFreshness({ source: 'gdacs', listed: true, last_change_at: hoursAgo(24 * 90) }, NOW)).toBe('older');
+    expect(situationFreshness({ source: 'gdacs', listed: true, last_change_at: hoursAgo(3) }, NOW)).toBe('live');
+    expect(situationFreshness({ source: 'gdacs', listed: false, last_change_at: hoursAgo(24 * 90) }, NOW)).toBe('hidden');
+    expect(situationFreshness({ source: 'news', last_change_at: hoursAgo(24 * 90) }, NOW)).toBe('hidden');
+  });
   it('falls back to opened_at, and never claims live or hidden without a timestamp', () => {
     expect(situationFreshness({ opened_at: hoursAgo(2) }, NOW)).toBe('live');
     expect(situationFreshness({}, NOW)).toBe('plain');

@@ -62,14 +62,17 @@ export function kindLabel(kind) {
  * situationFreshness(situation, now) -> 'live' | 'plain' | 'older' | 'hidden'
  * Age is measured from the situation's last change (else when it opened). A record carrying no
  * timestamp at all is shown 'plain' — never 'live' (we can't claim it's fresh) and never hidden
- * (we can't claim it's stale either).
+ * (we can't claim it's stale either). A GDACS alert the feed still lists (`listed`, set by the tracker)
+ * is never 'hidden': the feed keeps an Orange/Red event until it ends, however long since it last
+ * changed, so it stays on the map as 'older' instead of expiring after 30 days.
  */
 export function situationFreshness(s, now = Date.now()) {
   const iso = s?.last_change_at || s?.opened_at || null;
   if (!iso) return 'plain';
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return 'plain';
-  return freshnessState((now - t) / 86400000);
+  const state = freshnessState((now - t) / 86400000);
+  return state === 'hidden' && s.listed === true ? 'older' : state;
 }
 
 const FRESH_CLASS = { live: 'mk-fresh-live', plain: 'mk-fresh-plain', older: 'mk-fresh-older', hidden: 'mk-fresh-hidden' };

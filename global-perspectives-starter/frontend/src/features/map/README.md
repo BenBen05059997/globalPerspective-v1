@@ -32,7 +32,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Imports from other features: `@/features/briefings` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`;
   `@/features/threads` -> `useWebIndex`, `deriveFromIndex`
 - Shared: `@/shared/map/*` (legend, radar, globe, country-risk layer), `useGeminiTopics`, `useDailyBrief`, `useArchiveDayMap`
-- Situations with no change for 30+ days are hidden and counted, never dropped silently (`situationFreshness`).
+- Situations with no change for 30+ days are hidden and counted, never dropped silently (`situationFreshness`). Exception: a GDACS alert the feed still lists (`listed: true` in the bundle) stays drawn as "older" however long since it changed; it leaves the map only when GDACS stops listing it and the tracker closes it.
 
 ## Backend
 - Group guides: [situations](../../../../../backend/situations/README.md), [pipeline](../../../../../backend/pipeline/README.md)

@@ -18,18 +18,37 @@ export function nextPinId(pins) {
   }
 }
 
-/** addPin(board, {kind, refId}, now) -> { board, status: 'added' | 'duplicate' | 'full', pin? }. */
+/** Pins that count toward the budget: a retired pin (retiredAt) is greyed and does not. */
+export const livePins = (board) => board.pins.filter((p) => !p.retiredAt);
+export const livePinCount = (board) => livePins(board).length;
+
+/** addPin(board, {kind, refId}, now) -> { board, status: 'added' | 'restored' | 'duplicate' | 'full', pin? }.
+ *  Adding what is already on the board as a retired pin restores it (it takes a budget slot again). */
 export function addPin(board, { kind, refId }, now = new Date().toISOString()) {
   const existing = board.pins.find((p) => sameRef(p, kind, refId));
+  if (existing?.retiredAt) {
+    if (livePinCount(board) >= PIN_BUDGET) return { board, status: 'full' };
+    return { board: restorePin(board, existing.pinId), status: 'restored', pin: existing };
+  }
   if (existing) return { board, status: 'duplicate', pin: existing };
-  if (board.pins.length >= PIN_BUDGET) return { board, status: 'full' };
+  if (livePinCount(board) >= PIN_BUDGET) return { board, status: 'full' };
   const pin = { pinId: nextPinId(board.pins), kind, refId, addedAt: now };
   return { board: { ...board, pins: [...board.pins, pin] }, status: 'added', pin };
 }
 
-/** Removing a pin removes the strings that touched it. */
-export function removePin(board, pinId) {
-  return { ...board, pins: board.pins.filter((p) => p.pinId !== pinId), strings: board.strings.filter((s) => s.a !== pinId && s.b !== pinId) };
+/** Retire: the pin gets retiredAt and is drawn greyed. It keeps its strings and the reader's lines, and stops counting
+ *  toward the pin budget. Nothing is deleted. */
+export function retirePin(board, pinId, now = new Date().toISOString()) {
+  return { ...board, pins: board.pins.map((p) => (p.pinId === pinId && !p.retiredAt ? { ...p, retiredAt: now } : p)) };
+}
+
+/** Restore clears retiredAt (the caller checks the budget first: livePinCount < PIN_BUDGET). */
+export function restorePin(board, pinId) {
+  return { ...board, pins: board.pins.map((p) => {
+    if (p.pinId !== pinId) return p;
+    const { retiredAt, ...rest } = p; // eslint-disable-line no-unused-vars
+    return rest;
+  }) };
 }
 
 export function findString(board, idA, idB) {
@@ -37,13 +56,20 @@ export function findString(board, idA, idB) {
   return board.strings.find((s) => pairKey(s.a, s.b) === key) || null;
 }
 
-/** Keep: a `yours` string between two pins, with an optional one-line claim. It replaces any string already on
- *  that pair (one string per pair, as the server keeps). */
+/** Keep: a `yours` string between two pins, with an optional one-line claim. There is one string per pair (as the
+ *  server keeps), and a string of ours is never replaced: on a pair that already holds one, the reader's line goes on
+ *  our string (cut or not, its state stays as it was). Only the reader's own earlier string is replaced. */
 export function keepString(board, idA, idB, line, now = new Date().toISOString()) {
   const [a, b] = idA < idB ? [idA, idB] : [idB, idA];
+  const key = pairKey(a, b);
   const text = String(line || '').trim().slice(0, MAX_LINE);
+  const ours = board.strings.find((s) => pairKey(s.a, s.b) === key && s.owner === 'ours');
+  if (ours) {
+    if (!text) return board;
+    return { ...board, strings: board.strings.map((s) => (s === ours ? { ...s, line: text } : s)) };
+  }
   const next = { a, b, owner: 'yours', keptAt: now, ...(text ? { line: text } : {}) };
-  return { ...board, strings: [...board.strings.filter((s) => pairKey(s.a, s.b) !== pairKey(a, b)), next] };
+  return { ...board, strings: [...board.strings.filter((s) => pairKey(s.a, s.b) !== key), next] };
 }
 
 /** Cut sets cutAt; it never deletes the string. */

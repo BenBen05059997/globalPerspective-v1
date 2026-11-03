@@ -3,6 +3,7 @@
 import { crisisDotVar, crisisTypeForCategory, CRISIS_LABEL } from '@/shared/lib/crisisHue';
 import { KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers.js';
+import { branchCounts, branchCountText, todayUTC } from '@/features/board/lib/branchDays.js';
 
 const DAY = 86400000;
 const STRENGTH_WORD = { weak: 'Weak', medium: 'Medium', strong: 'Strong' };
@@ -30,22 +31,24 @@ export function mapPinLine(pin, info, now = new Date()) {
   return [risk, tail].filter(Boolean).join(' · ');
 }
 
-/** "5 chapters","2 live branches", "1 confirmed links": the counts the pin carries. [] when none. */
-export function pinCountParts(pin) {
+/** "5 chapters","34 live branches · 5 late", "1 confirmed links": the counts the pin carries. [] when none. Branch
+ *  counts come from the story view when it is loaded (the tree's own count); until then, from the pin's index row. */
+export function pinCountParts(pin, story = null, today = todayUTC()) {
   if (!pin.recordAvailable) return [];
   const count = (key, label) => (Number.isInteger(pin.counts?.[key]) && pin.counts[key] >= 0 ? `${pin.counts[key]} ${label}` : null);
-  return [count('chapters', 'chapters'), count('liveBranches', 'live branches'), count('confirmedLinks', 'confirmed links')].filter(Boolean);
+  const branches = story?.forks ? branchCountText(branchCounts(story.forks, today)) : count('liveBranches', 'live branches');
+  return [count('chapters', 'chapters'), branches, count('confirmedLinks', 'confirmed links')].filter(Boolean);
 }
 
 /** The label on a string: { head, body }. Ours: "Ours · Medium" (the strength when it has one, else "Inferred"), plus
- *  "Not confirmed" when the string says so; yours: "Yours" and the reader's line in quotes. */
+ *  the reader's line when they added one to it; yours: "Yours" and the reader's line in quotes. */
 export function stringLabel(s) {
   if (s.owner === 'yours') {
     return { head: s.cutAt ? 'Yours · Cut' : 'Yours', body: s.line ? `“${s.line}”` : '' };
   }
-  const head = ['Ours', STRENGTH_WORD[s.strength] || 'Inferred', s.cutAt ? 'Cut' : null, s.confirmed === false ? 'Not confirmed' : null].filter(Boolean);
-  return { head: head.join(' · '), body: s.mechanism || '' };
+  const head = ['Ours', STRENGTH_WORD[s.strength] || 'Inferred', s.cutAt ? 'Cut' : null].filter(Boolean);
+  return { head: head.join(' · '), body: [s.mechanism, s.line ? `Your line: “${s.line}”` : ''].filter(Boolean).join(' ') };
 }
 
-/** The short tag of a string label: its first two parts ("Ours · Medium · Not confirmed" -> "Ours · Medium"). */
+/** The short tag of a string label: its first two parts ("Ours · Medium · Cut" -> "Ours · Medium"). */
 export const shortHead = (head) => head.split(' · ').slice(0, 2).join(' · ');

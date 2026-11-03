@@ -148,3 +148,10 @@
 .board-strings-disclosure > summary { cursor: pointer; font-size: var(--text-sm); color: var(--text-muted); min-height: var(--tap-min); display: flex; align-items: center; }
 .board-strings-disclosure > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .board-strings-disclosure[open] > summary { margin-bottom: var(--space-2); }
+
+/* a pin card keeps its full height: a two-line title is never squeezed under the lines below it */
+.board-pin > * { flex: none; }
+.board-pin__title { padding-bottom: 0.1em; }
+/* a retired pin: greyed, still there with its strings (Restore brings it back) */
+.board-pin.is-retired, .bm-pin.is-retired { opacity: 0.5; filter: grayscale(1); }
+.board-pin.is-retired { border-style: dashed; }

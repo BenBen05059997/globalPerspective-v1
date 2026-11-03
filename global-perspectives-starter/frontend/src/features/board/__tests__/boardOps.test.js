@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PIN_BUDGET } from '@/shared/lib/board.js';
-import { placeLabels, addPin, removePin, keepString, cutString, restoreString, layoutPins, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
+import { placeLabels, addPin, retirePin, restorePin, livePinCount, keepString, cutString, restoreString, layoutPins, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
 
 const pin = (i, kind = 'thread', refId = `thread-${i}`) => ({ pinId: `p${String(i).padStart(2, '0')}`, kind, refId, addedAt: '2026-10-20T00:00:00Z' });
 const empty = () => ({ boardId: 'b1', name: 'Test', pins: [], strings: [] });
@@ -22,6 +22,17 @@ describe('addPin', () => {
     const board = { ...empty(), pins: [pin(1, 'actor', 'Iran')] };
     expect(addPin(board, { kind: 'actor', refId: ' iran ' }).status).toBe('duplicate');
   });
+  it('a retired pin does not count toward the budget; adding it again restores it, if there is room', () => {
+    const board = withPins(PIN_BUDGET);
+    const retired = retirePin(board, 'p01', '2026-10-21T00:00:00Z');
+    expect(livePinCount(retired)).toBe(PIN_BUDGET - 1);
+    expect(addPin(retired, { kind: 'thread', refId: 'thread-new' }).status).toBe('added');
+    const again = addPin(retired, { kind: 'thread', refId: 'thread-1' });
+    expect(again.status).toBe('restored');
+    expect(again.board.pins.find((p) => p.pinId === 'p01').retiredAt).toBeUndefined();
+    const full = addPin(retired, { kind: 'thread', refId: 'thread-new' }).board;
+    expect(addPin(full, { kind: 'thread', refId: 'thread-1' }).status).toBe('full');
+  });
   it('reuses a freed id', () => {
     expect(nextPinId([pin(1), pin(3)])).toBe('p02');
   });
@@ -38,10 +49,18 @@ describe('strings', () => {
   it('keep without a line stores no line', () => {
     expect(keepString(base, 'p02', 'p03', '  ').strings.find((x) => x.owner === 'yours').line).toBeUndefined();
   });
-  it('keep on a pair that already has a string replaces it (one string per pair)', () => {
+  it('keep on a pair that holds a string of yours replaces it (one string per pair)', () => {
+    const mine = { ...base, strings: [{ a: 'p01', b: 'p02', owner: 'yours', line: 'old' }] };
+    const next = keepString(mine, 'p02', 'p01', 'new', '2026-10-20T03:00:00Z');
+    expect(next.strings).toEqual([{ a: 'p01', b: 'p02', owner: 'yours', keptAt: '2026-10-20T03:00:00Z', line: 'new' }]);
+  });
+  it('keep on a pair that holds a string of ours never replaces it: the line goes on our string, a cut stays cut', () => {
     const next = keepString(base, 'p02', 'p01', 'mine');
-    expect(next.strings).toHaveLength(1);
-    expect(next.strings[0].owner).toBe('yours');
+    expect(next.strings).toEqual([{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', line: 'mine' }]);
+    const cut = { ...base, strings: [{ ...base.strings[0], cutAt: '2026-10-20T02:00:00Z', mechanism: 'm' }] };
+    const kept = keepString(cut, 'p01', 'p02', 'mine');
+    expect(kept.strings).toEqual([{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'm', cutAt: '2026-10-20T02:00:00Z', line: 'mine' }]);
+    expect(keepString(cut, 'p01', 'p02', '  ')).toBe(cut); // no line: nothing to add
   });
   it('cut sets cutAt and deletes nothing; restore clears it', () => {
     const cut = cutString(base, 'p02', 'p01', '2026-10-20T02:00:00Z');
@@ -49,8 +68,15 @@ describe('strings', () => {
     expect(cut.strings[0].cutAt).toBe('2026-10-20T02:00:00Z');
     expect(restoreString(cut, 'p01', 'p02').strings[0].cutAt).toBeUndefined();
   });
-  it('removing a pin removes the strings that touched it', () => {
-    expect(removePin(base, 'p01').strings).toEqual([]);
+  it('retiring a pin greys it and keeps its strings and the reader\'s lines; restore clears it', () => {
+    const lined = { ...base, strings: [...base.strings, { a: 'p01', b: 'p03', owner: 'yours', line: 'why I keep this' }] };
+    const retired = retirePin(lined, 'p01', '2026-10-21T00:00:00Z');
+    expect(retired.pins.find((p) => p.pinId === 'p01').retiredAt).toBe('2026-10-21T00:00:00Z');
+    expect(retired.pins).toHaveLength(3);
+    expect(retired.strings).toEqual(lined.strings);
+    const back = restorePin(retired, 'p01');
+    expect(back.pins.find((p) => p.pinId === 'p01').retiredAt).toBeUndefined();
+    expect(retirePin(retired, 'p01', 'later').pins[0].retiredAt).toBe('2026-10-21T00:00:00Z'); // retiring twice keeps the first date
   });
 });
 

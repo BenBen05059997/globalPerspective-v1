@@ -2,12 +2,13 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import StoryTree from '../components/StoryTree.jsx';
-import { presentOf, isLate, forkOutcome, outcomeText, foldTrunk, inChapter } from '../lib/storyTree.js';
+import { factsThrough, isLate, forkOutcome, outcomeText, foldTrunk, inChapter, drawnBranches } from '../lib/storyTree.js';
 import storyA from '../dev/recordViews/story-a.json';
 import storyB from '../dev/recordViews/story-b.json';
 import storyC from '../dev/recordViews/story-c.json';
 afterEach(cleanup);
-const show = (story) => render(<MemoryRouter><StoryTree story={story} /></MemoryRouter>);
+const TODAY = '2026-10-18'; // the day storyC's facts run to
+const show = (story, today = TODAY) => render(<MemoryRouter><StoryTree story={story} today={today} /></MemoryRouter>);
 const rung = (n) => screen.getByRole('button', { name: new RegExp(`^Level ${n},`) });
 
 describe('story tree zoom ladder', () => {
@@ -30,7 +31,7 @@ describe('story tree zoom ladder', () => {
     show(storyC);
     expect(rung(1)).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText(/Closure is leverage/)).toBeInTheDocument();
-    expect(screen.getByText('3 chapters · 5 events · 4 live branches')).toBeInTheDocument();
+    expect(screen.getByText('3 chapters · 5 events · 3 live branches · 1 late')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
     expect(rung(2)).toHaveAttribute('aria-pressed', 'true');
@@ -64,7 +65,8 @@ describe('story tree zoom ladder', () => {
     expect(svg).toHaveAttribute('aria-hidden', 'true');
     expect(svg.textContent).toContain('PRESENT · 18 OCT');
     const widths = [...svg.querySelectorAll('path.st-branch')].map((p) => Number(p.getAttribute('stroke-width')));
-    expect(widths).toEqual([22, 12, 6]); // only the newest open fork is drawn
+    expect(widths).toEqual([22, 12]); // only the newest open fork is drawn, and its 15% branch starts folded
+    expect(screen.getByRole('button', { name: '1 branch under 20% folded ▸' })).toBeInTheDocument();
     expect(svg.querySelectorAll('path.st-branch--late')).toHaveLength(0);
     expect(screen.getByText(/OURS · PROVISIONAL/)).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Key' })).toBeInTheDocument();
@@ -72,11 +74,11 @@ describe('story tree zoom ladder', () => {
   it('older history folds into one button that unfolds the drawing', () => {
     const { container } = show(storyC);
     fireEvent.click(rung(3));
-    const fold = screen.getByRole('button', { name: 'Before 21 Sep ▸' });
+    const fold = screen.getByRole('button', { name: 'Before 21 Sep · 1 event ▸' });
     expect(container.querySelectorAll('svg.story-tree__svg circle')).toHaveLength(4);
     fireEvent.click(fold);
     expect(container.querySelectorAll('svg.story-tree__svg circle')).toHaveLength(5);
-    expect(screen.getByRole('button', { name: 'Before 21 Sep ▾' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Before 21 Sep · 1 event ▾' })).toHaveAttribute('aria-expanded', 'true');
   });
   it('forks read as a person: closed forks count their outcomes, open forks are provisional, a late branch is flagged, never dead', () => {
     show(storyC);
@@ -126,9 +128,9 @@ describe('story tree zoom ladder', () => {
 });
 
 describe('storyTree helpers', () => {
-  it('present is the facts-through day; late needs an open branch past its due day', () => {
-    expect(presentOf(storyC)).toBe('2026-10-18');
-    expect(presentOf({})).toBe('');
+  it('facts-through is the story\'s data day; late needs an open branch past its due day', () => {
+    expect(factsThrough(storyC)).toBe('2026-10-18');
+    expect(factsThrough({})).toBe('');
     const open = { due: '2026-10-15', verdict: null };
     expect(isLate(open, '2026-10-18')).toBe(true);
     expect(isLate(open, '')).toBe(false);
@@ -142,13 +144,41 @@ describe('storyTree helpers', () => {
   it('fold hides events more than 4 weeks before the present; chapters scope events and forks by date', () => {
     const { shown, folded } = foldTrunk(storyC.entries, storyC.forks, '2026-10-18');
     expect(shown).toHaveLength(4);
-    expect(folded).toEqual({ before: '2026-09-21', branches: 0, taken: 0 });
+    expect(folded).toEqual({ before: '2026-09-21', events: 1, branches: 0, taken: 0 });
     expect(foldTrunk(storyC.entries.slice(1), storyC.forks, '2026-10-18').folded).toBeNull();
     expect(foldTrunk(storyC.entries, storyC.forks).folded).toBeNull(); // no present: nothing folds
     expect(foldTrunk(storyC.entries, storyC.forks, '2027-01-01').shown.map((e) => e.date)).toEqual(['2026-10-16']); // all old: the newest stays
     const c = inChapter(storyC, storyC.chapters[2]);
     expect(c.entries.map((e) => e.eventId)).toEqual(['c4', 'c5']);
     expect(c.forks.map((f) => f.forkId)).toEqual(['cf2', 'cf3']);
+  });
+});
+
+describe('the tree reads today, not the facts day', () => {
+  it('the present line and the late flags use today (UTC); a note says where the facts stop', () => {
+    const { container } = show(storyC, '2026-10-20');
+    fireEvent.click(rung(3));
+    expect(container.querySelector('svg.story-tree__svg').textContent).toContain('PRESENT · 20 OCT');
+    expect(screen.getByText('Facts run to 18 Oct.')).toBeInTheDocument();
+  });
+  it('a branch under 20% starts folded and is drawn once the reader unfolds it', () => {
+    const forks = [{ forkId: 'f', drawnAt: '2026-10-10', branches: [
+      { branchId: 'a', text: 'High', p: 60, due: '2026-12-01' }, { branchId: 'b', text: 'Low', p: 10, due: '2026-12-01' }, { branchId: 'c', text: 'Settled', p: 5, verdict: { result: 'no', at: '2026-10-12' } }] }];
+    expect(drawnBranches(forks)).toEqual({ shown: [forks[0].branches[0]], folded: 1, low: 1 });
+    expect(drawnBranches(forks, true).shown.map((b) => b.branchId)).toEqual(['a', 'b']);
+    const { container } = show({ ...storyA, forks });
+    expect(container.querySelectorAll('path.st-branch')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: '1 branch under 20% folded ▸' }));
+    expect(container.querySelectorAll('path.st-branch')).toHaveLength(2);
+  });
+  it('rung 1 counts live and late branches the way the pin card does', () => {
+    const forks = [{ forkId: 'f', drawnAt: '2026-10-10', branches: [{ branchId: 'a', text: 'A', due: '2026-12-01' }, { branchId: 'b', text: 'B', due: '2026-10-01' }] }];
+    show({ ...storyC, forks }, '2026-11-03');
+    expect(screen.getByText('3 chapters · 5 events · 1 live branch · 1 late')).toBeInTheDocument();
+  });
+  it('a story whose record could not be read draws nothing', () => {
+    const { container } = render(<StoryTree error />);
+    expect(container.textContent).toBe('');
   });
 });
 

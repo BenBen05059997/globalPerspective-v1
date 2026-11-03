@@ -7,9 +7,10 @@ export function cutByYou(board) {
   return board.strings.filter((s) => s.owner === 'ours' && s.cutAt).map((s) => ({ a: s.a, b: s.b, cutAt: s.cutAt }));
 }
 
-/** Lines only the reader wrote (their own strings that carry a line): [{a, b, line}]. */
+/** Lines the reader wrote: on their own strings (until they cut them) and on a string of ours, whatever its state:
+ *  [{a, b, line}]. */
 export function writtenByYou(board) {
-  return board.strings.filter((s) => s.owner === 'yours' && !s.cutAt && s.line).map((s) => ({ a: s.a, b: s.b, line: s.line }));
+  return board.strings.filter((s) => s.line && (s.owner === 'ours' || !s.cutAt)).map((s) => ({ a: s.a, b: s.b, line: s.line }));
 }
 
 /** Open branches with our stated probability, per fork of the board's pinned stories:

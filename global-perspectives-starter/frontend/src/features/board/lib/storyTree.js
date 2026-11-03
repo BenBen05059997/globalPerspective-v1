@@ -1,35 +1,39 @@
 // Pure helpers behind the drawn story tree and the zoom ladder (artboards 6 and 11). Dates are ISO day strings and are compared as
 // strings, never through the local timezone. A branch's wording stays in shared/lib/branchWording.js.
-import { isOldNode } from '@/features/board/lib/folding.js';
+import { isOldNode, isDeadBranch } from '@/features/board/lib/folding.js';
+import { isOpen, isLate } from '@/features/board/lib/branchDays.js';
 const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
+export { isOpen, isLate };
 
-/** The day the facts run to ('2026-10-18'), or '' when the view does not say. It is the "present" of the tree. */
-export const presentOf = (story) => day(story?.builtFrom?.factsThrough);
+/** The day the facts run to ('2026-10-18'), or '' when the view does not say. The tree's "present" is today (UTC); this
+ *  is shown beside it when the facts stop short of today. */
+export const factsThrough = (story) => day(story?.builtFrom?.factsThrough);
 
-/** A branch with no verdict yet (the old, unscored kind aside). */
-export const isOpen = (b) => !b.verdict && !b.legacy;
+/** The newest fork that still has an open branch (the "open fork"). */
+export const openFork = (forks) => [...(forks || [])].filter((f) => (f.branches || []).some(isOpen))
+  .sort((a, b) => String(b.drawnAt).localeCompare(String(a.drawnAt)))[0] || null;
 
-/** Open and past its due day: shown as late, never as dead. */
-export const isLate = (b, present) => isOpen(b) && Boolean(present) && Boolean(day(b.due)) && day(b.due) < present;
-
-export const liveBranches = (forks) => (forks || []).flatMap((f) => f.branches || []).filter(isOpen);
+/** The open branches of the open fork. */
+export const openForkBranches = (forks) => (openFork(forks)?.branches || []).filter(isOpen);
 
 const DRAWN_BRANCHES = 6;
 
-/** The branches the drawing shows: the open ones of the newest fork that still has any (the "open fork"), at most
- *  DRAWN_BRANCHES. Older forks stay in the text list. */
-export function drawnBranches(forks) {
-  const newest = [...(forks || [])].filter((f) => liveBranches([f]).length)
-    .sort((a, b) => String(b.drawnAt).localeCompare(String(a.drawnAt)))[0];
-  return newest ? liveBranches([newest]).slice(0, DRAWN_BRANCHES) : [];
+/** The branches the drawing shows: the open ones of the open fork, at most DRAWN_BRANCHES. A branch under
+ *  DEAD_BRANCH_P percent starts folded (not drawn) until `unfoldLow`; `folded` is how many are left out for that.
+ *  Older forks stay in the text list. `low` is how many are under the line, folded or not. -> { shown, folded, low } */
+export function drawnBranches(forks, unfoldLow = false) {
+  const open = openForkBranches(forks);
+  const low = open.filter(isDeadBranch);
+  const kept = unfoldLow ? open : open.filter((b) => !isDeadBranch(b));
+  return { shown: kept.slice(0, DRAWN_BRANCHES), folded: unfoldLow ? 0 : low.length, low: low.length };
 }
 
 /** Counts of one fork's branches by outcome: { total, open, late, happened, notReported, unchecked }. */
-export function forkOutcome(fork, present) {
+export function forkOutcome(fork, today) {
   const out = { total: 0, open: 0, late: 0, happened: 0, notReported: 0, unchecked: 0 };
   for (const b of fork.branches || []) {
     out.total += 1;
-    if (isLate(b, present)) out.late += 1;
+    if (isLate(b, today)) out.late += 1;
     else if (isOpen(b)) out.open += 1;
     else if (b.verdict?.result === 'yes') out.happened += 1;
     else if (b.verdict?.result === 'no') out.notReported += 1;
@@ -65,7 +69,7 @@ export function inChapter(story, chapter) {
 
 /** The trunk is drawn with the events of the last FOLD_AFTER_DAYS before `present` (the board's folding rule, lib/folding.js);
  *  older ones fold into one button. The newest event always shows. No `present`: nothing folds.
- *  -> { shown, folded: { before: 'YYYY-MM-DD', branches, taken } | null } */
+ *  -> { shown, folded: { before: 'YYYY-MM-DD', events, branches, taken } | null } */
 export function foldTrunk(entries, forks, present) {
   const sorted = [...entries].sort((a, b) => day(a.date).localeCompare(day(b.date)));
   const now = Date.parse(present);
@@ -74,5 +78,5 @@ export function foldTrunk(entries, forks, present) {
   if (shown.length === sorted.length) return { shown: sorted, folded: null };
   const before = day(shown[0].date);
   const older = (forks || []).filter((f) => day(f.drawnAt) < before).flatMap((f) => f.branches || []);
-  return { shown, folded: { before, branches: older.length, taken: older.filter((b) => b.verdict?.result === 'yes').length } };
+  return { shown, folded: { before, events: sorted.length - shown.length, branches: older.length, taken: older.filter((b) => b.verdict?.result === 'yes').length } };
 }

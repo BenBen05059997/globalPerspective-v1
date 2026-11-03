@@ -1,5 +1,7 @@
 import { branchStatus, VOID_REASON_WORDS } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario } from '@/features/board/lib/branchView.js';
+import { uniqueStories } from '@/features/board/lib/branchDays.js';
+import { isoWeekStart } from '@/features/board/lib/recordViews.js';
 // ISO week label of a date, e.g. '2026-W43' (UTC).
 export function isoWeekOf(date) {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -9,16 +11,17 @@ export function isoWeekOf(date) {
   return `${year}-W${String(week).padStart(2, '0')}`;
 }
 // Projections over the record views (0037). Facts only: verdicts are decisions on dated branches, never inferred
-// from a deadline.
+// from a deadline. The week is the ISO week (Monday to Sunday) that holds `now`, up to today: the same week the
+// header names ("week ending <Sunday>") and the one the confirmed links belong to.
 export function boardWeek(board, stories, links = {}, now = new Date()) {
   const end = now.toISOString().slice(0, 10);
-  const start = new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10);
+  const start = isoWeekStart(end);
   const isoWeek = isoWeekOf(now);
   const inWeek = (s) => s && s.slice(0, 10) >= start && s.slice(0, 10) <= end;
   return {
-    moved: board.pins.filter((p) => inWeek(p.lastMoved)),
+    moved: board.pins.filter((p) => !p.retiredAt && inWeek(p.lastMoved)),
     strings: board.strings.flatMap((s) => ['keptAt', 'cutAt'].filter((k) => inWeek(s[k])).map((k) => ({ ...s, change: k === 'cutAt' ? 'cut' : 'kept', date: s[k] }))),
-    branches: Object.values(stories).flatMap((s) => (s?.forks || []).flatMap((f) => f.branches.filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, line: branchLine(b), scenario: branchScenario(b), threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result, kind: branchStatus(b).kind, why: VOID_REASON_WORDS[b.verdict.voidReason] || null, status: branchStatus(b).text })))),
+    branches: uniqueStories(stories).flatMap(({ story: s }) => (s.forks || []).flatMap((f) => (f.branches || []).filter((b) => inWeek(b.verdict?.at)).map((b) => ({ branchId: b.branchId, line: branchLine(b), scenario: branchScenario(b), threadId: s.threadId, date: b.verdict.at.slice(0, 10), result: b.verdict.result, kind: branchStatus(b).kind, why: VOID_REASON_WORDS[b.verdict.voidReason] || null, status: branchStatus(b).text })))),
     links: Object.entries(links).flatMap(([threadId, v]) => (v?.confirmedLinks || []).filter((l) => l.week === isoWeek).map((l) => ({ ...l, threadId }))),
   };
 }

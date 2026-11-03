@@ -2,6 +2,7 @@ import { PIN_BUDGET } from '@/shared/lib/board.js';
 import '@/features/board/presets.css';
 
 // "Pin budget 7 / 12" with one segment per pin slot. The number carries the meaning; the fill is decoration.
+// `used` counts live pins only: a retired pin is greyed and does not use a slot.
 export default function PinBudget({ used, max = PIN_BUDGET }) {
   return (
     <span className="pin-budget" role="img" aria-label={`Pin budget ${used} of ${max}`}>

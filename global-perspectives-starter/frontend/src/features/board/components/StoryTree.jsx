@@ -6,7 +6,9 @@ import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordTe
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { presentOf, isLate, liveBranches, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { factsThrough, isLate, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { branchCounts, branchCountText, todayUTC } from '@/features/board/lib/branchDays.js';
+import { DEAD_BRANCH_P } from '@/features/board/lib/folding.js';
 import { weekMonday } from '@/features/board/lib/recordViews.js';
 import '@/features/board/storyTree.css';
 
@@ -16,17 +18,21 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const RUNGS = { 1: 'story line', 2: 'chapters', 3: 'forks and events', 4: 'the event' };
 
 // Facts view of one story (0037 story view) as a zoom ladder: 1 line, 2 chapters, 3 forks and events (the drawn tree), 4 one event.
-export default function StoryTree({ story, loading, error }) {
+// The tree's present is `today` (UTC); late is judged against it. A story record that could not be read shows nothing (the
+// failure is already reported by the loader).
+export default function StoryTree({ story, loading, error, today = todayUTC() }) {
   const [chosen, setLevel] = useState(null);
   const [chapter, setChapter] = useState(null);
   const [event, setEvent] = useState(null);
   const [unfolded, setUnfolded] = useState(false);
+  const [unfoldedLow, setUnfoldedLow] = useState(false);
   if (loading) return <p className="board-line">Loading this story’s record.</p>;
-  if (error) return <p className="board-line">This story’s record could not be read. Try opening the pin again.</p>;
+  if (error) return null;
   if (!story) return null;
   const hasLine = Boolean(story.line?.text);
   const hasChapters = Boolean(story.chapters?.length);
-  const present = presentOf(story);
+  const present = today;
+  const facts = factsThrough(story);
   const open = { 1: hasLine, 2: hasChapters, 3: true, 4: Boolean(event) };
   const steps = [1, 2, 3, 4].filter((n) => open[n]);
   const level = chosen || (hasLine ? 1 : 3);
@@ -52,11 +58,14 @@ export default function StoryTree({ story, loading, error }) {
   const rung3 = () => {
     const { shown, folded } = foldTrunk(scoped.entries, scoped.forks, present);
     const all = foldTrunk(scoped.entries, scoped.forks).shown;
+    const drawn = drawnBranches(scoped.forks, unfoldedLow);
     const empty = !scoped.entries.length && !scoped.forks.length;
     return <>
       {chapter ? <p className="board-line"><span className="story-tree__kicker story-tree__kicker--accent">{chapter.title} · opened</span> <Button compact onClick={() => setChapter(null)}>whole story</Button></p> : null}
-      {folded ? <Button compact aria-expanded={unfolded} onClick={() => setUnfolded(!unfolded)}>{`Before ${dayMonth(folded.before)}${folded.branches ? ` · ${plural(folded.branches, 'branch', 'branches')}${folded.taken ? `, ${folded.taken} happened` : ''}` : ''} ${unfolded ? '▾' : '▸'}`}</Button> : null}
-      <StoryTreeDrawing shown={unfolded ? all : shown} branches={drawnBranches(scoped.forks)} present={present} />
+      {folded ? <Button compact aria-expanded={unfolded} onClick={() => setUnfolded(!unfolded)}>{`Before ${dayMonth(folded.before)} · ${plural(folded.events, 'event', 'events')}${folded.branches ? ` · ${plural(folded.branches, 'branch', 'branches')}${folded.taken ? `, ${folded.taken} happened` : ''}` : ''} ${unfolded ? '▾' : '▸'}`}</Button> : null}
+      {drawn.low ? <Button compact aria-expanded={unfoldedLow} onClick={() => setUnfoldedLow(!unfoldedLow)}>{`${plural(drawn.low, 'branch', 'branches')} under ${DEAD_BRANCH_P}% ${unfoldedLow ? 'drawn' : 'folded'} ${unfoldedLow ? '▾' : '▸'}`}</Button> : null}
+      <StoryTreeDrawing shown={unfolded ? all : shown} branches={drawn.shown} present={present} />
+      {facts && facts < present ? <p className="board-note">Facts run to {dayMonth(facts)}.</p> : null}
       {trunk}
       {scoped.forks.length ? <><h3>Forks</h3>{scoped.forks.map(forkRow)}</> : null}
       {empty ? <p className="board-line">No dated event or forecast branch has been recorded for this story.</p> : null}
@@ -78,18 +87,19 @@ export default function StoryTree({ story, loading, error }) {
   const readWeek = story.reading?.state === 'read' ? weekMonday(story.reading.week) : null; // chapters carry no date of their own: the reading's week
   const chapterCards = () => <ol className="story-tree__chapters">{story.chapters.map((c) => {
     const f = inChapter(story, c).forks;
-    const live = liveBranches(f).length;
-    const now = present && present >= c.from && present <= c.to;
+    const branches = branchCountText(branchCounts(f, present));
+    const here = facts || present;
+    const now = here >= c.from && here <= c.to;
     return <li key={`${c.from}:${c.title}`} className={now ? 'story-tree__card story-tree__card--now' : 'story-tree__card'}>
       <div className="story-tree__card-head"><time>from {dayMonth(c.from)}</time>{now ? <span className="story-tree__kicker story-tree__kicker--accent">present · {dayMonth(present)}</span> : null}</div>
       <Button compact onClick={() => { setChapter(c); setLevel(3); }}>{c.title}</Button>
       {c.summary ? <p className="board-line"><ClaimTag kind="judgment" /> {c.summary}</p> : null}
       {readWeek ? <span className="story-tree__stamp">written week of {dayMonth(readWeek)} · never rewritten</span> : null}
-      {f.length ? <span className="story-tree__counts">{plural(f.length, 'fork', 'forks')} · {live} open</span> : null}
+      {f.length ? <span className="story-tree__counts">{[plural(f.length, 'fork', 'forks'), branches].filter(Boolean).join(' · ')}</span> : null}
     </li>;
   })}</ol>;
 
-  const counts = [story.chapters?.length && plural(story.chapters.length, 'chapter', 'chapters'), story.entries?.length && plural(story.entries.length, 'event', 'events'), liveBranches(story.forks).length && `${liveBranches(story.forks).length} live ${liveBranches(story.forks).length === 1 ? 'branch' : 'branches'}`].filter(Boolean).join(' · ');
+  const counts = [story.chapters?.length && plural(story.chapters.length, 'chapter', 'chapters'), story.entries?.length && plural(story.entries.length, 'event', 'events'), branchCountText(branchCounts(story.forks, present))].filter(Boolean).join(' · ');
 
   return <section className="board-tree story-tree" aria-label="Story tree">
     <div className="story-tree__ladder" role="group" aria-label="Tree zoom">

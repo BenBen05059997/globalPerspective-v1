@@ -47,7 +47,7 @@ export default function MonthlyCard({ board, stories, today, labelOf, storyLabel
       {m.ours || m.yours ? (
         <section className="al-sec" aria-label="Branches settled">
           <h3 className="pn-kicker">Branches settled</h3>
-          {m.ours ? <p className="al-line"><Public /> {m.ours.settled} settled this month. {m.ours.dueThisWeek} due this week.</p> : null}
+          {m.ours ? <p className="al-line"><Public /> {m.ours.settled} settled this month. {m.ours.dueThisWeek} due this week.{m.ours.late ? ` ${m.ours.late} past due.` : ''}</p> : null}
           {m.yours ? <p className="al-line"><Private /> You set numbers on {m.yours.set} {m.yours.set === 1 ? 'branch' : 'branches'}; {m.yours.settled ? `${m.yours.settled} settled` : 'none settled yet'}.</p> : null}
         </section>
       ) : null}

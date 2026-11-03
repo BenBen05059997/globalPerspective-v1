@@ -10,14 +10,16 @@ import { isoWeekEnd, weekMonday } from '@/features/board/lib/recordViews.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import { PIN_BUDGET } from '@/shared/lib/board.js';
+import { livePinCount } from '@/features/board/lib/boardOps.js';
 import '@/features/board/panels.css';
 
-// "Your board moved" (artboard 4). Facts and our readings of the last seven days; an empty section is absent.
+// "Your board moved" (artboard 4). Facts and our readings of the ISO week so far (Monday to today; the header names its
+// Sunday); an empty section is absent. A story record that could not be read is simply missing (the loader reports it).
 // Not built, for lack of data: old -> new scores, a string strengthening (we store no history), the coverage note.
 // onAddPin / onDismissLink are optional: without them a new link shows no buttons.
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-export default function BoardWeekly({ board, stories, links = {}, loading, errors, now = new Date(), info = {}, onAddPin, onDismissLink }) {
+export default function BoardWeekly({ board, stories, links = {}, loading, now = new Date(), info = {}, onAddPin, onDismissLink }) {
   const week = boardWeek(board, stories, links, now);
   const pinOf = (id) => board.pins.find((p) => p.pinId === id);
   const label = (id) => info[id]?.label || pinOf(id)?.line || pinOf(id)?.refId || id;
@@ -40,7 +42,6 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
     {board.name ? <p className="pn-kicker">{board.name}</p> : null}
     {summary.length ? <p className="board-line">{summary.join(' · ')}</p> : null}
     {loading ? <p className="board-line">Loading the pinned story records.</p> : null}
-    {Object.keys(errors || {}).length ? <p className="board-line">Some pinned story records could not be read; this week’s changes are incomplete.</p> : null}
 
     {week.moved.length ? <section className="pn-sec"><h3 className="pn-kicker">Pins that moved</h3><ul className="pn-rows">{week.moved.map((p) => <li key={p.pinId} className="pn-row pn-row--stack">
       <span className="pn-row__head">{label(p.pinId)} {info[p.pinId]?.risk != null ? <TierChip tier={tierFromScore(info[p.pinId].risk)} score={info[p.pinId].risk} /> : null}</span>
@@ -62,14 +63,14 @@ export default function BoardWeekly({ board, stories, links = {}, loading, error
       return <section key={`${l.threadId}:${l.otherThreadId}`} className="pn-box pn-box--ours" aria-label="New link we found">
         <span className="pn-kicker">New link we found</span>
         <p className="pn-row__head">{mine ? label(mine.pinId) : l.threadId} — {other ? label(other.pinId) : <EntityLink kind="story" id={l.otherThreadId}>linked story</EntityLink>}</p>
-        <p className="board-line"><ClaimTag kind="judgment" />{l.mechanism} <time dateTime={weekMonday(l.week) || undefined}>week of {dayMonth(weekMonday(l.week))}</time></p>
+        <p className="board-line"><ClaimTag kind="judgment" />{l.mechanism} {weekMonday(l.week) ? <time dateTime={weekMonday(l.week)}>week of {dayMonth(weekMonday(l.week))}</time> : null}</p>
         {!other && onAddPin && onDismissLink ? <div className="board-actions">
-          <Button disabled={board.pins.length >= PIN_BUDGET} onClick={() => onAddPin(l.otherThreadId)}>Add pin</Button>
+          <Button disabled={livePinCount(board) >= PIN_BUDGET} onClick={() => onAddPin(l.otherThreadId)}>Add pin</Button>
           <Button onClick={() => onDismissLink(l.otherThreadId)}>Dismiss</Button>
         </div> : null}
       </section>;
     })}
 
-    {!loading && !changed ?<p className="board-line">Nothing on your board changed in the last seven days.</p> : null}
+    {!loading && !changed ?<p className="board-line">Nothing on your board changed this week.</p> : null}
   </Card>;
 }

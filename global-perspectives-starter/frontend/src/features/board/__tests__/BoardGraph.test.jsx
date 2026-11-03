@@ -129,7 +129,8 @@ describe('graph parts that need data', () => {
   });
   it('draws a failed combination and a day with no coverage', () => {
     draw({ failed: [{ a: 'p01', b: 'p03', text: 'No link found.' }], coverageGap: { date: '2026-10-14', note: 'no archive for that day' } });
-    expect(screen.getByText('Combination failed')).toBeInTheDocument();
+    expect(screen.getByText('No link found')).toBeInTheDocument(); // one wording for a pair with no link, graph and map
+    expect(screen.queryByText('Combination failed')).toBeNull();
     expect(screen.getByText('No link found.')).toBeInTheDocument();
     expect(screen.getByTestId('board-fog')).toHaveTextContent('No coverage 14 Oct');
   });

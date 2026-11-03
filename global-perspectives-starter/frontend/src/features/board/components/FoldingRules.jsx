@@ -2,21 +2,22 @@ import { FOLD_AFTER_DAYS, DEAD_BRANCH_P, ARRIVALS_SHOWN } from '@/features/board
 import '@/features/board/presets.css';
 
 // "How the board folds": what folds, what is written when, the three promises, and where the ideas came from.
-// The thresholds come from lib/folding.js, so this page and the code cannot disagree. Folding by cluster of
-// pins and by multiple changes on a string is not built, so it is not listed.
+// The thresholds come from lib/folding.js, and every sentence here is one the code keeps (the story tree folds old
+// events and low branches; retiring a pin greys it). Folding by cluster of pins and by multiple changes on a string
+// is not built, so it is not listed.
 const FOLDS = [
   [`Older than ${FOLD_AFTER_DAYS / 7} weeks`, 'One node with a count'],
-  [`A branch under ${DEAD_BRANCH_P}%`, 'Folded from the start'],
-  ['Many arrivals', `A count on the pin; the strip shows at most ${ARRIVALS_SHOWN}, strongest first`],
+  [`A branch under ${DEAD_BRANCH_P}%`, 'Not drawn on the story tree until you unfold it'],
+  ['Many arrivals', `The clue pool shows at most ${ARRIVALS_SHOWN}, strongest first`],
 ];
 const WRITTEN = [
   ['One-line chapter and fork summaries', 'Written by the weekly run at the time, dated, never rewritten'],
-  ['Paragraph summaries', 'Rewritten weekly and versioned; you can edit yours on your board'],
+  ['Paragraph summaries', 'Rewritten weekly and versioned'],
   ['Counts', 'Computed, never written'],
 ];
 const PROMISES = [
   ['A later run rewrites a dated line', 'The line stays as written'],
-  ['Anything is deleted', 'It is only greyed, with its date'],
+  ['A pin or a string is taken off your board', 'It is only greyed, with its date, and keeps your lines; deleting a whole board asks first'],
   ['Anything shown unfolded unless you opened it', 'Folded is the default at every level'],
 ];
 const BORROWED = [

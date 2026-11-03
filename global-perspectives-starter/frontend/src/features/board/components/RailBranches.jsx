@@ -1,23 +1,24 @@
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
-import { branchStatus } from '@/shared/lib/branchWording.js';
+import { dayMonth } from '@/shared/lib/branchWording.js';
+import { isLate, uniqueStories } from '@/features/board/lib/branchDays.js';
+import { openFork, openForkBranches } from '@/features/board/lib/storyTree.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 
 const MAX_STORIES = 2;
 
-/** The open branches of the newest fork of each pinned story that has one: [{ threadId, forkId, title, branches }]. */
+/** The open branches of the open fork (newest with any) of each pinned story: [{ threadId, forkId, title, branches }]. */
 function railForks(stories, labelOf) {
   const out = [];
-  for (const story of Object.values(stories || {})) {
-    const fork = [...(story?.forks || [])].sort((x, y) => String(y.drawnAt).localeCompare(String(x.drawnAt)))[0];
-    const branches = (fork?.branches || []).filter((b) => branchStatus(b).kind === 'open');
-    if (branches.length) out.push({ threadId: story.threadId, forkId: fork.forkId, title: labelOf(story.threadId), branches });
+  for (const { key, story } of uniqueStories(stories)) {
+    const branches = openForkBranches(story.forks);
+    if (branches.length) out.push({ threadId: key, forkId: openFork(story.forks).forkId, title: labelOf(key), branches });
   }
   return out.slice(0, MAX_STORIES);
 }
 
 // The branches of your pinned stories in the right rail: label, our percentage and the trigger line. A reading by
 // the model, so it carries the model-judgment tag. No open branch -> absent.
-export default function RailBranches({ stories, labelOf }) {
+export default function RailBranches({ stories, labelOf, today }) {
   const forks = railForks(stories, labelOf);
   if (!forks.length) return null;
   return (
@@ -30,6 +31,7 @@ export default function RailBranches({ stories, labelOf }) {
               <li key={b.branchId}>
                 <span className="board-rail__branch"><span>{branchScenario(b) || branchLine(b)}</span>{branchPercent(b) != null ? <span className="board-rail__p">{branchPercent(b)}%</span> : null}</span>
                 {b.trigger ? <span className="board-note">trigger: {b.trigger}</span> : null}
+                {isLate(b, today) ? <span className="board-note">late · past {dayMonth(b.due)}</span> : null}
               </li>
             ))}
           </ul>

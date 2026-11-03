@@ -41,7 +41,7 @@ describe('branch view helpers', () => {
 describe('live-shaped branches on the board', () => {
   it('due strip: story, question, scenario tag, date and percent; upcoming first, past due after, none with a verdict', () => {
     const rows = dueBranches({ nk: story }, '2026-11-01');
-    expect(rows.map((r) => r.id)).toEqual(['nk:n2', 'nk:n1', 'nk:o1', 'nk:o2']);
+    expect(rows.map((r) => r.id)).toEqual(['nk:n2', 'nk:n1', 'nk:o1', 'nk:o2']); // n3 (due 25 Oct) is past due too: the strip shows four
     render(<DueStrip stories={{ nk: story }} today="2026-11-01" labelOf={() => 'North Korea'} />);
     expect(screen.getAllByText('North Korea').length).toBeGreaterThan(0);
     expect(screen.getByText('Talks resume in Beijing')).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('live-shaped branches on the board', () => {
     expect(dueBranches({ s: many }, '2026-11-01')[0].line).toBe('upcoming');
   });
   it('rail shows the scenario with the scenarioP percent', () => {
-    render(<RailBranches stories={{ nk: story }} labelOf={() => 'NK'} />);
+    render(<RailBranches stories={{ nk: story }} labelOf={() => 'NK'} today="2026-10-31" />);
     expect(screen.getAllByText('Most Likely').length).toBeGreaterThan(0);
     expect(screen.getAllByText('65%').length).toBeGreaterThan(0);
   });
@@ -77,22 +77,25 @@ describe('live-shaped branches on the board', () => {
 
 describe('story tree drawing', () => {
   it('draws only the open branches of the newest fork that has any, at most six', () => {
-    expect(drawnBranches(story.forks).map((b) => b.branchId)).toEqual(['n1', 'n2', 'n3']);
-    const big = [{ forkId: 'x', drawnAt: '2026-10-01', branches: Array.from({ length: 10 }, (_, i) => live(`b${i}`, 'Most Likely', 5, `q${i}`, '2026-12-01')) }];
-    expect(drawnBranches(big)).toHaveLength(6);
-    expect(drawnBranches([{ forkId: 'x', drawnAt: '2026-10-01', branches: [live('s', 'a', 1, 'b', '2026-10-01', voidLegacy, true)] }])).toEqual([]);
+    const drawn = drawnBranches(story.forks);
+    expect(drawn.shown.map((b) => b.branchId)).toEqual(['n1', 'n2']);
+    expect(drawn.folded).toBe(1); // n3 is at 15%: under the 20% line it starts folded
+    expect(drawnBranches(story.forks, true).shown.map((b) => b.branchId)).toEqual(['n1', 'n2', 'n3']);
+    const big = [{ forkId: 'x', drawnAt: '2026-10-01', branches: Array.from({ length: 10 }, (_, i) => live(`b${i}`, 'Most Likely', 25, `q${i}`, '2026-12-01')) }];
+    expect(drawnBranches(big).shown).toHaveLength(6);
+    expect(drawnBranches([{ forkId: 'x', drawnAt: '2026-10-01', branches: [live('s', 'a', 1, 'b', '2026-10-01', voidLegacy, true)] }]).shown).toEqual([]);
   });
   it('renders the branch question with the scenario tag and percent-weighted lines; the older fork stays in the list only', () => {
-    const { container } = render(<MemoryRouter><StoryTree story={story} /></MemoryRouter>);
+    const { container } = render(<MemoryRouter><StoryTree story={story} today="2026-10-31" /></MemoryRouter>);
     const svg = container.querySelector('svg.story-tree__svg');
-    expect([...svg.querySelectorAll('path.st-branch')].map((p) => Number(p.getAttribute('stroke-width')))).toEqual([26, 8, 6]);
+    expect([...svg.querySelectorAll('path.st-branch')].map((p) => Number(p.getAttribute('stroke-width')))).toEqual([26, 8]);
     expect(svg.textContent).toContain('IAEA adopts a resolution');
     expect(svg.textContent).not.toContain('Old fork open question');
     expect(container.textContent).toContain('Old fork open question');
   });
   it('draws the newest event on the trunk even when every event is older than four weeks', () => {
     expect(foldTrunk(story.entries, story.forks, '2026-10-31').shown.map((e) => e.eventId)).toEqual(['e2']);
-    const { container } = render(<MemoryRouter><StoryTree story={story} /></MemoryRouter>);
+    const { container } = render(<MemoryRouter><StoryTree story={story} today="2026-10-31" /></MemoryRouter>);
     const svg = container.querySelector('svg.story-tree__svg');
     expect(svg.querySelectorAll('circle')).toHaveLength(1);
     expect(svg.textContent).toContain('Newest event');

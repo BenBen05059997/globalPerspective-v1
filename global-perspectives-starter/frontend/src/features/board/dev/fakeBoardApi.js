@@ -67,7 +67,7 @@ function own(board) {
 }
 
 function checkBoard(board) {
-  if (board.pins.length > PIN_BUDGET) throw fail(400, `Pin budget exceeded: a board holds at most ${PIN_BUDGET} pins`, { code: 'pin_budget_exceeded', budget: PIN_BUDGET });
+  if (board.pins.filter((p) => !p.retiredAt).length > PIN_BUDGET) throw fail(400, `Pin budget exceeded: a board holds at most ${PIN_BUDGET} pins`, { code: 'pin_budget_exceeded', budget: PIN_BUDGET });
   const ids = new Set(board.pins.map((p) => p.pinId));
   for (const s of board.strings) {
     if (!ids.has(s.a) || !ids.has(s.b)) throw fail(400, 'Invalid board: a string must join two pins on the board', { code: 'invalid_board' });
@@ -153,7 +153,7 @@ export async function fakeBoardAction(action, body = {}) {
       if (board.boardId === DEV_GRAPH_ID) return decorateDevGraph(board);
       return { ...board, recordAvailable:available, pins:board.pins.map((p) => { const row = devRecordIndex.find((r) => r.threadId === p.refId); return available && row ? {...p,recordAvailable:true,line:row.line ?? null,born:row.born,entryCount:row.entryCount,counts:{chapters:null,liveBranches:row.liveBranchCount,confirmedLinks:null},lastMoved:dayFromNow(-1)} : p; }) };
     }
-    case 'arrivals': return {recordAvailable:available,since:boardOf(body.boardId).lastVisitedAt || boardOf(body.boardId).createdAt,arrivals:available && body.boardId==='dev-record' ? devArrivals() : []};
+    case 'arrivals': return {recordAvailable:available,since:dayFromNow(-13),lastVisitedAt:boardOf(body.boardId).lastVisitedAt || null,arrivals:available && body.boardId==='dev-record' ? devArrivals() : []};
     case 'visit_board': {const b=boardOf(body.boardId);b.lastVisitedAt=now;persist();return {lastVisitedAt:now};}
     case 'create_board': {
       const name = String(body.name || '').trim();
@@ -167,6 +167,7 @@ export async function fakeBoardAction(action, body = {}) {
       const incoming = body.board;
       if (!incoming || typeof incoming !== 'object') throw fail(400, 'board is required');
       if (incoming.boardId !== undefined && incoming.boardId !== stored.boardId) throw fail(400, 'boardId cannot change', { code: 'immutable_field' });
+      if (body.expectedUpdatedAt && body.expectedUpdatedAt !== stored.updatedAt) throw fail(409, 'This board changed somewhere else. Reload it.', { code: 'stale_board' });
       const next = normalise({ ...incoming, boardId: stored.boardId, uid: stored.uid, createdAt: stored.createdAt, updatedAt: now });
       if (!String(next.name || '').trim()) throw fail(400, 'Invalid board: name is required', { code: 'invalid_board' });
       checkBoard(next);

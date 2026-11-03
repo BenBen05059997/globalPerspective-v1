@@ -6,6 +6,7 @@ const NO_LINK = 'No link found. Shared: nothing but the week.';
 let user;
 let boardStore;
 let connectReply;
+let serverVisit; // the lastVisitedAt the fake server stamps on a saved board, as the real one keeps its own
 const calls = [];
 
 vi.mock('@/shared/contexts/AuthContext', () => ({ useAuth: () => ({ user, loading: false }) }));
@@ -28,7 +29,7 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
       case 'arrivals': return {recordAvailable:false,arrivals:[]};
       case 'visit_board': return {lastVisitedAt:'2026-10-20T12:00:00Z'};
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
-      case 'update_board': boardStore = { ...body.board }; return JSON.parse(JSON.stringify(boardStore));
+      case 'update_board': boardStore = { ...body.board, ...(serverVisit ? { lastVisitedAt: serverVisit } : {}) }; return JSON.parse(JSON.stringify(boardStore));
       case 'get_follows': return { followedThreads: ['thread-c'], followedActors: ['Oman'] };
       case 'list_presets': return [{ presetId: 'r-mena', name: 'MENA: highest-risk stories', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62 }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] }];
       case 'connect': return connectReply;
@@ -52,6 +53,7 @@ const lastUpdate = () => calls.filter(([a]) => a === 'update_board').at(-1)?.[1]
 
 beforeEach(() => {
   calls.length = 0;
+  serverVisit = null;
   user = { uid: 'u1', email: 'a@b.test', isAnonymous: false };
   boardStore = baseBoard();
   connectReply = {
@@ -139,9 +141,9 @@ describe('connect and the verdict card', () => {
     renderPage();
     await selectBoth();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
-    expect(await screen.findByText('No link found')).toBeInTheDocument();
-    expect(screen.getAllByText(NO_LINK)).toHaveLength(2); // the verdict card, and the "Combination failed" string on the graph
-    expect(screen.getByText('Combination failed')).toBeInTheDocument();
+    expect((await screen.findAllByText('No link found')).length).toBe(2); // the verdict card's word, and the same word on the graph
+    expect(screen.getAllByText(NO_LINK)).toHaveLength(2); // the verdict card, and the string on the graph
+    expect(screen.queryByText('Combination failed')).toBeNull();
   });
 
   it('the c key connects two selected pins', async () => {
@@ -206,5 +208,70 @@ describe('pin budget', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Add Oil price/ }));
     await screen.findByText(/3 \/ 12/);
     await waitFor(() => expect(lastUpdate()?.pins).toHaveLength(3), { timeout: 3000 });
+  });
+});
+
+describe('retiring a pin', () => {
+  it('greys the pin, keeps its strings and lines, frees a budget slot, and Restore brings it back', async () => {
+    boardStore.strings = [{ a: 'p01', b: 'p02', owner: 'yours', line: 'why I keep this', keptAt: 'x' }];
+    renderPage();
+    await screen.findByText(/2 \/ 12/);
+    fireEvent.click(within(screen.getByLabelText('Pins on this board')).getByRole('button', { name: /Hormuz shipping/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Retire pin' }));
+    await screen.findByText(/1 \/ 12/);
+    expect(pinEl(/Hormuz shipping/)).toHaveClass('is-retired');
+    expect(document.querySelector('.board-string[data-owner="yours"]')).not.toBeNull();
+    await waitFor(() => expect(lastUpdate()).toBeTruthy(), { timeout: 3000 });
+    expect(lastUpdate().pins).toHaveLength(2);
+    expect(lastUpdate().pins.find((p) => p.pinId === 'p01').retiredAt).toBeTruthy();
+    expect(lastUpdate().strings).toEqual([expect.objectContaining({ line: 'why I keep this' })]);
+
+    fireEvent.click(within(screen.getByLabelText('Pins on this board')).getByRole('button', { name: /Hormuz shipping.*retired/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore pin' }));
+    await screen.findByText(/2 \/ 12/);
+    expect(pinEl(/Hormuz shipping/)).not.toHaveClass('is-retired');
+    await waitFor(() => expect(lastUpdate().pins.find((p) => p.pinId === 'p01').retiredAt).toBeUndefined(), { timeout: 3000 });
+  });
+
+  it('a retired pin does not block the 12-pin budget', async () => {
+    boardStore.pins = Array.from({ length: 12 }, (_, i) => ({ ...thread(i + 1, `thread-${i + 1}`), ...(i === 0 ? { retiredAt: '2026-10-21T00:00:00Z' } : {}) }));
+    renderPage();
+    await screen.findByText(/11 \/ 12/);
+    fireEvent.click(screen.getByRole('button', { name: '+ Add pin' }));
+    expect(screen.queryByText(/Pin budget reached/)).toBeNull();
+    expect(await screen.findByRole('button', { name: /^Add Oil price/ })).toBeEnabled();
+  });
+});
+
+describe('keeping a string on a pair that holds one of ours', () => {
+  it('adds the reader\'s line to our string and does not replace it', async () => {
+    boardStore.strings = [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'shared place', cutAt: '2026-10-20T00:00:00Z' }];
+    renderPage();
+    await selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    await screen.findByText('Medium link');
+    fireEvent.change(screen.getByLabelText(/Your line/), { target: { value: 'I still think so' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add my line to our string' }));
+    await waitFor(() => expect(lastUpdate()).toBeTruthy(), { timeout: 3000 });
+    expect(lastUpdate().strings).toEqual([{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'shared place', cutAt: '2026-10-20T00:00:00Z', line: 'I still think so' }]);
+  });
+});
+
+describe('the visit date', () => {
+  it('"new entries since" keeps the date the session started with, printed as day and month, after an edit', async () => {
+    const views = await import('@/features/board/lib/recordViews.js');
+    const today = new Date().toISOString().slice(0, 10);
+    views.fetchCounts.mockImplementation(async (d) => ({ date: d, byStory: { 'thread-a': { newEntries: 1, branchesDue: 0, verdicts: 0 } } }));
+    boardStore = { ...baseBoard(), recordAvailable: true, lastVisitedAt: '2026-10-20T08:00:00Z', pins: baseBoard().pins.map((p) => ({ ...p, recordAvailable: true })) };
+    renderPage();
+    await screen.findByText(/new entries since 20 Oct/);
+    serverVisit = `${today}T09:00:00Z`; // the arrivals read has since moved the stamp on
+    fireEvent.click(screen.getByRole('button', { name: /Board name/ }));
+    fireEvent.change(screen.getByLabelText('Board name'), { target: { value: 'Renamed' } });
+    fireEvent.keyDown(screen.getByLabelText('Board name'), { key: 'Enter' });
+    await waitFor(() => expect(lastUpdate()?.name).toBe('Renamed'), { timeout: 3000 });
+    await waitFor(() => expect(boardStore.lastVisitedAt).toBe(serverVisit)); // the save echoed the moved-on stamp
+    expect(screen.getByText(/new entries since 20 Oct/)).toBeInTheDocument();
+    views.fetchCounts.mockImplementation(async () => null);
   });
 });

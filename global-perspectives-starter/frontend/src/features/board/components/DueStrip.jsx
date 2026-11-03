@@ -1,19 +1,19 @@
-import { dayMonth, branchStatus } from '@/shared/lib/branchWording.js';
+import { dayMonth } from '@/shared/lib/branchWording.js';
+import { isOpen, isLate, uniqueStories } from '@/features/board/lib/branchDays.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 
 const SHOWN = 4;
 
-/** The open branches (no verdict) of the pinned stories: [{ id, threadId, due, p, line, scenario, late }]. Due today or
+/** The open branches (no verdict) of the pinned stories: [{ id, threadId, due, p, line, scenario, late }] (`threadId` is the pin's own story id). Due today or
  *  later come first, nearest first; past-due ones follow, so they never crowd out what is coming. A branch with no due
  *  date is not listed (nothing to be due). */
 export function dueBranches(stories, today) {
   const rows = [];
-  for (const story of Object.values(stories || {})) {
-    for (const fork of story?.forks || []) {
+  for (const { key, story } of uniqueStories(stories)) {
+    for (const fork of story.forks || []) {
       for (const b of fork.branches || []) {
-        if (branchStatus(b).kind !== 'open' || !dayMonth(b.due)) continue;
-        const due = b.due.slice(0, 10);
-        rows.push({ id: `${story.threadId}:${b.branchId}`, threadId: story.threadId, due, p: branchPercent(b), line: branchLine(b), scenario: branchScenario(b), late: due < today });
+        if (!isOpen(b) || !dayMonth(b.due)) continue;
+        rows.push({ id: `${key}:${b.branchId}`, threadId: key, due: b.due.slice(0, 10), p: branchPercent(b), line: branchLine(b), scenario: branchScenario(b), late: isLate(b, today) });
       }
     }
   }

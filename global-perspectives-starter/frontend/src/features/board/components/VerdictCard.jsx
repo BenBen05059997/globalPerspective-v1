@@ -17,7 +17,8 @@ const STRENGTH = { none: 'No link found', weak: 'Weak link', medium: 'Medium lin
 
 const groundOf = (grounds, kind) => (grounds || []).find((g) => g.kind === kind)?.detail;
 
-export default function VerdictCard({ labelA, labelB, state, kept, onKeep, onDismiss }) {
+// `existing` is the string already on the pair ({ owner, cutAt }) or null: a string of ours is never replaced, the line goes on it.
+export default function VerdictCard({ labelA, labelB, state, existing, onKeep, onDismiss }) {
   const [line, setLine] = useState('');
   const [copied, setCopied] = useState(false);
   const r = state.result;
@@ -116,7 +117,7 @@ export default function VerdictCard({ labelA, labelB, state, kept, onKeep, onDis
           placeholder="Write one sentence on why you keep this"
         />
         <div className="board-actions pn-actions">
-          <Button variant="primary" onClick={() => onKeep(line)}>{kept ? 'Replace with my string' : 'Keep string'}</Button>
+          <Button variant="primary" onClick={() => onKeep(line)}>{!existing ? 'Keep string' : existing.owner === 'ours' ? 'Add my line to our string' : 'Replace with my string'}</Button>
           {navigator.clipboard?.writeText ? <Button onClick={exportMemo}>Export as memo</Button> : null}
           <Button className="pn-actions__drop" onClick={onDismiss}>Drop it</Button>
         </div>

@@ -26,7 +26,7 @@ export function devArrivals() {
   return [
     { threadId: 'dev-arrival-1', title: 'Insurers weigh convoy escorts for Gulf tankers', date: dayFromNow(-1), strength: 'strong',
       via: [{ pinId: 'p1', threadId: 'story-a', mechanism: 'Escort talks follow the rerouting.', direction: 'driven_by' }, { pinId: 'p2', threadId: 'story-b', mechanism: 'Cover costs hinge on escorts.', direction: 'drives' }] },
-    { threadId: 'dev-arrival-2', title: 'Port of Fujairah reports a backlog', date: dayFromNow(-2), strength: 'medium',
+    { threadId: 'dev-arrival-2', title: 'Port of Fujairah reports a backlog', date: dayFromNow(-2), strength: 'strong',
       via: [{ pinId: 'p1', threadId: 'story-a', mechanism: 'Diverted tankers queue at the nearest port.', direction: 'driven_by' }] },
     { threadId: 'dev-arrival-3', title: 'Freight rates on the Asia route climb', date: dayFromNow(-3), strength: 'strong',
       via: [{ pinId: 'p2', threadId: 'story-b', mechanism: 'Premiums feed freight rates.', direction: 'shared_cause' }] },

@@ -1,7 +1,7 @@
 // The monthly (artboard 7): everything here is counted or read from what the board and the record views already
 // hold; nothing is written by a model. Each part is empty when there is nothing to show, and an empty part is absent.
 import { dueBranches } from '@/features/board/components/DueStrip.jsx';
-import { isoWeekStart, isoWeekEnd } from '@/features/board/lib/recordViews.js';
+import { dueCounts, uniqueStories, branchesOf } from '@/features/board/lib/branchDays.js';
 
 const DAY = 86400000;
 const MONTH_DAYS = 30;
@@ -18,9 +18,7 @@ function summaryVersions(board) {
 /** The first sentence of a stored summary: one line for the arc. */
 export const firstLine = (text) => (/^[\s\S]*?[.!?](?=\s|$)/.exec(text.trim())?.[0] || text.trim());
 
-function branchRows(stories) {
-  return Object.values(stories || {}).flatMap((s) => (s?.forks || []).flatMap((f) => (f.branches || []).map((b) => ({ ...b, forkId: f.forkId }))));
-}
+const branchRows = (stories) => uniqueStories(stories).flatMap(({ story }) => branchesOf(story));
 
 /** The month on this board as of `today` (YYYY-MM-DD): { arc, previous, strings, ours, yours, missed, quiet, dates }. */
 export function monthlyView(board, stories, today) {
@@ -31,7 +29,7 @@ export function monthlyView(board, stories, today) {
 
   const ours = {
     settled: branches.filter((b) => settledOn(b) && day(b.verdict.at) >= since).length,
-    dueThisWeek: branches.filter((b) => !b.verdict && !b.legacy && day(b.due) >= isoWeekStart(today) && day(b.due) <= isoWeekEnd(today)).length,
+    ...dueCounts(stories, today),
   };
   const weighted = Object.entries(board?.weights || {}).flatMap(([forkId, byBranch]) => Object.keys(byBranch).map((branchId) => ({ forkId, branchId })));
   const yours = {
@@ -45,14 +43,14 @@ export function monthlyView(board, stories, today) {
     return [];
   }).sort((a, b) => (a.date < b.date ? 1 : -1));
 
-  const quiet = (board?.pins || []).filter((p) => p.kind === 'thread' && day(p.lastMoved) && day(p.lastMoved) <= ago(today, QUIET_DAYS))
+  const quiet = (board?.pins || []).filter((p) => p.kind === 'thread' && !p.retiredAt && day(p.lastMoved) && day(p.lastMoved) <= ago(today, QUIET_DAYS))
     .map((p) => ({ pinId: p.pinId, weeks: Math.floor((Date.parse(today) - Date.parse(day(p.lastMoved))) / (7 * DAY)) }));
 
   return {
     arc: versions.filter((v) => v.date >= since).reverse(),
     previous: versions.slice(1),
     strings,
-    ours: ours.settled || ours.dueThisWeek ? ours : null,
+    ours: ours.settled || ours.dueThisWeek || ours.late ? ours : null,
     yours: yours.set ? yours : null,
     missed: board?.coverage?.note || null,
     quiet,

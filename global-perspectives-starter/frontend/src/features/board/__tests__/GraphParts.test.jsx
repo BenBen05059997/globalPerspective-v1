@@ -48,7 +48,7 @@ describe('top bar', () => {
 
 describe('due on your board', () => {
   it('lists open branches with a due date, nearest first, with the date and our percentage', () => {
-    expect(dueBranches({ a: story }, '2026-10-20').map((r) => r.id)).toEqual(['story-a:f1-3', 'story-a:f1-0']);
+    expect(dueBranches({ a: story }, '2026-10-20').map((r) => r.id)).toEqual(['a:f1-3', 'a:f1-0']);
     render(<DueStrip stories={{ a: story }} today="2026-10-20" />);
     expect(screen.getByText('25 Oct · 20%')).toBeInTheDocument();
     expect(screen.getByText('Premiums rise again')).toBeInTheDocument();
@@ -60,6 +60,10 @@ describe('due on your board', () => {
     const { container } = render(<DueStrip stories={{}} today="2026-10-20" />);
     expect(container).toBeEmptyDOMElement();
   });
+  it('two pins merged into one survivor list its branches once, under the first pin', () => {
+    const rows = dueBranches({ a: story, b: story }, '2026-10-20');
+    expect(rows.map((r) => r.id)).toEqual(['a:f1-3', 'a:f1-0']);
+  });
 });
 
 describe('branches in the rail', () => {
@@ -69,6 +73,14 @@ describe('branches in the rail', () => {
     expect(screen.getByText('65%')).toBeInTheDocument();
     expect(screen.getByText('trigger: A second insurer announces an increase')).toBeInTheDocument();
     expect(screen.getByText('MODEL JUDGMENT')).toBeInTheDocument();
+  });
+  it('flags a late branch and takes the newest fork that still has an open branch', () => {
+    const late = { threadId: 't', forks: [
+      { forkId: 'new', drawnAt: '2026-10-25', branches: [{ branchId: 'n1', text: 'Done', verdict: { result: 'yes', at: '2026-10-26' } }] },
+      { forkId: 'old', drawnAt: '2026-10-10', branches: [{ branchId: 'o1', text: 'Still open', trigger: 'q?', due: '2026-10-30' }] }] };
+    render(<RailBranches stories={{ t: late }} labelOf={() => 'T'} today="2026-11-03" />);
+    expect(screen.getByText('Still open')).toBeInTheDocument();
+    expect(screen.getByText('late · past 30 Oct')).toBeInTheDocument();
     expect(screen.queryByText('Talks restart')).toBeNull(); // settled
   });
 });
@@ -119,8 +131,15 @@ describe('graph text', () => {
     expect(pinCountParts({ recordAvailable: true, counts: { chapters: 2, liveBranches: null, confirmedLinks: 0 } })).toEqual(['2 chapters', '0 confirmed links']);
     expect(pinCountParts({ counts: { chapters: 2 } })).toEqual([]);
   });
-  it('labels strings; "Not confirmed" only when the string says so', () => {
-    expect(stringLabel({ owner: 'ours', strength: 'medium', confirmed: false, mechanism: 'm' })).toEqual({ head: 'Ours · Medium · Not confirmed', body: 'm' });
+  it('branch counts on the card come from the story when it is loaded: live and late, as the tree counts them', () => {
+    const forks = [{ branches: [{ due: '2026-11-05' }, { due: '2026-11-03' }, { due: '2026-11-01' }, { due: '2026-10-01', verdict: { result: 'no', at: '2026-10-02' } }] }];
+    const pin = { recordAvailable: true, counts: { chapters: null, liveBranches: 99, confirmedLinks: null } };
+    expect(pinCountParts(pin, { forks }, '2026-11-03')).toEqual(['2 live branches · 1 late']);
+    expect(pinCountParts(pin, null, '2026-11-03')).toEqual(['99 live branches']);
+  });
+  it('labels strings; the reader\'s line on our string shows beside the mechanism', () => {
+    expect(stringLabel({ owner: 'ours', strength: 'medium', mechanism: 'm' })).toEqual({ head: 'Ours · Medium', body: 'm' });
+    expect(stringLabel({ owner: 'ours', strength: 'inferred', cutAt: 'x', mechanism: 'm', line: 'mine' })).toEqual({ head: 'Ours · Inferred · Cut', body: 'm Your line: “mine”' });
     expect(stringLabel({ owner: 'ours', strength: 'strong' }).head).toBe('Ours · Strong');
     expect(stringLabel({ owner: 'yours', line: 'x' })).toEqual({ head: 'Yours', body: '“x”' });
   });

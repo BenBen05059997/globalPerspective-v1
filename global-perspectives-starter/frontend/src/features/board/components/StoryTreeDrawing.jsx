@@ -1,7 +1,7 @@
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
-import { isLate } from '@/features/board/lib/storyTree.js';
+import { isLate } from '@/features/board/lib/branchDays.js';
 import '@/features/board/storyTree.css';
 
 // The drawn tree (artboard 6): the dated trunk, the present line, and one future line per open branch whose thickness is its

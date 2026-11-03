@@ -130,14 +130,14 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
             return (
               <g
                 key={p.pinId}
-                className={`bm-pin${on ? ' is-selected' : ''}`}
+                className={`bm-pin${on ? ' is-selected' : ''}${p.retiredAt ? ' is-retired' : ''}`}
                 data-pin-id={p.pinId}
                 data-kind={p.kind}
                 data-tier={i.risk != null ? tierFromScore(i.risk) : undefined}
                 style={p.kind === 'thread' && crisisDotVar(i.category) ? { '--pin-hue': crisisDotVar(i.category) } : undefined}
                 role="button"
                 tabIndex={0}
-                aria-label={`${KIND_WORD[p.kind]}: ${i.label || p.refId}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}`}
+                aria-label={`${KIND_WORD[p.kind]}: ${i.label || p.refId}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}${p.retiredAt ? ', retired' : ''}`}
                 onClick={() => onPickPin(p.pinId)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickPin(p.pinId); } }}
               >

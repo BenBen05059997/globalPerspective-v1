@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
@@ -21,7 +21,7 @@ import { usePresets } from '@/features/board/hooks/usePresets.js';
 import { usePinInfo } from '@/features/board/hooks/usePinInfo.js';
 import { boardAvailable, callBoard } from '@/features/board/lib/boardApi.js';
 import {
-  addPin, removePin, keepString, cutString, restoreString, findString, missingActors, pinRef, failedCombos, KIND_WORD,
+  addPin, retirePin, restorePin, keepString, cutString, restoreString, findString, missingActors, pinRef, failedCombos, KIND_WORD,
 } from '@/features/board/lib/boardOps.js';
 import RecordPinDetails from '@/features/board/components/RecordPinDetails.jsx';
 import ArrivalsTray from '@/features/board/components/ArrivalsTray.jsx';
@@ -47,7 +47,9 @@ import AlertsPanel from '@/features/board/components/AlertsPanel.jsx';
 import MonthlyCard from '@/features/board/components/MonthlyCard.jsx';
 import FoldingRules from '@/features/board/components/FoldingRules.jsx';
 import { setWeight } from '@/features/board/lib/divergence.js';
+import { dayMonth } from '@/shared/lib/branchWording.js';
 import { isoWeekEnd } from '@/features/board/lib/recordViews.js';
+import { todayUTC } from '@/features/board/lib/branchDays.js';
 import '@/features/board/board.css';
 
 const SHEET_TITLE = { add: 'Add a pin', presets: 'From a preset', verdict: 'Connection verdict', string: 'String', pin: 'Pin' };
@@ -56,6 +58,9 @@ export default function BoardPage() {
   useNoIndex();
   const { boardId } = useParams();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  // every move between boards keeps the query (the dev harness lives in it)
+  const goTo = useCallback((id, opts) => navigate({ pathname: boardHref(id), search }, opts), [navigate, search]);
   const isPhone = useIsPhone();
   const member = useMember();
   const available = boardAvailable();
@@ -83,18 +88,25 @@ export default function BoardPage() {
   const pins = useMemo(() => board?.pins || [], [board]);
   const info = usePinInfo(pins, topics);
   const records = useStoryViews(pins);
-  const today = new Date().toISOString().slice(0, 10);
-  const counts = useWeekCounts(today, board?.lastVisitedAt, !!board?.recordAvailable);
+  const today = todayUTC();
+  // the visit date the session started with: the server moves lastVisitedAt on as soon as the arrivals are read
+  const counts = useWeekCounts(today, state.visitedAt, !!board?.recordAvailable);
+  // retired pins are greyed: their stories stay out of the due strip, the rail, the weekly and the counts
+  const liveStories = useMemo(() => {
+    const refs = new Set(pins.filter((p) => !p.retiredAt).map((p) => p.refId));
+    return Object.fromEntries(Object.entries(records.stories).filter(([id]) => refs.has(id)));
+  }, [pins, records.stories]);
   const countIds = useMemo(() => [...new Set([...pins.filter((p) => p.kind === 'thread').map((p) => p.refId), ...Object.values(records.stories).map((s) => s?.threadId).filter(Boolean)])], [pins, records.stories]);
-  const full = pins.length >= PIN_BUDGET;
+  const liveCount = pins.filter((p) => !p.retiredAt).length;
+  const full = liveCount >= PIN_BUDGET;
   const pinById = useMemo(() => Object.fromEntries(pins.map((p) => [p.pinId, p])), [pins]);
   const labelOf = (id) => info[id]?.label || pinById[id]?.refId || id;
   const threadLabel = (threadId) => info[board.pins.find((p) => p.refId === threadId)?.pinId]?.label || threadId;
 
   // With no board in the address, open the newest one.
   useEffect(() => {
-    if (live && !boardId && boards.settled && boards.boards.length) navigate(boardHref(boards.boards[0].boardId), { replace: true });
-  }, [live, boardId, boards.settled, boards.boards, navigate]);
+    if (live && !boardId && boards.settled && boards.boards.length) goTo(boards.boards[0].boardId, { replace: true });
+  }, [live, boardId, boards.settled, boards.boards, goTo]);
 
   // A different board starts with a clean selection and no open panel.
   useEffect(() => { setPanel(null); setSelected([]); setResults([]); setNotice(''); setConfirmDelete(false); setWeekPick(null); }, [boardId]);
@@ -134,7 +146,7 @@ export default function BoardPage() {
     const r = addPin(board, ref);
     if (r.status === 'full') { setNotice(`Pin budget reached: a board holds at most ${PIN_BUDGET} pins.`); return; }
     if (r.status === 'duplicate') { setNotice('That pin is already on this board.'); return; }
-    setNotice('');
+    setNotice(r.status === 'restored' ? 'That pin was retired; it is back on the board.' : '');
     state.edit((b) => addPin(b, ref).board);
   };
 
@@ -147,21 +159,21 @@ export default function BoardPage() {
   const createBoard = async () => {
     try {
       const b = await boards.create(`Board ${boards.boards.length + 1}`);
-      navigate(boardHref(b.boardId));
-    } catch (err) { reportFetchError('board-create', err); setNotice('The board could not be created.'); }
+      goTo(b.boardId);
+    } catch (err) { reportFetchError('board-create', err); setNotice(err.code === 'board_limit' ? err.message : 'The board could not be created.'); }
   };
   const forkPreset = async (p) => {
     try {
       const b = await boards.fork(p.presetId);
       setPanel(null);
-      navigate(boardHref(b.boardId));
-    } catch (err) { reportFetchError('board-fork', err); setNotice('The preset could not be forked.'); }
+      goTo(b.boardId);
+    } catch (err) { reportFetchError('board-fork', err); setNotice(err.code === 'board_limit' ? err.message : 'The preset could not be forked.'); }
   };
   const deleteBoard = async () => {
     try {
       await boards.remove(boardId);
       setConfirmDelete(false);
-      navigate(boardHref(), { replace: true });
+      goTo(undefined, { replace: true });
     } catch (err) { reportFetchError('board-delete', err); setNotice('The board could not be deleted.'); }
   };
 
@@ -196,7 +208,7 @@ export default function BoardPage() {
 
   // The open story pin's tree: in the bottom sheet on a phone, full width under the graph on a desktop.
   const storyTree = detailPin?.kind === 'thread'
-    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} /> : null;
+    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} today={today} /> : null;
 
   let sheetBody = null;
   if (panel?.type === 'add') {
@@ -210,7 +222,7 @@ export default function BoardPage() {
         labelA={labelOf(panel.a)}
         labelB={labelOf(panel.b)}
         state={panel}
-        kept={!!findString(board, panel.a, panel.b)}
+        existing={findString(board, panel.a, panel.b)}
         onKeep={keep}
         onDismiss={() => { closePanel(); setSelected([]); }}
       />
@@ -231,7 +243,7 @@ export default function BoardPage() {
     const i = info[detailPin.pinId];
     sheetBody = (
       <div className="board-verdict">
-        <p className="board-verdict__pair">{KIND_WORD[detailPin.kind]}</p>
+        <p className="board-verdict__pair">{KIND_WORD[detailPin.kind]}{detailPin.retiredAt ? ` · retired ${dayMonth(detailPin.retiredAt)}; it keeps its strings and your lines` : ''}</p>
         <p className="board-verdict__strength">
           {detailPin.kind === 'thread' ? <EntityLink kind="story" id={detailPin.refId}>{i?.label}</EntityLink>
             : detailPin.kind === 'country' ? <EntityLink kind="country" id={detailPin.refId}>{i?.label}</EntityLink> : i?.label}
@@ -240,7 +252,9 @@ export default function BoardPage() {
         <div className="board-actions">
           {detailPin.kind === 'actor' && !follows.actors.some((a) => a.toLowerCase() === detailPin.refId.toLowerCase())
             ? <Button onClick={() => follows.followActor(detailPin.refId)}>Follow actor</Button> : null}
-          <Button onClick={() => { state.edit((b) => removePin(b, detailPin.pinId)); setSelected((s) => s.filter((x) => x !== detailPin.pinId)); closePanel(); }}>Remove pin</Button>
+          {detailPin.retiredAt
+            ? <Button disabled={full} onClick={() => { state.edit((b) => restorePin(b, detailPin.pinId)); closePanel(); }}>{full ? `Restore pin (budget of ${PIN_BUDGET} is full)` : 'Restore pin'}</Button>
+            : <Button onClick={() => { state.edit((b) => retirePin(b, detailPin.pinId)); setSelected((s) => s.filter((x) => x !== detailPin.pinId)); closePanel(); }}>Retire pin</Button>}
           <Button onClick={closePanel}>Close</Button>
         </div>
       </div>
@@ -266,7 +280,7 @@ export default function BoardPage() {
     <div className={`board-page${sheet ? ' has-sheet-open' : ''}`} onKeyDown={onKeyDown}>
       <BoardTopBar
         board={board}
-        pinCount={pins.length}
+        pinCount={liveCount}
         saving={state.saving}
         views={views}
         view={view}
@@ -280,7 +294,7 @@ export default function BoardPage() {
 
       <div className="board-switch" role="group" aria-label="Your boards">
         {boards.boards.map((b) => (
-          <Chip key={b.boardId} selected={b.boardId === boardId} onClick={() => navigate(boardHref(b.boardId))}>{b.name}</Chip>
+          <Chip key={b.boardId} selected={b.boardId === boardId} onClick={() => goTo(b.boardId)}>{b.name}</Chip>
         ))}
         <Button compact onClick={createBoard}>New board</Button>
         <Button compact selected={panel?.type === 'presets'} onClick={() => setPanel(panel?.type === 'presets' ? null : { type: 'presets' })}>From preset</Button>
@@ -340,9 +354,11 @@ export default function BoardPage() {
                   failed={failed}
                   onAddGhost={addActor}
                   coverageGap={coverage?.gaps?.[0] || null}
+                  stories={records.stories}
+                  today={today}
                 />
               )}
-              <DueStrip stories={records.stories} today={today} labelOf={threadLabel} />
+              <DueStrip stories={liveStories} today={today} labelOf={threadLabel} />
               {storyTree && !isPhone ? (
                 <Card as="section" aria-label={`Story tree: ${labelOf(detailPin.pinId)}`}>
                   <SectionHeader label={labelOf(detailPin.pinId)} hint="Story tree" as="h2"><Button compact onClick={closePanel}>Close tree</Button></SectionHeader>
@@ -373,25 +389,25 @@ export default function BoardPage() {
                   {pins.map((p) => (
                     <li key={p.pinId}>
                       <div className="board-pinrow">
-                        <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}</button>
+                        <button type="button" className="board-strings__btn" onClick={() => setPanel({ type: 'pin', pinId: p.pinId })}>{KIND_WORD[p.kind]}: {labelOf(p.pinId)}{p.retiredAt ? ' (retired)' : ''}</button>
                         {!p.line && p.kind === 'thread' && info[p.pinId]?.hasHeadline ? <span className="board-pinrow__tag">Latest headline</span> : null}
                       </div>
-                      <RecordPinDetails pin={p} />
+                      <RecordPinDetails pin={p} story={records.stories[p.refId]} today={today} />
                     </li>
                   ))}
                 </ul>
               </details>
             </div>
-            {thinRail ? <MapRail board={board} stories={records.stories} links={records.links} missing={missing} onOpen={() => setRailOpen(true)} /> : (
+            {thinRail ? <MapRail board={board} stories={liveStories} links={records.links} missing={missing} onOpen={() => setRailOpen(true)} /> : (
             <div className="board-rail">
               {mapView ? <Button compact onClick={() => setRailOpen(false)} aria-label="Collapse this week on your board">› Collapse</Button> : null}
               {!isPhone ? sheet : null}
-              <BoardWeekly board={board} info={info} stories={records.stories} links={records.links} loading={records.loading} errors={records.errors}
+              <BoardWeekly board={board} info={info} stories={liveStories} links={records.links} loading={records.loading}
                 onAddPin={(threadId) => addToBoard({ kind: 'thread', refId: threadId })}
                 onDismissLink={(threadId) => state.edit((b) => ({ ...b, dismissed: [...new Set([...b.dismissed, threadId])] }))} />
-              <RailBranches stories={records.stories} labelOf={threadLabel} />
+              <RailBranches stories={liveStories} labelOf={threadLabel} today={today} />
               <MissingCard actors={missing} full={full} onFollow={follows.followActor} onAdd={addActor} />
-              <DivergencePanel board={board} stories={records.stories} labelOf={labelOf}
+              <DivergencePanel board={board} stories={liveStories} labelOf={labelOf}
                 onRestore={(a, b) => state.edit((bd) => restoreString(bd, a, b))}
                 onWeight={(forkId, branchId, percent) => state.edit((bd) => setWeight(bd, forkId, branchId, percent))} />
             </div>)}
@@ -406,9 +422,9 @@ export default function BoardPage() {
                 return keepString(added.board, pin.pinId, card.via[0].pinId, card.via[0].mechanism);
               });
             }} />
-          {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} /> : null}
-          <MonthlyCard board={board} stories={records.stories} today={today} labelOf={labelOf} storyLabel={threadLabel}
-            onRetire={(pinId) => state.edit((b) => removePin(b, pinId))} />
+          {board.recordAvailable ? <UnsettledZone ids={countIds} counts={counts} stories={liveStories} today={today} /> : null}
+          <MonthlyCard board={board} stories={liveStories} today={today} labelOf={labelOf} storyLabel={threadLabel}
+            onRetire={(pinId) => state.edit((b) => retirePin(b, pinId))} />
           {import.meta.env.DEV ? <details className="board-fold"><summary>Alerts (dev harness only: not stored, nothing sent)</summary><AlertsPanel board={board} labelOf={labelOf} /></details> : null}
           <details className="board-fold"><summary>How the board folds</summary><FoldingRules /></details>
         </>

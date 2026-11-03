@@ -15,7 +15,7 @@ import { pinTypeLine, pinCountParts, stringLabel, shortHead } from '@/features/b
 const W = 1080;
 const H = 660;
 const PIN_W = 190;
-const PIN_H = 120;
+const PIN_H = 136;
 const GHOST_W = 150;
 const GHOST_H = 72;
 const LABEL_W = 190;
@@ -27,6 +27,7 @@ const DRAG_PX = 6;
 
 // `at` is { x, y, small } from placeLabels. The full text stays in the string's <title> and the string list.
 export function StringLabel({ at, head, body, ghost = false }) {
+  if (!at) return null;
   const w = at.small ? SMALL_W : LABEL_W;
   const h = at.small ? SMALL_H : LABEL_H;
   return (
@@ -53,7 +54,7 @@ function Legend() {
   );
 }
 
-export default function BoardGraph({ pins, strings, info, selected, pickedKey, onSelectPin, onPickString, onConnect, ghosts = [], failed = [], onAddGhost, coverageGap = null }) {
+export default function BoardGraph({ pins, strings, info, selected, pickedKey, onSelectPin, onPickString, onConnect, ghosts = [], failed = [], onAddGhost, coverageGap = null, stories = {}, today }) {
   const svgRef = useRef(null);
   const suppressClick = useRef(false);
   const [drag, setDragState] = useState(null);
@@ -73,7 +74,8 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
       ...failed.map((f) => ({ id: `f:${pairKey(f.a, f.b)}`, ...ends(f.a, f.b) })),
       ...ghosts.map((g) => ({ id: `g:${g.name}`, a: ghostAt[g.name], b: pos[g.pins[0]] || ghostAt[g.name] })),
     ].filter((it) => it.a);
-    return placeLabels(items, cards, W, H, { w: LABEL_W, h: LABEL_H }, { w: SMALL_W, h: SMALL_H });
+    // a label with no clear spot is left off (its string's title and the string list carry the text) rather than drawn over another
+    return placeLabels(items, cards, W, H, { w: LABEL_W, h: LABEL_H }, { w: SMALL_W, h: SMALL_H }, { dropBlocked: true });
   }, [pins, strings, failed, ghosts, pos, ghostAt]);
 
   const toSvg = (e) => {
@@ -159,7 +161,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
             return (
               <g key={`failed-${pairKey(f.a, f.b)}`} className="board-string board-string--cut" data-texture="cut" data-failed="true">
                 <line className="board-string__line" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />
-                <StringLabel at={labelAt[`f:${pairKey(f.a, f.b)}`]} head="Combination failed" body={f.text} ghost />
+                <StringLabel at={labelAt[`f:${pairKey(f.a, f.b)}`]} head="No link found" body={f.text} ghost />
               </g>
             );
           })}
@@ -191,23 +193,23 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
             const on = selected.includes(pin.pinId);
             const tier = i.risk != null ? tierFromScore(i.risk) : null;
             const type = pinTypeLine(pin, i, now);
-            const counts = pinCountParts(pin);
+            const counts = pinCountParts(pin, stories[pin.refId], today);
             return (
               <foreignObject key={pin.pinId} x={at.x - PIN_W / 2} y={at.y - PIN_H / 2} width={PIN_W} height={PIN_H}>
                 <div
-                  className={`board-pin${on ? ' is-selected' : ''}`}
+                  className={`board-pin${on ? ' is-selected' : ''}${pin.retiredAt ? ' is-retired' : ''}`}
                   data-pin-id={pin.pinId}
                   data-kind={pin.kind}
                   data-tier={tier || undefined}
                   role="button"
                   tabIndex={0}
                   aria-pressed={on}
-                  aria-label={`${KIND_WORD[pin.kind]}: ${i.label}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}`}
+                  aria-label={`${KIND_WORD[pin.kind]}: ${i.label}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}${pin.retiredAt ? ', retired' : ''}`}
                   onPointerDown={(e) => onPinDown(e, pin.pinId)}
                   onClick={() => onPinClick(pin.pinId)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectPin(pin.pinId); } }}
                 >
-                  <span className="board-pin__kind"><span className="board-pin__dot" style={type.dot ? { '--pin-hue': type.dot } : undefined} aria-hidden="true" />{type.text}</span>
+                  <span className="board-pin__kind"><span className="board-pin__dot" style={type.dot ? { '--pin-hue': type.dot } : undefined} aria-hidden="true" />{pin.retiredAt ? `Retired ${dayMonth(pin.retiredAt)} · ${KIND_WORD[pin.kind]}` : type.text}</span>
                   <span className="board-pin__title">{i.label}</span>
                   {pin.recordAvailable && pin.line ? <span className="board-pin__line">{pin.line}</span> : null}
                   {counts.length ? <span className="board-pin__counts">{counts.join(' · ')}</span> : null}

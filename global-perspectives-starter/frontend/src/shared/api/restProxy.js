@@ -334,7 +334,7 @@ export function boardConfigured() {
   return typeof window !== 'undefined' && !!window.BOARD_ENDPOINT;
 }
 
-export async function boardAction(action, body = {}, { auth = true } = {}) {
+export async function boardAction(action, body = {}, { auth = true, keepalive = false } = {}) {
   const endpoint = typeof window !== 'undefined' && window.BOARD_ENDPOINT;
   if (!endpoint) throw new Error('Missing BOARD_ENDPOINT');
   const headers = { 'Content-Type': 'application/json' };
@@ -343,7 +343,8 @@ export async function boardAction(action, body = {}, { auth = true } = {}) {
     if (!token) throw new Error('Sign in required');
     headers.Authorization = `Bearer ${token}`;
   }
-  const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ ...body, action }) });
+  // keepalive lets a save started as the page is being closed finish (the browser caps such a body at 64 KB)
+  const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ ...body, action }), ...(keepalive ? { keepalive: true } : {}) });
   let out;
   try { out = await res.json(); } catch { out = null; }
   if (!res.ok || !out || out.success !== true) {

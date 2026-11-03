@@ -134,6 +134,16 @@ function normalizeEntity(s) {
   return ACTOR_ALIASES[e] || e;       // fold full-name/variant → canonical surname
 }
 
+// "Spreading to X" is a claim, so it needs evidence: a country is NEW to a story only when it was
+// absent from the previous run's story AND at least SPREAD_MIN_OUTLETS distinct outlets tag it in
+// this run's articles. One model-tagged `iso3` entry on one article (or one outlet repeating itself)
+// is not spread, nor is a country that merely re-enters after its older articles aged out of the window.
+const SPREAD_MIN_OUTLETS = 2;
+function spreadCountries(items, isoSet, prevIso) {
+  return isoSet.filter((c) => !prevIso.includes(c)
+    && new Set(items.filter((i) => i.iso3.includes(c)).map((i) => i.domain).filter(Boolean)).size >= SPREAD_MIN_OUTLETS);
+}
+
 // Deterministic clustering: group classifiable EVENTS by (axis, primary iso3, shared entity) →
 // one story. storyId is stable across runs so velocity/spread accumulate. prevIndex: {storyId: prevStory}.
 function clusterStories(classified, nowIso, prevIndex = {}) {
@@ -167,7 +177,7 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
       outlets: domains.length,
       articles: items.length,
       velocity: prev ? +(domains.length / Math.max(prevOutlets, 1)).toFixed(2) : 1,
-      spread_new_iso3: isoSet.filter((c) => !prevIso.includes(c)),
+      spread_new_iso3: spreadCountries(items, isoSet, prevIso),
       first_seen: prev ? (prev.first_seen || nowIso) : nowIso,
       last_seen: nowIso,
       entities: [...new Set(items.flatMap((i) => i.entities))].slice(0, 6),

@@ -30,3 +30,5 @@ If more than half of attempted new classifications are missing, the run returns 
 
 ## Tests
 - `cd src && npm test` runs `outage.test.js`, `feeds.test.js` (RSS parse, fetch failure paths, S3 helpers; fake fetch and S3) and `classifier-core.test.mjs`. All offline.
+
+`spread_new_iso3` (the tracker prints "spreading to X" and raises a situation from it) lists a country only when it is new versus the previous run's story AND at least 2 distinct outlets tag it in this run's articles (`spreadCountries` in `src/classifier-core.js`). The model's per-article `iso3` list alone is not evidence of spread.

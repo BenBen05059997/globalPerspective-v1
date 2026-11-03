@@ -41,6 +41,17 @@ t('domainOf strips protocol + www', () => {
   assert.strictEqual(domainOf('https://www.bbc.com/news/x'), 'bbc.com');
 });
 
+t('spread_new_iso3 needs a country that is new vs the previous run AND tagged by >=2 distinct outlets', () => {
+  const mk = (domain, iso3) => ({
+    title: `Iran ${domain}`, url: `https://${domain}/x`, domain, iso3, latlon: { lat: 32, lon: 53 }, axis: 'conflict', category: 'war', severity: 3, kind: 'event', entities: ['IRGC'],
+  });
+  const prev = { 'conflict#IRN#irgc': { outlets: 2, iso3: ['IRN'] } };
+  const run = (items) => clusterStories(items, '2026-09-08T00:00:00Z', prev).find((x) => x.storyId === 'conflict#IRN#irgc').spread_new_iso3;
+  assert.deepStrictEqual(run([mk('reuters.com', ['IRN', 'ISR']), mk('bbc.com', ['IRN', 'ISR'])]), ['ISR']);
+  assert.deepStrictEqual(run([mk('reuters.com', ['IRN', 'ISR']), mk('reuters.com', ['IRN', 'ISR']), mk('bbc.com', ['IRN'])]), [], 'one outlet repeating itself');
+  assert.deepStrictEqual(run([mk('reuters.com', ['IRN']), mk('bbc.com', ['IRN'])]), [], 'nothing new');
+});
+
 t('clusterStories groups by axis+iso3+entity, computes outlets/velocity/spread', () => {
   const mk = (title, domain, iso3, ent, sev = 3) => ({
     title, url: `https://${domain}/x`, domain, iso3, latlon: { lat: 32, lon: 53 }, axis: 'conflict', category: 'war', severity: sev, kind: 'event', entities: [ent],
@@ -58,7 +69,7 @@ t('clusterStories groups by axis+iso3+entity, computes outlets/velocity/spread',
   assert.ok(s, 'iran story exists');
   assert.strictEqual(s.outlets, 3);
   assert.strictEqual(s.max_severity, 4);
-  assert.deepStrictEqual(s.spread_new_iso3, ['ISR']); // ISR new vs prev [IRN]
+  assert.deepStrictEqual(s.spread_new_iso3, []); // ISR is new vs prev [IRN] but only ONE outlet tags it: not evidence of spread
   assert.strictEqual(s.velocity, 3); // 3 outlets / prev 1
   assert.strictEqual(s.first_seen, '2026-09-07T00:00:00Z'); // preserved
   assert.strictEqual(stories.some((x) => x.axis === 'economic'), true);

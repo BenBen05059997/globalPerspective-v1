@@ -12,7 +12,7 @@ export default function HudCompactLine({ summary, expanded, onToggle, children }
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <span className="sh-hud-compact-text">{summary}</span>
+        <span className="sh-hud-compact-text" title={typeof summary === 'string' ? summary : undefined}>{summary}</span>
         <span className="sh-hud-compact-caret" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
       </button>
       {expanded ? <div className="sh-hud-compact-body">{children}</div> : null}

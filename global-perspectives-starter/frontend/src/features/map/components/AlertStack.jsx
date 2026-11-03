@@ -43,7 +43,7 @@ function AlertCard({ s, selected = false, isNew = false, scanned = false, onSele
         <span className="al-body">
           <span className="al-top">
             <span className="al-kind">{kind === 'alert' ? 'GDACS' : (AXIS_LABEL[s.axis] || s.axis)}</span>
-            {place ? <span className="al-place">{place}</span> : null}
+            {place ? <span className="al-place" title={place}>{place}</span> : null}
             <span className="al-age">{age}</span>
           </span>
           <span className="al-title">{s.verb_label}</span>

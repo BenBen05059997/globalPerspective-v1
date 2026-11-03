@@ -65,6 +65,13 @@ describe('map console — desktop alert stack (R4a)', () => {
     expect(screen.queryByText(/← All situations \(3\)/)).not.toBeInTheDocument();
   });
 
+  it('an ellipsized place name keeps its full text in a title', async () => {
+    SITUATIONS = [{ ...NEWS, affected_names: ['The Democratic Republic of the Congo and neighbours'] }];
+    await renderHome();
+    const stack = screen.getByRole('region', { name: 'Alerts' });
+    expect(within(stack).getByText('The Democratic Republic of the Congo and neighbours')).toHaveAttribute('title', 'The Democratic Republic of the Congo and neighbours');
+  });
+
   it('a card click selects the situation (announced) and marks the card pressed', async () => {
     SITUATIONS = [GDACS, NEWS];
     await renderHome();

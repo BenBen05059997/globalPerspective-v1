@@ -11,7 +11,7 @@ Read order: `CLAUDE.md` -> this file -> [architecture/ARCHITECTURE.md](architect
 - Facts come from code and live AWS: `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `App.jsx`, the served bundle hash. Never trust a doc for state.
 
 ## 2. Where we left off (2026-11-03)
-Working model: one coordinator session reviews, merges and deploys; lanes (git worktrees) or Sonnet agents build. Stale docs are found and rewritten whole by Sonnet agents, checked against code and AWS. Lane briefs go in `.board/` (ignored via `.git/info/exclude`). Dev machine is an Apple-silicon Mac; Lambdas stay x86_64 (`scripts/lambda.sh` cross-installs linux/x64 deps). Pages serves bundle `index-CeHmLqIG` (2026-11-03: countries list on the record).
+Working model: one coordinator session reviews, merges and deploys; lanes (git worktrees) or Sonnet agents build. Stale docs are found and rewritten whole by Sonnet agents, checked against code and AWS. Lane briefs go in `.board/` (ignored via `.git/info/exclude`). Dev machine is an Apple-silicon Mac; Lambdas stay x86_64 (`scripts/lambda.sh` cross-installs linux/x64 deps). Pages serves bundle `index-CgAfrMOy` (2026-11-03: board fix round 1).
 
 Foundation (goal: the site rebuilds from the record alone, decision 0035): steps 0-4 are done. Notes live in the record (0042), and the story, country, track record, list and archive pages read views (0043 to 0046). Weekly review `newsRecordReview` is live (`TriggerRecordReview`, Mon 01:00 UTC); the first full run (W44, about 520 stories) was Mon 2026-11-02. Pipeline alarms were removed by the operator choice.
 

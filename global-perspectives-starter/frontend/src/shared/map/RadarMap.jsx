@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
-import { placeMapLabels } from '@/shared/map/mapLabels.js';
+import { placeMapLabels, canvasMeasure } from '@/shared/map/mapLabels.js';
 import { land, FRAME } from '@/shared/map/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
 import {
@@ -28,6 +28,7 @@ function shadeFeature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO
 const TRAIL_DEG = 30;  // the beam's faint trail behind its leading edge
 const CARD_MS = 3000;  // how long a beam-pass card stays up (C6 R4)
 const CARD_W = 220;    // beam-pass card width (px)
+const MAX_LABELS = 8;  // most marker labels drawn at once (see the label rule where they are laid out)
 const CARD_GAP = 10;   // card ↔ marker gap (px)
 
 // The beam (C6 R1): faint and thin, about a quarter of the old full-accent edge. `angle` is the
@@ -439,17 +440,32 @@ export default function RadarMap({
         markerElsRef.current.set(s.id, this);
       });
 
+      // Labels (shared/map/mapLabels.js): the rule is deliberate — HIGH and ELEVATED situations
+      // only (MODERATE pins stay unlabelled so the map isn't a wall of text), most severe first,
+      // then escalating, then most recently changed, at most MAX_LABELS drawn. They live OUTSIDE the
+      // zoomed group, in screen pixels at a constant size, and are laid out again on every
+      // zoom/pan from the markers' on-screen positions (right/left/above/below the marker, inside
+      // the map, clear of other labels and of every marker, measured text width).
+      const ts = (v) => { const t = v ? new Date(v).getTime() : NaN; return Number.isFinite(t) ? t : 0; };
+      const markerR = (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 4;
       const labelable = active.filter((s) => s.tier === 'high' || s.tier === 'elevated')
-        .sort((a, b) => (tierSize(b.tier).ringR || tierSize(b.tier).r) - (tierSize(a.tier).ringR || tierSize(a.tier).r)).slice(0, 6);
-      // Right of the marker, flipped left at the map's right edge, overlaps dropped (lib/mapLabels.js).
-      const labels = placeMapLabels(labelable.map((s) => ({
-        id: s.id, x: proj(s)[0], y: proj(s)[1] + 4, off: (tierSize(s.tier).ringR || tierSize(s.tier).r) + 14, text: s.verb_label,
-      })), { width });
-      root.append('g').selectAll('text.sm-label').data(labels).join('text')
-        .attr('class', 'sm-label')
-        .attr('x', (l) => l.x).attr('y', (l) => l.y).attr('text-anchor', (l) => l.anchor)
-        .text((l) => l.text).attr('fill', TOKENS['text-body']).attr('font-size', 11)
-        .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 3);
+        .sort((a, b) => (markerR(b) - markerR(a)) || ((b.escalating ? 1 : 0) - (a.escalating ? 1 : 0)) || (ts(b.last_change_at) - ts(a.last_change_at)));
+      const measure = canvasMeasure(`11px ${getComputedStyle(svg.node()).fontFamily || 'sans-serif'}`);
+      const labelG = svg.append('g').attr('class', 'sm-labels').attr('pointer-events', 'none');
+      const layoutLabels = (t) => {
+        const at = (s) => { const [x, y] = proj(s); return { id: s.id, x: t.x + t.k * x, y: t.y + t.k * y, r: markerR(s) * t.k }; };
+        const labels = placeMapLabels(labelable.map((s) => ({ ...at(s), text: s.verb_label })), {
+          width, height, measure, max: MAX_LABELS, obstacles: active.map(at),
+        });
+        labelG.selectAll('text.sm-label').data(labels, (l) => l.id).join(
+          (enter) => enter.append('text').attr('class', 'sm-label').attr('fill', TOKENS['text-body']).attr('font-size', 11)
+            .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 3),
+        ).attr('x', (l) => l.x).attr('y', (l) => l.y).attr('text-anchor', (l) => l.anchor)
+          .text((l) => l.text).each(function title(l) {
+            d3.select(this).selectAll('title').data(l.full === l.text ? [] : [l.full]).join('title').text((x) => x);
+          });
+      };
+      layoutLabels(d3.zoomIdentity);
 
       // F2.2: the SVG is fully cleared and rebuilt every redraw (5-min poll, selection, resize),
       // which used to reset the zoom/pan to identity each time — reapply the visitor's last
@@ -457,6 +473,7 @@ export default function RadarMap({
       const zoom = d3.zoom().scaleExtent([1, 8]).on('zoom', (e) => {
         zoomTransformRef.current = e.transform;
         root.attr('transform', e.transform);
+        layoutLabels(e.transform);
       });
       zoomRef.current = zoom;
       svg.call(zoom).on('dblclick.zoom', null);

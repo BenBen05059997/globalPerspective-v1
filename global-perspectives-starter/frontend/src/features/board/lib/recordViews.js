@@ -2,12 +2,28 @@
 // ?devRecord=1 they come from the board's fixtures instead.
 import { fetchRecordView, makeRecordViews } from '@/shared/api/recordViews.js';
 
-async function getView(path) {
+async function readView(path) {
   if (import.meta.env.DEV) {
     const fake = await import('../dev/fakeRecordViews.js');
     if (fake.devRecordMode()) return fake.fakeView(path);
   }
   return fetchRecordView(path);
+}
+
+// One fetch per view file: the board hook and the verdict sheet ask for the same stories and links, so a file is
+// read once and shared for a minute (the promise itself is cached, so two asks at the same time share one request).
+// A failed read is not kept.
+const VIEW_TTL_MS = 60 * 1000;
+const views = new Map();
+export const clearViewCache = () => views.clear();
+
+function getView(path) {
+  const hit = views.get(path);
+  if (hit && Date.now() - hit.at < VIEW_TTL_MS) return hit.promise;
+  const promise = readView(path);
+  views.set(path, { at: Date.now(), promise });
+  promise.catch(() => { if (views.get(path)?.promise === promise) views.delete(path); });
+  return promise;
 }
 
 export const { fetchStoryView, fetchLinksView, fetchCounts } = makeRecordViews(getView);

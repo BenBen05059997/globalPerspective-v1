@@ -7,9 +7,9 @@ import UnsettledZone from '../components/UnsettledZone.jsx';
 import story from '../dev/recordViews/story-a.json';
 import counts from '../dev/recordViews/counts.json';
 import { boardWeek, sumCounts, isoWeekOf } from '../lib/recordProjection.js';
-import { fetchStoryView, fetchCounts, isoWeekStart, datesBetween } from '../lib/recordViews.js';
+import { fetchStoryView, fetchLinksView, fetchCounts, clearViewCache, isoWeekStart, datesBetween } from '../lib/recordViews.js';
 import { countDates } from '../hooks/useWeekCounts.js';
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); clearViewCache(); });
 const res = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
 describe('weekly', () => {
@@ -99,6 +99,21 @@ describe('unsettled zone', () => {
     expect(countDates('2026-10-21', '2026-10-21T01:00:00Z').since).toEqual([]);
     expect(countDates('2026-10-21', '2026-01-01T00:00:00Z').since).toBeNull();
     expect(countDates('2026-10-21', undefined).since).toEqual([]);
+  });
+});
+
+describe('one fetch per view file', () => {
+  it('asking for the same links view twice (at once or after) reads it once; a failed read is asked again', async () => {
+    const fetchMock = vi.fn(async () => res(200, { threadId: 'x' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await Promise.all([fetchLinksView('x'), fetchLinksView('x')]);
+    await fetchLinksView('x');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const failing = vi.fn().mockResolvedValueOnce(res(500)).mockResolvedValue(res(200, { threadId: 'y' }));
+    vi.stubGlobal('fetch', failing);
+    await expect(fetchLinksView('y')).rejects.toThrow(/500/);
+    expect(await fetchLinksView('y')).toEqual({ threadId: 'y' });
+    expect(failing).toHaveBeenCalledTimes(2);
   });
 });
 

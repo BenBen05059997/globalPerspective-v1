@@ -145,8 +145,8 @@ t('summarize: threadIds and also_reported_as only when present', () => {
 
 t('planNews: grouping off = planNewsSituations exactly; on = strict merge pass', () => {
   const { planNews } = _internal;
-  const a = story('conflict#UKR#a'); a.headlines = [{ title: 'x', url: 'https://x.com/1', domain: 'x.com' }, { title: 'x', url: 'https://x.com/2', domain: 'x.com' }];
-  const b = story('political#UKR#b'); b.headlines = [{ title: 'y', url: 'https://x.com/1/', domain: 'x.com' }, { title: 'y', url: 'https://x.com/2', domain: 'x.com' }];
+  const a = story('conflict#UKR#a'); a.headlines = [{ title: 'x', url: 'https://x.com/1', domain: 'x.com' }, { title: 'x', url: 'https://y.com/2', domain: 'y.com' }];
+  const b = story('political#UKR#b'); b.headlines = [{ title: 'y', url: 'https://x.com/1/', domain: 'x.com' }, { title: 'y', url: 'https://y.com/2', domain: 'y.com' }];
   const off = planNews([a, b], {}, {}, new Set(), { grouping: false });
   assert.strictEqual(off.groups.length, 2);
   assert.deepStrictEqual(off.merges, []);

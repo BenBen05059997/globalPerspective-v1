@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const core = require('../src/situations-core.js');
-const { planNewsGrouping, buildStorySituation, normalizeUrl, normalizeTitle, isLiveUrl, MEMBER_URL_CAP } = core;
+const { planNewsGrouping, buildStorySituation, normalizeUrl, normalizeTitle, isLiveUrl, outletOf, MEMBER_URL_CAP } = core;
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log(`  ok ${name}`); };
@@ -39,16 +39,16 @@ t('normalizeUrl: lowercase host, no query/fragment/trailing slash; non-http is n
 });
 
 t('URL rule across sweeps: a URL a situation held earlier joins a different story later', () => {
-  const a = story('conflict#UKR#russia', { title: 'Strike on Zaporizhzhia', outlets: 4, headlines: heads('https://a.com/1', 'https://a.com/2', 'https://a.com/3') });
+  const a = story('conflict#UKR#russia', { title: 'Strike on Zaporizhzhia', outlets: 4, headlines: heads('https://a.com/1', 'https://a2.com/2', 'https://a3.com/3') });
   const r1 = sweep([a], {}, 1);
   assert.deepStrictEqual(r1.merges, []);
   // sweep 2: the story key changed, its headline list now includes an old URL (with query + slash noise)
-  const b = story('political#UKR#zelensky', { title: 'Zelensky reacts', outlets: 2, headlines: heads('https://A.com/2/?ref=x', 'https://a.com/3', 'https://b.com/9') });
+  const b = story('political#UKR#zelensky', { title: 'Zelensky reacts', outlets: 2, headlines: heads('https://A2.com/2/?ref=x', 'https://a3.com/3', 'https://b.com/9') });
   const r2 = sweep([b], r1.next, 2);
   assert.strictEqual(r2.groups.length, 1);
   assert.strictEqual(r2.groups[0].id, 'news#conflict#UKR#russia', 'the older situation survives');
   assert.strictEqual(r2.merges[0].rule, 'url');
-  assert.deepStrictEqual(r2.merges[0].urls.sort(), ['https://a.com/2', 'https://a.com/3']);
+  assert.deepStrictEqual(r2.merges[0].urls.sort(), ['https://a2.com/2', 'https://a3.com/3']);
   assert.strictEqual(r2.merges[0].sharedCount, 2);
   const s = r2.next['news#conflict#UKR#russia'];
   assert.ok(s.aliases.includes('news#political#UKR#zelensky'));
@@ -83,7 +83,7 @@ t('look-alikes are NOT merged: same countries different titles; same title no sh
 
 t('grouped for life: the member story/URL still joins the survivor when it comes back alone', () => {
   const a = story('conflict#IRN#a', { title: 'Same title', iso3: ['IRN'], headlines: heads('https://a.com/1') });
-  const b = story('political#IRN#b', { title: 'Same title', iso3: ['IRN'], outlets: 1, headlines: heads('https://b.com/1', 'https://b.com/2') });
+  const b = story('political#IRN#b', { title: 'Same title', iso3: ['IRN'], outlets: 1, headlines: heads('https://b.com/1', 'https://b2.com/2') });
   const r1 = sweep([a, b], {}, 1);
   assert.strictEqual(r1.groups.length, 1);
   const id = r1.groups[0].id;
@@ -94,7 +94,7 @@ t('grouped for life: the member story/URL still joins the survivor when it comes
   assert.strictEqual(r2.merges[0].rule, 'member');
   assert.strictEqual(r2.merges[0].isNew, false, 'a standing group is not reported as a new merge');
   // sweep 3: a brand new story id carrying a URL b ever held joins by URL
-  const z = story('conflict#IRN#z', { title: 'Another', iso3: ['IRN'], headlines: heads('https://b.com/1', 'https://b.com/2') });
+  const z = story('conflict#IRN#z', { title: 'Another', iso3: ['IRN'], headlines: heads('https://b.com/1', 'https://b2.com/2') });
   const r3 = sweep([z], r2.next, 3);
   assert.deepStrictEqual(r3.groups.map((g) => g.id), [id]);
   assert.strictEqual(r3.merges[0].rule, 'url');
@@ -103,11 +103,11 @@ t('grouped for life: the member story/URL still joins the survivor when it comes
 
 t('survivor = oldest existing situation; absorbed prior is archived by the caller; aliases and threadIds[] populated', () => {
   const a = story('conflict#UKR#a', { title: 'Alpha', headlines: heads('https://a.com/1') });
-  const b = story('conflict#RUS#b', { title: 'Beta', iso3: ['RUS'], headlines: heads('https://b.com/1', 'https://b.com/2') });
+  const b = story('conflict#RUS#b', { title: 'Beta', iso3: ['RUS'], headlines: heads('https://b.com/1', 'https://b2.com/2') });
   let r = sweep([a], {}, 1, { threads: { 'conflict#UKR#a': 'thread-1' } });
   r = sweep([a, b], r.next, 2, { threads: { 'conflict#UKR#a': 'thread-1', 'conflict#RUS#b': 'thread-2' } });
   assert.deepStrictEqual(Object.keys(r.next).sort(), ['news#conflict#RUS#b', 'news#conflict#UKR#a']); // two separate so far
-  const a3 = story('conflict#UKR#a', { title: 'Alpha', headlines: heads('https://a.com/1', 'https://b.com/1', 'https://b.com/2') }); // now shares two of b's URLs
+  const a3 = story('conflict#UKR#a', { title: 'Alpha', headlines: heads('https://a.com/1', 'https://b.com/1', 'https://b2.com/2') }); // now shares two of b's URLs
   const r3 = sweep([a3, b], r.next, 3, { threads: { 'conflict#UKR#a': 'thread-1', 'conflict#RUS#b': 'thread-2' } });
   assert.strictEqual(r3.groups.length, 1);
   const g = r3.groups[0];
@@ -122,8 +122,8 @@ t('survivor = oldest existing situation; absorbed prior is archived by the calle
 });
 
 t('lead title = outlets x severity; the other member titles go to also_reported_as', () => {
-  const a = story('conflict#IRN#a', { title: 'Small take', outlets: 1, max_severity: 3, iso3: ['IRN'], headlines: heads('https://s.com/1', 'https://s.com/2') });
-  const b = story('political#IRN#b', { title: 'Big take', outlets: 5, max_severity: 4, iso3: ['IRN'], headlines: heads('https://s.com/1', 'https://s.com/2') });
+  const a = story('conflict#IRN#a', { title: 'Small take', outlets: 1, max_severity: 3, iso3: ['IRN'], headlines: heads('https://s.com/1', 'https://s2.com/2') });
+  const b = story('political#IRN#b', { title: 'Big take', outlets: 5, max_severity: 4, iso3: ['IRN'], headlines: heads('https://s.com/1', 'https://s2.com/2') });
   const r = sweep([a, b], {}, 1);
   const s = r.next[r.groups[0].id];
   assert.strictEqual(s.title, 'Big take');
@@ -150,21 +150,46 @@ t('live-blog URLs are recognised and ignored by the URL rule', () => {
 });
 
 t('one shared article is not enough; two shared non-live articles join', () => {
-  const a = story('conflict#UKR#a', { title: 'A', headlines: heads('https://a.com/1', 'https://a.com/2') });
-  const b1 = story('political#UKR#b', { title: 'B', headlines: heads('https://a.com/1', 'https://b.com/2') });
+  const a = story('conflict#UKR#a', { title: 'A', headlines: heads('https://a.com/1', 'https://a2.com/2') });
+  const b1 = story('political#UKR#b', { title: 'B', headlines: heads('https://a.com/1', 'https://b2.com/2') });
   assert.strictEqual(sweep([a, b1], {}, 1).groups.length, 2);
-  const b2 = story('political#UKR#b', { title: 'B', headlines: heads('https://a.com/1', 'https://a.com/2') });
+  const b2 = story('political#UKR#b', { title: 'B', headlines: heads('https://a.com/1', 'https://a2.com/2') });
   const r = sweep([a, b2], {}, 1);
   assert.strictEqual(r.groups.length, 1);
   assert.strictEqual(r.merges[0].sharedCount, 2);
 });
 
+t('outletOf: www./amp./m. prefixes and country suffixes fold to one outlet', () => {
+  assert.strictEqual(outletOf('https://www.bbc.co.uk/news/a'), 'bbc');
+  assert.strictEqual(outletOf('https://www.bbc.com/news/a'), 'bbc');
+  assert.strictEqual(outletOf('https://m.bbc.com/news/a'), 'bbc');
+  assert.strictEqual(outletOf('https://amp.theguardian.com/a'), 'theguardian');
+  assert.strictEqual(outletOf('https://www.france24.com/en/a'), 'france24');
+  assert.strictEqual(outletOf('https://news.sky.com/a'), 'sky');
+  assert.strictEqual(outletOf('https://www.abc.net.au/a'), 'abc');
+  assert.notStrictEqual(outletOf('https://www.dw.com/a'), outletOf('https://www.france24.com/a'));
+  assert.strictEqual(outletOf('not a url'), null);
+});
+
+t('2 shared articles from the SAME outlet do not join (France 24 + France 24); from different outlets they do', () => {
+  const talks = story('political#USA#talks', { title: 'Trump signals progress on Iran deal', iso3: ['USA', 'IRN'], outlets: 8, headlines: heads('https://www.france24.com/en/middle-east/20261103-us-strikes-qeshm', 'https://www.france24.com/en/tv-shows/20261102-trump-promised-no-more-wars') });
+  const qeshm = story('conflict#IRN#qeshm', { title: 'US strikes Qeshm Island', iso3: ['IRN', 'USA'], outlets: 3, headlines: heads('https://france24.com/en/middle-east/20261103-us-strikes-qeshm/', 'https://m.france24.com/en/tv-shows/20261102-trump-promised-no-more-wars?x=1') });
+  const same = sweep([talks, qeshm], {}, 1);
+  assert.strictEqual(same.groups.length, 2);
+  assert.deepStrictEqual(same.merges, []);
+  const qeshm2 = { ...qeshm, headlines: heads('https://www.france24.com/en/middle-east/20261103-us-strikes-qeshm/', 'https://www.bbc.co.uk/news/tv-shows/20261102-trump-promised-no-more-wars') };
+  const talks2 = { ...talks, headlines: heads('https://www.france24.com/en/middle-east/20261103-us-strikes-qeshm', 'https://www.bbc.co.uk/news/tv-shows/20261102-trump-promised-no-more-wars') };
+  const diff = sweep([talks2, qeshm2], {}, 1);
+  assert.strictEqual(diff.groups.length, 1);
+  assert.deepStrictEqual(diff.merges[0].outlets.sort(), ['bbc', 'france24']);
+});
+
 t('no chaining: a strike story sharing two articles with a talks story that leads another group does not join the strike group', () => {
   // talks (heaviest) leads; look-alike talks2 joins talks by title; strike shares two articles with talks2
   // only (a member), not with the lead talks, so it must NOT join the talks group.
-  const talks = story('political#IRN#talks', { title: 'Iran US talks progress', iso3: ['IRN', 'USA'], outlets: 8, max_severity: 4, headlines: heads('https://t.com/1', 'https://t.com/2') });
-  const talks2 = story('conflict#IRN#talks2', { title: 'iran us talks progress', iso3: ['IRN'], outlets: 2, max_severity: 3, headlines: heads('https://q.com/1', 'https://q.com/2') });
-  const strike = story('conflict#IRN#qeshm', { title: 'US strikes Qeshm island', iso3: ['IRN', 'USA'], outlets: 3, max_severity: 4, headlines: heads('https://q.com/1', 'https://q.com/2') });
+  const talks = story('political#IRN#talks', { title: 'Iran US talks progress', iso3: ['IRN', 'USA'], outlets: 8, max_severity: 4, headlines: heads('https://t.com/1', 'https://t2.com/2') });
+  const talks2 = story('conflict#IRN#talks2', { title: 'iran us talks progress', iso3: ['IRN'], outlets: 2, max_severity: 3, headlines: heads('https://q.com/1', 'https://q2.com/2') });
+  const strike = story('conflict#IRN#qeshm', { title: 'US strikes Qeshm island', iso3: ['IRN', 'USA'], outlets: 3, max_severity: 4, headlines: heads('https://q.com/1', 'https://q2.com/2') });
   const r = sweep([talks, talks2, strike], {}, 1);
   assert.strictEqual(r.groups.length, 2, 'talks + talks2 are one group; the strike stays separate');
   const strikeGroup = r.groups.find((g) => g.id === 'news#conflict#IRN#qeshm');
@@ -186,10 +211,10 @@ t('a lone situation does not hold its story id as a join key (only merged ones d
 });
 
 t('a closed situation is never a join target', () => {
-  const a = story('conflict#UKR#a', { headlines: heads('https://a.com/1', 'https://a.com/2') });
+  const a = story('conflict#UKR#a', { headlines: heads('https://a.com/1', 'https://a2.com/2') });
   const r1 = sweep([a], {}, 1);
   const closed = { ...r1.next['news#conflict#UKR#a'], state: 'closed' };
-  const b = story('political#UKR#b', { headlines: heads('https://a.com/1', 'https://a.com/2') });
+  const b = story('political#UKR#b', { headlines: heads('https://a.com/1', 'https://a2.com/2') });
   const r2 = sweep([b], { [closed.situationId]: closed }, 2);
   assert.deepStrictEqual(r2.groups.map((g) => g.id), ['news#political#UKR#b']);
 });

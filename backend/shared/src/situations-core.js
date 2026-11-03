@@ -281,7 +281,7 @@ function mergeStories(stories) {
 }
 // ── news grouping (one event, one situation) ────────────────────────────────
 // Strict, evidence-only rules (never country overlap or title words alone). Two news situations or
-// stories join when (a) they share at least 2 normalised, non-live article URLs (a story's URLs against
+// stories join when (a) they share at least 2 normalised, non-live article URLs from at least 2 different outlets (a story's URLs against
 // the URLs a situation has ever held), or (b) they have an identical normalised title AND a shared country.
 // Once joined they stay one situation: the survivor persists `member_story_ids[]` / `member_urls[]`,
 // and a story whose id or URL is in those sets joins it on every later sweep. GDACS never comes here.
@@ -335,6 +335,23 @@ function isLiveUrl(u) {
 // A URL join needs at least this many shared, non-live article URLs (one shared article is common
 // between two different events: a roundup that mentions both).
 const MIN_SHARED_URLS = 2;
+// ...and they must come from at least this many DIFFERENT outlets (two pages of one site are one source).
+const MIN_SHARED_OUTLETS = 2;
+const SECOND_LEVEL = new Set(['co', 'com', 'org', 'net', 'gov', 'ac', 'edu', 'or', 'ne']);
+/** Outlet of a URL: the brand label of its host. Lowercase host; drop www./amp./m./mobile. prefixes; then
+ *  the label just before the public suffix, where the suffix is the last label, or the last two when
+ *  the last is a 2-letter country code and the one before is co/com/org/net/gov/ac/edu/or/ne. So
+ *  www.bbc.co.uk, news.bbc.com and m.bbc.com are all "bbc"; france24.com is "france24"; null if unparsable. */
+function outletOf(u) {
+  const n = normalizeUrl(u);
+  if (!n) return null;
+  let labels = n.replace(/^https?:\/\//, '').split('/')[0].split(':')[0].split('.');
+  while (labels.length > 2 && ['www', 'amp', 'm', 'mobile'].includes(labels[0])) labels = labels.slice(1);
+  const k = labels.length;
+  if (k < 2) return labels[0] || null;
+  const twoPart = labels[k - 1].length === 2 && SECOND_LEVEL.has(labels[k - 2]) && k >= 3;
+  return labels[twoPart ? k - 3 : k - 2];
+}
 function articleUrl(u) { const n = normalizeUrl(u); return n && !isLiveUrl(n) ? n : null; }
 
 // A comparable node: a current-sweep group of stories, or a prior open news situation.
@@ -361,9 +378,10 @@ function priorNode(st) {
 const sharedOf = (a, b) => [...a].filter((x) => b.has(x));
 /** The strict rule by which candidate `a` matches lead `b`, or null: >=2 shared article URLs, or an
  *  identical title + a shared country. Grouped-for-life membership is checked separately. */
-function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS) {
+function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS, minOutlets = MIN_SHARED_OUTLETS) {
   const urls = sharedOf(a.urls, b.urls);
-  if (urls.length >= minUrls) return { rule: 'url', urls, sharedCount: urls.length };
+  const outlets = uniq(urls.map(outletOf).filter(Boolean));
+  if (urls.length >= minUrls && outlets.length >= minOutlets) return { rule: 'url', urls, sharedCount: urls.length, outlets };
   for (const [nt, raw] of a.titles) {
     if (!b.titles.has(nt)) continue;
     const countries = [...a.iso].filter((c) => b.iso.has(c));
@@ -397,6 +415,7 @@ const priorWeight = (st) => (Number(st.evidence && st.evidence.outlets) || 0) * 
 function planNewsGrouping(groups, priorStates, opts = {}) {
   const urlCap = opts.urlCap || MEMBER_URL_CAP;
   const minUrls = opts.minSharedUrls || MIN_SHARED_URLS;
+  const minOutlets = opts.minSharedOutlets || MIN_SHARED_OUTLETS;
   const priors = Object.values(priorStates || {}).filter((st) => st && st.source === 'news' && st.state !== 'closed' && st.situationId);
   const nodes = [...groups.map((g) => groupNode(g)), ...priors.map(priorNode)];
   // Continuity (a group and the prior situations it already carries by id or alias): one cluster, not a merge.
@@ -431,7 +450,7 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
     if (mine) return { rule: 'member', storyId: mine };
     const theirs = [...gIds(h)].find((i) => c.ps.some((p) => p.ids.has(i)));
     if (theirs) return { rule: 'member', storyId: theirs };
-    for (const ln of h.leadNodes) { const e = evidenceEdge(c.agg, ln, minUrls); if (e) return e; }
+    for (const ln of h.leadNodes) { const e = evidenceEdge(c.agg, ln, minUrls, minOutlets); if (e) return e; }
     return null;
   };
   for (const c of cands) {
@@ -469,7 +488,7 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
         // the survivor may sit in the joined cluster (it is the older situation): then the lead's side is the absorbed one
         const [abLabel, viaLabel] = j.c.label.id === id ? [h.label, j.c.label] : [j.c.label, h.label];
         const row = { survivor: { id, title: survivorTitle }, absorbed: abLabel, via: viaLabel, rule: j.rule };
-        if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else row.storyId = j.storyId;
+        if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; row.outlets = j.outlets; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else row.storyId = j.storyId;
         row.isNew = !(prev && Array.isArray(prev.aliases) && prev.aliases.includes(row.absorbed.id));
         merges.push(row);
       }
@@ -592,5 +611,5 @@ module.exports = {
   parseGeometry, eventKeyOf, affectedIso3,
   buildObservation, nextCheckAt, buildSituation, coolSituation, buildStorySituation,
   storyCountry, newsSituationId, mergeStories,
-  normalizeUrl, normalizeTitle, planNewsGrouping, isLiveUrl, LIVE_URL_PATTERNS, MIN_SHARED_URLS, MEMBER_URL_CAP,
+  normalizeUrl, normalizeTitle, planNewsGrouping, isLiveUrl, LIVE_URL_PATTERNS, MIN_SHARED_URLS, MIN_SHARED_OUTLETS, outletOf, MEMBER_URL_CAP,
 };

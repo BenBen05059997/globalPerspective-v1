@@ -53,7 +53,7 @@ const cell = (s) => String(s == null ? '' : s).replace(/\|/g, '\\|').replace(/\n
 const detailCache = new Map();
 const detailOf = (id) => { if (!detailCache.has(id)) detailCache.set(id, detail(id)); return detailCache.get(id); };
 
-function replay(minSharedUrls) {
+function replay(minSharedUrls, minSharedOutlets) {
   let prior = {}; const missed = {};
   const rows = new Map(); // `${survivor}|${absorbed}` -> first row
   let ungroupedLast = 0; let groupedLast = 0;
@@ -70,7 +70,7 @@ function replay(minSharedUrls) {
       };
       return { id: s.id, threadId: s.threadId || null, stories: [st], aliases: [], prev: prior[s.id] || null, opened: s.opened_at };
     });
-    const plan = core.planNewsGrouping(groups, prior, { minSharedUrls });
+    const plan = core.planNewsGrouping(groups, prior, { minSharedUrls, minSharedOutlets });
     for (const m of plan.merges) {
       const key = `${m.survivor.id}|${m.absorbed.id}`;
       if (!rows.has(key)) rows.set(key, { at: w.generated_at, ...m });
@@ -95,7 +95,7 @@ function replay(minSharedUrls) {
   return { list: [...rows.values()], ungroupedLast, groupedLast };
 }
 
-const evidence = (r) => (r.rule === 'url' ? `${r.sharedCount} shared: ${r.urls.join(' ; ')}` : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : `member story ${r.storyId}`);
+const evidence = (r) => (r.rule === 'url' ? `${r.sharedCount} shared from ${r.outlets.length} outlets (${r.outlets.join(', ')}): ${r.urls.map((u) => `[${core.outletOf(u)}] ${u}`).join(' ; ')}` : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : `member story ${r.storyId}`);
 const table = (list) => {
   const t = ['| Time (Tokyo) | Surviving id | Surviving title | Absorbed id | Absorbed title | Rule | Evidence |', '|---|---|---|---|---|---|---|'];
   for (const r of list) t.push(`| ${tokyo(r.at)} | ${cell(r.survivor.id)} | ${cell(r.survivor.title)} | ${cell(r.absorbed.id)} | ${cell(r.absorbed.title)} | ${r.rule} | ${cell(evidence(r))} |`);
@@ -104,22 +104,22 @@ const table = (list) => {
 };
 
 const first = sweeps[0].generated_at; const last = sweeps[sweeps.length - 1].generated_at;
-const main = replay(core.MIN_SHARED_URLS);
-const loose = replay(1); // 1-article rule, live blogs still excluded, same no-chaining
+const main = replay(core.MIN_SHARED_URLS, core.MIN_SHARED_OUTLETS);
+const before = replay(core.MIN_SHARED_URLS, 1); // previous rule: 2 articles, outlets not checked
 const kept = new Set(main.list.map((r) => r.absorbed.id));
-const dropped = loose.list.filter((r) => !kept.has(r.absorbed.id));
+const dropped = before.list.filter((r) => !kept.has(r.absorbed.id));
 const out = [];
 out.push('# News grouping replay');
 out.push('');
 out.push(`Replayed ${sweeps.length} sweeps, ${tokyo(first)} to ${tokyo(last)} (${((new Date(last) - new Date(first)) / 3600e3).toFixed(1)} h; ${snaps.length} snapshots were available, window ${HOURS} h).`);
-out.push(`Rules: >= ${core.MIN_SHARED_URLS} shared non-live article URLs, or identical title + shared country; a join must match the group's lead directly (no chaining).`);
+out.push(`Rules: >= ${core.MIN_SHARED_URLS} shared non-live article URLs from >= ${core.MIN_SHARED_OUTLETS} different outlets, or identical title + shared country; a join must match the group's lead directly (no chaining).`);
 out.push(`Open news situations in the last sweep: ${main.ungroupedLast} as published, ${main.groupedLast} with grouping. ${main.list.length} distinct join(s).`);
 out.push('');
 out.push('Limits: snapshots hold situation summaries, not raw stories; each situation is replayed as one story; article URLs come from the final state/archive file (so a URL rule can fire a few sweeps earlier than live).');
 out.push('');
 out.push(...table(main.list));
 out.push('');
-out.push(`## Dropped by the 2-article rule (1-article rule, live blogs excluded, gives ${loose.list.length} joins; ${dropped.length} are not in the list above)`);
+out.push(`## Dropped by the outlet condition (previous rule, 2 articles with outlets unchecked, gave ${before.list.length} joins; ${dropped.length} are not in the list above)`);
 out.push('');
 out.push(...table(dropped));
 const text = out.join('\n') + '\n';

@@ -260,8 +260,8 @@ const seedStories = (stories) => {
   objects.set('stories/index.json', JSON.stringify({ updated_at: '2026-10-31T11:00:00.000Z', degraded: false, status: 'ok', stories }));
 };
 const dupes = [
-  gstory('conflict#IRN#qeshm', { title: 'Qeshm strike', iso3: ['IRN', 'USA'], headlines: [{ title: 'a', url: 'https://x.com/a?utm=1', domain: 'x.com' }, { title: 'b', url: 'https://x.com/b', domain: 'x.com' }] }),
-  gstory('political#USA#pentagon', { title: 'Pentagon on Qeshm', iso3: ['USA'], headlines: [{ title: 'a', url: 'https://X.com/a/', domain: 'x.com' }, { title: 'b', url: 'https://x.com/b/', domain: 'x.com' }] }),
+  gstory('conflict#IRN#qeshm', { title: 'Qeshm strike', iso3: ['IRN', 'USA'], headlines: [{ title: 'a', url: 'https://x.com/a?utm=1', domain: 'x.com' }, { title: 'b', url: 'https://y.com/b', domain: 'y.com' }] }),
+  gstory('political#USA#pentagon', { title: 'Pentagon on Qeshm', iso3: ['USA'], headlines: [{ title: 'a', url: 'https://X.com/a/', domain: 'x.com' }, { title: 'b', url: 'https://Y.com/b/', domain: 'y.com' }] }),
 ];
 const newsIds = (key) => parsed(key).ids.filter((i) => i.startsWith('news#'));
 
@@ -286,7 +286,7 @@ test('grouping flag on + DRY_RUN: merges in the shadow universe only, merge list
   assert.equal(sit.aliases.length, 1);
   const list = parsed('shadow/situations/merges/2026/10/31/12/1200.json');
   assert.equal(list.merges[0].rule, 'url');
-  assert.deepEqual(list.merges[0].urls.sort(), ['https://x.com/a', 'https://x.com/b']);
+  assert.deepEqual(list.merges[0].urls.sort(), ['https://x.com/a', 'https://y.com/b']);
 });
 
 test('grouping flag on, live: the next sweep keeps the group (grouped for life)', async () => {

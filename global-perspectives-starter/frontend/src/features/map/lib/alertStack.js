@@ -2,6 +2,7 @@
 // open situation (GDACS alerts + news situations) as a small card at the map's edge. It replaces
 // the retired /breaking feed (that route now redirects). Pure so ordering + the honest empty line are testable.
 import { situationFreshness } from '@/shared/map/legend.js';
+import { threadKeys } from '@/features/map/lib/threadKeys.js';
 
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
 
@@ -21,7 +22,7 @@ function lastActivity(s) {
  *    the map to it — an alert with nowhere to fly to would be a dead click);
  *  - drops the 30d+ ones (freshness 'hidden'), returned as `hiddenCount` so the stack can say so;
  *  - orders most severe first (tier), then escalating first, then newest activity first;
- *  - lists one event once: news situations are per country, so one story thread can have several
+ *  - lists one event once (by `threadId` and every `threadIds[]` entry): news situations are per country, so one story thread can have several
  *    (the Qeshm strike as a US and an Iran situation). The first by that order stays; the others
  *    keep their map pins but not a second row.
  */
@@ -38,9 +39,10 @@ export function alertStackItems(situations = [], now = Date.now()) {
     || (lastActivity(b) - lastActivity(a)));
   const seenThreads = new Set();
   const once = items.filter((s) => {
-    if (!s.threadId) return true;
-    if (seenThreads.has(s.threadId)) return false;
-    seenThreads.add(s.threadId);
+    const keys = threadKeys(s);
+    if (!keys.length) return true;
+    if (keys.some((k) => seenThreads.has(k))) return false;
+    keys.forEach((k) => seenThreads.add(k));
     return true;
   });
   return { items: once, hiddenCount };

@@ -158,6 +158,16 @@
 .sh-country { max-width: 100%; overflow-wrap: anywhere; font-size: var(--text-sm); background: var(--panel-3); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 2px var(--space-2); color: var(--text-head); }
 .sh-country.sh-more { color: var(--text-muted); }
 
+.sh-also { border-top: 1px solid var(--hairline); }
+.sh-also-toggle { width: 100%; min-height: var(--tap-min); display: flex; align-items: center; gap: var(--space-2); text-align: left; background: transparent; border: 0; color: var(--text-muted); padding: var(--space-2) var(--space-4); font-size: var(--text-sm); cursor: pointer; }
+.sh-also-toggle:hover { color: var(--text-head); }
+.sh-also-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.sh-also-count { color: var(--text-dim); font-size: var(--text-xs); }
+.sh-also-caret { margin-left: auto; }
+.sh-also-list { list-style: none; margin: 0; padding: 0 var(--space-4) var(--space-3); }
+.sh-also-list[hidden] { display: none; }
+.sh-also-list li { overflow-wrap: anywhere; font-size: var(--text-ui); line-height: 1.35; color: var(--text-head); margin-bottom: var(--space-2); }
+
 .sh-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--hairline); }
 .sh-metrics > div { padding: var(--space-2) var(--space-4); border-right: 1px solid var(--hairline); }
 .sh-metrics > div:last-child { border-right: 0; }

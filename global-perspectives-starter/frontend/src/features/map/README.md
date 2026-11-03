@@ -18,7 +18,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Query (built by `mapHref` in `@/shared/lib/links.js`, read in `lib/deepLinks.js`): `?focus=<situation id>`, `?story=<threadId>`,
   `?country=<ISO3, ISO2 or name>` (an unknown code says so), `?layer=` (followed on every URL change). "Not on the map" / "no longer
   tracked" show only after the data really loaded without the id; while loading it says loading, after a failed load "unavailable".
-  The detail file is fetched for the resolved situation id (old aliases and `?story=` links included).
+  The detail file is fetched for the resolved situation id. A grouped situation answers to `aliases[]` for `?focus=` and every `threadIds[]` entry for `?story=` (`lib/threadKeys.js`).
 ## Frontend
 - `SituationHome.jsx` - the console: selection, boot sensors, layer and view state. Globe: `@/shared/map/SituationMap3D.jsx`
   (lazy); radar: `@/shared/map/RadarMap.jsx`
@@ -65,7 +65,8 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 
 ## The two lists
 - **Alerts** (`AlertStack.jsx`): the one list of situations; each plotted one is a real button (the keyboard twin of the pins). A story thread
-  shows once (news situations are per country; the others keep their pins). One count everywhere: `openCount` in `SituationHome.jsx` is the number of Alerts rows, and the Alerts header, every "All situations (N)" button, the About list and the phone ALERTS badge all use it.
+  (its `threadId` or any `threadIds[]` entry) shows once (news situations are per country; the others keep their pins). One count everywhere: `openCount` in `SituationHome.jsx` is the number of Alerts rows, and the Alerts header, every "All situations (N)" button, the About list and the phone ALERTS badge all use it.
+- **Grouped situations** (tracker `NEWS_GROUPING`): the card shows the lead title, then the other member titles (`also_reported_as[]`) under "Also reported as", a collapsed-by-default `aria-expanded` button, drawn only when non-empty.
 - **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`,
   the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
 

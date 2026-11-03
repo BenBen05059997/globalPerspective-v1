@@ -10,6 +10,7 @@
 //   - stories sharing a country are grouped: the group's count is drawn as a small badge, and its
 //     hue/top story favour a real crisis category over 'neutral' when the group is mixed.
 import { crisisTypeForCategory, crisisHueForCategory } from '@/shared/lib/crisisHue.js';
+import { threadKeys } from '@/features/map/lib/threadKeys.js';
 
 function topicIso3(topic) {
   if (Array.isArray(topic?.iso3) && topic.iso3[0]) return topic.iso3[0];
@@ -22,7 +23,7 @@ function topicIso3(topic) {
  * country shading and the Intel feed's story list share.
  */
 export function topicsWithoutSituation(topics = [], situations = []) {
-  const pinned = new Set((situations || []).map((s) => s?.threadId).filter(Boolean));
+  const pinned = new Set((situations || []).flatMap(threadKeys));
   return (topics || []).filter((t) => t && !(t.threadId && pinned.has(t.threadId)));
 }
 

@@ -9,6 +9,7 @@
 // Pure: no fetches, no React.
 import { parentCountry, COUNTRIES } from '@/shared/lib/countries.js';
 import { crisisHueForCategory } from '@/shared/lib/crisisHue.js';
+import { threadKeys } from '@/features/map/lib/threadKeys.js';
 
 /** The situation a ?focus= id names: its own id, else the situation that absorbed it. */
 export function situationForFocus(situations, focus) {
@@ -24,10 +25,10 @@ export function topicForStory(topics, storyId) {
   return topics.find((t) => (t.threadId || t.topicId) === storyId) || null;
 }
 
-/** The situation that carries a thread (news situations get one from the story map). */
+/** The situation that carries a thread: its own `threadId`, or one of the `threadIds[]` of the stories it grouped. */
 export function situationForThread(situations, threadId) {
   if (!threadId || !Array.isArray(situations)) return null;
-  return situations.find((s) => s.threadId === threadId) || null;
+  return situations.find((s) => threadKeys(s).includes(threadId)) || null;
 }
 
 /** The countries of a story-web thread: its `iso3[]` when the read API sends one, else its places

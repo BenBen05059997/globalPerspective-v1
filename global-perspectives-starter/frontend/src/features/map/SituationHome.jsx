@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef, useId, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
@@ -124,6 +124,26 @@ function metricsFor(selected, ev) {
   return { outlets, spread, ratio };
 }
 
+// "Also reported as": the other titles of the stories the tracker grouped into this situation (the lead
+// story's title is the heading). A disclosure, collapsed by default; nothing is drawn when there are none.
+function AlsoReported({ titles }) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  if (!Array.isArray(titles) || !titles.length) return null;
+  return (
+    <div className="sh-also">
+      <button type="button" className="sh-also-toggle" aria-expanded={open} aria-controls={listId} onClick={() => setOpen((o) => !o)}>
+        <span>Also reported as</span>
+        <span className="sh-also-count">{titles.length}</span>
+        <span aria-hidden="true" className="sh-also-caret">{open ? '▾' : '▸'}</span>
+      </button>
+      <ul id={listId} className="sh-also-list" hidden={!open}>
+        {titles.map((t) => <li key={t}>{t}</li>)}
+      </ul>
+    </div>
+  );
+}
+
 // SituationDetail — the situation half of the rail (M2–M6), factored out in M7 so the exact same
 // markup can render inside the phone bottom sheet (showBack=false there — the sheet's own
 // Collapse/Close buttons replace the "back" affordance) without duplicating it.
@@ -155,6 +175,8 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, detailStatus = 'r
             {affected.length > 5 ? <span className="sh-country sh-more">+{affected.length - 5}</span> : null}</span>
         </div>
       ) : null}
+
+      {isGdacs ? null : <AlsoReported key={selected.id} titles={selected.also_reported_as} />}
 
       {isGdacs ? (
         <>

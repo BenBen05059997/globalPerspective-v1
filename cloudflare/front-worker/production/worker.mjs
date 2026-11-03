@@ -464,10 +464,12 @@ export default {
         if (!upstream.ok) {
           return dataErr({ error: 'upstream', status: upstream.status }, 502);
         }
-        // Public bundles cache at the edge; member bundles are private to the viewer.
+        // Public bundles cache at the edge; member bundles are private to the viewer. The browser needs its own
+        // max-age: with only s-maxage and stale-while-revalidate it counts every copy as stale, serves it from cache
+        // and revalidates in the background, so each read shows up as two requests (the second can fail on its own).
         const cacheControl = isMember
           ? 'private, no-store'
-          : 'public, s-maxage=300, stale-while-revalidate=600';
+          : 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
         return new Response(upstream.body, {
           status: 200,
           headers: {

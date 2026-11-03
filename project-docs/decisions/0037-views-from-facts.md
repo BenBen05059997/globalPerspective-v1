@@ -71,7 +71,7 @@ Amended by 0039: `newsStoryRecord` stays the only view builder and reads reading
 | Item | Decision |
 |---|---|
 | `DATA_ALLOWED` | add `/^record\/views\/[\w./-]+\.json$/`. Not `record/facts/` (large, raw, one file per day, append-only history that is not a page contract), not `record/runs/` (operations data), not `record/readings/` (readers get readings only through the story view, after the review accepts them) |
-| Cache | exactly today's pattern, no special case for views: `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`, ETag passed through. One rule for every `/data/*` prefix; tune later with evidence, not now. Missing key stays 404 "not generated yet" |
+| Cache | exactly today's pattern, no special case for views: `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600` (the browser max-age was added 2026-11-03: without it Chrome serves a stale copy and revalidates in the background, two requests per read), ETag passed through. One rule for every `/data/*` prefix; tune later with evidence, not now. Missing key stays 404 "not generated yet" |
 | Member-only | none. Views are public; `.member.` keys are not used |
 | Who calls what | the browser fetches `index/active.json`, `stories/{id}.json`, `links/{id}.json`, `counts/{date}.json` through `/data/record/views/...` |
 | `newsBoard` | keeps server-side only: `enrichBoard` (pin enrichment on get_board; one GET of `index/active.json`, fallback `index/all.json` when a pinned story is not active) and `arrivals` (index + `links/{id}` for candidate stories, replacing N story GETs). Moves to the browser: `story_view` (becomes a direct fetch of `stories/{id}.json`; the Lambda action is removed when nothing calls it) and the board weekly's story reads |

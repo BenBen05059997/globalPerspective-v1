@@ -117,6 +117,8 @@ test(`baseline vs patched identical for ${SAME.length} non-blog requests`, async
     const b = await run(patched, `${H}${path}`, { method, ua });
     // the patched pre-render first looks for a record view (a manifest read, 0054); the origin and API calls and the page must be the baseline's
     b.log = b.log.filter((l) => !l.includes('.amazonaws.com/record/views/'));
+    // the one deliberate difference: public /data bundles carry a browser max-age (see the /data test below)
+    if (b.headers['cache-control']?.startsWith('public, max-age=60, ')) b.headers['cache-control'] = b.headers['cache-control'].replace('max-age=60, ', '');
     assert.deepEqual(b, a, `${method} ${path} ${ua ? '(bot)' : ''}`);
   }
 });
@@ -126,7 +128,8 @@ test('/data/record/views/* is served with the shared cache rule; other record pr
   for (const key of ['index/active.json', 'stories/story-a.json', 'links/story-a.json', 'counts/2026-10-21.json', 'manifest.json']) {
     const r = await run(patched, `${H}/data/record/views/${key}`);
     assert.equal(r.status, 200, key);
-    assert.equal(r.headers['cache-control'], 'public, s-maxage=300, stale-while-revalidate=600', key);
+    // max-age is what keeps the browser from serving a stale copy and revalidating at once (two requests per read)
+    assert.equal(r.headers['cache-control'], 'public, max-age=60, s-maxage=300, stale-while-revalidate=600', key);
     assert.equal(r.headers.etag, '"e1"', key);
     assert.equal(r.log.filter((l) => l.includes('amazonaws.com')).length, 1, key);
   }

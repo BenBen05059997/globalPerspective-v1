@@ -1,7 +1,7 @@
 # map
 
 The front page of the site (`/`). This folder is called `map` because the page is a world-map console: a globe (deck.gl) or
-radar (d3) of tracked situations, with a status line, alert stack, intel feed, story card and legend. Visitors use it to see
+radar (d3) of tracked situations, with a status line, alert stack (Alerts), intel feed (Intel), story card and legend. Visitors use it to see
 what is happening now and open a story or country from it. On phones it becomes tabs plus a bottom sheet.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
@@ -10,15 +10,15 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 <!-- pipeline:end -->
 
 ## Status
-- Live, public; map data never gates on sign-in. No feature flag.
-- The SITUATIONS / COUNTRY RISK layer switch and the Globe / Radar switch are both live. Radar behaviour: decision 0023.
+- Live, public; map data never gates on sign-in. No feature flag. The SITUATIONS / COUNTRY RISK layer switch and the Globe / Radar switch are both live. Radar behaviour: decision 0023.
 
 ## Routes
 - `/` -> `SituationHome` (lazy; the route fallback is `BootLoader` with `WAITING_SENSORS`)
 - `/map` -> `/` keeping query and hash (`src/app/MapRedirect.jsx`); `/breaking` -> `/` the same way (route in `app/App.jsx`, `MapRedirect`)
 - Query (built by `mapHref` in `@/shared/lib/links.js`, read in `lib/deepLinks.js`): `?focus=<situation id>`, `?story=<threadId>`,
-  `?country=<ISO3 or name>`, `?layer=`, `?about=`. An unknown story shows an honest "not on the map".
-
+  `?country=<ISO3, ISO2 or name>` (an unknown code says so), `?layer=` (followed on every URL change). "Not on the map" / "no longer
+  tracked" show only after the data really loaded without the id; while loading it says loading, after a failed load "unavailable".
+  The detail file is fetched for the resolved situation id (old aliases and `?story=` links included).
 ## Frontend
 - `SituationHome.jsx` - the console: selection, boot sensors, layer and view state. Globe: `@/shared/map/SituationMap3D.jsx`
   (lazy); radar: `@/shared/map/RadarMap.jsx`
@@ -43,7 +43,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 
 ## Data
 - `useWorld()` -> `/data/world/latest.json`, polled every 5 min while the tab is visible; `useSituationDetail(id)` ->
-  `/data/situations/state/<id>.json`. A 404 is an empty state, not an error. Dev override: `VITE_WORLD_URL`. No sign-in.
+  `/data/situations/state/<id>.json`. A 404 reads as unavailable. The one freshness stamp is the map file's age. Dev override: `VITE_WORLD_URL`. No sign-in.
 - `useGdacsStatus` re-reads the same file (memory cache 5 min), only while analysis is paused.
 - `useGeminiTopics()` -> `topics`; `useStoryCardData` -> `summary` and the story analysis (the record's story view `analysis`, `thread_analysis` as fallback, `@/shared/api/storyAnalysis.js`); `useWebIndex()` -> the record's web view (`index/web.json`), `web_index` as fallback
   (only once `?story=` is set); `useDailyBrief()` and `useWeeklyBrief()` -> the record's brief views, the `latest_daily_brief` / `weekly_brief` actions for what is newer (decision 0048).
@@ -58,9 +58,13 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 3. `newsAgent` writes `threads/story-map.json`, which links situations to story threads.
 4. `newsSituationTracker` (30 min) folds 1-3 into `situations/state/<id>.json` and `world/latest.json`.
 5. The Worker (`cloudflare/front-worker/production/worker.mjs`) serves `/data/*` from the private S3 bucket.
-6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, alert stack and intel feed on `/`.
-7. Story shading: `newsIngest` -> NewsCache `latest` -> `newsSensitiveData-dev` action `topics` -> `useGeminiTopics`.
-8. Country risk layer: `newsCountryIntelligence` -> `COUNTRY#<name>` rows -> `country_intelligence` -> `useCountryRiskLayer`.
+6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, Alerts and Intel on `/`. Every world poll and detail failure goes to the error sink.
+
+## The two lists
+- **Alerts** (`AlertStack.jsx`): the one list of situations; each plotted one is a real button (the keyboard twin of the pins). A story thread
+  shows once (news situations are per country; the others keep their pins). `N open` equals the phone ALERTS badge.
+- **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`,
+  the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
 
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md), [0023](../../../../../project-docs/decisions/0023-radar-one-sweep-12h-window.md),
@@ -73,4 +77,4 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
   `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
 
-Last verified: 2026-10-31
+Last verified: 2026-11-03

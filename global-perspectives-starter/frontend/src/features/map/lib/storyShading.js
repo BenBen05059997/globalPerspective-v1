@@ -17,17 +17,25 @@ function topicIso3(topic) {
 }
 
 /**
+ * topicsWithoutSituation(topics, situations) -> the topics whose thread is not carried by a situation
+ * (a topic that is a situation already has its pin and its Alerts row). The one rule the map's
+ * country shading and the Intel feed's story list share.
+ */
+export function topicsWithoutSituation(topics = [], situations = []) {
+  const pinned = new Set((situations || []).map((s) => s?.threadId).filter(Boolean));
+  return (topics || []).filter((t) => t && !(t.threadId && pinned.has(t.threadId)));
+}
+
+/**
  * storiesForShading(topics, situations) -> [{ iso3, count, top, stories, crisisType, hue }]
  * `situations` is the world bundle's situation list (each may carry a `threadId`); pass `[]` or
  * omit if unavailable — nothing will be excluded on that basis then.
  */
 export function storiesForShading(topics = [], situations = []) {
-  const pinnedThreadIds = new Set((situations || []).map((s) => s?.threadId).filter(Boolean));
   const byCountry = new Map();
 
-  for (const topic of topics || []) {
-    if (!topic || !topic.title) continue;
-    if (topic.threadId && pinnedThreadIds.has(topic.threadId)) continue; // already has a pin
+  for (const topic of topicsWithoutSituation(topics, situations)) {
+    if (!topic.title) continue;
     const iso3 = topicIso3(topic);
     if (!iso3) continue; // broad region — list only, never a made-up wash
 

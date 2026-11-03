@@ -63,7 +63,7 @@ describe('map console — selection live region (F2.12)', () => {
     expect(live).toBeInTheDocument();
     expect(live.textContent).toBe('');
 
-    const feedRow = document.querySelector('.hud-feed-list li button');
+    const feedRow = document.querySelector('.al-list li button');
     fireEvent.click(feedRow);
     expect(live.textContent).toBe('Selected: Mexico — tropical cyclone');
 

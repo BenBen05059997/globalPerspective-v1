@@ -71,12 +71,13 @@ describe('map console — phone layout (M7)', () => {
     expect(document.querySelector('.sheet')).not.toBeInTheDocument();
   });
 
-  it('LIST tab shows the intel feed full width with no map/sheet', async () => {
+  it('LIST tab shows the stories feed full width (no situations) with no map/sheet', async () => {
     await renderHome();
     fireEvent.click(screen.getByRole('tab', { name: /^list$/i }));
     expect(screen.getByRole('tab', { name: /^list$/i })).toHaveAttribute('aria-selected', 'true');
     const panel = screen.getByRole('tabpanel');
-    expect(within(panel).getByText('Mexico — tropical cyclone')).toBeInTheDocument();
+    expect(within(panel).getByLabelText('Intel feed')).toBeInTheDocument();
+    expect(within(panel).queryByText('Mexico — tropical cyclone')).not.toBeInTheDocument();
     expect(document.querySelector('.sh-mapinner')).not.toBeInTheDocument();
   });
 
@@ -89,9 +90,14 @@ describe('map console — phone layout (M7)', () => {
     expect(screen.getByLabelText('Alerts')).toBeInTheDocument();
   });
 
-  it('selecting a situation from LIST switches to MAP and opens the sheet at half', async () => {
+  it('the ALERTS tab badge is the number of rows its list shows', async () => {
     await renderHome();
-    fireEvent.click(screen.getByRole('tab', { name: /^list$/i }));
+    expect(screen.getByRole('tab', { name: /alerts/i }).textContent).toMatch(/1$/);
+  });
+
+  it('selecting a situation from ALERTS switches to MAP and opens the sheet at half', async () => {
+    await renderHome();
+    fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
     fireEvent.click(within(screen.getByRole('tabpanel')).getByText('Mexico — tropical cyclone'));
 
     expect(screen.getByRole('tab', { name: /^map$/i })).toHaveAttribute('aria-selected', 'true');
@@ -105,7 +111,7 @@ describe('map console — phone layout (M7)', () => {
 
   it('closing the sheet clears the selection and it does not reopen on its own', async () => {
     await renderHome();
-    fireEvent.click(screen.getByRole('tab', { name: /^list$/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
     fireEvent.click(within(screen.getByRole('tabpanel')).getByText('Mexico — tropical cyclone'));
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(document.querySelector('.sheet')).not.toBeInTheDocument();

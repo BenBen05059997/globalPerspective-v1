@@ -2,7 +2,9 @@
 // news situations) as small cards at the map's edge, most severe / newest first
 // (lib/alertStack.js). A card click selects the situation and the map flies to it. Replaces the
 // need for the retired /breaking feed (that route now redirects). The phone ALERTS tab reuses this same
-// component full width. Empty = one honest, computed line — never "the map is quiet".
+// component full width. This is the ONE list of situations: every plotted situation is a real <button>
+// here (keyboard-reachable twin of the map pins, with the "new" and radar "scanned" marks); the Intel
+// feed lists only stories. Empty = one honest, computed line — never "the map is quiet".
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { iso3Name } from '@/shared/lib/situationLabels.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
@@ -20,7 +22,7 @@ function placeOf(s) {
   return null;
 }
 
-function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
+function AlertCard({ s, selected = false, isNew = false, scanned = false, onSelect, now = Date.now() }) {
   const kind = markerKind(s);
   const fresh = situationFreshness(s, now);
   const glyph = statusGlyph(s);
@@ -54,6 +56,8 @@ function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
               </span>
             ) : null}
             {fresh === 'older' ? <span className="sh-older">older</span> : null}
+            {isNew ? <span className="sh-new">◇ new</span> : null}
+            {scanned ? <span className="hud-scanned" aria-label="just scanned by the radar sweep">◉ scanned</span> : null}
             <span className="sh-sr-only">{kindLabel(kind)}</span>
           </span>
         </span>
@@ -63,7 +67,7 @@ function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
 }
 
 export default function AlertStack({
-  items = [], hiddenCount = 0, focusId = null, onSelect, emptyText, note = null, label = 'Alerts', className = '',
+  items = [], hiddenCount = 0, focusId = null, newIds = null, scannedIds = null, onSelect, emptyText, note = null, label = 'Alerts', className = '',
 }) {
   const now = Date.now();
   return (
@@ -74,7 +78,7 @@ export default function AlertStack({
       {items.length ? (
         <ul className="al-list">
           {items.map((s) => (
-            <AlertCard key={s.id} s={s} selected={s.id === focusId} onSelect={onSelect} now={now} />
+            <AlertCard key={s.id} s={s} selected={s.id === focusId} isNew={!!newIds?.has(s.id)} scanned={!!scannedIds?.has(s.id)} onSelect={onSelect} now={now} />
           ))}
         </ul>
       ) : (

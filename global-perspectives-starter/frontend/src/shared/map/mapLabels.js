@@ -20,7 +20,9 @@ const MAX_TEXT_W = 220;        // longer labels are ellipsized (full text stays 
 export function canvasMeasure(font) {
   let ctx = null;
   try {
-    ctx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+    // jsdom (tests) has no canvas and logs a "not implemented" error: use the fallback there.
+    const canvasOk = typeof document !== 'undefined' && !/jsdom/i.test(globalThis.navigator?.userAgent || '');
+    ctx = canvasOk ? document.createElement('canvas').getContext('2d') : null;
     if (ctx) ctx.font = font;
   } catch { ctx = null; }
   if (ctx && typeof ctx.measureText === 'function') {

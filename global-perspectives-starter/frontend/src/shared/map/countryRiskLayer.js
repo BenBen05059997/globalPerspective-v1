@@ -126,7 +126,7 @@ export function riskPeekData(entry) {
     category: `RISK ${entry.score} · ${entry.tierLabel}`,
     hue: entry.hue,
     primaryCountry: entry.leadLabel,
-    hint: 'Click to open the country page',
+    hint: 'Click to open the country card',
   };
   if (dateOk) {
     const d = dateLabel.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -136,5 +136,5 @@ export function riskPeekData(entry) {
 }
 
 // Re-exported so callers/tests don't need a second import for the country name a map click
-// resolves to (SituationHome navigates to /weekly/country/:name, keyed by name not ISO3).
+// resolves to (SituationHome opens the country card in place, keyed by name not ISO3).
 export { iso3Name };

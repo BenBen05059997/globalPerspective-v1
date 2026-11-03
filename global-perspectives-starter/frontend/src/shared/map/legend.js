@@ -12,7 +12,7 @@
 //   badge      = direction: ▲ escalating · ● new · ◆ steady · ▼ cooling (text glyphs, so they
 //                work without colour), derived only from the tracker's own `state`/`escalating`
 //
-// Motion is NOT decided here (lib/pulse.js owns the ≤8-pulse budget).
+// Motion is NOT decided here (pulse.js owns the pulse budget, MOTION_BUDGET.pulses).
 import { freshnessState } from '@/shared/lib/freshness.js';
 
 export const TIERS = ['low', 'moderate', 'elevated', 'high'];

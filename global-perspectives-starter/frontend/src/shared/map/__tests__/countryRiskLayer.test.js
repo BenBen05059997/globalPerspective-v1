@@ -99,6 +99,7 @@ describe('countryRiskLayer — riskPeekData', () => {
     expect(peek.category).toContain('High');
     expect(peek.primaryCountry).toBe('Humanitarian');
     expect(peek.updatedLabel).toContain('older');
+    expect(peek.hint).toBe('Click to open the country card'); // a click opens the card on the map, not the country page
   });
   it('returns null for no entry', () => {
     expect(riskPeekData(null)).toBeNull();

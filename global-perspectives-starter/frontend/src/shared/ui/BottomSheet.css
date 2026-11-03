@@ -10,7 +10,7 @@
   box-shadow: var(--shadow-lg); overflow: hidden; transition: height 0.22s ease;
 }
 .sheet-instant { transition: none; }
-.sheet-peek { height: 120px; }
+.sheet-peek { height: 128px; } /* handle 44 + subtitle + 2 title lines + padding fits with room to spare */
 .sheet-half { height: 45vh; }
 .sheet-full { height: 85vh; }
 /* F2.16: the drag handle is a keyboard-operable role="slider", so its target reaches 44px too. */
@@ -20,6 +20,6 @@
 .sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--hairline); }
 .sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .sheet-subtitle { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
-.sheet-title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); line-height: var(--leading-tight); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
 .sheet-btns { flex: none; display: flex; gap: var(--space-2); }
 .sheet-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }

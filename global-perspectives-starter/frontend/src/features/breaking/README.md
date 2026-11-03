@@ -19,7 +19,7 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 - Subscriber breaking emails are off: `TriggerBreakingEmailSend` is DISABLED (enabling sends needs an operator yes).
 
 ## Routes
-- None owned. `/breaking` -> `BreakingFeedRedirect` (to `/`) and `/breaking/:id` -> `BreakingDetailRedirect`
+- None owned. `/breaking` -> `MapRedirect` (to `/`, keeping query and hash) and `/breaking/:id` -> `BreakingDetailRedirect`
   (`src/app/LegacyRedirects.jsx`) use `useBreakingAlert`: to the story `/weekly/thread/:threadId` when the alert has
   an arc, else `/`.
 

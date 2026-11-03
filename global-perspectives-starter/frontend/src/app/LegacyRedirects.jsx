@@ -2,7 +2,7 @@
 // links and emailed URLs keep working on any host. cloudflare/front-worker/production/worker.mjs
 // answers the same addresses with real 301s once it is uploaded; these stay as the fallback.
 //   /spider-demo         -> /weekly?view=web          (the unlisted prototype retired into the Stories WEB view)
-//   /breaking            -> /                         (the map's alert stack replaced the feed)
+//   /breaking            -> /  keeping query and hash (MapRedirect, same as /map; the map's alert stack replaced the feed)
 //   /breaking/:id        -> the alert's story /weekly/thread/:threadId when the alert resolves to
 //                           one (the single-alert read says it has an arc), else /
 // Briefings merge (2026-10-19): one /briefings page with read / weekly / present modes.
@@ -37,10 +37,6 @@ export function WeeklyRoute({ children }) {
 
 export function SpiderDemoRedirect() {
   return <Navigate replace to="/weekly?view=web" />;
-}
-
-export function BreakingFeedRedirect() {
-  return <Navigate replace to={ROUTE.map} />;
 }
 
 export function BreakingDetailRedirect() {

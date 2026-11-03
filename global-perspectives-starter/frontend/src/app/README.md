@@ -41,7 +41,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 
 ## Legacy redirects (client fallback; the Cloudflare Worker sends real 301s)
 `/map` -> `/` (keeps the query, `MapRedirect.jsx`); `/daily`, `/daily/:dateKey`, `/weekly-brief` -> `/briefings` modes;
-`/spider-demo` -> `/weekly?view=web`; `/breaking` -> `/`;
+`/spider-demo` -> `/weekly?view=web`; `/breaking` -> `/` (keeps the query and hash, like `/map`);
 `/breaking/:id` -> the alert's story or `/`; `/analyze?stories=<id,...>` -> the first id's story page when it is a thread id (`thread-...`), else `/weekly/countries` (`AnalyzeRedirect`). All in `LegacyRedirects.jsx`.
 
 ## Import direction

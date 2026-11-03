@@ -15,7 +15,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 
 ## Routes
 - `/` -> `SituationHome` (lazy; the route fallback is `BootLoader` with `WAITING_SENSORS`)
-- `/map` -> `/` keeping query and hash (`src/app/MapRedirect.jsx`); `/breaking` -> `/` (`app/LegacyRedirects.jsx`)
+- `/map` -> `/` keeping query and hash (`src/app/MapRedirect.jsx`); `/breaking` -> `/` the same way (route in `app/App.jsx`, `MapRedirect`)
 - Query (built by `mapHref` in `@/shared/lib/links.js`, read in `lib/deepLinks.js`): `?focus=<situation id>`, `?story=<threadId>`,
   `?country=<ISO3 or name>`, `?layer=`, `?about=`. An unknown story shows an honest "not on the map".
 

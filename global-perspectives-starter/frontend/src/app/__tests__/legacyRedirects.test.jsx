@@ -5,12 +5,13 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 const fetchAlert = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({ fetchAlert: (...a) => fetchAlert(...a) }));
 import {
-  BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
+  BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
 } from '@/app/LegacyRedirects';
+import MapRedirect from '@/app/MapRedirect';
 
 function Where() {
-  const { pathname, search } = useLocation();
-  return <div data-testid="where">{pathname}{search}</div>;
+  const { pathname, search, hash } = useLocation();
+  return <div data-testid="where">{pathname}{search}{hash}</div>;
 }
 
 function renderAt(path) {
@@ -27,7 +28,7 @@ function renderAt(path) {
         <Route path="/weekly-brief" element={<WeeklyBriefRedirect />} />
         <Route path="/spider-demo" element={<SpiderDemoRedirect />} />
         <Route path="/analyze" element={<AnalyzeRedirect />} />
-        <Route path="/breaking" element={<BreakingFeedRedirect />} />
+        <Route path="/breaking" element={<MapRedirect />} />
         <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
       </Routes>
     </MemoryRouter>,
@@ -48,6 +49,11 @@ describe('retired routes (P6, decisions 1 and 2)', () => {
   it('/breaking -> /', () => {
     renderAt('/breaking');
     expect(screen.getByTestId('where').textContent).toBe('/');
+  });
+
+  it('/breaking keeps the query and hash like /map', () => {
+    renderAt('/breaking?country=JPN#x');
+    expect(screen.getByTestId('where').textContent).toBe('/?country=JPN#x');
   });
 
   it('/breaking/:id -> the alert story when it resolves to one (has an arc and a thread id)', async () => {

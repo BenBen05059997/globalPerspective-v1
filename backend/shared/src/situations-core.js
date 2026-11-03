@@ -466,7 +466,9 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
       abs = ps.filter((n) => n.id !== id).map((n) => n.id);
       const survivorTitle = oldest ? oldest.title : lead.title;
       for (const j of h.joined) {
-        const row = { survivor: { id, title: survivorTitle }, absorbed: j.c.label, via: h.label, rule: j.rule };
+        // the survivor may sit in the joined cluster (it is the older situation): then the lead's side is the absorbed one
+        const [abLabel, viaLabel] = j.c.label.id === id ? [h.label, j.c.label] : [j.c.label, h.label];
+        const row = { survivor: { id, title: survivorTitle }, absorbed: abLabel, via: viaLabel, rule: j.rule };
         if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else row.storyId = j.storyId;
         row.isNew = !(prev && Array.isArray(prev.aliases) && prev.aliases.includes(row.absorbed.id));
         merges.push(row);

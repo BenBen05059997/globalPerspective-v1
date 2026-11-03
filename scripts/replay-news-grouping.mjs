@@ -53,62 +53,75 @@ const cell = (s) => String(s == null ? '' : s).replace(/\|/g, '\\|').replace(/\n
 const detailCache = new Map();
 const detailOf = (id) => { if (!detailCache.has(id)) detailCache.set(id, detail(id)); return detailCache.get(id); };
 
-let prior = {}; const missed = {};
-const rows = new Map(); // `${survivor}|${absorbed}` -> first row
-let ungroupedLast = 0; let groupedLast = 0;
-for (const w of sweeps) {
-  const open = w.situations.filter((s) => s.source === 'news' && s.state !== 'closed');
-  const groups = open.map((s) => {
-    const d = detailOf(s.id) || {};
-    const ev = d.evidence || {};
-    const outlets = Number((/(\d+)\s+outlets?/.exec(s.what_changed || '') || [])[1]) || Number(ev.outlets) || 1;
-    const st = {
-      storyId: d.storyId || s.id.replace(/^news#/, ''), title: d.title || s.verb_label, axis: s.axis,
-      max_severity: SEV[s.tier] || 3, outlets, velocity: 1, spread_new_iso3: [], centroid: s.centroid, iso3: s.iso3_affected || [],
-      headlines: ev.headlines || [],
-    };
-    return { id: s.id, threadId: s.threadId || null, stories: [st], aliases: [], prev: prior[s.id] || null, opened: s.opened_at };
-  });
-  const plan = core.planNewsGrouping(groups, prior);
-  for (const m of plan.merges) {
-    const key = `${m.survivor.id}|${m.absorbed.id}`;
-    if (!rows.has(key)) rows.set(key, { at: w.generated_at, ...m });
+function replay(minSharedUrls) {
+  let prior = {}; const missed = {};
+  const rows = new Map(); // `${survivor}|${absorbed}` -> first row
+  let ungroupedLast = 0; let groupedLast = 0;
+  for (const w of sweeps) {
+    const open = w.situations.filter((s) => s.source === 'news' && s.state !== 'closed');
+    const groups = open.map((s) => {
+      const d = detailOf(s.id) || {};
+      const ev = d.evidence || {};
+      const outlets = Number((/(\d+)\s+outlets?/.exec(s.what_changed || '') || [])[1]) || Number(ev.outlets) || 1;
+      const st = {
+        storyId: d.storyId || s.id.replace(/^news#/, ''), title: d.title || s.verb_label, axis: s.axis,
+        max_severity: SEV[s.tier] || 3, outlets, velocity: 1, spread_new_iso3: [], centroid: s.centroid, iso3: s.iso3_affected || [],
+        headlines: ev.headlines || [],
+      };
+      return { id: s.id, threadId: s.threadId || null, stories: [st], aliases: [], prev: prior[s.id] || null, opened: s.opened_at };
+    });
+    const plan = core.planNewsGrouping(groups, prior, { minSharedUrls });
+    for (const m of plan.merges) {
+      const key = `${m.survivor.id}|${m.absorbed.id}`;
+      if (!rows.has(key)) rows.set(key, { at: w.generated_at, ...m });
+    }
+    const next = {};
+    for (const id of plan.absorbed) delete prior[id];
+    for (const g of plan.groups) {
+      // the replayed situation keeps the real opened_at of the oldest member so "oldest survives" is honest
+      const item = core.buildStorySituation(g.prev, core.mergeStories(g.stories), w.generated_at, TTL, { situationId: g.id, threadId: g.threadId, aliases: g.aliases, grouping: g.grouping }).item;
+      const opened = [g.prev && g.prev.opened_at, ...g.groupIds.map((gid) => groups.find((x) => x.id === gid).opened)].filter(Boolean).sort()[0];
+      next[g.id] = { ...item, opened_at: opened || item.opened_at };
+      missed[g.id] = 0;
+    }
+    for (const [id, st] of Object.entries(prior)) {
+      if (next[id] || plan.absorbed.includes(id)) continue;
+      missed[id] = (missed[id] || 0) + 1;
+      if (missed[id] < 3) next[id] = st;
+    }
+    prior = next;
+    ungroupedLast = open.length; groupedLast = plan.groups.length;
   }
-  const next = {};
-  for (const id of plan.absorbed) delete prior[id];
-  for (const g of plan.groups) {
-    // the replayed situation keeps the real opened_at of the oldest member so "oldest survives" is honest
-    const item = core.buildStorySituation(g.prev, core.mergeStories(g.stories), w.generated_at, TTL, { situationId: g.id, threadId: g.threadId, aliases: g.aliases, grouping: g.grouping }).item;
-    const opened = [g.prev && g.prev.opened_at, ...g.groupIds.map((gid) => groups.find((x) => x.id === gid).opened)].filter(Boolean).sort()[0];
-    next[g.id] = { ...item, opened_at: opened || item.opened_at };
-    missed[g.id] = 0;
-  }
-  for (const [id, st] of Object.entries(prior)) {
-    if (next[id] || plan.absorbed.includes(id)) continue;
-    missed[id] = (missed[id] || 0) + 1;
-    if (missed[id] < 3) next[id] = st;
-  }
-  prior = next;
-  ungroupedLast = open.length; groupedLast = plan.groups.length;
+  return { list: [...rows.values()], ungroupedLast, groupedLast };
 }
 
+const evidence = (r) => (r.rule === 'url' ? `${r.sharedCount} shared: ${r.urls.join(' ; ')}` : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : `member story ${r.storyId}`);
+const table = (list) => {
+  const t = ['| Time (Tokyo) | Surviving id | Surviving title | Absorbed id | Absorbed title | Rule | Evidence |', '|---|---|---|---|---|---|---|'];
+  for (const r of list) t.push(`| ${tokyo(r.at)} | ${cell(r.survivor.id)} | ${cell(r.survivor.title)} | ${cell(r.absorbed.id)} | ${cell(r.absorbed.title)} | ${r.rule} | ${cell(evidence(r))} |`);
+  if (!list.length) t.push('| (no merges) | | | | | | |');
+  return t;
+};
+
 const first = sweeps[0].generated_at; const last = sweeps[sweeps.length - 1].generated_at;
-const list = [...rows.values()];
+const main = replay(core.MIN_SHARED_URLS);
+const loose = replay(1); // 1-article rule, live blogs still excluded, same no-chaining
+const kept = new Set(main.list.map((r) => r.absorbed.id));
+const dropped = loose.list.filter((r) => !kept.has(r.absorbed.id));
 const out = [];
-out.push(`# News grouping replay`);
+out.push('# News grouping replay');
 out.push('');
 out.push(`Replayed ${sweeps.length} sweeps, ${tokyo(first)} to ${tokyo(last)} (${((new Date(last) - new Date(first)) / 3600e3).toFixed(1)} h; ${snaps.length} snapshots were available, window ${HOURS} h).`);
-out.push(`Open news situations in the last sweep: ${ungroupedLast} as published, ${groupedLast} with grouping. ${list.length} distinct merge(s) fired.`);
+out.push(`Rules: >= ${core.MIN_SHARED_URLS} shared non-live article URLs, or identical title + shared country; a join must match the group's lead directly (no chaining).`);
+out.push(`Open news situations in the last sweep: ${main.ungroupedLast} as published, ${main.groupedLast} with grouping. ${main.list.length} distinct join(s).`);
 out.push('');
 out.push('Limits: snapshots hold situation summaries, not raw stories; each situation is replayed as one story; article URLs come from the final state/archive file (so a URL rule can fire a few sweeps earlier than live).');
 out.push('');
-out.push('| Time (Tokyo) | Surviving id | Surviving title | Absorbed id | Absorbed title | Rule | Evidence |');
-out.push('|---|---|---|---|---|---|---|');
-for (const r of list) {
-  const ev = r.rule === 'url' ? r.url : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : `member story ${r.storyId}`;
-  out.push(`| ${tokyo(r.at)} | ${cell(r.survivor.id)} | ${cell(r.survivor.title)} | ${cell(r.absorbed.id)} | ${cell(r.absorbed.title)} | ${r.rule} | ${cell(ev)} |`);
-}
-if (!list.length) out.push('| (no merges) | | | | | | |');
+out.push(...table(main.list));
+out.push('');
+out.push(`## Dropped by the 2-article rule (1-article rule, live blogs excluded, gives ${loose.list.length} joins; ${dropped.length} are not in the list above)`);
+out.push('');
+out.push(...table(dropped));
 const text = out.join('\n') + '\n';
 if (args.out) fs.writeFileSync(args.out, text);
 process.stdout.write(text);

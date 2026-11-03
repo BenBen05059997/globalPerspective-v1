@@ -29,6 +29,7 @@ const MAX_CANDIDATES = 60;
 // results keyed by name.
 let intelCache = new Map(); // name -> intel | null
 let intelFetchedKey = null; // the namesKey intelCache was built for
+let intelPartialKey = null; // the namesKey whose last run lost a chunk (the retry asks only for the missing names)
 
 function namesFromArchive(dayMap) {
   const counts = new Map();
@@ -80,7 +81,8 @@ export function useCountryRiskLayer(active) {
     startedRef.current = namesKey;
 
     let cancelled = false;
-    const chunks = chunkNames(names, MAX_NAMES_PER_CALL);
+    const retrying = intelPartialKey === namesKey;
+    const chunks = chunkNames(retrying ? names.filter((n) => !intelCache.has(n)) : names, MAX_NAMES_PER_CALL);
     setLoading(true);
     setCallCount(0);
     (async () => {
@@ -96,6 +98,7 @@ export function useCountryRiskLayer(active) {
         setLoading(false);
         return;
       }
+      let failed = false;
       await runPooled(chunks, MAX_CONCURRENT_BATCHES, async (chunk) => {
         try {
           const result = await fetchCountryIntelligence(chunk);
@@ -104,6 +107,7 @@ export function useCountryRiskLayer(active) {
           for (const name of chunk) intelCache.set(name, data[name] || null);
         } catch (err) {
           if (cancelled) return;
+          failed = true;
           reportFetchError('map-country-risk-layer', err);
           // Leave this chunk's countries unset (never invented) rather than caching a failure.
         } finally {
@@ -111,7 +115,9 @@ export function useCountryRiskLayer(active) {
         }
       });
       if (cancelled) return;
-      intelFetchedKey = namesKey;
+      // A failed chunk leaves the set unfinished: the next time the layer is opened (or the page
+      // loads again) the missing names are asked for again; the ones that answered are kept.
+      if (failed) { startedRef.current = null; intelPartialKey = namesKey; } else { intelFetchedKey = namesKey; intelPartialKey = null; }
       setIntelByName(Object.fromEntries(intelCache));
       setLoading(false);
     })();

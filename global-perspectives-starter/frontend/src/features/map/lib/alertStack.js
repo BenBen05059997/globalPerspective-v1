@@ -20,7 +20,10 @@ function lastActivity(s) {
  *  - keeps open situations only (state !== 'closed') that have a map position (a card click flies
  *    the map to it — an alert with nowhere to fly to would be a dead click);
  *  - drops the 30d+ ones (freshness 'hidden'), returned as `hiddenCount` so the stack can say so;
- *  - orders most severe first (tier), then escalating first, then newest activity first.
+ *  - orders most severe first (tier), then escalating first, then newest activity first;
+ *  - lists one event once: news situations are per country, so one story thread can have several
+ *    (the Qeshm strike as a US and an Iran situation). The first by that order stays; the others
+ *    keep their map pins but not a second row.
  */
 export function alertStackItems(situations = [], now = Date.now()) {
   const items = [];
@@ -33,7 +36,14 @@ export function alertStackItems(situations = [], now = Date.now()) {
   items.sort((a, b) => ((TIER_WEIGHT[b.tier] ?? 0) - (TIER_WEIGHT[a.tier] ?? 0))
     || ((b.escalating ? 1 : 0) - (a.escalating ? 1 : 0))
     || (lastActivity(b) - lastActivity(a)));
-  return { items, hiddenCount };
+  const seenThreads = new Set();
+  const once = items.filter((s) => {
+    if (!s.threadId) return true;
+    if (seenThreads.has(s.threadId)) return false;
+    seenThreads.add(s.threadId);
+    return true;
+  });
+  return { items: once, hiddenCount };
 }
 
 /**

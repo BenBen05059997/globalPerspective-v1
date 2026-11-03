@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchWorld, fetchSituationDetail, oldestSource } from '@/features/map/api/worldData.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
 
 const POLL_MS = 5 * 60 * 1000; // the bundle refreshes ~30 min; poll gently so a new one shows within ~5
 
@@ -26,7 +27,7 @@ export function useWorld() {
       setWorld(w); // may be null (not generated yet) — the UI shows the empty state
       setError(null);
     } catch (e) {
-      if (e.name !== 'AbortError') setError(e);
+      if (e.name !== 'AbortError') { setError(e); reportFetchError('map-world', e); } // polls too: a broken data path must not be silent
     } finally {
       // A superseded (aborted) load must not flip `loading` off while its replacement is in flight.
       if (abort.current === ctrl) setLoading(false);
@@ -52,19 +53,26 @@ export function useWorld() {
   return { world, situations: world?.situations || [], loading, error, asOf, stale, refresh: load, retry };
 }
 
-/** useSituationDetail — lazily fetch one situation's full detail (history/evidence) when selected. */
+/**
+ * useSituationDetail — lazily fetch one situation's full detail (history/evidence) when selected.
+ * Returns { detail, status }: 'idle' (no id) · 'loading' · 'ready' (detail in hand) · 'none' (no state
+ * file: archived or never written) · 'failed' (the fetch errored; reported to the error sink).
+ */
 export function useSituationDetail(id) {
-  const [detail, setDetail] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState({ id: null, detail: null, failed: false });
   useEffect(() => {
-    if (!id) { setDetail(null); return; }
+    if (!id) return undefined;
     const ac = new AbortController();
-    setLoading(true);
     fetchSituationDetail(id, ac.signal)
-      .then((d) => setDetail(d))
-      .catch((e) => { if (e.name !== 'AbortError') setDetail(null); })
-      .finally(() => setLoading(false));
+      .then((d) => setResult({ id, detail: d, failed: false }))
+      .catch((e) => {
+        if (e.name === 'AbortError') return;
+        reportFetchError('map-situation-detail', e);
+        setResult({ id, detail: null, failed: true });
+      });
     return () => ac.abort();
   }, [id]);
-  return { detail, loading };
+  const current = id && result.id === id ? result : null;
+  const status = !id ? 'idle' : !current ? 'loading' : current.failed ? 'failed' : current.detail ? 'ready' : 'none';
+  return { detail: current?.detail || null, status };
 }

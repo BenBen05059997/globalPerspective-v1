@@ -30,8 +30,9 @@ export function fetchSituationDetail(id, signal) {
   return getJson(DETAIL_URL(id), signal);
 }
 
-/** The oldest of the bundle's per-source stamps — the honest "as of" the page should display. */
+/** The oldest of the bundle's per-source stamps — the honest "as of" the page should display.
+ *  `sources` also carries flags (`newsDegraded`, `gdacsDegraded`); only the string stamps count. */
 export function oldestSource(sources) {
-  const stamps = Object.values(sources || {}).filter(Boolean).map((s) => new Date(s).getTime()).filter((n) => Number.isFinite(n));
+  const stamps = Object.values(sources || {}).filter((s) => typeof s === 'string' && s).map((s) => new Date(s).getTime()).filter((n) => Number.isFinite(n));
   return stamps.length ? new Date(Math.min(...stamps)).toISOString() : null;
 }

@@ -158,11 +158,11 @@
 .sh-country { font-size: var(--text-sm); background: var(--panel-3); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 2px var(--space-2); color: var(--text-head); }
 .sh-country.sh-more { color: var(--text-muted); }
 
-.sh-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0; border-top: 1px solid var(--hairline); }
+.sh-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--hairline); }
 .sh-metrics > div { padding: var(--space-2) var(--space-4); border-right: 1px solid var(--hairline); }
 .sh-metrics > div:last-child { border-right: 0; }
 .sh-metrics dt { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 2px; }
-.sh-metrics dd { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-head); }
+.sh-metrics dd { overflow-wrap: anywhere; margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-head); }
 
 .sh-heads { list-style: none; margin: 0; padding: 0; }
 .sh-heads li { font-size: var(--text-ui); margin-bottom: var(--space-2); line-height: 1.35; display: flex; flex-direction: column; gap: 1px; }

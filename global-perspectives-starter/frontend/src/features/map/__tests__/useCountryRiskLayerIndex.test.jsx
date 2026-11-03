@@ -48,4 +48,20 @@ describe('useCountryRiskLayer', () => {
     expect(api.fetchCountryIntelligence).toHaveBeenCalledTimes(1);
     expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.any(Error));
   });
+
+  it('retries a failed chunk on the next load instead of caching the failure (reported once per failure)', async () => {
+    archive.dayMap = { '2026-10-31': { entries: [entry(['Spain']), entry(['Spain']), entry(['Italy']), entry(['Italy'])] } };
+    rv.fetchCountriesIndex.mockRejectedValue(new Error('index down'));
+    api.fetchCountryIntelligence.mockRejectedValueOnce(new Error('proxy 502'));
+    const first = renderHook(() => useCountryRiskLayer(true));
+    await waitFor(() => expect(sink.reportFetchError).toHaveBeenCalledWith('map-country-risk-layer', expect.any(Error)));
+    await waitFor(() => expect(first.result.current.loading).toBe(false));
+    expect(first.result.current.drawn.find((d) => d.name === 'Spain')).toBeUndefined();
+    first.unmount();
+
+    api.fetchCountryIntelligence.mockResolvedValue({ data: { Spain: { riskScore: 61, riskLevel: 'elevated', generatedAt: fresh } } });
+    const second = renderHook(() => useCountryRiskLayer(true));
+    await waitFor(() => expect(second.result.current.drawn.find((d) => d.name === 'Spain')?.score).toBe(61));
+    expect(api.fetchCountryIntelligence).toHaveBeenCalledTimes(2);
+  });
 });

@@ -7,7 +7,7 @@
 //                           (`web_index.threads[threadId]`: title + places), shown as a story card
 //   ?country=<ISO3 | name>  the country (resolveCountry / parentCountry), flown to and outlined
 // Pure: no fetches, no React.
-import { parentCountry } from '@/shared/lib/countries.js';
+import { parentCountry, COUNTRIES } from '@/shared/lib/countries.js';
 import { crisisHueForCategory } from '@/shared/lib/crisisHue.js';
 
 /** The situation a ?focus= id names: its own id, else the situation that absorbed it. */
@@ -53,18 +53,30 @@ export function topicFromWebIndex(index, threadId) {
   };
 }
 
-/** ?country= -> { iso3, name } (a display name, alias or ISO3; a place inside one country gives that
- *  country) or null for a region / unknown text. */
+/** ?country= -> { iso3, name } (a display name, alias, ISO3 or two-letter ISO2 code; a place inside one
+ *  country gives that country) or null for a region / unknown text. */
 export function countryForParam(param) {
-  return param ? parentCountry(param) : null;
+  if (!param) return null;
+  const found = parentCountry(param);
+  if (found) return found;
+  const t = param.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(t)) return null;
+  const iso3 = Object.keys(COUNTRIES).find((k) => String(COUNTRIES[k].iso2 || '').toUpperCase() === t);
+  return iso3 ? { iso3, name: COUNTRIES[iso3].name } : null;
 }
 
-/** The name the country card is opened with: the canonical name for an ISO3 code, else the text as
- *  given (records keyed under an older spelling still resolve through the read API's key list). */
+/** True for text that is shaped like a country code (2 or 3 letters) but names no country. The card
+ *  then says so, instead of "No coverage" for a country that does not exist. */
+export function isUnknownCountryCode(param) {
+  return Boolean(param) && /^[A-Za-z]{2,3}$/.test(param.trim()) && !countryForParam(param);
+}
+
+/** The name the country card is opened with: the canonical name for an ISO3 / ISO2 code, else the text
+ *  as given (records keyed under an older spelling still resolve through the read API's key list). */
 export function countryCardName(param) {
   if (!param) return null;
   const c = countryForParam(param);
-  return c && /^[A-Z]{3}$/.test(param.trim()) ? c.name : param;
+  return c && /^[A-Za-z]{2,3}$/.test(param.trim()) ? c.name : param;
 }
 
 /** The map's country washes plus an outline-only entry for the focused country when it has no wash

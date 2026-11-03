@@ -21,12 +21,23 @@ test('step 2 links views have no confirmedLinks: no cards, and no per-story reco
  const none=fakeRecords(()=>null);assert.deepEqual((await arrivals(board,none.records,'2026-10-20')).arrivals,[]);
  const ungrounded=fakeRecords(()=>({confirmedLinks:[strong],links:[{...shared,grounds:0}]}));assert.deepEqual((await arrivals(board,ungrounded.records,'2026-10-20')).arrivals,[]);
 });
-test('missing index, births before the visit day, future stories and aliases never invent arrivals; the visit day counts',async()=>{
+test('missing index, future stories and aliases never invent arrivals; a visit does not hide a card',async()=>{
  const {records}=fakeRecords(withLinks);
- assert.deepEqual(await arrivals(board,{active:async()=>null},'2026-10-20'),{recordAvailable:false,since:board.lastVisitedAt,arrivals:[]});
- assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-20T00:00:00Z'},records,'2026-10-20')).arrivals.length,0);
- assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-19T23:00:00Z'},records,'2026-10-20')).arrivals.length,5);
+ assert.deepEqual(await arrivals(board,{active:async()=>null},'2026-10-20'),{recordAvailable:false,since:'2026-10-07',lastVisitedAt:board.lastVisitedAt,arrivals:[]});
+ assert.equal((await arrivals({...board,lastVisitedAt:'2026-10-20T00:00:00Z'},records,'2026-10-20')).arrivals.length,5);
  assert.equal((await arrivals(board,records,'2026-10-18')).arrivals.length,0);
  const alias={active:async()=>({stories:[row('old'),row('merged',{aliasOf:'x'})]}),links:async()=>withLinks()};
  assert.equal((await arrivals(board,alias,'2026-10-20')).arrivals.length,0);
+});
+test('the pool is a 14-day window: a card seen Tuesday is still there Thursday; only `unseen` follows the last visit',async()=>{
+ const {records}=fakeRecords(withLinks);
+ const visited={...board,lastVisitedAt:'2026-10-21T08:00:00Z'};
+ const thu=await arrivals(visited,records,'2026-10-23');
+ assert.equal(thu.arrivals.length,5);
+ assert.ok(thu.arrivals.every(c=>c.unseen===false),'born 19 Oct, visit 21 Oct: already seen');
+ assert.equal(thu.since,'2026-10-10');
+ const fresh=await arrivals({...board,lastVisitedAt:'2026-10-18T08:00:00Z'},records,'2026-10-23');
+ assert.ok(fresh.arrivals.every(c=>c.unseen===true));
+ assert.equal((await arrivals(visited,records,'2026-11-02')).arrivals.length,0,'older than 14 days: aged out');
+ assert.equal((await arrivals(visited,records,'2026-11-01')).arrivals.length,5,'the 14th day still counts (19 Oct + 13 days)');
 });

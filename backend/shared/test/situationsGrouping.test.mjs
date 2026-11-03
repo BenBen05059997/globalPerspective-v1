@@ -129,6 +129,16 @@ t('lead title = outlets x severity; the other member titles go to also_reported_
   assert.deepStrictEqual(s.also_reported_as, ['Small take']);
 });
 
+t('a lone situation does not hold its story id as a join key (only merged ones do)', () => {
+  const a = story('political#USA#trump', { title: 'One', headlines: heads('https://a.com/1') });
+  const r1 = sweep([a], {}, 1);
+  assert.deepStrictEqual(r1.next['news#political#USA#trump'].member_story_ids, []);
+  // the same story id comes back under another thread-keyed group id, with no shared URL or title
+  const again = { ...group(story('political#USA#trump', { title: 'Two', headlines: heads('https://b.com/1') })), id: 'news#USA#thread-x', threadId: 'thread-x' };
+  const r2 = planNewsGrouping([again], r1.next);
+  assert.deepStrictEqual(r2.merges, []);
+});
+
 t('a closed situation is never a join target', () => {
   const a = story('conflict#UKR#a', { headlines: heads('https://a.com/1') });
   const r1 = sweep([a], {}, 1);

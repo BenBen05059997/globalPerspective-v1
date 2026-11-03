@@ -324,7 +324,9 @@ function priorNode(st) {
   for (const u of st.member_urls || []) urls.add(u);
   for (const h of (st.evidence && st.evidence.headlines) || []) { const n = normalizeUrl(h && h.url); if (n) urls.add(n); }
   for (const t of [st.title, ...(st.also_reported_as || [])]) { const nt = normalizeTitle(t); if (nt && !titles.has(nt)) titles.set(nt, t); }
-  for (const i of [...(st.member_story_ids || []), ...(st.storyIds || []), st.storyId]) if (i) ids.add(i);
+  // Only a situation that has already merged holds story ids as members; a lone situation's own story id
+  // (entity-level, can be broad) is never a join key by itself.
+  for (const i of st.member_story_ids || []) ids.add(i);
   return { kind: 'prior', id: st.situationId, st, urls, titles, iso: new Set(st.iso3_affected || []), ids, title: st.title };
 }
 function firstShared(a, b) { for (const x of a) if (b.has(x)) return x; return null; }
@@ -431,7 +433,10 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
     out.push({
       id, threadId, stories: allStories, aliases, prev, absorbedIds: abs, groupIds: gs.map((n) => n.id),
       grouping: {
-        member_story_ids: lastN(uniq([...ps.flatMap((n) => [...n.ids]), ...allStories.map((st) => st.storyId)]), MEMBER_STORY_CAP),
+        // set only once the situation has merged (now or earlier); empty for a lone situation
+        member_story_ids: (compEdges.length || ps.some((n) => n.ids.size))
+          ? lastN(uniq([...ps.flatMap((n) => [...n.ids, ...(n.st.storyIds || []), n.st.storyId]), ...allStories.map((st) => st.storyId)].filter(Boolean)), MEMBER_STORY_CAP)
+          : [],
         member_urls: lastN(uniq([...ps.flatMap((n) => [...(n.st.member_urls || []), ...n.urls]), ...gs.flatMap((n) => [...n.urls])]), urlCap),
         threadIds: uniq([...ps.flatMap((n) => [...(n.st.threadIds || []), n.st.threadId]), ...gs.map((n) => n.g.threadId), threadId].filter(Boolean)),
         also_reported_as: also.slice(0, ALSO_REPORTED_CAP),

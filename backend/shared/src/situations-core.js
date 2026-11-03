@@ -281,8 +281,8 @@ function mergeStories(stories) {
 }
 // ── news grouping (one event, one situation) ────────────────────────────────
 // Strict, evidence-only rules (never country overlap or title words alone). Two news situations or
-// stories join when (a) they share a normalised article URL (a story's URLs against the URLs a
-// situation has ever held), or (b) they have an identical normalised title AND a shared country.
+// stories join when (a) they share at least 2 normalised, non-live article URLs (a story's URLs against
+// the URLs a situation has ever held), or (b) they have an identical normalised title AND a shared country.
 // Once joined they stay one situation: the survivor persists `member_story_ids[]` / `member_urls[]`,
 // and a story whose id or URL is in those sets joins it on every later sweep. GDACS never comes here.
 const MEMBER_URL_CAP = 200; // last 200 distinct URLs (an event rarely has more; keeps the state object small)
@@ -308,46 +308,74 @@ const uniq = (arr) => [...new Set(arr)];
 function storyWeight(s) { return (Number(s.outlets) || 0) * (Number(s.max_severity) || 0); }
 function leadStory(stories) { return stories.slice().sort((a, b) => storyWeight(b) - storyWeight(a))[0]; }
 
+// Live blogs and rolling coverage pages are updated all day and cover several events, so a shared one
+// proves nothing. A URL matching any of these (tested on host+path, lowercase) is ignored by the URL rule.
+// One list, in one place: add a pattern here and a case in situationsGrouping.test.mjs.
+const LIVE_URL_PATTERNS = [
+  /\/live(\/|$)/,            // /live/, /news/live/...
+  /\/live-?blog(\/|-|$)/,    // /liveblog/, /live-blog/, /liveblog-...
+  /live-?updates?/,          // live-updates, liveupdates
+  /\/live-news(\/|-|$)/,     // /live-news/
+  /\/live-coverage/,         // /live-coverage
+  /-live-/,                  // ...-live-... slugs ("iran-war-live-vance-sees-progress")
+  /-live$/,                  // slug ending in -live
+  /\/live-/,                 // /live-... slugs
+  /en-direct/,               // French live pages ("en-direct-guerre-en-ukraine")
+  /\/direct(\/|$)/,          // /direct/
+  /as-it-happened/,          // "as it happened" rolling pages
+  /minute-by-minute/,
+];
+/** True for a live-blog / rolling-coverage URL (raw or normalised). */
+function isLiveUrl(u) {
+  const n = normalizeUrl(u);
+  if (!n) return false;
+  const hostPath = n.replace(/^https?:\/\//, '').toLowerCase();
+  return LIVE_URL_PATTERNS.some((re) => re.test(hostPath));
+}
+// A URL join needs at least this many shared, non-live article URLs (one shared article is common
+// between two different events: a roundup that mentions both).
+const MIN_SHARED_URLS = 2;
+function articleUrl(u) { const n = normalizeUrl(u); return n && !isLiveUrl(n) ? n : null; }
+
 // A comparable node: a current-sweep group of stories, or a prior open news situation.
-function groupNode(g) {
+function groupNode(g, stories = g.stories) {
   const urls = new Set(); const titles = new Map(); const iso = new Set(); const ids = new Set();
-  for (const st of g.stories) {
-    for (const h of st.headlines || []) { const n = normalizeUrl(h && h.url); if (n) urls.add(n); }
+  for (const st of stories) {
+    for (const h of st.headlines || []) { const n = articleUrl(h && h.url); if (n) urls.add(n); }
     const nt = normalizeTitle(st.title); if (nt && !titles.has(nt)) titles.set(nt, st.title);
     for (const c of st.iso3 || []) iso.add(c);
     ids.add(st.storyId);
   }
-  return { kind: 'group', id: g.id, g, urls, titles, iso, ids, title: leadStory(g.stories).title };
+  return { kind: 'group', id: g.id, g, urls, titles, iso, ids, title: leadStory(stories).title };
 }
 function priorNode(st) {
   const urls = new Set(); const titles = new Map(); const ids = new Set();
-  for (const u of st.member_urls || []) urls.add(u);
-  for (const h of (st.evidence && st.evidence.headlines) || []) { const n = normalizeUrl(h && h.url); if (n) urls.add(n); }
+  for (const u of st.member_urls || []) { const n = articleUrl(u); if (n) urls.add(n); }
+  for (const h of (st.evidence && st.evidence.headlines) || []) { const n = articleUrl(h && h.url); if (n) urls.add(n); }
   for (const t of [st.title, ...(st.also_reported_as || [])]) { const nt = normalizeTitle(t); if (nt && !titles.has(nt)) titles.set(nt, t); }
   // Only a situation that has already merged holds story ids as members; a lone situation's own story id
   // (entity-level, can be broad) is never a join key by itself.
   for (const i of st.member_story_ids || []) ids.add(i);
   return { kind: 'prior', id: st.situationId, st, urls, titles, iso: new Set(st.iso3_affected || []), ids, title: st.title };
 }
-function firstShared(a, b) { for (const x of a) if (b.has(x)) return x; return null; }
-/** The strict rule linking two nodes, or null. Priors never link to priors (no news, nothing changed). */
-function evidenceEdge(a, b) {
-  if (a.kind === 'prior' && b.kind === 'prior') return null;
-  const url = firstShared(a.urls, b.urls);
-  if (url) return { rule: 'url', url };
+const sharedOf = (a, b) => [...a].filter((x) => b.has(x));
+/** The strict rule by which candidate `a` matches lead `b`, or null: >=2 shared article URLs, or an
+ *  identical title + a shared country. Grouped-for-life membership is checked separately. */
+function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS) {
+  const urls = sharedOf(a.urls, b.urls);
+  if (urls.length >= minUrls) return { rule: 'url', urls, sharedCount: urls.length };
   for (const [nt, raw] of a.titles) {
     if (!b.titles.has(nt)) continue;
     const countries = [...a.iso].filter((c) => b.iso.has(c));
     if (countries.length) return { rule: 'title+country', title: raw, countries };
   }
-  // grouped for life: a story whose id a prior situation already holds as a member
-  const g = a.kind === 'group' ? a : b; const p = a.kind === 'group' ? b : a;
-  if (g.kind === 'group' && p.kind === 'prior') {
-    const id = firstShared(g.ids, p.ids);
-    if (id) return { rule: 'member', storyId: id };
-  }
   return null;
 }
+const mergeNodes = (nodes) => ({
+  urls: new Set(nodes.flatMap((n) => [...n.urls])), iso: new Set(nodes.flatMap((n) => [...n.iso])), ids: new Set(nodes.flatMap((n) => [...n.ids])),
+  titles: new Map(nodes.flatMap((n) => [...n.titles])),
+});
+const priorWeight = (st) => (Number(st.evidence && st.evidence.outlets) || 0) * (Number(st.evidence && st.evidence.max_severity) || 0);
 
 /**
  * planNewsGrouping(groups, priorStates, opts) -> { groups, merges, absorbed }
@@ -356,47 +384,73 @@ function evidenceEdge(a, b) {
  * Returns the groups to build (same shape plus `grouping` = the fields to persist: member_story_ids,
  * member_urls, threadIds, also_reported_as), `absorbed` = prior ids folded into a survivor (the
  * caller archives them), and `merges` = one row per absorbed unit: { survivor, absorbed, via, rule,
- * url | title+countries | storyId, isNew }. isNew is false when the survivor already lists the absorbed
- * id as an alias (a standing group re-confirmed this sweep).
- * Survivor id rule: the OLDEST existing open situation in the component (opened_at, then id), so a saved
- * link to the long-lived situation keeps working; a component with no prior situation uses its lead
- * story's group id (outlets x severity). The other ids become aliases.
+ * urls + sharedCount | title + countries | storyId, isNew }. isNew is false when the survivor already
+ * lists the absorbed id as an alias (a standing group re-confirmed this sweep).
+ * NO CHAINING: clusters are taken heaviest first (the lead story's outlets x severity). A cluster joins
+ * a group only when it matches that group's LEAD directly (never through another member); otherwise it
+ * becomes the lead of a group of its own. Grouped-for-life members (story ids a merged situation
+ * already holds) always stay.
+ * Survivor id rule: the OLDEST existing open situation in the group (opened_at, then id), so a saved
+ * link to the long-lived situation keeps working; a group with no prior situation uses its lead
+ * story's group id. The other ids become aliases.
  */
 function planNewsGrouping(groups, priorStates, opts = {}) {
   const urlCap = opts.urlCap || MEMBER_URL_CAP;
+  const minUrls = opts.minSharedUrls || MIN_SHARED_URLS;
   const priors = Object.values(priorStates || {}).filter((st) => st && st.source === 'news' && st.state !== 'closed' && st.situationId);
-  const nodes = [...groups.map(groupNode), ...priors.map(priorNode)];
+  const nodes = [...groups.map((g) => groupNode(g)), ...priors.map(priorNode)];
+  // Continuity (a group and the prior situations it already carries by id or alias): one cluster, not a merge.
   const parent = nodes.map((_, i) => i);
   const find = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
-  const union = (i, j) => { const a = find(i); const b = find(j); if (a === b) return false; parent[b] = a; return true; };
-  // Phase 1: continuity (a group and the prior situations it already carries by id or alias): not a merge.
   const byId = new Map(); nodes.forEach((n, i) => { if (n.kind === 'prior') byId.set(n.id, i); });
   nodes.forEach((n, i) => {
     if (n.kind !== 'group') return;
-    for (const pid of [n.id, ...n.g.aliases]) if (byId.has(pid)) union(i, byId.get(pid));
+    for (const pid of [n.id, ...n.g.aliases]) if (byId.has(pid)) parent[find(byId.get(pid))] = find(i);
   });
-  // Phase 2: evidence edges between clusters (the merges).
-  const edges = [];
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      if (find(i) === find(j)) continue;
-      const e = evidenceEdge(nodes[i], nodes[j]);
-      if (e && union(i, j)) edges.push({ a: i, b: j, ...e });
+  const byRoot = new Map();
+  nodes.forEach((n, i) => { const r = find(i); if (!byRoot.has(r)) byRoot.set(r, []); byRoot.get(r).push(n); });
+  const clusters = [...byRoot.values()].map((ns) => {
+    const gs = ns.filter((n) => n.kind === 'group'); const ps = ns.filter((n) => n.kind === 'prior');
+    const stories = gs.flatMap((n) => n.g.stories);
+    const lead = stories.length ? leadStory(stories) : null;
+    const leadNodes = [...ps, ...(lead ? [groupNode(gs.find((n) => n.g.stories.includes(lead)).g, [lead])] : [])];
+    const sortId = (gs[0] || ps[0]).id;
+    return {
+      gs, ps, agg: mergeNodes(ns), leadNodes, sortId,
+      weight: lead ? storyWeight(lead) : Math.max(0, ...ps.map((p) => priorWeight(p.st))),
+      label: lead ? { id: gs[0].id, title: lead.title } : { id: ps[0].id, title: ps[0].title },
+      joined: [],
+    };
+  });
+  const heads = clusters.filter((c) => !c.gs.length); // a cooling situation with no story this sweep can still be joined
+  const cands = clusters.filter((c) => c.gs.length).sort((a, b) => b.weight - a.weight || (a.sortId < b.sortId ? -1 : 1));
+  const matchLead = (c, h) => {
+    // grouped for life: a story id a merged situation already holds (either side's prior)
+    const gIds = (x) => new Set(x.gs.flatMap((n) => [...n.ids]));
+    const mine = [...gIds(c)].find((i) => h.ps.some((p) => p.ids.has(i)));
+    if (mine) return { rule: 'member', storyId: mine };
+    const theirs = [...gIds(h)].find((i) => c.ps.some((p) => p.ids.has(i)));
+    if (theirs) return { rule: 'member', storyId: theirs };
+    for (const ln of h.leadNodes) { const e = evidenceEdge(c.agg, ln, minUrls); if (e) return e; }
+    return null;
+  };
+  for (const c of cands) {
+    let joined = false;
+    for (const h of heads) {
+      const e = matchLead(c, h);
+      if (e) { h.joined.push({ c, ...e }); joined = true; break; }
     }
+    if (!joined) heads.push(c);
   }
-  const comps = new Map();
-  nodes.forEach((n, i) => { const r = find(i); if (!comps.has(r)) comps.set(r, []); comps.get(r).push(i); });
 
   const out = []; const merges = []; const absorbed = [];
-  for (const members of comps.values()) {
-    const gs = members.map((i) => nodes[i]).filter((n) => n.kind === 'group');
-    const ps = members.map((i) => nodes[i]).filter((n) => n.kind === 'prior');
+  for (const h of heads) {
+    const all = [h, ...h.joined.map((j) => j.c)];
+    const gs = all.flatMap((c) => c.gs); const ps = all.flatMap((c) => c.ps);
     if (!gs.length) continue; // priors with no current story: the caller's fold cools them as before
-    const memberSet = new Set(members);
-    const compEdges = edges.filter((e) => memberSet.has(e.a));
     const allStories = gs.flatMap((n) => n.g.stories);
     let id; let prev; let threadId; let aliases; let abs;
-    if (!compEdges.length && gs.length === 1) {
+    if (!h.joined.length && gs.length === 1) {
       ({ id, threadId, aliases, prev } = gs[0].g);
       abs = gs[0].g.aliases.filter((a) => priorStates[a]);
     } else {
@@ -411,12 +465,9 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
       ]).filter((a) => a !== id);
       abs = ps.filter((n) => n.id !== id).map((n) => n.id);
       const survivorTitle = oldest ? oldest.title : lead.title;
-      const holdsSurvivor = (n) => n.id === id || (n.kind === 'group' && n.g.aliases.includes(id));
-      for (const e of compEdges) {
-        const [sv, ab] = holdsSurvivor(nodes[e.a]) ? [e.a, e.b] : [e.b, e.a];
-        const row = { survivor: { id, title: survivorTitle }, absorbed: { id: nodes[ab].id, title: nodes[ab].title }, via: { id: nodes[sv].id, title: nodes[sv].title }, rule: e.rule };
-        if (e.rule === 'url') row.url = e.url;
-        else if (e.rule === 'title+country') { row.title = e.title; row.countries = e.countries; } else row.storyId = e.storyId;
+      for (const j of h.joined) {
+        const row = { survivor: { id, title: survivorTitle }, absorbed: j.c.label, via: h.label, rule: j.rule };
+        if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else row.storyId = j.storyId;
         row.isNew = !(prev && Array.isArray(prev.aliases) && prev.aliases.includes(row.absorbed.id));
         merges.push(row);
       }
@@ -434,10 +485,10 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
       id, threadId, stories: allStories, aliases, prev, absorbedIds: abs, groupIds: gs.map((n) => n.id),
       grouping: {
         // set only once the situation has merged (now or earlier); empty for a lone situation
-        member_story_ids: (compEdges.length || ps.some((n) => n.ids.size))
+        member_story_ids: (h.joined.length || ps.some((n) => n.ids.size))
           ? lastN(uniq([...ps.flatMap((n) => [...n.ids, ...(n.st.storyIds || []), n.st.storyId]), ...allStories.map((st) => st.storyId)].filter(Boolean)), MEMBER_STORY_CAP)
           : [],
-        member_urls: lastN(uniq([...ps.flatMap((n) => [...(n.st.member_urls || []), ...n.urls]), ...gs.flatMap((n) => [...n.urls])]), urlCap),
+        member_urls: lastN(uniq([...ps.flatMap((n) => [...n.urls]), ...gs.flatMap((n) => [...n.urls])]), urlCap),
         threadIds: uniq([...ps.flatMap((n) => [...(n.st.threadIds || []), n.st.threadId]), ...gs.map((n) => n.g.threadId), threadId].filter(Boolean)),
         also_reported_as: also.slice(0, ALSO_REPORTED_CAP),
       },
@@ -539,5 +590,5 @@ module.exports = {
   parseGeometry, eventKeyOf, affectedIso3,
   buildObservation, nextCheckAt, buildSituation, coolSituation, buildStorySituation,
   storyCountry, newsSituationId, mergeStories,
-  normalizeUrl, normalizeTitle, planNewsGrouping, MEMBER_URL_CAP,
+  normalizeUrl, normalizeTitle, planNewsGrouping, isLiveUrl, LIVE_URL_PATTERNS, MIN_SHARED_URLS, MEMBER_URL_CAP,
 };

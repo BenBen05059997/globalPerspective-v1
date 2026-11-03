@@ -19,7 +19,7 @@ const RUNGS = { 1: 'story line', 2: 'chapters', 3: 'forks and events', 4: 'the e
 // The canvas captions (artboard 11): what the rung shows and how you get to it.
 const CAPTIONS = {
   1: ['the pin as it sits on the board', 'default on the board'],
-  2: ['three chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step'],
+  2: ['its chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step'],
   3: ['one chapter opened: its events and its forks, open or closed', 'zoom into a chapter'],
   4: ['one event opened as a card', 'zoom into an event; the only level with raw sources'],
 };

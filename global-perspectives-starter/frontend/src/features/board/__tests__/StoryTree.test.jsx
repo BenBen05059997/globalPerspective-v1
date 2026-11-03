@@ -21,7 +21,7 @@ describe('story tree zoom ladder', () => {
       expect(text).toContain(`How you get here ${how}`);
     };
     caption(1, 'Level 1 · story line the pin as it sits on the board', 'default on the board');
-    caption(2, 'Level 2 · chapters three chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step');
+    caption(2, 'Level 2 · chapters its chapters on a thin trunk, each with the sentence written at the time', 'tap the pin / zoom one step');
     caption(3, 'Level 3 · forks and events one chapter opened: its events and its forks, open or closed', 'zoom into a chapter');
     fireEvent.click(screen.getAllByRole('button', { name: /./ }).find((b) => b.closest('.board-tree') && b.className.includes('board-strings__btn')));
     caption(4, 'Level 4 · the event one event opened as a card', 'zoom into an event; the only level with raw sources');

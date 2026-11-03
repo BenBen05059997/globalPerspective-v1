@@ -254,9 +254,10 @@ exports.handler = async (event) => {
 
     // Zero generated is a failed generation, including cache-only retries after a provider
     // outage. Do not publish or re-archive an old generation as today's fresh content.
-    if (outputs.length === 0) return failedRun('zero-generated', generationId, { generated: 0, reused: reused.length, failed });
+    // PRED# rows put during generation stay put on these early exits, so their inbox lines are flushed first: the record reads forecasts only from the inbox.
+    if (outputs.length === 0) { await flushForecastsInbox(); return failedRun('zero-generated', generationId, { generated: 0, reused: reused.length, failed }); }
     const publicationReason = staleReason(stagingItem, await readFreshnessArchives());
-    if (publicationReason) return failedRun('stale-staging', generationId, { staleReason: publicationReason, generated: outputs.length, reused: reused.length, failed });
+    if (publicationReason) { await flushForecastsInbox(); return failedRun('stale-staging', generationId, { staleReason: publicationReason, generated: outputs.length, reused: reused.length, failed }); }
 
     // Assign threadIds from the RAW staging topics (which retain continues_topic,
     // category, and search_keywords — fields buildTopic() drops) and stamp them
@@ -336,6 +337,7 @@ exports.handler = async (event) => {
     });
   } catch (err) {
     console.error('NewsProjectInvokeAgentLambda error:', err);
+    await flushForecastsInbox(); // PRED# rows already put keep their inbox lines (best-effort, never throws)
     if (err.rethrow) throw err;
     return http(500, { error: err.message || String(err) });
   }

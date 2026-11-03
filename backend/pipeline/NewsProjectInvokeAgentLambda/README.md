@@ -63,8 +63,8 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
   before generation and again before publication. Zero generated returns 503 `[pipeline-status] {reason:"zero-generated"}`, stale staging
   `reason:"stale-staging"`; neither swaps or archives. A processed staging from before the current gemini slot throws
   `stale-processed-staging`; one from the current slot is a quiet skip.
-- A run that returns `stale-staging` at the publication check has already put PRED# rows but does not flush their forecasts-inbox lines
-  (they wait in memory for the next warm invocation, or are lost on a cold start).
+- The early exits (`zero-generated`, `stale-staging`) and the error path flush the forecasts-inbox lines of PRED# rows already put,
+  since newsStoryRecord reads forecasts only from the inbox (FORECASTS_SOURCE=inbox, 2026-11-02).
 - Source fields: archive sources keep selector `publishedAt`, `outlet`, `age`; PRED# rows carry `threadId`, `category` (`categories[0]`),
   `forkId = <PK>|<SK>` and `scenarioIndex`; older rows lack them and stay readable.
 - `http()` emits `Access-Control-Allow-Origin: *`. `package.json` lists Bedrock SDK deps the code does not use.

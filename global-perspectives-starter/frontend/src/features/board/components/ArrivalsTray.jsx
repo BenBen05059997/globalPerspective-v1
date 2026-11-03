@@ -19,6 +19,8 @@ import '@/features/board/panels.css';
 // A failed read shows nothing. Not built: dragging a card onto the board, the landed-on-string fact (no strength
 // history), a count on the pin.
 const DIRECTION = { drives: 'drives', driven_by: 'driven by', shared_cause: 'shared cause' };
+/** 'Via X: mechanism (driven by)': a missing mechanism is left out, and the direction with it (it only qualifies the mechanism). */
+export const viaText = (v, label) => `Via ${label}${v.mechanism ? `: ${v.mechanism}${DIRECTION[v.direction] ? ` (${DIRECTION[v.direction]})` : ''}` : ''}`;
 const FADE_MS = 1200;
 
 export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
@@ -45,7 +47,8 @@ export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
     timers.current.push(setTimeout(() => setFading((f) => Object.fromEntries(Object.entries(f).filter(([k]) => k !== id))), FADE_MS));
   };
   const { shown: cards } = strongestArrivals((state.arrivals || []).filter((c) => (!board.dismissed.includes(c.threadId) || fading[c.threadId]) && !board.pins.some((p) => p.kind === 'thread' && p.refId === c.threadId)));
-  const unseen = cards.filter((c) => c.unseen !== false && !fading[c.threadId] && !seen.has(c.threadId)).length;
+  const isUnseen = (c) => c.unseen !== false && !fading[c.threadId] && !seen.has(c.threadId); // the header count and the card labels share this
+  const unseen = cards.filter(isUnseen).length;
   if (state.error || (!state.loading && !state.recordAvailable)) return null; // read failed, or no story record yet: nothing to show
   const viaLabel = (v) => (labelOf ? labelOf(v.pinId) : v.threadId); // the pin's name as the board shows it
   return <Card as="section" aria-label="Arrivals"><SectionHeader label="Clue pool" hint={cards.length ? `${unseen} unseen` : null} as="h2" />
@@ -55,7 +58,7 @@ export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
         const when = <time dateTime={c.date}>{dayMonth(c.date)}</time>;
         if (fading[c.threadId]) return <li key={c.threadId} className="pn-card is-fading"><span className="pn-kicker">Dismissed · fading</span><span>{c.title || c.threadId}</span><span className="board-note">{when}</span></li>;
         if (!seen.has(c.threadId)) return <li key={c.threadId} className="pn-card is-down">
-          <span className="pn-kicker">Face down · unseen</span>
+          <span className="pn-kicker">{isUnseen(c) ? 'Face down · unseen' : 'Face down'}</span>
           <span className="pn-card__title">{c.title || c.threadId}</span>
           <span className="board-note">via {viaLabel(c.via[0])}{c.via.length > 1 ? ` / ${c.via.length} tracked stories` : ''}</span>
           <span className="board-line"><StrengthBadge strength={c.strength} /> {when}</span>
@@ -64,7 +67,7 @@ export default function ArrivalsTray({ board, labelOf, onDismiss, onKeep }) {
         return <li key={c.threadId} className="pn-card">
           <EntityLink kind="story" id={c.threadId}>{c.title || c.threadId}</EntityLink>
           <p className="board-line"><ClaimTag kind="judgment" /><StrengthBadge strength={c.strength} /> {when}</p>
-          {c.via.map((v) => <p className="board-line" key={v.pinId}>Via {viaLabel(v)}: {v.mechanism}{DIRECTION[v.direction] ? ` (${DIRECTION[v.direction]})` : ''}</p>)}
+          {c.via.map((v) => <p className="board-line" key={v.pinId}>{viaText(v, viaLabel(v))}</p>)}
           <div className="board-actions"><Button disabled={livePinCount(board) >= PIN_BUDGET} onClick={() => onKeep(c)}>Keep story</Button><Button onClick={() => dismiss(c.threadId)}>Dismiss arrival</Button></div>
         </li>;
       })}</ul></> : <p className="board-line">No new story touches your board in the last 14 days.</p>}

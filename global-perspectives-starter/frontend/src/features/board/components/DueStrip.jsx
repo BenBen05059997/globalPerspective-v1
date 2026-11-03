@@ -4,10 +4,10 @@ import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/
 
 const SHOWN = 4;
 
-/** The open branches (no verdict) of the pinned stories: [{ id, threadId, due, p, line, scenario, late }] (`threadId` is the pin's own story id). Due today or
+/** The open branches (no verdict; the first `limit`, default four) of the pinned stories: [{ id, threadId, due, p, line, scenario, late }] (`threadId` is the pin's own story id). Due today or
  *  later come first, nearest first; past-due ones follow, so they never crowd out what is coming. A branch with no due
  *  date is not listed (nothing to be due). */
-export function dueBranches(stories, today) {
+export function dueBranches(stories, today, limit = SHOWN) {
   const rows = [];
   for (const { key, story } of uniqueStories(stories)) {
     for (const fork of story.forks || []) {
@@ -18,15 +18,17 @@ export function dueBranches(stories, today) {
     }
   }
   const cmp = (x, y) => (x.due < y.due ? -1 : x.due > y.due ? 1 : 0) || (x.id < y.id ? -1 : 1);
-  return [...rows.filter((r) => !r.late).sort(cmp), ...rows.filter((r) => r.late).sort(cmp)].slice(0, SHOWN);
+  return [...rows.filter((r) => !r.late).sort(cmp), ...rows.filter((r) => r.late).sort(cmp)].slice(0, limit);
 }
 
 // "Due on your board": the nearest open questions on the stories you pinned: the story, the question, the scenario it
 // belongs to, its date and our percentage. A question past its date with no verdict yet says "past due".
 // Nothing to list -> the strip is absent.
 export default function DueStrip({ stories, today, labelOf }) {
-  const rows = dueBranches(stories, today);
-  if (!rows.length) return null;
+  const all = dueBranches(stories, today, Infinity);
+  if (!all.length) return null;
+  const rows = all.slice(0, SHOWN);
+  const more = all.length - rows.length;
   return (
     <section className="board-due" aria-label="Due on your board">
       <h2 className="board-eyebrow">Due on your board</h2>
@@ -40,6 +42,7 @@ export default function DueStrip({ stories, today, labelOf }) {
           </li>
         ))}
       </ul>
+      {more > 0 ? <p className="board-note">+{more} more due</p> : null}
     </section>
   );
 }

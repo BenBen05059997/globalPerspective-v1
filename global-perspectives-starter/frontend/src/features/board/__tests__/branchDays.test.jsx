@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { todayUTC, isOpen, isLate, isLive, isDueThisWeek, uniqueStories, branchCounts, branchCountText, dueCounts } from '../lib/branchDays.js';
-import { dueBranches } from '../components/DueStrip.jsx';
+import DueStrip, { dueBranches } from '../components/DueStrip.jsx';
 import { monthlyView } from '../lib/monthly.js';
 import { pinCountParts } from '../lib/graphText.js';
 import { writtenByYou, cutByYou } from '../lib/divergence.js';
@@ -83,5 +83,16 @@ describe('divergence with a reader\'s line on our string', () => {
   it('lists both the cut of ours and the line written beside it; a cut string of yours keeps its line out', () => {
     expect(cutByYou(board)).toEqual([{ a: 'p1', b: 'p2', cutAt: '2026-10-20T00:00:00Z' }]);
     expect(writtenByYou(board).map((x) => x.line)).toEqual(['still true', 'mine']);
+  });
+});
+
+describe('due strip says how many more are due', () => {
+  it('shows four rows and the rest as a count; nothing when all fit', () => {
+    render(<DueStrip stories={stories} today={TODAY} />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getByText('+3 more due')).toBeInTheDocument();
+    cleanup();
+    render(<DueStrip stories={{ x: story('nk', branches.slice(0, 2)) }} today={TODAY} />);
+    expect(screen.queryByText(/more due/)).toBeNull();
   });
 });

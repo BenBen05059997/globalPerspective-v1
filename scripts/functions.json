@@ -187,7 +187,7 @@
         }
       ]
     },
-    "newsInvokeGemini-dev": {
+    "newsIngest": {
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",
       "group": "pipeline",
@@ -283,7 +283,7 @@
         }
       ]
     },
-    "NewsProjectInvokeAgentLambda-dev": {
+    "newsAgent": {
       "dir": "backend/pipeline/NewsProjectInvokeAgentLambda",
       "runtime": "nodejs22.x",
       "group": "pipeline",

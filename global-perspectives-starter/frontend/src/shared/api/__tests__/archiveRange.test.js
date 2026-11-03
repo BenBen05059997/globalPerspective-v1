@@ -14,7 +14,7 @@ vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchW
 vi.mock('@/shared/api/errorSink.js', () => sink);
 
 import { clearViewsFreshCache, MAX_VIEW_AGE_MS } from '@/shared/api/viewsFresh.js';
-import { loadArchiveDayMap, loadArchiveDayMapFromAction, dayMapFromIndex, weeklyIndexUsable, daysFrom } from '@/shared/api/archiveRange.js';
+import { loadArchiveDayMap, dayMapFromIndex, weeklyIndexUsable, daysFrom } from '@/shared/api/archiveRange.js';
 
 const NOW = new Date('2026-10-31T15:05:00Z');
 const built = (ageMs) => ({ schemaVersion: 1, builtAt: new Date(Date.now() - ageMs).toISOString(), factsThrough: '2026-10-31' });
@@ -162,14 +162,5 @@ describe('loadArchiveDayMap', () => {
 
   it('counts whole UTC days', () => {
     expect([daysFrom('2026-10-29', '2026-10-31'), daysFrom('2026-10-31', '2026-10-31'), daysFrom('2026-11-02', '2026-10-31')]).toEqual([2, 0, 0]);
-  });
-});
-
-describe('a reader kept on the action (the countries list, decision 0046)', () => {
-  it('reads the 30 days from archive_range only, never the index', async () => {
-    const out = await loadArchiveDayMapFromAction();
-    expect(api.fetchArchiveRange).toHaveBeenCalledWith(30);
-    expect(rv.fetchWeeklyIndex).not.toHaveBeenCalled();
-    expect(out).toEqual(action.data);
   });
 });

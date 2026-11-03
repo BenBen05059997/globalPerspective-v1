@@ -19,7 +19,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`; card forecasts -> `?q=<qid>`).
 
 ## Frontend
-- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z); its coverage counts read `useWeeklyArchive({ source: 'action' })`, the `archive_range` action, not the record (decision 0046)
+- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z); its coverage counts read `useWeeklyArchive()`, the record's weekly index (decision 0046; adopted 2026-11-03)
 - `CountryPage.jsx` - hero, map band, `CountryCardV2`, the three tabs, rails; phone gets Read / Map tabs
 - `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers; the name links out
 - `components/CountrySheet.jsx` (+css, print) - How it connects, What we don't know, Your view (localStorage only), Copy as text, Print

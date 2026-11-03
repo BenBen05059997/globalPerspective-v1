@@ -13,7 +13,7 @@ Read order: `CLAUDE.md` -> this file -> [architecture/ARCHITECTURE.md](architect
 ## 2. Where we left off (2026-11-03)
 Working model: one coordinator session reviews, merges and deploys; lanes (git worktrees) or Sonnet agents build. Stale docs are found and rewritten whole by Sonnet agents, checked against code and AWS. Lane briefs go in `.board/` (ignored via `.git/info/exclude`). Dev machine is an Apple-silicon Mac; Lambdas stay x86_64 (`scripts/lambda.sh` cross-installs linux/x64 deps). Pages serves bundle `index-CjAFeg1j` (2026-11-01: forecasts and track record on the record only).
 
-Foundation (goal: the site rebuilds from the record alone, decision 0035): steps 0-4 are done. Notes live in the record (0042), and the story, country, track record, list and archive pages read views (0043 to 0046). Weekly review `newsRecordReview` is live (`TriggerRecordReview`, Mon 01:00 UTC); the first full run (W44, about 520 stories) was Mon 2026-11-02. Pipeline alarms were removed by the operator choice. The countries list still reads `archive_range`.
+Foundation (goal: the site rebuilds from the record alone, decision 0035): steps 0-4 are done. Notes live in the record (0042), and the story, country, track record, list and archive pages read views (0043 to 0046). Weekly review `newsRecordReview` is live (`TriggerRecordReview`, Mon 01:00 UTC); the first full run (W44, about 520 stories) was Mon 2026-11-02. Pipeline alarms were removed by the operator choice.
 
 Step 5 (retire the DynamoDB world tables; operator 2026-10-31; audit of 2026-11-01 in [STEP5_AUDIT.md](architecture/STEP5_AUDIT.md)). Done:
 - Record holds history from 2026-03-07 (0047), briefs (0048), fresh views after each ingest (0050), the entries inbox and today view (0051), the forecasts inbox (0052). The economy product is gone, and the `GlobalPerspectiveMarkets` table no longer exists (0049; export under `backup/economy-2026-10-31/`).
@@ -41,7 +41,7 @@ Done 2 Nov: AppSync API `newsproject-dev`, 14 old alarms and SNS `GlobalPerspect
 Waiting on the operator:
 1. Analyst weekly: build it on the readings, rewrite, or drop (ARCHITECTURE_WEEKLY_REVIEW.md section 9).
 2. Board decisions: a board summary writer (model and price), a schema field for alert choices, a coverage note in the board feed. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo; overview: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.
-3. Countries list: adopt the record's article counts (0046) or keep `archive_range` until step 5; derive `iso3` from old `regions` for history (0047).
+3. Derive `iso3` from old `regions` for history (0047).
 4. Selection go (P7d); gap benchmark rebuild or drop; Cloudflare cutover steps; delete the leftover untracked `amplify/` (about 56 files).
 5. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.
 

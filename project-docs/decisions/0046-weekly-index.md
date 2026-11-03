@@ -1,6 +1,6 @@
 # 0046. The 30-day archive pages read a record index (`views/index/weekly.json`)
 
-Status: accepted (operator, 2026-10-31) for every reader except the countries list, which stays on `archive_range` (its counts move most; adopt later); follows 0035, 0037, 0042, 0044
+Status: accepted (operator, 2026-10-31); the countries list adopted it 2026-11-03 (operator; live check that day: 80 rows vs 81, top 24 share 23, every row maps to a region and a page); follows 0035, 0037, 0042, 0044
 Date: 2026-10-31
 
 ## Context

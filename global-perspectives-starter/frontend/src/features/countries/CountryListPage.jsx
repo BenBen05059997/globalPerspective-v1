@@ -202,7 +202,7 @@ function RightRail({ featured, intelligence }) {
 
 export default function CountryListPage() {
   const navigate = useNavigate();
-  const { dayMap, sortedDates, loading } = useWeeklyArchive({ source: 'action' }); // old counts until the record's are adopted (0046)
+  const { dayMap, sortedDates, loading } = useWeeklyArchive();
 
   const handleCountryClick = useCallback((name) => {
     const to = countryHref(name);

@@ -68,9 +68,6 @@ async function actionDays(days) {
   return res?.data || {};
 }
 
-/** The 30-day archive from the `archive_range` action only, for a reader kept on the old counts (the countries list, operator 2026-10-31). */
-export const loadArchiveDayMapFromAction = () => actionDays(WINDOW_DAYS);
-
 /**
  * The 30-day archive, record first. When the index is missing the action's answer is returned (or its error thrown, as the
  * hooks always handled it); when the views are not fresh the action supplies the newest days, and a failed call for those is

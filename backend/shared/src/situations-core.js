@@ -305,6 +305,15 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
   if (velEscalating) parts.push(`coverage ${story.velocity}× prior`);
   if (spreadEscalating) parts.push(`spreading to ${story.spread_new_iso3.join(', ')}`);
   const what = parts.join(' · ');
+  // An unchanged sweep keeps the earlier line, but a "spreading to" part only stays when the current
+  // story backs it (>=2-outlet spread_new_iso3); older one-outlet spreads must not linger. State is
+  // recomputed from the current story every sweep, so it never stays escalating on a stale spread.
+  const keptWhat = () => {
+    if (!prev.what_changed) return what;
+    const kept = String(prev.what_changed).split(' · ').filter((p) => !/^spreading to /i.test(p.trim()));
+    if (spreadEscalating) kept.push(parts[parts.length - 1]);
+    return kept.join(' · ') || what;
+  };
   const label = String(story.title || '').slice(0, 90);
   // Reopen handling (audit F6): a closed situation whose storyId reappears re-opens fresh — it does
   // not silently resume at 'peak' with a stale opened_at.
@@ -351,7 +360,7 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
     item: {
       ...base, state,
       last_change_at: change === 'unchanged' ? (prev.last_change_at || nowIso) : nowIso,
-      what_changed: change === 'unchanged' ? (prev.what_changed || what) : what,
+      what_changed: change === 'unchanged' ? keptWhat() : what,
       history: change === 'unchanged' ? (Array.isArray(prev.history) ? prev.history : []) : appendHistory(prev, { at: nowIso, tier, state, note: what }),
     },
   };

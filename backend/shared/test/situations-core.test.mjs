@@ -219,4 +219,16 @@ t('buildStorySituation: situationId, storyIds and aliases (never its own id, kep
   assert.deepStrictEqual(later.item.aliases, item.aliases);
 });
 
+t('buildStorySituation: unchanged sweep drops a stale "spreading to" and stops escalating, keeps a backed one', () => {
+  const story = { storyId: 'conflict#UKR#war', title: 'War', axis: 'conflict', iso3: ['UKR'], outlets: 1, max_severity: 3, velocity: 1, spread_new_iso3: [] };
+  const prev = { ...core.buildStorySituation(null, story, NOW, TTL).item, state: 'escalating', last_raised_at: NOW, what_changed: '1 outlet · spreading to UKR, RUS', evidence: { outlets: 1 } };
+  const stale = core.buildStorySituation(prev, story, '2026-09-08T01:00:00.000Z', TTL).item;
+  assert.strictEqual(stale.what_changed, '1 outlet');
+  assert.strictEqual(stale.state, 'peak');
+  const backed = { ...story, outlets: 3, spread_new_iso3: ['POL'] };
+  const real = core.buildStorySituation({ ...prev, state: 'escalating' }, backed, '2026-09-08T01:00:00.000Z', TTL).item;
+  assert.strictEqual(real.what_changed, '1 outlet · spreading to POL');
+  assert.strictEqual(real.state, 'escalating');
+});
+
 console.log(`${pass} tests passed (incl. situation keying)`);

@@ -136,6 +136,7 @@ function buildSituation(prev, obs, nowIso, ttl) {
     gdacs_report_url: obs.reportUrl || null,
     gdacs_date_modified: obs.dateModified || null,
     gdacs_description: obs.description || null,
+    gdacs_listed: true, // GDACS lists the event right now (coolSituation sets false when it drops off)
     affected_count: affected.length,
   };
   const base = {
@@ -167,9 +168,13 @@ function buildSituation(prev, obs, nowIso, ttl) {
     return { change: 'opened', item: { ...base, state: 'emerging', last_change_at: nowIso, what_changed: what, history: [{ at: nowIso, tier, level, score: evidence.gdacs_score, state: 'emerging', note: what }] } };
   }
 
+  // Compare against the last REAL level. coolSituation keeps it when an event drops off the feed; a
+  // pre-2026-11 'Gone' level (not a rank) never counts as a raise.
   const prevLevel = (prev.evidence && prev.evidence.gdacs_level) || 'Green';
-  const prevRank = LEVEL_RANK[prevLevel] ?? 0;
   const rank = LEVEL_RANK[level] ?? 0;
+  const prevRank = LEVEL_RANK[prevLevel] ?? rank;
+  // Back in the feed after dropping off (cooling) or after closing: the same event re-opens.
+  const returning = prev.state === 'closed' || (prev.evidence && prev.evidence.gdacs_listed === false);
   const prevAffected = Array.isArray(prev.iso3_affected) ? prev.iso3_affected : [];
   const newIso3 = affected.filter((c) => !prevAffected.includes(c));
 
@@ -187,8 +192,14 @@ function buildSituation(prev, obs, nowIso, ttl) {
     const what = `Spread to ${plural(newIso3.length, 'new country', 'new countries')}: ${newIso3.join(', ')}`;
     return { change: 'spread', item: { ...base, state: 'escalating', spread_arcs: arcs, last_change_at: nowIso, what_changed: what, history: appendHistory(prev, { at: nowIso, tier, level, score: evidence.gdacs_score, state: 'escalating', note: what }) } };
   }
-  // Nothing moved.
-  return { change: 'unchanged', item: { ...base, state: prev.state || 'peak', last_change_at: prev.last_change_at || prev.opened_at || nowIso, what_changed: prev.what_changed || null, history: Array.isArray(prev.history) ? prev.history : [] } };
+  if (returning) {
+    const what = `Back in GDACS · ${level} alert${sevText ? ` · ${sevText}` : ''}`;
+    return { change: 'reopened', item: { ...base, state: 'peak', last_change_at: nowIso, what_changed: what, history: appendHistory(prev, { at: nowIso, tier, level, score: evidence.gdacs_score, state: 'peak', note: what }) } };
+  }
+  // Nothing moved. One-sweep repair of the pre-2026-11 false "Alert raised Gone→X" (a blink-out read as a
+  // raise, escalating forever): drop it back to a plain peak. Delete once no state carries that text.
+  const falseRaise = /^Alert raised Gone→/.test(prev.what_changed || '');
+  return { change: 'unchanged', item: { ...base, state: falseRaise ? 'peak' : (prev.state || 'peak'), last_change_at: prev.last_change_at || prev.opened_at || nowIso, what_changed: falseRaise ? `GDACS ${level} alert` : (prev.what_changed || null), history: Array.isArray(prev.history) ? prev.history : [] } };
 }
 
 // An open situation whose event is no longer Orange/Red (Green observation, or gone from the feed →
@@ -196,7 +207,7 @@ function buildSituation(prev, obs, nowIso, ttl) {
 // closes it after 3 checks.
 function coolSituation(prev, obs, nowIso, ttl) {
   const isNews = prev.source === 'news';
-  // Keep the pre-cool tier through the grey-out window — `state: 'cooling'` already conveys
+  // Keep the pre-cool tier through its cooldown window — `state: 'cooling'` already conveys
   // ended-ness; snapping to 'low' hid still-significant events during their cooldown (audit F3).
   const tier = prev.tier || 'low';
   const base = {
@@ -214,7 +225,9 @@ function coolSituation(prev, obs, nowIso, ttl) {
     ? { ...(prev.evidence || {}) }
     : {
         ...(prev.evidence || {}),
-        gdacs_level: obs ? 'Green' : 'Gone',
+        // Gone from the feed keeps the last real level, so a return compares against it.
+        gdacs_level: obs ? 'Green' : ((prev.evidence && prev.evidence.gdacs_level) || 'Orange'),
+        gdacs_listed: false,
         gdacs_score: obs && typeof obs.score === 'number' ? obs.score : (prev.evidence && prev.evidence.gdacs_score) || null,
         gdacs_date_modified: (obs && obs.dateModified) || (prev.evidence && prev.evidence.gdacs_date_modified) || null,
       };

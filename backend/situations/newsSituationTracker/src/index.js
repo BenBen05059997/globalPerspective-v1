@@ -22,6 +22,7 @@ const DRY_RUN = process.env.DRY_RUN !== 'false'; // default true (shadow) until 
 const SWEEP_MIN = Number(process.env.SWEEP_MIN) || 10;
 const GDACS_STALE_MIN = Number(process.env.GDACS_STALE_MIN) || 45; // > 2× the 20-min GDACS cadence
 const CLOSE_AFTER_COOL_CHECKS = Number(process.env.CLOSE_AFTER_COOL_CHECKS) || 3;
+const NEWS_STALE_MIN = Number(process.env.NEWS_STALE_MIN) || 180; // 3 missed runs of the hourly news ingest
 const CLOSED_KEEP_HOURS = Number(process.env.CLOSED_KEEP_HOURS) || 48;
 const SITUATION_TTL_DAYS = Number(process.env.SITUATION_TTL_DAYS) || 60;
 const METRIC_NS = process.env.METRIC_NS || 'GlobalPerspective/Situations';
@@ -72,13 +73,14 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
   // Situations in prior state but absent from every source this sweep → cool, then maybe close.
   for (const [id, prev] of Object.entries(priorStates)) {
     if (presentIds.has(id)) continue;
-    if (opts.newsDegraded && (prev.source === 'news' || id.startsWith('news#'))) {
+    const isNews = prev.source === 'news' || id.startsWith('news#');
+    if ((isNews && opts.newsDegraded) || (!isNews && opts.gdacsDegraded)) {
       states[id] = prev;
       counts.unchanged++;
       continue;
     }
     if (prev.state === 'closed') {
-      // keep briefly for the map's grey-out, then drop (→ handler archives the object)
+      // keep for CLOSED_KEEP_HOURS (a returning event re-opens instead of starting over; the map never draws closed ones), then drop (→ handler archives the object)
       const ageH = (new Date(nowIso) - new Date(prev.closed_at || prev.last_change_at || nowIso)) / 3.6e6;
       if (ageH <= (opts.keepHours ?? CLOSED_KEEP_HOURS)) states[id] = prev; else dropped.push(id);
       continue;
@@ -140,6 +142,8 @@ function summarize(state) {
     centroid: state.centroid, iso3_affected: state.iso3_affected, affected_names: state.affected_names || [], spread_arcs: state.spread_arcs || [],
     opened_at: state.opened_at, last_change_at: state.last_change_at, tier_changed_at: state.tier_changed_at || null,
     what_changed: state.what_changed, threadId: state.threadId || null,
+    // GDACS only: the feed still lists the event, so the map keeps it however long ago it last changed.
+    ...(state.source === 'gdacs' ? { listed: !(state.evidence && state.evidence.gdacs_listed === false) } : {}),
     ...(state.aliases && state.aliases.length ? { aliases: state.aliases } : {}),
   };
 }
@@ -191,8 +195,8 @@ function assembleWorld(states, nowIso, sources) {
     generated_at: nowIso,
     next_expected_at: new Date(new Date(nowIso).getTime() + SWEEP_MIN * 60000).toISOString(),
     sources,
-    stale: sources.newsDegraded === true || computeStale(sources, nowIso),
-    situations: all, // includes recently-closed (state:'closed') for the map's grey-out
+    stale: sources.newsDegraded === true || sources.gdacsDegraded === true || computeStale(sources, nowIso),
+    situations: all, // includes recently-closed (state:'closed'); the map filters them out
     lede: deriveLede(ranked, all),
     systemic: [], // populated from markets/economic disruption in a later task
     ranked,
@@ -220,12 +224,14 @@ async function putJson(key, obj, cacheSeconds) {
   }));
 }
 // GDACS is a full-snapshot source: read its STABLE current pointer every sweep (never consumed), so
-// an empty inbox never spuriously cools live situations.
+// an empty inbox never spuriously cools live situations. A missing/unreadable snapshot (or one the
+// ingest marked degraded) is "no information", not "no events": GDACS situations freeze like news.
 async function readObservations() {
   const snap = await getJson(`${INBOX_PREFIX}gdacs-latest.json`);
-  const observations = (snap && snap.events) || [];
+  const gdacsDegraded = !snap || snap.degraded === true || !Array.isArray(snap.events);
+  const observations = gdacsDegraded ? [] : snap.events;
   const gdacsObservedAt = (snap && snap.observed_at) || null;
-  return { observations, gdacsObservedAt };
+  return { observations, gdacsObservedAt, gdacsDegraded };
 }
 
 // News stories worth showing on the map (higher bar than persistence): ≥3 outlets or severity ≥4.
@@ -238,7 +244,9 @@ const CORROBORATION_CAP = process.env.CORROBORATION_CAP !== 'false'; // default 
 const RAISE_COOLDOWN_MIN = Number(process.env.RAISE_COOLDOWN_MIN) || 180;
 async function readStories() {
   const idx = await getJson('stories/index.json'); // stories are always in the live prefix (single producer)
-  const newsDegraded = !idx || idx.degraded === true || idx.ok === false || idx.status === 'failed';
+  // A stalled ingest leaves a healthy-looking index with an old (or no) updated_at: that is degraded too.
+  const age = idx && idx.updated_at ? (Date.now() - new Date(idx.updated_at).getTime()) / 60000 : Infinity;
+  const newsDegraded = !idx || idx.degraded === true || idx.ok === false || idx.status === 'failed' || !(age <= NEWS_STALE_MIN);
   const stories = newsDegraded ? [] : (idx.stories || []);
   const eligible = stories
     .filter((s) => s.centroid && s.axis && (s.outlets >= STORY_MAP_MIN_OUTLETS || s.max_severity >= STORY_MAP_MIN_SEVERITY))
@@ -247,7 +255,7 @@ async function readStories() {
 }
 
 // Event-registry link map (Phase 1 "the bridge"): storyId → { threadId } written by
-// NewsProjectInvokeAgentLambda. Best-effort read — a missing/unreadable map means "no links this
+// newsAgent. Best-effort read — a missing/unreadable map means "no links this
 // sweep" (fail open to null threadId), never blocks the sweep.
 async function readStoryMap() {
   const m = await getJson('threads/story-map.json');
@@ -276,11 +284,13 @@ exports.handler = async () => {
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
-  const [{ observations, gdacsObservedAt }, { stories, storiesAt, newsDegraded }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
+  const [{ observations, gdacsObservedAt, gdacsDegraded }, { stories, storiesAt, newsDegraded }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
 
   // Build news situations from stories (planNewsSituations: country + thread keys, GDACS merge rule).
   const gdacsIso = new Set();
   for (const o of observations) for (const c of o.iso3_affected || []) gdacsIso.add(c);
+  // Frozen GDACS situations still own their countries (one event, one pin).
+  if (gdacsDegraded) for (const st of Object.values(priorStates)) if (st.source === 'gdacs' && st.state !== 'closed') for (const c of st.iso3_affected || []) gdacsIso.add(c);
   const storyOpts = { corroborationCap: CORROBORATION_CAP, raiseCooldownMin: RAISE_COOLDOWN_MIN };
   const { groups, absorbed } = planNewsSituations(stories, priorStates, storyMap, gdacsIso);
   const extraBuilt = {};
@@ -291,7 +301,7 @@ exports.handler = async () => {
   const foldPrior = { ...priorStates };
   for (const id of absorbed) delete foldPrior[id];
 
-  const { states, changes, counts, dropped } = foldSweep(foldPrior, observations, now, ttl, { extraBuilt, newsDegraded });
+  const { states, changes, counts, dropped } = foldSweep(foldPrior, observations, now, ttl, { extraBuilt, newsDegraded, gdacsDegraded });
   dropped.push(...absorbed);
 
   // Persist changed state objects; write index; write history + world bundle.
@@ -312,7 +322,7 @@ exports.handler = async () => {
     } catch (e) { console.warn('[tracker] archive failed', id, e.message); }
   }
 
-  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt, news: storiesAt, newsDegraded });
+  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt, news: storiesAt, newsDegraded, gdacsDegraded });
   const memberWorld = { ...world, _member: true }; // same content for now; gated depth arrives with stories (S3)
   await putJson(P.world, world, 60);
   await putJson(P.worldMember, memberWorld, 0);
@@ -329,7 +339,7 @@ exports.handler = async () => {
     putMetric('Cooled', counts.cooled || 0), putMetric('Closed', counts.closed || 0),
     putMetric('Observations', observations.length), putMetric('Stale', world.stale ? 1 : 0), putMetric('LLMCallsToday', 0),
   ]);
-  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, stale: world.stale, newsDegraded };
+  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, stale: world.stale, newsDegraded, gdacsDegraded };
   console.log(`[tracker] ${JSON.stringify(result)}`);
   return result;
 };

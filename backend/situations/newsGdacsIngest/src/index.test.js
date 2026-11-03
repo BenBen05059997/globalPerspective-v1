@@ -195,6 +195,14 @@ test('fetch failure returns ok:false and writes nothing (non-200, network error,
   assert.equal(puts.length, 0);
 });
 
+test('an empty or malformed event list is a failed run: no corpus or inbox write', async () => {
+  for (const body of [{ features: [] }, {}, { features: null }]) {
+    fakeFetch(async () => okJson(body));
+    assert.deepEqual(await load().handler(), { ok: false, error: 'GDACS returned no events' });
+  }
+  assert.equal(puts.length, 0);
+});
+
 test('non-200 error names the status', async () => {
   fakeFetch(async () => ({ ok: false, status: 503 }));
   assert.deepEqual(await load().handler(), { ok: false, error: 'GDACS HTTP 503' });

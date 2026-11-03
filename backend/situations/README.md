@@ -23,6 +23,7 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 2. Every hour newsSituationIngest classifies new headlines and writes the stories and the story index.
 3. Every 30 minutes newsSituationTracker reads the snapshot, the story index and `threads/story-map.json` (written by newsAgent in the pipeline group).
 4. It opens, raises, spreads, cools and closes situations, archives closed ones, and writes `world/latest.json`.
+   GDACS and news each freeze their situations when their input is missing or stalled (details in newsSituationTracker's README); the bundle then reports `sources.gdacsDegraded` / `sources.newsDegraded` and `stale: true`.
 5. The Cloudflare Worker serves `/data/world/*.json`, `/data/situations/state/*.json` and `/data/stories/state/*.json` from the private world bucket. Other prefixes are refused.
 6. The home page `/` fetches `world/latest.json` (hook `useWorld`) and a situation's state file when one is opened. This path does not use the API proxy.
 7. newsGdeltConflict runs separately every six hours. Nothing reads its file now (its reader, newsImpactAudit, was removed 2026-11-01); the map does not.

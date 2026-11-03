@@ -15,7 +15,8 @@ Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches th
 ## Gotchas
 - `SITUATIONS_INBOX_DISABLED=true` skips the inbox write. Corpus and inbox writes are best-effort: a failure is logged and never fails the run.
 - The code no longer reads `GDACS_TABLE` (the DynamoDB mirror is gone); a leftover value in the live env does nothing.
-- `coolSituation` keeps the pre-cool tier (audit F3); its doc comment still says "cooling at tier 'low'".
+- A reply with no events at all fails the run (`GDACS returned no events`) and writes neither file, so the tracker keeps the last snapshot rather than closing every disaster. The snapshot can still hold zero Orange/Red events when GDACS replies normally.
+- `coolSituation` keeps the pre-cool tier (audit F3).
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests

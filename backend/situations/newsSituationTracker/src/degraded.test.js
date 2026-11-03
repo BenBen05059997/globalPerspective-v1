@@ -41,6 +41,42 @@ test('handler carries persisted degraded input through readStories to fold and w
  assert.equal(h.objects.get('world/latest.json').sources.newsDegraded,true);assert.equal(h.objects.get('world/latest.json').stale,true);
 });
 test('legacy successful indexes remain readable; missing index is degraded',async()=>{
- const h=harness({updated_at:NOW,stories:[]});assert.equal((await h.read()).newsDegraded,false);
+ const h=harness({updated_at:new Date().toISOString(),stories:[]});assert.equal((await h.read()).newsDegraded,false);
  h.objects.delete('stories/index.json');assert.equal((await h.read()).newsDegraded,true);
+});
+
+test('a stalled news ingest (old or missing updated_at on a healthy-looking index) is degraded',async()=>{
+ const old=new Date(Date.now()-4*3600e3).toISOString();
+ const h=harness({updated_at:old,degraded:false,status:'ok',stories:[{storyId:'x',centroid:{lat:0,lon:0},axis:'conflict',outlets:4}]});
+ const r=await h.read();assert.equal(r.newsDegraded,true);assert.equal(r.stories.length,0);
+ h.objects.set('stories/index.json',{stories:[]});assert.equal((await h.read()).newsDegraded,true);
+ h.objects.set('stories/index.json',{updated_at:new Date(Date.now()-2*3600e3).toISOString(),stories:[]});assert.equal((await h.read()).newsDegraded,false);
+ const result=await h.handler();assert.equal(result.newsDegraded,false);
+ h.objects.set('stories/index.json',{updated_at:old,stories:[]});
+ const stalled=await h.handler();assert.equal(stalled.newsDegraded,true);assert.equal(h.objects.get('world/latest.json').stale,true);
+});
+const gd={...news,situationId:'gdacs#FL#1',source:'gdacs',state:'peak',cooling_checks:0,iso3_affected:['CHN'],evidence:{gdacs_level:'Orange'}};
+test('gdacsDegraded freezes GDACS situations (no cooling, closing, dropping); news still folds',()=>{
+ const closed={...gd,situationId:'gdacs#FL#2',state:'closed',closed_at:'2026-10-01T00:00:00Z'};
+ let prior={[gd.situationId]:gd,[closed.situationId]:closed,[news.situationId]:news};
+ for(let i=0;i<5;i++){
+  const r=foldSweep(prior,[],NOW,9999999999,{gdacsDegraded:true,closeAfter:3,keepHours:1});
+  assert.equal(r.states[gd.situationId],gd);assert.equal(r.states[closed.situationId],closed);assert.equal(r.dropped.length,0);
+  prior=r.states;
+ }
+ assert.equal(prior[news.situationId].state,'closed');
+ const healthy=foldSweep({[gd.situationId]:gd},[],NOW,9999999999);
+ assert.equal(healthy.states[gd.situationId].state,'cooling');
+});
+test('handler: missing GDACS inbox or an empty-reply marker freezes GDACS situations and degrades the bundle',async()=>{
+ const h=harness({updated_at:new Date().toISOString(),stories:[]});
+ h.objects.set('situations/index.json',{ids:[gd.situationId,news.situationId]});h.objects.set('situations/state/gdacs_FL_1.json',gd);
+ h.objects.delete('situations/inbox/gdacs-latest.json');
+ for(let i=0;i<4;i++){const r=await h.handler();assert.equal(r.gdacsDegraded,true);}
+ assert.deepEqual(h.objects.get('situations/state/gdacs_FL_1.json'),gd);
+ const w=h.objects.get('world/latest.json');assert.equal(w.sources.gdacsDegraded,true);assert.equal(w.stale,true);
+ h.objects.set('situations/inbox/gdacs-latest.json',{observed_at:NOW,degraded:true,events:[]});
+ assert.equal((await h.handler()).gdacsDegraded,true);assert.deepEqual(h.objects.get('situations/state/gdacs_FL_1.json'),gd);
+ h.objects.set('situations/inbox/gdacs-latest.json',{observed_at:new Date().toISOString(),events:[]});
+ const ok=await h.handler();assert.equal(ok.gdacsDegraded,false);assert.equal(h.objects.get('situations/state/gdacs_FL_1.json').state,'cooling');
 });

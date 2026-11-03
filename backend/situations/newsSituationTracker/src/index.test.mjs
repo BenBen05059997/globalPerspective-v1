@@ -141,4 +141,16 @@ t('situationHref: the story page when there is a thread, else the map focused on
   assert.strictEqual(situationHref({ id: 'gdacs#FL#1', threadId: null }), '/?focus=gdacs%23FL%231');
 });
 
+t('fold: a closed GDACS event that returns inside the keep window re-opens; summaries carry listed', () => {
+  let states = foldSweep({}, [obs({ level: 'Red' })], NOW, TTL).states;
+  assert.strictEqual(_internal.summarize(states['gdacs#FL#1']).listed, true);
+  for (let i = 1; i <= 3; i++) states = foldSweep(states, [], `2026-09-08T0${i}:00:00.000Z`, TTL, { closeAfter: 3 }).states;
+  assert.strictEqual(states['gdacs#FL#1'].state, 'closed');
+  assert.strictEqual(_internal.summarize(states['gdacs#FL#1']).listed, false);
+  const r = foldSweep(states, [obs({ level: 'Red' })], '2026-09-08T04:00:00.000Z', TTL);
+  assert.strictEqual(r.states['gdacs#FL#1'].state, 'peak');
+  assert.strictEqual(r.counts.reopened, 1);
+  assert.strictEqual(_internal.summarize(r.states['gdacs#FL#1']).listed, true);
+});
+
 console.log(`\n${pass} tests passed`);

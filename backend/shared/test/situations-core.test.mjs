@@ -120,6 +120,46 @@ t('cool: gone from feed (obs null) → "no longer current"', () => {
   assert.match(item.what_changed, /no longer current/);
 });
 
+t('blink-out: gone from the feed keeps the last real level; a return is "reopened", never a Gone→X raise', () => {
+  const red = buildSituation(null, obs({ alertlevel: 'Red' }), NOW, TTL).item;
+  const gone = coolSituation(red, null, '2026-09-08T01:00:00.000Z', TTL).item;
+  assert.strictEqual(gone.evidence.gdacs_level, 'Red');
+  assert.strictEqual(gone.evidence.gdacs_listed, false);
+  const back = buildSituation(gone, obs({ alertlevel: 'Red' }), '2026-09-08T01:30:00.000Z', TTL);
+  assert.strictEqual(back.change, 'reopened');
+  assert.strictEqual(back.item.state, 'peak');
+  assert.doesNotMatch(back.item.what_changed, /Gone|raised/);
+  assert.strictEqual(back.item.evidence.gdacs_listed, true);
+  assert.strictEqual(back.item.opened_at, NOW);
+  const again = buildSituation(back.item, obs({ alertlevel: 'Red' }), '2026-09-08T02:00:00.000Z', TTL);
+  assert.strictEqual(again.change, 'unchanged');
+  assert.strictEqual(again.item.state, 'peak');
+});
+
+t('blink-out: an event that closed and returns re-opens (cooling_checks/closed_at cleared); a real raise still raises', () => {
+  const orange = buildSituation(null, obs(), NOW, TTL).item;
+  const closed = { ...coolSituation(orange, null, '2026-09-08T01:00:00.000Z', TTL).item, state: 'closed', closed_at: '2026-09-08T02:00:00.000Z', cooling_checks: 3 };
+  const back = buildSituation(closed, obs(), '2026-09-08T03:00:00.000Z', TTL);
+  assert.strictEqual(back.change, 'reopened');
+  assert.strictEqual(back.item.state, 'peak');
+  assert.strictEqual(back.item.closed_at, undefined);
+  assert.strictEqual(back.item.cooling_checks, undefined);
+  const raised = buildSituation(closed, obs({ alertlevel: 'Red' }), '2026-09-08T03:00:00.000Z', TTL);
+  assert.strictEqual(raised.change, 'raised');
+  assert.match(raised.item.what_changed, /Orange→Red/);
+});
+
+t('legacy Gone level and the false "Alert raised Gone→Red" state repair to a plain peak', () => {
+  const red = buildSituation(null, obs({ alertlevel: 'Red' }), NOW, TTL).item;
+  const legacyGone = { ...red, state: 'cooling', evidence: { ...red.evidence, gdacs_level: 'Gone' } };
+  assert.strictEqual(buildSituation(legacyGone, obs({ alertlevel: 'Red' }), NOW, TTL).change, 'unchanged');
+  const stuck = { ...red, state: 'escalating', what_changed: 'Alert raised Gone→Red' };
+  const { change, item } = buildSituation(stuck, obs({ alertlevel: 'Red' }), NOW, TTL);
+  assert.strictEqual(change, 'unchanged');
+  assert.strictEqual(item.state, 'peak');
+  assert.doesNotMatch(item.what_changed, /Gone/);
+});
+
 console.log(`\n${pass} tests passed`);
 
 // buildStorySituation (news, S3·T3)

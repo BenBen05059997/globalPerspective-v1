@@ -99,7 +99,10 @@ exports.handler = async () => {
     const res = await fetch(FEED, { headers: { 'User-Agent': 'globalperspective-gdacs/1.0' } });
     if (!res.ok) throw new Error(`GDACS HTTP ${res.status}`);
     const data = await res.json();
-    feats = data.features || [];
+    feats = data.features;
+    // A reply with no events at all (not even Green ones) is a broken feed, not a calm world: write
+    // nothing, so the tracker keeps the last snapshot instead of closing every disaster.
+    if (!Array.isArray(feats) || feats.length === 0) throw new Error('GDACS returned no events');
   } catch (e) {
     console.error('[gdacs] fetch failed:', e.message);
     return { ok: false, error: e.message };

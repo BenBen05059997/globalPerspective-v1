@@ -187,6 +187,14 @@
         }
       ]
     },
+    "newsInvokeGemini-dev": {
+      "dir": "backend/pipeline/newsInvokeGemini",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "features": [],
+      "nodeModules": false,
+      "deployBlocked": "Old name, replaced by newsIngest 2026-11-03 (schedule repointed); kept unscheduled for rollback until it is deleted. Deploy newsIngest."
+    },
     "newsIngest": {
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",
@@ -282,6 +290,14 @@
           "input": "{\"action\":\"tick\"}"
         }
       ]
+    },
+    "NewsProjectInvokeAgentLambda-dev": {
+      "dir": "backend/pipeline/NewsProjectInvokeAgentLambda",
+      "runtime": "nodejs22.x",
+      "group": "pipeline",
+      "features": [],
+      "nodeModules": false,
+      "deployBlocked": "Old name, replaced by newsAgent 2026-11-03 (schedule repointed); kept unscheduled for rollback until it is deleted. Deploy newsAgent."
     },
     "newsAgent": {
       "dir": "backend/pipeline/NewsProjectInvokeAgentLambda",

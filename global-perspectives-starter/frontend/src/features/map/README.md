@@ -60,9 +60,12 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 5. The Worker (`cloudflare/front-worker/production/worker.mjs`) serves `/data/*` from the private S3 bucket.
 6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, Alerts and Intel on `/`. Every world poll and detail failure goes to the error sink.
 
+## Radar labels
+`@/shared/map/mapLabels.js` places them, `RadarMap.jsx` draws them outside the zoomed group in screen pixels. Rule: HIGH and ELEVATED situations only, most severe first, then escalating, then newest change, at most 8 drawn. Each takes the first free spot (right, left, above, below the marker) that is inside the map, clear of other labels and of every marker; text width is measured with a canvas; labels over 220 px are ellipsized (full text in a `<title>`). The layout runs again on every zoom and pan. A label with no free spot is dropped; the pin and its Alerts row still carry the name.
+
 ## The two lists
 - **Alerts** (`AlertStack.jsx`): the one list of situations; each plotted one is a real button (the keyboard twin of the pins). A story thread
-  shows once (news situations are per country; the others keep their pins). `N open` equals the phone ALERTS badge.
+  shows once (news situations are per country; the others keep their pins). One count everywhere: `openCount` in `SituationHome.jsx` is the number of Alerts rows, and the Alerts header, every "All situations (N)" button, the About list and the phone ALERTS badge all use it.
 - **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`,
   the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
 
@@ -77,4 +80,4 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
   `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
 
-Last verified: 2026-11-03
+Last verified: 2026-11-03 (round 2 fixes: counts, labels, wrapping; spread rule in `backend/situations/newsSituationIngest/README.md`)

@@ -203,6 +203,9 @@ export default function RadarMap({
     };
   });
 
+  // Switching to the Country risk layer empties the situations: a card for one must not outlive them.
+  useEffect(() => { if (!active.length) cards.clear(); }, [active, cards]);
+
   // One lap the first time there are markers, and again when fresh data adds a situation (R1/R5).
   useEffect(() => {
     const ids = active.map((s) => s.id);

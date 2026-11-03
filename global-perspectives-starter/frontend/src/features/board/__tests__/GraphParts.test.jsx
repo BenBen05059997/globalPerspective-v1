@@ -47,15 +47,16 @@ describe('top bar', () => {
 });
 
 describe('due on your board', () => {
-  it('lists open branches with a due date, nearest first, with the date and our percentage', () => {
+  it('lists open branches due this week, with the date and our percentage', () => {
     expect(dueBranches({ a: story }, '2026-10-20').map((r) => r.id)).toEqual(['a:f1-3', 'a:f1-0']);
     render(<DueStrip stories={{ a: story }} today="2026-10-20" />);
     expect(screen.getByText('25 Oct · 20%')).toBeInTheDocument();
-    expect(screen.getByText('Premiums rise again')).toBeInTheDocument();
+    expect(screen.getByText('Shipping resumes')).toBeInTheDocument();
+    expect(screen.queryByText('Premiums rise again')).toBeNull(); // due 30 Nov: not this week
   });
-  it('says "past due" for an open branch whose date has passed, and is absent with nothing open', () => {
-    render(<DueStrip stories={{ a: story }} today="2026-11-02" />);
-    expect(screen.getByText('25 Oct · 20% · past due')).toBeInTheDocument();
+  it('leaves out a branch whose date has passed or is beyond this week, and is absent with nothing due', () => {
+    const { container: past } = render(<DueStrip stories={{ a: story }} today="2026-11-02" />);
+    expect(past).toBeEmptyDOMElement();
     cleanup();
     const { container } = render(<DueStrip stories={{}} today="2026-10-20" />);
     expect(container).toBeEmptyDOMElement();

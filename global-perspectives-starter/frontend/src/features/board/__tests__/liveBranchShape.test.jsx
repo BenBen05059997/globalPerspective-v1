@@ -39,10 +39,10 @@ describe('branch view helpers', () => {
 });
 
 describe('live-shaped branches on the board', () => {
-  it('due strip: story, question, scenario tag, date and percent; upcoming first, past due after, none with a verdict', () => {
+  it('due strip: story, question, scenario tag, date and percent; only those due this week, none with a verdict', () => {
     const rows = dueBranches({ nk: story }, '2026-11-01');
     expect(rows.map((r) => r.id)).toEqual(['nk:n2', 'nk:n1', 'nk:o1', 'nk:o2']); // n3 (due 25 Oct) is past due too: the strip shows four
-    render(<DueStrip stories={{ nk: story }} today="2026-11-01" labelOf={() => 'North Korea'} />);
+    render(<DueStrip stories={{ nk: story }} today="2026-11-16" labelOf={() => 'North Korea'} />);
     expect(screen.getAllByText('North Korea').length).toBeGreaterThan(0);
     expect(screen.getByText('Talks resume in Beijing')).toBeInTheDocument();
     expect(screen.getByText('20 Nov · 20%')).toBeInTheDocument();

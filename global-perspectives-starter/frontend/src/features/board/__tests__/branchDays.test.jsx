@@ -52,9 +52,10 @@ describe('one definition of today, live, late and due this week', () => {
     const board = { pins: [], strings: [], weights: {} };
     // pin card
     expect(pinCountParts({ recordAvailable: true, counts: { liveBranches: 99 } }, stories['pin-ref'], TODAY)).toEqual(['6 live branches · 2 late']);
-    // due strip: upcoming first (four fit), and the same two are flagged late when they are what is left
-    expect(dueBranches(stories, TODAY).map((r) => r.late)).toEqual([false, false, false, false]);
-    expect(dueBranches({ x: story('nk', branches.slice(0, 2)) }, TODAY).map((r) => r.late)).toEqual([true, true]);
+    // due strip: the same three as the others (due this week, none late), so its count agrees
+    const strip = render(<DueStrip stories={stories} today={TODAY} />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    strip.unmount();
     // monthly: due this week and past due
     const m = monthlyView(board, stories, TODAY);
     expect(m.ours).toEqual({ settled: 0, dueThisWeek: 3, late: 2 });
@@ -86,13 +87,16 @@ describe('divergence with a reader\'s line on our string', () => {
   });
 });
 
-describe('due strip says how many more are due', () => {
-  it('shows four rows and the rest as a count; nothing when all fit', () => {
-    render(<DueStrip stories={stories} today={TODAY} />);
+describe('due strip says how many more are due this week', () => {
+  it('shows four rows and the rest of this week as a count, equal to the unsettled zone; nothing when all fit', () => {
+    const week = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'].map((id, i) => b(id, `2026-11-0${3 + (i % 6)}`));
+    const many = { x: story('nk', [...week, b('far', '2027-01-01'), b('late', '2026-10-01')]) };
+    render(<DueStrip stories={many} today={TODAY} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
-    expect(screen.getByText('+3 more due')).toBeInTheDocument();
+    expect(screen.getByText('+3 more due this week')).toBeInTheDocument();
+    expect(dueCounts(many, TODAY).dueThisWeek).toBe(7); // 4 shown + 3 more
     cleanup();
-    render(<DueStrip stories={{ x: story('nk', branches.slice(0, 2)) }} today={TODAY} />);
+    render(<DueStrip stories={stories} today={TODAY} />);
     expect(screen.queryByText(/more due/)).toBeNull();
   });
 });

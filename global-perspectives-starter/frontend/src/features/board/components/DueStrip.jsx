@@ -1,5 +1,6 @@
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import { isOpen, isLate, uniqueStories } from '@/features/board/lib/branchDays.js';
+import { isoWeekEnd } from '@/features/board/lib/recordViews.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 
 const SHOWN = 4;
@@ -21,11 +22,12 @@ export function dueBranches(stories, today, limit = SHOWN) {
   return [...rows.filter((r) => !r.late).sort(cmp), ...rows.filter((r) => r.late).sort(cmp)].slice(0, limit);
 }
 
-// "Due on your board": the nearest open questions on the stories you pinned: the story, the question, the scenario it
-// belongs to, its date and our percentage. A question past its date with no verdict yet says "past due".
+// "Due on your board": the open questions on the stories you pinned that are due this week (the same set as the
+// unsettled zone and the monthly count), nearest first: the story, the question, the scenario it belongs to, its date
+// and our percentage. A question past its date is counted as past due beside the board, not listed here.
 // Nothing to list -> the strip is absent.
 export default function DueStrip({ stories, today, labelOf }) {
-  const all = dueBranches(stories, today, Infinity);
+  const all = dueBranches(stories, today, Infinity).filter((r) => !r.late && r.due <= isoWeekEnd(today));
   if (!all.length) return null;
   const rows = all.slice(0, SHOWN);
   const more = all.length - rows.length;
@@ -34,15 +36,15 @@ export default function DueStrip({ stories, today, labelOf }) {
       <h2 className="board-eyebrow">Due on your board</h2>
       <ul className="board-due__row">
         {rows.map((r) => (
-          <li key={r.id} className={`board-due__item${r.late ? ' is-late' : ''}`}>
-            <span className="board-due__when">{dayMonth(r.due)}{r.p != null ? ` · ${r.p}%` : ''}{r.late ? ' · past due' : ''}</span>
+          <li key={r.id} className="board-due__item">
+            <span className="board-due__when">{dayMonth(r.due)}{r.p != null ? ` · ${r.p}%` : ''}</span>
             {labelOf ? <span className="board-due__story">{labelOf(r.threadId)}</span> : null}
             <span className="board-due__text">{r.line}</span>
             {r.scenario ? <span className="board-note">{r.scenario}</span> : null}
           </li>
         ))}
       </ul>
-      {more > 0 ? <p className="board-note">+{more} more due</p> : null}
+      {more > 0 ? <p className="board-note">+{more} more due this week</p> : null}
     </section>
   );
 }

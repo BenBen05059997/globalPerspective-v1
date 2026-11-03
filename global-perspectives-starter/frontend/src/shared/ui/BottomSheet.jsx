@@ -3,7 +3,7 @@ import Button from '@/shared/ui/Button.jsx';
 import '@/shared/ui/BottomSheet.css';
 
 // BottomSheet — M7 phone MAP tab: the selected situation/story's detail opens here instead of
-// the desktop rail. Three stops (P1): peek (~120px, title + category only), half (~45vh), full
+// the desktop rail. Three stops (P1): peek (~128px, title up to 2 lines + category only), half (~45vh), full
 // (~85vh, role=dialog + aria-modal — the only stop that behaves as a true modal). A drag handle
 // AND explicit buttons move between stops (44px targets); Esc always closes; focus moves into
 // the sheet on open and returns to whatever had focus before it opened (WCAG 2.4.3).

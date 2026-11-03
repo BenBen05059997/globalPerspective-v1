@@ -41,13 +41,14 @@ async function connect(store, env, nowMs, rawA, rawB) {
 
   const data = new Map(); // pin.key -> { actors, places, outlets, scores }
   const limits = [];
-  for (const p of pins) {
+  for (const [i, p] of pins.entries()) {
     if (p.kind === 'thread') {
       const an = rows.get(p.refId);
       const topic = topicOf.get(p.refId);
       const outlets = world.threadOutlets(topic);
-      if (!topic) limits.push(`outlets unavailable for thread ${p.refId} (not in the latest topic pool)`);
-      if (!an) limits.push(`no analysis row for thread ${p.refId}`);
+      const name = topic?.title || (i === 0 ? 'the first story' : 'the second story'); // never the thread id
+      if (!topic) limits.push(`Outlets are unavailable for ${name} (it is not in the latest stories).`);
+      if (!an) limits.push(`There is no analysis yet for ${name}.`);
       data.set(p.key, {
         actors: world.threadActors(p.refId, an, topic, index),
         places: world.threadIso3(an, index.threads[p.refId], topic),

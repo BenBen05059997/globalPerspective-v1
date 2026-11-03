@@ -269,7 +269,8 @@ test('connect: the honest none, with limits listing what could not be read', asy
   assert.equal(r.data.strength, 'none');
   assert.deepEqual(r.data.grounds, []);
   assert.equal(r.data.note, 'No link found. Shared: nothing but the week.');
-  assert.ok(r.data.limits.some((l) => /outlets unavailable for thread thread-eu/.test(l)));
+  assert.ok(r.data.limits.some((l) => /^Outlets are unavailable for the first story/.test(l)));
+  assert.ok(r.data.limits.every((l) => !/thread-/.test(l)));
 });
 
 test('connect: country and actor pins; bad pins and identical pins are 400', async () => {

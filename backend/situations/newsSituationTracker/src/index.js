@@ -14,11 +14,15 @@
 
 const core = require('./_shared/situations-core');
 const { storyHref, mapHref } = require('./_shared/links');
-const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories } = core;
+const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories, planNewsGrouping } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const DRY_RUN = process.env.DRY_RUN !== 'false'; // default true (shadow) until explicitly flipped
+// One event, one situation (strict URL / title+country rules, grouped for life). OFF unless exactly 'true'.
+// With DRY_RUN (the code default) the grouped result lands only in the shadow universe (shadow/situations/,
+// world/shadow/) plus a merge list under shadow/situations/merges/; live world/latest.json is untouched.
+const NEWS_GROUPING = process.env.NEWS_GROUPING === 'true';
 const SWEEP_MIN = Number(process.env.SWEEP_MIN) || 10;
 const GDACS_STALE_MIN = Number(process.env.GDACS_STALE_MIN) || 45; // > 2× the 20-min GDACS cadence
 const CLOSE_AFTER_COOL_CHECKS = Number(process.env.CLOSE_AFTER_COOL_CHECKS) || 3;
@@ -134,6 +138,14 @@ function planNewsSituations(stories, priorStates, storyMap, gdacsIso) {
   return { groups: [...groups.values()], absorbed };
 }
 
+// planNews = planNewsSituations, then (NEWS_GROUPING) the strict merge pass. Returns { groups, absorbed,
+// merges }; each group carries `grouping` (the persisted member sets) only when grouping ran.
+function planNews(stories, priorStates, storyMap, gdacsIso, opts = {}) {
+  const base = planNewsSituations(stories, priorStates, storyMap, gdacsIso);
+  if (!opts.grouping) return { ...base, merges: [] };
+  return planNewsGrouping(base.groups, priorStates, opts);
+}
+
 function summarize(state) {
   return {
     id: state.situationId, source: state.source, verb_label: state.verb_label,
@@ -145,6 +157,8 @@ function summarize(state) {
     // GDACS only: the feed still lists the event, so the map keeps it however long ago it last changed.
     ...(state.source === 'gdacs' ? { listed: !(state.evidence && state.evidence.gdacs_listed === false) } : {}),
     ...(state.aliases && state.aliases.length ? { aliases: state.aliases } : {}),
+    ...(state.threadIds && state.threadIds.length ? { threadIds: state.threadIds } : {}),
+    ...(state.also_reported_as && state.also_reported_as.length ? { also_reported_as: state.also_reported_as } : {}),
   };
 }
 
@@ -292,10 +306,10 @@ exports.handler = async () => {
   // Frozen GDACS situations still own their countries (one event, one pin).
   if (gdacsDegraded) for (const st of Object.values(priorStates)) if (st.source === 'gdacs' && st.state !== 'closed') for (const c of st.iso3_affected || []) gdacsIso.add(c);
   const storyOpts = { corroborationCap: CORROBORATION_CAP, raiseCooldownMin: RAISE_COOLDOWN_MIN };
-  const { groups, absorbed } = planNewsSituations(stories, priorStates, storyMap, gdacsIso);
+  const { groups, absorbed, merges } = planNews(stories, priorStates, storyMap, gdacsIso, { grouping: NEWS_GROUPING });
   const extraBuilt = {};
   for (const g of groups) {
-    extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, situationId: g.id, aliases: g.aliases });
+    extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, situationId: g.id, aliases: g.aliases, grouping: g.grouping });
   }
   // Absorbed old-id states live on inside their group: archive them (below) rather than cool them.
   const foldPrior = { ...priorStates };
@@ -330,6 +344,13 @@ exports.handler = async () => {
   await putJson(`${P.worldSnap}/${hk}/${now.slice(11, 16).replace(':', '')}.json`, world);
   await putJson(`${P.history}/${hk}/${now.slice(11, 16).replace(':', '')}.json`, { updated_at: now, situations: summaries });
 
+  // Merge list (grouping on): what joined this sweep and why; standing groups re-confirmed are not repeated.
+  const newMerges = merges.filter((m) => m.isNew);
+  if (NEWS_GROUPING && newMerges.length) {
+    console.log(`[tracker] merges ${JSON.stringify(newMerges)}`);
+    try { await putJson(`${DRY_RUN ? 'shadow/' : ''}situations/merges/${hk}/${now.slice(11, 16).replace(':', '')}.json`, { at: now, merges: newMerges }); } catch (e) { console.warn('[tracker] merge list write failed', e.message); }
+  }
+
   const openCount = summaries.filter((s) => s.state !== 'closed').length;
   // Per-transition counts make the cooling/close rule tunable against live churn (CLOSE_AFTER_COOL_CHECKS,
   // GDACS_STALE_MIN are env knobs — no redeploy needed to tune).
@@ -339,9 +360,9 @@ exports.handler = async () => {
     putMetric('Cooled', counts.cooled || 0), putMetric('Closed', counts.closed || 0),
     putMetric('Observations', observations.length), putMetric('Stale', world.stale ? 1 : 0), putMetric('LLMCallsToday', 0),
   ]);
-  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, stale: world.stale, newsDegraded, gdacsDegraded };
+  const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', grouping: NEWS_GROUPING, merges: newMerges.length, observations: observations.length, open: openCount, counts, changes: changes.length, stale: world.stale, newsDegraded, gdacsDegraded };
   console.log(`[tracker] ${JSON.stringify(result)}`);
   return result;
 };
 
-exports._internal = { foldSweep, assembleWorld, deriveLede, computeStale, summarize, situationHref, planNewsSituations, readStories };
+exports._internal = { foldSweep, assembleWorld, deriveLede, computeStale, summarize, situationHref, planNewsSituations, planNews, readStories };

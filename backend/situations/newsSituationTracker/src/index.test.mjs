@@ -135,6 +135,27 @@ t('summarize: no aliases field when there are none', () => {
   assert.ok(!('aliases' in summarize({ situationId: 'gdacs#FL#1', aliases: [] })));
 });
 
+t('summarize: threadIds and also_reported_as only when present', () => {
+  assert.ok(!('threadIds' in summarize({ situationId: 'news#a', threadIds: [] })));
+  assert.ok(!('also_reported_as' in summarize({ situationId: 'news#a' })));
+  const s = summarize({ situationId: 'news#a', threadIds: ['t1', 't2'], also_reported_as: ['Other title'] });
+  assert.deepStrictEqual(s.threadIds, ['t1', 't2']);
+  assert.deepStrictEqual(s.also_reported_as, ['Other title']);
+});
+
+t('planNews: grouping off = planNewsSituations exactly; on = strict merge pass', () => {
+  const { planNews } = _internal;
+  const a = story('conflict#UKR#a'); a.headlines = [{ title: 'x', url: 'https://x.com/1', domain: 'x.com' }];
+  const b = story('political#UKR#b'); b.headlines = [{ title: 'y', url: 'https://x.com/1/', domain: 'x.com' }];
+  const off = planNews([a, b], {}, {}, new Set(), { grouping: false });
+  assert.strictEqual(off.groups.length, 2);
+  assert.deepStrictEqual(off.merges, []);
+  assert.ok(!('grouping' in off.groups[0]));
+  const on = planNews([a, b], {}, {}, new Set(), { grouping: true });
+  assert.strictEqual(on.groups.length, 1);
+  assert.strictEqual(on.merges[0].rule, 'url');
+});
+
 t('situationHref: the story page when there is a thread, else the map focused on the situation', () => {
   const { situationHref } = _internal;
   assert.strictEqual(situationHref({ id: 'news#UKR#t-1', threadId: 't-1' }), '/weekly/thread/t-1');

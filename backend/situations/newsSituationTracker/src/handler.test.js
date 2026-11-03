@@ -252,3 +252,53 @@ test('shadow: deletes only shadow state objects', async () => {
   await load({ DRY_RUN: 'true' }).handler();
   assert.deepEqual(ops.filter((o) => o.op === 'delete').map((o) => o.key), ['shadow/situations/state/gdacs_FL_old.json']);
 });
+
+// ── news grouping (NEWS_GROUPING) ────────────────────────────────────────────
+const gstory = (storyId, over = {}) => ({ storyId, title: storyId, axis: 'conflict', max_severity: 4, outlets: 4, velocity: 1, spread_new_iso3: [], centroid: { lat: 1, lon: 2 }, iso3: [storyId.split('#')[1]], category: 'war', headlines: [], ...over });
+const seedStories = (stories) => {
+  seed();
+  objects.set('stories/index.json', JSON.stringify({ updated_at: '2026-10-31T11:00:00.000Z', degraded: false, status: 'ok', stories }));
+};
+const dupes = [
+  gstory('conflict#IRN#qeshm', { title: 'Qeshm strike', iso3: ['IRN', 'USA'], headlines: [{ title: 'a', url: 'https://x.com/a?utm=1', domain: 'x.com' }] }),
+  gstory('political#USA#pentagon', { title: 'Pentagon on Qeshm', iso3: ['USA'], headlines: [{ title: 'a', url: 'https://X.com/a/', domain: 'x.com' }] }),
+];
+const newsIds = (key) => parsed(key).ids.filter((i) => i.startsWith('news#'));
+
+test('grouping flag off (default): two stories sharing a URL stay two situations, no new fields, no merge list', async () => {
+  seedStories(dupes);
+  const out = await load({ DRY_RUN: 'false' }).handler();
+  assert.equal(out.grouping, false);
+  assert.deepEqual(newsIds('situations/index.json').sort(), ['news#conflict#IRN#qeshm', 'news#political#USA#pentagon']);
+  const st = parsed('situations/state/news_conflict_IRN_qeshm.json');
+  for (const k of ['member_story_ids', 'member_urls', 'threadIds', 'also_reported_as']) assert.ok(!(k in st), k);
+  assert.ok(!writes().some((o) => o.key.includes('/merges/')));
+});
+
+test('grouping flag on + DRY_RUN: merges in the shadow universe only, merge list written, live keys untouched', async () => {
+  seedStories(dupes);
+  const out = await load({ DRY_RUN: 'true', NEWS_GROUPING: 'true' }).handler();
+  assert.equal(out.grouping, true);
+  assert.equal(out.merges, 1);
+  for (const o of writes()) assert.ok(o.key.startsWith('shadow/') || o.key.startsWith('world/shadow/'), `unexpected write ${o.key}`);
+  assert.equal(newsIds('shadow/situations/index.json').length, 1);
+  const sit = parsed('world/shadow/latest.json').situations.find((s) => s.source === 'news');
+  assert.equal(sit.aliases.length, 1);
+  const list = parsed('shadow/situations/merges/2026/10/31/12/1200.json');
+  assert.equal(list.merges[0].rule, 'url');
+  assert.equal(list.merges[0].url, 'https://x.com/a');
+});
+
+test('grouping flag on, live: the next sweep keeps the group (grouped for life)', async () => {
+  seedStories(dupes);
+  const mod = load({ DRY_RUN: 'false', NEWS_GROUPING: 'true' });
+  await mod.handler();
+  const ids1 = newsIds('situations/index.json');
+  assert.equal(ids1.length, 1);
+  // only the second story is left, with unrelated URLs: its story id still belongs to the group
+  objects.set('stories/index.json', JSON.stringify({ updated_at: '2026-10-31T11:00:00.000Z', degraded: false, status: 'ok', stories: [{ ...dupes[1], headlines: [] }] }));
+  await mod.handler();
+  assert.deepEqual(newsIds('situations/index.json'), ids1);
+  const s = parsed(`situations/state/${ids1[0].replace(/[^A-Za-z0-9._-]/g, '_')}.json`);
+  assert.ok(s.member_story_ids.includes('conflict#IRN#qeshm') && s.member_story_ids.includes('political#USA#pentagon'));
+});

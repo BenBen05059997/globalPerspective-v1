@@ -150,6 +150,13 @@ export default function BoardPage() {
     state.edit((b) => addPin(b, ref).board);
   };
 
+  // Dropping a connection forgets its verdict: a "no link" line and label drawn for it go with it.
+  const dropVerdict = () => {
+    const pairKey = panel?.result?.pairKey;
+    if (pairKey) setResults((prev) => prev.filter((r) => r.pairKey !== pairKey));
+    closePanel();
+    setSelected([]);
+  };
   const keep = (line) => {
     state.edit((b) => keepString(b, panel.a, panel.b, line));
     setPanel(null);
@@ -224,7 +231,7 @@ export default function BoardPage() {
         state={panel}
         existing={findString(board, panel.a, panel.b)}
         onKeep={keep}
-        onDismiss={() => { closePanel(); setSelected([]); }}
+        onDismiss={dropVerdict}
       />
     );
   } else if (pickedString) {

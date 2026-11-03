@@ -146,6 +146,18 @@ describe('connect and the verdict card', () => {
     expect(screen.queryByText('Combination failed')).toBeNull();
   });
 
+  it('Drop it removes the "No link found" line and label at once', async () => {
+    connectReply = { ...connectReply, strength: 'none', grounds: [], note: NO_LINK, limits: [] };
+    renderPage();
+    await selectBoth();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    await screen.findAllByText('No link found');
+    expect(document.querySelector('[data-failed="true"]')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Drop it' }));
+    expect(screen.queryByText('No link found')).toBeNull();
+    expect(document.querySelector('[data-failed="true"]')).toBeNull();
+  });
+
   it('the c key connects two selected pins', async () => {
     renderPage();
     await selectBoth();

@@ -34,7 +34,7 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 ## Backend
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [situations](../../../../../backend/situations/README.md),
   [predictions](../../../../../backend/predictions/README.md)
-- `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) writes topics, archive rows and thread ids;
+- `newsAgent` (Scheduler `InvokeNewsAgent`, 3x a day) writes topics, archive rows and thread ids;
   `newsThreadAnalysis` (rule `TriggerDailyAnalysis`, 04:40 UTC) writes thread analyses; `newsSystemsAnalysis`
   (`TriggerNewsSystemsAnalysis`, 05:00 UTC) writes the story web; `newsDriftCorrector` (`TriggerDriftCorrector`, 05:30 UTC) writes change notes.
   All are served by `newsSensitiveData-dev`.
@@ -50,8 +50,8 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 - `useStoryLinks(id)` (the story page's "fed into": StoryMode, PhoneStoryMode, ThreadPage) -> the record's links view (`/data/record/views/links/<id>.json`: `judgedLinks` and `web`, decision 0042). `lib/linksFromView.js` (`indexFromView`) builds an index-shaped object from that one view so `deriveFromIndex` and `linkNote` run unchanged; tested against live captures (`lib/__tests__/fixtures/linksFromView.json`, 2026-10-31). A missing view (404), a failed read (reported as `links-view`) or a view without `web` falls back to `web_index`, and that to `systems_analysis` (max 3 regions) if it fails too. Known differences from the action: neighbour titles and the top place come from the record; the empty-state "Last refresh" date is the story's newest web (absent when it sits in no web); the view has no run-wide `targets.count`, so `web_index` is read only in the `country_not_analysed` state for the "N most-covered countries" wording; a story the record calls unknown (no web, no entry in 14 days) is "unknown" where the index said `single_update`; reverse-direction judged rows appear once the views are rebuilt. Still on `web_index`: the Stories web view (`StoriesWeb`) and the map (`SituationHome`) read the whole index (many stories at once). `useLastVisit` is localStorage only.
 
 ## Pipeline
-1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) selects topics -> NewsCache `staging`.
-2. `NewsProjectInvokeAgentLambda-dev` assigns each topic a `threadId`, copies `staging` to `latest`, writes `archive#<date>` rows.
+1. RSS feeds -> `newsIngest` (3x a day) selects topics -> NewsCache `staging`.
+2. `newsAgent` assigns each topic a `threadId`, copies `staging` to `latest`, writes `archive#<date>` rows.
 3. `newsThreadAnalysis` (daily) reads 30 days of archive -> `THREAD#<id>` / `THREAD_ANALYSIS`.
 4. `newsSystemsAnalysis` (daily) -> `WEB#INDEX` / `LATEST` and `THREAD#<id>` / `WEB`.
 5. `newsSensitiveData-dev` actions `archive_range`, `narrative_thread`, `thread_analysis`, `web_index`.

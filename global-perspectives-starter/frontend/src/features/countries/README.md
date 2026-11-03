@@ -57,7 +57,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - `useWeeklyArchive` -> the record's weekly index, `archive_range` for the newest days and as fallback (decision 0046); `useThreadAnalyses` (`light`) -> the record's analyses index, `thread_analysis` as fallback.
 
 ## Pipeline
-1. `newsInvokeGemini-dev` / `NewsProjectInvokeAgentLambda-dev` (3x a day) write topics with `regions` into NewsCache `archive#<date>`.
+1. `newsIngest` / `newsAgent` (3x a day) write topics with `regions` into NewsCache `archive#<date>`.
 2. `newsThreadAnalysis` (04:40 UTC) writes `THREAD_ANALYSIS`; `newsCountryFactsUpdater` (weekly) pulls Wikidata into `FACTS#`.
 3. `newsCountryIntelligence` (05:15 UTC) reads the archives, thread analyses and facts -> `COUNTRY#<name>` briefing and risk read.
 4. `newsDriftCorrector` (05:30 UTC) compares days -> `DRIFT#<date>` notes.

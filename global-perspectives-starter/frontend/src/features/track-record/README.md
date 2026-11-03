@@ -36,7 +36,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 
 ## Backend
 - Group guides: [predictions](../../../../../backend/predictions/README.md); the forecasts and drift notes come from [pipeline](../../../../../backend/pipeline/README.md)
-- `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
+- `newsAgent` (Scheduler `InvokeNewsAgent`, 3x a day) logs a forecast per topic to `GlobalPerspectivePredictionLog`.
 - `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily, input `tick`): commits seeds for upcoming weeks, draws the
   sample for each ended week, drafts verdicts on Mondays and writes them itself (decision 0034; none written as of 2026-10-22). The operator only corrects.
 - `newsSensitiveData-dev` serves the corrections feed (gated).
@@ -55,7 +55,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - Neither hook needs sign-in.
 
 ## Pipeline
-1. `NewsProjectInvokeAgentLambda-dev` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
+1. `newsAgent` writes a `PRED#<topicId>` forecast row to `GlobalPerspectivePredictionLog` each cycle.
 2. `newsPredictionResolver` (daily `tick`) commits seeds, draws each ended week's sample, and on Mondays drafts verdicts
    (Brave Search evidence) and writes them itself; the operator disputes one with `predictions/settle-correct.js`.
 3. `newsStoryRecord` builds `record/views/track-record.json` (with the draw pools and `settleHealth`) from the facts in every views run.

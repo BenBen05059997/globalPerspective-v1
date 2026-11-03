@@ -91,38 +91,12 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
 - Branch status comes from verdict facts of the forecast loop (0038), never from the review.
-- Not now: the analyst's weekly built on the readings (§9) and retiring `newsWeeklyBrief`.
+- Not now: retiring `newsWeeklyBrief`. The analyst's weekly was dropped (§9).
 
 ## 8. Decisions
 [0039](../decisions/0039-weekly-review.md) (this loop), [0035](../decisions/0035-facts-are-the-system-of-record.md) (two clocks), [0036](../decisions/0036-facts-file-format.md) (kinds, Run), [0037](../decisions/0037-views-from-facts.md) (views, one builder), [0038](../decisions/0038-forecast-loop.md) (verdicts the review reads).
 
-## 9. The analyst's weekly (the published brief)
-The weekly brief is a view of the week's readings, written as an argument, not a digest of the most-covered stories. Design (operator, 2026-10-20); the content model is in code: `backend/weekly/sections.js` and `backend/weekly/schema/weekly.schema.json` (v2). Code is the truth for caps and fields.
+## 9. The analyst's weekly (dropped)
+The analyst's weekly, a published brief built on the readings, was designed on 2026-10-20 and dropped by the operator on 2026-11-03. Its code (`backend/weekly/`, `features/weekly/`) is removed. Git history keeps the design and the content model. The unmerged branches `lane/weekly` and `lane/routine` were deleted with it.
 
-Why a reader opens it: not to miss a change in what they follow; to check their read against a dated, labelled view and later see who was right; to lift a sourced line into their own note.
-
-Sections, in order:
-1. lead: the week's most important change as an argument: what happened, what we now expect, what would prove us wrong;
-2. where our view moved: one line per story, before to after with the mechanism, "none this week" stated;
-3. the trace: up to five anchor stories, where each was, is and goes, with the branches we drew;
-4. next week's dates;
-5. new this week: cap 3, events only;
-6. what we did not see: coverage.
-
-No scoreboard and no Brier number in the weekly; that stays on `/track-record`. "Moved" means a change in the expected path or a risk move that holds, only for stories at moderate risk or above. Selection is never by coverage volume.
-
-Honesty rules (enforced by the check script when it exists):
-- A fact line carries at least one archive source (date plus entry id or URL); no figure, date or name that is not in the cited source.
-- Every non-fact line is labelled `judgment` with a confidence; every judgment is one plain sentence with the mechanism spelled out, no internal terms.
-- A link between stories is `possibly_related` unless it is defensible (typed link from the review).
-- A test or watch date is after the send date.
-
-Publication: publish unless vetoed. There is no human gate (consistent with 0034); the operator may veto, which writes `status: held`. Enabling the sender on the new path is a user-facing send and needs a fresh yes.
-
-Storage (world data, so S3 per [DATA_STRATEGY.md](DATA_STRATEGY.md)): `weekly/YYYY-MM-DD.json` (week ending; status draft | published | held, create-only) and `weekly/latest.json` (newest published). The email sender and a future weekly page read these files, not DynamoDB. There are no objects under `weekly/` yet.
-
-Not to be confused with the old Sunday digest: `newsWeeklyBrief` writes `WEEKLY_BRIEF#` rows and, once its `NOTES_PREFIX` is set (decision 0048), `weekly_brief` notes. The record serves those as `record/views/briefs/weekly/`, and the Briefings weekly mode reads them. The analyst's weekly here is a different report, not built.
-
-Code layout: one backend source of truth, `backend/weekly/`; the frontend mirror of its section model (`features/weekly/lib/sections.js`) is checked by `scripts/check-shared-sync.mjs`. `features/weekly/` has no page and no route. The sender does not import the model: `newsEmailSender` still reads `WEEKLY_BRIEF#` rows, and the plan is to give it the same access as `_shared` when the new path is built. A headless scheduled Claude Code run (cloud, skill in the repo, IAM scoped to read the bucket and write `weekly/*` only) is the intended author. The old `newsWeeklyBrief` Lambda retires after one new-path send.
-
-Built so far: the content model (on main). The pull, check and publish scripts, the skill, the email renderer and the cloud routine live on the unmerged branches `lane/weekly` and `lane/routine`; they pull live tables and must be reviewed against the readings before merge. The page and the retirement are not built. Whether to build it on the readings, rewrite it or drop it is an operator decision. Known gaps the weekly cannot paper over: the `correction` fact kind has no producer yet, first reads are thin for stories born in the week, and every story link is model-inferred until the review confirms it.
+The Sunday brief stays and is unaffected: `newsWeeklyBrief` writes `WEEKLY_BRIEF#` rows and, once its `NOTES_PREFIX` is set (decision 0048), `weekly_brief` notes. The record serves those as `record/views/briefs/weekly/`, the Briefings weekly mode reads them, and `newsEmailSender` mode `weekly` sends them.

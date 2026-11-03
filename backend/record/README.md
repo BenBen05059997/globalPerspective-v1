@@ -7,12 +7,11 @@ Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → **5 Fact
 This folder is stage 5, 6, 7: newsStoryRecord appends the daily facts (5) and rebuilds the views (7); newsRecordReview writes the weekly readings (6). Timeline: newsStoryRecord is the only writer of record/facts, record/runs (daily) and record/views; newsRecordReview is the only writer of record/readings and record/runs/review-*; views are rebuilt from facts, readings and notes; the facts run from 2026-03-07 (history copy, decision 0047). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
-## Three names, never mixed
+## Two names, never mixed
 
 | Name | What it is | Where it lives |
 |---|---|---|
 | record | the world's memory | `backend/record/`, S3 `record/` |
-| weekly | the analyst's weekly, the same for every reader | `backend/weekly/`, S3 `weekly/`, `features/weekly/` |
 | board | the personal layer owned by one member | `backend/board/`, user DynamoDB items, `features/board/` |
 
 An agent working on the record does not write the other groups. Design: `project-docs/architecture/ARCHITECTURE_TIMELINE.md`.
@@ -39,7 +38,7 @@ Views are rebuilt in full by every nightly run and every refresh, and the manife
 ## Notes: the model's daily words
 
 Alongside facts and readings the record keeps notes, the text a model wrote about a thing at a time (decision 0042). Each is one append-only file per day and subtype under `record/notes/<subtype>/YYYY-MM-DD.jsonl` with a day manifest, shape `schema/note.schema.json`, built and written only by `backend/shared/src/notes.js`. Each subtype has one writer:
-- `entry`: `NewsProjectInvokeAgentLambda-dev`;
+- `entry`: `newsAgent`;
 - `story_analysis`: `newsThreadAnalysis`;
 - `drift`: `newsDriftCorrector`;
 - `country`: `newsCountryIntelligence`;
@@ -51,7 +50,7 @@ The writer's env `NOTES_PREFIX` decides where it writes. Live: `record/` on the 
 
 ## What it never writes
 
-DynamoDB, `record/pairs/*`, `weekly/*`, user tables. Duplicate detection reports proposals; it never merges or splits threads (a merge is a review proposal, applied through the inbox).
+DynamoDB, `record/pairs/*`, user tables. Duplicate detection reports proposals; it never merges or splits threads (a merge is a review proposal, applied through the inbox).
 
 ## Other prefixes under `record/`
 

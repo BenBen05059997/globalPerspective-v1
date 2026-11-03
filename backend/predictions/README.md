@@ -18,7 +18,7 @@ This folder is stage 3: the forecast watch, gather, judge and record (newsPredic
 
 Design of the forecast loop (draw, watch, gather, judge, record, review) and how it is verified: [ARCHITECTURE_FORECAST_LOOP.md](../../project-docs/architecture/ARCHITECTURE_FORECAST_LOOP.md) (decision 0038).
 
-1. NewsProjectInvokeAgentLambda-dev (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle, and a line to `record/inbox/forecasts/` (decision 0052).
+1. newsAgent (pipeline group) writes a `PRED#<topicId>` forecast row to GlobalPerspectivePredictionLog each cycle, and a line to `record/inbox/forecasts/` (decision 0052).
 2. Each day at 10:30 UTC newsPredictionResolver runs `tick`: it commits seed hashes for upcoming weeks and draws a sample from every ended week.
 3. The same run then does WATCH, GATHER, JUDGE and RECORD (tree below) for any open question, not only the sample, using only the story's own entry facts dated after the draw as evidence. The judge is not shown the question's probability.
 4. A yes/no/void judgment is written at once as the `Q#`/`VERDICT` row (`decidedBy` the model id, `confirmedBy: 'resolver'`); unclear checks stay open and, once counted after due + 3 days and 5 days apart, become void after three. The operator disputes a verdict with `predictions/settle-correct.js --correct` (appends `VERDICT#<n>` with a reason). Decision 0034.

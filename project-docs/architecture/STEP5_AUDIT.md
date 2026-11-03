@@ -32,7 +32,7 @@ SummarizeAndPredict families (31 Oct counts): country `HISTORY#` 1,560, `DRIFT#`
 ## 3. NewsCache: blockers (grep-verified 2026-11-01)
 - The agent (`NewsProjectInvokeAgentLambda`) reads `archive#` for 7 days for thread assignment and the publish gate. Large.
 - `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsWeeklyBrief` and `newsInvokeGemini` read `archive#` / `today-archive` directly, with no switch.
-- The read API actions `topics`, `today`, `archive_range`, `narrative_thread` have no record path (the story page and 30-day pages call `archive_range` / `narrative_thread` for the newest days; `/`, `/today` and the board read `topics`/`today`).
+- The read API actions `topics`, `today`, `archive_range`, `narrative_thread` have no record path (the story page and 30-day pages call `archive_range` / `narrative_thread` for the newest days; the countries list no longer calls `archive_range`, it reads the record's weekly index since 2026-11-03; `/`, `/today` and the board read `topics`/`today`).
 - `staging` and `seen-today` are the ingest handoff between `newsInvokeGemini` and the agent: needs a design decision.
 - The freshness monitor probes `topics`.
 - History: 141 archive days (6,919 entries) before 09-05 exist only here; export before any delete.
@@ -53,7 +53,7 @@ PredictionLog `PRED#`:
 - `newsStoryRecord` `FORECASTS_SOURCE=inbox` and the `PredictionLogScan` statement removed (operator yes); the first nightly without the scan is 2026-11-02 23:45Z.
 - Done 2026-11-02: `newsPredictionResolver` `QUESTIONS_SOURCE=record`. The 2026-11-02 nightly (`record/runs/2026-11-02.json`) is ok with no failures, the first without the scan: 21 `forecast_drawn` facts, a `question_commit`, a `question_draw`. Only the agent still reads `PRED#`.
 - The agent's `PRED#` put and thread reconcile.
-- About 1,513 Jun-Sep `PRED#` rows are not in the facts: operator decision, export and drop, or backfill.
+- About 1,513 Jun-Sep `PRED#` rows are not in the facts. Operator decision 2026-11-03: dropped, not migrated. They go with the PredictionLog `PRED#` export and delete at the end of step 5. (Decision 0047 already keeps the whole rows under `record/legacy/predictions/`.)
 - Forecasts inbox matched the log on 2026-11-01 (639 rows, then 647 snapshots in the 23:45Z compare, 0 differences); inbox at `record/inbox/forecasts/`.
 - `Q#`, `SEED#`, `SAMPLE#`, `SETTLE#` stay in PredictionLog (resolver state, unrevealed seed). `draw.pool` and `settleHealth` lived in the deleted track-record snapshot; the record views and the freshness monitor (`SETTLE_SOURCE=record`) now carry what the pages need.
 
@@ -74,7 +74,7 @@ e. Record paths for the read API actions in sections 3 and 4; a design for `stag
 f. Writers stop their DynamoDB puts.
 g. Export, then delete per family with an operator yes each, and the full rebuild test after each. Derived and duplicate families first (`DRIFTLOG#`, `WEB`, `SYSTEMS#`, `TOPICS`), then thread and country families, then `PRED#`, then NewsCache last. `EMAILLOG#` and the PredictionLog commitment state stay unless moved to S3 by a separate design.
 
-Renames approved 2026-11-01 (after Monday's checks; create new, move trigger, test, delete old): `NewsProjectInvokeAgentLambda-dev` to `newsAgent`, `newsInvokeGemini-dev` to `newsIngest`, `newsSensitiveData-dev` to `newsReadApi`, `newsPostDevTo` to `newsDailyBrief`; schedules InvokeGoogleGemini to TriggerIngest, InvokeNewsAgent to TriggerAgent, countryIntelliegence to TriggerCountryIntelligence, Fact to TriggerCountryFacts, InvokeDev to TriggerDailyBrief, InvokeLinkedIn to TriggerPostLinkedin, TriggerDailyAnalysis to TriggerThreadAnalysis; env `GROK_*` / `XAI_*` to `LLM_*`. Do these before the deletes touch the same code, or after; never mid-switch.
+Renames approved 2026-11-01 (after Monday's checks; create new, move trigger, test, delete old). Done 2026-11-03: `NewsProjectInvokeAgentLambda-dev` to `newsAgent` and `newsInvokeGemini-dev` to `newsIngest` (the schedules `InvokeNewsAgent` and `InvokeGoogleGemini` point at them; the old functions stay unscheduled and deploy-blocked in `scripts/functions.json` until deleted). Planned: `newsSensitiveData-dev` to `newsReadApi`, `newsPostDevTo` to `newsDailyBrief`; schedules InvokeGoogleGemini to TriggerIngest, InvokeNewsAgent to TriggerAgent, countryIntelliegence to TriggerCountryIntelligence, Fact to TriggerCountryFacts, InvokeDev to TriggerDailyBrief, InvokeLinkedIn to TriggerPostLinkedin, TriggerDailyAnalysis to TriggerThreadAnalysis; env `GROK_*` / `XAI_*` to `LLM_*`. Do these before the deletes touch the same code, or after; never mid-switch.
 
 ## 7. What would break a user-facing send, billing, or user data
 - Weekly email (ENABLED): `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; deleting either gives no mail or a duplicate.

@@ -1,6 +1,6 @@
 # The forecast loop
 
-Decision: [0038](../decisions/0038-forecast-loop.md) (design agreed by the operator 2026-10-22; evidence rule: our own entries only). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Code and live AWS are the truth for what is deployed: the draw is `NewsProjectInvokeAgentLambda-dev`, the nightly pass is `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily). Diff a deployed zip against the repo before deploying either (`scripts/lambda.sh <name> diff`).
+Decision: [0038](../decisions/0038-forecast-loop.md) (design agreed by the operator 2026-10-22; evidence rule: our own entries only). Place in the system: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Code and live AWS are the truth for what is deployed: the draw is `newsAgent` (renamed from `NewsProjectInvokeAgentLambda-dev` on 2026-11-03), the nightly pass is `newsPredictionResolver` (rule `TriggerPredictionResolver`, 10:30 UTC daily). Diff a deployed zip against the repo before deploying either (`scripts/lambda.sh <name> diff`).
 
 ## 1. Why
 The product is an analyst tool. A forecast with a verdict is what separates it from a feed and what turns a timeline into a narrative. The loop therefore draws few, checkable outcomes, watches only what moved, and judges on the story's own entries. A forecast that nothing can resolve is worse than none: it promises a check that never comes.

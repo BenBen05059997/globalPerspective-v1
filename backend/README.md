@@ -15,7 +15,6 @@ what exists and what runs (`aws lambda list-functions`, `aws events list-rules`,
 - [monitoring](monitoring/README.md): alerts to the operator on freshness, errors, model health and summary drift.
 - [record](record/README.md): the world's memory: daily facts, weekly readings, the notes the Lambdas write, and the static views the pages read.
 - [board](board/README.md): the personal board of a signed-in member.
-- [weekly](weekly/README.md): the analyst's weekly: schema and section model (the scripts are not written yet); not a Lambda.
 - [shared](shared/README.md): helper modules several Lambdas use. Not a Lambda.
 
 ## How the groups connect
@@ -30,7 +29,7 @@ read until step 5 retires them; the design is in `project-docs/architecture/ARCH
 - `backend/<group>/<name>/src/` holds the deployed code (`index.js`, `package.json`).
 - `src/_shared` is a committed symlink to `backend/shared/src`; the deploy script zips it as real files.
 - Tests sit in `test/` beside `src/` (a few keep a test script inside `src/`). Each folder has its own `README.md`.
-- The folder name and the deployed name can differ (for example `newsInvokeGemini` is deployed as `newsInvokeGemini-dev`).
+- The folder name and the deployed name can differ (for example `newsInvokeGemini/` is deployed as `newsIngest` and `NewsProjectInvokeAgentLambda/` as `newsAgent`).
 - Operator tools that run from a laptop sit in a group's `cli/` folder (`pipeline`, `distribution`, `record`), not in a Lambda.
 
 ## Deploying

@@ -12,8 +12,8 @@ This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (
 
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
-| newsInvokeGemini-dev | Fetches RSS feeds, asks one LLM call to pick the topics, and stores them as the pending list. | Scheduler `InvokeGoogleGemini`, cron(15 4/8 * * ? *) UTC, ENABLED | RSS hosts; DynamoDB NewsCache `seen-today`, `archive#<date>` | NewsCache `staging`, `seen-today`; S3 `record/inbox/articles/` (raw capture of every fetched item), `audit/ingest-capture/` | [link](newsInvokeGemini/README.md) |
-| NewsProjectInvokeAgentLambda-dev | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`, archive rows; SummarizeAndPredict `FACTS#`; S3 `stories/state/` | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/` | [link](NewsProjectInvokeAgentLambda/README.md) |
+| newsIngest | Fetches RSS feeds, asks one LLM call to pick the topics, and stores them as the pending list. | Scheduler `InvokeGoogleGemini`, cron(15 4/8 * * ? *) UTC, ENABLED | RSS hosts; DynamoDB NewsCache `seen-today`, `archive#<date>` | NewsCache `staging`, `seen-today`; S3 `record/inbox/articles/` (raw capture of every fetched item), `audit/ingest-capture/` | [link](newsInvokeGemini/README.md) |
+| newsAgent | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`, archive rows; SummarizeAndPredict `FACTS#`; S3 `stories/state/` | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/` | [link](NewsProjectInvokeAgentLambda/README.md) |
 | newsSelectionShadow | Logs what a layered selector would have picked beside the live pick; nothing reads it. | Rule `TriggerSelectionShadow`, cron(20 4,12,20 * * ? *) UTC, ENABLED | S3 `audit/ingest-capture/`, `corpus/`, `situations/state/gdacs_*`; Jev API | S3 `audit/selection-shadow/` | [link](newsSelectionShadow/README.md) |
 | newsThreadAnalysis | Re-analyses threads that have a new event, with a multi-axis risk read. | Rule `TriggerDailyAnalysis`, cron(40 4 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD#` | SummarizeAndPredict `THREAD#`/`THREAD_ANALYSIS`, `THREAD_HISTORY#`; S3 `record/notes/story_analysis/` | [link](newsThreadAnalysis/README.md) |
 | newsSystemsAnalysis | Builds a cause-and-effect web for the top countries and per-story web records. | Rule `TriggerNewsSystemsAnalysis`, cron(0 5 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD_ANALYSIS` | SummarizeAndPredict `SYSTEMS#`, `WEB#INDEX`, `THREAD#`/`WEB`; S3 `web/`, `record/notes/link/`, `record/notes/web/` | [link](newsSystemsAnalysis/README.md) |
@@ -29,9 +29,9 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 
 ## Pipeline
 
-1. Three times a day (04:15, 12:15, 20:15 UTC) newsInvokeGemini-dev fetches the feeds, picks topics and writes them to NewsCache `staging`.
+1. Three times a day (04:15, 12:15, 20:15 UTC) newsIngest fetches the feeds, picks topics and writes them to NewsCache `staging`.
 2. Five minutes later newsSelectionShadow logs a comparison pick to S3. Nothing downstream uses it.
-3. At :25 NewsProjectInvokeAgentLambda-dev reads `staging`, writes the summary, cause chain and forecast for each topic, and gives each topic a threadId.
+3. At :25 newsAgent reads `staging`, writes the summary, cause chain and forecast for each topic, and gives each topic a threadId.
 4. It then copies `staging` to `latest`, writes the archive rows, the thread pointers and the forecast row, and writes `threads/story-map.json` for the situations group.
 5. Once a day newsThreadAnalysis (04:40) reads 30 days of archive and re-analyses threads with a new event.
 6. newsSystemsAnalysis (05:00) builds the cause webs and the web index from the archive and thread analyses.

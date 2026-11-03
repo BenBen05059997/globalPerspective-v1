@@ -35,8 +35,8 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 
 ## Backend
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [predictions](../../../../../backend/predictions/README.md)
-- `newsInvokeGemini-dev` (Scheduler `InvokeGoogleGemini`, 04:15 / 12:15 / 20:15 UTC) picks the topics;
-  `NewsProjectInvokeAgentLambda-dev` (Scheduler `InvokeNewsAgent`, 25 min later) writes summaries, trace causes and forecasts and
+- `newsIngest` (Scheduler `InvokeGoogleGemini`, 04:15 / 12:15 / 20:15 UTC) picks the topics;
+  `newsAgent` (Scheduler `InvokeNewsAgent`, 25 min later) writes summaries, trace causes and forecasts and
   publishes the list; `newsSensitiveData-dev` serves the list data (forecasts and the track record come from the record views, not the proxy).
 
 ## Data
@@ -49,8 +49,8 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
   `corrections_feed` (the trust strip uses the server's `total`). Both hooks belong to `features/track-record`.
 
 ## Pipeline
-1. RSS feeds -> `newsInvokeGemini-dev` (3x a day) picks topics -> NewsCache `staging`.
-2. `NewsProjectInvokeAgentLambda-dev` writes per-topic summary, trace cause and forecast to `SummarizeAndPredict` (`TOPIC#`), gives each topic a `threadId`.
+1. RSS feeds -> `newsIngest` (3x a day) picks topics -> NewsCache `staging`.
+2. `newsAgent` writes per-topic summary, trace cause and forecast to `SummarizeAndPredict` (`TOPIC#`), gives each topic a `threadId`.
 3. It copies `staging` to NewsCache `latest` and adds the entries to `today-archive`.
 4. `newsSensitiveData-dev` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
 5. `useGeminiTopics` -> `Home.jsx` groups by region and renders the topic cards on `/today`.

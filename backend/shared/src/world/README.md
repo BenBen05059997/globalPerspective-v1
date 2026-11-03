@@ -111,7 +111,7 @@ dropped entry never shifts the next one's index.
 12. **Web links**: keep the live names `from`/`to`/`confidence` (record renamed to `a`/`b`/`strength`); a link that only has `a`/`b` is accepted and returned as `from`/`to`.
 
 ## Who imports it
-`newsStoryRecord` (the record's reads) and `newsBoard` (`src/world.js`); the weekly pull (`backend/weekly/pull.mjs`) is not written yet. Each Lambda reaches it as `require('./_shared/world')` through its committed
+`newsStoryRecord` (the record's reads) and `newsBoard` (`src/world.js`). Each Lambda reaches it as `require('./_shared/world')` through its committed
 `src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The weekly will run from the repo
 and require it with a relative path. The weekly and the board read `record/*` views and use this reader only for what
 the record does not hold (ARCHITECTURE_TIMELINE §6).

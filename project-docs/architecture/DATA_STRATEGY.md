@@ -81,7 +81,6 @@ Besides the five, these Global Perspectives tables exist (§6 says which stay): 
 | `record/shadow/…` | `newsStoryRecord`, the selector, the resolver and the review on a manual `shadow:true` invoke; note writers whose `NOTES_PREFIX` is `record/shadow/` (the default when unset on the agent and the analysis writers) | manual only | humans, tuning |
 | `record/shadow-history/…` | `backend/record/cli/backfill-history.mjs` (the trial run of decision 0047, superseded by the live copy) | once | humans; delete when the operator says |
 | `backup/<name>-YYYY-MM-DD/` | the operator or coordinator, before a destructive step (`record-2026-10-31/`, `economy-2026-10-31/`) | on demand | nothing reads it; the only copy of what step 5 deletes, so keep it until the operator says |
-| `weekly/YYYY-MM-DD.json`, `weekly/latest.json` | the weekly run (planned; no objects yet) | weekly | email, weekly page |
 
 The record's design, kinds and views: `ARCHITECTURE_TIMELINE.md`. Model notes live in the record as `record/notes/<subtype>/YYYY-MM-DD.jsonl`, one writer per subtype, schema `backend/record/schema/note.schema.json`, built and written only through shared `notes.js` (decision 0042). A writer's `NOTES_PREFIX` env decides where it writes (`record/`, `record/shadow/` for a trial, or unset); read the live value from the Lambda. The live values are in `STEP5_AUDIT.md` section 1.
 

@@ -38,7 +38,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Group guides: [situations](../../../../../backend/situations/README.md), [pipeline](../../../../../backend/pipeline/README.md)
 - `newsGdacsIngest` (rule `TriggerGdacsIngest`, every 20 min) and `newsSituationIngest` (`TriggerSituationIngest`, hourly) feed
   `newsSituationTracker` (`TriggerSituationTracker`, every 30 min, live `DRY_RUN=false`), which writes `world/latest.json`.
-- `newsInvokeGemini-dev` and `NewsProjectInvokeAgentLambda-dev` (Scheduler, 04:15 and 04:25 UTC then every 8 h) write the topics;
+- `newsIngest` and `newsAgent` (Scheduler, 04:15 and 04:25 UTC then every 8 h) write the topics;
   `newsCountryIntelligence` (Scheduler `countryIntelliegence`, 05:15 UTC daily) writes the country briefings.
 
 ## Data
@@ -55,11 +55,11 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 ## Pipeline
 1. gdacs.org -> `newsGdacsIngest` (20 min) -> S3 `situations/inbox/gdacs-latest.json`.
 2. RSS feeds -> `newsSituationIngest` (hourly) -> S3 `stories/index.json` and `stories/state/`.
-3. `NewsProjectInvokeAgentLambda-dev` writes `threads/story-map.json`, which links situations to story threads.
+3. `newsAgent` writes `threads/story-map.json`, which links situations to story threads.
 4. `newsSituationTracker` (30 min) folds 1-3 into `situations/state/<id>.json` and `world/latest.json`.
 5. The Worker (`cloudflare/front-worker/production/worker.mjs`) serves `/data/*` from the private S3 bucket.
 6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, alert stack and intel feed on `/`.
-7. Story shading: `newsInvokeGemini-dev` -> NewsCache `latest` -> `newsSensitiveData-dev` action `topics` -> `useGeminiTopics`.
+7. Story shading: `newsIngest` -> NewsCache `latest` -> `newsSensitiveData-dev` action `topics` -> `useGeminiTopics`.
 8. Country risk layer: `newsCountryIntelligence` -> `COUNTRY#<name>` rows -> `country_intelligence` -> `useCountryRiskLayer`.
 
 ## Docs

@@ -1,6 +1,6 @@
 # Global Perspectives: Architecture
 
-This is the map, not the inventory. Lambdas, schedules, env keys, routes, feature folders and S3 prefixes are read from the source of truth: `scripts/functions.json`, `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `src/app/App.jsx`, `ls src/features`, `aws s3 ls`. When this file and those disagree, they win. Area designs: [the record](ARCHITECTURE_TIMELINE.md), [forecast loop](ARCHITECTURE_FORECAST_LOOP.md), [weekly review and analyst weekly](ARCHITECTURE_WEEKLY_REVIEW.md), [board](ARCHITECTURE_BOARD.md), [ingest proposal](ARCHITECTURE_INGEST_DESIGN.md), [storage rules](DATA_STRATEGY.md), [world model](WORLD_MODEL.md). What is stopped or waiting right now: `project-docs/START_HERE.md`.
+This is the map, not the inventory. Lambdas, schedules, env keys, routes, feature folders and S3 prefixes are read from the source of truth: `scripts/functions.json`, `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `src/app/App.jsx`, `ls src/features`, `aws s3 ls`. When this file and those disagree, they win. Area designs: [the record](ARCHITECTURE_TIMELINE.md), [forecast loop](ARCHITECTURE_FORECAST_LOOP.md), [weekly review](ARCHITECTURE_WEEKLY_REVIEW.md), [board](ARCHITECTURE_BOARD.md), [ingest proposal](ARCHITECTURE_INGEST_DESIGN.md), [storage rules](DATA_STRATEGY.md), [world model](WORLD_MODEL.md). What is stopped or waiting right now: `project-docs/START_HERE.md`.
 
 The live frontend is the build in `docs/` (the bundle `docs/index.html` names); a change in `src/` reaches the site only through a release. That build already has decisions 0048 to 0050 (briefs page on the record, economy removed, views-freshness rule).
 
@@ -102,14 +102,14 @@ Paths are named, not linked; search for them.
 
 ### Backend: `backend/<group>/<dir>/src/`
 Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a README. Nothing is deployed with Amplify; each Lambda is deployed by hand (see Deploy). `scripts/functions.json` maps each deployed name to its repo dir, runtime, group and schedules. Names that surprise:
-- `newsInvokeGemini` (deployed `newsInvokeGemini-dev`) is topic selection. Despite the name it calls DeepSeek.
-- `NewsProjectInvokeAgentLambda-dev` and `newsSensitiveData-dev`: the `-dev` suffix is production.
+- `newsIngest` (repo dir `newsInvokeGemini`; renamed 2026-11-03, the old `newsInvokeGemini-dev` stays unscheduled for rollback) is topic selection. It calls DeepSeek.
+- `newsAgent` (repo dir `NewsProjectInvokeAgentLambda`; renamed 2026-11-03, the old `NewsProjectInvokeAgentLambda-dev` stays unscheduled for rollback) and `newsSensitiveData-dev`: the `-dev` suffix is production. Planned renames: `newsPostDevTo` to `newsDailyBrief`, `newsSensitiveData-dev` to `newsReadApi`.
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (the typo is real).
 - `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling` (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is what actually runs; `newsAnalyze/src/` is not.
 
-Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`. `backend/weekly/` (the analyst's weekly) holds the schema and section model only, no Lambda.
+Groups: `pipeline` (selection, story writer, analyses, country risk), `situations` (map pipeline), `predictions` (resolver), `record` (`newsStoryRecord`, `newsRecordReview`), `board` (`newsBoard`), `distribution` (email, social, briefs, breaking alerts), `read-api` (proxy and Function-URL endpoints), `membership-studio` (billing, and `newsAnalyze`, which the site no longer calls), `monitoring`.
 
 **Invariant:** code shared between Lambdas lives once, in `backend/shared/src/` (see its README). Each consumer reaches it through a committed `src/_shared` symlink; `scripts/lambda.sh` copies the real files into the zip. Never copy these into a Lambda.
 
@@ -118,7 +118,7 @@ Country names are canonical at the writers (United States, DR Congo, UAE; `resol
 ### Frontend: `global-perspectives-starter/frontend/`
 React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `src/app/`: routing (`App.jsx`), redirects for retired URLs, layout and chrome, the error boundary.
-- `src/features/<name>/`: 12 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `static`, `threads`, `track-record`, `weekly`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `briefings` `/briefings`, `track-record` `/track-record`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `weekly` is the planned analyst-weekly page and has no route. `/weekly`'s Countries tab links to `/weekly/countries`, which `App.jsx` routes to `countries`' `CountryListPage`, so `threads` never imports `countries`. Routes: `App.jsx`.
+- `src/features/<name>/`: 11 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `static`, `threads`, `track-record`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `briefings` `/briefings`, `track-record` `/track-record`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `/weekly`'s Countries tab links to `/weekly/countries`, which `App.jsx` routes to `countries`' `CountryListPage`, so `threads` never imports `countries`. Routes: `App.jsx`.
 - `src/features/<name>/index.js`: a feature's public API, only what other features and `app/` import (route pages are not in it; `App.jsx` lazy-loads them by path). `account`, `analysis-studio`, `static` and `weekly` have none.
 - `src/shared/`: `api/` (`restProxy.js` the one client for the proxy and the Function-URL endpoints; `recordViews.js` the one reader of `/data/record/views/`; `viewsFresh.js` the 9-hour freshness rule; the per-view readers), `contexts/AuthContext.jsx`, `styles/` tokens, `lib/` pure helpers, `hooks/` shared data hooks, `ui/` shared blocks, `map/` the map drawing kit.
 - `worker/` + `wrangler.jsonc`: the Workers Static Assets site (`globalperspective-site`), prepared but not the production path.
@@ -143,10 +143,10 @@ Times are UTC unless noted; exact cron expressions and ENABLED/DISABLED state co
 ### 1. Topic selection and daily stories (DynamoDB)
 ```mermaid
 flowchart LR
-  s1[Scheduler InvokeGoogleGemini 04:15 12:15 20:15] --> a[newsInvokeGemini-dev]
+  s1[Scheduler InvokeGoogleGemini 04:15 12:15 20:15] --> a[newsIngest]
   a -->|staging| nc[(NewsCache)]
   a -->|every article| ib[(S3 record/inbox/articles)]
-  s2[Scheduler InvokeNewsAgent 04:25 12:25 20:25] --> b[NewsProjectInvokeAgentLambda-dev]
+  s2[Scheduler InvokeNewsAgent 04:25 12:25 20:25] --> b[newsAgent]
   nc --> b
   b -->|TOPIC, THREAD pointers| sp[(SummarizeAndPredict)]
   b -->|forecasts| pl[(PredictionLog)]
@@ -158,8 +158,8 @@ flowchart LR
   sp -->|topics, today, thread_analysis, systems_analysis| px[newsSensitiveData-dev]
   px --> pg["/today, /weekly, story pages (newest days)"]
 ```
-1. `newsInvokeGemini-dev` (three times a day) reads the RSS feeds, asks the LLM to pick and cluster the day's topics under the done-not-said rule, with code dedupe and a significance floor (decision 0040), and writes them to `NewsCache` item `id='staging'`. Before the model call it writes every fetched article to S3 `record/inbox/articles/` (raw capture, no model), so a model outage cannot lose the news; it also writes `audit/ingest-capture/`. It fails the run on a model error. No web search in ingest.
-2. `NewsProjectInvokeAgentLambda-dev` (ten minutes later) reads `staging` and writes a summary, cause trace and forecast per topic to `SummarizeAndPredict` (`TOPIC#…` keys, each carrying `threadId`). It logs each forecast to `GlobalPerspectivePredictionLog` and assigns thread ids, writing `threads/story-map.json` to S3 by matching against `stories/state/`: a topic joins a thread only at composite score at least 0.4 and keyword overlap at least 0.15, each join logged as `[join]` (repair with `backend/pipeline/cli/threads.mjs`). It then swaps `staging` to `latest`, updates the archive (`today-archive`, `archive#<date>`) and writes the thread to topic pointer `THREAD#<threadId>` / `TOPICS`. It reconciles each `PRED#` row to the entry's final `threadId`. Forecasts are drawn at most weekly per story ([forecast loop](ARCHITECTURE_FORECAST_LOOP.md)). After each archive it writes the entry notes (summary, cause and forecast text per entry) to `record/notes/entry/`.
+1. `newsIngest` (three times a day) reads the RSS feeds, asks the LLM to pick and cluster the day's topics under the done-not-said rule, with code dedupe and a significance floor (decision 0040), and writes them to `NewsCache` item `id='staging'`. Before the model call it writes every fetched article to S3 `record/inbox/articles/` (raw capture, no model), so a model outage cannot lose the news; it also writes `audit/ingest-capture/`. It fails the run on a model error. No web search in ingest.
+2. `newsAgent` (ten minutes later) reads `staging` and writes a summary, cause trace and forecast per topic to `SummarizeAndPredict` (`TOPIC#…` keys, each carrying `threadId`). It logs each forecast to `GlobalPerspectivePredictionLog` and assigns thread ids, writing `threads/story-map.json` to S3 by matching against `stories/state/`: a topic joins a thread only at composite score at least 0.4 and keyword overlap at least 0.15, each join logged as `[join]` (repair with `backend/pipeline/cli/threads.mjs`). It then swaps `staging` to `latest`, updates the archive (`today-archive`, `archive#<date>`) and writes the thread to topic pointer `THREAD#<threadId>` / `TOPICS`. It reconciles each `PRED#` row to the entry's final `threadId`. Forecasts are drawn at most weekly per story ([forecast loop](ARCHITECTURE_FORECAST_LOOP.md)). After each archive it writes the entry notes (summary, cause and forecast text per entry) to `record/notes/entry/`.
 3. `newsThreadAnalysis` (daily) writes per-thread analysis and dated history (`THREAD#…` / `THREAD_ANALYSIS`, `THREAD_HISTORY#<date>`); `newsSystemsAnalysis` (daily) reads those and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`), plus a daily snapshot to `web/YYYY/MM/DD.json` and `web/latest.json`. Both also write their output as notes into the record (`story_analysis`; `link` and `web`) through shared `notes.js` (decision 0042).
 4. `newsSelectionShadow` (rule `TriggerSelectionShadow`, 04:20, 12:20, 20:20, ENABLED) runs a candidate layered selector (corpus plus GDACS, scored by the external model "Jev") against what was published and writes only `audit/selection-shadow/`. Nothing on the site reads it; whether it continues is an operator decision.
 

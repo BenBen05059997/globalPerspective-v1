@@ -213,11 +213,9 @@ export default function ReadMode({ dateParam }) {
       {fallbackNote && <div className="daily-fallback-note">{fallbackNote}</div>}
 
       <header className="daily-masthead">
-        {/* "Today's Brief" only when the shown edition really is today's (F4, review R2). */}
+        {/* Named by its date, never "Today's": the keys are UTC days, so before 09:00 JST a reader in Japan already has a later date (R3-1). */}
         <h1 className="daily-masthead-h1">
-          {servedDateKey === today
-            ? <>Today's <em>Brief</em></>
-            : <>{isLatest ? 'Latest' : 'Daily'} <em>Brief</em> · {shownDate}</>}
+          {isLatest ? 'Latest' : 'Daily'} <em>Brief</em> · {shownDate}
         </h1>
         <div className="daily-masthead-bar">
           {brief.generatedAt && <span>Generated <strong>{formatTimeAgo(brief.generatedAt)}</strong></span>}

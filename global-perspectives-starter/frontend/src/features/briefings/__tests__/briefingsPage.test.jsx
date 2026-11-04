@@ -1,5 +1,5 @@
-// /briefings modes. Read (the daily long-form, ex-/daily): "Today's Brief" only when the shown
-// edition really is today's (F4, review R2); a plain, true "no new brief" line instead of
+// /briefings modes. Read (the daily long-form, ex-/daily): the heading names the edition by its date
+// ("Latest Brief · <date>" for the newest), never "Today's" (UTC keys, R3-1); a plain, true "no new brief" line instead of
 // "publishes at the end of the day" during an outage; "AI-generated" only; an error state that is
 // not an empty state. Weekly (ex-/weekly-brief): KPIs, signals with sources, the week= archive
 // fallback note. The mode switch writes ?mode=.
@@ -77,10 +77,12 @@ beforeEach(() => {
 });
 
 describe('read mode — heading and fallback note', () => {
-  it('is the default mode and shows "Today\'s Brief" when the served edition is today\'s', () => {
+  it('is the default mode and names today\'s edition by its date, never "Today\'s" (UTC keys; R3-1)', () => {
     dailyValue = fresh;
     renderAt('/briefings');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Today's Brief");
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toMatch(/Brief · /);
+    expect(h1.textContent).not.toMatch(/Today/);
     expect(document.title).toBe(`Daily Brief — ${today} | Global Perspectives`);
   });
 

@@ -50,22 +50,23 @@ describe('ForecastBoard: board view', () => {
     expect(tiles).toHaveLength(items.length);
 
     const fired = tiles[0];
-    expect(fired).toHaveTextContent('✓ Happened');
+    expect(fired).toHaveTextContent('✓ happened');
     expect(fired).toHaveTextContent('Will Iran and Oman announce a shipping corridor?');
     expect(fired).toHaveTextContent('62% when locked');
     expect(fired).toHaveTextContent('source: Reuters');
-    expect(fired).toHaveTextContent('by Oct 20 2026');
     expect(fired).toHaveTextContent('“Both states announced the corridor”');
     expect(within(fired).getByRole('link', { name: 'source →' })).toHaveAttribute('href', 'https://reuters.com/x');
     expect(within(fired).getByRole('link', { name: 'Hormuz blockade' })).toHaveAttribute('href', '/weekly/thread/thread-hormuz-1');
 
-    expect(tiles[1]).toHaveTextContent('✗ Not reported');
-    expect(tiles[2]).toHaveTextContent('▢ Awaiting');
+    // the design words (FORECAST_LOOP §4): a no is "not reported by <due>", an open one "open · due <due>"
+    expect(tiles[1]).toHaveTextContent('✗ not reported by 25 Oct');
+    expect(tiles[1]).not.toHaveTextContent(/didn/);
+    expect(tiles[2]).toHaveTextContent('▢ open · due 1 Dec');
+    expect(tiles[2]).not.toHaveTextContent(/awaiting/i);
     // a passed deadline with no verdict is "awaiting check", never a miss
-    expect(tiles[3]).toHaveTextContent('▢ Awaiting check');
-    expect(tiles[3]).not.toHaveTextContent('Not reported');
-    expect(tiles[4]).toHaveTextContent('◌ Could not be checked');
-    expect(tiles[4]).toHaveTextContent('Could not be checked · the source was unavailable.');
+    expect(tiles[3]).toHaveTextContent('▢ awaiting check · due 1 Oct');
+    expect(tiles[3]).not.toHaveTextContent('not reported');
+    expect(tiles[4]).toHaveTextContent('◌ could not be checked · the source was unavailable');
   });
 
   it('only http(s) evidence becomes a source link', () => {

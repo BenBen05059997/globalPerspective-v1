@@ -59,7 +59,7 @@ function windowText(est) {
 /** The locked-accuracy explanation. `est` from estimateAccuracyWindow (or null). */
 export function accuracyNotReady(q, est, target = 150) {
   const c = q?.counts || {};
-  const base = `Accuracy score: not ready yet. It appears after ${target} questions are resolved (now ${c.resolved ?? 0}, void ${c.void ?? 0}, awaiting ${(c.awaiting ?? 0) + (c.pastDeadlineUnchecked ?? 0)}).`;
+  const base = `Accuracy score: not ready yet. It appears after ${target} questions are resolved (now ${c.resolved ?? 0}, void ${c.void ?? 0}, open ${c.awaiting ?? 0}, awaiting check ${c.pastDeadlineUnchecked ?? 0}).`;
   const w = windowText(est);
   return w ? `${base} ${w}` : base;
 }
@@ -99,3 +99,6 @@ export function pilotNote(lastResolvedAt, pilotCount) {
   if (!lastResolvedAt) return null;
   return `July pilot: ${pilotCount} triggers were settled once, on ${fmtDay(lastResolvedAt)}, under a retired method (archived, not scored).`;
 }
+
+/** The record view itself could not be read (missing, unreadable or another shape): no figures, said as a fact. */
+export const TRACK_RECORD_UNAVAILABLE = 'The track-record view could not be read (it is missing, unreadable or not published yet), so no figures are shown.';

@@ -48,7 +48,7 @@ describe('accuracyNotReady', () => {
     const est = estimateAccuracyWindow({ sampled: q.sampled, weeks: q.weeks, now: NOW });
     const t = accuracyNotReady(q, est);
     expect(t).toMatch(/Accuracy score: not ready yet/);
-    expect(t).toMatch(/after 150 questions are resolved \(now 0, void 0, awaiting 0\)/);
+    expect(t).toMatch(/after 150 questions are resolved \(now 0, void 0, open 0, awaiting check 0\)/);
     expect(t).toMatch(/Expected between .* and .* \(estimate/);
     expect(t).toMatch(/0–25% voided/);
   });

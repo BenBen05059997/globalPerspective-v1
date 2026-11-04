@@ -5,8 +5,7 @@ import Tabs from '@/shared/ui/Tabs.jsx';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
 import ForecastLinks from '@/features/track-record/components/ForecastLinks.jsx';
 import { forecastAnchorId } from '@/shared/lib/links.js';
-import { itemState, stateMeta, VOID_REASON_LABEL } from '@/shared/lib/questionStates.js';
-import { fmtDay } from '@/shared/lib/trFormatDate.js';
+import { questionLine } from '@/features/track-record/lib/questionLine.js';
 import '@/features/track-record/components/ForecastBoard.css';
 
 // ForecastBoard — the E2 "Forecast board: MAP (default) | BOARD" (TRACK_RECORD_AND_STUDIO_
@@ -27,23 +26,18 @@ const VIEWS = [{ key: 'map', label: 'MAP' }, { key: 'board', label: 'BOARD' }];
 // One question: text, frozen %, named source, state, verdict evidence, then its story and countries.
 // Used by the panel and the tiles.
 function QuestionDetail({ item }) {
-  const st = itemState(item);
-  const meta = stateMeta(st);
+  const line = questionLine(item);
   const text = item.question || item.trigger;
-  const url = item.verdict && typeof item.verdict === 'object' ? item.verdict.url : item.citation;
-  const quote = item.verdict && typeof item.verdict === 'object' ? item.verdict.quote : null;
   return (
     <>
-      <span className={`tr-fb-verdict ${meta ? meta.kind : ''}`}>{meta ? `${meta.glyph} ${meta.label}` : ''}</span>
+      <span className={`tr-fb-verdict ${line ? line.kind : ''}`}>{line ? `${line.glyph} ${line.text}` : ''}</span>
       <span className="tr-fb-panel-trigger">{text}</span>
       <span className="tr-fb-meta">
         {typeof item.p === 'number' ? <b>{item.p}% when locked</b> : null}
         {item.resolutionSource ? ` · source: ${item.resolutionSource}` : ''}
-        {item.deadline ? ` · by ${fmtDay(item.deadline)}` : ''}
       </span>
-      {st === 'void' && item.voidReason && <span className="tr-fb-meta">Could not be checked{VOID_REASON_LABEL[item.voidReason] ? ` · ${VOID_REASON_LABEL[item.voidReason]}` : ''}.</span>}
-      {quote && <span className="tr-fb-quote">&ldquo;{quote}&rdquo;</span>}
-      {url && /^https?:\/\//.test(url) && <a href={url} target="_blank" rel="noreferrer" className="tr-fb-cite">source →</a>}
+      {line?.quote && <span className="tr-fb-quote">&ldquo;{line.quote}&rdquo;</span>}
+      {line?.url && /^https?:\/\//.test(line.url) && <a href={line.url} target="_blank" rel="noreferrer" className="tr-fb-cite">source →</a>}
       <ForecastLinks item={item} className="tr-fb-links" />
     </>
   );
@@ -101,7 +95,7 @@ export default function ForecastBoard({ items = [], emptyText = null, focusQid =
                 </ul>
               </>
             ) : places.length ? (
-              <p className="tr-fb-panel-hint">Click a shaded place to see its questions. Counts only: ✓ happened · ✗ didn’t · ▢ open · ◌ void. Never an accuracy score for a country.</p>
+              <p className="tr-fb-panel-hint">Click a shaded place to see its questions. Counts only: ✓ happened · ✗ not reported · ▢ open · ◌ could not be checked. Never an accuracy score for a country.</p>
             ) : (
               <p className="tr-fb-panel-hint">No question names a country we can plot.</p>
             )}

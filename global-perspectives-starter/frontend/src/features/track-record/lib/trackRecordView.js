@@ -30,8 +30,11 @@ export function buildTrackRecordView(data, now = new Date()) {
   const est150 = q ? estimateAccuracyWindow({ sampled: q.sampled, weeks: q.weeks, target: 150, now, plannedK: K }) : null;
   const est400 = q ? estimateAccuracyWindow({ sampled: q.sampled, weeks: q.weeks, target: 400, now, plannedK: K }) : null;
 
+  const method = { K, leadDays: q?.method?.leadDays ?? [7, 90], graceDays: q?.method?.graceDays ?? 3 };
+  const counts = q?.counts || { locked: 0, resolved: 0, yes: 0, no: 0, void: 0, awaiting: 0, pastDeadlineUnchecked: 0 };
+
   return {
-    q, stage, lock, pilotCount, lastResolvedAt, pilot,
+    q, stage, method, lock, pilotCount, lastResolvedAt, pilot,
     notes: statusNotes(q, now),
     accuracyText: lock.locked ? accuracyNotReady(q, est150) : null,
     scoring: !lock.locked ? q?.scoring || null : null,
@@ -41,6 +44,15 @@ export function buildTrackRecordView(data, now = new Date()) {
     boardText: boardStatus(q, now),
     drawNotes: (q?.weeks || []).map((w) => drawShort(w, K)).filter(Boolean),
     pilotLine: pilotNote(lastResolvedAt, pilotCount),
-    counts: q?.counts || { locked: 0, resolved: 0, yes: 0, no: 0, void: 0, awaiting: 0, pastDeadlineUnchecked: 0 },
+    counts,
+    // The same split on both pages: tiles on the page, list items on the text version.
+    countRows: [
+      [counts.locked, 'Questions locked in samples'],
+      [counts.resolved, `Resolved (${counts.yes} happened, ${counts.no} not reported)`],
+      [counts.void, 'Could not be checked (void)'],
+      [counts.awaiting, 'Open, deadline still ahead'],
+      [counts.pastDeadlineUnchecked, 'Awaiting check, deadline passed'],
+      [pilotCount, 'July pilot (archived; method flawed)'],
+    ],
   };
 }

@@ -17,10 +17,10 @@ async function loadTrackRecord() {
 
 /**
  * useTrackRecord — the track-record data: the weekly question scheme (`questions`) and the frozen pilot-era fields.
- * Returns: { data, loading, error }
+ * Returns: { data, loading, error, refetch } (no data and no error = the view could not be read)
  * data shape: { eraCutFrom, totalDatedTriggers, resolvedTriggers, legacyPredictionsExcluded, recent[], questions }
  */
 export function useTrackRecord() {
-  const { data, loading, error } = useCachedQuery('gp_track_record', loadTrackRecord, { ttl: CACHE_TTL, storage: 'local' });
-  return { data: data ?? null, loading, error: error?.message ?? null };
+  const { data, loading, error, refetch } = useCachedQuery('gp_track_record', loadTrackRecord, { ttl: CACHE_TTL, storage: 'local' });
+  return { data: data ?? null, loading, error: error?.message ?? null, refetch };
 }

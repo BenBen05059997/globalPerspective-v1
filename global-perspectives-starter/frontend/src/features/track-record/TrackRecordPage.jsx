@@ -15,7 +15,9 @@ import DrawRow from '@/features/track-record/components/DrawRow.jsx';
 import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import '@/features/track-record/TrackRecordPage.css';
-import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
+import { TRACK_RECORD_UNAVAILABLE } from '@/features/track-record/lib/notReadyCopy.js';
+import Unavailable from '@/features/track-record/components/Unavailable.jsx';
+import { ledgerLine, ledgerGateText, NO_SINGLE_DRIVER, LEDGER_EMPTY, LEDGER_UNAVAILABLE } from '@/features/track-record/lib/ledgerLine.js';
 
 // The forecast board draws the console's radar map: loaded only when it is rendered (desktop, or the
 // phone MAP tab), never up front on a phone.
@@ -36,61 +38,54 @@ const PHONE_TABS = [
 // headline number. Since Batch 4 the numbers come from the server's `questions` block (a weekly
 // pre-registered sample of questions with their own probability); see lib/trackRecordView.js.
 
-function changeLabel(n) {
-  if (n.changeLevel && n.changeLevel.from && n.changeLevel.to && n.changeLevel.from !== n.changeLevel.to) {
-    return `${n.changeLevel.from} → ${n.changeLevel.to}`;
-  }
-  if (n.changeScore && n.changeScore.from != null && n.changeScore.to != null) {
-    return `risk ${n.changeScore.from} → ${n.changeScore.to}`;
-  }
-  return 'read revised';
-}
-
 function CorrectionsLedger() {
-  const { notes, total, gated, loading } = useCorrectionsFeed(40);
+  const feed = useCorrectionsFeed(40);
+  const { notes, total, gated, loading, error, refetch } = feed;
   if (loading) return <BootLoader variant="inline" className="gp-boot--tight" label="Loading recent corrections" text="Loading recent corrections" />;
+  if (error) return <Unavailable className="tr-cl-empty" onRetry={refetch}>{LEDGER_UNAVAILABLE}</Unavailable>;
   if (!notes || notes.length === 0) {
     return (
       <p className="tr-cl-empty">
-        No conclusion changes recorded in the current window. When a country or story read materially
+        {LEDGER_EMPTY} When a country or story read materially
         moves — and only when a real cited event explains it — it appears here.
       </p>
     );
   }
+  const gate = ledgerGateText({ notes, total, gated });
   return (
     <>
       <ul className="tr-cl-list">
         {notes.map((n, i) => {
-          const country = n.scope === 'country';
+          const l = ledgerLine(n);
           return (
             <Card as="li" key={i}>
               <div className="tr-cl-top">
-                <span className="tr-cl-scope">{country ? 'Country' : 'Story'}</span>
-                <EntityLink className="tr-cl-name" kind={country ? 'country' : 'story'} id={n.name}>
-                  {country ? n.name : `thread ${String(n.name).slice(0, 24)}…`}
+                <span className="tr-cl-scope">{l.country ? 'Country' : 'Story'}</span>
+                <EntityLink className="tr-cl-name" kind={l.country ? 'country' : 'story'} id={l.country ? n.name : l.threadId}>
+                  {l.name}
                 </EntityLink>
-                <span className="tr-cl-delta">{changeLabel(n)}</span>
-                <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
-                {country && (
+                <span className="tr-cl-delta">{l.change}</span>
+                <span className="tr-cl-date">{fmtDay(l.asOf)}</span>
+                {l.country && (
                   <span className="tr-cl-follow"><FollowButton country={n.name} /></span>
                 )}
               </div>
-              {n.noSingleDriver ? (
-                <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>
-              ) : safeTriggerEvent(n)?.title ? (
-                <p className="tr-cl-why">↳ Because: <strong><EntityLink kind="story" id={safeTriggerEvent(n).threadId} topic={{ title: safeTriggerEvent(n).title }}>{safeTriggerEvent(n).title}</EntityLink></strong>
-                  {safeTriggerEvent(n).date ? <span className="tr-cl-evdate"> · {fmtDay(safeTriggerEvent(n).date)}</span> : null}
+              {l.noSingleDriver ? (
+                <p className="tr-cl-why nsd">{NO_SINGLE_DRIVER}</p>
+              ) : l.event ? (
+                <p className="tr-cl-why">↳ Because: <strong><EntityLink kind="story" id={l.event.threadId} topic={{ title: l.event.title }}>{l.event.title}</EntityLink></strong>
+                  {l.event.date ? <span className="tr-cl-evdate"> · {fmtDay(l.event.date)}</span> : null}
                 </p>
-              ) : safeWhy(n) ? (
-                <p className="tr-cl-why">{safeWhy(n)}</p>
+              ) : l.why ? (
+                <p className="tr-cl-why">{l.why}</p>
               ) : null}
             </Card>
           );
         })}
       </ul>
-      {gated && total > notes.length && (
+      {gate && (
         <Link to="/membership" className="tr-cl-locked">
-          Showing the {notes.length} most recent of <strong>{total}</strong> corrections.{' '}
+          {gate}{' '}
           <span className="tr-cl-locked-cta">Members see the full history →</span>
         </Link>
       )}
@@ -100,7 +95,7 @@ function CorrectionsLedger() {
 
 export default function TrackRecordPage() {
   useEffect(() => { document.title = 'Track Record | Global Perspectives'; }, []);
-  const { data, loading, error } = useTrackRecord();
+  const { data, loading, error, refetch } = useTrackRecord();
   const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
   // Phone P1: READ (the record + method) / MAP (the forecast board) / LOG (settling log + ledger). One
   // switch; desktop shows every section in one scroll as before.
@@ -117,13 +112,41 @@ export default function TrackRecordPage() {
     return (
       <div className="tr-page">
         <header className="tr-head"><h1>Accountability</h1></header>
-        <p className="tr-empty">The scoreboard is temporarily unavailable. Please try again shortly.</p>
+        <Unavailable className="tr-empty" onRetry={refetch}>{TRACK_RECORD_UNAVAILABLE}</Unavailable>
       </div>
     );
   }
 
   const { eraCutFrom, legacyPredictionsExcluded, totalDatedTriggers } = data;
-  const { q, stage, lock, counts } = view;
+  const { q, stage, lock, method } = view;
+
+  const accuracyBody = lock.locked ? (
+    <>
+      <div className="tr-lock-bar"><div className="tr-lock-fill" style={{ width: `${lock.pct}%` }} /></div>
+      <p className="tr-lock-label">{lock.n} resolved of {lock.target} needed</p>
+      <p className="tr-lock-note" data-notready="accuracy">{view.accuracyText}</p>
+      <p className="tr-lock-note">
+        No Brier score, skill number, or a word like &ldquo;strong&rdquo;/&ldquo;weak&rdquo; until then.
+        The July pilot&apos;s {view.pilotCount} triggers don&apos;t count toward this — they were scored
+        against the parent scenario&apos;s probability, a method we&apos;ve since retired.
+      </p>
+    </>
+  ) : view.scoring ? (
+    <>
+      <div className="tr-brier-score">
+        <span className="tr-brier-num">{view.scoring.brier}</span>
+        <span className="tr-brier-verdict">{view.skillWords}</span>
+      </div>
+      <p className="tr-brier-explain">
+        Brier score across {view.scoring.n} resolved questions; a guess of the overall base rate ({Math.round(view.scoring.baseRate * 100)}% yes)
+        every time scores {view.scoring.brierRef}. Skill {view.scoring.skill}
+        {view.scoring.ci ? ` (95% interval ${view.scoring.ci.lo} to ${view.scoring.ci.hi}, resampled by story)` : ''}.
+        {' '}Voided: {Math.round(view.scoring.voidRate * 1000) / 10}%. Lower Brier is better, 0 is perfect.
+      </p>
+    </>
+  ) : null;
+  // Inside the accuracy card, so the band note never sits loose beside it.
+  const calibration = view.calibrationText ? <p className="tr-lock-note tr-lock-calibration" data-notready="calibration">{view.calibrationText}</p> : null;
 
   const readBlocks = (
     <>
@@ -138,32 +161,7 @@ export default function TrackRecordPage() {
       {/* ---- Accuracy: locked until 150 resolved questions ---- */}
       <section className="tr-section">
         <SectionHeader label="Accuracy" />
-        {lock.locked ? (
-          <Card>
-            <div className="tr-lock-bar"><div className="tr-lock-fill" style={{ width: `${lock.pct}%` }} /></div>
-            <p className="tr-lock-label">{lock.n} resolved of {lock.target} needed</p>
-            <p className="tr-lock-note" data-notready="accuracy">{view.accuracyText}</p>
-            <p className="tr-lock-note">
-              No Brier score, skill number, or a word like &ldquo;strong&rdquo;/&ldquo;weak&rdquo; until then.
-              The July pilot&apos;s {view.pilotCount} triggers don&apos;t count toward this — they were scored
-              against the parent scenario&apos;s probability, a method we&apos;ve since retired.
-            </p>
-          </Card>
-        ) : view.scoring ? (
-          <Card>
-            <div className="tr-brier-score">
-              <span className="tr-brier-num">{view.scoring.brier}</span>
-              <span className="tr-brier-verdict">{view.skillWords}</span>
-            </div>
-            <p className="tr-brier-explain">
-              Brier score across {view.scoring.n} resolved questions; a guess of the overall base rate ({Math.round(view.scoring.baseRate * 100)}% yes)
-              every time scores {view.scoring.brierRef}. Skill {view.scoring.skill}
-              {view.scoring.ci ? ` (95% interval ${view.scoring.ci.lo} to ${view.scoring.ci.hi}, resampled by story)` : ''}.
-              {' '}Voided: {Math.round(view.scoring.voidRate * 1000) / 10}%. Lower Brier is better, 0 is perfect.
-            </p>
-          </Card>
-        ) : null}
-        {view.calibrationText && <p className="tr-lock-note" data-notready="calibration">{view.calibrationText}</p>}
+        {accuracyBody ? <Card>{accuracyBody}{calibration}</Card> : calibration}
       </section>
 
       {/* ---- This week's draw + commitments ---- */}
@@ -181,14 +179,7 @@ export default function TrackRecordPage() {
           {q?.firstCommit && <span className="tr-eracut">sampled from {fmtDay(q.firstCommit.committedAt)}</span>}
         </SectionHeader>
         <section className="tr-stats">
-          {[
-            [counts.locked, 'Questions locked in samples'],
-            [counts.resolved, `Resolved (${counts.yes} happened, ${counts.no} didn't)`],
-            [counts.void, 'Void'],
-            [counts.awaiting, 'Open, deadline still ahead'],
-            [counts.pastDeadlineUnchecked, 'Awaiting check'],
-            [view.pilotCount, 'July pilot (archived; method flawed)'],
-          ].map(([num, label]) => (
+          {view.countRows.map(([num, label]) => (
             <Card key={label} className="tr-stat"><span className="tr-stat-num">{num}</span><span className="tr-stat-label">{label}</span></Card>
           ))}
         </section>
@@ -224,7 +215,7 @@ export default function TrackRecordPage() {
           </p>
         )}
         {view.pilot.length > 0 && (
-          <details className="tr-pilot-details">
+          <details className="tr-pilot-details" open>
             <summary>July pilot examples ({view.pilot.length} most recent; archived, not scored)</summary>
             <ul className="tr-pilot-list">
               {view.pilot.map((r, i) => (
@@ -279,15 +270,15 @@ export default function TrackRecordPage() {
           </li>
           <li>
             <strong>A random sample is locked each week, in advance.</strong> Before a week starts we publish a
-            commitment (a hash of a secret seed). After the week closes we reveal the seed; up to {q?.method?.K ?? 22} questions
+            commitment (a hash of a secret seed). After the week closes we reveal the seed; up to {method.K} questions
             are ranked by a hash of the seed and the question, at most one per story. Anyone can re-run the
-            draw (&ldquo;Verify this draw&rdquo;). Only questions with a lead time of 7 to 90 days are eligible; the rest are
+            draw (&ldquo;Verify this draw&rdquo;). Only questions with a lead time of {method.leadDays[0]} to {method.leadDays[1]} days are eligible; the rest are
             published but not scored.
           </li>
           <li>
             <strong>Resolved with sources by an agent and a person.</strong> An agent that is not shown the
             probability drafts a verdict with a quoted passage and a link; a person confirms it. A YES needs a source,
-            a NO is only allowed after the deadline plus 3 days, and anything that cannot be judged is marked{' '}
+            a NO is only allowed after the deadline plus {method.graceDays} days, and anything that cannot be judged is marked{' '}
             <em>void</em> with a reason, published, and excluded from the score.
           </li>
           <li>

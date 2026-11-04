@@ -3,12 +3,13 @@
 //   150 resolved -> the score, with words gated by the interval. The archived July pilot stays labelled.
 import { createElement } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 let trackRecordValue;
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => trackRecordValue }));
-vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0, gated: false, loading: false }) }));
+let feedValue = { notes: [], total: 0, gated: false, loading: false, error: null };
+vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => feedValue }));
 vi.mock('@/shared/ui/FollowButton', () => ({ FollowButton: () => null }));
 vi.mock('@/shared/map/RadarMap.jsx', () => ({ default: () => <div data-testid="radar-map-stub" /> }));
 
@@ -80,7 +81,7 @@ describe('a drawn week with open, past-deadline and resolved questions', () => {
       weeks: [{ weekId: '2026-W41', weekStart: '2026-10-05', commit: { hash: 'ab'.repeat(32), committedAt: '2026-10-01T10:30:00Z' }, reveal: { seedHex: 'cd'.repeat(32), revealedAt: '2026-10-12T10:30:00Z' }, drawn: true, eligible: 9, clusters: 3, picked: 3, due: 2, settled: 1, draw: { K: 22, pool: [], picked: [] } }],
     }) }), loading: false, error: null };
     renderPage();
-    expect(screen.getByText('Awaiting check')).toBeInTheDocument();
+    expect(screen.getByText('Awaiting check, deadline passed')).toBeInTheDocument();
     expect(screen.queryByText(/^awaiting$/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Verify this draw/ })).toBeInTheDocument();
     expect(screen.getByText(/Only 3 stories had an eligible question/)).toBeInTheDocument();
@@ -89,8 +90,9 @@ describe('a drawn week with open, past-deadline and resolved questions', () => {
   it('the text page carries the same facts', () => {
     trackRecordValue = { data: legacy({ questions: questions({ sampledTotal: 3, counts: { locked: 3, yes: 1, no: 0, void: 0, awaiting: 1, pastDeadlineUnchecked: 1, resolved: 1 }, sampled }) }), loading: false, error: null };
     renderPage(TrackRecordText);
-    expect(screen.getByText(/3 questions locked in weekly samples/)).toBeInTheDocument();
-    expect(screen.getByText(/1 awaiting their deadline; 1 awaiting check/)).toBeInTheDocument();
+    expect(screen.getByText('Questions locked in samples: 3')).toBeInTheDocument();
+    expect(screen.getByText('Open, deadline still ahead: 1')).toBeInTheDocument();
+    expect(screen.getByText('Awaiting check, deadline passed: 1')).toBeInTheDocument();
     expect(screen.getByText(/Country A ratifies the treaty/)).toBeInTheDocument();
     expect(screen.getByText(/62% when locked/)).toBeInTheDocument();
   });
@@ -149,5 +151,57 @@ describe('an old cached or fallback response with no questions block', () => {
     renderPage();
     expect(screen.getByText(/Stage 0/)).toBeInTheDocument();
     expect(screen.getAllByText(/Jul 24 2026/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('honest failure states and shared wording', () => {
+  const retry = vi.fn();
+  it('an unreadable view says so and offers Retry, on both pages', () => {
+    trackRecordValue = { data: null, loading: false, error: null, refetch: retry };
+    for (const Page of [TrackRecordPage, TrackRecordText]) {
+      const { unmount } = renderPage(Page);
+      expect(screen.getByText(/track-record view could not be read/)).toBeInTheDocument();
+      expect(screen.queryByText(/temporarily unavailable/)).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      unmount();
+    }
+    expect(retry).toHaveBeenCalledTimes(2);
+  });
+  it('a failed ledger read is not "no changes recorded"', () => {
+    trackRecordValue = { data: legacy({ questions: questions() }), loading: false, error: null };
+    feedValue = { notes: [], total: 0, gated: false, loading: false, error: 'Proxy HTTP 500', refetch: retry };
+    for (const Page of [TrackRecordPage, TrackRecordText]) {
+      const { unmount } = renderPage(Page);
+      expect(screen.getByText('The ledger of changed reads could not be loaded.')).toBeInTheDocument();
+      expect(screen.queryByText(/No conclusion changes recorded/)).not.toBeInTheDocument();
+      unmount();
+    }
+    feedValue = { notes: [], total: 0, gated: false, loading: false, error: null };
+  });
+  it('both pages print the same ledger line, gate line and no raw thread id', () => {
+    trackRecordValue = { data: legacy({ questions: questions() }), loading: false, error: null };
+    feedValue = { notes: [{ scope: 'thread', name: 'thread-abc-123', threadId: 'thread-abc-123', asOf: '2026-11-03', changeScore: { from: 80, to: 90 }, directionFlag: { backfilled: true }, whyChanged: 'x', triggerEvent: { title: 'Flagged cause title' } }], total: 389, gated: true, loading: false, error: null };
+    for (const Page of [TrackRecordPage, TrackRecordText]) {
+      const { unmount, container } = renderPage(Page);
+      expect(container.textContent).toContain('A story');
+      expect(container.textContent).not.toContain('thread thread-');
+      expect(container.textContent).not.toContain('Flagged cause title');
+      expect(container.textContent).toContain('Showing the 1 most recent of 389 corrections.');
+      unmount();
+    }
+    feedValue = { notes: [], total: 0, gated: false, loading: false, error: null };
+  });
+  it('method numbers come from the view, and the tiles and the text list use the same split', () => {
+    const q = questions({ method: { K: 22, leadDays: [10, 60], graceDays: 5 }, sampledTotal: 3, counts: { ...zero, locked: 88, awaiting: 79, pastDeadlineUnchecked: 9 } });
+    trackRecordValue = { data: legacy({ questions: q }), loading: false, error: null };
+    const page = renderPage();
+    expect(page.container.textContent).toContain('lead time of 10 to 60 days');
+    expect(page.container.textContent).toContain('deadline plus 5 days');
+    expect(page.container.textContent).not.toMatch(/didn/);
+    page.unmount();
+    const text = renderPage(TrackRecordText);
+    expect(text.container.textContent).toContain('10 to 60 day lead time');
+    expect(text.container.textContent).toContain('Open, deadline still ahead: 79');
+    expect(text.container.textContent).toContain('Awaiting check, deadline passed: 9');
   });
 });

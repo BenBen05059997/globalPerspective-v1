@@ -1,5 +1,5 @@
 // sampleRule — the weekly draw rule, so a reader can verify a published draw in the browser.
-// It mirrors amplify/backend/function/newsPredictionResolver/src/lib.js (`rankKey`, `draw`):
+// It mirrors backend/shared/src/questionPool.js (`rankKey`, `draw`), the rule the resolver and the views run:
 //   h = sha256(seedHex + '|' + qid); keep only the lowest h per story; sort by h; take the first K.
 // The Lambda uses Node's synchronous crypto; this uses WebCrypto (async). Parity is enforced by one
 // golden fixture that both sides test against (sampleRuleGolden.json, byte-identical in both

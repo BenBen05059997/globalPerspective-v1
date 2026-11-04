@@ -6,7 +6,10 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
 import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
-import { itemState, stateMeta } from '@/shared/lib/questionStates.js';
+import { questionLine } from '@/features/track-record/lib/questionLine.js';
+import { ledgerLine, ledgerGateText, NO_SINGLE_DRIVER, LEDGER_EMPTY, LEDGER_UNAVAILABLE } from '@/features/track-record/lib/ledgerLine.js';
+import { TRACK_RECORD_UNAVAILABLE } from '@/features/track-record/lib/notReadyCopy.js';
+import Unavailable from '@/features/track-record/components/Unavailable.jsx';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE, forecastAnchorId } from '@/shared/lib/links.js';
@@ -18,8 +21,9 @@ import '@/features/track-record/TrackRecordText.css';
 // same wording (both build from lib/trackRecordView.js), no map chrome, semantic headings.
 export default function TrackRecordText() {
   useEffect(() => { document.title = 'Track Record (text) | Global Perspectives'; }, []);
-  const { data, loading, error } = useTrackRecord();
-  const { notes, loading: notesLoading } = useCorrectionsFeed(40);
+  const { data, loading, error, refetch } = useTrackRecord();
+  const feed = useCorrectionsFeed(40);
+  const { notes } = feed;
 
   const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
   const places = useMemo(() => forecastPlaceCounts(view?.boardItems || []), [view]);
@@ -31,12 +35,12 @@ export default function TrackRecordText() {
     return (
       <article className="tr-text">
         <h1>Accountability (text version)</h1>
-        <p>The scoreboard is temporarily unavailable. Please try again shortly.</p>
+        <Unavailable onRetry={refetch}>{TRACK_RECORD_UNAVAILABLE}</Unavailable>
       </article>
     );
   }
 
-  const { q, stage, lock, counts } = view;
+  const { q, stage, lock, method } = view;
   return (
     <article className="tr-text">
       <header>
@@ -79,11 +83,8 @@ export default function TrackRecordText() {
       <section>
         <h2>Forecast record</h2>
         <ul>
-          <li>{counts.locked} questions locked in weekly samples</li>
-          <li>{counts.resolved} resolved ({counts.yes} happened, {counts.no} didn&apos;t); {counts.void} void</li>
-          <li>{counts.awaiting} awaiting their deadline; {counts.pastDeadlineUnchecked} awaiting check</li>
+          {view.countRows.map(([num, label]) => <li key={label}>{label}: {num}</li>)}
           {q && <li>{q.issued} questions issued with their own probability; {q.sampledTotal} in samples{q.warmUp ? `; ${q.warmUp} warm-up (before the first sample week, never scored)` : ''}</li>}
-          <li>{view.pilotCount} from the July pilot (archived; method flawed)</li>
           {data.totalDatedTriggers ? <li>{data.totalDatedTriggers} earlier dated triggers (issued without a probability of their own) were never scored</li> : null}
         </ul>
         {q?.weeks?.filter((w) => w.commit).map((w) => (
@@ -104,7 +105,7 @@ export default function TrackRecordText() {
             <h3>By place named in the question</h3>
             <ul>
               {places.map((p) => (
-                <li key={p.iso3}><EntityLink kind="country" id={p.iso3}>{p.name}</EntityLink>: {p.fired} happened, {p.notFired} didn&apos;t, {p.awaiting + p.pastUnchecked} open, {p.void} void</li>
+                <li key={p.iso3}><EntityLink kind="country" id={p.iso3}>{p.name}</EntityLink>: {p.fired} happened, {p.notFired} not reported, {p.awaiting + p.pastUnchecked} open, {p.void} could not be checked</li>
               ))}
             </ul>
           </>
@@ -114,14 +115,14 @@ export default function TrackRecordText() {
             <h3>Every question in a weekly sample</h3>
             <ol>
               {view.boardItems.map((r) => {
-                const meta = stateMeta(itemState(r));
+                const line = questionLine(r);
                 return (
                   <li key={r.qid} id={forecastAnchorId(r.qid)}>
-                    <strong>{meta ? meta.label : ''}:</strong> {r.question}
+                    <strong>{line ? line.text : ''}</strong> — {r.question}
+                    {line?.quote ? ` “${line.quote}”` : ''}
                     {typeof r.p === 'number' ? ` — ${r.p}% when locked` : ''}
                     {r.resolutionSource ? `; source: ${r.resolutionSource}` : ''}
-                    {r.deadline ? `; by ${fmtDay(r.deadline)}` : ''}
-                    {r.verdict?.url && /^https?:\/\//.test(r.verdict.url) && <> (<a href={r.verdict.url} target="_blank" rel="noreferrer">source</a>)</>}
+                    {line?.url && /^https?:\/\//.test(line.url) && <> (<a href={line.url} target="_blank" rel="noreferrer">source</a>)</>}
                     {' — '}<ForecastLinks item={r} />
                   </li>
                 );
@@ -159,21 +160,30 @@ export default function TrackRecordText() {
 
       <section>
         <h2>Ledger of changed reads</h2>
-        {notesLoading ? (
+        {feed.loading ? (
           <BootLoader variant="inline" className="gp-boot--tight" label="Loading recent corrections" text="Loading recent corrections" />
+        ) : feed.error ? (
+          <Unavailable onRetry={feed.refetch}>{LEDGER_UNAVAILABLE}</Unavailable>
         ) : !notes || notes.length === 0 ? (
-          <p>No conclusion changes recorded in the current window.</p>
+          <p>{LEDGER_EMPTY}</p>
         ) : (
-          <ul>
-            {notes.map((n, i) => (
-              <li key={i}>
-                <strong>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</strong>
-                {' — '}{fmtDay(n.asOf)}
-                {n.triggerEvent?.title ? ` — because: ${n.triggerEvent.title}` : ''}
-                {n.noSingleDriver ? ' — no single driver' : ''}
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul>
+              {notes.map((n, i) => {
+                const l = ledgerLine(n);
+                return (
+                  <li key={i}>
+                    <strong>{l.threadId ? <EntityLink kind="story" id={l.threadId}>{l.name}</EntityLink> : l.name}</strong>
+                    {' — '}{l.change}{' — '}{fmtDay(l.asOf)}
+                    {l.noSingleDriver ? ` — ${NO_SINGLE_DRIVER}` : ''}
+                    {l.event ? ` — because: ${l.event.title}` : ''}
+                    {l.why ? ` — ${l.why}` : ''}
+                  </li>
+                );
+              })}
+            </ul>
+            {ledgerGateText(feed) && <p>{ledgerGateText(feed)} <Link to="/membership">Members see the full history.</Link></p>}
+          </>
         )}
       </section>
 
@@ -181,8 +191,8 @@ export default function TrackRecordText() {
         <h2>How this works</h2>
         <ol>
           <li>Each question carries its own probability and a named source, fixed when it is published; the record is written once.</li>
-          <li>Before each week we publish a commitment (a hash of a secret seed); after the week closes the seed is revealed and up to {q?.method?.K ?? 22} questions are drawn by hash, at most one per story. Only questions with a 7 to 90 day lead time are eligible.</li>
-          <li>An agent that is not shown the probability drafts a verdict with a quote and a link; a person confirms it. A NO is only allowed after the deadline plus 3 days; anything unjudgeable is marked void with a reason and excluded.</li>
+          <li>Before each week we publish a commitment (a hash of a secret seed); after the week closes the seed is revealed and up to {method.K} questions are drawn by hash, at most one per story. Only questions with a {method.leadDays[0]} to {method.leadDays[1]} day lead time are eligible.</li>
+          <li>An agent that is not shown the probability drafts a verdict with a quote and a link; a person confirms it. A NO is only allowed after the deadline plus {method.graceDays} days; anything unjudgeable is marked void with a reason and excluded.</li>
           <li>Scored against a guess of the overall base rate, with an interval resampled by story. No accuracy before 150 resolved; calibration by band only after 400 over six months.</li>
           <li>
             The July pilot ({view.pilotCount} triggers, checked {fmtDay(view.lastResolvedAt)}) is archived, not scored: it scored a

@@ -87,6 +87,19 @@ describe('StoryLine renders the summary / Watching lines only with data', () => 
     const { container } = renderLine({ ...base, dayCount: 13 }, null);
     expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: \d+ events?, 13 days with news$/);
   });
+  it('the ▲ rising mark follows the Board status, not the old half-vs-half trend', () => {
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const mk = (spec) => {
+      const entries = Object.entries(spec).flatMap(([d, n]) => Array.from({ length: n }, () => ({ date: day(Number(d)) })));
+      const dates = [...new Set(entries.map((e) => e.date))].sort();
+      return { ...base, entries, dates, articleCount: entries.length, dayCount: dates.length };
+    };
+    const rising = renderLine(mk({ 20: 1, 1: 3, 0: 1 }), null);
+    expect(rising.container.querySelector('.sf-rising')).not.toBeNull();
+    rising.unmount();
+    const quieter = renderLine(mk({ 9: 3, 5: 3, 1: 1 }), null);
+    expect(quieter.container.querySelector('.sf-rising')).toBeNull();
+  });
   it('summary only (no watch question) -> no Watching line', () => {
     const { container } = renderLine(base, { storyArc: 'Only an arc.' });
     expect(container.querySelector('.gp-row__sum')).not.toBeNull();

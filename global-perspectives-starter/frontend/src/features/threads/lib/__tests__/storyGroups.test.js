@@ -223,22 +223,32 @@ describe('sorts', () => {
     expect(sortThreads(threads, 'articles')[0].threadId).toBe('t-now');
     expect(sortThreads(threads, 'recent').map((t) => t.threadId)[0]).toBe('t-now');
     expect(sortThreads(threads, 'recent').map((t) => t.threadId).slice(-1)[0]).toBe('t-arch');
-    const mk = (id, trend, articleCount) => ({ threadId: id, trend, articleCount, dateRange: { to: ago(0) } });
-    const r = sortThreads([mk('stable', 'stable', 9), mk('rise', 'rising', 2), mk('new', 'new', 5)], 'rising').map((t) => t.threadId);
-    expect(r).toEqual(['rise', 'new', 'stable']);
-  });
-  it('risingThreads selects exactly what the Board calls New or Rising (R3-6), rising first', () => {
-    // spec: { daysAgo: events that day }; `trend` is the old half-vs-half signal and must not matter
-    const mk = (id, spec, trend) => {
+    // statuses follow the Board (deriveBoardStatus): spec = { daysAgo: events that day }
+    const mk = (id, spec) => {
       const entries = Object.entries(spec).flatMap(([d, n]) => Array.from({ length: n }, () => ({ date: ago(Number(d)) })));
       const dates = Object.keys(spec).map((d) => ago(Number(d))).sort();
-      return { threadId: id, trend, entries, dates, articleCount: entries.length };
+      return { threadId: id, entries, dates, articleCount: entries.length, dateRange: { to: dates[dates.length - 1] } };
+    };
+    const r = sortThreads([
+      mk('steady', { 20: 5, 10: 5, 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }),
+      mk('quiet', { 20: 3, 5: 3 }),
+      mk('new', { 0: 1 }),
+      mk('rise', { 20: 1, 1: 3, 0: 1 }),
+    ], 'rising', NOW).map((t) => t.threadId);
+    expect(r).toEqual(['rise', 'new', 'steady', 'quiet']);
+  });
+  it('risingThreads selects exactly what the Board calls New or Rising (R3-6), rising first', () => {
+    // spec: { daysAgo: events that day }
+    const mk = (id, spec) => {
+      const entries = Object.entries(spec).flatMap(([d, n]) => Array.from({ length: n }, () => ({ date: ago(Number(d)) })));
+      const dates = Object.keys(spec).map((d) => ago(Number(d))).sort();
+      return { threadId: id, entries, dates, articleCount: entries.length };
     };
     const threads = [
-      mk('quiet', { 9: 3, 5: 3, 1: 1 }, 'rising'), // old trend says rising, the Board says quieter
-      mk('rise', { 12: 1, 3: 1, 1: 3 }, 'stable'),
-      mk('fresh', { 1: 4 }, 'new'),
-      mk('steady', { 12: 1, 6: 1 }, 'stable'),
+      mk('quiet', { 9: 3, 5: 3, 1: 1 }), // the Board says quieter
+      mk('rise', { 12: 1, 3: 1, 1: 3 }),
+      mk('fresh', { 1: 4 }),
+      mk('steady', { 12: 1, 6: 1 }),
     ];
     const out = risingThreads(threads, NOW, 5).map((t) => t.threadId);
     expect(out).toEqual(['rise', 'fresh']);

@@ -105,7 +105,7 @@ export default function WeeklyPage() {
 
   const filters = useMemo(() => ({ q, crisis, tiers, region, category, window: windowValue }), [q, crisis, tiers, region, category, windowValue]);
   const listed = useMemo(
-    () => sortThreads(filterThreads(threads, filters, analyses, now), sort),
+    () => sortThreads(filterThreads(threads, filters, analyses, now), sort, now),
     [threads, filters, analyses, now, sort],
   );
   const listedStandalone = useMemo(() => filterStandalone(standalone, filters, now), [standalone, filters, now]);

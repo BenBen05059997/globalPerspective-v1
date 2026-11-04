@@ -12,27 +12,6 @@ import { deriveHeadline } from '@/shared/lib/riskTiers';
 
 export const MS_DAY = 86400000;
 
-// Coverage trend from the story's own per-day article counts: the recent half of its days vs the
-// older half ('new' with one day). Only 'rising' is shown (StoryLine's "▲ rising" mark).
-function getTrend(entries) {
-  if (!entries || entries.length === 0) return 'new';
-  const dates = [...new Set(entries.map(e => e.date))].sort();
-  if (dates.length <= 1) return 'new';
-  const mid = Math.floor(dates.length / 2);
-  const olderDates = new Set(dates.slice(0, mid));
-  const recentDates = new Set(dates.slice(mid));
-  let olderCount = 0;
-  let recentCount = 0;
-  for (const e of entries) {
-    if (olderDates.has(e.date)) olderCount++;
-    if (recentDates.has(e.date)) recentCount++;
-  }
-  const ratio = olderCount > 0 ? recentCount / olderCount : 2;
-  if (ratio > 1.3) return 'rising';
-  if (ratio < 0.7) return 'fading';
-  return 'stable';
-}
-
 // Topic categories that /weekly?category= accepts (ThreadPage's breadcrumb links here).
 export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
 
@@ -113,7 +92,7 @@ export function listCounts(events, days) {
  * Groups archive entries by `threadId`. Each thread carries `dates` (unique day keys, ascending),
  * `dateRange`, `changedAt` (a REAL timestamp: the `updatedAt` of the thread's newest day; with none,
  * the newest day's UTC midnight only when that day is before today, else null — never a guess)
- * and the same fields the old page used (entries, articleCount, dayCount, regions, trend ...).
+ * and the same fields the old page used (entries, articleCount, dayCount, regions ...).
  */
 export function buildThreads(dayMap, sortedDates, now = Date.now(), titles = null) {
   const threadMap = {};
@@ -155,7 +134,6 @@ export function buildThreads(dayMap, sortedDates, now = Date.now(), titles = nul
       sourceCount: data.allSources.size,
       regions,
       primaryRegion: getTopicRegion({ regions }),
-      trend: getTrend(data.entries),
       category: data.entries[0].category ? String(data.entries[0].category).toLowerCase() : null,
       dateRange: { from, to },
       changedAt,
@@ -292,15 +270,17 @@ export function filterStandalone(entries, filters = {}, now = Date.now()) {
 
 // ─── Sorts ──────────────────────────────────────────────────────────────────────────────────────
 
-const TREND_ORDER = { rising: 0, new: 1, stable: 2, fading: 3 };
+// The Board's own statuses (deriveBoardStatus), the one coverage rule; the "rising first" sort follows it.
+const STATUS_ORDER = { rising: 0, new: 1, steady: 2, quieter: 3 };
 
 /** sortThreads(threads, 'articles' | 'recent' | 'rising') — returns a new array. */
-export function sortThreads(threads, sortBy = 'articles') {
+export function sortThreads(threads, sortBy = 'articles', now = Date.now()) {
   const copy = [...threads];
   if (sortBy === 'recent') {
     copy.sort((a, b) => b.dateRange.to.localeCompare(a.dateRange.to) || Date.parse(b.changedAt || 0) - Date.parse(a.changedAt || 0));
   } else if (sortBy === 'rising') {
-    copy.sort((a, b) => (TREND_ORDER[a.trend] ?? 4) - (TREND_ORDER[b.trend] ?? 4) || b.articleCount - a.articleCount);
+    const rank = new Map(copy.map((t) => [t, STATUS_ORDER[deriveBoardStatus(t, now).key] ?? 4]));
+    copy.sort((a, b) => rank.get(a) - rank.get(b) || b.articleCount - a.articleCount);
   } else {
     copy.sort((a, b) => b.articleCount - a.articleCount);
   }

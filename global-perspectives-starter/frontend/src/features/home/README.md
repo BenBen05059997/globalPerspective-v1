@@ -23,14 +23,17 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
   `composeTopicsLede.js` keeps relative imports because `quality/briefing/verify_lede.mjs` loads it in Node
 - `components/AiResultCard.jsx` - the one frame for a result (loading, unavailable, card); `SummaryDisplay`,
   `PredictionDisplay`, `TraceCauseDisplay` render inside it; `AiUnavailable` is the honest unavailable state with Retry / Close
-- `components/TodayArchiveSidebar.jsx` + `ArchiveTopicModal.jsx` - the earlier-today rail and its modal; `TopicNav.jsx` - right rail
+- `components/TodayArchiveSidebar.jsx` + `ArchiveTopicModal.jsx` - the earlier-today rail and its modal (the archive keeps 1,500
+  chars of a forecast / trace cause, so a cut note is read in full by topicId; none -> the tab is left out); `TopicNav.jsx` - right rail
+- `lib/noForecast.js` - Predict says "no new forecast" at once when the today view shows the latest run wrote the topic without one (0038)
 - `hooks/useTodayArchive.js` - the only hook in this folder
 - Public API (`index.js`): `Home`
 - Imports from other features: `@/features/breaking` -> `BreakingStrip`; `@/features/track-record` -> `useTrackRecord`,
   `useCorrectionsFeed` (trust strip)
 - Shared: `useGeminiTopics`, `contentService`, `EntityLink`, `@/shared/lib/links.js`
-- Failures render inline (no modal) and go to `reportFetchError`. Summary and Predict retry on cache miss or 503 up to `MAX_RETRIES`
-  (6), `RETRY_DELAY_MS` 10 s apart; Trace Cause does not retry.
+- Failures render inline (no modal) and go to `reportFetchError` (an empty result counts as a failure; the archive rail says it could
+  not load, with Retry). Summary and Predict retry on cache miss or 503 up to `MAX_RETRIES` (6), `RETRY_DELAY_MS` 10 s apart, stopped
+  on Close and unmount; Trace Cause does not retry. Not reported: a failed topics fetch while a cached list is held (`useGeminiTopics`, shared).
 - Links: a topic title opens its story only with a real `threadId`; a country opens its page.
 
 ## Backend
@@ -41,7 +44,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 
 ## Data
 - The five calls below (`topics`, `today`, `summary`, `prediction`, `trace_cause`) go through `contentService`, which answers from the record's today view (`index/today.json`, `@/shared/api/todayView.js`, decision 0051) while the views are fresh (0050) and asks the action when the view is missing, stale, unreadable (reported as `today-view`) or cannot answer that call (a topic outside the latest run, a note the run did not write).
-- `useGeminiTopics()` (`@/shared/data`) -> `topics` (asks for 13); localStorage `gemini_topics_cache_v2`, 1-hour TTL. A stale cache is served and flagged.
+- `useGeminiTopics()` (`@/shared/data`) -> `topics` (asks for 13); localStorage `gemini_topics_cache_v2`, 1-hour TTL, read only to flag staleness: the page waits for the network answer before showing topics.
 - `useTodayArchive()` -> `contentService.getTodayArchive()` -> `today`; localStorage `today_archive_cache_v1`, 10 min; an empty day is not cached.
 - On click: `contentService.getTopicSummary` / `getTopicPrediction` / `getTopicTraceCause` -> `summary` / `prediction` / `trace_cause`.
   These read stored results by `topicId`; nothing is generated on view.

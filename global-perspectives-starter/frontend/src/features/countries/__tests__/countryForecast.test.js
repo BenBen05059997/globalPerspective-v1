@@ -18,10 +18,9 @@ describe('countryForecast (the record only, decision 0052)', () => {
     expect(await countryForecast({ topicIds: ['A-1'], topicIdToThreadId: threads }, { recordForecast: record })).toBeNull();
   });
 
-  it('a story the record cannot answer adds nothing; the others still count', async () => {
+  it('a story the record cannot answer gives no deadline, not an older story\'s', async () => {
     const record = async (thread) => (thread === 'th-a' ? { answered: false, snapshot: null } : { answered: true, snapshot: snap('B-2', '2026-10-25') });
-    const got = await countryForecast({ topicIds: ['A-1', 'B-2'], topicIdToThreadId: threads }, { recordForecast: record });
-    expect(got.topicId).toBe('B-2');
+    expect(await countryForecast({ topicIds: ['A-1', 'B-2'], topicIdToThreadId: threads }, { recordForecast: record })).toBeNull();
     expect(await countryForecast({ topicIds: ['A-1'], topicIdToThreadId: threads }, { recordForecast: record })).toBeNull();
   });
 

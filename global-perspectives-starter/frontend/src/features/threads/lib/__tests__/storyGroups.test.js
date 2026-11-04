@@ -3,7 +3,7 @@ import {
   buildThreads, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
-  dayCounts, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
+  dayCounts, daysWithNews, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
 
 // "now" = 2026-10-01 12:00 UTC. Day keys are real UTC YYYY-MM-DD strings.
@@ -49,6 +49,18 @@ describe('buildThreads', () => {
     expect(today.threads[0].changedAt).toBeNull();
     const old = buildThreads({ [ago(3)]: { entries: [entry('a', 'x')] } }, [ago(3)], NOW);
     expect(old.threads[0].changedAt).toBe(`${ago(3)}T00:00:00Z`);
+  });
+});
+
+describe('daysWithNews', () => {
+  it('is the one wording for distinct days that carry a headline', () => {
+    expect(daysWithNews(1)).toBe('1 day with news');
+    expect(daysWithNews(7)).toBe('7 days with news');
+  });
+  it('counts distinct days, not the calendar span', () => {
+    const days = { [ago(10)]: { entries: [entry('g', 'First')] }, [ago(0)]: { entries: [entry('g', 'Last')] } };
+    const { threads } = buildThreads(days, Object.keys(days).sort(), NOW);
+    expect(threads[0].dayCount).toBe(2); // 11 calendar days apart, 2 with news
   });
 });
 

@@ -49,15 +49,6 @@ export function rawDateLabel(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
-/** spanDays(from, to) -> inclusive calendar-day count between two YYYY-MM-DD dates (min 1). */
-export function spanDays(from, to) {
-  if (!from || !to) return 0;
-  const a = new Date(from + 'T00:00:00Z').getTime();
-  const b = new Date(to + 'T00:00:00Z').getTime();
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
-  return Math.max(1, Math.round((b - a) / 86400000) + 1);
-}
-
 /** mostFrequent(list) -> the most common non-empty value, ties broken by first occurrence. */
 function mostFrequent(list) {
   const counts = new Map();

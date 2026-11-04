@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
-import { crisisOf, tierOf, timelineLayout, timelineSpan, timelineTicks } from '@/features/threads/lib/storyGroups';
+import { crisisOf, tierOf, daysWithNews, timelineLayout, timelineSpan, timelineTicks } from '@/features/threads/lib/storyGroups';
 import { placeOf } from '@/features/threads/components/StoryLine.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 
@@ -63,7 +63,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
                 topic={{ title, category: t.category, regions: t.regions, sources: t.sourceCount }}
                 asOf={t.changedAt}
                 className="gp-row__link tl-link"
-                aria-label={`${title}. Coverage on ${t.dayCount} ${t.dayCount === 1 ? 'day' : 'days'}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
+                aria-label={`${title}. News on ${daysWithNews(t.dayCount)}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
               >
                 <span className="tl-left">
                   <TierChip tier={tier} score={score} />
@@ -72,7 +72,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
                     <span className="tl-sub">
                       <CategoryTag category={t.category} />
                       {placeOf(t) ? <span>{placeOf(t)}</span> : null}
-                      <span>{fmt(t.dateRange.from)}{t.dateRange.from !== t.dateRange.to ? ` – ${fmt(t.dateRange.to)}` : ''} · {t.dayCount} {t.dayCount === 1 ? 'day' : 'days'}</span>
+                      <span>{fmt(t.dateRange.from)}{t.dateRange.from !== t.dateRange.to ? ` – ${fmt(t.dateRange.to)}` : ''} · {daysWithNews(t.dayCount)}</span>
                     </span>
                   </span>
                 </span>

@@ -2,7 +2,7 @@ import StoryRow from '@/shared/ui/StoryRow.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { crisisOf, tierOf, storySummary, watchingOf } from '@/features/threads/lib/storyGroups';
+import { crisisOf, tierOf, storySummary, watchingOf, daysWithNews } from '@/features/threads/lib/storyGroups';
 
 // StoryLine — one story as the shared StoryRow: crisis-hue bar, TierChip (word + ring weight, the
 // number only when the analysis has a score, "Not scored" otherwise), title (the thread analysis
@@ -49,7 +49,7 @@ export default function StoryLine({ thread, analysis = null, now, peek = null, d
           {showCount ? (
             <span className="sf-count">
               {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''}
-              {thread.dayCount > 1 ? ` · ${thread.dayCount} days` : ''}
+              {thread.dayCount > 1 ? ` · ${daysWithNews(thread.dayCount)}` : ''}
             </span>
           ) : null}
           {thread.trend === 'rising' ? <span className="sf-rising" title="Coverage is rising (more articles in the recent half of its days)">▲ rising</span> : null}

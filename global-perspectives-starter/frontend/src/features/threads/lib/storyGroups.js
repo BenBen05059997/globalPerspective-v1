@@ -73,6 +73,11 @@ function validIso(v) {
   return Number.isFinite(t) ? new Date(t).toISOString() : null;
 }
 
+/** daysWithNews(n) -> "3 days with news": the one wording for a story's count of distinct days that carry a headline. */
+export function daysWithNews(n) {
+  return `${n} ${n === 1 ? 'day' : 'days'} with news`;
+}
+
 /**
  * buildThreads(dayMap, sortedDates, now) -> { threads, standalone }
  * Groups archive entries by `threadId`. Each thread carries `dates` (unique day keys, ascending),

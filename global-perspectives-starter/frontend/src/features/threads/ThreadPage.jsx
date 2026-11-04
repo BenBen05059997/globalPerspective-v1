@@ -27,6 +27,7 @@ import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
 import SharedActorsList from '@/features/threads/components/SharedActorsList';
 import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
+import { daysWithNews } from '@/features/threads/lib/storyGroups';
 // CompactTimeline's classes (.compact-timeline*, .story-card-chevron, .story-entry-*) live in
 // WeeklyPage.css: imported here so a cold/direct load of a thread URL styles the Timeline tab.
 import '@/features/threads/WeeklyPage.css';
@@ -504,7 +505,7 @@ export default function ThreadPage() {
           <div className="tp-hd-kicker">
             <CategoryTag category={category} />
             <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
-            Story Arc · {thread.dayCount} days
+            Story Arc · {daysWithNews(thread.dayCount)}
           </div>
           <h1 className="tp-hd-h1">{displayTitle}</h1>
           {analysis?.storyArc && (

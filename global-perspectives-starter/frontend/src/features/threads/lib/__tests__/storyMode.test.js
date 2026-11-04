@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildSlides, viewFrom,
-  scrubberRange, pctForDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
+  scrubberRange, pctForDate, rawDateLabel, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 
 const ENTRIES = [
@@ -114,18 +114,11 @@ describe('scrubberRange / pctForDate', () => {
   });
 });
 
-describe('rawDateLabel / spanDays', () => {
+describe('rawDateLabel', () => {
   it('never collapses to "Today" even when the date is today', () => {
     const today = new Date().toISOString().slice(0, 10);
     expect(rawDateLabel(today)).not.toBe('Today');
     expect(rawDateLabel(today)).toMatch(/\d/);
-  });
-  it('computes an inclusive calendar-day span', () => {
-    expect(spanDays('2026-09-04', '2026-09-27')).toBe(24);
-    expect(spanDays('2026-09-04', '2026-09-04')).toBe(1);
-  });
-  it('is 0 for missing dates', () => {
-    expect(spanDays(null, '2026-09-04')).toBe(0);
   });
 });
 

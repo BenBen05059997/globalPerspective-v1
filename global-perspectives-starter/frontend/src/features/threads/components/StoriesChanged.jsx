@@ -3,7 +3,7 @@ import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import StoryLine from '@/features/threads/components/StoryLine.jsx';
-import { changedSince, risingThreads, ageDaysOf } from '@/features/threads/lib/storyGroups';
+import { changedSince, risingThreads, ageDaysOf, daysWithNews } from '@/features/threads/lib/storyGroups';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 // StoriesChanged — the right rail (desktop) and the changed section at the top of phone READ.
@@ -60,7 +60,7 @@ function Rising({ threads, analyses, now }) {
             >
               <CategoryTag category={t.category} />
               <span className="sf-rise-title">{analyses?.[t.threadId]?.threadTitle || t.latestTitle}</span>
-              <span className="sf-count">{t.articleCount} articles · {t.dayCount} {t.dayCount === 1 ? 'day' : 'days'}</span>
+              <span className="sf-count">{t.articleCount} articles · {daysWithNews(t.dayCount)}</span>
             </EntityLink>
           </li>
         ))}

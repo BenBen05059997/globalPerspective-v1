@@ -9,9 +9,10 @@ import { rootCauseSteps } from '@/shared/lib/rootCause';
 import { firstSentences } from '@/shared/lib/cardText.js';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildSlides, viewFrom,
-  scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
+  scrubberRange, pctForDate, shortDate, rawDateLabel, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 import { buildDeadlines } from '@/shared/lib/deadlines.js';
+import { daysWithNews } from '@/features/threads/lib/storyGroups.js';
 import { outcomeTag } from '@/features/threads/lib/forecastOutcome.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
@@ -83,7 +84,7 @@ export function BriefSlide({ thread, analysis, displayTitle, category, forecast,
     <div className="sm-slide sm-slide-brief">
       <div className="sm-slide-kicker">
         <CategoryTag category={category} />
-        <span>{rawDateLabel(from)} — {rawDateLabel(to)} · {spanDays(from, to)} day{spanDays(from, to) === 1 ? '' : 's'}</span>
+        <span>{rawDateLabel(from)} — {rawDateLabel(to)} · {daysWithNews(thread.dayCount)}</span>
       </div>
       <h2 className="sm-slide-title">{displayTitle}</h2>
       {analysis?.storyArc ? (

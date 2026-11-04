@@ -74,13 +74,13 @@ describe('Redesign v2 — WeeklyPage', () => {
     WeeklyPage = (await import('@/features/threads/WeeklyPage')).default;
   });
 
-  it('renders the StatusStrip with arc/article/day stats', () => {
+  it('renders the StatusStrip with arc/event/day stats', () => {
     renderWithRouter(<WeeklyPage />);
     const strip = document.querySelector('.ss-strip');
     expect(strip).toBeInTheDocument();
     expect(strip.textContent).toMatch(/LIVE/);
     expect(strip.textContent).toMatch(/arcs/);
-    expect(strip.textContent).toMatch(/articles/);
+    expect(strip.textContent).toMatch(/events/);
   });
 
   it('never claims LIVE for stale data', () => {

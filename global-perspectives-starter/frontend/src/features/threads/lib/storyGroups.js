@@ -79,6 +79,18 @@ export function daysWithNews(n) {
 }
 
 /**
+ * storyTitle(entries) -> the story's title everywhere: the newest entry's headline (a real source headline), null when there
+ * is none. Newest day by day key; inside that day the LAST entry in INPUT ORDER wins (never `at`; the record's titleOf takes the last of the day too), so
+ * every caller that passes the same entries in the same order (the list via buildThreads, the story page via the weekly
+ * archive) gets the same title by construction. Article rows (`kind: 'article'`) are not headlines.
+ */
+export function storyTitle(entries) {
+  const rows = (entries || []).filter((e) => e.kind !== 'article');
+  const day = rows.reduce((max, e) => ((e.date || '') > max ? e.date : max), '');
+  return rows.filter((e) => (e.date || '') === day).pop()?.title || null;
+}
+
+/**
  * buildThreads(dayMap, sortedDates, now) -> { threads, standalone }
  * Groups archive entries by `threadId`. Each thread carries `dates` (unique day keys, ascending),
  * `dateRange`, `changedAt` (a REAL timestamp: the `updatedAt` of the thread's newest day; with none,
@@ -116,7 +128,7 @@ export function buildThreads(dayMap, sortedDates, now = Date.now()) {
     const changedAt = stamped || (daysSince(to, now) >= 1 ? `${to}T00:00:00Z` : null);
     return {
       threadId,
-      latestTitle: data.entries[0].title,
+      latestTitle: storyTitle(data.entries),
       entries: data.entries,
       articleCount: data.entries.length,
       dayCount: dates.length,

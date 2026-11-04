@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildThreads, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
+  buildThreads, storyTitle, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
   dayCounts, daysWithNews, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
@@ -283,5 +283,19 @@ describe('board status (from coverage, never invented)', () => {
   });
   it('the printed rule names every column and says it is not a risk status', () => {
     for (const w of ['New', 'Rising', 'Quieter', 'Steady', 'not from risk']) expect(BOARD_RULE).toContain(w);
+  });
+});
+
+describe('storyTitle', () => {
+  it('is the newest day\'s headline whatever the day order of the input, and the last of that day\'s entries', () => {
+    const rows = [{ title: 'old', date: '2026-09-01' }, { title: 'new', date: '2026-09-03' }, { title: 'new too', date: '2026-09-03' }, { title: 'mid', date: '2026-09-02' }];
+    expect(storyTitle(rows)).toBe('new too');
+    expect(rows[0].title).toBe('old');
+  });
+  it('skips article rows and is null with no headline', () => {
+    expect(storyTitle([{ title: 'art', date: '2026-09-05', kind: 'article' }, { title: 'real', date: '2026-09-04' }])).toBe('real');
+    expect(storyTitle([{ title: 'art', date: '2026-09-05', kind: 'article' }])).toBeNull();
+    expect(storyTitle([])).toBeNull();
+    expect(storyTitle(undefined)).toBeNull();
   });
 });

@@ -392,7 +392,7 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
 function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntryFocus }) {
   const isPlaying = storyPlay?.threadId === thread.threadId;
   const canPlay = thread.dates && thread.dates.length > 1;
-  const displayTitle = analysis?.threadTitle || thread.latestTitle;
+  const displayTitle = thread.latestTitle;
   const entriesByDate = useMemo(() => {
     const grouped = {};
     for (const e of thread.entries) {

@@ -228,7 +228,7 @@ export default function WeeklyPage() {
     : view === 'board'
     ? <StoriesBoard threads={listed} analyses={analyses} now={now} peek={peek} />
     : view === 'web'
-    ? <StoriesWeb threads={listed} analyses={analyses} now={now} peek={peek} isPhone={isPhone} />
+    ? <StoriesWeb threads={listed} now={now} peek={peek} isPhone={isPhone} />
     : <StoriesFeed threads={listed} standalone={listedStandalone} analyses={analyses} now={now} peek={peek} />;
 
   if (isPhone) {

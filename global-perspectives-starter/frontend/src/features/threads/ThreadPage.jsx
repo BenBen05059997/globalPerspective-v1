@@ -27,7 +27,7 @@ import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
 import SharedActorsList from '@/features/threads/components/SharedActorsList';
 import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
-import { daysWithNews } from '@/features/threads/lib/storyGroups';
+import { buildThreads, daysWithNews, storyTitle } from '@/features/threads/lib/storyGroups';
 // CompactTimeline's classes (.compact-timeline*, .story-card-chevron, .story-entry-*) live in
 // WeeklyPage.css: imported here so a cold/direct load of a thread URL styles the Timeline tab.
 import '@/features/threads/WeeklyPage.css';
@@ -148,6 +148,14 @@ export default function ThreadPage() {
     return next;
   });
 
+  // The title is the list's: this story's entries from the weekly archive through buildThreads (same entries, same order
+  // inside a day, so the same pick as the /weekly row). The story view's own order differs inside a day, so it only
+  // decides when the story has no entries in the weekly window.
+  const weeklyTitle = useMemo(
+    () => (dayMap && sortedDates ? buildThreads(dayMap, sortedDates).threads.find((t) => t.threadId === threadId)?.latestTitle : null) || null,
+    [dayMap, sortedDates, threadId],
+  );
+
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
     // Newest-first, matching the prior archive-derived ordering (entries[0] = latest).
@@ -158,7 +166,7 @@ export default function ThreadPage() {
     const dates = [...new Set(entries.map(e => e.date))].sort();
     return {
       threadId,
-      latestTitle: entries[0].title,
+      latestTitle: weeklyTitle || storyTitle(entries),
       entries,
       articleCount: entries.length,
       regions: [...allRegions],
@@ -168,7 +176,7 @@ export default function ThreadPage() {
       dates,
       dayCount: dates.length,
     };
-  }, [narrativeEntries, threadId]);
+  }, [narrativeEntries, threadId, weeklyTitle]);
 
   const { analysis, loading: analysisLoading, error: analysisError, refetch: refetchAnalysis } = useStoryAnalysis(threadId);
   const category = thread?.entries[0]?.category?.toLowerCase();
@@ -236,7 +244,7 @@ export default function ThreadPage() {
     [chaptersOldestFirst, analysis],
   );
 
-  const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
+  const displayTitle = thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {
     document.title = `${displayTitle} — Story Arc | Global Perspectives`;
   }, [displayTitle]);
@@ -262,7 +270,7 @@ export default function ThreadPage() {
     // We may still hold the analysis record (keyed by the same threadId).
     // Show a focused fallback instead of a dead end.
     if (analysis) {
-      const fallbackTitle = analysis.threadTitle || humanizeThreadId(threadId);
+      const fallbackTitle = humanizeThreadId(threadId);
       return (
         <div className="container tp-fallback">
           <div className="tp-fallback-crumbs">

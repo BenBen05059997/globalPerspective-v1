@@ -51,7 +51,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
       <ul className="tl-list">
         {shown.map((t) => {
           const a = analyses?.[t.threadId];
-          const title = a?.threadTitle || t.latestTitle;
+          const title = t.latestTitle;
           const { tier, score } = tierOf(a);
           const crisis = crisisOf(t);
           const lay = timelineLayout(t.dates, span, now);

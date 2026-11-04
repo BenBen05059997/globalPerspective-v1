@@ -19,7 +19,7 @@ export function placeOf(thread) {
 }
 
 export default function StoryLine({ thread, analysis = null, now, peek = null, dim = false, showCount = true, showText = true, scope = 'feed' }) {
-  const title = analysis?.threadTitle || thread.latestTitle;
+  const title = thread.latestTitle;
   const { tier, score } = tierOf(analysis);
   const crisis = crisisOf(thread);
   const data = peekData(

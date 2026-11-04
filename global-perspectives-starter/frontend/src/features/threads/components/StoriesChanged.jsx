@@ -43,7 +43,7 @@ export function railRising(threads, now) {
   return risingThreads(threads.filter((t) => ageDaysOf(t, now) <= 7), 5);
 }
 
-function Rising({ threads, analyses, now }) {
+function Rising({ threads, now }) {
   const items = railRising(threads, now);
   if (!items.length) return null;
   return (
@@ -54,12 +54,12 @@ function Rising({ threads, analyses, now }) {
           <li key={t.threadId}>
             <EntityLink
               kind="story" id={t.threadId}
-              topic={{ title: analyses?.[t.threadId]?.threadTitle || t.latestTitle, category: t.category, regions: t.regions, sources: t.sourceCount }}
+              topic={{ title: t.latestTitle, category: t.category, regions: t.regions, sources: t.sourceCount }}
               asOf={t.changedAt}
               className="sf-rise-row"
             >
               <CategoryTag category={t.category} />
-              <span className="sf-rise-title">{analyses?.[t.threadId]?.threadTitle || t.latestTitle}</span>
+              <span className="sf-rise-title">{t.latestTitle}</span>
               <span className="sf-count">{t.articleCount} articles · {daysWithNews(t.dayCount)}</span>
             </EntityLink>
           </li>
@@ -74,7 +74,7 @@ export default function StoriesChanged({ threads, analyses, baseline, now, peek,
   return (
     <div className="sf-rail">
       <ChangedList threads={threads} analyses={analyses} baseline={baseline} now={now} peek={peek} />
-      {showRising ? <Rising threads={threads} analyses={analyses} now={now} /> : null}
+      {showRising ? <Rising threads={threads} now={now} /> : null}
     </div>
   );
 }

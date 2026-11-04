@@ -35,7 +35,7 @@ function Spark({ counts, title }) {
 
 function Card({ item, analysis, now, peek, colKey }) {
   const { thread } = item;
-  const title = analysis?.threadTitle || thread.latestTitle;
+  const title = thread.latestTitle;
   const { tier, score } = tierOf(analysis);
   const crisis = crisisOf(thread);
   const hue = crisis === 'neutral' ? 'var(--text-dim)' : `var(--hue-${crisis})`;

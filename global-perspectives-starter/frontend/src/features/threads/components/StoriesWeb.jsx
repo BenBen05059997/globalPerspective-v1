@@ -170,7 +170,7 @@ function LinkItem({ edge, titleOf }) {
   );
 }
 
-export default function StoriesWeb({ threads, analyses, now, peek, isPhone }) {
+export default function StoriesWeb({ threads, now, peek, isPhone }) {
   const { index, loading, failed } = useWebIndex(true);
   const [showAll, setShowAll] = useState(false);
   const [listAll, setListAll] = useState(false);
@@ -185,7 +185,7 @@ export default function StoriesWeb({ threads, analyses, now, peek, isPhone }) {
 
   const titleOf = (id) => {
     const t = threadsById.get(id);
-    return analyses?.[id]?.threadTitle || t?.latestTitle || index?.threads?.[id]?.title || id;
+    return t?.latestTitle || index?.threads?.[id]?.title || id;
   };
 
   if (loading) return <BootLoader variant="inline" className="gp-boot--tight" label="Loading story links" text="Loading story links" />;

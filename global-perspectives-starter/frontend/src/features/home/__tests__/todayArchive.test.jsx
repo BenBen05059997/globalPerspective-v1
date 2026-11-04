@@ -2,11 +2,17 @@
 // (grouping, category chips, search, count), which entries are hidden because they are still live
 // topics, and the saved-analysis modal a row opens (tabs per available analysis, sources, close).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import archiveFixture from '@fixtures/archive.json';
 
-vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
+const report = vi.fn();
+vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: (...a) => report(...a) }));
+const getTopicPrediction = vi.fn();
+const getTopicTraceCause = vi.fn();
+vi.mock('@/shared/data/contentService', () => ({
+  default: { getTopicPrediction: (...a) => getTopicPrediction(...a), getTopicTraceCause: (...a) => getTopicTraceCause(...a) },
+}));
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
@@ -30,6 +36,9 @@ const baseTopics = {
 const mount = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
 beforeEach(() => {
+  report.mockReset();
+  getTopicPrediction.mockReset();
+  getTopicTraceCause.mockReset();
   Element.prototype.scrollIntoView = vi.fn();
   archiveEntries = ENTRIES;
   topicsState = { ...baseTopics, topics: [] };
@@ -123,6 +132,45 @@ describe('ArchiveTopicModal via the sidebar', () => {
     expect(sourceLinks[0]).toHaveAttribute('href', withAi.sources[0].url);
     expect(sourceLinks[0]).toHaveAttribute('target', '_blank');
     expect(sourceLinks[0]).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
+  // The archive trims forecast / trace text to 1,500 characters + "...", so the stored JSON is cut and does not parse.
+  const cut = (obj) => `${JSON.stringify(obj).slice(0, 40)}...`;
+  const full = { scenarios: [{ label: 'Full scenario', probability_range: '10-20%', rationale: 'From the full note.' }] };
+  const traceFull = { proximate: { what: 'Full trace from the note.' } };
+  const cutEntry = { ...ENTRIES[1], ai: { summary: 'Short.', prediction: cut(full), trace_cause: cut(traceFull) } };
+
+  it('a cut Prediction / Trace Cause text is replaced by the full note read by topicId, never "failed"', async () => {
+    getTopicPrediction.mockResolvedValue({ content: JSON.stringify(full) });
+    getTopicTraceCause.mockResolvedValue({ content: JSON.stringify(traceFull) });
+    mount(<TodayArchiveSidebar entries={[cutEntry]} />);
+    fireEvent.click(screen.getByText(cutEntry.title));
+    const dialog = screen.getByRole('dialog');
+    expect(getTopicPrediction).toHaveBeenCalledWith(cutEntry.topicId);
+    fireEvent.click(await within(dialog).findByRole('tab', { name: 'Prediction' }));
+    expect(await within(dialog).findByText('From the full note.')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Trace Cause' }));
+    expect(await within(dialog).findByText('Full trace from the note.')).toBeInTheDocument();
+    expect(dialog.textContent).not.toMatch(/generation failed/);
+  });
+
+  it('a cut text with no stored note leaves its tab out; a miss is not an error, a failure is reported', async () => {
+    getTopicPrediction.mockRejectedValue(new Error('Cache miss'));
+    getTopicTraceCause.mockRejectedValue(new Error('Proxy HTTP 503: x'));
+    mount(<TodayArchiveSidebar entries={[cutEntry]} />);
+    fireEvent.click(screen.getByText(cutEntry.title));
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(within(dialog).queryByRole('tab', { name: 'Prediction' })).toBeNull());
+    await waitFor(() => expect(within(dialog).queryByRole('tab', { name: 'Trace Cause' })).toBeNull());
+    expect(within(dialog).getByRole('tab', { name: 'Summary' })).toBeInTheDocument();
+    expect(dialog.textContent).not.toMatch(/generation failed/);
+    expect(report.mock.calls.map((c) => c[0])).toEqual(['today-archive-trace_cause']);
+  });
+
+  it('a text that parses is shown as is, with no lookup', () => {
+    mount(<TodayArchiveSidebar entries={[withAi]} />);
+    fireEvent.click(screen.getByText(withAi.title));
+    expect(getTopicPrediction).not.toHaveBeenCalled();
   });
 
   it('an entry with a threadId links its title to the story page', () => {

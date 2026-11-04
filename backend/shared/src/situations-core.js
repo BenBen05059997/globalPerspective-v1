@@ -354,8 +354,32 @@ function outletOf(u) {
 }
 function articleUrl(u) { const n = normalizeUrl(u); return n && !isLiveUrl(n) ? n : null; }
 
-// A comparable node: a current-sweep group of stories, or a prior open news situation.
-function groupNode(g, stories = g.stories) {
+// Title-similarity rule (trial from 2026-11-04, flag NEWS_GROUPING_TITLE_SIM; newsSituationTracker README "News grouping").
+// Two clusters join when their iso3 sets are exactly equal, their opened_at differ by at most
+// TITLE_SIM_MAX_GAP_H hours, and the best token Jaccard over each side's titles (title + also_reported_as)
+// is at least TITLE_SIM_MIN. Axis is not required. 12 h: without the gap, daily headline templates
+// ("Israeli strikes kill four / eight in Gaza") 16-20 h apart joined wrongly in the 48 h replay.
+const TITLE_SIM_MIN = 0.40;
+const TITLE_SIM_MAX_GAP_H = 12;
+const TITLE_STOP = new Set('a an the of in on at to for from by with as and or but is are was were be been has have had after amid over into out up down its it this that than then who whom says say said new more least about against while during before between under'.split(' '));
+/** Token set of a title: lowercase, drop 's, punctuation and stopwords (and 1-letter tokens); words longer than
+ *  3 letters lose a trailing "es"/"s". Kept identical to the proposal's replay script. */
+function titleTokens(t) {
+  return new Set(String(t == null ? '' : t).toLowerCase().replace(/[\u2019']s\b/g, '').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter((w) => w.length > 1 && !TITLE_STOP.has(w)).map((w) => (w.length > 3 ? w.replace(/(es|s)$/, '') : w)));
+}
+function titleJaccard(a, b) {
+  const ta = titleTokens(a); const tb = titleTokens(b);
+  let i = 0; for (const x of ta) if (tb.has(x)) i++;
+  return i / (ta.size + tb.size - i || 1);
+}
+const sameSet = (a, b) => a.size > 0 && a.size === b.size && [...a].every((x) => b.has(x));
+const hoursApart = (a, b) => (a && b ? Math.abs(Date.parse(a) - Date.parse(b)) / 3600e3 : NaN);
+
+// A comparable node: a current-sweep group of stories, or a prior open news situation. `openedAt` is the
+// time the situation opened (a prior's opened_at; for a group with no prior, the sweep time, as
+// buildStorySituation opens a new situation); null when unknown (the title-sim rule then never matches).
+function groupNode(g, stories = g.stories, openedAt = null) {
   const urls = new Set(); const titles = new Map(); const iso = new Set(); const ids = new Set();
   for (const st of stories) {
     for (const h of st.headlines || []) { const n = articleUrl(h && h.url); if (n) urls.add(n); }
@@ -363,7 +387,7 @@ function groupNode(g, stories = g.stories) {
     for (const c of st.iso3 || []) iso.add(c);
     ids.add(st.storyId);
   }
-  return { kind: 'group', id: g.id, g, urls, titles, iso, ids, title: leadStory(stories).title };
+  return { kind: 'group', id: g.id, g, urls, titles, iso, ids, title: leadStory(stories).title, openedAt };
 }
 function priorNode(st) {
   const urls = new Set(); const titles = new Map(); const ids = new Set();
@@ -373,12 +397,13 @@ function priorNode(st) {
   // Only a situation that has already merged holds story ids as members; a lone situation's own story id
   // (entity-level, can be broad) is never a join key by itself.
   for (const i of st.member_story_ids || []) ids.add(i);
-  return { kind: 'prior', id: st.situationId, st, urls, titles, iso: new Set(st.iso3_affected || []), ids, title: st.title };
+  return { kind: 'prior', id: st.situationId, st, urls, titles, iso: new Set(st.iso3_affected || []), ids, title: st.title, openedAt: st.opened_at || null };
 }
 const sharedOf = (a, b) => [...a].filter((x) => b.has(x));
 /** The strict rule by which candidate `a` matches lead `b`, or null: >=2 shared article URLs, or an
- *  identical title + a shared country. Grouped-for-life membership is checked separately. */
-function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS, minOutlets = MIN_SHARED_OUTLETS) {
+ *  identical title + a shared country; with `titleSim` also the title-similarity rule (checked last, so the
+ *  URL and title+country rules keep their labels). Grouped-for-life membership is checked separately. */
+function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS, minOutlets = MIN_SHARED_OUTLETS, titleSim = false) {
   const urls = sharedOf(a.urls, b.urls);
   const outlets = uniq(urls.map(outletOf).filter(Boolean));
   if (urls.length >= minUrls && outlets.length >= minOutlets) return { rule: 'url', urls, sharedCount: urls.length, outlets };
@@ -387,11 +412,23 @@ function evidenceEdge(a, b, minUrls = MIN_SHARED_URLS, minOutlets = MIN_SHARED_O
     const countries = [...a.iso].filter((c) => b.iso.has(c));
     if (countries.length) return { rule: 'title+country', title: raw, countries };
   }
+  if (titleSim && sameSet(a.iso, b.iso)) {
+    const gapHours = hoursApart(a.openedAt, b.openedAt);
+    if (gapHours <= TITLE_SIM_MAX_GAP_H) {
+      let best = null;
+      for (const ra of a.titles.values()) for (const rb of b.titles.values()) {
+        const score = titleJaccard(ra, rb);
+        if (!best || score > best.score) best = { score, titles: [ra, rb] };
+      }
+      if (best && best.score >= TITLE_SIM_MIN) return { rule: 'title-sim', score: Math.round(best.score * 1000) / 1000, titles: best.titles, iso3: [...a.iso].sort(), gapHours: Math.round(gapHours * 10) / 10 };
+    }
+  }
   return null;
 }
 const mergeNodes = (nodes) => ({
   urls: new Set(nodes.flatMap((n) => [...n.urls])), iso: new Set(nodes.flatMap((n) => [...n.iso])), ids: new Set(nodes.flatMap((n) => [...n.ids])),
   titles: new Map(nodes.flatMap((n) => [...n.titles])),
+  openedAt: nodes.map((n) => n.openedAt).filter(Boolean).sort()[0] || null, // the oldest member's opened_at
 });
 const priorWeight = (st) => (Number(st.evidence && st.evidence.outlets) || 0) * (Number(st.evidence && st.evidence.max_severity) || 0);
 
@@ -408,6 +445,8 @@ const priorWeight = (st) => (Number(st.evidence && st.evidence.outlets) || 0) * 
  * a group only when it matches that group's LEAD directly (never through another member); otherwise it
  * becomes the lead of a group of its own. Grouped-for-life members (story ids a merged situation
  * already holds) always stay.
+ * With opts.titleSim (trial rule) a cluster may also join a lead by title similarity (see TITLE_SIM_*);
+ * opts.now (ISO) is the opened_at of clusters with no prior situation (default: the wall clock).
  * Survivor id rule: the OLDEST existing open situation in the group (opened_at, then id), so a saved
  * link to the long-lived situation keeps working; a group with no prior situation uses its lead
  * story's group id. The other ids become aliases.
@@ -416,8 +455,10 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
   const urlCap = opts.urlCap || MEMBER_URL_CAP;
   const minUrls = opts.minSharedUrls || MIN_SHARED_URLS;
   const minOutlets = opts.minSharedOutlets || MIN_SHARED_OUTLETS;
+  const titleSim = opts.titleSim === true;
+  const nowIso = opts.now || new Date().toISOString();
   const priors = Object.values(priorStates || {}).filter((st) => st && st.source === 'news' && st.state !== 'closed' && st.situationId);
-  const nodes = [...groups.map((g) => groupNode(g)), ...priors.map(priorNode)];
+  const nodes = [...groups.map((g) => groupNode(g, g.stories, nowIso)), ...priors.map(priorNode)];
   // Continuity (a group and the prior situations it already carries by id or alias): one cluster, not a merge.
   const parent = nodes.map((_, i) => i);
   const find = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
@@ -432,7 +473,8 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
     const gs = ns.filter((n) => n.kind === 'group'); const ps = ns.filter((n) => n.kind === 'prior');
     const stories = gs.flatMap((n) => n.g.stories);
     const lead = stories.length ? leadStory(stories) : null;
-    const leadNodes = [...ps, ...(lead ? [groupNode(gs.find((n) => n.g.stories.includes(lead)).g, [lead])] : [])];
+    const openedAt = ps.map((p) => p.openedAt).filter(Boolean).sort()[0] || nowIso; // a continuing cluster keeps its situation's opened_at
+    const leadNodes = [...ps, ...(lead ? [groupNode(gs.find((n) => n.g.stories.includes(lead)).g, [lead], openedAt)] : [])];
     const sortId = (gs[0] || ps[0]).id;
     return {
       gs, ps, agg: mergeNodes(ns), leadNodes, sortId,
@@ -450,7 +492,7 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
     if (mine) return { rule: 'member', storyId: mine };
     const theirs = [...gIds(h)].find((i) => c.ps.some((p) => p.ids.has(i)));
     if (theirs) return { rule: 'member', storyId: theirs };
-    for (const ln of h.leadNodes) { const e = evidenceEdge(c.agg, ln, minUrls, minOutlets); if (e) return e; }
+    for (const ln of h.leadNodes) { const e = evidenceEdge(c.agg, ln, minUrls, minOutlets, titleSim); if (e) return e; }
     return null;
   };
   for (const c of cands) {
@@ -488,7 +530,7 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
         // the survivor may sit in the joined cluster (it is the older situation): then the lead's side is the absorbed one
         const [abLabel, viaLabel] = j.c.label.id === id ? [h.label, j.c.label] : [j.c.label, h.label];
         const row = { survivor: { id, title: survivorTitle }, absorbed: abLabel, via: viaLabel, rule: j.rule };
-        if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; row.outlets = j.outlets; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else row.storyId = j.storyId;
+        if (j.rule === 'url') { row.urls = j.urls; row.sharedCount = j.sharedCount; row.outlets = j.outlets; } else if (j.rule === 'title+country') { row.title = j.title; row.countries = j.countries; } else if (j.rule === 'title-sim') { row.score = j.score; row.titles = j.titles; row.iso3 = j.iso3; row.gapHours = j.gapHours; } else row.storyId = j.storyId;
         row.isNew = !(prev && Array.isArray(prev.aliases) && prev.aliases.includes(row.absorbed.id));
         merges.push(row);
       }
@@ -611,5 +653,5 @@ module.exports = {
   parseGeometry, eventKeyOf, affectedIso3,
   buildObservation, nextCheckAt, buildSituation, coolSituation, buildStorySituation,
   storyCountry, newsSituationId, mergeStories,
-  normalizeUrl, normalizeTitle, planNewsGrouping, isLiveUrl, LIVE_URL_PATTERNS, MIN_SHARED_URLS, MIN_SHARED_OUTLETS, outletOf, MEMBER_URL_CAP,
+  normalizeUrl, normalizeTitle, planNewsGrouping, titleTokens, titleJaccard, TITLE_SIM_MIN, TITLE_SIM_MAX_GAP_H, isLiveUrl, LIVE_URL_PATTERNS, MIN_SHARED_URLS, MIN_SHARED_OUTLETS, outletOf, MEMBER_URL_CAP,
 };

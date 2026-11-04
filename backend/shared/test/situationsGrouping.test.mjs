@@ -244,4 +244,123 @@ t('grouping off: buildStorySituation output has none of the new fields', () => {
   for (const k of ['member_story_ids', 'member_urls', 'threadIds', 'also_reported_as']) assert.ok(!(k in item), k);
 });
 
+// ── title-similarity rule (opts.titleSim; trial from 2026-11-04) ─────────────
+const SIM = { titleSim: true };
+// A prior open situation, opened `ageH` hours before T(12).
+const priorSit = (id, title, iso3, ageH, over = {}) => ({
+  situationId: id, source: 'news', state: 'peak', title, iso3_affected: iso3, opened_at: new Date(Date.parse(T(12)) - ageH * 3600e3).toISOString(),
+  evidence: { headlines: [], outlets: 1, max_severity: 2 }, ...over,
+});
+const plan = (stories, prior, opts) => planNewsGrouping(stories.map((st) => ({ ...group(st), prev: null })), prior, { now: T(12), ...opts });
+const QA = 'US strikes Iran’s Qeshm Island ahead of midterm elections';
+const QB = 'US strikes Iran\'s Qeshm Island on eve of midterms';
+
+t('titleSim: score uses the proposal tokeniser (possessives, stopwords, plural s)', () => {
+  assert.deepStrictEqual([...core.titleTokens('Israeli strikes kill eight in Gaza, medics say')].sort(), ['eight', 'gaza', 'israeli', 'kill', 'medic', 'strik']);
+  assert.ok(core.titleJaccard(QA, QB) >= 0.4);
+  assert.strictEqual(core.titleJaccard('', ''), 0);
+  assert.strictEqual(core.TITLE_SIM_MIN, 0.4);
+  assert.strictEqual(core.TITLE_SIM_MAX_GAP_H, 12);
+});
+
+t('titleSim: a Qeshm-like pair (same iso3, 9 h, score >= 0.40) joins and logs its evidence', () => {
+  const prior = { 'news#a': priorSit('news#a', QA, ['USA', 'IRN'], 9) };
+  const b = story('conflict#USA#united-states-military', { title: QB, iso3: ['IRN', 'USA'] });
+  const r = plan([b], prior, SIM);
+  assert.strictEqual(r.groups.length, 1);
+  assert.strictEqual(r.groups[0].id, 'news#a', 'the older situation survives');
+  const m = r.merges[0];
+  assert.strictEqual(m.rule, 'title-sim');
+  assert.ok(m.score >= 0.4 && m.score <= 1);
+  assert.deepStrictEqual(m.titles.slice().sort(), [QA, QB].sort());
+  assert.deepStrictEqual(m.iso3, ['IRN', 'USA']);
+  assert.strictEqual(m.gapHours, 9);
+});
+
+t('titleSim: two new clusters in one sweep (both opened now) join', () => {
+  const a = story('conflict#USA#a', { title: QA, iso3: ['USA', 'IRN'], outlets: 5 });
+  const b = story('conflict#IRN#b', { title: QB, iso3: ['IRN', 'USA'] });
+  const r = plan([a, b], {}, SIM);
+  assert.strictEqual(r.groups.length, 1);
+  assert.strictEqual(r.merges[0].rule, 'title-sim');
+  assert.strictEqual(r.merges[0].gapHours, 0);
+});
+
+t('titleSim: Gaza "kill four" vs "kill eight" 16-20 h apart does not join (the gap blocks it)', () => {
+  const four = 'Israeli strikes kill four people in Gaza, medics say';
+  const eight = 'Israeli strikes kill eight in Gaza, medics say';
+  assert.ok(core.titleJaccard(four, eight) >= 0.4, 'the score alone would join');
+  const g8 = () => story('conflict#PSE#g8', { title: eight, iso3: ['PSE', 'ISR'] });
+  for (const ageH of [16, 20]) {
+    const r = plan([g8()], { 'news#g': priorSit('news#g', four, ['ISR', 'PSE'], ageH) }, SIM);
+    assert.deepStrictEqual(r.merges, [], `${ageH} h`);
+    assert.strictEqual(r.groups.length, 1);
+  }
+  // exactly at the limit still joins; just past it does not
+  assert.strictEqual(plan([g8()], { 'news#g': priorSit('news#g', four, ['ISR', 'PSE'], 12) }, SIM).merges.length, 1);
+  assert.strictEqual(plan([g8()], { 'news#g': priorSit('news#g', four, ['ISR', 'PSE'], 12.2) }, SIM).merges.length, 0);
+});
+
+t('titleSim: different iso3 sets do not join (a subset or a superset is not equal)', () => {
+  const prior = { 'news#a': priorSit('news#a', QA, ['USA', 'IRN'], 2) };
+  for (const iso3 of [['USA'], ['USA', 'IRN', 'OMN']]) {
+    const r = plan([story('conflict#X#b', { title: QB, iso3 })], prior, SIM);
+    assert.deepStrictEqual(r.merges, [], iso3.join());
+  }
+});
+
+t('titleSim: a score just below 0.40 does not join, one at or above does', () => {
+  const A = 'alpha bravo foxtrot golf hotel';
+  const above = 'alpha bravo foxtrot lima mike';            // 3 shared of 7 = 0.4286
+  const below = 'alpha bravo foxtrot lima mike nov oscar';  // 3 shared of 9 = 0.333
+  assert.ok(core.titleJaccard(A, above) >= 0.4 && core.titleJaccard(A, below) < 0.4);
+  const prior = { 'news#a': priorSit('news#a', A, ['USA'], 1) };
+  assert.strictEqual(plan([story('conflict#USA#b', { title: above, iso3: ['USA'] })], prior, SIM).merges.length, 1);
+  assert.deepStrictEqual(plan([story('conflict#USA#c', { title: below, iso3: ['USA'] })], prior, SIM).merges, []);
+  // exactly 0.40 (2 shared, 5 distinct) joins: the threshold is inclusive
+  assert.strictEqual(core.titleJaccard('alpha bravo charlie delta', 'alpha bravo echo'), 0.4);
+});
+
+t('titleSim: the best score over title and also_reported_as counts', () => {
+  const prior = { 'news#a': priorSit('news#a', 'Unrelated headline words', ['USA', 'IRN'], 3, { also_reported_as: [QA] }) };
+  const r = plan([story('conflict#IRN#b', { title: QB, iso3: ['IRN', 'USA'] })], prior, SIM);
+  assert.strictEqual(r.merges[0].rule, 'title-sim');
+  assert.strictEqual(r.merges[0].titles[1], QA);
+});
+
+t('titleSim off (default): no title-sim joins, and the plan is identical to one without the option', () => {
+  const prior = { 'news#a': priorSit('news#a', QA, ['USA', 'IRN'], 2) };
+  const b = story('conflict#IRN#b', { title: QB, iso3: ['IRN', 'USA'] });
+  const off = plan([b], prior, {});
+  assert.deepStrictEqual(off.merges, []);
+  assert.deepStrictEqual(plan([b], prior, { titleSim: false }), off);
+  assert.deepStrictEqual(plan([b], prior, { titleSim: 'true' }), off, 'only boolean true enables it');
+  // existing fixture: the URL rule gives the same plan with and without the flag
+  const a = story('conflict#UKR#russia', { title: 'Strike', headlines: heads('https://a.com/1', 'https://a2.com/2'), outlets: 5 });
+  const c = story('political#UKR#zelensky', { title: 'Reacts', headlines: heads('https://a.com/1', 'https://a2.com/2') });
+  assert.strictEqual(JSON.stringify(plan([a, c], {}, SIM)), JSON.stringify(plan([a, c], {}, {})));
+  assert.strictEqual(plan([a, c], {}, {}).merges[0].rule, 'url');
+});
+
+t('titleSim: existing rules take precedence (rule stays "url" / "title+country")', () => {
+  const a = story('conflict#UKR#a', { title: 'Same words here today', headlines: heads('https://a.com/1', 'https://b.com/2'), outlets: 5 });
+  const b = story('political#UKR#b', { title: 'Same words here today', headlines: heads('https://a.com/1', 'https://b.com/2') });
+  assert.strictEqual(plan([a, b], {}, SIM).merges[0].rule, 'url');
+  const c = story('conflict#UKR#c', { title: 'Identical title for both', outlets: 5 });
+  const d = story('political#UKR#d', { title: 'Identical title for both' });
+  assert.strictEqual(plan([c, d], {}, SIM).merges[0].rule, 'title+country');
+});
+
+t('titleSim: no chaining (a join must match the group LEAD directly)', () => {
+  // lead L; B resembles L; C resembles B but not L -> C stays alone even though B joined
+  const L = story('conflict#USA#l', { title: 'alpha bravo charlie delta echo', iso3: ['USA'], outlets: 9 });
+  const B = story('conflict#USA#b', { title: 'alpha bravo charlie foxtrot golf', iso3: ['USA'], outlets: 5 });
+  const C = story('conflict#USA#c', { title: 'charlie foxtrot golf hotel india', iso3: ['USA'], outlets: 2 });
+  assert.ok(core.titleJaccard(L.title, B.title) >= 0.4 && core.titleJaccard(B.title, C.title) >= 0.4 && core.titleJaccard(L.title, C.title) < 0.4);
+  const r = plan([L, B, C], {}, SIM);
+  assert.strictEqual(r.groups.length, 2);
+  assert.strictEqual(r.merges.length, 1);
+  assert.deepStrictEqual(r.groups.map((g) => g.stories.length).sort(), [1, 2]);
+});
+
 console.log(`\n${pass} tests passed`);

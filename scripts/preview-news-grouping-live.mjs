@@ -5,7 +5,7 @@
 //   stories/index.json (same eligibility filter as the tracker), threads/story-map.json,
 //   situations/index.json + situations/state/<id>.json (the LIVE prefixes), situations/inbox/gdacs-latest.json.
 //
-//   node scripts/preview-news-grouping-live.mjs [--out preview.md] [--min-urls 2] [--min-outlets 2]
+//   node scripts/preview-news-grouping-live.mjs [--out preview.md] [--min-urls 2] [--min-outlets 2] [--title-sim]
 //
 // Bucket and story-eligibility knobs come from the live Lambda env (WORLD_BUCKET, STORY_MAP_*), else the
 // tracker's code defaults. Needs AWS CLI credentials with read access.
@@ -42,10 +42,10 @@ if (!gdacsDegraded) for (const o of snap.events) for (const c of o.iso3_affected
 else for (const st of Object.values(priors)) if (st.source === 'gdacs' && st.state !== 'closed') for (const c of st.iso3_affected || []) gdacsIso.add(c);
 
 const plain = tracker._internal.planNews(stories, priors, storyMap, gdacsIso, { grouping: false });
-const plan = tracker._internal.planNews(stories, priors, storyMap, gdacsIso, { grouping: true, minSharedUrls: args['min-urls'] ? Number(args['min-urls']) : undefined, minSharedOutlets: args['min-outlets'] ? Number(args['min-outlets']) : undefined });
+const plan = tracker._internal.planNews(stories, priors, storyMap, gdacsIso, { grouping: true, titleSim: 'title-sim' in args, now: new Date().toISOString(), minSharedUrls: args['min-urls'] ? Number(args['min-urls']) : undefined, minSharedOutlets: args['min-outlets'] ? Number(args['min-outlets']) : undefined });
 
 const cell = (s) => String(s == null ? '' : s).replace(/\|/g, '\\|').replace(/\n/g, ' ');
-const evidence = (r) => (r.rule === 'url' ? `${r.sharedCount} shared from ${r.outlets.length} outlets (${r.outlets.join(', ')}): ${r.urls.map((u) => `[${core.outletOf(u)}] ${u}`).join(' ; ')}` : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : `member story ${r.storyId}`);
+const evidence = (r) => (r.rule === 'url' ? `${r.sharedCount} shared from ${r.outlets.length} outlets (${r.outlets.join(', ')}): ${r.urls.map((u) => `[${core.outletOf(u)}] ${u}`).join(' ; ')}` : r.rule === 'title+country' ? `"${r.title}" in ${r.countries.join(', ')}` : r.rule === 'title-sim' ? `score ${r.score}; "${r.titles[0]}" vs "${r.titles[1]}"; iso3 ${r.iso3.join(',')}; opened ${r.gapHours} h apart` : `member story ${r.storyId}`);
 const out = [];
 out.push('# Live grouping preview (read-only)');
 out.push('');

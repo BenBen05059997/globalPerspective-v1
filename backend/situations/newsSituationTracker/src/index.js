@@ -23,6 +23,9 @@ const DRY_RUN = process.env.DRY_RUN !== 'false'; // default true (shadow) until 
 // With DRY_RUN (the code default) the grouped result lands only in the shadow universe (shadow/situations/,
 // world/shadow/) plus a merge list under shadow/situations/merges/; live world/latest.json is untouched.
 const NEWS_GROUPING = process.env.NEWS_GROUPING === 'true';
+// Trial (from 2026-11-04): also join clusters by title similarity (same iso3 set, opened within 12 h, title
+// Jaccard >= 0.40; situations-core TITLE_SIM_*). On only when exactly 'true' AND NEWS_GROUPING is on; off = unchanged output.
+const NEWS_GROUPING_TITLE_SIM = process.env.NEWS_GROUPING_TITLE_SIM === 'true';
 const SWEEP_MIN = Number(process.env.SWEEP_MIN) || 10;
 const GDACS_STALE_MIN = Number(process.env.GDACS_STALE_MIN) || 45; // > 2× the 20-min GDACS cadence
 const CLOSE_AFTER_COOL_CHECKS = Number(process.env.CLOSE_AFTER_COOL_CHECKS) || 3;
@@ -306,7 +309,7 @@ exports.handler = async () => {
   // Frozen GDACS situations still own their countries (one event, one pin).
   if (gdacsDegraded) for (const st of Object.values(priorStates)) if (st.source === 'gdacs' && st.state !== 'closed') for (const c of st.iso3_affected || []) gdacsIso.add(c);
   const storyOpts = { corroborationCap: CORROBORATION_CAP, raiseCooldownMin: RAISE_COOLDOWN_MIN };
-  const { groups, absorbed, merges } = planNews(stories, priorStates, storyMap, gdacsIso, { grouping: NEWS_GROUPING });
+  const { groups, absorbed, merges } = planNews(stories, priorStates, storyMap, gdacsIso, { grouping: NEWS_GROUPING, titleSim: NEWS_GROUPING_TITLE_SIM, now });
   const extraBuilt = {};
   for (const g of groups) {
     extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, situationId: g.id, aliases: g.aliases, grouping: g.grouping });

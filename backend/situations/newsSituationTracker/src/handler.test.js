@@ -302,3 +302,41 @@ test('grouping flag on, live: the next sweep keeps the group (grouped for life)'
   const s = parsed(`situations/state/${ids1[0].replace(/[^A-Za-z0-9._-]/g, '_')}.json`);
   assert.ok(s.member_story_ids.includes('conflict#IRN#qeshm') && s.member_story_ids.includes('political#USA#pentagon'));
 });
+
+// ── title-similarity trial (NEWS_GROUPING_TITLE_SIM; only matters when NEWS_GROUPING is on) ──
+const simPair = [
+  gstory('conflict#USA#us-military', { title: 'US strikes Iran\'s Qeshm Island ahead of midterm elections', iso3: ['USA', 'IRN'], headlines: [{ title: 'a', url: 'https://x.com/a', domain: 'x.com' }] }),
+  gstory('conflict#IRN#jd-vance', { title: 'US strikes Iran\'s Qeshm Island on eve of midterms', iso3: ['IRN', 'USA'], headlines: [{ title: 'b', url: 'https://y.com/b', domain: 'y.com' }] }),
+];
+
+test('title-sim flag on + NEWS_GROUPING on: joins the pair and writes a title-sim merge row with its evidence', async () => {
+  seedStories(simPair);
+  const out = await load({ DRY_RUN: 'false', NEWS_GROUPING: 'true', NEWS_GROUPING_TITLE_SIM: 'true' }).handler();
+  assert.equal(out.merges, 1);
+  assert.equal(newsIds('situations/index.json').length, 1);
+  const row = parsed('situations/merges/2026/10/31/12/1200.json').merges[0];
+  assert.equal(row.rule, 'title-sim');
+  assert.ok(row.score >= 0.4);
+  assert.equal(row.titles.length, 2);
+  assert.deepEqual(row.iso3, ['IRN', 'USA']);
+  assert.equal(row.gapHours, 0);
+});
+
+test('title-sim flag unset, "false", "1" or "TRUE": no title-sim joins', async () => {
+  for (const v of [undefined, 'false', '1', 'TRUE']) {
+    seedStories(simPair);
+    const env = { DRY_RUN: 'false', NEWS_GROUPING: 'true' };
+    if (v !== undefined) env.NEWS_GROUPING_TITLE_SIM = v;
+    const out = await load(env).handler();
+    assert.equal(out.merges, 0, String(v));
+    assert.equal(newsIds('situations/index.json').length, 2, String(v));
+  }
+});
+
+test('title-sim flag on but NEWS_GROUPING off: nothing is grouped', async () => {
+  seedStories(simPair);
+  const out = await load({ DRY_RUN: 'false', NEWS_GROUPING_TITLE_SIM: 'true' }).handler();
+  assert.equal(out.grouping, false);
+  assert.equal(newsIds('situations/index.json').length, 2);
+  assert.ok(!writes().some((o) => o.key.includes('/merges/')));
+});

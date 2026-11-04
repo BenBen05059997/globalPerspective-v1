@@ -81,7 +81,11 @@ function CountryRow({ country, intel }) {
       tier={countryTier(intel)}
       score={intel?.riskScore}
       summary={intel?.headline || null}
-      meta={<><Trajectory value={intel?.trajectory} /><span className="clp-row-meta">{country.articles} art</span></>}
+      meta={<>
+        <Trajectory value={intel?.trajectory} />
+        {briefingAge(intel) === 'older' && <span className="clp-row-meta">older briefing</span>}
+        <span className="clp-row-meta">{country.articles} art</span>
+      </>}
     />
   );
 }
@@ -246,7 +250,7 @@ export default function CountryListPage() {
   }, [dayMap, sortedDates, loading]);
 
   // Request briefings for every country in the news: the countries index answers for all of them in one request, and
-  // a country with no briefing there lands in "not enough coverage".
+  // a country with no briefing there (or one past the age limit) lands in "Other countries".
   const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
   const { intelligence: loaded } = useCountryIntelligence(countryNames);
   // A briefing past the card's/map's age limit is not shown as a briefing here either.
@@ -393,7 +397,7 @@ export default function CountryListPage() {
           <SectionHeader
             label="Other countries in the news"
             count={filteredOthers.length}
-            hint="not enough coverage for AI briefing"
+            hint="no current AI briefing"
           />
           <div className="clp-others-grid">
             {filteredOthers.map(c => (

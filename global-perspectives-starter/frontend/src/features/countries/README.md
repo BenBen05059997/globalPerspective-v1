@@ -19,7 +19,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`; card forecasts -> `?q=<qid>`).
 
 ## Frontend
-- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z); its coverage counts read `useWeeklyArchive()`, the record's weekly index (decision 0046; adopted 2026-11-03)
+- `CountryListPage.jsx` - list with search, region filter and sort (risk, coverage, A-Z) over both blocks (inline above the map on a phone); asks the index for every country in the news, a briefing over 30 days old (`lib/briefingAge.js`, the card's and map's rule) goes under "Other countries", 14-30 days is labelled; a story arc = 2+ entries (`lib/countryArcs.js`, list and page); its coverage counts read `useWeeklyArchive()`, the record's weekly index (decision 0046; adopted 2026-11-03)
 - `CountryPage.jsx` - hero, map band, `CountryCardV2`, the three tabs, rails; phone gets Read / Map tabs
 - `components/CountryCardV2.jsx` - facts, summary, risk, change, stories, triggers; the name links out
 - `components/CountrySheet.jsx` (+css, print) - How it connects, What we don't know, Your view (localStorage only), Copy as text, Print
@@ -42,8 +42,8 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
   `newsSensitiveData-dev` serves all.
 
 ## Data
-- `useCountryIntelligence` (several countries: the list page) -> the record's countries index (`/data/record/views/index/countries.json`, one request for every briefed country; `@/shared/api/countryBriefingsIndex.js`: the fields the list and the risk layer read, only the first risk signal, no drift), falling back when the index is missing or unreadable (reported) to `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
-  localStorage `gp_country_intel_v1`, 30 min. The auth header is sent when signed in; the action is not tier-gated.
+- `useCountryIntelligence` (several countries: the list page) -> the record's countries index (`/data/record/views/index/countries.json`, one request for every briefed country; `@/shared/api/countryBriefingsIndex.js`: the fields the list and the risk layer read, only the first risk signal, no drift), falling back when the index is missing or unreadable (a thrown error is reported; a missing index is not yet) to `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
+  not cached here (the index is memoised 30 min); one country: localStorage `gp_country_intel_v2`, 30 min per entry, so the list's thin items never reach the page. Record files are fetched once per page load (`lib/countryViews.js`). The auth header is sent when signed in; the action is not tier-gated.
   One country (page, `CountryCardV2`) reads the view's `intelligence` first (0042 step 4, `lib/viewIntelligence.js`; equal to the action's item
   for all 48 views), falling back to the action on a missing view or failed fetch (reported); the list page and the map layer read the countries index (compared field by field with the action for 40 live briefings, 2026-10-31: no difference).
 - `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h). Drift-note depth is capped by tier on the
@@ -78,4 +78,4 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - Facts: same command with `-d '{"action":"country_facts","payload":{"countryNames":["Japan"]}}'`
 - Daily job: `aws scheduler get-schedule --name countryIntelliegence --region ap-northeast-1 --query State`
 
-Last verified: 2026-10-31
+Last verified: 2026-11-04

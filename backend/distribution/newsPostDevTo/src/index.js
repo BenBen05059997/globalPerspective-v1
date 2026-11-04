@@ -133,7 +133,7 @@ Generate a JSON object with exactly these fields:
 
 1. "headline": The single most important story of the day as a crisp, journalistic headline (8-15 words). No clickbait.
 
-2. "summary": A 3-4 paragraph global overview (250-350 words) that synthesizes today's major themes, identifies interconnections between stories, and notes emerging patterns. Write in analytical journalism style — flowing paragraphs, no bullet points, no headers. Reference specific countries and actors by name. Use **double asterisks** around the 3-5 most critical phrases.
+2. "summary": A 3-4 paragraph global overview (250-350 words) that synthesizes today's major themes, identifies interconnections between stories, and notes emerging patterns. Write in analytical journalism style — flowing paragraphs, no bullet points, no headers. Reference specific countries and actors by name.
    HARD LIMITS for "summary": at most 350 words in total; count the words before you answer, and if you are over 350, cut sentences until you are under (aim for about 300). Mark exactly 4 phrases with **double asterisks**, no more and no fewer; count them before you answer.
 
 3. "topStories": Array of the 5-8 most significant stories, each with:

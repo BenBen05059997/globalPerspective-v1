@@ -252,8 +252,8 @@ test('views are written after the facts, in order: stories, links, counts, then 
   await handler({date: '2026-10-20'});
   const keys = viewKeys(f);
   const at = (k) => keys.indexOf(k);
-  assert.deepEqual(keys.slice(-9), ['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json', 'index/briefs.json', 'index/all.json', 'track-record.json', 'manifest.json']);
-  const groups = keys.slice(0, -9).map((k) => k.split('/')[0]);
+  assert.deepEqual(keys.slice(-10), ['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json', 'index/briefs.json', 'index/all.json', 'track-record.json', 'digests.json', 'manifest.json']);
+  const groups = keys.slice(0, -10).map((k) => k.split('/')[0]);
   assert.deepEqual([...new Set(groups)], ['stories', 'links', 'counts']);
   assert.ok(groups.lastIndexOf('stories') < groups.indexOf('links') && groups.lastIndexOf('links') < groups.indexOf('counts'));
   assert.ok(f.puts.findIndex((p) => p.Key === `${P}facts/2026-10-20.jsonl`) < f.puts.findIndex((p) => p.Key === `${P}views/${keys[0]}`));
@@ -280,13 +280,15 @@ test('shadow:false writes the views under record/views/', async () => {
   assert.equal(f.objs.has(`${P}views/manifest.json`), false);
 });
 
-test('a re-run rewrites the same view bytes; only the manifest builtAt and runId change', async () => {
+test('a re-run puts no unchanged view again: only digests.json and the manifest (builtAt, runId) are written', async () => {
   const f = fakeS3();
   await make(dayStore(), f).handler({date: '2026-10-20'});
   const first = new Map([...f.objs].filter(([k]) => k.includes('/views/')).map(([k, v]) => [k, v.body]));
+  const putsBefore = f.puts.length;
   await make(dayStore(), f, () => '2026-10-21T09:00:00.000Z').handler({date: '2026-10-20'});
+  assert.deepEqual(viewKeys({puts: f.puts.slice(putsBefore)}), ['digests.json', 'manifest.json']);
   for (const [k, body] of first) {
-    if (k.endsWith('/manifest.json')) continue;
+    if (k.endsWith('/manifest.json') || k.endsWith('/digests.json')) continue;
     assert.equal(f.objs.get(k).body, body, k);
   }
   assert.deepEqual(f.json(`${P}views/manifest.json`), {...JSON.parse(first.get(`${P}views/manifest.json`)), builtAt: '2026-10-21T09:00:00.000Z', runId: '2026-10-20-2', factsManifestDays: 2});
@@ -308,7 +310,7 @@ test('a view failure marks the Run partial with stage views; facts stay and the 
 test('a view failure on a re-run that writes no new facts is still partial, not failed', async () => {
   const f = fakeS3();
   await make(dayStore(), f).handler({date: '2026-10-20'});
-  f.failPut = (i) => i.Key === `${P}views/index/active.json`;
+  f.failPut = (i) => i.Key === `${P}views/digests.json`; // an unchanged re-run puts only digests.json and the manifest
   await assert.rejects(() => make(dayStore(), f).handler({date: '2026-10-20'}), /partial/);
   assert.equal(f.json(`${P}runs/2026-10-20.json`).status, 'partial');
 });

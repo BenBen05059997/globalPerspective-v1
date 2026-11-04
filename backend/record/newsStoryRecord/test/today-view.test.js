@@ -111,6 +111,7 @@ test('a refresh and a nightly run both write the view from the inbox of the last
   assert.equal(validate(viaRefresh), true, JSON.stringify(validate.errors));
   assert.deepEqual(viaRefresh.entries.map((e) => e.topicId), ['Topic 1-1', 'Topic 2-2', 'Topic 3-3', 'Topic 4-4']);
   f.objs.delete(`${P}views/index/today.json`);
+  f.objs.delete(`${P}views/digests.json`); // a view missing from S3 is only rewritten once its digest is gone
   await handler({date: D1}); // the nightly path (no archive row: a tolerated day-zero miss) still publishes the views
   assert.equal(JSON.stringify(f.json(`${P}views/index/today.json`)), JSON.stringify(viaRefresh));
 });

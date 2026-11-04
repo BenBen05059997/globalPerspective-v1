@@ -15,7 +15,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-4)
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-5)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
@@ -62,7 +62,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 
 Merge rule (the 5% rule of 0037): a `merge_proposal` is always a reading; it also goes to the inbox only if the two stories share a specific actor (fewer than 5% of active stories carry it) and a country, their last entries are within 14 days, the reading cites both stories, and confidence is `high`. The older story (earlier `born`) survives. One inbox line per pair and per `from` story.
 
-Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-4` (recovered article headlines placed on a story are bundle items marked `kind:"article"`, citable, no detail).
+Assignment proposals (0040 rule 3, operator answer 6: proposals only): reading subtype `assignment`, payload `{entryId, threadId, why}` where `threadId` is an active story or `new`; key = `entryId`; cap 5 per story. They are written to the readings file and nothing else: no inbox line, no fact, no view change. The operator applies one by writing a line `{entryId, threadId, by:'operator', at, reason}` to `record/inbox/assignments/DAY.jsonl`, which `newsStoryRecord` turns into an `assignment` fact. The prompt is `review-5` (recovered article headlines placed on a story are bundle items marked `kind:"article"`, citable, no detail).
 
 Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, covers:{from,to}, supersedes, run, model, promptVersion, confidence}` ([schema](schema/reading.schema.json)). `readingId = sha1(week + threadId + subtype + key)` with key = chapter `from`, `branchId`, `otherThreadId`, alias `canonical`, empty for a line. `supersedes` is the `readingId` of the newest earlier-week reading of the same story, subtype and key, else null. `covers` is the first fact date of the bundle to the week's Sunday.
 
@@ -99,7 +99,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Deployed name `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record` (`scripts/functions.json`); runtime `nodejs22.x`, timeout 900 s, memory 1024 MB. Deploy with `scripts/lambda.sh` (diff first).
 - Schedule: EventBridge rule `TriggerRecordReview`, Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), input `{"shadow":false}`, ENABLED.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
-- Model: `REVIEW_MODEL=deepseek-flash` live since 2026-11-04 (was `deepseek-v4-pro`). Golden week on Flash, 2 runs: every gate passed, about 4 times cheaper per call; canary on live W44 running 2026-11-04. Back to Pro is one env value (decision 0056).
+- Model: `REVIEW_MODEL=deepseek-flash` live since 2026-11-04 (was `deepseek-v4-pro`). Golden week on Flash, 2 runs: every gate passed, about 4 times cheaper per call; canary on 25 live W44 stories (prompt review-4): 25 read, 0 citation errors, no invented facts, but uncited "still pending / not yet recorded" clauses in 8 of 19 lines; prompt review-5 adds a rule against them (golden week gates passed on Flash, such lines 6 and 4 down to 0 and 0). Back to Pro is one env value (decision 0056).
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`, and `REVIEW_CONCURRENCY` (set live; the code default is 6). The provider and model are the live env, not the variable names (`GROK_*`/`XAI_*` hold DeepSeek).
 - Watch the first full Run's `notReached` after a change: a re-run of the same week re-reads every story (only earlier weeks' readings count for the skip rule), so raise `REVIEW_CONCURRENCY` or split by `threadIds` if it times out.
 - Golden week: `node scripts/golden-week.js capture|real|replay DIR` runs this handler on the frozen fixture in memory; results under `fixtures/golden-week/runs/` (see its README).

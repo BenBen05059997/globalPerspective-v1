@@ -37,6 +37,6 @@ Changes to earlier decisions:
 The first scored run (DeepSeek, prompt review-3) failed: 4-5 of 27 stories cut off at 3000 tokens, 45 rejected items (30 fired/dead on open branches, 9 chapter dates outside the cited facts), and 126 `holding` statuses that headlines cannot support. Changed (operator: "if there is a better design, do it"):
 - No `branch_status` reading. fired/dead only restated the verdict, late is date arithmetic, holding was unsupported. A branch's status is its verdict fact, else open or past due by `due`, derived where it is shown.
 - Chapter `from`/`to` are set in code from the dates of the cited facts; the model writes title, summary, cites.
-- `maxTokens` 6000; prompt review-4 (line at most 30 words; chapters group several entries, do not overlap).
+- `maxTokens` 6000; prompt review-5 (line at most 30 words; chapters group several entries, do not overlap; state only what the cited entries say, 2026-11-04).
 - Testing: instead of a reconciled two-drafter answer key for every story, the score is objective gates (no failed story, no citation rejection, no rule-breaking subtype) over three runs, plus an operator spot check of a few stories and the canary. The two Opus drafts of 2026-10-30 were lost with the temp folder; their findings are in the fixture README.
 

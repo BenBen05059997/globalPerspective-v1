@@ -14,7 +14,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - Env: `WORLD_BUCKET`, `RAW_CAPTURE_SHADOW`, `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_THRESHOLD`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_CROSS_TOPIC`, `TOPICS_LIMIT`.
 
 ## Models
-- `GROK_MODEL` (live `deepseek-v4-pro`; planned `deepseek-flash` after the filter fixes are deployed, decision 0056; fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
+- `GROK_MODEL` (live `deepseek-flash` since 2026-11-04, decision 0056; fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
 
 ## Gotchas
 - Model-reply checks (whole or salvaged from a truncated reply): source URLs match the fetched pool after one HTML-entity decode and a trim (`&amp;` vs `&`); category `diplomacy` is mapped to `politics`, any other unlisted category is dropped; after the repeat drop, only the first `limit` topics are kept. Test: `test/topicFilters.test.js`.

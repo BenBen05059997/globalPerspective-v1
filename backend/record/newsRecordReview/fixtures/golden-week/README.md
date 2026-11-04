@@ -36,8 +36,10 @@ puts drafted answers through the same check.
 |---|---|---|---|---|---|---|
 | review-3 | deepseek-v4-pro | 22-23 of 27 (rest cut off at 3000 tokens) | 20 | 38 | 45 (30 fired/dead on open branches, 9 chapter dates, 2 uncited) + 126 unsupported `holding` | fail |
 | review-4 | deepseek-v4-pro, 3 runs | 27 of 27 | 25 of 26 | 48-51 | 2-3 shape slips, 0 citation; plus 15 `over_cap` assignments on one story | pass the gates |
+| review-4 | deepseek-flash, 2 runs (2026-11-04) | 27 of 27 | 26 / 25 | 46 / 43 | 18 / 20 (alias and line shape slips, 1 chapter duplicate, 15 `over_cap`), 0 citation | pass the gates; 6 and 4 lines with a "still / pending / yet / remains" clause |
+| review-5 | deepseek-flash, 2 runs (2026-11-04) | 27 of 27 | 26 / 26 | 46 / 47 | 18 / 21 (alias shape slips, 1 chapter duplicate, 15 `over_cap`), 0 citation | pass the gates; 0 and 0 such lines |
 
-Runs: `runs/review-4-real/readings-N.jsonl`, `run-N.json`.
+Runs: `runs/review-4-real/readings-N.jsonl`, `run-N.json` (Pro). The Flash runs are not committed.
 
 What the fixture can and cannot test: every entry summary is null (headlines only); no story has neighbours, verdicts, earlier
 readings or operator aliases, so links, merges and alias conflicts are untested. Known data problems it shows: the Amazon

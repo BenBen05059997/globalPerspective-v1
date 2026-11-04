@@ -17,7 +17,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |
 +- 2 ASSEMBLE   no model            [newsRecordReview]
 |  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-4)
+|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-5)
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
@@ -52,7 +52,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
    - `merge_proposal`: {otherThreadId, why};
    - `alias`: {variants, canonical, wikidataId};
    - `assignment`: {entryId, threadId, why}, an entry that belongs to another story (a proposal only).
-   Model: DeepSeek larger model, env `REVIEW_MODEL`, through the shared `llm.js`, prompt version `review-4`, `MAX_TOKENS` 6000.
+   Model: DeepSeek larger model, env `REVIEW_MODEL`, through the shared `llm.js`, prompt version `review-5`, `MAX_TOKENS` 6000.
 4. Check. Pure code. An item is rejected, with a reason kept in the Run, when it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter cites no dated fact; its shape or length is wrong; its confidence is low; or an auto-merge fails the merge rule. Branch status is not a reading: a branch's status is its verdict fact, else open or past due by its `due` date, derived where it is shown.
 5. Write. Accepted readings are appended to the week file; the review Run records counts and rejections; accepted auto-merges go to the inbox. Readings are never edited. A rerun for the same week writes readings whose `supersedes` points at the earlier `readingId`.
 6. Build. Not the review's job: `newsStoryRecord` rebuilds all views (nightly and at each refresh) and reads readings, inbox merges, `story_split` facts and the alias file.
@@ -87,7 +87,7 @@ Alias rule: review alias readings apply only with a Wikidata Q-number and no con
 - Operator check: merge proposals, alias proposals and assignment proposals are read by the operator.
 
 ## 7. State and limits
-- Live gate (met 2026-10-31): the golden-week gates passed (prompt review-4), a live canary on 5 stories was checked by the operator, then rule `TriggerRecordReview` was enabled with the operator's yes. The canary run for 2026-W43 (`review-2026-W43.json`, status ok) read 5 of 615 active stories and wrote 18 readings. The first full run is Monday 2026-11-02 01:00 UTC for 2026-W44.
+- Live gate (met 2026-10-31): the golden-week gates passed (prompt review-4; review-5 passed them again on Flash), a live canary on 5 stories was checked by the operator, then rule `TriggerRecordReview` was enabled with the operator's yes. The canary run for 2026-W43 (`review-2026-W43.json`, status ok) read 5 of 615 active stories and wrote 18 readings. The first full run is Monday 2026-11-02 01:00 UTC for 2026-W44.
 - A reading is a model judgment. Citation and date checks prove it points at real facts, not that it is right.
 - Entries are capped at the newest 60 per story; older context comes only from earlier readings.
 - Branch status comes from verdict facts of the forecast loop (0038), never from the review.

@@ -1,4 +1,4 @@
-# 0056. Each job's model is chosen by a recorded Flash-versus-Pro test; four jobs move to Flash, the rest stay on Pro
+# 0056. Each job's model is chosen by a recorded Flash-versus-Pro test; four jobs moved to Flash, the rest stay on Pro
 
 Date: 2026-11-04. Status: accepted (operator decision 2026-11-04, "switch the four"); partly supersedes the "four high-leverage calls on Pro" consequence of 0014 and the "larger model" wording of 0039. Live 2026-11-04 for `newsRecordReview`, `newsSystemsAnalysis` and `newsDailyBrief`; `newsIngest` is planned, after its filter fixes are deployed.
 
@@ -12,13 +12,13 @@ Date: 2026-11-04. Status: accepted (operator decision 2026-11-04, "switch the fo
 
 ## Decision
 1. **A job's model is chosen by a recorded test, not by judgement.** Same inputs rebuilt from the record, Flash only (the Pro side is the stored output), a blind A/B judge run in both orders, plus a hand check of the inputs and outputs. For the weekly review the test is the golden week (`scripts/golden-week.js`). The result goes to a report and, when it changes a model, to a record like this one.
-2. **Four jobs move to Flash.** `newsRecordReview` (`REVIEW_MODEL`), `newsSystemsAnalysis` (`GROK_MODEL`) and `newsDailyBrief` (`GROK_MODEL`) are `deepseek-flash` live since 2026-11-04. `newsIngest` (`GROK_MODEL`) moves to `deepseek-flash` once its small filter fixes are deployed (planned, not live).
+2. **Four jobs move to Flash.** `newsRecordReview` (`REVIEW_MODEL`), `newsSystemsAnalysis` (`GROK_MODEL`) and `newsDailyBrief` (`GROK_MODEL`) are `deepseek-flash` live since 2026-11-04. `newsIngest` (`GROK_MODEL`) is `deepseek-flash` since 2026-11-04 about 21:45 JST, with its filter fixes (commit c9948088: category alias diplomacy to politics, URL matching after HTML-entity decode, topic cap also on salvaged truncated replies) deployed.
 3. **These stay on Pro, each for its own reason.** `newsCountryIntelligence`: Flash invented facts in the test. `newsAgent` `PREDICTION_MODEL` (forecasts): not testable until verdicts exist to score them against. `newsWeeklyBrief`: equal quality and the saving is about 2 cents a month, so left as it is. `newsAnalyze`: parked.
 4. **Reversal is one env value** per Lambda (`REVIEW_MODEL` or `GROK_MODEL` back to `deepseek-v4-pro`); no code changes.
 
 ## Consequences
 - Estimated model spend falls from about $6 to 10 a month to about $2 to 3 (from the reports above; the review's saving was computed from the fixture's token sizes, so check it against the live `[usage]` logs after Monday's run). Monday's review fits the DeepSeek balance.
-- A live canary of the review on 25 W44 stories is running 2026-11-04 (the result is not in this record yet).
+- Review canary on 25 live W44 stories (2026-11-04, prompt review-4): 25 read, 0 citation errors, no invented names, numbers or dates. Flash added uncited "pending / not yet recorded" clauses (taken from forecast branches or missing evidence) in 8 of 19 lines and once a neighbour story's claim without citing it. Prompt review-5 adds the rule "state only what the cited entries say"; it passed the golden-week gates on Flash (2 runs) and cut the such lines on the golden week from 6 and 4 to 0 and 0; the same 25 stories on review-5 show 1 leftover clause (Man City "sanction still to be detailed") and 2 plain absence statements (Italy "no recorded parliamentary step", Myanmar "no further developments recorded"), the Italy and Man City claims no longer false, and the neighbour claim (Brazil) rejected by the check as an unknown eventId.
 - Country briefings stay on Pro. The review's links, merges and alias conflicts were not covered by the fixture for either model, and the operator spot check of a few stories is still open.
 - Flash is looser on the daily brief's length and bold markers; accepted.
 - The next model change follows the same method (point 1).

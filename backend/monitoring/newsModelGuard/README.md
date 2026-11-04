@@ -11,8 +11,8 @@ Daily guard against DeepSeek model retirements and an empty balance. It checks D
 - AWS: `lambda:ListFunctions` (reads every function's env variables).
 - External: `api.deepseek.com/models` (`DEEPSEEK_MODELS_URL`) and `api.deepseek.com/user/balance`, using `DEEPSEEK_API_KEY`.
 - SNS: `SNS_TOPIC_ARN`.
-- Env: `MODEL_VARS` (default `GROK_MODEL,LLM_MODEL,MODEL,AUDIT_MODEL,JUDGE_MODEL,PPLX_MODEL,AI_MODEL`; the live env adds `PREDICTION_MODEL`), `IGNORE_FUNCTIONS`, `DEPRECATED_ALIASES`, `DEEPSEEK_BALANCE_ALERT_USD`.
-- `REVIEW_MODEL` (`newsRecordReview`) is in neither the code default nor the live `MODEL_VARS`, so a retired review model would not be flagged; add it to the env if wanted.
+- Env: `MODEL_VARS` (default `GROK_MODEL,LLM_MODEL,MODEL,AUDIT_MODEL,JUDGE_MODEL,PPLX_MODEL,AI_MODEL`; the live env adds `PREDICTION_MODEL` and `REVIEW_MODEL`), `IGNORE_FUNCTIONS`, `DEPRECATED_ALIASES`, `DEEPSEEK_BALANCE_ALERT_USD`.
+- `REVIEW_MODEL` (`newsRecordReview`) is in the live `MODEL_VARS` since 2026-11-04 but not in the code default.
 
 ## Gotchas
 - Functions whose names end in `-sandbox`, or are listed in `IGNORE_FUNCTIONS`, are skipped.

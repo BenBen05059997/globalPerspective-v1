@@ -78,7 +78,7 @@ estimate is an upper bound).
 | `newsRecordReview` | `REVIEW_MODEL=deepseek-flash` (since 2026-11-04) |
 | `newsDailyBrief`, `newsSystemsAnalysis` | `GROK_MODEL=deepseek-flash` (since 2026-11-04) |
 | `newsWeeklyBrief`, `newsCountryIntelligence`, `newsAnalyze` | `GROK_MODEL=deepseek-v4-pro` (country: Flash invented facts in the test; weekly brief: equal quality, saving about 2 cents a month; `newsAnalyze` parked) |
-| `newsIngest` | `GROK_MODEL=deepseek-v4-pro` now; planned `deepseek-flash` after its filter fixes are deployed |
+| `newsIngest` | `GROK_MODEL=deepseek-flash` (since 2026-11-04 about 21:45 JST, with its filter fixes) |
 
    The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` hold DeepSeek). `newsDailyBrief` also has
    an `AI_MODEL` set to a `:free` model name; check the code for which one it uses.
@@ -95,7 +95,7 @@ estimate is an upper bound).
 |---|---|
 | Find the remaining S3 writers; make the situations tracker rewrite only when content changed (same digest idea) | Most of the S3 line that remains after the 11-04 fix |
 | Retire the DynamoDB world tables (decision 0035 step 5) | About -$2.50 a month by the coordinator's estimate (Nov 1-3 run-rate: $0.24 in 3 days) |
-| Move the four jobs from Pro to Flash after tests (0056): review, systems and daily brief done 2026-11-04; `newsIngest` planned | About -$4 to 7 a month of model spend (estimate from the test reports, not yet measured live) |
+| Move the four jobs from Pro to Flash after tests (0056): review, systems, daily brief and `newsIngest` done 2026-11-04 | About -$4 to 7 a month of model spend (estimate from the test reports, not yet measured live) |
 | Items vs stories: a one-entry item gets no forecasts, links or analysis | An estimated third to half off model spend |
 | Incremental refresh; freeze cold stories | Headroom rather than money |
 

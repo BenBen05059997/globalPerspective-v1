@@ -70,7 +70,7 @@ function getTopicId(t, idx) {
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
-  const { entries: archiveEntries } = useTodayArchive();
+  const { entries: archiveEntries, error: archiveError, refetch: refetchArchive } = useTodayArchive();
 
   const filteredArchiveEntries = React.useMemo(() => {
     if (!archiveEntries.length || !topics.length) return archiveEntries;
@@ -168,6 +168,11 @@ function Home() {
   useEffect(() => {
     if (error) reportFetchError('today-topics', new Error(error));
   }, [error]);
+
+  // The archive rail fails in place too (see leftRail) and goes to the sink.
+  useEffect(() => {
+    if (archiveError) reportFetchError('today-archive', new Error(archiveError));
+  }, [archiveError]);
 
   useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
 
@@ -349,6 +354,12 @@ function Home() {
   const leftRail = (
     <>
       <TodayArchiveSidebar mode="rail" entries={filteredArchiveEntries} />
+      {archiveError && archiveEntries.length === 0 && (
+        <div className="home-unavailable home-unavailable--rail" role="status" data-testid="today-archive-unavailable">
+          <p>Couldn't load today's archive.</p>
+          <Button compact onClick={refetchArchive}>Retry</Button>
+        </div>
+      )}
       <div className="home-rail-coffee">
         <p>We run ad-free. Help keep it that way.</p>
         <Button
@@ -443,6 +454,14 @@ function Home() {
         <div className="home-unavailable" role="status" data-testid="today-unavailable">
           <p>Couldn't load today's topics.</p>
           <Button onClick={refetch}>Retry</Button>
+        </div>
+      )}
+
+      {/* Honest empty state: the call worked and the latest run holds no topics */}
+      {!loading && !error && totalTopics === 0 && (
+        <div className="home-unavailable" role="status" data-testid="today-empty">
+          <p>No topics are published yet.</p>
+          <Button onClick={refetch}>Refresh</Button>
         </div>
       )}
 

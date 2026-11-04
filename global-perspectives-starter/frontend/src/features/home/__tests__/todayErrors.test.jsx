@@ -10,7 +10,9 @@ vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: (...a) => report(..
 const refetch = vi.fn();
 let topicsState;
 vi.mock('@/shared/data/useGeminiTopics', () => ({ useGeminiTopics: () => topicsState }));
-vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () => ({ entries: [] }) }));
+const refetchArchive = vi.fn();
+let archiveState;
+vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () => archiveState }));
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
@@ -38,6 +40,8 @@ const oneTopic = () => {
 
 beforeEach(() => {
   views.fresh = false; views.view = null;
+  archiveState = { entries: [], error: null, refetch: refetchArchive };
+  refetchArchive.mockClear();
   report.mockClear(); refetch.mockClear(); Element.prototype.scrollIntoView = vi.fn();
   for (const f of Object.values(svc)) f.mockReset().mockRejectedValue(new Error('Proxy HTTP 500: boom'));
 });
@@ -137,5 +141,32 @@ describe('/today failure states', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Predict' }));
     expect(await screen.findByText('Prediction unavailable right now')).toBeTruthy();
     expect(svc.getTopicPrediction).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed archive load is reported and shown in the rail with a working Retry', () => {
+    oneTopic();
+    archiveState = { entries: [], error: 'Today archive unavailable', refetch: refetchArchive };
+    wrap();
+    expect(screen.getByTestId('today-archive-unavailable').textContent).toMatch(/Couldn't load today's archive/);
+    expect(report).toHaveBeenCalledWith('today-archive', expect.any(Error));
+    fireEvent.click(within(screen.getByTestId('today-archive-unavailable')).getByRole('button', { name: 'Retry' }));
+    expect(refetchArchive).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed archive refresh that keeps entries is reported but does not replace the rail', () => {
+    oneTopic();
+    archiveState = { entries: [{ topicId: 'x', title: 'Older story', category: 'politics' }], error: 'Today archive unavailable', refetch: refetchArchive };
+    wrap();
+    expect(screen.queryByTestId('today-archive-unavailable')).toBeNull();
+    expect(report).toHaveBeenCalledWith('today-archive', expect.any(Error));
+  });
+
+  it('zero topics with no error says so honestly instead of a blank page', () => {
+    topicsState = { topics: [], loading: false, error: null, refetch, isStale: false, updatedAt: null, hasNewData: false };
+    wrap();
+    expect(screen.getByTestId('today-empty').textContent).toMatch(/No topics are published yet/);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('today-unavailable')).toBeNull();
   });
 });

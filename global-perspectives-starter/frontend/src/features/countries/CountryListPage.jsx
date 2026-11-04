@@ -381,7 +381,7 @@ export default function CountryListPage() {
           })()
         ) : (
           <>
-            <SectionHeader label="AI Briefings" hint={`${filteredFeatured.length} countries`} />
+            <SectionHeader label="AI briefings" count={filteredFeatured.length} hint="current AI briefing" className="clp-band-header" />
             <div className="clp-cards">
               {filteredFeatured.map(c => (
                 <CountryCard

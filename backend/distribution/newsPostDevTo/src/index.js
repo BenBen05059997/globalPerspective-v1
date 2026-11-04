@@ -134,6 +134,7 @@ Generate a JSON object with exactly these fields:
 1. "headline": The single most important story of the day as a crisp, journalistic headline (8-15 words). No clickbait.
 
 2. "summary": A 3-4 paragraph global overview (250-350 words) that synthesizes today's major themes, identifies interconnections between stories, and notes emerging patterns. Write in analytical journalism style — flowing paragraphs, no bullet points, no headers. Reference specific countries and actors by name. Use **double asterisks** around the 3-5 most critical phrases.
+   HARD LIMITS for "summary": at most 350 words in total; count the words before you answer, and if you are over 350, cut sentences until you are under (aim for about 300). Mark exactly 4 phrases with **double asterisks**, no more and no fewer; count them before you answer.
 
 3. "topStories": Array of the 5-8 most significant stories, each with:
    - "title": Story headline (from the headlines above)
@@ -167,6 +168,14 @@ async function callGrok(prompt) {
   return stripCodeFence(content);
 }
 
+// The prompt asks for <= 350 words and exactly 4 bold phrases; models miss both often, so log the miss (no rejection).
+function checkSummaryFormat(summary) {
+  const text = String(summary || '');
+  const words = text.replace(/\*\*/g, '').split(/\s+/).filter(Boolean).length;
+  const bold = (text.match(/\*\*[^*]+\*\*/g) || []).length;
+  return { words, bold, ok: words <= 350 && bold === 4 };
+}
+
 async function generateAndStoreDailyBrief(entries, dateKey) {
   const missing = [['SUMMARIZE_PREDICT_TABLE', SUMMARY_TABLE], ['XAI_API_KEY', XAI_API_KEY]].filter(([, v]) => !v).map(([k]) => k);
   if (missing.length) {
@@ -190,6 +199,9 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
   if (!brief.headline || !brief.summary) {
     throw new Error(`Missing required fields: ${Object.keys(brief).join(', ')}`);
   }
+
+  const format = checkSummaryFormat(brief.summary);
+  console.log(`[DAILY_BRIEF] summary words=${format.words} bold=${format.bold}${format.ok ? '' : ' (outside the prompt limits: <=350 words, 4 bold)'}`);
 
   if (brief.risingThread) {
     brief.risingThread.threadId = resolveRealThreadId(brief.risingThread.title, threadAnalyses);
@@ -306,3 +318,4 @@ module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests
 module.exports.loadThreadAnalyses = loadThreadAnalyses; // for tests
 module.exports.loadTodayArchive = loadTodayArchive; // for tests
 module.exports.buildBriefPrompt = buildBriefPrompt; // for tests
+module.exports.checkSummaryFormat = checkSummaryFormat; // for tests

@@ -78,6 +78,18 @@ test('prompt: numbered headlines carry category label, regions, source count and
   });
 });
 
+test('prompt: summary carries the hard word limit and the exact bold count; the format check counts words and bold', async () => {
+  await withHandler({}, () => {}, '{}', ({ buildBriefPrompt, checkSummaryFormat }) => {
+    const p = buildBriefPrompt([entry(1)], {}, {}, 'November 2, 2026', '2026-11-02');
+    assert.match(p, /HARD LIMITS for "summary": at most 350 words in total; count the words/);
+    assert.match(p, /exactly 4 phrases with \*\*double asterisks\*\*/);
+    const ok = `${'word '.repeat(300)}**a** **b** **c** **d**`;
+    assert.deepEqual({ ...checkSummaryFormat(ok) }, { words: 304, bold: 4, ok: true });
+    assert.equal(checkSummaryFormat(`${'word '.repeat(400)}**a**`).ok, false);
+    assert.deepEqual({ ...checkSummaryFormat('') }, { words: 0, bold: 0, ok: false });
+  });
+});
+
 test('prompt: only the first 20 titled entries are listed, an untitled entry is dropped, and only 3 regions per line', async () => {
   await withHandler({}, () => {}, '{}', ({ buildBriefPrompt }) => {
     const entries = [entry(0, { title: '', regions: ['A', 'B', 'C', 'D'] }), ...Array.from({ length: 25 }, (_, i) => entry(i + 1))];

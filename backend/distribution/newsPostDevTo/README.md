@@ -21,6 +21,7 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 ## Gotchas
 - The handler rejects (`Missing required env vars: <names>`, never the values) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset, so the Errors metric moves; it checks after the no-entries skip, so an empty day still answers 200 skipped. Other failures (unset `TOPICS_DDB_TABLE`, a bad model reply, a failed put) are returned as `500` and do not move Errors.
 - `topStories[]` carry `threadId` (matched to an archive entry, never from the model; ambiguous or unmatched = `null`) and `iso3[]` (their regions through `resolveIso3`); `countryToWatch` carries `iso3[]` and the `threadId` of today's thread with most entries in that country.
+- The brief prompt carries a hard limit line for `summary` (at most 350 words, exactly 4 bold phrases); the handler logs `summary words=N bold=N` after the reply and never rejects on format.
 - Thinking mode is disabled on purpose (2026-07-26 outage: thinking burned `max_tokens`).
 
 ## Tests

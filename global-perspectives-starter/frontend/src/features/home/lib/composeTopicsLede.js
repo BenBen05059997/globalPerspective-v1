@@ -15,6 +15,15 @@
 
 const sourceCountOf = (t) => (Array.isArray(t && t.sources) ? t.sources.length : 0);
 
+// The counts line. countryCount tallies every country the stories name (`regions`), which is more than the one
+// primary country each card shows, so it reads "countries involved" rather than a bare "countries".
+export function ledeMeta({ topicCount = 0, countryCount = 0, threadCount = 0 }) {
+  const parts = [`${topicCount} ${topicCount === 1 ? 'story' : 'stories'}`];
+  if (countryCount) parts.push(`${countryCount} ${countryCount === 1 ? 'country' : 'countries'} involved`);
+  if (threadCount) parts.push(`${threadCount} active ${threadCount === 1 ? 'thread' : 'threads'}`);
+  return parts;
+}
+
 // Returns { empty, lede, topicCount, countryCount, threadCount, text }.
 // `lede` = { title, threadId, category, country, reason } | null.
 export function composeTopicsLede({ topics = [] } = {}) {
@@ -73,11 +82,7 @@ export function composeTopicsLede({ topics = [] } = {}) {
   const countryCount = countries.size;
   const threadCount = threads.size;
 
-  const metaParts = [`${topicCount} ${topicCount === 1 ? 'story' : 'stories'}`];
-  if (countryCount) metaParts.push(`${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`);
-  if (threadCount) metaParts.push(`${threadCount} active ${threadCount === 1 ? 'thread' : 'threads'}`);
-
-  const text = `Today's lede: ${lede.title}. ${metaParts.join(', ')}.`;
+  const text = `Today's lede: ${lede.title}. ${ledeMeta({ topicCount, countryCount, threadCount }).join(', ')}.`;
 
   return { empty: false, lede, topicCount, countryCount, threadCount, text };
 }

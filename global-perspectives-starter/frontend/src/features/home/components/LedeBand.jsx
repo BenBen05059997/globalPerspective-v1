@@ -7,6 +7,7 @@
 // via EntityLink (storyHref).
 import '@/features/home/components/LedeBand.css';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ledeMeta } from '@/features/home/lib/composeTopicsLede';
 
 export default function LedeBand({
   empty,
@@ -16,10 +17,6 @@ export default function LedeBand({
   threadCount = 0,
 }) {
   if (empty || !lede || !lede.title) return null;
-
-  const metaParts = [`${topicCount} ${topicCount === 1 ? 'story' : 'stories'}`];
-  if (countryCount) metaParts.push(`${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`);
-  if (threadCount) metaParts.push(`${threadCount} active ${threadCount === 1 ? 'thread' : 'threads'}`);
 
   // Link into the story-arc analysis ONLY when the topic carries a real threadId.
   // No fallback link — an unlinked headline is honest; a guessed destination is not.
@@ -32,7 +29,7 @@ export default function LedeBand({
       <span className="lede-kicker">Today&rsquo;s lede</span>
       <span className="lede-headline">{headline}</span>
       {lede.reason && <span className="lede-reason">{lede.reason}</span>}
-      <span className="lede-meta">{metaParts.join(' · ')}</span>
+      <span className="lede-meta">{ledeMeta({ topicCount, countryCount, threadCount }).join(' · ')}</span>
     </div>
   );
 }

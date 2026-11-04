@@ -55,8 +55,8 @@ describe('composeTopicsLede', () => {
     const many = composeTopicsLede({
       topics: [t({ title: 'A', regions: ['France'], threadId: 'x' }), t({ title: 'B', regions: ['Spain'], threadId: 'y' })],
     });
-    expect(many.text).toBe("Today's lede: A. 2 stories, 2 countries, 2 active threads.");
+    expect(many.text).toBe("Today's lede: A. 2 stories, 2 countries involved, 2 active threads.");
     const one = composeTopicsLede({ topics: [t({ title: 'A', regions: ['France'], threadId: 'x' })] });
-    expect(one.text).toBe("Today's lede: A. 1 story, 1 country, 1 active thread.");
+    expect(one.text).toBe("Today's lede: A. 1 story, 1 country involved, 1 active thread.");
   });
 });

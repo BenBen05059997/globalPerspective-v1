@@ -5,7 +5,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { withLambda, fakeDdb, fakeS3, fakeLlm, archiveRows } = require('../../../shared/test/pipelineHarness');
+const { withLambda, fakeDdb, fakeS3, fakeLlm, archiveRows, inboxObjects } = require('../../../shared/test/pipelineHarness');
 
 const INDEX = path.resolve(__dirname, '../src/index.js');
 const ENV = {
@@ -16,10 +16,11 @@ const today = new Date().toISOString().slice(0, 10);
 const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
 
 const entry = (topicId, regions, extra = {}) => ({ topicId, title: `Headline ${topicId}`, regions, category: 'politics', sources: [{ url: `https://example.com/${topicId}` }], ai: {}, ...extra });
-const ARCHIVE = () => archiveRows({
+const BY_DAY = () => ({
   1: [entry('j-2', ['Japan'], { threadId: 'thr-j' }), entry('f-2', ['France'])],
   2: [entry('j-1', ['Japan'], { threadId: 'thr-j' }), entry('f-1', ['France']), entry('e-1', ['Europe']), entry('e-2', ['Europe']), entry('b-1', ['Brazil'])],
 });
+const ARCHIVE = () => archiveRows(BY_DAY());
 const THREAD_J = { PK: 'THREAD#thr-j', SK: 'THREAD_ANALYSIS', threadTitle: 'Japan rate path', storyArc: 'The BOJ moved.', trajectory: 'Gradual hikes ahead.', keyActors: [{ name: 'Kazuo Ueda', role: 'BOJ Governor' }] };
 
 const GOOD = {
@@ -405,4 +406,16 @@ test('the editorial block reaches the model prompt: operator facts for Iran, aut
     assert.match(iran, /EDITORIAL CONTEXT for Iran .*\(last reviewed 2026-04-18 by operator\)/);
     assert.match(iran, /Iran-Israel War \(started 2026-02-28\)/);
   });
+});
+
+test('ARCHIVE_READS=inbox reads the window from the entries inbox: no archive row in DynamoDB, the same COUNTRY# row', async () => {
+  const ddb = fakeDdb([THREAD_J]);
+  const env = { ARCHIVE_READS: 'inbox', ENTRIES_INBOX_PREFIX: 'record/' };
+  await run({ ddb, s3: fakeS3(inboxObjects(BY_DAY())), llm: fakeLlm(byCountry({ Japan: reply(GOOD), France: reply(GOOD) })), env }, {}, ({ llm }, out) => {
+    assert.equal(out.statusCode, 200);
+    assert.match(out.body, /2 generated \(new 2\), 0 skipped, 0 failed/);
+    assert.equal(llm.calls.length, 2);
+  });
+  assert.equal(row(ddb, 'Japan').totalArticles, 2);
+  assert.ok(!ddb.sent.some((c) => c.name === 'GetCommand' && c.input.TableName === 'topics'), 'no NewsCache read');
 });

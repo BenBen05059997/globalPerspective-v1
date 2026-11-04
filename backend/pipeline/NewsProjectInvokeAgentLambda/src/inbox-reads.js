@@ -11,34 +11,11 @@
 // FORECASTS_INBOX_PREFIX); with it unset the switch stays ddb. The replay rules are the shared ones (entriesInbox.replayDay,
 // forecastsInbox.replay); this file only shapes what they give into what the DynamoDB reads gave. Pure: no I/O, no clock.
 
-const { replayDay } = require('./_shared/entriesInbox');
 const { lastArchiveWrite } = require('./run-guard');
 const { latestForkDay, openBranchTexts } = require('./forecast-draw');
 
-const MODES = ['ddb', 'inbox', 'compare'];
-
-/** The switch value: 'ddb' | 'inbox' | 'compare'. Unknown, or inbox/compare without the inbox prefix, is 'ddb' (logged). */
-function readMode(name, value, prefix, log = console) {
-  const v = String(value || 'ddb').trim().toLowerCase();
-  if (!MODES.includes(v)) { log.warn(`${name}=${value} is not ddb|inbox|compare: reading DynamoDB`); return 'ddb'; }
-  if (v !== 'ddb' && !prefix) { log.warn(`${name}=${v} needs the inbox prefix the agent writes to: reading DynamoDB`); return 'ddb'; }
-  return v;
-}
-
-/** mode ddb: ddb(); inbox: inbox() (no DynamoDB call); compare: both, the DynamoDB answer, every difference (diff(ddb, inbox) -> [..]) logged. */
-async function readBy({ mode, tag, label, ddb, inbox, diff, log = console }) {
-  if (mode === 'inbox') return inbox();
-  const fromDdb = await ddb();
-  if (mode !== 'compare') return fromDdb;
-  try {
-    const d = diff(fromDdb, await inbox());
-    if (d.length) log.warn(`[${tag}] ${label}: DIFFER ${d.length} ${JSON.stringify(d.slice(0, 10))}`);
-    else log.log(`[${tag}] ${label}: equal`);
-  } catch (e) {
-    log.warn(`[${tag}] ${label}: inbox read failed (${e.message})`);
-  }
-  return fromDdb;
-}
+// The generic half (MODES, readMode, readBy, sameJson, archiveOfLines) lives in the shared archiveReads.js, one copy for every Lambda that reads the archive.
+const { MODES, readMode, readBy, sameJson, archiveOfLines } = require('./_shared/archiveReads');
 
 // ---- archive window and freshness --------------------------------------------------------------------------------------------------------
 
@@ -57,17 +34,6 @@ function pastEntriesOfDay(day, entries) {
     date: day, // for the v1 arc digest (buildArcDigest)
   }));
 }
-
-/** A day's entries-inbox lines -> the `archive#DAY` item as DynamoDB holds it after the same writes ({updatedAt, entries}), or null (no row). */
-function archiveOfLines(lines) {
-  if (!Array.isArray(lines) || !lines.length) return null;
-  const { entries, updatedAt } = replayDay(lines);
-  return { updatedAt, entries };
-}
-
-// Equal as data: DynamoDB hands a map back with its keys in another order than they were put (and than the inbox line keeps them).
-const canon = (x) => (Array.isArray(x) ? x.map(canon) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon(x[k])])) : x);
-const sameJson = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 
 /** Differences between two threading windows, per day: topics on one side only, changed fields, the same topics in another order. */
 function diffWindow(a, b) {
@@ -138,4 +104,4 @@ function diffForks(today) {
   };
 }
 
-module.exports = { MODES, readMode, readBy, pastEntriesOfDay, archiveOfLines, diffWindow, diffFreshness, forkRows, diffForks };
+module.exports = { MODES, readMode, readBy, sameJson, pastEntriesOfDay, archiveOfLines, diffWindow, diffFreshness, forkRows, diffForks };

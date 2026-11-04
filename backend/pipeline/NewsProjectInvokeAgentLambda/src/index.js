@@ -93,7 +93,7 @@ function recordJson() {
 // The lines of <prefix>inbox/<kind>/DAY.jsonl ([] when the day has no file); a read error throws.
 async function readInboxDay(kind, day) {
   const prefix = kind === 'entries' ? ENTRIES_INBOX_PREFIX : FORECASTS_INBOX_PREFIX;
-  return (await recordJson().getLines(`${prefix}inbox/${kind}/${day}.jsonl`)).lines;
+  return require('./_shared/archiveReads').inboxDayLines(recordJson(), prefix, kind, day);
 }
 // Read every stories/state/*.json (the full registry, per Phase 0's measured surface — NOT the
 // 80-cap stories/index.json). Best-effort: any failure returns [] so the matcher no-ops safely.

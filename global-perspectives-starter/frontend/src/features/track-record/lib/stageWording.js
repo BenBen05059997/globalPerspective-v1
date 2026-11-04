@@ -61,6 +61,6 @@ export function stageWording({ questions = null, lastResolvedAt = null, eraCutFr
     stage: 2,
     label: 'Stage 2 — scored',
     headline: `${resolved} questions resolved since ${since}.`,
-    detail: 'Each verdict was drafted by an agent that was not shown the probability, then confirmed by a person, with a cited source.',
+    detail: 'Each verdict was written by an automated resolver that was not shown the probability, with a quoted source; the operator spot-checks a sample and can correct any one, in the open.',
   };
 }

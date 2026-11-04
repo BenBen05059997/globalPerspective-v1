@@ -42,7 +42,7 @@ export function statusNotes(q, now = new Date()) {
     const earliest = sampled.map((s) => s.deadline).filter(Boolean).sort()[0];
     if (earliest) {
       const review = iso(mondayOnOrAfter(ms(earliest) + 3 * DAY));
-      notes.push({ key: 'first-results', text: `First results: the first locked questions reach their deadlines from ${fmtDay(earliest)}; the first verdicts are confirmed the week of ${fmtDay(review)}.` });
+      notes.push({ key: 'first-results', text: `First results: the first locked questions reach their deadlines from ${fmtDay(earliest)}; first verdicts ${review <= today ? 'were' : 'are'} due the week of ${fmtDay(review)}; none is settled yet.` });
     }
   }
   return notes;

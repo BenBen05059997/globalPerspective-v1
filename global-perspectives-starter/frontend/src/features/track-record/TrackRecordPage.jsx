@@ -276,8 +276,9 @@ export default function TrackRecordPage() {
             published but not scored.
           </li>
           <li>
-            <strong>Resolved with sources by an agent and a person.</strong> An agent that is not shown the
-            probability drafts a verdict with a quoted passage and a link; a person confirms it. A YES needs a source,
+            <strong>Resolved with sources by an automated resolver.</strong> A resolver that is not shown the
+            probability writes each verdict with a quoted passage and a link; the operator spot-checks a sample and can
+            correct any one, in the open. A YES needs a source,
             a NO is only allowed after the deadline plus {method.graceDays} days, and anything that cannot be judged is marked{' '}
             <em>void</em> with a reason, published, and excluded from the score. A question that only a gap in our own
             record keeps from a NO is marked void (&ldquo;gap in our record&rdquo;), never NO.

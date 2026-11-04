@@ -2,9 +2,9 @@
 // the weekly draw / verdict / review records). Colours mean:
 //   grey   nothing was due that week (a fact, not a miss)
 //   open   the week has not ended yet
-//   green  everything that fell due was confirmed
-//   amber  some of what fell due was confirmed
-//   red    something fell due, the week is over, and nothing was confirmed
+//   green  everything that fell due was settled
+//   amber  some of what fell due was settled
+//   red    something fell due, the week is over, and nothing was settled
 // "Due" = a sampled question whose deadline + 3 days falls in the week.
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 
@@ -16,13 +16,13 @@ export function weekSquare(w, now = new Date()) {
   const of = fmtDay(w.weekStart);
   if (due === 0) {
     return settled > 0
-      ? { kind: 'green', label: `Week of ${of}: nothing new fell due; ${settled} earlier question${settled === 1 ? '' : 's'} confirmed` }
+      ? { kind: 'green', label: `Week of ${of}: nothing new fell due; ${settled} earlier question${settled === 1 ? '' : 's'} settled` }
       : { kind: ended ? 'grey' : 'open', label: ended ? `Week of ${of}: nothing due` : `Week of ${of}: in progress, nothing due yet` };
   }
-  if (settled >= due) return { kind: 'green', label: `Week of ${of}: ${due} due, ${settled} confirmed` };
-  if (settled > 0) return { kind: 'amber', label: `Week of ${of}: ${due} due, ${settled} confirmed so far` };
+  if (settled >= due) return { kind: 'green', label: `Week of ${of}: ${due} due, ${settled} settled` };
+  if (settled > 0) return { kind: 'amber', label: `Week of ${of}: ${due} due, ${settled} settled so far` };
   if (!ended) return { kind: 'open', label: `Week of ${of}: ${due} due, review still to come` };
-  return { kind: 'red', label: `Week of ${of}: ${due} due, none confirmed` };
+  return { kind: 'red', label: `Week of ${of}: ${due} due, none settled` };
 }
 
 export function buildWeeklySquares(weeks = [], now = new Date()) {

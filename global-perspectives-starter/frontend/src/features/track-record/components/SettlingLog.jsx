@@ -4,7 +4,7 @@ import '@/features/track-record/components/SettlingLog.css';
 
 // SettlingLog — one square per real week (questions.weeks[], built by the server from the weekly
 // draw / verdict / review records). Grey = nothing was due (a fact, not a miss); red only when
-// something fell due, the week ended and nothing was confirmed. See lib/settlingLog.js.
+// something fell due, the week ended and nothing was settled. See lib/settlingLog.js.
 export default function SettlingLog({ weeks = [], firstCommit = null, pilotNote = null, now }) {
   const squares = buildWeeklySquares(weeks, now);
   const sum = settlingSummary(squares);
@@ -19,7 +19,7 @@ export default function SettlingLog({ weeks = [], firstCommit = null, pilotNote 
         <>
           <p className="tr-sl-summary">
             {sum.total} week{sum.total === 1 ? '' : 's'} since {fmtDay(weeks[0].weekStart)}:{' '}
-            {sum.green + sum.amber} with confirmations, {sum.red} where something was due and nothing was confirmed, {sum.grey + sum.open} with nothing due yet.
+            {sum.green + sum.amber} with settled questions, {sum.red} where something was due and nothing was settled, {sum.grey + sum.open} with nothing due yet.
           </p>
           <div className="tr-sl-grid" role="list" aria-label="Weekly settling log">
             {squares.map((s) => (
@@ -27,9 +27,9 @@ export default function SettlingLog({ weeks = [], firstCommit = null, pilotNote 
             ))}
           </div>
           <p className="tr-sl-legend">
-            <span className="tr-sl-key green" /> all confirmed
-            <span className="tr-sl-key amber" /> some confirmed
-            <span className="tr-sl-key red" /> due, none confirmed
+            <span className="tr-sl-key green" /> all settled
+            <span className="tr-sl-key amber" /> some settled
+            <span className="tr-sl-key red" /> due, none settled
             <span className="tr-sl-key grey" /> nothing due
           </p>
         </>

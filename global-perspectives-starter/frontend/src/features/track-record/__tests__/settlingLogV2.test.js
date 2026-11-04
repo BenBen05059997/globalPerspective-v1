@@ -21,7 +21,7 @@ describe('weekSquare', () => {
     expect(weekSquare(w('2026-10-12', 0, 3), NOW).kind).toBe('green'); // catch-up confirmations
   });
   it('labels carry real dates and counts', () => {
-    expect(weekSquare(w('2026-10-12', 4, 0), NOW).label).toBe('Week of Oct 12 2026: 4 due, none confirmed');
+    expect(weekSquare(w('2026-10-12', 4, 0), NOW).label).toBe('Week of Oct 12 2026: 4 due, none settled');
   });
 });
 

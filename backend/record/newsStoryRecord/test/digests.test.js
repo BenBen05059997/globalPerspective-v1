@@ -7,6 +7,7 @@ const {fakeS3} = require('./fake-s3');
 const X = require('./views-fixture');
 const {md5Of, bodyOf, readDigests} = require('../src/digests');
 const {makePublisher} = require('../src/publish');
+const V = require('../src/views');
 
 const P = 'record/shadow/';
 const silent = {log() {}};
@@ -33,6 +34,39 @@ test('serialization: the digest hashes the exact bytes s3json puts, and the same
   assert.equal(md5Of(obj), crypto.createHash('md5').update(f.objs.get('k').body).digest('hex'));
   assert.equal(md5Of(obj), md5Of(JSON.parse(JSON.stringify(obj))));
   assert.notEqual(md5Of(obj), md5Of({a: obj.a, b: 1})); // key order is part of the bytes
+});
+
+test('the digest leaves out the top-level builtFrom and nothing else', () => {
+  const a = {schemaVersion: 1, builtFrom: {factsThrough: '2026-10-22', readingsThrough: null}, threadId: 't', n: {builtFrom: 1}};
+  assert.equal(md5Of(a), md5Of({...a, builtFrom: {factsThrough: '2026-10-23', readingsThrough: '2026-10-19', provisionalThrough: '2026-10-23'}}));
+  assert.equal(md5Of(a), md5Of({schemaVersion: 1, threadId: 't', n: {builtFrom: 1}})); // no stamp at all hashes the same
+  assert.notEqual(md5Of(a), md5Of({...a, n: {builtFrom: 2}})); // a nested builtFrom is content
+  assert.notEqual(md5Of(a), md5Of({...a, threadId: 'u'}));
+});
+
+test('a day later with a new fact for one story: the untouched stories keep their digest and their file (and their older builtFrom); only the touched one is written', async () => {
+  const facts = X.golden();
+  const {f, load, run} = setup(facts);
+  const first = await run();
+  const old = V.buildViews(facts, {today: '2026-10-22', builtAt: AT, runId: 'r1', factsManifestDays: 7});
+  const next = [...facts, X.entry('thread-b', '2026-10-23T04:00:00.000Z', 'B second', {id: 'eb2', iso3: ['FRA'], sources: ['s1']})];
+  const now = V.buildViews(next, {today: '2026-10-23', builtAt: '2026-10-23T23:45:00.000Z', runId: 'r2', factsManifestDays: 8});
+  for (const id of ['thread-a', 'thread-old']) { // no new facts for these: the build differs by the stamp alone
+    assert.notDeepEqual(old.stories.get(id).builtFrom, now.stories.get(id).builtFrom, id);
+    assert.equal(md5Of(old.stories.get(id)), md5Of(now.stories.get(id)), id);
+    assert.equal(md5Of(old.links.get(id)), md5Of(now.links.get(id)), id);
+  }
+  assert.notEqual(md5Of(old.stories.get('thread-b')), md5Of(now.stories.get('thread-b')));
+  const before = f.puts.length;
+  load(next);
+  const second = await run({today: '2026-10-23', builtAt: '2026-10-23T23:45:00.000Z', runId: 'r2', changedDays: ['2026-10-23']});
+  const keys = f.puts.slice(before).map((p) => p.Key.slice(`${P}views/`.length));
+  assert.ok(keys.includes('stories/thread-b.json') && keys.includes('links/thread-b.json'));
+  for (const k of ['stories/thread-a.json', 'stories/thread-old.json', 'links/thread-a.json', 'links/thread-old.json', 'forecasts/thread-a.json']) assert.ok(!keys.includes(k), k);
+  assert.equal(f.json(`${P}views/stories/thread-a.json`).builtFrom.factsThrough, '2026-10-22'); // the file is the one the first run wrote
+  assert.equal(f.json(`${P}views/stories/thread-b.json`).builtFrom.factsThrough, '2026-10-23');
+  assert.equal(f.json(`${P}views/manifest.json`).factsThrough, '2026-10-23');
+  assert.ok(second.written < first.written / 2, `${second.written} of ${first.written}`);
 });
 
 test('a missing digest file writes everything; the log line and result say so', async () => {
@@ -111,7 +145,6 @@ test('a failed write stops the sequence: no digests.json update and the old mani
 });
 
 // provisionalThrough is stamped only on a view that holds provisional content
-const V = require('../src/views');
 const prov = () => ({...X.entry('thread-a', '2026-10-22T07:00:00.000Z', 'A today', {id: 'eprov', iso3: ['FRA'], sources: ['s1']}), provisional: true});
 const build = (provisional) => V.buildViews(X.golden(), {today: '2026-10-22', builtAt: AT, runId: 'r', factsManifestDays: 7, provisional});
 

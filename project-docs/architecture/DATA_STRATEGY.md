@@ -48,6 +48,7 @@ Besides the five, these Global Perspectives tables exist (§6 says which stay): 
 | `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 30-min sweep | map, thread and country pages |
 | `situations/archive/<id>.json` | `newsSituationTracker` | on close and age-out | audit |
 | `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
+| `situations/merges/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | a sweep with new news joins (`NEWS_GROUPING`) | audit |
 | `world/latest.json`, `world/YYYY/MM/DD/HHMM.json`, `world/latest.member.json` | `newsSituationTracker` (assembles at the end of a sweep) | each sweep | frontend via the Worker (member file JWT-gated) |
 | `world/shadow/…` | tracker in `DRY_RUN` (live `DRY_RUN=false`, so nothing new is written) | | humans, tuning |
 | `web/latest.json`, `web/YYYY/MM/DD.json` (story web snapshot) | `newsSystemsAnalysis` | daily 05:00 UTC | `newsStoryRecord` (world reader) |

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { factRows, compactPopulation, FACTS_MAX_AGE_DAYS } from '@/features/countries/lib/countryFacts.js';
+import { factRows, compactPopulation, checkedDay, checkedLabel, FACTS_MAX_AGE_DAYS } from '@/features/countries/lib/countryFacts.js';
 
 const NOW = Date.parse('2026-09-30T12:00:00Z');
 const chk = '2026-09-28T20:03:23.148Z';
@@ -52,5 +52,12 @@ describe('factRows (Batch 3 / D)', () => {
   it('omits the capital row when Wikidata lists more than one capital (contested / ambiguous)', () => {
     const rows = factRows({ capital: { names: ['Jerusalem', 'Tel Aviv'], source: 'wikidata', checkedAt: chk } }, NOW);
     expect(rows.find((r) => r.key === 'capital')).toBeUndefined();
+  });
+});
+
+describe('checked date', () => {
+  it('the card and Copy as text name the same (UTC) day, whatever the reader\'s time zone', () => {
+    expect(checkedDay('2026-11-01T20:03:23.148Z')).toBe('2026-11-01');
+    expect(checkedLabel('2026-11-01T20:03:23.148Z')).toMatch(/\b1\b/);
   });
 });

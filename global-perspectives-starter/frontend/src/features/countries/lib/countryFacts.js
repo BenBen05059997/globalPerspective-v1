@@ -18,6 +18,11 @@ const isFresh = (iso, now) => {
 };
 const sourceLabel = (s) => (s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : null);
 
+/** The day a fact was checked, as the UTC date the stored stamp carries (YYYY-MM-DD): the one date the card and Copy as text both print. */
+export const checkedDay = (iso) => String(iso).slice(0, 10);
+/** checkedDay as the card shows it ("Nov 1"), read in UTC so it names the same day as checkedDay. */
+export const checkedLabel = (iso) => new Date(`${checkedDay(iso)}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
 /** compactPopulation - 84,900,000 -> "84.9M"; 1,404,890,000 -> "1.40B"; 5,261,372 -> "5.3M". */
 export function compactPopulation(n) {
   const v = Number(n);

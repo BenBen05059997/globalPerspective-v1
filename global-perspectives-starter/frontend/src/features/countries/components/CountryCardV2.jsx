@@ -22,7 +22,7 @@ import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js
 import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
-import { factRows } from '@/features/countries/lib/countryFacts.js';
+import { factRows, checkedLabel } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';
@@ -107,7 +107,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
               <b>{r.value}</b> {r.label}
               {r.since ? ` (since ${r.since})` : ''}
               {r.dataYear ? ` (${r.dataYear})` : ''}
-              <span className="ccv2-fact-date">{r.source} · checked {fmtShort(r.checkedAt)}</span>
+              <span className="ccv2-fact-date">{r.source} · checked {checkedLabel(r.checkedAt)}</span>
             </span>
           ))}
         </div>

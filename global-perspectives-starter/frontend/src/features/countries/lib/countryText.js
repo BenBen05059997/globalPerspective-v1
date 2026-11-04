@@ -2,6 +2,7 @@
 // JUDGMENT marks are kept, every link becomes a numbered footnote with an absolute address (links.js builders +
 // absoluteUrl), and the "What we don't know" block is always included. "Your view" is private and never copied.
 import { absoluteUrl, countryHref, storyHref, forecastHref } from '@/shared/lib/links.js';
+import { checkedDay } from '@/features/countries/lib/countryFacts.js';
 import { deriveHeadline, tierLabel } from '@/shared/lib/riskTiers.js';
 
 const clean = (s) => String(s || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
@@ -76,7 +77,7 @@ export function formatCountrySheet(m) {
   if (m.facts?.length) {
     section('COUNTRY FACTS', 'FACT');
     for (const f of m.facts) {
-      out.push(`- ${f.label}: ${f.value}${f.since ? ` (since ${f.since})` : ''}${f.dataYear ? ` (${f.dataYear})` : ''} - ${f.source}, checked ${String(f.checkedAt).slice(0, 10)}`);
+      out.push(`- ${f.label}: ${f.value}${f.since ? ` (since ${f.since})` : ''}${f.dataYear ? ` (${f.dataYear})` : ''} - ${f.source}, checked ${checkedDay(f.checkedAt)}`);
     }
   }
 

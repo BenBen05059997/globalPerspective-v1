@@ -394,8 +394,9 @@ export default function CountryPage() {
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
 
   useEffect(() => {
-    document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
-  }, [decodedName]);
+    // a name that is not a country gets a neutral title, never "<name> Intelligence Briefing"
+    document.title = country ? `${decodedName} Intelligence Briefing — Global Perspectives` : 'Country — Global Perspectives';
+  }, [decodedName, country]);
 
   if (country && country.name !== countryName) return <Navigate replace to={countryHref(country.iso3)} />;
   if (loading) return <BootLoader variant="inline" label="Loading country" text="Loading country" />;
@@ -541,10 +542,10 @@ export default function CountryPage() {
   // The hero's header bar (back link, country picker, risk + direction pills). Desktop: over the map
   // band. Phone READ: the same bar as a flat row (no map is loaded); phone MAP: over the map.
   const heroBar = (
-        <div className={`cpg-map-overlay${isPhone && phoneTab === 'read' ? ' cpg-map-overlay--flat' : ''}`} ref={setOverlayEl}>
+        <div className={`cpg-map-overlay${!country || (isPhone && phoneTab === 'read') ?' cpg-map-overlay--flat' : ''}`} ref={setOverlayEl}>
           <div className="cpg-map-overlay-left">
             <Link to={ROUTE.countries} className="cpg-map-back">← Countries</Link>
-            <select
+            {country && <select
               className="cpg-country-select"
               aria-label="Select country"
               value={decodedName}
@@ -553,7 +554,7 @@ export default function CountryPage() {
               {countries.map(c => (
                 <option key={c.name} value={c.name}>{c.name} ({c.articles})</option>
               ))}
-            </select>
+            </select>}
             {country && <Link to={mapHref({ country: country.iso3 })} className="cpg-map-back">Show on map</Link>}
           </div>
           <div className="cpg-map-overlay-right">
@@ -588,7 +589,7 @@ export default function CountryPage() {
       {!countryData ? (
         <div className="cpg-nocov">
           <h3>No coverage for {decodedName}</h3>
-          <p>This country has no recent news in the archive.</p>
+          <p>{country ? `${decodedName} has no recent news in the archive.` : 'We hold no recent coverage under this name.'}</p>
         </div>
       ) : (
         <EditorialShell
@@ -855,7 +856,12 @@ export default function CountryPage() {
 
   return (
     <div className="cpg-page">
-      {isPhone ? (
+      {!country ? (
+        <>
+          <div className="cpg-phonehead">{heroBar}</div>
+          {readBody}
+        </>
+      ) : isPhone ? (
         <>
           <div className="cpg-phonehead">
             <PhoneTabs tabs={PHONE_TABS} active={phoneTab} onChange={setPhoneTab} label="Country view" idBase="cp" />

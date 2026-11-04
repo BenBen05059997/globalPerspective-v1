@@ -58,11 +58,26 @@ describe('country page: one name per country', () => {
     expect(screen.getByRole('link', { name: 'Show on map' }).getAttribute('href')).toBe('/?country=USA');
   });
 
-  it('a name that is not a country keeps its coverage but gets no map, follow or save', () => {
+  it('a name that is not a country gets no map, follow or save', () => {
     at('/weekly/country/Strait%20of%20Hormuz');
     expect(screen.getByTestId('where').textContent).toBe('/weekly/country/Strait%20of%20Hormuz');
     expect(screen.queryByRole('link', { name: 'Show on map' })).not.toBeInTheDocument();
     expect(screen.queryByText('follow')).not.toBeInTheDocument();
     expect(screen.queryByText('save')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Select country')).not.toBeInTheDocument();
+    expect(document.title).toBe('Country — Global Perspectives');
+  });
+
+  it('an unknown name gets a neutral title, no map or picker, and a plain no-coverage line', () => {
+    at('/weekly/country/Narnia');
+    expect(document.title).toBe('Country — Global Perspectives');
+    expect(screen.getByText('No coverage for Narnia')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/This country/);
+    expect(screen.queryByLabelText('Select country')).not.toBeInTheDocument();
+  });
+
+  it('a country keeps its titled page', () => {
+    at('/weekly/country/United%20States');
+    expect(document.title).toBe('United States Intelligence Briefing — Global Perspectives');
   });
 });

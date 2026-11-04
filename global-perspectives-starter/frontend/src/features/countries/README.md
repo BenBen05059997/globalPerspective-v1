@@ -15,7 +15,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - `/weekly/countries` -> `CountryListPage` (`/weekly?section=countries` redirects here, `app/LegacyRedirects.jsx`)
 - `/weekly/country/:countryName` -> `CountryPage`. `useParams()` already decodes the name; decoding again throws on `%`.
   Aliases and ISO3 codes (`USA`, `ARE`, `West Bank`) redirect to the canonical name (`countryHref`) and data is read under it only;
-  a non-country keeps coverage but gets no map, follow, save or share.
+  a non-country gets a neutral title, no map, picker, follow, save or share, and says there is no recent coverage under that name (record days carry only countries).
 - Links come from `@/shared/lib/links.js` (Show on map `mapHref`, `storyHref`; card forecasts -> `?q=<qid>`).
 
 ## Frontend

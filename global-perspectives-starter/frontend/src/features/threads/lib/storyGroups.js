@@ -5,6 +5,7 @@
 //
 // Honesty rules (CLAUDE.md "never invent facts"): every date comes from the archive's own day keys
 // (YYYY-MM-DD) or a day's real `updatedAt`; nothing here synthesises a date, a status or a score.
+import { dropRedatedRepeats } from '@/shared/lib/dropRedatedRepeats.js';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { crisisTypeForCategory } from '@/shared/lib/crisisHue';
 import { deriveHeadline } from '@/shared/lib/riskTiers';
@@ -39,10 +40,10 @@ export const CRISIS_TYPES = ['conflict', 'political', 'economic', 'humanitarian'
 
 // Window control: last-change recency. Infinity = everything the archive returned (<= 30 days).
 export const WINDOWS = [
-  { value: '1d', label: '24 h', days: 1, span: 3 },
-  { value: '3d', label: '3 d', days: 3, span: 3 },
-  { value: '7d', label: '7 d', days: 7, span: 7 },
-  { value: '30d', label: '30 d', days: Infinity, span: 30 },
+  { value: '1d', phrase: 'last 24 hours', label: '24 h', days: 1, span: 3 },
+  { value: '3d', phrase: 'last 3 days', label: '3 d', days: 3, span: 3 },
+  { value: '7d', phrase: 'last 7 days', label: '7 d', days: 7, span: 7 },
+  { value: '30d', phrase: 'last 30 days', label: '30 d', days: Infinity, span: 30 },
 ];
 export const DEFAULT_WINDOW = '30d';
 export const SORTS = [
@@ -53,10 +54,17 @@ export const SORTS = [
 
 const windowOf = (value) => WINDOWS.find((w) => w.value === value) || WINDOWS[WINDOWS.length - 1];
 
-// Whole days since a YYYY-MM-DD archive date (the archive is day-granular), local calendar.
+// Archive day keys are UTC days (the pipeline runs on UTC), so every day count here is on the UTC calendar:
+// the same answer in Los Angeles and in Tokyo. Never mix a key with the reader's local midnight.
+const utcDay = (ms) => Math.floor(ms / MS_DAY);
+
+/** Calendar days from a YYYY-MM-DD archive day key to the UTC day of `now` (0 = today's key, negative = a future key). */
 export function daysSince(dateStr, now = Date.now()) {
-  return Math.floor((now - new Date(dateStr + 'T00:00:00').getTime()) / MS_DAY);
+  return utcDay(now) - utcDay(Date.parse(`${dateStr}T00:00:00Z`));
 }
+
+/** The YYYY-MM-DD key of the UTC day `ago` days before `now`. */
+export const dayKeyAgo = (ago, now = Date.now()) => new Date((utcDay(now) - ago) * MS_DAY).toISOString().slice(0, 10);
 
 // ─── Threads from the archive ───────────────────────────────────────────────────────────────────
 
@@ -69,7 +77,7 @@ function validIso(v) {
  * buildThreads(dayMap, sortedDates, now) -> { threads, standalone }
  * Groups archive entries by `threadId`. Each thread carries `dates` (unique day keys, ascending),
  * `dateRange`, `changedAt` (a REAL timestamp: the `updatedAt` of the thread's newest day; with none,
- * the newest day's local midnight only when that day is before today, else null — never a guess)
+ * the newest day's UTC midnight only when that day is before today, else null — never a guess)
  * and the same fields the old page used (entries, articleCount, dayCount, regions, trend ...).
  */
 export function buildThreads(dayMap, sortedDates, now = Date.now()) {
@@ -80,24 +88,27 @@ export function buildThreads(dayMap, sortedDates, now = Date.now()) {
     for (const entry of entries) {
       const enriched = { ...entry, date };
       if (entry.threadId) {
-        const t = threadMap[entry.threadId] || (threadMap[entry.threadId] = { entries: [], allSources: new Set(), allRegions: new Set() });
-        t.entries.push(enriched);
-        for (const s of (entry.sources || [])) t.allSources.add(s.source || s.title || 'Unknown');
-        for (const r of (entry.regions || [])) t.allRegions.add(r);
+        (threadMap[entry.threadId] ||= []).push(enriched);
       } else {
         standalone.push(enriched);
       }
     }
   }
 
-  const threads = Object.entries(threadMap).map(([threadId, data]) => {
+  const threads = Object.entries(threadMap).map(([threadId, all]) => {
+    // The same rule as the story page (useNarrativeThread): a headline re-written under a later day counts once, on its first day.
+    const data = { entries: dropRedatedRepeats(all), allSources: new Set(), allRegions: new Set() };
+    for (const e of data.entries) {
+      for (const s of (e.sources || [])) data.allSources.add(s.source || s.title || 'Unknown');
+      for (const r of (e.regions || [])) data.allRegions.add(r);
+    }
     data.entries.sort((a, b) => b.date.localeCompare(a.date));
     const regions = [...data.allRegions];
     const to = data.entries[0].date;
     const from = data.entries[data.entries.length - 1].date;
     const dates = [...new Set(data.entries.map((e) => e.date))].sort();
     const stamped = validIso(dayMap[to]?.updatedAt);
-    const changedAt = stamped || (daysSince(to, now) >= 1 ? `${to}T00:00:00` : null);
+    const changedAt = stamped || (daysSince(to, now) >= 1 ? `${to}T00:00:00Z` : null);
     return {
       threadId,
       latestTitle: data.entries[0].title,
@@ -357,18 +368,18 @@ export function timelineLayout(dates, span, now = Date.now()) {
   };
 }
 
-/** Axis ticks: about `count` evenly spaced local dates across the span, oldest first. */
+/** Axis ticks: about `count` evenly spaced UTC days across the span, oldest first. */
 export function timelineTicks(span, now = Date.now(), count = 6) {
   const denom = Math.max(1, span - 1);
   const n = Math.min(count, span);
   const out = [];
   for (let k = 0; k < n; k += 1) {
     const idx = n === 1 ? span - 1 : Math.round((k * denom) / (n - 1));
-    const d = new Date(now - (span - 1 - idx) * MS_DAY);
+    const d = new Date(Date.parse(`${dayKeyAgo(span - 1 - idx, now)}T00:00:00Z`));
     out.push({
       idx,
       pct: span === 1 ? 50 : (idx / denom) * 100,
-      label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
     });
   }
   return out;

@@ -23,7 +23,7 @@ describe('what the Stories page and the countries list see (fixture window, now 
   it('the Stories page: one story fewer (two folded into others, one re-seated), the same ages otherwise', () => {
     const a = summarize(action.data), r = summarize(rec);
     expect([a.threads.length, r.threads.length]).toEqual([107, 106]);
-    expect([a.groups, r.groups]).toEqual([{ moving: 30, week: 77, older: 0, archive: 0 }, { moving: 29, week: 77, older: 0, archive: 0 }]); // the merged story was one of the moving ones
+    expect([a.groups, r.groups]).toEqual([{ moving: 28, week: 79, older: 0, archive: 0 }, { moving: 27, week: 79, older: 0, archive: 0 }]); // the merged story was one of the moving ones; two stories are no longer "moving" once their re-dated repeats are dropped (S8: same rule as the story page)
     const ids = new Set(a.threads.map((t) => t.threadId)), rids = new Set(r.threads.map((t) => t.threadId));
     expect(r.threads.filter((t) => !ids.has(t.threadId)).map((t) => t.articleCount)).toEqual([2]); // one story under an id the archive did not have (entries re-seated)
     expect(a.threads.filter((t) => !rids.has(t.threadId)).length).toBe(2); // and two archive stories folded into stories the record keeps

@@ -13,7 +13,7 @@ import EntityLink from '@/shared/ui/EntityLink.jsx';
 // inside each row (all lanes and the axis scroll together), the page never overflows.
 const CAP = 40;
 
-const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const fmt = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 // Keep every lane (and the axis) at the same horizontal scroll offset.
 function syncLanes(e) {
@@ -38,7 +38,6 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
     if (!root) return;
     for (const el of root.querySelectorAll('.tl-lane-scroll')) if (el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth;
   }, [windowValue, limit, total]);
-  if (!threads.length) return <div className="weekly-empty-state"><p>No stories match your current filters.</p></div>;
   return (
     <div className="tl" ref={rootRef} onScrollCapture={syncLanes}>
       <div className="tl-axis" aria-hidden="true">

@@ -6,13 +6,9 @@ import {
   dayCounts, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
 
-// "now" = 2026-10-01 12:00 local. Day keys are real YYYY-MM-DD strings.
-const NOW = new Date('2026-10-01T12:00:00').getTime();
-const ago = (days) => {
-  const d = new Date(NOW - days * MS_DAY);
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
+// "now" = 2026-10-01 12:00 UTC. Day keys are real UTC YYYY-MM-DD strings.
+const NOW = new Date('2026-10-01T12:00:00Z').getTime();
+const ago = (days) => new Date(NOW - days * MS_DAY).toISOString().slice(0, 10);
 const entry = (threadId, title, extra = {}) => ({ topicId: `${threadId}-${title}`, threadId, title, category: 'conflict', regions: ['Iran'], sources: [{ source: 'a.com' }], ...extra });
 
 function archive(spec) {
@@ -52,7 +48,7 @@ describe('buildThreads', () => {
     const today = buildThreads({ [ago(0)]: { entries: [entry('a', 'x')] } }, [ago(0)], NOW);
     expect(today.threads[0].changedAt).toBeNull();
     const old = buildThreads({ [ago(3)]: { entries: [entry('a', 'x')] } }, [ago(3)], NOW);
-    expect(old.threads[0].changedAt).toBe(`${ago(3)}T00:00:00`);
+    expect(old.threads[0].changedAt).toBe(`${ago(3)}T00:00:00Z`);
   });
 });
 

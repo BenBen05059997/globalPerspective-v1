@@ -2,7 +2,7 @@
 
 The operator's health and cost view (design: [ARCHITECTURE_OPS.md](../../../project-docs/architecture/ARCHITECTURE_OPS.md)). Once an hour it reads the pipeline's own files and AWS metrics and writes two JSON files. It uses no model and sends no alert (the operator removed pipeline alarms 2026-11-02): it only writes what it saw, and a source it cannot read is `nodata` with the error text, never a made-up value.
 
-**Status: built 2026-11-04, not deployed.** No role, function or schedule exists yet; follow "Deploy" below.
+**Status: live.** Deployed 2026-11-04 (about 20:34 JST), rule `TriggerHealth` hourly and ENABLED; `record/views/health.json` and `monitoring/ops.json` are written. The `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set) and the `/ops` page is in bundle `index-CYeE3t3L`.
 
 ## Files it writes (world bucket)
 | File | Who reads it | What |
@@ -28,7 +28,7 @@ ingest (`record/runs/DAY.json` `inputs.rawDay`) · agent (line count of `record/
 - Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`). No secrets.
 - Test event flags: `{"dry": true}` (writes nothing), `{"skipCost": true}`.
 
-## Deploy (operator authorization for each IAM and AWS step; nothing here has been run)
+## Deploy (the steps used on 2026-11-04; each IAM and AWS step needed the operator's yes)
 ```
 # 1. role (IAM)
 aws iam create-role --role-name newsHealth-role --assume-role-policy-document file://backend/monitoring/newsHealth/iam/trust.json

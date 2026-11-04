@@ -8,7 +8,7 @@ This folder is stage 10: the operator page (/ops): money and pipeline health. Ti
 <!-- pipeline:end -->
 
 ## Status
-Phase 1 (money and pipeline panels) built 2026-11-04, not deployed: `newsHealth` does not exist in AWS yet, so `record/views/health.json` and `monitoring/ops.json` are not written, and the `ops` action is not in the deployed `newsReadApi`. Until then the page says so honestly ("The pipeline view has not been generated yet.", "The money file has not been written yet."). Readers and quality panels are later phases (`ARCHITECTURE_OPS.md`).
+Phase 1 (money and pipeline panels) is live: released in bundle `index-CYeE3t3L` (2026-11-04); `newsHealth` writes `record/views/health.json` and `monitoring/ops.json` hourly and the deployed `newsReadApi` has the `ops` action. A missing file still reads honestly ("The pipeline view has not been generated yet.", "The money file has not been written yet."). Readers and quality panels are later phases (`ARCHITECTURE_OPS.md`).
 
 ## Routes
 - `/ops` (`OPS_ROUTE` in `index.js`; lazy in `app/App.jsx`; noindex). Not in `shared/lib/links.js`, whose core is mirrored into the Lambdas' link code.

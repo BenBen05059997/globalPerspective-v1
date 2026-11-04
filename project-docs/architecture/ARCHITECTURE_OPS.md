@@ -1,11 +1,11 @@
 # Ops: the health view and the operator page (plan, 2026-11-04)
 
-Status: phase 1 (money + pipeline) built 2026-11-04, not deployed; phases 2 to 4 not started. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
+Status: phase 1 (money + pipeline) is live: `newsHealth` deployed 2026-11-04 (rule `TriggerHealth`, hourly), the `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set), and the `/ops` page is released (bundle `index-CYeE3t3L`, 2026-11-04). Phases 2 to 4 not started. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
 Google Analytics and Cloudflare Web Analytics; add Google Search Console; PostHog later, for member events only; no alarms
 (the operator removed them 2026-11-02 and does not want them back). This page is where the operator looks, and what the
 coordinating session reads when asked "how is it now".
 
-## Phase 1 as built (changes from the plan)
+## Phase 1 as built (changes from the plan; the Lambda's own facts are in its README)
 - `newsHealth` code, `src/prices.json` (in `src/` so the zip carries it; real list rates read 2026-11-04: Flash $0.15/$0.60, Pro $0.66/$1.98 per million, cache hit $0.003/$0.022, peak hours double), role policy `backend/monitoring/newsHealth/iam/`, deploy commands in its README. Peak (01-04, 06-10 UTC Mon-Fri) is priced hourly, so the usage query bins by hour.
 - `health.json`: `days[].rows[]` with `status` ok/thin/missing/failed/nodata, each row with facts, source, time. A day is judged only after the next day's 01:00 UTC. Resolver and situations are snapshots: a closed day keeps the row the previous file held, so they start empty after deploy. Errors thin from 1, failed from 5 a day; a compare DIFFER is thin.
 - `ops.json` keeps 62 days so month to date survives the 14-day query; AWS cost is pulled on the first run of each UTC day (not exactly 00:15). Weekly review spend is per ISO week.
@@ -36,10 +36,9 @@ Two files, one Lambda, one page.
 - DeepSeek, estimated: the `[usage]` log lines every model call writes (`fn`, `model`, prompt/completion/cache-hit tokens),
   summed per day per Lambda per model by one CloudWatch Logs Insights query over the `/aws/lambda/news*` groups, priced with
   `backend/monitoring/newsHealth/prices.json` (operator-owned: model, price per million in/out/cache-hit, valid-from date;
-  today's list rates Flash $0.14/$0.28, Pro $1.74/$3.48, to be checked against api-docs.deepseek.com before the first build).
+  list rates and peak hours are in `src/prices.json`, read 2026-11-04).
   Shown: yesterday, month to date, by Lambda, trend.
-- DeepSeek, actual: the account balance endpoint, if it exists for our key (to verify; needs the key in the new Lambda's env, a
-  secret copy, operator yes). Shown next to the estimate so the two can be compared.
+- DeepSeek, actual: not read (it would need a secret copy of the key in the Lambda's env; `newsModelGuard` already reads the balance).
 - AWS: Cost Explorer `GetCostAndUsage`, daily by service, pulled once a day ($0.01 a call). Needs `ce:GetCostAndUsage` on the
   role (IAM, operator yes).
 - Unit costs: model spend per story entry, per forecast question, per country briefing, per weekly review, per daily brief,
@@ -88,7 +87,7 @@ Two files, one Lambda, one page.
    recovery from public records (decision 0040) and mark the day "recovered". Done when: a forced-missing day heals without a hand.
 Later: PostHog; AI-search citation tracking; a public status line on the map from `health.json`.
 
-## Needs the operator (fresh yes each)
+## Needs the operator (fresh yes each; phase 1 items are done)
 IAM on the `newsHealth` role (`ce:GetCostAndUsage`, `logs:StartQuery/GetQueryResults`, `cloudwatch:GetMetricData`, `lambda:InvokeFunction`
 on the resolver, S3 read on `record/` and write on the two files); the DeepSeek key and the Cloudflare analytics token in its env;
 the operator uid for the `ops` action; Search Console verification; the `/ops` route in a frontend release.

@@ -62,6 +62,14 @@ describe('ledgerLine', () => {
     expect(ledgerLine({ ...thread, threadId: undefined, name: 'topic-123' }).threadId).toBeNull();
   });
 
+  it('shows only what moved: never "72 → 72"', () => {
+    const same = { ...thread, changeScore: { from: 72, to: 72 }, changeLevel: { from: 'HIGH', to: 'HIGH' } };
+    expect(ledgerLine(same).change).toBe('read revised');
+    expect(ledgerLine({ ...same, changeDimensions: { conflict: { from: 60, to: 60, delta: 0 }, economic: { from: 40, to: 48, delta: 8 } } }).change).toBe('Economic 40 → 48');
+    expect(ledgerLine({ ...same, changeLevel: { from: 'MODERATE', to: 'HIGH' } }).change).toBe('MODERATE → HIGH');
+    expect(ledgerLine({ ...same, changeScore: { from: 72, to: 75 } }).change).toBe('risk 72 → 75');
+  });
+
   it('a flagged note shows numbers only, never the cited event', () => {
     const l = ledgerLine({ ...thread, directionFlag: { backfilled: true }, whyChanged: 'Risk fell because of an escalation.', changeDimensions: { conflict: { from: 85, to: 95, delta: 10 } } });
     expect(l.event).toBeNull();

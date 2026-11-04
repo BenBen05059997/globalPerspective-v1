@@ -3,14 +3,20 @@
 // row is "A story" (linked when the id is a real `thread-` id), never the id text. The cause goes through
 // driftNote's safeTriggerEvent / safeWhy so a flagged note shows numbers only.
 import { safeTriggerEvent, safeWhy } from '@/shared/lib/driftNote.js';
+import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 
 export function ledgerLine(n) {
   const country = n.scope === 'country';
   const id = n.threadId || n.name || '';
   const event = safeTriggerEvent(n);
+  // Only a value that moved is shown: a note whose level and score are unchanged (a revised read, e.g. an
+  // axis moved or only the reasoning) never prints "72 → 72".
+  const moved = (c) => c?.from != null && c?.to != null && c.from !== c.to;
+  const axis = AXES.find((a) => moved(n.changeDimensions?.[a]));
   let change = 'read revised';
-  if (n.changeLevel?.from && n.changeLevel?.to && n.changeLevel.from !== n.changeLevel.to) change = `${n.changeLevel.from} → ${n.changeLevel.to}`;
-  else if (n.changeScore?.from != null && n.changeScore?.to != null) change = `risk ${n.changeScore.from} → ${n.changeScore.to}`;
+  if (moved(n.changeLevel)) change = `${n.changeLevel.from} → ${n.changeLevel.to}`;
+  else if (moved(n.changeScore)) change = `risk ${n.changeScore.from} → ${n.changeScore.to}`;
+  else if (axis) change = `${AXIS_LABELS[axis]} ${n.changeDimensions[axis].from} → ${n.changeDimensions[axis].to}`;
   return {
     country,
     name: country ? n.name : 'A story',

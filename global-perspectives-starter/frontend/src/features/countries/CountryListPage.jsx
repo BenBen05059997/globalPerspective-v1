@@ -16,6 +16,9 @@ import StoryRow from '@/shared/ui/StoryRow.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
+import { isArc } from '@/features/countries/lib/countryArcs';
+import { briefingAge } from '@/features/countries/lib/briefingAge';
+import { applyListView } from '@/features/countries/lib/countryListView';
 import { parentCountry } from '@/shared/lib/countries.js';
 import { countryHref } from '@/shared/lib/links.js';
 import '@/features/countries/CountryListPage.css';
@@ -43,6 +46,7 @@ function CountryCard({ country, intel }) {
 
       <div className="clp-card-foot">
         <CategoryTag category={country.topCategories?.[0]} />
+        {briefingAge(intel) === 'older' && <span className="clp-card-meta">older briefing</span>}
         <span className="clp-card-meta">
           {country.articles} art · {country.arcCount} {country.arcCount !== 1 ? 'arcs' : 'arc'}
         </span>
@@ -110,16 +114,16 @@ function RiskBand({ band, items, intelligence }) {
 
 // ─── Left Rail ────────────────────────────────────────────────────────────────
 
-function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegion, regionCounts }) {
+function LeftRail({ idPrefix, sortBy, onSort, searchQuery, onSearch, activeRegion, onRegion, regionCounts }) {
   return (
     <div className="clp-rail-left">
       <div className="clp-rail-section">
-        <SectionHeader label="Search" id="clp-search-label" />
+        <SectionHeader label="Search" id={`${idPrefix}-search-label`} />
         <input
           className="clp-search"
           type="text"
           placeholder="Filter countries…"
-          aria-labelledby="clp-search-label"
+          aria-labelledby={`${idPrefix}-search-label`}
           value={searchQuery}
           onChange={e => onSearch(e.target.value)}
         />
@@ -218,9 +222,9 @@ export default function CountryListPage() {
         // for Palestine); regions, blocs and seas (Europe, NATO, Strait of Hormuz) are not countries.
         const names = new Set((entry.regions || []).map((r) => parentCountry(r)?.name).filter(Boolean));
         for (const region of names) {
-          if (!map[region]) map[region] = { name: region, articles: 0, threads: new Set(), categories: {} };
+          if (!map[region]) map[region] = { name: region, articles: 0, threads: {}, categories: {} };
           map[region].articles++;
-          if (entry.threadId) map[region].threads.add(entry.threadId);
+          if (entry.threadId) map[region].threads[entry.threadId] = (map[region].threads[entry.threadId] || 0) + 1;
           const cat = (entry.category || 'other').toLowerCase();
           map[region].categories[cat] = (map[region].categories[cat] || 0) + 1;
         }
@@ -233,7 +237,7 @@ export default function CountryListPage() {
         return {
           name: c.name,
           articles: c.articles,
-          arcCount: c.threads.size,
+          arcCount: Object.values(c.threads).filter(isArc).length,
           topCategories: sortedCats.slice(0, 2).map(([cat]) => cat),
           region: getTopicRegion({ regions: [c.name] }),
         };
@@ -241,12 +245,16 @@ export default function CountryListPage() {
       .sort((a, b) => b.articles - a.articles);
   }, [dayMap, sortedDates, loading]);
 
-  // Request briefings for every country the backend generates one for. The backend
-  // caps at MAX_COUNTRIES=20 (newsCountryIntelligence); fetch a small margin over
-  // that so ranking drift between the two sides can't strand a real briefing in the
-  // "not enough coverage" bucket. Single batched call — no request-burst cost.
-  const countryNames = useMemo(() => countries.slice(0, 24).map(c => c.name), [countries]);
-  const { intelligence } = useCountryIntelligence(countryNames);
+  // Request briefings for every country in the news: the countries index answers for all of them in one request, and
+  // a country with no briefing there lands in "not enough coverage".
+  const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
+  const { intelligence: loaded } = useCountryIntelligence(countryNames);
+  // A briefing past the card's/map's age limit is not shown as a briefing here either.
+  const intelligence = useMemo(() => {
+    const out = {};
+    for (const [name, intel] of Object.entries(loaded || {})) if (briefingAge(intel) !== 'hidden') out[name] = intel;
+    return out;
+  }, [loaded]);
 
   const [activeRegion, setActiveRegion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -262,12 +270,12 @@ export default function CountryListPage() {
 
   const regionCounts = useMemo(() => {
     const counts = {};
-    for (const c of featured) {
+    for (const c of countries) {
       const r = c.region || 'World';
       counts[r] = (counts[r] || 0) + 1;
     }
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [featured]);
+  }, [countries]);
 
   const latestGeneratedAt = useMemo(() => {
     let latest = null;
@@ -282,25 +290,11 @@ export default function CountryListPage() {
 
   if (loading) return <BootLoader variant="inline" label="Loading countries" text="Loading countries" />;
 
-  const q = searchQuery.trim().toLowerCase();
-
-  let filteredFeatured = activeRegion
-    ? featured.filter(c => (c.region || 'World') === activeRegion)
-    : featured;
-  if (q) {
-    filteredFeatured = filteredFeatured.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      (intelligence?.[c.name]?.headline || '').toLowerCase().includes(q)
-    );
-  }
-  if (sortBy === 'alpha') {
-    filteredFeatured = [...filteredFeatured].sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sortBy === 'articles') {
-    filteredFeatured = [...filteredFeatured].sort((a, b) => b.articles - a.articles);
-  }
-
-  let filteredOthers = others;
-  if (q) filteredOthers = filteredOthers.filter(c => c.name.toLowerCase().includes(q));
+  const view = { region: activeRegion, query: searchQuery, sortBy };
+  const intelOf = (name) => intelligence[name];
+  const filteredFeatured = applyListView(featured, view, intelOf);
+  const filteredOthers = applyListView(others, view);
+  const searching = searchQuery.trim();
 
   const strip = (
     <StatusStrip
@@ -313,8 +307,9 @@ export default function CountryListPage() {
     />
   );
 
-  const left = (
+  const controls = (idPrefix) => (
     <LeftRail
+      idPrefix={idPrefix}
       sortBy={sortBy}
       onSort={setSortBy}
       searchQuery={searchQuery}
@@ -325,12 +320,17 @@ export default function CountryListPage() {
     />
   );
 
+  const left = controls('clp-rail');
+
   const right = (
     <RightRail featured={featured} intelligence={intelligence} />
   );
 
   return (
     <EditorialShell strip={strip} left={left} right={right} className="clp-shell">
+      {/* The left rail is hidden at phone width: the same controls open the main column there. */}
+      <div className="clp-controls-inline">{controls('clp-inline')}</div>
+
       {/* Map: marker size = coverage, ring weight = risk tier (never a colour scale) */}
       <div className="clp-map-wrap">
         <CountryOverviewMap
@@ -379,6 +379,12 @@ export default function CountryListPage() {
             </div>
           </>
         )
+      )}
+
+      {countries.length > 0 && filteredFeatured.length === 0 && filteredOthers.length === 0 && (
+        <p className="clp-empty">
+          {searching ? `No country matches “${searching}”` : 'No countries in this region'}
+        </p>
       )}
 
       {/* Others */}

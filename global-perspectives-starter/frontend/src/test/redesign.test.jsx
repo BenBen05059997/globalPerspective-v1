@@ -40,7 +40,8 @@ vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
 }));
 
 vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
-  useCountryIntelligence: () => ({ intelligence: countryIntelFixture.data, loading: false, error: null }),
+  // briefings stamped now: the list hides briefings past the card's 30-day age limit
+  useCountryIntelligence: () => ({ intelligence: Object.fromEntries(Object.entries(countryIntelFixture.data).map(([k, v]) => [k, { ...v, generatedAt: new Date().toISOString() }])), loading: false, error: null }),
 }));
 
 // Auth context — bypass with a minimal stub
@@ -209,7 +210,7 @@ describe('Redesign v2 — CountryListPage', () => {
 
   it('clicks "Coverage" sort chip and marks it selected', () => {
     renderWithRouter(<CountryListPage />);
-    const btn = screen.getByRole('button', { name: /coverage/i });
+    const btn = within(document.querySelector('.es-left')).getByRole('button', { name: /coverage/i });
     fireEvent.click(btn);
     expect(btn).toHaveAttribute('aria-pressed', 'true');
   });
@@ -217,10 +218,11 @@ describe('Redesign v2 — CountryListPage', () => {
   it('search filter narrows the visible entries', () => {
     renderWithRouter(<CountryListPage />);
     const before = document.querySelectorAll('.clp-card, .clp-row').length;
-    const input = screen.getByPlaceholderText(/filter countries/i);
+    const input = within(document.querySelector('.es-left')).getByPlaceholderText(/filter countries/i);
     fireEvent.change(input, { target: { value: 'ZZZZNOMATCH' } });
     const after = document.querySelectorAll('.clp-card, .clp-row').length;
     expect(after).toBeLessThan(before);
+    expect(screen.getByText(/No country matches/)).toBeInTheDocument();
   });
 
   it('right rail leaderboard rows are clickable links', () => {

@@ -4,7 +4,8 @@ import { ROUTE, storyHref, countryHref, mapHref } from '@/shared/lib/links.js';
 import { parentCountry } from '@/shared/lib/countries.js';
 import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { useWeeklyArchive, useThreadAnalyses, useWebIndex } from '@/features/threads';
+import { isArc } from '@/features/countries/lib/countryArcs.js';
+import { useWeeklyArchive,useThreadAnalyses, useWebIndex } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
@@ -348,7 +349,7 @@ export default function CountryPage() {
         threadMap[e.threadId].entries.push(e);
       }
       const arcs = Object.entries(threadMap)
-        .filter(([, t]) => t.entries.length >= 2)
+        .filter(([, t]) => isArc(t.entries.length))
         .map(([threadId, t]) => {
           const urgCounts = { high: 0, medium: 0, low: 0 };
           let anchorCount = 0;

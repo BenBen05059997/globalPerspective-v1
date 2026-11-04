@@ -10,6 +10,8 @@ const { archiveRowKey } = require('./_shared/dayZero');
 const { makeFirebaseVerifier } = require('./_shared/firebaseAuth');
 const { readMode: recordReadMode, readBy, liveRecordReads } = require('./_shared/recordReads');
 const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
+const { operatorUids, opsReply, s3JsonReader } = require('./ops');
+let _opsRead;
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -518,6 +520,17 @@ exports.handler = async (event) => {
           }}),
         };
       } catch { return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) }; }
+    }
+
+    // The operator's money panel: the one gated action (Firebase uid listed in OPS_OPERATOR_UIDS); see ops.js.
+    if (action === 'ops') {
+      const response = await opsReply({
+        authHeader: event?.headers?.authorization || event?.headers?.Authorization,
+        verify: verifyFirebaseToken,
+        uids: operatorUids(process.env.OPS_OPERATOR_UIDS),
+        read: (_opsRead || (_opsRead = s3JsonReader({ bucket: WORLD_BUCKET, region: REGION }))),
+      });
+      return { statusCode: response.statusCode, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify(response.body) };
     }
 
     console.warn('newsSensitiveData received unsupported action', {

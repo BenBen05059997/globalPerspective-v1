@@ -109,3 +109,37 @@ test('a failed write stops the sequence: no digests.json update and the old mani
   await run({runId: 'r3'}); // the next run still sees the story as changed (old digest) and repairs
   assert.equal(f.json(`${P}views/digests.json`).files['stories/thread-a.json'], md5Of(f.json(`${P}views/stories/thread-a.json`)));
 });
+
+// provisionalThrough is stamped only on a view that holds provisional content
+const V = require('../src/views');
+const prov = () => ({...X.entry('thread-a', '2026-10-22T07:00:00.000Z', 'A today', {id: 'eprov', iso3: ['FRA'], sources: ['s1']}), provisional: true});
+const build = (provisional) => V.buildViews(X.golden(), {today: '2026-10-22', builtAt: AT, runId: 'r', factsManifestDays: 7, provisional});
+
+test('provisionalThrough: on the story, links, count and indexes that hold a provisional entry, off every other view, on the manifest', () => {
+  const v = build([prov()]);
+  assert.equal(v.stories.get('thread-a').builtFrom.provisionalThrough, '2026-10-22');
+  assert.equal(v.links.get('thread-a').builtFrom.provisionalThrough, '2026-10-22');
+  assert.equal(v.counts.get('2026-10-22').builtFrom.provisionalThrough, '2026-10-22');
+  assert.equal(v.active.builtFrom.provisionalThrough, '2026-10-22');
+  for (const id of [...v.stories.keys()].filter((i) => i !== 'thread-a')) assert.equal(v.stories.get(id).builtFrom.provisionalThrough, undefined, id);
+  assert.equal(v.counts.get('2026-10-21').builtFrom.provisionalThrough, undefined);
+  assert.equal(v.indexes['analyses.json'].builtFrom.provisionalThrough, undefined);
+  assert.equal(v.manifest.provisionalThrough, '2026-10-22');
+  const none = build([]);
+  assert.equal(none.manifest.provisionalThrough, undefined);
+  assert.equal(none.stories.get('thread-a').builtFrom.provisionalThrough, undefined);
+});
+
+test('a refresh adding a provisional entry to one story rewrites that story, not the others; the next refresh writes only digests and manifest', async () => {
+  const {f, run} = setup(X.golden());
+  await run(); // nightly-style: no provisional
+  const before = f.puts.length;
+  const r1 = await run({provisional: [prov()], runId: 'r2'});
+  const keys1 = f.puts.slice(before).map((p) => p.Key.slice(`${P}views/`.length));
+  assert.ok(keys1.includes('stories/thread-a.json') && !keys1.includes('stories/thread-b.json') && !keys1.includes('links/thread-b.json'));
+  assert.ok(r1.written < 30, String(r1.written));
+  const mid = f.puts.length;
+  const r2 = await run({provisional: [prov()], runId: 'r3'});
+  assert.deepEqual(f.puts.slice(mid).map((p) => p.Key.slice(`${P}views/`.length)), ['digests.json', 'manifest.json']);
+  assert.equal(r2.written, 2);
+});

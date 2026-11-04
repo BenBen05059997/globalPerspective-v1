@@ -3,7 +3,7 @@
 //    and sync inbox/entries for the last two UTC days (the views read them).
 // 2. node dryrun-digests.mjs <liveDir> [--sample N] [--ignore-provisional]
 // The live view files stand in for the digest file (md5 of their bytes; --sample N keeps only N random stories' stories/ and links/ files, the
-// rest in full). --ignore-provisional drops builtFrom.provisionalThrough from the live bodies first (see below). The real publisher then builds the views from the downloaded facts over a filesystem stand-in and reports what it would write.
+// rest in full). --ignore-provisional drops builtFrom.provisionalThrough from the live bodies first. The real publisher then builds the views from the downloaded facts over a filesystem stand-in and reports what it would write.
 // Nothing is written anywhere. Not exact for a refresh: its provisional entries come from DynamoDB, so views that show today's entries differ.
 import {createRequire} from 'node:module';
 import {readFileSync, existsSync, readdirSync, statSync} from 'node:fs';

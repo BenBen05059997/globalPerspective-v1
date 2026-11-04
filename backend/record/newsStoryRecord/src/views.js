@@ -498,7 +498,11 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const provisionalThrough = maxOf(extra.map((f) => f.date));
   const standingReadings = Rd.standing(readingLines);
   const readingsThrough = Rd.maxWeek(standingReadings);
-  const builtFrom = {factsThrough, readingsThrough, ...(provisionalThrough ? {provisionalThrough} : {})};
+  // `builtFrom` is the stamp without provisionalThrough; a view carries provisionalThrough only when it holds provisional content (stampOf below), so a
+  // refresh does not change the bytes of the views that do not (and the digests skip them). The reader's rule: through = max(factsThrough, provisionalThrough).
+  const builtFrom = {factsThrough, readingsThrough};
+  const stampOf = (dates) => { const t = maxOf(dates); return t ? {...builtFrom, provisionalThrough: t} : builtFrom; };
+  const indexFrom = stampOf(extra.map((f) => f.date)); // the indexes that list provisional rows: active, all, weekly, today
   const readings = Rd.byThread(standingReadings);
   const {canon, isGeneric} = Rd.actorAliases(operatorAliases, standingReadings);
   const resolved = resolveAliases(facts);
@@ -532,15 +536,23 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
     view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};
   }
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
-  const active = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: activeRows};
-  const everything = {schemaVersion: SCHEMA_VERSION, builtFrom, stories: all};
+  const active = {schemaVersion: SCHEMA_VERSION, builtFrom: indexFrom, stories: activeRows};
+  const everything = {schemaVersion: SCHEMA_VERSION, builtFrom: indexFrom, stories: all};
   const size = bytesOf(everything);
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough} : {}), ...provisionalCounts(extra)};
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
-  const indexes = buildIndexViews({builtFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, builtFrom)}); // the many-at-once readers' indexes (indexViews.js)
+  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
+  // per-view stamps: a story, its forecasts and its links from the provisional entries and forks it holds; a day's count from the provisional facts of that day
+  for (const [id, story] of stories) {
+    const t = stampOf([...(story.entries || []).filter((e) => e.provisional).map((e) => e.date), ...(story.forks || []).filter((k) => k.provisional).map((k) => k.drawnAt.slice(0, 10))]);
+    story.builtFrom = t;
+    if (forecasts.has(id)) forecasts.get(id).builtFrom = t;
+    if (links.has(id)) links.get(id).builtFrom = t;
+  }
+  for (const [d, view] of counts) view.builtFrom = stampOf(extra.filter((f) => f.date === d).map((f) => f.date));
   return {stories, links, forecasts, counts, active, all: everything, manifest, countries, briefs, indexes, trackRecord: buildTrackRecord(allFacts, {today, now: builtAt})};
 }
 

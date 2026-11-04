@@ -2,7 +2,7 @@
 // empty state's way back (S13), honest failure states (S16).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 
 const NOW = Date.now();
 const today = new Date(NOW).toISOString().slice(0, 10);
@@ -66,6 +66,15 @@ describe('/weekly', () => {
     fireEvent.click(screen.getByText('Show all stories'));
     expect(screen.getAllByText(/War story/).length).toBeGreaterThan(0);
     expect(screen.queryByTestId('unknown-category')).toBeNull();
+  });
+
+  it('an unknown ?category= stays in the URL until the reader clears it (R3-3: not dropped)', () => {
+    const Probe = () => <i data-testid="search">{useLocation().search}</i>;
+    render(<MemoryRouter initialEntries={['/weekly?category=zzz']}><WeeklyPage /><Probe /></MemoryRouter>);
+    expect(screen.getByTestId('search').textContent).toBe('?category=zzz');
+    expect(screen.getByTestId('unknown-category')).toBeTruthy();
+    fireEvent.click(screen.getByText('Show all stories'));
+    expect(screen.getByTestId('search').textContent).toBe('');
   });
 
   it('a search with no result offers Clear filters', () => {

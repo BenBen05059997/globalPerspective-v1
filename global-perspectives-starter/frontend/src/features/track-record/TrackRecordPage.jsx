@@ -279,7 +279,8 @@ export default function TrackRecordPage() {
             <strong>Resolved with sources by an agent and a person.</strong> An agent that is not shown the
             probability drafts a verdict with a quoted passage and a link; a person confirms it. A YES needs a source,
             a NO is only allowed after the deadline plus {method.graceDays} days, and anything that cannot be judged is marked{' '}
-            <em>void</em> with a reason, published, and excluded from the score.
+            <em>void</em> with a reason, published, and excluded from the score. A question that only a gap in our own
+            record keeps from a NO is marked void (&ldquo;gap in our record&rdquo;), never NO.
           </li>
           <li>
             <strong>Scored against a plain guess.</strong> Brier score next to the score of guessing the overall

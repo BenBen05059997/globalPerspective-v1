@@ -50,6 +50,7 @@ export function buildTrackRecordView(data, now = new Date()) {
       [counts.locked, 'Questions locked in samples'],
       [counts.resolved, `Resolved (${counts.yes} happened, ${counts.no} not reported)`],
       [counts.void, 'Could not be checked (void)'],
+      ...(typeof counts.voidRecordGap === 'number' ? [[counts.voidRecordGap, 'Void — gap in our record']] : []),
       [counts.awaiting, 'Open, deadline still ahead'],
       [counts.pastDeadlineUnchecked, 'Awaiting check, deadline passed'],
       [pilotCount, 'July pilot (archived; method flawed)'],

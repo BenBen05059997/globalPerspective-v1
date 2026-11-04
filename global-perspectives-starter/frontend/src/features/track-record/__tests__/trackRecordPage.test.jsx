@@ -69,6 +69,21 @@ describe('Stage 1: a committed week, nothing drawn yet', () => {
   });
 });
 
+describe('record-gap voids', () => {
+  const counts = { locked: 3, yes: 1, no: 0, void: 2, voidRecordGap: 1, awaiting: 0, pastDeadlineUnchecked: 0, resolved: 1 };
+  it('the page and the text page count them apart from other voids; an older view without the field shows no such line', () => {
+    trackRecordValue = { data: legacy({ questions: questions({ sampledTotal: 3, counts }) }), loading: false, error: null };
+    renderPage();
+    expect(screen.getByText('Void — gap in our record')).toBeInTheDocument();
+    renderPage(TrackRecordText);
+    expect(screen.getByText('Void — gap in our record: 1')).toBeInTheDocument();
+    trackRecordValue = { data: legacy({ questions: questions({ sampledTotal: 3, counts: { ...counts, voidRecordGap: undefined } }) }), loading: false, error: null };
+    document.body.innerHTML = '';
+    renderPage();
+    expect(screen.queryByText('Void — gap in our record')).not.toBeInTheDocument();
+  });
+});
+
 describe('a drawn week with open, past-deadline and resolved questions', () => {
   const sampled = [
     { qid: 'a', weekId: '2026-W41', question: 'Country A ratifies the treaty', deadline: '2026-10-20', p: 62, resolutionSource: 'Reuters or AP wire report', state: 'yes', storyTitle: 'Treaty', verdict: { url: 'https://ex.com/a', quote: 'Lawmakers voted' } },

@@ -9,6 +9,7 @@ export const VOID_REASON_WORDS = {
   duplicate: 'duplicate of another branch',
   criterion_met_at_issue: 'already true when drawn',
   issued_before_method: 'recorded before scoring began',
+  'record gap': 'a gap in our own record, not a finding about the world',
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

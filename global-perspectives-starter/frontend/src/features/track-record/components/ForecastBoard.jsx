@@ -6,6 +6,7 @@ import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.
 import ForecastLinks from '@/features/track-record/components/ForecastLinks.jsx';
 import { forecastAnchorId } from '@/shared/lib/links.js';
 import { questionLine } from '@/features/track-record/lib/questionLine.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/ForecastBoard.css';
 
 // ForecastBoard — the E2 "Forecast board: MAP (default) | BOARD" (TRACK_RECORD_AND_STUDIO_
@@ -38,6 +39,7 @@ function QuestionDetail({ item }) {
       </span>
       {line?.quote && <span className="tr-fb-quote">&ldquo;{line.quote}&rdquo;</span>}
       {line?.url && /^https?:\/\//.test(line.url) && <a href={line.url} target="_blank" rel="noreferrer" className="tr-fb-cite">source →</a>}
+      {item.state === 'void' && Array.isArray(item.gapDays) && item.gapDays.length > 0 && <span className="tr-fb-meta">Missing from our record: {item.gapDays.map(fmtDay).join(', ')}.</span>}
       <ForecastLinks item={item} className="tr-fb-links" />
     </>
   );

@@ -192,7 +192,7 @@ export default function TrackRecordText() {
         <ol>
           <li>Each question carries its own probability and a named source, fixed when it is published; the record is written once.</li>
           <li>Before each week we publish a commitment (a hash of a secret seed); after the week closes the seed is revealed and up to {method.K} questions are drawn by hash, at most one per story. Only questions with a {method.leadDays[0]} to {method.leadDays[1]} day lead time are eligible.</li>
-          <li>An agent that is not shown the probability drafts a verdict with a quote and a link; a person confirms it. A NO is only allowed after the deadline plus {method.graceDays} days; anything unjudgeable is marked void with a reason and excluded.</li>
+          <li>An agent that is not shown the probability drafts a verdict with a quote and a link; a person confirms it. A NO is only allowed after the deadline plus {method.graceDays} days; anything unjudgeable is marked void with a reason and excluded. A question that only a gap in our own record keeps from a NO is marked void (gap in our record), never NO.</li>
           <li>Scored against a guess of the overall base rate, with an interval resampled by story. No accuracy before 150 resolved; calibration by band only after 400 over six months.</li>
           <li>
             The July pilot ({view.pilotCount} triggers, checked {fmtDay(view.lastResolvedAt)}) is archived, not scored: it scored a

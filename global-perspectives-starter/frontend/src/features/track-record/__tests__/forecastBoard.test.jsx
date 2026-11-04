@@ -42,6 +42,19 @@ const mount = (props) => render(<MemoryRouter><ForecastBoard items={items} {...p
 
 beforeEach(() => { radarProps = null; Element.prototype.scrollIntoView = vi.fn(); });
 
+describe('ForecastBoard: a record-gap void', () => {
+  it('reads as a gap in our own record, with the missing days, never as a finding about the world', () => {
+    const gap = { qid: 'q-gap', storyTitle: 'Gap one', question: 'Will Chad hold the vote?', state: 'void', voidReason: 'record gap', gapDays: ['2026-10-13', '2026-10-14'] };
+    render(<MemoryRouter><ForecastBoard items={[gap]} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('radio', { name: 'BOARD' }));
+    const tile = document.querySelector('.tr-fb-boardlist > li');
+    expect(tile).toHaveTextContent('◌ could not be checked');
+    expect(tile).toHaveTextContent('a gap in our own record');
+    expect(tile).toHaveTextContent('Missing from our record: Oct 13 2026, Oct 14 2026');
+    expect(tile).not.toHaveTextContent('Not reported');
+  });
+});
+
 describe('ForecastBoard: board view', () => {
   it('shows every question with its honest state label and locked percentage', () => {
     mount();

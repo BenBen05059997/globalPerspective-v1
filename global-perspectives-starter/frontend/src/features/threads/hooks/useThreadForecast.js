@@ -23,7 +23,7 @@ export function useThreadForecast(topicIds, threadId) {
     if (!key || !threadId) { setSnapshot(null); setLoading(false); return; }
     let live = true;
     setLoading(true);
-    recordForecast(threadId, whole ? null : key.split(','))
+    recordForecast(threadId, key === '*' ? null : key.split(','))
       .then((r) => { if (live) setSnapshot(r.snapshot || null); })
       .catch(() => { if (live) setSnapshot(null); })
       .finally(() => { if (live) setLoading(false); });

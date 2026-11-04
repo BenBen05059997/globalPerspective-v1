@@ -20,7 +20,9 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |
 +- 2 WATCH    nightly, no model                       [newsPredictionResolver  src/watch.js]
 |  +- rule   : candidates = open branches on stories with a new entry fact (yesterday or today)
-|  |           + open branches whose due date passed 3 days ago (GRACE_DAYS); oldest due first; cap per run, overflow logged
+|  |           + open branches whose due date passed 3 days ago (GRACE_DAYS); oldest due first
+|  |           SAMPLED FIRST (operator decision 2026-11-04): every due or moved candidate of the pre-registered sample is checked
+|  |           first and never cut by the cap; the per-run cap applies to the other questions only (log: sampled, others, overflow)
 |  |           a moved story with no entry dated after the draw and not past due + 3 is skipped
 |  +- cost   : zero model calls; this keeps the loop cheap
 |
@@ -42,6 +44,9 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  +- else not_yet: the branch stays open until the next trigger; at most 2 model calls per check; an unclear draft is
 |  |         re-drafted after 5 days (REDRAFT_AFTER_DAYS) and the third unclear draft (MAX_UNCLEAR_DRAFTS, made at or after
 |  |         due + 3) writes void `unclear after 3 drafts`
+|  +- RECORD-GAP VOID (operator decision 2026-11-04): a draft blocked only by our own record gap (reason `coverage_gap`: bundle complete,
+|  |         no `yes`, a hole in record/runs inside the window) made at or after due + 3 settles the question void, voidReason and
+|  |         reason `record gap`, with the gap days (`gapDays`). The first such draft is enough, no spacing, so the queue drains
 |
 +- 5 RECORD   no model            [resolver -> record/inbox/verdicts/ -> newsStoryRecord -> record/facts]
 |  +- the verdict is put-once as Q#<qid>/VERDICT in the prediction log and appended as one line to record/inbox/verdicts/DAY.jsonl;
@@ -55,6 +60,8 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |
 +- LOOP BACK: new entry facts -> 1 DRAW (the story moved) -> 2 WATCH every night -> 3 -> 4 -> 5
 ```
+**Methodology change, operator decision 2026-11-04.** (1) Sampled-first pass: the nightly cap had starved the sample (551 candidates, 40 checked, 7 of 9 past-due sampled questions never drafted), so the sample is now always checked first and the cap bounds only the unsampled rest. (2) Record-gap void: before, a coverage-gap draft was "not a judgment" and a question whose window crossed a missing record day (for example 2026-10-13/14, 10-21..24) stayed open forever, because it could never become `no`. Now it settles `void` with reason `record gap` and the gap days, shown on the track-record page as "Void — gap in our record". The gap is never evidence of `no`; the yes rule, the normal `no` rule and the unclear-after-3 rule for non-gap drafts are unchanged. A gap draft with an incomplete bundle, or one made before this rule (no `bundleComplete` flag), does not trigger it. It applies to every question, sampled or not; `counts.voidRecordGap` in the track-record view counts the sampled ones.
+
 The per-run cap on candidates is 60 in code (`MAX_CANDIDATES`, `watch.js`); the live Lambda sets `MAX_RESOLVE_PER_RUN` to 40 and that wins. Read the live value from the Lambda.
 
 ## 3. Objects and ownership

@@ -14,7 +14,8 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 |  +- rule   : candidates = open branches on stories with a new entry fact (yesterday or today)
 |  |                       + open branches whose due date passed 3 days ago (GRACE_DAYS)
 |  |           a moved story with no entry dated after the forecast's draw, and not yet past due + 3, is skipped (nothing to judge)
-|  |           nothing else is checked; oldest due first; cap 60 per run, overflow logged
+|  |           nothing else is checked; oldest due first; sampled questions first and never capped (operator decision 2026-11-04),
+|  |           cap (MAX_RESOLVE_PER_RUN, default 60) on the others only; logged as sampled / others / overflow
 |  +- model  : no
 |  +- output : list of (branch, trigger)
 |
@@ -35,6 +36,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
 |  |           no = only after due + 3 days, only on a complete bundle, and only with NO coverage gap (else not_yet, reason
 |  |           `coverage_gap`: our outage is not silence in the world); recorded with reason `not_reported_by_due`;
 |  |           void = only a VOID_REASONS entry; else not_yet (stays open)
+|  |           record-gap void: latest draft `coverage_gap` with a complete bundle, made at or after due + 3 -> void `record gap` (below)
 |  |           zero entries after the draw: not_yet before due + 3; after it a `no` made by rule, no model call
 |  +- model  : yes, at most 2 calls per check
 |
@@ -45,6 +47,7 @@ FORECAST LOOP  (nightly stages of newsPredictionResolver; draw and review live e
    |           for newsStoryRecord; the resolver never writes record/facts/
    +- draws  : the weekly seed commit and the weekly draw are appended as lines to record/inbox/draws/YYYY-MM-DD.jsonl (shadow: record/shadow/inbox/draws/)
    |           (decision 0043): newsStoryRecord turns them into question_commit / question_draw facts, the views derive each branch's scoring and state
+   +- gap    : a `record gap` void also carries gapDays (the verdict row and the inbox line); newsStoryRecord copies them to the verdict fact
    +- output : the weekly sample (sampled:true) reaches the public track record through the record (draws and verdicts inboxes -> newsStoryRecord -> views/track-record.json); `predictions/track_record.json` is no longer refreshed
 ```
 
@@ -83,7 +86,7 @@ New `Q#/SAMPLED` rows copy `threadId` from their PRED row (null for older rows w
 - Own-entry evidence (operator decision): the only evidence is the forecast's own story's `entry` facts, dated after the draw day (the PRED issue day) and up to due + 3 days. No web search, no Brave, no page fetching, nothing before the draw, no other story. `BRAVE_SEARCH_API_KEY` is no longer read; the live env still carries it and the operator can remove it.
 - Evidence also includes operator-assigned recovered `article` facts (threadId null, placed by `assignment` facts; latest `at` wins, ties operator > review > ingest, same rule as the views), entries moved by a reassignment, and the entries of stories merged into the question's story (`story_merged`, a later `story_split` cancels). Assignments and merges can sit on any later day, so GATHER reads every facts day from the earliest open window start to today (one GET per day). The judge sees a recovered article as `[recovered headline, no text]`; a `yes` quote may come from its title, and a recovered day still has no archive Run, so the coverage guard keeps a `no` impossible over it.
 - A `no` is judged on a complete bundle only (every facts day in the window read, story identified by `threadId`); a sampled row without `threadId` can never be a `no`. A question with zero post-draw entries is `not_yet` until due + 3, then a `no` made by rule (`decidedBy: rule:no_entries_after_draw`, no model call). The draw day is the PRED issue day; the second pass shows the same bundle in reverse order; the judge cites an entry by `eventId`.
-- Coverage guard: a `no`, rule-made or by the model, is allowed only if every day from the draw day + 1 to the due day has `record/runs/DAY.json` with `status` ok or partial and `inputs.archiveDay` `present`. Otherwise the draft is `not_yet` with `reason: 'coverage_gap'` and `gapDays`, and the gap days are logged (`coverage_gap` line, `out.coverageGaps`). An unreadable Run (for example no IAM grant) counts as a gap, so nothing is lost by the missing grant but no `no` can be made until it exists. A `yes` is unaffected (it needs a verified quote). A `coverage_gap` draft is not an unclear draft: it never counts toward voiding a question. The window ends at the due day (not due + 3) by the lane brief.
+- Coverage guard: a `no`, rule-made or by the model, is allowed only if every day from the draw day + 1 to the due day has `record/runs/DAY.json` with `status` ok or partial and `inputs.archiveDay` `present`. Otherwise the draft is `not_yet` with `reason: 'coverage_gap'` and `gapDays`, and the gap days are logged (`coverage_gap` line, `out.coverageGaps`). An unreadable Run (for example no IAM grant) counts as a gap, so nothing is lost by the missing grant but no `no` can be made until it exists. A `yes` is unaffected (it needs a verified quote). A `coverage_gap` draft is not an unclear draft: it never counts toward the unclear-after-3 void. Record-gap void (operator decision 2026-11-04): when the latest draft is `not_yet` with reason `coverage_gap` and `bundleComplete` (the judge found no `yes`, every facts day was read, and the only thing blocking a `no` is a hole in our own `record/runs`), made at or after due + `GRACE_DAYS`, `settleQuestion` writes `void` with `voidReason` and `reason` `record gap` and `gapDays`. It applies on the first such draft (no spacing, no repeat), so the queue drains; it applies to any question, sampled or not. The gap is never treated as `no`. A gap draft written before this rule has no `bundleComplete` and is left open until the next check. Sampled-first (same date): `selectCandidates` keeps every due or moved sampled candidate (oldest first) ahead of the others and the cap `MAX_RESOLVE_PER_RUN` bounds only the others; the redraft spacing rule is unchanged for both. The window ends at the due day (not due + 3) by the lane brief.
 - `issued_before_method` is not added to `VOID_REASONS`: the brief says "void only with VOID_REASONS" and nothing in the nightly path assigns it.
 - Void after unclear drafts: only drafts made at or after due + 3 days, at least 5 days apart, count toward `MAX_UNCLEAR_DRAFTS` (3). Without this, a story that moves nightly would void a question in three days.
 - A question is checked at most once per UTC day; an age-only candidate waits 5 days (`REDRAFT_AFTER_DAYS`) between checks, a moved one does not.

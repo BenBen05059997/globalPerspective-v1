@@ -4,7 +4,7 @@
 // with any wording change: readings carry it, and a changed prompt must pass the golden-week score before it runs live.
 const {parseJsonContent} = require('./_shared/llm');
 
-const PROMPT_VERSION = 'review-4';
+const PROMPT_VERSION = 'review-5';
 const MAX_TOKENS = 6000; // per call; a long story's chapters and flags overran 3000 (golden week, 2026-10-30)
 
 const SYSTEM = `You are the weekly reviewer of a news record. You read ONE story's recorded facts and write short, checkable readings about it for the ISO week given. You may use only the facts in the bundle. Never invent facts, dates, names or links.
@@ -27,6 +27,7 @@ Rules:
 - Assignments: flag an entry that does not belong to the story you are reading because it is about a different event, and name the story it belongs to (a neighbour's threadId, or "new" when it starts a story of its own). The entryId must be an entry of this story, or an entry of a neighbour that you also cite. Propose it only when the entry's title and outlets clearly describe another event; a proposal is only a flag, nothing moves until the operator approves. Most weeks you flag none.
 - Aliases: only actor ids that appear in this bundle, and only with a wikidataId you are certain of (a Q-number). Otherwise omit.
 - Bundle entries marked kind "article" (summary "[recovered headline, no text]") are recovered headlines placed on this story: you may cite them for what happened and when, but they carry no detail, so never draw reasons, quotes or numbers from them.
+- State only what the cited entries say. Never describe a forecast branch or its trigger, or the absence of an entry, as the story's current status (no "still pending", "not yet recorded", "remains in ..." unless a cited entry says so). A claim taken from a neighbour story must cite that story's entry, or be left out.
 - Prefer fewer, sure items over many. Do not repeat a previous reading unless the new facts change it.`;
 
 /** {system, user} for one bundle. */

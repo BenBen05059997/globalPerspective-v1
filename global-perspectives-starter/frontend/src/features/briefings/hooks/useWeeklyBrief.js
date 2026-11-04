@@ -1,5 +1,6 @@
 import { fetchWeeklyBrief } from '@/shared/api/restProxy';
 import { readWeeklyBrief } from '@/shared/api/briefViews.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
 import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
@@ -11,7 +12,15 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 async function loadWeeklyBrief(week) {
   const recorded = await readWeeklyBrief(week);
   if (recorded && (week || (await loadViewsFresh()).fresh)) return recorded;
-  const res = await fetchWeeklyBrief(week);
+  let res;
+  try {
+    res = await fetchWeeklyBrief(week);
+  } catch (err) {
+    // The record has a copy: show it, and report the failed ask (as the daily path does). Without one the error is the page's.
+    if (!recorded) throw err;
+    reportFetchError('weekly-brief', err);
+    return recorded;
+  }
   const fresh = res?.data || null;
   return fresh && (!recorded || String(fresh.weekOf) >= String(recorded.weekOf)) ? fresh : recorded;
 }

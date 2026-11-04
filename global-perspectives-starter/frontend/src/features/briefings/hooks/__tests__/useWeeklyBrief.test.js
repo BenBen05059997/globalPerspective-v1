@@ -13,6 +13,7 @@ vi.mock('@/shared/api/errorSink.js', () => ({ reportFetchError: vi.fn() }));
 
 import { useWeeklyBrief } from '@/features/briefings/hooks/useWeeklyBrief.js';
 import { clearBriefsIndexCache } from '@/shared/api/briefViews.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
 import { clearViewsFreshCache } from '@/shared/api/viewsFresh.js';
 
 const live = fx.action.weekly.data; // weekOf 2026-10-25
@@ -90,5 +91,15 @@ describe('useWeeklyBrief', () => {
     const r = await load();
     expect(r.brief).toBeNull();
     expect(r.error).toMatch(/502/);
+  });
+
+  it('stale views, the action fails and the record has the brief: the record\'s brief, and the failure is reported', async () => {
+    setNow('2026-11-01T10:00:00Z');
+    rv.fetchManifest.mockImplementation(async () => built(10 * 3600000));
+    api.fetchWeeklyBrief.mockRejectedValue(new Error('Proxy HTTP 502'));
+    const r = await load();
+    expect(r.brief).toEqual(live);
+    expect(r.error).toBeNull();
+    expect(reportFetchError).toHaveBeenCalledWith('weekly-brief', expect.any(Error));
   });
 });

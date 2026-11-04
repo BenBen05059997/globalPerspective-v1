@@ -2,6 +2,7 @@
 // JUDGMENT marks are kept, every link becomes a numbered footnote with an absolute address (links.js builders +
 // absoluteUrl), and the "What we don't know" block is always included. "Your view" is private and never copied.
 import { absoluteUrl, countryHref, storyHref, forecastHref } from '@/shared/lib/links.js';
+import { boardQid } from '@/shared/lib/questionChips.js';
 import { checkedDay } from '@/features/countries/lib/countryFacts.js';
 import { deriveHeadline, tierLabel } from '@/shared/lib/riskTiers.js';
 
@@ -71,7 +72,7 @@ export function formatCountrySheet(m) {
 
   if (m.triggers?.length) {
     section('FORECASTS', 'MODEL JUDGMENT', 'our forecast, not reported fact');
-    for (const t of m.triggers) out.push(`- ${t.label}, by ${t.deadline}${t.qid ? ` ${ref(forecastHref(t.qid))}` : ''}`);
+    for (const t of m.triggers) out.push(`- ${t.label}, by ${t.deadline}${boardQid(t) ? ` ${ref(forecastHref(t.qid))}` : ''}`);
   }
 
   if (m.facts?.length) {

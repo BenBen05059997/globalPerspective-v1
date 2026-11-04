@@ -16,7 +16,7 @@ import { daysWithNews } from '@/features/threads/lib/storyGroups.js';
 import { outcomeTag } from '@/features/threads/lib/forecastOutcome.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
-import { legacyNote } from '@/shared/lib/questionChips.js';
+import { legacyNote, boardQid } from '@/shared/lib/questionChips.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
@@ -174,7 +174,7 @@ export function WatchSlide({ deadlines }) {
               <span className="sm-watch-diamond" aria-hidden="true">◆</span>
               <div>
                 <div className="sm-watch-text">
-                  {d.question === true && d.qid ? <EntityLink kind="forecast" id={d.qid}>{d.label}</EntityLink> : d.label}
+                  {boardQid(d) ? <EntityLink kind="forecast" id={d.qid}>{d.label}</EntityLink> : d.label}
                 </div>
                 <QuestionChip trigger={d} />
                 <div className="sm-watch-meta">

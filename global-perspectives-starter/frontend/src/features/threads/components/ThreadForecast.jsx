@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
-import { legacyNote } from '@/shared/lib/questionChips.js';
+import { legacyNote, boardQid } from '@/shared/lib/questionChips.js';
 import { forecastAnchorId, forecastHref } from '@/shared/lib/links.js';
 import { triggerState, OUTCOME_TAG as TAG } from '@/features/threads/lib/forecastOutcome.js';
 
@@ -55,7 +55,7 @@ export default function ThreadForecast({ snapshot }) {
               return (
                 <li key={t.id || ti} id={qid ? forecastAnchorId(qid) : undefined} className={`tp-fc-item ${st}`}>
                   <span className="tp-fc-mark" aria-hidden="true">{MARK[st]}</span>
-                  {qid
+                  {boardQid(t)
                     ? <EntityLink kind="forecast" id={qid} className="tp-fc-text">{t.text}</EntityLink>
                     : <span className="tp-fc-text">{t.text}</span>}
                   <QuestionChip trigger={t} />

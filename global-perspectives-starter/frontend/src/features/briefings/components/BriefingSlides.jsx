@@ -8,6 +8,7 @@ import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { boardQid } from '@/shared/lib/questionChips.js';
 import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import Trajectory from '@/features/briefings/components/Trajectory.jsx';
@@ -66,7 +67,7 @@ function StoryNextQuestion({ threadId }) {
     <div className="bm-next-question">
       <span className="bm-next-question-kicker">Next dated question</span>
       <p className="bm-slide-text">
-        {q.qid ? <EntityLink kind="forecast" id={q.qid}>{q.text}</EntityLink> : q.text}
+        {boardQid(q) ? <EntityLink kind="forecast" id={q.qid}>{q.text}</EntityLink> : q.text}
         {' '}<span className="bm-next-question-by">by {q.deadline}</span>
       </p>
       <QuestionChip trigger={q} />

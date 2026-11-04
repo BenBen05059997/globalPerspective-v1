@@ -48,7 +48,8 @@ describe('ThreadForecast (story page)', () => {
     expect(screen.getAllByText(/awaiting check/).length).toBeGreaterThan(0);
     // each question links to its track-record entry and carries its anchor id
     expect(screen.getByRole('link', { name: 'Q one' })).toHaveAttribute('href', '/track-record?q=a');
-    expect(screen.getByRole('link', { name: 'Q two' }).closest('li')).toHaveAttribute('id', 'q-b');
+    expect(screen.queryByRole('link', { name: 'Q two' })).toBeNull(); // not on the board: plain text, no link
+    expect(screen.getByText('Q two').closest('li')).toHaveAttribute('id', 'q-b');
   });
   it('a confirmed question counts as resolved and shows its verdict', () => {
     const t = { id: '0-0', text: 'Q one', deadline: '2026-10-20', question: true, qid: 'a', p: 62, source: 'AP', scoring: 'sampled', state: 'yes', verdict: null };

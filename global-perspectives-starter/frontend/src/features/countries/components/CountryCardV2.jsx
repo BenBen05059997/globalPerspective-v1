@@ -25,7 +25,7 @@ import { resolveCountry } from '@/shared/lib/countries.js';
 import { factRows, checkedLabel } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
-import { legacyNote } from '@/shared/lib/questionChips.js';
+import { legacyNote, boardQid } from '@/shared/lib/questionChips.js';
 import '@/features/countries/components/CountryCardV2.css';
 import { latestChange as pickLatestChange } from '@/features/countries/lib/countryChange.js';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
@@ -200,7 +200,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
         <div className="ccv2-note"><ClaimTag kind="judgment" /> our forecast, not reported fact</div>
         <ul className="ccv2-triggers">
           {triggers.map((t) => (
-            <li key={t.id}>{t.qid ? <EntityLink kind="forecast" id={t.qid}>{t.label}</EntityLink> : t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
+            <li key={t.id}>{boardQid(t) ? <EntityLink kind="forecast" id={t.qid}>{t.label}</EntityLink> : t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
           ))}
           {legacyNote(triggers) && <li className="ccv2-trigger-note">{legacyNote(triggers)}</li>}
         </ul>

@@ -53,6 +53,22 @@ describe('CountryCardV2 future dated questions (Batch 4)', () => {
     expect(items[0]).toMatch(/41% · source: Reuters or AP wire report · awaiting/);
     expect(items[1]).not.toMatch(/%/);
     expect(items[2]).toMatch(/have no probability of their own/);
+    expect(container.querySelector('.ccv2-triggers a[href="/track-record?q=q"]')).not.toBeNull();
+    deadlinesHolder.value = [];
+  });
+});
+
+describe('CountryCardV2 question links', () => {
+  it('a question not on the board (not sampled) is plain text with its chip, no track-record link', () => {
+    const day = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+    deadlinesHolder.value = [
+      { id: 'c', label: 'Country C elects', deadline: day, question: true, qid: 'r', p: 30, source: 'AP', scoring: 'not_sampled', state: null },
+    ];
+    factsHolder.value = null;
+    const { container } = render(<MemoryRouter><CountryCardV2 name="Japan" /></MemoryRouter>);
+    expect(container.querySelector('.ccv2-triggers')).toHaveTextContent('Country C elects');
+    expect(container.querySelector('.ccv2-triggers [data-testid="question-chip"]')).not.toBeNull();
+    expect(container.querySelector('.ccv2-triggers a')).toBeNull();
     deadlinesHolder.value = [];
   });
 });

@@ -21,7 +21,10 @@ describe('formatCountrySheet', () => {
       totalArticles: 4, dayCount: 3,
       change: { asOf: '2026-10-19', eventTitle: 'Quake hits', threadId: 't-1', why: 'Damage widened.' },
       connections: [{ fromId: 't-1', fromTitle: 'Quake', toId: 't-2', toTitle: 'Supply cut', confidence: 'medium', lag: 'order unclear', mechanism: 'ports shut', cited: [{ date: '2026-10-18', title: 'Ports close' }] }],
-      triggers: [{ label: 'Will rates change?', deadline: '2026-11-01', qid: 'q9' }],
+      triggers: [
+        { label: 'Will rates change?', deadline: '2026-11-01', question: true, qid: 'q9', scoring: 'sampled' },
+        { label: 'Will the yen weaken?', deadline: '2026-11-02', question: true, qid: 'q10', scoring: 'not_sampled' },
+      ],
       facts: [{ label: 'Capital', value: 'Tokyo', source: 'Wikidata', checkedAt: '2026-10-18T05:00:00Z' }],
       unknowns,
     });
@@ -42,6 +45,8 @@ describe('formatCountrySheet', () => {
     expect(notes.every((n) => /^\[\d+\] https?:\/\//.test(n))).toBe(true);
     expect(notes).toContain('[3] https://bbc.com/a'.replace('[3]', `[${notes.findIndex((n) => n.endsWith('bbc.com/a')) + 1}]`));
     expect(notes.some((n) => n.endsWith('/track-record?q=q9'))).toBe(true);
+    expect(notes.some((n) => n.includes('q=q10'))).toBe(false); // not on the board: no link
+    expect(t).toContain('- Will the yen weaken?, by 2026-11-02\n');
     expect(t.match(/\/weekly\/thread\/t-1/g)).toHaveLength(1); // same address, one footnote
   });
 

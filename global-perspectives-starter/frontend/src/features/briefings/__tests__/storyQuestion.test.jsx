@@ -21,6 +21,16 @@ describe('briefing story slide: next dated question', () => {
     expect(screen.getByText(/France ratifies the treaty/)).toBeInTheDocument();
     expect(screen.getByTestId('question-chip').textContent).toBe('55% · source: Official Journal of France · awaiting');
   });
+  it('links the question to the track record only when it is on the board (sampled)', () => {
+    holder.q = { text: 'France ratifies the treaty', deadline: '2026-11-20', question: true, qid: 'q', p: 55, scoring: 'sampled', state: 'awaiting' };
+    const r = wrap(story);
+    expect(screen.getByRole('link', { name: 'France ratifies the treaty' })).toHaveAttribute('href', '/track-record?q=q');
+    r.unmount();
+    holder.q = { text: 'France ratifies the treaty', deadline: '2026-11-20', question: true, qid: 'q', p: 55, scoring: 'not_sampled', state: null };
+    wrap(story);
+    expect(screen.getByText(/France ratifies the treaty/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'France ratifies the treaty' })).toBeNull();
+  });
   it('no question -> nothing extra', () => {
     holder.q = null;
     wrap(story);

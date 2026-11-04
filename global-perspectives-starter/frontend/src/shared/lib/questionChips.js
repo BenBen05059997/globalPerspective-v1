@@ -17,6 +17,12 @@ export function hasOwnProbability(t) {
   return Boolean(t && t.question === true && typeof t.p === 'number');
 }
 
+/** The question id to link to the track record, or null. Only a question in a scored sample is on the
+ *  board (`/track-record?q=<qid>`); every other question stays plain text, with no link. */
+export function boardQid(t) {
+  return t && t.question === true && t.scoring === 'sampled' && t.qid ? t.qid : null;
+}
+
 /** @returns {{pct:string, source:string|null, text:string, kind:string}|null} */
 export function chipFor(t) {
   if (!hasOwnProbability(t)) return null;

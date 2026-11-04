@@ -68,8 +68,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
   (its `threadId` or any `threadIds[]` entry) shows once (news situations are per country; the others keep their pins). One count everywhere: `openCount` in `SituationHome.jsx` is the number of Alerts rows, and the Alerts header, every "All situations (N)" button, the About list and the phone ALERTS badge all use it.
 - **Grouped situations** (tracker `NEWS_GROUPING`): the card shows the lead title, then the other member titles (`also_reported_as[]`) under "Also reported as", a collapsed-by-default `aria-expanded` button, drawn only when non-empty and never on GDACS situations (`AlsoReported` in `SituationHome.jsx`). Grouping is live (`NEWS_GROUPING=true` since 2026-11-04); the rules live in the [tracker README](../../../../../backend/situations/newsSituationTracker/README.md).
 - **Escape** (desktop): closes the open card and returns focus to its Alerts row (`data-situation-id`); the Key legend, About drawer, inputs and dialogs keep their own Escape. On phones the `BottomSheet` closes itself.
-- **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`,
-  the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
+- **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`, the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
 
 ## Docs
 - Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md), [0023](../../../../../project-docs/decisions/0023-radar-one-sweep-12h-window.md),

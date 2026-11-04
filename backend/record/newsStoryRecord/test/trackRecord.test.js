@@ -79,6 +79,15 @@ test('the view states what it computed: counts, a corrected verdict, the void re
   assert.equal(validate(view), true, JSON.stringify(validate.errors));
 });
 
+test('weeks[] settled and void count sampled questions only, not a verdict on an unsampled one', () => {
+  const stray = (qid, result, at) => F.inboxVerdictFact(verdictLine(qid, 'a', result, 1, at, result === 'void' ? {voidReason: 'event_moot'} : {}), null, 'r');
+  const fx = [...facts, F.inboxVerdictFact(verdicts[2][0], null, 'r'), stray('q-old', 'no', '2026-10-20T09:00:00.000Z'), stray('q-old2', 'void', '2026-10-20T09:00:00.000Z')];
+  const weeks = buildTrackRecord(fx, {today: '2026-11-05'}).questions.weeks;
+  const row = (id) => weeks.find((w) => w.weekId === id);
+  assert.deepEqual([row('2026-W43').settled, row('2026-W43').void], [0, 0], 'the unsampled verdicts in W43 are not counted');
+  assert.deepEqual([row('2026-W44').settled, row('2026-W44').void], [1, 1], 'the sampled void (q-b) is');
+});
+
 test('nothing in the record: honest zeros, no weeks, a valid view', () => {
   const view = buildTrackRecord([], {today: '2026-10-01'});
   assert.deepEqual([view.questions.issued, view.questions.sampled, view.questions.weeks, view.questions.firstCommit, view.questions.scoring, view.builtFrom.factsThrough], [0, [], [], null, null, null]);

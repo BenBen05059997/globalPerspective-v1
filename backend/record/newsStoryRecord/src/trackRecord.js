@@ -113,7 +113,9 @@ function buildTrackRecord(allFacts, {today, now = `${today}T12:00:00.000Z`}) {
 
   // ---- weeks: every week from the first commitment to the latest committed or the current week ----
   const first = commits[0] || null;
-  const settled = [...verdictBy.values()]; // every question with a verdict, sampled or watched, as the old board counted them
+  // weeks[] count the scored sample only (a verdict on a watched, unsampled question is not a settled sampled question)
+  const sampledIds = new Set(sampledAll.map((s) => s.qid));
+  const settled = [...verdictBy.values()].filter((v) => sampledIds.has(v.payload.qid));
   const weeks = [];
   const drawnIds = [...drawBy.keys()].sort();
   const poolWeeks = new Set(drawnIds.slice(-POOL_WEEKS_PUBLISHED));

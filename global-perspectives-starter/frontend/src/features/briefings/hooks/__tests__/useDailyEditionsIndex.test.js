@@ -116,4 +116,33 @@ describe('useDailyEditionsIndex', () => {
       expect(fetchDailyBrief.mock.calls).toEqual([['2026-10-31']]);
     } finally { vi.useRealTimers(); }
   });
+
+  it('a probe\'s "no edition" is not kept for the session: it is asked again after MISS_TTL_MS, a found edition is not', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-12T08:00:00Z'));
+    try {
+      const { useDailyEditionsIndex, fetchDailyBrief, fetchLatestDailyBrief, MISS_TTL_MS, LOOKBACK_DAYS } = await freshModule();
+      fetchLatestDailyBrief.mockRejectedValue(new Error('unavailable'));
+      fetchDailyBrief.mockImplementation(async (dk) => ({ data: dk === '2026-09-12' ? { dateKey: dk } : null }));
+
+      const a = renderHook(() => useDailyEditionsIndex('2026-09-12'));
+      await waitFor(() => expect(a.result.current.loading).toBe(false));
+      expect(fetchDailyBrief).toHaveBeenCalledTimes(LOOKBACK_DAYS);
+      expect(Object.values(JSON.parse(sessionStorage.getItem('gp_briefings_daily_editions_v1'))).includes(false)).toBe(false); // misses are not in the session cache
+      a.unmount();
+
+      fetchDailyBrief.mockClear();
+      const b = renderHook(() => useDailyEditionsIndex('2026-09-12')); // inside the TTL: no new asks
+      await waitFor(() => expect(b.result.current.loading).toBe(false));
+      expect(fetchDailyBrief).not.toHaveBeenCalled();
+      expect(b.result.current.index['2026-09-11']).toBe(false);
+      b.unmount();
+
+      vi.setSystemTime(new Date(Date.now() + MISS_TTL_MS + 1000));
+      const c = renderHook(() => useDailyEditionsIndex('2026-09-12')); // past the TTL: the 13 misses are asked again, the found one is not
+      await waitFor(() => expect(c.result.current.loading).toBe(false));
+      expect(fetchDailyBrief).toHaveBeenCalledTimes(LOOKBACK_DAYS - 1);
+      expect(fetchDailyBrief).not.toHaveBeenCalledWith('2026-09-12');
+    } finally { vi.useRealTimers(); }
+  });
 });

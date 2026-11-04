@@ -11,16 +11,28 @@ import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDaily
 // (the design brief's own §6.7 interim: "probe backwards … stopping after 14 dates"), in small
 // batches, and caches the found/not-found result in sessionStorage so re-opening /briefings in
 // the same tab costs zero extra requests. A network failure leaves that date 'unknown' (never
-// silently 'no edition') and is reported once via reportFetchError.
+// silently 'no edition') and is reported once via reportFetchError. A probe's "no edition" is
+// kept for MISS_TTL_MS only: `daily_brief` answers null for a read error too, so one blip must not
+// read as "no edition" for the whole tab session. An answer from the record's index or the latest
+// lookup (authoritative) and a found edition are kept for the session.
 export const LOOKBACK_DAYS = 14;
 const BATCH_SIZE = 5;
 const CACHE_KEY = 'gp_briefings_daily_editions_v1';
+const MISS_KEY = 'gp_briefings_daily_misses_v1';
+export const MISS_TTL_MS = 10 * 60 * 1000;
 
 function readCache() {
   try { return JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; }
 }
 function writeCache(map) {
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(map)); } catch { /* ignore */ }
+}
+// dateKey -> ms when a probe last found no edition
+function readMisses() {
+  try { return JSON.parse(sessionStorage.getItem(MISS_KEY) || '{}'); } catch { return {}; }
+}
+function writeMisses(map) {
+  try { sessionStorage.setItem(MISS_KEY, JSON.stringify(map)); } catch { /* ignore */ }
 }
 
 export function useDailyEditionsIndex(anchorDateKey) {
@@ -56,6 +68,10 @@ export function useDailyEditionsIndex(anchorDateKey) {
           }
         }
       } catch { /* fall back to probing */ }
+      // Probe misses that are still fresh stand for this run only; they are never written to the main cache.
+      const now = Date.now();
+      const misses = Object.fromEntries(Object.entries(readMisses()).filter(([, ts]) => now - ts < MISS_TTL_MS));
+      for (const dk of dateKeys) if (cache[dk] === undefined && misses[dk]) cache[dk] = false;
       const missing = dateKeys.filter((dk) => cache[dk] === undefined);
       for (let i = 0; i < missing.length && !cancelled; i += BATCH_SIZE) {
         const batch = missing.slice(i, i + BATCH_SIZE);
@@ -69,10 +85,15 @@ export function useDailyEditionsIndex(anchorDateKey) {
           }
         }));
         for (const [dk, exists] of results) {
-          if (exists !== undefined) cache[dk] = exists;
+          if (exists === undefined) continue;
+          cache[dk] = exists;
+          if (!exists) misses[dk] = Date.now();
         }
       }
-      writeCache(cache);
+      const persisted = { ...cache };
+      for (const dk of Object.keys(misses)) if (persisted[dk] === false) delete persisted[dk];
+      writeCache(persisted);
+      writeMisses(misses);
       if (!cancelled) { setIndex({ ...cache }); setLoading(false); }
     })();
 

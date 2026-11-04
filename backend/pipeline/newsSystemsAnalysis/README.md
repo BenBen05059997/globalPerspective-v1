@@ -9,6 +9,7 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `today-archive` and `archive#YYYY-MM-DD` (key `id`)
+- Archive window source (decision 0035 step 5d), env `ARCHIVE_READS`: `ddb` (default, also when unset or unknown) reads the rows above; `inbox` replays `<ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl` (needs `s3:GetObject` on `record/inbox/entries/*`; a missing day = empty; no DynamoDB archive read); `compare` reads both, uses DynamoDB and logs `[archive-compare] <key>: equal | DIFFER n [..]` on whole entries. `inbox`/`compare` need `ENTRIES_INBOX_PREFIX` (e.g. `record/`), else it stays `ddb`. Shared code: `src/_shared/archiveReads.js`.
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`; writes `SYSTEMS#<country>`/`SYSTEMS_ANALYSIS`, `WEB#INDEX`/`LATEST`, `THREAD#<id>`/`WEB`
 - Env `NOTES_READS` (decision 0053, `ddb` default | `compare` | `notes`): the `THREAD_ANALYSIS` read comes from the record's `story_analysis` notes instead; `compare` answers from DynamoDB and logs `[notes-compare]` differences. The role needs `s3:GetObject` on `record/notes/story_analysis/*`.
 - S3 `WORLD_BUCKET` (fallback `globalperspective-world-280362093938`): after the DynamoDB writes, writes the same snapshot (`runId`, `index`, `records`, raw per-country `webs`) to `web/YYYY/MM/DD.json` (UTC date; a same-day rerun overwrites) and `web/latest.json`; a failure is logged and does not fail the run. Role has write-only `s3:PutObject` on `web/*`.

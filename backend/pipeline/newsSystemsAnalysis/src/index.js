@@ -1,6 +1,7 @@
 'use strict';
 
 const archive = require('./_shared/archiveEntries');
+const archiveReads = require('./_shared/archiveReads');
 const { isCountryName } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { pickSpreadEntries } = require('./spreadEntries');
@@ -36,6 +37,9 @@ const THREAD_SK = 'THREAD_ANALYSIS';
 const SYSTEMS_TTL_DAYS = 14;
 const MAX_COUNTRIES = parseInt(process.env.SYSTEMS_TOP_N || '5', 10);
 const ARCHIVE_DAYS = 30;
+// Where the archive window is read from (decision 0035 step 5d): ddb (default) | inbox (record/inbox/entries/ under ENTRIES_INBOX_PREFIX) | compare.
+const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
+const ARCHIVE_READS = process.env.ARCHIVE_READS;
 const MAX_THREADS_PER_COUNTRY = 15;
 const MAX_EDGES_PER_NODE = 3;
 
@@ -151,7 +155,10 @@ function webHistoryKey(date) {
 function readArchiveEntries(days) {
   return archive.readArchiveEntries({
     days,
-    getRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    getRow: archiveReads.archiveRowReader({
+      mode: ARCHIVE_READS, prefix: ENTRIES_INBOX_PREFIX, readDay: archiveReads.s3EntriesDay(ENTRIES_INBOX_PREFIX),
+      ddbGetRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    }),
     project: (e, date) => ({
       topicId: e.topicId,
       threadId: e.threadId || null,

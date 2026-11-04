@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows } = require('../../../shared/test/pipelineHarness');
+const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows, inboxObjects } = require('../../../shared/test/pipelineHarness');
 
 const INDEX = path.resolve(__dirname, '../src/index.js');
 const ENV = {
@@ -273,4 +273,17 @@ test('missing table config or API key answers 500 and reads nothing', async () =
     });
     assert.equal(ddb.sent.length, 0);
   }
+});
+
+test('ARCHIVE_READS=inbox reads the window from the entries inbox: no archive row in DynamoDB, the same SYSTEMS# row', async () => {
+  const byDay = {};
+  for (const [n, entry] of JAPAN_SPECS) (byDay[n] ||= []).push(entry);
+  const ddb = mkDdb([]);
+  const env = { ARCHIVE_READS: 'inbox', ENTRIES_INBOX_PREFIX: 'record/' };
+  await run({ ddb, s3: fakeS3(inboxObjects(byDay)), llm: fakeLlm(graph(NODES, [EDGES[0]])), env }, {}, ({}, out) => {
+    assert.equal(out.statusCode, 200);
+    assert.equal(out.coverage.threadsInScope, 4);
+  });
+  assert.equal(systems(ddb, 'Japan').totalArticles, 8);
+  assert.ok(!ddb.sent.some((c) => c.name === 'GetCommand' && c.input.TableName === 'topics'), 'no NewsCache read');
 });

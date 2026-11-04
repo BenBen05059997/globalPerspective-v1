@@ -135,7 +135,7 @@ function inboxVerdictFact(line, forecast, runId) {
   const sourceKey = l.sourceKey || `inbox:verdicts/${l.qid}#${revision}`;
   return makeFact({
     kind: 'verdict', eventId: R.sha1(`verdict${l.qid}${revision}`), sourceKey, at: l.decidedAt, precision: 'exact', threadId, sourceRow: {store: 'record', key: sourceKey}, runId,
-    payload: {qid: l.qid, branchId, result: l.result, revision, decidedBy: l.decidedBy ?? null, evidence: l.evidence ?? null, reason: l.reason ?? null, voidReason: l.voidReason ?? null},
+    payload: {qid: l.qid, branchId, result: l.result, revision, decidedBy: l.decidedBy ?? null, evidence: l.evidence ?? null, reason: l.reason ?? null, voidReason: l.voidReason ?? null, ...(Array.isArray(l.gapDays) && l.gapDays.length ? {gapDays: l.gapDays} : {})},
   });
 }
 

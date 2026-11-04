@@ -45,11 +45,11 @@
         "sampled": {"type": "array", "items": {"$ref": "#/definitions/sampled"}},
         "counts": {
           "type": "object",
-          "required": ["locked", "yes", "no", "void", "awaiting", "pastDeadlineUnchecked", "resolved"],
+          "required": ["locked", "yes", "no", "void", "voidRecordGap", "awaiting", "pastDeadlineUnchecked", "resolved"],
           "additionalProperties": false,
           "properties": {
             "locked": {"type": "integer", "minimum": 0}, "yes": {"type": "integer", "minimum": 0}, "no": {"type": "integer", "minimum": 0},
-            "void": {"type": "integer", "minimum": 0}, "awaiting": {"type": "integer", "minimum": 0}, "pastDeadlineUnchecked": {"type": "integer", "minimum": 0},
+            "void": {"type": "integer", "minimum": 0}, "voidRecordGap": {"description": "of `void`: voided because only a gap in our own record kept the question from a `no`", "type": "integer", "minimum": 0}, "awaiting": {"type": "integer", "minimum": 0}, "pastDeadlineUnchecked": {"type": "integer", "minimum": 0},
             "resolved": {"type": "integer", "minimum": 0}
           }
         },
@@ -139,7 +139,8 @@
           "additionalProperties": false,
           "properties": {"decidedAt": {"$ref": "#/definitions/iso"}, "url": {"type": ["string", "null"]}, "quote": {"type": ["string", "null"]}}
         },
-        "voidReason": {"type": ["string", "null"]}
+        "voidReason": {"type": ["string", "null"]},
+        "gapDays": {"description": "a `record gap` void: the days of our own record that were missing in the question's window", "type": "array", "items": {"$ref": "#/definitions/day"}}
       }
     }
   }

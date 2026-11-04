@@ -58,10 +58,27 @@ const build = (today, upTo) => {
   return {view: buildTrackRecord(fx, {today})};
 };
 
+test('a record-gap void is counted apart (voidRecordGap) and carries its gap days; the fact keeps them, other voids have none', () => {
+  const gapLine = {...verdictLine('q-d', 'd', 'void', 1, '2026-11-25T09:00:00.000Z', {voidReason: 'record gap'}), reason: 'record gap', gapDays: ['2026-10-21', '2026-10-22']};
+  const fx = [...facts, ...verdicts.map(([l]) => F.inboxVerdictFact(l, null, 'r')), F.inboxVerdictFact(gapLine, null, 'r')];
+  const q = buildTrackRecord(fx, {today: '2026-11-26'}).questions;
+  assert.equal(q.counts.void, 2);
+  assert.equal(q.counts.voidRecordGap, 1);
+  const byId = Object.fromEntries(q.sampled.map((s) => [s.qid, s]));
+  assert.equal(byId['q-d'].state, 'void');
+  assert.equal(byId['q-d'].voidReason, 'record gap');
+  assert.deepEqual(byId['q-d'].gapDays, ['2026-10-21', '2026-10-22']);
+  assert.ok(!('gapDays' in byId['q-b']));
+  const fact = fx.find((f) => f.kind === 'verdict' && f.payload.qid === 'q-d');
+  assert.deepEqual(fact.payload.gapDays, ['2026-10-21', '2026-10-22']);
+  assert.ok(!('gapDays' in fx.find((f) => f.kind === 'verdict' && f.payload.qid === 'q-b').payload));
+  assert.ok(validate(buildTrackRecord(fx, {today: '2026-11-26'})), JSON.stringify(validate.errors));
+});
+
 test('the view states what it computed: counts, a corrected verdict, the void reason, weeks and warm-up', () => {
   const {view} = build('2026-11-05', '2026-11-05');
   const q = view.questions;
-  assert.deepEqual(q.counts, {locked: 4, yes: 0, no: 1, void: 1, awaiting: 2, pastDeadlineUnchecked: 0, resolved: 1});
+  assert.deepEqual(q.counts, {locked: 4, yes: 0, no: 1, void: 1, voidRecordGap: 0, awaiting: 2, pastDeadlineUnchecked: 0, resolved: 1});
   const byId = Object.fromEntries(q.sampled.map((s) => [s.qid, s]));
   assert.equal(byId['q-a'].state, 'no');
   assert.deepEqual(byId['q-a'].verdict, {decidedAt: '2026-11-02T09:00:00.000Z', url: null, quote: 'fixed'});

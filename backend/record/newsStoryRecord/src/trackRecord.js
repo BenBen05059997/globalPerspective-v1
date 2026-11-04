@@ -22,6 +22,7 @@ const LEGACY = require('./trackRecordLegacy.json');
 
 const SCHEMA_VERSION = 1;
 const GRACE_DAYS = 3; // a "no" needs the deadline plus this many days (the resolver's rule)
+const RECORD_GAP = 'record gap'; // the resolver's voidReason for a question only our own record gap kept from a `no` (counted apart from other voids)
 const SAMPLED_WEEKS_SHOWN = 26;
 const POOL_WEEKS_PUBLISHED = 4; // the draws that carry their pool (the old board's number)
 const HOUR_MS = 3600 * 1000;
@@ -99,6 +100,7 @@ function buildTrackRecord(allFacts, {today, now = `${today}T12:00:00.000Z`}) {
         deadline: q.b.due, issuedAt: q.f.at, clusterKey: q.f.threadId || p.clusterKey || null, state,
         ...(v ? {verdict: {decidedAt: v.at, url: (v.payload.evidence && v.payload.evidence.url) || null, quote: (v.payload.evidence && v.payload.evidence.quote) || null}} : {}),
         ...(v && v.payload.result === 'void' ? {voidReason: v.payload.voidReason || null} : {}),
+        ...(v && v.payload.result === 'void' && Array.isArray(v.payload.gapDays) ? {gapDays: v.payload.gapDays} : {}),
       });
     }
   }
@@ -108,7 +110,7 @@ function buildTrackRecord(allFacts, {today, now = `${today}T12:00:00.000Z`}) {
   const sampled = sampledAll.filter((s) => shownWeeks.includes(s.weekId));
 
   const count = (st) => sampledAll.filter((s) => s.state === st).length;
-  const counts = {locked: sampledAll.length, yes: count('yes'), no: count('no'), void: count('void'), awaiting: count('awaiting'), pastDeadlineUnchecked: count('past_deadline_unchecked')};
+  const counts = {locked: sampledAll.length, yes: count('yes'), no: count('no'), void: count('void'), voidRecordGap: sampledAll.filter((s) => s.state === 'void' && s.voidReason === RECORD_GAP).length, awaiting: count('awaiting'), pastDeadlineUnchecked: count('past_deadline_unchecked')};
   counts.resolved = counts.yes + counts.no;
 
   // ---- weeks: every week from the first commitment to the latest committed or the current week ----

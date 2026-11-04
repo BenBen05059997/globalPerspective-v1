@@ -11,13 +11,13 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 
 ## Architecture
 
-| Lambda | What it does | Trigger (live) | Reads | Writes | README |
-|---|---|---|---|---|---|
-| newsReadApi (repo dir newsSensitiveData; was newsSensitiveData-dev) | The site's public read proxy; one handler, many `action` values. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; UserTable `tier`; S3 `record/` notes and views (per the read flags) | Nothing | [README](newsSensitiveData/README.md) |
-| newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | Function URL (no schedule) | NewsCache `latest`; SavedItems; UserPrefs; BreakingAlerts; UserTable `tier` | UserPrefs | [README](newsRecommend/README.md) |
-| newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
-| newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
-| newsClientErrors | Public sink that counts uncaught browser errors. | Function URL | Nothing | GlobalPerspectiveClientErrors | [README](newsClientErrors/README.md) |
+| Lambda | What it does | README |
+|---|---|---|
+| newsReadApi (repo dir newsSensitiveData; was newsSensitiveData-dev) | The site's public read proxy; one handler, many `action` values. | [README](newsSensitiveData/README.md) |
+| newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | [README](newsRecommend/README.md) |
+| newsSavedItems | Saves, unsaves and lists a member's bookmarks. | [README](newsSavedItems/README.md) |
+| newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | [README](newsSharedAnalysis/README.md) |
+| newsClientErrors | Public sink that counts uncaught browser errors. | [README](newsClientErrors/README.md) |
 
 ## Pipeline
 

@@ -11,13 +11,13 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 
 ## Architecture
 
-| Lambda | What it does | Trigger (live) | Reads | Writes | README |
-|---|---|---|---|---|---|
-| newsBreakingAlert | Scores stories each cycle, proposes at most one breaking alert, emails the operator when sending is on. | EventBridge `TriggerBreakingAlert`, 04:45, 12:45, 20:45 UTC, ENABLED | NewsCache `latest`; SummarizeAndPredict country, thread and topic rows | GlobalPerspectiveBreakingAlerts (key `alertKey`); Resend email to the operator address | [README](newsBreakingAlert/README.md) |
-| newsEmailSender | Sends email by `mode`: weekly brief, breaking alert or country drift note. | EventBridge, input sets the mode: weekly Sun 14:00 UTC ENABLED; breaking every 15 min DISABLED; drift 07:40 UTC DISABLED | GlobalPerspectiveUserPrefs (opt-ins); SummarizeAndPredict `WEEKLY_BRIEF`, `DRIFT#` rows; BreakingAlerts | Marks `emailedAt` on notes and alerts; weekly marker `EMAILLOG#weekly#<weekOf>`; Resend | [README](newsEmailSender/README.md) |
-| newsDailyBrief (repo dir newsPostDevTo) | Builds the daily brief (no longer posts to Dev.to) from today's entries plus thread and country analysis. | Scheduler `InvokeDev`, 23:00 Asia/Tokyo, ENABLED | NewsCache `today-archive`; SummarizeAndPredict `THREAD#`, `COUNTRY#`; DeepSeek | SummarizeAndPredict `DAILY_BRIEF#<date>`; S3 `record/notes/daily_brief/` only when env `NOTES_PREFIX` is set | [README](newsPostDevTo/README.md) |
-| newsPostLinkedin (folder newsPostLinkedIn) | Posts new topics to LinkedIn and Bluesky with a generated map image. | Scheduler `InvokeLinkedIn`, minute 20 every 3 hours, Asia/Tokyo, ENABLED | NewsCache `latest`; SummarizeAndPredict `TOPIC#` summary and prediction; posted-log table | `NewsProject-linkedin-posts` (`POSTED#<platform>#<fingerprint>`); LinkedIn and Bluesky APIs | [README](newsPostLinkedIn/README.md) |
-| newsWeeklyBrief | Writes the weekly signals brief from seven days of archives; sends no email. | EventBridge `TriggerWeeklyBrief`, Sun 06:00 UTC, ENABLED | NewsCache `today-archive`, `archive#<date>` (`ARCHIVE_READS=compare` against S3 `record/inbox/entries/`); SummarizeAndPredict thread and country rows; DeepSeek | SummarizeAndPredict `WEEKLY_BRIEF#<weekKey>`, status published; S3 `record/notes/weekly_brief/` only when env `NOTES_PREFIX` is set | [README](newsWeeklyBrief/README.md) |
+| Lambda | What it does | README |
+|---|---|---|
+| newsBreakingAlert | Scores stories each cycle, proposes at most one breaking alert, emails the operator when sending is on. | [README](newsBreakingAlert/README.md) |
+| newsEmailSender | Sends email by `mode`: weekly brief, breaking alert or country drift note. | [README](newsEmailSender/README.md) |
+| newsDailyBrief (repo dir newsPostDevTo) | Builds the daily brief (no longer posts to Dev.to) from today's entries plus thread and country analysis. | [README](newsPostDevTo/README.md) |
+| newsPostLinkedin (folder newsPostLinkedIn) | Posts new topics to LinkedIn and Bluesky with a generated map image. | [README](newsPostLinkedIn/README.md) |
+| newsWeeklyBrief | Writes the weekly signals brief from seven days of archives; sends no email. | [README](newsWeeklyBrief/README.md) |
 
 ## Pipeline
 

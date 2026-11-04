@@ -10,9 +10,9 @@ This folder is stage 3: the forecast watch, gather, judge and record (newsPredic
 
 ## Architecture
 
-| Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
-|---|---|---|---|---|---|
-| newsPredictionResolver | Commits weekly seeds, draws the sampled questions, and every night watches for open question branches to check (story moved or due + 3 days), judges them and writes the verdicts itself. | Rule `TriggerPredictionResolver`, cron(30 10 * * ? *) UTC, input action `tick`, ENABLED | PredictionLog `PRED#` rows, `Q#`/`VERDICT`; S3 `record/facts/` entry facts; DeepSeek endpoint | PredictionLog `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows, written once and never replaced; S3 `record/inbox/verdicts/` and `record/inbox/draws/` lines for newsStoryRecord | [link](newsPredictionResolver/README.md) |
+| Lambda | What it does | README |
+|---|---|---|
+| newsPredictionResolver | Commits weekly seeds, draws the sampled questions, and every night watches for open question branches to check (story moved or due + 3 days), judges them and writes the verdicts itself. | [link](newsPredictionResolver/README.md) |
 
 ## Pipeline
 

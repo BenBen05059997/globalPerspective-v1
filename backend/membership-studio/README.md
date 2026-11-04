@@ -12,11 +12,11 @@ This folder is stage 9: billing (Polar) and the retired Studio Lambda. Timeline:
 
 ## Architecture
 
-| Lambda | What it does | Trigger (live) | Reads | Writes | README |
-|---|---|---|---|---|---|
-| newsAnalyze | Retired Studio run: checks the Firebase token and the member tier, runs the user's message against DeepSeek, returns a Markdown report. Nothing on the site calls it. | Function URL, no schedule | GlobalPerspectiveUserTable (`uid`: `tier`, daily counter); Google signing certs; DeepSeek | UserTable daily counter fields | [README](newsAnalyze/README.md) |
-| newsPolarBilling | Creates Polar checkout sessions, reports membership, and applies Polar webhooks. | Function URL, no schedule | UserTable; Polar API; Google signing certs | UserTable (`tier`, `subscriptionStatus`, Polar ids, period end) | [README](newsPolarBilling/README.md) |
-| newsAnalyze-sandbox, newsPolarBilling-sandbox | Test twins pointed at Polar's sandbox API; no repo source folder. | Function URL | UserTable | UserTable | none; made by `_sandbox/deploy-sandbox.sh` |
+| Lambda | What it does | README |
+|---|---|---|
+| newsAnalyze | Retired Studio run: checks the Firebase token and the member tier, runs the user's message against DeepSeek, returns a Markdown report. | [README](newsAnalyze/README.md) |
+| newsPolarBilling | Creates Polar checkout sessions, reports membership, and applies Polar webhooks. | [README](newsPolarBilling/README.md) |
+| newsAnalyze-sandbox, newsPolarBilling-sandbox | Test twins pointed at Polar's sandbox API; no repo source folder. | none; made by `_sandbox/deploy-sandbox.sh` |
 
 ## Pipeline
 

@@ -10,12 +10,12 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 
 ## Architecture
 
-| Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
-|---|---|---|---|---|---|
-| newsGdacsIngest | Fetches the GDACS disaster list and writes the current events and an Orange/Red snapshot. | Rule `TriggerGdacsIngest`, rate(20 minutes), ENABLED | gdacs.org events API | S3 `corpus/gdacs/latest.json`, `situations/inbox/gdacs-latest.json` | [link](newsGdacsIngest/README.md) |
-| newsSituationIngest | Fetches RSS feeds, classifies headlines with an LLM, clusters them into stories, keeps the significant ones. | Rule `TriggerSituationIngest`, rate(1 hour), ENABLED | RSS hosts; DeepSeek endpoint; S3 `stories/index.json`, `stories/classify-cache.json` | S3 `corpus/YYYY/MM/DD/HH.jsonl`, `stories/state/`, `stories/index.json`, `stories/classify-cache.json` | [link](newsSituationIngest/README.md) |
-| newsSituationTracker | Folds GDACS and news stories into situation state and builds the map bundle. | Rule `TriggerSituationTracker`, rate(30 minutes), ENABLED | S3 `situations/inbox/gdacs-latest.json`, `stories/index.json`, `threads/story-map.json`, own state | S3 `situations/state/`, `situations/index.json`, `situations/history/`, `situations/archive/`, `world/latest.json` | [link](newsSituationTracker/README.md) |
-| newsGdeltConflict | Aggregates GDELT material-conflict events by country into a daily file. No LLM. | Rule `TriggerGdeltConflict`, cron(0 */6 * * ? *) UTC, ENABLED | data.gdeltproject.org latest export | S3 `corpus/gdelt/<date>.json` | [link](newsGdeltConflict/README.md) |
+| Lambda | What it does | README |
+|---|---|---|
+| newsGdacsIngest | Fetches the GDACS disaster list and writes the current events and an Orange/Red snapshot. | [link](newsGdacsIngest/README.md) |
+| newsSituationIngest | Fetches RSS feeds, classifies headlines with an LLM, clusters them into stories, keeps the significant ones. | [link](newsSituationIngest/README.md) |
+| newsSituationTracker | Folds GDACS and news stories into situation state and builds the map bundle. | [link](newsSituationTracker/README.md) |
+| newsGdeltConflict | Aggregates GDELT material-conflict events by country into a daily file. | [link](newsGdeltConflict/README.md) |
 
 ## Pipeline
 

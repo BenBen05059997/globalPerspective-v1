@@ -18,10 +18,10 @@ An agent working on the record does not write the other groups. Design: `project
 
 ## Lambdas
 
-| Lambda | What it does | Trigger (live) | README |
-|---|---|---|---|
-| newsStoryRecord | The facts writer and the only view builder. Appends the day's facts to `record/facts/YYYY-MM-DD.jsonl` (no model), writes the Run in `record/runs/YYYY-MM-DD.json`, then rebuilds `record/views/` from all facts, readings and notes. With `{"refresh":true}` it appends no fact and only rebuilds the views, with today's archive entries as provisional entries (decision 0050). | EventBridge `TriggerStoryRecord`, 23:45 UTC daily, input `{"shadow":false}`. Refresh rules, input `{"refresh":true,"shadow":false}`: `TriggerStoryRecordRefresh` 04:35, 12:35, 20:35 UTC; `TriggerStoryRecordRefreshBrief` 14:15; `TriggerStoryRecordRefreshAnalysis` 05:20; `TriggerStoryRecordRefreshWeekly` Sunday 06:15. All ENABLED | [README](newsStoryRecord/README.md) |
-| newsRecordReview | The weekly review. One boxed model call per active story; checked answers become readings with hindsight in `record/readings/YYYY-Www.jsonl`, plus the review Run `record/runs/review-YYYY-Www.json` and auto-merges in `record/inbox/merges/`. | EventBridge `TriggerRecordReview`, Monday 01:00 UTC, ENABLED, input `{"shadow":false}` | [README](newsRecordReview/README.md) |
+| Lambda | What it does | README |
+|---|---|---|
+| newsStoryRecord | The facts writer and the only view builder: appends the day's facts (no model), writes the Run, rebuilds `record/views/` from facts, readings and notes. | [README](newsStoryRecord/README.md) |
+| newsRecordReview | The weekly review: one boxed model call per active story; checked answers become readings with hindsight. | [README](newsRecordReview/README.md) |
 
 Each is the only writer of its keys. Neither has a Function URL. `newsStoryRecord` has reserved concurrency 1, so a refresh and the nightly run never overlap: keep any new rule at least five minutes clear of 23:45.
 

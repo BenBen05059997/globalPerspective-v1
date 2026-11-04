@@ -89,7 +89,15 @@ function domainOf(url) {
   return String(url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].toLowerCase();
 }
 
-function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40); }
+// Accents fold to their base letter ("Óscar" -> "oscar") so one actor is one key. NFKD splits most accented
+// letters into base + combining mark (marks removed); SLUG_FOLD covers Latin letters NFKD leaves whole.
+// Letters outside Latin (Arabic, Cyrillic, CJK) still have no a-z form and still act as separators.
+const SLUG_FOLD = { 'ß': 'ss', 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'đ': 'd', 'ð': 'd', 'ł': 'l', 'þ': 'th', 'ħ': 'h', 'ı': 'i' };
+function slug(s) {
+  return String(s || '').toLowerCase().normalize('NFKD').replace(/\p{M}+/gu, '')
+    .replace(/[ßøæœđðłþħı]/g, (c) => SLUG_FOLD[c])
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+}
 
 // Conservative entity-key normalization (audit F1 — storyId fragmentation). Folds obvious lexical
 // variants of the SAME actor onto one cluster key (e.g. "President Trump", "Trump administration",
@@ -269,4 +277,4 @@ function nextCache(cache, classified, nowIso, keepHours) {
   return { updated_at: nowIso, count: Object.keys(entries).length, entries };
 }
 
-module.exports = { canonicalIso3, AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, storyCentroid, domainOf, normalizeEntity, cacheKey, splitByCache, nextCache };
+module.exports = { canonicalIso3, AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, storyCentroid, domainOf, normalizeEntity, cacheKey, splitByCache, nextCache, slug };

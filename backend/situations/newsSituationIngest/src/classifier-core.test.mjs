@@ -164,4 +164,22 @@ t('storyCentroid: antimeridian group averages across 180; country boxes never sp
   for (const iso of ['USA', 'IRN']) assert.ok(inBox({ lat: boxes[iso].c[0], lon: boxes[iso].c[1] }, iso));
 });
 
+t('slug folds accents and non-decomposing Latin letters instead of dropping them', () => {
+  const { slug } = core;
+  const cases = {
+    'Óscar Puente': 'oscar-puente', 'Oscar Puente': 'oscar-puente', 'São Paulo': 'sao-paulo', 'Zürich': 'zurich',
+    'Kraków': 'krakow', 'Łódź': 'lodz', 'Ørsted': 'orsted', 'Straße': 'strasse', 'Ñuñoa': 'nunoa', 'Ça va': 'ca-va',
+    'Æther Þór Đorđe': 'aether-thor-dorde', 'Donald Trump': 'donald-trump',
+  };
+  for (const [input, want] of Object.entries(cases)) assert.strictEqual(slug(input), want, input);
+  assert.strictEqual(slug('Óscar Puente'), slug('Oscar Puente'));
+  assert.strictEqual(slug('x'.repeat(60)).length, 40); // length cap unchanged
+});
+
+t('slug leaves non-Latin scripts as they were (no a-z form, so empty)', () => {
+  const { slug } = core;
+  for (const name of ['محمد بن سلمان', 'مُحَمَّد', 'Владимир Путин', 'Йосип Броз', '习近平']) assert.strictEqual(slug(name), '', name);
+  assert.strictEqual(slug('Путин Putin'), 'putin'); // Latin part survives as before
+});
+
 console.log(`\n${pass} tests passed`);

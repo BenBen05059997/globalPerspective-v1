@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCountryDirection, directionLabel } from '@/features/countries/lib/countryDirection.js';
+import { computeCountryDirection, directionLabel, outlookLabel } from '@/features/countries/lib/countryDirection.js';
 
 const DAY = 86400000;
 function iso(daysAgo, now) {
@@ -95,5 +95,12 @@ describe('computeCountryDirection', () => {
     const older = computeCountryDirection([snap(iso(22, now), 50), snap(iso(15, now), 50)], now);
     expect(older.freshness).toBe('amber');
     expect(older.state).toBe('unchanged');
+  });
+});
+
+describe('outlookLabel', () => {
+  it('names the briefing trajectory as an AI-assessed outlook, apart from the score change', () => {
+    expect(outlookLabel({ dir: 'up', label: 'Escalating' })).toBe('Outlook: escalating (AI-assessed)');
+    expect(outlookLabel(null)).toBeNull();
   });
 });

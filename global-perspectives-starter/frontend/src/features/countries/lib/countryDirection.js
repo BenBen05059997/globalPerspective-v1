@@ -139,6 +139,12 @@ function namedAxis(bucketA, bucketB) {
   return best;
 }
 
+// What the briefing's AI-assessed trajectory (hero chip, risk tile) is called, so it cannot read as the same
+// measure as the card's score change below ("Risk score unchanged since Oct 26").
+export function outlookLabel(trajectory) {
+  return trajectory ? `Outlook: ${trajectory.label.toLowerCase()} (AI-assessed)` : null;
+}
+
 // A short, honest label for the direction line — used by CountryCardV2 and the country page.
 export function directionLabel(direction) {
   if (!direction) return null;

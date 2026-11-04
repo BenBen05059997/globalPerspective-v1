@@ -127,9 +127,9 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <span className="ccv2-note"><ClaimTag kind="judgment" /> model score, not a measurement</span>
           <span className="ccv2-direction">
             {direction.state === 'arrow' ? <DirectionArrow dir={direction.arrow} /> : direction.state === 'top' ? '◆' : ''}
-            {' '}{directionLabel(direction)}
+            {' '}{['arrow', 'unchanged', 'top'].includes(direction.state) ? 'Risk score ' : ''}{directionLabel(direction)}
             {direction.axis ? ` (${direction.axis.label})` : ''}
-            {direction.priorAsOf && (direction.state === 'arrow' || direction.state === 'unchanged') ? ` · vs ${fmtShort(direction.priorAsOf)}` : ''}
+            {direction.priorAsOf && (direction.state === 'arrow' || direction.state === 'unchanged') ? ` since ${fmtShort(direction.priorAsOf)}` : ''}
           </span>
         </div>
       ) : null}

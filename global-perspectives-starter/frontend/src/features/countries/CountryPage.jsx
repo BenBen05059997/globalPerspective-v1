@@ -24,6 +24,7 @@ import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
 import { crisisTypeForCategory } from '@/shared/lib/crisisHue';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { countryTier } from '@/features/countries/lib/countryTier';
+import { outlookLabel } from '@/features/countries/lib/countryDirection.js';
 import { trajectoryOf } from '@/shared/lib/trajectory';
 import BackgroundTimeline from '@/features/countries/components/BackgroundTimeline';
 import { SaveButton } from '@/shared/ui/SaveButton';
@@ -559,7 +560,7 @@ export default function CountryPage() {
             {riskTier && <TierChip className="cpg-overlay-chip" tier={riskTier} score={intel?.riskScore} />}
             {trajectory && (
               <span className="cpg-overlay-chip cpg-traj">
-                <DirectionArrow dir={trajectory.dir} /> {trajectory.label}
+                <DirectionArrow dir={trajectory.dir} /> {outlookLabel(trajectory)}
               </span>
             )}
           </div>
@@ -654,7 +655,7 @@ export default function CountryPage() {
                 {riskHistory.length >= 2 ? (
                   <RiskSparkline snapshots={riskHistory} />
                 ) : (
-                  trajectory ? <><DirectionArrow dir={trajectory.dir} /> {trajectory.label}</> : 'AI-assessed'
+                  trajectory ? <><DirectionArrow dir={trajectory.dir} /> {outlookLabel(trajectory)}</> : 'AI-assessed'
                 )}
               </div>
             </div>

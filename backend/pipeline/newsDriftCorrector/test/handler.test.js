@@ -5,7 +5,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows } = require('../../../shared/test/pipelineHarness');
+const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows, inboxObjects } = require('../../../shared/test/pipelineHarness');
+
+const { inboxLines } = require('../../../shared/src/entriesInbox');
 
 const INDEX = path.resolve(__dirname, '../src/index.js');
 const ENV = {
@@ -20,13 +22,14 @@ const thist = (id, daysAgo, f) => ({ PK: `THREAD#${id}`, SK: `THREAD_HISTORY#${D
 const ev = (topicId, title, regions, extra = {}) => ({ topicId, title, regions, ...extra });
 const answer = (o) => JSON.stringify({ triggerEventNumber: 1, whyChanged: 'The BOJ hike lifted the risk score.', noSingleDriver: false, ...o });
 
+const JAPAN_ARCHIVE = () => ({
+  4: [ev('j-1', 'BOJ surprises with a rate hike', ['Japan'], { threadId: 'thr-j' }), ev('f-1', 'French strike', ['France'])],
+  3: [ev('j-2', 'Yen slides after the hike', ['Japan']), ev('j-1', 'BOJ surprises with a rate hike', ['Japan'], { threadId: 'thr-j' })],
+});
 // Japan rose from 40 (4 days ago) to 60 (3 days ago): one material move, with Japan and French events inside the window
 const JAPAN_MOVE = () => [
   hist('Japan', 4), hist('Japan', 3, { riskLevel: 'elevated', riskScore: 60, headline: 'Japan under strain' }),
-  ...archiveRows({
-    4: [ev('j-1', 'BOJ surprises with a rate hike', ['Japan'], { threadId: 'thr-j' }), ev('f-1', 'French strike', ['France'])],
-    3: [ev('j-2', 'Yen slides after the hike', ['Japan']), ev('j-1', 'BOJ surprises with a rate hike', ['Japan'], { threadId: 'thr-j' })],
-  }),
+  ...archiveRows(JAPAN_ARCHIVE()),
 ];
 
 const run = (opts, event, body) => withLambda(INDEX, { env: { ...ENV, ...(opts.env || {}) }, ddb: opts.ddb, s3: opts.s3, llm: opts.llm }, async (ctx) => body(ctx, await ctx.mod.handler(event)));
@@ -351,5 +354,63 @@ test('the default country list is used when the event names none', async () => {
   await run({ ddb: fakeDdb([]), s3: fakeS3(), llm: fakeLlm(answer()) }, {}, (_, out) => {
     assert.deepEqual(out.countries.map((c) => c.country), ['Iran', 'Israel', 'United States', 'Venezuela', 'China', 'Japan', 'Ukraine', 'Russia', 'France', 'Germany', 'DR Congo', 'South Africa']);
     assert.ok(out.countries.every((c) => c.status === 'no-history'));
+  });
+});
+
+// ─── ARCHIVE_READS (decision 0035 step 5d): the archive days and `latest` from the entries inbox ───────────────────────────────────────────
+
+const INBOX_ENV = { ARCHIVE_READS: 'inbox', ENTRIES_INBOX_PREFIX: 'record/' };
+const noArchiveRead = (ddb) => !ddb.sent.some((c) => c.name === 'GetCommand' && c.input.TableName === 'topics');
+
+test('ARCHIVE_READS=inbox: the window events come from the entries inbox, the same note, no NewsCache read', async () => {
+  const ddb = fakeDdb(JAPAN_MOVE().filter((r) => r.id === undefined));
+  const llm = fakeLlm(answer({ triggerEventNumber: 2 }));
+  await run({ ddb, s3: fakeS3(inboxObjects(JAPAN_ARCHIVE())), llm, env: INBOX_ENV }, { country: 'Japan' }, (_, out) => {
+    assert.deepEqual(country(out, 'Japan'), { country: 'Japan', status: 'noted', moves: 1, noted: 1, skipped: 0, triggers: ['Yen slides after the hike'] });
+    assert.match(llm.calls[0].user, /\[1\] \(.*\) BOJ surprises with a rate hike\n  \[2\] \(.*\) Yen slides after the hike$/m);
+    assert.doesNotMatch(llm.calls[0].user, /French strike/);
+  });
+  assert.ok(noArchiveRead(ddb));
+});
+
+test('ARCHIVE_READS=inbox: a story\'s events come from the inbox too', async () => {
+  const ddb = fakeDdb(THREAD_MOVE().filter((r) => r.id === undefined));
+  const days = {};
+  for (const r of THREAD_MOVE().filter((x) => x.id !== undefined && x.entries)) {
+    const n = [4, 3, 2, 1, 0].find((k) => dayAgo(k).key === r.id);
+    if (n !== undefined) days[n] = r.entries;
+  }
+  await run({ ddb, s3: fakeS3(inboxObjects(days)), llm: fakeLlm(answer({ triggerEventNumber: 2 })), env: INBOX_ENV }, { country: 'Nowhere', threadId: 'thr-g' }, ({ llm }, out) => {
+    assert.equal(out.threads[0].status, 'noted');
+    assert.match(llm.calls[0].user, /\[1\] \(.*\) Talks open in Cairo\n  \[2\] \(.*\) Ceasefire collapses$/m);
+  });
+  assert.ok(noArchiveRead(ddb));
+});
+
+// today's day file with a run of two topics: `of` = how many topics the run's staging item had
+const latestFile = (of) => {
+  const batch = `${today}T04:50:00.000Z`;
+  const topics = { 'g-1': { threadId: 'thr-g' }, 'q-1': { threadId: 'thr-q' } };
+  const lines = inboxLines([{ topicId: 'g-1', threadId: 'thr-g', title: 'a' }, { topicId: 'q-1', threadId: 'thr-q', title: 'b' }], { batch, selection: { topics, run: { of, model: 'm' } } });
+  return { [`record/inbox/entries/${today}.jsonl`]: { body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n', etag: '"i"' } };
+};
+
+test('ARCHIVE_READS=inbox: stories are discovered from the last complete run of the inbox; an incomplete run gives none (honest empty)', async () => {
+  const rows = [{ id: 'latest', topics: [{ threadId: 'thr-zzz' }] }, ...THREAD_MOVE()];
+  await run({ ddb: fakeDdb(rows), s3: fakeS3(latestFile(2)), llm: fakeLlm(answer()), env: INBOX_ENV }, { country: 'Nowhere' }, (_, out) => {
+    assert.deepEqual(out.threads.map((t) => t.threadId).sort(), ['thr-g', 'thr-q']);
+  });
+  await run({ ddb: fakeDdb(rows), s3: fakeS3(latestFile(5)), llm: fakeLlm(answer()), env: INBOX_ENV }, { country: 'Nowhere' }, (_, out) => {
+    assert.deepEqual(out.threads, []);
+  });
+});
+
+test('ARCHIVE_READS=compare: DynamoDB answers; [archive-compare] and [latest-compare] lines are logged', async () => {
+  const rows = [{ id: 'latest', topics: [{ threadId: 'thr-g' }, { threadId: 'thr-q' }] }, ...JAPAN_MOVE()];
+  const s3 = fakeS3({ ...inboxObjects(JAPAN_ARCHIVE()), ...latestFile(2) });
+  await run({ ddb: fakeDdb(rows), s3, llm: fakeLlm(answer({ triggerEventNumber: 2 })), env: { ARCHIVE_READS: 'compare', ENTRIES_INBOX_PREFIX: 'record/' } }, { country: 'Japan' }, ({ logs }, out) => {
+    assert.equal(country(out, 'Japan').status, 'noted');
+    assert.ok(logs.log.some((l) => l.startsWith('[archive-compare] archive#') && l.endsWith('equal')), logs.log.concat(logs.warn).join('\n'));
+    assert.ok(logs.log.some((l) => l === '[latest-compare] threadIds: equal'), logs.log.concat(logs.warn).join('\n'));
   });
 });

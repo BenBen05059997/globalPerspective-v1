@@ -15,6 +15,8 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
+const archiveReads = require('./_shared/archiveReads');
+const { latestSelection } = require('./_shared/entriesInbox');
 const { chat } = require('./_shared/llm');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const NR = require('./_shared/noteReads');
@@ -29,6 +31,9 @@ const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; 
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const DRIFT_TTL_DAYS = parseInt(process.env.DRIFT_TTL_DAYS || '60', 10);
 const LOOKBACK_DAYS = parseInt(process.env.DRIFT_LOOKBACK_DAYS || '10', 10); // only note RECENT moves
+// Where the archive days and `latest` are read from (decision 0035 step 5d): ddb (default) | inbox (record/inbox/entries/ under ENTRIES_INBOX_PREFIX) | compare.
+const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
+const ARCHIVE_READS = archiveReads.readMode('ARCHIVE_READS', process.env.ARCHIVE_READS, ENTRIES_INBOX_PREFIX);
 const MAX_EVENTS = parseInt(process.env.DRIFT_MAX_EVENTS || '25', 10);
 const COUNTRIES = (process.env.DRIFT_COUNTRIES
   || 'Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,DR Congo,South Africa')
@@ -68,19 +73,34 @@ async function readHistory(country) {
   }, sortedByDay);
 }
 
-// Real archive events for this country between two dates (inclusive). Reads archive#<date>
-// rows (+ today-archive for the current day), filters entries whose regions include the country.
-async function readCountryEvents(country, fromDate, toDate) {
+// The archive items of the days from..to (inclusive), as [{dateKey, entries}]: `today-archive` for the current day (day-zero filtered),
+// `archive#<date>` for the rest. One reader per run (reset in the handler), so a day file of the inbox is read once.
+let archiveRows = null;
+let inboxDays = new Map();
+const readInboxDay = (day) => inboxDays.get(day) || inboxDays.set(day, archiveReads.s3EntriesDay(ENTRIES_INBOX_PREFIX)(day)).get(day);
+async function archiveDays(fromDate, toDate) {
   const from = parseDay(fromDate); const to = parseDay(toDate);
   if (from == null || to == null) return [];
+  archiveRows ||= archiveReads.archiveRowReader({
+    mode: ARCHIVE_READS, prefix: ENTRIES_INBOX_PREFIX, readDay: readInboxDay,
+    ddbGetRow: (id) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } })),
+  });
   const todayKey = fmtDay(Date.now());
-  const seen = new Set(); const events = [];
+  const days = [];
   for (let ms = from; ms <= to; ms += DAY) {
     const dateKey = fmtDay(ms);
-    const id = dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`;
     let Item;
-    try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
-    for (const e of (dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []))) {
+    try { ({ Item } = await archiveRows(dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`)); } catch { Item = null; }
+    days.push({ dateKey, entries: dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []) });
+  }
+  return days;
+}
+
+// Real archive events for this country between two dates (inclusive), filtered to entries whose regions include the country.
+async function readCountryEvents(country, fromDate, toDate) {
+  const seen = new Set(); const events = [];
+  for (const { dateKey, entries } of await archiveDays(fromDate, toDate)) {
+    for (const e of entries) {
       // records are keyed by the canonical name; archive regions carry the model's spelling (USA, West Bank)
       if (!Array.isArray(e.regions) || !e.regions.some((r) => r === country || resolveIso3(r)?.name === country)) continue;
       const key = e.topicId || e.id;
@@ -213,16 +233,9 @@ async function readThreadHistory(threadId) {
 
 // Archive events belonging to this thread in the window (filter by threadId, not region).
 async function readThreadEvents(threadId, fromDate, toDate) {
-  const from = parseDay(fromDate); const to = parseDay(toDate);
-  if (from == null || to == null) return [];
-  const todayKey = fmtDay(Date.now());
   const seen = new Set(); const events = [];
-  for (let ms = from; ms <= to; ms += DAY) {
-    const dateKey = fmtDay(ms);
-    const id = dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`;
-    let Item;
-    try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
-    for (const e of (dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []))) {
+  for (const { dateKey, entries } of await archiveDays(fromDate, toDate)) {
+    for (const e of entries) {
       if (e.threadId !== threadId) continue;
       const key = e.topicId || e.id;
       if (!key || seen.has(key)) continue;
@@ -287,12 +300,26 @@ async function processThread(threadId, dryRun = false) {
   return { threadId, status: noted ? 'noted' : (skipped ? 'already-noted' : 'parse-fail'), moves: drifts.length, noted, skipped, triggers };
 }
 
-// Discover active threads from the served `latest` topics (bounded, cheap).
+// Discover active threads from the served `latest` topics (bounded, cheap). inbox: the topics of the last complete run in the entries inbox
+// (today's file, else yesterday's; none when that run is incomplete); compare logs `[latest-compare]` when the thread ids differ.
 async function discoverThreadIds() {
+  const ids = (list) => [...new Set(list.map((t) => t.threadId).filter(Boolean))];
   try {
-    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }));
-    const topics = Item?.topics || Item?.data?.topics || [];
-    return [...new Set(topics.map((t) => t.threadId).filter(Boolean))];
+    return await archiveReads.readBy({
+      mode: ARCHIVE_READS, tag: 'latest-compare', label: 'threadIds',
+      diff: (a, b) => (archiveReads.sameJson([...a].sort(), [...b].sort()) ? [] : [{ ddb: a.length, inbox: b.length, onlyDdb: a.filter((x) => !b.includes(x)), onlyInbox: b.filter((x) => !a.includes(x)) }]),
+      ddb: async () => {
+        const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }));
+        return ids(Item?.topics || Item?.data?.topics || []);
+      },
+      inbox: async () => {
+        const today = Date.now();
+        const todays = await readInboxDay(fmtDay(today));
+        const lines = todays.length ? todays : await readInboxDay(fmtDay(today - DAY));
+        const sel = latestSelection(lines);
+        return sel ? ids(sel.lines) : [];
+      },
+    });
   } catch { return []; }
 }
 
@@ -300,6 +327,7 @@ exports.handler = async (event = {}) => {
   const results = { countries: [], threads: [] };
   RUN_ID = new Date().toISOString();
   src.reset(); // a run reads the notes as its previous run left them, never an older warm copy
+  archiveRows = null; inboxDays = new Map(); // and the archive as it is now
 
   const countries = event.country ? [event.country] : COUNTRIES;
   for (const country of countries) {

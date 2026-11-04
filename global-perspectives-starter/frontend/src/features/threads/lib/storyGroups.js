@@ -90,6 +90,13 @@ export function eventCount(n) {
   return `${n} ${n === 1 ? 'event' : 'events'}`;
 }
 
+// FALLBACK for the `archive_range` action path only (no record titles): the first entry of the newest day, `entries` being sorted
+// newest day first. It differs from the record's one title rule (newsStoryRecord titleOf); the record's title wins whenever present.
+// Used by buildThreads and nowhere else.
+function actionPathTitle(entries) {
+  return entries[0].title;
+}
+
 /**
  * buildThreads(dayMap, sortedDates, now, titles) -> { threads, standalone }
  * `titles` is the record's { threadId: title } (the one title rule lives in the record, newsStoryRecord titleOf); null on the
@@ -130,9 +137,7 @@ export function buildThreads(dayMap, sortedDates, now = Date.now(), titles = nul
     const changedAt = stamped || (daysSince(to, now) >= 1 ? `${to}T00:00:00Z` : null);
     return {
       threadId,
-      // FALLBACK for the action path only (no record titles): the newest day's first entry as the data lists it. The record's title
-      // wins whenever it is present; this is not a second copy of the record's rule.
-      latestTitle: titles?.[threadId] || data.entries[0].title,
+      latestTitle: titles?.[threadId] || actionPathTitle(data.entries),
       entries: data.entries,
       articleCount: data.entries.length,
       dayCount: dates.length,

@@ -14,3 +14,4 @@
    hit areas touch without overlapping (the shared rule is 44px tall but only 20px wide). */
 .psm-root .psm-slidedots { gap: var(--space-8); }
 .psm-root .psm-slidedot::after { inset: calc(-1 * var(--space-4) - 1px); } /* -1px: the inset starts inside the dot's 1px border */
+.psm-root .psm-slidedot.on::after { inset: calc(-1 * var(--space-4) - 2px); } /* the active dot's border is 2px (deck.css) */

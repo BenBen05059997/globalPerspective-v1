@@ -126,7 +126,7 @@ async function drawWeek(deps, commit, dryRun, out) {
 const verdictOrder = (sk) => { const m = /^VERDICT#(\d+)$/.exec(sk); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; };
 
 // An unclear draft is one the drafter judged and could not settle (not_yet, or needs_human on evidence); an LLM
-// outage (needs_human with an 'llm error' note) or a coverage gap (our record has holes) is not a judgment and never counts toward voiding a question.
+// outage (needs_human with an 'llm error' note) or a coverage gap (our record has holes) is not a judgment and never counts toward the unclear-after-3 void (a coverage gap past due + GRACE_DAYS has its own void, isRecordGapDraft).
 const isUnclearDraft = (d) => !FINAL_DRAFT_VERDICTS.includes(d.verdict) && !/^llm error/.test(String(d.note || '')) && d.reason !== lib.COVERAGE_GAP;
 
 // Unclear drafts that count toward a void: made once `no` was allowed (deadline + GRACE_DAYS) and at least
@@ -144,6 +144,12 @@ function countUnclear(drafts, deadline) {
   return n;
 }
 
+// Record-gap void (operator decision 2026-11-04): the latest draft is a coverage_gap `not_yet` (the judge found no `yes`, the bundle is complete, and only
+// a hole in our own record keeps it from being a `no`), made at or after deadline + GRACE_DAYS. The first such draft settles it; no spacing, no repeat.
+// bundleComplete is on the draft since this rule; an older gap draft (no flag) is never settled this way. The gap is not evidence of `no`.
+const isRecordGapDraft = (d, deadline) => d.verdict === 'not_yet' && d.reason === lib.COVERAGE_GAP && d.bundleComplete === true
+  && Array.isArray(d.gapDays) && d.gapDays.length > 0 && String(d.SK).slice(6, 16) >= lib.addDays(deadline, lib.GRACE_DAYS);
+
 // RECORD: settle one question from its drafts (g.drafts includes any draft just written; g.q is the question).
 // yes/no/void in the latest draft is the verdict; unclear drafts leave it open until MAX_UNCLEAR_DRAFTS, then void.
 // The row is the same for any question; `sampled` marks the pre-registered weekly sample.
@@ -159,6 +165,8 @@ async function settleQuestion(deps, g, dryRun, out) {
       ...(latest.verdict === 'void' ? { voidReason: latest.voidReason } : {}),
       ...(latest.reason || latest.why ? { reason: latest.reason || latest.why } : {}),
     };
+  } else if (isRecordGapDraft(latest, (g.q || g.sampled).deadline)) {
+    row = { verdict: 'void', evidence: null, voidReason: lib.RECORD_GAP, reason: lib.RECORD_GAP, gapDays: latest.gapDays };
   } else if (countUnclear(g.drafts, (g.q || g.sampled).deadline) >= MAX_UNCLEAR_DRAFTS) {
     row = { verdict: 'void', evidence: null, voidReason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts`, reason: `unclear after ${MAX_UNCLEAR_DRAFTS} drafts` };
   } else return;
@@ -173,6 +181,7 @@ async function settleQuestion(deps, g, dryRun, out) {
     await inbox.appendVerdict(deps, out, {
       q: g.q || g.sampled, qid: g.qid, result: row.verdict, voidReason: row.voidReason || null, decidedAt: deps.now(),
       decidedBy: latest.model || 'resolver', evidence: row.verdict === 'void' ? null : row.evidence, reason: row.reason || null, revision: 1,
+      ...(row.gapDays ? { gapDays: row.gapDays } : {}),
     });
   }
 }

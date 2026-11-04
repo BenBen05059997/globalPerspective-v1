@@ -39,6 +39,7 @@ async function write(deps, out, v) {
       schemaVersion: 1, qid: v.qid, threadId: (v.q && v.q.threadId) || null, ...ids(v.q),
       result: v.result, voidReason: v.voidReason || null, decidedAt: v.decidedAt, decidedBy: v.decidedBy,
       evidence: v.evidence || null, reason: v.reason || null, revision: v.revision,
+      ...(v.gapDays ? { gapDays: v.gapDays } : {}), // a record-gap void: the days of our own record that were missing
       sourceKey: `inbox:verdicts/${day}#${lines.length + 1}`,
     };
     await deps.inbox.appendLines(key, [line], { idKey: 'sourceKey' });

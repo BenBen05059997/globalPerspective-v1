@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { run } = require('../src/index');
+const lib = require('../src/lib');
 const { fakeStore, predRow, fakeFacts, entryFact, fakeS3 } = require('./helpers');
 
 const TODAY = '2026-11-10';
@@ -199,15 +200,77 @@ test('an inbox failure is reported; the Q# verdict row stays', async () => {
   assert.match(out.errors[0], /inbox line not written/);
 });
 
-test('coverage_gap drafts never void a question, however many there are', async () => {
-  const store = fakeStore();
-  const Q2 = { qid: 'g', threadId: 'tG', question: 'x happens', deadline: '2026-10-25', issuedAt: '2026-10-19T05:00:00Z', storyTitle: 's', resolutionSource: 'r' };
-  await store.putOnce({ PK: 'Q#g', SK: 'SAMPLED', ...Q2 });
-  const facts = fakeFacts({}, {}); // no runs at all: every day is a gap
-  for (const day of ['2026-11-01', '2026-11-07', '2026-11-13', '2026-11-19']) {
-    await run({ action: 'draft' }, { store, now: () => `${day}T10:30:00.000Z`, facts, llm: async () => { throw new Error('none'); }, draftModel: 'm' });
-  }
-  const rows = [...store.rows.values()].filter((r) => r.PK === 'Q#g');
-  assert.equal(rows.filter((r) => r.SK.startsWith('DRAFT#') && r.reason === 'coverage_gap').length, 4);
-  assert.equal(rows.filter((r) => r.SK.startsWith('VERDICT')).length, 0);
+// ---- record-gap void (operator decision 2026-11-04) ----
+const gapQ = (deadline) => ({ qid: 'g', threadId: 'tG', question: 'x happens', deadline, issuedAt: '2026-10-19T05:00:00Z', storyTitle: 's', resolutionSource: 'r' });
+const gapDeps = (store, { files = {}, runs = {}, llm = async () => { throw new Error('none'); }, day = '2026-11-01', extra = {} } = {}) =>
+  ({ store, now: () => `${day}T10:30:00.000Z`, facts: fakeFacts(files, runs), llm, draftModel: 'm', ...extra });
+const gapStore = async (deadline) => { const store = fakeStore(); await store.putOnce({ PK: 'Q#g', SK: 'SAMPLED', ...gapQ(deadline) }); return store; };
+const qrows = (store, prefix) => [...store.rows.values()].filter((r) => r.PK === 'Q#g' && r.SK.startsWith(prefix));
+
+test('record gap: the first coverage_gap draft at or after due + 3 voids the question, with the gap days on the row and the inbox line', async () => {
+  const store = await gapStore('2026-10-25'); // due + 3 = 10-28; today 11-01; no Run on any day: every day is a gap
+  const lines = [];
+  const inbox = { async getLines() { return { lines: [] }; }, async appendLines(k, l) { lines.push(...l); } };
+  const out = await run({ action: 'draft' }, gapDeps(store, { extra: { inbox } }));
+  const [d] = qrows(store, 'DRAFT#');
+  assert.equal(d.verdict, 'not_yet');
+  assert.equal(d.reason, 'coverage_gap');
+  assert.equal(d.bundleComplete, true);
+  const [v] = qrows(store, 'VERDICT');
+  assert.equal(v.verdict, 'void');
+  assert.equal(v.voidReason, 'record gap');
+  assert.equal(v.reason, 'record gap');
+  assert.deepEqual(v.gapDays, d.gapDays);
+  assert.ok(v.gapDays.length > 0);
+  assert.equal(v.evidence, null);
+  assert.equal(v.sampled, true);
+  assert.deepEqual(out.settled, [{ qid: 'g', verdict: 'void' }]);
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].result, 'void');
+  assert.equal(lines[0].voidReason, 'record gap');
+  assert.deepEqual(lines[0].gapDays, v.gapDays);
+});
+
+test('record gap: nothing before due + 3 (a gap does not even draft a coverage_gap then), and never a `no`', async () => {
+  const store = await gapStore('2026-10-30'); // due + 3 = 11-02, today 11-01
+  await run({ action: 'draft' }, gapDeps(store, { files: { '2026-10-31': [entryFact('tG', '2026-10-31')] }, llm: async () => ({ verdict: 'no', why: 'none' }) }));
+  assert.equal(qrows(store, 'VERDICT').length, 0);
+  assert.notEqual(qrows(store, 'DRAFT#')[0].reason, 'coverage_gap');
+});
+
+test('record gap: a bundle with a yes settles yes, not void', async () => {
+  const store = await gapStore('2026-10-25');
+  const e = entryFact('tG', '2026-10-26', { eventId: 'ev-g', payload: { title: 'Council approves the plan', summary: 'The council voted 9-2 to approve the plan on Monday.' } });
+  const yes = { verdict: 'yes', quote: 'The council voted 9-2 to approve the plan', event_id: 'ev-g', why: 'reported' };
+  await run({ action: 'draft' }, gapDeps(store, { files: { '2026-10-26': [e] }, llm: async () => yes }));
+  assert.equal(qrows(store, 'VERDICT')[0].verdict, 'yes');
+  assert.equal(qrows(store, 'VERDICT')[0].gapDays, undefined);
+});
+
+test('record gap: a model `no` over a gap is void too; a model not_yet over a gap is an ordinary open question', async () => {
+  const withNo = await gapStore('2026-10-25');
+  await run({ action: 'draft' }, gapDeps(withNo, { files: { '2026-10-26': [entryFact('tG', '2026-10-26')] }, llm: async () => ({ verdict: 'no', why: 'none' }) }));
+  assert.equal(qrows(withNo, 'VERDICT')[0].voidReason, 'record gap');
+  const notYet = await gapStore('2026-10-25');
+  await run({ action: 'draft' }, gapDeps(notYet, { files: { '2026-10-26': [entryFact('tG', '2026-10-26')] }, llm: async () => ({ verdict: 'not_yet', why: 'unclear' }) }));
+  assert.equal(qrows(notYet, 'VERDICT').length, 0);
+  assert.equal(qrows(notYet, 'DRAFT#')[0].reason, undefined);
+});
+
+test('record gap: without gaps a `no` is still a `no`; an older gap draft (no bundleComplete flag) or an incomplete bundle is not voided', async () => {
+  const healthy = await gapStore('2026-10-25');
+  await run({ action: 'draft' }, { ...gapDeps(healthy), facts: fakeFacts({}) }); // every day has a healthy Run
+  assert.equal(qrows(healthy, 'VERDICT')[0].verdict, 'no');
+  const old = await gapStore('2026-10-25');
+  await old.putOnce({ PK: 'Q#g', SK: 'DRAFT#2026-11-01T05:00:00.000Z', qid: 'g', verdict: 'not_yet', reason: 'coverage_gap', gapDays: ['2026-10-21'], at: '2026-11-01T05:00:00.000Z' });
+  await run({ action: 'draft' }, gapDeps(old)); // same-day draft already exists: only the settle pass runs
+  assert.equal(qrows(old, 'VERDICT').length, 0);
+  assert.equal(lib.validateDraft({ verdict: 'no' }, [], '2026-11-01', '2026-10-25', { complete: false, coverageGaps: [{ day: '2026-10-21' }] }).bundleComplete, false);
+});
+
+test('old unflagged coverage_gap drafts never count toward the unclear-after-3 void', async () => {
+  const store = await gapStore('2026-10-25');
+  for (const d of ['2026-10-29', '2026-11-03', '2026-11-08']) await store.putOnce({ PK: 'Q#g', SK: `DRAFT#${d}T05:00:00.000Z`, qid: 'g', verdict: 'not_yet', reason: 'coverage_gap', gapDays: ['2026-10-21'], at: d });
+  await run({ action: 'draft' }, gapDeps(store, { day: '2026-11-08' })); // today's draft exists already: only the settle pass runs
+  assert.equal(qrows(store, 'VERDICT').length, 0);
 });

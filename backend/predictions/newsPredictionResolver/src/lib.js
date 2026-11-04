@@ -15,6 +15,7 @@ const RULE = 'v1';
 const GRACE_DAYS = 3; // NO is only allowed after the deadline + 3 days
 const NO_REASON = 'not_reported_by_due'; // the reason recorded on every `no`
 const COVERAGE_GAP = 'coverage_gap'; // a `no` blocked because our own record has holes in the window (not a judgment)
+const RECORD_GAP = 'record gap'; // the voidReason / reason of a question that past due + GRACE_DAYS only our own record gap kept from being a `no`
 const VOID_REASONS = ['ambiguous_criterion', 'source_unavailable', 'event_moot', 'duplicate', 'criterion_met_at_issue'];
 
 const addWeeks = (weekId, n) => weekOf(addDays(weekStart(weekId), 7 * n));
@@ -52,7 +53,7 @@ function validateDraft(raw, entries, today, deadline, { complete = true, coverag
   }
   if (verdict === 'no') {
     if (!canConcludeNo(deadline, today)) return { verdict: 'not_yet', why, note: 'NO not allowed before deadline + 3 days' };
-    if (coverageGaps.length) return { verdict: 'not_yet', why, reason: COVERAGE_GAP, gapDays: coverageGaps.map((g) => g.day), note: 'NO needs a healthy Run on every day from the draw to the due day' };
+    if (coverageGaps.length) return { verdict: 'not_yet', why, reason: COVERAGE_GAP, gapDays: coverageGaps.map((g) => g.day), bundleComplete: complete, note: 'NO needs a healthy Run on every day from the draw to the due day' };
     if (!complete) return { verdict: 'not_yet', why, note: 'NO needs the bundle computed from all entries since the draw' };
     return { verdict: 'no', why, reason: NO_REASON };
   }
@@ -73,7 +74,7 @@ function combinePasses(a, b) {
 }
 
 module.exports = {
-  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, COVERAGE_GAP, VOID_REASONS,
+  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, COVERAGE_GAP, RECORD_GAP, VOID_REASONS,
   sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks,
   newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
   quoteInEntry, validateDraft, combinePasses,

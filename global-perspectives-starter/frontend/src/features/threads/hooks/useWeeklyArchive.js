@@ -1,73 +1,29 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { loadArchiveDayMap } from '@/shared/api/archiveRange';
-import { useAuth } from '@/shared/contexts/AuthContext';
+import { reportFetchError } from '@/shared/api/errorSink.js';
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
-const CACHE_KEY = 'gp_weekly_archive_v2'; // v2: days read from the record's weekly index (shape of the action's days)
+const CACHE_KEY = 'gp_weekly_archive_v3'; // v3: useCachedQuery's { data, ts } entry (v2 held { dayMap, tier, uid, timestamp })
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const NO_DAYS = {};
+
+// The archive is public and identical for every reader: no sign-in state is read here (CLAUDE.md "public data hooks
+// never gate on sign-in"). A failed load is reported and not cached; the page decides what to say.
+async function loadArchive() {
+  window.dispatchEvent(new CustomEvent('gp-loading-start'));
+  try {
+    return await loadArchiveDayMap();
+  } catch (err) {
+    reportFetchError('weekly-archive', err);
+    throw err;
+  } finally {
+    window.dispatchEvent(new CustomEvent('gp-loading-end'));
+  }
+}
 
 export function useWeeklyArchive() {
-  const { user } = useAuth();
-  const [dayMap, setDayMap] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [tier, setTier] = useState(null);
-  // true once a load attempt has finished (cache hit, fetch success or failure). `loading` is false
-  // before the first load starts, so callers that must wait for real data key on `settled`.
-  const [settled, setSettled] = useState(false);
-  // When this data was actually fetched (cache write or fresh fetch completion) — an honest
-  // client-side "as of" stamp, not a fabricated per-record timestamp. The archive response has
-  // no genuine per-day updatedAt field to thread through, so this is the fetch-completion time,
-  // per STAGE0_FIXES_PLAN.md item (b).
-  const [fetchedAt, setFetchedAt] = useState(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        const fresh = cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS;
-        if (fresh && cached?.dayMap) {
-          setDayMap(cached.dayMap);
-          setTier(cached.tier || null);
-          setFetchedAt(cached.timestamp);
-          setSettled(true);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    setLoading(true);
-    window.dispatchEvent(new CustomEvent('gp-loading-start'));
-    try {
-      const data = await loadArchiveDayMap();
-      const dayCount = Object.keys(data).length;
-      const resolvedTier = dayCount > 7 ? 'enterprise' : 'member';
-      const now = Date.now();
-      setDayMap(data);
-      setTier(resolvedTier);
-      setFetchedAt(now);
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          dayMap: data,
-          tier: resolvedTier,
-          uid: user?.uid || 'anon',
-          timestamp: now,
-        }));
-      } catch { /* ignore */ }
-    } catch (err) {
-      setError(err?.message || 'Failed to fetch archive');
-    } finally {
-      setLoading(false);
-      setSettled(true);
-      window.dispatchEvent(new CustomEvent('gp-loading-end'));
-    }
-  }, [user]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, error, loading, refetch } = useCachedQuery(CACHE_KEY, loadArchive, { storage: 'local', ttl: CACHE_TTL_MS });
+  const dayMap = data ?? NO_DAYS;
 
   const sortedDates = useMemo(
     () => Object.keys(dayMap).sort((a, b) => b.localeCompare(a)),
@@ -85,5 +41,5 @@ export function useWeeklyArchive() {
     return latest;
   }, [dayMap]);
 
-  return { dayMap, sortedDates, loading, settled, error, tier, fetchedAt, dataUpdatedAt, refetch: load };
+  return { dayMap, sortedDates, loading, error, dataUpdatedAt, refetch };
 }

@@ -16,7 +16,8 @@ function loadAnalysesIndex() {
 }
 
 /**
- * useThreadAnalyses(threadIds, { light }) — many stories' analyses at once.
+ * useThreadAnalyses(threadIds, { light }) — many stories' analyses at once. Returns { analyses, loading, failed }:
+ *   `failed` is true when the action (the only source left) could not be read; it is reported, and `analyses` is then empty.
  *   light: the caller reads only threadTitle, storyArc, watchQuestions and the tier inputs (dimensions, riskScore,
  *          riskLevel) — the Stories page and the country page's arc list. It then reads the record's analyses
  *          index in one request (no 20-id cap), and falls back to the `thread_analysis` action when the index is
@@ -26,6 +27,7 @@ function loadAnalysesIndex() {
 export function useThreadAnalyses(threadIds, { light = false } = {}) {
   const [fromAction, setFromAction] = useState({});
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const idsKey = useMemo(() => [...threadIds].sort().join(','), [threadIds]);
 
@@ -36,6 +38,7 @@ export function useThreadAnalyses(threadIds, { light = false } = {}) {
 
   const load = useCallback(async () => {
     if (!actionOn || threadIds.length === 0) return;
+    setFailed(false);
 
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -69,8 +72,11 @@ export function useThreadAnalyses(threadIds, { light = false } = {}) {
         const merged = { ...existing.data, ...data };
         localStorage.setItem(CACHE_KEY, JSON.stringify({ data: merged, timestamp: Date.now() }));
       } catch { /* ignore */ }
-    } catch {
+    } catch (err) {
+      // No analysis is not the same as "not yet scored": the caller is told, so it can say "scores unavailable".
+      reportFetchError('thread-analyses', err);
       setFromAction({});
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -79,5 +85,5 @@ export function useThreadAnalyses(threadIds, { light = false } = {}) {
   useEffect(() => { load(); }, [load]);
 
   const fromIndex = useMemo(() => (useIndex ? analysesFromIndex(index.data, threadIds) : null), [useIndex, index.data, idsKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { analyses: fromIndex ?? fromAction, loading: light ? index.loading || loading : loading };
+  return { analyses: fromIndex ?? fromAction, loading: light ? index.loading || loading : loading, failed: !useIndex && failed };
 }

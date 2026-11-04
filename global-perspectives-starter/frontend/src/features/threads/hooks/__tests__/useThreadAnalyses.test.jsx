@@ -64,4 +64,25 @@ describe('useThreadAnalyses', () => {
     expect(rv.fetchAnalysesIndex).not.toHaveBeenCalled();
     expect(api.fetchThreadAnalyses).not.toHaveBeenCalled();
   });
+
+  it('an action that fails is reported and flagged, so a page can say "scores unavailable" instead of "not yet scored"', async () => {
+    rv.fetchAnalysesIndex.mockResolvedValue(null);
+    api.fetchThreadAnalyses.mockRejectedValue(new Error('Proxy HTTP 502'));
+    const ids = ['A'];
+    const { result } = renderHook(() => useThreadAnalyses(ids, { light: true }));
+    await waitFor(() => expect(result.current.failed).toBe(true));
+    expect(result.current.analyses).toEqual({});
+    expect(sink.reportFetchError).toHaveBeenCalledWith('thread-analyses', expect.any(Error));
+  });
+
+  it('an answer with no score for a story is not a failure', async () => {
+    rv.fetchAnalysesIndex.mockResolvedValue(null);
+    api.fetchThreadAnalyses.mockResolvedValue({ data: {} });
+    const ids = ['A'];
+    const { result } = renderHook(() => useThreadAnalyses(ids, { light: true }));
+    await waitFor(() => expect(api.fetchThreadAnalyses).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.failed).toBe(false);
+    expect(sink.reportFetchError).not.toHaveBeenCalled();
+  });
 });

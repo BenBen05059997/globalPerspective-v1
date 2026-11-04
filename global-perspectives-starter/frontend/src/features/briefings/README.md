@@ -17,8 +17,8 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
   and `newsWeeklyBrief`): the views hold the backfilled briefs and the actions still serve every new one.
 - The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`). Setting `status: draft`
   on the DynamoDB row holds it back from the `weekly_brief` action and from the email (the sender follows DynamoDB; `RECORD_READS=compare`
-  only compares the record), but NOT from the record views, the page or the Worker pre-render: the views are built from append-only
-  notes and a DynamoDB edit writes none. There is no tested way to hold a weekly brief back on the web path yet.
+  only compares the record), but NOT from the record views, the page or the Worker pre-render (append-only notes). To hold one back there too, or publish it again:
+  `backend/record/cli/hold-weekly-brief.mjs --week <weekOf> [--publish] --row --write` (dry run without `--write`) appends a later note; the week leaves the index at the next rebuild.
 - The pause wording follows the newest published edition (UTC dates), not the edition on screen: "paused" only when that edition is 2+ days
   before today, or today's is missing after 14:30 UTC; before that the page says today's brief comes at 23:00 JST (14:00 UTC).
 

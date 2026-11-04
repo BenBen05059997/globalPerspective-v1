@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { fetchCountryHistory } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
@@ -14,7 +13,7 @@ const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 // returned (lib/viewDrift.js); the risk snapshots and the gate stay on country_history.
 export function useCountryHistory(countryName) {
   const key = countryName ? `gp_country_history_${countryName}` : null;
-  const { data, loading, error, refetch } = useCachedQuery(key, async () => {
+  const { data, loading, error } = useCachedQuery(key, async () => {
     const iso3 = resolveCountry(countryName)?.iso3;
     const [res, view] = await Promise.all([
       fetchCountryHistory(countryName),
@@ -30,17 +29,11 @@ export function useCountryHistory(countryName) {
     };
   }, { ttl: CACHE_TTL, storage: 'local' });
 
-  // An entry written before useCachedQuery held the snapshots array as `data` (notes beside it):
-  // read it as a miss and fetch once.
-  const legacy = Array.isArray(data);
-  useEffect(() => { if (legacy) refetch(); }, [legacy, refetch]);
-  const d = legacy ? null : data;
-
   return {
-    snapshots: d?.snapshots ?? [],
-    driftNotes: d?.driftNotes ?? [],
-    driftNotesTotal: d?.total ?? 0,
-    driftNotesGated: d?.gated ?? false,
+    snapshots: data?.snapshots ?? [],
+    driftNotes: data?.driftNotes ?? [],
+    driftNotesTotal: data?.total ?? 0,
+    driftNotesGated: data?.gated ?? false,
     loading,
     error: error?.message ?? null,
   };

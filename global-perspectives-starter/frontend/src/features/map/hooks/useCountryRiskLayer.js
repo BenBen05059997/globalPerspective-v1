@@ -6,10 +6,8 @@
 // the tail of its request without an error), with bounded concurrency and a session cache so
 // flipping the layer switch back and forth never re-fetches.
 //
-// Deliberately does NOT reuse features/threads' useWeeklyArchive — that hook calls useAuth() and
-// throws outside an AuthProvider (map tests render SituationHome standalone, and the map's public
-// data must never gate on auth anyway — CLAUDE.md). It reads the shared public archive instead
-// (useArchiveDayMap: one cached `archive_range` read per tab, shared with the country card).
+// Reads the shared public archive (useArchiveDayMap: one cached `archive_range` read per tab, shared
+// with the country card), never sign-in gated (CLAUDE.md).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';

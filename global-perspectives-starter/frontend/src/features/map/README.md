@@ -49,7 +49,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
   (only once `?story=` is set); `useDailyBrief()` and `useWeeklyBrief()` -> the record's brief views, the `latest_daily_brief` / `weekly_brief` actions for what is newer (decision 0048).
 - `useCountryRiskLayer` -> the 30-day archive (via `useArchiveDayMap`, the record's weekly index with `archive_range` for the newest days, decision 0046) for the candidate names, then the record's countries index
   (`index/countries.json`, one request; `@/shared/api/countryBriefingsIndex.js`), `country_intelligence` (15 names per call) only when the index is missing or unreadable (reported), up to 60
-  countries, only once the COUNTRY RISK layer is selected. Session cache; it avoids `useWeeklyArchive`, which needs sign-in.
+  countries, only once the COUNTRY RISK layer is selected. Session cache; public data, no sign-in.
 - localStorage: `gp_map_last_seen`, `gp_map_layer`, `gp_map_view`, `gp_map_legend_open`.
 
 ## Pipeline

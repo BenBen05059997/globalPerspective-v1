@@ -1,4 +1,4 @@
-import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
+import { buildWeeklySquares, settlingSentence } from '@/features/track-record/lib/settlingLog.js';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/SettlingLog.css';
 
@@ -7,7 +7,6 @@ import '@/features/track-record/components/SettlingLog.css';
 // something fell due, the week ended and nothing was settled. See lib/settlingLog.js.
 export default function SettlingLog({ weeks = [], firstCommit = null, pilotNote = null, now }) {
   const squares = buildWeeklySquares(weeks, now);
-  const sum = settlingSummary(squares);
   return (
     <div className="tr-sl">
       {squares.length === 0 ? (
@@ -17,10 +16,7 @@ export default function SettlingLog({ weeks = [], firstCommit = null, pilotNote 
         </p>
       ) : (
         <>
-          <p className="tr-sl-summary">
-            {sum.total} week{sum.total === 1 ? '' : 's'} since {fmtDay(weeks[0].weekStart)}:{' '}
-            {sum.green + sum.amber} with settled questions, {sum.red} where something was due and nothing was settled, {sum.grey + sum.open} with nothing due yet.
-          </p>
+          <p className="tr-sl-summary">{settlingSentence(squares, weeks[0].weekStart)}</p>
           <div className="tr-sl-grid" role="list" aria-label="Weekly settling log">
             {squares.map((s) => (
               <div key={s.weekId} role="listitem" className={`tr-sl-sq ${s.kind}`} title={s.label} aria-label={s.label} />

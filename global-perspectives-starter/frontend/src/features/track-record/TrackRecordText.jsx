@@ -5,7 +5,7 @@ import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrections
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
-import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
+import { buildWeeklySquares, settlingSentence } from '@/features/track-record/lib/settlingLog.js';
 import { questionLine } from '@/features/track-record/lib/questionLine.js';
 import { ledgerLine, ledgerGateText, NO_SINGLE_DRIVER, LEDGER_EMPTY, LEDGER_UNAVAILABLE } from '@/features/track-record/lib/ledgerLine.js';
 import { TRACK_RECORD_UNAVAILABLE } from '@/features/track-record/lib/notReadyCopy.js';
@@ -28,7 +28,6 @@ export default function TrackRecordText() {
   const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
   const places = useMemo(() => forecastPlaceCounts(view?.boardItems || []), [view]);
   const squares = useMemo(() => buildWeeklySquares(view?.q?.weeks || []), [view]);
-  const settling = settlingSummary(squares);
 
   if (loading) return <BootLoader variant="inline" label="Loading the track record" text="Loading the track record" />;
   if (error || !data) {
@@ -148,10 +147,7 @@ export default function TrackRecordText() {
       <section>
         <h2>Settling log</h2>
         {squares.length > 0 ? (
-          <p>
-            {settling.total} week{settling.total === 1 ? '' : 's'} since {fmtDay(q.weeks[0].weekStart)}: {settling.green + settling.amber} with
-            settled questions, {settling.red} where something was due and nothing was settled, {settling.grey + settling.open} with nothing due yet.
-          </p>
+          <p>{settlingSentence(squares, q.weeks[0].weekStart)}</p>
         ) : (
           <p>No settling weeks yet. The log starts with the first committed weekly sample.</p>
         )}

@@ -58,21 +58,8 @@ const READERS = {
   restBase: 'https://api.cloudflare.com/client/v4',
   topN: 10,
   rowLimit: 10000,   // GraphQL rows per query (the API maximum); 14 days x pages stays far below it today
-  // Page families: ONE table. A path matches an `exact` entry or an entry as a prefix at a segment boundary (/daily matches
-  // /daily and /daily/2026-11-03, not /dailyx). First family that matches wins; nothing matching is `other`. `ops` is excluded from totals.
-  // `features` are the scripts/functions.json feature names whose Lambdas are charged to the family in attention-vs-effort.
-  families: [
-    { id: 'map', label: 'Map', exact: ['/'], prefix: ['/map', '/breaking'], features: ['home', 'map', 'breaking'] },
-    { id: 'stories', label: 'Stories', exact: ['/weekly', '/today'], prefix: ['/weekly/thread'], features: ['threads'] },
-    { id: 'countries', label: 'Countries', exact: ['/weekly/countries'], prefix: ['/weekly/country'], features: ['countries'] },
-    { id: 'briefings', label: 'Briefings', exact: ['/briefings', '/weekly-brief'], prefix: ['/daily'], features: ['briefings'] },
-    { id: 'trackRecord', label: 'Track record', exact: [], prefix: ['/track-record'], features: ['track-record'] },
-    { id: 'board', label: 'Board', exact: [], prefix: ['/board'], features: ['board'] },
-    { id: 'ops', label: 'Ops', exact: ['/ops'], prefix: [], features: [], excludedFromTotals: true },
-  ],
-  otherFamily: { id: 'other', label: 'Other', features: [] },
-  storyPrefix: '/weekly/thread/',
-  countryPrefix: '/weekly/country/',
+  // Page families (path -> family, and family -> functions.json features): the one table is pageFamilies.json.
+  ...require('./pageFamilies.json'),
   // Deployed Lambda -> features, copied from scripts/functions.json (test/readers.test.js fails when the two differ). Lambdas with no
   // feature, or only `ops`, are left out.
   lambdaFeatures: {

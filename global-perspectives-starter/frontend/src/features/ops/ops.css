@@ -66,3 +66,11 @@
 .ops-facts div { display: flex; gap: var(--space-2); min-width: 0; }
 .ops-facts dt { color: var(--text-dim); flex: none; }
 .ops-facts dd { margin: 0; color: var(--text-body); overflow-wrap: anywhere; }
+
+/* ---- Readers ---- */
+.ops-table .ops-table__wrap { white-space: normal; min-width: 12rem; max-width: 28rem; text-align: left; }
+.ops-spark { display: inline-flex; align-items: flex-end; gap: var(--space-1); height: 1.75rem; width: 14rem; vertical-align: middle; border-bottom: 1px solid var(--hairline-strong); }
+.ops-spark__day { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; }
+.ops-spark__bar { width: 100%; background: var(--accent); border-radius: var(--r-xs) var(--r-xs) 0 0; }
+.ops-steps { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm); color: var(--text-body); }
+.ops-steps code { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-head); overflow-wrap: anywhere; }

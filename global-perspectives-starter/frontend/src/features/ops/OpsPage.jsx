@@ -7,6 +7,7 @@ import { devOps, loadOps, loadHealth } from '@/features/ops/lib/opsApi.js';
 import { rememberOps } from '@/features/ops/hooks/useOpsAccess.js';
 import MoneyPanel from '@/features/ops/components/MoneyPanel.jsx';
 import PipelinePanel from '@/features/ops/components/PipelinePanel.jsx';
+import ReadersPanel from '@/features/ops/components/ReadersPanel.jsx';
 import '@/features/ops/ops.css';
 
 // /ops: the operator's page. Signed out: one sign-in line. Signed in but not the operator: one line, no data (the server decides
@@ -62,6 +63,7 @@ export default function OpsPage() {
       {health.state === 'loading' ? <p className="ops-line" aria-busy="true">Loading the pipeline view.</p>
         : health.state === 'error' ? <p className="ops-line">The pipeline view could not be loaded.</p>
           : <PipelinePanel health={health.data} />}
+      <ReadersPanel readers={ops.data?.readers} />
     </div>
   );
 }

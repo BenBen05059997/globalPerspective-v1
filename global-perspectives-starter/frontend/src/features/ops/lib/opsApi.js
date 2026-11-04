@@ -5,15 +5,18 @@ import { fetchOps } from '@/shared/api/restProxy';
 import { fetchRecordView } from '@/shared/api/recordViews';
 
 const DEV_KEY = 'gp_dev_ops';
+const DEV_MODES = { 1: 'operator', nc: 'notConnected', cferr: 'cfError', 403: 'forbidden' };
 
-/** 'operator' | 'forbidden' | null: in a dev build opened with ?devOps=1 / ?devOps=403 (remembered for the tab) the page runs on fixtures. */
+/**
+ * 'operator' | 'notConnected' | 'cfError' | 'forbidden' | null: in a dev build opened with ?devOps=1 (readers connected), =nc (Cloudflare
+ * not connected), =cferr (Cloudflare error) or =403 (remembered for the tab) the page runs on fixtures.
+ */
 export function devOps() {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
   try {
     const asked = new URLSearchParams(window.location.search).get('devOps');
-    if (asked === '1' || asked === '403') sessionStorage.setItem(DEV_KEY, asked);
-    const mode = sessionStorage.getItem(DEV_KEY);
-    return mode === '1' ? 'operator' : mode === '403' ? 'forbidden' : null;
+    if (asked && Object.hasOwn(DEV_MODES, asked)) sessionStorage.setItem(DEV_KEY, asked);
+    return DEV_MODES[sessionStorage.getItem(DEV_KEY)] || null;
   } catch { return null; }
 }
 

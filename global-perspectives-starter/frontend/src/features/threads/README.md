@@ -14,7 +14,7 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 - No Economy tab (retired, decision 0049); an old `?tab=economy` link falls back to Overview.
 
 ## Routes
-- `/weekly` -> `WeeklyPage` (`?view=list|board|timeline|map|web|changes`, `?category=`; no `view` means list)
+- `/weekly` -> `WeeklyPage` (`?view=list|board|timeline|map|web|changes`, `?category=`, filters `?q= ?crisis= ?tiers= ?region= ?window= ?sort=`; no `view` means list; a view change pushes a history entry, everything else replaces)
 - `/weekly/thread/:threadId` -> `ThreadPage` (`?tab=` opens Read in full; `?from=country&country=`)
 - Redirects (`src/app/LegacyRedirects.jsx`): `/weekly?section=countries` -> `/weekly/countries`; `/spider-demo` -> `/weekly?view=web`;
   `/breaking/:id` -> its thread when the alert has one

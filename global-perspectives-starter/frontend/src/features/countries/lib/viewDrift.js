@@ -8,15 +8,20 @@ export function driftFromCountryView(view) {
   return drift.filter((n) => n && typeof n === 'object').map(({ model, ...note }) => note); // eslint-disable-line no-unused-vars
 }
 
+// A note's day: `asOf` (YYYY-MM-DD), else the day it was generated. '' when it has neither (a view note with none never wins).
+const noteDay = (n) => String(n?.asOf || n?.generatedAt || '').slice(0, 10);
+
 /**
  * The notes to show: the view's, cut to as many as the action returned. The action carries the member gate (it caps
  * the depth by tier server-side and reports the honest total), so its count is the cap and its total/gated stay. The
  * view is used only when it holds at least that many (its 90-note window or a missing backfill never shows fewer
- * notes than the action did); otherwise the action's notes stand.
+ * notes than the action did) and its newest note is at least as new as the action's (a view built before today's
+ * note, however long, must not replace it with older ones); otherwise the action's notes stand.
  */
 export function combineDrift(view, history) {
   const fromAction = Array.isArray(history?.driftNotes) ? history.driftNotes : [];
   const fromView = driftFromCountryView(view);
-  const notes = fromAction.length > 0 && fromView.length >= fromAction.length ? fromView.slice(0, fromAction.length) : fromAction;
+  const useView = fromAction.length > 0 && fromView.length >= fromAction.length && noteDay(fromView[0]) >= noteDay(fromAction[0]);
+  const notes = useView ? fromView.slice(0, fromAction.length) : fromAction;
   return { driftNotes: notes, total: Number(history?.driftNotesTotal) || notes.length, gated: !!history?.driftNotesGated };
 }

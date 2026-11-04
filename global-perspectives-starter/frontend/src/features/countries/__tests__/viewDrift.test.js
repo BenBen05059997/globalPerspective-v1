@@ -44,6 +44,16 @@ describe('combineDrift', () => {
     expect(combineDrift(long, history).driftNotes).toHaveLength(1);
   });
 
+  it('keeps the action notes when the view is longer but its newest note is older', () => {
+    const newest = { ...iranView.drift[0], asOf: '2026-08-19', generatedAt: '2026-08-19T05:30:00Z' };
+    const older = (d) => ({ ...iranView.drift[0], asOf: d, generatedAt: `${d}T05:30:00Z` });
+    const action = { ...history, driftNotes: [{ ...history.driftNotes[0], asOf: '2026-08-20', generatedAt: '2026-08-20T05:30:00Z' }] };
+    const lagging = { ...iranView, drift: [newest, older('2026-08-18'), older('2026-08-17')] };
+    expect(combineDrift(lagging, action).driftNotes).toBe(action.driftNotes);
+    const current = { ...iranView, drift: [{ ...action.driftNotes[0], model: 'm' }, newest] };
+    expect(combineDrift(current, action).driftNotes).toEqual([action.driftNotes[0]]);
+  });
+
   it('keeps the action notes when the view is missing or holds fewer', () => {
     expect(combineDrift(null, history).driftNotes).toEqual(history.driftNotes);
     const member = { ...history, driftNotes: [history.driftNotes[0], { ...history.driftNotes[0], asOf: '2026-08-18' }], driftNotesGated: false };

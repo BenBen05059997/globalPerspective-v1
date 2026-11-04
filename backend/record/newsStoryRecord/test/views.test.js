@@ -471,4 +471,11 @@ test('titleOf: the newest non-article entry in the 30-day window, else the newes
   assert.equal(titleOf([e('2026-09-20', 'out'), e('2026-10-05', 'edge')], today), 'edge'); // the window's first day counts
   assert.equal(titleOf([e('2026-10-10', 'a1', 'article'), e('2026-10-12', 'a2', 'article')], today), 'a2');
   assert.equal(titleOf([], today), null);
+  // ties: same date and `at` -> the later place in the archive list (day, then sourceRow.index), then eventId
+  const t = (eventId, at = '2026-11-02T10:54:55.000Z') => ({date: '2026-11-02', at, eventId, title: eventId});
+  const refs = new Map([['x1', {day: '2026-11-02', index: 5}], ['x2', {day: '2026-11-02', index: 9}], ['x3', {day: '2026-11-02', index: 2}], ['x4', {day: '2026-11-03', index: 0}]]);
+  assert.equal(titleOf([t('x1'), t('x2'), t('x3')], today, refs), 'x2');
+  assert.equal(titleOf([t('x2'), t('x3'), t('x1')], today, refs), 'x2'); // input order does not matter
+  assert.equal(titleOf([t('x2'), t('x4')], today, refs), 'x4'); // listed on a later archive day
+  assert.equal(titleOf([t('b'), t('a')], today), 'b'); // no refs: eventId breaks the tie
 });

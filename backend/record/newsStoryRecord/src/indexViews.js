@@ -8,6 +8,7 @@
 // and member-only fields are never copied).
 const {iso3List} = require('./_shared/resolveIso3');
 const {addDays} = require('./_shared/world');
+const {byKey} = require('./_shared/placement');
 
 const SCHEMA_VERSION = 1;
 const INDEX_MAX_BYTES = 2 * 1024 * 1024; // per index; over this the run fails (like index/all.json) rather than truncate
@@ -77,6 +78,16 @@ function archiveRefOf(f) {
 }
 
 /**
+ * The one order of a story's entries (weeklyIndex lists a day in it, views.js titleOf takes the last of it): record date, then archive
+ * day, then the place in that archive day's list (`sourceRow.index`), then `at`, then eventId. `refs`: eventId -> {day, index} from the
+ * entry facts; an entry without a ref (fixtures) orders as archive day = record date, index 0.
+ */
+function entryOrder(refs) {
+  const ref = (e) => refs.get(e.eventId) || {day: e.date, index: 0};
+  return byKey((e) => e.date, (e) => ref(e).day, (e) => ref(e).index, (e) => e.at, (e) => e.eventId);
+}
+
+/**
  * index/weekly.json: the `archive_range` action's days (the last 30 archive days), for the Stories page, the Stories map, the
  * countries list and the map's risk layer, built from the story views' entries (so placement, merges and reassignment apply: an
  * entry is under the story it belongs to now). Per day, in the archive's order (see below): `topicId`, `threadId`, `title`, `category`, `iso3`
@@ -94,15 +105,15 @@ function weeklyIndex(stories, refs, today, builtFrom) {
   for (const [id, s] of [...stories].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     for (const e of s.entries || []) {
       if (e.kind === 'article') continue;
-      const ref = refs.get(e.eventId) || {day: e.date, index: 0};
       if (e.date < from || e.date > today) continue;
-      (days[e.date] ||= []).push({ref, at: e.at, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}, eventId: e.eventId});
+      (days[e.date] ||= []).push({e, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}});
     }
   }
   const out = {};
+  const order = entryOrder(refs);
   for (const day of Object.keys(days).sort()) {
-    const list = days[day].sort((a, b) => (a.ref.day < b.ref.day ? -1 : a.ref.day > b.ref.day ? 1 : 0) || a.ref.index - b.ref.index || (a.at < b.at ? -1 : a.at > b.at ? 1 : 0) || (a.eventId < b.eventId ? -1 : 1));
-    out[day] = {updatedAt: maxOf(list.map((x) => x.at)), entries: list.map((x) => x.row)};
+    const list = days[day].sort((a, b) => order(a.e, b.e));
+    out[day] = {updatedAt: maxOf(list.map((x) => x.e.at)), entries: list.map((x) => x.row)};
   }
   return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, days: out};
 }
@@ -117,4 +128,4 @@ function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, countries,
   return out;
 }
 
-module.exports = {buildIndexViews, analysesIndex, countriesIndex, webIndex, weeklyIndex, archiveRefOf, WEEKLY_DAYS, INDEX_MAX_BYTES, ANALYSIS_FIELDS, COUNTRY_FIELDS};
+module.exports = {buildIndexViews, analysesIndex, countriesIndex, webIndex, weeklyIndex, archiveRefOf, entryOrder, WEEKLY_DAYS, INDEX_MAX_BYTES, ANALYSIS_FIELDS, COUNTRY_FIELDS};

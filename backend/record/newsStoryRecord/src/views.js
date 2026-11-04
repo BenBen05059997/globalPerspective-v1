@@ -11,7 +11,7 @@ const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = requi
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
 const {iso3List} = require('./_shared/resolveIso3');
-const {buildIndexViews, archiveRefOf} = require('./indexViews');
+const {buildIndexViews, archiveRefOf, entryOrder} = require('./indexViews');
 const {buildBriefViews} = require('./briefViews');
 const {todayIndex} = require('./todayView');
 
@@ -293,7 +293,7 @@ function groupStories(facts, aliases, keep = new Set()) {
  * The rows and story views. `rows` has every thread (an alias row for a merged story); `stories` maps threadId -> view.
  * Counts and links are built from the same grouping by buildViews.
  */
-function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy = new Map()}) {
+function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy = new Map()}) {
   const {own, merged} = groupStories(facts, aliases, keep);
   const ledger = sampleLedger(facts);
   const stories = new Map();
@@ -306,7 +306,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
       stories.set(threadId, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId, aliasOf});
       rows.set(threadId, {
         threadId, born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), iso3: [], actorIds: [], sourceCount: 0, entryCount: 0,
-        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set()), today),
+        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set()), today, refs),
       });
       continue;
     }
@@ -324,7 +324,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
     const entries = entryRows(group, corrected, reassigned, notesBy);
     const kept = entries.slice(-ENTRY_CAP);
-    const title = titleOf(entries, today); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
+    const title = titleOf(entries, today, refs); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
     const forks = forkRows(mine, ledger, today);
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));
@@ -381,12 +381,15 @@ function readingFields(t) {
 /**
  * The story's one title, used by every view that names a story: the headline of its newest non-article entry within the WINDOW_DAYS
  * ending today; with none in the window, its newest entry overall; a story with only placed articles takes the newest article's title;
- * null for a story with no rows. `entries` are entryRows (date ascending), so the newest is the last match.
+ * null for a story with no rows. "Newest" is the last in indexViews' entryOrder (record date, archive day, place in the archive day's
+ * list, `at`, eventId), the order the weekly index lists a day in, so entries that tie on date and `at` still have one answer.
  */
-function titleOf(entries, today) {
+function titleOf(entries, today, refs = new Map()) {
   const from = addDays(today, -WINDOW_DAYS);
+  const order = entryOrder(refs);
+  const last = (list) => list.reduce((best, e) => (!best || order(best, e) <= 0 ? e : best), null);
   const real = entries.filter((e) => e.kind !== 'article');
-  const pick = real.filter((e) => e.date >= from && e.date <= today).pop() || real.pop() || entries[entries.length - 1];
+  const pick = last(real.filter((e) => e.date >= from && e.date <= today)) || last(real) || last(entries);
   return pick ? pick.title ?? null : null;
 }
 
@@ -520,7 +523,8 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const resolved = resolveAliases(facts);
   const {aliases} = resolved;
   const notesBy = entryNotesBy(noteLines);
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, analysisBy: storyAnalysisBy(noteLines, aliases)});
+  const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
+  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy: storyAnalysisBy(noteLines, aliases)});
 
   const forecasts = forecastViews(facts, stories, builtFrom);
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
@@ -554,7 +558,6 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   if (size > ALL_INDEX_MAX_BYTES) throw new Error(`views: index/all.json is ${size} bytes, over the ${ALL_INDEX_MAX_BYTES} cap; it needs the shard decision of 0037`);
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough} : {}), ...provisionalCounts(extra)};
   const countries = countryViews(noteLines, builtFrom);
-  const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
   const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
   // per-view stamps: a story, its forecasts and its links from the provisional entries and forks it holds; a day's count from the provisional facts of that day

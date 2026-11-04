@@ -289,7 +289,7 @@ describe('weekly mode', () => {
     expect(screen.getByRole('link', { name: 'Sudan' }).getAttribute('href')).toBe('/weekly/country/Sudan');
     expect(screen.getByText('Vote')).toBeInTheDocument();
     expect(screen.getByText(/Signals are selected by significance/)).toBeInTheDocument();
-    expect(document.title).toMatch(/^Weekly Brief — week of /);
+    expect(document.title).toMatch(/^Weekly Brief — week ending /);
   });
 
   it('asks for ?week= and says so plainly when the API answers with a later (latest) edition', () => {
@@ -305,7 +305,7 @@ describe('weekly mode', () => {
   it('a week with no edition says so and offers the nearest earlier edition and the latest', () => {
     weekKeys = ['2026-10-11', '2026-09-06'];
     renderAt('/briefings?mode=weekly&week=2026-10-04');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/No weekly brief for the week of/);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/No weekly brief for the week ending/);
     expect(screen.getByRole('link', { name: '← Week before' }).getAttribute('href')).toBe('/briefings?mode=weekly&week=2026-09-06');
     expect(screen.getByRole('link', { name: 'Latest edition →' }).getAttribute('href')).toBe('/briefings?mode=weekly');
   });

@@ -94,7 +94,7 @@ export default function WeeklyMode({ weekParam }) {
 
   useEffect(() => {
     document.title = brief?.weekOf
-      ? `Weekly Brief — week of ${formatDateLabel(brief.weekOf)} | Global Perspectives`
+      ? `Weekly Brief — week ending ${formatDateLabel(brief.weekOf)} | Global Perspectives`
       : 'Weekly Brief | Global Perspectives';
   }, [brief]);
 
@@ -108,10 +108,10 @@ export default function WeeklyMode({ weekParam }) {
     let title = 'No brief published yet';
     let text = 'The weekly signals brief will appear here once it’s published.';
     if (brief?.weekOf) {
-      title = `Week of ${formatDateLabel(brief.weekOf)}`;
+      title = `Week ending ${formatDateLabel(brief.weekOf)}`;
       text = 'This edition predates the signals format and has no signals to show.';
     } else if (weekParam) {
-      title = `No weekly brief for the week of ${formatDateLabel(weekParam)}`;
+      title = `No weekly brief for the week ending ${formatDateLabel(weekParam)}`;
       text = 'No edition was published under that week.';
     }
     return (
@@ -146,11 +146,11 @@ export default function WeeklyMode({ weekParam }) {
           <div>
             <div className="wb-eyebrow">Weekly Signals Brief</div>
             <div className="wb-dateline">
-              WEEK OF {weekLabel.toUpperCase()}
+              WEEK ENDING {weekLabel.toUpperCase()}
               {brief.asOf && <> · COMPILED {brief.asOf}</>} · {signals.length} SIGNALS
             </div>
           </div>
-          <SaveButton itemType="weekly" itemId={brief.weekOf} metadata={{ headline: 'Weekly Signals Brief', date: `Week of ${weekLabel}` }} />
+          <SaveButton itemType="weekly" itemId={brief.weekOf} metadata={{ headline: 'Weekly Signals Brief', date: `Week ending ${weekLabel}` }} />
         </div>
         <h1 className="wb-h1">The week’s signals, ranked by risk</h1>
 

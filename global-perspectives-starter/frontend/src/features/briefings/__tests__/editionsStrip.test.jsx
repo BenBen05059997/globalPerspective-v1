@@ -93,7 +93,7 @@ describe('WeeklyEditionNav', () => {
 
   it('latest edition: shows the week and a link to the week before, no "latest" link', () => {
     render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-26" weeks={['2026-10-26', '2026-10-19']} hrefForWeek={hrefForWeek} /></MemoryRouter>);
-    expect(screen.getByLabelText('Week of Mon, Oct 26, currently showing')).toBeInTheDocument();
+    expect(screen.getByLabelText('Week ending Mon, Oct 26, currently showing')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '← Week before' })).toHaveAttribute('href', '/briefings?mode=weekly&week=2026-10-19');
     expect(screen.queryByRole('link', { name: /Latest edition/ })).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
@@ -120,7 +120,7 @@ describe('WeeklyEditionNav', () => {
 
   it('when the API answers with a different week than asked, it says so plainly', () => {
     render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-26" requestedWeek="2026-10-05" hrefForWeek={hrefForWeek} /></MemoryRouter>);
-    expect(screen.getByRole('status')).toHaveTextContent('The edition for the week of Mon, Oct 5 is not available here yet; showing the latest edition (week of Mon, Oct 26).');
+    expect(screen.getByRole('status')).toHaveTextContent('The edition for the week ending Mon, Oct 5 is not available here yet; showing the latest edition (week ending Mon, Oct 26).');
   });
 });
 

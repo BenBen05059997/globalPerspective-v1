@@ -18,7 +18,7 @@ describe('SlideBody', () => {
 
   it('the weekly deck headline reads the week like the weekly read mode, not as an ISO date', () => {
     render(<MemoryRouter><SlideBody mode="weekly" slide={{ kind: 'week' }} brief={{ weekOf: '2026-11-01' }} /></MemoryRouter>);
-    expect(screen.getByText(/WEEKLY · week of Sun, Nov 1/)).toBeInTheDocument();
+    expect(screen.getByText(/WEEKLY · week ending Sun, Nov 1/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain('2026-11-01');
   });
 });

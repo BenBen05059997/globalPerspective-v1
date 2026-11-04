@@ -109,15 +109,15 @@ export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) 
     <div className="bm-editions bm-editions-weekly" role="group" aria-label="Editions">
       <div className="bm-editions-track">
         {before && <Link className="bm-edition-step" to={hrefForWeek(before)}>← Week before</Link>}
-        <span className="bm-edition-mark bm-edition-solid current" aria-label={`Week of ${label}, currently showing`} title={`Week of ${label}`}>
+        <span className="bm-edition-mark bm-edition-solid current" aria-label={`Week ending ${label}, currently showing`} title={`Week ending ${label}`}>
           <span className="bm-edition-dot" aria-hidden="true">●</span>
-          <span className="bm-edition-label">Week of {label}</span>
+          <span className="bm-edition-label">Week ending {label}</span>
         </span>
         {requestedWeek && <Link className="bm-edition-step" to={hrefForWeek(null)}>Latest edition →</Link>}
       </div>
       {notServed && (
         <p className="bm-editions-weekly-note" role="status">
-          The edition for the week of {formatDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week of {label}).
+          The edition for the week ending {formatDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week ending {label}).
         </p>
       )}
     </div>

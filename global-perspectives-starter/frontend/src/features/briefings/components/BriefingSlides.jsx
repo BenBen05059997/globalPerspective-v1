@@ -144,7 +144,7 @@ function WeekSlide({ brief }) {
   return (
     <div className="bm-slide bm-slide-week">
       <div className="bm-slide-kicker">
-        WEEKLY · week of {formatDateLabel(brief.weekOf)}
+        WEEKLY · week ending {formatDateLabel(brief.weekOf)}
         <span className="bm-ai-tag">AI-generated</span>
       </div>
       <h2 className="bm-slide-title">The week's signals, ranked by risk</h2>

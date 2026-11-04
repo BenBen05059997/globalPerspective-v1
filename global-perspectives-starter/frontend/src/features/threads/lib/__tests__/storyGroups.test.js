@@ -207,10 +207,24 @@ describe('sorts', () => {
     const r = sortThreads([mk('stable', 'stable', 9), mk('rise', 'rising', 2), mk('new', 'new', 5)], 'rising').map((t) => t.threadId);
     expect(r).toEqual(['rise', 'new', 'stable']);
   });
-  it('risingThreads keeps the old rule (rising/new, >= 2 articles)', () => {
-    const mk = (id, trend, articleCount) => ({ threadId: id, trend, articleCount });
-    const out = risingThreads([mk('a', 'rising', 3), mk('b', 'new', 1), mk('c', 'stable', 5), mk('d', 'new', 4)], 5);
-    expect(out.map((t) => t.threadId)).toEqual(['a', 'd']);
+  it('risingThreads selects exactly what the Board calls New or Rising (R3-6), rising first', () => {
+    // spec: { daysAgo: events that day }; `trend` is the old half-vs-half signal and must not matter
+    const mk = (id, spec, trend) => {
+      const entries = Object.entries(spec).flatMap(([d, n]) => Array.from({ length: n }, () => ({ date: ago(Number(d)) })));
+      const dates = Object.keys(spec).map((d) => ago(Number(d))).sort();
+      return { threadId: id, trend, entries, dates, articleCount: entries.length };
+    };
+    const threads = [
+      mk('quiet', { 9: 3, 5: 3, 1: 1 }, 'rising'), // old trend says rising, the Board says quieter
+      mk('rise', { 12: 1, 3: 1, 1: 3 }, 'stable'),
+      mk('fresh', { 1: 4 }, 'new'),
+      mk('steady', { 12: 1, 6: 1 }, 'stable'),
+    ];
+    const out = risingThreads(threads, NOW, 5).map((t) => t.threadId);
+    expect(out).toEqual(['rise', 'fresh']);
+    for (const t of threads) expect(['rising', 'new'].includes(deriveBoardStatus(t, NOW).key)).toBe(out.includes(t.threadId));
+    expect(risingThreads(threads, NOW, 1)).toHaveLength(1);
+    expect(risingThreads(threads, NOW, 5, new Set(['rise'])).map((t) => t.threadId)).toEqual(['fresh']);
   });
   it('regionCounts: biggest first, World last', () => {
     const r = regionCounts([{ primaryRegion: 'World' }, { primaryRegion: 'Asia' }, { primaryRegion: 'Asia' }, { primaryRegion: 'Europe' }]);

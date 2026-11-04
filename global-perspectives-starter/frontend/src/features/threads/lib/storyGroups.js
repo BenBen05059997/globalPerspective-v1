@@ -346,12 +346,18 @@ export function facetCounts(threads, filters = {}, analyses = {}, now = Date.now
 
 // ─── Rising ─────────────────────────────────────────────────────────────────────────────────────
 
-/** Threads whose coverage is rising or new (>= 2 articles): the old "Rising this week" rule. */
-export function risingThreads(threads, limit = 5, excludeIds = null) {
+/**
+ * Threads the Board puts under "New" or "Rising" (deriveBoardStatus, the one coverage rule), rising first, then by
+ * event count: the "Gaining coverage this week" rail, so it always agrees with the Board.
+ */
+export function risingThreads(threads, now = Date.now(), limit = 5, excludeIds = null) {
+  const rank = { rising: 0, new: 1 };
   return threads
-    .filter((t) => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2 && !excludeIds?.has(t.threadId))
-    .sort((a, b) => (a.trend === 'rising' && b.trend !== 'rising' ? -1 : b.trend === 'rising' && a.trend !== 'rising' ? 1 : b.articleCount - a.articleCount))
-    .slice(0, limit);
+    .map((thread) => ({ thread, key: deriveBoardStatus(thread, now).key }))
+    .filter(({ thread, key }) => key in rank && !excludeIds?.has(thread.threadId))
+    .sort((a, b) => rank[a.key] - rank[b.key] || b.thread.articleCount - a.thread.articleCount)
+    .slice(0, limit)
+    .map(({ thread }) => thread);
 }
 
 // ─── Last visit ("changed since your last visit") ───────────────────────────────────────────────

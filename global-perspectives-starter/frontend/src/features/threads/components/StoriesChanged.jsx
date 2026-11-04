@@ -40,7 +40,7 @@ function ChangedList({ threads, analyses, baseline, now, peek }) {
 
 /** railRising(threads, now) -> the compact "Gaining coverage this week" items (stories changed within 7 days). */
 export function railRising(threads, now) {
-  return risingThreads(threads.filter((t) => ageDaysOf(t, now) <= 7), 5);
+  return risingThreads(threads.filter((t) => ageDaysOf(t, now) <= 7), now, 5);
 }
 
 function Rising({ threads, now }) {
@@ -48,7 +48,7 @@ function Rising({ threads, now }) {
   if (!items.length) return null;
   return (
     <section className="sf-rising-rail" aria-labelledby="sf-rising-h">
-      <SectionHeader label="Gaining coverage this week" id="sf-rising-h" hint="new or rising coverage, 2+ events" />
+      <SectionHeader label="Gaining coverage this week" id="sf-rising-h" hint="new or rising on the Board" />
       <ul className="sf-rise-list">
         {items.map((t) => (
           <li key={t.threadId}>

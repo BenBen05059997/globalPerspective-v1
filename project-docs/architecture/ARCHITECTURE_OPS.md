@@ -95,3 +95,5 @@ the operator uid for the `ops` action; Search Console verification; the `/ops` r
 
 ## Cost of the monitor itself
 About 720 invocations a month, Logs Insights over a few MB a day (cents), Cost Explorer $0.30 a month. Well under $1.
+
+What the site costs and why, with the checking recipe: [COSTS.md](COSTS.md).

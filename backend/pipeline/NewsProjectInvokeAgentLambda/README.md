@@ -17,6 +17,8 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 | `ARCHIVE_READS` | NewsCache `archive#DAY` today..today-7; freshness: `today-archive`, `archive#today`, `archive#yesterday` (consistent) | `<ENTRIES_INBOX_PREFIX>inbox/entries/DAY.jsonl` replayed (`entriesInbox.replayDay`) to the same rows | threading window, arc digest, G15, same-day siblings, freshness gate |
 | `FORKS_READS` | `THREAD#<id>/TOPICS` pointer, then `PRED#<topicId>` query per id, SK >= today-90 | `<FORECASTS_INBOX_PREFIX>inbox/forecasts/DAY.jsonl` today-90..today replayed (`forecastsInbox.replay`, thread lines included): rows of this topic or naming the thread | draw cadence, G12 near-duplicate gate |
 
+- Live: both `inbox` since 2026-11-04 04:30Z, after three compare runs (archive equal every run; forks equal except one
+  known inbox-only row, below). Roll back by setting either to `ddb`.
 - `compare` reads both, answers from DynamoDB and logs `[archive-compare] window|freshness: equal|DIFFER n [...]` / `[forks-compare] <topicId> <threadId>: ...`.
   Unknown values, or inbox/compare with the inbox prefix unset, read DynamoDB. Code: `src/inbox-reads.js` (pure) + `index.js`.
 - Timing: the run appends its inbox lines at the end, so at read time both sources hold the earlier runs only (same-day runs included).

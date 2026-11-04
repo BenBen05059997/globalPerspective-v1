@@ -63,7 +63,7 @@
         "additionalProperties": false,
         "properties": {
           "state": {"enum": ["linked", "analysed_no_links", "single_update", "country_not_analysed"]},
-          "title": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"], "description": "the story's one title (the story view's title); the web node summary only for a thread the record holds no titled row for"},
           "entries": {"type": "integer", "minimum": 0},
           "places": {"type": "array", "items": {"type": "object", "required": ["name", "n"], "additionalProperties": false, "properties": {"name": {"type": "string"}, "n": {"type": "integer"}}}},
           "analysedIn": {"type": "array", "items": {"type": "object", "required": ["country", "generatedAt"], "additionalProperties": false, "properties": {"country": {"type": "string"}, "generatedAt": {"type": "string"}}}},

@@ -71,6 +71,7 @@
         "threadId",
         "born",
         "aliasOf",
+        "title",
         "iso3",
         "actorIds",
         "sourceIds",
@@ -107,6 +108,10 @@
         },
         "aliasOf": {
           "type": "null"
+        },
+        "title": {
+          "anyOf": [{"type": "string"}, {"type": "null"}],
+          "description": "the story's one title: the headline of its newest non-article entry within the last 30 days (WINDOW_DAYS), else its newest entry overall; null only for a story with no entries. The same string is the index rows' title, index/web.json threads[id].title and links' otherTitle. analysis.threadTitle is the model's paraphrase, not this."
         },
         "iso3": {
           "$ref": "#/definitions/strings"

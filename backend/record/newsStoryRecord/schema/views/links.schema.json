@@ -110,7 +110,7 @@
     },
     "web": {
       "type": "object",
-      "description": "the story's place in the country webs (newsSystemsAnalysis): what the web_index action carried beside the judged links. Same rules as the index: each country's newest web, at most 30 days old; titles, entry counts and places from the last 30 days of entries",
+      "description": "the story's place in the country webs (newsSystemsAnalysis): what the web_index action carried beside the judged links. Same rules as the index: each country's newest web, at most 30 days old; entry counts and places from the last 30 days of entries; titles (otherTitle) are the stories' own",
       "required": [
         "state",
         "entries",

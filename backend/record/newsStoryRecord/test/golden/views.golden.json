@@ -9,6 +9,7 @@
       "threadId": "thread-a",
       "born": "2026-10-18",
       "aliasOf": null,
+      "title": "A second",
       "iso3": [
         "DEU",
         "FRA"
@@ -186,6 +187,7 @@
       "threadId": "thread-b",
       "born": "2026-10-17",
       "aliasOf": null,
+      "title": "B first",
       "iso3": [
         "FRA",
         "UKR"
@@ -285,6 +287,7 @@
       "threadId": "thread-old",
       "born": "2026-07-01",
       "aliasOf": null,
+      "title": "Old first",
       "iso3": [
         "FRA"
       ],
@@ -548,7 +551,7 @@
         "latestVerdictAt": "2026-10-22T06:00:00.000Z",
         "aliasOf": null,
         "aliases": [],
-        "title": "A first"
+        "title": "A second"
       },
       {
         "threadId": "thread-b",
@@ -571,7 +574,7 @@
         "aliases": [
           "thread-c"
         ],
-        "title": "C first"
+        "title": "B first"
       }
     ]
   },
@@ -601,7 +604,7 @@
         "latestVerdictAt": "2026-10-22T06:00:00.000Z",
         "aliasOf": null,
         "aliases": [],
-        "title": "A first"
+        "title": "A second"
       },
       {
         "threadId": "thread-b",
@@ -624,7 +627,7 @@
         "aliases": [
           "thread-c"
         ],
-        "title": "C first"
+        "title": "B first"
       },
       {
         "threadId": "thread-c",

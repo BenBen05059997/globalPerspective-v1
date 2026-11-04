@@ -111,7 +111,7 @@ function newestWebs(noteLines, today) {
  * index's own rules: only each country's newest web, at most WEB_MAX_AGE_DAYS old, one row per pair per country. Model judgment;
  * `otherTitle` from the record's rows.
  */
-function judgedLinksBy(noteLines, newest, titleOf = () => null) {
+function judgedLinksBy(noteLines, newest, titleFor = () => null) {
   const out = new Map();
   const seen = new Set();
   for (const n of noteLines) {
@@ -123,7 +123,7 @@ function judgedLinksBy(noteLines, newest, titleOf = () => null) {
     const {reverse, ...edge} = n.payload;
     const stored = [asStored({...n, payload: edge}), ...(reverse ? [asStored({...n, payload: {...edge, from: edge.to, to: edge.from, ...reverse}})] : [])];
     for (const [me, other] of [[ids[0], ids[1]], [ids[1], ids[0]]]) {
-      for (const row of stored) (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, otherTitle: titleOf(other), iso3: n.part, ...row});
+      for (const row of stored) (out.get(me) || out.set(me, []).get(me)).push({otherThreadId: other, otherTitle: titleFor(other), iso3: n.part, ...row});
     }
   }
   for (const list of out.values()) list.sort(byKey((l) => l.otherThreadId, (l) => l.iso3, (l) => (l.from === l.otherThreadId ? 1 : 0)));
@@ -136,7 +136,7 @@ const PLACES_MAX = 3;
 
 /**
  * Entry facts -> threadId -> what the web index keeps of that thread id (the archive groups by the thread id an entry carried, so a
- * merged story's entries stay under its old id here): entry count in the web's window, newest day, title of the newest entry, and
+ * merged story's entries stay under its old id here): entry count in the web's window, newest day, and
  * the three most-mentioned countries (real countries only, ties by name).
  */
 function windowInfos(facts, today) {
@@ -152,7 +152,7 @@ function windowInfos(facts, today) {
     const places = new Map();
     for (const f of es) for (const c of f.iso3 || []) if (COUNTRIES[c]) places.set(c, (places.get(c) || 0) + 1);
     out.set(id, {
-      n: new Set(es.map((f) => f.payload.topicId || f.eventId)).size, lastDate: es[es.length - 1].date, title: es[es.length - 1].payload.title ?? null,
+      n: new Set(es.map((f) => f.payload.topicId || f.eventId)).size, lastDate: es[es.length - 1].date,
       places: [...places].map(([iso3, n]) => ({iso3, name: COUNTRIES[iso3].name, n})).sort(byKey((p) => -p.n, (p) => p.name)).slice(0, PLACES_MAX),
     });
   }
@@ -166,7 +166,7 @@ function windowInfos(facts, today) {
  * in no web). analysedIn: the webs the story is a node of; backbone: the web's deterministic shared-actor edges (both ends nodes of
  * the web), one row per web and other story; otherPlaces: top places of every story in judgedLinks or backbone.
  */
-function webCoverageBy(webs, judged, info, today, titleOf) {
+function webCoverageBy(webs, judged, info, today, titleFor) {
   const analysed = new Map();
   const backbone = new Map();
   const add = (map, id, row) => (map.get(id) || map.set(id, []).get(id)).push(row);
@@ -176,15 +176,15 @@ function webCoverageBy(webs, judged, info, today, titleOf) {
     for (const b of w.payload.backbone) {
       if (!nodes.has(b.from) || !nodes.has(b.to)) continue;
       const row = {iso3, country: w.payload.country, generatedAt: w.at, actors: b.sharedActors, weight: b.weight};
-      add(backbone, b.from, {otherThreadId: b.to, otherTitle: titleOf(b.to), ...row});
-      add(backbone, b.to, {otherThreadId: b.from, otherTitle: titleOf(b.from), ...row});
+      add(backbone, b.from, {otherThreadId: b.to, otherTitle: titleFor(b.to), ...row});
+      add(backbone, b.to, {otherThreadId: b.from, otherTitle: titleFor(b.from), ...row});
     }
   }
   const scopeFrom = addDays(today, -SCOPE_DAYS);
   const placesOf = (id) => (info.get(id) || {}).places || [];
   const out = new Map();
   // a story in a web or a link that the record no longer has as its own (a merged one) has no entries here: its state rests on the web alone
-  const none = {n: 0, lastDate: '', title: null, places: []};
+  const none = {n: 0, lastDate: '', places: []};
   for (const id of unique([...info.keys(), ...analysed.keys(), ...judged.keys()])) {
     const i = info.get(id) || none;
     const inWeb = analysed.has(id);
@@ -306,7 +306,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
       stories.set(threadId, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId, aliasOf});
       rows.set(threadId, {
         threadId, born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), iso3: [], actorIds: [], sourceCount: 0, entryCount: 0,
-        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set())),
+        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set()), today),
       });
       continue;
     }
@@ -324,6 +324,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
     const entries = entryRows(group, corrected, reassigned, notesBy);
     const kept = entries.slice(-ENTRY_CAP);
+    const title = titleOf(entries, today); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
     const forks = forkRows(mine, ledger, today);
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));
@@ -332,7 +333,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const verdictAts = mine.filter((f) => f.kind === 'verdict').map((f) => f.at);
     const born = minOf(group.map((g) => bornOf(g.facts)).filter(Boolean));
     stories.set(threadId, {
-      schemaVersion: SCHEMA_VERSION, builtFrom, threadId, born, aliasOf: null, iso3, actorIds, sourceIds,
+      schemaVersion: SCHEMA_VERSION, builtFrom, threadId, born, aliasOf: null, title, iso3, actorIds, sourceIds,
       entries: kept, entriesOmitted: entries.length - kept.length, forks,
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
@@ -342,7 +343,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     rows.set(threadId, {
       threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
       forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.legacy && !b.verdict && b.due && b.due >= today).length,
-      latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds, title: titleOf(entries),
+      latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds, title,
       ...(readings.get(threadId) && readings.get(threadId).line ? {line: readings.get(threadId).line.payload.text} : {}),
     });
     survivors.set(threadId, {iso3, actorIds, sourceIds});
@@ -377,8 +378,19 @@ function readingFields(t) {
   };
 }
 
+/**
+ * The story's one title, used by every view that names a story: the headline of its newest non-article entry within the WINDOW_DAYS
+ * ending today; with none in the window, its newest entry overall; a story with only placed articles takes the newest article's title;
+ * null for a story with no rows. `entries` are entryRows (date ascending), so the newest is the last match.
+ */
+function titleOf(entries, today) {
+  const from = addDays(today, -WINDOW_DAYS);
+  const real = entries.filter((e) => e.kind !== 'article');
+  const pick = real.filter((e) => e.date >= from && e.date <= today).pop() || real.pop() || entries[entries.length - 1];
+  return pick ? pick.title ?? null : null;
+}
+
 const bornOf = (facts) => minOf([...facts.filter((f) => f.kind === 'story_born').map((f) => f.payload.born || f.date), ...facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.date)]);
-const titleOf = (entries) => (entries.length ? entries[0].title : null);
 
 const rowOrder = byKey((r) => -Date.parse(r.lastFactAt || 0), (r) => r.threadId);
 
@@ -521,16 +533,16 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
     if (!links.has(id)) links.set(id, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId: id, links: [], confirmedLinks: [], confirmedLinksReason: NO_READING});
   }
   // the story web's model-judged links (link notes, 0042) beside the computed shared-fact links
-  // titles and places as the web index keeps them (newest entry of the last 30 days), not the story row's first title
+  // places and counts as the web index keeps them (entries of the last 30 days); titles are the stories' own (titleOf)
   const info = windowInfos(facts, today);
   const rowTitles = new Map(all.map((r) => [r.threadId, r.title || null]));
   const {newest, webs} = newestWebs(noteLines, today);
-  // a story with no entry in the window is titled by its node summary in the web (the index's titleOf), then by the record's row
+  // a thread the web names but the record has no titled row for (a node of a web whose id the record never held) keeps its node summary
   const summaries = new Map();
   for (const [, w] of [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1))) for (const x of w.payload.nodes) if (x.summary && !summaries.has(x.threadId)) summaries.set(x.threadId, x.summary);
-  const titleOf = (id) => (info.get(id) || {}).title ?? summaries.get(id) ?? rowTitles.get(id) ?? null;
-  const judged = judgedLinksBy(noteLines, newest, titleOf);
-  const coverage = webCoverageBy(webs, judged, info, today, titleOf);
+  const webTitleOf = (id) => rowTitles.get(id) ?? summaries.get(id) ?? null;
+  const judged = judgedLinksBy(noteLines, newest, webTitleOf);
+  const coverage = webCoverageBy(webs, judged, info, today, webTitleOf);
   for (const [id, view] of links) {
     view.judgedLinks = judged.get(id) || [];
     view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};
@@ -544,7 +556,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const countries = countryViews(noteLines, builtFrom);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
-  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
+  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
   // per-view stamps: a story, its forecasts and its links from the provisional entries and forks it holds; a day's count from the provisional facts of that day
   for (const [id, story] of stories) {
     const t = stampOf([...(story.entries || []).filter((e) => e.provisional).map((e) => e.date), ...(story.forks || []).filter((k) => k.provisional).map((k) => k.drawnAt.slice(0, 10))]);
@@ -569,4 +581,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {entryNotesBy, SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};
+module.exports = {titleOf, entryNotesBy, SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};

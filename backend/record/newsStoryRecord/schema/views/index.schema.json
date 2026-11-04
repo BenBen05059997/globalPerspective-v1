@@ -169,6 +169,7 @@
           "$ref": "#/definitions/strings"
         },
         "title": {
+          "description": "the story's one title (same as the story view's title): newest non-article entry in the last 30 days, else newest overall",
           "anyOf": [
             {
               "type": "string"

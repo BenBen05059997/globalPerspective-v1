@@ -224,7 +224,7 @@ test('Y2: a reassigned entry leaves the old story and joins the new one tagged r
   assert.deepEqual(a.entries.map((e) => e.eventId), ['ea1']);
   assert.deepEqual(b.entries.map((e) => [e.eventId, e.reassignedFrom, e.fromThreadId]), [['ec1', undefined, 'thread-c'], ['eb1', undefined, undefined], ['ea2', 'thread-a', undefined]]);
   assert.deepEqual([rowOf(v, 'thread-a').entryCount, rowOf(v, 'thread-b').entryCount], [1, 3]);
-  assert.deepEqual(rowOf(v, 'thread-b').title, 'C first');
+  assert.deepEqual(rowOf(v, 'thread-b').title, 'A second');
   assert.deepEqual(v.counts.get('2026-10-20').byStory, {'thread-b': {newEntries: 1, branchesDue: 0, verdicts: 0}, 'thread-a': {newEntries: 0, branchesDue: 1, verdicts: 1}});
   assert.deepEqual(a.iso3, ['FRA']); // DEU came with ea2
   assert.deepEqual(b.iso3, ['DEU', 'FRA', 'UKR']);
@@ -459,4 +459,16 @@ test('an analysis or drift note filed under a merged-away story id is served on 
   assert.equal(v.stories.get('thread-b').analysis.lead, 'filed under the merged id, newer');
   assert.equal(v.stories.get('thread-b').analysis.driftNote.whyChanged, 'also under the merged id');
   assert.equal(v.stories.get('thread-c').analysis, undefined); // the alias view stays a stub
+});
+
+test('titleOf: the newest non-article entry in the 30-day window, else the newest entry overall, else the newest article, else null', () => {
+  const {titleOf} = require('../src/views');
+  const e = (date, title, kind) => ({date, title, ...(kind ? {kind} : {})});
+  const today = '2026-11-04'; // window starts 2026-10-05
+  assert.equal(titleOf([e('2026-10-01', 'old'), e('2026-10-20', 'mid'), e('2026-11-02', 'new')], today), 'new');
+  assert.equal(titleOf([e('2026-10-20', 'mid'), e('2026-11-03', 'article', 'article')], today), 'mid'); // an article never titles a story that has an entry
+  assert.equal(titleOf([e('2026-09-01', 'older'), e('2026-09-20', 'newest in none')], today), 'newest in none'); // no entry in the window: newest overall
+  assert.equal(titleOf([e('2026-09-20', 'out'), e('2026-10-05', 'edge')], today), 'edge'); // the window's first day counts
+  assert.equal(titleOf([e('2026-10-10', 'a1', 'article'), e('2026-10-12', 'a2', 'article')], today), 'a2');
+  assert.equal(titleOf([], today), null);
 });

@@ -75,7 +75,7 @@ test('writeGroups writes the brief views with the story views and the index with
   const groups = V.writeGroups(build());
   const keys = groups.map((g) => g.map(([k]) => k));
   assert.ok(keys[0].includes('briefs/daily/2026-10-30.json') && keys[0].includes('briefs/weekly/2026-10-25.json'));
-  assert.equal(keys[0].includes('briefs/weekly/2026-06-21.json'), false);
+  assert.ok(keys[0].includes('briefs/weekly/2026-06-21.json'), 'a held-back week is written as a tombstone over any earlier file');
   assert.ok(keys[1].includes('index/briefs.json'));
   assert.equal(keys.at(-1)[0], 'manifest.json');
 });
@@ -93,4 +93,20 @@ test('the views satisfy their schemas, and the examples are the built views of t
     if (process.env.UPDATE_GOLDEN) writeFileSync(file, `${JSON.stringify(JSONIFY(view), null, 2)}\n`);
     assert.deepEqual(load(`examples/${name}.json`), JSONIFY(view));
   }
+});
+
+test('a later draft note holds a published week back: gone from the index, its file a tombstone with no brief, and a later published note brings it back', () => {
+  const at = (iso, status) => N.weeklyBriefNote({item: {...rows.weekly[0], status, generatedAt: iso}, producer});
+  const held = build([...weeklyNotes(), at('2026-10-26T09:00:00.000Z', 'draft')]);
+  assert.equal(held.briefs.weekly.has('2026-10-25'), false);
+  assert.equal(held.indexes['briefs.json'].weekly.some((w) => w.weekOf === '2026-10-25'), false);
+  const file = V.writeGroups(held)[0].find(([k]) => k === 'briefs/weekly/2026-10-25.json')[1];
+  assert.deepEqual([file.held, file.brief, file.weekOf], [true, null, '2026-10-25']);
+  const ajv = new Ajv({allErrors: true, strict: false});
+  const validate = ajv.compile(JSON.parse(readFileSync(resolve(__dirname, '../schema/views/brief-weekly.schema.json'), 'utf8')));
+  assert.equal(validate(JSONIFY(file)), true, JSON.stringify(validate.errors));
+  // newest wins whatever the file order, and a later published note restores the brief
+  const back = build([at('2026-10-27T09:00:00.000Z', 'published'), ...weeklyNotes(), at('2026-10-26T09:00:00.000Z', 'draft')]);
+  assert.equal(back.briefs.weekly.has('2026-10-25'), true);
+  assert.equal(back.briefs.held.has('2026-10-25'), false);
 });

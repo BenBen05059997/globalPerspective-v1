@@ -561,7 +561,7 @@ function writeGroups(views) {
   const keyed = (dir, map) => [...map].map(([id, obj]) => [`${dir}/${id}.json`, obj]);
   return [
     [...keyed('stories', views.stories), ...keyed('links', views.links), ...keyed('forecasts', views.forecasts || new Map()), ...keyed('counts', views.counts), ...keyed('countries', views.countries || new Map()),
-      ...keyed('briefs/daily', views.briefs ? views.briefs.daily : new Map()), ...keyed('briefs/weekly', views.briefs ? views.briefs.weekly : new Map())],
+      ...keyed('briefs/daily', views.briefs ? views.briefs.daily : new Map()), ...keyed('briefs/weekly', views.briefs ? views.briefs.weekly : new Map()), ...keyed('briefs/weekly', views.briefs ? views.briefs.held : new Map())],
     [['index/active.json', views.active], ...Object.entries(views.indexes || {}).map(([name, obj]) => [`index/${name}`, obj])],
     [['index/all.json', views.all]],
     [['track-record.json', views.trackRecord]],

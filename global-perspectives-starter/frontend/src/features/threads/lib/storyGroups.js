@@ -98,6 +98,15 @@ function actionPathTitle(entries) {
 }
 
 /**
+ * listCounts(events, days) -> "In 30 days: 25 events, 13 days with news": a list row's two counts, both taken from the
+ * weekly index's 30 days, with the span said once up front so it reads as covering both. Every list, rail, timeline and
+ * map row that shows the two uses this; the story page keeps the bare all-time `eventCount` / `daysWithNews`.
+ */
+export function listCounts(events, days) {
+  return `In ${ARCHIVE_DAYS} days: ${eventCount(events)}, ${daysWithNews(days)}`;
+}
+
+/**
  * buildThreads(dayMap, sortedDates, now, titles) -> { threads, standalone }
  * `titles` is the record's { threadId: title } (the one title rule lives in the record, newsStoryRecord titleOf); null on the
  * `archive_range` action path.

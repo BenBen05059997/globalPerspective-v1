@@ -81,11 +81,11 @@ describe('StoryLine renders the summary / Watching lines only with data', () => 
   });
   it('the count says "events", not "articles" (R3-2)', () => {
     const { container } = renderLine({ ...base, articleCount: 12, dayCount: 3 }, null);
-    expect(container.querySelector('.sf-count').textContent).toMatch(/^12 events · 3 days with news in 30 days$/);
+    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: 12 events, 3 days with news$/);
   });
   it('the day count names its 30-day span (R3-1)', () => {
     const { container } = renderLine({ ...base, dayCount: 13 }, null);
-    expect(container.querySelector('.sf-count').textContent).toMatch(/13 days with news in 30 days/);
+    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: \d+ events?, 13 days with news$/);
   });
   it('summary only (no watch question) -> no Watching line', () => {
     const { container } = renderLine(base, { storyArc: 'Only an arc.' });

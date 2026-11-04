@@ -20,7 +20,7 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE, mapHref } from '@/shared/lib/links.js';
-import { daysWithNews, eventCount, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
+import { daysWithNews, listCounts, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
 
@@ -416,7 +416,7 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
         {thread.entries[0]?.category && (
           <CategoryTag category={thread.entries[0].category.toLowerCase()} className="wmap-detail-cat" />
         )}
-        {eventCount(thread.articleCount)} · {daysWithNews(thread.dates.length, ARCHIVE_DAYS)}
+        {listCounts(thread.articleCount, thread.dates.length)}
         {thread.regions.slice(0, 3).map((r, i) => (
           <span key={r}>{i === 0 ? ' · ' : ', '}<EntityLink kind="country" id={r}>{r}</EntityLink></span>
         ))}
@@ -630,7 +630,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                               <div className="wmap-thread-info" onClick={() => onThreadClick(t.threadId)}>
                                 <div className="wmap-thread-title">{t.latestTitle}</div>
                                 <div className="wmap-thread-meta">
-                                  {eventCount(t.articleCount)} · {t.dates.length}d · {t.regions.slice(0, 3).join(', ')}
+                                  {listCounts(t.articleCount, t.dates.length)} · {t.regions.slice(0, 3).join(', ')}
                                 </div>
                                 {canPlay && (
                                   <div className="wmap-thread-badges">

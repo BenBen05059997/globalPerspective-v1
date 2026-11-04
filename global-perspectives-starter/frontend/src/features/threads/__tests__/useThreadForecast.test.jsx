@@ -31,6 +31,14 @@ describe('useThreadForecast reads the record only (decision 0052)', () => {
     expect(result.current.snapshot).toBeNull();
   });
 
+  it('null topicIds asks for the story\'s forecast whole (a story with no entries has no topics)', async () => {
+    recordForecast.mockResolvedValue({ answered: true, snapshot: { topicId: 'A-1', scenarios: [{ label: 'Most Likely' }] } });
+    const { result } = renderHook(() => useThreadForecast(null, 't'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(recordForecast).toHaveBeenCalledWith('t', null);
+    expect(result.current.snapshot.topicId).toBe('A-1');
+  });
+
   it('is empty without topics or without a thread, and asks nothing', async () => {
     const a = renderHook(() => useThreadForecast([], 't'));
     const b = renderHook(() => useThreadForecast(['A-1'], null));

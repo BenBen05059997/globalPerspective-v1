@@ -8,19 +8,22 @@ import { recordForecast } from '@/shared/api/forecastViews.js';
  * for, so a topic moved in from another story no longer brings that story's forecast (operator, 2026-10-31).
  * Honest-empty (snapshot: null) when the story drew no question, has no thread, or the record cannot answer (stale views, unreadable file: reported
  * by `recordForecast` / `loadViewsFresh`, not on every render).
+ * `topicIds` null (not an empty list) asks for the story's forecast whatever its topics: a story with a forecast but no entries on record has no
+ * topics of its own to name, and still has its forecast.
  * Returns: { snapshot, loading }
  */
 export function useThreadForecast(topicIds, threadId) {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const key = Array.isArray(topicIds) ? topicIds.filter(Boolean).join(',') : '';
+  const whole = topicIds === null;
+  const key = whole ? '*' : Array.isArray(topicIds) ? topicIds.filter(Boolean).join(',') : '';
 
   useEffect(() => {
     if (!key || !threadId) { setSnapshot(null); setLoading(false); return; }
     let live = true;
     setLoading(true);
-    recordForecast(threadId, key.split(','))
+    recordForecast(threadId, whole ? null : key.split(','))
       .then((r) => { if (live) setSnapshot(r.snapshot || null); })
       .catch(() => { if (live) setSnapshot(null); })
       .finally(() => { if (live) setLoading(false); });

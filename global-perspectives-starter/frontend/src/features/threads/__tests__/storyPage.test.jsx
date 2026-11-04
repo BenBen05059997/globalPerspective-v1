@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, renderHook, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, Link, useLocation } from 'react-router';
 
-const H = vi.hoisted(() => ({ thread: null, analysis: null, links: null, weekly: null }));
+const H = vi.hoisted(() => ({ thread: null, analysis: null, links: null, weekly: null, forecast: null }));
 const sink = vi.hoisted(() => ({ reportFetchError: vi.fn() }));
 const api = vi.hoisted(() => ({ fetchNarrativeThread: vi.fn() }));
 const rv = vi.hoisted(() => ({ fetchStoryView: vi.fn(), fetchManifest: vi.fn() }));
@@ -13,7 +13,7 @@ const sa = vi.hoisted(() => ({ fetchStoryAnalysis: vi.fn() }));
 vi.mock('@/features/threads/hooks/useNarrativeThread', () => ({ useNarrativeThread: () => H.thread }));
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({ useWeeklyArchive: () => H.weekly }));
 vi.mock('@/features/threads/hooks/useStoryAnalysis', () => ({ useStoryAnalysis: () => H.analysis }));
-vi.mock('@/features/threads/hooks/useThreadForecast', () => ({ useThreadForecast: () => ({ snapshot: null }) }));
+vi.mock('@/features/threads/hooks/useThreadForecast', () => ({ useThreadForecast: (ids) => { H.forecastIds = ids; return { snapshot: H.forecast, loading: false }; } }));
 vi.mock('@/features/threads/hooks/useStoryLinks', () => ({ useStoryLinks: () => H.links }));
 vi.mock('@/features/threads/components/StoryMode', () => ({
   default: ({ thread, links, onReadFull }) => (
@@ -49,6 +49,8 @@ beforeEach(() => {
   H.analysis = { ...baseAnalysis };
   H.links = { ...baseLinks };
   H.weekly = { dayMap: {}, sortedDates: [] };
+  H.forecast = null;
+  H.forecastIds = undefined;
 });
 
 describe('ThreadPage failures (S4)', () => {
@@ -73,6 +75,26 @@ describe('ThreadPage failures (S4)', () => {
     await renderPage('/weekly/thread/a');
     expect(screen.getByText('Story arc not found')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Back to Stories/ })).toBeInTheDocument();
+  });
+});
+
+describe('a story with a forecast but no entries (R4-3)', () => {
+  const forecast = { topicId: 'T-1', generatedAt: '2026-10-15T20:26:02.189Z', scenarios: [{ label: 'Most Likely', probability: 60, triggers: [{ id: '0-0', text: 'Democrats win at least 218 House seats.', deadline: '2026-11-10', verdict: null, question: true, qid: 'q1', state: null }] }] };
+  it('shows the forecast under the humanised id, says no entries are on record, and is not "not found"', async () => {
+    H.thread = { entries: null, loading: false, error: null, refetch: vi.fn() };
+    H.analysis = { analysis: null, loading: false, error: null, refetch: vi.fn() };
+    H.forecast = forecast;
+    await renderPage('/weekly/thread/thread-ahead-of-us-midterms-voters-fr-b1e699');
+    expect(screen.queryByText('Story arc not found')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ahead Of Us Midterms Voters Fr');
+    expect(document.body.textContent).toMatch(/No news entries are on record for this story/);
+    expect(document.body.textContent).toMatch(/Democrats win at least 218 House seats/);
+    expect(H.forecastIds).toBeNull(); // asks for the story's forecast whole: there are no topics to name
+  });
+  it('with entries the forecast is asked for by their topics', async () => {
+    H.forecast = null;
+    await renderPage('/weekly/thread/a');
+    expect(H.forecastIds).toEqual(['t1']);
   });
 });
 

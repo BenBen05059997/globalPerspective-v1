@@ -219,11 +219,12 @@ export default function ThreadPage() {
 
   // Phase 4 — Living forecast. Fetch the thread's newest v1 prediction snapshot (across all its
   // topic entries). Hook is unconditional (before early returns); honest-empty when no v1 forecast.
+  // A story with no entries on record (once the read has answered) asks for its forecast whole: it has no topics to name.
   const forecastTopicIds = useMemo(
-    () => [...new Set((thread?.entries || []).map(e => e.topicId).filter(Boolean))],
-    [thread]
+    () => (thread || threadLoading ? [...new Set((thread?.entries || []).map(e => e.topicId).filter(Boolean))] : null),
+    [thread, threadLoading]
   );
-  const { snapshot: forecast } = useThreadForecast(forecastTopicIds, threadId);
+  const { snapshot: forecast, loading: forecastLoading } = useThreadForecast(forecastTopicIds, threadId);
   const hasForecast = !!(forecast && forecast.scenarios?.length);
 
   // S2.2 (STORY_WEB_RETHINK_PLAN.md §5): the same news-based links story mode's FED INTO slide
@@ -255,7 +256,7 @@ export default function ThreadPage() {
     // Beyond the 90-day durable window the timeline can't be rebuilt. Wait for the
     // analysis record before deciding, so we never flash a dead-end
     // while that by-ID fetch is still in flight.
-    if (analysisLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
+    if (analysisLoading || forecastLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
     // A failed read is not "not found" and not "aged out": say it could not be loaded (the failure is already reported).
     if (threadError || analysisError) {
       return (
@@ -269,7 +270,8 @@ export default function ThreadPage() {
     }
     // We may still hold the analysis record (keyed by the same threadId).
     // Show a focused fallback instead of a dead end.
-    if (analysis) {
+    // A story with a forecast but no news entries shows that forecast, labelled as such: nothing is invented (no title, no entries).
+    if (analysis || hasForecast) {
       const fallbackTitle = humanizeThreadId(threadId);
       return (
         <div className="container tp-fallback">
@@ -278,11 +280,12 @@ export default function ThreadPage() {
           </div>
           <h1 className="tp-fallback-h1">{fallbackTitle}</h1>
           <p className="tp-fallback-dek">
-            Full timeline isn&apos;t available for this story (it&apos;s aged out of the 90-day window),
-            but here&apos;s the analysis we have.
+            {analysis
+              ? <>Full timeline isn&apos;t available for this story (it&apos;s aged out of the 90-day window), but here&apos;s the analysis we have.</>
+              : <>No news entries are on record for this story. Here is the forecast we have for it.</>}
           </p>
 
-          {(analysis.storyArc || analysis.trajectory) && (
+          {(analysis?.storyArc || analysis?.trajectory) && (
             <div className="tp-fallback-analysis">
               {analysis.storyArc && (
                 <>
@@ -298,6 +301,7 @@ export default function ThreadPage() {
               )}
             </div>
           )}
+          <ThreadForecast snapshot={forecast} />
         </div>
       );
     }

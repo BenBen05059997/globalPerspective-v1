@@ -11,6 +11,7 @@ const KEYS = {
   manifest: 'record/views/manifest.json',
   heartbeat: 'record/views/health/settle-tick.json',
   world: 'world/latest.json',
+  storyIndex: 'record/views/index/all.json', // thread id -> title for the readers panel
 };
 
 const CONFIG = {
@@ -47,6 +48,63 @@ const CONFIG = {
   weeklyReview: { fn: ['newsRecordReview'] },
 };
 
+// Readers (ARCHITECTURE_OPS.md phase 2). Cloudflare Web Analytics through the GraphQL analytics API, once per UTC day.
+// The account id is not a secret (it is also in scripts/site-release.config.json). The token is: env CF_ANALYTICS_TOKEN, set by the
+// operator (README). CF_SITE_TAG is optional: with the token the site is found by host in the account's Web Analytics sites.
+const READERS = {
+  accountId: process.env.CF_ACCOUNT_ID || '45efe64168fc55da3937e2c01b1ca43a',
+  siteHost: 'globalperspective.net',
+  graphqlUrl: 'https://api.cloudflare.com/client/v4/graphql',
+  restBase: 'https://api.cloudflare.com/client/v4',
+  topN: 10,
+  rowLimit: 10000,   // GraphQL rows per query (the API maximum); 14 days x pages stays far below it today
+  // Page families: ONE table. A path matches an `exact` entry or an entry as a prefix at a segment boundary (/daily matches
+  // /daily and /daily/2026-11-03, not /dailyx). First family that matches wins; nothing matching is `other`. `ops` is excluded from totals.
+  // `features` are the scripts/functions.json feature names whose Lambdas are charged to the family in attention-vs-effort.
+  families: [
+    { id: 'map', label: 'Map', exact: ['/'], prefix: ['/map', '/breaking'], features: ['home', 'map', 'breaking'] },
+    { id: 'stories', label: 'Stories', exact: ['/weekly', '/today'], prefix: ['/weekly/thread'], features: ['threads'] },
+    { id: 'countries', label: 'Countries', exact: ['/weekly/countries'], prefix: ['/weekly/country'], features: ['countries'] },
+    { id: 'briefings', label: 'Briefings', exact: ['/briefings', '/weekly-brief'], prefix: ['/daily'], features: ['briefings'] },
+    { id: 'trackRecord', label: 'Track record', exact: [], prefix: ['/track-record'], features: ['track-record'] },
+    { id: 'board', label: 'Board', exact: [], prefix: ['/board'], features: ['board'] },
+    { id: 'ops', label: 'Ops', exact: ['/ops'], prefix: [], features: [], excludedFromTotals: true },
+  ],
+  otherFamily: { id: 'other', label: 'Other', features: [] },
+  storyPrefix: '/weekly/thread/',
+  countryPrefix: '/weekly/country/',
+  // Deployed Lambda -> features, copied from scripts/functions.json (test/readers.test.js fails when the two differ). Lambdas with no
+  // feature, or only `ops`, are left out.
+  lambdaFeatures: {
+    newsAnalyze: ['analysis-studio'],
+    newsBoard: ['board'],
+    newsBreakingAlert: ['breaking'],
+    newsCountryFactsUpdater: ['countries'],
+    newsCountryIntelligence: ['countries', 'map'],
+    newsDriftCorrector: ['countries', 'account', 'analysis-studio'],
+    newsEmailSender: ['briefings', 'breaking', 'account'],
+    newsGdacsIngest: ['map'],
+    newsIngest: ['home', 'threads', 'map'],
+    newsPolarBilling: ['account'],
+    newsDailyBrief: ['briefings'],
+    newsPredictionResolver: ['track-record'],
+    newsAgent: ['home', 'threads', 'map', 'countries', 'analysis-studio', 'briefings', 'track-record'],
+    newsRecommend: ['account', 'breaking'],
+    newsSavedItems: ['account'],
+    newsReadApi: ['home', 'threads', 'map', 'countries', 'briefings', 'analysis-studio', 'track-record', 'account'],
+    newsSharedAnalysis: ['analysis-studio'],
+    newsSituationIngest: ['map'],
+    newsSituationTracker: ['map', 'threads'],
+    newsStoryRecord: ['board', 'threads'],
+    newsRecordReview: ['threads'],
+    newsSystemsAnalysis: ['countries', 'threads'],
+    newsThreadAnalysis: ['threads', 'map', 'analysis-studio'],
+    newsWeeklyBrief: ['briefings'],
+  },
+  // Own tables (read-only Scan, projection only; no uid or email is read).
+  tables: { users: 'GlobalPerspectiveUserTable', saved: 'GlobalPerspectiveSavedItems', shares: 'GlobalPerspectiveShares' },
+};
+
 const STAGES = [
   { id: 'ingest', label: 'Ingest ran' },
   { id: 'agent', label: 'Agent wrote the archive' },
@@ -59,4 +117,4 @@ const STAGES = [
   { id: 'compare', label: 'Compare switches' },
 ];
 
-module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES };
+module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES, READERS };

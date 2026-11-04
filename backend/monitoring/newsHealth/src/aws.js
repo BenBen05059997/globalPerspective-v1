@@ -2,7 +2,7 @@
 
 // The real ports for health.js / ops.js: S3, the resolver invoke, CloudWatch metrics, Logs Insights, Cost Explorer.
 // The SDK v3 clients ship with the Lambda runtime and are required lazily, so the pure modules and the tests need none.
-const { CONFIG, KEYS, BUCKET, REGION } = require('./config');
+const { CONFIG, KEYS, BUCKET, REGION, READERS } = require('./config');
 const { dayStart, dayOf } = require('./days');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -79,12 +79,13 @@ function parseErrorSeries(results) {
   return out;
 }
 
-function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient } = {}) {
+function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient, ddbClient } = {}) {
   const lazy = (make) => { let c; return () => c || (c = make()); };
   const s3 = lazy(() => s3Client || new (require('@aws-sdk/client-s3').S3Client)({ region: REGION }));
   const lambda = lazy(() => lambdaClient || new (require('@aws-sdk/client-lambda').LambdaClient)({ region: REGION }));
   const cw = lazy(() => cwClient || new (require('@aws-sdk/client-cloudwatch').CloudWatchClient)({ region: REGION }));
   const logsC = lazy(() => logsClient || new (require('@aws-sdk/client-cloudwatch-logs').CloudWatchLogsClient)({ region: REGION }));
+  const ddb = lazy(() => ddbClient || new (require('@aws-sdk/client-dynamodb').DynamoDBClient)({ region: REGION }));
   const ce = lazy(() => ceClient || new (require('@aws-sdk/client-cost-explorer').CostExplorerClient)({ region: 'us-east-1' })); // Cost Explorer's one endpoint
 
   // The logs port: thin wrappers so insights() stays testable with a fake.
@@ -106,7 +107,25 @@ function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient } = {}
     return (groupsCache = names);
   }
 
+  // One attribute of every row of a table (Scan with a projection: no uid, email or other field is read). Pages until done.
+  async function scanAttr(table, attr) {
+    const { ScanCommand } = require('@aws-sdk/client-dynamodb');
+    const out = []; let start;
+    do {
+      const r = await ddb().send(new ScanCommand({ TableName: table, ProjectionExpression: '#a', ExpressionAttributeNames: { '#a': attr }, ExclusiveStartKey: start }));
+      out.push(...(r.Items || []).map((i) => (i[attr] && i[attr].S) || null));
+      start = r.LastEvaluatedKey;
+    } while (start);
+    return out;
+  }
+
   return {
+    async ownRows() {
+      const [userCreated, savedKeys, shareCreated] = await Promise.all([
+        scanAttr(READERS.tables.users, 'createdAt'), scanAttr(READERS.tables.saved, 'savedKey'), scanAttr(READERS.tables.shares, 'createdAt'),
+      ]);
+      return { userCreated, savedKeys, shareCreated };
+    },
     async readText(key) {
       const { GetObjectCommand } = require('@aws-sdk/client-s3');
       try {

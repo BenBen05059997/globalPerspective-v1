@@ -1,17 +1,23 @@
 // The record views (decisions 0037, 0042), read straight from the Worker's /data/* route: story, links, country and daily counts
 // files, and the index/ files that serve a page needing many stories or countries at once. A 404 means "not generated yet" and answers null; any other failure throws for the caller to report.
 // makeRecordViews(getView) lets a feature swap the fetch (the board's dev fixtures); every reader shares these rules.
+import { withTimeout } from './withTimeout';
+
+// Static JSON files from the Worker: 15 s is far past a normal load; a hung read must reject, not wait forever.
+const VIEW_TIMEOUT_MS = 15000;
 const BASE = '/data/record/views';
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const ISO3 = /^[A-Z]{3}$/;
 
 /** One view file by its path under record/views/, or null when it is not generated. */
-export async function fetchRecordView(path) {
-  const res = await fetch(`${BASE}/${path}`, { headers: { Accept: 'application/json' } });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`record view ${res.status} for ${path}`);
-  return res.json();
+export function fetchRecordView(path, { signal } = {}) {
+  return withTimeout(VIEW_TIMEOUT_MS, async (s) => {
+    const res = await fetch(`${BASE}/${path}`, { headers: { Accept: 'application/json' }, signal: s });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`record view ${res.status} for ${path}`);
+    return res.json();
+  }, signal);
 }
 
 /** The track record view (decision 0044): the weekly question scheme and the frozen pilot stats; null when not generated. */

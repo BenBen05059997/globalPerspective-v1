@@ -3,6 +3,13 @@
 
 let PROXY_ENDPOINT = null;
 
+import { withTimeout } from './withTimeout';
+
+// Proxy actions are cache reads (the heaviest is a few hundred KB), so 15 s is generous; past that the
+// request is hung and must free its limiter slot. The token wait is bounded separately and shorter.
+const PROXY_TIMEOUT_MS = 15000;
+const TOKEN_TIMEOUT_MS = 4000;
+
 // Set by AuthContext on init — returns a Promise<string|null> for the Firebase ID token.
 // Falls back to legacy x-api-key if not set (migration period).
 let getAuthToken = null;
@@ -70,16 +77,17 @@ function limitedProxyFetch(headers, action, payload) {
   const existing = inFlightRequests.get(key);
   if (existing) return existing;
 
-  const promise = runLimited(async () => {
+  const promise = runLimited(() => withTimeout(PROXY_TIMEOUT_MS, async (signal) => {
     const res = await fetch(PROXY_ENDPOINT, {
       method: 'POST',
       headers,
       body: JSON.stringify({ action, payload }),
+      signal,
     });
     let body;
     try { body = await res.json(); } catch { body = null; }
     return { res, body };
-  }).finally(() => {
+  })).finally(() => {
     inFlightRequests.delete(key);
   });
 
@@ -150,8 +158,11 @@ async function proxyActionWithAuth(action, payload = {}) {
   assertProxy();
   const headers = { 'Content-Type': 'application/json' };
 
+  // A broken or slow session must not fail a public read: without a token the call goes out anonymous,
+  // and the server answers 401/403 to a member-only action as before.
   if (getAuthToken) {
-    const token = await getAuthToken();
+    let token = null;
+    try { token = await withTimeout(TOKEN_TIMEOUT_MS, () => getAuthToken()); } catch { /* anonymous */ }
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 

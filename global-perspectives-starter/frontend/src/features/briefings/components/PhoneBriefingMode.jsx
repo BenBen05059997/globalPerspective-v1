@@ -5,6 +5,7 @@ import {
   shadingForDailySlides, shadingForWeeklySlides,
 } from '@/features/briefings/lib/briefingSlides.js';
 import { lastNDateKeys, buildDailyEditionMarks, buildPausedSegment, todayKey } from '@/features/briefings/lib/editions.js';
+import { useSettledFocus } from '@/features/briefings/hooks/useSettledFocus.js';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
@@ -52,7 +53,8 @@ export default function PhoneBriefingMode({
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const goto = useCallback((i) => setSlideIdx(Math.max(0, Math.min(slides.length - 1, i))), [slides.length]);
 
-  const mapFocusIso3 = mode === 'weekly' ? mapFocusForWeeklySlide(activeSlide) : mapFocusForDailySlide(activeSlide);
+  const slideFocusIso3 = mode === 'weekly' ? mapFocusForWeeklySlide(activeSlide) : mapFocusForDailySlide(activeSlide);
+  const mapFocusIso3 = useSettledFocus(slideFocusIso3);
 
   const [tab, setTab] = useState('slides');
   const touchRef = useRef(null);

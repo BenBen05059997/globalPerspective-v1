@@ -1,7 +1,7 @@
 // /today fails inline and honestly (P3b): no modal, no "Something went wrong", the failure goes to the
 // client-error sink, and every unavailable state carries a working Retry.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 const report = vi.fn();
@@ -20,6 +20,9 @@ const svc = vi.hoisted(() => ({
   getTopicPrediction: vi.fn(),
   getTopicTraceCause: vi.fn(),
 }));
+const views = vi.hoisted(() => ({ fresh: false, view: null }));
+vi.mock('@/shared/api/viewsFresh.js', () => ({ loadViewsFresh: async () => ({ fresh: views.fresh }) }));
+vi.mock('@/shared/api/todayView.js', () => ({ loadTodayView: async () => views.view }));
 vi.mock('@/shared/data/contentService', () => ({ default: svc }));
 
 import Home from '@/features/home/Home';
@@ -34,6 +37,7 @@ const oneTopic = () => {
 };
 
 beforeEach(() => {
+  views.fresh = false; views.view = null;
   report.mockClear(); refetch.mockClear(); Element.prototype.scrollIntoView = vi.fn();
   for (const f of Object.values(svc)) f.mockReset().mockRejectedValue(new Error('Proxy HTTP 500: boom'));
 });
@@ -98,5 +102,40 @@ describe('/today failure states', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('Predict on a topic the latest run wrote without a forecast says so at once: no request, no retry, no network wording, links the story', async () => {
+    topicsState = {
+      topics: [{ topicId: 't1', threadId: 'thread-a-1', title: 'Story one', category: 'politics', sources: [] }],
+      loading: false, error: null, refetch, isStale: false, updatedAt: null, hasNewData: false,
+    };
+    views.fresh = true;
+    views.view = {
+      schemaVersion: 1,
+      latest: { topicIds: ['t1'], generationId: 'g1' },
+      entries: [{ topicId: 't1', generationId: 'g1', notes: { summary: {}, trace_cause: {} } }],
+    };
+    wrap();
+    fireEvent.click(screen.getByRole('button', { name: 'Predict' }));
+    const card = await screen.findByTestId('no-forecast');
+    expect(card.textContent).toMatch(/No new forecast was drawn for this story in the latest run/);
+    expect(card.textContent).toMatch(/at most once a week/);
+    expect(card.textContent).not.toMatch(/network|connecting/i);
+    expect(card.querySelector('a')).toHaveAttribute('href', expect.stringContaining('/weekly/thread/thread-a-1'));
+    expect(svc.getTopicPrediction).not.toHaveBeenCalled();
+    expect(screen.queryByText('Prediction unavailable right now')).toBeNull();
+    expect(report).not.toHaveBeenCalled();
+    fireEvent.click(within(card).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByTestId('no-forecast')).toBeNull();
+  });
+
+  it('a topic whose view shows a forecast (or cannot prove none) still asks and reports as before', async () => {
+    oneTopic();
+    views.fresh = true;
+    views.view = { schemaVersion: 1, latest: { topicIds: ['t1'], generationId: 'g1' }, entries: [{ topicId: 't1', generationId: 'g1', notes: { summary: {}, prediction: {} } }] };
+    wrap();
+    fireEvent.click(screen.getByRole('button', { name: 'Predict' }));
+    expect(await screen.findByText('Prediction unavailable right now')).toBeTruthy();
+    expect(svc.getTopicPrediction).toHaveBeenCalledTimes(1);
   });
 });

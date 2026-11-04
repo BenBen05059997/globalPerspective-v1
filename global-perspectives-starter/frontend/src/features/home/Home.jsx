@@ -20,6 +20,7 @@ import LedeBand from '@/features/home/components/LedeBand';
 import { BreakingStrip } from '@/features/breaking';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
+import { topicHasNoForecast } from '@/features/home/lib/noForecast';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
 import '@/features/home/AIComponents.css';
 import '@/features/home/Home.css';
@@ -142,6 +143,7 @@ function Home() {
   const [predictionLoading, setPredictionLoading] = useState({});
   const [predictionErrors, setPredictionErrors] = useState({});
   const [predictionCollapsed, setPredictionCollapsed] = useState({});
+  const [noForecast, setNoForecast] = useState({});
 
   const [traceCauses, setTraceCauses] = useState({});
   const [traceCauseLoading, setTraceCauseLoading] = useState({});
@@ -239,12 +241,19 @@ function Home() {
     const id = getTopicId(t, idx);
     setActiveTimestamps(prev => ({ ...prev, [`${id}_prediction`]: Date.now() }));
     if (predictions[id]) { setPredictionCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (noForecast[id]) return;
     if (predictionLoading[id] && attempt === 0) return;
     predictionAttemptsRef.current[id] = attempt;
     setPredictionLoading(prev => ({ ...prev, [id]: true }));
     setPredictionErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
     try {
+      // A topic the latest run wrote without a forecast never gets one: say so now, no request and no retry loop.
+      if (await topicHasNoForecast(id)) {
+        setNoForecast(prev => ({ ...prev, [id]: true }));
+        setPredictionLoading(prev => ({ ...prev, [id]: false }));
+        return;
+      }
       const data = await contentService.getTopicPrediction(id);
       const content = data?.content || data?.impact_analysis || '';
       if (!content.trim()) throw new Error('Prediction came back empty');
@@ -617,6 +626,19 @@ function Home() {
                     onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
                     lastActive={activeTimestamps[`${id}_prediction`]}
                   />
+                  {noForecast[id] && (
+                    <div className="ai-result-card" role="status" data-testid="no-forecast">
+                      <div className="ai-unavailable-row">
+                        <span className="ai-unavailable-text">
+                          No new forecast was drawn for this story in the latest run. A forecast is drawn at most once a week per story
+                          {t.threadId && <>; its earlier forecast, if any, is on <EntityLink kind="story" id={t.threadId} topic={t}>the story page</EntityLink></>}.
+                        </span>
+                        <span className="ai-result-actions">
+                          <Button compact onClick={() => setNoForecast(prev => ({ ...prev, [id]: false }))}>Close</Button>
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <TraceCauseDisplay
                     traceCause={traceCauses[id]}
                     isLoading={traceCauseLoading[id]}

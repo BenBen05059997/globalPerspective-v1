@@ -343,7 +343,7 @@ function Home() {
   const statusStats = [
     totalTopics > 0 && { value: totalTopics, unit: 'topics' },
     trendingCount > 0 && { value: trendingCount, unit: 'trending' },
-    archiveEntries?.length > 0 && { value: archiveEntries.length, unit: 'archive' },
+    filteredArchiveEntries.length > 0 && { value: filteredArchiveEntries.length, unit: 'archive' },
   ].filter(Boolean);
 
   const leftRail = (

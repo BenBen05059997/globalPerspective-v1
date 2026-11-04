@@ -70,10 +70,14 @@ describe('TodayArchiveSidebar', () => {
     expect(b.container.firstChild).toBeNull();
   });
 
-  it('category chips are offered only for the fixed categories present; clicking one filters, clicking again clears', () => {
+  it('every category in the data gets a chip (known ones first, the rest after); clicking one filters, clicking again clears', () => {
     mount(<TodayArchiveSidebar entries={ENTRIES} />);
-    // energy / business / society / climate are not in the chip list
-    expect(screen.queryByRole('button', { name: 'energy' })).toBeNull();
+    const chips = document.querySelectorAll('.archive-rail-chips button');
+    const cats = [...new Set(ENTRIES.map((e) => e.category))];
+    expect([...chips].map((c) => c.textContent).sort()).toEqual([...cats].sort());
+    for (const c of ['energy', 'business', 'society', 'climate']) {
+      if (cats.includes(c)) expect(screen.getByRole('button', { name: c })).toBeInTheDocument();
+    }
     const chip = screen.getByRole('button', { name: 'conflict' });
     fireEvent.click(chip);
     for (const e of byCategory('conflict')) expect(screen.getByText(e.title)).toBeInTheDocument();
@@ -92,6 +96,21 @@ describe('TodayArchiveSidebar', () => {
     expect(screen.queryByText(/Hong Kong IPO/)).toBeNull();
     fireEvent.change(box, { target: { value: 'zzzz-no-such-story' } });
     expect(screen.getByText('No matching topics')).toBeInTheDocument();
+  });
+
+  it('society, science and uncategorised entries each get a chip that filters to them', () => {
+    const entries = [
+      { topicId: 'a', title: 'Politics one', category: 'politics' },
+      { topicId: 'b', title: 'Society one', category: 'society' },
+      { topicId: 'c', title: 'Science one', category: 'science' },
+      { topicId: 'd', title: 'No category one' },
+    ];
+    mount(<TodayArchiveSidebar entries={entries} />);
+    expect([...document.querySelectorAll('.archive-rail-chips button')].map((c) => c.textContent))
+      .toEqual(['politics', 'other', 'science', 'society']);
+    fireEvent.click(screen.getByRole('button', { name: 'science' }));
+    expect(screen.getByText('Science one')).toBeInTheDocument();
+    expect(screen.queryByText('Society one')).toBeNull();
   });
 
   it('an entry without a category is grouped as "other"', () => {
@@ -223,14 +242,15 @@ describe('Home with an archive', () => {
     expect(strip).toHaveTextContent(new RegExp(`${ENTRIES.length}\\s*archive`));
   });
 
-  it('hides an archived entry that is still one of today\'s live topics, but still counts it in the strip', () => {
+  it('hides an archived entry that is still one of today\'s live topics, and the strip counts the same rows as the rail', () => {
     topicsState = { ...baseTopics, topics: [liveTopic, otherTopic] };
     mount(<Home />);
     const rail = document.querySelector('.archive-rail');
     expect(within(rail).queryByText(liveTopic.title)).toBeNull();
     expect(within(rail).getByText(ENTRIES[1].title)).toBeInTheDocument();
     expect(rail.querySelector('.gp-sec__count')).toHaveTextContent(String(ENTRIES.length - 1));
-    expect(document.querySelector('.ss-strip')).toHaveTextContent(new RegExp(`${ENTRIES.length}\\s*archive`));
+    // the strip counts what the rail lists
+    expect(document.querySelector('.ss-strip')).toHaveTextContent(new RegExp(`${ENTRIES.length - 1}\\s*archive`));
     // the live topic is still on the page body
     expect(document.getElementById(`topic-${liveTopic.topicId}`)).not.toBeNull();
   });

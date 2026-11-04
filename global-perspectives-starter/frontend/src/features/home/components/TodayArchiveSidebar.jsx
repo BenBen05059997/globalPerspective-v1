@@ -9,6 +9,14 @@ import '@/features/home/components/TodayArchiveSidebar.css';
 
 const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster', 'technology', 'health'];
 
+// The known categories first in this order, any other category the data carries after them (alphabetical).
+const byCategory = (a, b) => {
+  const ai = CATEGORY_ORDER.indexOf(a);
+  const bi = CATEGORY_ORDER.indexOf(b);
+  if (ai === -1 && bi === -1) return a.localeCompare(b);
+  return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+};
+
 // TodayArchiveSidebar — the /today left rail (inside EditorialShell): topics that already left
 // today's list, filterable by category chip and title search; a row opens its saved AI analysis.
 function TodayArchiveSidebar({ entries }) {
@@ -18,8 +26,7 @@ function TodayArchiveSidebar({ entries }) {
 
   const availableCategories = useMemo(() => {
     if (!entries || entries.length === 0) return [];
-    const cats = new Set(entries.map(e => e.category || 'other'));
-    return CATEGORY_ORDER.filter(c => cats.has(c));
+    return [...new Set(entries.map(e => e.category || 'other'))].sort(byCategory);
   }, [entries]);
 
   const filtered = useMemo(() => {
@@ -44,11 +51,7 @@ function TodayArchiveSidebar({ entries }) {
     grouped[cat].push(entry);
   });
 
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    const ai = CATEGORY_ORDER.indexOf(a);
-    const bi = CATEGORY_ORDER.indexOf(b);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  const sortedCategories = Object.keys(grouped).sort(byCategory);
 
   const handleCategoryClick = (cat) => {
     setActiveCategory(prev => prev === cat ? null : cat);

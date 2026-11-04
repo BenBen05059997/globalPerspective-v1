@@ -25,21 +25,24 @@ export function combineTimeline(view, archive) {
 // Durable, by-ID timeline: the record's story view (decision 0042, step 4), which carries today's entries (provisional until the
 // nightly run, 0050). A story with no view, or views that are not fresh (viewsFresh.js), also ask the archive (server scans the
 // 90-day archive) for what the view has not caught up with, so deep-links survive long after a story ages out.
+// Returns { entries, title, loading, error, refetch }: `title` is the story view's own title, null when there is no view.
 export function useNarrativeThread(threadId) {
-  const key = threadId ? `gp_narrative_thread_v2_${threadId}` : null;
+  const key = threadId ? `gp_narrative_thread_v3_${threadId}` : null;
   const { data, loading, error, refetch } = useCachedQuery(key, async () => {
     const [view, { fresh }] = await Promise.all([
       views.fetchStoryView(threadId).catch((e) => { reportFetchError('story-view', e); return null; }),
       loadViewsFresh(),
     ]);
     const recorded = viewEntriesToThread(view);
-    if (fresh && recorded.length) return dropRedatedRepeats(recorded); // the view carries today's entries: no action call
+    const title = view?.title || null; // the record's one title for the story (null: no view, or a story with no entries)
+    if (fresh && recorded.length) return { entries: dropRedatedRepeats(recorded), title }; // the view carries today's entries: no action call
     const result = await fetchNarrativeThread(threadId).catch((e) => { reportFetchError('narrative-thread', e); throw e; });
     const entries = dropRedatedRepeats(combineTimeline(view, Array.isArray(result?.data) ? result.data : []));
-    return entries.length ? entries : undefined; // an empty answer is "not found" but is not kept: the story's view may appear soon
+    return entries.length ? { entries, title } : undefined; // an empty answer is "not found" but is not kept: the story's view may appear soon
   }, { ttl: CACHE_TTL_MS, storage: 'session' });
   return {
-    entries: data ?? null,
+    entries: data?.entries ?? null,
+    title: data?.title ?? null,
     loading,
     error: error ? (error.message || 'Failed to load thread') : null,
     refetch,

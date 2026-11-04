@@ -94,12 +94,12 @@ export default function WeeklyPage() {
   useEffect(() => setReady(true), []);
   useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
 
-  const { dayMap, sortedDates: allDates, loading, error, dataUpdatedAt, refetch } = useWeeklyArchive();
+  const { dayMap, titles, sortedDates: allDates, loading, error, dataUpdatedAt, refetch } = useWeeklyArchive();
   const baseline = useLastVisit();
   // One "now" per loaded archive: ages are stable while the page is open.
   const now = useMemo(() => Date.now(), [dayMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { threads, standalone } = useMemo(() => buildThreads(dayMap, allDates, now), [dayMap, allDates, now]);
+  const { threads, standalone } = useMemo(() => buildThreads(dayMap, allDates, now, titles), [dayMap, allDates, now, titles]);
   const qualifyingThreadIds = useMemo(() => threads.filter((t) => t.articleCount >= 2).map((t) => t.threadId), [threads]);
   const { analyses, failed: scoresFailed } = useThreadAnalyses(qualifyingThreadIds, { light: true });
 

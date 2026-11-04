@@ -27,7 +27,7 @@ import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
 import SharedActorsList from '@/features/threads/components/SharedActorsList';
 import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
-import { buildThreads, daysWithNews, storyTitle } from '@/features/threads/lib/storyGroups';
+import { buildThreads, daysWithNews } from '@/features/threads/lib/storyGroups';
 // CompactTimeline's classes (.compact-timeline*, .story-card-chevron, .story-entry-*) live in
 // WeeklyPage.css: imported here so a cold/direct load of a thread URL styles the Timeline tab.
 import '@/features/threads/WeeklyPage.css';
@@ -128,8 +128,8 @@ export default function ThreadPage() {
   // so deep-links resolve long after a story's articles age out of the 30-day
   // rolling archive. The weekly archive (below) is used only for the
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
-  const { entries: narrativeEntries, loading: threadLoading, error: threadError, refetch: refetchThread } = useNarrativeThread(threadId);
-  const { dayMap, sortedDates } = useWeeklyArchive();
+  const { entries: narrativeEntries, title: viewTitle, loading: threadLoading, error: threadError, refetch: refetchThread } = useNarrativeThread(threadId);
+  const { dayMap, titles, sortedDates } = useWeeklyArchive();
   // The URL is the state: `?tab=` opens Read in full on that tab (unknown values, an old ?tab=economy link
   // included, decision 0049, land on Overview); no `tab` is story mode. Following the URL on every change means
   // another story's link, Back and Forward all work, and Read in full and tab changes show in the address.
@@ -148,12 +148,12 @@ export default function ThreadPage() {
     return next;
   });
 
-  // The title is the list's: this story's entries from the weekly archive through buildThreads (same entries, same order
-  // inside a day, so the same pick as the /weekly row). The story view's own order differs inside a day, so it only
-  // decides when the story has no entries in the weekly window.
+  // The title is the record's: the story view's `title`. Only when the story has no view (the entries came from the action) it is
+  // the list's: this story's row from the weekly archive through buildThreads (record titles, else its action-path fallback).
+  // With neither, the heading is the humanised id (displayTitle below), as for a story with no entries.
   const weeklyTitle = useMemo(
-    () => (dayMap && sortedDates ? buildThreads(dayMap, sortedDates).threads.find((t) => t.threadId === threadId)?.latestTitle : null) || null,
-    [dayMap, sortedDates, threadId],
+    () => (viewTitle || !dayMap || !sortedDates ? null : buildThreads(dayMap, sortedDates, Date.now(), titles).threads.find((t) => t.threadId === threadId)?.latestTitle) || null,
+    [viewTitle, dayMap, titles, sortedDates, threadId],
   );
 
   const thread = useMemo(() => {
@@ -166,7 +166,7 @@ export default function ThreadPage() {
     const dates = [...new Set(entries.map(e => e.date))].sort();
     return {
       threadId,
-      latestTitle: weeklyTitle || storyTitle(entries),
+      latestTitle: viewTitle || weeklyTitle,
       entries,
       articleCount: entries.length,
       regions: [...allRegions],
@@ -176,7 +176,7 @@ export default function ThreadPage() {
       dates,
       dayCount: dates.length,
     };
-  }, [narrativeEntries, threadId, weeklyTitle]);
+  }, [narrativeEntries, threadId, viewTitle, weeklyTitle]);
 
   const { analysis, loading: analysisLoading, error: analysisError, refetch: refetchAnalysis } = useStoryAnalysis(threadId);
   const category = thread?.entries[0]?.category?.toLowerCase();

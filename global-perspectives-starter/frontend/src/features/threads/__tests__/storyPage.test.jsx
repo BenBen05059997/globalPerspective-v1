@@ -104,23 +104,25 @@ describe('ThreadPage in the URL (S5, S6)', () => {
 });
 
 describe('story title', () => {
-  it('is the newest entry\'s headline in the heading and tab title, not the analysis title', async () => {
-    H.thread = { ...baseThread, entries: [entry({ topicId: 'a', title: 'Older headline', date: '2026-09-18' }), entry({ topicId: 'b', title: 'Newest headline', date: '2026-09-20' })] };
+  it('is the story view\'s title in the heading and tab title, not the analysis title or an entry headline', async () => {
+    H.thread = { ...baseThread, title: 'Record title', entries: [entry({ topicId: 'a', title: 'Older headline', date: '2026-09-18' }), entry({ topicId: 'b', title: 'Newest headline', date: '2026-09-20' })] };
     H.analysis = { ...baseAnalysis, analysis: { threadTitle: 'Analysis title', storyArc: 'An arc.' } };
     await renderPage('/weekly/thread/a?tab=overview');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Newest headline');
-    expect(document.title).toContain('Newest headline');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Record title');
+    expect(document.title).toContain('Record title');
     expect(screen.queryByText('Analysis title')).toBeNull();
   });
-});
-
-describe('story title follows the list', () => {
-  it('is the weekly list\'s pick when the story view orders a day differently', async () => {
+  it('a story with no view uses the weekly list\'s title (the record\'s when it has one)', async () => {
     const day = (titles) => ({ entries: titles.map((title, i) => ({ topicId: `t${i}`, threadId: 'a', title, category: 'conflict', regions: ['Iran'], sources: [] })) });
-    H.weekly = { dayMap: { '2026-09-19': day(['Older']), '2026-09-20': day(['Other same day', 'List pick']) }, sortedDates: ['2026-09-19', '2026-09-20'] };
-    H.thread = { ...baseThread, entries: [entry({ topicId: 'y', title: 'List pick', date: '2026-09-20' }), entry({ topicId: 'x', title: 'Other same day', date: '2026-09-20' })] };
+    H.weekly = { dayMap: { '2026-09-20': day(['Action headline']) }, titles: { a: 'Weekly record title' }, sortedDates: ['2026-09-20'] };
+    H.thread = { ...baseThread, title: null };
     await renderPage('/weekly/thread/a?tab=overview');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('List pick');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Weekly record title');
+  });
+  it('with no title anywhere the heading is the humanised id, as before', async () => {
+    H.thread = { ...baseThread, title: null };
+    await renderPage('/weekly/thread/a?tab=overview');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('A');
   });
 });
 
@@ -174,7 +176,7 @@ describe('hooks (S4)', () => {
     await waitFor(() => expect(b.result.current.loading).toBe(false));
     expect(b.result.current.error).toBeNull();
     expect(b.result.current.entries).toBeNull();
-    expect(sessionStorage.getItem('gp_narrative_thread_v2_t10')).toBeNull();
+    expect(sessionStorage.getItem('gp_narrative_thread_v3_t10')).toBeNull();
   });
   it('useStoryAnalysis: a failed read is reported and exposed', async () => {
     vi.doMock('@/shared/api/storyAnalysis.js', () => sa);

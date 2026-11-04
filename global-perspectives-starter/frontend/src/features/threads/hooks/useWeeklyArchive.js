@@ -1,18 +1,19 @@
 import { useMemo } from 'react';
-import { loadArchiveDayMap } from '@/shared/api/archiveRange';
+import { loadArchive as loadArchiveFromRecord } from '@/shared/api/archiveRange';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
-const CACHE_KEY = 'gp_weekly_archive_v3'; // v3: useCachedQuery's { data, ts } entry (v2 held { dayMap, tier, uid, timestamp })
+const CACHE_KEY = 'gp_weekly_archive_v4'; // v4: data is { dayMap, titles } (v3 held the day map alone)
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const NO_DAYS = {};
+const NONE = { dayMap: NO_DAYS, titles: null };
 
 // The archive is public and identical for every reader: no sign-in state is read here (CLAUDE.md "public data hooks
 // never gate on sign-in"). A failed load is reported and not cached; the page decides what to say.
 async function loadArchive() {
   window.dispatchEvent(new CustomEvent('gp-loading-start'));
   try {
-    return await loadArchiveDayMap();
+    return await loadArchiveFromRecord();
   } catch (err) {
     reportFetchError('weekly-archive', err);
     throw err;
@@ -23,7 +24,7 @@ async function loadArchive() {
 
 export function useWeeklyArchive() {
   const { data, error, loading, refetch } = useCachedQuery(CACHE_KEY, loadArchive, { storage: 'local', ttl: CACHE_TTL_MS });
-  const dayMap = data ?? NO_DAYS;
+  const { dayMap, titles } = data ?? NONE;
 
   const sortedDates = useMemo(
     () => Object.keys(dayMap).sort((a, b) => b.localeCompare(a)),
@@ -41,5 +42,5 @@ export function useWeeklyArchive() {
     return latest;
   }, [dayMap]);
 
-  return { dayMap, sortedDates, loading, error, dataUpdatedAt, refetch };
+  return { dayMap, titles, sortedDates, loading, error, dataUpdatedAt, refetch };
 }

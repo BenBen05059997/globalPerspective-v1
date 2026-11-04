@@ -91,25 +91,15 @@ export function eventCount(n) {
 }
 
 /**
- * storyTitle(entries) -> the story's title everywhere: the newest entry's headline (a real source headline), null when there
- * is none. Newest day by day key; inside that day the LAST entry in INPUT ORDER wins (never `at`; the record's titleOf takes the last of the day too), so
- * every caller that passes the same entries in the same order (the list via buildThreads, the story page via the weekly
- * archive) gets the same title by construction. Article rows (`kind: 'article'`) are not headlines.
- */
-export function storyTitle(entries) {
-  const rows = (entries || []).filter((e) => e.kind !== 'article');
-  const day = rows.reduce((max, e) => ((e.date || '') > max ? e.date : max), '');
-  return rows.filter((e) => (e.date || '') === day).pop()?.title || null;
-}
-
-/**
- * buildThreads(dayMap, sortedDates, now) -> { threads, standalone }
+ * buildThreads(dayMap, sortedDates, now, titles) -> { threads, standalone }
+ * `titles` is the record's { threadId: title } (the one title rule lives in the record, newsStoryRecord titleOf); null on the
+ * `archive_range` action path.
  * Groups archive entries by `threadId`. Each thread carries `dates` (unique day keys, ascending),
  * `dateRange`, `changedAt` (a REAL timestamp: the `updatedAt` of the thread's newest day; with none,
  * the newest day's UTC midnight only when that day is before today, else null — never a guess)
  * and the same fields the old page used (entries, articleCount, dayCount, regions, trend ...).
  */
-export function buildThreads(dayMap, sortedDates, now = Date.now()) {
+export function buildThreads(dayMap, sortedDates, now = Date.now(), titles = null) {
   const threadMap = {};
   const standalone = [];
   for (const date of sortedDates) {
@@ -140,7 +130,9 @@ export function buildThreads(dayMap, sortedDates, now = Date.now()) {
     const changedAt = stamped || (daysSince(to, now) >= 1 ? `${to}T00:00:00Z` : null);
     return {
       threadId,
-      latestTitle: storyTitle(data.entries),
+      // FALLBACK for the action path only (no record titles): the newest day's first entry as the data lists it. The record's title
+      // wins whenever it is present; this is not a second copy of the record's rule.
+      latestTitle: titles?.[threadId] || data.entries[0].title,
       entries: data.entries,
       articleCount: data.entries.length,
       dayCount: dates.length,

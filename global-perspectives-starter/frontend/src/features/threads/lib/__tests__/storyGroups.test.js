@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildThreads, storyTitle, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
+  buildThreads, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, facetCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
   dayCounts, daysWithNews, eventCount, ARCHIVE_DAYS, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
@@ -31,6 +31,19 @@ function sample() {
   });
   return { ...buildThreads(dayMap, sortedDates, NOW), dayMap, sortedDates };
 }
+
+describe('buildThreads titles', () => {
+  const days = { [ago(1)]: { entries: [entry('a', 'old one')] }, [ago(0)]: { entries: [entry('a', 'new first'), entry('a', 'new second'), entry('b', 'other')] } };
+  const run = (titles) => buildThreads(days, Object.keys(days).sort((x, y) => y.localeCompare(x)), NOW, titles).threads;
+  it('latestTitle is the record\'s title for the story', () => {
+    const t = run({ a: 'Record A', b: 'Record B' });
+    expect(t.map((x) => [x.threadId, x.latestTitle])).toEqual([['a', 'Record A'], ['b', 'Record B']]);
+  });
+  it('without record titles (the action path) a story shows its newest day\'s first entry; a story the titles lack does too', () => {
+    expect(run(null).find((x) => x.threadId === 'a').latestTitle).toBe('new first');
+    expect(run({ a: 'Record A' }).find((x) => x.threadId === 'b').latestTitle).toBe('other');
+  });
+});
 
 describe('buildThreads', () => {
   it('groups by threadId with real dates, counts and a real changedAt', () => {
@@ -339,19 +352,5 @@ describe('board status (from coverage, never invented)', () => {
   });
   it('the printed rule names every column and says it is not a risk status', () => {
     for (const w of ['New', 'Rising', 'Quieter', 'Steady', 'not from risk']) expect(BOARD_RULE).toContain(w);
-  });
-});
-
-describe('storyTitle', () => {
-  it('is the newest day\'s headline whatever the day order of the input, and the last of that day\'s entries', () => {
-    const rows = [{ title: 'old', date: '2026-09-01' }, { title: 'new', date: '2026-09-03' }, { title: 'new too', date: '2026-09-03' }, { title: 'mid', date: '2026-09-02' }];
-    expect(storyTitle(rows)).toBe('new too');
-    expect(rows[0].title).toBe('old');
-  });
-  it('skips article rows and is null with no headline', () => {
-    expect(storyTitle([{ title: 'art', date: '2026-09-05', kind: 'article' }, { title: 'real', date: '2026-09-04' }])).toBe('real');
-    expect(storyTitle([{ title: 'art', date: '2026-09-05', kind: 'article' }])).toBeNull();
-    expect(storyTitle([])).toBeNull();
-    expect(storyTitle(undefined)).toBeNull();
   });
 });

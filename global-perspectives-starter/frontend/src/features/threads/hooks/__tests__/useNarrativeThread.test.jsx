@@ -15,7 +15,7 @@ import { useNarrativeThread } from '@/features/threads/hooks/useNarrativeThread.
 import { clearViewsFreshCache } from '@/shared/api/viewsFresh.js';
 
 const entry = (title, date, extra = {}) => ({ eventId: title, date, at: `${date}T04:00:00.000Z`, title, category: 'conflict', eventType: null, iso3: ['FRA'], sources: [{ outlet: 'BBC', url: `https://bbc.test/${title}` }], topicId: title, ...extra });
-const view = { threadId: 't1', builtFrom: { factsThrough: '2026-10-30', provisionalThrough: '2026-10-31' }, entries: [entry('Old', '2026-10-30'), entry('Today', '2026-10-31', { provisional: true })] };
+const view = { threadId: 't1', title: 'Record title', builtFrom: { factsThrough: '2026-10-30', provisionalThrough: '2026-10-31' }, entries: [entry('Old', '2026-10-30'), entry('Today', '2026-10-31', { provisional: true })] };
 const archive = [{ title: 'Today', date: '2026-10-31', threadId: 't1', sources: [], fromArchive: true }];
 const built = (ageMs) => ({ builtAt: new Date(Date.now() - ageMs).toISOString() });
 const load = async (id) => {
@@ -37,6 +37,7 @@ describe('useNarrativeThread', () => {
   it('fresh views: the view alone, today\'s provisional entry included, and no narrative_thread call', async () => {
     const r = await load('t1');
     expect(r.entries.map((e) => e.title)).toEqual(['Old', 'Today']);
+    expect(r.title).toBe('Record title');
     expect(api.fetchNarrativeThread).not.toHaveBeenCalled();
     expect(sink.reportFetchError).not.toHaveBeenCalled();
   });
@@ -57,6 +58,7 @@ describe('useNarrativeThread', () => {
     const r = await load('t2');
     expect(api.fetchNarrativeThread).toHaveBeenCalledWith('t2');
     expect(r.entries).toEqual(archive);
+    expect(r.title).toBeNull();
   });
 
   it('a view that cannot be read is reported and the action answers', async () => {

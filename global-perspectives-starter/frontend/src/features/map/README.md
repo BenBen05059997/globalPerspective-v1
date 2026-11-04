@@ -26,7 +26,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
   `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone uses `@/shared/ui/Tabs` and `BottomSheet`
 - `api/worldData.js` - the only fetch of the world bundle; `hooks/` - `useWorld`, `useSituationDetail`,
   `useStoryCardData`, `useCountryRiskLayer`, `useGdacsStatus`, `usePausedSince`
-- `lib/` - pure helpers: alert stack, boot sensors, deep links, card mentions, layer mode, phone sheet, story shading
+- `lib/` - pure helpers: alert stack, boot sensors, deep links, card mentions, layer mode, phone sheet, story shading, `threadKeys` (a situation's `threadId` plus `threadIds[]`; used by alert stack, deep links and story shading, so a grouped situation shades its countries and hides its topics once)
 - Public API (`index.js`): `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (used by `app/layout/Layout.jsx`),
   `WAITING_SENSORS` (used by `app/App.jsx`)
 - Imports from other features: `@/features/briefings` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`;
@@ -66,7 +66,8 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 ## The two lists
 - **Alerts** (`AlertStack.jsx`): the one list of situations; each plotted one is a real button (the keyboard twin of the pins). A story thread
   (its `threadId` or any `threadIds[]` entry) shows once (news situations are per country; the others keep their pins). One count everywhere: `openCount` in `SituationHome.jsx` is the number of Alerts rows, and the Alerts header, every "All situations (N)" button, the About list and the phone ALERTS badge all use it.
-- **Grouped situations** (tracker `NEWS_GROUPING`): the card shows the lead title, then the other member titles (`also_reported_as[]`) under "Also reported as", a collapsed-by-default `aria-expanded` button, drawn only when non-empty.
+- **Grouped situations** (tracker `NEWS_GROUPING`): the card shows the lead title, then the other member titles (`also_reported_as[]`) under "Also reported as", a collapsed-by-default `aria-expanded` button, drawn only when non-empty and never on GDACS situations (`AlsoReported` in `SituationHome.jsx`). Grouping is live (`NEWS_GROUPING=true` since 2026-11-04); the rules live in the [tracker README](../../../../../backend/situations/newsSituationTracker/README.md).
+- **Escape** (desktop): closes the open card and returns focus to its Alerts row (`data-situation-id`); the Key legend, About drawer, inputs and dialogs keep their own Escape. On phones the `BottomSheet` closes itself.
 - **Intel** (`HudIntelFeed.jsx`): today's stories only, under the dated header, minus topics a situation carries (`topicsWithoutSituation`,
   the map shading's rule). A quiet day is fewer rows, no placeholder. Phone: LIST = Intel, ALERTS = Alerts.
 
@@ -81,4 +82,4 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 - Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
   `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
 
-Last verified: 2026-11-03 (round 2 fixes: counts, labels, wrapping; spread rule in `backend/situations/newsSituationIngest/README.md`)
+Last verified: 2026-11-04 (news grouping live; 2026-11-03 round 2 fixes: counts, labels, wrapping; spread rule in `backend/situations/newsSituationIngest/README.md`)

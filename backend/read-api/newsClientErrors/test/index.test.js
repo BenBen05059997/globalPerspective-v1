@@ -1,7 +1,7 @@
 'use strict';
 // newsClientErrors: the public, unauthenticated sink for uncaught frontend errors. The size cap, the field clamps and the fingerprint (identical
 // errors collapse into one counter row) are the only abuse protection, so they are what these tests pin. Offline: the AWS SDK is replaced by a
-// fake DynamoDB client that records every command. The Function-URL CORS config owns CORS (see monitoring/alarms/client-errors-cors.test.mjs),
+// fake DynamoDB client that records every command. The Function-URL CORS config owns CORS (see test/client-errors-cors.test.mjs),
 // so no response may carry an Access-Control-* header.
 const test = require('node:test');
 const assert = require('node:assert/strict');

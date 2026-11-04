@@ -16,9 +16,9 @@ Kept off the content proxy on purpose (bursty, untrusted traffic). Read rows bac
 - No S3, no external APIs.
 
 ## Gotchas
-- CORS: code does NOT emit `Access-Control-Allow-Origin`, so its Function-URL CORS config must be populated.
+- CORS: code does NOT emit `Access-Control-Allow-Origin`, so its Function-URL CORS config must be populated and stays the only CORS owner; do not add CORS headers to the handler while the URL emits them. The config is `client-errors-cors.json` here and matches the live one: methods POST, header content-type, max age 3600, origins `https://globalperspective.net`, `https://www.globalperspective.net`, `https://benben05059997.github.io` and the localhost / 127.0.0.1 development ports 5173 and 5174. Apply a change with `aws lambda update-function-url-config --function-name newsClientErrors --cors file://backend/read-api/newsClientErrors/client-errors-cors.json --region ap-northeast-1` after re-reading the live config (operator go-ahead).
 - Abuse bounds: body > 16 KB -> 413; per-field caps (message 2000, stack 8000, url 1000, UA 500); missing `message` -> 400.
 - Missing `CLIENT_ERRORS_TABLE` env -> 500 on every request.
 
 ## Tests
-- None.
+- `node --test backend/read-api/newsClientErrors/test/*.js backend/read-api/newsClientErrors/test/*.mjs`: the handler and the CORS config (`test/client-errors-cors.test.mjs`, offline).

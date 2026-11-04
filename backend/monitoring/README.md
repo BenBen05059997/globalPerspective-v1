@@ -2,7 +2,7 @@
 
 This group watches the site and the pipeline and tells the operator when something is wrong. (The impact audit, newsImpactAudit, was removed 2026-11-01.) It serves only the operator:
 publishers use the SNS topic `GlobalPerspectiveAlerts`. None of these Lambdas changes site content, and a quiet
-run sends nothing. CloudWatch alarm proposals and the client-error CORS config are in [alarms/README.md](alarms/README.md).
+run sends nothing. There are no CloudWatch alarms and the operator does not want pipeline alarms (no per-stage, per-Lambda, 402 or record alarms; do not create any without a fresh request); the hourly `newsHealth` view replaces them. The SNS topic `GlobalPerspectiveAlerts` stays for the four monitor Lambdas below (env `SNS_TOPIC_ARN`). The client-error CORS config now lives with [newsClientErrors](../read-api/newsClientErrors/README.md).
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → **10 Watch**

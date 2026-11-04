@@ -2,9 +2,9 @@
 
 The operator does not want pipeline alarms (no per-stage, per-Lambda, 402 or record alarms). Do not create any without a fresh request.
 
-What exists live (CloudWatch, read 2026-11-02):
-- `situation-tracker-errors` and `situation-tracker-stalled` (newsSituationTracker), the only Global Perspectives alarms.
-- They publish to the SNS topic `GlobalPerspectiveAlerts`, as do the monitor Lambdas (`newsModelGuard`, `newsErrorDigest`, `newsFreshnessMonitor`, `newsSourceAudit`, env `SNS_TOPIC_ARN`).
+What exists live (CloudWatch, read 2026-11-04):
+- No Global Perspectives alarms. The last two, `situation-tracker-errors` and `situation-tracker-stalled`, were deleted 2026-11-04 (operator); the hourly `newsHealth` view (`record/views/health.json`, ARCHITECTURE_OPS.md) covers them.
+- The SNS topic `GlobalPerspectiveAlerts` stays for the monitor Lambdas (`newsModelGuard`, `newsErrorDigest`, `newsFreshnessMonitor`, `newsSourceAudit`, env `SNS_TOPIC_ARN`).
 
 Removed 2026-11-02: the native `lambda-errors-*`, `lambda-duration-*` and `lambda-throttles-*` alarms, the DynamoDB throttle alarms, `Lambda-Errors-Spike`, the unused topic `GlobalPerspectivesAlerts`, the alarm proposal `spec.json` (and its test), and `scripts/setup-cloudwatch-alarms.sh`. Git history keeps them.
 

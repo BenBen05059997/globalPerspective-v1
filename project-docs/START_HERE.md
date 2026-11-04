@@ -37,7 +37,7 @@ Goal at the end: the record is the only store for world data; pages and jobs rea
 
 Still on the old path: the old Sunday digest (`TriggerWeeklyBrief`, `TriggerWeeklyEmailSend`, 2 recipients); `TriggerSelectionShadow` still ENABLED (04:20/12:20/20:20 UTC) past its planned end; `newsIngest` runs the older deployed zip (the repo is ahead, mostly newer shared helpers; checked 3 Nov, not re-checked).
 
-Done 2 Nov: AppSync API `newsproject-dev`, 14 old alarms and SNS `GlobalPerspectivesAlerts` removed from AWS (`GlobalPerspectiveAlerts` and the two situation-tracker alarms remain); alarm spec and `setup-cloudwatch-alarms.sh` removed from the repo. Cleanup PRs #12-#20, tests #21-#27 and #33-#39 (reports in `.board/reviews/`) and fixes #28-#32 are merged. Dependency PRs #40-#44 (vite 8 etc.) are open, held for a release day.
+Done 2 Nov: AppSync API `newsproject-dev`, 14 old alarms and SNS `GlobalPerspectivesAlerts` removed from AWS (`GlobalPerspectiveAlerts` remains; the two situation-tracker alarms were deleted 4 Nov); alarm spec and `setup-cloudwatch-alarms.sh` removed from the repo. Cleanup PRs #12-#20, tests #21-#27 and #33-#39 (reports in `.board/reviews/`) and fixes #28-#32 are merged. Dependency PRs #40-#44 (vite 8 etc.) are open, held for a release day.
 
 Waiting on the operator:
 1. Board decisions: a board summary writer (model and price), a schema field for alert choices, a coverage note in the board feed. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo; overview: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd.

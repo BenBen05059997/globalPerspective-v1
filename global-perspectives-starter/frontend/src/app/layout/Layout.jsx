@@ -7,6 +7,7 @@ import { usePausedSince, useGdacsStatus, HudStatusLine } from '@/features/map';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { ROUTE } from '@/shared/lib/links.js';
 import { boardAvailable } from '@/features/board';
+import { useOpsAccess, OPS_ROUTE } from '@/features/ops';
 import '@/app/layout/Layout.css';
 
 // P1 phone tab bar (A2): simple inline-SVG line icons, no icon library. 20x20 viewBox, stroke
@@ -53,6 +54,7 @@ const BUILD_LABEL = `v${_ver}${_date ? ` · ${_date}` : ''}`;
 function Layout({ children }) {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
+  const opsAccess = useOpsAccess();
   // P1 phone tab bar (A2): shared 900px breakpoint — same one the map's own MAP·LIST·ALERTS tabs use.
   const isPhone = useIsPhone();
 
@@ -161,6 +163,10 @@ function Layout({ children }) {
               where a board backend is configured. */}
           {!authLoading && user && !user.isAnonymous && boardAvailable() ? (
             <Link to={ROUTE.board} className={`gp-nav-link${isActive(ROUTE.board) ? ' active' : ''}`} title="Your board: pins, strings and the tests between them.">Board</Link>
+          ) : null}
+          {/* The operator's page: the link appears only after the server's `ops` action has answered 200 once this session. */}
+          {opsAccess ? (
+            <Link to={OPS_ROUTE} className={`gp-nav-link${isActive(OPS_ROUTE) ? ' active' : ''}`} title="Health and cost of the pipeline.">Ops</Link>
           ) : null}
 
           {!authLoading && (

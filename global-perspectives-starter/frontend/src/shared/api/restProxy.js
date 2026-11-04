@@ -166,6 +166,20 @@ async function proxyActionWithAuth(action, payload = {}) {
   return body;
 }
 
+/**
+ * The operator's money file (action `ops`, gated by uid on the server): { status: 200, data } or { status: 403, data: null }.
+ * Any other failure throws. Not a tier cap: the server answers 403 to every account that is not the operator.
+ */
+export async function fetchOps() {
+  try {
+    const body = await proxyActionWithAuth('ops');
+    return { status: 200, data: body?.data ?? null };
+  } catch (e) {
+    if (/^Proxy HTTP 403\b/.test(e?.message || '')) return { status: 403, data: null };
+    throw e;
+  }
+}
+
 export async function fetchArchiveRange(days = 30) {
   return proxyActionWithAuth('archive_range', { days });
 }

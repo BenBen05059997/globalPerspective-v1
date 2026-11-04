@@ -19,6 +19,7 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
 import { WAITING_SENSORS } from '@/features/map';
 import { ROUTE } from '@/shared/lib/links.js';
+import { OPS_ROUTE } from '@/features/ops';
 
 // Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
@@ -41,6 +42,7 @@ const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPa
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
 const BoardPage = lazy(() => import('@/features/board/BoardPage'));
+const OpsPage = lazy(() => import('@/features/ops/OpsPage'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
 // BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
@@ -135,6 +137,7 @@ export default function App() {
             <Route path="/briefings" element={<BriefingsPage />} />
             <Route path={ROUTE.board} element={<BoardPage />} />
             <Route path={`${ROUTE.board}/:boardId`} element={<BoardPage />} />
+            <Route path={OPS_ROUTE} element={<OpsPage />} />
             <Route path="/breaking" element={<MapRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
             <Route path="/weekly" element={<WeeklyRoute><WeeklyPage /></WeeklyRoute>} />

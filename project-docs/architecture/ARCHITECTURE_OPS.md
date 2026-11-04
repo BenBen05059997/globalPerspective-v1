@@ -1,9 +1,17 @@
 # Ops: the health view and the operator page (plan, 2026-11-04)
 
-Status: planned, nothing built. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
+Status: phase 1 (money + pipeline) built 2026-11-04, not deployed; phases 2 to 4 not started. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
 Google Analytics and Cloudflare Web Analytics; add Google Search Console; PostHog later, for member events only; no alarms
 (the operator removed them 2026-11-02 and does not want them back). This page is where the operator looks, and what the
 coordinating session reads when asked "how is it now".
+
+## Phase 1 as built (changes from the plan)
+- `newsHealth` code, `src/prices.json` (in `src/` so the zip carries it; real list rates read 2026-11-04: Flash $0.15/$0.60, Pro $0.66/$1.98 per million, cache hit $0.003/$0.022, peak hours double), role policy `backend/monitoring/newsHealth/iam/`, deploy commands in its README. Peak (01-04, 06-10 UTC Mon-Fri) is priced hourly, so the usage query bins by hour.
+- `health.json`: `days[].rows[]` with `status` ok/thin/missing/failed/nodata, each row with facts, source, time. A day is judged only after the next day's 01:00 UTC. Resolver and situations are snapshots: a closed day keeps the row the previous file held, so they start empty after deploy. Errors thin from 1, failed from 5 a day; a compare DIFFER is thin.
+- `ops.json` keeps 62 days so month to date survives the 14-day query; AWS cost is pulled on the first run of each UTC day (not exactly 00:15). Weekly review spend is per ISO week.
+- The role also needs `s3:GetObject` on `monitoring/ops.json` and `s3:ListBucket`; `newsReadApi`'s shared role needs `GetObject` on `monitoring/ops.json` (`iam/read-api-ops-read.json`).
+- The DeepSeek balance endpoint is not read (needs a secret copy; `newsModelGuard` already reads it).
+- Route constant `OPS_ROUTE` lives in `features/ops`, not `shared/lib/links.js` (that core is mirrored into the Lambdas).
 
 ## Why
 Every watcher we have looks at one stage from the outside (the freshness monitor probes the topics file; the resolver logs one

@@ -325,6 +325,25 @@ export function regionCounts(threads) {
     .sort((a, b) => (a.region === 'World') - (b.region === 'World') || b.count - a.count);
 }
 
+/**
+ * facetCounts(threads, filters, analyses, now) -> { total, crisis, tier, regions }
+ * The counts beside the sidebar options. Each facet is counted with every OTHER active filter applied but not its own
+ * (so a crisis box shows what ticking it would add, and the header's tier row and the sidebar agree). `total` is the
+ * "All regions" count (every filter except region); the chosen region stays listed even at 0.
+ */
+export function facetCounts(threads, filters = {}, analyses = {}, now = Date.now()) {
+  const without = (key, empty) => filterThreads(threads, { ...filters, [key]: empty }, analyses, now);
+  const regions = regionCounts(without('region', null));
+  const chosen = filters.region;
+  if (chosen && !regions.some((r) => r.region === chosen)) regions.push({ region: chosen, count: 0 });
+  return {
+    total: regions.reduce((n, r) => n + r.count, 0),
+    crisis: crisisCounts(without('crisis', [])),
+    tier: tierCounts(without('tiers', []), analyses),
+    regions,
+  };
+}
+
 // ─── Rising ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Threads whose coverage is rising or new (>= 2 articles): the old "Rising this week" rule. */

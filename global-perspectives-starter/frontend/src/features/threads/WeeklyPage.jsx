@@ -12,7 +12,7 @@ import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { useLastVisit } from '@/features/threads/hooks/useLastVisit';
 import {
   CATEGORY_ORDER, DEFAULT_WINDOW, WINDOWS, SORTS, buildThreads, filterThreads, filterStandalone, sortThreads,
-  inWindow, tierCounts, crisisCounts, regionCounts,
+  tierCounts, facetCounts,
 } from '@/features/threads/lib/storyGroups';
 import StoriesHeader from '@/features/threads/components/StoriesHeader.jsx';
 import StoriesFilters from '@/features/threads/components/StoriesFilters.jsx';
@@ -110,15 +110,14 @@ export default function WeeklyPage() {
   );
   const listedStandalone = useMemo(() => filterStandalone(standalone, filters, now), [standalone, filters, now]);
 
-  // Counts shown next to each filter option: the stories inside the chosen window.
-  const windowed = useMemo(() => threads.filter((t) => inWindow(t, windowValue, now)), [threads, windowValue, now]);
-  const counts = useMemo(() => ({
-    total: windowed.length,
-    crisis: crisisCounts(windowed),
-    tier: scoresFailed ? {} : tierCounts(windowed, analyses), // no scores read: no tier counts (not "all unscored")
-  }), [windowed, analyses, scoresFailed]);
-  const regions = useMemo(() => regionCounts(windowed), [windowed]);
-  // The header and the strip count what the filters leave (the facet counts on the left stay "within the window").
+  // Counts shown next to each filter option: each facet counted with every other active filter applied (not its own).
+  const facets = useMemo(() => facetCounts(threads, filters, analyses, now), [threads, filters, analyses, now]);
+  const counts = useMemo(
+    () => ({ total: facets.total, crisis: facets.crisis, tier: scoresFailed ? {} : facets.tier }), // no scores read: no tier counts (not "all unscored")
+    [facets, scoresFailed],
+  );
+  const regions = facets.regions;
+  // The header and the strip count what the filters leave (the facet counts on the left leave out their own filter).
   const headerCounts = useMemo(() => (scoresFailed ? { total: listed.length } : tierCounts(listed, analyses)), [listed, analyses, scoresFailed]);
 
   // `?view=changes` on a phone: once the list has rendered, scroll to the changed section (it only exists with a baseline).

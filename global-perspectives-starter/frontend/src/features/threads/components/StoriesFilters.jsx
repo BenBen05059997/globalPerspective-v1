@@ -79,7 +79,7 @@ export default function StoriesFilters({
         options={WINDOWS.map((w) => ({ value: w.value, label: w.label }))}
       />
 
-      {regions.length > 1 ? (
+      {regions.length > 1 || region ? (
         <FilterGroup
           label="Region"
           name="sf-region"

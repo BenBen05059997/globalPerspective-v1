@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildThreads, storyTitle, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
-  sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
+  sortThreads, tierCounts, facetCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
   dayCounts, daysWithNews, eventCount, ARCHIVE_DAYS, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
@@ -131,6 +131,36 @@ describe('tier', () => {
     const { threads } = sample();
     const c = tierCounts(threads, { 't-now': { riskScore: 80 }, 't-week': { riskScore: 55 } });
     expect(c).toMatchObject({ high: 1, elevated: 1, none: 3, total: 5 });
+  });
+});
+
+describe('facetCounts (R3-5: each facet counts every other filter, not its own)', () => {
+  const an = { 't-now': { riskScore: 80 }, 't-week': { riskScore: 55 } };
+  it('no filters: the plain counts', () => {
+    const { threads } = sample();
+    const f = facetCounts(threads, {}, an, NOW);
+    expect(f.total).toBe(5);
+    expect(f.tier).toMatchObject({ high: 1, elevated: 1, none: 3 });
+  });
+  it('tier counts follow the crisis filter; crisis counts ignore their own', () => {
+    const { threads } = sample();
+    const f = facetCounts(threads, { crisis: ['conflict'] }, an, NOW);
+    expect(f.tier).toMatchObject({ high: 1, elevated: 0, none: 0, total: 1 });
+    expect(f.crisis.conflict).toBe(1);
+    expect(f.crisis.political).toBe(1); // what ticking it would add
+  });
+  it('crisis and region counts follow the tier filter', () => {
+    const { threads } = sample();
+    const f = facetCounts(threads, { tiers: ['high'] }, an, NOW);
+    expect(f.crisis).toMatchObject({ conflict: 1, political: 0, economic: 0 });
+    expect(f.total).toBe(1);
+    expect(f.regions.map((r) => r.count)).toEqual([1]);
+  });
+  it('the chosen region stays listed at 0 and "All" ignores the region filter', () => {
+    const { threads } = sample();
+    const f = facetCounts(threads, { tiers: ['high'], region: 'Africa' }, an, NOW);
+    expect(f.regions.find((r) => r.region === 'Africa').count).toBe(0);
+    expect(f.total).toBe(1);
   });
 });
 

@@ -15,19 +15,28 @@ vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord:
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
 vi.mock('@/features/breaking/components/BreakingStrip', () => ({ default: () => null }));
-vi.mock('@/shared/data/contentService', () => ({
-  default: {
-    getTopicSummary: vi.fn().mockRejectedValue(new Error('Proxy HTTP 500: boom')),
-    getTopicPrediction: vi.fn().mockRejectedValue(new Error('Proxy HTTP 500: boom')),
-    getTopicTraceCause: vi.fn().mockRejectedValue(new Error('Proxy HTTP 500: boom')),
-  },
+const svc = vi.hoisted(() => ({
+  getTopicSummary: vi.fn(),
+  getTopicPrediction: vi.fn(),
+  getTopicTraceCause: vi.fn(),
 }));
+vi.mock('@/shared/data/contentService', () => ({ default: svc }));
 
 import Home from '@/features/home/Home';
 
 const wrap = () => render(<MemoryRouter><Home /></MemoryRouter>);
 
-beforeEach(() => { report.mockClear(); refetch.mockClear(); Element.prototype.scrollIntoView = vi.fn(); });
+const oneTopic = () => {
+  topicsState = {
+    topics: [{ topicId: 't1', title: 'Story one', category: 'politics', sources: [] }],
+    loading: false, error: null, refetch, isStale: false, updatedAt: null, hasNewData: false,
+  };
+};
+
+beforeEach(() => {
+  report.mockClear(); refetch.mockClear(); Element.prototype.scrollIntoView = vi.fn();
+  for (const f of Object.values(svc)) f.mockReset().mockRejectedValue(new Error('Proxy HTTP 500: boom'));
+});
 
 describe('/today failure states', () => {
   it('topics load failure: inline panel with Retry, reported, no modal', () => {
@@ -54,5 +63,40 @@ describe('/today failure states', () => {
     expect(screen.getAllByRole('button', { name: 'Retry' }).length).toBe(3);
     expect(document.body.textContent).not.toMatch(/Something went wrong|Proxy HTTP 500/);
     expect(report.mock.calls.map((c) => c[0]).sort()).toEqual(['today-prediction', 'today-summary', 'today-trace-cause']);
+  });
+
+  it('an empty result is the honest unavailable state with a working Retry, reported', async () => {
+    oneTopic();
+    svc.getTopicSummary.mockResolvedValue({ content: '   ' });
+    svc.getTopicTraceCause.mockResolvedValue({ content: '' });
+    wrap();
+    fireEvent.click(screen.getByRole('button', { name: 'Summary' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trace Cause' }));
+    expect(await screen.findByText('Summary unavailable right now')).toBeTruthy();
+    expect(await screen.findByText('Trace cause unavailable right now')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/generation failed/);
+    expect(report.mock.calls.map((c) => c[0]).sort()).toEqual(['today-summary', 'today-trace-cause']);
+    svc.getTopicSummary.mockResolvedValue({ content: '- A real takeaway' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Retry' })[0]);
+    expect(await screen.findByText(/A real takeaway/)).toBeTruthy();
+  });
+
+  it('retry timers stop when the page unmounts', async () => {
+    vi.useFakeTimers();
+    try {
+      oneTopic();
+      svc.getTopicSummary.mockRejectedValue(new Error('Cache miss'));
+      const { unmount } = wrap();
+      fireEvent.click(screen.getByRole('button', { name: 'Summary' }));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(svc.getTopicSummary).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(10000);
+      expect(svc.getTopicSummary).toHaveBeenCalledTimes(2);
+      unmount();
+      await vi.advanceTimersByTimeAsync(60000);
+      expect(svc.getTopicSummary).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -153,6 +153,10 @@ function Home() {
 
   const summaryAttemptsRef = useRef({});
   const predictionAttemptsRef = useRef({});
+  // Pending retry timers by 'summary:<id>' / 'prediction:<id>': cleared on Close and on unmount.
+  const retryTimersRef = useRef({});
+  useEffect(() => () => { Object.values(retryTimersRef.current).forEach(clearTimeout); }, []);
+  const cancelRetry = (key) => { clearTimeout(retryTimersRef.current[key]); delete retryTimersRef.current[key]; };
 
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
@@ -167,7 +171,7 @@ function Home() {
 
   // ── Summary ──────────────────────────────────────────────
   const scheduleSummaryRetry = (topic, idx, attempt) => {
-    setTimeout(() => {
+    retryTimersRef.current[`summary:${getTopicId(topic, idx)}`] = setTimeout(() => {
       summaryAttemptsRef.current[getTopicId(topic, idx)] = attempt;
       handleGenerateSummary(topic, idx, attempt);
     }, RETRY_DELAY_MS);
@@ -185,6 +189,7 @@ function Home() {
     try {
       const data = await contentService.getTopicSummary(id);
       const content = data?.content || '';
+      if (!content.trim()) throw new Error('Summary came back empty');
       setSummaries(prev => ({ ...prev, [id]: {
         content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),
@@ -214,6 +219,8 @@ function Home() {
     setSummaryErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setSummaryCollapsed(prev => ({ ...prev, [id]: true }));
     delete summaryAttemptsRef.current[id];
+    cancelRetry(`summary:${id}`);
+    setSummaryLoading(prev => ({ ...prev, [id]: false }));
   };
   const toggleSummaryCollapsed = (t, idx) => {
     const id = getTopicId(t, idx);
@@ -222,7 +229,7 @@ function Home() {
 
   // ── Prediction ───────────────────────────────────────────
   const schedulePredictionRetry = (topic, idx, attempt) => {
-    setTimeout(() => {
+    retryTimersRef.current[`prediction:${getTopicId(topic, idx)}`] = setTimeout(() => {
       predictionAttemptsRef.current[getTopicId(topic, idx)] = attempt;
       handleGeneratePrediction(topic, idx, attempt);
     }, RETRY_DELAY_MS);
@@ -240,6 +247,7 @@ function Home() {
     try {
       const data = await contentService.getTopicPrediction(id);
       const content = data?.content || data?.impact_analysis || '';
+      if (!content.trim()) throw new Error('Prediction came back empty');
       setPredictions(prev => ({ ...prev, [id]: {
         content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),
@@ -269,6 +277,8 @@ function Home() {
     setPredictionErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
     delete predictionAttemptsRef.current[id];
+    cancelRetry(`prediction:${id}`);
+    setPredictionLoading(prev => ({ ...prev, [id]: false }));
   };
   const togglePredictionCollapsed = (t, idx) => {
     const id = getTopicId(t, idx);
@@ -286,6 +296,7 @@ function Home() {
     try {
       const data = await contentService.getTopicTraceCause(id);
       const content = data?.content || '';
+      if (!content.trim()) throw new Error('Trace cause came back empty');
       setTraceCauses(prev => ({ ...prev, [id]: {
         content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),

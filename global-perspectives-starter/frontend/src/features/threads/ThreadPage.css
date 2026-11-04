@@ -357,6 +357,11 @@
 
 /* ── Content tabs (shared <Tabs>; this only spaces them) ─── */
 .tp-views { margin-bottom: var(--space-5); }
+/* Phone: the four tabs share the row (no sideways scroll, "Sources 15" not clipped). */
+@media (max-width: 600px) {
+  .tp-views { gap: 0; }
+  .tp-views .gp-tabs__tab { flex: 1 1 auto; min-width: 0; padding: 0 var(--space-1); gap: var(--space-1); }
+}
 .tp-tabpanel:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
 
 /* ── Overview tab: sectioned synthesis ── */

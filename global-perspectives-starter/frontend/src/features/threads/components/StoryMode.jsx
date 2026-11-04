@@ -7,12 +7,12 @@ import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisis
 import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import { firstSentences } from '@/shared/lib/cardText.js';
-import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildSlides, viewFrom,
   scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 import { buildDeadlines } from '@/shared/lib/deadlines.js';
+import { outcomeTag } from '@/features/threads/lib/forecastOutcome.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';
@@ -167,6 +167,7 @@ export function WatchSlide({ deadlines }) {
         {deadlines.map((d) => {
           const ms = new Date(d.deadline).getTime();
           const daysLeft = Number.isFinite(ms) ? Math.round((ms - now) / 86400000) : null;
+          const tag = outcomeTag(d);
           return (
             <li key={d.id} className="sm-watch-row">
               <span className="sm-watch-diamond" aria-hidden="true">◆</span>
@@ -179,7 +180,7 @@ export function WatchSlide({ deadlines }) {
                   {formatDateLabel(d.deadline)}
                   {daysLeft != null && (daysLeft >= 0 ? ` · in ${daysLeft}d` : ` · ${-daysLeft}d ago`)}
                   {d.scenarioLabel && ` · scenario: ${d.scenarioLabel}`}
-                  {d.verdict && ` · ${d.verdict}`}
+                  {tag && ` · ${tag}`}
                 </div>
               </div>
             </li>
@@ -285,7 +286,8 @@ function Drawer({ label, open, onToggle, children }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function StoryMode({ thread, analysis, forecast, displayTitle, category, onReadFull }) {
+// `links` is ThreadPage's one useStoryLinks result for this story (the page reads it once for both views).
+export default function StoryMode({ thread, analysis, forecast, links, displayTitle, category, onReadFull }) {
   const entriesOldestFirst = useMemo(() => [...thread.entries].reverse(), [thread.entries]);
 
   const chapters = useMemo(
@@ -299,7 +301,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
   // Review fix #1: while the fed-into fetch is in flight, treat it as empty so the FED INTO dot
   // never appears (and disappears again) mid-load — it only ever shows once we KNOW there's a
   // real link (S6).
-  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = useStoryLinks(thread.threadId, thread.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = links;
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
   const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
 
@@ -314,6 +316,9 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
 
   useEffect(() => {
     const onKey = (e) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
+      const t = e.target;
+      if (t?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName || '')) return;
       if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') prev();
     };

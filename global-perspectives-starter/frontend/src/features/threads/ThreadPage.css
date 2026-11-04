@@ -86,16 +86,6 @@
   text-transform: uppercase;
   color: var(--accent-strong);
 }
-.tp-urgent {
-  padding: 0 var(--space-1);
-  border: 1px solid var(--text-head);
-  border-radius: var(--r-xs);
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.1em;
-  color: var(--text-head);
-}
 .tp-hd-h1 {
   max-width: 800px;
   margin: 0 0 var(--space-3);
@@ -559,5 +549,10 @@
   .tp-topbar-right { flex-wrap: wrap; justify-content: flex-start; width: 100%; margin-left: 0; }
   .tp-topbar-right .share-buttons { flex-wrap: wrap; }
   .tp-topbar-right .copy-briefing-btn { white-space: normal; }
-  /* (The StatusStrip's own 390px overflow is contained in shared/ui/atoms.css.) */
+  /* The Read-in-full status strip wraps instead of swiping sideways (shared atoms.css scrolls it, which hides the
+     "updated" stamp at 390px). Scoped here because shared/ui/atoms.css is not edited from this page. */
+  .tp-page .ss-strip { height: auto; min-height: 34px; flex-wrap: wrap; overflow-x: visible; padding: var(--space-2) var(--space-4); gap: var(--space-1) var(--space-3); }
+  .tp-page .ss-strip > * { flex: 0 1 auto; }
+  .tp-page .ss-stat + .ss-stat::before { margin-right: var(--space-3); }
+  .tp-page .ss-ago { margin-left: 0; }
 }

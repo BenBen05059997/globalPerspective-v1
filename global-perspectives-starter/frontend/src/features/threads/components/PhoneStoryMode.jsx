@@ -4,7 +4,6 @@ import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisis
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import Button from '@/shared/ui/Button.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
-import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import {
   buildChapters, buildSlides, viewFrom,
@@ -90,7 +89,7 @@ function DrawerSheet({ drawerKey, onClose, whySteps, who, view, sources }) {
 // BottomSheet; TIMELINE is the scrubber's chapters + deadlines as a vertical dated list, tapping
 // a row jumps to that slide in READ. Drawers open as a full BottomSheet from a row of buttons
 // under the slide. 44px targets; reduced motion = instant (no swipe transition class).
-export default function PhoneStoryMode({ thread, analysis, forecast, displayTitle, category, onReadFull }) {
+export default function PhoneStoryMode({ thread, analysis, forecast, links, displayTitle, category, onReadFull }) {
   const entriesOldestFirst = useMemo(() => [...thread.entries].reverse(), [thread.entries]);
   const chapters = useMemo(
     () => buildChapters(entriesOldestFirst, analysis?.entryShortTitles, analysis?.inflectionTopicId),
@@ -98,7 +97,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
   );
   const deadlines = useMemo(() => buildDeadlines(forecast), [forecast]);
 
-  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = useStoryLinks(thread.threadId, thread.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = links;
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
   const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
 

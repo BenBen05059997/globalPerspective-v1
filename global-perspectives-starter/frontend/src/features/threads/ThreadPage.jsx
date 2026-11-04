@@ -2,10 +2,11 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useNarrativeThread } from '@/features/threads/hooks/useNarrativeThread';
 import { useStoryAnalysis } from '@/features/threads/hooks/useStoryAnalysis';
+import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
+import { rollupSources, rollupCounts } from '@/features/threads/lib/sourceRollup.js';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
@@ -78,13 +79,13 @@ function RailBlock({ label, defaultOpen = false, children }) {
 // Overview-tab section: a labeled, collapsible band in the center reading column.
 // The synthesis (story arc, trajectory, root cause, watch) moved here out of the
 // right rail so the page reads as one column of short sections instead of a wall.
-function OverviewSection({ label, count, defaultOpen = false, children }) {
+function OverviewSection({ label, count, unit, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`tp-ov-sec${open ? ' open' : ''}`}>
       <button type="button" className="tp-ov-head" aria-expanded={open} onClick={() => setOpen(o => !o)}>
         <span className="tp-ov-lbl">
-          {label}{count != null && <span className="tp-ov-count">{count}</span>}
+          {label}{count != null && <span className="tp-ov-count">{count}{unit ? ` ${unit}` : ''}</span>}
         </span>
         <span className={`tp-ov-chev${open ? ' open' : ''}`} aria-hidden="true">▾</span>
       </button>
@@ -120,46 +121,39 @@ function formatDateRange(from, to) {
 
 export default function ThreadPage() {
   const { threadId } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fromCountry = searchParams.get('from') === 'country' ? searchParams.get('country') : null;
-  const { loading: authLoading } = useAuth();
   // Source of truth: durable by-ID timeline (90-day server-side reconstruction),
   // so deep-links resolve long after a story's articles age out of the 30-day
   // rolling archive. The weekly archive (below) is used only for the
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
-  const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
+  const { entries: narrativeEntries, loading: threadLoading, error: threadError, refetch: refetchThread } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
-  // Honor deep-linked tabs (storyHref's ?tab= contract). Unknown values (an old
-  // ?tab=economy link included, decision 0049) → Overview (the synthesis-first
-  // landing tab; falls back to Timeline when no analysis yet).
+  // The URL is the state: `?tab=` opens Read in full on that tab (unknown values, an old ?tab=economy link
+  // included, decision 0049, land on Overview); no `tab` is story mode. Following the URL on every change means
+  // another story's link, Back and Forward all work, and Read in full and tab changes show in the address.
   const requestedTab = searchParams.get('tab');
   const allowedTabs = ['overview', 'timeline', 'actors', 'sources'];
-  const [contentTab, setContentTab] = useState(() =>
-    allowedTabs.includes(requestedTab) ? requestedTab : 'overview');
+  const contentTab = allowedTabs.includes(requestedTab) ? requestedTab : 'overview';
   // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page, on desktop and phone
   // alike (S2.2 — PhoneStoryMode replaces the phone's former long-page default). "Read in full" is
-  // the alternate, long accessible page (unchanged below, same component on both breakpoints). A
-  // deep-linked tab (?tab=) lands straight on the full page so
-  // that contract keeps working — story mode has no tabs to honor it.
+  // the alternate, long accessible page (same component on both breakpoints).
   const isPhone = useIsPhone();
-  const [readFull, setReadFull] = useState(() => !!requestedTab);
+  const readFull = requestedTab != null;
   const showStoryMode = !readFull;
+  const setTab = (tab) => setSearchParams((p) => {
+    const next = new URLSearchParams(p);
+    if (tab) next.set('tab', tab); else next.delete('tab');
+    return next;
+  });
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
     // Newest-first, matching the prior archive-derived ordering (entries[0] = latest).
     const entries = [...narrativeEntries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const allRegions = new Set();
-    const primarySources = new Set();
-    const secondarySources = new Set();
-    for (const entry of entries) {
-      for (const r of (entry.regions || [])) allRegions.add(r);
-      for (const s of (entry.sources || [])) {
-        const name = s.source || s.title || 'Source';
-        if (s.tier === 'secondary') secondarySources.add(name);
-        else primarySources.add(name);
-      }
-    }
+    for (const entry of entries) for (const r of (entry.regions || [])) allRegions.add(r);
+    const sourceRollup = rollupSources(entries);
     const dates = [...new Set(entries.map(e => e.date))].sort();
     return {
       threadId,
@@ -167,16 +161,15 @@ export default function ThreadPage() {
       entries,
       articleCount: entries.length,
       regions: [...allRegions],
-      primarySources: [...primarySources],
-      secondarySources: [...secondarySources],
-      allSources: [...new Set([...primarySources, ...secondarySources])],
+      sourceRollup,
+      allSources: sourceRollup.map((r) => r.name),
       dateRange: { from: dates[0], to: dates[dates.length - 1] },
       dates,
       dayCount: dates.length,
     };
   }, [narrativeEntries, threadId]);
 
-  const { analysis, loading: analysisLoading } = useStoryAnalysis(threadId);
+  const { analysis, loading: analysisLoading, error: analysisError, refetch: refetchAnalysis } = useStoryAnalysis(threadId);
   const category = thread?.entries[0]?.category?.toLowerCase();
 
   // Related threads: same category + same region
@@ -212,20 +205,8 @@ export default function ThreadPage() {
     return { sameCategory, sameRegion };
   }, [dayMap, sortedDates, threadId, category, thread]);
 
-  // Source rollup for Sources tab
-  const sourceRollup = useMemo(() => {
-    if (!thread) return [];
-    const map = {};
-    for (const entry of thread.entries) {
-      for (const s of (entry.sources || [])) {
-        const name = s.source || s.title || 'Source';
-        if (!map[name]) map[name] = { name, count: 0, tier: s.tier || 'secondary', latest: entry.date };
-        map[name].count++;
-        if (entry.date > map[name].latest) map[name].latest = entry.date;
-      }
-    }
-    return Object.values(map).sort((a, b) => b.count - a.count);
-  }, [thread]);
+  const sourceRollup = thread?.sourceRollup || [];
+  const sourceCounts = rollupCounts(sourceRollup);
 
   // Phase 4 — Living forecast. Fetch the thread's newest v1 prediction snapshot (across all its
   // topic entries). Hook is unconditional (before early returns); honest-empty when no v1 forecast.
@@ -240,7 +221,8 @@ export default function ThreadPage() {
   // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
   // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
-  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, shared: sharedRaw = [], hiddenOlder = 0, provenance = null, loading: fedLoading, note: linkNote } = useStoryLinks(threadId, thread?.regions);
+  const storyLinks = useStoryLinks(threadId, thread?.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, shared: sharedRaw = [], hiddenOlder = 0, provenance = null, loading: fedLoading, note: linkNote } = storyLinks;
   const fedInto = fedLoading ? [] : fedIntoRaw;
   const fedFrom = fedLoading ? [] : fedFromRaw;
   const sharedActors = fedLoading ? [] : sharedRaw;
@@ -258,7 +240,6 @@ export default function ThreadPage() {
     document.title = `${displayTitle} — Story Arc | Global Perspectives`;
   }, [displayTitle]);
 
-  if (authLoading) return null;
   if (threadLoading) return <BootLoader variant="inline" label="Loading story" text="Loading story" />;
 
   if (!thread) {
@@ -266,6 +247,17 @@ export default function ThreadPage() {
     // analysis record before deciding, so we never flash a dead-end
     // while that by-ID fetch is still in flight.
     if (analysisLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
+    // A failed read is not "not found" and not "aged out": say it could not be loaded (the failure is already reported).
+    if (threadError || analysisError) {
+      return (
+        <div className="tp-page tp-notfound">
+          <h3 className="tp-notfound-h">This story could not be loaded</h3>
+          <p className="tp-notfound-p">The link is fine; the story did not load just now.</p>
+          <Button compact onClick={() => { if (threadError) refetchThread(); if (analysisError) refetchAnalysis(); }}>Try again</Button>
+          <Link to={ROUTE.stories} className="tp-notfound-link">← Back to Stories</Link>
+        </div>
+      );
+    }
     // We may still hold the analysis record (keyed by the same threadId).
     // Show a focused fallback instead of a dead end.
     if (analysis) {
@@ -273,7 +265,7 @@ export default function ThreadPage() {
       return (
         <div className="container tp-fallback">
           <div className="tp-fallback-crumbs">
-            <Link to="/">← Home</Link>
+            <Link to={ROUTE.map}>← Home</Link>
           </div>
           <h1 className="tp-fallback-h1">{fallbackTitle}</h1>
           <p className="tp-fallback-dek">
@@ -304,7 +296,7 @@ export default function ThreadPage() {
       <div className="tp-page tp-notfound">
         <h3 className="tp-notfound-h">Story arc not found</h3>
         <p className="tp-notfound-p">This thread may have expired or the link may be incorrect.</p>
-        <Link to={ROUTE.stories} className="tp-notfound-link">← Back to Threads</Link>
+        <Link to={ROUTE.stories} className="tp-notfound-link">← Back to Stories</Link>
       </div>
     );
   }
@@ -329,7 +321,7 @@ export default function ThreadPage() {
   const leftRail = (
     <div className="tp-left">
       <div className="tp-left-crumbs">
-        <Link to={ROUTE.stories}>Threads</Link>
+        <Link to={ROUTE.stories}>Stories</Link>
         <span className="tp-crumb-sep">/</span>
         {category && <Link to={`${ROUTE.stories}?category=${encodeURIComponent(category)}`}>{category}</Link>}
         {category && <span className="tp-crumb-sep">/</span>}
@@ -338,7 +330,7 @@ export default function ThreadPage() {
 
       {relatedThreads.sameCategory.length > 0 && (
         <>
-          <SectionHeader as="h3" label="Related threads" />
+          <SectionHeader as="h3" label="Related stories" />
           {relatedThreads.sameCategory.map(t => {
             return (
               <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
@@ -346,7 +338,7 @@ export default function ThreadPage() {
                   {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
                 </div>
                 <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
-                <div className="tp-related-meta">{t.count} articles</div>
+                <div className="tp-related-meta">{t.count} events</div>
               </EntityLink>
             );
           })}
@@ -362,7 +354,7 @@ export default function ThreadPage() {
                 {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
               </div>
               <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
-              <div className="tp-related-meta">{t.count} articles</div>
+              <div className="tp-related-meta">{t.count} events</div>
             </EntityLink>
           ))}
         </>
@@ -441,7 +433,7 @@ export default function ThreadPage() {
 
       {/* Topbar */}
       <div className="tp-topbar">
-        <Link to="/">Home</Link>
+        <Link to={ROUTE.map}>Home</Link>
         <span className="tp-topbar-sep">/</span>
         {fromCountry ? (
           <>
@@ -450,7 +442,7 @@ export default function ThreadPage() {
           </>
         ) : (
           <>
-            <Link to={ROUTE.stories}>Threads</Link>
+            <Link to={ROUTE.stories}>Stories</Link>
             <span className="tp-topbar-sep">/</span>
           </>
         )}
@@ -466,7 +458,7 @@ export default function ThreadPage() {
               only the way BACK, shown once we're actually on the full page, so there is never
               more than one "Read in full"-ish control on screen at once. */}
           {readFull && (
-            <Button compact onClick={() => setReadFull(false)}>← Story mode</Button>
+            <Button compact onClick={() => setTab(null)}>← Story mode</Button>
           )}
         </div>
       </div>
@@ -474,21 +466,25 @@ export default function ThreadPage() {
       {showStoryMode ? (
         isPhone ? (
           <PhoneStoryMode
+            key={threadId}
             thread={thread}
             analysis={analysis}
             forecast={forecast}
             displayTitle={displayTitle}
             category={category}
-            onReadFull={() => setReadFull(true)}
+            links={storyLinks}
+            onReadFull={() => setTab('overview')}
           />
         ) : (
           <StoryMode
+            key={threadId}
             thread={thread}
             analysis={analysis}
             forecast={forecast}
             displayTitle={displayTitle}
             category={category}
-            onReadFull={() => setReadFull(true)}
+            links={storyLinks}
+            onReadFull={() => setTab('overview')}
           />
         )
       ) : (
@@ -507,9 +503,6 @@ export default function ThreadPage() {
         <div className="tp-hd">
           <div className="tp-hd-kicker">
             <CategoryTag category={category} />
-            {thread?.entries[0]?.urgency === 'high' && (
-              <span className="tp-urgent">URGENT</span>
-            )}
             <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
             Story Arc · {thread.dayCount} days
           </div>
@@ -542,11 +535,11 @@ export default function ThreadPage() {
         {/* Stats row */}
         <div className="tp-stats">
           <div className="tp-stat">
-            <div className="tp-stat-k">Thread Risk</div>
+            <div className="tp-stat-k">Story risk</div>
             <div className="tp-stat-v tp-stat-v--chip">
               <TierChip tier={tierFromScore(analysis?.riskScore)} />
             </div>
-            <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : '/100'}</div>
+            <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : 'not scored yet'}</div>
           </div>
           <div className="tp-stat">
             <div className="tp-stat-k">Events</div>
@@ -556,7 +549,7 @@ export default function ThreadPage() {
           <div className="tp-stat">
             <div className="tp-stat-k">Sources</div>
             <div className="tp-stat-v">{thread.allSources.length}</div>
-            <div className="tp-stat-d">{thread.primarySources.length} primary</div>
+            <div className="tp-stat-d">{sourceCounts.primary} primary</div>
           </div>
           <div className="tp-stat">
             <div className="tp-stat-k">Sentiment</div>
@@ -568,7 +561,7 @@ export default function ThreadPage() {
         </div>
 
         {/* Content tabs */}
-        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setContentTab} className="tp-views" />
+        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setTab} className="tp-views" />
         <div className="tp-tabpanel" {...tabPanelProps('tp', activeTab)}>
 
         {/* Overview tab — the synthesis, as short collapsible sections in reading order */}
@@ -599,7 +592,7 @@ export default function ThreadPage() {
                 story is judged to feed into / feed in from (S6-style honest-empty when the story
                 hasn't been part of a cross-story analysis, or the analysis found no links). */}
             {fedInto.length > 0 && (
-              <OverviewSection label="News this story is judged to feed into" count={fedInto.length}>
+              <OverviewSection label="News this story is judged to feed into" count={distinctTargets(fedInto)} unit="stories">
                 <p className="tp-ov-text tp-ov-text--note">
                   Links are between stories; we don&apos;t know which event in this story drove each one.
                 </p>
@@ -607,7 +600,7 @@ export default function ThreadPage() {
               </OverviewSection>
             )}
             {fedFrom.length > 0 && (
-              <OverviewSection label="Earlier news judged to feed in" count={fedFrom.length}>
+              <OverviewSection label="Earlier news judged to feed in" count={distinctTargets(fedFrom, 'sourceThreadId')} unit="stories">
                 <FedIntoList links={fedFrom} direction="from" />
               </OverviewSection>
             )}
@@ -712,7 +705,7 @@ export default function ThreadPage() {
         {activeTab === 'sources' && (
           <div className="tp-sources-list">
             <div className="tp-sources-hd">
-              {sourceRollup.length} outlets · {thread.primarySources.length} primary · {thread.secondarySources.length} secondary
+              {sourceCounts.outlets} outlets · {sourceCounts.primary} primary · {sourceCounts.secondary} secondary
             </div>
             {sourceRollup.map((s, i) => (
               <div key={i} className="tp-source-row">

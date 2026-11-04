@@ -10,6 +10,7 @@
 // mirrors the breaking-detector dry-run approach.
 
 const archive = require('./_shared/archiveEntries');
+const archiveReads = require('./_shared/archiveReads');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { iso3List, resolveIso3 } = require('./_shared/resolveIso3');
@@ -29,6 +30,9 @@ const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 
 const WEEK_DAYS = 7;
+// Where the archive window is read from (decision 0035 step 5d): ddb (default) | inbox (record/inbox/entries/ under ENTRIES_INBOX_PREFIX) | compare.
+const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
+const ARCHIVE_READS = process.env.ARCHIVE_READS;
 const TOP_THREADS = parseInt(process.env.WEEKLY_TOP_THREADS || '6', 10);
 const TOP_COUNTRIES = parseInt(process.env.WEEKLY_TOP_COUNTRIES || '6', 10);
 const BRIEF_TTL_DAYS = 180;
@@ -168,7 +172,10 @@ function fail(msg) {
 function readArchiveEntries(days) {
   return archive.readArchiveEntries({
     days,
-    getRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    getRow: archiveReads.archiveRowReader({
+      mode: ARCHIVE_READS, prefix: ENTRIES_INBOX_PREFIX, readDay: archiveReads.s3EntriesDay(ENTRIES_INBOX_PREFIX),
+      ddbGetRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    }),
     project: (e, date) => (e.threadId ? {
       topicId: e.topicId, threadId: e.threadId, title: e.title, date,
       regions: e.regions || [], category: e.category || '', ai: e.ai || {},

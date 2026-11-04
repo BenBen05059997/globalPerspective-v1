@@ -281,7 +281,7 @@ export default function CountryPage() {
     ro.observe(overlayEl);
     return () => ro.disconnect();
   }, [overlayEl]);
-  const { dayMap, sortedDates, loading } = useWeeklyArchive();
+  const { dayMap, sortedDates, loading, error: archiveError, refetch: retryArchive } = useWeeklyArchive();
   const [mainTab, setMainTab] = useState('situation');
   const [activeDeepTab, setActiveDeepTab] = useState(null);
   const [arcTypeFilter, setArcTypeFilter] = useState('all');
@@ -587,7 +587,13 @@ export default function CountryPage() {
         <CountryCardV2 name={decodedName} linkName={false} />
       </div>
 
-      {!countryData ? (
+      {!countryData && archiveError ? (
+        <div className="cpg-nocov" role="alert">
+          <h3>Coverage is unavailable right now</h3>
+          <p>The story archive could not be loaded.</p>
+          <Button onClick={retryArchive}>Try again</Button>
+        </div>
+      ) : !countryData ? (
         <div className="cpg-nocov">
           <h3>No coverage for {decodedName}</h3>
           <p>{country ? `${decodedName} has no recent news in the archive.` : 'We hold no recent coverage under this name.'}</p>

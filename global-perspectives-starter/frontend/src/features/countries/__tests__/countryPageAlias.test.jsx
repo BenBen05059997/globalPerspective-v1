@@ -6,10 +6,13 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 
 const intelNames = vi.hoisted(() => ({ list: [] }));
+const archive = vi.hoisted(() => ({ error: null, refetch: () => {} }));
 const e = (regions, i) => ({ topicId: `t${i}`, threadId: null, title: `Story ${i}`, category: 'politics', regions });
 const entries = [e(['USA'], 1), e(['United States'], 2), e(['US', 'Iran'], 3), e(['Strait of Hormuz'], 4), e(['Strait of Hormuz'], 5)];
 vi.mock('@/features/threads', () => ({
-  useWeeklyArchive: () => ({ dayMap: { '2026-10-18': { entries } }, sortedDates: ['2026-10-18'], loading: false }),
+  useWeeklyArchive: () => (archive.error
+    ? { dayMap: {}, sortedDates: [], loading: false, error: archive.error, refetch: archive.refetch }
+    : { dayMap: { '2026-10-18': { entries } }, sortedDates: ['2026-10-18'], loading: false }),
   useThreadAnalyses: () => ({ analyses: {} }),
   useWebIndex: () => ({ index: null }),
   deriveFromIndex: () => ({ fedInto: [] }),
@@ -79,5 +82,19 @@ describe('country page: one name per country', () => {
   it('a country keeps its titled page', () => {
     at('/weekly/country/United%20States');
     expect(document.title).toBe('United States Intelligence Briefing — Global Perspectives');
+  });
+
+  it('a failed archive says coverage is unavailable with Try again, never "No coverage"', () => {
+    archive.refetch = vi.fn();
+    archive.error = new Error('archive down');
+    try {
+      at('/weekly/country/Japan');
+      expect(screen.getByRole('alert').textContent).toMatch(/Coverage is unavailable right now/);
+      expect(screen.queryByText(/No coverage for/)).not.toBeInTheDocument();
+      screen.getByRole('button', { name: 'Try again' }).click();
+      expect(archive.refetch).toHaveBeenCalledTimes(1);
+    } finally {
+      archive.error = null;
+    }
   });
 });

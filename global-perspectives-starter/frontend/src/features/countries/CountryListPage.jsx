@@ -15,6 +15,7 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { isArc } from '@/features/countries/lib/countryArcs';
 import { briefingAge } from '@/features/countries/lib/briefingAge';
@@ -210,7 +211,7 @@ function RightRail({ featured, intelligence }) {
 
 export default function CountryListPage() {
   const navigate = useNavigate();
-  const { dayMap, sortedDates, loading } = useWeeklyArchive();
+  const { dayMap, sortedDates, loading, error: archiveError, refetch: retryArchive } = useWeeklyArchive();
 
   const handleCountryClick = useCallback((name) => {
     const to = countryHref(name);
@@ -293,6 +294,15 @@ export default function CountryListPage() {
   useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
 
   if (loading) return <BootLoader variant="inline" label="Loading countries" text="Loading countries" />;
+  // The archive failed (useWeeklyArchive reports it): say so, never an empty list that reads as "no countries in the news".
+  if (archiveError && countries.length === 0) {
+    return (
+      <div className="clp-empty" role="alert">
+        <p>The country list is unavailable right now: the story archive could not be loaded.</p>
+        <Button onClick={retryArchive}>Try again</Button>
+      </div>
+    );
+  }
 
   const view = { region: activeRegion, query: searchQuery, sortBy };
   const intelOf = (name) => intelligence[name];

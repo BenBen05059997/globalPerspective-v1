@@ -11,25 +11,6 @@ weekly report are views of that record, served as static JSON through the Worker
 `project-docs/architecture/ARCHITECTURE_TIMELINE.md`; the stage list as data is `project-docs/architecture/pipeline.json`;
 what is stopped or waiting is in `project-docs/START_HERE.md`; what is deployed comes from AWS.
 
-## Where to look (start here)
+## Where to look
 
-| You want… | Read |
-|---|---|
-| Agent operating rules + deploy workflow | **`CLAUDE.md`** (repo root) |
-| A map of the docs and where we left off | **`project-docs/START_HERE.md`** |
-| System overview (Lambdas, stores, routes) | `project-docs/architecture/ARCHITECTURE.md` and the area designs beside it. Code and deployed AWS beat any doc. |
-| Storage rules and decisions | `project-docs/architecture/DATA_STRATEGY.md`, `project-docs/decisions/` |
-| How to run / check a job | the README next to the code (`backend/<group>/<name>/README.md`) |
-| Frontend source | `global-perspectives-starter/frontend/src/` — `app/` (chrome/routing) + `shared/` (cross-feature) + `features/<name>/`; see ARCHITECTURE.md's Frontend Path map |
-| Lambda source | `backend/<group>/<name>/src/` (path per Lambda: `scripts/functions.json` `dir`) |
-
-## Traps — do NOT assume
-
-- **`docs/` is the legacy GitHub Pages build OUTPUT** (served HTML + operator-owned `config.js`), not source. `./deploy.sh` with no target only verifies, builds and packages locally; only `./deploy.sh --target …` publishes, and every target needs explicit operator authorization. See `.claude/skills/deploy-frontend/DEPLOYMENT_NOTES.md`.
-- **Lambda env vars named `XAI_API_KEY` / `GROK_*` are legacy** — they hold DeepSeek/Gemini values. Confirm the provider with `aws lambda get-function-configuration`, never from the name.
-- **Deployed Lambda bytes can drift from `main`** — diff before changing (`scripts/lambda.sh <name> diff`).
-- Load-bearing root files: `CLAUDE.md`, `deploy.sh`, `.env.example`.
-
-## No CI by design
-
-This repo is intentionally CI-free. Doc↔code drift is avoided by keeping docs to design intent (code and AWS are the truth) and caught by local pre-commit checks (`quality/check_*.mjs`), not GitHub Actions.
+Start with [`CLAUDE.md`](CLAUDE.md) (rules, authorization, verify) and [`project-docs/START_HERE.md`](project-docs/START_HERE.md) (the doc map and where we left off). Code and deployed AWS beat any doc; `docs/` is build output, not source; there is no CI by design (local `quality/check_*.mjs` checks catch drift).

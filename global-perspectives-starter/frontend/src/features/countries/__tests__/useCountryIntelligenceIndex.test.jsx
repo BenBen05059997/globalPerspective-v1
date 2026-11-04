@@ -48,4 +48,31 @@ describe('useCountryIntelligence (several countries)', () => {
     await waitFor(() => expect(result.current.intelligence.France?.headline).toBe('from action'));
     expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.any(Error));
   });
+
+  it('a list-shaped load then a single-country load returns the full item', async () => {
+    rv.fetchCountriesIndex.mockResolvedValue(INDEX);
+    const list = renderHook(() => useCountryIntelligence(names));
+    await waitFor(() => expect(list.result.current.intelligence.France).toBeTruthy());
+    rv.fetchCountryView.mockResolvedValue(null);
+    api.fetchCountryIntelligence.mockResolvedValue({ data: { France: { riskScore: 55, bluf: 'full item' } } });
+    const one = renderHook(() => useCountryIntelligence(['France']));
+    await waitFor(() => expect(one.result.current.intelligence.France?.bluf).toBe('full item'));
+  });
+
+  it('asks for every country it is given, not a capped slice', async () => {
+    rv.fetchCountriesIndex.mockResolvedValue(INDEX);
+    const many = Array.from({ length: 40 }, (_, i) => `Nowhere${i}`).concat(['France']);
+    const { result } = renderHook(() => useCountryIntelligence(many));
+    await waitFor(() => expect(result.current.intelligence.France).toBeTruthy());
+  });
+
+  it('a failed action chunk is reported and the other chunks are kept', async () => {
+    rv.fetchCountriesIndex.mockResolvedValue(null);
+    api.fetchCountryIntelligence.mockReset();
+    api.fetchCountryIntelligence.mockRejectedValueOnce(new Error('boom')).mockResolvedValue({ data: { Japan: { riskScore: 2 } } });
+    const many = Array.from({ length: 20 }, (_, i) => `Nowhere${i}`);
+    const { result } = renderHook(() => useCountryIntelligence(many));
+    await waitFor(() => expect(result.current.intelligence.Japan).toBeTruthy());
+    expect(sink.reportFetchError).toHaveBeenCalledWith('country-intelligence', expect.any(Error));
+  });
 });

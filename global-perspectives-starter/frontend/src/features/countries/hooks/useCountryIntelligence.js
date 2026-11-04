@@ -8,7 +8,9 @@ import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
 import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBriefingsIndex.js';
 
-const CACHE_KEY = 'gp_country_intel_v1';
+// Only single-country loads are cached (the full briefing); the list's one index request is already shared for 30 minutes
+// by loadCountriesIndex, and its thinner items must never reach the country page. Each entry carries its own time.
+const CACHE_KEY = 'gp_country_intel_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 const views = makeRecordViews();
@@ -24,14 +26,21 @@ export async function fetchCountryBriefing(name, { getViews = views, fetchAction
   const view = await getViews.fetchCountryView(iso3).catch((e) => { reportFetchError('country-view-intelligence', e); return null; });
   const fromView = intelligenceFromCountryView(view);
   if (fromView) return fromView;
-  const result = await fetchAction([name]);
+  const result = await fetchAction([name]).catch((e) => { reportFetchError('country-intelligence', e); return null; });
   return result?.data?.[name] ?? null;
 }
 
-function cacheMerge(data) {
+function cacheRead(name) {
   try {
-    const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ data: { ...existing.data, ...data }, timestamp: Date.now() }));
+    const entry = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')[name];
+    return entry && Date.now() - entry.ts < CACHE_TTL_MS ? entry.value : null;
+  } catch { return null; }
+}
+
+function cacheWrite(name, value) {
+  try {
+    const all = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...all, [name]: { value, ts: Date.now() } }));
   } catch { /* ignore */ }
 }
 
@@ -58,53 +67,36 @@ export function useCountryIntelligence(countryNames) {
   const load = useCallback(async () => {
     if (countryNames.length === 0) return;
 
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        if (cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
-          const hit = {};
-          let allHit = true;
-          for (const name of countryNames) {
-            if (name in cached.data) {
-              hit[name] = cached.data[name];
-            } else {
-              allHit = false;
-            }
-          }
-          if (allHit) {
-            setIntelligence(hit);
-            return;
-          }
-        }
-      }
-    } catch { /* ignore */ }
+    if (countryNames.length === 1) {
+      const hit = cacheRead(countryNames[0]);
+      if (hit) { setIntelligence({ [countryNames[0]]: hit }); return; }
+    }
 
     setLoading(true);
+    const data = {};
     try {
-      // Never call the proxy with more than MAX_NAMES_PER_CALL names — the backend silently
-      // slices anything bigger (CLAUDE.md / countryRiskLayer.js), which used to strand
-      // CountryListPage's 24-name ask at the first 15 with no error. Batch + merge instead.
-      const data = {};
       if (countryNames.length === 1) {
         const one = await fetchCountryBriefing(countryNames[0]);
-        if (one) data[countryNames[0]] = one;
+        if (one) { data[countryNames[0]] = one; cacheWrite(countryNames[0], one); }
       } else {
         const index = await loadCountriesIndex();
         if (index) {
           Object.assign(data, briefingsFromIndex(index, countryNames));
         } else {
+          // Never more than MAX_NAMES_PER_CALL names per call (the backend silently slices anything bigger); a failed
+          // chunk is reported and the others still land.
           await runPooled(chunkNames(countryNames, MAX_NAMES_PER_CALL), MAX_CONCURRENT_BATCHES, async (chunk) => {
-            const result = await fetchCountryIntelligence(chunk);
-            Object.assign(data, result?.data || {});
+            try {
+              const result = await fetchCountryIntelligence(chunk);
+              Object.assign(data, result?.data || {});
+            } catch (e) { reportFetchError('country-intelligence', e); }
           });
         }
       }
-      setIntelligence(data);
-      cacheMerge(data);
-    } catch {
-      setIntelligence({});
+    } catch (e) {
+      reportFetchError('country-intelligence', e);
     } finally {
+      setIntelligence(data);
       setLoading(false);
     }
   }, [namesKey]);

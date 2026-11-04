@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Weekly index (record/views/index/weekly.json)",
-  "description": "The last 30 archive days (the archive_range action's days) for the Stories page, the Stories map, the countries list and the map's risk layer. A day is the archive day the entry was listed under; an article listed again on a later day is not a second entry. Per entry only what the readers show: topic, story (as placed now, merges applied), title, category, the entry's ISO3 countries and its sources as outlet and url. `updatedAt` is the newest entry time of the day. Built by indexViews.js from the story views' entries.",
+  "description": "The last 30 days (the archive_range action's window) for the Stories page, the Stories map, the countries list and the map's risk layer. A day is the entry's record date, the day its story view files it under; an article listed again on a later day is not a second entry. Per entry only what the readers show: topic, story (as placed now, merges applied), title, category, the entry's ISO3 countries and its sources as outlet and url. `updatedAt` is the newest entry time of the day. Built by indexViews.js from the story views' entries.",
   "type": "object",
   "required": ["schemaVersion", "builtFrom", "from", "to", "days"],
   "additionalProperties": false,

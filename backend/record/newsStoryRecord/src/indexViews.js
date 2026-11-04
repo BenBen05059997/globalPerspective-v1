@@ -79,12 +79,14 @@ function archiveRefOf(f) {
 /**
  * index/weekly.json: the `archive_range` action's days (the last 30 archive days), for the Stories page, the Stories map, the
  * countries list and the map's risk layer, built from the story views' entries (so placement, merges and reassignment apply: an
- * entry is under the story it belongs to now). Per day, in the archive's order: `topicId`, `threadId`, `title`, `category`, `iso3`
+ * entry is under the story it belongs to now). Per day, in the archive's order (see below): `topicId`, `threadId`, `title`, `category`, `iso3`
  * (the countries of the entry; the page names them from the one country table) and `sources` as `{outlet, url}` (outlet null when
- * unknown; the page falls back to the url's host); nothing else the readers do not show. A day is the archive day the entry was
- * listed under (not the day of its first article), and `updatedAt` is the newest entry time of the day. An archive row that lists
- * an article already on record is not a second entry (the facts rule), so a repeat is shown on its first day only.
- * `refs`: eventId -> {day, index} from the entry facts. Entries without a ref (fixtures) fall back to their fact date.
+ * unknown; the page falls back to the url's host); nothing else the readers do not show. A day is the entry's record date (`e.date`, the day the story view files it under, so the list and the
+ * story page count the same days), and the 30-day window applies to it. The archive only orders a day: archive day, then the place in that
+ * archive day's list (`sourceRow.index`), then `at`, then eventId (an entry listed on a later archive day than its record date
+ * follows the entries of earlier archive days). `updatedAt` is the newest entry time of the day. An archive row that lists an
+ * article already on record is not a second entry (the facts rule), so a repeat is shown on its first day only.
+ * `refs`: eventId -> {day, index} from the entry facts; entries without a ref (fixtures) order as archive day = record date, index 0.
  */
 function weeklyIndex(stories, refs, today, builtFrom) {
   const from = addDays(today, 1 - WEEKLY_DAYS);
@@ -93,13 +95,13 @@ function weeklyIndex(stories, refs, today, builtFrom) {
     for (const e of s.entries || []) {
       if (e.kind === 'article') continue;
       const ref = refs.get(e.eventId) || {day: e.date, index: 0};
-      if (ref.day < from || ref.day > today) continue;
-      (days[ref.day] ||= []).push({ref, at: e.at, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}, eventId: e.eventId});
+      if (e.date < from || e.date > today) continue;
+      (days[e.date] ||= []).push({ref, at: e.at, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}, eventId: e.eventId});
     }
   }
   const out = {};
   for (const day of Object.keys(days).sort()) {
-    const list = days[day].sort((a, b) => a.ref.index - b.ref.index || (a.eventId < b.eventId ? -1 : 1));
+    const list = days[day].sort((a, b) => (a.ref.day < b.ref.day ? -1 : a.ref.day > b.ref.day ? 1 : 0) || a.ref.index - b.ref.index || (a.at < b.at ? -1 : a.at > b.at ? 1 : 0) || (a.eventId < b.eventId ? -1 : 1));
     out[day] = {updatedAt: maxOf(list.map((x) => x.at)), entries: list.map((x) => x.row)};
   }
   return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, days: out};

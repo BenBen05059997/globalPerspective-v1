@@ -77,10 +77,8 @@ function SingleMentions({ entries }) {
 
 export default function StoriesFeed({ threads, standalone, analyses, now, peek }) {
   const g = groupByAge(threads, now);
-  const empty = threads.length === 0 && standalone.length === 0;
   return (
     <div className="sf-feed">
-      {empty ? <div className="weekly-empty-state"><p>No stories match your current filters.</p></div> : null}
       {GROUPS.filter((x) => x.key !== 'archive' && g[x.key].length > 0).map((grp) => (
         <Group key={grp.key} group={grp} items={g[grp.key]} analyses={analyses} now={now} peek={peek} />
       ))}

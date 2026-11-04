@@ -36,7 +36,7 @@ function viewToTab(view) {
   return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }
 
-export default function StoriesHeader({ view, setView, isPhone, counts = null }) {
+export default function StoriesHeader({ view, setView, isPhone, counts = null, windowPhrase = 'last 30 days', scoresUnavailable = false }) {
   const shownView = view === 'changes' ? 'list' : view; // the old CHANGES view is the list
   return (
     <header className="sf-head">
@@ -54,13 +54,14 @@ export default function StoriesHeader({ view, setView, isPhone, counts = null })
       {counts && counts.total > 0 ? (
         <p className="sf-counts" aria-label="Open stories by tier">
           <strong>{counts.total}</strong> open {counts.total === 1 ? 'story' : 'stories'}
-          <span className="sf-counts__win"> · last 30 days</span>
+          <span className="sf-counts__win"> · {windowPhrase}</span>
           {SCORED.filter((t) => counts[t] > 0).map((t) => (
             <span key={t} className="sf-counts__t">
               {TIER_WORD[t]} <b>{counts[t]}</b>
             </span>
           ))}
-          {counts.none > 0 ? <span className="sf-counts__unscored">{counts.none} not yet scored</span> : null}
+          {scoresUnavailable ? <span className="sf-counts__unscored">scores unavailable right now</span> : null}
+          {!scoresUnavailable && counts.none > 0 ? <span className="sf-counts__unscored">{counts.none} not yet scored</span> : null}
         </p>
       ) : null}
 

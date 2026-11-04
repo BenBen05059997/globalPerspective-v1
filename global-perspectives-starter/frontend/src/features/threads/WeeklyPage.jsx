@@ -5,14 +5,13 @@ import { useSearchParams } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import { usePeek } from '@/shared/hooks/usePeek';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { useLastVisit } from '@/features/threads/hooks/useLastVisit';
 import {
-  CATEGORY_ORDER, DEFAULT_WINDOW, buildThreads, filterThreads, filterStandalone, sortThreads,
+  CATEGORY_ORDER, DEFAULT_WINDOW, WINDOWS, buildThreads, filterThreads, filterStandalone, sortThreads,
   inWindow, tierCounts, crisisCounts, regionCounts,
 } from '@/features/threads/lib/storyGroups';
 import StoriesHeader from '@/features/threads/components/StoriesHeader.jsx';
@@ -39,7 +38,6 @@ const VIEWS = ['list', 'board', 'timeline', 'map', 'web', 'changes'];
 // READ and only exists once a previous-visit baseline does; `?view=changes` (the old CHANGES tab)
 // opens READ scrolled to it, or plain READ without a baseline.
 export default function WeeklyPage() {
-  const { loading: authLoading } = useAuth();
   const isPhone = useIsPhone();
   const peek = usePeek();
   const [welcome, setWelcome] = useState(() => {
@@ -61,8 +59,11 @@ export default function WeeklyPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view');
   const view = VIEWS.includes(viewParam) ? viewParam : 'list';
-  const categoryParam = searchParams.get('category');
-  const category = categoryParam && CATEGORY_ORDER.includes(categoryParam) ? categoryParam : null;
+  // ?category= is case-insensitive; a name that is not a topic is said so (below), never read as "all stories".
+  const categoryParam = (searchParams.get('category') || '').trim();
+  const categoryKey = categoryParam.toLowerCase();
+  const category = CATEGORY_ORDER.includes(categoryKey) ? categoryKey : null;
+  const unknownCategory = categoryParam && !category ? categoryParam : null;
   const patchParams = (fn) => setSearchParams((prev) => { const n = new URLSearchParams(prev); fn(n); return n; }, { replace: true });
   const setView = (v) => patchParams((n) => { if (v === 'list') n.delete('view'); else n.set('view', v); });
   const clearCategory = () => patchParams((n) => n.delete('category'));
@@ -70,14 +71,14 @@ export default function WeeklyPage() {
   useEffect(() => setReady(true), []);
   useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
 
-  const { dayMap, sortedDates: allDates, loading, error, dataUpdatedAt } = useWeeklyArchive();
+  const { dayMap, sortedDates: allDates, loading, error, dataUpdatedAt, refetch } = useWeeklyArchive();
   const baseline = useLastVisit();
   // One "now" per loaded archive: ages are stable while the page is open.
   const now = useMemo(() => Date.now(), [dayMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { threads, standalone } = useMemo(() => buildThreads(dayMap, allDates, now), [dayMap, allDates, now]);
   const qualifyingThreadIds = useMemo(() => threads.filter((t) => t.articleCount >= 2).map((t) => t.threadId), [threads]);
-  const { analyses } = useThreadAnalyses(qualifyingThreadIds, { light: true });
+  const { analyses, failed: scoresFailed } = useThreadAnalyses(qualifyingThreadIds, { light: true });
 
   const filters = useMemo(() => ({ q, crisis, tiers, region, category, window: windowValue }), [q, crisis, tiers, region, category, windowValue]);
   const listed = useMemo(
@@ -91,10 +92,11 @@ export default function WeeklyPage() {
   const counts = useMemo(() => ({
     total: windowed.length,
     crisis: crisisCounts(windowed),
-    tier: tierCounts(windowed, analyses),
-  }), [windowed, analyses]);
+    tier: scoresFailed ? {} : tierCounts(windowed, analyses), // no scores read: no tier counts (not "all unscored")
+  }), [windowed, analyses, scoresFailed]);
   const regions = useMemo(() => regionCounts(windowed), [windowed]);
-  const headerCounts = useMemo(() => tierCounts(threads, analyses), [threads, analyses]);
+  // The header and the strip count what the filters leave (the facet counts on the left stay "within the window").
+  const headerCounts = useMemo(() => (scoresFailed ? { total: listed.length } : tierCounts(listed, analyses)), [listed, analyses, scoresFailed]);
 
   // `?view=changes` on a phone: once the list has rendered, scroll to the changed section (it only exists with a baseline).
   const scrollToChanged = isPhone && view === 'changes' && Number.isFinite(baseline) && ready && !loading;
@@ -102,25 +104,25 @@ export default function WeeklyPage() {
     if (scrollToChanged) document.getElementById('sf-changed')?.scrollIntoView?.({ block: 'start' });
   }, [scrollToChanged]);
 
-  if (authLoading) return <BootLoader variant="inline" label="Loading stories" text="Loading stories" />;
-
   const header = (
     <StoriesHeader
       view={view}
       setView={setView}
       isPhone={isPhone}
       counts={!loading ? headerCounts : null}
+      windowPhrase={WINDOWS.find((w) => w.value === windowValue)?.phrase}
+      scoresUnavailable={scoresFailed}
     />
   );
 
-  const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
+  const totalArticles = listed.reduce((sum, t) => sum + t.articleCount, 0) + listedStandalone.length;
   const strip = (
     <StatusStrip
       label="LIVE"
       stats={[
-        { value: threads.length, unit: 'arcs' },
+        { value: listed.length, unit: 'arcs' },
         { value: totalArticles, unit: 'articles' },
-        { value: allDates.length, unit: 'days' },
+        { value: allDates.length, unit: 'days with stories' },
       ]}
       updatedAt={dataUpdatedAt}
     />
@@ -141,13 +143,14 @@ export default function WeeklyPage() {
   if (!ready || loading) return <BootLoader variant="inline" label="Loading stories" text="Loading stories" />;
 
   if (threads.length === 0 && standalone.length === 0) {
+    // A failed load (already reported by the hook) says so and offers a retry; an answered-but-empty archive says that.
     return (
       <div className="wp-section-wrap">
         {header}
-        {error ? <div className="weekly-error" role="alert">{error}</div> : null}
-        <div className="weekly-empty-state">
-          <h3>No archive data yet</h3>
-          <p>Data is accumulating. Check back in a few hours as the pipeline runs.</p>
+        <div className="weekly-empty-state" role={error ? 'alert' : undefined}>
+          <h3>{error ? 'Stories are unavailable right now' : 'No stories in the archive'}</h3>
+          <p>{error ? 'The story archive could not be loaded.' : 'The archive has no stories for the last 30 days.'}</p>
+          {error ? <Button onClick={refetch}>Try again</Button> : null}
         </div>
       </div>
     );
@@ -157,7 +160,11 @@ export default function WeeklyPage() {
     q, setQ, crisis, setCrisis, tiers, setTiers, windowValue, setWindow, region, setRegion, sort, setSort,
     category, clearCategory, counts, regions,
   };
-  const activeFilters = crisis.length + tiers.length + (region ? 1 : 0) + (windowValue !== DEFAULT_WINDOW ? 1 : 0)
+  const clearFilters = () => {
+    setQ(''); setCrisis([]); setTiers([]); setRegion(null); setWindow(DEFAULT_WINDOW); setSort('articles');
+    clearCategory();
+  };
+  const activeFilters = (q.trim() ? 1 : 0) + crisis.length + tiers.length + (region ? 1 : 0) + (windowValue !== DEFAULT_WINDOW ? 1 : 0)
     + (sort !== 'articles' ? 1 : 0) + (category ? 1 : 0);
 
   const hasBaseline = Number.isFinite(baseline);
@@ -175,11 +182,25 @@ export default function WeeklyPage() {
           <Button variant="icon" label="Dismiss" onClick={() => setWelcome(false)}>✕</Button>
         </div>
       ) : null}
-      {error ? <div className="weekly-error" role="alert">{error}</div> : null}
     </>
   );
 
-  const body = view === 'timeline'
+  const nothingListed = listed.length === 0 && listedStandalone.length === 0;
+  const body = unknownCategory
+    ? (
+      <div className="weekly-empty-state" data-testid="unknown-category">
+        <p>There is no topic called “{unknownCategory}”.</p>
+        <Button onClick={clearCategory}>Show all stories</Button>
+      </div>
+    )
+    : nothingListed && view !== 'web'
+    ? (
+      <div className="weekly-empty-state" data-testid="no-match">
+        <p>No stories match your current filters.</p>
+        <Button onClick={clearFilters}>Clear filters</Button>
+      </div>
+    )
+    : view === 'timeline'
     ? <StoriesTimeline threads={listed} analyses={analyses} windowValue={windowValue} now={now} />
     : view === 'board'
     ? <StoriesBoard threads={listed} analyses={analyses} now={now} peek={peek} />

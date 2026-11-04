@@ -13,10 +13,14 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 ## Status
 - Live, public. No markets line (economy retired, decision 0049); `/weekly-markets` no longer exists.
 - The briefs are in the record (decision 0048): the hooks read `record/views/` first and ask the `daily_brief`, `latest_daily_brief` and
-  `weekly_brief` actions only for what the views lack. The brief writers' notes are on (`NOTES_PREFIX=record/` on
-  `newsPostDevTo` and `newsWeeklyBrief`): the views hold the backfilled briefs and the actions still serve every new one.
-- The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`); the action and the views serve
-  only published briefs, so a bad one is held back by setting its status to `draft`.
+  `weekly_brief` actions only for what the views lack. The brief writers' notes are on (`NOTES_PREFIX=record/` on `newsDailyBrief`
+  and `newsWeeklyBrief`): the views hold the backfilled briefs and the actions still serve every new one.
+- The weekly brief is written `status: 'published'` with no review step (`newsWeeklyBrief/src/index.js`). Setting `status: draft`
+  on the DynamoDB row holds it back from the `weekly_brief` action and from the email (the sender follows DynamoDB; `RECORD_READS=compare`
+  only compares the record), but NOT from the record views, the page or the Worker pre-render: the views are built from append-only
+  notes and a DynamoDB edit writes none. There is no tested way to hold a weekly brief back on the web path yet.
+- The pause wording follows the newest published edition (UTC dates), not the edition on screen: "paused" only when that edition is 2+ days
+  before today, or today's is missing after 14:30 UTC; before that the page says today's brief comes at 23:00 JST (14:00 UTC).
 
 ## Routes
 - `/briefings?mode=read|weekly|present` -> `BriefingsPage` (no or unknown `mode` = read). `&date=YYYY-MM-DD` picks the daily edition
@@ -31,8 +35,9 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - `components/WeeklyMode.jsx` - KPIs, signal cards, watch list, method note, `SubscribeCard`, Save (`itemType: weekly`), week navigation
 - `components/BriefingSlides.jsx` (slide bodies; the weekly deck ends with `SubscribeCard`), `EditionsStrip.jsx`, `BriefingError.jsx`
   (failed request: reported, with retry), `Trajectory.jsx`, `PlaceLinks.jsx`
-- `lib/dateKey.js`, `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (date helpers)
-- `hooks/` - `useWeeklyBrief`, `useDailyEditionsIndex`, `useStoryQuestion`; the daily brief hook is shared (`@/shared/hooks/useDailyBrief.js`).
+- `lib/dateKey.js`, `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (date helpers, `dailyPauseState`, `nearestWeek`)
+- `hooks/` - `useWeeklyBrief`, `useDailyEditionsIndex`, `useBriefEditions` (newest daily key, weekly edition keys), `useStoryQuestion`;
+  the daily brief hook is shared (`@/shared/hooks/useDailyBrief.js`).
   Both brief hooks read the record through `@/shared/api/briefViews.js`.
 - Public API (`index.js`): `useWeeklyBrief` (used by `account` and `map`; keep its return shape). Imports from other features: none.
 - Shared: `useDailyBrief`, `StoryMap`, `EntityLink`, `SubscribeCard`, `SaveButton`, `@/shared/lib/links.js` (`briefingHref`, `storyHref`,
@@ -40,37 +45,28 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 
 ## Backend
 - Group guide: [distribution](../../../../../backend/distribution/README.md); inputs come from [pipeline](../../../../../backend/pipeline/README.md)
-- `newsPostDevTo` (Scheduler `InvokeDev`, 23:00 Asia/Tokyo daily) writes `DAILY_BRIEF#<date>`; `newsWeeklyBrief` (rule `TriggerWeeklyBrief`,
-  Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`. Both also call `writeBriefNote`, a no-op while `NOTES_PREFIX` is unset (live `record/`).
-- `newsStoryRecord` (rule `TriggerStoryRecord`, 23:45 UTC) builds the brief views from the notes; `newsSensitiveData-dev` serves the actions.
+- `newsDailyBrief` (repo dir `backend/distribution/newsPostDevTo`; Scheduler `InvokeDev`, `cron(0 23 * * ? *)` Asia/Tokyo = 14:00 UTC) writes
+  `DAILY_BRIEF#<date>`; `newsWeeklyBrief` (rule `TriggerWeeklyBrief`, Sunday 06:00 UTC) writes `WEEKLY_BRIEF#<weekOf>`. Both also call
+  `writeBriefNote`, a no-op while `NOTES_PREFIX` is unset (live `record/`). The old `newsPostDevTo` Lambda is unscheduled (rollback copy).
+- `newsStoryRecord` builds the brief views from the notes: the nightly run (`TriggerStoryRecord`, 23:45 UTC) and the refreshes of decision 0050
+  (`TriggerStoryRecordRefresh` 04:35, 12:35, 20:35 UTC; `...RefreshAnalysis` 05:20; `...RefreshBrief` 14:15, right after the daily brief;
+  `...RefreshWeekly` Sunday 06:15, right after the weekly brief). `newsReadApi` (repo dir `backend/read-api/newsSensitiveData`) serves the actions.
 - `newsEmailSender` (rule `TriggerWeeklyEmailSend`, Sunday 14:00 UTC) emails the weekly brief from `WEEKLY_BRIEF#`; its text mirrors
   `?mode=weekly`. `newsSavedItems` accepts `daily` and `weekly` as saved item types.
 
 ## Data
-- Record views (`/data/record/views/`): `index/briefs.json` (which briefs exist), `briefs/daily/<date>.json`, `briefs/weekly/<weekOf>.json`.
-  Rebuilt nightly, so today's daily and a newer weekly are not in them yet. A failed read is reported and answers null, never "no brief".
-- `useDailyBrief(date)` -> no date: the record's newest in the 30-day window plus `daily_brief` for today alone unless the record already
-  has it, and `latest_daily_brief` when the record holds none; a date: the record, else `daily_brief`. localStorage `gp_daily_brief_v1`,
-  30 min. A date with no edition falls back to the nearest earlier one and says so.
-- `useWeeklyBrief(week)` -> the record's copy; the action when that week is missing or, for the latest, once the record's is a week old
-  (the newer wins). localStorage `gp_weekly_brief_v1[:week]`, 30 min. A read API without the lookup answers latest and the page says so.
-- `useDailyEditionsIndex` -> the record's index, then `latest_daily_brief` editions, then `daily_brief` probes for dates still unknown,
-  at most 14 days (sessionStorage `gp_briefings_daily_editions_v1`); `useStoryQuestion(threadId)` -> the record's `forecasts/<threadId>.json` view while the views are fresh (`shared/api/forecastViews.js`, decision 0052), no question when the record cannot answer, reported by the shared freshness check (memory). No sign-in.
+- Record views (`/data/record/views/`): `index/briefs.json` (which briefs exist), `briefs/daily/<date>.json`, `briefs/weekly/<weekOf>.json`. Rebuilt after every ingest and brief and nightly, so a brief shows up to 15 minutes after it is written. A failed read is reported and answers null, never "no brief".
+- `useDailyBrief(date)` -> no date: the record's newest in the 30-day window plus `daily_brief` for today alone unless the record already has it, and `latest_daily_brief` when the record holds none; a date: the record, else `daily_brief`. localStorage `gp_daily_brief_v1`, 30 min. A date with no edition falls back to the nearest earlier one and says so.
+- `useWeeklyBrief(week)` -> the record's copy; the action when that week is missing or, for the latest, when the views are not fresh (`manifest.builtAt` over 9 h old, `shared/api/viewsFresh.js`; the newer wins). If the action fails and the record has the brief, the record's copy is shown and the failure reported. localStorage `gp_weekly_brief_v1[:week]`, 30 min. A read API without the lookup answers latest and the page says so. "Week before" goes to the nearest earlier edition in the record's index (`nearestWeek`), never a bare 7 days.
+- `useDailyEditionsIndex` -> the record's index, then `latest_daily_brief` editions, then `daily_brief` probes for dates still unknown, at most 14 days (sessionStorage `gp_briefings_daily_editions_v1`; a probe's "no edition" is kept 10 min only, the index's answers for the session); `useStoryQuestion(threadId)` -> the record's `forecasts/<threadId>.json` view while the views are fresh (`shared/api/forecastViews.js`, decision 0052), no question when the record cannot answer, reported by the shared freshness check (memory). No sign-in.
 
 ## Pipeline
-1. `newsPostDevTo` (23:00 Tokyo) builds the daily brief from `today-archive`, thread analyses and country rows ->
-   `SummarizeAndPredict` `DAILY_BRIEF#<date>` (and a `daily_brief` note, `NOTES_PREFIX=record/` live).
+1. `newsDailyBrief` (23:00 Tokyo) builds the daily brief from `today-archive`, thread analyses and country rows -> `DAILY_BRIEF#<date>` and a note.
 2. `newsWeeklyBrief` (Sunday 06:00 UTC) builds the weekly brief from seven days of archives -> `WEEKLY_BRIEF#<weekOf>`, published.
-3. `newsStoryRecord` (23:45 UTC) turns the brief notes into `briefs/` views and `index/briefs.json`.
-4. `useDailyBrief`, `useWeeklyBrief`, `useDailyEditionsIndex` read the views, then the actions for what is newer -> `ReadMode`,
-   `WeeklyMode`, `PresentMode` on `/briefings`.
-5. Sunday 14:00 UTC `newsEmailSender` emails the weekly brief to opted-in subscribers, linking back to `?mode=weekly`.
+3. `newsStoryRecord` turns the notes into the views; the hooks read the views, then the actions for what is newer -> `/briefings`.
 
 ## Docs
-- Decisions: [0048](../../../../../project-docs/decisions/0048-briefs-in-the-record.md) (briefs in the record),
-  [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md) (retired routes),
-  [0028](../../../../../project-docs/decisions/0028-briefings-merge-real-301s.md) (Briefings merge, real 301s),
-  [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md); links: [ARCHITECTURE.md](../../../../../project-docs/architecture/ARCHITECTURE.md)
+- Decisions: [0048](../../../../../project-docs/decisions/0048-briefs-in-the-record.md) (briefs in the record), [0050](../../../../../project-docs/decisions/0050-fresh-views-after-ingest.md) (refresh rules), [0017](../../../../../project-docs/decisions/0017-retired-routes-and-tours.md), [0028](../../../../../project-docs/decisions/0028-briefings-merge-real-301s.md) (real 301s), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md); [ARCHITECTURE.md](../../../../../project-docs/architecture/ARCHITECTURE.md)
 
 ## How to check it
 - Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/briefings src/shared/api src/app`; Worker
@@ -81,4 +77,4 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - Weekly: same command with `-d '{"action":"weekly_brief","payload":{"week":"YYYY-MM-DD"}}'` (omit payload for latest)
 - Weekly job ran: `aws logs tail /aws/lambda/newsWeeklyBrief --since 7d --region ap-northeast-1 --filter-pattern '"[weekly] published:"'`
 
-Last verified: 2026-10-31
+Last verified: 2026-11-04

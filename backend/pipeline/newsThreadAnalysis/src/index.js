@@ -1,6 +1,7 @@
 'use strict';
 
 const archive = require('./_shared/archiveEntries');
+const archiveReads = require('./_shared/archiveReads');
 const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
@@ -23,6 +24,9 @@ const THREAD_SK = 'THREAD_ANALYSIS';
 const THREAD_TTL_DAYS = 90;
 const MAX_THREADS = parseInt(process.env.MAX_THREADS || '10', 10);
 const ARCHIVE_DAYS = 30;
+// Where the archive window is read from (decision 0035 step 5d): ddb (default) | inbox (record/inbox/entries/ under ENTRIES_INBOX_PREFIX) | compare.
+const ENTRIES_INBOX_PREFIX = process.env.ENTRIES_INBOX_PREFIX || '';
+const ARCHIVE_READS = process.env.ARCHIVE_READS;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -89,7 +93,10 @@ exports.handler = async (event = {}) => {
 function readArchiveEntries(days) {
   return archive.readArchiveEntries({
     days,
-    getRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    getRow: archiveReads.archiveRowReader({
+      mode: ARCHIVE_READS, prefix: ENTRIES_INBOX_PREFIX, readDay: archiveReads.s3EntriesDay(ENTRIES_INBOX_PREFIX),
+      ddbGetRow: (key) => ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } })),
+    }),
     project: (e, date) => (e.threadId ? {
       topicId: e.topicId,
       threadId: e.threadId,

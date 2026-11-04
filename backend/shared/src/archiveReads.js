@@ -12,6 +12,7 @@
 const { replayDay, replayToday } = require('./entriesInbox');
 const { keepDayZero } = require('./dayZero');
 
+const DEFAULT_WORLD_BUCKET = 'globalperspective-world-280362093938';
 const MODES = ['ddb', 'inbox', 'compare'];
 const TODAY_SOURCES = 3; // the `today-archive` item keeps 3 sources per entry (recordReads.TODAY_SOURCES); the inbox line holds up to 10
 
@@ -52,6 +53,22 @@ const sameJson = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b))
 /** The lines of <prefix>inbox/<kind>/DAY.jsonl through a shared s3json ([] when the day has no file); a read error throws. */
 async function inboxDayLines(s3json, prefix, kind, day) {
   return (await s3json.getLines(`${prefix}inbox/${kind}/${day}.jsonl`)).lines;
+}
+
+/**
+ * readDay(day) for the Lambdas that read the entries inbox from the world bucket (env WORLD_BUCKET, default the world store; region
+ * AWS_REGION): the S3 client is required on first use, as s3NoteWriter does, so a Lambda on ddb loads without the SDK.
+ */
+function s3EntriesDay(prefix) {
+  let json;
+  return (day) => {
+    if (!json) {
+      const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+      const { makeS3Json } = require('./s3json');
+      json = makeS3Json({ client: new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' }), GetObjectCommand, PutObjectCommand, bucket: process.env.WORLD_BUCKET || DEFAULT_WORLD_BUCKET });
+    }
+    return inboxDayLines(json, prefix, 'entries', day);
+  };
 }
 
 const isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
@@ -113,4 +130,4 @@ function archiveRowReader({ mode, prefix, ddbGetRow, readDay, log = console, now
   };
 }
 
-module.exports = { MODES, TODAY_SOURCES, readMode, readBy, sameJson, archiveOfLines, inboxDayLines, diffRows, archiveRowReader };
+module.exports = { MODES, TODAY_SOURCES, readMode, readBy, sameJson, archiveOfLines, inboxDayLines, s3EntriesDay, diffRows, archiveRowReader };

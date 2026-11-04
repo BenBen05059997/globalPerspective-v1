@@ -5,7 +5,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows } = require('../../../shared/test/pipelineHarness');
+const { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows, inboxObjects } = require('../../../shared/test/pipelineHarness');
 
 const INDEX = path.resolve(__dirname, '../src/index.js');
 const ENV = { TOPICS_DDB_TABLE: 'topics', SUMMARIZE_PREDICT_TABLE: 'summary', XAI_API_KEY: 'k', MAX_THREADS: undefined, INTER_CALL_DELAY_MS: undefined, NOTES_PREFIX: undefined, WORLD_BUCKET: 'bkt', GROK_MODEL: undefined };
@@ -287,4 +287,18 @@ test('a failed note write is logged [notes] and never fails the run or the Dynam
     assert.ok(logs.error.some((l) => l.startsWith('[notes] story_analysis note not written: S3 down')), logs.error.join('\n'));
   });
   assert.ok(threadRow(ddb, 'thr-c'));
+});
+
+test('ARCHIVE_READS=inbox reads the window from the entries inbox: no archive row in DynamoDB, the same THREAD# row', async () => {
+  const days = { 1: [entry('c-2', 'thr-c', { regions: ['Japan'] })], 2: [entry('a-2', 'thr-a'), entry('c-1', 'thr-c', { regions: ['Japan'] })], 3: [entry('a-1', 'thr-a')] };
+  const ddb = fakeDdb();
+  const s3 = fakeS3(inboxObjects(days));
+  const env = { MAX_THREADS: '1', ARCHIVE_READS: 'inbox', ENTRIES_INBOX_PREFIX: 'record/' };
+  await run({ ddb, s3, llm: fakeLlm(reply(GOOD)), env }, {}, ({ llm }, out) => {
+    assert.equal(out.statusCode, 200);
+    assert.match(llm.calls[0].user, /Headline c-1/);
+    assert.match(llm.calls[0].user, /Summary of c-2/);
+  });
+  assert.equal(threadRow(ddb, 'thr-c').entryCount, 2);
+  assert.ok(!ddb.sent.some((c) => c.name === 'GetCommand' && c.input.TableName === 'topics'), 'no NewsCache read');
 });

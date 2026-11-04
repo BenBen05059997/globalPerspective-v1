@@ -9,6 +9,7 @@ const Module = require('node:module');
 const path = require('node:path');
 const realLlm = require('../src/llm');
 const { archiveRowKey } = require('../src/dayZero');
+const { inboxLines } = require('../src/entriesInbox');
 
 const SHARED_SRC = path.resolve(__dirname, '../src');
 
@@ -116,6 +117,18 @@ function archiveRows(byDaysAgo) {
   return Object.entries(byDaysAgo).map(([n, entries]) => ({ id: dayAgo(Number(n)).key, entries }));
 }
 
+/**
+ * The entries-inbox day files for fakeS3({...}) from { daysAgo: [entries] }, written with the shared writer (one batch a day):
+ * { 'record/inbox/entries/DAY.jsonl': { body, etag } }. The same entries as archiveRows(byDaysAgo) hold in DynamoDB.
+ */
+function inboxObjects(byDaysAgo, prefix = 'record/') {
+  return Object.fromEntries(Object.entries(byDaysAgo).map(([n, entries]) => {
+    const { date } = dayAgo(Number(n));
+    const lines = inboxLines(entries, { batch: `${date}T05:00:00.000Z` });
+    return [`${prefix}inbox/entries/${date}.jsonl`, { body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n', etag: '"i"' }];
+  }));
+}
+
 function inDir(file, dir) { return file.startsWith(dir + path.sep); }
 
 /**
@@ -154,4 +167,4 @@ async function withLambda(file, opts, body) {
   }
 }
 
-module.exports = { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows, GetCommand, PutCommand, QueryCommand, ScanCommand, GetObjectCommand, PutObjectCommand };
+module.exports = { withLambda, fakeDdb, fakeS3, fakeLlm, dayAgo, archiveRows, inboxObjects, GetCommand, PutCommand, QueryCommand, ScanCommand, GetObjectCommand, PutObjectCommand };

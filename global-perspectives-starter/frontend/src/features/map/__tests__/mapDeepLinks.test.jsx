@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router';
 import {
   situationForFocus, topicForStory, situationForThread, topicFromWebIndex, countryForParam, countryCardName, withFocusOutline,
 } from '@/features/map/lib/deepLinks.js';
+import { differingStoryTitle } from '@/features/map/lib/situationText.js';
 
 const WORLD = {
   schema: 1,
@@ -29,6 +30,7 @@ const WORLD = {
 const TOPICS = [{ topicId: 'Today topic-0', threadId: 'thread-today-1', title: 'Today’s story', iso3: ['FRA'], regions: ['France'], category: 'politics' }];
 const WEB_INDEX = {
   threads: {
+    'thread-ukraine-war-abc123': { title: 'Ukraine war: front lines hold', places: [{ name: 'Ukraine', n: 5 }] },
     'thread-old-strike-9f9f9f': { title: 'Port strike in Chile', places: [{ name: 'Chile', n: 3 }, { name: 'Pacific Ocean', n: 1 }] },
   },
   links: [], shared: [],
@@ -99,6 +101,16 @@ describe('map deep links — pure resolvers', () => {
   });
 });
 
+describe('differingStoryTitle', () => {
+  const sit = { verb_label: 'Ukraine — fighting spreads' };
+  it('returns the story title only when it reads differently', () => {
+    expect(differingStoryTitle(sit, 'Ukraine war: front lines hold')).toBe('Ukraine war: front lines hold');
+    expect(differingStoryTitle(sit, '  ukraine — FIGHTING  spreads ')).toBeNull();
+    expect(differingStoryTitle(sit, '')).toBeNull();
+    expect(differingStoryTitle(sit, undefined)).toBeNull();
+  });
+});
+
 describe('map deep links — the console', () => {
   beforeEach(() => {
     localStorage.clear(); vi.resetModules();
@@ -127,6 +139,17 @@ describe('map deep links — the console', () => {
     await renderAt('/?story=thread-ukraine-war-abc123');
     expect(screen.getByRole('heading', { name: 'Ukraine — fighting spreads' })).toBeInTheDocument();
     expect(radar()).toHaveAttribute('data-focus-id', 'news#UKR#thread-ukraine-war-abc123');
+  });
+
+  it('?story=<thread of a situation> names the story too when its title differs from the situation heading', async () => {
+    await renderAt('/?story=thread-ukraine-war-abc123');
+    expect(await screen.findByText('From the story: Ukraine war: front lines hold')).toBeInTheDocument();
+  });
+
+  it('?focus=<situation> never shows a "From the story" line', async () => {
+    await renderAt('/?focus=news%23UKR%23thread-ukraine-war-abc123');
+    expect(screen.getByRole('heading', { name: 'Ukraine — fighting spreads' })).toBeInTheDocument();
+    expect(screen.queryByText(/From the story/)).toBeNull();
   });
 
   it('?story=<today’s thread> opens its story card and flies to its country', async () => {

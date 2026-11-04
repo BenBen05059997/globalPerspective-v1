@@ -2,148 +2,34 @@
 
 Operator tools for the record. They run from a laptop; they are not deployed as Lambdas. Timeline: [ARCHITECTURE_TIMELINE.md](../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 
-Two families. The note backfills (`backfill-*-notes.mjs`, `capture-entry-notes.mjs`) copy what the model-writing Lambdas stored in DynamoDB into `record/notes/` for the days before those Lambdas wrote notes themselves (decision 0042; briefs 0048). The history copy (`backfill-history.mjs`, `backfill-forecasts.mjs`, `check-history.mjs`) puts the pre-record days into the record (decision 0047). All of them have been run live: the record's facts now start 2026-03-07 and every notes subtype has been backfilled. Every one is idempotent (same ids, so a re-run appends nothing) and writes under `record/shadow/` or only prints unless told otherwise (`--live`, `--write` or `--prefix`; each section says which), so a rehearsal never touches the live record.
+`sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works). Every tool here is idempotent (same ids, so a re-run appends nothing) and writes under `record/shadow/` or only prints unless told otherwise (`--live`, `--write` or `--prefix`; each section says which), so a rehearsal never touches the live record. Tests sit beside the scripts (`node --test backend/record/cli/<name>.test.mjs`).
 
-## capture-entry-notes.mjs
+## Finished one-shot backfills
 
-Copies the agent's per-entry notes (`SummarizeAndPredict` `TOPIC#` items `SUMMARY`, `PREDICTION`, `TRACE_CAUSE`) into
-`record/notes/entry/YYYY-MM-DD.jsonl` (decision 0042) through shared `notes.js`, so these notes are the reference shape every
-note writer follows. Each note's subject is its entry fact's `eventId`, computed with the shared `entryIdentity` from the
-topic's sources in NewsCache `latest`; a note whose `eventId` is not an entry fact within 100 days is reported as `unmatched` and
-not written (an article seen again keeps the eventId of its first day). The agent keeps only the current generation (older
-items are pruned and carry a `ttl`), so a run copies what exists now; a re-run appends nothing (same `noteId`).
+All of these have been run live: the record's facts now start 2026-03-07 and every notes subtype has been backfilled. The scripts stay for now (the operator decides on deleting them); read the script header for flags.
 
-```sh
-RECORD_SDK_DIR=<dir with @aws-sdk/client-s3, client-dynamodb, lib-dynamodb> node backend/record/cli/capture-entry-notes.mjs [--dry] [--live]
-```
-Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/capture-entry-notes.test.mjs`.
+| Script | What it did | Decision (date) | Status |
+|---|---|---|---|
+| `capture-entry-notes.mjs` | Copied the agent's per-entry notes (`TOPIC#` summary, prediction, cause) into `record/notes/entry/` | 0042 (2026-10-31) | done |
+| `backfill-entry-notes.mjs` | Turned each `archive#DAY` entry's stored texts into archive-copy entry notes (`model` null) | 0042 (2026-10-31) | done |
+| `backfill-country-notes.mjs` | Copied `COUNTRY_INTELLIGENCE` items and `HISTORY#` rows into `country` notes | 0042 (2026-10-31) | done |
+| `backfill-country-facts-notes.mjs` | Copied the 40 `FACTS#` items into `country_facts` notes | 0053 (2026-10-31) | done |
+| `backfill-story-history-notes.mjs` | Copied `THREAD_HISTORY#` rows into `story_history` notes | 0053 (2026-10-31) | done |
+| `compare-reads.mjs` | Read-only check that the read API's country and story rows equal the same rows rebuilt from notes | 0053 (2026-10-31) | done |
+| `backfill-brief-notes.mjs` | Copied `DAILY_BRIEF#` and `WEEKLY_BRIEF#` rows into `daily_brief` / `weekly_brief` notes | 0048 (2026-10-31) | done |
+| `backfill-link-notes.mjs` | Turned the country webs' causal edges and the S3 web history into `link` and `web` notes | 0042 (2026-10-31) | done |
+| `backfill-story-analysis-notes.mjs` | Turned each `THREAD_ANALYSIS` item into a `story_analysis` note | 0042 (2026-10-31) | done |
+| `backfill-drift-notes.mjs` | Turned `COUNTRY#` `DRIFTLOG#` / `DRIFT#` items into country `drift` notes | 0042 (2026-10-31) | done |
+| `backfill-story-drift-notes.mjs` | Turned story `DRIFT#` items into story `drift` notes | 0042 (2026-10-31) | done |
+| `backfill-question-draws.mjs` | Turned `SEED#` commits and `SAMPLE#` draws into the draws inbox lines | 0043 (2026-10-31) | done |
+| `backfill-forecasts.mjs` | Appended the `forecast_drawn` facts the facts run missed (rows whose topic was not among the day's entries) | 0047 (2026-10-31) | done |
+| `backfill-history.mjs` | Replayed the archive days 2026-03-07..09-05 through `newsStoryRecord`, placed the pre-record `PRED#` rows, kept unplaceable ones whole in `record/legacy/predictions/` | 0047 (2026-10-31, run live 07:25 UTC, 0 diffs) | done |
+| `check-history.mjs` | Printed the measurements of the history copy from local files | 0047 (2026-10-31) | done |
+| `benchmark-assignments.mjs` | Turned the gap benchmark's T1 continuations into assignment inbox lines (reason "gap benchmark 2026-10-24") | 0040 (2026-10-24) | done |
 
-## backfill-entry-notes.mjs
+`backfill-history.mjs` is still the dry-run harness for `newsStoryRecord` over any range of archive days (`--out`, `--seed`, `--ddb-cache`; see the newsStoryRecord README). The history copy and the note backfills use `RECORD_SDK_DIR=<sdk dir> node backend/record/cli/<script>.mjs [--dry] [--live]`.
 
-For every day the record has facts for, turns each NewsCache `archive#DAY` entry's stored `ai` texts (summary, forecast, cause,
-cut at 1,500 characters by the agent) into archive-copy entry notes through shared `notes.js` `archiveEntryNotes`: format
-`text`, `model` null (the archive did not keep it), `at` the archive time, `payload.from: "archive"`. Views prefer an exact note
-over a copy. Unmatched subjects are reported and not written; a re-run appends nothing.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-entry-notes.mjs [--dry] [--live] [--prefix record/<name>/] [--from DAY] [--to DAY]
-```
-The days are the facts manifest's, and the history copy (below) has put the 2026-03-07..09-05 facts on the record, so the same command covers them. `--prefix` reads the facts of that prefix and writes its notes there (a rehearsal on `record/shadow-history/`). Test: `node --test backend/record/cli/backfill-entry-notes.test.mjs`.
-
-## backfill-country-notes.mjs
-
-Copies every current `SummarizeAndPredict` `COUNTRY#<c>` / `COUNTRY_INTELLIGENCE` item into a full `country` note (its own `generatedAt`
-and `model`; subject the ISO3 from the shared `resolveIso3`, a name with none is reported and skipped), and every `HISTORY#<date>` row
-into a reduced history copy (`payload.from: "history"`, `model` null: the row did not record it) through shared `notes.js`. A
-`HISTORY#` row written by the same run as a briefing item (same `generatedAt`) is that briefing's subset and is not planned. Views prefer
-an exact note over a copy. A re-run appends nothing (same `noteId`).
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-notes.mjs [--dry] [--live] [--no-history]
-```
-Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-country-notes.test.mjs`.
-
-## backfill-country-facts-notes.mjs, backfill-story-history-notes.mjs, compare-reads.mjs (decision 0053)
-
-`backfill-country-facts-notes.mjs` copies the 40 `FACTS#<c>` / `COUNTRY_FACTS` items into `country_facts` notes (model null, `at` the item's `lastUpdatedAt`).
-`backfill-story-history-notes.mjs` copies the `THREAD#<id>` / `THREAD_HISTORY#<date>` rows into `story_history` notes (`payload.from: "history"`, model null; the readers
-prefer the `story_analysis` note of a day that has one). `backfill-drift-notes.mjs` now reads `DRIFT#` as well as `DRIFTLOG#` (26 country `DRIFT#` rows from 23 June to 5 July have no
-`DRIFTLOG#` twin). All three write `record/shadow/` by default, `--live` writes `record/`, `--dry` writes nothing, and a re-run appends nothing.
-
-`compare-reads.mjs` is read only (DynamoDB Get/Query/Scan, S3 Get): it loads the read API's `records.js` and compares every country and story row from DynamoDB with the
-same row rebuilt from the notes (10 countries x `country_history` snapshots, drift chain, signed-out and member shapes, `corrections_feed`, 20 `thread_analysis`, previews, `country_facts`, thread history),
-using the notes the backfills would write for the two subtypes and the drift rows that have none yet. Exit 1 on a difference.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cli/compare-reads.mjs [--countries 10] [--threads 20]
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-country-facts-notes.mjs [--dry] [--live]
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-history-notes.mjs [--dry] [--live]
-```
-Tests: `node --test backend/record/cli/backfill-country-facts-notes.test.mjs backend/record/cli/backfill-story-history-notes.test.mjs backend/record/cli/backfill-drift-notes.test.mjs`.
-
-## backfill-brief-notes.mjs
-
-Copies every `SummarizeAndPredict` `DAILY_BRIEF#<date>` / `DAILY_BRIEF` row into a `daily_brief` note and every `WEEKLY_BRIEF#<weekOf>` /
-`WEEKLY_BRIEF` row into a `weekly_brief` note (decision 0048) through the builders the writers use (`dailyBriefNote`, `weeklyBriefNote` in
-shared `notes.js`). Subject `daily:<date>` / `weekly:<weekOf>`, `at` the row's own `generatedAt`, `model` the row's, payload the stored row
-minus `PK`, `SK`, `ttl`, `generatedAt` and `model` (drafts included; the views serve published weeklies only). The note a writer makes for a
-row has the same `noteId`, so a row the writers also wrote, or a re-run, appends nothing. A row the builder refuses is reported and skipped. The live brief writers write no notes until their env `NOTES_PREFIX` is set (decision 0048), so until then this script is what puts the briefs in the record.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-brief-notes.mjs [--dry] [--live]
-```
-Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-brief-notes.test.mjs`.
-
-## backfill-link-notes.mjs
-
-Turns the causal edges of the country webs into `link` notes through the same planner `newsSystemsAnalysis` uses (`recordNotes.js`
-`planLinkNotes`). Sources (read-only): the current `SYSTEMS#` / `SYSTEMS_ANALYSIS` rows (the webs `WEB#INDEX/LATEST` is built from; they carry
-the model) and the dated S3 web history `web/YYYY/MM/DD.json` (`webs`): a web there that is not also a current row has no recorded model, so its
-notes are copies (`model` null, `payload.source: "web-history"`). Cites are the eventIds of the cited entries found in the NewsCache archive
-rows of the cited days. Region rows (Europe, Asia ...) have no ISO3 and are reported and skipped; a web holding both directions of a pair
-keeps the stronger edge as the note and the other as `payload.reverse`. `WEB#INDEX/LATEST` is read only to print its link count beside the planned notes. Each web (current and history, edges or not) is also written as one `web` note (nodes and shared-actor backbone; `planWebNotes`), written before the links. A re-run appends nothing.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-link-notes.mjs [--dry] [--live] [--no-history]
-```
-Default writes under `record/shadow/`; `--live` writes `record/`. Test: `node --test backend/record/cli/backfill-link-notes.test.mjs`.
-
-## backfill-question-draws.mjs
-
-Turns the PredictionLog `SEED#<week>/COMMIT` rows into `commit` lines and the `SAMPLE#<week>/DRAW` rows (with the `SEED#<week>/REVEAL` seed) into `draw` lines of the draws inbox (decision 0043), built with the resolver's own `inbox.js` `commitLine` / `drawLine`, so newsStoryRecord makes `question_commit` / `question_draw` facts from them. PredictionLog is read only; the seed `SECRET` is never read out and the draw's `pool` is not copied. A week with a `DRAW` but no `REVEAL` is written with `seedHex: null`. A re-run appends nothing (`sourceKey` `backfill:draws/...`).
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-question-draws.mjs [--dry] [--live]
-```
-Default writes `record/shadow/inbox/draws/`; `--live` writes `record/inbox/draws/`. Test: `node --test backend/record/cli/backfill-question-draws.test.mjs`.
-
-`sdk.mjs` loads the AWS SDK for the record CLIs from the working directory or `RECORD_SDK_DIR` (`RECOVER_SDK_DIR` still works).
-
-## backfill-story-analysis-notes.mjs
-
-Turns every current `SummarizeAndPredict` item `PK THREAD#<id>`, `SK THREAD_ANALYSIS` (scan) into one `story_analysis` note through
-shared `notes.js` `storyAnalysisNote`: `at` the item's `generatedAt`, `model` the stored model, payload the stored analysis. `cites`
-= eventIds of the thread's archive entries it was built from (the stored `entryTopicIds`), found by reading NewsCache
-`archive#DAY` for every day in `record/facts/manifest.json`; an item without `entryTopicIds` gets no cites. A thread with no story
-in `record/views/index/all.json` is reported as unmatched and not written (before the history copy, the threads from before the
-record's then first day, 2026-09-05, were unmatched); a re-run appends nothing.
-
-History: only the current analysis is stored (one item per thread, overwritten on each run). `THREAD_HISTORY#<date>` rows (about
-330, 60-day TTL) hold scalars and the trajectory text only (no storyArc, watch questions, actors or model), so they cannot
-make a valid `story_analysis` note and are not backfilled. Older analyses carry `groundingSources`/`searchResultsCount` (search-grounded
-era); the schema allows them.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-analysis-notes.mjs [--dry] [--live] [--prefix record/<name>/]
-```
-Run it after the history copy and its views, so the threads from before 2026-09-05 find their stories. `--prefix` reads the views and facts of that prefix and writes there.
-Test: `node --test backend/record/cli/backfill-story-analysis-notes.test.mjs`.
-
-## backfill-drift-notes.mjs
-
-Turns every `COUNTRY#<name>` / `DRIFTLOG#<date>` item (the permanent drift archive; `DRIFT#` is the same item with a 60-day TTL) into
-one `drift` note through `driftNote`, ISO3 from `resolveIso3` (unresolved: reported, skipped). The items store no model, so the notes
-are archive copies like the entry copies: `model` null and `payload.from: "archive"` (the schema's drift payload allows `from`).
-The Lambda's configured model (`GROK_MODEL`) is not used: it is what writes today, not necessarily what wrote
-a note months ago, and a made-up attribution would be worse than none. The oldest items lack `currentRiskScore` (optional in the schema).
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-drift-notes.mjs [--dry] [--live]
-```
-Test: `node --test backend/record/cli/backfill-drift-notes.test.mjs`.
-
-## backfill-story-drift-notes.mjs
-
-Turns every `THREAD#<threadId>` / `DRIFT#<date>` item (the story's "what changed" row from `newsDriftCorrector`; 60-day TTL, so only
-the recent weeks exist) into one `drift` note about the story through `storyDriftNote` (subject kind `story`, same `notes/drift/` files
-as the country notes). Archive copies like the country ones: `model` null, `payload.from: "archive"`. A story missing from
-`record/views/index/all.json` is reported as `unmatched` and not written. The story view's `analysis.driftNote` is the latest of these.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-story-drift-notes.mjs [--dry] [--live] [--prefix record/<name>/]
-```
-The thread drift rows of stories from before 2026-09-05 find their stories once the history copy exists. `--prefix` as above.
-Test: `node --test backend/record/cli/backfill-story-drift-notes.test.mjs`.
+## Tools still in use
 
 ## recover-day.mjs
 
@@ -196,14 +82,6 @@ Recovered days never draw forecasts: `newsStoryRecord` refuses `forecast_drawn` 
 
 Offline tests (URL building, GKG zip fixtures built in the test, GDELT JSON and CDX fixtures in `fixtures/`, line shape, dedupe, window split, fake-fetch walk, throttle classification, cool-down, exit code 2): `node --test backend/record/cli/recover.test.mjs`. The shared parser has its own test in `backend/shared/test/rss.test.js`.
 
-## benchmark-assignments.mjs
-
-Turns the gap benchmark's T1 continuations (`out/T1-s*.json`: "this recovered article continues that story") into assignment inbox lines. Local files only, no S3. The article's benchmark id (first 12 chars of `rawId`) is mapped to its `article` fact eventId by reading local copies of the recovered `record/inbox/articles/DAY.jsonl` lines and running `inboxArticleFact` from `newsStoryRecord/src/facts.js`; the target story is the T1 story, or its survivor when `--merges` (JSONL `{from, into}`) says it was merged away. Output lines `{entryId, threadId, by:'operator', at, reason}` (reason = the reader's `why` + " (gap benchmark 2026-10-24)") go to `record/inbox/assignments/DAY.jsonl`, where `entryId` is the article fact's eventId. An article cited by two stories is placed on the first; the other is listed as a conflict. Unmapped ids (no recovered inbox line) are listed and skipped.
-
-```
-node backend/record/cli/benchmark-assignments.mjs --t1 'gap-benchmark/out/T1-s*.json' --inbox-dir ./inbox-articles --merges merges.jsonl --at 2026-10-24T12:00:00.000Z --out assignments.jsonl
-```
-
 ## reconcile-actors.mjs
 Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata (`wbsearchentities` and, for offices, one SPARQL query; 1 request/second in total) for the top N (`--top`) or all (`--all`), and keeps a hit only when its description names an allowed class (person, office, government, ministry, armed forces, police, central bank, court, parliament, party, company, NGO, international organisation, armed group, country/region).
 
@@ -214,39 +92,6 @@ Offices: when the hit looks like a position, the script probes it (instance of p
 Dry run by default; `--write --out DIR` writes `aliases.candidate.json` (the alias-file schema; variants resolving to one id pool under the commonest name; generic and unresolved names included; `ambiguous` listed apart because one canonical takes one id), `review.md` (ready / check / unresolved / generic, one line per entry), plus `aliases.proposals.json`, `generic.candidates.json`, `unresolved.json`, `summary.json`. `--cache FILE` keeps Wikidata answers so a rerun costs no requests. It never writes `record/operator/aliases.json`; the operator copies accepted entries. Tests: `node --test cli/test/*.test.mjs` (no network).
 
 Choices: ready = exact, alias, or an office with exactly one holder; check = near, ambiguous_period, position items. Only the operator promotes a candidate; wrong confident hits are caught in review, not by tightening the rule further.
-
-## backfill-forecasts.mjs
-
-Appends the `forecast_drawn` facts the facts run missed: a PredictionLog `PRED#` row whose topic was not among its day's archive
-entries (the run used to find rows only through the day's entry topics). Reads every `PRED#` row from the record's first day to
-today (a Scan, run as the operator) and every stored fact; a row with no fact becomes one through `forecastFact` (same eventId as
-the facts run). threadId: the row's own, else the latest `entry` fact of the topic; a row with neither is reported `unresolved` and
-not written. **Dry run by default**; `--write` adds the days to the manifest and appends to `record/facts/DAY.jsonl` (`--prefix` for a shadow
-copy). A re-run appends nothing. The views pick the facts up on the next facts run.
-
-```sh
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-forecasts.mjs [--write] [--prefix record/] [--from DAY]
-```
-`--from` reaches back before the record's first day. A row with no own thread and no entry of its topic is placed by the entry whose title equals its title within 3 days (`payload.threadFrom: 'title'`); the nearest entry of the topic wins. `backfill-history.mjs` runs this planner over the pre-record range.
-Test: `node --test backend/record/cli/backfill-forecasts.test.mjs`.
-
-## backfill-history.mjs
-
-Copies the history that lives only in DynamoDB into the record (decision 0047): replays the NewsCache `archive#DAY` rows from the first day wanted up to 2026-09-05, the record's former first day (the first live run had skipped that day itself), oldest first through `newsStoryRecord`'s own handler (`backfill:{from,to}`, `strict:false`), so facts, Runs and views are the nightly code's. Then places the PredictionLog `PRED#` rows the replay's rule did not (`planForecastGaps`, above), copies the rows no story can be found for whole to `legacy/predictions/DAY.jsonl` (+ `manifest.json`), and builds the views again. DynamoDB is read with two Scans (`archive#` rows, `PRED#` rows) and kept in memory; nothing in DynamoDB is written.
-
-```sh
-# dry run: local files only (--seed = a local copy of the live record/, read through where <out> has nothing; --ddb-cache keeps the scanned rows)
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-history.mjs --from 2026-03-07 --to 2026-09-05 --out <outDir> --seed <record copy> --ddb-cache <dir>
-# S3, under a prefix that holds a copy of the live record (facts, inbox, notes, readings, operator); default record/shadow-history/
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-history.mjs --from 2026-03-07 --to 2026-09-05 --write [--prefix record/shadow-history/]
-# the real record
-RECORD_SDK_DIR=<sdk dir> node backend/record/cli/backfill-history.mjs --from 2026-03-07 --to 2026-09-05 --live
-```
-The handler writes `record/shadow/`; the CLI maps that prefix onto the target, so `--live` is `record/`. `--views` alone (no `--from/--to`) rebuilds the views of the target from its facts and notes, for after the notes CLIs ran. A re-run appends nothing (same eventIds). Test: `node --test backend/record/cli/backfill-history.test.mjs`.
-
-## check-history.mjs
-
-`node backend/record/cli/check-history.mjs --record <dir> [--fallback <dir>] --ddb <dir> [--live-views <dir>]` prints the measurements of 0047 as JSON, from local files only: every archive entry as a fact or as "the same article is the fact of another listing" (same day, earlier, later), stories, the forecast rows as facts or legacy copies, analyses and notes the CLIs would write, view sizes, and what changed against the live views (stories, track record, weekly index). `--record` is a directory with `facts/` and `views/` (the dry run's `<out>/record/shadow/`, or an `aws s3 sync` of `record/`); `--ddb` holds `archive.json`, `pred.json` and optionally `thread_analysis.json` (what `--ddb-cache` writes; the last is a Scan with `SK = THREAD_ANALYSIS`).
 
 ## build-entries-inbox.mjs
 
@@ -265,6 +110,7 @@ Equality of the record readers with the DynamoDB rows they replace (decision 005
 RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cli/compare-record-reads.mjs [--only today,analyses,countries,weekly,rss] [--rss-url URL]
 ```
 Test: `node --test backend/record/cli/compare-record-reads.test.mjs`.
+
 ## build-forecasts-inbox.mjs
 
 Builds the forecasts inbox (decision 0052) for the last N days from the PredictionLog `PRED#` rows into **local files**, and proves that the `forecast_drawn` facts built from the inbox are byte-identical to the facts built from the log. Read only: one Scan of the window's `PRED#` rows and GetItem on the archive rows (the day's entries are the context `forecastFact` takes); the inbox is written under `--out`.

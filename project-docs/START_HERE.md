@@ -37,7 +37,7 @@ Step 5, retire the DynamoDB world tables (operator 2026-10-31): flags, blockers 
 Waiting on the operator:
 1. Board decisions: a board summary writer (model and price), a schema field for alert choices, a coverage note in the board feed. Design canvas: https://claude.ai/artifact/6TnZPszLnubW6VBTzoN6qo; overview: https://claude.ai/artifact/69GUFsy8aSACTZYvMpvpyd. Delete the test board "QA test 2026-11-03" on the operator's account.
 2. Derive `iso3` from old `regions` for history ([0047](decisions/0047-history-before-record.md)).
-3. Selection go (P7d); gap benchmark rebuild or drop; the Cloudflare cutover steps ([decision 0019](decisions/0019-frontend-hosting-two-worker-cloudflare.md), [front-worker README](../cloudflare/front-worker/README.md)); delete the leftover untracked `amplify/` (about 56 files).
+3. Selection go (P7d) and one ingest or two ([0057](decisions/0057-one-ingest-or-two.md), proposed); gap benchmark rebuild or drop; the Cloudflare cutover steps ([decision 0019](decisions/0019-frontend-hosting-two-worker-cloudflare.md), [front-worker README](../cloudflare/front-worker/README.md)); delete the leftover untracked `amplify/` (about 56 files).
 4. AWS CLI is signed in as the root user; an Identity Center or admin-user login is safer.
 5. `newsAnalyze` versus repo: the deployed zip differs from the repo (parked credits code); leave it or remove the Lambda (billing code: needs yes). `newsAnalyze` and `newsPolarBilling` stay on `nodejs20.x`.
 

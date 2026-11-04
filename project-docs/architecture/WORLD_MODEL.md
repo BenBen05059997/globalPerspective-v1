@@ -74,7 +74,7 @@ Universal counts for every event, never judged: outlets (corroboration), countri
 1. **The world lifecycle** (situations): `emerging`, `escalating` or `cooling`, `peak`, `closed`, a per-entity state machine with transition history, archived to `situations/archive/<id>.json` on close. It answers "is this still happening".
 2. **The narrative lifecycle** (stories): a pipeline progression (`staging`, `latest`, `today-archive`, `archive#YYYY-MM-DD`), thread accretion (`continues_topic`), and a change log (`newsDriftCorrector`'s drift notes, kept in the record under `record/notes/drift/` and, until step 5, as `DRIFT#` / `DRIFTLOG#` rows). In the record it is dated facts with weekly readings. It answers "has our understanding changed".
 
-Neither is forced into the other's shape: a situation closing does not make a thread done, and a thread accreting new topics does not mean the situation is escalating. They are read together at the event through the `storyId` to `threadId` link. Absence of data never closes a situation (ARCHITECTURE_INGEST_DESIGN.md §4).
+Neither is forced into the other's shape: a situation closing does not make a thread done, and a thread accreting new topics does not mean the situation is escalating. They are read together at the event through the `storyId` to `threadId` link. Absence of data never closes a situation ([decision 0057](../decisions/0057-one-ingest-or-two.md)).
 
 ## 7. The guardrail law
 No new IDs, no new scales, no new taxonomies: extend this model or do not ship. The bar is proving the existing model cannot cover the need, not that a new one is more convenient. This doc is the semantic source of truth (what a field means, which identity it belongs to, whether a scale should exist). `ARCHITECTURE.md` wins on machinery. Neither overrides `DATA_STRATEGY.md`'s S3-world / DynamoDB-user split.
@@ -84,7 +84,7 @@ Done: fingerprint emission by both pipelines; the URL matcher live; the home swa
 
 Next:
 1. Attach the typed-impact fields (measured inputs, universal counts, tier) to registry entries.
-2. Editorial selects from the registry instead of running its own RSS fetch, the point where the two roots become one by construction. Shadow-gated: `newsSelectionShadow` runs the layered selector three times a day (rule `TriggerSelectionShadow`, ENABLED) and writes `audit/selection-shadow/`. The operator's selection decision is pending. See ARCHITECTURE_INGEST_DESIGN.md.
+2. Editorial selects from the registry instead of running its own RSS fetch, the point where the two roots become one by construction. Shadow-gated: `newsSelectionShadow` runs the layered selector three times a day (rule `TriggerSelectionShadow`, ENABLED) and writes `audit/selection-shadow/`. The operator's selection decision is pending. See [decision 0057](../decisions/0057-one-ingest-or-two.md) (proposed).
 3. Surfaces render canonical marks the next time they are touched for another reason; no big-bang UI migration.
 
 Known gaps that convergence must not hide: population (disaster reach), per-event fatalities, and the lossy category mapping in §3.

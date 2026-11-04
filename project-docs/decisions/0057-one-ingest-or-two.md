@@ -1,8 +1,11 @@
-# Ingest design: one ingest or two
+# 0057. One ingest or two
 
-Status: proposal. The operator has not decided; revisit after the record and the weekly are live (`START_HERE.md` lists the open selection decision). Recommendation: converge on one ingest in stages, with the two pipelines kept as they are until a replay proves coverage and identity. Context: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md) (the record), [WORLD_MODEL.md](WORLD_MODEL.md) (identity), `backend/pipeline/cli/README.md` (cleanup tools and the append-only repair policy).
+Status: proposed, operator has not decided (revisit after the record and the weekly are live; START_HERE lists the open selection decision). Moved here on 2026-11-04 from `ARCHITECTURE_INGEST_DESIGN.md`, which was a decision paper, not architecture; the text below is that paper unchanged except for headings. Follows 0035, 0040, 0042; context: [ARCHITECTURE_TIMELINE.md](../architecture/ARCHITECTURE_TIMELINE.md) (the record), [WORLD_MODEL.md](../architecture/WORLD_MODEL.md) (identity), `backend/pipeline/cli/README.md` (cleanup tools and the append-only repair policy).
+Date: 2026-11-04 (moved; the paper itself is older)
 
-## 1. Today (read from code and AWS)
+## Context
+Today, read from code and AWS when the paper was written:
+
 Two pipelines read RSS and classify or select with the model:
 - **Editorial:** `newsIngest` (repo dir `newsInvokeGemini`; calls DeepSeek) runs 3 times a day, reads 26 feeds (fetches up to 25 items each, 8 per feed in the prompt), selects topics under the done-not-said rule and stages them in `NewsCache`. It writes every fetched article to `record/inbox/articles/` first (decision 0040). `newsAgent` then writes the summary, cause trace, forecast and thread per topic.
 - **Map:** `newsSituationIngest` runs hourly over 25 feeds, classifies headlines (country, location, axis, severity; cached in `stories/classify-cache.json`), clusters them deterministically, keeps at most 80 significant clusters in `stories/index.json`, and writes the corpus. `newsSituationTracker` folds clusters, GDACS and the thread story-map into situations and `world/latest.json`.
@@ -11,12 +14,13 @@ Two pipelines read RSS and classify or select with the model:
 
 A topic is one editorial selection; a story is a thread (`threadId`); a cluster is the map's headline group; a situation is a map pin. The wire names `storyId` and S3 `stories/` mean cluster; they are legacy names, not another story.
 
-## 2. Option (a): keep both, bridge them
+## Options
+### Option (a): keep both, bridge them
 Keep both pipelines and schedules. Rename the cluster vocabulary internally, give the map ingest an uncapped recent-cluster manifest (about a 7-day horizon), and link clusters to threads conservatively. Exact URL overlap stays the strongest signal and is checked against contradictory event or time evidence first. A secondary link needs a canonical country and a specific named actor and overlapping event windows (about 72 hours) and a compatible event type; country plus actor plus time alone is not enough. Ambiguity gives null, never a guess, and a latched thread is not overwritten because a reused key later describes another event.
 - Benefit: lowest risk; editorial and map stay independently available.
 - Risk: duplicated RSS work remains; semantic matching can create false story links; the coarse cluster key (axis + first country + first actor) merges distinct events or fragments one.
 
-## 3. Option (b): one hourly reader, editorial selects from its output
+### Option (b): one hourly reader, editorial selects from its output
 `newsSituationIngest` becomes the shared news ingest: a union feed registry fetched once an hour, each new article classified once, the full classified set and versioned cluster membership retained, with an immutable run manifest (counts, status, completion marker) and a latest-success pointer published only after the run is usable. The selector stops fetching, reads completed manifests every eight hours, and records exactly which versions it read. The map index becomes a filtered view. Clusters get a versioned event key from grounded action, place and time, not the actor bucket, with explicit split and continuation relations; a topic may cite several clusters, and a cluster mapped to unrelated threads leaves the map link null or is split.
 - Benefit: one reader and one classification per article.
 - Risk: a single availability dependency; map-specific classification can suppress editorial coverage; the union feeds raise classifier tokens; the batch cap can silently defer articles. Mitigations: a bounded durable backlog, full-corpus retention, separate map and editorial projections, fail-closed stale checks. Never fall back to a model's unsupported knowledge when the corpus is empty.
@@ -25,7 +29,14 @@ Keep both pipelines and schedules. Rename the cluster vocabulary internally, giv
 
 `newsSelectionShadow` (3 times a day, writes only `audit/selection-shadow/`) compares a layered candidate selector against what was published; the outcome review is the operator's selection decision.
 
-## 4. Rules both options need
+`newsSelectionShadow` (3 times a day, writes only `audit/selection-shadow/`) compares a layered candidate selector against what was published; the outcome review is the operator's selection decision.
+
+## Decision
+Not made. Recommendation: converge on one ingest in stages, with the two pipelines kept as they are until a replay proves coverage and identity.
+
+## Consequences
+Whichever option is chosen, these rules hold:
+
 - **No data is not an ending.** During a provider failure the map ingest once dropped classified items from 417 to 124 and clusters from 80 to 55 while still returning ok, and the tracker closed situations for lack of data. The ingest run manifest must say `complete`, `partial` or `failed` with fetched, classified, cached, deferred and unclassified counts; an incomplete run must not advance a complete-coverage watermark, and the tracker must not count absence from an incomplete run toward cooling or closing. Unclassified articles stay in a backlog for retry. Repeated 30-minute sweeps of one ingest run are one observation, not several.
 - **Stable entry identity.** The observation key for a new entry is `(generationId, topicId)`, encoded as a versioned hash; `topicId` alone is unstable across runs, and neither threadId nor array index belongs in it. The world reader's `sourceKey` and `sourceRow` stay as implemented, so `eventId = sha1(kind + sourceKey)` does not change. Conflicting payloads for one key are reported and retained, not overwritten.
 - **Repairs append.** A duplicate story is merged by a `story_merged` fact (review auto-merge or operator line); an entry that sits in the wrong story moves by an `assignment` fact (decision 0040). Raw rows, PRED snapshots and history are not retagged in place; the legacy `threads.mjs merge/split` in-place repair is not the preferred path. Resolve canonical ids before grouping or forecast lookup, keeping the original id in provenance.

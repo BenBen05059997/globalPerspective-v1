@@ -200,7 +200,7 @@ Dated state (what is deployed, which rule is enabled, which release is live) com
 - **Record data:** over-joined threads and duplicate stories the review cannot merge without neighbours; the review flags off-story entries as assignment proposals for the operator to apply.
 - **Backfills:** the gap-benchmark answer key was lost on 2026-10-25 and must be rebuilt or dropped.
 - **Feeds** for Latin America and Southeast Asia wait on operator-supplied URLs.
-- **Map ingest drops unclassified articles silently**, and the tracker then closes pins for lack of data, so "no data" reads as "ended" (ARCHITECTURE_INGEST_DESIGN.md §4).
+- **Map ingest drops unclassified articles silently**, and the tracker then closes pins for lack of data, so "no data" reads as "ended" ([decision 0057](../decisions/0057-one-ingest-or-two.md), rules both options need).
 - **Raw-row parsers outside `world/`:** some Lambdas still parse raw rows themselves, so a concept (risk tier, story title, freshness, outlet from host, Firebase JWT check) can be defined more than once; they move to `world/` as touched.
 - **Retire list** (each deletion needs its own operator yes, after the rebuild test): `DRIFTLOG#`, `situations/history`, `WEB#INDEX` / `LATEST`, `tags/backfill`, `world/shadow`, the Scans in `newsReadApi`.
 - **Open questions:** one ingest or two; consolidate the five user tables.

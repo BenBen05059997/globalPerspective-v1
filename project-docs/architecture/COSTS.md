@@ -24,7 +24,7 @@ Next biggest: DynamoDB `APN1-ReadRequestUnits` $0.07 / $0.06 / $0.08. S3 was abo
 The 2026-11-04 digests fix is not in these days yet.
 
 DeepSeek (the model provider) is not on the AWS bill. It is estimated from our own usage logs: about $0.10-0.40 on a normal
-day, about $2.40 on the Monday weekly-review day, about $6-10 a month. List prices, per million tokens
+day, about $2.40 on the Monday weekly-review day (review on Pro), about $6-10 a month before the 2026-11-04 switch to Flash (decision [0056](../decisions/0056-models-by-measured-quality.md)); about $2-3 expected after it. List prices, per million tokens
 (`backend/monitoring/newsHealth/src/prices.json`, operator-owned, fetched 2026-11-04): Flash $0.15 in / $0.60 out / $0.003
 cache hit; Pro $0.66 / $1.98 / $0.022; both double at peak (01-04 and 06-10 UTC, Mon-Fri; holidays not modelled, so the
 estimate is an upper bound).
@@ -37,7 +37,7 @@ estimate is an upper bound).
 | Other S3 requests (about 40-85k a day, **not yet attributed**) | Suspects: `newsSituationTracker` (every 30 min) writing every situation file each run; the `record/shadow/` prefixes. | to find (section 5) |
 | DynamoDB (about $9-10 a month in Sep-Oct; $0.24 in 3 days of Nov) | The old world tables, read and written until decision 0035 step 5 retires them. Table TTL is disabled, so rows only grow. | decision 0035; `STEP5_AUDIT.md` |
 | CloudWatch ($5-6 a month in Sep-Oct) | Alarms and custom metrics. The alarms were removed 2026-11-02 (operator decision). Nov shows about $0. | section 4 |
-| DeepSeek | The weekly review `newsRecordReview` (Pro, about 670 calls a week) is about half of model spend. The rest is `newsAgent` (Flash for summaries, Pro for forecasts) and the analysis Lambdas. | `ARCHITECTURE_WEEKLY_REVIEW.md` |
+| DeepSeek | The weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, now Flash, about 4 times cheaper per call) was about half of model spend. The rest is `newsAgent` (Flash for summaries, Pro for forecasts) and the analysis Lambdas. | `ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Lambda, API Gateway, SQS | Cents. | |
 
 ## 3. Where to look
@@ -69,14 +69,16 @@ estimate is an upper bound).
    baseline 156 h, open alert, coverage jump; never twice a UTC day; top `COUNTRY_TOP_N`).
 3. **Prompt caching.** Providers bill cache-hit tokens at about 1/50 of input; the `[usage]` cache-hit count shows how well
    prompts are laid out (stable prefix first).
-4. **Flash for bulk, Pro where it matters.** Live model env, 2026-11-04 (values are model names):
+4. **Each job's model is chosen by a recorded Flash-vs-Pro test** (decision [0056](../decisions/0056-models-by-measured-quality.md); the 29 Sep choice of Pro for the "high-leverage" calls was a judgement). Flash is about 4 times cheaper per call. Live model env, 2026-11-04 (values are model names):
 
 | Lambda | Model |
 |---|---|
 | `newsAgent` | `GROK_MODEL=deepseek-flash` (summaries); `PREDICTION_MODEL=deepseek-v4-pro` (forecasts) |
 | `newsThreadAnalysis`, `newsDriftCorrector`, `newsPredictionResolver` | Flash |
-| `newsRecordReview` | `REVIEW_MODEL=deepseek-v4-pro` |
-| `newsDailyBrief`, `newsWeeklyBrief`, `newsCountryIntelligence`, `newsSystemsAnalysis`, `newsAnalyze` | `GROK_MODEL=deepseek-v4-pro` |
+| `newsRecordReview` | `REVIEW_MODEL=deepseek-flash` (since 2026-11-04) |
+| `newsDailyBrief`, `newsSystemsAnalysis` | `GROK_MODEL=deepseek-flash` (since 2026-11-04) |
+| `newsWeeklyBrief`, `newsCountryIntelligence`, `newsAnalyze` | `GROK_MODEL=deepseek-v4-pro` (country: Flash invented facts in the test; weekly brief: equal quality, saving about 2 cents a month; `newsAnalyze` parked) |
+| `newsIngest` | `GROK_MODEL=deepseek-v4-pro` now; planned `deepseek-flash` after its filter fixes are deployed |
 
    The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` hold DeepSeek). `newsDailyBrief` also has
    an `AI_MODEL` set to a `:free` model name; check the code for which one it uses.
@@ -93,10 +95,11 @@ estimate is an upper bound).
 |---|---|
 | Find the remaining S3 writers; make the situations tracker rewrite only when content changed (same digest idea) | Most of the S3 line that remains after the 11-04 fix |
 | Retire the DynamoDB world tables (decision 0035 step 5) | About -$2.50 a month by the coordinator's estimate (Nov 1-3 run-rate: $0.24 in 3 days) |
+| Move the four jobs from Pro to Flash after tests (0056): review, systems and daily brief done 2026-11-04; `newsIngest` planned | About -$4 to 7 a month of model spend (estimate from the test reports, not yet measured live) |
 | Items vs stories: a one-entry item gets no forecasts, links or analysis | An estimated third to half off model spend |
 | Incremental refresh; freeze cold stories | Headroom rather than money |
 
-Expected end state: AWS about $2-3 a month, DeepSeek about $4-6 a month.
+Expected end state: AWS about $2-3 a month, DeepSeek about $2-3 a month with the Flash switches (less if items vs stories lands).
 
 ## 6. How to check a cost claim
 

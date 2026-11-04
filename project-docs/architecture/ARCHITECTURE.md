@@ -47,7 +47,7 @@ flowchart LR
   back -->|posts| soc
   operator -->|deploys, corrections| back
 ```
-Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`); the exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsDailyBrief` (daily 23:00 JST) are ENABLED.
+Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`). Each job's model is chosen by a recorded Flash-versus-Pro test (decision 0056). Live 2026-11-04: `newsRecordReview`, `newsSystemsAnalysis`, `newsDailyBrief`, `newsAgent` summaries and the other analysis Lambdas run `deepseek-flash`; `newsCountryIntelligence`, `newsWeeklyBrief`, `newsAgent` forecasts (`PREDICTION_MODEL`) and parked `newsAnalyze` run `deepseek-v4-pro`; `newsIngest` is planned to move to Flash after its filter fixes. The exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsDailyBrief` (daily 23:00 JST) are ENABLED.
 
 ### Containers
 ```mermaid
@@ -320,7 +320,7 @@ Firebase Authentication in the browser (`src/shared/contexts/AuthContext.jsx`: e
 **Invariant:** a Function URL gets CORS from exactly one place. If the code emits `Access-Control-Allow-Origin` (`newsPolarBilling`, `newsAnalyze`, `newsSharedAnalysis`), the Function-URL CORS config stays empty; if it does not (`newsSavedItems`, `newsRecommend`, `newsClientErrors`, `newsBoard`), the config must be populated. Both at once sends a duplicate header and the browser fails with "Failed to fetch". Grep the source before touching either side.
 
 ### LLM providers
-Every LLM-calling Lambda calls DeepSeek (`api.deepseek.com`) through shared `llm.js` or its own client; the model is the live env value. `newsSelectionShadow` is the exception (external "Jev" scorer).
+Every LLM-calling Lambda calls DeepSeek (`api.deepseek.com`) through shared `llm.js` or its own client; the model is the live env value (job-by-job list: [COSTS.md](COSTS.md) section 4). `newsSelectionShadow` is the exception (external "Jev" scorer).
 
 **Invariant:** env names lie. `GROK_*` and `XAI_*` keys hold DeepSeek settings; read the live value (`aws lambda get-function-configuration`), never infer the provider from the name.
 

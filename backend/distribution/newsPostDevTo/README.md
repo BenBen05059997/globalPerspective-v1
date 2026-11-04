@@ -16,7 +16,7 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 - env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` reads the day's entries (`today-archive`) from the record's view `index/today.json` while `manifest.builtAt` is under 9 h old, and reads DynamoDB for any view that cannot answer; `compare` reads both, uses DynamoDB and logs `[record-reads]` equal or DIFFER. The thread analyses and country briefings follow `NOTES_READS` (0053). Needs `s3:GetObject` on `record/views/*` (role `newsPostDevTo-role-uek0owwd`). The brief row is still put to `SUMMARIZE_PREDICT_TABLE`.
 
 ## Models
-- `GROK_MODEL` (fallback `deepseek-v4-pro`) with key `XAI_API_KEY`, through the shared client `src/_shared/llm.js` (thinking disabled). The GROK_*/XAI_* names hold DeepSeek values.
+- `GROK_MODEL` (live `deepseek-flash` since 2026-11-04, decision 0056: equal content in the test, looser summary length and bold markers; code fallback `deepseek-v4-pro`) with key `XAI_API_KEY`, through the shared client `src/_shared/llm.js` (thinking disabled). The GROK_*/XAI_* names hold DeepSeek values.
 
 ## Gotchas
 - The handler rejects (`Missing required env vars: <names>`, never the values) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset, so the Errors metric moves; it checks after the no-entries skip, so an empty day still answers 200 skipped. Other failures (unset `TOPICS_DDB_TABLE`, a bad model reply, a failed put) are returned as `500` and do not move Errors.

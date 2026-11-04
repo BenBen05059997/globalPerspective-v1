@@ -22,7 +22,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- rule   : returns JSON only: line, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
 |  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
-|  +- model  : DeepSeek larger model (env); a stub model in tests and in the golden-week run
+|  +- model  : DeepSeek model from env `REVIEW_MODEL` (`deepseek-flash` since 2026-11-04, decision 0056); a stub model in tests and in the golden-week run
 |
 +- 4 CHECK      no model            [newsRecordReview]
 |  +- rule   : citations exist and belong to the story (or both stories for a link); a chapter's from/to = the dates of its cited facts;
@@ -99,6 +99,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 - Deployed name `newsRecordReview`, dir `backend/record/newsRecordReview`, group `record` (`scripts/functions.json`); runtime `nodejs22.x`, timeout 900 s, memory 1024 MB. Deploy with `scripts/lambda.sh` (diff first).
 - Schedule: EventBridge rule `TriggerRecordReview`, Monday 01:00 UTC, `cron(0 1 ? * MON *)` (the default week is the one that just ended), input `{"shadow":false}`, ENABLED.
 - Role and IAM: `S3 GetObject record/*`; `PutObject` on `record/readings/*`, `record/runs/review-*`, `record/inbox/merges/*` and their `record/shadow/` equivalents. No DynamoDB.
+- Model: `REVIEW_MODEL=deepseek-flash` live since 2026-11-04 (was `deepseek-v4-pro`). Golden week on Flash, 2 runs: every gate passed, about 4 times cheaper per call; canary on live W44 running 2026-11-04. Back to Pro is one env value (decision 0056).
 - Env: `REVIEW_MODEL`, `WORLD_BUCKET`, `GROK_API_URL`, `XAI_API_KEY`, and `REVIEW_CONCURRENCY` (set live; the code default is 6). The provider and model are the live env, not the variable names (`GROK_*`/`XAI_*` hold DeepSeek).
 - Watch the first full Run's `notReached` after a change: a re-run of the same week re-reads every story (only earlier weeks' readings count for the skip rule), so raise `REVIEW_CONCURRENCY` or split by `threadIds` if it times out.
 - Golden week: `node scripts/golden-week.js capture|real|replay DIR` runs this handler on the frozen fixture in memory; results under `fixtures/golden-week/runs/` (see its README).

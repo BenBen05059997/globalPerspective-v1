@@ -17,7 +17,7 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 - Other env names: `SYSTEMS_TEST_COUNTRIES` (comma list restricting targets), `MAX_TOKENS` (default 3000), `TEMPERATURE` (default 0.3)
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values. Thinking mode disabled.
+- `GROK_MODEL` (live `deepseek-flash` since 2026-11-04, decision 0056: as good in the test, valid graphs; code fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values. Thinking mode disabled.
 
 ## Gotchas
 - `SYSTEMS#` rows carry a 14-day `ttl`, but the table's TTL is disabled, so old webs never expire; readers judge freshness from `generatedAt`.

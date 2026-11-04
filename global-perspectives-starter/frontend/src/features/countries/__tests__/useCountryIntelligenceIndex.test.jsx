@@ -34,12 +34,12 @@ describe('useCountryIntelligence (several countries)', () => {
     expect(api.fetchCountryIntelligence).not.toHaveBeenCalled();
   });
 
-  it('a missing index falls back to the action, unreported', async () => {
+  it('a missing index falls back to the action and is reported', async () => {
     rv.fetchCountriesIndex.mockResolvedValue(null);
     const { result } = renderHook(() => useCountryIntelligence(names));
     await waitFor(() => expect(result.current.intelligence.France?.headline).toBe('from action'));
     expect(api.fetchCountryIntelligence).toHaveBeenCalledWith(names);
-    expect(sink.reportFetchError).not.toHaveBeenCalled();
+    expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.objectContaining({ message: 'countries index missing' }));
   });
 
   it('a failed index read is reported and falls back to the action', async () => {

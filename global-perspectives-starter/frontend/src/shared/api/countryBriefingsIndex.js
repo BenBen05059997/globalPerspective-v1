@@ -24,13 +24,17 @@ export function briefingsFromIndex(index, names) {
 }
 
 /**
- * The index for the next ~30 minutes (one request shared by every caller), or null when it is not generated or could not be
- * read (a failed read is reported); the caller then asks the action. `getViews` is for tests.
+ * The index for the next ~30 minutes (one request shared by every caller), or null when it is not generated, unusable or could not be
+ * read (each is reported once per load); the caller then asks the action. `getViews` is for tests.
  */
 export function loadCountriesIndex(getViews = makeRecordViews()) {
   if (memo && Date.now() - memo.ts < TTL_MS) return memo.promise;
   const promise = getViews.fetchCountriesIndex()
-    .then((index) => (countriesIndexUsable(index) ? index : null))
+    .then((index) => {
+      if (countriesIndexUsable(index)) return index;
+      reportFetchError('countries-index', new Error(index ? 'countries index unusable' : 'countries index missing')); // as viewsFresh.js reports a missing manifest
+      return null;
+    })
     .catch((err) => { reportFetchError('countries-index', err); return null; });
   memo = { ts: Date.now(), promise };
   promise.then((index) => { if (!index && memo && memo.promise === promise) memo = null; }); // never keep a miss

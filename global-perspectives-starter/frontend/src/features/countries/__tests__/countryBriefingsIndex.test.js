@@ -65,18 +65,34 @@ describe('loadCountriesIndex', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('a missing index (404) answers null unreported, and is asked again next time', async () => {
+  it('a missing index (404) is reported once, answers null, and is asked again next time', async () => {
     const fn = vi.fn().mockResolvedValue(null);
-    expect(await loadCountriesIndex(views(fn))).toBeNull();
+    const [a, b] = await Promise.all([loadCountriesIndex(views(fn)), loadCountriesIndex(views(fn))]);
+    expect(a).toBeNull(); expect(b).toBeNull();
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(sink.reportFetchError).toHaveBeenCalledTimes(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.objectContaining({ message: 'countries index missing' }));
     await Promise.resolve();
     expect(await loadCountriesIndex(views(fn))).toBeNull();
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(sink.reportFetchError).not.toHaveBeenCalled();
   });
 
-  it('a failed read is reported and answers null so the caller asks the action', async () => {
+  it('an unusable index is reported once and answers null', async () => {
+    const fn = vi.fn().mockResolvedValue({ countries: [] });
+    expect(await loadCountriesIndex(views(fn))).toBeNull();
+    expect(sink.reportFetchError).toHaveBeenCalledTimes(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.objectContaining({ message: 'countries index unusable' }));
+  });
+
+  it('a failed read is reported once and answers null so the caller asks the action', async () => {
     const fn = vi.fn().mockRejectedValue(new Error('record view 500 for index/countries.json'));
     expect(await loadCountriesIndex(views(fn))).toBeNull();
-    expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.any(Error));
+    expect(sink.reportFetchError).toHaveBeenCalledTimes(1);
+    expect(sink.reportFetchError).toHaveBeenCalledWith('countries-index', expect.objectContaining({ message: expect.stringContaining('500') }));
+  });
+
+  it('a usable index is not reported', async () => {
+    expect(await loadCountriesIndex(views(vi.fn().mockResolvedValue(data.index)))).toBe(data.index);
+    expect(sink.reportFetchError).not.toHaveBeenCalled();
   });
 });

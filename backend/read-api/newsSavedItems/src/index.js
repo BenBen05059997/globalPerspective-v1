@@ -21,6 +21,8 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
 const ALLOWED_ITEM_TYPES = new Set(['thread', 'country', 'daily', 'weekly', 'pair']);
 const MAX_SAVED_ITEMS = 500;
+const MAX_QUERY_PAGES = 10;
+const BOARD_PREFIX = 'board#';
 const MAX_METADATA_BYTES = 4096;
 
 // ── DynamoDB client (singleton) ─────────────────────────────────────────────
@@ -140,15 +142,24 @@ async function getSavedItemsCore(uid, args) {
     if (typeErr) return { ok: false, error: typeErr, status: 400 };
     params.KeyConditionExpression += ' AND begins_with(savedKey, :prefix)';
     params.ExpressionAttributeValues[':prefix'] = `${itemType}#`;
-  } else {
-    // Boards (newsBoard, savedKey `board#<id>`) share this table but are not saved items: never list them here.
-    params.FilterExpression = 'NOT begins_with(savedKey, :boards)';
-    params.ExpressionAttributeValues[':boards'] = 'board#';
   }
 
   try {
-    const { Items = [] } = await getDynamoClient().send(new QueryCommand(params));
-    const items = Items
+    // Boards (newsBoard, savedKey `board#<id>`) share this table but are not saved items. savedKey is the sort key, so a
+    // FilterExpression on it is rejected by DynamoDB: drop them here, and keep paging until MAX_SAVED_ITEMS saves are in
+    // hand (Limit counts rows read, boards included).
+    const rows = [];
+    let startKey;
+    for (let page = 0; page < MAX_QUERY_PAGES && rows.length < MAX_SAVED_ITEMS; page += 1) {
+      const { Items = [], LastEvaluatedKey } = await getDynamoClient().send(new QueryCommand(
+        startKey ? { ...params, ExclusiveStartKey: startKey } : params,
+      ));
+      for (const row of Items) if (!String(row.savedKey).startsWith(BOARD_PREFIX)) rows.push(row);
+      if (!LastEvaluatedKey) break;
+      startKey = LastEvaluatedKey;
+    }
+    const items = rows
+      .slice(0, MAX_SAVED_ITEMS)
       .map(({ uid: _u, savedKey: _sk, ...rest }) => rest)
       .sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
     console.info('get_saved_items ok', { uid, count: items.length, filterType: itemType || null });

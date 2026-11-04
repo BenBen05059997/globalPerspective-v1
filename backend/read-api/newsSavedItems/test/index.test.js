@@ -163,6 +163,7 @@ test('get_saved_items with no type queries the user\'s partition and excludes bo
     { uid: 'user-1', savedKey: 'country#Japan', itemType: 'country', itemId: 'Japan', metadata: { n: 1 }, savedAt: '2026-10-03T00:00:00.000Z' },
     { uid: 'user-1', savedKey: 'daily#d', itemType: 'daily', itemId: 'd', metadata: {} }, // no savedAt sorts last
     { uid: 'user-1', savedKey: 'thread#new', itemType: 'thread', itemId: 'new', metadata: {}, savedAt: '2026-10-02T00:00:00.000Z' },
+    { uid: 'user-1', savedKey: 'board#b1', title: 'My board', savedAt: '2026-10-09T00:00:00.000Z' },
   ] });
   const res = await call(h, 'get_saved_items', {});
   assert.equal(res.statusCode, 200);
@@ -171,32 +172,44 @@ test('get_saved_items with no type queries the user\'s partition and excludes bo
   assert.deepEqual(sent[0].input, {
     TableName: 'SavedT',
     KeyConditionExpression: 'uid = :uid',
-    ExpressionAttributeValues: { ':uid': 'user-1', ':boards': 'board#' },
-    FilterExpression: 'NOT begins_with(savedKey, :boards)',
+    ExpressionAttributeValues: { ':uid': 'user-1' },
     Limit: 500,
   });
+  assert.ok(!('FilterExpression' in sent[0].input), 'savedKey is the sort key: DynamoDB rejects a filter on it');
   const { data } = json(res);
   assert.deepEqual(data.map((i) => i.itemId), ['Japan', 'new', 'old', 'd']);
   for (const item of data) assert.ok(!('uid' in item) && !('savedKey' in item));
 });
 
-test('the board# filter, read as DynamoDB reads it, leaves a user with boards and saves only their saves', async () => {
+test('board# rows filling the first page do not eat the limit: the next page is read and its saves are listed', async () => {
   const h = load();
-  const table = [
-    { uid: 'user-1', savedKey: 'board#b1', title: 'My board' },
-    { uid: 'user-1', savedKey: 'thread#t1', itemType: 'thread', itemId: 't1', savedAt: '2026-10-01T00:00:00.000Z' },
+  const pages = [
+    { Items: Array.from({ length: 500 }, (_, i) => ({ uid: 'user-1', savedKey: `board#b${i}`, title: `B${i}` })), LastEvaluatedKey: { uid: 'user-1', savedKey: 'board#b499' } },
+    { Items: [{ uid: 'user-1', savedKey: 'thread#t1', itemType: 'thread', itemId: 't1', savedAt: '2026-10-01T00:00:00.000Z' }] },
   ];
-  // A minimal reading of the two expressions this Lambda sends (key prefix and NOT begins_with filter), enough to see what a user would get.
-  respond = (_, input) => {
-    const v = input.ExpressionAttributeValues;
-    const match = /begins_with\(savedKey, (:\w+)\)/.exec(input.KeyConditionExpression || '');
-    let rows = table.filter((r) => !match || r.savedKey.startsWith(v[match[1]]));
-    const f = /^NOT begins_with\(savedKey, (:\w+)\)$/.exec(input.FilterExpression || '');
-    if (f) rows = rows.filter((r) => !r.savedKey.startsWith(v[f[1]]));
-    return { Items: rows };
-  };
+  respond = () => pages.shift();
   const { data } = json(await call(h, 'get_saved_items', {}));
   assert.deepEqual(data.map((i) => i.itemId), ['t1']);
+  assert.equal(sent.length, 2);
+  assert.ok(!('ExclusiveStartKey' in sent[0].input));
+  assert.deepEqual(sent[1].input.ExclusiveStartKey, { uid: 'user-1', savedKey: 'board#b499' });
+  for (const s of sent) assert.ok(!('FilterExpression' in s.input));
+});
+
+test('paging stops at 500 saves, and at 10 pages when the table keeps answering with more', async () => {
+  const h = load();
+  const saves = (n, from = 0) => Array.from({ length: n }, (_, i) => ({ uid: 'user-1', savedKey: `thread#t${from + i}`, itemType: 'thread', itemId: `t${from + i}` }));
+  const pages = [{ Items: saves(300), LastEvaluatedKey: { k: 1 } }, { Items: saves(300, 300), LastEvaluatedKey: { k: 2 } }, { Items: saves(300, 600) }];
+  respond = () => pages.shift();
+  let res = json(await call(h, 'get_saved_items', {}));
+  assert.equal(res.data.length, 500);
+  assert.equal(sent.length, 2);
+
+  sent.length = 0;
+  respond = () => ({ Items: [{ uid: 'user-1', savedKey: 'board#b' }], LastEvaluatedKey: { k: 1 } });
+  res = json(await call(h, 'get_saved_items', {}));
+  assert.deepEqual(res, { success: true, data: [] });
+  assert.equal(sent.length, 10);
 });
 
 test('get_saved_items with a type narrows by key prefix, adds no filter, and validates the type (boards cannot be listed here)', async () => {

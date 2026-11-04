@@ -1,9 +1,18 @@
 # Ops: the health view and the operator page (plan, 2026-11-04)
 
-Status: phase 1 (money + pipeline) is live: `newsHealth` deployed 2026-11-04 (rule `TriggerHealth`, hourly), the `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set), and the `/ops` page is released (bundle `index-CYeE3t3L`, 2026-11-04). Phases 2 to 4 not started. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
+Status: phase 1 (money + pipeline) is live: `newsHealth` deployed 2026-11-04 (rule `TriggerHealth`, hourly), the `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set), and the `/ops` page is released (bundle `index-CYeE3t3L`, 2026-11-04). Phase 2 (readers) is built, not deployed, waiting for the Cloudflare API token (the panel reads "not connected" until then); phases 3 and 4 not started. Operator decisions 2026-11-04: build money + pipeline first, readers second; keep
 Google Analytics and Cloudflare Web Analytics; add Google Search Console; PostHog later, for member events only; no alarms
 (the operator removed them 2026-11-02 and does not want them back). This page is where the operator looks, and what the
 coordinating session reads when asked "how is it now".
+
+## Phase 2 as built (readers)
+- `ops.json` has a `readers` section, built by `newsHealth` on the first run of each UTC day (and hourly again while Cloudflare is not `ok`, which costs no call when there is no token): `cloudflare` (`not_connected` | `error` | `ok`), `own` (counts only), `attention`, `note`.
+- Cloudflare: GraphQL `rumPageloadEventsAdaptiveGroups` (Web Analytics page loads) for the account and site, grouped by date and request path, by referrer host and by country, 14 days. Token `CF_ANALYTICS_TOKEN` (secret, Account Analytics: Read, set by the operator on the Lambda); site tag from `CF_SITE_TAG` or found by host through the account's Web Analytics site list. No token: `{status: 'not_connected'}`; any API failure: `{status: 'error', error}`; no number is ever invented.
+- Page families come from one table, `src/pageFamilies.json` (map, stories, countries, briefings, track record, board, ops left out of totals, other). Top 10 stories (titles from `record/views/index/all.json`), top 10 country pages, visitor countries, referrers, views per family per day.
+- Own data, no token: accounts by `createdAt` day (`GlobalPerspectiveUserTable`), boards and saved items by `savedKey` prefix (`GlobalPerspectiveSavedItems`), shares (`GlobalPerspectiveShares`). `dynamodb:Scan` with a one-attribute projection; no uid or email is read.
+- Attention vs effort: per family, views next to the DeepSeek spend of the Lambdas whose `scripts/functions.json` `features` include the family's features, a Lambda's spend split evenly over its features. `config.js` `lambdaFeatures` is a copy of that file (a test fails when they differ). AWS cost is not in it.
+- Own traffic: Cloudflare RUM has no user identity, so the counts include our own testing and nothing in our data measures that honestly; the panel says so and shows no "test sessions" figure.
+- Not built here: Google Analytics, Search Console, PostHog, email opens, social posts.
 
 ## Phase 1 as built (changes from the plan; the Lambda's own facts are in its README)
 - `newsHealth` code, `src/prices.json` (in `src/` so the zip carries it; real list rates read 2026-11-04: Flash $0.15/$0.60, Pro $0.66/$1.98 per million, cache hit $0.003/$0.022, peak hours double), role policy `backend/monitoring/newsHealth/iam/`, deploy commands in its README. Peak (01-04, 06-10 UTC Mon-Fri) is priced hourly, so the usage query bins by hour.

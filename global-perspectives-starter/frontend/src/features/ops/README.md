@@ -8,7 +8,7 @@ This folder is stage 10: the operator page (/ops): money and pipeline health. Ti
 <!-- pipeline:end -->
 
 ## Status
-Phase 1 (money and pipeline panels) is live: released in bundle `index-CYeE3t3L` (2026-11-04); `newsHealth` writes `record/views/health.json` and `monitoring/ops.json` hourly and the deployed `newsReadApi` has the `ops` action. A missing file still reads honestly ("The pipeline view has not been generated yet.", "The money file has not been written yet."). Readers and quality panels are later phases (`ARCHITECTURE_OPS.md`).
+Phase 1 (money and pipeline panels) is live: released in bundle `index-CYeE3t3L` (2026-11-04); `newsHealth` writes `record/views/health.json` and `monitoring/ops.json` hourly and the deployed `newsReadApi` has the `ops` action. A missing file still reads honestly ("The pipeline view has not been generated yet.", "The money file has not been written yet."). The Readers panel (phase 2) is built, not deployed: it reads `readers` in `ops.json` and says "Not connected" with the token steps until the operator sets the Cloudflare token on `newsHealth`. The quality panel is a later phase (`ARCHITECTURE_OPS.md`).
 
 ## Routes
 - `/ops` (`OPS_ROUTE` in `index.js`; lazy in `app/App.jsx`; noindex). Not in `shared/lib/links.js`, whose core is mirrored into the Lambdas' link code.
@@ -18,7 +18,8 @@ Phase 1 (money and pipeline panels) is live: released in bundle `index-CYeE3t3L`
 ## Frontend
 - `OpsPage.jsx` holds the states. `MoneyPanel`: DeepSeek yesterday and month to date (labelled estimate), AWS yesterday and month to date, 14 daily bars (a day with no data has no bar), DeepSeek by Lambda (a model with no price reads "unpriced"), unit costs, the weekly review's spend; a source that failed on the last run is named above the numbers.
 - `PipelinePanel`: one row per stage, one cell per UTC day for 14 days: ok `✓`, thin `~`, missing `✕`, failed `!`, no data `·` (colour plus glyph). Hover, focus or tap shows the day's numbers, source, the source's time, or the error text. A stage with no data on any day reads "no run". The grid scrolls inside its own box on a phone.
-- Libs: `pipeline.js` (pivot, no-run rule, fact lines), `money.js`, `opsApi.js` (the one door). Styles: `ops.css`, tokens and shared Card, SectionHeader, AsOf only.
+- `ReadersPanel` (third): page views over 14 days (without /ops, shown apart), views per family with a 14-day bar row each (each row scaled to its own tallest day), top stories (title, or the thread id when there is none), top country pages, visitor countries, referrers, our own counts (accounts, boards, saved items, shares), the attention-vs-effort table (views next to model spend, split rule in the panel note). States: not connected (the steps), Cloudflare error (its text), own-table error, section missing (older file). Our own testing is included in the counts and the note says so.
+- Libs: `readers.js`, `pipeline.js` (pivot, no-run rule, fact lines), `money.js`, `opsApi.js` (the one door). Styles: `ops.css`, tokens and shared Card, SectionHeader, AsOf only.
 
 ## Backend
 `newsHealth` (`backend/monitoring/newsHealth/`, hourly, no model) writes both files. `newsReadApi` action `ops` (`backend/read-api/newsSensitiveData/src/ops.js`) serves the money file to the uids in `OPS_OPERATOR_UIDS`.
@@ -37,5 +38,5 @@ Phase 1 (money and pipeline panels) is live: released in bundle `index-CYeE3t3L`
 
 ## How to check it
 - `cd global-perspectives-starter/frontend && npm run verify`; this feature only: `npx vitest run src/features/ops` (access states, both panels, hover and tap, errors, no-run rows, the nav-link hook).
-- Dev harness (dev builds only, `dev/fixtures.js` cut from a live `newsHealth` dry run): `/ops?devOps=1` runs as the operator, `?devOps=403` shows the not-the-operator answer.
+- Dev harness (dev builds only, `dev/fixtures.js` cut from a live `newsHealth` dry run): `/ops?devOps=1` runs as the operator, `?devOps=nc` is the same with Cloudflare not connected, `?devOps=cferr` a Cloudflare error, `?devOps=403` the not-the-operator answer.
 - Browser: click a strip cell, tab to the grid, check 390px (no page-level sideways scroll).

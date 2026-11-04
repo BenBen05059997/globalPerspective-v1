@@ -410,6 +410,8 @@
   .home-region-hd h2 { font-size: var(--text-2xl); }
   .home-topic h3 { font-size: var(--text-xl); }
   .home-topic-actions { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  /* The shared status strip scrolls sideways on a phone and clips "updated Xm ago": here it wraps instead. */
+  .home-shell .ss-strip { height: auto; min-height: 34px; padding-block: var(--space-2); flex-wrap: wrap; gap: var(--space-1) var(--space-4); overflow-x: visible; }
 }
 
 /* ── Topics failed to load (inline honest state; no modal) ── */

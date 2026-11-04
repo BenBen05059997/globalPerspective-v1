@@ -11,6 +11,9 @@ import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { buildDeadlines } from '@/shared/lib/deadlines.js';
 import { countryMatcher } from '@/features/countries/lib/countryMatch.js';
 import { countryForecast } from '@/features/countries/lib/countryForecast.js';
+import { once } from '@/features/countries/lib/countryViews.js';
+
+const forecastReads = new Map();
 
 /**
  * useCountryStories(countryName) -> { stories, deadlines, loading }
@@ -59,7 +62,8 @@ export function useCountryStories(countryName) {
     let cancelled = false;
     if (!topicKey) { setSnapshot(null); return undefined; }
     // the record's forecasts views while they are fresh (decision 0052); no forecast when it cannot
-    countryForecast({ topicIds, topicIdToThreadId }, { recordForecast })
+    // the page and its card both mount this hook for the same country: one forecast read per topic set
+    once(forecastReads, topicKey, () => countryForecast({ topicIds, topicIdToThreadId }, { recordForecast }))
       .then((snap) => { if (!cancelled) setSnapshot(snap); })
       .catch((err) => { if (!cancelled) { reportFetchError('country-card-forecast', err); setSnapshot(null); } });
     return () => { cancelled = true; };

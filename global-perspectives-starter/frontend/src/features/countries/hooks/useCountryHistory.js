@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
 import { fetchCountryHistory } from '@/shared/api/restProxy.js';
-import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
+import { countryViews as views } from '@/features/countries/lib/countryViews.js';
 import { combineDrift } from '@/features/countries/lib/viewDrift.js';
 
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
-const views = makeRecordViews();
 
 // Correction-history depth gate: the server caps driftNotes for non-members and reports the
 // honest total + whether it withheld any, so the UI can show "+N earlier — join to see all".

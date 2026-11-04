@@ -168,6 +168,15 @@
   .es-center > .sf-head { margin-top: 0; }
 }
 
+/* The shared status strip scrolls sideways on a phone and hides the "updated" stamp: on /weekly it wraps instead
+   (same local override as Home.css and ThreadPage.css; src/shared is not edited from this page). */
+@media (max-width: 600px) {
+  .wp-shell .ss-strip, .wp-section-wrap .ss-strip { height: auto; min-height: 34px; flex-wrap: wrap; overflow-x: visible; padding-block: var(--space-2); gap: var(--space-1) var(--space-3); }
+  .wp-shell .ss-strip > *, .wp-section-wrap .ss-strip > * { flex: 0 1 auto; }
+  .wp-shell .ss-stat + .ss-stat::before, .wp-section-wrap .ss-stat + .ss-stat::before { margin-right: var(--space-3); }
+  .wp-shell .ss-ago, .wp-section-wrap .ss-ago { margin-left: 0; }
+}
+
 /* ---- board (B4): four status columns of story cards ---- */
 .sb { min-width: 0; }
 .sb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: var(--space-3); }

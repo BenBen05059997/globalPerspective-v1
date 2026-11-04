@@ -1,0 +1,26 @@
+{
+  "_about": "Operator-owned DeepSeek list prices in USD per million tokens, used to ESTIMATE spend from the [usage] log lines. Edit when DeepSeek changes prices: add a new entry with its validFrom date and keep the old one. A usage day older than every validFrom is priced with the earliest entry (an estimate at that rate, not the rate in force then).",
+  "source": "https://api-docs.deepseek.com/quick_start/pricing",
+  "fetchedAt": "2026-11-04",
+  "peak": {
+    "daysUtc": [1, 2, 3, 4, 5],
+    "hoursUtc": [1, 2, 3, 6, 7, 8, 9],
+    "note": "Peak is 01:00-04:00 and 06:00-10:00 UTC, Monday to Friday, excluding Chinese public holidays. Off-peak is half the peak rate. Holidays are not modelled, so those days are estimated at the peak rate: an upper bound."
+  },
+  "prices": [
+    {
+      "model": "deepseek-flash",
+      "aliases": ["deepseek-v4-flash", "deepseek-v4-flash-vision-exp"],
+      "validFrom": "2026-11-04",
+      "offPeak": { "in": 0.15, "out": 0.6, "cacheHit": 0.003 },
+      "peak": { "in": 0.3, "out": 1.2, "cacheHit": 0.006 }
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "aliases": [],
+      "validFrom": "2026-11-04",
+      "offPeak": { "in": 0.66, "out": 1.98, "cacheHit": 0.022 },
+      "peak": { "in": 1.32, "out": 3.96, "cacheHit": 0.044 }
+    }
+  ]
+}

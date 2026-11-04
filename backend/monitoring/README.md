@@ -6,7 +6,7 @@ run sends nothing. CloudWatch alarm proposals and the client-error CORS config a
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → **10 Watch**
-This folder is stage 10: model guard, freshness monitor, error digest, audits. Timeline: writes no facts or readings; Run objects are the record's own signal and the operator does not want pipeline alarms (2026-10-31). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 10: model guard, freshness monitor, error digest, audits, health view. Timeline: writes no facts or readings; Run objects are the record's own signal and the operator does not want pipeline alarms (2026-10-31). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -15,6 +15,7 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits. T
 |---|---|---|---|---|---|
 | newsErrorDigest | Folds browser error rows into fingerprints and alerts on new or spiking ones. | EventBridge `TriggerErrorDigest`, minute 15 every 6 hours UTC, ENABLED | DynamoDB GlobalPerspectiveClientErrors (full scan) | Its own baseline row `DIGEST#STATE` in the same table; SNS | [README](newsErrorDigest/README.md) |
 | newsFreshnessMonitor | Alerts when the topics feed is stale or the proxy fails; once a day also checks the prediction-settling flow. | EventBridge `TriggerFreshnessMonitor`, minute 30 every 2 hours UTC, ENABLED | Public proxy action `topics`; the record's public view files (`track-record.json`, `manifest.json`, `health/settle-tick.json`); S3 dedupe marker `monitoring/freshness/state.json` | SNS; the marker | [README](newsFreshnessMonitor/README.md) |
+| newsHealth | Hourly: writes the public pipeline panel (`record/views/health.json`) and the private money panel (`monitoring/ops.json`). No model, no alerts. | EventBridge `TriggerHealth`, `rate(1 hour)`; **not deployed yet** (built 2026-11-04) | The record's files in S3, `world/latest.json`, CloudWatch metrics and Logs Insights, the resolver's `status` action, Cost Explorer once a day | The two files | [README](newsHealth/README.md) |
 | newsModelGuard | Checks the DeepSeek balance and flags retired or unknown model ids in other Lambdas' env. | EventBridge `TriggerModelGuard`, 12:00 UTC, ENABLED | `lambda:ListFunctions` env; `api.deepseek.com` `/models` and `/user/balance` | SNS | [README](newsModelGuard/README.md) |
 | newsSourceAudit | Compares the top live summaries against their source articles and counts drift. | EventBridge `newsSourceAuditDaily`, Mon, Wed, Fri 11:30 UTC, ENABLED | Public proxy actions `topics`, `summary`; source article pages; DeepSeek | SNS when drift reaches the threshold | [README](newsSourceAudit/README.md) |
 

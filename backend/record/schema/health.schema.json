@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://globalperspective.net/schema/health.schema.json",
+  "title": "record/views/health.json",
+  "description": "The pipeline panel written hourly by newsHealth (public, no money, no reader data). One row per stage per UTC day; every row names its source and the time of that source. A source that could not be read is status 'nodata' with an error text, never a made-up value. Design: project-docs/architecture/ARCHITECTURE_OPS.md.",
+  "type": "object",
+  "required": ["schemaVersion", "asOf", "producer", "stages", "days", "now"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "asOf": { "type": "string", "format": "date-time" },
+    "producer": { "const": "newsHealth" },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+      }
+    },
+    "days": {
+      "description": "The last 14 UTC days, oldest first; the last one is today (still open).",
+      "type": "array",
+      "maxItems": 31,
+      "items": {
+        "type": "object",
+        "required": ["date", "closed", "rows"],
+        "additionalProperties": false,
+        "properties": {
+          "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "closed": { "type": "boolean" },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["stage", "status", "facts", "source", "at", "error", "note"],
+              "additionalProperties": false,
+              "properties": {
+                "stage": { "type": "string" },
+                "status": { "enum": ["ok", "thin", "missing", "failed", "nodata"] },
+                "facts": { "type": "object" },
+                "source": { "type": "string" },
+                "at": { "type": ["string", "null"] },
+                "error": { "type": ["string", "null"] },
+                "note": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "now": {
+      "type": "object",
+      "required": ["resolver"],
+      "additionalProperties": false,
+      "properties": {
+        "resolver": {
+          "description": "The resolver's read-only status reply at asOf, or the error that stopped it.",
+          "type": "object",
+          "properties": {
+            "sampled": { "type": ["integer", "null"] },
+            "due": { "type": ["integer", "null"] },
+            "drafted": { "type": ["integer", "null"] },
+            "verdicts": { "type": ["integer", "null"] },
+            "commits": { "type": ["integer", "null"] },
+            "error": { "type": ["string", "null"] }
+          }
+        }
+      }
+    }
+  }
+}

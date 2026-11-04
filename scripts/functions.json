@@ -187,6 +187,21 @@
         }
       ]
     },
+    "newsHealth": {
+      "dir": "backend/monitoring/newsHealth",
+      "runtime": "nodejs24.x",
+      "group": "monitoring",
+      "features": ["ops"],
+      "nodeModules": false,
+      "schedules": [
+        {
+          "via": "events",
+          "name": "TriggerHealth",
+          "expr": "rate(1 hour)",
+          "state": "ENABLED"
+        }
+      ]
+    },
     "newsInvokeGemini-dev": {
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",

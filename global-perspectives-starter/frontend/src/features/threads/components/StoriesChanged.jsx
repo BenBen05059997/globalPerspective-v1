@@ -3,7 +3,7 @@ import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import StoryLine from '@/features/threads/components/StoryLine.jsx';
-import { changedSince, risingThreads, ageDaysOf, daysWithNews, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
+import { changedSince, risingThreads, ageDaysOf, daysWithNews, eventCount, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 // StoriesChanged — the right rail (desktop) and the changed section at the top of phone READ.
@@ -48,7 +48,7 @@ function Rising({ threads, now }) {
   if (!items.length) return null;
   return (
     <section className="sf-rising-rail" aria-labelledby="sf-rising-h">
-      <SectionHeader label="Gaining coverage this week" id="sf-rising-h" hint="new or rising coverage, 2+ articles" />
+      <SectionHeader label="Gaining coverage this week" id="sf-rising-h" hint="new or rising coverage, 2+ events" />
       <ul className="sf-rise-list">
         {items.map((t) => (
           <li key={t.threadId}>
@@ -60,7 +60,7 @@ function Rising({ threads, now }) {
             >
               <CategoryTag category={t.category} />
               <span className="sf-rise-title">{t.latestTitle}</span>
-              <span className="sf-count">{t.articleCount} articles · {daysWithNews(t.dayCount, ARCHIVE_DAYS)}</span>
+              <span className="sf-count">{eventCount(t.articleCount)} · {daysWithNews(t.dayCount, ARCHIVE_DAYS)}</span>
             </EntityLink>
           </li>
         ))}

@@ -3,7 +3,7 @@ import {
   buildThreads, storyTitle, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
-  dayCounts, daysWithNews, ARCHIVE_DAYS, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
+  dayCounts, daysWithNews, eventCount, ARCHIVE_DAYS, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
 
 // "now" = 2026-10-01 12:00 UTC. Day keys are real UTC YYYY-MM-DD strings.
@@ -49,6 +49,13 @@ describe('buildThreads', () => {
     expect(today.threads[0].changedAt).toBeNull();
     const old = buildThreads({ [ago(3)]: { entries: [entry('a', 'x')] } }, [ago(3)], NOW);
     expect(old.threads[0].changedAt).toBe(`${ago(3)}T00:00:00Z`);
+  });
+});
+
+describe('eventCount (R3-2)', () => {
+  it('is the one word for a story\'s headline count, the story page\'s own term', () => {
+    expect(eventCount(1)).toBe('1 event');
+    expect(eventCount(12)).toBe('12 events');
   });
 });
 

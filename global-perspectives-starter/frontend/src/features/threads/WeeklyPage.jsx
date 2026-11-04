@@ -138,13 +138,13 @@ export default function WeeklyPage() {
     />
   );
 
-  const totalArticles = listed.reduce((sum, t) => sum + t.articleCount, 0) + listedStandalone.length;
+  const totalEvents = listed.reduce((sum, t) => sum + t.articleCount, 0) + listedStandalone.length;
   const strip = (
     <StatusStrip
       label="LIVE"
       stats={[
         { value: listed.length, unit: 'arcs' },
-        { value: totalArticles, unit: 'articles' },
+        { value: totalEvents, unit: 'events' },
         { value: allDates.length, unit: 'days with stories' },
       ]}
       updatedAt={dataUpdatedAt}

@@ -101,7 +101,7 @@ export function BriefSlide({ thread, analysis, displayTitle, category, forecast,
         </div>
       )}
       <div className="sm-slide-stats">
-        <span><b>{thread.entries.length}</b> events</span>
+        <span><b>{thread.entries.length}</b> {thread.entries.length === 1 ? 'event' : 'events'}</span>
         <span><b>{thread.allSources.length}</b> sources</span>
         {analysis?.riskScore != null && (
           <span className="sm-slide-risk"><TierChip tier={tierFromScore(analysis.riskScore)} /> risk</span>

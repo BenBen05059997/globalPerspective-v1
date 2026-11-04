@@ -79,6 +79,10 @@ describe('StoryLine renders the summary / Watching lines only with data', () => 
     expect(container.querySelector('.gp-row__sum').textContent).toBe('The arc in one line.');
     expect(container.querySelector('.gp-row__watch').textContent).toBe('Watching: Will the ceasefire hold?');
   });
+  it('the count says "events", not "articles" (R3-2)', () => {
+    const { container } = renderLine({ ...base, articleCount: 12, dayCount: 3 }, null);
+    expect(container.querySelector('.sf-count').textContent).toMatch(/^12 events · 3 days with news in 30 days$/);
+  });
   it('the day count names its 30-day span (R3-1)', () => {
     const { container } = renderLine({ ...base, dayCount: 13 }, null);
     expect(container.querySelector('.sf-count').textContent).toMatch(/13 days with news in 30 days/);

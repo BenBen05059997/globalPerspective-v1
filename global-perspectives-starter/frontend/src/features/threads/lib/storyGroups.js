@@ -85,6 +85,11 @@ export function daysWithNews(n, inDays = null) {
   return `${n} ${n === 1 ? 'day' : 'days'} with news${inDays ? ` in ${inDays} days` : ''}`;
 }
 
+/** eventCount(n) -> "12 events": the one word for a story's number of headlines (entries), as the story page says it. */
+export function eventCount(n) {
+  return `${n} ${n === 1 ? 'event' : 'events'}`;
+}
+
 /**
  * storyTitle(entries) -> the story's title everywhere: the newest entry's headline (a real source headline), null when there
  * is none. Newest day by day key; inside that day the LAST entry in INPUT ORDER wins (never `at`; the record's titleOf takes the last of the day too), so
@@ -428,7 +433,7 @@ export const BOARD_COLUMNS = [
   { key: 'quieter', glyph: '▼', label: 'Quieter', short: 'Quieter' },
 ];
 
-export const BOARD_RULE = `Status from coverage, not from risk. ● New: first covered ${BOARD_NEW_DAYS} days ago or less. ▲ Rising: at least ${BOARD_MIN} articles in the last ${BOARD_WINDOW} days and more than in the ${BOARD_WINDOW} days before. ▼ Quieter: no articles in the last ${BOARD_WINDOW} days, or at least ${BOARD_MIN} in the ${BOARD_WINDOW} days before and fewer now. ◆ Steady: everything else. Counted from each story's own articles per day, today included.`;
+export const BOARD_RULE = `Status from coverage, not from risk. ● New: first covered ${BOARD_NEW_DAYS} days ago or less. ▲ Rising: at least ${BOARD_MIN} events in the last ${BOARD_WINDOW} days and more than in the ${BOARD_WINDOW} days before. ▼ Quieter: no events in the last ${BOARD_WINDOW} days, or at least ${BOARD_MIN} in the ${BOARD_WINDOW} days before and fewer now. ◆ Steady: everything else. Counted from each story's own events per day, today included.`;
 
 /** dayCounts(thread, days, now) -> articles per day for the last `days` days, oldest first, today last. */
 export function dayCounts(thread, days = BOARD_SPARK_DAYS, now = Date.now()) {

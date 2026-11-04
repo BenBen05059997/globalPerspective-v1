@@ -62,7 +62,7 @@ describe('Stories BOARD (?view=board)', () => {
     renderAt('/weekly?view=board');
     const spark = document.querySelector('.sb-card .sb-spark');
     expect(spark.querySelectorAll('.sb-spark__bar')).toHaveLength(14);
-    expect(spark.getAttribute('aria-label')).toMatch(/Articles per day, last 14 days/);
+    expect(spark.getAttribute('aria-label')).toMatch(/Events per day, last 14 days/);
   });
   it('phone: tabs stay READ / MAP / TIMELINE, READ carries a List | Board toggle that reaches the board', () => {
     phone.on = true;

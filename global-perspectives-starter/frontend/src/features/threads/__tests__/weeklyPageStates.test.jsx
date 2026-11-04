@@ -48,7 +48,7 @@ describe('/weekly', () => {
     fireEvent.click(screen.getByLabelText('24 h'));
     expect(headerText()).toMatch(/2\s*open stories.*last 24 hours/);
     expect(document.querySelector('.ss-strip').textContent).toMatch(/2arcs/);
-    expect(document.querySelector('.ss-strip').textContent).toMatch(/4articles/);
+    expect(document.querySelector('.ss-strip').textContent).toMatch(/4events/);
     expect(document.querySelector('.ss-strip').textContent).toMatch(/2days with stories/);
   });
 

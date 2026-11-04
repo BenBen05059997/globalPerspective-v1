@@ -46,14 +46,43 @@ test('--list shows proposed and sent rows only, highest score first, and never p
   assert.match(r.stdout, /\[90\] Story high {2}\(high\) {2}verify=verified/);
 });
 
-test('the scan asks the fake table for exactly status proposed OR sent, in the right table and region', async () => {
+test('the scan asks the fake table for status proposed OR sent that was never confirmed, in the right table and region', async () => {
   const r = await run('review.js', { args: ['--list'], items: [alert('a')] });
   const scan = r.awsCalls.find((c) => c.op === 'scan');
   assert.equal(scan.flags['table-name'], TABLE);
   assert.equal(scan.flags.region, REGION);
-  assert.equal(scan.flags['filter-expression'], '#s = :p OR #s = :s');
+  assert.equal(scan.flags['filter-expression'], '(#s = :p OR #s = :s) AND attribute_not_exists(confirmedAt)');
   assert.deepEqual(JSON.parse(scan.flags['expression-attribute-names']), { '#s': 'status' });
   assert.deepEqual(JSON.parse(scan.flags['expression-attribute-values']), { ':p': { S: 'proposed' }, ':s': { S: 'sent' } });
+});
+
+// newsBreakingAlert markSent writes status 'sent', sent=true, sentAt when it emails the OPERATOR the proposal: still awaiting review.
+// The old send.js wrote status 'sent' on an alert that review.js had confirmed (confirmedAt set): legacy rows, already public history.
+test('a sent row WITHOUT confirmedAt (the operator-emailed proposal) is still offered, in --list and in the walk', async () => {
+  const items = [alert('emailed', { status: 'sent', sent: true, sentAt: '2026-10-30T06:06:00Z' })];
+  const l = await run('review.js', { args: ['--list'], items });
+  assert.match(l.stdout, /1 alert\(s\) awaiting review/);
+  assert.match(l.stdout, /Story emailed/);
+  const r = await run('review.js', { items, answers: ['c'] });
+  assert.match(r.stdout, /Story emailed/);
+  assert.equal(byStatus(written(r), 'confirmed').length, 1);
+});
+
+test('a sent row WITH confirmedAt (legacy: demoted by the old send.js) is neither offered nor listed', async () => {
+  const items = [
+    alert('legacy', { status: 'sent', sent: true, confirmedAt: '2026-10-30T07:00:00Z', confirmedBy: 'human', title: 'Legacy demoted' }),
+    alert('fresh', { status: 'sent', sent: true }),
+  ];
+  const l = await run('review.js', { args: ['--list'], items });
+  assert.match(l.stdout, /1 alert\(s\) awaiting review/);
+  assert.doesNotMatch(l.stdout, /Legacy demoted/);
+  assert.match(l.stdout, /Story fresh/);
+  const r = await run('review.js', { items, answers: ['s', 's'] });
+  assert.equal(r.prompts, 1);
+  assert.doesNotMatch(r.stdout, /Legacy demoted/);
+  assert.equal(puts(r).length, 0);
+  const only = await run('review.js', { items: [items[0]] });
+  assert.match(only.stdout, /No unconfirmed alerts awaiting review/);
 });
 
 test('an empty queue says so and exits cleanly without prompting', async () => {

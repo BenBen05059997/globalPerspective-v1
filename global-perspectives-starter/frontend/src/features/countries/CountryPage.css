@@ -348,10 +348,6 @@
 
 @media (max-width: 600px) {
   .cpg-hd-h1 { font-size: var(--text-3xl); }
-  /* The status strip (anchor / linked / articles / risk + "updated") scrolled sideways on a phone and clipped its last items:
-     let it wrap onto a second line instead (this page only; the shared strip keeps its contained scroll elsewhere). */
-  .cpg-shell .ss-strip { height: auto; min-height: 34px; flex-wrap: wrap; row-gap: var(--space-1); padding: var(--space-2) var(--space-4); overflow-x: visible; }
-  .cpg-shell .ss-ago { margin-left: 0; }
   /* H1 (Batch 3): the overlay (back link + country select + risk pill + trajectory pill) was one
      non-wrapping flex row, 533px wide at 390px, and the hero clips its overflow, so the pills were
      invisible. Wrap it: select row first, pills on their own row; the hero grows to keep the map visible. */

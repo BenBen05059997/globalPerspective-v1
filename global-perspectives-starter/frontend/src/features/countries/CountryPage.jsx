@@ -5,7 +5,7 @@ import { parentCountry } from '@/shared/lib/countries.js';
 import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { isArc } from '@/features/countries/lib/countryArcs.js';
-import { useWeeklyArchive,useThreadAnalyses, useWebIndex } from '@/features/threads';
+import { useWeeklyArchive, useThreadAnalyses, useWebIndex } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy';
-import { makeRecordViews } from '@/shared/api/recordViews';
+import { countryViews as views } from '@/features/countries/lib/countryViews.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { resolveCountry } from '@/shared/lib/countries';
 import { intelligenceFromCountryView } from '@/features/countries/lib/viewIntelligence';
@@ -12,8 +12,6 @@ import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBrie
 // by loadCountriesIndex, and its thinner items must never reach the country page. Each entry carries its own time.
 const CACHE_KEY = 'gp_country_intel_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;
-
-const views = makeRecordViews();
 
 /**
  * One country's briefing, the record first (decision 0042): the country view's `intelligence`; a country without a

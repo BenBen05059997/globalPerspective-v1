@@ -390,7 +390,7 @@ export default function CountryPage() {
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
   const { index: webIndex } = useWebIndex();
-  const { deadlines, topicIdToThreadId } = useCountryStories(decodedName);
+  const { deadlines, topicIdToThreadId } = useCountryStories(decodedName, { dayMap, loading });
   const { facts: storedFacts } = useCountryFacts(decodedName);
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
 
@@ -584,7 +584,7 @@ export default function CountryPage() {
           background timeline, systems web, disruptions, share) stays reachable underneath —
           see TASK_2026-09-27_pages_local.md S4 for the old->new section mapping. */}
       <div className="cpg-card-v2-wrap">
-        <CountryCardV2 name={decodedName} linkName={false} />
+        <CountryCardV2 name={decodedName} linkName={false} archive={{ dayMap, loading }} />
       </div>
 
       {!countryData && archiveError ? (

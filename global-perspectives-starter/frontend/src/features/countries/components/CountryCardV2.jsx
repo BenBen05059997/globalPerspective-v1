@@ -37,14 +37,14 @@ function fmtShort(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function CountryCardV2({ name, situations = null, onBack = null, onClose = null, variant = 'panel', linkName = true }) {
+export default function CountryCardV2({ name, situations = null, onBack = null, onClose = null, variant = 'panel', linkName = true, archive = null }) {
   const namesArr = useMemo(() => (name ? [name] : []), [name]);
   const { intelligence, loading: intelLoading } = useCountryIntelligence(namesArr);
   const intel = name ? intelligence[name] : null;
 
   const { snapshots, driftNotes, loading: historyLoading } = useCountryHistory(name);
   const { facts: storedFacts } = useCountryFacts(name);
-  const { stories, deadlines, topicIdToThreadId, loading: storiesLoading } = useCountryStories(name);
+  const { stories, deadlines, topicIdToThreadId, loading: storiesLoading } = useCountryStories(name, archive);
 
   const [openAxis, setOpenAxis] = useState(null);
 

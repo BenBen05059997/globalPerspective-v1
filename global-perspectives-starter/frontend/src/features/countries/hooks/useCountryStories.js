@@ -16,14 +16,17 @@ import { once } from '@/features/countries/lib/countryViews.js';
 const forecastReads = new Map();
 
 /**
- * useCountryStories(countryName) -> { stories, deadlines, loading }
+ * useCountryStories(countryName, archive?) -> { stories, deadlines, loading }
  *   stories:   up to 3 { threadId, title, date, category } — most recent thread per story,
  *              newest first. Never invented: a country with no archive entries gets [].
  *   deadlines: this country's stories' future dated forecast triggers (see countryTriggers.js
  *              for the "future only" filter — this hook returns the raw, unfiltered deadlines).
  */
-export function useCountryStories(countryName) {
-  const { dayMap, loading } = useArchiveDayMap();
+export function useCountryStories(countryName, archive = null) {
+  // the country page already holds the archive (useWeeklyArchive): it passes { dayMap, loading } and this hook asks for nothing,
+  // so the page loads the weekly index once; the map's card passes nothing and reads the shared public archive
+  const shared = useArchiveDayMap(!archive);
+  const { dayMap, loading } = archive || shared;
   const [snapshot, setSnapshot] = useState(null);
 
   const { stories, topicIds, topicIdToThreadId } = useMemo(() => {

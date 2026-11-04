@@ -15,7 +15,7 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 |---|---|---|---|---|---|
 | newsBreakingAlert | Scores stories each cycle, proposes at most one breaking alert, emails the operator when sending is on. | EventBridge `TriggerBreakingAlert`, 04:45, 12:45, 20:45 UTC, ENABLED | NewsCache `latest`; SummarizeAndPredict country, thread and topic rows | GlobalPerspectiveBreakingAlerts (key `alertKey`); Resend email to the operator address | [README](newsBreakingAlert/README.md) |
 | newsEmailSender | Sends email by `mode`: weekly brief, breaking alert or country drift note. | EventBridge, input sets the mode: weekly Sun 14:00 UTC ENABLED; breaking every 15 min DISABLED; drift 07:40 UTC DISABLED | GlobalPerspectiveUserPrefs (opt-ins); SummarizeAndPredict `WEEKLY_BRIEF`, `DRIFT#` rows; BreakingAlerts | Marks `emailedAt` on notes and alerts; weekly marker `EMAILLOG#weekly#<weekOf>`; Resend | [README](newsEmailSender/README.md) |
-| newsPostDevTo | Builds the daily brief (no longer posts to Dev.to) from today's entries plus thread and country analysis. | Scheduler `InvokeDev`, 23:00 Asia/Tokyo, ENABLED | NewsCache `today-archive`; SummarizeAndPredict `THREAD#`, `COUNTRY#`; DeepSeek | SummarizeAndPredict `DAILY_BRIEF#<date>`; S3 `record/notes/daily_brief/` only when env `NOTES_PREFIX` is set | [README](newsPostDevTo/README.md) |
+| newsDailyBrief (repo dir newsPostDevTo) | Builds the daily brief (no longer posts to Dev.to) from today's entries plus thread and country analysis. | Scheduler `InvokeDev`, 23:00 Asia/Tokyo, ENABLED | NewsCache `today-archive`; SummarizeAndPredict `THREAD#`, `COUNTRY#`; DeepSeek | SummarizeAndPredict `DAILY_BRIEF#<date>`; S3 `record/notes/daily_brief/` only when env `NOTES_PREFIX` is set | [README](newsPostDevTo/README.md) |
 | newsPostLinkedin (folder newsPostLinkedIn) | Posts new topics to LinkedIn and Bluesky with a generated map image. | Scheduler `InvokeLinkedIn`, minute 20 every 3 hours, Asia/Tokyo, ENABLED | NewsCache `latest`; SummarizeAndPredict `TOPIC#` summary and prediction; posted-log table | `NewsProject-linkedin-posts` (`POSTED#<platform>#<fingerprint>`); LinkedIn and Bluesky APIs | [README](newsPostLinkedIn/README.md) |
 | newsWeeklyBrief | Writes the weekly signals brief from seven days of archives; sends no email. | EventBridge `TriggerWeeklyBrief`, Sun 06:00 UTC, ENABLED | NewsCache `today-archive`, `archive#<date>`; SummarizeAndPredict thread and country rows; DeepSeek | SummarizeAndPredict `WEEKLY_BRIEF#<weekKey>`, status published; S3 `record/notes/weekly_brief/` only when env `NOTES_PREFIX` is set | [README](newsWeeklyBrief/README.md) |
 
@@ -24,7 +24,7 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 1. The pipeline group fills NewsCache (`latest`, `today-archive`) and the thread and country analysis rows.
 2. Three times a day newsBreakingAlert scores stories and writes a `proposed` alert row. Its live `DRY_RUN` is `false`, so when a story clears the bar it emails the operator (not subscribers; the email says it is not public) and marks the alert `sent`.
 3. A `sent` alert is NOT public: it reaches the site bell and strip (newsRecommend `list_alerts`, see the read-api group) only after the operator runs `node backend/distribution/cli/breaking/review.js` and confirms it. Subscriber breaking and drift emails are DISABLED, so they send nothing.
-4. At 23:00 Tokyo time newsPostDevTo writes the daily brief. The site reads it through `daily_brief` on the `/briefings` page (`/daily` redirects there).
+4. At 23:00 Tokyo time newsDailyBrief writes the daily brief. The site reads it through `daily_brief` on the `/briefings` page (`/daily` redirects there).
 5. Every three hours newsPostLinkedin posts new topics to LinkedIn and Bluesky; a platform posts only when its credentials are set.
 6. Sunday 06:00 UTC newsWeeklyBrief writes and publishes the week's brief. The site serves it through `weekly_brief` on `/briefings`.
 7. Sunday 14:00 UTC newsEmailSender (weekly mode) emails the latest published brief to `digestOptIn` subscribers, once per `weekOf`. Its live `EMAIL_SEND_DRY_RUN` is `false`, so this is a real send; the schedule is ENABLED.
@@ -51,6 +51,6 @@ The two brief writers also copy each brief into the record as a `daily_brief` / 
 aws events list-rules --region ap-northeast-1 --query 'Rules[?contains(Name,`Breaking`)||contains(Name,`Email`)||contains(Name,`WeeklyBrief`)].[Name,State]' --output text
 aws scheduler list-schedules --region ap-northeast-1 --query 'Schedules[].[Name,State]' --output text
 aws events list-targets-by-rule --rule TriggerWeeklyEmailSend --region ap-northeast-1 --query 'Targets[].[Arn,Input]' --output text
-aws lambda get-function-configuration --function-name newsPostDevTo --region ap-northeast-1 --query 'Environment.Variables.NOTES_PREFIX'
+aws lambda get-function-configuration --function-name newsDailyBrief --region ap-northeast-1 --query 'Environment.Variables.NOTES_PREFIX'
 aws dynamodb describe-table --table-name GlobalPerspectiveBreakingAlerts --region ap-northeast-1 --query 'Table.[TableStatus,ItemCount]'
 ```

@@ -47,7 +47,7 @@ flowchart LR
   back -->|posts| soc
   operator -->|deploys, corrections| back
 ```
-Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`); the exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsPostDevTo` (daily 23:00 JST) are ENABLED.
+Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`); the exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsDailyBrief` (daily 23:00 JST) are ENABLED.
 
 ### Containers
 ```mermaid
@@ -103,7 +103,7 @@ Paths are named, not linked; search for them.
 ### Backend: `backend/<group>/<dir>/src/`
 Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a README. Nothing is deployed with Amplify; each Lambda is deployed by hand (see Deploy). `scripts/functions.json` maps each deployed name to its repo dir, runtime, group and schedules. Names that surprise:
 - `newsIngest` (repo dir `newsInvokeGemini`; renamed 2026-11-03, the old `newsInvokeGemini-dev` stays unscheduled for rollback) is topic selection. It calls DeepSeek.
-- `newsAgent` (repo dir `NewsProjectInvokeAgentLambda`; renamed 2026-11-03, the old `NewsProjectInvokeAgentLambda-dev` stays unscheduled for rollback) and `newsSensitiveData-dev`: the `-dev` suffix is production. Planned renames: `newsPostDevTo` to `newsDailyBrief`, `newsSensitiveData-dev` to `newsReadApi`.
+- `newsAgent` (repo dir `NewsProjectInvokeAgentLambda`; renamed 2026-11-03, the old `NewsProjectInvokeAgentLambda-dev` stays unscheduled for rollback) and `newsSensitiveData-dev`: the `-dev` suffix is production. `newsDailyBrief` (repo dir `newsPostDevTo`; renamed 2026-11-04, the old `newsPostDevTo` stays unscheduled for rollback). Planned rename: `newsSensitiveData-dev` to `newsReadApi`.
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (the typo is real).
 - `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling` (no repo src of their own).
@@ -243,7 +243,7 @@ flowchart LR
   d --> es
   u[(UserPrefs)] --> es
   es -->|Resend| sub([Subscribers])
-  l[Scheduler InvokeLinkedIn, InvokeDev JST] --> po[newsPostLinkedin, newsPostDevTo]
+  l[Scheduler InvokeLinkedIn, InvokeDev JST] --> po[newsPostLinkedin, newsDailyBrief]
   d --> po
   po -->|newsPostLinkedin| soc([LinkedIn, Bluesky])
   po -->|DAILY_BRIEF| d
@@ -253,7 +253,7 @@ flowchart LR
 ```
 - `newsWeeklyBrief` (Sunday 06:00) writes `WEEKLY_BRIEF#<week>` to `SummarizeAndPredict`, published directly. `newsEmailSender` mode `weekly` (Sunday 14:00) sends it with Resend to subscribers in `GlobalPerspectiveUserPrefs` (`digestOptIn`), logging each week (`EMAILLOG#`) so it is never sent twice. Its `breaking` and `drift_alert` rules are DISABLED. This is the old digest; the analyst's weekly (ARCHITECTURE_WEEKLY_REVIEW.md §9) is meant to replace it, and then `newsWeeklyBrief` retires.
 - `newsBreakingAlert` (every 8 h, 04:45 12:45 20:45) scores stories deterministically, records proposals in `GlobalPerspectiveBreakingAlerts`, and with live `DRY_RUN=false` emails each detection to one operator address. It does not email subscribers. A breaking alert shows on the site only when the operator has `confirmed` it (`review.js`); the operator email is marked "[Unconfirmed] NOT PUBLIC YET". This is separate from verdicts, which have no human gate.
-- `newsPostDevTo` builds the daily brief (`DAILY_BRIEF#<date>`) for `/briefings`; despite the name it no longer posts to dev.to (publish path removed 2026-05-18). `newsPostLinkedin` posts to LinkedIn and Bluesky and logs to `NewsProject-linkedin-posts`.
+- `newsDailyBrief` (repo dir `newsPostDevTo`) builds the daily brief (`DAILY_BRIEF#<date>`) for `/briefings`; despite the name it no longer posts to dev.to (publish path removed 2026-05-18). `newsPostLinkedin` posts to LinkedIn and Bluesky and logs to `NewsProject-linkedin-posts`.
 - The record holds both briefs as `daily_brief` and `weekly_brief` notes (decision 0048), backfilled for every existing brief. The two writers call `briefNotes.writeBriefNote`, which writes nothing while `NOTES_PREFIX` is unset (the live values are in `STEP5_AUDIT.md` section 1). `newsStoryRecord` builds `record/views/briefs/` and `index/briefs.json` from the notes. The briefs page reads those views and asks the actions only when the views are not fresh. The Worker's bot pre-render reads the brief views first and the email sender's weekly mode does too behind its `RECORD_READS` flag (decision 0054); both fall back to the DynamoDB rows.
 - Subscription preferences and unsubscribe go through `newsRecommend` (Function URL).
 

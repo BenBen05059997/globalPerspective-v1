@@ -3,9 +3,9 @@
 Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-18). It builds the daily brief: loads today's entries from the `today-archive` item, enriches them with up to 20 thread analyses and up to 15 country intelligence records (real countries, last 30 days), asks an LLM for a JSON brief (headline, summary, topStories, ...), resolves real thread ids deterministically, and stores `DAILY_BRIEF#<date>` for the `/briefings` page (`/daily` redirects there).
 
 ## Deployment
-- Deployed name `newsPostDevTo` · runtime `nodejs24.x` · group `distribution` (scripts/functions.json)
+- Deployed name `newsDailyBrief` since 2026-11-04 (was `newsPostDevTo`, kept unscheduled until its removal) · runtime `nodejs24.x` · group `distribution` (scripts/functions.json)
 - Trigger: Scheduler `InvokeDev` `cron(0 23 * * ? *)` (Asia/Tokyo, ENABLED)
-- Deploy: `scripts/lambda.sh newsPostDevTo diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships node_modules.
+- Deploy: `scripts/lambda.sh newsDailyBrief diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships node_modules.
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `id = today-archive` (only entries archived today)

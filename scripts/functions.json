@@ -247,6 +247,14 @@
       "dir": "backend/distribution/newsPostDevTo",
       "runtime": "nodejs24.x",
       "group": "distribution",
+      "features": [],
+      "nodeModules": true,
+      "deployBlocked": "Old name, replaced by newsDailyBrief 2026-11-04 (schedule repointed); kept unscheduled for rollback until it is deleted. Deploy newsDailyBrief."
+    },
+    "newsDailyBrief": {
+      "dir": "backend/distribution/newsPostDevTo",
+      "runtime": "nodejs24.x",
+      "group": "distribution",
       "features": ["briefings"],
       "nodeModules": true,
       "schedules": [

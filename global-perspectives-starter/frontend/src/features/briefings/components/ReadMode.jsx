@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { threadIdOf, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
 import { addDaysKey, dailyPauseState, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
-import { useNewestDailyKey } from '@/features/briefings/hooks/useBriefEditions.js';
 import { briefingHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -127,8 +126,7 @@ function CountryCardLink({ name, className, children }) {
 export default function ReadMode({ dateParam }) {
   const today = todayKey();
   const requested = dateParam || today;
-  const { brief, servedDateKey, loading, error, refetch } = useDailyBrief(dateParam || undefined);
-  const newestKey = useNewestDailyKey();
+  const { brief, servedDateKey, latestDateKey, loading, error, refetch } = useDailyBrief(dateParam || undefined);
 
   useEffect(() => {
     const label = brief?.displayDate || servedDateKey || requested;
@@ -170,7 +168,7 @@ export default function ReadMode({ dateParam }) {
   const relLabel = relativeDayLabel(servedDateKey, today);
   const servedOlder = !!servedDateKey && servedDateKey !== requested;
   // The newest edition: a bare page serves it by construction; a dated page has to wait for the lookup (unknown = say nothing).
-  const newest = dateParam ? newestKey : servedDateKey;
+  const newest = latestDateKey;
   const pause = dailyPauseState(newest);
   let fallbackNote = null;
   if (servedOlder) {

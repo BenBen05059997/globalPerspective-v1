@@ -27,7 +27,7 @@ vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 let dailyValue;
 const dailyArgs = [];
 vi.mock('@/shared/hooks/useDailyBrief', () => ({
-  useDailyBrief: (dateKey) => { dailyArgs.push(dateKey); return dailyValue; },
+  useDailyBrief: (dateKey) => { dailyArgs.push(dateKey); return { latestDateKey: dateKey ? newestKey : dailyValue.servedDateKey, ...dailyValue }; },
 }));
 let weeklyValue;
 const weeklyArgs = [];
@@ -38,7 +38,6 @@ vi.mock('@/features/briefings/hooks/useWeeklyBrief.js', () => ({
 let newestKey = null;
 let weekKeys = null;
 vi.mock('@/features/briefings/hooks/useBriefEditions.js', () => ({
-  useNewestDailyKey: () => newestKey,
   useWeeklyEditionKeys: () => weekKeys,
 }));
 

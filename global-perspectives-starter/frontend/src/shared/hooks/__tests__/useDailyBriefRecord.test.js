@@ -113,4 +113,91 @@ describe('useDailyBrief from the record', () => {
     expect(result.current.brief).toEqual(latest.data);
     expect(fetchDailyBrief).not.toHaveBeenCalled();
   });
+
+  describe('an explicit date with no edition', () => {
+    const idx = { daily: [{ dateKey: '2026-11-03' }, { dateKey: '2026-10-20' }], weekly: [] };
+    const views = async (d) => (idx.daily.some((x) => x.dateKey === d) ? { brief: { dateKey: d } } : null);
+    const daysAsked = (fn) => fn.mock.calls.map((c) => c[0]);
+    beforeEach(() => {
+      rv.fetchBriefsIndex.mockResolvedValue(idx);
+      rv.fetchDailyBriefView.mockImplementation(views);
+    });
+
+    it('serves the nearest earlier edition from the index, even after an older edition was viewed, asking the action for the requested day only', async () => {
+      setNow('2026-11-04T08:00:00Z');
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      fetchDailyBrief.mockResolvedValue({ data: null });
+      const old = renderHook(() => useDailyBrief('2026-10-20'));
+      await waitFor(() => expect(old.result.current.servedDateKey).toBe('2026-10-20'));
+      const { result } = renderHook(() => useDailyBrief('2026-11-04'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.servedDateKey).toBe('2026-11-03');
+      expect(result.current.brief).toEqual({ dateKey: '2026-11-03' });
+      expect(daysAsked(fetchDailyBrief)).toEqual(['2026-11-04']);
+      await waitFor(() => expect(result.current.latestDateKey).toBe('2026-11-03'));
+    });
+
+    it('a day newer than the index that the action holds is served as itself', async () => {
+      setNow('2026-11-04T08:00:00Z');
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      fetchDailyBrief.mockResolvedValue({ data: { dateKey: '2026-11-04' } });
+      const { result } = renderHook(() => useDailyBrief('2026-11-04'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.servedDateKey).toBe('2026-11-04');
+    });
+
+    it('a gap inside the index costs no action call', async () => {
+      setNow('2026-11-04T08:00:00Z');
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      const { result } = renderHook(() => useDailyBrief('2026-10-25'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.servedDateKey).toBe('2026-10-20');
+      expect(fetchDailyBrief).not.toHaveBeenCalled();
+    });
+
+    it('stale views: the action is probed only for the days after the index\'s newest edition, never more than 8 calls', async () => {
+      setNow('2026-11-20T08:00:00Z');
+      rv.fetchManifest.mockImplementation(async () => built(10 * 3600000));
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      fetchDailyBrief.mockResolvedValue({ data: null });
+      const { result } = renderHook(() => useDailyBrief('2026-11-19'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      const probed = daysAsked(fetchDailyBrief).filter((d) => d !== '2026-11-20'); // today is the latest lookup's own call (stale views)
+      expect(probed.length).toBeLessThanOrEqual(8);
+      expect(probed).toContain('2026-11-19');
+      expect(probed.every((d) => d > '2026-11-03')).toBe(true);
+      expect(result.current.servedDateKey).toBe('2026-11-03');
+    });
+
+    it('no index: the action is probed for the requested day and the 7 before it, nearest wins', async () => {
+      setNow('2026-11-04T08:00:00Z');
+      rv.fetchBriefsIndex.mockResolvedValue(null);
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      fetchDailyBrief.mockImplementation(async (d) => ({ data: d <= '2026-11-02' ? { dateKey: d } : null }));
+      const { result } = renderHook(() => useDailyBrief('2026-11-04'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(fetchDailyBrief).toHaveBeenCalledTimes(8);
+      expect(result.current.servedDateKey).toBe('2026-11-02');
+    });
+
+    it('a future day is not asked for: the newest earlier edition is served', async () => {
+      setNow('2026-11-04T08:00:00Z');
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      const { result } = renderHook(() => useDailyBrief('2026-11-05'));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.servedDateKey).toBe('2026-11-03');
+      expect(fetchDailyBrief).not.toHaveBeenCalled();
+    });
+
+    it.each(['2026-13-45', '2026-02-30', 'tomorrow'])('an impossible date (%s) is treated as no date: the latest edition, no error', async (bad) => {
+      setNow('2026-11-04T08:00:00Z');
+      const { useDailyBrief, fetchDailyBrief } = await freshModule();
+      const { result } = renderHook(() => useDailyBrief(bad));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toBeNull();
+      expect(result.current.servedDateKey).toBe('2026-11-03');
+      expect(result.current.latestDateKey).toBe('2026-11-03');
+      expect(fetchDailyBrief).not.toHaveBeenCalled();
+    });
+  });
 });

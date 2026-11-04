@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import Button from '@/shared/ui/Button.jsx';
 import '@/features/threads/components/FedIntoList.css';
 
@@ -64,7 +65,7 @@ export function FedIntoToggle({ label, links, direction, defaultOpen = false }) 
   return (
     <div className="fi-toggle-wrap">
       <Button compact aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {label} ({links.length}) {open ? '▴' : '▾'}
+        {label} ({distinctTargets(links, direction === 'into' ? 'targetThreadId' : 'sourceThreadId')}) {open ? '▴' : '▾'}
       </Button>
       {open && <FedIntoList links={links} direction={direction} />}
     </div>

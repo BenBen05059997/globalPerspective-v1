@@ -1,4 +1,5 @@
 import { fetchStoryAnalysis } from '@/shared/api/storyAnalysis.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes, as useThreadAnalyses
@@ -9,6 +10,10 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes, as useThreadAnalyses
  */
 export function useStoryAnalysis(threadId) {
   const key = threadId ? `gp_story_analysis_v1_${threadId}` : null;
-  const { data, loading } = useCachedQuery(key, () => fetchStoryAnalysis(threadId), { ttl: CACHE_TTL_MS, storage: 'session' });
-  return { analysis: data ?? null, loading };
+  const { data, loading, error, refetch } = useCachedQuery(
+    key,
+    () => fetchStoryAnalysis(threadId).catch((e) => { reportFetchError('story-analysis', e); throw e; }),
+    { ttl: CACHE_TTL_MS, storage: 'session' },
+  );
+  return { analysis: data ?? null, loading, error: error ? (error.message || 'Failed to load analysis') : null, refetch };
 }

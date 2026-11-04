@@ -27,19 +27,21 @@ export function combineTimeline(view, archive) {
 // 90-day archive) for what the view has not caught up with, so deep-links survive long after a story ages out.
 export function useNarrativeThread(threadId) {
   const key = threadId ? `gp_narrative_thread_v2_${threadId}` : null;
-  const { data, loading, error } = useCachedQuery(key, async () => {
+  const { data, loading, error, refetch } = useCachedQuery(key, async () => {
     const [view, { fresh }] = await Promise.all([
       views.fetchStoryView(threadId).catch((e) => { reportFetchError('story-view', e); return null; }),
       loadViewsFresh(),
     ]);
     const recorded = viewEntriesToThread(view);
     if (fresh && recorded.length) return dropRedatedRepeats(recorded); // the view carries today's entries: no action call
-    const result = await fetchNarrativeThread(threadId);
-    return dropRedatedRepeats(combineTimeline(view, Array.isArray(result?.data) ? result.data : []));
+    const result = await fetchNarrativeThread(threadId).catch((e) => { reportFetchError('narrative-thread', e); throw e; });
+    const entries = dropRedatedRepeats(combineTimeline(view, Array.isArray(result?.data) ? result.data : []));
+    return entries.length ? entries : undefined; // an empty answer is "not found" but is not kept: the story's view may appear soon
   }, { ttl: CACHE_TTL_MS, storage: 'session' });
   return {
     entries: data ?? null,
     loading,
     error: error ? (error.message || 'Failed to load thread') : null,
+    refetch,
   };
 }

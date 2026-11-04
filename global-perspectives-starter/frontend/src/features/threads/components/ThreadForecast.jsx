@@ -4,35 +4,14 @@ import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';
 import { forecastAnchorId, forecastHref } from '@/shared/lib/links.js';
+import { triggerState, OUTCOME_TAG as TAG } from '@/features/threads/lib/forecastOutcome.js';
 
 const FC_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fcDay(s) {
   const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? `${FC_MONTHS[+m[2] - 1]} ${+m[3]}` : s;
 }
-const TODAY = new Date().toISOString().slice(0, 10);
-
-function triggerState(t) {
-  // per-question verdicts (Batch 4) come from `state`; legacy triggers from `verdict`
-  if (t.state === 'yes') return 'fired';
-  if (t.state === 'no') return 'notfired';
-  if (t.state === 'void') return 'unclear';
-  if (t.state === 'past_deadline_unchecked') return 'awaiting';
-  if (t.verdict === 'fired') return 'fired';
-  if (t.verdict === 'not_fired') return 'notfired';
-  if (t.verdict === 'unclear') return 'unclear';
-  if (t.deadline && t.deadline < TODAY) return 'awaiting'; // deadline passed, not yet resolved
-  return 'pending';
-}
-
 const MARK = { fired: '✓', notfired: '✗', unclear: '–', awaiting: '⌛', pending: '☐' };
-const TAG = {
-  fired: 'happened',
-  notfired: 'not reported',
-  unclear: 'unclear',
-  awaiting: 'awaiting check',
-  pending: null,
-};
 
 /**
  * ThreadForecast — Phase 4 "Living forecast" board (presentational). Renders the thread's
@@ -43,11 +22,10 @@ const TAG = {
 export default function ThreadForecast({ snapshot }) {
   if (!snapshot || !snapshot.scenarios?.length) return null;
 
-  const resolved = snapshot.scenarios
-    .flatMap(s => s.triggers)
-    .filter(t => t.verdict === 'fired' || t.verdict === 'not_fired' || t.state === 'yes' || t.state === 'no').length;
-  const total = snapshot.scenarios.flatMap(s => s.triggers).length;
-  const note = legacyNote(snapshot.scenarios.flatMap(s => s.triggers));
+  const triggers = snapshot.scenarios.flatMap(s => s.triggers);
+  const resolved = triggers.filter(t => ['fired', 'notfired'].includes(triggerState(t))).length;
+  const total = triggers.length;
+  const note = legacyNote(triggers);
 
   return (
     <div className="tp-ai-block tp-fc">
@@ -63,7 +41,8 @@ export default function ThreadForecast({ snapshot }) {
       {snapshot.scenarios.map((s, si) => (
         <div key={si} className="tp-fc-scenario">
           <div className="tp-fc-shead">
-            <span className="tp-fc-slabel">{s.label}</span>
+            {/* a scenario named after its one question would print that sentence twice */}
+            {!s.triggers.some(t => t.text === s.label) && <span className="tp-fc-slabel">{s.label}</span>}
             {s.probability != null && (
               <span className="tp-fc-prob">{Math.round(s.probability * 100)}%</span>
             )}

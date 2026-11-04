@@ -23,3 +23,11 @@ test('PRED writer always assigns a thread and accepts older singular categories'
  const h=harness();await h.write({id:'old',title:'Old',category:'economy'},JSON.stringify({scenarios:[]}),{modelId:'fake'},'gen',2026);
  assert.equal(h.writes.length,1);assert.match(h.writes[0].threadId,/^thread-/);assert.equal(h.writes[0].category,'economy');
 });
+
+test('summary prompt forbids commenting on the source text or its completeness',()=>{
+ const src=fs.readFileSync(require.resolve('../src/index.js'),'utf8');
+ const body=src.slice(src.indexOf('function buildSummaryPrompt'),src.indexOf('function buildSummaryPrompt')+2500);
+ assert.match(body,/Never mention the snippets, the headline, the sources or their completeness/);
+ assert.match(body,/never write "the snippet\/source does not report/);
+ assert.match(body,/If a source has no usable text, ignore it/);
+});

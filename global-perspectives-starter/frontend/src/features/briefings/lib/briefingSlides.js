@@ -5,7 +5,7 @@
 import { parentCountry } from '@/shared/lib/countries.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 
-// Daily topStories carry a real `threadId` since 2026-09-30 (newsPostDevTo resolves it from the
+// Daily topStories carry a real `threadId` since 2026-09-30 (the daily brief writer, live Lambda newsDailyBrief, repo dir newsPostDevTo, resolves it from the
 // archive entry the story was written from; null when there is no confident match, and older
 // briefs have none); the read API adds `iso3[]` to top stories, the country to watch and weekly
 // signals. Addresses come from shared/lib/links.js; this file only says which ids are real.

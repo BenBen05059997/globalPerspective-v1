@@ -13,7 +13,8 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
 import BriefingError from '@/features/briefings/components/BriefingError.jsx';
 import { briefingHref } from '@/shared/lib/links.js';
-import { previousWeekKey } from '@/features/briefings/lib/editions.js';
+import { nearestWeek } from '@/features/briefings/lib/editions.js';
+import { useWeeklyEditionKeys } from '@/features/briefings/hooks/useBriefEditions.js';
 import { threadIdOf, placeNames } from '@/features/briefings/lib/briefingSlides.js';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
 import '@/features/briefings/components/WeeklyMode.css';
@@ -89,6 +90,7 @@ const weekHref = (week) => briefingHref({ mode: 'weekly', week });
 // asks for a past edition (see WeeklyEditionNav for how an unsupported lookup is shown).
 export default function WeeklyMode({ weekParam }) {
   const { brief, loading, error, refetch } = useWeeklyBrief(weekParam);
+  const weeks = useWeeklyEditionKeys();
 
   useEffect(() => {
     document.title = brief?.weekOf
@@ -102,6 +104,7 @@ export default function WeeklyMode({ weekParam }) {
   const signals = Array.isArray(brief?.signals) ? brief.signals : [];
   if (!signals.length) {
     // No edition, or an early prose-format edition without signals (not shown here).
+    const before = weekParam && nearestWeek(weeks, weekParam, -1);
     let title = 'No brief published yet';
     let text = 'The weekly signals brief will appear here once it’s published.';
     if (brief?.weekOf) {
@@ -114,12 +117,12 @@ export default function WeeklyMode({ weekParam }) {
     return (
       <div className="wb-page">
         <div className="wb-wrap wb-empty">
-          {brief?.weekOf && <WeeklyEditionNav weekOf={brief.weekOf} requestedWeek={weekParam} hrefForWeek={weekHref} />}
+          {brief?.weekOf && <WeeklyEditionNav weekOf={brief.weekOf} requestedWeek={weekParam} weeks={weeks} hrefForWeek={weekHref} />}
           <h1 className="wb-h1">{title}</h1>
           <p className="wb-status">{text}</p>
           {weekParam && !brief?.weekOf && (
             <p className="wb-empty-links">
-              <Link className="wb-latest" to={weekHref(previousWeekKey(weekParam))}>← Week before</Link>
+              {before && <Link className="wb-latest" to={weekHref(before)}>← Week before</Link>}
               <Link className="wb-latest" to={weekHref(null)}>Latest edition →</Link>
             </p>
           )}
@@ -138,7 +141,7 @@ export default function WeeklyMode({ weekParam }) {
   return (
     <div className="wb-page">
       <div className="wb-wrap">
-        <WeeklyEditionNav weekOf={brief.weekOf} requestedWeek={weekParam} hrefForWeek={weekHref} />
+        <WeeklyEditionNav weekOf={brief.weekOf} requestedWeek={weekParam} weeks={weeks} hrefForWeek={weekHref} />
         <div className="wb-head">
           <div>
             <div className="wb-eyebrow">Weekly Signals Brief</div>

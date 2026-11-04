@@ -3,7 +3,7 @@
 // "publishes at the end of the day" during an outage; "AI-generated" only; an error state that is
 // not an empty state. Weekly (ex-/weekly-brief): KPIs, signals with sources, the week= archive
 // fallback note. The mode switch writes ?mode=.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
@@ -35,6 +35,13 @@ vi.mock('@/features/briefings/hooks/useWeeklyBrief.js', () => ({
   useWeeklyBrief: (week) => { weeklyArgs.push(week); return weeklyValue; },
 }));
 
+let newestKey = null;
+let weekKeys = null;
+vi.mock('@/features/briefings/hooks/useBriefEditions.js', () => ({
+  useNewestDailyKey: () => newestKey,
+  useWeeklyEditionKeys: () => weekKeys,
+}));
+
 import BriefingsPage from '@/features/briefings/BriefingsPage';
 import { reportFetchError } from '@/shared/api/errorSink';
 
@@ -63,6 +70,8 @@ const stale = { brief: { displayDate: old, generatedAt: new Date(old).toISOStrin
 beforeEach(() => {
   dailyValue = { brief: null, servedDateKey: null, loading: false, error: null, refetch: vi.fn() };
   weeklyValue = { brief: null, loading: false, error: null, refetch: vi.fn() };
+  newestKey = null;
+  weekKeys = null;
   dailyArgs.length = 0;
   weeklyArgs.length = 0;
   reportFetchError.mockClear();
@@ -84,6 +93,71 @@ describe('read mode — heading and fallback note', () => {
     expect(h1.textContent).toContain(old);
     expect(screen.getByText(/No new brief since/)).toBeInTheDocument();
     expect(screen.queryByText(/publishes at the end of the day/i)).not.toBeInTheDocument();
+  });
+
+  describe('the pause wording follows the newest published edition, not the clock alone', () => {
+    const at = (iso) => vi.useFakeTimers({ toFake: ['Date'], now: new Date(iso) });
+    const servedKey = (key) => ({ brief: { displayDate: key, summary: '' }, servedDateKey: key, loading: false, error: null });
+    afterEach(() => vi.useRealTimers());
+
+    it('yesterday is the newest edition before 14:30 UTC: the brief is simply due, nothing is "paused"', () => {
+      at('2026-11-04T05:00:00Z');
+      dailyValue = servedKey('2026-11-03');
+      renderAt('/briefings');
+      expect(screen.getByText(/published at 23:00 JST \(14:00 UTC\)/)).toBeInTheDocument();
+      expect(document.body.textContent).not.toMatch(/paused/i);
+    });
+
+    it('yesterday is the newest edition after 14:30 UTC: today\'s is late, so it says paused', () => {
+      at('2026-11-04T15:00:00Z');
+      dailyValue = servedKey('2026-11-03');
+      renderAt('/briefings');
+      expect(screen.getByText(/No new brief since/)).toBeInTheDocument();
+      expect(screen.getByText(/while analysis is paused/)).toBeInTheDocument();
+    });
+
+    it('two days without an edition is a pause at any hour', () => {
+      at('2026-11-04T05:00:00Z');
+      dailyValue = servedKey('2026-11-02');
+      renderAt('/briefings');
+      expect(screen.getByText(/while analysis is paused/)).toBeInTheDocument();
+    });
+
+    it('viewing an old date while the newest edition is yesterday does not say paused', () => {
+      at('2026-11-04T05:00:00Z');
+      newestKey = '2026-11-03';
+      dailyValue = servedKey('2026-10-20');
+      renderAt('/briefings?mode=read&date=2026-10-20');
+      expect(document.body.textContent).not.toMatch(/paused/i);
+    });
+  });
+
+  it('"Latest Brief" is only for the newest edition; an older one is not called latest', () => {
+    newestKey = '2026-09-12';
+    dailyValue = { ...stale, servedDateKey: '2026-09-01', brief: { ...stale.brief, displayDate: '2026-09-01' } };
+    renderAt('/briefings?mode=read&date=2026-09-01');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).not.toMatch(/Latest/);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('2026-09-01');
+  });
+
+  it('"Latest Brief" is kept when the dated edition is the newest one', () => {
+    newestKey = old;
+    dailyValue = stale;
+    renderAt(`/briefings?mode=read&date=${old}`);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
+  });
+
+  it('a date after today is "not published yet", never a gap in the archive', () => {
+    dailyValue = { ...fresh, servedDateKey: today };
+    renderAt('/briefings?mode=read&date=2999-01-01');
+    expect(document.querySelector('.daily-fallback-note').textContent).toMatch(/The brief for 2999-01-01 is not published yet; showing the latest edition/);
+    expect(document.body.textContent).not.toMatch(/real gap|No brief was published/);
+  });
+
+  it('a future date with nothing in the archive says it is not published yet', () => {
+    renderAt('/briefings?mode=read&date=2999-01-01');
+    expect(screen.getByText('The brief for 2999-01-01 is not published yet.')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/real gap/);
   });
 
   it('a requested past date that has no edition says which edition is shown instead', () => {
@@ -117,7 +191,7 @@ describe('read mode — sections', () => {
         ...fresh.brief,
         headline: 'Lead',
         summary: 'One. Two. Three.\n\nSecond paragraph.',
-        categoryBreakdown: { conflict: 3, economy: 1 },
+        categoryBreakdown: { conflict: 9, economy: 9 }, // the model's tally: not what is plotted
         risingThread: { title: 'Rising arc', threadId: 'thread-abc', oneLiner: 'It grows', trajectory: 'escalating' },
         topStories: [{ title: 'Story A', category: 'conflict', regions: ['France'], threadId: 'thread-a' }],
       },
@@ -129,6 +203,25 @@ describe('read mode — sections', () => {
     expect(screen.getByRole('link', { name: /Rising arc/ }).getAttribute('href')).toBe('/weekly/thread/thread-abc');
     expect(screen.getByRole('link', { name: 'Story A' }).getAttribute('href')).toBe('/weekly/thread/thread-a');
     expect(screen.getByRole('link', { name: 'France' }).getAttribute('href')).toBe('/weekly/country/France');
+  });
+
+  it('"Shape of the Day" counts the top stories\' own categories, not the model\'s categoryBreakdown', () => {
+    dailyValue = {
+      ...fresh,
+      brief: {
+        ...fresh.brief,
+        categoryBreakdown: { politics: 12, economy: 9 },
+        topStories: [
+          { title: 'A', category: 'conflict' }, { title: 'B', category: 'conflict' }, { title: 'C', category: 'economy' },
+        ],
+        stats: { totalArticles: 17, sourceOutlets: 5, countriesCovered: 6 },
+      },
+    };
+    renderAt('/briefings');
+    const rows = [...document.querySelectorAll('.daily-bar-row')].map((r) => r.textContent);
+    expect(rows).toEqual(['conflict2', 'economy1']);
+    expect(document.body.textContent).not.toMatch(/politics|24-hour window|by signal breadth|wire \+ regional/);
+    expect(screen.getByText('Stories').previousElementSibling).toHaveTextContent('17');
   });
 
   it('regions stay text, the country to watch links to its page (a region to watch is an unlinked card)', () => {
@@ -202,6 +295,7 @@ describe('weekly mode', () => {
 
   it('asks for ?week= and says so plainly when the API answers with a later (latest) edition', () => {
     weeklyValue = { brief: weekly, loading: false, error: null };
+    weekKeys = ['2026-10-11', '2026-10-04'];
     renderAt('/briefings?mode=weekly&week=2026-10-04');
     expect(weeklyArgs).toContain('2026-10-04');
     expect(screen.getByText(/is not available here yet; showing the latest edition/)).toBeInTheDocument();
@@ -209,10 +303,11 @@ describe('weekly mode', () => {
     expect(screen.getByRole('link', { name: 'Latest edition →' }).getAttribute('href')).toBe('/briefings?mode=weekly');
   });
 
-  it('a past week with no edition says so and offers the week before and the latest', () => {
+  it('a week with no edition says so and offers the nearest earlier edition and the latest', () => {
+    weekKeys = ['2026-10-11', '2026-09-06'];
     renderAt('/briefings?mode=weekly&week=2026-10-04');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/No weekly brief for the week of/);
-    expect(screen.getByRole('link', { name: '← Week before' }).getAttribute('href')).toBe('/briefings?mode=weekly&week=2026-09-27');
+    expect(screen.getByRole('link', { name: '← Week before' }).getAttribute('href')).toBe('/briefings?mode=weekly&week=2026-09-06');
     expect(screen.getByRole('link', { name: 'Latest edition →' }).getAttribute('href')).toBe('/briefings?mode=weekly');
   });
 

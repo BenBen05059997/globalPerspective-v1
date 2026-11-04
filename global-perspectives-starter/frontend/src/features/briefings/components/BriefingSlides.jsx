@@ -3,6 +3,7 @@ import { storyHref, mapHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
+import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
@@ -73,13 +74,13 @@ function StoryNextQuestion({ threadId }) {
   );
 }
 
-export function StorySlide({ story, index }) {
+export function StorySlide({ story, index, total }) {
   const threadId = threadIdOf(story);
   const country = firstCountry(story);
   return (
     <div className="bm-slide bm-slide-story">
       <div className="bm-slide-kicker">
-        TOP STORY {index + 1} of 8
+        TOP STORY {index + 1} of {total}
         <CategoryTag category={story.category} />
       </div>
       <Peekable id={`bm-story-${index}`} item={peekInputForStory(story)}>
@@ -142,7 +143,7 @@ function WeekSlide({ brief }) {
   return (
     <div className="bm-slide bm-slide-week">
       <div className="bm-slide-kicker">
-        WEEKLY · week of {brief.weekOf}
+        WEEKLY · week of {formatDateLabel(brief.weekOf)}
         <span className="bm-ai-tag">AI-generated</span>
       </div>
       <h2 className="bm-slide-title">The week's signals, ranked by risk</h2>
@@ -212,7 +213,7 @@ export function SlideBody({ mode, slide, brief, isLast = false }) {
     );
   }
   if (slide.kind === 'day') return <DaySlide brief={brief} />;
-  if (slide.kind === 'story') return <StorySlide story={slide.story} index={slide.index} />;
+  if (slide.kind === 'story') return <StorySlide story={slide.story} index={slide.index} total={(brief.topStories || []).length} />;
   if (slide.kind === 'watch') return <WatchSlide countryToWatch={slide.countryToWatch} risingThread={slide.risingThread} />;
   return null;
 }

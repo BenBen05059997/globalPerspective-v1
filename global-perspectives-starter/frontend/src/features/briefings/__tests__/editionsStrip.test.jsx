@@ -77,12 +77,6 @@ describe('EditionsStrip', () => {
     expect(screen.getByRole('status')).toHaveTextContent('No editions since Fri, Oct 30 — AI analysis has been paused for 3 days.');
   });
 
-  it('a one-day pause reads "1 day"', () => {
-    render(<EditionsStrip marks={marks} pausedSegment={{ fromKey: '2026-11-02', toKey: '2026-11-02', days: 1 }} currentDateKey="2026-10-30" />);
-    fireEvent.click(screen.getByRole('button', { name: /^Paused/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('paused for 1 day.');
-  });
-
   it('without a pause there is no paused mark and no "paused" wording', () => {
     render(<EditionsStrip marks={marks} currentDateKey="2026-10-30" />);
     expect(screen.queryByRole('button', { name: /^Paused/ })).toBeNull();
@@ -98,7 +92,7 @@ describe('WeeklyEditionNav', () => {
   });
 
   it('latest edition: shows the week and a link to the week before, no "latest" link', () => {
-    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-26" hrefForWeek={hrefForWeek} /></MemoryRouter>);
+    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-26" weeks={['2026-10-26', '2026-10-19']} hrefForWeek={hrefForWeek} /></MemoryRouter>);
     expect(screen.getByLabelText('Week of Mon, Oct 26, currently showing')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '← Week before' })).toHaveAttribute('href', '/briefings?mode=weekly&week=2026-10-19');
     expect(screen.queryByRole('link', { name: /Latest edition/ })).toBeNull();
@@ -106,10 +100,22 @@ describe('WeeklyEditionNav', () => {
   });
 
   it('a past week offers a way back to the latest edition', () => {
-    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-19" requestedWeek="2026-10-19" hrefForWeek={hrefForWeek} /></MemoryRouter>);
+    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-19" requestedWeek="2026-10-19" weeks={['2026-10-26', '2026-10-19', '2026-09-06']} hrefForWeek={hrefForWeek} /></MemoryRouter>);
     expect(screen.getByRole('link', { name: 'Latest edition →' })).toHaveAttribute('href', '/briefings?mode=weekly');
-    expect(screen.getByRole('link', { name: '← Week before' })).toHaveAttribute('href', '/briefings?mode=weekly&week=2026-10-12');
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('the week before is the nearest existing edition, not the previous calendar week', () => {
+    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-04" weeks={['2026-10-04', '2026-09-06']} hrefForWeek={hrefForWeek} /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: '← Week before' })).toHaveAttribute('href', '/briefings?mode=weekly&week=2026-09-06');
+  });
+
+  it('no earlier edition, or no index to know it: no "Week before" link (never a guessed week)', () => {
+    const { unmount } = render(<MemoryRouter><WeeklyEditionNav weekOf="2026-09-06" weeks={['2026-09-06']} hrefForWeek={hrefForWeek} /></MemoryRouter>);
+    expect(screen.queryByRole('link', { name: '← Week before' })).toBeNull();
+    unmount();
+    render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-04" weeks={null} hrefForWeek={hrefForWeek} /></MemoryRouter>);
+    expect(screen.queryByRole('link', { name: '← Week before' })).toBeNull();
   });
 
   it('when the API answers with a different week than asked, it says so plainly', () => {

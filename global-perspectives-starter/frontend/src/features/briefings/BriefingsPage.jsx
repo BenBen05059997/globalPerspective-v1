@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { useWeeklyBrief } from '@/features/briefings/hooks/useWeeklyBrief.js';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';
+import { useNewestDailyKey, useWeeklyEditionKeys } from '@/features/briefings/hooks/useBriefEditions.js';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { briefingHref } from '@/shared/lib/links.js';
 import { dateKeyOrNull } from '@/features/briefings/lib/dateKey.js';
@@ -30,6 +31,8 @@ function PresentMode({ deck, dateParam, weekParam }) {
   const daily = useDailyBrief(dateParam || undefined);
   const weekly = useWeeklyBrief(weekParam);
   const { index: dailyEditionsIndex } = useDailyEditionsIndex(daily.servedDateKey);
+  const newestDailyKey = useNewestDailyKey();
+  const weeklyEditionKeys = useWeeklyEditionKeys();
   const current = deck === 'weekly' ? weekly : daily;
 
   useEffect(() => {
@@ -59,9 +62,11 @@ function PresentMode({ deck, dateParam, weekParam }) {
       weeklyBrief={weekly.brief}
       dailyEditionsIndex={dailyEditionsIndex}
       dailyAnchorDateKey={daily.servedDateKey}
+      newestDailyKey={newestDailyKey}
       requestedDateKey={dateParam}
       onSelectDailyDate={selectDailyDate}
       requestedWeek={weekParam}
+      weeklyEditionKeys={weeklyEditionKeys}
       hrefForWeek={weekHref}
     />
   );

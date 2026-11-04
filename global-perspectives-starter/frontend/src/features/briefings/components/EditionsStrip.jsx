@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import Button from '@/shared/ui/Button.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { previousWeekKey, labelledDateKeys } from '@/features/briefings/lib/editions.js';
+import { nearestWeek, labelledDateKeys } from '@/features/briefings/lib/editions.js';
 import '@/features/briefings/components/EditionsStrip.css';
 
 // EditionsStrip — one mark per day (daily), oldest to newest, left to right, over the real probe
@@ -63,8 +63,8 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
           <button
             type="button"
             className="bm-edition-mark bm-edition-paused"
-            title={`${formatDateLabel(pausedSegment.fromKey)} → today — no editions (AI analysis paused, ${pausedSegment.days} day${pausedSegment.days === 1 ? '' : 's'})`}
-            aria-label={`Paused, ${formatDateLabel(pausedSegment.fromKey)} through today, ${pausedSegment.days} day${pausedSegment.days === 1 ? '' : 's'} with no editions`}
+            title={`${formatDateLabel(pausedSegment.fromKey)} → today — no editions (AI analysis paused, ${pausedSegment.days} days)`}
+            aria-label={`Paused, ${formatDateLabel(pausedSegment.fromKey)} through today, ${pausedSegment.days} days with no editions`}
             onClick={() => setExplain('paused')}
           >
             <span className="bm-edition-dot" aria-hidden="true">‖</span>
@@ -79,7 +79,7 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
         <div className="bm-edition-explain" role="status">
           <span>
             {explain === 'paused'
-              ? `No editions since ${latestLabel || formatDateLabel(currentDateKey)} — AI analysis has been paused for ${pausedSegment?.days} day${pausedSegment?.days === 1 ? '' : 's'}.`
+              ? `No editions since ${latestLabel || formatDateLabel(currentDateKey)} — AI analysis has been paused for ${pausedSegment?.days} days.`
               : `No edition was published for ${formatDateLabel(explain)}.`}
           </span>
           {onGoLatest && (
@@ -94,20 +94,21 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
   );
 }
 
-// WeeklyEditionNav — the weekly archive: the one edition shown, a step to the week before (weekly
-// editions are keyed by their weekOf, written once a week, so the week before is weekOf − 7 days;
-// `weekly_brief` with `week` returns exactly that week's edition or none), and the latest. No row
-// of probed marks. A read API without per-week lookup answers with the latest edition; then
-// `weekOf` differs from the requested week and the note says so plainly.
+// WeeklyEditionNav — the weekly archive: the one edition shown, a step to the nearest earlier edition
+// the record's index lists (`weeks`; weekly editions are not every calendar week, so a fixed 7-day step
+// lands on empty weeks), and the latest. No row of probed marks. A read API without per-week lookup
+// answers with the latest edition; then `weekOf` differs from the requested week and the note says so.
+// With no index (`weeks` null) there is no step: an edition is never guessed.
 //   hrefForWeek(week | null) -> the address for that edition (null = latest)
-export function WeeklyEditionNav({ weekOf, requestedWeek, hrefForWeek }) {
+export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) {
   if (!weekOf) return null;
   const label = formatDateLabel(weekOf);
   const notServed = !!requestedWeek && weekOf !== requestedWeek;
+  const before = nearestWeek(weeks, weekOf, -1);
   return (
     <div className="bm-editions bm-editions-weekly" role="group" aria-label="Editions">
       <div className="bm-editions-track">
-        <Link className="bm-edition-step" to={hrefForWeek(previousWeekKey(weekOf))}>← Week before</Link>
+        {before && <Link className="bm-edition-step" to={hrefForWeek(before)}>← Week before</Link>}
         <span className="bm-edition-mark bm-edition-solid current" aria-label={`Week of ${label}, currently showing`} title={`Week of ${label}`}>
           <span className="bm-edition-dot" aria-hidden="true">●</span>
           <span className="bm-edition-label">Week of {label}</span>

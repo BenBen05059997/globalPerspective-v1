@@ -32,8 +32,8 @@ function prefersReducedMotion() {
 export default function PhoneBriefingMode({
   mode, onModeChange,
   dailyBrief, weeklyBrief,
-  dailyEditionsIndex, dailyAnchorDateKey, requestedDateKey, onSelectDailyDate,
-  requestedWeek, hrefForWeek,
+  dailyEditionsIndex, dailyAnchorDateKey, newestDailyKey, requestedDateKey, onSelectDailyDate,
+  requestedWeek, weeklyEditionKeys, hrefForWeek,
 }) {
   const brief = mode === 'weekly' ? weeklyBrief : dailyBrief;
   const slides = useMemo(
@@ -72,8 +72,8 @@ export default function PhoneBriefingMode({
     return buildDailyEditionMarks(keys, dailyEditionsIndex, requestedDateKey || dailyAnchorDateKey);
   }, [mode, dailyAnchorDateKey, dailyEditionsIndex, requestedDateKey]);
   const pausedSegment = useMemo(
-    () => (dailyAnchorDateKey ? buildPausedSegment(dailyAnchorDateKey, todayKey()) : null),
-    [dailyAnchorDateKey],
+    () => (newestDailyKey ? buildPausedSegment(newestDailyKey, todayKey()) : null),
+    [newestDailyKey],
   );
 
   if (!brief) {
@@ -127,7 +127,7 @@ export default function PhoneBriefingMode({
       {tab === 'editions' && (
         <div className="psm-panel" {...tabPanelProps('pbm', 'editions')}>
           {mode === 'weekly' ? (
-            <WeeklyEditionNav weekOf={weeklyBrief?.weekOf} requestedWeek={requestedWeek} hrefForWeek={hrefForWeek} />
+            <WeeklyEditionNav weekOf={weeklyBrief?.weekOf} requestedWeek={requestedWeek} weeks={weeklyEditionKeys} hrefForWeek={hrefForWeek} />
           ) : (
             <EditionsStrip
               key={mode}
@@ -135,8 +135,8 @@ export default function PhoneBriefingMode({
               pausedSegment={pausedSegment}
               currentDateKey={requestedDateKey || dailyAnchorDateKey}
               onSelect={(dk) => { onSelectDailyDate?.(dk); setTab('slides'); }}
-              latestLabel={dailyAnchorDateKey ? formatDateLabel(dailyAnchorDateKey) : null}
-              onGoLatest={() => { onSelectDailyDate?.(dailyAnchorDateKey); setTab('slides'); }}
+              latestLabel={newestDailyKey ? formatDateLabel(newestDailyKey) : null}
+              onGoLatest={() => { onSelectDailyDate?.(null); setTab('slides'); }}
             />
           )}
         </div>

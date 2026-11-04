@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { threadIdOf, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
-import { addDaysKey, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
+import { addDaysKey, dailyPauseState, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
+import { useNewestDailyKey } from '@/features/briefings/hooks/useBriefEditions.js';
 import { briefingHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -61,13 +62,9 @@ function toParagraphs(text) {
   return (text || '').split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
 }
 
-// Key Takeaways — the scannable 10-second read. A server `keyPoints` array when present; otherwise
-// an honest list from fields the brief already carries (rising thread, country to watch, top
-// story headlines). Nothing is invented.
+// Key Takeaways — the scannable 10-second read: an honest list from fields the brief already
+// carries (rising thread, country to watch, top story headlines). Nothing is invented.
 function deriveTakeaways(brief) {
-  if (Array.isArray(brief.keyPoints) && brief.keyPoints.length) {
-    return brief.keyPoints.slice(0, 4).map(p => (typeof p === 'string' ? { text: p } : p));
-  }
   const out = [];
   if (brief.risingThread?.oneLiner) out.push({ tag: 'Rising', text: brief.risingThread.oneLiner });
   if (brief.countryToWatch?.headline) out.push({ tag: brief.countryToWatch.countryName, text: brief.countryToWatch.headline });
@@ -108,6 +105,14 @@ function RisingThreadCard({ thread }) {
     : <div className="daily-highlight">{body}</div>;
 }
 
+// The categories of the top stories, counted from the stories themselves (the brief's own
+// `categoryBreakdown` is the model's tally and does not match its stories), largest first.
+function topStoryCategories(topStories) {
+  const counts = {};
+  for (const s of topStories || []) if (s?.category) counts[s.category] = (counts[s.category] || 0) + 1;
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+}
+
 const dayHref = (dateKey) => briefingHref({ mode: 'read', date: dateKey });
 
 // The country-to-watch card: a link to the country page, or the same card unlinked when the name is
@@ -123,6 +128,7 @@ export default function ReadMode({ dateParam }) {
   const today = todayKey();
   const requested = dateParam || today;
   const { brief, servedDateKey, loading, error, refetch } = useDailyBrief(dateParam || undefined);
+  const newestKey = useNewestDailyKey();
 
   useEffect(() => {
     const label = brief?.displayDate || servedDateKey || requested;
@@ -139,14 +145,17 @@ export default function ReadMode({ dateParam }) {
   const next = anchor < today ? addDaysKey(anchor, 1) : null;
 
   if (!brief) {
-    // Nothing in the hook's ~30-day lookback either side of the request: a real gap, not a delay.
+    // Nothing in the hook's ~30-day lookback either side of the request. A date after today is not
+    // a gap: it has not happened yet.
     return (
       <div className="daily-page daily-empty">
         <h1>No brief available</h1>
         <p>
-          {requested === today
-            ? 'No brief has been generated in the last month. This looks like a real gap, not a same-day delay.'
-            : `No brief was published within about a month of ${requested} — this looks like a real gap in the archive, not a delay.`}
+          {requested > today
+            ? `The brief for ${requested} is not published yet.`
+            : requested === today
+              ? 'No brief has been generated in the last month. This looks like a real gap, not a same-day delay.'
+              : `No brief was published within about a month of ${requested} — this looks like a real gap in the archive, not a delay.`}
         </p>
         <div className="daily-empty-links">
           <Link to={dayHref(prev)}>← Previous day</Link>
@@ -160,11 +169,25 @@ export default function ReadMode({ dateParam }) {
   const shownDate = brief.displayDate || servedDateKey || requested;
   const relLabel = relativeDayLabel(servedDateKey, today);
   const servedOlder = !!servedDateKey && servedDateKey !== requested;
+  // The newest edition: a bare page serves it by construction; a dated page has to wait for the lookup (unknown = say nothing).
+  const newest = dateParam ? newestKey : servedDateKey;
+  const pause = dailyPauseState(newest);
+  let fallbackNote = null;
+  if (servedOlder) {
+    if (requested > today) {
+      fallbackNote = <>The brief for <strong>{requested}</strong> is not published yet; showing the latest edition, <strong>{shownDate}</strong>.</>;
+    } else if (requested !== today) {
+      fallbackNote = <>No brief was published for <strong>{requested}</strong>; showing the nearest earlier edition, <strong>{shownDate}</strong>.</>;
+    } else if (pause === 'paused') {
+      fallbackNote = <>No new brief since <strong>{shownDate}</strong>{relLabel ? ` (${relLabel.toLowerCase()})` : ''} while analysis is paused.</>;
+    } else if (pause === 'due') {
+      fallbackNote = <>Today's brief is published at 23:00 JST (14:00 UTC). Showing <strong>{shownDate}</strong> until then.</>;
+    }
+  }
+  const isLatest = !!newest && servedDateKey === newest;
   const stats = brief.stats || {};
   const countryTier = tierFromLevel(brief.countryToWatch?.riskLevel); // unknown level reads "Not scored"
-  const catEntries = Object.entries(brief.categoryBreakdown || {})
-    .filter(([, n]) => n > 0)
-    .sort((a, b) => b[1] - a[1]);
+  const catEntries = topStoryCategories(brief.topStories);
   const catMax = catEntries.length ? catEntries[0][1] : 1;
   const takeaways = deriveTakeaways(brief);
   const lead = firstSentences(brief.summary, 2);
@@ -189,20 +212,14 @@ export default function ReadMode({ dateParam }) {
       </div>
 
       {/* Honest fallback: say plainly which edition is shown when it is not the one asked for. */}
-      {servedOlder && (
-        <div className="daily-fallback-note">
-          {requested === today
-            ? <>No new brief since <strong>{shownDate}</strong>{relLabel ? ` (${relLabel.toLowerCase()})` : ''} while analysis is paused.</>
-            : <>No brief was published for <strong>{requested}</strong>; showing the nearest earlier edition, <strong>{shownDate}</strong>.</>}
-        </div>
-      )}
+      {fallbackNote && <div className="daily-fallback-note">{fallbackNote}</div>}
 
       <header className="daily-masthead">
         {/* "Today's Brief" only when the shown edition really is today's (F4, review R2). */}
         <h1 className="daily-masthead-h1">
           {servedDateKey === today
             ? <>Today's <em>Brief</em></>
-            : <>Latest <em>Brief</em> · {shownDate}</>}
+            : <>{isLatest ? 'Latest' : 'Daily'} <em>Brief</em> · {shownDate}</>}
         </h1>
         <div className="daily-masthead-bar">
           {brief.generatedAt && <span>Generated <strong>{formatTimeAgo(brief.generatedAt)}</strong></span>}
@@ -248,29 +265,25 @@ export default function ReadMode({ dateParam }) {
           {stats.totalArticles > 0 && (
             <div className="daily-statcard">
               <div className="daily-stat-val">{stats.totalArticles}</div>
-              <div className="daily-stat-lbl">Articles</div>
-              <div className="daily-stat-sub">24-hour window</div>
+              <div className="daily-stat-lbl">Stories</div>
             </div>
           )}
           {stats.countriesCovered > 0 && (
             <div className="daily-statcard">
               <div className="daily-stat-val">{stats.countriesCovered}</div>
-              <div className="daily-stat-lbl">Countries</div>
-              <div className="daily-stat-sub">by signal breadth</div>
+              <div className="daily-stat-lbl">Regions</div>
             </div>
           )}
           {stats.sourceOutlets > 0 && (
             <div className="daily-statcard">
               <div className="daily-stat-val">{stats.sourceOutlets}</div>
               <div className="daily-stat-lbl">Outlets</div>
-              <div className="daily-stat-sub">wire + regional</div>
             </div>
           )}
           {catEntries.length > 0 && (
             <div className="daily-statcard">
               <div className="daily-stat-val">{catEntries.length}</div>
-              <div className="daily-stat-lbl">Categories</div>
-              <div className="daily-stat-sub">active today</div>
+              <div className="daily-stat-lbl">Top-story categories</div>
             </div>
           )}
         </div>
@@ -282,7 +295,7 @@ export default function ReadMode({ dateParam }) {
           <SectionHeader
             num="2"
             title="Top Stories"
-            meta={`${brief.topStories.length} item${brief.topStories.length !== 1 ? 's' : ''} · by signal breadth`}
+            meta={`${brief.topStories.length} item${brief.topStories.length !== 1 ? 's' : ''}`}
           />
           <div className="daily-stories">
             {brief.topStories.map((story, i) => {
@@ -347,7 +360,7 @@ export default function ReadMode({ dateParam }) {
       {/* ⑤ SHAPE OF THE DAY — category breakdown */}
       {catEntries.length > 0 && (
         <section className="daily-sec">
-          <SectionHeader num="5" title="Shape of the Day" meta="stories by category" />
+          <SectionHeader num="5" title="Shape of the Day" meta="top stories by category" />
           <div className="daily-bars">
             {catEntries.map(([cat, count]) => (
               <div key={cat} className="daily-bar-row">

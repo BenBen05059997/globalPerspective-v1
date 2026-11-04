@@ -26,7 +26,10 @@
 .daily-topbar a:hover { color: var(--text-head); }
 
 .daily-date-nav { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
-@media (pointer: coarse) { .daily-date-nav a { display: inline-flex; align-items: center; min-height: var(--tap-min); } }
+/* phone widths and touch: the day links are 44px tall tap targets (not 17px text) */
+@media (pointer: coarse), (max-width: 860px) {
+  .daily-date-nav a, .daily-empty-links a { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+}
 .daily-date-label { color: var(--text-head); font-weight: var(--weight-medium); }
 .daily-rel-tag {
   font-family: var(--mono);
@@ -193,7 +196,6 @@
   color: var(--text-muted);
   margin-top: var(--space-2);
 }
-.daily-stat-sub { font-size: var(--text-sm); color: var(--text-dim); margin-top: var(--space-1); }
 
 /* ── Story list ──────────────────────────────────────────── */
 .daily-stories { display: grid; }

@@ -9,3 +9,8 @@
 .psm-panel .bm-editions { border-top: none; padding: var(--space-1) 0 var(--space-3); }
 .psm-panel .bm-editions-track { justify-content: flex-start; }
 .psm-panel .bm-edition-explain { flex-direction: column; align-items: flex-start; }
+
+/* The slide dots stay 12px to the eye; their hit area is 44x44. The dots sit 32px apart so neighbouring
+   hit areas touch without overlapping (the shared rule is 44px tall but only 20px wide). */
+.psm-root .psm-slidedots { gap: var(--space-8); }
+.psm-root .psm-slidedot::after { inset: calc(-1 * var(--space-4)); }

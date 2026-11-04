@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   todayKey, addDaysKey, lastNDateKeys,
-  buildDailyEditionMarks, daysBetween, buildPausedSegment, labelledDateKeys,
+  buildDailyEditionMarks, daysBetween, buildPausedSegment, labelledDateKeys, dailyPauseState, nearestWeek,
 } from '@/features/briefings/lib/editions.js';
 
 describe('editions.js', () => {
@@ -57,6 +57,50 @@ describe('editions.js', () => {
     it('builds the real gap from the day after the anchor edition through today', () => {
       const seg = buildPausedSegment('2026-09-12', '2026-09-27');
       expect(seg).toEqual({ fromKey: '2026-09-13', toKey: '2026-09-27', days: 15 });
+    });
+
+    it('the newest edition is yesterday: no segment, so a "Today → today (1d)" mark cannot exist', () => {
+      expect(buildPausedSegment('2026-09-26', '2026-09-27')).toBeNull();
+    });
+
+    it('the newest edition is two days old: the segment starts yesterday and ends today', () => {
+      expect(buildPausedSegment('2026-09-25', '2026-09-27')).toEqual({ fromKey: '2026-09-26', toKey: '2026-09-27', days: 2 });
+    });
+  });
+
+  describe('dailyPauseState — when a missing brief for today is a pause', () => {
+    const at = (iso) => new Date(iso);
+    it('today\'s brief is the newest: nothing to say', () => {
+      expect(dailyPauseState('2026-11-04', at('2026-11-04T20:00:00Z'))).toBeNull();
+    });
+    it('the newest edition is unknown: nothing to say', () => {
+      expect(dailyPauseState(null, at('2026-11-04T20:00:00Z'))).toBeNull();
+    });
+    it('yesterday is the newest before 14:30 UTC: due, not paused', () => {
+      expect(dailyPauseState('2026-11-03', at('2026-11-04T00:00:00Z'))).toBe('due');
+      expect(dailyPauseState('2026-11-03', at('2026-11-04T14:29:00Z'))).toBe('due');
+    });
+    it('yesterday is the newest from 14:30 UTC: today\'s is late, paused', () => {
+      expect(dailyPauseState('2026-11-03', at('2026-11-04T14:30:00Z'))).toBe('paused');
+      expect(dailyPauseState('2026-11-03', at('2026-11-04T23:59:00Z'))).toBe('paused');
+    });
+    it('two or more days old is paused at any hour', () => {
+      expect(dailyPauseState('2026-11-02', at('2026-11-04T00:00:00Z'))).toBe('paused');
+      expect(dailyPauseState('2026-10-20', at('2026-11-04T05:00:00Z'))).toBe('paused');
+    });
+  });
+
+  describe('nearestWeek', () => {
+    const weeks = ['2026-10-04', '2026-09-06', '2026-10-25'];
+    it('steps to the nearest existing earlier or later edition, skipping empty weeks', () => {
+      expect(nearestWeek(weeks, '2026-10-04', -1)).toBe('2026-09-06');
+      expect(nearestWeek(weeks, '2026-10-04', 1)).toBe('2026-10-25');
+      expect(nearestWeek(weeks, '2026-09-27', -1)).toBe('2026-09-06'); // a week with no edition
+    });
+    it('null at either end and with no index', () => {
+      expect(nearestWeek(weeks, '2026-09-06', -1)).toBeNull();
+      expect(nearestWeek(weeks, '2026-10-25', 1)).toBeNull();
+      expect(nearestWeek(null, '2026-10-04', -1)).toBeNull();
     });
   });
 

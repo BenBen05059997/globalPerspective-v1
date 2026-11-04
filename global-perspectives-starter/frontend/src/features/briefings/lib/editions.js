@@ -16,11 +16,6 @@ export function addDaysKey(dateKey, days) {
   return d.toISOString().slice(0, 10);
 }
 
-/** previousWeekKey — the weekly edition key one week before (weekly briefs are keyed by weekOf, one a week). */
-export function previousWeekKey(weekKey) {
-  return addDaysKey(weekKey, -7);
-}
-
 /**
  * lastNDateKeys — the `n` calendar dates ending at `anchorDateKey` (inclusive), newest first.
  * Used to size the daily editions-strip probe window (capped by the caller, not here).
@@ -55,17 +50,40 @@ export function daysBetween(aKey, bKey) {
 }
 
 /**
- * buildPausedSegment — the real gap between the latest known edition and today, as a single
+ * buildPausedSegment — the real gap between the NEWEST published edition and today, as a single
  * dashed range mark (never one mark per paused day — that's the fan-out §S3 warns against, and a
- * wall of identical dashes carries no more information than one labelled range). Returns null
- * when there is no gap (the latest edition IS today, or is somehow in the future — never a
- * negative/fabricated range). `useDailyBrief` already establishes there are no editions after the
- * anchor, so this never needs to probe.
+ * wall of identical dashes carries no more information than one labelled range). Null unless the
+ * newest edition is 2+ days before today: a range that starts on today ("Today → today") is no
+ * gap, and the day after the newest edition is simply the brief not yet out. The caller passes the
+ * newest edition, never the one on screen.
  */
-export function buildPausedSegment(anchorDateKey, todayDateKey) {
-  const days = daysBetween(anchorDateKey, todayDateKey);
-  if (!Number.isFinite(days) || days <= 0) return null;
-  return { fromKey: addDaysKey(anchorDateKey, 1), toKey: todayDateKey, days };
+export function buildPausedSegment(newestDateKey, todayDateKey) {
+  const days = daysBetween(newestDateKey, todayDateKey);
+  if (!Number.isFinite(days) || days < 2) return null;
+  return { fromKey: addDaysKey(newestDateKey, 1), toKey: todayDateKey, days };
+}
+
+/** The daily brief is published 23:00 JST = 14:00 UTC and the views rebuild at 14:15 UTC: after this UTC time a missing brief for today is late. */
+export const DAILY_BRIEF_LATE_UTC = { hour: 14, minute: 30 };
+
+/**
+ * dailyPauseState — what to say when the brief for today is not the one served, from the NEWEST
+ * published edition (UTC date keys). 'paused': that edition is 2+ days before today, or today's is
+ * still missing after 14:30 UTC. 'due': today's is just not out yet. null: today's is out, or the
+ * newest edition is unknown (say nothing rather than guess).
+ */
+export function dailyPauseState(newestDateKey, now = new Date()) {
+  if (!newestDateKey) return null;
+  const days = daysBetween(newestDateKey, todayKey(now));
+  if (!(days > 0)) return null;
+  const late = now.getUTCHours() * 60 + now.getUTCMinutes() >= DAILY_BRIEF_LATE_UTC.hour * 60 + DAILY_BRIEF_LATE_UTC.minute;
+  return days >= 2 || late ? 'paused' : 'due';
+}
+
+/** nearestWeek — the existing weekly edition closest to `weekOf` in direction `dir` (-1 earlier, 1 later), or null. `weeks` are weekOf keys, any order. */
+export function nearestWeek(weeks, weekOf, dir) {
+  const sorted = (weeks || []).filter((w) => (dir < 0 ? w < weekOf : w > weekOf)).sort();
+  return (dir < 0 ? sorted[sorted.length - 1] : sorted[0]) || null;
 }
 
 /**

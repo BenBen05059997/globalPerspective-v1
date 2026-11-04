@@ -39,8 +39,8 @@ export function BriefingModeToggle({ mode, onModeChange }) {
 export default function BriefingMode({
   mode, onModeChange,
   dailyBrief, weeklyBrief,
-  dailyEditionsIndex, dailyAnchorDateKey, requestedDateKey, onSelectDailyDate,
-  requestedWeek, hrefForWeek,
+  dailyEditionsIndex, dailyAnchorDateKey, newestDailyKey, requestedDateKey, onSelectDailyDate,
+  requestedWeek, weeklyEditionKeys, hrefForWeek,
 }) {
   const brief = mode === 'weekly' ? weeklyBrief : dailyBrief;
   const slides = useMemo(
@@ -62,13 +62,21 @@ export default function BriefingMode({
   const next = useCallback(() => goto(slideIdx + 1), [goto, slideIdx]);
   const prev = useCallback(() => goto(slideIdx - 1), [goto, slideIdx]);
 
+  // Arrow keys step the slides exactly like the buttons and chips do (the map follows the slide).
+  // Capture phase, and the event stops there: the globe's own controller also pans on arrow keys when
+  // its canvas has focus, and that cancels the fly-to the new slide asked for. Typing in a field
+  // (the weekly deck ends with the subscribe form) and browser shortcuts (Alt+Left) are left alone.
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight') next();
-      else if (e.key === 'ArrowLeft') prev();
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target;
+      if (t instanceof Element && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      e.stopPropagation();
+      if (e.key === 'ArrowRight') next(); else prev();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [next, prev]);
 
   const mapFocusIso3 = mode === 'weekly' ? mapFocusForWeeklySlide(activeSlide) : mapFocusForDailySlide(activeSlide);
@@ -116,8 +124,8 @@ export default function BriefingMode({
     return buildDailyEditionMarks(keys, dailyEditionsIndex, requestedDateKey || dailyAnchorDateKey);
   }, [mode, dailyAnchorDateKey, dailyEditionsIndex, requestedDateKey]);
   const pausedSegment = useMemo(
-    () => (dailyAnchorDateKey ? buildPausedSegment(dailyAnchorDateKey, todayKey()) : null),
-    [dailyAnchorDateKey],
+    () => (newestDailyKey ? buildPausedSegment(newestDailyKey, todayKey()) : null),
+    [newestDailyKey],
   );
 
   if (!brief) {
@@ -164,7 +172,7 @@ export default function BriefingMode({
       </div>
 
       {mode === 'weekly' ? (
-        <WeeklyEditionNav weekOf={weeklyBrief?.weekOf} requestedWeek={requestedWeek} hrefForWeek={hrefForWeek} />
+        <WeeklyEditionNav weekOf={weeklyBrief?.weekOf} requestedWeek={requestedWeek} weeks={weeklyEditionKeys} hrefForWeek={hrefForWeek} />
       ) : (
         <EditionsStrip
           key={mode}
@@ -172,8 +180,8 @@ export default function BriefingMode({
           pausedSegment={pausedSegment}
           currentDateKey={requestedDateKey || dailyAnchorDateKey}
           onSelect={onSelectDailyDate}
-          latestLabel={dailyAnchorDateKey ? formatDateLabel(dailyAnchorDateKey) : null}
-          onGoLatest={() => onSelectDailyDate?.(dailyAnchorDateKey)}
+          latestLabel={newestDailyKey ? formatDateLabel(newestDailyKey) : null}
+          onGoLatest={() => onSelectDailyDate?.(null)}
         />
       )}
     </div>

@@ -63,7 +63,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
                 topic={{ title, category: t.category, regions: t.regions, sources: t.sourceCount }}
                 asOf={t.changedAt}
                 className="gp-row__link tl-link"
-                aria-label={`${title}. News on ${daysWithNews(t.dayCount, ARCHIVE_DAYS)}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
+                aria-label={`${title}. ${daysWithNews(t.dayCount, ARCHIVE_DAYS)}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
               >
                 <span className="tl-left">
                   <TierChip tier={tier} score={score} />

@@ -13,7 +13,7 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 
 | Lambda | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
-| newsSensitiveData-dev | The site's public read proxy; one handler, many `action` values. The `-dev` name is production. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; UserTable `tier`; S3 `record/` notes and views (per the read flags) | Nothing | [README](newsSensitiveData/README.md) |
+| newsReadApi (repo dir newsSensitiveData; was newsSensitiveData-dev) | The site's public read proxy; one handler, many `action` values. | API Gateway REST API `NewsSensitiveProxyRestAPI`, path `/proxy` (GET, POST, OPTIONS) | NewsCache; SummarizeAndPredict; UserTable `tier`; S3 `record/` notes and views (per the read flags) | Nothing | [README](newsSensitiveData/README.md) |
 | newsRecommend | Recommendations, notification preferences, country follows, breaking-alert feed, email unsubscribe. | Function URL (no schedule) | NewsCache `latest`; SavedItems; UserPrefs; BreakingAlerts; UserTable `tier` | UserPrefs | [README](newsRecommend/README.md) |
 | newsSavedItems | Saves, unsaves and lists a member's bookmarks. | Function URL | GlobalPerspectiveSavedItems | GlobalPerspectiveSavedItems | [README](newsSavedItems/README.md) |
 | newsSharedAnalysis | Creates, serves and deletes unlisted shared-run links (the site only reads and deletes since the Studio retired 2026-10-20). | Function URL | GlobalPerspectiveShares; the public proxy above | GlobalPerspectiveShares | [README](newsSharedAnalysis/README.md) |
@@ -22,7 +22,7 @@ This folder is stage 9: the read proxy and the per-user endpoints that serve eve
 ## Pipeline
 
 1. A page hook in the browser calls `restProxy.js` with an `action` and payload. The address comes from `docs/config.js`: `SENSITIVE_PROXY_ENDPOINT` for the proxy, and one Function URL each for saved items, preferences, share links and error reports.
-2. The proxy URL is the API Gateway `/proxy` resource, which invokes newsSensitiveData-dev. It reads the Firebase token if sent; no token or a bad token means the free tier, never a refusal.
+2. The proxy URL is the API Gateway `/proxy` resource, which invokes newsReadApi. It reads the Firebase token if sent; no token or a bad token means the free tier, never a refusal.
 3. The handler fetches from DynamoDB (or the record's notes and views in S3, per the read flags) and returns JSON. Account calls go to their own Lambda, which checks the Firebase token first.
 4. The map feature reads the S3 world store through the Cloudflare Worker `/data/*` route instead; that path does not touch this group.
 
@@ -39,13 +39,13 @@ Other Lambdas' actions: newsRecommend `get_prefs`, `set_prefs`, `follow_country`
 
 ## Shared code
 
-- newsSensitiveData-dev: `briefs`, `links`, `noteReads`, `recordReads`, `resolveIso3`. newsRecommend: `links`, `recordReads`.
+- newsReadApi: `briefs`, `links`, `noteReads`, `recordReads`, `resolveIso3`. newsRecommend: `links`, `recordReads`.
 - newsSavedItems, newsSharedAnalysis and newsClientErrors use none. See the [shared README](../shared/README.md).
 
 ## Known limits
 
-- newsSensitiveData-dev has no write path; the tier only caps depth, never gates access.
-- CORS differs by Lambda. newsSharedAnalysis sends its own headers and its live Function-URL CORS is empty. newsClientErrors, newsRecommend and newsSavedItems rely on Function-URL CORS, which is populated live. newsSensitiveData-dev has no Function URL and sends its own headers.
+- newsReadApi has no write path; the tier only caps depth, never gates access.
+- CORS differs by Lambda. newsSharedAnalysis sends its own headers and its live Function-URL CORS is empty. newsClientErrors, newsRecommend and newsSavedItems rely on Function-URL CORS, which is populated live. newsReadApi has no Function URL and sends its own headers.
 - `archive_range` returns light entries because of the 6 MB payload limit.
 
 ## How to check it

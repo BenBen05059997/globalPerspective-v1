@@ -358,6 +358,15 @@
       "dir": "backend/read-api/newsSensitiveData",
       "runtime": "nodejs22.x",
       "group": "read-api",
+      "features": [],
+      "nodeModules": false,
+      "schedules": [],
+      "deployBlocked": "Old name, replaced by newsReadApi 2026-11-04 (API Gateway /proxy repointed); kept for rollback until it is deleted. Deploy newsReadApi."
+    },
+    "newsReadApi": {
+      "dir": "backend/read-api/newsSensitiveData",
+      "runtime": "nodejs22.x",
+      "group": "read-api",
       "features": ["home", "threads", "map", "countries", "briefings", "analysis-studio", "track-record", "account"],
       "nodeModules": false,
       "schedules": []

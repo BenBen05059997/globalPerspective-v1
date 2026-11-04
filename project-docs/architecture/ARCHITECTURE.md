@@ -103,7 +103,7 @@ Paths are named, not linked; search for them.
 ### Backend: `backend/<group>/<dir>/src/`
 Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a README. Nothing is deployed with Amplify; each Lambda is deployed by hand (see Deploy). `scripts/functions.json` maps each deployed name to its repo dir, runtime, group and schedules. Names that surprise:
 - `newsIngest` (repo dir `newsInvokeGemini`; renamed 2026-11-03, the old `newsInvokeGemini-dev` stays unscheduled for rollback) is topic selection. It calls DeepSeek.
-- `newsAgent` (repo dir `NewsProjectInvokeAgentLambda`; renamed 2026-11-03, the old `NewsProjectInvokeAgentLambda-dev` stays unscheduled for rollback) and `newsSensitiveData-dev`: the `-dev` suffix is production. `newsDailyBrief` (repo dir `newsPostDevTo`; renamed 2026-11-04, the old `newsPostDevTo` stays unscheduled for rollback). Planned rename: `newsSensitiveData-dev` to `newsReadApi`.
+- `newsAgent` (repo dir `NewsProjectInvokeAgentLambda`; renamed 2026-11-03, the old `NewsProjectInvokeAgentLambda-dev` stays unscheduled for rollback), `newsDailyBrief` (repo dir `newsPostDevTo`; renamed 2026-11-04, the old `newsPostDevTo` stays unscheduled for rollback) and `newsReadApi` (repo dir `newsSensitiveData`; renamed 2026-11-04 with only the 8 env keys its code reads, API Gateway `/proxy` repointed, the old `newsSensitiveData-dev` kept for rollback).
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (the typo is real).
 - `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling` (no repo src of their own).
@@ -155,7 +155,7 @@ flowchart LR
   sp --> c
   c --> sp
   c -->|story_analysis, link, web notes| nt
-  sp -->|topics, today, thread_analysis, systems_analysis| px[newsSensitiveData-dev]
+  sp -->|topics, today, thread_analysis, systems_analysis| px[newsReadApi]
   px --> pg["/today, /weekly, story pages (newest days)"]
 ```
 1. `newsIngest` (three times a day) reads the RSS feeds, asks the LLM to pick and cluster the day's topics under the done-not-said rule, with code dedupe and a significance floor (decision 0040), and writes them to `NewsCache` item `id='staging'`. Before the model call it writes every fetched article to S3 `record/inbox/articles/` (raw capture, no model), so a model outage cannot lose the news; it also writes `audit/ingest-capture/`. It fails the run on a model error. No web search in ingest.
@@ -163,7 +163,7 @@ flowchart LR
 3. `newsThreadAnalysis` (daily) writes per-thread analysis and dated history (`THREAD#…` / `THREAD_ANALYSIS`, `THREAD_HISTORY#<date>`); `newsSystemsAnalysis` (daily) reads those and writes causal webs (`SYSTEMS#…`, `WEB#INDEX`, `THREAD#…/WEB`), plus a daily snapshot to `web/YYYY/MM/DD.json` and `web/latest.json`. Both also write their output as notes into the record (`story_analysis`; `link` and `web`) through shared `notes.js` (decision 0042).
 4. `newsSelectionShadow` (rule `TriggerSelectionShadow`, 04:20, 12:20, 20:20, ENABLED) runs a candidate layered selector (corpus plus GDACS, scored by the external model "Jev") against what was published and writes only `audit/selection-shadow/`. Nothing on the site reads it; whether it continues is an operator decision.
 
-The record's views carry the entries, analyses and links these produce. `newsSensitiveData-dev` still answers what the views do not hold: today's topics, the home map's topic card, the board's pin titles, member extras.
+The record's views carry the entries, analyses and links these produce. `newsReadApi` still answers what the views do not hold: today's topics, the home map's topic card, the board's pin titles, member extras.
 
 ### 2. Situations and the map (S3)
 ```mermaid
@@ -225,7 +225,7 @@ flowchart LR
   dc -->|drift notes| nt
   nt -->|countries views| cv[(S3 record/views)]
   cv --> cp["/weekly/country/:name"]
-  d -->|country_history, country_facts| px[newsSensitiveData-dev]
+  d -->|country_history, country_facts| px[newsReadApi]
   px --> cp
 ```
 `newsCountryFactsUpdater` (weekly, Mondays 05:00 JST) writes current facts from Wikidata and ACLED to `FACTS#<country>`. `newsCountryIntelligence` (daily) reads thread analyses and facts and writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` plus a dated `HISTORY#<date>` snapshot. `newsDriftCorrector` (daily) compares snapshots; when a risk level, score (change of 8 or more) or trajectory moves, it grounds the move in a real archived event and writes a note (`DRIFT#<date>`, 60-day TTL; permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. Both also write the `country` and `drift` notes. The country page reads the country views and the countries index for the briefing and "what changed"; member drift depth (`country_history`), country facts and the cross-country corrections ledger stay on the proxy actions. No pipeline Lambda runs a web search.
@@ -247,7 +247,7 @@ flowchart LR
   d --> po
   po -->|newsPostLinkedin| soc([LinkedIn, Bluesky])
   po -->|DAILY_BRIEF| d
-  d -->|actions| px[newsSensitiveData-dev]
+  d -->|actions| px[newsReadApi]
   px --> bp["/briefings"]
   rv[(S3 record/views/briefs)] -->|while fresh| bp
 ```
@@ -315,7 +315,7 @@ Firebase Authentication in the browser (`src/shared/contexts/AuthContext.jsx`: e
 `docs/config.js` is operator-owned and loaded at runtime; it sets the `window.*` endpoints and keys (proxy, share, billing, saved items, prefs, client errors, board, `FIREBASE_CONFIG`, `GOOGLE_MAPS_API_KEY`). None is bundled into the build. Local dev uses `frontend/public/config.js` (template `public/config.example.js`).
 
 ### Endpoints and CORS
-`newsSensitiveData-dev` is behind API Gateway (REST API `NewsSensitiveProxyRestAPI`, `GET`/`POST /proxy`) and dispatches on `action`. The other browser-facing Lambdas use Function URLs (list: `scripts/functions.json`).
+`newsReadApi` is behind API Gateway (REST API `NewsSensitiveProxyRestAPI`, `GET`/`POST /proxy`) and dispatches on `action`. The other browser-facing Lambdas use Function URLs (list: `scripts/functions.json`).
 
 **Invariant:** a Function URL gets CORS from exactly one place. If the code emits `Access-Control-Allow-Origin` (`newsPolarBilling`, `newsAnalyze`, `newsSharedAnalysis`), the Function-URL CORS config stays empty; if it does not (`newsSavedItems`, `newsRecommend`, `newsClientErrors`, `newsBoard`), the config must be populated. Both at once sends a duplicate header and the browser fails with "Failed to fetch". Grep the source before touching either side.
 

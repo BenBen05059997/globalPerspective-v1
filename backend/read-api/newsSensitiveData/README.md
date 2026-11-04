@@ -5,9 +5,9 @@ The site's public REST read proxy: one handler, many `action` values. It serves 
 Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `daily_brief`, `latest_daily_brief`, `weekly_brief` (`week=YYYY-MM-DD` for a past published brief), `narrative_thread`, `archive_range`, `thread_analysis`, `country_intelligence`, `country_facts`, `country_history`, `corrections_feed`, `systems_analysis`, `web_index`, `country_preview`, `thread_preview`. Which page calls which is in the group README.
 
 ## Deployment
-- Deployed name `newsSensitiveData-dev` (the `-dev` name is prod) · runtime `nodejs22.x` · 85 s · 512 MB · group `read-api` (scripts/functions.json)
+- Deployed name `newsReadApi` since 2026-11-04 (was `newsSensitiveData-dev`, kept for rollback until its removal; env cut to the 8 keys the code reads) · runtime `nodejs22.x` · 85 s · 512 MB · group `read-api` (scripts/functions.json)
 - Trigger: API Gateway REST API, path `/proxy` (`window.SENSITIVE_PROXY_ENDPOINT` is its `execute-api` URL; frontend via `shared/api/restProxy.js`); no schedule, no Function URL
-- Deploy: `scripts/lambda.sh newsSensitiveData-dev diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
+- Deploy: `scripts/lambda.sh newsReadApi diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes (read-only: no DynamoDB or S3 writes)
 - DynamoDB `TOPICS_DDB_TABLE`: `latest` (`TOPICS_CACHE_ITEM_ID`), `today-archive`, `archive#YYYY-MM-DD`

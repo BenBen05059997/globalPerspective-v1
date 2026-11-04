@@ -17,6 +17,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - `GROK_MODEL` (live `deepseek-v4-pro`; planned `deepseek-flash` after the filter fixes are deployed, decision 0056; fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
 
 ## Gotchas
+- Model-reply checks (whole or salvaged from a truncated reply): source URLs match the fetched pool after one HTML-entity decode and a trim (`&amp;` vs `&`); category `diplomacy` is mapped to `politics`, any other unlisted category is dropped; after the repeat drop, only the first `limit` topics are kept. Test: `test/topicFilters.test.js`.
 - A failed run on a scheduled event (missing key, model/upstream error, empty reply) throws, so the Lambda `Errors` metric counts it; only direct HTTP invocations get a 4xx/5xx response body. Test: `node --test src/scheduled-failure.test.js`.
 - The names "Gemini" and "Grok" in the code and logs are historical.
 - It emits `Access-Control-Allow-Origin: *` on its HTTP-shaped responses. If a Function URL is ever added, its CORS config must stay empty.

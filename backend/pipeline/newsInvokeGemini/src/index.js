@@ -27,6 +27,10 @@ const VALID_CATEGORIES = [
   'politics', 'economy', 'military', 'conflict', 'disaster', 'technology', 'health',
   'climate', 'science', 'business', 'society', 'energy',
 ];
+// Words Flash returns that are not in the list but mean one of its categories (deepseek-flash returned
+// `diplomacy` for 2 of 50 topics in the 2026-11-04 test; the prompt defines politics as including
+// "diplomatic relations"). Mapped in the filter instead of dropping a real topic.
+const CATEGORY_ALIASES = { diplomacy: 'politics' };
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
@@ -245,6 +249,53 @@ function salvageTruncatedTopics(text) {
     i = j;
   }
   return items.length ? { topics: items } : null;
+}
+
+// Source URLs are compared after one pass of HTML-entity decoding and a trim, on both sides: the model
+// sometimes turns `&amp;` into `&` (or the reverse), and feeds carry either form.
+function normalizeSourceUrl(u) {
+  return String(u || '')
+    .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (m, e) => {
+      const k = e.toLowerCase();
+      if (k === 'amp') return '&';
+      if (k === 'lt') return '<';
+      if (k === 'gt') return '>';
+      if (k === 'quot') return '"';
+      if (k === 'apos') return "'";
+      const n = k[1] === 'x' ? parseInt(k.slice(2), 16) : parseInt(k.slice(1), 10);
+      return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+    })
+    .trim();
+}
+
+// The same checks for every model reply, whole or salvaged from a truncated one: the category must be
+// allowed (aliases mapped) and the topic needs a source. Pure; the handler passes topics that already
+// carry validated sources.
+function filterTopics(topics) {
+  const kept = [];
+  for (const t of topics) {
+    const alias = CATEGORY_ALIASES[t.category];
+    const category = alias || t.category;
+    if (alias) console.warn(`CATEGORY MAPPED: "${t.category}" -> "${alias}" for: ${t.title?.substring(0, 40)}`);
+    if (!VALID_CATEGORIES.includes(category)) {
+      console.warn(`FILTERED: Invalid category "${t.category}" for: ${t.title?.substring(0, 40)}`);
+      continue;
+    }
+    if (!(t.sources?.length > 0)) {
+      console.warn(`FILTERED: No sources for: ${t.title?.substring(0, 40)}`);
+      continue;
+    }
+    kept.push(category === t.category ? t : { ...t, category });
+  }
+  return kept;
+}
+
+// The model can overshoot the limit (a truncated reply once salvaged 30 topics against 13): keep the
+// first `limit`, in the model's order.
+function capTopics(topics, limit) {
+  if (topics.length <= limit) return topics;
+  console.warn(`TOPIC LIMIT: kept the first ${limit} of ${topics.length} topics`);
+  return topics.slice(0, limit);
 }
 
 function parseAgeToHours(ageStr) {
@@ -674,7 +725,8 @@ exports.handler = async (event) => {
     const topics = Array.isArray(parsed) ? parsed : (parsed?.topics || []);
 
     // SOURCE VALIDATION: Filter out hallucinated URLs
-    const validUrls = new Set(allArticles.map(a => a.url));
+    // normalised URL -> the pool's own URL, so a decoded/encoded variant still validates and the kept source carries the real one
+    const validUrls = new Map(allArticles.map(a => [normalizeSourceUrl(a.url), a.url]));
     let totalSourcesBefore = 0;
     let totalSourcesAfter = 0;
 
@@ -688,11 +740,13 @@ exports.handler = async (event) => {
 
       const validatedSources = rawSources.filter(s => {
         if (!s?.url) return false;
-        const isValid = validUrls.has(s.url);
-        if (!isValid) {
+        const poolUrl = validUrls.get(normalizeSourceUrl(s.url));
+        if (!poolUrl) {
           console.warn(`HALLUCINATION: Filtering fabricated URL: ${s.url?.substring(0, 60)}`);
+          return false;
         }
-        return isValid;
+        s.url = poolUrl;
+        return true;
       });
       totalSourcesAfter += validatedSources.length;
 
@@ -769,20 +823,8 @@ exports.handler = async (event) => {
       console.error('SOURCE ENRICHMENT failed (continuing with LLM-only sources):', err);
     }
 
-    // TOPIC FILTERING: Category + source validation
-    let filtered = normalized.filter(t => {
-      const categoryValid = VALID_CATEGORIES.includes(t.category);
-      if (!categoryValid) {
-        console.warn(`FILTERED: Invalid category "${t.category}" for: ${t.title?.substring(0, 40)}`);
-        return false;
-      }
-      const sourceCount = t.sources?.length || 0;
-      if (sourceCount === 0) {
-        console.warn(`FILTERED: No sources for: ${t.title?.substring(0, 40)}`);
-        return false;
-      }
-      return true;
-    });
+    // TOPIC FILTERING: category (aliases mapped) + sources; the limit is applied after the dedupe below
+    let filtered = filterTopics(normalized);
 
     // DEDUPE (code, not prompt): drop a topic that repeats an entry of the last 24h runs, today or yesterday,
     // unless its title carries a number the earlier title lacks.
@@ -794,6 +836,7 @@ exports.handler = async (event) => {
     const repeats = dropRepeatTopics(filtered, earlierTitles);
     for (const d of repeats.dropped) console.warn(`DEDUPE: dropped repeat "${d.title?.substring(0, 60)}" (repeats "${d.repeats?.substring(0, 60)}")`);
     filtered = repeats.topics;
+    filtered = capTopics(filtered, limit);
 
     console.log(`TOPIC FILTER: ${filtered.length} topics passed (${normalized.length - filtered.length} filtered)`);
 
@@ -855,4 +898,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._internal = { parseRssXml, canonicalIso3, RSS_FEEDS, buildSelectionPrompt };
+exports._internal = { normalizeSourceUrl, filterTopics, capTopics, extractJson, parseRssXml, canonicalIso3, RSS_FEEDS, buildSelectionPrompt };

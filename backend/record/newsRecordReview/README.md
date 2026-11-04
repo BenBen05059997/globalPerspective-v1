@@ -4,43 +4,7 @@ The weekly review. For the ISO week that ended, every active story gets one boxe
 
 ## The loop
 
-```text
-WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per active story · decision 0039)
-|
-+- 1 SELECT     no model            [newsRecordReview]
-|  +- inputs : record/views/index/active.json, record/views/manifest.json (must be built for the week's last day)
-|  +- rule   : active stories only; skip a story with no new fact since its last reading unless a branch got a verdict;
-|  |           facts are placed as the views place them (shared placement.js): latest assignment, merged stories folded into the survivor
-|  +- output : the week's story list
-|
-+- 2 ASSEMBLE   no model            [newsRecordReview]
-|  +- inputs : the story's facts (record/facts, all days of the story, entries capped at the newest 60), its last readings
-|  |           (record/readings), verdict facts, the operator alias file; placed recovered articles are headline-only items (prompt review-5)
-|  +- output : one bundle per story; every fact carries its eventId so the model can cite it
-|
-+- 3 READ       model, boxed        [newsRecordReview]
-|  +- rule   : returns JSON only: line, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
-|  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
-|  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
-|  +- model  : DeepSeek model from env `REVIEW_MODEL` (`deepseek-flash` since 2026-11-04, decision 0056); a stub model in tests and in the golden-week run
-|
-+- 4 CHECK      no model            [newsRecordReview]
-|  +- rule   : citations exist and belong to the story (or both stories for a link); a chapter's from/to = the dates of its cited facts;
-|  |           merge auto-allowed only under the merge rule below;
-|  |           assignment: entry of this story, or a cited neighbour entry; target an active story or new; written as a reading, never applied
-|  +- output : accepted readings, rejected items with reason (kept in the review Run)
-|
-+- 5 WRITE      no model            [newsRecordReview -> record/readings/ ; merges -> record/inbox/merges/]
-|  +- record/readings/YYYY-Www.jsonl   one line per accepted reading (append-only per week; a re-run supersedes)
-|  +- record/runs/review-YYYY-Www.json  started -> ok | partial | failed, counts, rejections
-|  +- record/inbox/merges/YYYY-MM-DD.jsonl  accepted auto-merges, for newsStoryRecord to turn into story_merged facts
-|
-+- 6 BUILD      no model            [newsStoryRecord, nightly]
-|  +- reads readings + inbox merges + operator aliases; fills line, chapters, confirmedLinks in the views;
-|  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
-|
-+- LOOP BACK : new entries all week -> nightly facts and views -> Monday review reads them with hindsight -> views show it
-```
+The six-stage loop (select, assemble, read, check, write, build) is drawn in [ARCHITECTURE_WEEKLY_REVIEW.md](../../../project-docs/architecture/ARCHITECTURE_WEEKLY_REVIEW.md) §2. "What a run does" below is this Lambda's own detail.
 
 ## What a run does
 

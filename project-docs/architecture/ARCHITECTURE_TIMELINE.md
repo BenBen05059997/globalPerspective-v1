@@ -194,7 +194,7 @@ Dated state (what is deployed, which rule is enabled, which release is live) com
 - **Step 5, retire the world tables** (`STEP5_AUDIT.md`): SummarizeAndPredict, NewsCache, GlobalPerspectiveMarkets and the PredictionLog `PRED#` rows go once no reader is left, each deletion on its own operator yes. User tables, EMAILLOG, BreakingAlerts, ClientErrors and the PredictionLog commitment state stay. The economy product is retired (decision 0049): its Lambdas and rules are deleted, and only its data awaits deletion. Before the rows go, the full rebuild test: delete the world rows in a copy and prove the site rebuilds from the record.
 - **Briefs writers:** `newsDailyBrief` and `newsWeeklyBrief` write briefs to the record when their `NOTES_PREFIX` is set (live values: `STEP5_AUDIT.md` section 1); the email sender and the Worker read the DynamoDB rows until each reads the record or is retired (0048).
 - **Alarms:** the operator does not want pipeline alarms; Run objects are the record's own signal and the freshness monitor watches the public topics.
-- **Weekly report** (stage 8) was dropped 2026-11-03 (ARCHITECTURE_WEEKLY_REVIEW.md §9).
+- **Weekly report** (stage 8) was dropped 2026-11-03.
 - **History `iso3`:** entries before 2026-09-12 carry `iso3:[]`/`actorIds:[]`; deriving countries from `regions` is open (operator).
 - **Who's who file:** actors keep `name:` ids until `record/operator/aliases.json` names them; `reconcile-actors.mjs` proposes entries.
 - **Record data:** over-joined threads and duplicate stories the review cannot merge without neighbours; the review flags off-story entries as assignment proposals for the operator to apply.

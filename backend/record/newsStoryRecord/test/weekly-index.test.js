@@ -91,3 +91,16 @@ test('an index over its cap fails the build instead of truncating', () => {
   const big = [X.born('thread-a', '2026-10-20T04:00:00.000Z', '2026-10-20'), e('thread-a', '2026-10-21T04:00:00.000Z', 'x', 'w1', '2026-10-21', 0, {sources: ['s'.repeat(IV.INDEX_MAX_BYTES)]})];
   assert.throws(() => build(big), /index\/weekly\.json is \d+ bytes, over the/);
 });
+
+test('titles: each listed thread has the story view title (same string), no null, and unlisted threads are absent', () => {
+  const v = build();
+  const w = v.indexes['weekly.json'];
+  const ids = [...new Set(Object.values(w.days).flatMap((d) => d.entries.map((x) => x.threadId)))].sort();
+  assert.ok(ids.length >= 2);
+  assert.deepEqual(Object.keys(w.titles).sort(), ids);
+  for (const id of ids) {
+    assert.notEqual(v.stories.get(id).title, null, `${id}: a thread in weekly.json has a title`);
+    assert.equal(w.titles[id], v.stories.get(id).title, id);
+  }
+  assert.equal(w.titles['thread-old'], undefined);
+});

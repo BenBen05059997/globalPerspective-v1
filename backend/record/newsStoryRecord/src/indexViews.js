@@ -97,15 +97,18 @@ function entryOrder(refs) {
  * archive day's list (`sourceRow.index`), then `at`, then eventId (an entry listed on a later archive day than its record date
  * follows the entries of earlier archive days). `updatedAt` is the newest entry time of the day. An archive row that lists an
  * article already on record is not a second entry (the facts rule), so a repeat is shown on its first day only.
+ * `titles`: threadId -> the story view's `title` (titleOf, decision 0037 one title rule) for the threads in `days`, so the lists read the record's title.
  * `refs`: eventId -> {day, index} from the entry facts; entries without a ref (fixtures) order as archive day = record date, index 0.
  */
 function weeklyIndex(stories, refs, today, builtFrom) {
   const from = addDays(today, 1 - WEEKLY_DAYS);
   const days = {};
+  const titles = {};
   for (const [id, s] of [...stories].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     for (const e of s.entries || []) {
       if (e.kind === 'article') continue;
       if (e.date < from || e.date > today) continue;
+      if (s.title != null) titles[id] = s.title; // the story view's own title (titleOf output, not recomputed); a missing key means no title
       (days[e.date] ||= []).push({e, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}});
     }
   }
@@ -115,7 +118,7 @@ function weeklyIndex(stories, refs, today, builtFrom) {
     const list = days[day].sort((a, b) => order(a.e, b.e));
     out[day] = {updatedAt: maxOf(list.map((x) => x.e.at)), entries: list.map((x) => x.row)};
   }
-  return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, days: out};
+  return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, titles, days: out};
 }
 
 /** All indexes, keyed by file name under index/ (`briefs` is built by briefViews.js, decision 0048; `today` by todayView.js, decision 0051, only when the entries inbox has lines). Throws when one is over INDEX_MAX_BYTES. */

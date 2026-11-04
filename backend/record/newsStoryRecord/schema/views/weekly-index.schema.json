@@ -3,13 +3,14 @@
   "title": "Weekly index (record/views/index/weekly.json)",
   "description": "The last 30 days (the archive_range action's window) for the Stories page, the Stories map, the countries list and the map's risk layer. A day is the entry's record date, the day its story view files it under; an article listed again on a later day is not a second entry. Per entry only what the readers show: topic, story (as placed now, merges applied), title, category, the entry's ISO3 countries and its sources as outlet and url. `updatedAt` is the newest entry time of the day. Built by indexViews.js from the story views' entries.",
   "type": "object",
-  "required": ["schemaVersion", "builtFrom", "from", "to", "days"],
+  "required": ["schemaVersion", "builtFrom", "from", "to", "titles", "days"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {"const": 1},
     "builtFrom": {"type": "object"},
     "from": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
     "to": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "titles": {"type": "object", "description": "threadId -> the story view's title (decision 0037 one title rule) for the threads in days; a missing key means no title.", "additionalProperties": {"type": "string"}},
     "days": {
       "type": "object",
       "propertyNames": {"pattern": "^\\d{4}-\\d{2}-\\d{2}$"},

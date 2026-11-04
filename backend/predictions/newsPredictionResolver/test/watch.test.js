@@ -68,6 +68,35 @@ test('cap: oldest due first, overflow counted', async () => {
   assert.equal(out.watch.overflow, 2);
 });
 
+test('sampled-first: every due sampled question is picked beyond the cap, then the cap applies to the others only', async () => {
+  const preds = [];
+  for (let i = 0; i < 6; i++) preds.push(pred(`s${i}`, `t${i}`, '2026-09-01', 30 + i * 2)); // due ascending, all past due+3
+  const store = fakeStore(preds);
+  // s4 and s5 (the newest deadlines) are in the pre-registered sample
+  for (const i of [4, 5]) {
+    const qid = `s${i}-2026-09-01-0`;
+    await store.putOnce({ PK: `Q#${qid}`, SK: 'SAMPLED', qid, question: 'x', deadline: preds[i].scenarios[0].triggers[0].deadline, issuedAt: '2026-09-01T05:00:00Z', threadId: `t${i}` });
+  }
+  const out = await watchOut(preds, {}, store, 2);
+  assert.deepEqual(out.wouldCheck.map((c) => c.qid), ['s4-2026-09-01-0', 's5-2026-09-01-0', 's0-2026-09-01-0', 's1-2026-09-01-0']);
+  assert.deepEqual(out.wouldCheck.map((c) => c.sampled), [true, true, false, false]);
+  assert.equal(out.watch.total, 6);
+  assert.equal(out.watch.sampled, 2);
+  assert.equal(out.watch.others, 4);
+  assert.equal(out.watch.overflow, 2); // only unsampled questions overflow
+});
+
+test('sampled-first: a sampled question still follows the redraft spacing rule', () => {
+  const q = { qid: 'x', deadline: '2026-11-01', threadId: 'tX' };
+  const groups = new Map([['x', { sampled: { qid: 'x' }, drafts: [{ SK: 'DRAFT#2026-11-07T10:30:00.000Z', verdict: 'not_yet' }], verdicts: [] }]]);
+  const sel = watch.selectCandidates({ questions: [q], groups, moved: new Map(), today: TODAY, redraftAfterDays: 5, cap: 0 });
+  assert.equal(sel.candidates.length, 0);
+  const g2 = new Map([['x', { sampled: { qid: 'x' }, drafts: [], verdicts: [] }]]);
+  const sel2 = watch.selectCandidates({ questions: [q], groups: g2, moved: new Map(), today: TODAY, redraftAfterDays: 5, cap: 0 });
+  assert.equal(sel2.candidates.length, 1); // cap 0 does not cut the sample
+  assert.equal(sel2.overflow, 0);
+});
+
 test('a question already checked today is skipped; a grace candidate waits 5 days between checks', () => {
   const q = { qid: 'x', deadline: '2026-11-01', threadId: 'tX' };
   const base = { questions: [q], moved: new Map(), today: TODAY, redraftAfterDays: 5 };

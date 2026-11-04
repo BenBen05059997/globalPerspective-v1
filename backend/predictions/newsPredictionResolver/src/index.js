@@ -227,7 +227,7 @@ async function watchSelect(deps, today, limit, out) {
   const bundles = new Map(open.map((q) => [q.qid, gather.buildBundle(q, loaded, today)]));
   const sel = watch.selectCandidates({ questions, groups, moved, bundles, today, redraftAfterDays: REDRAFT_AFTER_DAYS, cap: limit });
   out.watch = {
-    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, overflow: sel.overflow, unreadable: sel.unreadable,
+    questions: questions.length, movedThreads: moved.size, candidates: sel.candidates.length, total: sel.total, sampled: sel.sampled, others: sel.others, overflow: sel.overflow, unreadable: sel.unreadable,
     moved: sel.candidates.filter((c) => c.reason === 'moved').length, grace: sel.candidates.filter((c) => c.reason === 'grace').length,
   };
   console.log('watch', JSON.stringify(out.watch));

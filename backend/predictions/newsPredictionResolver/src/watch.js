@@ -6,7 +6,8 @@
 //   - the branch is old: its due date passed GRACE_DAYS ago (the first day a `no` is allowed).
 // A moved branch whose story has no entry dated after the forecast's draw (and is not yet past due + GRACE_DAYS)
 // is skipped: there is nothing to judge.
-// Nothing else is checked. Oldest due first; a per-run cap with the overflow logged.
+// Nothing else is checked. Oldest due first. The pre-registered sample (Q#/SAMPLED rows) goes first and is never cut by the cap
+// (operator decision 2026-11-04); the cap applies to the other questions, whose overflow is logged.
 
 const lib = require('./lib');
 
@@ -46,7 +47,8 @@ const draftDay = (d) => String(d.SK).slice(6, 16);
  * A question with a verdict row is never a candidate. A question already checked today is skipped; one whose
  * only reason is its age is re-checked only after redraftAfterDays (the old 5-day rule).
  * moved = Set of threadIds with a new entry fact; bundles = Map(qid -> gather.buildBundle result).
- * -> { candidates:[{...question, reason:'moved'|'grace', bundle}], total, overflow, unreadable }
+ * Sampled candidates are all kept, first (oldest deadline first); `cap` limits the unsampled ones (same order); overflow counts only those.
+ * -> { candidates:[{...question, reason:'moved'|'grace', bundle, sampled}], total, sampled, others, overflow, unreadable }
  */
 function selectCandidates({ questions, groups, moved, bundles = new Map(), today, redraftAfterDays, cap = MAX_CANDIDATES }) {
   const cutoff = lib.addDays(today, -redraftAfterDays);
@@ -67,7 +69,12 @@ function selectCandidates({ questions, groups, moved, bundles = new Map(), today
     picked.push({ ...q, reason: isMoved ? 'moved' : 'grace', bundle, sampled: Boolean(g && g.sampled) });
   }
   picked.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || String(a.qid).localeCompare(String(b.qid)));
-  return { candidates: picked.slice(0, cap), total: picked.length, overflow: Math.max(0, picked.length - cap), unreadable };
+  const sampled = picked.filter((c) => c.sampled);
+  const others = picked.filter((c) => !c.sampled);
+  return {
+    candidates: [...sampled, ...others.slice(0, cap)], total: picked.length, sampled: sampled.length, others: others.length,
+    overflow: Math.max(0, others.length - cap), unreadable,
+  };
 }
 
 module.exports = { MAX_CANDIDATES, questionsFromPreds, questionFromSampled, selectCandidates };

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController } from '@deck.gl/core';
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, PathLayer, IconLayer } from '@deck.gl/layers';
@@ -127,12 +127,17 @@ export default function SituationMap3D({
   // instance as `.deck` (the R1 loops called `.setProps` on the ref handle itself, which threw
   // on the first frame and silently stopped both the spin and the pulse).
   const viewStateRef = useRef(viewState);
+  const flightPendingRef = useRef(false);
   const setViewState = useCallback((updater) => {
     const next = typeof updater === 'function' ? updater(viewStateRef.current) : updater;
     if (next === viewStateRef.current) return;
     viewStateRef.current = next;
+    // A new fly-to target is in the ref but deck.gl has not been handed it yet (React commits later).
+    if (next.transitionInterpolator) flightPendingRef.current = true;
     setViewStateReact(next);
   }, []);
+  // Every commit renders DeckGL from the ref, so once a commit lands the new flight has reached deck.gl.
+  useLayoutEffect(() => { flightPendingRef.current = false; });
   const deckInstance = () => deckRef.current?.deck || null;
   const deckRef = useRef(null);
   const userMoved = useRef(false);
@@ -610,6 +615,12 @@ export default function SituationMap3D({
         viewState={viewStateRef.current}
         onViewStateChange={(e) => {
           if (e.interactionState?.isDragging || e.interactionState?.isZooming) { userMoved.current = true; stopSpin(); }
+          // A frame of an older flight that lands after a newer fly-to target was set, but before React
+          // committed it, would overwrite the target with a camera that has no transition and so cancel
+          // the new flight. Only the visitor's own drag/zoom/pan/rotate may override a pending target.
+          const ix = e.interactionState || {};
+          const userDriven = ix.isDragging || ix.isZooming || ix.isPanning || ix.isRotating;
+          if (flightPendingRef.current && !userDriven) return;
           setViewState(e.viewState);
         }}
         controller={{ type: GlobeController }}

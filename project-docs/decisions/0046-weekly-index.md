@@ -42,3 +42,9 @@ its `regions` text, and they hold an article once.
 - Until the record can state the archive's `regions` (a new fact field and a backfill from the rows), the Stories page and map are close and the countries
   list and country page are the readers whose numbers move. To hold one back, give it its own loader that calls only the action.
 - The action stays for the newest recorded day and after, and as the fallback; the rows cannot be deleted before the record carries today's entries.
+
+## Amendment 2026-11-04
+`index/weekly.json` files each entry under its record date (`entry.date`, the day the story view uses), not the archive day, so the /weekly
+list and the story page count the same days; the 30-day window applies to the record date. The archive day and `sourceRow.index` only order
+entries within a day (archive day, list place, `at`, eventId). The `archive_range` action still keys by archive day, so during a fallback
+(stale or missing views) the newest days can be grouped differently (105 of 692 entries sat on another day on 2026-11-04).

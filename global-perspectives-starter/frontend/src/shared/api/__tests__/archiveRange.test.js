@@ -14,7 +14,7 @@ vi.mock('@/shared/api/recordViews.js', () => ({ makeRecordViews: () => ({ fetchW
 vi.mock('@/shared/api/errorSink.js', () => sink);
 
 import { clearViewsFreshCache, MAX_VIEW_AGE_MS } from '@/shared/api/viewsFresh.js';
-import { loadArchiveDayMap, dayMapFromIndex, weeklyIndexUsable, daysFrom } from '@/shared/api/archiveRange.js';
+import { loadArchive, loadArchiveDayMap, dayMapFromIndex, weeklyIndexUsable, daysFrom } from '@/shared/api/archiveRange.js';
 
 const NOW = new Date('2026-10-31T15:05:00Z');
 const built = (ageMs) => ({ schemaVersion: 1, builtAt: new Date(Date.now() - ageMs).toISOString(), factsThrough: '2026-10-31' });
@@ -70,6 +70,20 @@ describe('the index as the action\'s day map', () => {
     const out = dayMapFromIndex({ days: { '2026-10-30': day, '2026-09-30': day } }, '2026-10-31');
     expect(Object.keys(out)).toEqual(['2026-10-30']);
     expect(out['2026-10-30'].entries[0].sources.map((s) => s.source)).toEqual(['France 24', 'dawn.com']);
+  });
+});
+
+describe('loadArchive titles', () => {
+  it('carries the index\'s titles with the day map; null when the index has none or the action answered', async () => {
+    rv.fetchWeeklyIndex.mockResolvedValue({ ...weekly, titles: { a: 'Record title' } });
+    const out = await loadArchive(NOW);
+    expect(out.titles).toEqual({ a: 'Record title' });
+    expect(out.dayMap).toEqual(dayMapFromIndex(weekly, '2026-10-31'));
+    expect(await loadArchiveDayMap(NOW)).toEqual(out.dayMap);
+    rv.fetchWeeklyIndex.mockResolvedValue(weekly);
+    expect((await loadArchive(NOW)).titles).toBeNull();
+    rv.fetchWeeklyIndex.mockResolvedValue(null);
+    expect((await loadArchive(NOW)).titles).toBeNull();
   });
 });
 

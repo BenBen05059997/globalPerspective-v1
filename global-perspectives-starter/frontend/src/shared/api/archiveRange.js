@@ -9,6 +9,9 @@
 // once, on its first day; an entry sits under the story it belongs to now (merges and reassignments applied); places are the
 // entry's countries by the one country table plus the EU (any other region, such as Global or the Middle East, is not carried),
 // in ISO3 order; a source is named by its outlet (its host when the outlet is unknown).
+//
+// loadArchive returns { dayMap, titles }: `titles` is the index's { threadId: title }, the record's one title per story
+// (newsStoryRecord titleOf), null when the index has none or the action answered. loadArchiveDayMap is the day map alone.
 import { fetchArchiveRange } from '@/shared/api/restProxy.js';
 import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
@@ -68,24 +71,34 @@ async function actionDays(days) {
   return res?.data || {};
 }
 
+/** The record's story titles ({ threadId: title }) from the weekly index; null when the index carries none (not live yet, or the action path). */
+const titlesOf = (index) => (index?.titles && typeof index.titles === 'object' && !Array.isArray(index.titles) ? index.titles : null);
+
 /**
- * The 30-day archive, record first. When the index is missing the action's answer is returned (or its error thrown, as the
- * hooks always handled it); when the views are not fresh the action supplies the newest days, and a failed call for those is
- * reported and the recorded days are kept.
+ * The 30-day archive, record first, as { dayMap, titles }. `titles` is the record's one title per story ({ threadId: title }, the
+ * record's titleOf), or null when the answer came from the `archive_range` action, which has none. When the index is missing the
+ * action's answer is returned (or its error thrown, as the hooks always handled it); when the views are not fresh the action
+ * supplies the newest days, and a failed call for those is reported and the recorded days are kept.
  */
-export async function loadArchiveDayMap(now = new Date()) {
+export async function loadArchive(now = new Date()) {
   const today = now.toISOString().slice(0, 10);
   const index = await loadIndex();
-  if (!weeklyIndexUsable(index)) return actionDays(WINDOW_DAYS);
+  if (!weeklyIndexUsable(index)) return { dayMap: await actionDays(WINDOW_DAYS), titles: null };
   const recorded = dayMapFromIndex(index, today);
   const newest = Object.keys(recorded).sort().at(-1);
-  if (!newest) return actionDays(WINDOW_DAYS);
-  if ((await loadViewsFresh()).fresh) return recorded; // the views carry today: no action call
+  if (!newest) return { dayMap: await actionDays(WINDOW_DAYS), titles: null };
+  const titles = titlesOf(index);
+  if ((await loadViewsFresh()).fresh) return { dayMap: recorded, titles }; // the views carry today: no action call
   try {
     const fresh = await actionDays(daysFrom(newest, today) + 1);
-    return { ...recorded, ...Object.fromEntries(Object.entries(fresh).filter(([day]) => day >= newest)) };
+    return { dayMap: { ...recorded, ...Object.fromEntries(Object.entries(fresh).filter(([day]) => day >= newest)) }, titles };
   } catch (err) {
     reportFetchError('archive-range-recent', err);
-    return recorded;
+    return { dayMap: recorded, titles };
   }
+}
+
+/** The 30-day archive as the day map alone (the countries list and page, the map, anything that does not name stories). */
+export async function loadArchiveDayMap(now = new Date()) {
+  return (await loadArchive(now)).dayMap;
 }

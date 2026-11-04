@@ -20,7 +20,7 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE, mapHref } from '@/shared/lib/links.js';
-import { daysWithNews } from '@/features/threads/lib/storyGroups';
+import { daysWithNews, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
 
@@ -634,7 +634,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                                 </div>
                                 {canPlay && (
                                   <div className="wmap-thread-badges">
-                                    <span className="wmap-thread-badge multi-day">{daysWithNews(t.dates.length)}</span>
+                                    <span className="wmap-thread-badge multi-day">{daysWithNews(t.dates.length, ARCHIVE_DAYS)}</span>
                                   </div>
                                 )}
                               </div>

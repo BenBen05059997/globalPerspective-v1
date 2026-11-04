@@ -3,7 +3,7 @@ import {
   buildThreads, storyTitle, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
-  dayCounts, daysWithNews, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
+  dayCounts, daysWithNews, ARCHIVE_DAYS, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
 
 // "now" = 2026-10-01 12:00 UTC. Day keys are real UTC YYYY-MM-DD strings.
@@ -56,6 +56,11 @@ describe('daysWithNews', () => {
   it('is the one wording for distinct days that carry a headline', () => {
     expect(daysWithNews(1)).toBe('1 day with news');
     expect(daysWithNews(7)).toBe('7 days with news');
+  });
+  it('a list count names its span, the story page keeps the bare wording (R3-1)', () => {
+    expect(daysWithNews(13, ARCHIVE_DAYS)).toBe('13 days with news in 30 days');
+    expect(daysWithNews(1, ARCHIVE_DAYS)).toBe('1 day with news in 30 days');
+    expect(daysWithNews(24)).toBe('24 days with news');
   });
   it('counts distinct days, not the calendar span', () => {
     const days = { [ago(10)]: { entries: [entry('g', 'First')] }, [ago(0)]: { entries: [entry('g', 'Last')] } };

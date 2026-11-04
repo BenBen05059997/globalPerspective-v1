@@ -38,12 +38,15 @@ export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'military', 'd
 
 export const CRISIS_TYPES = ['conflict', 'political', 'economic', 'humanitarian'];
 
+/** The stories list reads the weekly index: 30 archive days. A count taken from it spans no more than this. */
+export const ARCHIVE_DAYS = 30;
+
 // Window control: last-change recency. Infinity = everything the archive returned (<= 30 days).
 export const WINDOWS = [
   { value: '1d', phrase: 'last 24 hours', label: '24 h', days: 1, span: 3 },
   { value: '3d', phrase: 'last 3 days', label: '3 d', days: 3, span: 3 },
   { value: '7d', phrase: 'last 7 days', label: '7 d', days: 7, span: 7 },
-  { value: '30d', phrase: 'last 30 days', label: '30 d', days: Infinity, span: 30 },
+  { value: '30d', phrase: 'last 30 days', label: '30 d', days: Infinity, span: ARCHIVE_DAYS },
 ];
 export const DEFAULT_WINDOW = '30d';
 export const SORTS = [
@@ -73,9 +76,13 @@ function validIso(v) {
   return Number.isFinite(t) ? new Date(t).toISOString() : null;
 }
 
-/** daysWithNews(n) -> "3 days with news": the one wording for a story's count of distinct days that carry a headline. */
-export function daysWithNews(n) {
-  return `${n} ${n === 1 ? 'day' : 'days'} with news`;
+/**
+ * daysWithNews(n, inDays) -> "3 days with news" (a story page: all the story's days) or, when `inDays` is given,
+ * "3 days with news in 30 days" (a list: only the days inside that span). The one wording for a count of distinct
+ * days that carry a headline; lists pass ARCHIVE_DAYS so they never read as the story's whole history.
+ */
+export function daysWithNews(n, inDays = null) {
+  return `${n} ${n === 1 ? 'day' : 'days'} with news${inDays ? ` in ${inDays} days` : ''}`;
 }
 
 /**

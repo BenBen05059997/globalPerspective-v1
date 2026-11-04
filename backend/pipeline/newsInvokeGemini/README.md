@@ -5,7 +5,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 ## Deployment
 - Deployed name `newsIngest` since 2026-11-03 (was `newsInvokeGemini-dev`, kept until its removal; repo dir `newsInvokeGemini`) · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
 - Trigger: EventBridge Scheduler `InvokeGoogleGemini` `cron(15 4/8 * * ? *)` (UTC, ENABLED). No Function URL.
-- Deploy: `scripts/lambda.sh newsInvokeGemini diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships no node_modules: `src/package.json` has no production deps (the runtime provides `@aws-sdk` v3).
+- Deploy: `scripts/lambda.sh newsIngest diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships no node_modules: `src/package.json` has no production deps (the runtime provides `@aws-sdk` v3).
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE` (key `id`): reads `seen-today` and `archive#YYYY-MM-DD` (today and the previous 7 days); writes the cache item `id = TOPICS_CACHE_ITEM_ID` (default `staging`) and `seen-today`.

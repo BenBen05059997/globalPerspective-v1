@@ -13,19 +13,23 @@ This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (
 | Lambda (deployed name) | What it does | Trigger (live) | Reads | Writes | README |
 |---|---|---|---|---|---|
 | newsIngest | Fetches RSS feeds, asks one LLM call to pick the topics, and stores them as the pending list. | Scheduler `InvokeGoogleGemini`, cron(15 4/8 * * ? *) UTC, ENABLED | RSS hosts; DynamoDB NewsCache `seen-today`, `archive#<date>` | NewsCache `staging`, `seen-today`; S3 `record/inbox/articles/` (raw capture of every fetched item), `audit/ingest-capture/` | [link](newsInvokeGemini/README.md) |
-| newsAgent | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`, archive rows; SummarizeAndPredict `FACTS#`; S3 `stories/state/` | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/` | [link](NewsProjectInvokeAgentLambda/README.md) |
+| newsAgent | Writes summary, cause chain and forecast per topic, assigns threads, and publishes the list. | Scheduler `InvokeNewsAgent`, cron(25 4/8 * * ? *) UTC, ENABLED | NewsCache `staging`; SummarizeAndPredict `FACTS#`; S3 `stories/state/`, `record/inbox/entries/` (previous days, `ARCHIVE_READS=inbox`), `record/inbox/forecasts/` (forks, `FORKS_READS=inbox`) | NewsCache `latest`, `today-archive`, `archive#<date>`; SummarizeAndPredict `TOPIC#`, `THREAD#`; PredictionLog `PRED#`; S3 `threads/story-map.json`, `record/notes/entry/` | [link](NewsProjectInvokeAgentLambda/README.md) |
 | newsSelectionShadow | Logs what a layered selector would have picked beside the live pick; nothing reads it. | Rule `TriggerSelectionShadow`, cron(20 4,12,20 * * ? *) UTC, ENABLED | S3 `audit/ingest-capture/`, `corpus/`, `situations/state/gdacs_*`; Jev API | S3 `audit/selection-shadow/` | [link](newsSelectionShadow/README.md) |
-| newsThreadAnalysis | Re-analyses threads that have a new event, with a multi-axis risk read. | Rule `TriggerDailyAnalysis`, cron(40 4 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD#` | SummarizeAndPredict `THREAD#`/`THREAD_ANALYSIS`, `THREAD_HISTORY#`; S3 `record/notes/story_analysis/` | [link](newsThreadAnalysis/README.md) |
-| newsSystemsAnalysis | Builds a cause-and-effect web for the top countries and per-story web records. | Rule `TriggerNewsSystemsAnalysis`, cron(0 5 * * ? *) UTC, ENABLED | NewsCache archives; SummarizeAndPredict `THREAD_ANALYSIS` | SummarizeAndPredict `SYSTEMS#`, `WEB#INDEX`, `THREAD#`/`WEB`; S3 `web/`, `record/notes/link/`, `record/notes/web/` | [link](newsSystemsAnalysis/README.md) |
+| newsThreadAnalysis | Re-analyses threads that have a new event, with a multi-axis risk read. | Rule `TriggerDailyAnalysis`, cron(40 4 * * ? *) UTC, ENABLED | NewsCache archives (`ARCHIVE_READS=compare` against S3 `record/inbox/entries/`); SummarizeAndPredict `THREAD#` | SummarizeAndPredict `THREAD#`/`THREAD_ANALYSIS`, `THREAD_HISTORY#`; S3 `record/notes/story_analysis/` | [link](newsThreadAnalysis/README.md) |
+| newsSystemsAnalysis | Builds a cause-and-effect web for the top countries and per-story web records. | Rule `TriggerNewsSystemsAnalysis`, cron(0 5 * * ? *) UTC, ENABLED | NewsCache archives (`ARCHIVE_READS=compare` against `record/inbox/entries/`); SummarizeAndPredict `THREAD_ANALYSIS` | SummarizeAndPredict `SYSTEMS#`, `WEB#INDEX`, `THREAD#`/`WEB`; S3 `web/`, `record/notes/link/`, `record/notes/web/` | [link](newsSystemsAnalysis/README.md) |
 | newsCountryFactsUpdater | Refreshes capital, population and leadership facts per country from Wikidata and ACLED. | Scheduler `Fact`, cron(0 5 ? * MON *) Asia/Tokyo, ENABLED | wikidata.org, acleddata.com | SummarizeAndPredict `FACTS#<country>`/`COUNTRY_FACTS` | [link](newsCountryFactsUpdater/README.md) |
-| newsCountryIntelligence | Writes the country briefings and 4-axis risk read for countries that need a refresh. | Scheduler `countryIntelliegence`, cron(15 5 * * ? *) UTC, ENABLED | NewsCache archives; `THREAD_ANALYSIS`, `FACTS#`, `DRIFT#`; public `data/world/latest.json` | SummarizeAndPredict `COUNTRY#`/`COUNTRY_INTELLIGENCE`, `HISTORY#<date>`; S3 `record/notes/country/` | [link](newsCountryIntelligence/README.md) |
-| newsDriftCorrector | Checks whether a conclusion moved and, if so, writes a note naming the event that explains it. | Rule `TriggerDriftCorrector`, cron(30 5 * * ? *) UTC, ENABLED | SummarizeAndPredict `HISTORY#`, `THREAD_HISTORY#`; NewsCache archives | SummarizeAndPredict `DRIFT#<date>`, `DRIFTLOG#<date>`; S3 `record/notes/drift/` | [link](newsDriftCorrector/README.md) |
+| newsCountryIntelligence | Writes the country briefings and 4-axis risk read for countries that need a refresh. | Scheduler `countryIntelliegence`, cron(15 5 * * ? *) UTC, ENABLED | NewsCache archives (`ARCHIVE_READS=compare` against `record/inbox/entries/`); `THREAD_ANALYSIS`, `FACTS#`, `DRIFT#`; public `data/world/latest.json` | SummarizeAndPredict `COUNTRY#`/`COUNTRY_INTELLIGENCE`, `HISTORY#<date>`; S3 `record/notes/country/` | [link](newsCountryIntelligence/README.md) |
+| newsDriftCorrector | Checks whether a conclusion moved and, if so, writes a note naming the event that explains it. | Rule `TriggerDriftCorrector`, cron(30 5 * * ? *) UTC, ENABLED | SummarizeAndPredict `HISTORY#`, `THREAD_HISTORY#`; NewsCache archives (`ARCHIVE_READS=compare` against `record/inbox/entries/`) | SummarizeAndPredict `DRIFT#<date>`, `DRIFTLOG#<date>`; S3 `record/notes/drift/` | [link](newsDriftCorrector/README.md) |
 
 The `cli/` folder holds an operator tool, not a Lambda: [cli/README.md](cli/README.md).
 
 ## Notes in the record (decision 0042)
 
 The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector) each also copy what they stored into the record as notes (`backend/shared/src/notes.js`, best-effort, never failing the run). The prefix is env `NOTES_PREFIX`: the code defaults to `record/shadow/`, and the live env of all five sets `record/`. The DynamoDB rows stay the primary copy until the world tables retire (step 5, `project-docs/architecture/STEP5_AUDIT.md`).
+
+## Archive reads (step 5d, 2026-11-04)
+
+Shared `backend/shared/src/archiveReads.js`, env `ARCHIVE_READS` = `ddb` (default) | `inbox` | `compare` (any other value, or `inbox`/`compare` without `ENTRIES_INBOX_PREFIX`, means `ddb`). `inbox` reads the day files `record/inbox/entries/` instead of the NewsCache archive rows; `compare` answers from NewsCache and logs the differences (`[archive-compare]`). Live: newsAgent `inbox` (with `FORKS_READS=inbox` for its forecast forks); newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector and (in distribution) newsWeeklyBrief `compare`, `ENTRIES_INBOX_PREFIX=record/`. Each moves to `inbox` after 3 clean nights. newsIngest still reads `archive#` titles directly.
 
 ## Pipeline
 
@@ -38,16 +42,16 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 7. newsCountryFactsUpdater runs Mondays at 05:00 Tokyo time and refreshes the `FACTS#` rows that the country briefings use.
 8. newsCountryIntelligence (05:15) writes country briefings for countries its refresh policy selects.
 9. newsDriftCorrector (05:30) compares the daily history rows and writes drift notes.
-10. The browser reads these rows through the `newsSensitiveData-dev` API proxy (pages that already have a record view read the view first and use the action as the fallback; see the read-api group). The actions are `topics` and `today` (home), `summary`, `prediction`, `trace_cause`, `narrative_thread` and `thread_analysis` (story pages), `country_intelligence`, `country_facts`, `country_history` (country pages), `systems_analysis`, `web_index`, `corrections_feed`.
+10. The browser reads these rows through the `newsReadApi` API proxy (pages that already have a record view read the view first and use the action as the fallback; see the read-api group). The actions are `topics` and `today` (home), `summary`, `prediction`, `trace_cause`, `narrative_thread` and `thread_analysis` (story pages), `country_intelligence`, `country_facts`, `country_history` (country pages), `systems_analysis`, `web_index`, `corrections_feed`.
 11. Pages that call them: `/today` and `/` (topics), `/weekly/thread/:threadId` (narrative thread, forecast, web), `/weekly/country/:countryName` (country intelligence, facts, history), `/track-record` (corrections feed).
 
 ## Shared code
 
-- `llm.js` (chat client): newsInvokeGemini, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
+- `llm.js` (chat client): newsIngest, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `dayZero.js`: newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsThreadAnalysis, newsCountryIntelligence, newsDriftCorrector.
 - `placeFilter.js`: newsSystemsAnalysis, newsCountryIntelligence. `riskDimensions.js`: newsThreadAnalysis, newsCountryIntelligence.
-- NewsProjectInvokeAgentLambda, newsCountryFactsUpdater and newsSelectionShadow have no `_shared` link. newsSelectionShadow symlinks `classifier-core.js` from newsSituationIngest.
+- newsAgent, newsCountryFactsUpdater and newsSelectionShadow have no `_shared` link. newsSelectionShadow symlinks `classifier-core.js` from newsSituationIngest.
 
 ## Known limits
 
@@ -56,7 +60,7 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 - newsCountryFactsUpdater writes leadership for 12 countries only; the others get capital and population. A time budget skips countries it cannot reach.
 - newsSystemsAnalysis rewrites the same-day `web/YYYY/MM/DD.json` on every rerun.
 - newsDriftCorrector skips a date that already has a `DRIFT#` row.
-- NewsProjectInvokeAgentLambda skips a `staging` that already has `agentProcessedAt`, unless forced.
+- newsAgent skips a `staging` that already has `agentProcessedAt`, unless forced.
 - newsSelectionShadow needs a `JEV_API_KEY` and does not affect the site.
 
 ## How to check it

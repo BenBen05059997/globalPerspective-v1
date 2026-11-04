@@ -48,9 +48,9 @@ Ten detailed stages map onto five: Ingest = 1-3, Commit = 4-5, Review = 6, Build
 | # | Stage | What runs | Produces |
 |---|---|---|---|
 | | **Daily, no model** | | |
-| 1 | Ingest | selector `newsInvokeGemini` 3x/day (26 feeds, up to 25 items each fetched, 8 per feed in the prompt, done-not-said rule, code dedupe, significance floor); map ingest `newsSituationIngest` hourly, `newsGdacsIngest` every 20 min | topics; raw articles in `record/inbox/articles/`; map clusters; disaster alerts |
-| 2 | Stories | `NewsProjectInvokeAgentLambda` joins topics to threads, draws at most 3 outcomes per story per week, reconciles each `PRED#` row to the entry's final thread; `newsSituationTracker` | threads, daily archive, forecasts (`PRED#`), map pins |
-| 3 | Daily notes | the agent (entry summary, forecast and cause texts), `newsThreadAnalysis` (story analysis), `newsDriftCorrector` (drift), `newsCountryIntelligence` (country briefings), `newsSystemsAnalysis` (story web), `newsPostDevTo` and `newsWeeklyBrief` (briefs); the forecast watch and judge `newsPredictionResolver` | notes in `record/notes/<subtype>/` (the DynamoDB rows are still written beside them until step 5); verdict and draw lines in `record/inbox/verdicts/` and `record/inbox/draws/` |
+| 1 | Ingest | selector `newsIngest` 3x/day (26 feeds, up to 25 items each fetched, 8 per feed in the prompt, done-not-said rule, code dedupe, significance floor); map ingest `newsSituationIngest` hourly, `newsGdacsIngest` every 20 min | topics; raw articles in `record/inbox/articles/`; map clusters; disaster alerts |
+| 2 | Stories | `newsAgent` joins topics to threads, draws at most 3 outcomes per story per week, reconciles each `PRED#` row to the entry's final thread; `newsSituationTracker` | threads, daily archive, forecasts (`PRED#`), map pins |
+| 3 | Daily notes | the agent (entry summary, forecast and cause texts), `newsThreadAnalysis` (story analysis), `newsDriftCorrector` (drift), `newsCountryIntelligence` (country briefings), `newsSystemsAnalysis` (story web), `newsDailyBrief` and `newsWeeklyBrief` (briefs); the forecast watch and judge `newsPredictionResolver` | notes in `record/notes/<subtype>/` (the DynamoDB rows are still written beside them until step 5); verdict and draw lines in `record/inbox/verdicts/` and `record/inbox/draws/` |
 | 4 | One reader | `backend/shared/src/world/` | normalised rows with provenance; the only parser of raw tables |
 | 5 | Facts | `newsStoryRecord` reads the world reader and every inbox | `record/facts/YYYY-MM-DD.jsonl`, the daily Run, then the views |
 | | **Weekly, Monday 01:00 UTC after the ISO week ends** | | |
@@ -58,7 +58,7 @@ Ten detailed stages map onto five: Ingest = 1-3, Commit = 4-5, Review = 6, Build
 | 7 | Views | rebuilt from facts, readings, notes and the who's who file by `newsStoryRecord` | `record/views/` |
 | 8 | Weekly report | dropped by the operator 2026-11-03; no code (the Sunday brief, `newsWeeklyBrief`, is separate) | none |
 | | **Always** | | |
-| 9 | Delivery | pages read views through the Worker (§6 lists which); the rest still read DynamoDB through the `newsSensitiveData` proxy or S3 `world/` JSON; email and posts (`backend/distribution`) | what readers see |
+| 9 | Delivery | pages read views through the Worker (§6 lists which); the rest still read DynamoDB through the `newsReadApi` proxy or S3 `world/` JSON; email and posts (`backend/distribution`) | what readers see |
 | 10 | Watch | `backend/monitoring` | monitor Lambdas; Run objects are the record's own signal |
 
 On demand: re-run the review on a past week after an algorithm fix; the new readings supersede the old.
@@ -113,7 +113,7 @@ A note is model text or a model judgment about a subject the record names, never
 | `country` | a country; parts briefing and systems | `newsCountryIntelligence` | `countries/{ISO3}`, `index/countries.json` |
 | `link` | a story pair | `newsSystemsAnalysis` | `links/{id}` `judgedLinks`, `index/web.json` |
 | `web` | a country's story web | `newsSystemsAnalysis` | `links/{id}` `web`, `index/web.json` |
-| `daily_brief` | a day | `newsPostDevTo` | `briefs/daily/{date}`, `index/briefs.json` |
+| `daily_brief` | a day | `newsDailyBrief` | `briefs/daily/{date}`, `index/briefs.json` |
 | `weekly_brief` | a week | `newsWeeklyBrief` | `briefs/weekly/{weekOf}`, `index/briefs.json` |
 Each writer sends its notes to `<NOTES_PREFIX>notes/...`; the code default is `record/shadow/`, and the live Lambda environment decides (read it with `aws lambda get-function-configuration`: `STEP5_AUDIT.md` section 1 lists the values read on 2026-11-01; the briefs already in the record came from `backend/record/cli/backfill-brief-notes.mjs`). Backfill CLIs for each subtype are in `backend/record/cli/`. The DynamoDB rows are still written beside the notes until step 5. Drift depth beyond the newest note is a member perk and stays on the gated `country_history` action; views are public.
 
@@ -192,7 +192,7 @@ Invariants: (1) one writer per prefix and per table field. (2) Facts, readings a
 Dated state (what is deployed, which rule is enabled, which release is live) comes from AWS and `START_HERE.md`.
 - **Step 4, pages onto views:** what is left is listed in `START_HERE.md` (Step 5 order of work, item e: record paths for the remaining read API actions). Each page keeps its action as a fallback until its view is live.
 - **Step 5, retire the world tables** (`STEP5_AUDIT.md`): SummarizeAndPredict, NewsCache, GlobalPerspectiveMarkets and the PredictionLog `PRED#` rows go once no reader is left, each deletion on its own operator yes. User tables, EMAILLOG, BreakingAlerts, ClientErrors and the PredictionLog commitment state stay. The economy product is retired (decision 0049): its Lambdas and rules are deleted, and only its data awaits deletion. Before the rows go, the full rebuild test: delete the world rows in a copy and prove the site rebuilds from the record.
-- **Briefs writers:** `newsPostDevTo` and `newsWeeklyBrief` write briefs to the record when their `NOTES_PREFIX` is set (live values: `STEP5_AUDIT.md` section 1); the email sender and the Worker read the DynamoDB rows until each reads the record or is retired (0048).
+- **Briefs writers:** `newsDailyBrief` and `newsWeeklyBrief` write briefs to the record when their `NOTES_PREFIX` is set (live values: `STEP5_AUDIT.md` section 1); the email sender and the Worker read the DynamoDB rows until each reads the record or is retired (0048).
 - **Alarms:** the operator does not want pipeline alarms; Run objects are the record's own signal and the freshness monitor watches the public topics.
 - **Weekly report** (stage 8) was dropped 2026-11-03 (ARCHITECTURE_WEEKLY_REVIEW.md §9).
 - **History `iso3`:** entries before 2026-09-12 carry `iso3:[]`/`actorIds:[]`; deriving countries from `regions` is open (operator).
@@ -202,7 +202,7 @@ Dated state (what is deployed, which rule is enabled, which release is live) com
 - **Feeds** for Latin America and Southeast Asia wait on operator-supplied URLs.
 - **Map ingest drops unclassified articles silently**, and the tracker then closes pins for lack of data, so "no data" reads as "ended" (ARCHITECTURE_INGEST_DESIGN.md §4).
 - **Raw-row parsers outside `world/`:** some Lambdas still parse raw rows themselves, so a concept (risk tier, story title, freshness, outlet from host, Firebase JWT check) can be defined more than once; they move to `world/` as touched.
-- **Retire list** (each deletion needs its own operator yes, after the rebuild test): `DRIFTLOG#`, `situations/history`, `WEB#INDEX` / `LATEST`, `tags/backfill`, `world/shadow`, the Scans in `newsSensitiveData`.
+- **Retire list** (each deletion needs its own operator yes, after the rebuild test): `DRIFTLOG#`, `situations/history`, `WEB#INDEX` / `LATEST`, `tags/backfill`, `world/shadow`, the Scans in `newsReadApi`.
 - **Open questions:** one ingest or two; consolidate the five user tables.
 - **Source gaps the facts inherit:** `topicId` is unstable across runs; a legacy script still edits verdicts in place; `backend/pipeline/cli/threads.mjs merge/split` rewrites rows in place (on the record a merge is a `story_merged` fact).
 

@@ -9,7 +9,7 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 ## Deployment
 - `newsAgent` since 2026-11-03 (was `NewsProjectInvokeAgentLambda-dev`, kept until its removal), `nodejs22.x`, group `pipeline` (scripts/functions.json); zip ships no node_modules.
 - EventBridge Scheduler `InvokeNewsAgent` `cron(25 4/8 * * ? *)` UTC, 10 min after newsIngest.
-- `scripts/lambda.sh NewsProjectInvokeAgentLambda diff|package|deploy` (diff first; deploy needs the operator).
+- `scripts/lambda.sh newsAgent diff|package|deploy` (diff first; deploy needs the operator).
 
 ## Reads (decision 0035 step 5d: two switches)
 | Read | `ddb` (default) | `inbox` | Used by |

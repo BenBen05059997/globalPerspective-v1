@@ -6,7 +6,7 @@ is emailed each breaking alert. It reads what the pipeline group wrote and write
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no facts or readings; newsPostDevTo and newsWeeklyBrief write the daily_brief and weekly_brief notes (decision 0048, when NOTES_PREFIX is set); the email sender still reads WEEKLY_BRIEF# rows. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the weekly email, the old weekly brief, breaking alerts and social posts. Timeline: writes no facts or readings; newsDailyBrief and newsWeeklyBrief write the daily_brief and weekly_brief notes (decision 0048, when NOTES_PREFIX is set); the email sender still reads WEEKLY_BRIEF# rows. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
@@ -17,7 +17,7 @@ This folder is stage 9: the weekly email, the old weekly brief, breaking alerts 
 | newsEmailSender | Sends email by `mode`: weekly brief, breaking alert or country drift note. | EventBridge, input sets the mode: weekly Sun 14:00 UTC ENABLED; breaking every 15 min DISABLED; drift 07:40 UTC DISABLED | GlobalPerspectiveUserPrefs (opt-ins); SummarizeAndPredict `WEEKLY_BRIEF`, `DRIFT#` rows; BreakingAlerts | Marks `emailedAt` on notes and alerts; weekly marker `EMAILLOG#weekly#<weekOf>`; Resend | [README](newsEmailSender/README.md) |
 | newsDailyBrief (repo dir newsPostDevTo) | Builds the daily brief (no longer posts to Dev.to) from today's entries plus thread and country analysis. | Scheduler `InvokeDev`, 23:00 Asia/Tokyo, ENABLED | NewsCache `today-archive`; SummarizeAndPredict `THREAD#`, `COUNTRY#`; DeepSeek | SummarizeAndPredict `DAILY_BRIEF#<date>`; S3 `record/notes/daily_brief/` only when env `NOTES_PREFIX` is set | [README](newsPostDevTo/README.md) |
 | newsPostLinkedin (folder newsPostLinkedIn) | Posts new topics to LinkedIn and Bluesky with a generated map image. | Scheduler `InvokeLinkedIn`, minute 20 every 3 hours, Asia/Tokyo, ENABLED | NewsCache `latest`; SummarizeAndPredict `TOPIC#` summary and prediction; posted-log table | `NewsProject-linkedin-posts` (`POSTED#<platform>#<fingerprint>`); LinkedIn and Bluesky APIs | [README](newsPostLinkedIn/README.md) |
-| newsWeeklyBrief | Writes the weekly signals brief from seven days of archives; sends no email. | EventBridge `TriggerWeeklyBrief`, Sun 06:00 UTC, ENABLED | NewsCache `today-archive`, `archive#<date>`; SummarizeAndPredict thread and country rows; DeepSeek | SummarizeAndPredict `WEEKLY_BRIEF#<weekKey>`, status published; S3 `record/notes/weekly_brief/` only when env `NOTES_PREFIX` is set | [README](newsWeeklyBrief/README.md) |
+| newsWeeklyBrief | Writes the weekly signals brief from seven days of archives; sends no email. | EventBridge `TriggerWeeklyBrief`, Sun 06:00 UTC, ENABLED | NewsCache `today-archive`, `archive#<date>` (`ARCHIVE_READS=compare` against S3 `record/inbox/entries/`); SummarizeAndPredict thread and country rows; DeepSeek | SummarizeAndPredict `WEEKLY_BRIEF#<weekKey>`, status published; S3 `record/notes/weekly_brief/` only when env `NOTES_PREFIX` is set | [README](newsWeeklyBrief/README.md) |
 
 ## Pipeline
 
@@ -36,7 +36,7 @@ The two brief writers also copy each brief into the record as a `daily_brief` / 
 ## Shared code
 
 - newsBreakingAlert: `links`, `placeFilter`. newsEmailSender: `links`. newsPostLinkedin: `links`.
-- newsPostDevTo and newsWeeklyBrief: `dayZero`, `llm`, `placeFilter`, `resolveIso3`, `briefNotes` (with `notes`, `briefs`, `s3json`).
+- newsDailyBrief (dir newsPostDevTo) and newsWeeklyBrief: `dayZero`, `llm`, `placeFilter`, `resolveIso3`, `briefNotes` (with `notes`, `briefs`, `s3json`).
 - Each reaches them through its `src/_shared` link to `backend/shared/src`. Details: [shared README](../shared/README.md).
 - Operator scripts live in [cli](cli/README.md).
 

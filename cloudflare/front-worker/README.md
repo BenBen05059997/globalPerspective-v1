@@ -30,6 +30,8 @@ or `wrangler versions list`); it is not recorded here.
   `daily_brief`, `latest_daily_brief`, `weekly_brief`, `thread_preview`, `country_preview`) answers as before. The Worker reads no DynamoDB.
 - GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static pages in `docs/blog/`).
 - `HEAD` answers exactly as `GET` does (status and headers), without the body, for every path.
+- Content-hashed build files (`/assets/<name>-<hash>.<ext>`) are served `Cache-Control: public, max-age=31536000, immutable`; every other
+  response keeps the origin's headers (HTML, `config.js`, `/data` are unchanged).
 - Everything else falls back to the SPA shell.
 
 ## Tests

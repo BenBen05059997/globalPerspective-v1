@@ -435,6 +435,9 @@ function botHtmlResponse(html) {
   });
 }
 
+// Vite's content-hashed build files (/assets/<name>-<8-char hash>.<ext>): the name changes with the content, so they never go stale.
+const HASHED_ASSET = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9]+$/;
+
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -587,8 +590,14 @@ const worker = {
       // the default passthrough below rather than surfacing a worker error.
     }
 
-    // Everything else: pass through to GitHub Pages
-    return fetch(request);
+    // Everything else: pass through to GitHub Pages. A content-hashed build file is cached for a year.
+    const origin = await fetch(request);
+    if (HASHED_ASSET.test(url.pathname) && origin.status === 200) {
+      const asset = new Response(origin.body, origin);
+      asset.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      return asset;
+    }
+    return origin;
   },
 };
 

@@ -31,6 +31,7 @@ function makeFetch(log, api = () => null, views = null) {
     if (u.pathname === '/blog/pair-intelligence/') return new Response('<title>Article</title>', { status: 200 });
     if (u.pathname === '/blog/feed.xml') return new Response('<feed/>', { status: 200 });
     if (u.pathname === '/app.js') return new Response('js', { status: 200 });
+    if (u.pathname === '/config.js' || u.pathname === '/assets/index-z7F9oR-P.js') return new Response('js', { status: 200, headers: { 'cache-control': 'max-age=14400' } });
     return new Response('origin 404', { status: 404 });
   };
 }
@@ -136,6 +137,23 @@ test('HEAD answers exactly as GET does, minus the body', async () => {
     }
   }
   assert.equal((await run(patched, `${H}/today`, { method: 'HEAD' })).status, 200);
+});
+
+// Only content-hashed /assets/* files get the long immutable cache; everything else keeps the origin's headers.
+test('hashed /assets/* files are cached for a year, immutable; nothing else changes', async () => {
+  const IMMUTABLE = 'public, max-age=31536000, immutable';
+  for (const method of ['GET', 'HEAD']) {
+    const hashed = await run(patched, `${H}/assets/index-z7F9oR-P.js`, { method });
+    assert.equal(hashed.status, 200);
+    assert.equal(hashed.headers['cache-control'], IMMUTABLE);
+  }
+  assert.equal((await run(patched, `${H}/assets/index-z7F9oR-P.js`)).body, 'js');
+  assert.equal((await run(patched, `${H}/config.js`)).headers['cache-control'], 'max-age=14400');
+  assert.equal((await run(patched, `${H}/assets/unhashed.js`)).headers['cache-control'], undefined);
+  // a missing hashed file is the origin's 404, never cached as immutable
+  const missing = await run(patched, `${H}/assets/Gone-AAAAAAAA.js`);
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers['cache-control'], undefined);
 });
 
 // Record views (0037) are public through /data/*; facts, runs, readings and shadow views are not.

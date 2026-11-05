@@ -1,0 +1,1 @@
+../../../pipeline/newsInvokeGemini/src/index.js

@@ -462,6 +462,15 @@
         }
       ]
     },
+    "newsRecover": {
+      "dir": "backend/record/newsRecover",
+      "runtime": "nodejs22.x",
+      "group": "record",
+      "features": ["ops"],
+      "nodeModules": false,
+      "planned": true,
+      "schedules": []
+    },
     "newsSourceAudit": {
       "dir": "backend/monitoring/newsSourceAudit",
       "runtime": "nodejs22.x",

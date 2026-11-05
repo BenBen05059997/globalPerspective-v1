@@ -15,7 +15,7 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits, h
 |---|---|---|
 | newsErrorDigest | Folds browser error rows into fingerprints and alerts on new or spiking ones. | [README](newsErrorDigest/README.md) |
 | newsFreshnessMonitor | Alerts when the topics feed is stale or the proxy fails; once a day also checks the prediction-settling flow. | [README](newsFreshnessMonitor/README.md) |
-| newsHealth | Hourly: writes the public pipeline panel (`record/views/health.json`) and the private money panel (`monitoring/ops.json`). | [README](newsHealth/README.md) |
+| newsHealth | Hourly: writes the public pipeline panel (`record/views/health.json`) and the private money panel (`monitoring/ops.json`); with `HEAL=on` it also re-runs a missing day's agent once and recovers the day from public records (phase 4). | [README](newsHealth/README.md) |
 | newsModelGuard | Checks the DeepSeek balance and flags retired or unknown model ids in other Lambdas' env. | [README](newsModelGuard/README.md) |
 | newsSourceAudit | Compares the top live summaries against their source articles and counts drift. | [README](newsSourceAudit/README.md) |
 

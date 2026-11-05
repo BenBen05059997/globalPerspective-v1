@@ -33,7 +33,7 @@ All of these have been run live: the record's facts now start 2026-03-07 and eve
 
 ## recover-day.mjs
 
-Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.
+Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). The library and the fetchers now live in [`newsRecover/src/recover.js`](../newsRecover/src/recover.js) (one copy, shared with the `newsRecover` Lambda that `newsHealth` calls for self-healing); `recover-lib.mjs` re-exports them and this script keeps the S3 write and the arguments. It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.
 
 Sources, in dedupe priority order:
 1. Wayback (`recoveredFrom:"wayback-rss"`): the Internet Archive CDX list of the day's snapshots of each of our feed URLs, each snapshot parsed with the selector's own parser (`backend/shared/src/rss.js`). Real `publishedAt`; only items published on the day are kept. Holes are expected.

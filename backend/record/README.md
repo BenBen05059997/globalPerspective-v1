@@ -22,6 +22,7 @@ An agent working on the record does not write the other groups. Design: `project
 |---|---|---|
 | newsStoryRecord | The facts writer and the only view builder: appends the day's facts (no model), writes the Run, rebuilds `record/views/` from facts, readings and notes. | [README](newsStoryRecord/README.md) |
 | newsRecordReview | The weekly review: one boxed model call per active story; checked answers become readings with hindsight. | [README](newsRecordReview/README.md) |
+| newsRecover | Rebuilds one missed, closed day's raw articles from public records (GDELT GKG, Wayback), no model; invoked by `newsHealth`'s self-healing, never scheduled. Not deployed yet. | [README](newsRecover/README.md) |
 
 Each is the only writer of its keys. Neither has a Function URL. `newsStoryRecord` has reserved concurrency 1, so a refresh and the nightly run never overlap: keep any new rule at least five minutes clear of 23:45.
 

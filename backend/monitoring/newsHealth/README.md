@@ -2,9 +2,7 @@
 
 The operator's health and cost view (design: [ARCHITECTURE_OPS.md](../../../project-docs/architecture/ARCHITECTURE_OPS.md)). Once an hour it reads the pipeline's own files and AWS metrics and writes two JSON files. It uses no model and sends no alert (the operator removed pipeline alarms 2026-11-02): it only writes what it saw, and a source it cannot read is `nodata` with the error text, never a made-up value.
 
-**Status: live.** Deployed 2026-11-04 (about 20:34 JST), rule `TriggerHealth` hourly and ENABLED; `record/views/health.json` and `monitoring/ops.json` are written. The `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set) and the `/ops` page is in bundle `index-CYeE3t3L`.
-
-**Phase 4 (self-healing) is built on branch, not deployed**: `src/heal.js`, a new Lambda `newsRecover` ([README](../../record/newsRecover/README.md)), `iam/policy-phase4.json`. It is off until `HEAL` is set (below).
+**Status: live, all four phases deployed.** Deployed 2026-11-04 (about 20:34 JST), rule `TriggerHealth` hourly and ENABLED; `record/views/health.json` and `monitoring/ops.json` are written. The `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set) and the `/ops` page is released (bundle `index-DCySZ7bZ`, release 7, with the Quality panel; the `recovered` glyph is on main, not yet released). Readers (phase 2) are live: `CF_ANALYTICS_TOKEN` is set and the Cloudflare pull reads `ok`; Web Analytics was switched to automatic setup on 2026-11-05 (the snippet-mode site dropped every beacon with a 404), so reader data starts on 2026-11-05. Quality (phase 3) was deployed 2026-11-05 about 23:00 JST. Self-healing (phase 4) was deployed 2026-11-06 about 00:00 JST with `HEAL=dry`: it decides and reports in `now.heal` and writes and invokes nothing; the operator sets `HEAL=on` after reading a dry tick. Its recovery step is the Lambda `newsRecover` ([README](../../record/newsRecover/README.md)).
 
 ## Files it writes (world bucket)
 | File | Who reads it | What |
@@ -28,13 +26,13 @@ ingest (`record/runs/DAY.json` `inputs.rawDay`) · agent (line count of `record/
 Built once per UTC day (the first run of the day; again each hour while Cloudflare is not `ok`). Design: ARCHITECTURE_OPS.md "Phase 2 as built". Code: `src/cloudflare.js` (the API), `src/readers.js` (families, summaries, attention), `src/pageFamilies.json` (path -> family and family -> features), `aws.js` `ownRows`.
 - Cloudflare Web Analytics, GraphQL `rumPageloadEventsAdaptiveGroups`, 14 days, by date and path, referrer host, country. No `CF_ANALYTICS_TOKEN` -> `readers.cloudflare = {status: 'not_connected'}` and no call; an API failure -> `{status: 'error', error}`.
 - Own tables (counts only): `GlobalPerspectiveUserTable` (`createdAt`), `GlobalPerspectiveSavedItems` (`savedKey`), `GlobalPerspectiveShares` (`createdAt`).
-- Env (all optional until the operator connects Cloudflare): `CF_ANALYTICS_TOKEN` (secret), `CF_SITE_TAG` (optional: with the token the site is found by host `globalperspective.net` in the account's Web Analytics sites; set it if the lookup says no site was found), `CF_ACCOUNT_ID` (defaults to the account id in `scripts/site-release.config.json`, not a secret).
+- Env: `CF_ANALYTICS_TOKEN` (secret; set 2026-11-05, status `ok`), `CF_SITE_TAG` (optional; not set, the site is found by host `globalperspective.net` in the account's Web Analytics sites; set it if the lookup says no site was found), `CF_ACCOUNT_ID` (defaults to the account id in `scripts/site-release.config.json`, not a secret).
 - Finding the site tag by hand: Cloudflare dashboard, Analytics and Logs, Web Analytics, the globalperspective.net site; the tag is in the site's snippet (`"token"` in the beacon `data-cf-beacon`) and settings.
-- IAM added to `iam/policy.json` (statement `ReadersOwnTablesCountsOnly`): `dynamodb:Scan` on `arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveUserTable`, `.../GlobalPerspectiveSavedItems`, `.../GlobalPerspectiveShares`. Apply with `aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy.json`.
+- IAM (`iam/policy.json`, now `OwnTablesProjectedScanOnly`): `dynamodb:Scan` on `arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveUserTable`, `.../GlobalPerspectiveSavedItems`, `.../GlobalPerspectiveShares`.
 - Test event flag `{"skipReaders": true}`; `node index.js --dry` shows the section locally.
-- Not verified without a token: the exact GraphQL field names (`date`, `requestPath`, `refererHost`, `countryName`, `sum.visits`), the site-list endpoint's host field, and the real row counts. A wrong field comes back as `readers.cloudflare = {status: 'error', error: 'Cloudflare GraphQL: ...'}` with the API's message.
+- Live check 2026-11-05: the GraphQL fields and the site lookup were accepted (`readers.cloudflare.status` `ok`, site tag found). The pull of 21:58 JST counted 0 views because the site's beacons only started after Web Analytics was switched to automatic setup (about 22:05 JST); real counts begin with the next daily pull. A wrong field comes back as `readers.cloudflare = {status: 'error', error: 'Cloudflare GraphQL: ...'}` with the API's message.
 
-### Set the Cloudflare token (operator)
+### Set or rotate the Cloudflare token (operator; done once on 2026-11-05)
 1. Cloudflare dashboard, My Profile, API Tokens, Create Token, custom: Account, Account Analytics, Read; this account only. Copy it.
 2. Run this in a terminal (the token is read from a prompt, so it is not in shell history or output), one block:
 ```
@@ -67,7 +65,7 @@ Built once per UTC day (the first run of the day), for the last closed UTC day; 
 | source audit | `/aws/lambda/newsSourceAudit` log (Logs Insights, 7 days) | last run: checked, drift (titles), errors, single-source; `deadOutlets` is `not_available` (the audit does not record outlets it cannot fetch) |
 | client errors by page | DynamoDB `GlobalPerspectiveClientErrors`, Scan projecting `day`, `count`, `sampleUrl` | the day vs the median of the 14 days before, per page family |
 - Event flag `{"skipQuality": true}`; `node index.js --dry` shows the section.
-- IAM beyond phase 2 (file `iam/policy-phase3.json`, the whole role policy with two additions; not applied): `s3:GetObject` on `situations/merges/*`, `dynamodb:Scan` on `GlobalPerspectiveClientErrors`. Apply (operator yes): `aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy-phase3.json`, then replace `iam/policy.json` with it. Until then the affected checks read `error` with the AccessDenied text.
+- IAM beyond phase 2 (in `iam/policy.json`, applied 2026-11-06): `s3:GetObject` on `situations/merges/*`, `dynamodb:Scan` on `GlobalPerspectiveClientErrors`. A check whose read is refused reads `error` with the AccessDenied text and is read again on the next hourly run.
 - The run can take longer with the extra reads (a Logs Insights query for the audit, up to 30 s); the 120 s timeout still holds because the quality pull runs beside the readers pull.
 
 ## Self-healing (phase 4)
@@ -81,24 +79,19 @@ Runs first on every tick, before `health.json` is built. Design and the reasons:
 - **Never:** an alert, an email, `force`, a second agent run for a day, a forecast on a recovered day, made-up articles.
 - **Cost:** a re-run costs what a scheduled ingest (model + Brave) and agent run cost, at most once each per day; recovery uses no model and no paid API.
 
-### Turning it on (each AWS step needs the operator's yes; nothing here is done yet)
+### State and turning it on
+Deployed 2026-11-06 about 00:00 JST: `newsRecover` (role, function, no schedule; steps in its README), the whole role policy `iam/policy.json` (phases 1-4), and this code, with `HEAL=dry`. Remaining step, needing the operator's yes:
 ```
-# 1. the recovery Lambda: role, function (steps in backend/record/newsRecover/README.md), then drop "planned" from scripts/functions.json
-# 2. newsHealth's role: the phase-3 additions plus phase 4 (this file replaces iam/policy.json afterwards)
-aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy-phase4.json
-# 3. the code (diff first)
-scripts/lambda.sh newsHealth diff
-scripts/lambda.sh newsHealth deploy
-# 4. look before it acts: HEAL=dry (fetch -> merge -> write the full env map), invoke once, read health.json now.heal
+# 1. look at a dry tick: invoke once (or wait for the hourly tick) and read health.json now.heal (mode "dry", actions with dry:true)
 aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout
-# 5. HEAL=on
+# 2. HEAL=on: fetch the env, merge HEAL=on, write the full map (temp file; keep WORLD_BUCKET and CF_ANALYTICS_TOKEN)
 ```
 Read-only preview from a laptop (no S3 write, no invoke): `HEAL=dry node index.js --dry` in `src/` (needs `npm install` there for the SDK clients).
 
 ## Deployment
 - Name `newsHealth` · `nodejs24.x` · handler `index.handler` · timeout 120 s · 256 MB · group `monitoring` (scripts/functions.json). Worst case a run waits 60 s for each of the two Logs Insights queries (they run side by side), plus the resolver invoke; a normal run takes under 30 s. The zip does not ship node_modules (the runtime's AWS SDK v3 is used).
 - Trigger: EventBridge rule `TriggerHealth`, `rate(1 hour)`, ENABLED, no input.
-- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`), `HEAL` (`on` | `dry`; unset = off). No secrets.
+- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`), `HEAL` (`on` | `dry`; unset = off; currently `dry`), `CF_ANALYTICS_TOKEN` (secret; `CF_SITE_TAG` is not set, the site is found by host).
 - Test event flags: `{"dry": true}` (writes nothing), `{"skipCost": true}`.
 
 ## Deploy (the steps used on 2026-11-04; each IAM and AWS step needed the operator's yes)
@@ -118,7 +111,7 @@ aws lambda add-permission --function-name newsHealth --statement-id TriggerHealt
 aws events put-targets --rule TriggerHealth --targets 'Id=1,Arn=arn:aws:lambda:ap-northeast-1:280362093938:function:newsHealth' --region ap-northeast-1
 # 5. newsReadApi: deploy the `ops` action, then add OPS_OPERATOR_UIDS to its env (fetch, merge, write the full map)
 ```
-Role policy: `iam/policy.json` (`dynamodb:Scan` on the three readers tables; S3 Get on `record/*`, `world/latest.json` and the old `monitoring/ops.json` so history carries over; `s3:ListBucket` so a missing key is a 404, not AccessDenied; Put only on the two files; `logs:StartQuery` on `/aws/lambda/news*`; `logs:GetQueryResults` and `DescribeLogGroups`; `cloudwatch:GetMetricData`; `ce:GetCostAndUsage`; `lambda:InvokeFunction` on `newsPredictionResolver`; its own log group). After the first real run, check `aws s3 ls s3://globalperspective-world-280362093938/record/views/health.json` and that `/data/record/views/health.json` answers 200 through the Worker.
+Role policy: `iam/policy.json` (the whole policy, phases 1-4; applied 2026-11-06). Reads: S3 Get on `record/*`, `situations/merges/*`, `world/latest.json`, the old `monitoring/ops.json` (so history carries over) and `monitoring/heal/*`; `s3:ListBucket` so a missing key is a 404, not AccessDenied; `dynamodb:Scan` (projected) on the three readers tables and `GlobalPerspectiveClientErrors`; `dynamodb:GetItem` on `NewsCache` with leading key `staging`; `logs:StartQuery` on `/aws/lambda/news*`, `logs:GetQueryResults`, `DescribeLogGroups`; `cloudwatch:GetMetricData`; `ce:GetCostAndUsage`. Writes: S3 Put only on `monitoring/ops.json`, `record/views/health.json` and `monitoring/heal/*`; its own log group. Invokes: `lambda:InvokeFunction` on `newsPredictionResolver` and on `newsAgent`, `newsIngest`, `newsStoryRecord`, `newsRecover`. After the first real run, check `aws s3 ls s3://globalperspective-world-280362093938/record/views/health.json` and that `/data/record/views/health.json` answers 200 through the Worker.
 
 ## Local preview (no S3 writes)
 ```

@@ -2,13 +2,15 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "ReadRecordAndWorld",
+      "Sid": "ReadRecordWorldMergesAndHealFiles",
       "Effect": "Allow",
       "Action": "s3:GetObject",
       "Resource": [
         "arn:aws:s3:::globalperspective-world-280362093938/record/*",
         "arn:aws:s3:::globalperspective-world-280362093938/world/latest.json",
-        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/ops.json"
+        "arn:aws:s3:::globalperspective-world-280362093938/situations/merges/*",
+        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/ops.json",
+        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/heal/*"
       ]
     },
     {
@@ -18,12 +20,13 @@
       "Resource": "arn:aws:s3:::globalperspective-world-280362093938"
     },
     {
-      "Sid": "WriteTheTwoFiles",
+      "Sid": "WriteTheTwoFilesAndTheHealLedger",
       "Effect": "Allow",
       "Action": "s3:PutObject",
       "Resource": [
         "arn:aws:s3:::globalperspective-world-280362093938/record/views/health.json",
-        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/ops.json"
+        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/ops.json",
+        "arn:aws:s3:::globalperspective-world-280362093938/monitoring/heal/*"
       ]
     },
     {
@@ -35,7 +38,10 @@
     {
       "Sid": "LogsInsightsResultsAndGroupNames",
       "Effect": "Allow",
-      "Action": ["logs:GetQueryResults", "logs:DescribeLogGroups"],
+      "Action": [
+        "logs:GetQueryResults",
+        "logs:DescribeLogGroups"
+      ],
       "Resource": "*"
     },
     {
@@ -57,19 +63,48 @@
       "Resource": "arn:aws:lambda:ap-northeast-1:280362093938:function:newsPredictionResolver"
     },
     {
-      "Sid": "ReadersOwnTablesCountsOnly",
+      "Sid": "OwnTablesProjectedScanOnly",
       "Effect": "Allow",
       "Action": "dynamodb:Scan",
       "Resource": [
         "arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveUserTable",
         "arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveSavedItems",
-        "arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveShares"
+        "arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveShares",
+        "arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveClientErrors"
       ]
+    },
+    {
+      "Sid": "SelfHealingInvokeOnly",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": [
+        "arn:aws:lambda:ap-northeast-1:280362093938:function:newsAgent",
+        "arn:aws:lambda:ap-northeast-1:280362093938:function:newsIngest",
+        "arn:aws:lambda:ap-northeast-1:280362093938:function:newsStoryRecord",
+        "arn:aws:lambda:ap-northeast-1:280362093938:function:newsRecover"
+      ]
+    },
+    {
+      "Sid": "SelfHealingReadTheStagingItemOnly",
+      "Effect": "Allow",
+      "Action": "dynamodb:GetItem",
+      "Resource": "arn:aws:dynamodb:ap-northeast-1:280362093938:table/NewsCache",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "dynamodb:LeadingKeys": [
+            "staging"
+          ]
+        }
+      }
     },
     {
       "Sid": "OwnLogs",
       "Effect": "Allow",
-      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
       "Resource": "arn:aws:logs:ap-northeast-1:280362093938:log-group:/aws/lambda/newsHealth:*"
     }
   ]

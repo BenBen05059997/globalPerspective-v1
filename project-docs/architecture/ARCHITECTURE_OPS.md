@@ -128,7 +128,7 @@ Done: the `newsHealth` role grants, the `newsHealth` env (`WORLD_BUCKET`, `CF_AN
 Open:
 - Set `HEAL=on` on `newsHealth` once a dry tick's `now.heal` has been read and looks right (fetch the env, merge, write the full map; steps in the `newsHealth` README).
 - A frontend release that carries the `recovered` glyph on `/ops` (commit `6135f744`).
-- Google Search Console: the operator verifies the domain (panel 3).
+- Google Search Console: done; the domain property `sc-domain:globalperspective.net` is verified (seen 2026-11-05: sitemap read 31 Oct, 31 pages indexed). Pulling it into the panel is not built.
 
 ## Cost of the monitor itself
 About 720 invocations a month, Logs Insights over a few MB a day (cents), Cost Explorer $0.30 a month. Well under $1.

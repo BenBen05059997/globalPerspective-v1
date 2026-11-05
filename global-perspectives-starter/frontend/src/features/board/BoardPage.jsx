@@ -29,6 +29,7 @@ import StoryTree from '@/features/board/components/StoryTree.jsx';
 import BoardWeekly from '@/features/board/components/BoardWeekly.jsx';
 import UnsettledZone from '@/features/board/components/UnsettledZone.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
+import { useRecordFactsThrough } from '@/features/board/hooks/useRecordFactsThrough.js';
 import { useWeekCounts } from '@/features/board/hooks/useWeekCounts.js';
 import BoardGraph from '@/features/board/components/BoardGraph.jsx';
 import BoardMap from '@/features/board/components/BoardMap.jsx';
@@ -88,6 +89,7 @@ export default function BoardPage() {
   const pins = useMemo(() => board?.pins || [], [board]);
   const info = usePinInfo(pins, topics);
   const records = useStoryViews(pins);
+  const recordThrough = useRecordFactsThrough();
   const today = todayUTC();
   // the visit date the session started with: the server moves lastVisitedAt on as soon as the arrivals are read
   const counts = useWeekCounts(today, state.visitedAt, !!board?.recordAvailable);
@@ -215,7 +217,7 @@ export default function BoardPage() {
 
   // The open story pin's tree: in the bottom sheet on a phone, full width under the graph on a desktop.
   const storyTree = detailPin?.kind === 'thread'
-    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} today={today} /> : null;
+    ? <StoryTree key={detailPin.refId} story={records.stories[detailPin.refId]} loading={records.loading} error={records.errors[detailPin.refId]} today={today} recordThrough={recordThrough} /> : null;
 
   let sheetBody = null;
   if (panel?.type === 'add') {

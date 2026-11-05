@@ -5,9 +5,17 @@ import { isOpen, isLate } from '@/features/board/lib/branchDays.js';
 const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
 export { isOpen, isLate };
 
-/** The day the facts run to ('2026-10-18'), or '' when the view does not say. The tree's "present" is today (UTC); this
- *  is shown beside it when the facts stop short of today. */
-export const factsThrough = (story) => day(story?.builtFrom?.factsThrough);
+/** The day the facts run to, { day: '2026-10-18', own } or null when nothing says. The record's own day (the manifest's `factsThrough`,
+ *  written every run) wins: a story view is rewritten only when its content changes, so a quiet story's `builtFrom` is the run that
+ *  last changed it, not the record's end. Only when the manifest could not be read (`recordDay` ''), the story's own stamp is used
+ *  and `own` is true so the label says it is that story's. `recordDay` undefined = still loading: null. */
+export function factsRun(story, recordDay) {
+  if (recordDay === undefined) return null;
+  const record = day(recordDay);
+  if (record) return { day: record, own: false };
+  const own = day(story?.builtFrom?.factsThrough);
+  return own ? { day: own, own: true } : null;
+}
 
 /** The newest fork that still has an open branch (the "open fork"). */
 export const openFork = (forks) => [...(forks || [])].filter((f) => (f.branches || []).some(isOpen))

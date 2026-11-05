@@ -2,13 +2,13 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import StoryTree from '../components/StoryTree.jsx';
-import { factsThrough, isLate, forkOutcome, outcomeText, foldTrunk, inChapter, drawnBranches } from '../lib/storyTree.js';
+import { factsRun, isLate, forkOutcome, outcomeText, foldTrunk, inChapter, drawnBranches } from '../lib/storyTree.js';
 import storyA from '../dev/recordViews/story-a.json';
 import storyB from '../dev/recordViews/story-b.json';
 import storyC from '../dev/recordViews/story-c.json';
 afterEach(cleanup);
 const TODAY = '2026-10-18'; // the day storyC's facts run to
-const show = (story, today = TODAY) => render(<MemoryRouter><StoryTree story={story} today={today} /></MemoryRouter>);
+const show = (story, today = TODAY, recordThrough = '2026-10-18') => render(<MemoryRouter><StoryTree story={story} today={today} recordThrough={recordThrough} /></MemoryRouter>);
 const rung = (n) => screen.getByRole('button', { name: new RegExp(`^Level ${n},`) });
 
 describe('story tree zoom ladder', () => {
@@ -141,10 +141,37 @@ describe('story tree zoom ladder', () => {
   });
 });
 
+describe('facts date: the record\'s, not the quiet story\'s', () => {
+  const quiet = { ...storyC, builtFrom: { factsThrough: '2026-10-18' }, chapters: [...storyC.chapters, { title: 'Quiet weeks', from: '2026-10-19', to: '2026-11-30', summary: 'Nothing new.' }] };
+  it('a story view with an old builtFrom shows the manifest date, and the now-mark sits at it', () => {
+    render(<MemoryRouter><StoryTree story={quiet} today="2026-11-05" recordThrough="2026-11-04" /></MemoryRouter>);
+    fireEvent.click(rung(3));
+    expect(screen.getByText('Facts run to 4 Nov.')).toBeInTheDocument();
+    cleanup();
+    render(<MemoryRouter><StoryTree story={quiet} today="2026-11-05" recordThrough="2026-11-04" /></MemoryRouter>);
+    fireEvent.click(rung(2));
+    const marked = [...document.querySelectorAll('.story-tree__card--now')];
+    expect(marked).toHaveLength(1);
+    expect(marked[0].textContent).toContain('Quiet weeks'); // the chapter holding 4 Nov, not the one holding the story's own 18 Oct
+  });
+  it('an unreadable manifest falls back to the story\'s own stamp and says so', () => {
+    render(<MemoryRouter><StoryTree story={quiet} today="2026-11-05" recordThrough="" /></MemoryRouter>);
+    fireEvent.click(rung(3));
+    expect(screen.getByText('Facts on this story run to 18 Oct.')).toBeInTheDocument();
+  });
+  it('shows no facts note while the manifest is loading', () => {
+    render(<MemoryRouter><StoryTree story={quiet} today="2026-11-05" /></MemoryRouter>);
+    fireEvent.click(rung(3));
+    expect(document.body.textContent).not.toMatch(/Facts (on this story )?run to/);
+  });
+});
+
 describe('storyTree helpers', () => {
   it('facts-through is the story\'s data day; late needs an open branch past its due day', () => {
-    expect(factsThrough(storyC)).toBe('2026-10-18');
-    expect(factsThrough({})).toBe('');
+    expect(factsRun(storyC, '')).toEqual({ day: '2026-10-18', own: true });
+    expect(factsRun(storyC, '2026-11-04')).toEqual({ day: '2026-11-04', own: false });
+    expect(factsRun(storyC, undefined)).toBeNull();
+    expect(factsRun({}, '')).toBeNull();
     const open = { due: '2026-10-15', verdict: null };
     expect(isLate(open, '2026-10-18')).toBe(true);
     expect(isLate(open, '')).toBe(false);

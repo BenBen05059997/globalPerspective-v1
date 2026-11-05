@@ -6,7 +6,7 @@ import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordTe
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { factsThrough, isLate, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { factsRun, isLate, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
 import { branchCounts, branchCountText, todayUTC } from '@/features/board/lib/branchDays.js';
 import { DEAD_BRANCH_P } from '@/features/board/lib/folding.js';
 import { weekMonday } from '@/features/board/lib/recordViews.js';
@@ -25,9 +25,10 @@ const CAPTIONS = {
 };
 
 // Facts view of one story (0037 story view) as a zoom ladder: 1 line, 2 chapters, 3 forks and events (the drawn tree), 4 one event.
-// The tree's present is `today` (UTC); late is judged against it. A story record that could not be read shows nothing (the
+// The tree's present is `today` (UTC); late is judged against it. `recordThrough` is the record's `factsThrough` from the manifest
+// ('' when it could not be read, undefined while loading); see factsRun. A story record that could not be read shows nothing (the
 // failure is already reported by the loader).
-export default function StoryTree({ story, loading, error, today = todayUTC() }) {
+export default function StoryTree({ story, loading, error, today = todayUTC(), recordThrough }) {
   const [chosen, setLevel] = useState(null);
   const [chapter, setChapter] = useState(null);
   const [event, setEvent] = useState(null);
@@ -39,7 +40,8 @@ export default function StoryTree({ story, loading, error, today = todayUTC() })
   const hasLine = Boolean(story.line?.text);
   const hasChapters = Boolean(story.chapters?.length);
   const present = today;
-  const facts = factsThrough(story);
+  const run = factsRun(story, recordThrough);
+  const facts = run?.day || '';
   const open = { 1: hasLine, 2: hasChapters, 3: true, 4: Boolean(event) };
   const steps = [1, 2, 3, 4].filter((n) => open[n]);
   const level = chosen || (hasLine ? 1 : 3);
@@ -72,7 +74,7 @@ export default function StoryTree({ story, loading, error, today = todayUTC() })
       {folded ? <Button compact aria-expanded={unfolded} onClick={() => setUnfolded(!unfolded)}>{`Before ${dayMonth(folded.before)} · ${plural(folded.events, 'event', 'events')}${folded.branches ? ` · ${plural(folded.branches, 'branch', 'branches')}${folded.taken ? `, ${folded.taken} happened` : ''}` : ''} ${unfolded ? '▾' : '▸'}`}</Button> : null}
       {drawn.low ? <Button compact aria-expanded={unfoldedLow} onClick={() => setUnfoldedLow(!unfoldedLow)}>{`${plural(drawn.low, 'branch', 'branches')} under ${DEAD_BRANCH_P}% ${unfoldedLow ? 'drawn' : 'folded'} ${unfoldedLow ? '▾' : '▸'}`}</Button> : null}
       <StoryTreeDrawing shown={unfolded ? all : shown} branches={drawn.shown} present={present} />
-      {facts && facts < present ? <p className="board-note">Facts run to {dayMonth(facts)}.</p> : null}
+      {facts && facts < present ? <p className="board-note">{run.own ? 'Facts on this story run to' : 'Facts run to'} {dayMonth(facts)}.</p> : null}
       {trunk}
       {scoped.forks.length ? <><h3>Forks</h3>{scoped.forks.map(forkRow)}</> : null}
       {empty ? <p className="board-line">No dated event or forecast branch has been recorded for this story.</p> : null}

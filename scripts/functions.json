@@ -468,7 +468,6 @@
       "group": "record",
       "features": ["ops"],
       "nodeModules": false,
-      "planned": true,
       "schedules": []
     },
     "newsSourceAudit": {

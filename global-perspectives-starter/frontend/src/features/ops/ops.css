@@ -74,3 +74,11 @@
 .ops-spark__bar { width: 100%; background: var(--accent); border-radius: var(--r-xs) var(--r-xs) 0 0; }
 .ops-steps { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm); color: var(--text-body); }
 .ops-steps code { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-head); overflow-wrap: anywhere; }
+
+/* ---- Quality ---- */
+.ops-check { display: flex; flex-direction: column; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--hairline); min-width: 0; }
+.ops-check__title { margin: 0; font-family: var(--mono); font-size: var(--hud-label-size); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); font-weight: var(--weight-medium); }
+.ops-part { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.ops-part__title { margin: 0; font-size: var(--text-base); font-weight: var(--weight-medium); color: var(--text-head); }
+.ops-part__headline { margin: 0; font-size: var(--text-base); line-height: var(--leading-normal); color: var(--text-body); font-variant-numeric: tabular-nums; }
+.ops-table--text td { white-space: normal; text-align: left; overflow-wrap: anywhere; }

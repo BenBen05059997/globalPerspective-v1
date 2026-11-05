@@ -118,6 +118,62 @@ export function devReaders(cloudflare = 'ok') {
   return { asOf: new Date(Date.now() - 12 * 60000).toISOString(), pulledAt: `${TODAY}T00:15:00.000Z`, note: READERS_NOTE, cloudflare: cf, own: READERS_OWN, attention: READERS_ATTENTION(cloudflare === 'ok') };
 }
 
+const QUALITY_DAY = '2026-11-03';
+const PINS_WHY = "Not available: newsSituationIngest (classifier-core storyCentroid) moves a story centroid that falls outside all of the story's countries onto the first country's centre, and writes nothing about it. Its result line ([ingest] {...}) and stories/index.json carry no count of moved centroids. Missing: one counter for \"centroid snapped to country centre\" in the ingest result line.";
+const DEAD_WHY = 'newsSourceAudit does not look for dead outlets: it checks our cached summaries against the text of their source articles (drift) and writes only CloudWatch log lines and an SNS alert, no file. An article it cannot fetch is skipped without a log line, so unreachable outlets are not recorded anywhere. Missing: a per-outlet fetch result in its log.';
+
+/** The quality section, shaped like newsHealth's quality.js output (values cut from a live read-only pull on 2026-11-05). 'errors': every source unreadable. */
+export function devQuality(mode = 'ok') {
+  const day = QUALITY_DAY;
+  const err = (source) => ({ status: 'error', source, error: 'AccessDenied: not authorized to perform this action' });
+  const head = { asOf: new Date(Date.now() - 12 * 60000).toISOString(), pulledAt: `${TODAY}T00:15:00.000Z`, day, note: 'Checks look at the last closed UTC day (the day named on each); the open-situations snapshot is as of the build. Built once a UTC day; a check that could not read its source is retried hourly. A source that does not exist says so and names what is missing; nothing here is estimated.' };
+  const pins = { status: 'not_available', source: 'newsSituationIngest log', why: PINS_WHY, day };
+  if (mode === 'errors') {
+    return {
+      ...head,
+      checks: {
+        situations: { duplicates: err('world/latest.json'), merged: err('situations/merges/2026/11/03/') },
+        selfReference: err(`record/inbox/entries/${day}.jsonl`), pins,
+        forecast: { voids: err(`record/inbox/verdicts/${day}.jsonl`), coverage: err('record/runs/DAY.json') },
+        sourceAudit: err('/aws/lambda/newsSourceAudit'), clientErrors: err('GlobalPerspectiveClientErrors'),
+      },
+    };
+  }
+  return {
+    ...head,
+    checks: {
+      situations: {
+        duplicates: { status: 'ok', source: 'world/latest.json', at: `${TODAY}T00:13:59.268Z`, open: 21, groups: 1, situations: 2, examples: [{ title: 'Israeli opposition slams Netanyahu after US Democrats win', countries: ['ISR'], ids: ['news#ISR#thread-a', 'news#ISR#thread-b'] }] },
+        merged: { status: 'ok', source: 'situations/merges/2026/11/03/', day, files: 3, merged: 3, byRule: { url: 2, 'title+country': 1 }, unreadable: 0 },
+      },
+      selfReference: {
+        status: 'ok', source: `record/inbox/entries/${day}.jsonl`, day, pattern: 'x', unparsed: 0, entries: 32, withSummary: 32, matched: 17,
+        byPhrase: { 'the snippets': 9, 'the snippet': 4, 'the headline': 3, 'according to the snippets': 1 },
+        examples: [
+          { title: 'Democrat Keisha Lance Bottoms Elected Georgia Governor, First Black Woman in US History', phrase: 'according to the snippets' },
+          { title: 'Democrat Talarico Wins Texas Senate Race, Ending Decades of Republican Dominance', phrase: 'the snippets' },
+          { title: 'Cyberattack on French Bank Crédit Mutuel Arkéa Causes Fraudulent Transfers', phrase: 'The snippets' },
+        ],
+      },
+      pins,
+      forecast: {
+        voids: { status: 'ok', source: `record/inbox/verdicts/${day}.jsonl`, day, fileAbsent: false, unparsed: 0, settled: 38, results: { void: 38 }, corrections: 0, voids: 38, byReason: [{ reason: 'record gap', count: 32 }, { reason: 'unclear after 3 drafts', count: 6 }], recordGapDays: ['2026-10-22', '2026-10-23', '2026-10-24'] },
+        coverage: { status: 'ok', source: 'record/runs/DAY.json', from: '2026-10-21', to: day, days: 14, gaps: [{ day: '2026-10-22', why: 'run status failed' }, { day: '2026-10-23', why: 'run status failed' }, { day: '2026-10-25', why: 'archive day thin:15' }] },
+      },
+      sourceAudit: {
+        status: 'ok', source: '/aws/lambda/newsSourceAudit (CloudWatch Logs Insights, last 7 days)', at: `${TODAY}T11:30:36.997Z`, day: TODAY, checked: 6, drift: 3, auditErrors: 0, singleSource: 2,
+        drifted: [{ title: 'Democrats Win US House, Make Senate Gains in Midterm Wave Against Trum', robustness: 'corroborated' }, { title: 'Jon Ossoff Wins Reelection in Georgia, Holding Senate Seat for Democra', robustness: 'corroborated' }],
+        deadOutlets: { status: 'not_available', source: 'newsSourceAudit', why: DEAD_WHY },
+      },
+      clientErrors: {
+        status: 'ok', source: 'DynamoDB GlobalPerspectiveClientErrors (attributes day, count, sampleUrl)', day, rows: 188, note: 'Count is every hit of an error that day; its page is the URL of the first hit of that error (the sink keeps one sample URL per error and day). The table keeps 30 days.',
+        total: 92, median: 5, baselineFrom: '2026-10-20', baselineTo: '2026-11-02',
+        pages: [{ id: 'map', label: 'Map', day: 52, median: 5 }, { id: 'countries', label: 'Countries', day: 16, median: 0 }, { id: 'stories', label: 'Stories', day: 9, median: 0 }], pagesOmitted: 0,
+      },
+    },
+  };
+}
+
 export function devOpsData(cloudflare = 'ok') {
   const dsDates = DATES.slice(3);
   const dsDays = DATES.map((date) => {
@@ -140,6 +196,7 @@ export function devOpsData(cloudflare = 'ok') {
       days: DATES.slice(0, 13).map((date, i) => ({ date, usd: AWS[i], byService: [{ service: 'Amazon Simple Storage Service', usd: AWS[i] }] })),
     },
     readers: devReaders(cloudflare),
+    quality: devQuality(),
     unitCosts: {
       labels: { entry: 'per story entry', forecast: 'per forecast question', countryNote: 'per country briefing', dailyBrief: 'per daily brief' },
       days: [{ date: '2026-11-03', entry: { usd: 0.0173, count: 47, per: 0.00037 }, forecast: { usd: 0.06, count: 33, per: 0.00182 }, countryNote: { usd: 0.0181, count: 3, per: 0.00602 }, dailyBrief: { usd: 0.004, count: 1, per: 0.004 } }],

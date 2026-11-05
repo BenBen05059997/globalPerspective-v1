@@ -8,6 +8,7 @@ import { rememberOps } from '@/features/ops/hooks/useOpsAccess.js';
 import MoneyPanel from '@/features/ops/components/MoneyPanel.jsx';
 import PipelinePanel from '@/features/ops/components/PipelinePanel.jsx';
 import ReadersPanel from '@/features/ops/components/ReadersPanel.jsx';
+import QualityPanel from '@/features/ops/components/QualityPanel.jsx';
 import '@/features/ops/ops.css';
 
 // /ops: the operator's page. Signed out: one sign-in line. Signed in but not the operator: one line, no data (the server decides
@@ -64,6 +65,7 @@ export default function OpsPage() {
         : health.state === 'error' ? <p className="ops-line">The pipeline view could not be loaded.</p>
           : <PipelinePanel health={health.data} />}
       <ReadersPanel readers={ops.data?.readers} />
+      <QualityPanel quality={ops.data?.quality} />
     </div>
   );
 }

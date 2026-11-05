@@ -54,6 +54,20 @@ rm -f "$NHENV"
    (`umask 077` and `mktemp` keep the temp file private to you, and `CFT` is handed to python as an environment variable of that one command; the final query prints the variable names, never values.)
 3. Invoke once: `aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout` and read `readers` in the answer: `ok`, or the error text. On "no Web Analytics site", add `CF_SITE_TAG` the same way.
 
+## Quality (ops.json `quality`, phase 3)
+Built once per UTC day (the first run of the day), for the last closed UTC day; a check that failed is read again hourly, alone. Design: ARCHITECTURE_OPS.md "Phase 3 as built". Code: `src/quality.js` (checks and section), `QUALITY` in `src/config.js`, ports in `src/aws.js` (`listKeys`, `clientErrorRows`, `auditLog`). Every check names its `source` and `day`; `{status:'not_available', why}` where the source does not exist, `{status:'error', error}` where a read failed.
+| Check | Source | Result |
+|---|---|---|
+| duplicates, merged | `world/latest.json`; `situations/merges/YYYY/MM/DD/` (the tracker's merge files) | groups of open situations with the same normalised title and country set; merges of the day by rule |
+| summaries about their sources | `record/inbox/entries/DAY.jsonl`, `ai.summary` | count, phrases, 5 examples (title, phrase) |
+| pins outside their country | none | `not_available`: newsSituationIngest moves such centroids silently, no log or file counts them |
+| forecast voids, coverage gaps | `record/inbox/verdicts/DAY.jsonl`; `record/runs/DAY.json` x 14 days | voids by reason (record gap first); gap days with the reason |
+| source audit | `/aws/lambda/newsSourceAudit` log (Logs Insights, 7 days) | last run: checked, drift (titles), errors, single-source; `deadOutlets` is `not_available` (the audit does not record outlets it cannot fetch) |
+| client errors by page | DynamoDB `GlobalPerspectiveClientErrors`, Scan projecting `day`, `count`, `sampleUrl` | the day vs the median of the 14 days before, per page family |
+- Event flag `{"skipQuality": true}`; `node index.js --dry` shows the section.
+- IAM beyond phase 2 (file `iam/policy-phase3.json`, the whole role policy with two additions; not applied): `s3:GetObject` on `situations/merges/*`, `dynamodb:Scan` on `GlobalPerspectiveClientErrors`. Apply (operator yes): `aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy-phase3.json`, then replace `iam/policy.json` with it. Until then the affected checks read `error` with the AccessDenied text.
+- The run can take longer with the extra reads (a Logs Insights query for the audit, up to 30 s); the 120 s timeout still holds because the quality pull runs beside the readers pull.
+
 ## Deployment
 - Name `newsHealth` · `nodejs24.x` · handler `index.handler` · timeout 120 s · 256 MB · group `monitoring` (scripts/functions.json). Worst case a run waits 60 s for each of the two Logs Insights queries (they run side by side), plus the resolver invoke; a normal run takes under 30 s. The zip does not ship node_modules (the runtime's AWS SDK v3 is used).
 - Trigger: EventBridge rule `TriggerHealth`, `rate(1 hour)`, ENABLED, no input.
@@ -91,4 +105,4 @@ Needs AWS read credentials for ap-northeast-1.
 Reads: S3 (above), CloudWatch metrics and Logs Insights, the resolver's `status` action, Cost Explorer, the three own tables (projection scan), Cloudflare's analytics API (HTTPS, when a token is set). Writes: the two files, nothing else. Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-`cd backend/monitoring/newsHealth/src && npm test` (`node --test ../test/*.test.js`, offline, fakes for every AWS port). Covers day arithmetic, every stage's thresholds, a day with missing files, unreadable sources, snapshot carry-forward, the schema, pricing (peak, cache hits, unknown model), unit costs, history retention, the once-a-day Cost Explorer pull and the Logs Insights polling.
+`cd backend/monitoring/newsHealth/src && npm test` (`node --test ../test/*.test.js`, offline, fakes for every AWS port). Covers (quality: `test/quality.test.js`, every check on injected ports) day arithmetic, every stage's thresholds, a day with missing files, unreadable sources, snapshot carry-forward, the schema, pricing (peak, cache hits, unknown model), unit costs, history retention, the once-a-day Cost Explorer pull and the Logs Insights polling.

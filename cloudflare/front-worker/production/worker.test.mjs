@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import baseline from '../baseline/worker2.mjs';
 import patched from './worker.mjs';
 
@@ -87,9 +88,10 @@ test('HEAD /blog/ and Googlebot /blog/ pass through (no pre-render, no shell)', 
   }
 });
 
-test('lookalikes (/blogger, /blog-x) still get the shell', async () => {
+test('lookalikes (/blogger, /blog-x) get the shell, not the blog', async () => {
   for (const p of ['/blogger', '/blog-x/y']) {
     const r = await run(patched, `${H}${p}`);
+    assert.equal(r.body, '<title>SHELL</title>');
     assert.equal(r.headers['x-rendered-by'], 'cf-worker-spa-fallback');
   }
 });
@@ -101,6 +103,65 @@ test('shell fallback for /, /weekly, /weekly/thread/x is unchanged', async () =>
     assert.equal(r.body, '<title>SHELL</title>');
     assert.equal(r.headers['x-rendered-by'], 'cf-worker-spa-fallback');
   }
+});
+
+// A path that is no client route, redirect, file or blog page gets the shell with a real 404; client routes keep 200.
+const FRONTEND = new URL('../../../global-perspectives-starter/frontend/src/', import.meta.url);
+const read = (rel) => readFileSync(new URL(rel, FRONTEND), 'utf8');
+
+// the route patterns App.jsx declares, with the ROUTE.* / OPS_ROUTE constants it uses resolved from their sources
+function appJsxRoutes() {
+  const ROUTE = Object.fromEntries([...read('shared/lib/links.js').matchAll(/^\s+(\w+): '([^']*)',?\s*$/gm)].map((m) => [m[1], m[2]]));
+  const OPS_ROUTE = read('features/ops/index.js').match(/OPS_ROUTE = '([^']+)'/)[1];
+  const exprs = [...read('app/App.jsx').matchAll(/<Route path=(?:"([^"]*)"|\{(.+?)\})\s+element=/g)];
+  return exprs.map((m) => (m[1] !== undefined ? m[1] : new Function('ROUTE', 'OPS_ROUTE', `return ${m[2]};`)(ROUTE, OPS_ROUTE))).filter((p) => p !== '*');
+}
+
+test('the Worker answers 200 for exactly the routes App.jsx declares (a drifted list fails here)', async () => {
+  const declared = appJsxRoutes();
+  assert.ok(declared.length > 25 && declared.includes('/today') && declared.includes('/board/:boardId') && declared.includes('/ops'), declared.join(' '));
+  const listed = [...readFileSync(new URL('./worker.mjs', import.meta.url), 'utf8').match(/const APP_ROUTES = \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...listed].sort(), [...declared].sort(), 'APP_ROUTES in worker.mjs must list exactly the <Route path> values of App.jsx (except "*")');
+  for (const pattern of declared) {
+    const path = pattern.replace(/:\w+/g, 'x1');
+    const r = await run(patched, `${H}${path}`);
+    // a redirect (retired address) or the shell: never the 404
+    assert.notEqual(r.status, 404, `${pattern} (${path}) must not be a 404`);
+  }
+  // and the other way: near-misses of the declared routes are 404
+  for (const p of ['/nonexistent-xyz', '/a/b/c', '/weekly/thread', '/weekly/thread/x/y', '/today/extra', '/weekly/country', '/analyze/s', '/board/a/b', '/_boom', '/Today']) {
+    assert.equal((await run(patched, `${H}${p}`)).status, 404, p);
+  }
+});
+
+test('unknown paths get the shell with status 404; client routes (static, dynamic, trailing slash) keep 200', async () => {
+  for (const p of ['/nonexistent-xyz', '/nonexistent-xyz/', '/weekly/thread']) {
+    const r = await run(patched, `${H}${p}`);
+    assert.equal(r.status, 404, p);
+    assert.equal(r.body, '<title>SHELL</title>');
+    assert.equal(r.headers['x-rendered-by'], 'cf-worker-spa-fallback');
+    assert.equal(r.headers['content-type'], 'text/html; charset=utf-8');
+  }
+  for (const p of ['/', '/today', '/today/', '/weekly/thread/thread-abc', '/weekly/country/United%20States', '/analyze/s/abc', '/breaking/ev-1', '/breaking', '/track-record/text', '/briefings', '/__boom']) {
+    const r = await run(patched, `${H}${p}`);
+    assert.equal(r.status, 200, p);
+    assert.equal(r.body, '<title>SHELL</title>');
+  }
+  // HEAD agrees; a bot still gets the pre-render on the routes it is rendered for
+  assert.equal((await run(patched, `${H}/nonexistent-xyz`, { method: 'HEAD' })).status, 404);
+  assert.equal((await run(patched, `${H}/nonexistent-xyz`, { ua: GOOGLEBOT })).status, 404);
+  const bot = await run(patched, `${H}/today/`, { ua: GOOGLEBOT, api: (a) => (a === 'topics' ? { topics: [{ title: 'T1' }] } : null) });
+  assert.equal(bot.status, 200);
+  assert.equal(bot.headers['x-rendered-by'], 'cf-worker-bot');
+});
+
+test('files, redirects and blog pages are not turned into shell 404s', async () => {
+  const file = await run(patched, `${H}/app.js`);
+  assert.equal(file.status, 200);
+  assert.equal(file.body, 'js');
+  assert.equal((await run(patched, `${H}/nope.png`)).body, 'origin 404'); // a missing file is the origin's own 404
+  assert.equal((await run(patched, `${H}/daily`)).status, 301);
+  assert.equal((await run(patched, `${H}/blog/`)).status, 200);
 });
 
 // Baseline vs patched must be identical for everything outside /blog, the retired-route 301s, the root

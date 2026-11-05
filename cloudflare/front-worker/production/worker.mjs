@@ -435,6 +435,18 @@ function botHtmlResponse(html) {
   });
 }
 
+// The client routes: every <Route path> in frontend/src/app/App.jsx except the "*" catch-all. A path that matches none of these
+// (and is not a retired address, a /blog page or a file) gets the SPA shell with a real 404. worker.test.mjs fails when this list
+// and App.jsx differ. ":name" is one path segment, as in the router.
+const APP_ROUTES = [
+  '/', '/today', '/map', '/privacy', '/about', '/disclosures', '/contact', '/daily', '/daily/:dateKey', '/analyze', '/analyze/s/:id',
+  '/membership', '/track-record', '/track-record/text', '/weekly-brief', '/briefings', '/board', '/board/:boardId', '/ops',
+  '/breaking', '/breaking/:id', '/weekly', '/weekly/thread/:threadId', '/weekly/countries', '/weekly/country/:countryName',
+  '/signin', '/auth/callback', '/account', '/whitepaper', '/spider-demo', '/__boom',
+];
+const APP_ROUTE_RES = APP_ROUTES.map((p) => new RegExp(`^${p.split('/').map((seg) => (seg.startsWith(':') ? '[^/]+' : seg)).join('/')}$`));
+const isAppRoute = (pathname) => APP_ROUTE_RES.some((re) => re.test(pathname.replace(/\/+$/, '') || '/'));
+
 // Vite's content-hashed build files (/assets/<name>-<8-char hash>.<ext>): the name changes with the content, so they never go stale.
 const HASHED_ASSET = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9]+$/;
 
@@ -561,16 +573,10 @@ const worker = {
 
     // SPA-aware fallback: any non-asset path (no "." in the last segment) that
     // wasn't already handled above (not /data/*, not /rss, not bot-prerendered)
-    // gets the SPA shell (docs/index.html) with a real 200, not GitHub Pages'
-    // 404 status for an unrecognised path. This covers every client route
-    // (/analyze, /membership, /track-record, /briefings,
-    // /breaking(/:id) (a client redirect since 2026-10-01), /weekly, /weekly/countries,
-    // /signin, /account, /whitepaper, etc.) without enumerating
-    // them, and survives future route additions. A genuinely bogus path still
-    // 200s the shell at the edge — the client router's own catch-all
-    // (`*` -> NotFound in App.jsx) renders the real "not found" UI once the
-    // shell's JS loads; this fix is purely about the HTTP status code a
-    // crawler reads before executing JS.
+    // gets the SPA shell (docs/index.html): status 200 for a client route (APP_ROUTES),
+    // 404 for any other path. Either way the shell is the body, so the client router's
+    // catch-all (`*` -> NotFound in App.jsx) still renders the "not found" UI; the status
+    // is what a crawler reads before executing JS.
     const lastSegment = url.pathname.split('/').pop() || '';
     const looksLikeAsset = lastSegment.includes('.');
     if (request.method === 'GET' && !looksLikeAsset) {
@@ -578,7 +584,7 @@ const worker = {
       const shellRes = await fetch(shellUrl.toString(), request);
       if (shellRes.ok) {
         return new Response(shellRes.body, {
-          status: 200,
+          status: isAppRoute(url.pathname) ? 200 : 404,
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'public, max-age=0, must-revalidate',

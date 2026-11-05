@@ -32,7 +32,9 @@ or `wrangler versions list`); it is not recorded here.
 - `HEAD` answers exactly as `GET` does (status and headers), without the body, for every path.
 - Content-hashed build files (`/assets/<name>-<hash>.<ext>`) are served `Cache-Control: public, max-age=31536000, immutable`; every other
   response keeps the origin's headers (HTML, `config.js`, `/data` are unchanged).
-- Everything else falls back to the SPA shell.
+- Everything else falls back to the SPA shell: status 200 for a client route, status 404 for any other path (no route, redirect, file or blog page).
+  The route list is `APP_ROUTES` in `worker.mjs`; `worker.test.mjs` fails when it differs from the `<Route path>` values in `src/app/App.jsx`,
+  so adding or removing a route there means editing that list in the same commit.
 
 ## Tests
 

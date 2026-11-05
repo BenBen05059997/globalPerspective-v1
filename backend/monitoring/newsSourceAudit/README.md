@@ -1,6 +1,6 @@
 # newsSourceAudit
 
-Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 6) live topics it rates source robustness (none / single / low / corroborated), fetches up to 3 source articles, and asks an LLM whether our cached summary drifts from them (hedge turned into assertion, invented result, added framing). Logs every verdict; sends an SNS alert when drift count reaches `DRIFT_ALERT_THRESHOLD` (default 2). Self-contained port of `quality/analysis/source_check.mjs`.
+Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 6) live topics it rates source robustness (none / single / low / corroborated), fetches up to 3 source articles, and asks an LLM whether our cached summary drifts from them (hedge turned into assertion, invented result, added framing). Logs every verdict. Since 2026-11-06 (about 00:15 JST, operator) the live Lambda has no `SNS_TOPIC_ARN`, so it **emails nothing**: the `[audit]` log lines are the output, and the `/ops` Quality panel (newsHealth) reads them. The code still publishes to SNS when drift reaches `DRIFT_ALERT_THRESHOLD` (default 2) or any audit errors occur, but only when `SNS_TOPIC_ARN` is set (the send is guarded by `&& TOPIC_ARN`). Self-contained port of `quality/analysis/source_check.mjs`.
 
 ## Deployment
 - Deployed name `newsSourceAudit` · runtime `nodejs22.x` · group `monitoring` (scripts/functions.json)
@@ -10,7 +10,8 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 ## Reads / writes
 - `PROXY_ENDPOINT` (public proxy actions `topics`, `summary`)
 - External: each topic's source URLs (article fetch, 15s timeout)
-- SNS: publishes to `SNS_TOPIC_ARN` when the threshold is hit
+- SNS: publishes to `SNS_TOPIC_ARN` only when that env is set (live: not set since 2026-11-06, so no send)
+- CloudWatch Logs: the `[audit]` lines in `/aws/lambda/newsSourceAudit`, read by newsHealth
 - No S3 or DynamoDB writes
 
 ## Models
@@ -19,7 +20,7 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 ## Gotchas
 - The rule is named `...Daily` but runs Mon/Wed/Fri only.
 - With no fetchable article it audits against source snippets instead.
-- LLM/proxy/missing-summary/source-text failures count as `auditErrors`, never drift. Later topics still run; the result separates attempted `checked`, completed `audited`, drift and error counts. Any audit error emits a failed-run marker and an SNS failure report (when configured), independently of the drift threshold. SNS failure throws.
+- LLM/proxy/missing-summary/source-text failures count as `auditErrors`, never drift. Later topics still run; the result separates attempted `checked`, completed `audited`, drift and error counts. Any audit error emits a failed-run marker and, when `SNS_TOPIC_ARN` is set, an SNS failure report, independently of the drift threshold. An SNS failure throws (not reachable live while the topic is unset).
 
 ## Tests
 - `node --test backend/monitoring/newsSourceAudit/test/*.test.js` (mocked proxy/model/SNS; no live calls).

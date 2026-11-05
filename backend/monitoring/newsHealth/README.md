@@ -86,6 +86,7 @@ Deployed 2026-11-06 about 00:00 JST: `newsRecover` (role, function, no schedule;
 aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout
 # 2. HEAL=on: fetch the env, merge HEAL=on, write the full map (temp file; keep WORLD_BUCKET and CF_ANALYTICS_TOKEN)
 ```
+Planned with step 2 (operator, 2026-11-06; not done): once `HEAL=on`, disable the rule `TriggerFreshnessMonitor` (the `/ops` page and the heal pass then cover a stale feed). The `/ops` Quality panel already replaced the `newsErrorDigest` email (`TriggerErrorDigest` DISABLED 2026-11-06) and reads the `[audit]` log lines of `newsSourceAudit`, which no longer emails.
 Read-only preview from a laptop (no S3 write, no invoke): `HEAL=dry node index.js --dry` in `src/` (needs `npm install` there for the SDK clients).
 
 ## Deployment

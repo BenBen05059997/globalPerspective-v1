@@ -38,7 +38,7 @@
           "via": "events",
           "name": "TriggerBreakingAlert",
           "expr": "cron(45 4/8 * * ? *)",
-          "state": "ENABLED"
+          "state": "DISABLED"
         }
       ]
     },
@@ -138,7 +138,7 @@
           "via": "events",
           "name": "TriggerErrorDigest",
           "expr": "cron(15 0/6 * * ? *)",
-          "state": "ENABLED"
+          "state": "DISABLED"
         }
       ]
     },

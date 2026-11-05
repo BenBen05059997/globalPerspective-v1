@@ -1,31 +1,30 @@
 # monitoring
 
-This group watches the site and the pipeline and tells the operator when something is wrong. (The impact audit, newsImpactAudit, was removed 2026-11-01.) It serves only the operator:
-publishers use the SNS topic `GlobalPerspectiveAlerts`. None of these Lambdas changes site content, and a quiet
-run sends nothing. There are no CloudWatch alarms and the operator does not want pipeline alarms (no per-stage, per-Lambda, 402 or record alarms; do not create any without a fresh request); the hourly `newsHealth` view replaces them. The SNS topic `GlobalPerspectiveAlerts` stays for the four monitor Lambdas below (env `SNS_TOPIC_ARN`). The client-error CORS config now lives with [newsClientErrors](../read-api/newsClientErrors/README.md).
+This group watches the site and the pipeline and tells the operator when something is wrong. (The impact audit, newsImpactAudit, was removed 2026-11-01.) It serves only the operator.
+None of these Lambdas changes site content, and a quiet run sends nothing. Alert email goes through the SNS topic `GlobalPerspectiveAlerts`; since 2026-11-06 the operator has cut it back (the `/ops` page now shows what the emails used to say): the error digest is switched off, the source audit no longer publishes, the freshness monitor is still on but planned to be switched off, and the model guard's DeepSeek balance email is the one that stays. There are no CloudWatch alarms and the operator does not want pipeline alarms (no per-stage, per-Lambda, 402 or record alarms; do not create any without a fresh request); the hourly `newsHealth` view replaces them. The live env `SNS_TOPIC_ARN` is set on newsFreshnessMonitor, newsModelGuard and newsErrorDigest (disabled), and not on newsSourceAudit. The client-error CORS config now lives with [newsClientErrors](../read-api/newsClientErrors/README.md).
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → **10 Watch**
-This folder is stage 10: model guard, freshness monitor, error digest, audits, health view. Timeline: writes no facts or readings; Run objects are the record's own signal and the operator does not want pipeline alarms (2026-10-31). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 10: model guard, freshness monitor, error digest (disabled), audits, health view. Timeline: writes no facts or readings; Run objects are the record's own signal and the operator does not want pipeline alarms (2026-10-31). See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture
 
 | Lambda | What it does | README |
 |---|---|---|
-| newsErrorDigest | Folds browser error rows into fingerprints and alerts on new or spiking ones. | [README](newsErrorDigest/README.md) |
-| newsFreshnessMonitor | Alerts when the topics feed is stale or the proxy fails; once a day also checks the prediction-settling flow. | [README](newsFreshnessMonitor/README.md) |
+| newsErrorDigest | DISABLED (2026-11-06): rule off; the `/ops` Quality panel covers client errors. Folds browser error rows into fingerprints and alerts on new or spiking ones. | [README](newsErrorDigest/README.md) |
+| newsFreshnessMonitor | Still ENABLED; planned to be disabled once newsHealth `HEAL=on` (not done). Alerts when the topics feed is stale or the proxy fails; once a day also checks the prediction-settling flow. | [README](newsFreshnessMonitor/README.md) |
 | newsHealth | Hourly: writes the public pipeline panel (`record/views/health.json`) and the private money panel (`monitoring/ops.json`); with `HEAL=on` it also re-runs a missing day's agent once and recovers the day from public records (phase 4). | [README](newsHealth/README.md) |
-| newsModelGuard | Checks the DeepSeek balance and flags retired or unknown model ids in other Lambdas' env. | [README](newsModelGuard/README.md) |
-| newsSourceAudit | Compares the top live summaries against their source articles and counts drift. | [README](newsSourceAudit/README.md) |
+| newsModelGuard | The one alert email kept. Checks the DeepSeek balance and flags retired or unknown model ids in other Lambdas' env. | [README](newsModelGuard/README.md) |
+| newsSourceAudit | Compares the top live summaries against their source articles and counts drift; logs `[audit]` lines that `/ops` reads and, with no `SNS_TOPIC_ARN` (since 2026-11-06), emails nothing. | [README](newsSourceAudit/README.md) |
 
 ## Pipeline
 
 1. Readers' browsers post uncaught errors to newsClientErrors (read-api group), which counts them per day and fingerprint.
-2. Every 6 hours newsErrorDigest compares those counts with its last run and alerts on new or growing fingerprints. Its first run only stores a baseline.
-3. Every 2 hours newsFreshnessMonitor calls the public topics action and alerts once on an unhealthy transition and once on recovery (dedupe kept in the S3 marker) when it fails or is older than `STALE_HOURS`. The 12:30 UTC run also sends the settle alert if the weekly prediction flow is behind (read from the record's track-record view, manifest and the resolver's heartbeat, `SETTLE_SOURCE=record`, decision 0052; the old snapshot-file source through the removed `prediction_track_record` action no longer works).
+2. newsErrorDigest used to compare those counts every 6 hours and alert on new or growing fingerprints; its rule `TriggerErrorDigest` has been DISABLED since 2026-11-06, and the `/ops` Quality panel (newsHealth) reads the same table (client errors per page against the 14-day median).
+3. Every 2 hours (rule ENABLED; planned to be disabled once newsHealth `HEAL=on`, which has not happened) newsFreshnessMonitor calls the public topics action and alerts once on an unhealthy transition and once on recovery (dedupe kept in the S3 marker) when it fails or is older than `STALE_HOURS`. The 12:30 UTC run also sends the settle alert if the weekly prediction flow is behind (read from the record's track-record view, manifest and the resolver's heartbeat, `SETTLE_SOURCE=record`, decision 0052; the old snapshot-file source through the removed `prediction_track_record` action no longer works).
 4. At 12:00 UTC newsModelGuard checks the DeepSeek balance and the model ids set on every Lambda.
-5. On Monday, Wednesday and Friday newsSourceAudit audits the top live topics against their sources.
+5. On Monday, Wednesday and Friday newsSourceAudit audits the top live topics against their sources and logs the verdicts for `/ops`; it sends no email.
 
 ## Shared code
 
@@ -35,10 +34,10 @@ This folder is stage 10: model guard, freshness monitor, error digest, audits, h
 
 ## Known limits
 
-- newsErrorDigest scans the whole errors table on every run.
+- newsErrorDigest (when enabled) scans the whole errors table on every run.
 - newsModelGuard's "days left" line uses a fixed burn rate in code, not real spend.
 - newsFreshnessMonitor needs its S3 marker (see its README); live `STALE_HOURS` is 9, the code default too.
-- newsSourceAudit's rule name says Daily but runs three days a week.
+- newsSourceAudit's rule name says Daily but runs three days a week. Its drift alert needs `SNS_TOPIC_ARN`, which is unset live.
 
 ## How to check it
 

@@ -1,6 +1,8 @@
 # newsBreakingAlert
 
-Each pipeline cycle: groups the latest topics into stories by `threadId`, scores each deterministically
+**Paused 2026-11-06 (operator): the rule `TriggerBreakingAlert` is DISABLED (about 00:25 JST), so this Lambda does not run, and the live env is `DRY_RUN=true` (set about 00:20 JST), so it would send no email even if invoked.** The operator switched it off fully to rethink the breaking feature (a redesign; "we rethink it later"). Before the pause `DRY_RUN` was `false` and it had emailed the operator 7 proposals, none of them confirmed. The code, the alerts table and `review.js` stay; the site's bell and strip are being unmounted in a separate frontend change that is not released yet. Subscriber breaking and drift emails were already DISABLED (`TriggerBreakingEmailSend`, `TriggerDriftEmailSend`); the weekly subscriber email (`TriggerWeeklyEmailSend`) is a different job and is unchanged.
+
+What it does when run (each pipeline cycle): groups the latest topics into stories by `threadId`, scores each deterministically
 (`src/significance.js`: sources, topic count, region risk, velocity; continuations
 face a raised bar), picks at most ONE un-deduped story above the threshold, renders an email
 (`src/render.js`) and writes a `status: 'proposed'` row. With `DRY_RUN` off and `RESEND_API_KEY` set it
@@ -8,7 +10,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 
 ## Deployment
 - Deployed name `newsBreakingAlert` · runtime `nodejs22.x` · group `distribution` (scripts/functions.json)
-- Trigger: EventBridge rule `TriggerBreakingAlert` `cron(45 4/8 * * ? *)` (UTC, ENABLED). It runs at :45, not :35, so it reads the record after the :35 `TriggerStoryRecordRefresh` has finished (about 50 s); at :35 it read at :35:18 and got the previous run
+- Trigger: EventBridge rule `TriggerBreakingAlert` `cron(45 4/8 * * ? *)` (UTC, **DISABLED** since 2026-11-06 about 00:25 JST). When enabled it runs at :45, not :35, so it reads the record after the :35 `TriggerStoryRecordRefresh` has finished (about 50 s); at :35 it read at :35:18 and got the previous run
 - Deploy: `scripts/lambda.sh newsBreakingAlert diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes
@@ -19,8 +21,8 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row `sent`. Th
 - env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054); live value `record`. `record` reads the topic pool (`latest`) from the record's view `index/today.json` and DynamoDB when it cannot answer; `compare` logs and decides from DynamoDB. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` follow `NOTES_READS` (0053). `TOPIC#` rows (summary, prediction, cause) and the alerts table stay in DynamoDB. Needs `s3:GetObject` on `record/views/*` (role `newsBreakingAlert-role`).
 
 ## Gotchas
-- `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.
-- Live it emails the operator when `DRY_RUN` is off, but the alert stays hidden from readers until `backend/distribution/cli/breaking/review.js` sets it `confirmed`.
+- `DRY_RUN` defaults ON: anything other than the string `false` sends nothing. Live it is `true` (since 2026-11-06), and the rule is disabled besides.
+- With `DRY_RUN=false` (the setting before the pause) it emails the operator, but the alert stays hidden from readers until `backend/distribution/cli/breaking/review.js` sets it `confirmed`. Enabling the rule or turning `DRY_RUN` off again is the operator's call and part of the redesign.
 - A failed proposal Put emails nothing, logs `[pipeline-status]` `failed` (`reason: proposal-write-failed`) and rethrows past the handler's `{ ok: false }` envelope, so Lambda `Errors` and the stage 7 failed-run filter both move. Every other error still returns `{ ok: false, error }`.
 - `placeFilter` (`usableCountryRecord`) comes from `backend/shared/src` through the `src/_shared` symlink.
 - Tune via `SIGNIFICANCE_THRESHOLD` (code default 2.0). `node index.js` runs a local pass against prod tables (writes the proposal row).

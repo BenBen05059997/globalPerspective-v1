@@ -25,15 +25,19 @@ describe('oldestSource', () => {
   });
 });
 
-describe('alertStackItems lists one event once', () => {
+describe('alertStackItems lists one row per situation', () => {
   const NOW = Date.parse('2026-11-03T06:00:00Z');
   const s = (id, over = {}) => ({ id, tier: 'high', state: 'peak', centroid: { lat: 1, lon: 1 }, last_change_at: '2026-11-03T05:00:00Z', threadId: null, ...over });
-  it('keeps the first situation of a thread (by rank) and drops the same thread\'s other-country rows', () => {
+  it('keeps two different events that share a story thread as two rows (US midterms vs Israel reaction)', () => {
     const items = alertStackItems([
-      s('news#IRN#t1', { threadId: 't1', tier: 'moderate' }), s('news#USA#t1', { threadId: 't1', tier: 'high' }),
-      s('news#IRN#t1b', { threadId: 't1', tier: 'low' }), s('news#x', { threadId: null }), s('news#y', { threadId: null }),
+      s('news#USA#t1', { threadId: 't1', tier: 'high' }),
+      s('news#ISR#t1', { threadId: 't1', tier: 'moderate' }),
+      s('news#x', { threadId: null }),
     ], NOW).items.map((x) => x.id);
-    expect(items).toEqual(['news#USA#t1', 'news#x', 'news#y']);
+    expect(items).toEqual(['news#USA#t1', 'news#x', 'news#ISR#t1']);
+  });
+  it('a Qeshm-style event is one situation (the tracker merged it), so it is one row', () => {
+    expect(alertStackItems([s('news#conflict#IRN#qeshm', { threadId: 't1', threadIds: ['t1', 't2'] })], NOW).items).toHaveLength(1);
   });
   it('lists situations without a thread each time', () => {
     expect(alertStackItems([s('a'), s('b'), s('c')], NOW).items).toHaveLength(3);

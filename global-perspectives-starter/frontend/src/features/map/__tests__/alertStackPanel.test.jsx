@@ -52,17 +52,17 @@ describe('map console — desktop alert stack (R4a)', () => {
     expect(within(stack).getByText(/1 open situation not updated in 30\+ days/)).toBeInTheDocument();
   });
 
-  it('every count (Alerts header, All situations back button, About list) is the Alerts row count after the one-thread rule', async () => {
+  it('every count (Alerts header, All situations back button, About list) is the Alerts row count with two situations on one thread', async () => {
     const A = { ...NEWS, id: 'news#a', threadId: 't1', affected_names: ['United States'] };
     const B = { ...NEWS, id: 'news#b', threadId: 't1', tier: 'elevated', affected_names: ['Iran'], verb_label: 'Iran — strike' };
     SITUATIONS = [A, B, GDACS];
     await renderHome();
     const stack = screen.getByRole('region', { name: 'Alerts' });
-    expect(within(stack).getAllByRole('button')).toHaveLength(2);
-    expect(within(stack).getByText(/2 open/)).toBeInTheDocument();
+    expect(within(stack).getAllByRole('button')).toHaveLength(3);
+    expect(within(stack).getByText(/3 open/)).toBeInTheDocument();
     fireEvent.click(within(stack).getByText('Mexico — tropical cyclone').closest('button'));
-    expect(screen.getAllByText(/← All situations \(2\)/).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/← All situations \(3\)/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/← All situations \(3\)/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/← All situations \(2\)/)).not.toBeInTheDocument();
   });
 
   it('an ellipsized place name keeps its full text in a title', async () => {

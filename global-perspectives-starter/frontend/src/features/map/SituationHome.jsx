@@ -277,8 +277,8 @@ export default function SituationHome() {
     [situations],
   );
   const alertStack = useMemo(() => alertStackItems(situations), [situations]);
-  // ONE open count for every "All situations (N)", "N open" and badge: the Alerts rows, which already
-  // apply the one-row-per-thread rule (lib/alertStack.js). Don't recount from `open` / `ranked`.
+  // ONE open count for every "All situations (N)", "N open" and badge: the Alerts rows. Same filter
+  // as `open` (tier chips, list), so they agree; don't recount elsewhere.
   const openCount = alertStack.items.length;
   const ranked = useMemo(() => {
     return [...open].sort((a, b) => {
@@ -289,10 +289,6 @@ export default function SituationHome() {
     });
   }, [open]);
   const hero = ranked[0] || null;
-  const listedRanked = useMemo(() => {
-    const ids = new Set(alertStack.items.map((s) => s.id));
-    return ranked.filter((s) => ids.has(s.id));
-  }, [ranked, alertStack]);
 
   // "Since you last looked" — compare each situation's opened_at against the last visit stamp
   // (this browser only). v1 is new-only; "escalated since your visit" needs a tier_changed_at
@@ -965,7 +961,7 @@ export default function SituationHome() {
   const aboutContent = (
     <MapAbout
       paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}
-      ranked={listedRanked} onSelect={select} coverageNote={isPhone ? null : coverageNote}
+      ranked={ranked} onSelect={select} coverageNote={isPhone ? null : coverageNote}
     />
   );
   const staleBanner = stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null;

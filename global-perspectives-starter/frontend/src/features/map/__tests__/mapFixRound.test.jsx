@@ -230,12 +230,12 @@ describe('Alerts is the one situations list; Intel keeps only stories', () => {
     expect(within(intel()).queryByText('Topic that is a situation')).toBeNull();
     expect(within(intel()).getByText('A plain story')).toBeInTheDocument();
   });
-  it('every plotted situation is in Alerts as a keyboard-reachable button (one thread listed once)', async () => {
+  it('every plotted situation is in Alerts as a keyboard-reachable button (a same-thread sibling keeps its own row)', async () => {
     await renderAt('/');
     const cards = within(alerts()).getAllByRole('button').filter((b) => b.classList.contains('al-card'));
     const titles = cards.map((b) => within(b).getByText(/—|quiet/).textContent);
     expect(titles).toEqual(expect.arrayContaining(['Mexico — tropical cyclone', 'Ukraine — fighting spreads', 'A quiet one']));
-    expect(titles).not.toContain('Ukraine — dup of the same thread'); // same thread: one row
+    expect(titles).toContain('Ukraine — dup of the same thread'); // same thread, own situation: own row
     for (const b of cards) { expect(b.tabIndex).toBeGreaterThanOrEqual(0); expect(b.tagName).toBe('BUTTON'); }
     fireEvent.click(cards[0]);
     expect(document.querySelector('.sh-detail-title')).toHaveTextContent('Ukraine — fighting spreads');

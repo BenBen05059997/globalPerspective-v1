@@ -54,10 +54,10 @@ describe('grouped situations — pure lookups', () => {
     expect(situationForThread(WORLD.situations, 'thread-b').id).toBe(GROUPED.id);
     expect(situationForThread(WORLD.situations, 'thread-none')).toBeNull();
   });
-  it('Alerts lists a thread once even when two situations share it only through threadIds[]', () => {
+  it('Alerts keeps a separate row for a situation that only shares a thread through threadIds[]', () => {
     const other = { ...LONE, id: 'news#USA#thread-b', threadId: 'thread-b', last_change_at: '2026-11-01T00:00:00.000Z', tier: 'moderate' };
     const { items } = alertStackItems([GROUPED, other, LONE], Date.parse('2026-11-03T06:00:00Z'));
-    expect(items.map((s) => s.id)).toEqual([GROUPED.id, LONE.id]);
+    expect(items.map((s) => s.id).sort()).toEqual([GROUPED.id, LONE.id, other.id].sort());
   });
   it('Intel drops a topic whose thread a grouped situation carries in threadIds[]', () => {
     const topics = [{ topicId: 't1', threadId: 'thread-b', title: 'x' }, { topicId: 't2', threadId: 'thread-z', title: 'y' }];

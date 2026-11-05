@@ -1,4 +1,4 @@
-# Costs: what the site spends, why, and how to check (2026-11-04)
+# Costs: what the site spends, why, and how to check (2026-11-05)
 
 Read this first, then check the code. Numbers are from Cost Explorer and our own `[usage]` logs on the dates given;
 they go stale, so re-run the recipe in section 6 before quoting them.
@@ -19,9 +19,27 @@ AWS, Cost Explorer `UnblendedCost`, run 2026-11-04 (ap-northeast-1 account):
 | Cost Explorer | 0.05 | 0.13 | ~0 |
 | Lambda | 0.00 | ~0 | 0.00 |
 
-Nov daily by usage type (the S3 line is `APN1-Requests-Tier1`, PUT/COPY/POST/LIST): Nov 1 $0.45, Nov 2 $0.28, Nov 3 $0.24.
-Next biggest: DynamoDB `APN1-ReadRequestUnits` $0.07 / $0.06 / $0.08. S3 was about 74% of the Nov 1-3 total ($1.07 of $1.45).
-The 2026-11-04 digests fix is not in these days yet.
+The table above is the 2026-11-04 pull. Cost Explorer settles late: Nov 3 read $0.24 then and $0.29 on 2026-11-05.
+Next biggest in Nov: DynamoDB `APN1-ReadRequestUnits` $0.06-0.08 a day. S3 was about 74% of the Nov 1-3 total ($1.07 of $1.45).
+
+### S3 by usage type, per UTC day (Cost Explorer, 2026-11-05)
+
+The S3 cost is `APN1-Requests-Tier1` (PUT/COPY/POST/LIST, about $0.0047 per 1,000). GET (`Tier2`) is about $0.02-0.03 a day;
+storage is under $0.01 a day.
+
+| UTC day | Tier1 requests | Tier1 cost |
+|---|---|---|
+| Oct 29 | 10,624 | $0.05 |
+| Oct 30 | 8,196 | - |
+| Oct 31 | 581,939 (plus 4,995,380 GET) | $4.58, one-off |
+| Nov 1 | 95,782 | $0.45 |
+| Nov 2 | 59,793 | $0.28 |
+| Nov 3 | 61,221 | $0.29 |
+| Nov 4 | 46,491 | $0.22 |
+
+Oct 31 is the record-migration day: 27 `newsStoryRecord` invocations (about 20 manual) plus the local backfill and replay CLIs.
+That is inferred from git and invocation counts, not measured (there is no CloudTrail data-event log).
+Nov 1-4 are mostly `newsStoryRecord` view rewrites; the digests (section 4, rule 1) are what stops them (see below).
 
 DeepSeek (the model provider) is not on the AWS bill. It is estimated from our own usage logs: about $0.10-0.40 on a normal
 day, about $2.40 on the Monday weekly-review day (review on Pro), about $6-10 a month before the 2026-11-04 switch to Flash (decision [0056](../decisions/0056-models-by-measured-quality.md)); about $2-3 expected after it. List prices, per million tokens
@@ -33,12 +51,30 @@ estimate is an upper bound).
 
 | Cost | Mechanism | File / decision |
 |---|---|---|
-| S3 write requests (about 70% of AWS in early Nov; about 100,000 PUTs a day) | `newsStoryRecord` rewrote about 9,000 view files per run, 6 runs a day. Fixed 2026-11-04: a view is written only when its md5 changed. | `backend/record/newsStoryRecord/src/digests.js`; decision 0037, "Amended 2026-11-04" |
-| Other S3 requests (about 40-85k a day, **not yet attributed**) | Suspects: `newsSituationTracker` (every 30 min) writing every situation file each run; the `record/shadow/` prefixes. | to find (section 5) |
+| S3 write requests (about 70% of AWS in early Nov; 46,491 Tier1 on Nov 4) | `newsStoryRecord` rewrote about 9,000 view files per run, 6 runs a day. Fixed in two steps, see "S3 writers on 2026-11-04" below. | `backend/record/newsStoryRecord/src/digests.js`; decision 0037, "Amended 2026-11-04" |
 | DynamoDB (about $9-10 a month in Sep-Oct; $0.24 in 3 days of Nov) | The old world tables, read and written until decision 0035 step 5 retires them. Table TTL is disabled, so rows only grow. | decision 0035; `STEP5_AUDIT.md` |
 | CloudWatch ($5-6 a month in Sep-Oct) | Alarms and custom metrics. The alarms were removed 2026-11-02 (operator decision). Nov shows about $0. | section 4 |
 | DeepSeek | The weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, now Flash, about 4 times cheaper per call) was about half of model spend. The rest is `newsAgent` (Flash for summaries, Pro for forecasts) and the analysis Lambdas. | `ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Lambda, API Gateway, SQS | Cents. | |
+
+### S3 writers on 2026-11-04 (46,491 Tier1 requests)
+
+| Writer | Requests | How known |
+|---|---|---|
+| `newsStoryRecord` views | about 41,500 | 23,012 logged by `[views] wrote N of M` across 6 runs, plus about 18,500 from the 04:35 and 05:20 UTC runs, which ran the old code (every view written, no count logged): an estimate from run duration |
+| `newsSituationTracker` | about 2,050 | 48 runs x about 43 puts; it rewrites every state file each run |
+| `newsSituationIngest` | 1,992 | 24 runs x 83, measured |
+| `newsGdacsIngest` | 144 | |
+| everything else | about 250 | |
+| unattributed | about 600 (1.3%) | |
+
+The earlier "40-85k requests a day not attributed, suspect the situations tracker" was wrong: it was the record's own view
+writes. The tracker is about 4% of the day.
+
+Fixes in place: (1) digests, so a view is written only when changed (deployed 2026-11-04 20:53 JST); (2) from 2026-11-05
+about 09:00 JST the digest leaves out the daily `builtFrom` stamp (commit 8cd2267d), because the nightly run on 11-04 23:46 UTC
+still wrote 9,293 of 9,293. Expected after both: `newsStoryRecord` a few hundred writes a day instead of about 40-55k, saving
+about $6 a month. **Not yet measured:** the first clean day to confirm it is 2026-11-06 (UTC).
 
 ## 3. Where to look
 
@@ -93,7 +129,7 @@ estimate is an upper bound).
 
 | Step | Expected effect |
 |---|---|
-| Find the remaining S3 writers; make the situations tracker rewrite only when content changed (same digest idea) | Most of the S3 line that remains after the 11-04 fix |
+| Confirm 2026-11-06 shows `newsStoryRecord` at a few hundred writes (section 6, recipe 4) | About -$6 a month, from the digest fixes already deployed |
 | Retire the DynamoDB world tables (decision 0035 step 5) | About -$2.50 a month by the coordinator's estimate (Nov 1-3 run-rate: $0.24 in 3 days) |
 | Move the four jobs from Pro to Flash after tests (0056): review, systems, daily brief and `newsIngest` done 2026-11-04 | About -$4 to 7 a month of model spend (estimate from the test reports, not yet measured live) |
 | Items vs stories: a one-entry item gets no forecasts, links or analysis | An estimated third to half off model spend |
@@ -101,9 +137,14 @@ estimate is an upper bound).
 
 Expected end state: AWS about $2-3 a month, DeepSeek about $2-3 a month with the Flash switches (less if items vs stories lands).
 
+After that about 4,400 Tier1 a day is left from the non-record writers, about $0.66 a month. Not worth building now:
+tracker skip-unchanged (about 1,200 a day, about $0.18 a month; first check whether anything reads `last_checked_at` in
+`situations/state/*.json`), ingest skip-unchanged (guess $0.08-0.15 a month), GDACS (about $0.02 a month).
+
 ## 6. How to check a cost claim
 
 1. A day by usage type: `aws ce get-cost-and-usage --time-period Start=2026-11-03,End=2026-11-04 --granularity DAILY --metrics UnblendedCost --group-by Type=DIMENSION,Key=USAGE_TYPE` (swap the key for `SERVICE` for a service view; each call is $0.01).
 2. Model spend: Logs Insights over `/aws/lambda/news*`, `filter @message like /\[usage\]/ | parse @message '[usage] *' as j | stats count(*) by bin(1d)`, then sum the tokens per `fn` and `model` from `j` (fields `fn`, `step`, `model`, token counts) and price them with `prices.json`.
 3. Or read `monitoring/ops.json`: `aws.days`, `aws.monthToDate`, `deepseek.days`, `deepseek.yesterday`, `deepseek.monthToDate`, `unitCosts.days`, `unitCosts.weeklyReview`, and `errors`/`error` fields for a source that failed.
-4. S3 request counts by prefix are not available from Cost Explorer; use S3 server access logs or CloudTrail data events on a short window (both cost money; operator yes).
+4. S3 requests per day: `aws ce get-cost-and-usage --time-period Start=2026-11-05,End=2026-11-06 --granularity DAILY --metrics UsageQuantity UnblendedCost --group-by Type=DIMENSION,Key=USAGE_TYPE --filter '{"Dimensions":{"Key":"SERVICE","Values":["Amazon Simple Storage Service"]}}'` (read `APN1-Requests-Tier1`), then the `newsStoryRecord` `[views] wrote N of M` log lines summed per UTC day (Logs Insights over `/aws/lambda/newsStoryRecord`). Other writers are the run count times the puts per run read from the code.
+5. S3 requests by prefix are not in Cost Explorer; that needs S3 server access logs or CloudTrail data events on a short window (both cost money; operator yes).

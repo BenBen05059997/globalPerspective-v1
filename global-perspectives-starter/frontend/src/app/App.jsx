@@ -12,6 +12,7 @@ import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
+import { PageViewBridge } from '@/app/pageViews';
 import {
   BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute, AnalyzeRedirect,
 } from '@/app/LegacyRedirects';
@@ -115,6 +116,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter basename={basename}>
         <AuthBridge />
+        <PageViewBridge />
         <Layout>
           <ErrorBoundary>
           <Suspense fallback={<RouteFallback />}>

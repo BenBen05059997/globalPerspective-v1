@@ -10,6 +10,9 @@ retired addresses. Every page itself lives in a folder under `features/`.
   so `shared/api/restProxy.js` knows the one backend door. It also adds a console test hook, `window.testProxyGeocode`.
 - `App.jsx` wraps everything in `AuthProvider` and a router, then `Layout`, `ErrorBoundary`, `Suspense` and the `Routes`.
   `AuthBridge` hands Firebase's `getIdToken` to `restProxy` so gated requests carry the token.
+- `pageViews.jsx` - `PageViewBridge` sends the Google Analytics `page_view` (`index.html` sets `send_page_view:false`): one per route,
+  once the page has set `document.title` (or after 1.5 s if it keeps its title), so views carry the route's title.
+  The Worker route list (`APP_ROUTES` in `cloudflare/front-worker/production/worker.mjs`) must match the `<Route path>` values here.
 - Lazy pages: every page except Today (`features/home`, eager) is `lazy(import(...))`, a chunk fetched on first visit.
   While a chunk loads, `RouteFallback` shows the shared `BootLoader` (full-screen sensor list on `/`, inline elsewhere).
   `removeStaticBoot()` hands off from the pre-JS boot screen in `index.html`.

@@ -24,7 +24,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../..');
 const FN_DIR = 'backend/pipeline/NewsProjectInvokeAgentLambda';
 const OLD_FN_DIR = 'amplify/backend/function/NewsProjectInvokeAgentLambda'; // its path at OLD_REF, before the move to backend/
-const FN = 'NewsProjectInvokeAgentLambda-dev';
+const FN = 'newsAgent';
 const REGION = 'ap-northeast-1';
 const OLD_REF = process.env.OLD_REF || '0ef24cf'; // last commit with the two-call job
 const HELD = process.argv.some((a) => a.startsWith('--days='));

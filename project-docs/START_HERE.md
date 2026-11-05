@@ -31,7 +31,7 @@ Step 5, retire the DynamoDB world tables (operator 2026-10-31): flags, blockers 
 - Forecast loop ([0055](decisions/0055-sampled-first-and-record-gap-void.md), deployed 4 Nov): watch the resolver logs for `sampled`, `others`, `overflow`. Record gaps 13-14 Oct and 21-24 Oct.
 - Models ([0056](decisions/0056-models-by-measured-quality.md)): review, systems analysis, daily brief and `newsIngest` (since 2026-11-04) on Flash; country briefings, forecasts and the weekly brief stay on Pro. The review canary on 25 live W44 stories found uncited "pending" clauses, so the prompt is review-5; gates passed on Flash.
 - Still on the old path: the Sunday digest (`TriggerWeeklyBrief`, `TriggerWeeklyEmailSend`); `TriggerSelectionShadow` is still ENABLED (04:20/12:20/20:20 UTC) past its planned end; `newsIngest` was redeployed 2026-11-04 (commit c9948088), so the deployed zip is no longer older than the repo.
-- The four old-name Lambdas (`newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsPostDevTo`, `newsSensitiveData-dev`) still exist, unscheduled and deploy-blocked, until the operator deletes them. Schedule names and env `GROK_*`/`XAI_*` are not renamed yet (STEP5_AUDIT).
+- Old-name Lambdas: `newsInvokeGemini-dev` and `NewsProjectInvokeAgentLambda-dev` were deleted 2026-11-05 (operator yes); `newsPostDevTo` and `newsSensitiveData-dev` still exist, unscheduled and deploy-blocked, until the operator deletes them. Schedule names and env `GROK_*`/`XAI_*` are not renamed yet (STEP5_AUDIT).
 - Open PRs #40-#44 (frontend dependencies, held for a release day) and #45-#49 (security, accessibility, docs fixes), read 2026-11-04.
 
 Waiting on the operator:

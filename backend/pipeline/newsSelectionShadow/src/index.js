@@ -1,7 +1,7 @@
 'use strict';
 
 // newsSelectionShadow — shadow week for the layered story selector (plan P7, B2). Runs 5 min after each topic selection
-// (newsInvokeGemini-dev, 04:15 / 12:15 / 20:15 UTC) and logs what the layered selector WOULD have picked next to what
+// (newsIngest, 04:15 / 12:15 / 20:15 UTC) and logs what the layered selector WOULD have picked next to what
 // was published. Writes only audit/selection-shadow/; nothing on the site reads it.
 //   1. candidates: story-scan corpus for the 8 hours before this run (same window as predictions/jev-backtest)
 //   2. GDACS Red/Orange events tag disaster stories outlets already report (situations/state/gdacs_*)

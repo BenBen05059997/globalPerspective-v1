@@ -7,7 +7,7 @@
 #   scripts/lambda.sh <name> rollback            # PROD MUTATION: re-upload the newest backup, confirm sha
 #
 # <name> is the deployed name or the repo folder name (scripts/functions.json maps them; e.g. newsInvokeGemini ->
-# newsInvokeGemini-dev, repo dir backend/pipeline/newsInvokeGemini). deploy/rollback need the same authorization
+# newsIngest, repo dir backend/pipeline/newsInvokeGemini). deploy/rollback need the same authorization
 # as any `aws lambda update-function-code` (see CLAUDE.md "Authorization"); the script never decides that for you.
 #
 # Package: copies <dir>/src (functions.json "dir", e.g. backend/<group>/<name>) minus node_modules and test files,

@@ -171,6 +171,8 @@ function Layout({ children }) {
             user && !user.isAnonymous ? (
               <Link to="/account" className="gp-btn gp-btn-account" aria-label={`Account: ${user.email?.split('@')[0] || 'Account'}`}>
                 <span className="gp-btn-account-name">{user.email?.split('@')[0] || 'Account'}</span>
+                {/* Phones: the name gives way to its first letter, so the button keeps its size (see Layout.css). */}
+                <span className="gp-btn-account-initial" aria-hidden="true">{(user.email?.[0] || 'A').toUpperCase()}</span>
               </Link>
             ) : (
               <Link to={signInHref} className="gp-btn gp-btn-primary">Sign in</Link>

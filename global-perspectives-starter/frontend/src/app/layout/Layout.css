@@ -103,6 +103,9 @@
   justify-content: flex-end;
   margin-left: auto;
 }
+/* The right side never shrinks: "?", Board, Ops and the account button keep their size, the brand gives way (600px block). */
+.gp-nav-right > * { flex-shrink: 0; }
+.gp-btn-account-initial { display: none; }
 
 /* "?" link: opens the map About drawer (/?about=1) */
 .gp-help {
@@ -276,11 +279,16 @@ html:has(.gp-app-tabbar) { scroll-padding-bottom: calc(58px + 12px + env(safe-ar
 @media (max-width: 600px) {
   /* Bell + help + Sign in + the logo overflowed a 390px bar by 6px once the bell is configured (prod). */
   .gp-nav { padding: 0 12px; }
-  .gp-nav-right { gap: 6px; flex: 0 1 auto; min-width: 0; }
-  /* Signed-in name truncates instead of pushing the bar past a 360-390px viewport. */
-  /* The button is inline-flex, which ignores text-overflow, so the name span carries the ellipsis. */
-  .gp-btn-account { min-width: 0; max-width: 7rem; }
-  .gp-btn-account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gp-nav-right { gap: 6px; }
+  /* The logo and name give way first: the brand shrinks (name ellipsis), the buttons on the right keep their size. */
+  .gp-brand { flex: 0 1 auto; min-width: 0; }
+  .gp-brand-link { max-width: 100%; }
+  .gp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* Signed in: the account button is a square tap target showing the first letter of the name (the full name
+     stays in its aria-label), never a clipped label. */
+  .gp-btn-account { justify-content: center; width: var(--tap-min); padding: 0; }
+  .gp-btn-account-name { display: none; }
+  .gp-btn-account-initial { display: inline; font-size: var(--text-ui); font-weight: 600; }
   .gp-footer {
     height: auto;
     flex-direction: column;

@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
+import { formatDateLabel, tokyoDayKey } from '@/shared/lib/dateUtils';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
@@ -202,7 +202,7 @@ function Scrubber({ days, chapters, deadlines, inflectionDate, activeKey, onJump
   );
   const ticks = useMemo(() => buildScrubberTicks(startMs, endMs), [startMs, endMs]);
   const maxCount = Math.max(1, ...days.map((d) => d.count));
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = tokyoDayKey();
   const todayPct = pctForDate(todayIso, startMs, endMs);
 
   return (

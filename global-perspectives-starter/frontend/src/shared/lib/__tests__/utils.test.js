@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   regionToCountryCode,
   getTopicCountryCodes,
   getTopicRegion,
   getBroadRegionsForCountry,
 } from '@/shared/lib/countryMapping';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
+import { formatDateLabel, tokyoDayKey } from '@/shared/lib/dateUtils';
 
 describe('countryMapping', () => {
   it('resolves common country names to codes', () => {
@@ -73,9 +73,36 @@ describe('countryMapping', () => {
 });
 
 describe('dateUtils', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('formatDateLabel returns formatted date', () => {
     const result = formatDateLabel('2026-03-22');
     expect(result).toBeTruthy();
     expect(typeof result).toBe('string');
+  });
+
+  it('tokyoDayKey is the Tokyo calendar day', () => {
+    expect(tokyoDayKey(Date.parse('2026-11-05T23:30:00Z'))).toBe('2026-11-06');
+    expect(tokyoDayKey(Date.parse('2026-11-06T14:30:00Z'))).toBe('2026-11-06');
+    expect(tokyoDayKey(Date.parse('2026-11-06T15:00:00Z'))).toBe('2026-11-07');
+  });
+
+  // 23:30 UTC on 5 Nov = 08:30 JST on 6 Nov: Tokyo's day is already the 6th
+  it('at 23:30 UTC (08:30 JST next day) Today is the Tokyo day, not the UTC day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-05T23:30:00Z'));
+    expect(formatDateLabel('2026-11-06')).toBe('Today');
+    expect(formatDateLabel('2026-11-05')).toBe('Yesterday');
+    expect(formatDateLabel('2026-11-04')).toBe('Wed, Nov 4');
+  });
+
+  // 14:30 UTC on 6 Nov = 23:30 JST on 6 Nov: both calendars agree
+  it('at 14:30 UTC (23:30 JST) Today and Yesterday agree with the UTC day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-06T14:30:00Z'));
+    expect(formatDateLabel('2026-11-06')).toBe('Today');
+    expect(formatDateLabel('2026-11-05')).toBe('Yesterday');
+    expect(formatDateLabel('2026-11-04')).toBe('Wed, Nov 4');
+    expect(formatDateLabel('2026-11-07')).toBe('Sat, Nov 7');
   });
 });

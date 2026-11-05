@@ -1,7 +1,7 @@
 # backend
 
 The AWS Lambdas (region ap-northeast-1) behind globalperspective.net, grouped by job. Each group has a README with its
-Lambdas, schedules, stores and pipeline. `scripts/functions.json` lists 39 entries (seven are `deployBlocked`: `newsAnalyze`, the two `-sandbox` twins, the old-name `-dev` twins and `newsPostDevTo`); live AWS is the truth for
+Lambdas, schedules, stores and pipeline. `scripts/functions.json` lists 38 entries (five are `deployBlocked`: `newsAnalyze`, the two `-sandbox` twins, `newsSensitiveData-dev` and `newsPostDevTo`; the `NewsProjectInvokeAgentLambda-dev` and `newsInvokeGemini-dev` twins were deleted 2026-11-05); live AWS is the truth for
 what exists and what runs (`aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`).
 
 ## Groups

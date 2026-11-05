@@ -2,7 +2,7 @@
 
 // The real ports for health.js / ops.js: S3, the resolver invoke, CloudWatch metrics, Logs Insights, Cost Explorer.
 // The SDK v3 clients ship with the Lambda runtime and are required lazily, so the pure modules and the tests need none.
-const { CONFIG, KEYS, BUCKET, REGION, READERS, QUALITY } = require('./config');
+const { CONFIG, KEYS, BUCKET, REGION, READERS, QUALITY, HEAL } = require('./config');
 const { dayStart, dayOf } = require('./days');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -172,6 +172,22 @@ function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient, ddbCl
     async putJson(key, obj, cacheControl) {
       const { PutObjectCommand } = require('@aws-sdk/client-s3');
       await s3().send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: `${JSON.stringify(obj)}\n`, ContentType: 'application/json', CacheControl: cacheControl }));
+    },
+    /** Start a Lambda without waiting (InvocationType Event): the self-healing steps. Throws unless AWS accepted it (202). */
+    async invoke(functionName, payload) {
+      const { InvokeCommand } = require('@aws-sdk/client-lambda');
+      const r = await lambda().send(new InvokeCommand({ FunctionName: functionName, InvocationType: 'Event', Payload: Buffer.from(JSON.stringify(payload || {})) }));
+      if (r.StatusCode !== 202) throw new Error(`invoke ${functionName}: status ${r.StatusCode}`);
+    },
+    /** The ingest's staging item (read only, three attributes): { generationId, updatedAt, agentProcessedAt } or null. */
+    async staging() {
+      const { GetItemCommand } = require('@aws-sdk/client-dynamodb');
+      const r = await ddb().send(new GetItemCommand({
+        TableName: HEAL.stagingTable, Key: { id: { S: 'staging' } }, ProjectionExpression: 'generationId, updatedAt, agentProcessedAt',
+      }));
+      if (!r.Item) return null;
+      const s = (k) => (r.Item[k] && r.Item[k].S) || null;
+      return { generationId: s('generationId'), updatedAt: s('updatedAt'), agentProcessedAt: s('agentProcessedAt') };
     },
     async resolverStatus() {
       const { InvokeCommand } = require('@aws-sdk/client-lambda');

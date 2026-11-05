@@ -4,6 +4,8 @@ The operator's health and cost view (design: [ARCHITECTURE_OPS.md](../../../proj
 
 **Status: live.** Deployed 2026-11-04 (about 20:34 JST), rule `TriggerHealth` hourly and ENABLED; `record/views/health.json` and `monitoring/ops.json` are written. The `ops` action is in the deployed `newsReadApi` (`OPS_OPERATOR_UIDS` set) and the `/ops` page is in bundle `index-CYeE3t3L`.
 
+**Phase 4 (self-healing) is built on branch, not deployed**: `src/heal.js`, a new Lambda `newsRecover` ([README](../../record/newsRecover/README.md)), `iam/policy-phase4.json`. It is off until `HEAL` is set (below).
+
 ## Files it writes (world bucket)
 | File | Who reads it | What |
 |---|---|---|
@@ -68,10 +70,35 @@ Built once per UTC day (the first run of the day), for the last closed UTC day; 
 - IAM beyond phase 2 (file `iam/policy-phase3.json`, the whole role policy with two additions; not applied): `s3:GetObject` on `situations/merges/*`, `dynamodb:Scan` on `GlobalPerspectiveClientErrors`. Apply (operator yes): `aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy-phase3.json`, then replace `iam/policy.json` with it. Until then the affected checks read `error` with the AccessDenied text.
 - The run can take longer with the extra reads (a Logs Insights query for the audit, up to 30 s); the 120 s timeout still holds because the quality pull runs beside the readers pull.
 
+## Self-healing (phase 4)
+Runs first on every tick, before `health.json` is built. Design and the reasons: [ARCHITECTURE_OPS.md](../../../project-docs/architecture/ARCHITECTURE_OPS.md) "Phase 4 as built". Code `src/heal.js` (the pass), `src/healthRead.js` (S3 reads shared with `health.js`), settings `HEAL` in `src/config.js`, ports in `src/aws.js` (`invoke`, `staging`).
+- **Condition:** `record/inbox/entries/D.jsonl` has no line, for today or the two days before. Thin days (under 20) are not healed. An unreadable file is skipped.
+- **Step 1 (once per day, 21:00-23:00 UTC of D, never inside a scheduled run):** staging fresh (generated on D, not processed) -> invoke `newsAgent {}`; else invoke `newsIngest {}` and, next tick, the agent if staging is then fresh. The next tick reads the entries file: lines present -> ledger `healed`.
+- **Step 2 (from D+1 00:30 UTC, within 48 h, still empty):** `newsRecover {day}` (up to 3 invokes, result in `monitoring/heal/recover/D.json`); with at least 300 articles in the day file, `newsStoryRecord {recovery:true, date:D}` (up to 2 invokes); the Run file must show `notes:"recovery"`, `inputs.recovered:true`, status ok, no failures -> ledger `recovered`. Otherwise `unhealed` with the reason; nothing is retried after an outcome.
+- **Ledger** `monitoring/heal/D.json`, written before each invoke (a failed write means no invoke; a refused invoke still counts). A day with an `outcome` is never touched again.
+- **Shown:** agent row status `recovered` (new), `facts.heal`, a note; `health.json now.heal` = what this tick did. `/ops` draws `recovered` as `↺`.
+- **Switch:** env `HEAL` = `on` | `dry` | anything else (off, the default). `dry` decides and reports with nothing written or invoked. Event flags `{"heal":"dry"}` / `{"heal":"off"}` / `{"dry":true}` can only lower the mode.
+- **Never:** an alert, an email, `force`, a second agent run for a day, a forecast on a recovered day, made-up articles.
+- **Cost:** a re-run costs what a scheduled ingest (model + Brave) and agent run cost, at most once each per day; recovery uses no model and no paid API.
+
+### Turning it on (each AWS step needs the operator's yes; nothing here is done yet)
+```
+# 1. the recovery Lambda: role, function (steps in backend/record/newsRecover/README.md), then drop "planned" from scripts/functions.json
+# 2. newsHealth's role: the phase-3 additions plus phase 4 (this file replaces iam/policy.json afterwards)
+aws iam put-role-policy --role-name newsHealth-role --policy-name newsHealth --policy-document file://backend/monitoring/newsHealth/iam/policy-phase4.json
+# 3. the code (diff first)
+scripts/lambda.sh newsHealth diff
+scripts/lambda.sh newsHealth deploy
+# 4. look before it acts: HEAL=dry (fetch -> merge -> write the full env map), invoke once, read health.json now.heal
+aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout
+# 5. HEAL=on
+```
+Read-only preview from a laptop (no S3 write, no invoke): `HEAL=dry node index.js --dry` in `src/` (needs `npm install` there for the SDK clients).
+
 ## Deployment
 - Name `newsHealth` · `nodejs24.x` · handler `index.handler` · timeout 120 s · 256 MB · group `monitoring` (scripts/functions.json). Worst case a run waits 60 s for each of the two Logs Insights queries (they run side by side), plus the resolver invoke; a normal run takes under 30 s. The zip does not ship node_modules (the runtime's AWS SDK v3 is used).
 - Trigger: EventBridge rule `TriggerHealth`, `rate(1 hour)`, ENABLED, no input.
-- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`). No secrets.
+- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`), `HEAL` (`on` | `dry`; unset = off). No secrets.
 - Test event flags: `{"dry": true}` (writes nothing), `{"skipCost": true}`.
 
 ## Deploy (the steps used on 2026-11-04; each IAM and AWS step needed the operator's yes)
@@ -102,7 +129,7 @@ node index.js --dry --no-cost                           # same without the $0.01
 Needs AWS read credentials for ap-northeast-1.
 
 ## Reads / writes
-Reads: S3 (above), CloudWatch metrics and Logs Insights, the resolver's `status` action, Cost Explorer, the three own tables (projection scan), Cloudflare's analytics API (HTTPS, when a token is set). Writes: the two files, nothing else. Not a Function URL; the code emits no CORS headers.
+Reads: S3 (above), CloudWatch metrics and Logs Insights, the resolver's `status` action, Cost Explorer, the three own tables (projection scan), Cloudflare's analytics API (HTTPS, when a token is set). Writes: the two files and, with `HEAL=on`, the heal ledger `monitoring/heal/DAY.json`; with `HEAL=on` it also starts `newsAgent`, `newsIngest`, `newsRecover` and `newsStoryRecord` (asynchronous invokes) and reads the ingest's `staging` item in `NewsCache`. Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-`cd backend/monitoring/newsHealth/src && npm test` (`node --test ../test/*.test.js`, offline, fakes for every AWS port). Covers (quality: `test/quality.test.js`, every check on injected ports) day arithmetic, every stage's thresholds, a day with missing files, unreadable sources, snapshot carry-forward, the schema, pricing (peak, cache hits, unknown model), unit costs, history retention, the once-a-day Cost Explorer pull and the Logs Insights polling.
+`cd backend/monitoring/newsHealth/src && npm test` (`node --test ../test/*.test.js`, offline, fakes for every AWS port). Covers (self-healing: `test/heal.test.js`, a forced-missing day healed by the agent re-run, by ingest then agent and by recovery, a day that cannot heal without a loop, the once-per-day guards, the schedule windows, dry/off, the `recovered` row and the schema; quality: `test/quality.test.js`, every check on injected ports) day arithmetic, every stage's thresholds, a day with missing files, unreadable sources, snapshot carry-forward, the schema, pricing (peak, cache hits, unknown model), unit costs, history retention, the once-a-day Cost Explorer pull and the Logs Insights polling.

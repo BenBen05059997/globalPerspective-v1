@@ -5,13 +5,14 @@
 //   record/views/health.json  PUBLIC  the pipeline panel only (14 UTC days x stages), served by the Worker like every view
 //   monitoring/ops.json       PRIVATE the money and readers panels; only newsReadApi action `ops` serves it, to the operator
 // Design: project-docs/architecture/ARCHITECTURE_OPS.md. Local preview: `node index.js --dry` (reads live data, writes nothing).
-const { KEYS, CONFIG } = require('./config');
+const { KEYS, CONFIG, HEAL } = require('./config');
 const { lastDays } = require('./days');
 const { buildHealth } = require('./health');
 const { buildOps, awsPullDue } = require('./ops');
 const { pullReaders, readersPullDue } = require('./readers');
 const { pullQuality, qualityPullDue } = require('./quality');
 const { makeAws } = require('./aws');
+const { heal, effectiveMode, healSummary } = require('./heal');
 
 const errText = (e) => String((e && e.message) || e).slice(0, 200);
 const prices = require('./prices.json');
@@ -32,15 +33,21 @@ async function readPrev(aws, key) {
 
 /**
  * One run. `aws` is the port object (aws.js makeAws, or a fake in tests). Returns { health, ops, wrote }.
- * dry: nothing is written. skipCost: no Cost Explorer call even when due. skipReaders: no Cloudflare or own-table pull. skipQuality: no quality checks.
+ * dry: nothing is written (self-healing only reports). healMode: the HEAL env ('on' | 'dry' | else off); healFlag: 'off' | 'dry' lowers it for this run. skipCost: no Cost Explorer call even when due. skipReaders: no Cloudflare or own-table pull. skipQuality: no quality checks.
  */
-async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipReaders = false, skipQuality = false, log = console.log } = {}) {
+async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipReaders = false, skipQuality = false, healFlag = null, healMode = HEAL.mode, log = console.log } = {}) {
   const days = lastDays(now, CONFIG.days);
   const problems = [];
   let prevHealth = null; let prevOps = null;
   let healthReadable = true; let opsReadable = true;
   try { prevHealth = await readPrev(aws, KEYS.health); } catch (e) { healthReadable = false; problems.push(`${KEYS.health} not written: earlier file unreadable (${errText(e)})`); }
   try { prevOps = await readPrev(aws, KEYS.ops); } catch (e) { opsReadable = false; problems.push(`${KEYS.ops} not written: earlier file unreadable (${errText(e)})`); }
+
+  // Self-healing first, so the health rows below show what it just did. It never throws. A dry run (or the event flag) can only lower its mode.
+  const healed = await heal({
+    ports: { readText: (k) => aws.readText(k), putJson: (k, o, c) => aws.putJson(k, o, c), invoke: (f, p) => aws.invoke(f, p), staging: () => aws.staging() },
+    now, mode: effectiveMode(healMode, dry ? 'dry' : healFlag),
+  });
 
   const ports = {
     readText: (key) => aws.readText(key),
@@ -52,6 +59,8 @@ async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipR
     buildHealth(ports, now, prevHealth),
     aws.usageRows(days, now).then((rows) => ({ rows, error: null }), (e) => ({ rows: null, error: errText(e) })),
   ]);
+
+  health.now.heal = healSummary(healed);
 
   let cost = null;
   if (!skipCost && awsPullDue(prevOps, now)) {
@@ -70,13 +79,13 @@ async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipR
     if (healthReadable) { await aws.putJson(KEYS.health, health, 'no-cache'); wrote.push(KEYS.health); }
     if (opsReadable) { await aws.putJson(KEYS.ops, ops, 'no-cache'); wrote.push(KEYS.ops); }
   }
-  log('newsHealth', JSON.stringify({ dry, wrote, usageError: usage.error, costError: cost ? cost.error : null, readers: ops.readers.cloudflare.status, quality: qualityLog(ops.quality), problems }));
+  log('newsHealth', JSON.stringify({ dry, wrote, heal: { mode: healed.mode, actions: healed.actions.map((a) => `${a.day} ${a.step}`), skipped: healed.skipped.length, errors: healed.errors }, usageError: usage.error, costError: cost ? cost.error : null, readers: ops.readers.cloudflare.status, quality: qualityLog(ops.quality), problems }));
   if (problems.length && !dry) throw new Error(problems.join('; '));
   return { health, ops, wrote, problems };
 }
 
 exports.handler = async (event = {}) => {
-  const { health, ops, wrote } = await run({ aws: makeAws(), dry: Boolean(event.dry), skipCost: Boolean(event.skipCost), skipReaders: Boolean(event.skipReaders), skipQuality: Boolean(event.skipQuality) });
+  const { health, ops, wrote } = await run({ aws: makeAws(), dry: Boolean(event.dry), healFlag: event.heal || null, skipCost: Boolean(event.skipCost), skipReaders: Boolean(event.skipReaders), skipQuality: Boolean(event.skipQuality) });
   return { wrote, asOf: health.asOf, usageError: ops.deepseek.error, costError: ops.aws.error, readers: ops.readers.cloudflare.status };
 };
 

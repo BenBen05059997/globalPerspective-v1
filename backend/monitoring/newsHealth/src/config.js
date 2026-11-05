@@ -13,6 +13,7 @@ const KEYS = {
   world: 'world/latest.json',
   storyIndex: 'record/views/index/all.json', // thread id -> title for the readers panel
   mergesPrefix: 'situations/merges/',   // newsSituationTracker: YYYY/MM/DD/HH/HHMM.json, one file per sweep that made new merges
+  healPrefix: 'monitoring/heal/',       // self-healing ledger DAY.json (newsHealth) and recover/DAY.json (newsRecover's result)
 };
 
 const CONFIG = {
@@ -110,6 +111,27 @@ const QUALITY = {
   errorsTopPages: 8,
 };
 
+// Self-healing (ARCHITECTURE_OPS.md phase 4, src/heal.js). HEAL env: 'on' acts, 'dry' only reports what it would do, anything else is off.
+// Times are UTC. Scheduled runs (scripts/functions.json): ingest 04:15/12:15/20:15, agent :25 (about a minute, timeout 15 min), record
+// refresh :35, the nightly record run 23:45. The healer starts nothing from :10 to :55 of 04/12/20 or from 23:40 to 00:10.
+const HEAL = {
+  mode: process.env.HEAL || 'off',
+  lookbackDays: 2,                          // today, yesterday and the day before
+  agentFromMin: 21 * 60,                    // the agent re-run window opens at 21:00 UTC (06:00 JST): the 20:25 run is long over
+  agentToMin: 23 * 60,                      // and closes at 23:00, so a re-run is finished well before the 23:45 record run
+  quiet: [[4 * 60 + 10, 4 * 60 + 55], [12 * 60 + 10, 12 * 60 + 55], [20 * 60 + 10, 20 * 60 + 55], [23 * 60 + 40, 10]],
+  inflightMin: 20,                          // an invoked run is given this long to show its result (agent about 1 min, ingest under 1 min)
+  recoverFromMin: 30,                       // recovery of a closed day D starts at D+1 00:30 UTC (GDELT's last quarter-hour file is out)
+  recoverUntilHours: 48,                    // and gives up 48 h after the day closed
+  recoverAttempts: 3,                       // newsRecover invokes per day
+  recordAttempts: 2,                        // newsStoryRecord recovery invokes per day
+  // A recovered day is 1,624 lines for 2026-09-18 (GDELT GKG) against 760 captured live on 2026-11-04; under this the records did not
+  // cover the day and it is not called recovered.
+  minArticles: 300,
+  functions: { agent: 'newsAgent', ingest: 'newsIngest', record: 'newsStoryRecord', recover: 'newsRecover' },
+  stagingTable: 'NewsCache',                // the ingest's staging item, key id = 'staging' (read only)
+};
+
 const STAGES = [
   { id: 'ingest', label: 'Ingest ran' },
   { id: 'agent', label: 'Agent wrote the archive' },
@@ -122,4 +144,4 @@ const STAGES = [
   { id: 'compare', label: 'Compare switches' },
 ];
 
-module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES, READERS, QUALITY };
+module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES, READERS, QUALITY, HEAL };

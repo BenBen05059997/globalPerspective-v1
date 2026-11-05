@@ -38,7 +38,7 @@
               "additionalProperties": false,
               "properties": {
                 "stage": { "type": "string" },
-                "status": { "enum": ["ok", "thin", "missing", "failed", "nodata"] },
+                "status": { "enum": ["ok", "thin", "missing", "failed", "nodata", "recovered"], "description": "recovered: the agent row only, a day rebuilt from public records by the self-healing (raw articles, no entries, no forecasts)." },
                 "facts": { "type": "object" },
                 "source": { "type": "string" },
                 "at": { "type": ["string", "null"] },
@@ -55,6 +55,19 @@
       "required": ["resolver"],
       "additionalProperties": false,
       "properties": {
+        "heal": {
+          "description": "What the self-healing pass of this run did (ARCHITECTURE_OPS.md phase 4). mode off: it did nothing; dry: it only says what it would do; on: it acted. Absent in files written before phase 4.",
+          "type": "object",
+          "required": ["mode", "at", "actions", "skipped", "errors"],
+          "additionalProperties": false,
+          "properties": {
+            "mode": { "enum": ["off", "dry", "on"] },
+            "at": { "type": "string", "format": "date-time" },
+            "actions": { "type": "array", "items": { "type": "object", "required": ["day", "step", "note", "dry"], "additionalProperties": false, "properties": { "day": { "type": "string" }, "step": { "type": "string" }, "note": { "type": "string" }, "dry": { "type": "boolean" } } } },
+            "skipped": { "type": "array", "items": { "type": "object", "required": ["day", "why"], "additionalProperties": false, "properties": { "day": { "type": "string" }, "why": { "type": "string" } } } },
+            "errors": { "type": "array", "items": { "type": "object", "required": ["day", "error"], "additionalProperties": false, "properties": { "day": { "type": "string" }, "error": { "type": "string" } } } }
+          }
+        },
         "resolver": {
           "description": "The resolver's read-only status reply at asOf, or the error that stopped it.",
           "type": "object",

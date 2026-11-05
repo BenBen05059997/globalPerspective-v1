@@ -2,7 +2,7 @@
 
 // The pipeline panel: one row per stage per UTC day, facts only. Every row names its source and the time of that source.
 // A source that cannot be read gives status 'nodata' with the error text, never a made-up value.
-// Statuses: ok | thin (degraded) | missing | failed | nodata.
+// Statuses: ok | thin (degraded) | missing | failed | nodata | recovered (the agent row only: a day rebuilt from public records, phase 4).
 //
 // Ports (all injected, so tests run offline):
 //   readText(key)                  -> { text, at } | null (no such key); throws on any other failure
@@ -11,24 +11,8 @@
 //   compareCounts(days)            -> { [fn]: { [day]: n } } (DIFFER lines); throws on failure
 const { CONFIG, KEYS, STAGES } = require('./config');
 const { lastDays, isClosed, isSunday } = require('./days');
-
-const errText = (e) => String((e && e.message) || e).slice(0, 200);
-
-async function readJson(ports, key) {
-  try {
-    const r = await ports.readText(key);
-    if (!r) return { missing: true };
-    return { json: JSON.parse(r.text), at: r.at || null };
-  } catch (e) { return { error: errText(e) }; }
-}
-
-async function readLines(ports, key) {
-  try {
-    const r = await ports.readText(key);
-    if (!r) return { missing: true };
-    return { lines: r.text.split('\n').filter((l) => l.trim()).length, at: r.at || null };
-  } catch (e) { return { error: errText(e) }; }
-}
+const { readJson, readLines, errText } = require('./healthRead');
+const { healFacts, ledgerKey } = require('./heal');
 
 const row = (stage, status, { facts = {}, source, at = null, error = null, note = null } = {}) => ({ stage, status, facts, source, at, error, note });
 const nodata = (stage, source, { error = null, note = null } = {}) => row(stage, 'nodata', { source, error, note });
@@ -44,14 +28,24 @@ function ingestRow(day, closed, run) {
   return row('ingest', raw === 'present' ? 'ok' : 'missing', { facts: { rawDay: raw || null }, source, at: run.json.finishedAt || run.at });
 }
 
-function agentRow(day, closed, entries) {
+function agentRow(day, closed, entries, heal = null) {
   const source = `record/inbox/entries/${day}.jsonl (line count)`;
   if (entries.error) return nodata('agent', source, { error: entries.error });
   const n = entries.missing ? 0 : entries.lines;
   const facts = { entries: n, normalRange: [CONFIG.entries.normalLow, CONFIG.entries.normalHigh], thinBelow: CONFIG.entries.thin };
-  if (n >= CONFIG.entries.thin) return row('agent', 'ok', { facts, source, at: entries.at || null });
-  if (!closed) return open('agent', source, facts);
-  return row('agent', n === 0 ? 'missing' : 'thin', { facts, source, at: entries.at || null });
+  const L = heal && heal.json ? heal.json : null;
+  const hf = healFacts(L);
+  if (hf) facts.heal = hf;
+  // A day the self-healing rebuilt from public records: raw articles only, no entries and no forecasts (decision 0040). Never 'ok'.
+  if (L && L.outcome === 'recovered' && n < CONFIG.entries.thin) {
+    return row('agent', 'recovered', { facts, source: `${source} + ${ledgerKey(day)}`, at: L.outcomeAt || null,
+      note: `Recovered from public records: ${L.recovered && L.recovered.articles != null ? `${L.recovered.articles} raw articles` : 'raw articles'} (GDELT GKG, Wayback); the model did not run for this day, so there are no story entries and no forecasts.` });
+  }
+  const healNote = L ? `Self-healing: ${L.outcome ? `${L.outcome}${L.why ? `, ${L.why}` : ''}` : 'in progress'}.`
+    : heal && heal.error && n < CONFIG.entries.thin ? `Self-healing ledger unreadable: ${heal.error}` : null;
+  if (n >= CONFIG.entries.thin) return row('agent', 'ok', { facts, source, at: entries.at || null, note: L && L.outcome === 'healed' ? healNote : null });
+  if (!closed) return { ...open('agent', source, facts), note: healNote ? `day in progress. ${healNote}` : 'day in progress' };
+  return row('agent', n === 0 ? 'missing' : 'thin', { facts, source, at: entries.at || null, note: healNote });
 }
 
 function recordRow(day, closed, run) {
@@ -146,14 +140,15 @@ async function buildHealth(ports, now, prev = null) {
 
   const [manifest, world, heartbeat] = await Promise.all([readJson(ports, KEYS.manifest), readJson(ports, KEYS.world), readJson(ports, KEYS.heartbeat)]);
   const perDay = await Promise.all(days.map(async (day) => {
-    const [run, entries, daily, weekly, country] = await Promise.all([
+    const [run, entries, daily, weekly, country, heal] = await Promise.all([
       readJson(ports, `record/runs/${day}.json`),
       readLines(ports, `record/inbox/entries/${day}.jsonl`),
       readLines(ports, `record/notes/daily_brief/${day}.jsonl`),
       isSunday(day) ? readLines(ports, `record/notes/weekly_brief/${day}.jsonl`) : Promise.resolve(null),
       readLines(ports, `record/notes/country/${day}.jsonl`),
+      readJson(ports, ledgerKey(day)),
     ]);
-    return { day, run, entries, daily, weekly, country };
+    return { day, run, entries, daily, weekly, country, heal };
   }));
 
   let resolverStatus = null; let resolverStatusError = null;
@@ -174,7 +169,7 @@ async function buildHealth(ports, now, prev = null) {
   const tickDay = heartbeat.json && heartbeat.json.at ? heartbeat.json.at.slice(0, 10) : null;
 
   const raw = {};
-  const outDays = perDay.map(({ day, run, entries, daily, weekly, country }) => {
+  const outDays = perDay.map(({ day, run, entries, daily, weekly, country, heal }) => {
     const closed = isClosed(day, now, CONFIG.closeAfterUtcHour);
     const carry = (stage) => (day === today ? null : prevRow(day, stage));
 
@@ -191,7 +186,7 @@ async function buildHealth(ports, now, prev = null) {
 
     const rows = [
       ingestRow(day, closed, run),
-      agentRow(day, closed, entries),
+      agentRow(day, closed, entries, heal),
       recordRow(day, closed, run),
       viewsRow(day, today, manifest, now),
       resolver,

@@ -54,6 +54,9 @@ function fakeAws(files, over = {}) {
     compareCounts: async () => ({}),
     usageRows: async () => [],
     costByService: async () => [{ day: '2026-11-03', service: 'S3', usd: 0.1 }],
+    listKeys: async () => [],
+    clientErrorRows: async () => [],
+    auditLog: async () => null,
     ...over,
   };
 }

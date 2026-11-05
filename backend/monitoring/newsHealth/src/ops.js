@@ -6,6 +6,7 @@ const { CONFIG } = require('./config');
 const { lastDays, dayOf, isoWeek } = require('./days');
 const { usageUsd, round } = require('./pricing');
 const { buildReaders } = require('./readers');
+const { buildQuality } = require('./quality');
 
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 
@@ -82,9 +83,10 @@ function monthToDate(days, today) {
  *   usage: { rows, error }       Logs Insights result (rows null when the query failed)
  *   cost:  { rows, error, pulledAt } | null   Cost Explorer pull, null when not pulled this run (the earlier AWS days stay)
  *   readers: the daily pull from readers.pullReaders, null when not due this run (the earlier readers section stays)
+ *   quality: the daily pull from quality.pullQuality, null when not due this run (the earlier quality section stays; null when never built)
  *   raw:   per-day facts from buildHealth (run counts, country notes, daily brief)
  */
-function buildOps({ usage, cost, readers: readersPull, raw, prices, prev, now }) {
+function buildOps({ usage, cost, readers: readersPull, quality: qualityPull = null, raw, prices, prev, now }) {
   const window = lastDays(now, CONFIG.days);
   const today = window[window.length - 1];
   const keep = CONFIG.retainOpsDays;
@@ -140,6 +142,7 @@ function buildOps({ usage, cost, readers: readersPull, raw, prices, prev, now })
       days: awsDaysOut,
     },
     readers: buildReaders({ pull: readersPull, prev, dsDays, now }),
+    quality: buildQuality({ pull: qualityPull, prev, now }),
     unitCosts: {
       labels: Object.fromEntries(Object.entries(CONFIG.units).map(([id, u]) => [id, u.label])),
       days: unitDays,

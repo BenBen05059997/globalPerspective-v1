@@ -10,10 +10,19 @@ const { lastDays } = require('./days');
 const { buildHealth } = require('./health');
 const { buildOps, awsPullDue } = require('./ops');
 const { pullReaders, readersPullDue } = require('./readers');
+const { pullQuality, qualityPullDue } = require('./quality');
 const { makeAws } = require('./aws');
 
 const errText = (e) => String((e && e.message) || e).slice(0, 200);
 const prices = require('./prices.json');
+
+/** One word per check for the run log: ok, not_available or error (a check with parts shows the worst). */
+function qualityLog(q) {
+  if (!q) return null;
+  const rank = { ok: 0, not_available: 1, error: 2 };
+  const worst = (c) => [c.status, ...Object.values(c).filter((v) => v && typeof v === 'object' && v.status).map((v) => v.status)].filter(Boolean).sort((a, b) => rank[b] - rank[a])[0] || 'ok';
+  return Object.fromEntries(Object.entries(q.checks || {}).map(([id, c]) => [id, worst(c)]));
+}
 
 /** The earlier file, or null when there is none. A file that exists but cannot be read stops that file's write: its history would be lost. */
 async function readPrev(aws, key) {
@@ -23,9 +32,9 @@ async function readPrev(aws, key) {
 
 /**
  * One run. `aws` is the port object (aws.js makeAws, or a fake in tests). Returns { health, ops, wrote }.
- * dry: nothing is written. skipCost: no Cost Explorer call even when due. skipReaders: no Cloudflare or own-table pull.
+ * dry: nothing is written. skipCost: no Cost Explorer call even when due. skipReaders: no Cloudflare or own-table pull. skipQuality: no quality checks.
  */
-async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipReaders = false, log = console.log } = {}) {
+async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipReaders = false, skipQuality = false, log = console.log } = {}) {
   const days = lastDays(now, CONFIG.days);
   const problems = [];
   let prevHealth = null; let prevOps = null;
@@ -49,21 +58,25 @@ async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipR
     try { cost = { rows: await aws.costByService(days), error: null, pulledAt: new Date(now).toISOString() }; } catch (e) { cost = { rows: null, error: errText(e) }; }
   }
   // Readers: Cloudflare + own tables, once per UTC day (and hourly again while Cloudflare is not 'ok'; not_connected costs no call).
-  const readers = !skipReaders && readersPullDue(prevOps, now) ? await pullReaders({ aws, now, days }) : null;
-  const ops = buildOps({ usage, cost, readers, raw, prices, prev: prevOps, now });
+  // Quality: six checks, once per UTC day for the last closed day; a check that failed is read again hourly, alone. Runs beside the readers pull.
+  const [readers, quality] = await Promise.all([
+    !skipReaders && readersPullDue(prevOps, now) ? pullReaders({ aws, now, days }) : null,
+    !skipQuality && qualityPullDue(prevOps, now) ? pullQuality({ aws, now, prev: prevOps && prevOps.quality }) : null,
+  ]);
+  const ops = buildOps({ usage, cost, readers, quality, raw, prices, prev: prevOps, now });
 
   const wrote = [];
   if (!dry) {
     if (healthReadable) { await aws.putJson(KEYS.health, health, 'no-cache'); wrote.push(KEYS.health); }
     if (opsReadable) { await aws.putJson(KEYS.ops, ops, 'no-cache'); wrote.push(KEYS.ops); }
   }
-  log('newsHealth', JSON.stringify({ dry, wrote, usageError: usage.error, costError: cost ? cost.error : null, readers: ops.readers.cloudflare.status, problems }));
+  log('newsHealth', JSON.stringify({ dry, wrote, usageError: usage.error, costError: cost ? cost.error : null, readers: ops.readers.cloudflare.status, quality: qualityLog(ops.quality), problems }));
   if (problems.length && !dry) throw new Error(problems.join('; '));
   return { health, ops, wrote, problems };
 }
 
 exports.handler = async (event = {}) => {
-  const { health, ops, wrote } = await run({ aws: makeAws(), dry: Boolean(event.dry), skipCost: Boolean(event.skipCost), skipReaders: Boolean(event.skipReaders) });
+  const { health, ops, wrote } = await run({ aws: makeAws(), dry: Boolean(event.dry), skipCost: Boolean(event.skipCost), skipReaders: Boolean(event.skipReaders), skipQuality: Boolean(event.skipQuality) });
   return { wrote, asOf: health.asOf, usageError: ops.deepseek.error, costError: ops.aws.error, readers: ops.readers.cloudflare.status };
 };
 

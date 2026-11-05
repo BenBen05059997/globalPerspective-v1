@@ -2,7 +2,7 @@
 
 // The real ports for health.js / ops.js: S3, the resolver invoke, CloudWatch metrics, Logs Insights, Cost Explorer.
 // The SDK v3 clients ship with the Lambda runtime and are required lazily, so the pure modules and the tests need none.
-const { CONFIG, KEYS, BUCKET, REGION, READERS } = require('./config');
+const { CONFIG, KEYS, BUCKET, REGION, READERS, QUALITY } = require('./config');
 const { dayStart, dayOf } = require('./days');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -41,6 +41,9 @@ const USAGE_QUERY = String.raw`filter @message like /\[usage\]/
 | parse @message /"completion_tokens":(?<ct>\d+)/
 | parse @message /"prompt_cache_hit_tokens":(?<hit>\d+)/
 | stats count() as calls, sum(pt) as ptok, sum(ct) as ctok, sum(hit) as hitok by bin(1h) as hr, fn, step, model`;
+
+// newsSourceAudit's per-topic verdict lines: "[audit] corroborated | DRIFT | <title>" (one per audited topic, Mon/Wed/Fri runs).
+const AUDIT_QUERY = String.raw`filter @message like /\[audit\]/ | fields @timestamp, @message | sort @timestamp asc | limit 1000`;
 
 const DIFFER_QUERY = 'filter @message like /DIFFER/ | stats count() as n by bin(1d) as day, @log';
 
@@ -119,7 +122,37 @@ function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient, ddbCl
     return out;
   }
 
+  // The error sink's rows, three attributes only (no message, stack, user agent, uid or email): [{ day, count, url }].
+  async function clientErrorRows() {
+    const { ScanCommand } = require('@aws-sdk/client-dynamodb');
+    const out = []; let start;
+    do {
+      const r = await ddb().send(new ScanCommand({
+        TableName: QUALITY.errorsTable, ProjectionExpression: '#d, #c, sampleUrl', ExpressionAttributeNames: { '#d': 'day', '#c': 'count' }, ExclusiveStartKey: start,
+      }));
+      out.push(...(r.Items || []).map((i) => ({ day: (i.day && i.day.S) || null, count: Number(i.count && i.count.N) || 0, url: (i.sampleUrl && i.sampleUrl.S) || '' })));
+      start = r.LastEvaluatedKey;
+    } while (start);
+    return out;
+  }
+
   return {
+    clientErrorRows,
+    async listKeys(prefix) {
+      const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+      const keys = []; let token;
+      do {
+        const r = await s3().send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix, ContinuationToken: token }));
+        keys.push(...(r.Contents || []).map((o) => o.Key));
+        token = r.IsTruncated ? r.NextContinuationToken : undefined;
+      } while (token);
+      return keys;
+    },
+    /** newsSourceAudit's [audit] lines in [startMs, endMs] as [{ '@timestamp', '@message' }]; null when its log group does not exist. */
+    async auditLog(startMs, endMs) {
+      if (!(await logGroups()).includes(QUALITY.auditGroup)) return null;
+      return insights(logs, { groups: [QUALITY.auditGroup], queryString: AUDIT_QUERY, startMs, endMs, maxWaitMs: QUALITY.auditMaxWaitMs });
+    },
     async ownRows() {
       const [userCreated, savedKeys, shareCreated] = await Promise.all([
         scanAttr(READERS.tables.users, 'createdAt'), scanAttr(READERS.tables.saved, 'savedKey'), scanAttr(READERS.tables.shares, 'createdAt'),
@@ -186,4 +219,4 @@ function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient, ddbCl
   };
 }
 
-module.exports = { makeAws, insights, parseUsageRows, parseDifferRows, parseErrorSeries, USAGE_QUERY, DIFFER_QUERY, KEYS };
+module.exports = { makeAws, insights, parseUsageRows, parseDifferRows, parseErrorSeries, USAGE_QUERY, DIFFER_QUERY, AUDIT_QUERY, KEYS };

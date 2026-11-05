@@ -12,6 +12,7 @@ const KEYS = {
   heartbeat: 'record/views/health/settle-tick.json',
   world: 'world/latest.json',
   storyIndex: 'record/views/index/all.json', // thread id -> title for the readers panel
+  mergesPrefix: 'situations/merges/',   // newsSituationTracker: YYYY/MM/DD/HH/HHMM.json, one file per sweep that made new merges
 };
 
 const CONFIG = {
@@ -92,6 +93,23 @@ const READERS = {
   tables: { users: 'GlobalPerspectiveUserTable', saved: 'GlobalPerspectiveSavedItems', shares: 'GlobalPerspectiveShares' },
 };
 
+// Quality (ARCHITECTURE_OPS.md phase 3). Built once per UTC day, for the last closed UTC day (the record run for D finishes ~23:46 UTC
+// on D, the agent and the resolver write D's files during D), plus a snapshot of the open situations at build time.
+const QUALITY = {
+  examples: 5,
+  // Summaries that describe their sources instead of the news (the prompt forbids all of these: newsAgent buildSummaryPrompt rule 5/6).
+  // Found 2026-11-05 in the 2026-11-04 entries: 16 of 32 summaries said "the snippet(s)", "the sources" or "the headline".
+  // "the report" and bare "the articles" are not matched: they are ordinary news words ("the report said", "articles of impeachment").
+  selfReference: String.raw`\b(?:according to the (?:provided |given |available )?(?:articles?|sources?|snippets?)|the (?:provided |given |available )?(?:snippets?|sources?)|the headlines?)\b`,
+  coverageDays: 14,                         // days of record/runs/DAY.json read for coverage gaps
+  auditGroup: '/aws/lambda/newsSourceAudit',
+  auditWindowDays: 7,                       // newsSourceAudit runs Mon/Wed/Fri: the longest gap is 3 days; 7 leaves room for one miss
+  auditMaxWaitMs: 30000,
+  errorsTable: 'GlobalPerspectiveClientErrors',   // newsClientErrors: key errKey = DAY#hash16, attributes day, count, sampleUrl; TTL 30 days
+  errorsBaselineDays: 14,                   // the median is over the 14 days before the checked day
+  errorsTopPages: 8,
+};
+
 const STAGES = [
   { id: 'ingest', label: 'Ingest ran' },
   { id: 'agent', label: 'Agent wrote the archive' },
@@ -104,4 +122,4 @@ const STAGES = [
   { id: 'compare', label: 'Compare switches' },
 ];
 
-module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES, READERS };
+module.exports = { REGION, BUCKET, KEYS, CONFIG, STAGES, READERS, QUALITY };

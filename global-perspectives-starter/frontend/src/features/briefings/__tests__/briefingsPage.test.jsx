@@ -118,6 +118,8 @@ describe('read mode — heading and the edition shown', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
     expect(document.querySelector('.daily-fallback-note')).toBeNull();
     expect(document.body.textContent).not.toMatch(/not published yet|nearest earlier|paused|real gap/i);
+    expect(screen.queryByText('No brief available')).toBeNull();
+    expect(dailyArgs).not.toContain('2999-01-01'); // asked for the latest edition, not for the impossible day
   });
 
   it('a past date with no edition shows the nearest earlier one under its own date, with no note', () => {

@@ -7,6 +7,7 @@ import { useWeeklyEditionKeys } from '@/features/briefings/hooks/useBriefEdition
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { briefingHref } from '@/shared/lib/links.js';
 import { dateKeyOrNull } from '@/features/briefings/lib/dateKey.js';
+import { todayKey } from '@/features/briefings/lib/editions.js';
 import BriefingMode from '@/features/briefings/components/BriefingMode.jsx';
 import PhoneBriefingMode from '@/features/briefings/components/PhoneBriefingMode.jsx';
 import ReadMode from '@/features/briefings/components/ReadMode.jsx';
@@ -82,7 +83,9 @@ export default function BriefingsPage() {
   const navigate = useNavigate();
   const modeParam = searchParams.get('mode');
   const mode = MODE_KEYS.has(modeParam) ? modeParam : 'read';
-  const dateParam = dateKeyOrNull(searchParams.get('date'));
+  // A date after today is no date: the page serves the latest edition, the same as a bare /briefings.
+  const asked = dateKeyOrNull(searchParams.get('date'));
+  const dateParam = asked && asked <= todayKey() ? asked : null;
   const weekParam = dateKeyOrNull(searchParams.get('week'));
   const deck = searchParams.get('deck') === 'weekly' ? 'weekly' : 'daily';
 

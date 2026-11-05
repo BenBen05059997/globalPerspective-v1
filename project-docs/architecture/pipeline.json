@@ -32,7 +32,7 @@
     "features/ops": { "stages": [10], "part": "the operator page (/ops): money and pipeline health", "timeline": "reads the public record/views/health.json through the Worker and the gated ops action for the private money file; writes nothing" },
     "features/board": { "stages": [9], "part": "the board page (/board)", "timeline": "reads boards via newsBoard and the record views (stories, links, counts) through the Worker; reading fields fill as the weekly review runs" },
     "features/account": { "stages": [9], "part": "the account desk", "timeline": "reads country history and prefs from raw tables; target: board and record views" },
-    "features/breaking": { "stages": [9], "part": "breaking-alert redirects and the bell", "timeline": "reads breaking alerts; not a record view" },
+    "features/breaking": { "stages": [9], "part": "breaking-alert redirects; bell and strip switched off 2026-11-06", "timeline": "reads breaking alerts; not a record view" },
     "features/static": { "stages": [9], "part": "static pages", "timeline": "reads the daily brief only; not a record view" },
     "features/analysis-studio": { "stages": [9], "part": "shared-run pages of the retired Studio", "timeline": "reads none of the record" }
   }

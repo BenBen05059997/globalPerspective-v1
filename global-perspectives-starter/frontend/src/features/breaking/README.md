@@ -7,14 +7,14 @@ the Today page strip shows the latest alert from the last 24 hours; a hook resol
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads breaking alerts; not a record view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: breaking-alert redirects; bell and strip switched off 2026-11-06. Timeline: reads breaking alerts; not a record view. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status
 - **Switched off 2026-11-06 by the operator** ("switch it off fully and since that is a good time we rethink it later"). To be
   redesigned later. No alert was ever confirmed, so the bell and strip were always empty while every open page polled the feed
   every 5 minutes (about 18.9k `newsRecommend` calls in 14 days).
-- **Unmounted:** `NotificationBell` from `src/app/layout/Layout.jsx` (nav bar) and `BreakingStrip` from `src/features/home/Home.jsx`
+- **Unmounted (released in frontend release 9, commit 431fc4b1, bundle index-De4cN7vP, served 2026-11-06 00:27 JST):** `NotificationBell` from `src/app/layout/Layout.jsx` (nav bar) and `BreakingStrip` from `src/features/home/Home.jsx`
   (top of `/today`). Nothing else calls `fetchAlerts`, so no page requests the alert feed. The components, `useNotifications`,
   their CSS and tests stay in this folder, and `index.js` still exports `BreakingStrip` and `NotificationBell`.
 - **Still live:** the `/breaking` and `/breaking/:id` redirects (old shared links) through `useBreakingAlert` / `fetchAlert`.

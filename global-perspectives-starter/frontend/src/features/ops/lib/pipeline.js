@@ -4,6 +4,7 @@
 export const STATUS = {
   ok: { glyph: '✓', label: 'ok' },
   thin: { glyph: '~', label: 'thin' },
+  recovered: { glyph: '↺', label: 'recovered' },   // the agent row only: a day rebuilt from public records (raw articles, no entries, no forecasts)
   missing: { glyph: '✕', label: 'missing' },
   failed: { glyph: '!', label: 'failed' },
   nodata: { glyph: '·', label: 'no data' },

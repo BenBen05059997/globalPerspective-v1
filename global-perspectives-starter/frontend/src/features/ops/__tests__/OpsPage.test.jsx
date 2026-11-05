@@ -134,6 +134,19 @@ describe('OpsPage pipeline panel', () => {
     expect(screen.getByText(/facts: no archive entries for the day/)).toBeTruthy();
   });
 
+  it('a day rebuilt from public records is its own status, in the key and in the detail card, never "ok"', async () => {
+    renderPage();
+    const grid = await screen.findByRole('region', { name: 'Pipeline by stage and day' });
+    expect(screen.getByLabelText('Cell key').textContent).toContain('recovered');
+    const cell = within(grid).getByRole('button', { name: 'Agent wrote the archive, 1 Nov: recovered' });
+    fireEvent.click(cell);
+    const detail = screen.getByText(/Agent wrote the archive/, { selector: 'strong' }).closest('.ops-detail__body');
+    expect(within(detail).getByText('recovered')).toBeTruthy();
+    expect(within(detail).getByText(/Recovered from public records: 1624 raw articles/)).toBeTruthy();
+    expect(within(detail).getByText(/no story entries and no forecasts/)).toBeTruthy();
+    expect(within(detail).getByText('heal')).toBeTruthy();
+  });
+
   it('a cell that could not be read shows its error text', async () => {
     const health = devHealth();
     const row = health.days[5].rows[2];

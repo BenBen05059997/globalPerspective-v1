@@ -101,11 +101,12 @@ describe('read mode — heading and fallback note', () => {
     const servedKey = (key) => ({ brief: { displayDate: key, summary: '' }, servedDateKey: key, loading: false, error: null });
     afterEach(() => vi.useRealTimers());
 
-    it('yesterday is the newest edition before 14:30 UTC: the brief is simply due, nothing is "paused"', () => {
+    it('yesterday is the newest edition before 14:30 UTC: no banner, nothing is "paused"', () => {
       at('2026-11-04T05:00:00Z');
       dailyValue = servedKey('2026-11-03');
       renderAt('/briefings');
-      expect(screen.getByText(/published at 23:00 JST \(14:00 UTC\)/)).toBeInTheDocument();
+      expect(document.querySelector('.daily-fallback-note')).toBeNull();
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
       expect(document.body.textContent).not.toMatch(/paused/i);
     });
 

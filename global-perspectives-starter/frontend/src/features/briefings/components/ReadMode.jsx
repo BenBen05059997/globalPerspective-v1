@@ -178,8 +178,6 @@ export default function ReadMode({ dateParam }) {
       fallbackNote = <>No brief was published for <strong>{requested}</strong>; showing the nearest earlier edition, <strong>{shownDate}</strong>.</>;
     } else if (pause === 'paused') {
       fallbackNote = <>No new brief since <strong>{shownDate}</strong>{relLabel ? ` (${relLabel.toLowerCase()})` : ''} while analysis is paused.</>;
-    } else if (pause === 'due') {
-      fallbackNote = <>Today's brief is published at 23:00 JST (14:00 UTC). Showing <strong>{shownDate}</strong> until then.</>;
     }
   }
   const isLatest = !!newest && servedDateKey === newest;

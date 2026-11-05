@@ -435,7 +435,7 @@ function botHtmlResponse(html) {
   });
 }
 
-export default {
+const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
     const userAgent = request.headers.get('User-Agent') || '';
@@ -500,8 +500,8 @@ export default {
       });
     }
 
-    // Retired addresses: real 301s for every client (GET/HEAD), before any pre-render or shell.
-    if (request.method === 'GET' || request.method === 'HEAD') {
+    // Retired addresses: real 301s for every client, before any pre-render or shell.
+    if (request.method === 'GET') {
       const redirect = legacyRedirect(url);
       if (redirect) return redirect;
     }
@@ -552,7 +552,7 @@ export default {
     // Static blog (docs/blog/**/index.html on the origin): /blog and /blog/* are real pages, not client
     // routes, so they skip the SPA-shell fallback below and go straight to the origin (GitHub Pages),
     // which supplies its own /blog -> /blog/ redirect and genuine 404s. No bot branch above matches /blog.
-    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/blog' || url.pathname.startsWith('/blog/'))) {
+    if (request.method === 'GET' && (url.pathname === '/blog' || url.pathname.startsWith('/blog/'))) {
       return fetch(request);
     }
 
@@ -589,5 +589,15 @@ export default {
 
     // Everything else: pass through to GitHub Pages
     return fetch(request);
+  },
+};
+
+// HEAD answers exactly as GET does, minus the body.
+export default {
+  async fetch(request, env) {
+    if (request.method !== 'HEAD') return worker.fetch(request, env);
+    const res = await worker.fetch(new Request(request, { method: 'GET' }), env);
+    await res.body?.cancel();
+    return new Response(null, res);
   },
 };

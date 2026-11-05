@@ -29,6 +29,7 @@ or `wrangler versions list`); it is not recorded here.
   and the country read only while `manifest.builtAt` is under 9 hours old. A missing, unreadable or stale view is not an error: the action (`topics`,
   `daily_brief`, `latest_daily_brief`, `weekly_brief`, `thread_preview`, `country_preview`) answers as before. The Worker reads no DynamoDB.
 - GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static pages in `docs/blog/`).
+- `HEAD` answers exactly as `GET` does (status and headers), without the body, for every path.
 - Everything else falls back to the SPA shell.
 
 ## Tests

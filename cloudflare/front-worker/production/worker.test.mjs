@@ -108,7 +108,7 @@ const SAME = [
   ['GET', '/'], ['GET', '/weekly'], ['GET', '/weekly/thread/x'], ['GET', '/weekly/countries'], ['GET', '/analyze/s/abc'],
   ['GET', '/rss'], ['GET', '/rss/'], ['GET', '/app.js'], ['GET', '/nope.png'],
   ['GET', '/data/world/latest.json'], ['GET', '/data/world/missing.json'], ['GET', '/data/evil/x.json'], ['GET', '/data/world/a.member.json'],
-  ['POST', '/weekly'], ['HEAD', '/weekly'], ['POST', '/daily'],
+  ['POST', '/weekly'], ['POST', '/daily'],
   ['GET', '/weekly/thread/x', GOOGLEBOT], ['GET', '/briefings', GOOGLEBOT], ['GET', '/analyze/s/abc', GOOGLEBOT],
 ];
 test(`baseline vs patched identical for ${SAME.length} non-blog requests`, async () => {
@@ -121,6 +121,21 @@ test(`baseline vs patched identical for ${SAME.length} non-blog requests`, async
     if (b.headers['cache-control']?.startsWith('public, max-age=60, ')) b.headers['cache-control'] = b.headers['cache-control'].replace('max-age=60, ', '');
     assert.deepEqual(b, a, `${method} ${path} ${ua ? '(bot)' : ''}`);
   }
+});
+
+// HEAD is GET without the body: same status and headers for every kind of path the Worker handles.
+test('HEAD answers exactly as GET does, minus the body', async () => {
+  const paths = ['/', '/today', '/weekly/thread/x', '/blog/', '/blog', '/app.js', '/nope.png', '/rss', '/daily', '/data/world/latest.json', '/data/world/missing.json', '/data/evil/x.json'];
+  for (const ua of [undefined, GOOGLEBOT]) {
+    for (const path of paths) {
+      const get = await run(patched, `${H}${path}`, { ua });
+      const head = await run(patched, `${H}${path}`, { method: 'HEAD', ua });
+      assert.equal(head.status, get.status, `HEAD ${path}`);
+      assert.deepEqual(head.headers, get.headers, `HEAD ${path}`);
+      assert.equal(head.body, '', `HEAD ${path} has no body`);
+    }
+  }
+  assert.equal((await run(patched, `${H}/today`, { method: 'HEAD' })).status, 200);
 });
 
 // Record views (0037) are public through /data/*; facts, runs, readings and shadow views are not.

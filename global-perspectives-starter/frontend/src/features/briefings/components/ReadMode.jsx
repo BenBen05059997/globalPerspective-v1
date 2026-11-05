@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { threadIdOf, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
-import { addDaysKey, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
+import { addDaysKey, todayKey } from '@/features/briefings/lib/editions.js';
 import { briefingHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -27,14 +27,6 @@ function BoldText({ text }) {
       ? <strong key={i}>{p.slice(2, -2)}</strong>
       : p
   )}</>;
-}
-
-// How old the *served* brief is vs today: null when it is today's.
-function relativeDayLabel(servedKey, today) {
-  if (!servedKey) return null;
-  const days = daysBetween(servedKey, today);
-  if (!(days > 0)) return null;
-  return days === 1 ? 'Yesterday' : `${days} days ago`;
 }
 
 function formatTimeAgo(iso) {
@@ -158,7 +150,6 @@ export default function ReadMode({ dateParam }) {
   }
 
   const shownDate = brief.displayDate || servedDateKey || requested;
-  const relLabel = relativeDayLabel(servedDateKey, today);
   // The newest edition: a bare page serves it by construction; a dated page has to wait for the lookup (unknown = say nothing).
   const newest = latestDateKey;
   const isLatest = !!newest && servedDateKey === newest;
@@ -177,7 +168,6 @@ export default function ReadMode({ dateParam }) {
         <nav className="daily-date-nav" aria-label="Daily editions">
           <Link to={dayHref(prev)}>← Previous day</Link>
           <span className="daily-date-label">{shownDate}</span>
-          {relLabel && <span className="daily-rel-tag">{relLabel}</span>}
           {next && <Link to={dayHref(next)}>Next day →</Link>}
           {dateParam && <Link to={dayHref(null)}>Latest</Link>}
         </nav>

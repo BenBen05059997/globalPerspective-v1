@@ -12,9 +12,10 @@ This folder is stage 9: breaking-alert redirects and the bell. Timeline: reads b
 
 ## Status
 - Live (bell and strip). The feed shows only rows the operator has confirmed (status `confirmed`; `newsRecommend` `listAlerts`). `sent` and `proposed` rows are hidden.
-- Live config differs from the older docs: `newsBreakingAlert` runs with `DRY_RUN=false` and a mail key set, so a
-  detection is emailed to one operator address and marked `sent` (code: `markSent` in
-  `backend/distribution/newsBreakingAlert/src/index.js`). `sent` is not public: the operator runs
+- Operator email off since 2026-11-06 00:20 JST (operator: "stop the alert ... we dont use it"): `newsBreakingAlert` runs with
+  `DRY_RUN=true`, so a detection is only logged and written as `proposed`; nothing is emailed. Before, with `DRY_RUN=false`, it was
+  emailed to one operator address and marked `sent` (7 rows, none confirmed; code: `markSent` in
+  `backend/distribution/newsBreakingAlert/src/index.js`). Neither state is public: the operator runs
   `node backend/distribution/cli/breaking/review.js` (`proposed`/`sent` -> `confirmed`) to publish it to the bell and strip.
 - Subscriber breaking emails are off: `TriggerBreakingEmailSend` is DISABLED (enabling sends needs an operator yes).
 

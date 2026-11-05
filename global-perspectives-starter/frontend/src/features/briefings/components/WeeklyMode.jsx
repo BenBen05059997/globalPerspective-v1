@@ -86,7 +86,7 @@ function SignalCard({ s, signals }) {
 const weekHref = (week) => briefingHref({ mode: 'weekly', week });
 
 // WeeklyMode — /briefings?mode=weekly: the weekly signals brief as a long-form read. `?week=`
-// asks for a past edition (see WeeklyEditionNav for how an unsupported lookup is shown).
+// asks for a past edition; the "Week ending" label names the edition actually shown.
 export default function WeeklyMode({ weekParam }) {
   const { brief, loading, error, refetch } = useWeeklyBrief(weekParam);
   const weeks = useWeeklyEditionKeys();

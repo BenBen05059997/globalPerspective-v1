@@ -261,12 +261,12 @@ describe('weekly mode', () => {
     expect(document.title).toMatch(/^Weekly Brief — week ending /);
   });
 
-  it('asks for ?week= and says so plainly when the API answers with a later (latest) edition', () => {
+  it('asks for ?week= and, when the API answers with the latest edition, names that edition with no note', () => {
     weeklyValue = { brief: weekly, loading: false, error: null };
     weekKeys = ['2026-10-11', '2026-10-04'];
     renderAt('/briefings?mode=weekly&week=2026-10-04');
     expect(weeklyArgs).toContain('2026-10-04');
-    expect(screen.getByText(/is not available here yet; showing the latest edition/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/not available here yet/);
     expect(screen.getByRole('link', { name: '← Week before' }).getAttribute('href')).toBe('/briefings?mode=weekly&week=2026-10-04');
     expect(screen.getByRole('link', { name: 'Latest edition →' }).getAttribute('href')).toBe('/briefings?mode=weekly');
   });

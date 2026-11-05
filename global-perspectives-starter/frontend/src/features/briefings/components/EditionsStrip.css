@@ -28,10 +28,6 @@
 .bm-edition-mark:not(.current):hover { border-color: var(--hairline-strong); color: var(--text-head); }
 .bm-edition-mark:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
-.bm-editions-weekly-note {
-  margin: var(--space-2) 0 0; font-size: var(--text-ui); color: var(--text-dim);
-}
-
 .bm-edition-explain {
   margin-top: var(--space-2); display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2);
   font-size: var(--text-ui); color: var(--text-body);

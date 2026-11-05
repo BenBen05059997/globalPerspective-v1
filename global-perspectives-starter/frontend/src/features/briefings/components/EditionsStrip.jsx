@@ -75,14 +75,13 @@ export default function EditionsStrip({ marks, currentDateKey, onSelect, onGoLat
 
 // WeeklyEditionNav — the weekly archive: the one edition shown, a step to the nearest earlier edition
 // the record's index lists (`weeks`; weekly editions are not every calendar week, so a fixed 7-day step
-// lands on empty weeks), and the latest. No row of probed marks. A read API without per-week lookup
-// answers with the latest edition; then `weekOf` differs from the requested week and the note says so.
+// lands on empty weeks), and the latest. No row of probed marks. When the read API answers with the
+// latest edition instead of the requested week, the "Week ending" label names the edition shown.
 // With no index (`weeks` null) there is no step: an edition is never guessed.
 //   hrefForWeek(week | null) -> the address for that edition (null = latest)
 export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) {
   if (!weekOf) return null;
   const label = editionDateLabel(weekOf);
-  const notServed = !!requestedWeek && weekOf !== requestedWeek;
   const before = nearestWeek(weeks, weekOf, -1);
   return (
     <div className="bm-editions bm-editions-weekly" role="group" aria-label="Editions">
@@ -94,11 +93,6 @@ export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) 
         </span>
         {requestedWeek && <Link className="bm-edition-step" to={hrefForWeek(null)}>Latest edition →</Link>}
       </div>
-      {notServed && (
-        <p className="bm-editions-weekly-note" role="status">
-          The edition for the week ending {editionDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week ending {label}).
-        </p>
-      )}
     </div>
   );
 }

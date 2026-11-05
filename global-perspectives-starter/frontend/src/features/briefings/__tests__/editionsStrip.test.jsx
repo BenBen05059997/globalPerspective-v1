@@ -109,9 +109,11 @@ describe('WeeklyEditionNav', () => {
     expect(screen.queryByRole('link', { name: '← Week before' })).toBeNull();
   });
 
-  it('when the API answers with a different week than asked, it says so plainly', () => {
+  it('when the API answers with a different week than asked, the label names the edition shown and there is no note', () => {
     render(<MemoryRouter><WeeklyEditionNav weekOf="2026-10-26" requestedWeek="2026-10-05" hrefForWeek={hrefForWeek} /></MemoryRouter>);
-    expect(screen.getByRole('status')).toHaveTextContent('The edition for the week ending Mon, Oct 5 is not available here yet; showing the latest edition (week ending Mon, Oct 26).');
+    expect(screen.getByText('Week ending Mon, Oct 26')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Latest edition →' })).toBeInTheDocument();
   });
 });
 

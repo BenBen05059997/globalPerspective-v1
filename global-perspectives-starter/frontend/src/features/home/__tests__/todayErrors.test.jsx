@@ -16,7 +16,6 @@ vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () =>
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
-vi.mock('@/features/breaking/components/BreakingStrip', () => ({ default: () => null }));
 const svc = vi.hoisted(() => ({
   getTopicSummary: vi.fn(),
   getTopicPrediction: vi.fn(),

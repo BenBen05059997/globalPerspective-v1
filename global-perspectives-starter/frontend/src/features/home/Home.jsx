@@ -17,7 +17,6 @@ import StatusStrip from '@/shared/ui/StatusStrip';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
 import LedeBand from '@/features/home/components/LedeBand';
-import { BreakingStrip } from '@/features/breaking';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
 import { topicHasNoForecast } from '@/features/home/lib/noForecast';
@@ -386,9 +385,6 @@ function Home() {
       right={rightRail}
       className="home-shell"
     >
-      {/* Breaking strip — only renders when a confirmed alert is <24h old */}
-      <BreakingStrip />
-
       {/* Today's lede — deterministic orientation band (composeTopicsLede) */}
       {!loading && <LedeBand {...lede} />}
 

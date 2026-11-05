@@ -121,7 +121,8 @@
 }
 .gp-help:hover { border-color: var(--hairline-strong); color: var(--text-head); }
 
-/* The bell (NotificationBell, features/breaking) sits in the bar at the same 44px size. */
+/* The bell (NotificationBell, features/breaking) sits in the bar at the same 44px size. It is unmounted since
+   2026-11-06 (see features/breaking/README.md); this rule waits for it. */
 .gp-nav .gp-bell {
   width: var(--tap-min); height: var(--tap-min); background: transparent;
   border-color: var(--hairline); color: var(--text-muted);

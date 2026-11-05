@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
 
@@ -27,10 +27,13 @@ vi.mock('firebase/auth', () => ({
 // fetchDailyBrief backs useDailyBrief, which both /map and this Layout test reuse for the
 // "paused since" computation — mocked per test to control freshness.
 const fetchDailyBrief = vi.fn();
+// The breaking-alert bell is switched off (2026-11-06); this spy proves the shell never polls the alert feed.
+const fetchAlerts = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({
   fetchDailyBrief: (...args) => fetchDailyBrief(...args),
   // Batch 3 / B: useDailyBrief() (no date) now calls fetchLatestDailyBrief; same mock controls both.
   fetchLatestDailyBrief: (...args) => fetchDailyBrief(...args),
+  fetchAlerts: (...args) => fetchAlerts(...args),
   billingConfigured: () => false,
   fetchMembership: vi.fn(),
 }));
@@ -61,6 +64,7 @@ function renderLayout(path = '/weekly') {
 beforeEach(() => {
   __resetAnalysisFreshness();
   fetchDailyBrief.mockReset();
+  fetchAlerts.mockReset();
   isPhoneMock.mockReset();
   isPhoneMock.mockReturnValue(false);
   try { localStorage.clear(); } catch { /* ignore */ }
@@ -88,6 +92,26 @@ describe('Layout — N1 menu', () => {
     renderLayout('/weekly');
     const footer = document.querySelector('.gp-footer');
     expect(footer.innerHTML).not.toMatch(/whitepaper|white paper/i);
+  });
+});
+
+describe('Layout — breaking-alert bell switched off (2026-11-06)', () => {
+  it('renders no bell and makes no alert request, even with the alert endpoint configured', async () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    window.USER_PREFS_ENDPOINT = 'https://prefs.test/';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+    try {
+      renderLayout('/weekly');
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(document.querySelector('.gp-bell')).toBeNull();
+      expect(screen.queryByRole('button', { name: /notification|alert/i })).toBeNull();
+      expect(screen.getByText('page content')).toBeTruthy();
+      expect(fetchAlerts).not.toHaveBeenCalled();
+      expect(fetchSpy.mock.calls.filter(([, init]) => String(init?.body ?? '').includes('list_alerts'))).toEqual([]);
+    } finally {
+      fetchSpy.mockRestore();
+      delete window.USER_PREFS_ENDPOINT;
+    }
   });
 });
 

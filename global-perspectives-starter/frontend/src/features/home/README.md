@@ -28,7 +28,7 @@ This folder is stage 9: the today page (/today). Timeline: reads today's topics 
 - `lib/noForecast.js` - Predict says "no new forecast" at once when the today view shows the latest run wrote the topic without one (0038)
 - `hooks/useTodayArchive.js` - the only hook in this folder
 - Public API (`index.js`): `Home`
-- Imports from other features: `@/features/breaking` -> `BreakingStrip`; `@/features/track-record` -> `useTrackRecord`,
+- Imports from other features: `@/features/track-record` -> `useTrackRecord`,
   `useCorrectionsFeed` (trust strip)
 - Shared: `useGeminiTopics`, `contentService`, `EntityLink`, `@/shared/lib/links.js`
 - Failures render inline (no modal) and go to `reportFetchError` (an empty result counts as a failure; the archive rail says it could

@@ -8,7 +8,6 @@ import { MemoryRouter } from 'react-router';
 const report = vi.fn();
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: (...a) => report(...a) }));
 vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
-vi.mock('@/features/breaking/components/BreakingStrip', () => ({ default: () => null }));
 vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () => ({ entries: [] }) }));
 
 let topicsState;

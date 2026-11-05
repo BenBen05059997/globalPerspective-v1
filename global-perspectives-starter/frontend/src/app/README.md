@@ -16,8 +16,8 @@ retired addresses. Every page itself lives in a folder under `features/`.
 - Lazy pages: every page except Today (`features/home`, eager) is `lazy(import(...))`, a chunk fetched on first visit.
   While a chunk loads, `RouteFallback` shows the shared `BootLoader` (full-screen sensor list on `/`, inline elsewhere).
   `removeStaticBoot()` hands off from the pre-JS boot screen in `index.html`.
-- `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record), a "?" link to the map's About, the bell from
-  `features/breaking`, a Board link (signed-in non-guest users, only when `boardAvailable()`), Account or Sign in; the
+- `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record), a "?" link to the map's About (the breaking-alert bell is unmounted since 2026-11-06),
+  a Board link (signed-in non-guest users, only when `boardAvailable()`), Account or Sign in; the
   paused-analysis status line (not on `/`), the footer (About, Membership, Privacy, Disclosures, Contact; hidden on the
   desktop map console) and a phone tab bar with the four main items. `layout/AIToast.jsx` shows a toast while a generation runs.
 - `errors/ErrorHandling.jsx` - `ErrorBoundary` renders nothing on a crash on purpose (no "something went wrong" card)

@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
-import { NotificationBell } from '@/features/breaking';
 import { usePausedSince, useGdacsStatus, HudStatusLine } from '@/features/map';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { ROUTE } from '@/shared/lib/links.js';
@@ -157,7 +156,6 @@ function Layout({ children }) {
               <circle cx="8" cy="11.6" r="0.6" fill="currentColor" stroke="none" />
             </svg>
           </Link>
-          <NotificationBell />
 
           {/* The board is a member tool: its link sits in the account area, only for a signed-in member and only
               where a board backend is configured. */}

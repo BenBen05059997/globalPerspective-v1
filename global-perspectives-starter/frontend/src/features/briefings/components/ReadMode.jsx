@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { threadIdOf, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
-import { addDaysKey, dailyPauseState, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
+import { addDaysKey, daysBetween, todayKey } from '@/features/briefings/lib/editions.js';
 import { briefingHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -122,7 +122,7 @@ function CountryCardLink({ name, className, children }) {
 }
 
 // ReadMode — /briefings (mode=read, the default): the daily brief as one long-form read. `?date=`
-// asks for a specific edition; the hook falls back to the nearest earlier one and says so.
+// asks for a specific edition; the hook falls back to the nearest earlier one and the date heading names it.
 export default function ReadMode({ dateParam }) {
   const today = todayKey();
   const requested = dateParam || today;
@@ -143,18 +143,11 @@ export default function ReadMode({ dateParam }) {
   const next = anchor < today ? addDaysKey(anchor, 1) : null;
 
   if (!brief) {
-    // Nothing in the hook's ~30-day lookback either side of the request. A date after today is not
-    // a gap: it has not happened yet.
+    // Nothing in the hook's ~30-day lookback either side of the request.
     return (
       <div className="daily-page daily-empty">
         <h1>No brief available</h1>
-        <p>
-          {requested > today
-            ? `The brief for ${requested} is not published yet.`
-            : requested === today
-              ? 'No brief has been generated in the last month. This looks like a real gap, not a same-day delay.'
-              : `No brief was published within about a month of ${requested} — this looks like a real gap in the archive, not a delay.`}
-        </p>
+        <p>No brief has been published in the last month.</p>
         <div className="daily-empty-links">
           <Link to={dayHref(prev)}>← Previous day</Link>
           {next && <Link to={dayHref(next)}>Next day →</Link>}
@@ -166,20 +159,8 @@ export default function ReadMode({ dateParam }) {
 
   const shownDate = brief.displayDate || servedDateKey || requested;
   const relLabel = relativeDayLabel(servedDateKey, today);
-  const servedOlder = !!servedDateKey && servedDateKey !== requested;
   // The newest edition: a bare page serves it by construction; a dated page has to wait for the lookup (unknown = say nothing).
   const newest = latestDateKey;
-  const pause = dailyPauseState(newest);
-  let fallbackNote = null;
-  if (servedOlder) {
-    if (requested > today) {
-      fallbackNote = <>The brief for <strong>{requested}</strong> is not published yet; showing the latest edition, <strong>{shownDate}</strong>.</>;
-    } else if (requested !== today) {
-      fallbackNote = <>No brief was published for <strong>{requested}</strong>; showing the nearest earlier edition, <strong>{shownDate}</strong>.</>;
-    } else if (pause === 'paused') {
-      fallbackNote = <>No new brief since <strong>{shownDate}</strong>{relLabel ? ` (${relLabel.toLowerCase()})` : ''} while analysis is paused.</>;
-    }
-  }
   const isLatest = !!newest && servedDateKey === newest;
   const stats = brief.stats || {};
   const countryTier = tierFromLevel(brief.countryToWatch?.riskLevel); // unknown level reads "Not scored"
@@ -206,9 +187,6 @@ export default function ReadMode({ dateParam }) {
           <SaveButton itemType="daily" itemId={editionKey} metadata={{ headline: brief.headline, date: brief.displayDate }} />
         </div>
       </div>
-
-      {/* Honest fallback: say plainly which edition is shown when it is not the one asked for. */}
-      {fallbackNote && <div className="daily-fallback-note">{fallbackNote}</div>}
 
       <header className="daily-masthead">
         {/* Named by its date, never "Today's": the keys are UTC days, so before 09:00 JST a reader in Japan already has a later date (R3-1). */}

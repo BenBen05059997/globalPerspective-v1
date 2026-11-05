@@ -6,17 +6,13 @@ import { nearestWeek, labelledDateKeys } from '@/features/briefings/lib/editions
 import '@/features/briefings/components/EditionsStrip.css';
 
 // EditionsStrip — one mark per day (daily), oldest to newest, left to right, over the real probe
-// window (ending at the latest known edition — it never probes past it, see useDailyEditionsIndex),
-// plus one appended range mark for the real gap since then (the pause), if any. Never a dead end:
-// every dashed/paused mark explains itself and, for the pause, offers the latest edition.
+// window (ending at the latest known edition — it never probes past it, see useDailyEditionsIndex).
+// Never a dead end: every dashed mark explains itself and offers the latest edition.
 //   solid   (●) — a real edition exists, clickable
-//   dashed  (○) — no edition was published for that date (within the probe window; this is a gap
-//                 in the archive, NOT the pause — the pause only starts after the latest edition)
+//   dashed  (○) — no edition was published for that date
 //   unknown (?) — not yet probed
-//   paused  (a wider ‖ mark at the end) — the real, dated range from the day after the latest
-//                 edition through today; the only place the "AI paused" wording appears
-export default function EditionsStrip({ marks, pausedSegment, currentDateKey, onSelect, onGoLatest, latestLabel }) {
-  const [explain, setExplain] = useState(null); // 'paused' | a dateKey | null
+export default function EditionsStrip({ marks, currentDateKey, onSelect, onGoLatest, latestLabel }) {
+  const [explain, setExplain] = useState(null); // a dateKey | null
   if (!marks || marks.length === 0) return null;
   const ordered = [...marks].reverse(); // oldest first, reading left to right
   const dateKeysAsc = ordered.map((m) => m.dateKey);
@@ -59,28 +55,12 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
             </button>
           );
         })}
-        {pausedSegment && (
-          <button
-            type="button"
-            className="bm-edition-mark bm-edition-paused"
-            title={`${formatDateLabel(pausedSegment.fromKey)} → today — no editions (AI analysis paused, ${pausedSegment.days} days)`}
-            aria-label={`Paused, ${formatDateLabel(pausedSegment.fromKey)} through today, ${pausedSegment.days} days with no editions`}
-            onClick={() => setExplain('paused')}
-          >
-            <span className="bm-edition-dot" aria-hidden="true">‖</span>
-            <span className="bm-edition-label">
-              Paused · {formatDateLabel(pausedSegment.fromKey)} → today ({pausedSegment.days}d)
-            </span>
-          </button>
-        )}
       </div>
 
       {explain && (
         <div className="bm-edition-explain" role="status">
           <span>
-            {explain === 'paused'
-              ? `No editions since ${latestLabel || formatDateLabel(currentDateKey)} — AI analysis has been paused for ${pausedSegment?.days} days.`
-              : `No edition was published for ${formatDateLabel(explain)}.`}
+            No edition was published for {formatDateLabel(explain)}.
           </span>
           {onGoLatest && (
             <Button compact onClick={() => { onGoLatest(); setExplain(null); }}>

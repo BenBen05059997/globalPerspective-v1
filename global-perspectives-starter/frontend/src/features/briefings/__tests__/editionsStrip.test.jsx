@@ -68,16 +68,7 @@ describe('EditionsStrip', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('the pause is one range mark with the real day count, and says AI analysis is paused', () => {
-    const pausedSegment = { fromKey: '2026-10-31', toKey: '2026-11-02', days: 3 };
-    render(<EditionsStrip marks={marks} pausedSegment={pausedSegment} currentDateKey="2026-10-30" onGoLatest={vi.fn()} latestLabel="Fri, Oct 30" />);
-    const paused = screen.getByRole('button', { name: 'Paused, Sat, Oct 31 through today, 3 days with no editions' });
-    expect(paused).toHaveTextContent('Paused · Sat, Oct 31 → today (3d)');
-    fireEvent.click(paused);
-    expect(screen.getByRole('status')).toHaveTextContent('No editions since Fri, Oct 30 — AI analysis has been paused for 3 days.');
-  });
-
-  it('without a pause there is no paused mark and no "paused" wording', () => {
+  it('there is no paused mark and no "paused" wording', () => {
     render(<EditionsStrip marks={marks} currentDateKey="2026-10-30" />);
     expect(screen.queryByRole('button', { name: /^Paused/ })).toBeNull();
     expect(document.body.textContent).not.toMatch(/paused/i);

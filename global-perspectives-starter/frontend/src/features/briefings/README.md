@@ -19,8 +19,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
   on the DynamoDB row holds it back from the `weekly_brief` action and from the email (the sender follows DynamoDB; `RECORD_READS=compare`
   only compares the record), but NOT from the record views, the page or the Worker pre-render (append-only notes). To hold one back there too, or publish it again:
   `backend/record/cli/hold-weekly-brief.mjs --week <weekOf> [--publish] --row --write` (dry run without `--write`) appends a later note; the week leaves the index at the next rebuild.
-- The pause wording follows the newest published edition (UTC dates), not the edition on screen: "paused" only when that edition is 2+ days
-  before today, or today's is missing after 14:30 UTC; before that the page says today's brief comes at 23:00 JST (14:00 UTC).
+- A date with no edition (or a future date) shows the nearest earlier edition (the latest, for a future date) under its own date heading, with no note. Nothing is published in the last month: one plain line.
 
 ## Routes
 - `/briefings?mode=read|weekly|present` -> `BriefingsPage` (no or unknown `mode` = read). `&date=YYYY-MM-DD` picks the daily edition
@@ -30,12 +29,12 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 
 ## Frontend
 - `BriefingsPage.jsx` - URL parsing, mode switch (`Tabs`), `PresentMode` (`BriefingMode` desktop / `PhoneBriefingMode` phone)
-- `components/ReadMode.jsx` - date prev/next, fallback note, takeaways, stats, top stories, rising thread, country to watch,
+- `components/ReadMode.jsx` - date prev/next, takeaways, stats, top stories, rising thread, country to watch,
   Share / Copy / Save (`itemType: daily`), empty state
 - `components/WeeklyMode.jsx` - KPIs, signal cards, watch list, method note, `SubscribeCard`, Save (`itemType: weekly`), week navigation
 - `components/BriefingSlides.jsx` (slide bodies; the weekly deck ends with `SubscribeCard`), `EditionsStrip.jsx`, `BriefingError.jsx`
   (failed request: reported, with retry), `Trajectory.jsx`, `PlaceLinks.jsx`
-- `lib/dateKey.js`, `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (date helpers, `dailyPauseState`, `nearestWeek`)
+- `lib/dateKey.js`, `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (date helpers, `nearestWeek`)
 - `hooks/` - `useWeeklyBrief`, `useDailyEditionsIndex`, `useBriefEditions` (newest daily key, weekly edition keys), `useStoryQuestion`;
   the daily brief hook is shared (`@/shared/hooks/useDailyBrief.js`).
   Both brief hooks read the record through `@/shared/api/briefViews.js`.
@@ -56,7 +55,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 
 ## Data
 - Record views (`/data/record/views/`): `index/briefs.json` (which briefs exist), `briefs/daily/<date>.json`, `briefs/weekly/<weekOf>.json`. Rebuilt after every ingest and brief and nightly, so a brief shows up to 15 minutes after it is written. A failed read is reported and answers null, never "no brief".
-- `useDailyBrief(date)` -> no date: the record's newest in the 30-day window plus `daily_brief` for today alone unless the record already has it, and `latest_daily_brief` when the record holds none; a date: the requested day, else the newest edition before it from the record's index (the action is asked only for days the index cannot hold: the requested day when newer than the index, at most 8 days when the views are stale or the index is missing; an impossible date means no date). Also returns `latestDateKey` (the newest published edition). localStorage `gp_daily_brief_v1`, 30 min. A date with no edition falls back to the nearest earlier one and says so.
+- `useDailyBrief(date)` -> no date: the record's newest in the 30-day window plus `daily_brief` for today alone unless the record already has it, and `latest_daily_brief` when the record holds none; a date: the requested day, else the newest edition before it from the record's index (the action is asked only for days the index cannot hold: the requested day when newer than the index, at most 8 days when the views are stale or the index is missing; an impossible date means no date). Also returns `latestDateKey` (the newest published edition). localStorage `gp_daily_brief_v1`, 30 min. A date with no edition falls back to the nearest earlier one (the page heading names it).
 - `useWeeklyBrief(week)` -> the record's copy; the action when that week is missing or, for the latest, when the views are not fresh (`manifest.builtAt` over 9 h old, `shared/api/viewsFresh.js`; the newer wins). If the action fails and the record has the brief, the record's copy is shown and the failure reported. localStorage `gp_weekly_brief_v1[:week]`, 30 min. A read API without the lookup answers latest and the page says so. "Week before" goes to the nearest earlier edition in the record's index (`nearestWeek`), never a bare 7 days.
 - `useDailyEditionsIndex` -> the record's index, then `latest_daily_brief` editions, then `daily_brief` probes for dates still unknown, at most 14 days (sessionStorage `gp_briefings_daily_editions_v1`; a probe's "no edition" is kept 10 min only, the index's answers for the session); `useStoryQuestion(threadId)` -> the record's `forecasts/<threadId>.json` view while the views are fresh (`shared/api/forecastViews.js`, decision 0052), no question when the record cannot answer, reported by the shared freshness check (memory). No sign-in.
 

@@ -1,8 +1,8 @@
 // /briefings modes. Read (the daily long-form, ex-/daily): the heading names the edition by its date
 // ("Latest Brief · <date>" for the newest), never "Today's" (UTC keys, R3-1); a plain, true "no new brief" line instead of
 // "publishes at the end of the day" during an outage; "AI-generated" only; an error state that is
-// not an empty state. Weekly (ex-/weekly-brief): KPIs, signals with sources, the week= archive
-// fallback note. The mode switch writes ?mode=.
+// not an empty state. Weekly (ex-/weekly-brief): KPIs, signals with sources, the week= archive.
+// The mode switch writes ?mode=.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -76,7 +76,7 @@ beforeEach(() => {
   reportFetchError.mockClear();
 });
 
-describe('read mode — heading and fallback note', () => {
+describe('read mode — heading and the edition shown', () => {
   it('is the default mode and names today\'s edition by its date, never "Today\'s" (UTC keys; R3-1)', () => {
     dailyValue = fresh;
     renderAt('/briefings');
@@ -86,52 +86,14 @@ describe('read mode — heading and fallback note', () => {
     expect(document.title).toBe(`Daily Brief — ${today} | Global Perspectives`);
   });
 
-  it('shows "Latest Brief · <date>" and "No new brief since" when the served edition is older than today', () => {
+  it('shows "Latest Brief · <date>" and the served edition under it when that edition is older than today', () => {
     dailyValue = stale;
     renderAt('/briefings?mode=read');
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.textContent).toMatch(/Latest Brief/);
     expect(h1.textContent).toContain(old);
-    expect(screen.getByText(/No new brief since/)).toBeInTheDocument();
+    expect(document.querySelector('.daily-fallback-note')).toBeNull();
     expect(screen.queryByText(/publishes at the end of the day/i)).not.toBeInTheDocument();
-  });
-
-  describe('the pause wording follows the newest published edition, not the clock alone', () => {
-    const at = (iso) => vi.useFakeTimers({ toFake: ['Date'], now: new Date(iso) });
-    const servedKey = (key) => ({ brief: { displayDate: key, summary: '' }, servedDateKey: key, loading: false, error: null });
-    afterEach(() => vi.useRealTimers());
-
-    it('yesterday is the newest edition before 14:30 UTC: no banner, nothing is "paused"', () => {
-      at('2026-11-04T05:00:00Z');
-      dailyValue = servedKey('2026-11-03');
-      renderAt('/briefings');
-      expect(document.querySelector('.daily-fallback-note')).toBeNull();
-      expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
-      expect(document.body.textContent).not.toMatch(/paused/i);
-    });
-
-    it('yesterday is the newest edition after 14:30 UTC: today\'s is late, so it says paused', () => {
-      at('2026-11-04T15:00:00Z');
-      dailyValue = servedKey('2026-11-03');
-      renderAt('/briefings');
-      expect(screen.getByText(/No new brief since/)).toBeInTheDocument();
-      expect(screen.getByText(/while analysis is paused/)).toBeInTheDocument();
-    });
-
-    it('two days without an edition is a pause at any hour', () => {
-      at('2026-11-04T05:00:00Z');
-      dailyValue = servedKey('2026-11-02');
-      renderAt('/briefings');
-      expect(screen.getByText(/while analysis is paused/)).toBeInTheDocument();
-    });
-
-    it('viewing an old date while the newest edition is yesterday does not say paused', () => {
-      at('2026-11-04T05:00:00Z');
-      newestKey = '2026-11-03';
-      dailyValue = servedKey('2026-10-20');
-      renderAt('/briefings?mode=read&date=2026-10-20');
-      expect(document.body.textContent).not.toMatch(/paused/i);
-    });
   });
 
   it('"Latest Brief" is only for the newest edition; an older one is not called latest', () => {
@@ -149,24 +111,25 @@ describe('read mode — heading and fallback note', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
   });
 
-  it('a date after today is "not published yet", never a gap in the archive', () => {
+  it('a date after today shows the latest edition under "Latest Brief", with no note', () => {
+    newestKey = today;
     dailyValue = { ...fresh, servedDateKey: today };
     renderAt('/briefings?mode=read&date=2999-01-01');
-    expect(document.querySelector('.daily-fallback-note').textContent).toMatch(/The brief for 2999-01-01 is not published yet; showing the latest edition/);
-    expect(document.body.textContent).not.toMatch(/real gap|No brief was published/);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Latest Brief/);
+    expect(document.querySelector('.daily-fallback-note')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/not published yet|nearest earlier|paused|real gap/i);
   });
 
-  it('a future date with nothing in the archive says it is not published yet', () => {
-    renderAt('/briefings?mode=read&date=2999-01-01');
-    expect(screen.getByText('The brief for 2999-01-01 is not published yet.')).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/real gap/);
-  });
-
-  it('a requested past date that has no edition says which edition is shown instead', () => {
+  it('a past date with no edition shows the nearest earlier one under its own date, with no note', () => {
+    newestKey = '2026-09-12';
     dailyValue = { ...stale, servedDateKey: '2026-09-10', brief: { ...stale.brief, displayDate: '2026-09-10' } };
     renderAt(`/briefings?mode=read&date=${old}`);
     expect(dailyArgs).toContain(old);
-    expect(screen.getByText(/showing the nearest earlier edition/)).toBeInTheDocument();
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toContain('2026-09-10');
+    expect(h1.textContent).not.toMatch(/Latest/);
+    expect(document.querySelector('.daily-fallback-note')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/not published yet|nearest earlier|paused|real gap/i);
   });
 
   it('shows "AI-generated" only, no "analyst-reviewed" claim, and no Economic Footprint', () => {
@@ -256,9 +219,10 @@ describe('read mode — sections', () => {
 });
 
 describe('read mode — empty and error states', () => {
-  it("no brief found: says it's a real gap rather than a same-day publish delay", () => {
+  it('no brief found: one plain line, no "gap" or "delay" wording', () => {
     renderAt('/briefings');
-    expect(screen.getByText(/No brief has been generated in the last month/i)).toBeInTheDocument();
+    expect(screen.getByText('No brief has been published in the last month.')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/real gap|not a delay|not published yet/i);
   });
 
   it('a failed request is an error (reported, with a retry), not "no brief"', () => {
@@ -266,7 +230,7 @@ describe('read mode — empty and error states', () => {
     dailyValue = { brief: null, servedDateKey: null, loading: false, error: 'Proxy HTTP 502', refetch };
     renderAt('/briefings');
     expect(screen.getByRole('alert')).toHaveTextContent(/could not be loaded/);
-    expect(screen.queryByText(/No brief has been generated/)).toBeNull();
+    expect(screen.queryByText(/No brief has been published/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(refetch).toHaveBeenCalled();
     expect(reportFetchError).toHaveBeenCalledWith('briefings-daily', expect.any(Error));

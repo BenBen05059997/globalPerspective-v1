@@ -4,7 +4,7 @@ import {
   buildDailySlides, buildWeeklySlides, mapFocusForDailySlide, mapFocusForWeeklySlide,
   shadingForDailySlides, shadingForWeeklySlides,
 } from '@/features/briefings/lib/briefingSlides.js';
-import { lastNDateKeys, buildDailyEditionMarks, buildPausedSegment, todayKey } from '@/features/briefings/lib/editions.js';
+import { lastNDateKeys, buildDailyEditionMarks } from '@/features/briefings/lib/editions.js';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
@@ -71,10 +71,6 @@ export default function PhoneBriefingMode({
     const keys = lastNDateKeys(dailyAnchorDateKey, 14);
     return buildDailyEditionMarks(keys, dailyEditionsIndex, requestedDateKey || dailyAnchorDateKey);
   }, [mode, dailyAnchorDateKey, dailyEditionsIndex, requestedDateKey]);
-  const pausedSegment = useMemo(
-    () => (newestDailyKey ? buildPausedSegment(newestDailyKey, todayKey()) : null),
-    [newestDailyKey],
-  );
 
   if (!brief) {
     return (
@@ -132,7 +128,6 @@ export default function PhoneBriefingMode({
             <EditionsStrip
               key={mode}
               marks={dailyMarks}
-              pausedSegment={pausedSegment}
               currentDateKey={requestedDateKey || dailyAnchorDateKey}
               onSelect={(dk) => { onSelectDailyDate?.(dk); setTab('slides'); }}
               latestLabel={newestDailyKey ? formatDateLabel(newestDailyKey) : null}

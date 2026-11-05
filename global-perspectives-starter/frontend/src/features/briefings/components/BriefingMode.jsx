@@ -4,7 +4,7 @@ import {
   buildDailySlides, buildWeeklySlides, mapFocusForDailySlide, mapFocusForWeeklySlide,
   shadingForDailySlides, shadingForWeeklySlides,
 } from '@/features/briefings/lib/briefingSlides.js';
-import { lastNDateKeys, buildDailyEditionMarks, buildPausedSegment, todayKey } from '@/features/briefings/lib/editions.js';
+import { lastNDateKeys, buildDailyEditionMarks } from '@/features/briefings/lib/editions.js';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
@@ -116,17 +116,12 @@ export default function BriefingMode({
   }, []);
 
   // Editions strip data — the probe window ends at the latest known edition (no extra requests;
-  // useDailyEditionsIndex never looks past it), and the real gap since then (if any) is one dated
-  // "paused" range, not a false "AI paused" reason stamped on every pre-pause missing day.
+  // useDailyEditionsIndex never looks past it).
   const dailyMarks = useMemo(() => {
     if (mode !== 'daily' || !dailyAnchorDateKey) return [];
     const keys = lastNDateKeys(dailyAnchorDateKey, 14);
     return buildDailyEditionMarks(keys, dailyEditionsIndex, requestedDateKey || dailyAnchorDateKey);
   }, [mode, dailyAnchorDateKey, dailyEditionsIndex, requestedDateKey]);
-  const pausedSegment = useMemo(
-    () => (newestDailyKey ? buildPausedSegment(newestDailyKey, todayKey()) : null),
-    [newestDailyKey],
-  );
 
   if (!brief) {
     return (
@@ -177,7 +172,6 @@ export default function BriefingMode({
         <EditionsStrip
           key={mode}
           marks={dailyMarks}
-          pausedSegment={pausedSegment}
           currentDateKey={requestedDateKey || dailyAnchorDateKey}
           onSelect={onSelectDailyDate}
           latestLabel={newestDailyKey ? formatDateLabel(newestDailyKey) : null}

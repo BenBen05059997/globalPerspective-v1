@@ -42,19 +42,6 @@
   padding: 0 var(--space-2);
 }
 
-/* "No new brief since …" = stale: the --warn status stripe */
-.daily-fallback-note {
-  font-size: var(--text-ui);
-  color: var(--text-muted);
-  background: var(--panel-2);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--r-xs);
-  padding: var(--space-2) var(--space-3);
-  margin: var(--space-4) 0 0;
-  line-height: var(--leading-normal);
-}
-.daily-fallback-note strong { color: var(--text-head); font-weight: var(--weight-semibold); }
-
 .daily-topbar-right { display: flex; align-items: center; gap: var(--space-2); }
 
 /* ── Masthead ────────────────────────────────────────────── */

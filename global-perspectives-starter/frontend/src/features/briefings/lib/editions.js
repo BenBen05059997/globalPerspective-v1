@@ -69,3 +69,14 @@ export function labelledDateKeys(dateKeysAsc, currentDateKey) {
   });
   return out;
 }
+
+/**
+ * editionDateLabel: an edition is named by its date ("Thu, Nov 5"), never "Today" or "Yesterday"
+ * (R3-1). Date keys are UTC days, so a relative word is wrong for readers in other timezones.
+ * Same format the shared formatDateLabel uses for non-relative dates.
+ */
+export function editionDateLabel(dateKey) {
+  return new Date(dateKey + 'T00:00:00Z').toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
+  });
+}

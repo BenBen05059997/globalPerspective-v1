@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import Button from '@/shared/ui/Button.jsx';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { nearestWeek, labelledDateKeys } from '@/features/briefings/lib/editions.js';
+import { nearestWeek, labelledDateKeys, editionDateLabel } from '@/features/briefings/lib/editions.js';
 import '@/features/briefings/components/EditionsStrip.css';
 
 // EditionsStrip — one mark per day (daily), oldest to newest, left to right, over the real probe
@@ -22,7 +21,7 @@ export default function EditionsStrip({ marks, currentDateKey, onSelect, onGoLat
     <div className="bm-editions" role="group" aria-label="Editions">
       <div className="bm-editions-track">
         {ordered.map((m) => {
-          const label = formatDateLabel(m.dateKey);
+          const label = editionDateLabel(m.dateKey);
           const showLabel = labelled.has(m.dateKey);
           if (m.status === 'exists') {
             return (
@@ -60,7 +59,7 @@ export default function EditionsStrip({ marks, currentDateKey, onSelect, onGoLat
       {explain && (
         <div className="bm-edition-explain" role="status">
           <span>
-            No edition was published for {formatDateLabel(explain)}.
+            No edition was published for {editionDateLabel(explain)}.
           </span>
           {onGoLatest && (
             <Button compact onClick={() => { onGoLatest(); setExplain(null); }}>
@@ -82,7 +81,7 @@ export default function EditionsStrip({ marks, currentDateKey, onSelect, onGoLat
 //   hrefForWeek(week | null) -> the address for that edition (null = latest)
 export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) {
   if (!weekOf) return null;
-  const label = formatDateLabel(weekOf);
+  const label = editionDateLabel(weekOf);
   const notServed = !!requestedWeek && weekOf !== requestedWeek;
   const before = nearestWeek(weeks, weekOf, -1);
   return (
@@ -97,7 +96,7 @@ export function WeeklyEditionNav({ weekOf, requestedWeek, weeks, hrefForWeek }) 
       </div>
       {notServed && (
         <p className="bm-editions-weekly-note" role="status">
-          The edition for the week ending {formatDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week ending {label}).
+          The edition for the week ending {editionDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week ending {label}).
         </p>
       )}
     </div>

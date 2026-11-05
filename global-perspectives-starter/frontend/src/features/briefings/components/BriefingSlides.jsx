@@ -3,7 +3,7 @@ import { storyHref, mapHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
+import { editionDateLabel } from '@/features/briefings/lib/editions.js';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
@@ -144,7 +144,7 @@ function WeekSlide({ brief }) {
   return (
     <div className="bm-slide bm-slide-week">
       <div className="bm-slide-kicker">
-        WEEKLY · week ending {formatDateLabel(brief.weekOf)}
+        WEEKLY · week ending {editionDateLabel(brief.weekOf)}
         <span className="bm-ai-tag">AI-generated</span>
       </div>
       <h2 className="bm-slide-title">The week's signals, ranked by risk</h2>

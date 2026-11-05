@@ -4,8 +4,7 @@ import {
   buildDailySlides, buildWeeklySlides, mapFocusForDailySlide, mapFocusForWeeklySlide,
   shadingForDailySlides, shadingForWeeklySlides,
 } from '@/features/briefings/lib/briefingSlides.js';
-import { lastNDateKeys, buildDailyEditionMarks } from '@/features/briefings/lib/editions.js';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
+import { lastNDateKeys, buildDailyEditionMarks, editionDateLabel } from '@/features/briefings/lib/editions.js';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
 import { BriefingModeToggle } from '@/features/briefings/components/BriefingMode.jsx';
@@ -130,7 +129,7 @@ export default function PhoneBriefingMode({
               marks={dailyMarks}
               currentDateKey={requestedDateKey || dailyAnchorDateKey}
               onSelect={(dk) => { onSelectDailyDate?.(dk); setTab('slides'); }}
-              latestLabel={newestDailyKey ? formatDateLabel(newestDailyKey) : null}
+              latestLabel={newestDailyKey ? editionDateLabel(newestDailyKey) : null}
               onGoLatest={() => { onSelectDailyDate?.(null); setTab('slides'); }}
             />
           )}

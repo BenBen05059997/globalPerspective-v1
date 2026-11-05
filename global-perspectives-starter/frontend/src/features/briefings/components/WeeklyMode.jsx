@@ -8,12 +8,11 @@ import Card from '@/shared/ui/Card.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { SaveButton } from '@/shared/ui/SaveButton';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
-import { formatDateLabel } from '@/shared/lib/dateUtils';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
 import BriefingError from '@/features/briefings/components/BriefingError.jsx';
 import { briefingHref } from '@/shared/lib/links.js';
-import { nearestWeek } from '@/features/briefings/lib/editions.js';
+import { nearestWeek, editionDateLabel } from '@/features/briefings/lib/editions.js';
 import { useWeeklyEditionKeys } from '@/features/briefings/hooks/useBriefEditions.js';
 import { threadIdOf, placeNames } from '@/features/briefings/lib/briefingSlides.js';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -94,7 +93,7 @@ export default function WeeklyMode({ weekParam }) {
 
   useEffect(() => {
     document.title = brief?.weekOf
-      ? `Weekly Brief — week ending ${formatDateLabel(brief.weekOf)} | Global Perspectives`
+      ? `Weekly Brief — week ending ${editionDateLabel(brief.weekOf)} | Global Perspectives`
       : 'Weekly Brief | Global Perspectives';
   }, [brief]);
 
@@ -108,10 +107,10 @@ export default function WeeklyMode({ weekParam }) {
     let title = 'No brief published yet';
     let text = 'The weekly signals brief will appear here once it’s published.';
     if (brief?.weekOf) {
-      title = `Week ending ${formatDateLabel(brief.weekOf)}`;
+      title = `Week ending ${editionDateLabel(brief.weekOf)}`;
       text = 'This edition predates the signals format and has no signals to show.';
     } else if (weekParam) {
-      title = `No weekly brief for the week ending ${formatDateLabel(weekParam)}`;
+      title = `No weekly brief for the week ending ${editionDateLabel(weekParam)}`;
       text = 'No edition was published under that week.';
     }
     return (
@@ -136,7 +135,7 @@ export default function WeeklyMode({ weekParam }) {
   const threats = signals.filter((s) => s.kind !== 'development');
   const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
   const highest = threats.length ? tierFromLevel(threats[0].riskLevel) : null;
-  const weekLabel = formatDateLabel(brief.weekOf);
+  const weekLabel = editionDateLabel(brief.weekOf);
 
   return (
     <div className="wb-page">

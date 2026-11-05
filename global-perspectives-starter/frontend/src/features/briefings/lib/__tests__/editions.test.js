@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   todayKey, addDaysKey, lastNDateKeys,
-  buildDailyEditionMarks, daysBetween, labelledDateKeys, nearestWeek,
+  buildDailyEditionMarks, daysBetween, labelledDateKeys, nearestWeek, editionDateLabel,
 } from '@/features/briefings/lib/editions.js';
 
 describe('editions.js', () => {
@@ -74,5 +74,19 @@ describe('editions.js', () => {
       expect(labelled.has('2026-09-01')).toBe(true); // month boundary
       expect(labelled.has('2026-08-31')).toBe(false); // not first/last/current/boundary
     });
+  });
+});
+
+describe('editionDateLabel', () => {
+  it('names today and yesterday by date, never Today or Yesterday', () => {
+    const t = todayKey();
+    for (const k of [t, addDaysKey(t, -1)]) {
+      const label = editionDateLabel(k);
+      expect(label).not.toMatch(/Today|Yesterday/);
+      expect(label).toMatch(/^[A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2}$/);
+    }
+  });
+  it('formats a fixed UTC day', () => {
+    expect(editionDateLabel('2026-11-05')).toBe('Thu, Nov 5');
   });
 });

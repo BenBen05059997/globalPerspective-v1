@@ -75,13 +75,14 @@ describe('failures reach the error sink', () => {
   beforeEach(() => { api.fetchWorld.mockReset(); api.fetchSituationDetail.mockReset(); sink.reportFetchError.mockReset(); });
   afterEach(() => { vi.useRealTimers(); });
 
-  it('a failed later world poll is reported (the page keeps the last good world)', async () => {
+  it('a failed later world poll is silent (the page keeps the last good world)', async () => {
     api.fetchWorld.mockResolvedValueOnce({ situations: [], sources: {} });
     const { result } = renderHook(() => useWorld());
     await waitFor(() => expect(result.current.world).not.toBeNull());
-    api.fetchWorld.mockRejectedValueOnce(new Error('world 503'));
+    api.fetchWorld.mockRejectedValue(new Error('world 503'));
     await act(async () => { await result.current.refresh(); });
-    expect(sink.reportFetchError).toHaveBeenCalledWith('map-world', expect.objectContaining({ message: 'world 503' }));
+    expect(sink.reportFetchError).not.toHaveBeenCalled();
+    expect(result.current.error).toBeTruthy();
     expect(result.current.world).not.toBeNull();
   });
 

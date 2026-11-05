@@ -3,6 +3,9 @@ import { fetchWorld, fetchSituationDetail, oldestSource } from '@/features/map/a
 import { reportFetchError } from '@/shared/api/errorSink.js';
 
 const POLL_MS = 5 * 60 * 1000; // the bundle refreshes ~30 min; poll gently so a new one shows within ~5
+const RETRY_MS = 1500; // a failed world fetch retries once after this before it counts as failed
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * useWorld — the map-as-home data bundle (situations + freshness + lede + ranked), auto-refreshing
@@ -17,17 +20,28 @@ export function useWorld() {
   const [error, setError] = useState(null);
   const timer = useRef(null);
   const abort = useRef(null);
+  const held = useRef(false); // a bundle is already in hand: later failures stay silent (stale banner covers them)
+  const leaving = useRef(false); // pagehide fired: in-flight fetches are cancelled by the browser, not broken
 
   const load = useCallback(async () => {
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
     try {
-      const w = await fetchWorld(ctrl.signal);
+      let w;
+      try { w = await fetchWorld(ctrl.signal); } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        await wait(RETRY_MS);
+        w = await fetchWorld(ctrl.signal);
+      }
+      held.current = held.current || !!w;
       setWorld(w); // may be null (not generated yet) — the UI shows the empty state
       setError(null);
     } catch (e) {
-      if (e.name !== 'AbortError') { setError(e); reportFetchError('map-world', e); } // polls too: a broken data path must not be silent
+      if (e.name === 'AbortError') return;
+      setError(e);
+      // Report only a real first-load failure: not while a bundle is held, nor when the page is leaving or hidden.
+      if (!held.current && !leaving.current && document.visibilityState !== 'hidden') reportFetchError('map-world', e);
     } finally {
       // A superseded (aborted) load must not flip `loading` off while its replacement is in flight.
       if (abort.current === ctrl) setLoading(false);
@@ -42,8 +56,18 @@ export function useWorld() {
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     const tick = () => { if (document.visibilityState === 'visible') load(); };
     timer.current = setInterval(tick, POLL_MS);
+    const onHide = () => { leaving.current = true; };
+    const onShow = (ev) => { if (ev.persisted) leaving.current = false; }; // back/forward cache restore
     document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(timer.current); document.removeEventListener('visibilitychange', onVisible); abort.current?.abort(); };
+    window.addEventListener('pagehide', onHide);
+    window.addEventListener('pageshow', onShow);
+    return () => {
+      clearInterval(timer.current);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pagehide', onHide);
+      window.removeEventListener('pageshow', onShow);
+      abort.current?.abort();
+    };
   }, [load]);
 
   const asOf = world ? oldestSource(world.sources) : null;

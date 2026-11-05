@@ -324,14 +324,16 @@ export default function SituationHome() {
   const onMapFirstDraw = useCallback(() => setMapDrawn(true), []);
   const onMapDrawError = useCallback((e) => setMapError(e || new Error('map failed to draw')), []);
   // A failed sensor is reported once to the client error sink (and again only after it recovers).
+  // A world fetch error is already reported by useWorld, so the disaster sensor adds a report only for a missing bundle.
   const reportedSensors = useRef(new Set());
   useEffect(() => {
     for (const sn of bootSensors) {
       if (sn.state !== 'fail') { reportedSensors.current.delete(sn.id); continue; }
       if (reportedSensors.current.has(sn.id)) continue;
       reportedSensors.current.add(sn.id);
+      if (sn.id === 'disaster' && error) continue; // useWorld already reported this failure
       const cause = sn.id === 'news' ? new Error(String(topicsError || 'stories feed failed'))
-        : sn.id === 'disaster' ? (error || new Error('world bundle missing or without a checked GDACS source'))
+        : sn.id === 'disaster' ? new Error('world bundle missing or without a checked GDACS source')
           : mapError;
       reportFetchError(`boot-sensor-${sn.id}`, cause);
     }

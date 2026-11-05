@@ -48,16 +48,24 @@ describe('SituationHome boot sensors', () => {
     expect(document.querySelector('.gp-boot--ready')).toBeTruthy();
   });
 
-  it('failed world load: honest line naming the sensor, reported to the sink, RETRY re-runs only that load', () => {
+  it('failed world load: honest line naming the sensor, no duplicate report, RETRY re-runs only that load', () => {
     h.topics = { ...h.topics, settled: true, topics: [{ title: 't' }] };
     h.world = { ...h.world, loading: false, error: new Error('worldData 500') };
     mount();
     expect(stateOf('Disaster alerts')).toHaveTextContent('NOT LOADED');
     expect(screen.getByText("Disaster alerts didn't load. News desk and Map are ready.")).toBeInTheDocument();
-    expect(h.report).toHaveBeenCalledWith('boot-sensor-disaster', expect.any(Error));
+    expect(h.report).not.toHaveBeenCalled(); // useWorld already reported the fetch failure: no second report
     fireEvent.click(screen.getByRole('button', { name: 'RETRY' }));
     expect(h.world.retry).toHaveBeenCalledTimes(1);
     expect(h.topics.refetch).not.toHaveBeenCalled();
+  });
+
+  it('a missing bundle with no fetch error is still reported once by the boot sensor', () => {
+    h.topics = { ...h.topics, settled: true, topics: [{ title: 't' }] };
+    h.world = { ...h.world, loading: false, error: null, world: null };
+    mount();
+    expect(h.report).toHaveBeenCalledTimes(1);
+    expect(h.report).toHaveBeenCalledWith('boot-sensor-disaster', expect.any(Error));
   });
 
   it('OPEN ANYWAY lets the console open with the data that did load', () => {

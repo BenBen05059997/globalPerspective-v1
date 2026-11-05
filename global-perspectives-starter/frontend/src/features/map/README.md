@@ -58,7 +58,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
 3. `newsAgent` writes `threads/story-map.json`, which links situations to story threads.
 4. `newsSituationTracker` (30 min) folds 1-3 into `situations/state/<id>.json` and `world/latest.json`.
 5. The Worker (`cloudflare/front-worker/production/worker.mjs`) serves `/data/*` from the private S3 bucket.
-6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, Alerts and Intel on `/`. Every world poll and detail failure goes to the error sink.
+6. `fetchWorld` -> `useWorld` -> `SituationHome` -> globe or radar map, Alerts and Intel on `/`. A first-load world failure (after one 1.5 s retry, page visible) and every detail failure go to the error sink; a failed poll while a bundle is held stays silent (stale banner).
 
 ## Radar labels
 `@/shared/map/mapLabels.js` places them, `RadarMap.jsx` draws them outside the zoomed group in screen pixels. Rule: HIGH and ELEVATED situations only, most severe first, then escalating, then newest change, at most 8 drawn. Each takes the first free spot (right, left, above, below the marker) that is inside the map, clear of other labels and of every marker; text width is measured with a canvas; labels over 220 px are ellipsized (full text in a `<title>`). The layout runs again on every zoom and pan. A label with no free spot is dropped; the pin and its Alerts row still carry the name.

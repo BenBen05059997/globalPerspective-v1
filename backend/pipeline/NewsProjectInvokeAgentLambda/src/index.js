@@ -505,6 +505,7 @@ function buildSummaryPrompt(topic, generatedDate) {
     '3) Do NOT state an outcome, verdict, vote result, casualty figure, or number the snippets do not report.',
     '4) Do NOT invent or infer dates. Include a date ONLY if it appears in a snippet; otherwise omit it. Do not add today\'s date.',
     '5) If the event is unresolved or a detail is not reported, say it about the event itself (e.g. "the vote is pending; no result has been reported"). Never mention the snippets, the headline, the sources or their completeness, and never write "the snippet/source does not report…". If a source has no usable text, ignore it.',
+    '6) To attribute a claim, name the outlet given in brackets on its source line (e.g. "per Al Jazeera"); never write "the snippets", "the sources" or "the report" instead of the outlet.',
     `Title: ${topic.title || 'Untitled Topic'}`,
     snippets ? `Source article snippets (your ONLY material):\n${snippets}` : 'No source snippets were provided — summarize only what the title states, in one or two bullets, without commenting on the material.',
     'Also note the main countries or regions involved if the snippets mention them.',

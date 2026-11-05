@@ -29,5 +29,6 @@ test('summary prompt forbids commenting on the source text or its completeness',
  const body=src.slice(src.indexOf('function buildSummaryPrompt'),src.indexOf('function buildSummaryPrompt')+2500);
  assert.match(body,/Never mention the snippets, the headline, the sources or their completeness/);
  assert.match(body,/never write "the snippet\/source does not report/);
+assert.match(body,/name the outlet given in brackets on its source line \(e\.g\. "per Al Jazeera"\)/);
  assert.match(body,/If a source has no usable text, ignore it/);
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   todayKey, addDaysKey, lastNDateKeys,
-  buildDailyEditionMarks, daysBetween, labelledDateKeys, nearestWeek, editionDateLabel,
+  buildDailyEditionMarks, labelledDateKeys, nearestWeek, editionDateLabel,
 } from '@/features/briefings/lib/editions.js';
 
 describe('editions.js', () => {
@@ -35,14 +35,6 @@ describe('editions.js', () => {
   it('buildDailyEditionMarks treats an undefined index as all-unknown, never all-missing', () => {
     const marks = buildDailyEditionMarks(['2026-09-12'], undefined, '2026-09-12');
     expect(marks[0].status).toBe('unknown');
-  });
-
-  describe('daysBetween', () => {
-    it('counts whole days forward and returns 0 for the same date', () => {
-      expect(daysBetween('2026-09-12', '2026-09-27')).toBe(15);
-      expect(daysBetween('2026-09-12', '2026-09-12')).toBe(0);
-      expect(daysBetween('2026-09-27', '2026-09-12')).toBe(-15);
-    });
   });
 
   describe('nearestWeek', () => {

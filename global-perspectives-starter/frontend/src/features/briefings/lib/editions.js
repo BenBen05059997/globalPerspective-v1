@@ -41,13 +41,6 @@ export function buildDailyEditionMarks(dateKeys, existsIndex, currentDateKey) {
   });
 }
 
-/** daysBetween — whole calendar days from `aKey` to `bKey` (positive when b is after a). */
-export function daysBetween(aKey, bKey) {
-  const a = new Date(aKey + 'T00:00:00Z').getTime();
-  const b = new Date(bKey + 'T00:00:00Z').getTime();
-  return Math.round((b - a) / 86400000);
-}
-
 /** nearestWeek — the existing weekly edition closest to `weekOf` in direction `dir` (-1 earlier, 1 later), or null. `weeks` are weekOf keys, any order. */
 export function nearestWeek(weeks, weekOf, dir) {
   const sorted = (weeks || []).filter((w) => (dir < 0 ? w < weekOf : w > weekOf)).sort();

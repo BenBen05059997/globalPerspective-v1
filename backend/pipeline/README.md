@@ -29,7 +29,7 @@ The five analysis Lambdas (the agent, newsThreadAnalysis, newsSystemsAnalysis, n
 
 ## Archive reads (step 5d, 2026-11-04)
 
-Shared `backend/shared/src/archiveReads.js`, env `ARCHIVE_READS` = `ddb` (default) | `inbox` | `compare` (any other value, or `inbox`/`compare` without `ENTRIES_INBOX_PREFIX`, means `ddb`). `inbox` reads the day files `record/inbox/entries/` instead of the NewsCache archive rows; `compare` answers from NewsCache and logs the differences (`[archive-compare]`). Live: newsAgent `inbox` (with `FORKS_READS=inbox` for its forecast forks); newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector and (in distribution) newsWeeklyBrief `compare`, `ENTRIES_INBOX_PREFIX=record/`. Each moves to `inbox` after 3 clean nights. newsIngest still reads `archive#` titles directly.
+Shared `backend/shared/src/archiveReads.js`, env `ARCHIVE_READS` = `ddb` (default) | `inbox` | `compare` (any other value, or `inbox`/`compare` without `ENTRIES_INBOX_PREFIX`, means `ddb`). `inbox` reads the day files `record/inbox/entries/` instead of the NewsCache archive rows; `compare` answers from NewsCache and logs the differences (`[archive-compare]`). Live: newsAgent `inbox` (with `FORKS_READS=inbox` for its forecast forks); newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence and newsDriftCorrector `inbox` since 2026-11-05 05:45Z (after clean compare runs: only the known `today-archive` `archivedAt` difference); (in distribution) newsWeeklyBrief `compare` until its Sunday run; `ENTRIES_INBOX_PREFIX=record/`. Roll back by setting `ddb`. newsIngest still reads `archive#` titles directly.
 
 ## Pipeline
 

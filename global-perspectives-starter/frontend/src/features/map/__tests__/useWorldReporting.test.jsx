@@ -1,4 +1,4 @@
-// useWorld error reporting: one retry before a failure counts; only a real first-load failure is reported.
+// useWorld error reporting: one retry before a failure counts; only a real first-load failure is reported (hidden/leaving/automation filtering lives in the error sink).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useWorld } from '@/features/map/hooks/useWorld.js';
@@ -14,10 +14,9 @@ vi.mock('@/shared/api/errorSink.js', () => ({ reportFetchError: (...a) => h.repo
 const BUNDLE = { situations: [], sources: {} };
 const boom = () => new TypeError('Failed to fetch');
 const settle = () => act(async () => { await vi.advanceTimersByTimeAsync(2000); });
-const setVisibility = (v) => Object.defineProperty(document, 'visibilityState', { value: v, configurable: true });
 
-beforeEach(() => { vi.useFakeTimers(); h.fetchWorld.mockReset(); h.report.mockReset(); setVisibility('visible'); });
-afterEach(() => { vi.useRealTimers(); setVisibility('visible'); });
+beforeEach(() => { vi.useFakeTimers(); h.fetchWorld.mockReset(); h.report.mockReset(); });
+afterEach(() => { vi.useRealTimers(); });
 
 describe('useWorld error reporting', () => {
   it('retry then success: no report', async () => {
@@ -45,22 +44,6 @@ describe('useWorld error reporting', () => {
     await settle();
     await act(async () => { result.current.refresh(); await vi.advanceTimersByTimeAsync(2000); });
     expect(result.current.error).toBeTruthy();
-    expect(h.report).not.toHaveBeenCalled();
-  });
-
-  it('failure while the page is hidden: no report', async () => {
-    h.fetchWorld.mockRejectedValue(boom());
-    setVisibility('hidden');
-    renderHook(() => useWorld());
-    await settle();
-    expect(h.report).not.toHaveBeenCalled();
-  });
-
-  it('failure after pagehide: no report', async () => {
-    h.fetchWorld.mockRejectedValue(boom());
-    renderHook(() => useWorld());
-    act(() => { window.dispatchEvent(new Event('pagehide')); });
-    await settle();
     expect(h.report).not.toHaveBeenCalled();
   });
 

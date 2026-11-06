@@ -21,7 +21,6 @@ export function useWorld() {
   const timer = useRef(null);
   const abort = useRef(null);
   const held = useRef(false); // a bundle is already in hand: later failures stay silent (stale banner covers them)
-  const leaving = useRef(false); // pagehide fired: in-flight fetches are cancelled by the browser, not broken
 
   const load = useCallback(async () => {
     abort.current?.abort();
@@ -40,8 +39,9 @@ export function useWorld() {
     } catch (e) {
       if (e.name === 'AbortError') return;
       setError(e);
-      // Report only a real first-load failure: not while a bundle is held, nor when the page is leaving or hidden.
-      if (!held.current && !leaving.current && document.visibilityState !== 'hidden') reportFetchError('map-world', e);
+      // Report only a real first-load failure: not while a bundle is held. Hidden / leaving pages and
+      // automated browsers are filtered once, in the error sink.
+      if (!held.current) reportFetchError('map-world', e);
     } finally {
       // A superseded (aborted) load must not flip `loading` off while its replacement is in flight.
       if (abort.current === ctrl) setLoading(false);
@@ -56,16 +56,10 @@ export function useWorld() {
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     const tick = () => { if (document.visibilityState === 'visible') load(); };
     timer.current = setInterval(tick, POLL_MS);
-    const onHide = () => { leaving.current = true; };
-    const onShow = (ev) => { if (ev.persisted) leaving.current = false; }; // back/forward cache restore
     document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('pagehide', onHide);
-    window.addEventListener('pageshow', onShow);
     return () => {
       clearInterval(timer.current);
       document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('pagehide', onHide);
-      window.removeEventListener('pageshow', onShow);
       abort.current?.abort();
     };
   }, [load]);

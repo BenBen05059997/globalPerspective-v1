@@ -9,11 +9,33 @@
 //   - in-session dedup so one repeating error doesn't spam the network
 //   - a hard per-session send cap
 //   - never reports its own failures (no recursion)
+//
+// Noise rule (one place, applies to every page): an automated fleet loads the site every 3 hours and
+// leaves again, and its requests time out or are cancelled. That is not a reader failure, so:
+//   - a browser under automation (navigator.webdriver) reports nothing;
+//   - a network failure ("Request timed out", "Failed to fetch", Safari "Load failed", Firefox
+//     "NetworkError") is reported only if the page is still open and visible when it lands: not in a
+//     hidden tab, not after pagehide/beforeunload (the browser cancels in-flight fetches then), not
+//     while the browser is offline. Real script errors and render crashes are NOT subject to the
+//     visibility checks: they are ours to fix wherever they happen.
 
 const MAX_SENDS_PER_SESSION = 20;
 const seen = new Set();
 let sent = 0;
 let installed = false;
+let leaving = false; // pagehide/beforeunload fired: in-flight fetches are cancelled, not broken
+
+const NETWORK_FAILURE = /Request timed out after|Failed to fetch|Load failed|NetworkError/i;
+
+// True when this failure is not a reader-visible problem. Exported for tests.
+export function isNoise(message) {
+  if (typeof navigator !== 'undefined' && navigator.webdriver) return true;
+  if (!NETWORK_FAILURE.test(String(message))) return false;
+  if (leaving) return true;
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return true;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  return false;
+}
 
 function endpoint() {
   return typeof window !== 'undefined' ? window.CLIENT_ERRORS_ENDPOINT : null;
@@ -23,6 +45,7 @@ function report(kind, message, stack) {
   const url = endpoint();
   if (!url || !message) return;
   if (sent >= MAX_SENDS_PER_SESSION) return;
+  if (isNoise(message)) return;
 
   const key = `${kind}:${message}:${(stack || '').split('\n')[1] || ''}`;
   if (seen.has(key)) return;
@@ -74,6 +97,10 @@ export function reportFetchError(context, error) {
 export function installErrorSink() {
   if (installed || typeof window === 'undefined') return;
   installed = true;
+
+  window.addEventListener('pagehide', () => { leaving = true; });
+  window.addEventListener('beforeunload', () => { leaving = true; });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) leaving = false; }); // back/forward cache restore
 
   window.addEventListener('error', (e) => {
     // Resource-load errors (img/script 404) have no `error` object and a

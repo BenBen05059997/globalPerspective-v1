@@ -400,7 +400,8 @@ async function checkMapLayers(browser) {
 // a deliberate-throw route wired inside the boundary. We assert (a) .gp-nav
 // survived the crash, and (b) the sink POST fires — intercepting and ABORTING
 // that POST so the test never writes a row to the prod DynamoDB table.
-const CLIENT_ERRORS_HOST = 'ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws';
+// The page posts to /api/errors (the front Worker forwards to the Function URL); a dev build may still post to the URL itself.
+const CLIENT_ERRORS_ROUTE = (url) => url.pathname === '/api/errors' || url.hostname === 'ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws';
 
 async function checkErrorBoundary(browser) {
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
@@ -408,7 +409,7 @@ async function checkErrorBoundary(browser) {
   const out = { ran: false, caught: false, reported: false, endpointSet: false, error: null, payloadMsg: null };
   let posted = null;
   try {
-    await page.route(`**${CLIENT_ERRORS_HOST}/**`, async (route) => {
+    await page.route(CLIENT_ERRORS_ROUTE, async (route) => {
       if (route.request().method() === 'POST') posted = route.request().postData();
       await route.abort(); // never let the test error reach the table
     });

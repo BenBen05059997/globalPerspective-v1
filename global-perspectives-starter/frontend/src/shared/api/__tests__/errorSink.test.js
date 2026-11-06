@@ -59,10 +59,10 @@ describe('errorSink noise rule', () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('after beforeunload a network failure is dropped', () => {
+  it('beforeunload alone does not suppress a report (a cancelled leave prompt must not silence the page)', () => {
     window.dispatchEvent(new Event('beforeunload'));
     sink.reportFetchError('briefs-index', timeout());
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('offline: a network failure is dropped', () => {

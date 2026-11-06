@@ -15,7 +15,7 @@
 //   - a browser under automation (navigator.webdriver) reports nothing;
 //   - a network failure ("Request timed out", "Failed to fetch", Safari "Load failed", Firefox
 //     "NetworkError") is reported only if the page is still open and visible when it lands: not in a
-//     hidden tab, not after pagehide/beforeunload (the browser cancels in-flight fetches then), not
+//     hidden tab, not after pagehide (the browser cancels in-flight fetches then), not
 //     while the browser is offline. Real script errors and render crashes are NOT subject to the
 //     visibility checks: they are ours to fix wherever they happen.
 
@@ -23,7 +23,7 @@ const MAX_SENDS_PER_SESSION = 20;
 const seen = new Set();
 let sent = 0;
 let installed = false;
-let leaving = false; // pagehide/beforeunload fired: in-flight fetches are cancelled, not broken
+let leaving = false; // pagehide fired: in-flight fetches are cancelled, not broken
 
 const NETWORK_FAILURE = /Request timed out after|Failed to fetch|Load failed|NetworkError/i;
 
@@ -99,7 +99,6 @@ export function installErrorSink() {
   installed = true;
 
   window.addEventListener('pagehide', () => { leaving = true; });
-  window.addEventListener('beforeunload', () => { leaving = true; });
   window.addEventListener('pageshow', (e) => { if (e.persisted) leaving = false; }); // back/forward cache restore
 
   window.addEventListener('error', (e) => {

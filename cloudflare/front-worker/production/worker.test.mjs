@@ -444,3 +444,75 @@ test('bot country page: the countries index finds the ISO3, the country view hol
   const b = await run(patched, `${H}/weekly/country/Atlantis`, { ua: GOOGLEBOT, api, views });
   assert.match(b.body, /<h1>Action headline<\/h1>/);
 });
+
+// --- POST /api/errors: client-error reports go through the Worker; data-centre networks are dropped ---------------
+const LAMBDA_URL = 'https://ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws/';
+const REPORT = JSON.stringify({ kind: 'fetch', message: 'Request timed out after 15000ms', url: `${H}/`, userAgent: 'UA-in-body' });
+
+// `cf` is set by Cloudflare on the incoming request; a plain Request has none, so it is attached here.
+async function postError({ asn, method = 'POST', body = REPORT, upstream = () => new Response('{"ok":true}', { status: 202, headers: { 'content-type': 'application/json' } }) } = {}) {
+  const calls = [];
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    const req = new Request(input, init);
+    calls.push({ url: req.url, method: req.method, contentType: req.headers.get('content-type'), userAgent: req.headers.get('user-agent'), body: await req.text() });
+    return upstream();
+  };
+  try {
+    const req = new Request(`${H}/api/errors`, { method, headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 reader', Origin: H }, body: method === 'POST' ? body : undefined });
+    if (asn !== undefined) Object.defineProperty(req, 'cf', { value: { asn } });
+    const res = await patched.fetch(req, env, {});
+    return { res, text: await res.text(), calls };
+  } finally { globalThis.fetch = orig; }
+}
+
+test('/api/errors from Microsoft (asn 8075) answers 204 and sends nothing upstream', async () => {
+  const r = await postError({ asn: 8075 });
+  assert.equal(r.res.status, 204);
+  assert.equal(r.text, '');
+  assert.equal(r.res.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(r.calls, []);
+});
+
+test('/api/errors from an ISP network forwards the body and headers to the Function URL and passes its answer back', async () => {
+  const r = await postError({ asn: 9824 });
+  assert.equal(r.res.status, 202);
+  assert.equal(r.text, '{"ok":true}');
+  assert.equal(r.res.headers.get('content-type'), 'application/json');
+  assert.equal(r.res.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(r.calls, [{ url: LAMBDA_URL, method: 'POST', contentType: 'application/json', userAgent: 'Mozilla/5.0 reader', body: REPORT }]);
+});
+
+test('/api/errors with no cf data (local, tests) is forwarded', async () => {
+  const r = await postError();
+  assert.equal(r.res.status, 202);
+  assert.equal(r.calls.length, 1);
+});
+
+test('/api/errors passes an upstream error status back (400, 413, 500) and answers 502 when the Function URL is unreachable', async () => {
+  for (const status of [400, 413, 500]) {
+    const r = await postError({ asn: 9824, upstream: () => new Response(JSON.stringify({ ok: false }), { status, headers: { 'content-type': 'application/json' } }) });
+    assert.equal(r.res.status, status);
+    assert.equal(r.text, '{"ok":false}');
+  }
+  const down = await postError({ asn: 9824, upstream: () => { throw new TypeError('fetch failed'); } });
+  assert.equal(down.res.status, 502);
+  assert.equal(down.res.headers.get('cache-control'), 'no-store');
+});
+
+test('/api/errors accepts only POST: other methods get 405 without an upstream call, including from a data-centre network', async () => {
+  for (const method of ['GET', 'OPTIONS', 'PUT']) {
+    for (const asn of [9824, 8075]) {
+      const r = await postError({ method, asn });
+      assert.equal(r.res.status, 405, method);
+      assert.equal(r.res.headers.get('allow'), 'POST');
+      assert.deepEqual(r.calls, []);
+    }
+  }
+});
+
+test('/api/errors is not an app route (never answered with the SPA shell)', () => {
+  const src = readFileSync(new URL('./worker.mjs', import.meta.url), 'utf8');
+  const routes = [...src.match(/const APP_ROUTES = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  assert.ok(!routes.some((r) => r === '/api/errors' || r === '/api'));
+});

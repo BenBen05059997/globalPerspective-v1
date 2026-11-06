@@ -15,6 +15,9 @@ or `wrangler versions list`); it is not recorded here.
 - `/data/<key>` reads the private world bucket with SigV4. Only keys matching `DATA_ALLOWED` are served: `world/*.json`,
   `situations/state/*.json`, `stories/state/*.json` and `record/views/*.json`. Facts, runs, inboxes and readings are not
   in the allowlist.
+- `POST /api/errors` is the client-error sink's same-origin endpoint: a request whose `request.cf.asn` is in `DATA_CENTRE_ASNS` (8075, Microsoft) gets 204 and
+  nothing is sent on; any other is forwarded (body, content-type, user-agent) to the newsClientErrors Function URL (`CLIENT_ERRORS_URL`) and its
+  status and body come back. Other methods get 405. Never cached.
 - `/rss` proxies the RSS action of the read API (which builds the feed from the record's today view when its `RECORD_READS` says so, decision 0054).
 - Real 301s (query string kept) for retired addresses: `/daily`, `/daily/:date`, `/weekly-brief` (to `/briefings?mode=read|weekly`),
   `/spider-demo` (to `/weekly?view=web`), `/map` (to `/`),

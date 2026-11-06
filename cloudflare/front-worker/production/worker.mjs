@@ -1,6 +1,13 @@
 const API_BASE = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
 const SITE_URL = 'https://globalperspective.net';
 
+// --- Client-error reports (POST /api/errors) ---------------------------------------------------------------------------
+// The browser error sink posts here (same origin) and the Worker forwards to the newsClientErrors Function URL. Reports that
+// come from a cloud data-centre network are an automated fleet whose fetches time out, not readers: they are answered 204 and
+// never forwarded. One place to list those networks (request.cf.asn): 8075 = Microsoft.
+const CLIENT_ERRORS_URL = 'https://ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws/';
+const DATA_CENTRE_ASNS = new Set([8075]);
+
 // --- S3 "world" data (map-as-home; DATA_STRATEGY.md) --------------------------
 // The private world bucket is read here via SigV4 and served under /data/*.
 // Secrets (Worker secret store): S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY.
@@ -450,6 +457,28 @@ const isAppRoute = (pathname) => APP_ROUTE_RES.some((re) => re.test(pathname.rep
 // Vite's content-hashed build files (/assets/<name>-<8-char hash>.<ext>): the name changes with the content, so they never go stale.
 const HASHED_ASSET = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9]+$/;
 
+async function forwardClientError(request) {
+  const headers = { 'Cache-Control': 'no-store' };
+  if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST' } });
+  if (DATA_CENTRE_ASNS.has(request.cf?.asn)) return new Response(null, { status: 204, headers });
+  try {
+    const upstream = await fetch(CLIENT_ERRORS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': request.headers.get('Content-Type') || 'application/json',
+        'User-Agent': request.headers.get('User-Agent') || '',
+      },
+      body: await request.arrayBuffer(),
+    });
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: { ...headers, 'Content-Type': upstream.headers.get('Content-Type') || 'application/json' },
+    });
+  } catch {
+    return new Response(JSON.stringify({ ok: false, error: 'upstream' }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
+  }
+}
+
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -499,6 +528,11 @@ const worker = {
         return dataErr({ error: 'fetch failed' }, 502);
       }
     }
+
+    // Client-error reports: dropped for data-centre networks, otherwise forwarded to the newsClientErrors Function URL and its
+    // answer passed back. The Lambda reads only the method and the JSON body (no Origin check, no source IP), so the body and
+    // content-type are what matter. Never cached; never a client route.
+    if (url.pathname === '/api/errors') return forwardClientError(request);
 
     // RSS Feed
     if (url.pathname === '/rss' || url.pathname === '/rss/') {

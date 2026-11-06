@@ -32,7 +32,7 @@ function familyOf(path) {
 const decode = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
 
 /** rows from pullCloudflare, days = the 14 UTC days, titles = { threadId: title } -> the `cloudflare` section with status 'ok'. */
-function summarize({ pages, referrers, countries, siteTag }, days, titles, pulledAt) {
+function summarize({ pages, referrers, countries }, days, titles, pulledAt) {
   const fam = [...READERS.families, READERS.otherFamily].map((f) => ({ id: f.id, label: f.label, excluded: Boolean(f.excludedFromTotals), views: 0, days: days.map(() => 0) }));
   const famById = Object.fromEntries(fam.map((f) => [f.id, f]));
   const stories = new Map(); const countryPages = new Map();
@@ -50,7 +50,7 @@ function summarize({ pages, referrers, countries, siteTag }, days, titles, pulle
   // Referrers and visitor countries come from their own queries (all paths, ops included); they are not split by family.
   const merge = (rows, key) => { const m = new Map(); for (const r of rows) m.set(r[key], (m.get(r[key]) || 0) + r.views); return m; };
   return {
-    status: 'ok', pulledAt, siteTag, from: days[0], to: days[days.length - 1], days,
+    status: 'ok', pulledAt, from: days[0], to: days[days.length - 1], days,
     totals: { views: sum(counted.map((f) => f.views)), opsViews: famById.ops.views },
     families: fam,
     topStories: top(stories, 'threadId').map((s) => ({ ...s, title: titles[s.threadId] || null })),
@@ -158,7 +158,7 @@ async function pullReaders({ aws, now, days, env = process.env, fetchFn = fetch 
   const token = env.CF_ANALYTICS_TOKEN;
   const cfPart = async () => {
     if (!token) return { status: 'not_connected' };
-    try { return summarize(await pullCloudflare({ token, days, now, fetchFn, env }), days, await storyTitles(aws), pulledAt); } catch (e) { return { status: 'error', error: errText(e) }; }
+    try { return summarize(await pullCloudflare({ token, days, now, fetchFn }), days, await storyTitles(aws), pulledAt); } catch (e) { return { status: 'error', error: errText(e) }; }
   };
   const ownPart = async () => {
     try { return ownCounts(await aws.ownRows(), days); } catch (e) { return { status: 'error', error: errText(e) }; }

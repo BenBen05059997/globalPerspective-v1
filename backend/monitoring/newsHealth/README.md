@@ -26,11 +26,11 @@ ingest (`record/runs/DAY.json` `inputs.rawDay`) · agent (line count of `record/
 Built once per UTC day (the first run of the day; again each hour while Cloudflare is not `ok`). Design: ARCHITECTURE_OPS.md "Phase 2 as built". Code: `src/cloudflare.js` (the API), `src/readers.js` (families, summaries, attention), `src/pageFamilies.json` (path -> family and family -> features), `aws.js` `ownRows`.
 - Cloudflare Web Analytics, GraphQL `rumPageloadEventsAdaptiveGroups`, 14 days, by date and path, referrer host, country. No `CF_ANALYTICS_TOKEN` -> `readers.cloudflare = {status: 'not_connected'}` and no call; an API failure -> `{status: 'error', error}`.
 - Own tables (counts only): `GlobalPerspectiveUserTable` (`createdAt`), `GlobalPerspectiveSavedItems` (`savedKey`), `GlobalPerspectiveShares` (`createdAt`).
-- Env: `CF_ANALYTICS_TOKEN` (secret; set 2026-11-05, status `ok`), `CF_SITE_TAG` (optional; not set, the site is found by host `globalperspective.net` in the account's Web Analytics sites; set it if the lookup says no site was found), `CF_ACCOUNT_ID` (defaults to the account id in `scripts/site-release.config.json`, not a secret).
-- Finding the site tag by hand: Cloudflare dashboard, Analytics and Logs, Web Analytics, the globalperspective.net site; the tag is in the site's snippet (`"token"` in the beacon `data-cf-beacon`) and settings.
+- Env: `CF_ANALYTICS_TOKEN` (secret; set 2026-11-05, status `ok`), `CF_ACCOUNT_ID` (defaults to the account id in `scripts/site-release.config.json`, not a secret).
+- The query filters `rumPageloadEventsAdaptiveGroups` by `requestHost: globalperspective.net` (the apex; www 301s to it), not by site tag: the token cannot call the Web Analytics site-list REST endpoint (HTTP 403), and the beacon `token` in the served HTML is not the analytics `siteTag`.
 - IAM (`iam/policy.json`, now `OwnTablesProjectedScanOnly`): `dynamodb:Scan` on `arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveUserTable`, `.../GlobalPerspectiveSavedItems`, `.../GlobalPerspectiveShares`.
 - Test event flag `{"skipReaders": true}`; `node index.js --dry` shows the section locally.
-- Live check 2026-11-05: the GraphQL fields and the site lookup were accepted (`readers.cloudflare.status` `ok`, site tag found). The pull of 21:58 JST counted 0 views because the site's beacons only started after Web Analytics was switched to automatic setup (about 22:05 JST); real counts begin with the next daily pull. A wrong field comes back as `readers.cloudflare = {status: 'error', error: 'Cloudflare GraphQL: ...'}` with the API's message.
+- Live check 2026-11-05: the GraphQL fields were accepted (`readers.cloudflare.status` `ok`). The pull of 21:58 JST counted 0 views because the site's beacons only started after Web Analytics was switched to automatic setup (about 22:05 JST); real counts begin with the next daily pull. A wrong field comes back as `readers.cloudflare = {status: 'error', error: 'Cloudflare GraphQL: ...'}` with the API's message.
 
 ### Set or rotate the Cloudflare token (operator; done once on 2026-11-05)
 1. Cloudflare dashboard, My Profile, API Tokens, Create Token, custom: Account, Account Analytics, Read; this account only. Copy it.
@@ -52,7 +52,7 @@ aws lambda update-function-configuration --function-name newsHealth --region ap-
 rm -f "$NHENV"
 ```
    (`umask 077` and `mktemp` keep the temp file private to you, and `CFT` is handed to python as an environment variable of that one command; the final query prints the variable names, never values.)
-3. Invoke once: `aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout` and read `readers` in the answer: `ok`, or the error text. On "no Web Analytics site", add `CF_SITE_TAG` the same way.
+3. Invoke once: `aws lambda invoke --function-name newsHealth --payload '{}' --cli-binary-format raw-in-base64-out --region ap-northeast-1 /dev/stdout` and read `readers` in the answer: `ok`, or the error text.
 
 ## Quality (ops.json `quality`, phase 3)
 Built once per UTC day (the first run of the day), for the last closed UTC day; a check that failed is read again hourly, alone. Design: ARCHITECTURE_OPS.md "Phase 3 as built". Code: `src/quality.js` (checks and section), `QUALITY` in `src/config.js`, ports in `src/aws.js` (`listKeys`, `clientErrorRows`, `auditLog`). Every check names its `source` and `day`; `{status:'not_available', why}` where the source does not exist, `{status:'error', error}` where a read failed.
@@ -92,7 +92,7 @@ Read-only preview from a laptop (no S3 write, no invoke): `HEAL=dry node index.j
 ## Deployment
 - Name `newsHealth` · `nodejs24.x` · handler `index.handler` · timeout 120 s · 256 MB · group `monitoring` (scripts/functions.json). Worst case a run waits 60 s for each of the two Logs Insights queries (they run side by side), plus the resolver invoke; a normal run takes under 30 s. The zip does not ship node_modules (the runtime's AWS SDK v3 is used).
 - Trigger: EventBridge rule `TriggerHealth`, `rate(1 hour)`, ENABLED, no input.
-- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`), `HEAL` (`on` | `dry`; unset = off; currently `dry`), `CF_ANALYTICS_TOKEN` (secret; `CF_SITE_TAG` is not set, the site is found by host).
+- Env: `WORLD_BUCKET` (default `globalperspective-world-280362093938`), `HEAL` (`on` | `dry`; unset = off; currently `dry`), `CF_ANALYTICS_TOKEN` (secret).
 - Test event flags: `{"dry": true}` (writes nothing), `{"skipCost": true}`.
 
 ## Deploy (the steps used on 2026-11-04; each IAM and AWS step needed the operator's yes)

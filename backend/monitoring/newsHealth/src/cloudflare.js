@@ -6,27 +6,13 @@ const { READERS } = require('./config');
 
 const errText = (e) => String((e && e.message) || e).slice(0, 200);
 
-/** The site tag: env CF_SITE_TAG if set, else the Web Analytics site of this account whose host is globalperspective.net. */
-async function findSiteTag({ token, accountId, fetchFn, env = process.env }) {
-  if (env.CF_SITE_TAG) return env.CF_SITE_TAG;
-  const res = await fetchFn(`${READERS.restBase}/accounts/${accountId}/rum/site_info/list?per_page=100`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`Cloudflare site list HTTP ${res.status}`);
-  const body = await res.json();
-  if (body.success === false) throw new Error(`Cloudflare site list: ${errText(((body.errors || [])[0] || {}).message || 'refused')}`);
-  const sites = body.result || [];
-  // A site's host is on the site itself (`host`) or on its ruleset (`ruleset.zone_name`), depending on how it was added.
-  const hit = sites.find((s) => [s.host, s.ruleset && s.ruleset.zone_name, s.zone_name].some((h) => h === READERS.siteHost || h === `www.${READERS.siteHost}`));
-  if (!hit || !hit.site_tag) throw new Error(`no Web Analytics site for ${READERS.siteHost} in this account (${sites.length} sites); set CF_SITE_TAG`);
-  return hit.site_tag;
-}
-
-const FILTER = '{ AND: [{ siteTag: $siteTag }, { datetime_geq: $from, datetime_leq: $to }] }';
+const FILTER = '{ AND: [{ requestHost: $host }, { datetime_geq: $from, datetime_leq: $to }] }';
 const group = (alias, dims) => `${alias}: rumPageloadEventsAdaptiveGroups(filter: ${FILTER}, limit: $limit, orderBy: [count_DESC]) {
         count
         sum { visits }
         dimensions { ${dims} }
       }`;
-const QUERY = `query Readers($accountTag: string!, $siteTag: string!, $from: Time!, $to: Time!, $limit: uint64!) {
+const QUERY = `query Readers($accountTag: string!, $host: string!, $from: Time!, $to: Time!, $limit: uint64!) {
   viewer {
     accounts(filter: { accountTag: $accountTag }) {
       ${group('pages', 'date requestPath')}
@@ -51,21 +37,19 @@ function parseGraphql(body) {
 }
 
 /**
- * -> { siteTag, pages:[{date,path,views,visits}], referrers:[{host,views,visits}], countries:[{country,views,visits}] }.
+ * -> { pages:[{date,path,views,visits}], referrers:[{host,views,visits}], countries:[{country,views,visits}] }.
  * Throws with the API's own message on an HTTP, GraphQL or shape failure.
  */
-async function pullCloudflare({ token, days, now, fetchFn = fetch, env = process.env }) {
-  const accountId = READERS.accountId;
-  const siteTag = await findSiteTag({ token, accountId, fetchFn, env });
+async function pullCloudflare({ token, days, now, fetchFn = fetch }) {
   const from = `${days[0]}T00:00:00Z`;
   const to = new Date(now).toISOString().replace(/\.\d+Z$/, 'Z');
   const res = await fetchFn(READERS.graphqlUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: QUERY, variables: { accountTag: accountId, siteTag, from, to, limit: READERS.rowLimit } }),
+    body: JSON.stringify({ query: QUERY, variables: { accountTag: READERS.accountId, host: READERS.siteHost, from, to, limit: READERS.rowLimit } }),
   });
   if (!res.ok) throw new Error(`Cloudflare GraphQL HTTP ${res.status}`);
-  return { siteTag, ...parseGraphql(await res.json()) };
+  return parseGraphql(await res.json());
 }
 
-module.exports = { pullCloudflare, parseGraphql, findSiteTag, QUERY };
+module.exports = { pullCloudflare, parseGraphql, QUERY };

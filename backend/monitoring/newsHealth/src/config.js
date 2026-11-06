@@ -52,12 +52,11 @@ const CONFIG = {
 
 // Readers (ARCHITECTURE_OPS.md phase 2). Cloudflare Web Analytics through the GraphQL analytics API, once per UTC day.
 // The account id is not a secret (it is also in scripts/site-release.config.json). The token is: env CF_ANALYTICS_TOKEN, set by the
-// operator (README). CF_SITE_TAG is optional: with the token the site is found by host in the account's Web Analytics sites.
+// operator (README). The query filters by `requestHost` (siteHost), so no site tag is needed.
 const READERS = {
   accountId: process.env.CF_ACCOUNT_ID || '45efe64168fc55da3937e2c01b1ca43a',
   siteHost: 'globalperspective.net',
   graphqlUrl: 'https://api.cloudflare.com/client/v4/graphql',
-  restBase: 'https://api.cloudflare.com/client/v4',
   topN: 10,
   rowLimit: 10000,   // GraphQL rows per query (the API maximum); 14 days x pages stays far below it today
   // Page families (path -> family, and family -> functions.json features): the one table is pageFamilies.json.

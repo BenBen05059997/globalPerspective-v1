@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { READERS } = require('../src/config');
 const { lastDays } = require('../src/days');
-const { parseGraphql, findSiteTag, pullCloudflare } = require('../src/cloudflare');
+const { parseGraphql, pullCloudflare } = require('../src/cloudflare');
 const { familyOf, normalizePath, summarize, ownCounts, attention, buildReaders, readersPullDue, pullReaders } = require('../src/readers');
 const { buildOps } = require('../src/ops');
 const prices = require('../src/prices.json');
@@ -54,7 +54,7 @@ const answer = () => ({
 });
 
 test('GraphQL answer parsing and summary: families, per-day bars, ops excluded from totals, titles, top lists', () => {
-  const rows = { siteTag: 'tag1', ...parseGraphql(answer()) };
+  const rows = parseGraphql(answer());
   assert.equal(rows.pages.length, 10);
   assert.deepEqual(rows.pages[0], { date: '2026-11-03', path: '/', views: 40, visits: 30 });
   const s = summarize(rows, DAYS, { 'thread-a': 'Story A' }, '2026-11-04T12:00:00.000Z');
@@ -82,34 +82,26 @@ test('GraphQL errors and a missing account are errors, an empty list is a real z
   assert.throws(() => parseGraphql(null), /no account/);
   const z = parseGraphql({ data: { viewer: { accounts: [{ pages: [], referrers: [], countries: [] }] } } });
   assert.deepEqual(z, { pages: [], referrers: [], countries: [] });
-  assert.equal(summarize({ ...z, siteTag: 't' }, DAYS, {}, 'x').totals.views, 0);
+  assert.equal(summarize(z, DAYS, {}, 'x').totals.views, 0);
 });
 
 const jsonRes = (body, ok = true, status = 200) => ({ ok, status, json: async () => body });
 
-test('site tag: env wins; otherwise found by host in the account site list; not found says so', async () => {
-  assert.equal(await findSiteTag({ token: 't', accountId: 'a', fetchFn: async () => { throw new Error('no call'); }, env: { CF_SITE_TAG: 'envtag' } }), 'envtag');
-  const calls = [];
-  const fetchFn = async (url, init) => { calls.push([url, init.headers.Authorization]); return jsonRes({ success: true, result: [{ site_tag: 'x', host: 'other.example' }, { site_tag: 'gp', ruleset: { zone_name: 'globalperspective.net' } }] }); };
-  assert.equal(await findSiteTag({ token: 'secret', accountId: 'acc', fetchFn, env: {} }), 'gp');
-  assert.match(calls[0][0], /\/accounts\/acc\/rum\/site_info\/list/);
-  await assert.rejects(findSiteTag({ token: 't', accountId: 'a', fetchFn: async () => jsonRes({ success: true, result: [{ site_tag: 'x', host: 'other.example' }] }), env: {} }), /no Web Analytics site for globalperspective\.net/);
-  await assert.rejects(findSiteTag({ token: 't', accountId: 'a', fetchFn: async () => jsonRes({}, false, 403), env: {} }), /HTTP 403/);
-});
-
-test('pullCloudflare sends the account, site tag and 14-day window; the token only in the header', async () => {
+test('pullCloudflare sends the account, host filter and 14-day window; the token only in the header', async () => {
   const sent = [];
   const fetchFn = async (url, init) => { sent.push({ url, init }); return jsonRes(answer()); };
-  const r = await pullCloudflare({ token: 'tok', days: DAYS, now: NOW, fetchFn, env: { CF_SITE_TAG: 'tag1' } });
-  assert.equal(r.siteTag, 'tag1');
+  const r = await pullCloudflare({ token: 'tok', days: DAYS, now: NOW, fetchFn });
+  assert.ok(r.pages.length);
   const body = JSON.parse(sent[0].init.body);
   assert.equal(sent[0].url, READERS.graphqlUrl);
   assert.equal(body.variables.accountTag, READERS.accountId);
-  assert.equal(body.variables.siteTag, 'tag1');
+  assert.equal(body.variables.host, 'globalperspective.net');
+  assert.match(body.query, /requestHost: \$host/);
+  assert.ok(!('siteTag' in body.variables));
   assert.equal(body.variables.from, '2026-10-22T00:00:00Z');
   assert.match(body.query, /rumPageloadEventsAdaptiveGroups/);
   assert.ok(!sent[0].init.body.includes('tok'));
-  await assert.rejects(pullCloudflare({ token: 't', days: DAYS, now: NOW, fetchFn: async () => jsonRes({}, false, 500), env: { CF_SITE_TAG: 'x' } }), /GraphQL HTTP 500/);
+  await assert.rejects(pullCloudflare({ token: 't', days: DAYS, now: NOW, fetchFn: async () => jsonRes({}, false, 500) }), /GraphQL HTTP 500/);
 });
 
 const fakeAws = (over = {}) => ({
@@ -132,10 +124,10 @@ test('pull: no token is not_connected with no network call, own data still count
   assert.deepEqual(nc.own.boards, { total: 1 });
   assert.equal(nc.own.shares.days[13].count, 1);
 
-  const err = await pullReaders({ aws: fakeAws(), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't', CF_SITE_TAG: 's' }, fetchFn: async () => jsonRes({}, false, 403) });
+  const err = await pullReaders({ aws: fakeAws(), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't' }, fetchFn: async () => jsonRes({}, false, 403) });
   assert.deepEqual(err.cloudflare, { status: 'error', error: 'Cloudflare GraphQL HTTP 403' });
 
-  const ok = await pullReaders({ aws: fakeAws(), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't', CF_SITE_TAG: 's' }, fetchFn });
+  const ok = await pullReaders({ aws: fakeAws(), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't' }, fetchFn });
   assert.equal(ok.cloudflare.status, 'ok');
   assert.equal(ok.cloudflare.topStories[0].title, 'Story A');
 
@@ -144,7 +136,7 @@ test('pull: no token is not_connected with no network call, own data still count
 });
 
 test('pull: an unreadable story index leaves titles empty, it does not fail the pull', async () => {
-  const ok = await pullReaders({ aws: fakeAws({ readText: async () => { throw new Error('boom'); } }), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't', CF_SITE_TAG: 's' }, fetchFn: async () => jsonRes(answer()) });
+  const ok = await pullReaders({ aws: fakeAws({ readText: async () => { throw new Error('boom'); } }), now: NOW, days: DAYS, env: { CF_ANALYTICS_TOKEN: 't' }, fetchFn: async () => jsonRes(answer()) });
   assert.equal(ok.cloudflare.status, 'ok');
   assert.equal(ok.cloudflare.topStories[0].title, null);
 });

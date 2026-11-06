@@ -1,7 +1,7 @@
 // Runtime config served by GitHub Pages.
 window.SENSITIVE_PROXY_ENDPOINT = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
 window.SAVED_ITEMS_ENDPOINT = 'https://y57kgqdctggtjtieddcts2byke0madfd.lambda-url.ap-northeast-1.on.aws/';
-window.CLIENT_ERRORS_ENDPOINT = 'https://ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws/';
+window.CLIENT_ERRORS_ENDPOINT = '/api/errors';
 window.USER_PREFS_ENDPOINT = 'https://snkxw6dllquntzyyur2cb4eu6u0cnzqr.lambda-url.ap-northeast-1.on.aws/';
 window.POLAR_BILLING_ENDPOINT = 'https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/';
 window.NEWS_ANALYZE_ENDPOINT = 'https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/';

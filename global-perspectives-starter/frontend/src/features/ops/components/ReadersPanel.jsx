@@ -23,7 +23,7 @@ function NotConnected() {
       <ol className="ops-steps">
         <li>Cloudflare dashboard, My Profile, API Tokens, Create Token: custom token, permission Account, Account Analytics, Read, for this account only.</li>
         <li>Set it on the <code>newsHealth</code> Lambda as <code>CF_ANALYTICS_TOKEN</code> (recipe in the newsHealth README; the value never goes in chat or a file).</li>
-        <li>The next hourly run reads the site from the account&apos;s Web Analytics sites; <code>CF_SITE_TAG</code> is only needed if that lookup fails.</li>
+        <li>The next hourly run reads the page views of this site from the account&apos;s Web Analytics.</li>
       </ol>
     </div>
   );

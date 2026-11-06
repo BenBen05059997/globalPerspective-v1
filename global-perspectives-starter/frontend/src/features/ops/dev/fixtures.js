@@ -80,7 +80,7 @@ const READERS_CF = (() => {
   ].map(([id, label, excluded, days]) => ({ id, label, excluded, views: days.reduce((a, b) => a + b, 0), days }));
   const views = fam.filter((f) => !f.excluded).reduce((a, f) => a + f.views, 0);
   return {
-    status: 'ok', pulledAt: `${TODAY}T00:15:00.000Z`, siteTag: 'dev-site-tag', from: DATES[0], to: TODAY, days: DATES,
+    status: 'ok', pulledAt: `${TODAY}T00:15:00.000Z`, from: DATES[0], to: TODAY, days: DATES,
     totals: { views, opsViews: fam.find((f) => f.id === 'ops').views },
     families: fam,
     topStories: [

@@ -49,12 +49,39 @@ test('expired, wrong audience, wrong issuer, wrong signature and unknown kid are
   assert.equal(await verify(`Bearer ${token(claims(), { kid: 'nope' })}`), null);
 });
 
-test('without a projectId the aud and iss checks are skipped (exp and signature still apply)', async () => {
-  const verify = makeFirebaseVerifier({});
-  const c = claims({ aud: 'anything', iss: 'anywhere' });
+test('without a projectId (unset, undefined or empty) every token is refused, even a valid-looking one, and no certs are fetched', async () => {
+  const valid = `Bearer ${token(claims())}`;
+  const foreign = `Bearer ${token(claims({ aud: 'another-firebase-project', iss: 'https://securetoken.google.com/another-firebase-project' }))}`;
+  const [, warns] = await withLogs(async () => {
+    for (const opts of [{}, undefined, { projectId: undefined }, { projectId: '' }, { projectId: null }]) {
+      const verify = makeFirebaseVerifier(opts);
+      assert.equal(await verify(valid), null);
+      assert.equal(await verify(foreign), null);
+    }
+  });
+  assert.equal(fetches, 0);
+  assert.equal(warns.length, 5); // one warning per verifier built
+});
+
+test('a verifier built without a projectId warns once, naming FIREBASE_PROJECT_ID and using logLabel, never a token', async () => {
+  const t = token(claims());
+  const [verify, warns] = await withLogs(async () => makeFirebaseVerifier({ logLabel: 'verifyFirebaseToken failed' }));
+  const [, more] = await withLogs(async () => { await verify(`Bearer ${t}`); await verify(`Bearer ${t}`); });
+  assert.equal(warns.length, 1);
+  assert.match(warns[0][0], /^verifyFirebaseToken failed: .*FIREBASE_PROJECT_ID/);
+  assert.equal(JSON.stringify(warns).includes(t), false);
+  assert.deepEqual(more, []);
+  const [, none] = await withLogs(async () => makeFirebaseVerifier({ projectId: PROJECT }));
+  assert.deepEqual(none, []);
+});
+
+test('with a projectId the token is accepted only when aud and iss both match it', async () => {
+  const verify = makeFirebaseVerifier({ projectId: PROJECT });
+  const c = claims();
   assert.deepEqual(await verify(`Bearer ${token(c)}`), c);
-  assert.equal(await verify(`Bearer ${token(claims({ exp: nowS() - 5 }))}`), null);
-  assert.equal(await verify(`Bearer ${token(claims(), { key: other })}`), null);
+  assert.equal(await verify(`Bearer ${token(claims({ aud: 'anything' }))}`), null);
+  assert.equal(await verify(`Bearer ${token(claims({ iss: 'anywhere' }))}`), null);
+  assert.equal(await verify(`Bearer ${token(claims({ aud: undefined }))}`), null);
 });
 
 test('the certs are fetched once and kept for the next token', async () => {

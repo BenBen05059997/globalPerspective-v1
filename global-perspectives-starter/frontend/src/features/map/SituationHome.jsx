@@ -1085,7 +1085,9 @@ export default function SituationHome() {
             </HudCompactLine>
           ) : null}
           <div className="sh-mapwrap">{mapPane}</div>
-          {phoneSheetOpen ? (
+          {/* The stale-feed filter creates a containing block for fixed descendants.
+              Keep the detail sheet fixed to the phone viewport. */}
+          {phoneSheetOpen ? createPortal(
             <BottomSheet
               stop={sheetStop}
               onStopChange={setSheetStop}
@@ -1094,7 +1096,7 @@ export default function SituationHome() {
               subtitle={sheetSubtitle}
             >
               {sheetBody}
-            </BottomSheet>
+            </BottomSheet>, document.body,
           ) : null}
         </div>
       ) : phoneTab === 'list' ? (

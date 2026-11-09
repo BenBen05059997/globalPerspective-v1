@@ -603,7 +603,7 @@ export default function SituationMap3D({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [spinOn, reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);  
+  }, [spinOn, reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);
 
   // Project labels into the same pixel space as the canvas. Match the marker horizon
   // test so names on the far side never show through the globe.

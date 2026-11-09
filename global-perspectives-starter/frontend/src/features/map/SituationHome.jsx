@@ -764,8 +764,7 @@ export default function SituationHome() {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
         href: hero.threadId ? storyHref(hero.threadId) : null,
-        onOpen: hero.threadId ? null : () => select(hero.id),
-        openLabel: hero.threadId ? 'open story →' : 'show on map →',
+        onOpen: () => select(hero.id),
       };
     }
     if (topicsFreshness === 'hidden') return null;
@@ -776,10 +775,12 @@ export default function SituationHome() {
       title: t.title,
       older: topicsFreshness === 'older',
       href: t.threadId ? storyHref(t.threadId) : null,
-      onOpen: t.threadId ? null : () => selectStory(t),
-      openLabel: 'open story →',
+      onOpen: () => selectStory(t),
     };
   }, [hero, topics, topicsFreshness, storiesDateLabel, select, selectStory]);
+
+  const firstReadable = topicsFreshness !== 'hidden' && topics.find((t) => t?.title && t.threadId);
+  const readingFallback = firstReadable ? { title: firstReadable.title, href: storyHref(firstReadable.threadId) } : null;
 
   const alertNote = alertStackNote(alertStack.items, paused);
   const alertEmpty = alertEmptyText(paused);
@@ -995,7 +996,7 @@ export default function SituationHome() {
             heading={worldDateLabel ? `Situation brief · ${worldDateLabel}` : 'Situation brief'}
             counts={world ? tierCounts : null}
             lede={worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}
-            lead={world ? lead : null}
+            lead={world ? lead : null} readingFallback={readingFallback}
           />
           {world ? (
             <AlertStack
@@ -1075,10 +1076,11 @@ export default function SituationHome() {
 
       {phoneTab === 'map' ? (
         <div {...tabPanelProps('sh', 'map')} className="sh-phone-panel">
+          <HudIntelFeed topics={topics} topicsAsOf={topicsAsOf} label="Top stories" directLimit={3} />
           {world || sensorRows.length ? (
             <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
               <div className="sh-hud-row">
-                {world ? <HudBriefPanel counts={tierCounts} lead={lead} /> : null}
+                {world ? <HudBriefPanel counts={tierCounts} lead={lead} readingFallback={readingFallback} /> : null}
                 {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
               </div>
             </HudCompactLine>

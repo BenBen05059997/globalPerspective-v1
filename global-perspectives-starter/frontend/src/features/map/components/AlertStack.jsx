@@ -76,6 +76,7 @@ export default function AlertStack({
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <SectionHeader className="al-head" label={label} count={`${items.length} open`} />
+      <p className="al-note">Tracked situations that are developing.</p>
       {items.length ? (
         <ul className="al-list">
           {items.map((s) => (

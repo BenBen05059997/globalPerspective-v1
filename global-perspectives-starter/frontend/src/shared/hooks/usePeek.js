@@ -90,7 +90,7 @@ export function usePeek({ delayMs = HOVER_DELAY_MS, peekWidth = 280, peekHeight 
 
   useEffect(() => () => clearTimer(), []);
 
-  return { openId, style, openOnHover, openOnFocus, close };
+  return { openId, style, openOnHover, openOnFocus, openNow, close };
 }
 
 export default usePeek;

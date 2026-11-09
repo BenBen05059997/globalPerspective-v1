@@ -7,6 +7,7 @@ import { crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import { topicsWithoutSituation } from '@/features/map/lib/storyShading.js';
+import { storyHref } from '@/shared/lib/links.js';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
@@ -20,21 +21,26 @@ function storiesDateLabel(asOf) {
 
 export default function HudIntelFeed({
   situations = [], topics = [], topicsAsOf = null, storyFocusId = null, onSelectStory = null, peek = null,
-  label = 'Intel feed',
+  label = 'Intel feed', directLimit = 0,
 }) {
   const dateLabel = storiesDateLabel(topicsAsOf);
   const ageDays = topicsAsOf ? (Date.now() - new Date(topicsAsOf).getTime()) / 86400000 : null;
   const state = ageDays != null ? freshnessState(ageDays) : null;
-  const titled = topicsWithoutSituation(topics, situations).filter((t) => t.title);
+  const titled = directLimit
+    ? topics.filter((t) => t?.title && t.threadId).slice(0, directLimit)
+    : topicsWithoutSituation(topics, situations).filter((t) => t.title);
   const visibleTopics = state === 'hidden' ? [] : titled;
   const hiddenCount = state === 'hidden' ? titled.length : 0;
+
+  if (directLimit && !visibleTopics.length) return null;
 
   return (
     <div className="hud-feed" role="region" aria-label={label}>
       <SectionHeader
-        className="hud-feed-head hud-stories-head" label="Stories" count={dateLabel ? `from ${dateLabel}` : null}
+        className="hud-feed-head hud-stories-head" label={directLimit ? 'Top stories' : 'Stories'} count={dateLabel ? `from ${dateLabel}` : null}
         hint={state === 'older' ? <span className="sh-paused">paused</span> : null}
       />
+      {!directLimit ? <p className="hud-stories-hidden sh-muted">{ageDays != null && ageDays < 1 ? 'Today’s news stories.' : 'News stories from the latest edition.'}</p> : null}
       {visibleTopics.length ? (
         <ul className="hud-feed-list hud-stories-list">
           {visibleTopics.map((t, i) => {
@@ -48,7 +54,8 @@ export default function HudIntelFeed({
                 id={rowId}
                 active={rowId === storyFocusId}
                 dim={state === 'older'}
-                onClick={() => onSelectStory && onSelectStory(t)}
+                to={directLimit ? storyHref(t.threadId) : null}
+                onClick={directLimit ? null : () => onSelectStory && onSelectStory(t)}
                 title={t.title}
                 place={t.primaryCountry || null}
                 crisis={crisis === 'neutral' ? null : crisis}

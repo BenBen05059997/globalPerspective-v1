@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
-import { useParams, useNavigate, Link, Navigate } from 'react-router';
+import { useParams, useNavigate, useLocation, Link, Navigate } from 'react-router';
 import { ROUTE, storyHref, countryHref, mapHref } from '@/shared/lib/links.js';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { parentCountry } from '@/shared/lib/countries.js';
 import AsOf from '@/shared/ui/AsOf.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
@@ -255,6 +256,11 @@ const PHONE_TABS = [
 
 export default function CountryPage() {
   const { countryName } = useParams();
+  const { pathname, search, hash } = useLocation();
+  const { user, loading: authLoading } = useAuth();
+  const signInHref = !authLoading && (!user || user.isAnonymous)
+    ? `/signin?returnTo=${encodeURIComponent(pathname + search + hash)}`
+    : null;
   // Phone P1: READ (the card + everything below) / MAP (the country on the map). The map is only
   // mounted while MAP is open; desktop keeps the map band above the card.
   const isPhone = useIsPhone();
@@ -632,7 +638,7 @@ export default function CountryPage() {
               <CopyAsText getText={getSheetText} />
               <PrintButton />
               {country && <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />}
-              {country && <FollowButton country={decodedName} />}
+              {country && <FollowButton country={decodedName} signInHref={signInHref} />}
             </div>
           </div>
 
@@ -677,7 +683,7 @@ export default function CountryPage() {
           <RiskScorecard record={intel} />
 
           {/* What changed — living-analysis Phase 1a (deterministic, honest-empty if no material move) */}
-          <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} driftNotesTotal={driftNotesTotal} driftNotesGated={driftNotesGated} />
+          <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} driftNotesTotal={driftNotesTotal} driftNotesGated={driftNotesGated} signInHref={signInHref} />
 
           {/* Tabs */}
           <Tabs

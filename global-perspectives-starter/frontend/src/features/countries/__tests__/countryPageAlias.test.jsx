@@ -27,6 +27,8 @@ vi.mock('@/features/countries/hooks/useCountryHistory', () => ({ useCountryHisto
 vi.mock('@/features/countries/components/CountryCardV2', () => ({ default: () => null }));
 vi.mock('@/shared/ui/SaveButton', () => ({ SaveButton: () => <span>save</span> }));
 vi.mock('@/shared/ui/FollowButton', () => ({ FollowButton: () => <span>follow</span> }));
+vi.mock('@/shared/contexts/AuthContext', () => ({ useAuth: () => ({ user: null, loading: false }) }));
+
 vi.mock('@/shared/ui/ShareButtons', () => ({ default: () => null }));
 
 import CountryPage from '@/features/countries/CountryPage';

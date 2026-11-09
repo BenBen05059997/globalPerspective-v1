@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useMembership } from '@/shared/hooks/useMembership';
 import { usePreferences } from '@/shared/hooks/usePreferences';
 import Button from '@/shared/ui/Button.jsx';
@@ -18,7 +19,7 @@ function Bell({ filled }) {
   );
 }
 
-export function FollowButton({ country }) {
+export function FollowButton({ country, signInHref = null }) {
   const { isMember, available, loading: memLoading } = useMembership();
   const { isFollowing, follow, saving, endpointMissing } = usePreferences();
 
@@ -29,10 +30,13 @@ export function FollowButton({ country }) {
   // Non-member (incl. anonymous): the upsell hint.
   if (!isMember) {
     return (
-      <Button compact to="/membership"
-        title={`Follow ${country} to see changes in your account desk — a member feature`}>
-        <Bell /> Follow <span className="follow-button__members">· Members</span>
-      </Button>
+      <>
+        <Button compact to="/membership"
+          title={`Follow ${country} to see changes in your account desk — a member feature`}>
+          <Bell /> Follow <span className="follow-button__members">· Members</span>
+        </Button>
+        {signInHref ? <Link to={signInHref}>Sign in</Link> : null}
+      </>
     );
   }
 

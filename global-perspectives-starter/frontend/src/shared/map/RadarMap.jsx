@@ -429,6 +429,8 @@ export default function RadarMap({
             .text(glyph.glyph);
         }
         if (s.id === focusId) {
+          g.append('circle').attr('r', (tierSize(s.tier).ringR || r) + 4).attr('fill', 'none')
+            .attr('stroke', TOKENS.accent).attr('stroke-width', 2).attr('pointer-events', 'none');
           // HUD brackets = selected (legend §1 / L4), replacing the old white glow ring.
           const b = (tierSize(s.tier).ringR || r) + 7;
           g.append('path').attr('class', 'rd-brackets').attr('d', bracketsPath(b))
@@ -447,8 +449,8 @@ export default function RadarMap({
       // zoom/pan from the markers' on-screen positions (right/left/above/below the marker, inside
       // the map, clear of other labels and of every marker, measured text width).
       const ts = (v) => { const t = v ? new Date(v).getTime() : NaN; return Number.isFinite(t) ? t : 0; };
-      const markerR = (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 4;
-      const labelable = active.filter((s) => s.tier === 'high' || s.tier === 'elevated')
+      const markerR = (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + (s.id === focusId ? 7 : 4);
+      const labelable = active.filter((s) => focusId ? s.id === focusId : s.tier === 'high' || s.tier === 'elevated')
         .sort((a, b) => (markerR(b) - markerR(a)) || ((b.escalating ? 1 : 0) - (a.escalating ? 1 : 0)) || (ts(b.last_change_at) - ts(a.last_change_at)));
       const measure = canvasMeasure(`11px ${getComputedStyle(svg.node()).fontFamily || 'sans-serif'}`);
       const labelG = svg.append('g').attr('class', 'sm-labels').attr('pointer-events', 'none');
@@ -461,6 +463,7 @@ export default function RadarMap({
           (enter) => enter.append('text').attr('class', 'sm-label').attr('fill', TOKENS['text-body']).attr('font-size', 11)
             .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 3),
         ).attr('x', (l) => l.x).attr('y', (l) => l.y).attr('text-anchor', (l) => l.anchor)
+          .attr('fill', (l) => l.id === focusId ? TOKENS.accent : TOKENS['text-body'])
           .text((l) => l.text).each(function title(l) {
             d3.select(this).selectAll('title').data(l.full === l.text ? [] : [l.full]).join('title').text((x) => x);
           });

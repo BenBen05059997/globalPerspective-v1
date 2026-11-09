@@ -5,6 +5,7 @@
 .sm-wrap { position: relative; width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
 /* F2.15: a visible focus ring on the globe canvas and the radar's focusable countries/markers.
    !important: deck.gl sets `outline: none` inline on `.deck-events-root` on every render. */
+.sm-globe-labels { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .sm-wrap canvas:focus-visible,
 .sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; }
 /* radar marker hover card: the shared Tooltip look (gp-tip), shown/placed by RadarMap.jsx */

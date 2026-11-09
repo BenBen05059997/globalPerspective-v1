@@ -289,6 +289,7 @@ export default function SituationHome() {
     });
   }, [open]);
   const hero = ranked[0] || null;
+  const globeLabelIds = useMemo(() => ranked.slice(0, 3).map((s) => s.id), [ranked]);
 
   // "Since you last looked" — compare each situation's opened_at against the last visit stamp
   // (this browser only). v1 is new-only; "escalated since your visit" needs a tier_changed_at
@@ -827,7 +828,7 @@ export default function SituationHome() {
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" tone="dark" /></div>}>
             <SituationMap3D
               key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
-              situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds} view="globe"
+              situations={riskMode ? NO_ITEMS : situations} labelIds={riskMode ? NO_ITEMS : globeLabelIds} focusId={focusId} newIds={newIds} view="globe"
               onSelect={select} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
               shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
               onSelectCountry={selectStoryByCountry}

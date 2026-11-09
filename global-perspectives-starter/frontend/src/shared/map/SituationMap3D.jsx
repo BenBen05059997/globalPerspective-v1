@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
-import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController } from '@deck.gl/core';
+import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeViewport as GlobeViewport, _GlobeController as GlobeController } from '@deck.gl/core';
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, PathLayer, IconLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
@@ -11,6 +11,7 @@ import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFra
 import {
   ICON_MAPPING, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BRACKET_GAP, diamondSize, badgeOffset, bracketCorners, getIconAtlas,
 } from '@/shared/map/globeIcons.js';
+import { canvasMeasure, placeMapLabels } from '@/shared/map/mapLabels.js';
 import { GLOBE_HORIZON } from '@/shared/map/globeHorizon.js';
 import { CRISIS_RGB } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
@@ -60,6 +61,8 @@ const LAND_RGB = hexToRgb(TOKENS['map-land']);
 const LAND_LINE_RGB = hexToRgb(TOKENS['map-land-line']);
 const LAND_LINE_DIM_RGB = hexToRgb(TOKENS['map-land-line-dim']);
 const outerR = (m) => m.size.ringR || m.size.r;
+const LABEL_FONT = '11px sans-serif';
+const GLOBE_VIEW = new GlobeView();
 
 const landFeatures = topojson.feature(topoData, topoData.objects.countries).features;
 // ISO-3 → country geometry / centroid, for spread arcs + affected-country fill (slice 2b).
@@ -93,7 +96,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  * hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], focusId, newIds = null, view = 'globe', onSelect, height = 560, width = null,
+  situations = [], labelIds = [], focusId, newIds = null, view = 'globe', onSelect, height = 560, width = null,
   shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw, onDrawError,
 }) {
@@ -155,7 +158,8 @@ export default function SituationMap3D({
   // clear it so the drift actually restarts.
   const resumeSpin = useCallback(() => { userMoved.current = false; setSpinOn(true); }, []);
   const wrapRef = useRef(null);
-  const [, setDims] = useState({ width: 1, height });
+  const [dims, setDims] = useState({ width: 1, height });
+  const measureLabel = useMemo(() => canvasMeasure(LABEL_FONT), []);
 
   // F1.2: pause both animation loops (spin, pulse) when the tab is hidden or the map panel has
   // scrolled off-screen — a plain visibility/IntersectionObserver check read inside the rAF loops
@@ -460,7 +464,7 @@ export default function SituationMap3D({
       }),
       dots: new ScatterplotLayer({
         id: 'core', data: situationsOnly, pickable: true, radiusUnits: 'pixels', getPosition: (m) => m.position,
-        getRadius: (m) => Math.max(3, m.size.r * 0.6),
+        getRadius: (m) => Math.max(3, m.size.r - 3),
         getFillColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)],
         stroked: true, lineWidthUnits: 'pixels', getLineWidth: 1, getLineColor: [...EDGE_RGB, 255],
         onClick, updateTriggers: trig,
@@ -483,6 +487,11 @@ export default function SituationMap3D({
       badges: icons('badges', glyphed, {
         getIcon: (m) => m.glyph.key, getSize: GLYPH_SIZE,
         getPixelOffset: (m) => badgeOffset(outerR(m)), getColor: (m) => [...BADGE_RGB, dimA(m, 255)],
+      }),
+      selectionRing: new ScatterplotLayer({
+        id: 'selection-ring', parameters: NO_DEPTH_WRITE, data: selected, getPosition: (m) => m.position,
+        radiusUnits: 'pixels', filled: false, stroked: true, pickable: false, lineWidthUnits: 'pixels',
+        getRadius: (m) => outerR(m) + 4, getLineWidth: 2, getLineColor: ACCENT_RGB,
       }),
       // Selected = HUD brackets (L4), replacing the old white keyline: four corner icons.
       brackets: icons('brackets', selected.flatMap((m) => bracketCorners(outerR(m) + BRACKET_GAP).map((c) => ({ ...c, position: m.position }))), {
@@ -580,7 +589,7 @@ export default function SituationMap3D({
     ...(linkArcLayer ? [linkArcLayer] : []),
     markerLayers.glow, markerLayers.softOuter, markerLayers.softInner, markerLayers.highRing,
     ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
-    markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.brackets,
+    markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.selectionRing, markerLayers.brackets,
     ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
   ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, linkArcLayer, markerLayers, storyBrackets, pulseStillLayer]);
@@ -607,6 +616,24 @@ export default function SituationMap3D({
     return () => cancelAnimationFrame(raf);
   }, [spinOn, reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);  
 
+  // Project labels into the same pixel space as the canvas. Match the marker horizon
+  // test so names on the far side never show through the globe.
+  const labels = (() => {
+    if (dims.width <= 1 || (!focusId && !labelIds.length)) return [];
+    const viewport = new GlobeViewport({ ...viewStateRef.current, ...dims });
+    const { cameraPosition } = viewport;
+    const obstacles = marks.flatMap((m) => {
+      const point = viewport.projectPosition(m.position);
+      const facing = point.reduce((dot, p, i) => dot + p * (cameraPosition[i] - p), 0);
+      if (facing <= 0) return [];
+      const [x, y] = viewport.project(m.position);
+      return [{ id: m.s.id, x, y, r: outerR(m) + (m.s.id === focusId ? BRACKET_GAP : 4), text: m.s.verb_label }];
+    });
+    const byId = new Map(obstacles.map((item) => [item.id, item]));
+    const ids = focusId ? [focusId] : labelIds;
+    return placeMapLabels(ids.map((id) => byId.get(id)).filter(Boolean), { ...dims, obstacles, measure: measureLabel });
+  })();
+
   const getTooltip = useCallback(({ object }) => {
     const sit = object?.s;
     if (!sit || !sit.verb_label) return null;
@@ -628,7 +655,7 @@ export default function SituationMap3D({
     <div className="sm-wrap" style={{ height }} ref={wrapRef} onPointerDownCapture={(e) => pointersDown.current.add(e.pointerId)}>
       <DeckGL
         ref={deckRef}
-        views={new GlobeView()}
+        views={GLOBE_VIEW}
         viewState={viewStateRef.current}
         onViewStateChange={(e) => {
           if (e.interactionState?.isDragging || e.interactionState?.isZooming) { userMoved.current = true; stopSpin(); }
@@ -649,6 +676,17 @@ export default function SituationMap3D({
         getCursor={({ isDragging, isHovering }) => (isDragging ? 'grabbing' : (isHovering ? 'pointer' : 'grab'))}
         style={{ position: 'relative', width: '100%', height: '100%' }}
       />
+      {labels.length ? (
+        <svg className="sm-globe-labels" aria-hidden="true">
+          {labels.map((label) => (
+            <text key={label.id} x={label.x} y={label.y} textAnchor={label.anchor}
+              fill={label.id === focusId ? TOKENS.accent : TOKENS['text-body']}
+              stroke={TOKENS.bg} strokeWidth={3} paintOrder="stroke" style={{ font: LABEL_FONT }}>
+              {label.text}
+            </text>
+          ))}
+        </svg>
+      ) : null}
       <div className="sm-globe-foot">
         <span className="sm-attrib">Earth at night: NASA Black Marble</span>
         {(() => {

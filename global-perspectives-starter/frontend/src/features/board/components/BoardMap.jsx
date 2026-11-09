@@ -68,6 +68,7 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
 
   if (!pins.length) return <p className="board-empty">No pins yet. Add a story, a country or an actor to start the board.</p>;
 
+  const PinChip = onPickPin ? 'button' : 'div';
   const unplaced = pins.filter((p) => !layout.centres[p.pinId]);
   const arc = (a, b) => (layout.centres[a] && layout.centres[b] ? arcPath(layout.centres[a], layout.centres[b]) : null);
 
@@ -103,7 +104,7 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
               <g key={key} className={`board-string board-string--${stringTexture(s)}${pickedKey === key ? ' is-picked' : ''}`} data-owner={s.owner} data-strength={s.strength}>
                 <title>{[head, body].filter(Boolean).join('. ')}</title>
                 <path className="board-string__line" d={d} />
-                <path className="board-string__hit" d={d} onClick={() => onPickString(s)} />
+                {onPickString ? <path className="board-string__hit" d={d} onClick={() => onPickString(s)} /> : null}
               </g>
             );
           })}
@@ -135,11 +136,11 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
                 data-kind={p.kind}
                 data-tier={i.risk != null ? tierFromScore(i.risk) : undefined}
                 style={p.kind === 'thread' && crisisDotVar(i.category) ? { '--pin-hue': crisisDotVar(i.category) } : undefined}
-                role="button"
-                tabIndex={0}
+                role={onPickPin ? 'button' : undefined}
+                tabIndex={onPickPin ? 0 : undefined}
                 aria-label={`${KIND_WORD[p.kind]}: ${i.label || p.refId}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}${p.retiredAt ? ', retired' : ''}`}
-                onClick={() => onPickPin(p.pinId)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickPin(p.pinId); } }}
+                onClick={onPickPin ? () => onPickPin(p.pinId) : undefined}
+                onKeyDown={onPickPin ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickPin(p.pinId); } } : undefined}
               >
                 <title>{i.label || p.refId}</title>
                 <line className="bm-pin__leader" x1={c.x} y1={c.y} x2={left ? lab.x + lab.w / 2 : lab.x - lab.w / 2} y2={lab.y} />
@@ -164,11 +165,11 @@ export default function BoardMap({ pins, strings, info, stories = {}, selected =
             ))}
             {unplaced.map((p) => (
               <li key={p.pinId}>
-                <button type="button" className="bm-chip" onClick={() => onPickPin(p.pinId)}>
+                <PinChip type={onPickPin ? 'button' : undefined} className="bm-chip" onClick={onPickPin ? () => onPickPin(p.pinId) : undefined}>
                   <span className="bm-chip__head">No place</span>
                   <span className="bm-chip__name">{info[p.pinId]?.label || p.refId}</span>
                   <span className="bm-chip__tail">{KIND_WORD[p.kind].toLowerCase()}</span>
-                </button>
+                </PinChip>
               </li>
             ))}
           </ul>

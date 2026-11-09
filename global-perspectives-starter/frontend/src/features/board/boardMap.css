@@ -3,7 +3,7 @@
 .bm-land { fill: var(--tier-low-wash); stroke: var(--hairline-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .bm-region { fill: var(--text-dim); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; text-anchor: middle; pointer-events: none; }
 
-.bm-pin { cursor: pointer; outline: none; }
+.bm-pin[role="button"] { cursor: pointer; outline: none; }
 .bm-pin__ring { fill: var(--panel-2); stroke: var(--pin-hue, var(--text-body)); stroke-width: 2; }
 .bm-pin[data-tier='low'] .bm-pin__ring { stroke-width: 1.2; }
 .bm-pin[data-tier='moderate'] .bm-pin__ring { stroke-width: 2; }
@@ -23,6 +23,7 @@
 .bm-chip--ghost { border-style: dashed; }
 .bm-chip:hover { border-color: var(--accent); }
 .bm-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+div.bm-chip { cursor: default; }
 .bm-chip__head { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); }
 .bm-chip__name { color: var(--text-head); }
 .bm-chip__tail { color: var(--text-dim); font-size: var(--text-xs); }

@@ -15,16 +15,16 @@ const labelOf = (id) => divergenceLabels[id];
 
 it('preset card: tag, counts, fork, footer sentence', () => {
   const onFork = vi.fn();
-  render(<MemoryRouter><PresetsPanel presets={[preset]} canFork onFork={onFork} signInHref="/x" /></MemoryRouter>);
+  render(<MemoryRouter><PresetsPanel presets={[preset]} canFork onFork={onFork} /></MemoryRouter>);
   expect(screen.getByText('Ours · read-only')).toBeInTheDocument();
   expect(screen.getByText('2 pins · 1 string')).toBeInTheDocument();
   expect(screen.getByText(/Forking makes a copy that is yours/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Fork Gulf: highest-risk stories' }));
   expect(onFork).toHaveBeenCalledWith(preset);
 });
-it('signed out shows sign in to fork', () => {
-  render(<MemoryRouter><PresetsPanel presets={[preset]} canFork={false} signInHref="/x" /></MemoryRouter>);
-  expect(screen.getByRole('link', { name: 'Sign in to fork' })).toBeInTheDocument();
+it('signed out links the whole card to its preview', () => {
+  render(<MemoryRouter><PresetsPanel presets={[preset]} /></MemoryRouter>);
+  expect(screen.getByRole('link', { name: 'Open preview: Gulf: highest-risk stories' })).toHaveAttribute('href', '/board?preset=r-gulf');
 });
 it('pin budget has a label and 12 segments', () => {
   const { container } = render(<PinBudget used={7} />);

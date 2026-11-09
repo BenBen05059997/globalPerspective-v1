@@ -1,5 +1,6 @@
 import Button from '@/shared/ui/Button.jsx';
 import { Link } from 'react-router';
+import { boardHref } from '@/shared/lib/links.js';
 import { layoutPins } from '@/features/board/lib/boardOps.js';
 import '@/features/board/presets.css';
 
@@ -20,26 +21,33 @@ function MiniGraph({ pins, strings }) {
 
 // Region presets: a starting board of the region's highest-risk stories with the strings we infer between
 // them. Listing is public; forking needs a member. Only region presets exist, so there is one group.
-export default function PresetsPanel({ presets, loading, canFork, signInHref, onFork }) {
+export default function PresetsPanel({ presets, loading, canFork, onFork }) {
   if (loading && !presets.length) return <p className="board-line">Loading presets.</p>;
   if (!presets.length) return <p className="board-line">No region presets are available right now.</p>;
   return (
     <div className="presets">
       <h3 className="presets__group">By region</h3>
       <ul className="presets__grid">
-        {presets.map((p) => (
-          <li key={p.presetId} className="preset-card">
-            <span className="preset-card__tag">Ours · read-only</span>
-            <strong className="preset-card__name">{p.name}</strong>
-            <MiniGraph pins={p.pins} strings={p.strings} />
-            <span className="preset-card__foot">
-              <span className="board-note">{plural(p.pins.length, 'pin')} · {plural(p.strings.length, 'string')}</span>
-              {canFork
-                ? <Button compact onClick={() => onFork(p)} aria-label={`Fork ${p.name}`}>Fork →</Button>
-                : <Link className="board-link" to={signInHref}>Sign in to fork</Link>}
-            </span>
-          </li>
-        ))}
+        {presets.map((p) => {
+          const content = (
+            <>
+              <span className="preset-card__tag">Ours · read-only</span>
+              <strong className="preset-card__name">{p.name}</strong>
+              <MiniGraph pins={p.pins} strings={p.strings} />
+              <span className="preset-card__foot">
+                <span className="board-note">{plural(p.pins.length, 'pin')} · {plural(p.strings.length, 'string')}</span>
+                {canFork
+                  ? <Button compact onClick={() => onFork(p)} aria-label={`Fork ${p.name}`}>Fork →</Button>
+                  : <span className="board-link">Open preview →</span>}
+              </span>
+            </>
+          );
+          return canFork
+            ? <li key={p.presetId} className="preset-card">{content}</li>
+            : <li key={p.presetId}>
+                <Link className="preset-card" to={`${boardHref()}?preset=${encodeURIComponent(p.presetId)}`} aria-label={`Open preview: ${p.name}`}>{content}</Link>
+              </li>;
+        })}
       </ul>
       <p className="board-note">Presets are ours and read-only. Forking makes a copy that is yours.</p>
     </div>

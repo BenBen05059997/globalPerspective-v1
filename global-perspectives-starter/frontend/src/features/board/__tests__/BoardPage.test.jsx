@@ -22,8 +22,8 @@ vi.mock('@/shared/hooks/useIsPhone.js', () => ({ useIsPhone: () => false }));
 vi.mock('@/features/board/lib/boardApi.js', () => ({
   boardAvailable: () => true,
   devMember: () => false,
-  callBoard: vi.fn(async (action, body) => {
-    calls.push([action, body]);
+  callBoard: vi.fn(async (action, body, options) => {
+    calls.push([action, body, options]);
     switch (action) {
       case 'list_boards': return [{ boardId: 'b1', name: 'My board', pinCount: boardStore.pins.length, updatedAt: 'x' }];
       case 'arrivals': return {recordAvailable:false,arrivals:[]};
@@ -31,7 +31,7 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
       case 'update_board': boardStore = { ...body.board, ...(serverVisit ? { lastVisitedAt: serverVisit } : {}) }; return JSON.parse(JSON.stringify(boardStore));
       case 'get_follows': return { followedThreads: ['thread-c'], followedActors: ['Oman'] };
-      case 'list_presets': return [{ presetId: 'r-mena', name: 'MENA: highest-risk stories', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62 }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] }];
+      case 'list_presets': return [{ presetId: 'r-mena', name: 'MENA: highest-risk stories', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62, lead: 'Shipping is under review.' }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'Shared shipping routes.' }] }];
       case 'connect': return connectReply;
       default: throw new Error(`unexpected ${action}`);
     }
@@ -75,6 +75,26 @@ async function selectBoth() {
   fireEvent.click(pinEl(/Gulf talks/));
 }
 
+it('opens a public preset with both read-only views, pin details and story links', async () => {
+  user = null;
+  renderPage('/board');
+  fireEvent.click(await screen.findByRole('link', { name: /^Open preview: MENA/ }));
+  expect(await screen.findByRole('heading', { name: 'MENA: highest-risk stories' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Hormuz shipping' })).toHaveAttribute('href', '/weekly/thread/thread-a');
+  expect(screen.getByText('Shipping is under review.')).toBeInTheDocument();
+  expect(within(screen.getByLabelText('Preset pins')).getByText(/62/)).toBeInTheDocument();
+  expect(within(screen.getByLabelText('Preset strings')).getByText('Shared shipping routes.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Connect|Retire|Add pin/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Map' }));
+  expect(screen.getByTestId('board-map')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Graph' }));
+  expect(screen.getByTestId('board-graph')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('link', { name: /All region presets/ }));
+  expect(await screen.findByRole('link', { name: /^Open preview: MENA/ })).toBeInTheDocument();
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every(([action, , options]) => action === 'list_presets' && options?.auth === false)).toBe(true);
+});
+
 describe('record views', () => {
   it('shows pin readings as absent and the unsettled counts of the pinned story', async () => {
     const views = await import('@/features/board/lib/recordViews.js');
@@ -92,7 +112,7 @@ describe('record views', () => {
 describe('B0 list fixes', () => {
   it('presets count pins and strings in the singular and plural', () => {
     const preset = (id, pins, strings) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: Array.from({ length: strings }, () => ({})) });
-    render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork signInHref="/signin" onFork={() => {}} /></MemoryRouter>);
+    render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork onFork={() => {}} /></MemoryRouter>);
     expect(screen.getByText('8 pins · 1 string')).toBeInTheDocument();
     expect(screen.getByText('1 pin · 0 strings')).toBeInTheDocument();
   });
@@ -108,13 +128,13 @@ describe('B0 list fixes', () => {
 });
 
 describe('signed out', () => {
-  it('shows one honest line with a sign-in link, and calls no member action', async () => {
+  it('describes what sign-in adds and calls no member action', async () => {
     user = null;
     renderPage('/board');
-    expect(screen.getByText(/for signed-in members/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign in' }).getAttribute('href')).toMatch(/^\/signin\?returnTo=/);
+    expect(screen.getByText(/With a free account/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in to build your own board' }).getAttribute('href')).toMatch(/^\/signin\?returnTo=/);
     await screen.findByText(/MENA: highest-risk stories/); // presets are public and may render
-    expect(screen.getByText(/Sign in to fork/)).toBeInTheDocument();
+    expect(screen.getByText(/Open preview/)).toBeInTheDocument();
     expect(calls.map(([a]) => a).every((a) => a === 'list_presets')).toBe(true);
   });
 });

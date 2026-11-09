@@ -5,7 +5,7 @@ import { pinCountParts } from '@/features/board/lib/graphText.js';
 // not listed (operator rule: show only what exists).
 export default function RecordPinDetails({ pin, story, today }) {
   const parts = pinCountParts(pin, story, today);
-  if (!pin.recordAvailable) return null;
-  return <>{pin.line ? <p className="board-line"><ClaimTag kind="judgment" /> {pin.line}</p> : null}
+  const line = pin.recordAvailable ? pin.line : null;
+  return <>{line ? <p className="board-line"><ClaimTag kind="judgment" /> {line}</p> : pin.lead ? <p className="board-line">{pin.lead}</p> : null}
     {parts.length ? <p className="board-note">{parts.join(' · ')}</p> : null}</>;
 }

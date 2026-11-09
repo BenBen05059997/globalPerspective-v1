@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
@@ -37,6 +37,7 @@ import MapRail from '@/features/board/components/MapRail.jsx';
 import VerdictCard from '@/features/board/components/VerdictCard.jsx';
 import StringDetail from '@/features/board/components/StringDetail.jsx';
 import AddPinPanel from '@/features/board/components/AddPinPanel.jsx';
+import ReadOnlyPreset from '@/features/board/components/ReadOnlyPreset.jsx';
 import PresetsPanel from '@/features/board/components/PresetsPanel.jsx';
 import MissingCard from '@/features/board/components/MissingCard.jsx';
 import BoardTopBar from '@/features/board/components/BoardTopBar.jsx';
@@ -192,19 +193,26 @@ export default function BoardPage() {
   const views = ['map', 'graph'];
   const mapView = view === 'map';
   const coverage = board?.coverage || null; // per-day coverage and kept weeks: the live board feed does not carry it yet
-  const signInHref = `/signin?returnTo=${encodeURIComponent(boardHref(boardId))}`;
 
   if (!available) return <div className="board-page"><p className="board-line">The board is not available yet.</p></div>;
   if (member.loading) return <div className="board-page" aria-busy="true" />;
   if (!member.signedIn) {
+    const presetId = new URLSearchParams(search).get('preset');
+    const preset = presets.presets.find((p) => p.presetId === presetId);
     return (
       <div className="board-page">
         <h1 className="board-title">Board</h1>
-        <p className="board-line">The board is for signed-in members. <Link className="board-link" to={signInHref}>Sign in</Link> to build yours.</p>
-        <Card as="section" aria-label="Region presets">
-          <SectionHeader label="Region presets" hint="A starting board per region" as="h2" />
-          <PresetsPanel presets={presets.presets} loading={presets.loading} canFork={false} signInHref={signInHref} />
-        </Card>
+        <div>
+          <Button variant="primary" to={`/signin?returnTo=${encodeURIComponent(boardHref(boardId))}`}>Sign in to build your own board</Button>
+        </div>
+        <p className="board-line">With a free account, you can build and save your own boards, test connections between pins and see the verdicts, follow stories and actors, and see new arrivals since your last visit.</p>
+        {preset ? <ReadOnlyPreset key={preset.presetId} preset={preset} today={today} /> : (
+          <Card as="section" aria-label="Region presets">
+            <SectionHeader label="Region presets" hint="A starting board per region" as="h2" />
+            {presetId && !presets.loading && presets.presets.length ? <p className="board-line">That preset is no longer available.</p> : null}
+            <PresetsPanel presets={presets.presets} loading={presets.loading} />
+          </Card>
+        )}
       </div>
     );
   }
@@ -223,7 +231,7 @@ export default function BoardPage() {
   if (panel?.type === 'add') {
     sheetBody = <AddPinPanel topics={topics} followedThreads={follows.threads} followedActors={follows.actors} full={full} notice={notice} onAdd={addToBoard} />;
   } else if (panel?.type === 'presets') {
-    sheetBody = <PresetsPanel presets={presets.presets} loading={presets.loading} canFork signInHref={signInHref} onFork={forkPreset} />;
+    sheetBody = <PresetsPanel presets={presets.presets} loading={presets.loading} canFork onFork={forkPreset} />;
   } else if (panel?.type === 'verdict' && verdictPins[0] && verdictPins[1]) {
     sheetBody = (
       <VerdictCard
@@ -439,7 +447,7 @@ export default function BoardPage() {
         </>
       ) : null}
       {board ? null : (state.loading ? <p className="board-line" aria-busy="true">Loading the board.</p> : null)}
-      {empty ? <Card as="section" aria-label="Region presets"><SectionHeader label="Region presets" as="h2" /><PresetsPanel presets={presets.presets} loading={presets.loading} canFork signInHref={signInHref} onFork={forkPreset} /></Card> : null}
+      {empty ? <Card as="section" aria-label="Region presets"><SectionHeader label="Region presets" as="h2" /><PresetsPanel presets={presets.presets} loading={presets.loading} canFork onFork={forkPreset} /></Card> : null}
       {isPhone ? sheet : null}
     </div>
   );

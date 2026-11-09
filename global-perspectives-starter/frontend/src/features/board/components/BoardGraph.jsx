@@ -54,7 +54,7 @@ function Legend() {
   );
 }
 
-export default function BoardGraph({ pins, strings, info, selected, pickedKey, onSelectPin, onPickString, onConnect, ghosts = [], failed = [], onAddGhost, coverageGap = null, stories = {}, today }) {
+export default function BoardGraph({ pins, strings, info, selected = [], pickedKey, onSelectPin, onPickString, onConnect, ghosts = [], failed = [], onAddGhost, coverageGap = null, stories = {}, today }) {
   const svgRef = useRef(null);
   const suppressClick = useRef(false);
   const [drag, setDragState] = useState(null);
@@ -84,7 +84,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
   };
 
   const onPinDown = (e, pinId) => {
-    if (e.button > 0 || e.pointerType === 'touch') return; // touch pans the graph and page; connect by selecting two pins + Connect
+    if (!onConnect || e.button > 0 || e.pointerType === 'touch') return; // touch pans the graph and page; connect by selecting two pins + Connect
     setDrag({ from: pinId, ...toSvg(e), sx: e.clientX, sy: e.clientY, moved: false });
   };
   const onMove = (e) => {
@@ -149,7 +149,7 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
               <g key={key} className={`board-string board-string--${texture}${pickedKey === key ? ' is-picked' : ''}`} data-texture={texture} data-owner={s.owner} data-strength={s.strength}>
                 <title>{[head, body].filter(Boolean).join('. ')}</title>
                 <line className="board-string__line" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />
-                <line className="board-string__hit" x1={p.x} y1={p.y} x2={q.x} y2={q.y} onClick={() => onPickString(s)} />
+                {onPickString ? <line className="board-string__hit" x1={p.x} y1={p.y} x2={q.x} y2={q.y} onClick={() => onPickString(s)} /> : null}
                 <StringLabel at={labelAt[`s:${key}`]} head={head} body={body} />
               </g>
             );
@@ -201,13 +201,13 @@ export default function BoardGraph({ pins, strings, info, selected, pickedKey, o
                   data-pin-id={pin.pinId}
                   data-kind={pin.kind}
                   data-tier={tier || undefined}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={on}
+                  role={onSelectPin ? 'button' : undefined}
+                  tabIndex={onSelectPin ? 0 : undefined}
+                  aria-pressed={onSelectPin ? on : undefined}
                   aria-label={`${KIND_WORD[pin.kind]}: ${i.label}${i.risk != null ? `, risk ${Math.round(i.risk)}` : ''}${pin.retiredAt ? ', retired' : ''}`}
                   onPointerDown={(e) => onPinDown(e, pin.pinId)}
-                  onClick={() => onPinClick(pin.pinId)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectPin(pin.pinId); } }}
+                  onClick={onSelectPin ? () => onPinClick(pin.pinId) : undefined}
+                  onKeyDown={onSelectPin ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectPin(pin.pinId); } } : undefined}
                 >
                   <span className="board-pin__kind"><span className="board-pin__dot" style={type.dot ? { '--pin-hue': type.dot } : undefined} aria-hidden="true" />{pin.retiredAt ? `Retired ${dayMonth(pin.retiredAt)} · ${KIND_WORD[pin.kind]}` : type.text}</span>
                   <span className="board-pin__title">{i.label}</span>

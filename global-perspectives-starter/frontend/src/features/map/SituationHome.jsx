@@ -762,7 +762,7 @@ export default function SituationHome() {
       return {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
-        href: hero.threadId ? storyHref(hero.threadId) : null,
+        href: hero.threadId ? storyHref(hero.threadId, { tab: 'overview' }) : null,
         onOpen: () => select(hero.id),
       };
     }
@@ -773,13 +773,13 @@ export default function SituationHome() {
       kicker: `First in the latest stories${storiesDateLabel ? ` · ${storiesDateLabel}` : ''}`,
       title: t.title,
       older: topicsFreshness === 'older',
-      href: t.threadId ? storyHref(t.threadId) : null,
+      href: t.threadId ? storyHref(t.threadId, { tab: 'overview' }) : null,
       onOpen: () => selectStory(t),
     };
   }, [hero, topics, topicsFreshness, storiesDateLabel, select, selectStory]);
 
   const firstReadable = topicsFreshness !== 'hidden' && topics.find((t) => t?.title && t.threadId);
-  const readingFallback = firstReadable ? { title: firstReadable.title, href: storyHref(firstReadable.threadId) } : null;
+  const readingFallback = firstReadable ? { title: firstReadable.title, href: storyHref(firstReadable.threadId, { tab: 'overview' }) } : null;
 
   const alertNote = alertStackNote(alertStack.items, paused);
   const alertEmpty = alertEmptyText(paused);

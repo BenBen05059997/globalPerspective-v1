@@ -54,7 +54,7 @@ export default function HudIntelFeed({
                 id={rowId}
                 active={rowId === storyFocusId}
                 dim={state === 'older'}
-                to={directLimit ? storyHref(t.threadId) : null}
+                to={directLimit ? storyHref(t.threadId, { tab: 'overview' }) : null}
                 onClick={directLimit ? null : () => onSelectStory && onSelectStory(t)}
                 title={t.title}
                 place={t.primaryCountry || null}

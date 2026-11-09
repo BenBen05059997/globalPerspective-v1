@@ -11,6 +11,9 @@
 export function changeNote(situation) {
   const text = situation?.what_changed;
   if (!text) return null;
+  // A cooling situation still counts as open. Older tracker notes can also
+  // survive a return to active coverage, so hide closure wording on open cards.
+  if (situation.state !== 'closed' && /^(?:no longer in active coverage|closed\s*[-–—]\s*inactive)[.!]?$/i.test(text.trim())) return null;
   if (situation.source === 'gdacs') return text;
   const rest = text.split(' · ').filter((p) => !/^\d+\s+outlets?$/i.test(p.trim()) && !/^coverage\s+[\d.]+\s*[×x]\s+prior$/i.test(p.trim()));
   return rest.length ? rest.join(' · ') : null;

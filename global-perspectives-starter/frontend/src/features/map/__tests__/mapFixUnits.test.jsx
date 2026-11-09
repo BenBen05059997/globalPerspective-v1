@@ -45,6 +45,12 @@ describe('alertStackItems lists one row per situation', () => {
 });
 
 describe('changeNote', () => {
+  it.each(['No longer in active coverage', 'Closed - inactive', 'Closed — inactive'])('only shows %s on closed situations', (what_changed) => {
+    expect(changeNote({ state: 'cooling', what_changed })).toBeNull();
+    expect(changeNote({ state: 'peak', what_changed })).toBeNull();
+    expect(changeNote({ state: 'closed', what_changed })).toBe(what_changed);
+  });
+
   it('drops the stale outlet count and coverage ratio of a news situation, keeping the rest', () => {
     expect(changeNote({ source: 'news', what_changed: '2 outlets · spreading to USA, IRN' })).toBe('spreading to USA, IRN');
     expect(changeNote({ source: 'news', what_changed: '5 outlets · coverage 1.67× prior · spreading to ISR' })).toBe('spreading to ISR');

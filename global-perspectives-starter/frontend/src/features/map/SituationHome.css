@@ -134,7 +134,6 @@ a.hud-brief-title { display: block; color: var(--accent); }
 .sh-leg-off .sh-leg-pin { opacity: 0.4; }
 .sh-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .lg-sw { flex: none; }
-.lg-glyph { flex: none; width: 14px; text-align: center; font-family: var(--mono); color: var(--text-head); }
 .sh-coverage { margin: var(--space-2) 2px 0; font-size: var(--text-ui); color: var(--text-muted); }
 
 /* ---- rail: detail (a situation, a story card, the "no longer tracked" note) ---- */

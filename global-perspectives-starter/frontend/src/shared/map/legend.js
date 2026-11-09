@@ -4,13 +4,11 @@
 //
 //   shape      = what it is   ◆ official GDACS alert · soft haloed dot = a situation at an
 //                             approximate place · country wash = a story with no exact place ·
-//                             HUD brackets = the selected item (an overlay, not a kind)
+//                             accent ring and brackets = the selected item
 //   hue        = crisis type only (never severity, never GDACS's own traffic-light colour)
 //   size       = severity: 4 fixed steps; a double ring is reserved for HIGH only
 //   brightness = freshness: live <24h glow → 1–7d plain → 7–30d desaturated + "older" → 30d+
 //                hidden from the map (and counted, never silently dropped)
-//   badge      = direction: ▲ escalating · ● new · ◆ steady · ▼ cooling (text glyphs, so they
-//                work without colour), derived only from the tracker's own `state`/`escalating`
 //
 // Motion is NOT decided here (pulse.js owns the pulse budget, MOTION_BUDGET.pulses).
 import { freshnessState } from '@/shared/lib/freshness.js';
@@ -94,9 +92,6 @@ export function freshnessLook(state) {
     default: return { visible: false, glow: false, desaturate: false, older: false };
   }
 }
-
-// The direction glyphs moved to shared/ (shared UI reads them); re-exported so map imports keep working.
-export { STATUS_GLYPHS, statusGlyph } from '@/shared/lib/statusGlyph.js';
 
 /** hexToRgb('#rrggbb') -> [r, g, b]; null for anything unparseable. */
 export function hexToRgb(hex) {

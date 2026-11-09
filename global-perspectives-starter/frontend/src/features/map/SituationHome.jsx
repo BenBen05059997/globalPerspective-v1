@@ -43,7 +43,7 @@ import { linkedStoryLines } from '@/features/map/lib/cardMentions.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
-import { markerKind, statusGlyph, situationFreshness } from '@/shared/map/legend.js';
+import { markerKind, situationFreshness } from '@/shared/map/legend.js';
 import { storyHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import {
@@ -739,10 +739,9 @@ export default function SituationHome() {
   // Legend "present" flags: which token items are actually on the map right now (the Key dims the
   // rest with "none now" instead of describing things that aren't drawn).
   const legendPresent = useMemo(() => {
-    const kinds = new Set(); const tiers = new Set(); const glyphs = new Set(); const fresh = new Set(); const axes = new Set();
+    const kinds = new Set(); const tiers = new Set(); const fresh = new Set(); const axes = new Set();
     for (const s of open) {
       kinds.add(markerKind(s)); tiers.add(s.tier); axes.add(s.axis); fresh.add(situationFreshness(s));
-      const g = statusGlyph(s); if (g) glyphs.add(g.key);
     }
     let neutral = false;
     if (visibleShading.length) {
@@ -750,7 +749,7 @@ export default function SituationHome() {
       if (topicsFreshness) fresh.add(topicsFreshness);
       for (const e of visibleShading) { if (e.crisisType === 'neutral') neutral = true; else axes.add(e.crisisType); }
     }
-    return { kinds, tiers, glyphs, fresh, axes, neutral };
+    return { kinds, tiers, fresh, axes, neutral };
   }, [open, visibleShading, topicsFreshness]);
 
   // Situation brief's LEAD line (Console.dc.html): the top-ranked open situation; else the first

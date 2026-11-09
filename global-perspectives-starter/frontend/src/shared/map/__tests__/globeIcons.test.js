@@ -1,18 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
-  ICON_MAPPING, GLYPH_PTS, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BADGE_GAP, BRACKET_GAP, ATLAS_W, ATLAS_H,
-  diamondSize, badgeOffset, bracketCorners, getIconAtlas,
+  ICON_MAPPING, CORNER_SIZE, BRACKET_GAP, ATLAS_W, ATLAS_H,
+  diamondSize, bracketCorners, getIconAtlas,
 } from '@/shared/map/globeIcons.js';
-import { STATUS_GLYPHS } from '@/shared/map/legend.js';
 
-describe('globeIcons (pixel-space badge / alert / bracket sprites)', () => {
-  it('has one sprite per legend glyph, plus the alert diamond and the bracket corner', () => {
-    for (const key of Object.keys(STATUS_GLYPHS)) {
-      expect(ICON_MAPPING[key], key).toBeTruthy();
-      expect(GLYPH_PTS[key].length).toBeGreaterThanOrEqual(3);
-    }
-    expect(ICON_MAPPING.diamond).toBeTruthy();
-    expect(ICON_MAPPING.corner).toBeTruthy();
+describe('globeIcons (pixel-space alert and bracket sprites)', () => {
+  it('contains the alert diamond and selection corner', () => {
+    expect(Object.keys(ICON_MAPPING)).toEqual(['diamond', 'corner']);
   });
 
   it('every sprite lies inside the atlas and is tinted per marker (mask)', () => {
@@ -21,24 +15,6 @@ describe('globeIcons (pixel-space badge / alert / bracket sprites)', () => {
       expect(m.x + m.width, k).toBeLessThanOrEqual(ATLAS_W);
       expect(m.y + m.height, k).toBeLessThanOrEqual(ATLAS_H);
     }
-  });
-
-  it('glyph sprites stay inside their cell, edge included (edge = glyph x1.45, same anchor)', () => {
-    const half = GLYPH_SIZE / 2;
-    for (const pts of Object.values(GLYPH_PTS)) {
-      for (const [x, y] of pts) {
-        expect(Math.abs(x) * EDGE_SCALE).toBeLessThan(half);
-        expect(Math.abs(y) * EDGE_SCALE).toBeLessThan(half);
-      }
-    }
-  });
-
-  it('badge sits up-right of the marker by a fixed pixel offset (deck +y is down)', () => {
-    expect(badgeOffset(9)).toEqual([9 + BADGE_GAP, -(9 + BADGE_GAP)]);
-    expect(badgeOffset(14)[0]).toBeGreaterThan(badgeOffset(4)[0]);
-    const [dx, dy] = badgeOffset(6.5);
-    expect(dx).toBeGreaterThan(0);
-    expect(dy).toBeLessThan(0);
   });
 
   it('diamond sprite height is proportional to its half-diagonal (constant in screen px)', () => {
@@ -64,14 +40,14 @@ describe('globeIcons (pixel-space badge / alert / bracket sprites)', () => {
       expect(getIconAtlas()).toBeNull();
     });
 
-    it('paints every sprite white (tinted per marker later): 4 glyphs + the diamond filled, one bracket corner stroked', () => {
+    it('paints every sprite white (tinted per marker later): the diamond filled, one bracket corner stroked', () => {
       const calls = { fill: 0, stroke: 0 };
       const ctx = new Proxy({}, { get: (t, k) => (k === 'fill' ? () => { calls.fill += 1; } : k === 'stroke' ? () => { calls.stroke += 1; } : (t[k] ?? (() => {}))), set: (t, k, v) => { t[k] = v; return true; } });
       vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx);
       const cv = getIconAtlas();
       expect(cv.width).toBe(ATLAS_W);
       expect(cv.height).toBe(ATLAS_H);
-      expect(calls).toEqual({ fill: 5, stroke: 1 });
+      expect(calls).toEqual({ fill: 1, stroke: 1 });
       expect(getIconAtlas()).toBe(cv); // built once, shared by every layer
     });
   });

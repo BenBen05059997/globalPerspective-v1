@@ -37,7 +37,7 @@ export default function MapAbout({
             {paused
               ? `The GDACS disaster feed is checked on a fixed cycle. News situations are re-scored when the classification pipeline runs — that has been paused since ${paused.beyondLookback ? paused.text : paused.label}.`
               : 'The GDACS disaster feed is checked on a fixed cycle, and news situations are re-scored each time the classification pipeline runs.'}
-            {' '}The freshness stamps on this page show the age of the data you are looking at, not the age of the page. A situation marked escalating has moved up since the last run.
+            {' '}The freshness stamps on this page show the age of the data you are looking at, not the age of the page. Alerts and situation cards show how each situation is trending.
           </p></div>
         </div>
       </div>

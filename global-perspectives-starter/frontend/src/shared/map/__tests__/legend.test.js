@@ -1,8 +1,8 @@
 // R4a · the approved map tokens (Legend.dc.html / STORY_WEB_RETHINK_PLAN.md §8) as pure helpers:
-// shape = kind, size + double ring = HIGH only, brightness = freshness, ▲●◆▼ from tracker state.
+// shape = kind, size + double ring = HIGH only, brightness = freshness.
 import { describe, it, expect } from 'vitest';
 import {
-  tierSize, markerKind, markerShape, situationFreshness, freshnessClass, freshnessLook, statusGlyph,
+  tierSize, markerKind, markerShape, situationFreshness, freshnessClass, freshnessLook,
   desaturateRgb, hexToRgb, markerHex,
 } from '@/shared/map/legend.js';
 
@@ -77,23 +77,5 @@ describe('legend — freshness → brightness', () => {
     expect(Math.max(...faded) - Math.min(...faded)).toBeLessThan(248 - 140);
     expect(markerHex('#9b8cf8', 'plain')).toBe('#9b8cf8');
     expect(markerHex('#9b8cf8', 'older')).not.toBe('#9b8cf8');
-  });
-});
-
-describe('legend — status glyph from tracker fields', () => {
-  it('▲ escalating from the escalating flag or state', () => {
-    expect(statusGlyph({ state: 'peak', escalating: true }).glyph).toBe('▲');
-    expect(statusGlyph({ state: 'escalating' }).key).toBe('escalating');
-  });
-  it('● new = emerging, ▼ cooling, ◆ steady = peak', () => {
-    expect(statusGlyph({ state: 'emerging' }).glyph).toBe('●');
-    expect(statusGlyph({ state: 'cooling' }).glyph).toBe('▼');
-    expect(statusGlyph({ state: 'peak' }).glyph).toBe('◆');
-  });
-  it('escalating wins over the state word; closed/unknown get no badge', () => {
-    expect(statusGlyph({ state: 'cooling', escalating: true }).glyph).toBe('▲');
-    expect(statusGlyph({ state: 'closed', escalating: true })).toBeNull();
-    expect(statusGlyph({ state: 'whatever' })).toBeNull();
-    expect(statusGlyph(null)).toBeNull();
   });
 });

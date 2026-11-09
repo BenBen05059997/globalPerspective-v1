@@ -1,12 +1,12 @@
 // MapLegend — the "Key" panel (L2: collapsed by default, toggled by the Key button). R4a: it now
 // describes exactly the approved token channels the globe and radar draw (lib/legend.js,
 // Legend.dc.html) and nothing else — shape = kind, hue = crisis type, size + double ring = HIGH,
-// brightness = freshness, ▲●◆▼ badges, motion budget, GDACS level as text. Items with nothing on
+// brightness = freshness, motion budget, GDACS level as text. Items with nothing on
 // the map right now are dimmed with "none now" rather than hidden, so the key never changes shape.
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
-import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/shared/map/legend.js';
+import { tierSize, TIERS, markerHex } from '@/shared/map/legend.js';
 import { outlineForTier } from '@/shared/map/countryRiskLayer.js';
 import { MOTION_BUDGET } from '@/shared/map/pulse.js';
 import Button from '@/shared/ui/Button.jsx';
@@ -40,6 +40,7 @@ function BracketsMark() {
   return (
     <Swatch>
       <path d="M2 7V2H7M15 2H20V7M20 15V20H15M7 20H2V15" fill="none" stroke={TOKENS['text-head']} strokeWidth="1.6" />
+      <circle cx={C} cy={C} r="6" fill="none" stroke={TOKENS.accent} strokeWidth="1.5" />
       <circle cx={C} cy={C} r="3.5" fill={CRISIS_HUE.conflict} />
     </Swatch>
   );
@@ -84,7 +85,7 @@ function OutlineMark({ width, double }) {
 }
 
 /**
- * present: { kinds:Set('alert'|'situation'|'story'), tiers:Set, glyphs:Set(key), fresh:Set(state),
+ * present: { kinds:Set('alert'|'situation'|'story'), tiers:Set, fresh:Set(state),
  *            axes:Set, neutral:boolean }
  * layer: 'situations' (default) | 'risk' — in COUNTRY RISK mode the Key describes exactly that
  * layer's channels (hue = worst axis, weight = tier, brightness = briefing age) and nothing else;
@@ -163,14 +164,6 @@ export default function MapLegend({
         <Item on={has(present?.fresh, 'plain')} mark={<FreshMark state="plain" />}>1–7 days</Item>
         <Item on={has(present?.fresh, 'older')} mark={<FreshMark state="older" />}>7–30 days · faded, “older”</Item>
         <Item on={hiddenCount > 0} mark={<FreshMark state="hidden" />} note={hiddenCount ? `${hiddenCount} hidden` : undefined}>30+ days · not drawn</Item>
-      </div>
-      <div className="sh-legrow">
-        <b>Badge = direction</b>
-        {['escalating', 'new', 'steady', 'cooling'].map((k) => (
-          <Item key={k} on={has(present?.glyphs, k)} mark={<span className="lg-glyph" aria-hidden="true">{STATUS_GLYPHS[k].glyph}</span>}>
-            {STATUS_GLYPHS[k].label}
-          </Item>
-        ))}
       </div>
       <div className="sh-legrow">
         <b>Line = judged link</b>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
+import { statusGlyph } from '@/shared/lib/statusGlyph.js';
 import { placeMapLabels, canvasMeasure } from '@/shared/map/mapLabels.js';
 import { land, FRAME } from '@/shared/map/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
@@ -13,7 +14,7 @@ import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/shared/map/countryGeo.js'
 import { pulseSet, MOTION_BUDGET } from '@/shared/map/pulse.js';
 import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import {
-  tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
+  tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, markerHex,
 } from '@/shared/map/legend.js';
 import '@/shared/ui/primitives.css';
 import '@/shared/map/mapKit.css';
@@ -213,8 +214,7 @@ export default function RadarMap({
     if (!reduceMotion && gainedIds(seenIdsRef.current, ids)) setLap((n) => n + 1);
     seenIdsRef.current = new Set(ids);
   }, [active, reduceMotion]);
-  // `newIds` (since-your-last-visit) is shown in the feed only — the map's badges are the
-  // approved ▲●◆▼ set, so no extra undocumented ring is drawn here any more.
+  // `newIds` (since-your-last-visit) is shown in the feed only.
   void newIds;
 
   // Draw land + markers once per data/selection change — never per animation frame.
@@ -370,9 +370,9 @@ export default function RadarMap({
         const [x, y] = d3.pointer(e, wrap);
         tip.style.opacity = 1; tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
         const level = gdacsLevelBadge(s);
-        const glyph = statusGlyph(s);
+        const trend = statusGlyph(s)?.label;
         tip.innerHTML = `<div class="gp-tip__title">${escapeHtml(s.verb_label)}</div><div class="gp-tip__meta">${escapeHtml(TIER_LABEL[s.tier] || s.tier)}`
-          + `${level ? ` · ${escapeHtml(level)}` : ''}${glyph ? ` · ${escapeHtml(`${glyph.glyph} ${glyph.label}`)}` : ''}`
+          + `${level ? ` · ${escapeHtml(level)}` : ''}${trend ? ` · ${escapeHtml(trend)}` : ''}`
           + ` · ${escapeHtml(agoShort(s.last_change_at))}</div>`;
       };
       const hideTip = () => { tip.style.opacity = 0; };
@@ -420,14 +420,6 @@ export default function RadarMap({
         core.attr('class', 'rd-core').attr('fill', fill)
           .attr('opacity', look.desaturate ? 0.85 : 1)
           .attr('filter', look.glow ? 'url(#rd-glow)' : null);
-        const glyph = statusGlyph(s);
-        if (glyph) {
-          const off = (tierSize(s.tier).ringR || r) + 3;
-          g.append('text').attr('class', 'rd-badge').attr('x', off).attr('y', -off + 3)
-            .attr('font-size', 10).attr('fill', TOKENS['text-head']).attr('pointer-events', 'none')
-            .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 2.5)
-            .text(glyph.glyph);
-        }
         if (s.id === focusId) {
           g.append('circle').attr('r', (tierSize(s.tier).ringR || r) + 4).attr('fill', 'none')
             .attr('stroke', TOKENS.accent).attr('stroke-width', 2).attr('pointer-events', 'none');

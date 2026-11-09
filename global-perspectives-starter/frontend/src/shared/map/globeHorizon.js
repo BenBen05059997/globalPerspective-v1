@@ -1,5 +1,5 @@
 // globeHorizon — a deck.gl layer extension that hides a pixel-space sprite whenever its ANCHOR is
-// beyond the visible hemisphere. A billboard is offset in screen space, so a badge up-right of a
+// beyond the visible hemisphere. A billboard is offset in screen space, so a bracket on a
 // marker near the limb can poke out past the sphere's silhouette (the depth test only sees the
 // hidden anchor's depth), showing a sprite with no marker. The rule runs in the vertex shader on
 // the anchor's globe-space position, so it follows the camera every frame with no layer rebuild:
@@ -9,7 +9,7 @@ import { LayerExtension } from '@deck.gl/core';
 // Two tests, both per instance, in the vertex shader (follow the camera every frame):
 //  1. the anchor faces the camera: dot(p, cam - p) > 0 (p = position from the globe centre);
 //  2. the sprite's CENTRE (anchor + its pixel offset) is inside the globe's silhouette. Near the
-//     limb a badge up-right of a marker that is itself still on the sphere can land in empty space
+//     limb a bracket on a marker that is itself still on the sphere can land in empty space
 //     outside the disc; that is a sprite with no marker, so it is hidden. The silhouette radius is
 //     measured by projecting the sphere's tangent (limb) point, so it is exact for this camera.
 export const HORIZON_GLSL = `

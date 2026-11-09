@@ -9,10 +9,11 @@ import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/shared/map/countryGeo.js'
 import { dashedArcPaths, DASH } from '@/shared/map/storyLinkArcs.js';
 import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction } from '@/shared/map/globeSpin.js';
 import {
-  ICON_MAPPING, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BRACKET_GAP, diamondSize, badgeOffset, bracketCorners, getIconAtlas,
+  ICON_MAPPING, CORNER_SIZE, BRACKET_GAP, diamondSize, bracketCorners, getIconAtlas,
 } from '@/shared/map/globeIcons.js';
 import { canvasMeasure, placeMapLabels } from '@/shared/map/mapLabels.js';
 import { GLOBE_HORIZON } from '@/shared/map/globeHorizon.js';
+import { statusGlyph } from '@/shared/lib/statusGlyph.js';
 import { CRISIS_RGB } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import '@/shared/ui/primitives.css';
@@ -20,7 +21,7 @@ import '@/shared/map/mapKit.css';
 import { pulseSet, MOTION_BUDGET } from '@/shared/map/pulse.js';
 import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import {
-  tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb, hexToRgb,
+  tierSize, markerKind, situationFreshness, freshnessLook, desaturateRgb, hexToRgb,
 } from '@/shared/map/legend.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
@@ -37,8 +38,8 @@ const rgbOf = (axis) => CRISIS_RGB[axis] || CRISIS_RGB.neutral;
 // R4a · the approved map tokens (lib/legend.js, Legend.dc.html) drawn with deck.gl:
 //   shape = kind (◆ GDACS alert = a diamond · news situation = a small dot in a soft, feathered
 //   halo · selected = HUD brackets), hue = crisis type, size steps + a double ring for HIGH only,
-//   brightness = freshness (live glows · plain · older desaturated · 30d+ not drawn), and the
-//   ▲●◆▼ badges as small glyph shapes. The ◆, badges and brackets are PIXEL-SPACE icons (IconLayer
+//   brightness = freshness (live glows · plain · older desaturated · 30d+ not drawn).
+//   The alert diamond and brackets are PIXEL-SPACE icons (IconLayer
 //   billboards, lib/globeIcons.js): a constant screen size at every zoom, at a fixed pixel offset from
 //   their own mark. They were lon/lat polygons sized by a degrees-per-pixel guess, which grew with
 //   latitude, skewed near the limb and could detach from the mark (2026-10-01 fix).
@@ -47,14 +48,14 @@ const rgbOf = (axis) => CRISIS_RGB[axis] || CRISIS_RGB.neutral;
 // still hides the far side.
 const MARK_LIFT_M = 30000;
 // Translucent halos/rings are flat discs on the tangent plane, which sits slightly OUTSIDE the
-// sphere at their edges — if they wrote depth they would hide the ◆ / badges drawn after them.
+// sphere at their edges — if they wrote depth they would hide the diamonds drawn after them.
 const NO_DEPTH_WRITE = { depthWriteEnabled: false };
 // Why IconLayer "drew nothing" here (R4a): GlobeView sets cullMode 'back' on every layer to drop the
 // sphere's far side, and IconLayer's vertex shader flips y (pixelOffset.y *= -1), which reverses
 // the quad's winding, so every sprite was back-face culled. Culling nothing for sprites is safe:
 // the depth test against the sphere still hides them on the far side.
 const ICON_PARAMS = { cullMode: 'none' };
-const BADGE_RGB = hexToRgb(TOKENS['text-head']);
+const OUTLINE_RGB = hexToRgb(TOKENS['text-head']);
 const ACCENT_RGB = hexToRgb(TOKENS.accent);
 const EDGE_RGB = hexToRgb(TOKENS['map-edge']);
 const LAND_RGB = hexToRgb(TOKENS['map-land']);
@@ -91,7 +92,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
 
 /**
  * SituationMap3D — deck.gl night globe drawn with the approved map tokens (lib/legend.js): shape =
- * kind, hue = crisis type, size + double ring = HIGH, brightness = freshness, ▲●◆▼ badges, HUD
+ * kind, hue = crisis type, size + double ring = HIGH, brightness = freshness, HUD
  * brackets for the selection. The only marker motion is the capped 24h pulse (lib/pulse.js).
  * hover → tooltip; click → onSelect(id).
  */
@@ -221,12 +222,11 @@ export default function SituationMap3D({
     const look = freshnessLook(fresh);
     const base = rgbOf(s.axis);
     return {
-      s, fresh, look, kind: markerKind(s), size: tierSize(s.tier), glyph: statusGlyph(s),
+      s, fresh, look, kind: markerKind(s), size: tierSize(s.tier),
       rgb: look.desaturate ? desaturateRgb(base) : base, position: [s.centroid.lon, s.centroid.lat, MARK_LIFT_M],
     };
   }), [active]);
-  // `newIds` (since-your-last-visit) stays a feed-only marker: the map draws only the approved
-  // ▲●◆▼ badges, never an extra undocumented ring.
+  // `newIds` (since-your-last-visit) is shown in the feed only.
   void newIds;
   // reduceMotion kept for future globe-view motion; the map itself is now static (see below).
   void reduceMotion;
@@ -266,7 +266,7 @@ export default function SituationMap3D({
       ? new GeoJsonLayer({
         id: 'story-shade', data: storyShadeFeatures, stroked: true, filled: true, pickable: true,
         getFillColor: (f) => [...f.properties.__rgb, f.properties.__dim ? 26 : 46],
-        getLineColor: (f) => (f.properties.__iso3 === storyFocusIso3 ? [...BADGE_RGB, 230] : [...f.properties.__rgb, 130]),
+        getLineColor: (f) => (f.properties.__iso3 === storyFocusIso3 ? [...OUTLINE_RGB, 230] : [...f.properties.__rgb, 130]),
         getLineWidth: (f) => (f.properties.__iso3 === storyFocusIso3 ? 2.5 : 1),
         lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
         onClick: (info) => info.object && onSelectCountry && onSelectCountry(info.object.properties.__iso3),
@@ -419,7 +419,7 @@ export default function SituationMap3D({
 
   // Marker layers (R4a tokens), all static — memoised so the pickable layers keep stable
   // instances across pulse frames (a fresh instance each frame used to eat clicks).
-  // The ◆ / badges / brackets are pixel-space icons, so nothing here depends on the zoom: a drag,
+  // Alert diamonds and brackets are pixel-space icons, so nothing here depends on the zoom: a drag,
   // spin or zoom only moves the camera, never rebuilds them.
   const markerLayers = useMemo(() => {
     const atlas = getIconAtlas();
@@ -435,7 +435,6 @@ export default function SituationMap3D({
       getPosition: (m) => m.position, updateTriggers: { getColor: [focusId] }, ...props,
       parameters: { ...ICON_PARAMS, ...props.parameters },
     }) : null);
-    const glyphed = marks.filter((m) => m.glyph);
     const selected = marks.filter((m) => m.s.id === focusId);
     return {
       // Brightness = freshness: only LIVE (<24h) items glow.
@@ -478,16 +477,6 @@ export default function SituationMap3D({
         getIcon: () => 'diamond', getSize: (m) => diamondSize(m.size.r * 1.2),
         getColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)], pickable: true, onClick,
       }),
-      // Badges: ▲ escalating · ● new · ◆ steady · ▼ cooling — glyph shapes up-right of the mark,
-      // one neutral colour (hue stays crisis type only), with a dark edge so they read on land.
-      badgeEdge: icons('badge-edge', glyphed, {
-        parameters: NO_DEPTH_WRITE, getIcon: (m) => m.glyph.key, getSize: GLYPH_SIZE * EDGE_SCALE,
-        getPixelOffset: (m) => badgeOffset(outerR(m)), getColor: (m) => [...EDGE_RGB, dimA(m, 230)],
-      }),
-      badges: icons('badges', glyphed, {
-        getIcon: (m) => m.glyph.key, getSize: GLYPH_SIZE,
-        getPixelOffset: (m) => badgeOffset(outerR(m)), getColor: (m) => [...BADGE_RGB, dimA(m, 255)],
-      }),
       selectionRing: new ScatterplotLayer({
         id: 'selection-ring', parameters: NO_DEPTH_WRITE, data: selected, getPosition: (m) => m.position,
         radiusUnits: 'pixels', filled: false, stroked: true, pickable: false, lineWidthUnits: 'pixels',
@@ -496,7 +485,7 @@ export default function SituationMap3D({
       // Selected = HUD brackets (L4), replacing the old white keyline: four corner icons.
       brackets: icons('brackets', selected.flatMap((m) => bracketCorners(outerR(m) + BRACKET_GAP).map((c) => ({ ...c, position: m.position }))), {
         getIcon: () => 'corner', getSize: CORNER_SIZE, getPixelOffset: (c) => c.offset, getAngle: (c) => c.angle,
-        getColor: [...BADGE_RGB, 255], updateTriggers: {},
+        getColor: [...OUTLINE_RGB, 255], updateTriggers: {},
       }),
     };
   }, [marks, focusId, onSelect]);
@@ -509,13 +498,13 @@ export default function SituationMap3D({
       id: 'story-brackets', iconAtlas: atlas, iconMapping: ICON_MAPPING, billboard: true, sizeUnits: 'pixels', parameters: ICON_PARAMS, extensions: GLOBE_HORIZON,
       data: bracketCorners(16).map((k) => ({ ...k, position: [c[0], c[1], MARK_LIFT_M] })), getPosition: (k) => k.position,
       getIcon: () => 'corner', getSize: CORNER_SIZE, getPixelOffset: (k) => k.offset, getAngle: (k) => k.angle,
-      getColor: [...BADGE_RGB, 255], pickable: false,
+      getColor: [...OUTLINE_RGB, 255], pickable: false,
     }) : null;
   }, [storyFocusIso3]);
 
   // Motion budget (M6, STORY_WEB_RETHINK_PLAN.md §8): only 3 things on the whole page may move —
-  // the radar sweep, this 2.4s breathing pulse (NEW/▲ situations from the last 24h, capped at 8,
-  // highest tier first — see lib/pulse.js), and the selected story's travelling arc dashes.
+  // the radar sweep, this 2.4s breathing pulse (recently changed situations, capped and
+  // ranked by tier in pulse.js), and the selected story's travelling arc dashes.
   // Everything else stays static. Recomputed only when `active` changes (the 5-min poll), not
   // per animation frame.
   const pulseIds = useMemo(() => pulseSet(active, Date.now(), MOTION_BUDGET.pulses), [active]);
@@ -579,7 +568,7 @@ export default function SituationMap3D({
 
   // Order (bottom → top): earth-night, land, story country wash, selection fill/arcs, freshness
   // glow, soft halos, HIGH ring, pulse (the only animated marker layer, capped), news dots,
-  // alert diamonds, badges, selected brackets, destination rings.
+  // alert diamonds, selected ring and brackets, destination rings.
   const composeLayers = useCallback((pulseAlpha) => [
     ...(earthLayer ? [earthLayer] : []),
     landLayer,
@@ -589,7 +578,7 @@ export default function SituationMap3D({
     ...(linkArcLayer ? [linkArcLayer] : []),
     markerLayers.glow, markerLayers.softOuter, markerLayers.softInner, markerLayers.highRing,
     ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
-    markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.selectionRing, markerLayers.brackets,
+    markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.selectionRing, markerLayers.brackets,
     ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
   ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, linkArcLayer, markerLayers, storyBrackets, pulseStillLayer]);
@@ -639,9 +628,9 @@ export default function SituationMap3D({
     if (!sit || !sit.verb_label) return null;
     const tierW = TIER_W[sit.tier] || sit.tier;
     const level = gdacsLevelBadge(sit);
-    const glyph = statusGlyph(sit);
+    const trend = statusGlyph(sit)?.label;
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const bits = [tierW, level, glyph ? `${glyph.glyph} ${glyph.label}` : null].filter(Boolean).map(esc).join(' · ');
+    const bits = [tierW, level, trend].filter(Boolean).map(esc).join(' · ');
     // The shared Tooltip look (gp-tip): deck.gl draws its own tooltip element, so it gets the same
     // class and the token surface/text (its default inline colours would otherwise win).
     return {

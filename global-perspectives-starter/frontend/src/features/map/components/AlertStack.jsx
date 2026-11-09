@@ -7,11 +7,12 @@
 // feed lists only stories. Empty = one honest, computed line — never "the map is quiet".
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { iso3Name } from '@/shared/lib/situationLabels.js';
+import { statusGlyph } from '@/shared/lib/statusGlyph.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
-import { markerKind, kindLabel, statusGlyph, situationFreshness, markerHex } from '@/shared/map/legend.js';
+import { markerKind, kindLabel, situationFreshness, markerHex } from '@/shared/map/legend.js';
 import { ageShort } from '@/features/map/lib/alertStack.js';
 
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };

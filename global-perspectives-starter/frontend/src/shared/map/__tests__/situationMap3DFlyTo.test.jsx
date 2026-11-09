@@ -27,13 +27,33 @@ import SituationMap3D from '@/shared/map/SituationMap3D.jsx';
 
 const sit = (id, lon, lat) => ({ id, verb_label: id, centroid: { lon, lat }, tier: 'high', state: 'peak', axis: 'conflict', iso3_affected: [] });
 const SITS = [sit('a', 10, 20), sit('b', 70, -30)];
-const mount = (focusId) => <SituationMap3D situations={SITS} focusId={focusId} height={300} width={400} />;
+const mount = (focusId, onSelect) => <SituationMap3D situations={SITS} focusId={focusId} onSelect={onSelect} height={300} width={400} />;
 // a deck.gl frame: the in-between camera, with no transition fields
 const frame = (over, ix = { inTransition: true }) => ({
   viewState: { ...deck.props.viewState, transitionDuration: undefined, transitionInterpolator: undefined, ...over }, interactionState: ix,
 });
 
 describe('SituationMap3D fly-to', () => {
+  it('dispatches a picked marker to the current selection handler', () => {
+    const previous = vi.fn();
+    const onSelect = vi.fn();
+    const { rerender } = render(mount(null, previous));
+    rerender(mount(null, onSelect));
+    const core = deck.props.layers.find((layer) => layer?.props.id === 'core');
+    core.props.onClick({ object: core.props.data[1] });
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith('b');
+    expect(previous).not.toHaveBeenCalled();
+  });
+
+  it('returns to the overview after clearing a fly-to without dragging', () => {
+    const { rerender } = render(mount(null));
+    const { longitude, latitude, zoom } = deck.props.viewState;
+    rerender(mount('b'));
+    expect(deck.props.viewState.longitude).toBe(70);
+    rerender(mount(null));
+    expect(deck.props.viewState).toMatchObject({ longitude, latitude, zoom, transitionDuration: 1100 });
+  });
+
   it('focus A, frame for A, focus B before commit, stale A frame: the view ends on B with its transition', () => {
     const { rerender } = render(mount(null));
     rerender(mount('a'));

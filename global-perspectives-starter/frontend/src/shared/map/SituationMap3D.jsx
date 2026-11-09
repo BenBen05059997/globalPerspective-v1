@@ -141,6 +141,8 @@ export default function SituationMap3D({
   const deckInstance = () => deckRef.current?.deck || null;
   const deckRef = useRef(null);
   const userMoved = useRef(false);
+  const wasFocused = useRef(false);
+  const pointersDown = useRef(new Set());
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
   }, []);
@@ -167,7 +169,21 @@ export default function SituationMap3D({
   }, []);
   const onScreenRef = useRef(onScreen);
   onScreenRef.current = onScreen;
-  const animationPaused = useCallback(() => (typeof document !== 'undefined' && document.hidden) || !onScreenRef.current, []);
+  const animationPaused = useCallback(() => document.hidden || !onScreenRef.current || pointersDown.current.size > 0, []);
+  useEffect(() => {
+    const release = (event) => pointersDown.current.delete(event.pointerId);
+    const reset = () => pointersDown.current.clear();
+    // A press can end outside the map. Let deck.gl handle the gesture without moving
+    // the camera or replacing its layer list between the press pick and the release.
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    window.addEventListener('blur', reset);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+      window.removeEventListener('blur', reset);
+    };
+  }, []);
 
   // Night-lights texture: probed with a plain Image() after an idle tick so a slow/failed load
   // never touches deck.gl or throws — it only ever flips `textureReady` on success. F1.2: the
@@ -326,13 +342,15 @@ export default function SituationMap3D({
   }, [situations, focusId, storyFocusIso3]);
   useEffect(() => {
     if (focusCentroid) {
+      wasFocused.current = true;
       stopSpin(); // a selection turns the globe to face the story and stays stopped (task M3)
       const [lon, lat] = focusCentroid.split(',').map(Number);
       setViewState((v) => ({
         ...v, longitude: lon, latitude: lat - 4, zoom: 2.1,
         ...(reduceMotion ? {} : { transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }),
       }));
-    } else if (userMoved.current) {
+    } else if (wasFocused.current || userMoved.current) {
+      wasFocused.current = false;
       setViewState((v) => ({
         ...v, ...globeViewFor(heightRef.current, widthRef.current),
         ...(reduceMotion ? {} : { transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }),
@@ -472,7 +490,7 @@ export default function SituationMap3D({
         getColor: [...BADGE_RGB, 255], updateTriggers: {},
       }),
     };
-  }, [marks, focusId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [marks, focusId, onSelect]);
 
   // A selected STORY (no exact place) gets the same HUD brackets, at its shaded country's centre.
   const storyBrackets = useMemo(() => {
@@ -493,27 +511,26 @@ export default function SituationMap3D({
   // per animation frame.
   const pulseIds = useMemo(() => pulseSet(active, Date.now(), MOTION_BUDGET.pulses), [active]);
   const pulseData = useMemo(() => active.filter((s) => pulseIds.has(s.id)), [active, pulseIds]);
-  const buildPulseLayer = useCallback((t) => (!reduceMotion && pulseData.length)
+  const buildPulseLayer = useCallback((t) => (spinOn && !reduceMotion && pulseData.length)
     ? new ScatterplotLayer({
       id: 'pulse', parameters: NO_DEPTH_WRITE, data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
       getRadius: (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 6 + t * 18,
       getFillColor: (s) => [...hue(s), Math.round(150 * (1 - t))],
     })
-    : null, [reduceMotion, pulseData]);
+    : null, [spinOn, reduceMotion, pulseData]);
   // Reduced motion → a still ring instead of a pulse (never nothing, never moving). Memoised (like
   // the layers below it) so composeLayers gets a stable reference instead of a new instance every
   // render.
-  const pulseStillLayer = useMemo(() => (reduceMotion && pulseData.length)
+  const pulseStillLayer = useMemo(() => ((!spinOn || reduceMotion) && pulseData.length)
     ? new ScatterplotLayer({
       id: 'pulse-still', parameters: NO_DEPTH_WRITE, data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
       getRadius: (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 7, filled: false, stroked: true,
       getLineColor: (s) => [...hue(s), 190], getLineWidth: 1.5, lineWidthUnits: 'pixels',
     })
-    : null, [reduceMotion, pulseData]);
+    : null, [spinOn, reduceMotion, pulseData]);
   // Static (t=0) frame for the initial/non-animated JSX render below — the rAF loop (further
   // down) takes over via deckRef.current.setProps on the very next frame.
   const pulsePhaseRef = useRef(0);
-  const pulseLayer = buildPulseLayer(pulsePhaseRef.current);
 
   // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
   // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
@@ -567,14 +584,14 @@ export default function SituationMap3D({
     ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
   ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, linkArcLayer, markerLayers, storyBrackets, pulseStillLayer]);
-  const layers = composeLayers(pulseLayer);
+  const layers = useMemo(() => composeLayers(buildPulseLayer(pulsePhaseRef.current)), [composeLayers, buildPulseLayer]);
 
   // F1.2: the 2.4s breathing pulse used to be driven by a `pulseT` React state updated every
   // frame — deck.gl rebuilt every layer on every tick as a result. It now keeps its phase in a
   // plain closure variable and pushes a freshly-built pulse layer straight to the deck.gl
   // instance (deckRef.current.setProps), so only the `pulse` layer itself is ever replaced.
   useEffect(() => {
-    if (reduceMotion || pulseData.length === 0) return undefined;
+    if (!spinOn || reduceMotion || pulseData.length === 0) return undefined;
     let raf; let start = null;
     const PULSE_MS = 2400;
     const tick = (t) => {
@@ -588,7 +605,7 @@ export default function SituationMap3D({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);  
+  }, [spinOn, reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);  
 
   const getTooltip = useCallback(({ object }) => {
     const sit = object?.s;
@@ -608,7 +625,7 @@ export default function SituationMap3D({
   }, []);
 
   return (
-    <div className="sm-wrap" style={{ height }} ref={wrapRef}>
+    <div className="sm-wrap" style={{ height }} ref={wrapRef} onPointerDownCapture={(e) => pointersDown.current.add(e.pointerId)}>
       <DeckGL
         ref={deckRef}
         views={new GlobeView()}

@@ -1,12 +1,14 @@
 'use strict';
 // Rebuild test (decision 0035): rebuild every view from a local copy of record/ (facts, inbox, operator, readings) in memory and
-// compare with a local copy of the live views. Nothing is written anywhere but memory. Not a test file.
+// compare with a local copy of the live views. Nothing is written anywhere but memory, except to --out when given. Not a test file.
 //
-//   node rebuild-test.js RECORD_DIR LIVE_VIEWS_DIR TODAY [--ignore field,field]
+//   node rebuild-test.js RECORD_DIR LIVE_VIEWS_DIR TODAY [--ignore field,field] [--out DIR]
 //   RECORD_DIR      a copy of s3://<world bucket>/record/ without views/ (aws s3 sync ... --exclude 'views/*')
 //   LIVE_VIEWS_DIR  a copy of s3://<world bucket>/record/views/
 //   TODAY           the day the live views were built for (views/manifest.json factsThrough)
 //   --ignore        extra top-level or story fields to drop before comparing (e.g. a field the deployed code no longer writes)
+//   --out DIR       also write every rebuilt view to DIR (same paths as under record/views/), so two builders can be run on the same copy
+//                   of live data and their DIRs diffed (decision 0058 "Open checks", shadow comparison); the only thing written to disk
 //
 // builtAt and runId are always ignored. Exit 1 when any view differs, is missing, or is extra.
 const fs = require('node:fs');
@@ -14,12 +16,14 @@ const path = require('node:path');
 const {fakeS3} = require('../test/fake-s3');
 const {makePublisher} = require('../src/publish');
 
-const [recordDir, liveDir, today, flag, list] = process.argv.slice(2);
-if (!recordDir || !liveDir || !/^\d{4}-\d{2}-\d{2}$/.test(today || '')) {
-  console.error('usage: node rebuild-test.js RECORD_DIR LIVE_VIEWS_DIR TODAY [--ignore field,field]');
+const [recordDir, liveDir, today, ...flags] = process.argv.slice(2);
+const flagValue = (name) => (flags.includes(name) ? flags[flags.indexOf(name) + 1] : undefined);
+const outDir = flagValue('--out');
+if (!recordDir || !liveDir || !/^\d{4}-\d{2}-\d{2}$/.test(today || '') || flags.some((x, i) => x.startsWith('--') && !['--ignore', '--out'].includes(x)) || (flags.includes('--out') && !outDir)) {
+  console.error('usage: node rebuild-test.js RECORD_DIR LIVE_VIEWS_DIR TODAY [--ignore field,field] [--out DIR]');
   process.exit(2);
 }
-const ignore = new Set(['builtAt', 'runId', ...(flag === '--ignore' && list ? list.split(',') : [])]);
+const ignore = new Set(['builtAt', 'runId', ...(flagValue('--ignore') ? flagValue('--ignore').split(',') : [])]);
 
 const files = (dir) => fs.readdirSync(dir, {recursive: true}).filter((n) => fs.statSync(path.join(dir, n)).isFile());
 const strip = (v) => {
@@ -35,6 +39,12 @@ const strip = (v) => {
   const out = await makePublisher({s3json: f.s3json}).publish({prefix: 'record/', today, builtAt, runId: 'rebuild-test'});
 
   const rebuilt = new Map([...f.objs].filter(([k]) => k.startsWith('record/views/')).map(([k, o]) => [k.slice('record/views/'.length), o.body]));
+  if (outDir) {
+    for (const [k, body] of rebuilt) {
+      fs.mkdirSync(path.dirname(path.join(outDir, k)), {recursive: true});
+      fs.writeFileSync(path.join(outDir, k), body);
+    }
+  }
   const live = new Map(files(liveDir).map((n) => [n, fs.readFileSync(path.join(liveDir, n), 'utf8')]));
   const counts = (k) => k.startsWith('counts/');
   const missing = [...live.keys()].filter((k) => !rebuilt.has(k) && !counts(k)); // counts are rewritten only for recent days

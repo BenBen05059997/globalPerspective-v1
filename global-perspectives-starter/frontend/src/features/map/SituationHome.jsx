@@ -112,6 +112,9 @@ function fmtShortDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+// A merged situation (several story threads) keeps the oldest member's threadId, which is not the story its label names.
+const isMerged = (s) => s?.threadIds?.length > 1;
+
 // Structured metrics for the detail panel. VS-PRIOR / outlet count are carried inside the
 // tracker's `what_changed` string today ("5 outlets · coverage 1.67× prior"); parse them here
 // so the metric row works now, and prefer the structured evidence fields when present.
@@ -221,9 +224,9 @@ function SituationDetail({ selected, fromStoryTitle = null, ev, isGdacs, m, affe
         </>
       )}
 
-      {(selected.threadId || (isGdacs && ev.gdacs_report_url)) && (
+      {((selected.threadId && !isMerged(selected)) || (isGdacs && ev.gdacs_report_url)) && (
         <div className="sh-detail-foot">
-          {selected.threadId
+          {selected.threadId && !isMerged(selected)
             ? <Link to={storyHref(selected.threadId)}>Full analysis →</Link>
             : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
         </div>
@@ -762,7 +765,8 @@ export default function SituationHome() {
       return {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
-        href: hero.threadId ? storyHref(hero.threadId, { tab: 'overview' }) : null,
+        // A merged situation keeps its oldest member's threadId but shows the lead story's headline: no link beats a wrong one.
+        href: hero.threadId && !isMerged(hero) ? storyHref(hero.threadId, { tab: 'overview' }) : null,
         onOpen: () => select(hero.id),
       };
     }

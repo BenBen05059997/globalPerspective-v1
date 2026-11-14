@@ -158,6 +158,7 @@ Views live under `record/views/` (shadow: `record/shadow/views/`), each with `sc
 | Country | notes only: newest drift note, briefing, systems | `countries/{ISO3}.json` |
 | Briefs | the newest `daily_brief` / `weekly_brief` note of each day or week; drafts never | `briefs/daily/{date}.json`, `briefs/weekly/{weekOf}.json` |
 | List indexes | the page lists cut from notes and facts, each a 2 MB cap: analyses, web, countries, weekly (30-day archive by day), briefs | `index/analyses.json`, `index/web.json`, `index/countries.json`, `index/weekly.json`, `index/briefs.json` |
+| Themes and regions | judged links of the web index grouped into themes of 3 or more stories; one summary per board region (decision 0058, built 2026-11-14, no reader yet) | `index/themes.json`, `index/regions.json` |
 | Track record | `forecast_drawn`, `question_*`, `verdict` facts (decision 0044) | `track-record.json` |
 | Manifest | written last, so a reader that sees it sees a complete set | `manifest.json` |
 | Board | your pins and strings over the views | computed on request by `newsBoard` |

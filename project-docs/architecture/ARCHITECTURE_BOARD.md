@@ -121,7 +121,7 @@ Waits for data, not UI:
 
 Waits for a model call and a price decision: the verdict's mechanism sentence, direction, "what follows if" and "what would break it"; the board summary paragraph, "the surprise" and the monthly text. Alert delivery waits on a fresh yes for user-facing sends.
 
-At the Cloudflare cutover add `BOARD_ENDPOINT` to `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs` (it is not in the list today).
+`BOARD_ENDPOINT` is a required field in `REQUIRED_CONFIG_FIELDS` in `scripts/prepare-site-assets.mjs` (commit 0b7bcf55).
 
 ## 12. Not now
 Leaderboards across readers, chat with the board, anything that answers without evidence, narrative / calendar / reading-list views, quarterly replay.

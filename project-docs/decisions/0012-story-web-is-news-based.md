@@ -21,3 +21,6 @@ post-hoc fuzzy matching stays banned).
 
 Source: `git show 120de90:project-docs/archive/redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md` (deleted 2026-10-19) (§5 ruling);
 `git show a5c0de8:project-docs/plans/REDESIGN_MASTER_PLAN.md` (deleted 2026-10-19) (§1 honesty rules)
+
+## Amended by 0058 (2026-11-10, direction accepted; applies as each step ships)
+Themes are groups of judged links ("judged to feed into"): weak links count (a weak link attaches only a group of 2 or fewer, 0058 rule 9); texture follows `ARCHITECTURE_BOARD.md` section 3 (a link of ours is dashed until the weekly review confirms it, solid only after; operator, 2026-11-10); shared-actor pairs do not join groups. The wording rules stay. See [0058](0058-one-story-description-regions-themes.md).

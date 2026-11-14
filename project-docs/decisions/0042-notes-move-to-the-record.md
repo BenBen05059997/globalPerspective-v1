@@ -66,3 +66,6 @@ the backfill copies the current generation once.
 - `newsStoryRecord` copying `TOPIC#` into notes nightly: notes pruned between agent runs would be lost; the writer that makes a
   note records it.
 - Keeping notes in DynamoDB for good: violates 0003 and keeps two systems for every page.
+
+## Amended by 0058 (2026-11-10, direction accepted; applies as each step ships)
+The reason text of a link is published with evidence codes removed; the note keeps the text as the model wrote it, and the cited entries stay as data. Status 2026-11-14: built in `themes.js` for `index/themes.json` and deployed. See [0058](0058-one-story-description-regions-themes.md).

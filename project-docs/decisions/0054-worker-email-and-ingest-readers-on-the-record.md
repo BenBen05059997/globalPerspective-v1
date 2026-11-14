@@ -83,3 +83,6 @@ Several of these post externally or send mail, so each switch has to be provably
 6. Step 5 then needs: the remaining list above, the drift email move, and the deletes (a fresh yes each).
 
 Amendment (coordinator, 2026-10-31, at the merge with 0053): one reader per family. `THREAD_ANALYSIS` and `COUNTRY_INTELLIGENCE` in newsPostDevTo and newsBreakingAlert follow `NOTES_READS` (0053, the notes); `RECORD_READS` there covers only NewsCache (`latest`, `today-archive`). The 0054 view readers for those two families were removed from both Lambdas.
+
+## Amended by 0058 (2026-11-10, direction accepted; applies as each step ships)
+The preset rule "a story belongs to every region its countries fall in" becomes the rule for the whole site, over the board's 10 regions in one table in `backend/shared/src/`. `newsBoard` presets read `index/themes.json` and `index/regions.json` and its own grouping code is deleted. Status 2026-11-14: the one table is built and `newsBoard` imports it (57ef9582, deployed); presets reading the two views is step 5, not built. See [0058](0058-one-story-description-regions-themes.md).

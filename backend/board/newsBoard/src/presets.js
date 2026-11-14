@@ -5,7 +5,7 @@
 // (slice 1 rule: the web's own strength is shown at read time, never stored as confirmed).
 
 const { normalizeBoard } = require('./_shared/record');
-const { regionOf, presetIdOf } = require('./regions');
+const { regionOf, presetIdOf } = require('./_shared/regions');
 const world = require('./world');
 
 const PRESET_THREADS = 8;

@@ -79,6 +79,7 @@ async function parseWranglerOAuth() {
   const configPaths = [
     path.join(os.homedir(), '.wrangler/config/default.toml'),
     path.join(os.homedir(), '.config/.wrangler/config/default.toml'),
+    path.join(os.homedir(), 'Library/Preferences/.wrangler/config/default.toml'),
   ];
   for (const configPath of configPaths) {
     try {

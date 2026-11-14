@@ -40,7 +40,7 @@ Wrangler. Merging the two Workers is a separate, later decision (Phase E).
 - Waiver: the operator waived the `next.globalperspective.net` chained test on 2026-11-14. The browser origin does not change,
   so Firebase, API CORS and Maps allow-lists were expected to need no change. The first chain test was production itself.
 - Checks after the cutover: every smoke URL kept its status code; no GitHub headers; bot pre-render on `/briefings` works; no
-  `x-robots-tag` on the real hostname. The operator reported sign-in working. The map was not explicitly confirmed.
+  `x-robots-tag` on the real hostname. The operator reported sign-in working. The maps were checked the same day in a signed-out test browser, desktop and phone size: the home globe and radar draw and open a situation and its story, and the Google Maps views (`/weekly?view=map`, `/weekly/countries`, a country page) load with markers and no Maps API error. Not checked: a real graphics card, touch, signed-in views.
   `mark-verified` was run for that artifact and version.
 - Header differences, not faults: `cache-control` on the shell, blog, sitemap, robots and `config.js` is now
   `public, max-age=0, must-revalidate` (was max-age 600 or 14400); a missing asset returns an empty 404 with `no-store`;

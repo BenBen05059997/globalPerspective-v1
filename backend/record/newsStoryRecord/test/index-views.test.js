@@ -36,7 +36,13 @@ const build = (n = notes(), o = {}) => V.buildViews(X.golden(), {...opts, ...o, 
 test('analyses index: the read fields of every story with an analysis (latest note), never the drift note or the long texts', () => {
   const idx = build().indexes['analyses.json'];
   assert.deepEqual(Object.keys(idx.analyses), ['thread-a', 'thread-b']);
-  assert.deepEqual(idx.analyses['thread-a'], {threadId: 'thread-a', threadTitle: 'A title', storyArc: 'A arc', watchQuestions: ['Q1?'], dimensions: {conflict: {score: 60, why: 'w'}}, riskScore: 60, generatedAt: T1});
+  const {title, line, lineWeek, lineReason, iso3, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = idx.analyses['thread-a'];
+  assert.deepEqual(own, {threadId: 'thread-a', threadTitle: 'A title', storyArc: 'A arc', watchQuestions: ['Q1?'], dimensions: {conflict: {score: 60, why: 'w'}}, generatedAt: T1});
+  // the shared story fields beside the model's: the story's own title (not the model's), the analysis score as the tier's source, its date as riskAt
+  assert.deepEqual([title, line, lineWeek, lineReason, iso3, regions, tier, riskScore, riskAt, tierReason, born], ['A second', null, null, 'no reading yet', ['DEU', 'FRA'], ['Europe'], 'elevated', 60, T1, null, '2026-10-18']);
+  assert.equal(lastFactAt, '2026-10-22T06:00:00.000Z');
+  assert.deepEqual([lastEntryAt, category], ['2026-10-20T04:00:00.000Z', 'conflict']); // the newest news entry, not the newer fact of another kind
+  assert.deepEqual([idx.analyses['thread-b'].tier, idx.analyses['thread-b'].riskScore, idx.analyses['thread-b'].riskAt, idx.analyses['thread-b'].tierReason], [null, null, null, 'analysis has no score']);
   assert.equal(JSON.stringify(idx).includes('driftNote'), false);
   assert.deepEqual(build([]).indexes['analyses.json'].analyses, {});
 });
@@ -45,7 +51,8 @@ test('analyses index equals the story views: each entry is the story view analys
   const v = build();
   for (const [id, a] of Object.entries(v.indexes['analyses.json'].analyses)) {
     const full = v.stories.get(id).analysis;
-    for (const k of IV.ANALYSIS_FIELDS) assert.deepEqual(a[k], full[k], `${id}.${k}`);
+    for (const k of IV.ANALYSIS_FIELDS.filter((f) => f !== 'riskScore')) assert.deepEqual(a[k], full[k], `${id}.${k}`);
+    assert.equal(a.riskScore, full.riskScore ?? null, `${id}.riskScore`);
   }
 });
 
@@ -58,7 +65,9 @@ test('web index: links once per direction, shared once per pair, threads with st
   assert.deepEqual(w.websUsed, [{country: 'Germany', generatedAt: T1, nodes: 1}, {country: 'France', generatedAt: T1, nodes: 2}]); // by ISO3 (DEU, FRA)
   assert.equal(w.generatedAt, T1);
   assert.equal(w.maxAgeDays, 30);
-  assert.deepEqual(w.threads['thread-a'], {state: 'linked', title: 'A second', entries: 2, places: [{name: 'France', n: 2}, {name: 'Germany', n: 1}], analysedIn: [{country: 'France', generatedAt: T1}], iso3: ['FRA', 'DEU']});
+  const {threadId, title, line, lineWeek, lineReason, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = w.threads['thread-a'];
+  assert.deepEqual(own, {state: 'linked', entries: 2, places: [{name: 'France', n: 2}, {name: 'Germany', n: 1}], analysedIn: [{country: 'France', generatedAt: T1}], iso3: ['FRA', 'DEU']}); // `iso3` stays the web's own (top places), not the stamp's
+  assert.deepEqual([threadId, title, regions, tier, riskScore, riskAt, tierReason], ['thread-a', 'A second', ['Europe'], 'elevated', 60, T1, null]);
   assert.equal(w.threads['thread-c'].state, 'analysed_no_links');
   assert.equal(w.threads['thread-old'], undefined); // no recent entry, in no web: not in the index
 });
@@ -85,10 +94,10 @@ test('countries index: the briefing fields and the first risk signal only; no dr
 
 test('no notes: every index is empty but valid; the write groups carry them beside index/active.json', () => {
   const v = build([]);
-  assert.deepEqual(Object.keys(v.indexes).sort(), ['analyses.json', 'briefs.json', 'countries.json', 'web.json', 'weekly.json']);
+  assert.deepEqual(Object.keys(v.indexes).sort(), ['analyses.json', 'briefs.json', 'countries.json', 'regions.json', 'themes.json', 'web.json', 'weekly.json']);
   assert.deepEqual([v.indexes['web.json'].links, v.indexes['web.json'].shared, v.indexes['web.json'].websUsed, v.indexes['web.json'].generatedAt], [[], [], [], null]);
   const keys = V.writeGroups(build()).map((g) => g.map(([k]) => k));
-  assert.deepEqual(keys[1].sort(), ['index/active.json', 'index/analyses.json', 'index/briefs.json', 'index/countries.json', 'index/web.json', 'index/weekly.json']);
+  assert.deepEqual(keys[1].sort(), ['index/active.json', 'index/analyses.json', 'index/briefs.json', 'index/countries.json', 'index/regions.json', 'index/themes.json', 'index/web.json', 'index/weekly.json']);
   assert.deepEqual(keys.slice(3), [['track-record.json'], ['manifest.json']]);
 });
 
@@ -110,6 +119,7 @@ test('golden: the indexes of the notes fixture are exactly the reviewed JSON, an
   assert.deepEqual(actual, JSON.parse(readFileSync(file, 'utf8')));
   const ajv = new Ajv({allErrors: true, strict: false});
   const load = (n) => JSON.parse(readFileSync(resolve(__dirname, '../schema/views', n), 'utf8'));
+  ajv.addSchema(load('story-stamp.schema.json'));
   for (const [name, schema] of [['analyses.json', 'analyses-index'], ['web.json', 'web-index'], ['countries.json', 'countries-index'], ['weekly.json', 'weekly-index']]) {
     const validate = ajv.compile(load(`${schema}.schema.json`));
     assert.equal(validate(actual[name]), true, `${name}: ${JSON.stringify(validate.errors)}`);

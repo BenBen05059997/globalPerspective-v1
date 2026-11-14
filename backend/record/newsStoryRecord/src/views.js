@@ -11,9 +11,11 @@ const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = requi
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
 const {iso3List} = require('./_shared/resolveIso3');
-const {buildIndexViews, archiveRefOf, entryOrder} = require('./indexViews');
+const {buildIndexViews, webLinks, archiveRefOf, entryOrder} = require('./indexViews');
+const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
 const {todayIndex} = require('./todayView');
+const {storyStamp} = require('./storyStamp');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -27,6 +29,7 @@ const NO_READING = 'no reading yet';
 const unique = (xs) => [...new Set(xs)].sort();
 const maxOf = (xs) => xs.reduce((m, x) => (m === null || x > m ? x : m), null);
 const minOf = (xs) => xs.reduce((m, x) => (m === null || x < m ? x : m), null);
+const without = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
 const bytesOf = (obj) => Buffer.byteLength(`${JSON.stringify(obj)}\n`);
 
 // outlet country and type come from the one outlet table at build time (not stored); snippet and tier where the fact has them
@@ -298,15 +301,18 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
   const ledger = sampleLedger(facts);
   const stories = new Map();
   const rows = new Map();
+  const stamps = new Map(); // threadId -> the shared story fields (storyStamp.js), the same object every view takes its copy from
   const survivors = new Map();
   for (const threadId of [...own.keys()].sort()) {
     const aliasOf = aliases.get(threadId) || null;
     if (aliasOf) {
       const facts0 = own.get(threadId);
       stories.set(threadId, {schemaVersion: SCHEMA_VERSION, builtFrom, threadId, aliasOf});
+      const rows0 = entryRows([{threadId, own: true, facts: facts0}], new Set());
+      const stamp = storyStamp({threadId, title: titleOf(rows0, today, refs), iso3: [], born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), entries: rows0});
+      stamps.set(threadId, stamp);
       rows.set(threadId, {
-        threadId, born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), iso3: [], actorIds: [], sourceCount: 0, entryCount: 0,
-        forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [], title: titleOf(entryRows([{threadId, own: true, facts: facts0}], new Set()), today, refs),
+        ...stamp, actorIds: [], sourceCount: 0, entryCount: 0, forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [],
       });
       continue;
     }
@@ -332,23 +338,24 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const actorIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.actorIds.map(canon))));
     const verdictAts = mine.filter((f) => f.kind === 'verdict').map((f) => f.at);
     const born = minOf(group.map((g) => bornOf(g.facts)).filter(Boolean));
+    const stamp = storyStamp({threadId, title, iso3, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), entries, reading: readings.get(threadId), analysis: analysisBy.get(threadId)});
+    stamps.set(threadId, stamp);
     stories.set(threadId, {
-      schemaVersion: SCHEMA_VERSION, builtFrom, threadId, born, aliasOf: null, title, iso3, actorIds, sourceIds,
+      schemaVersion: SCHEMA_VERSION, builtFrom, ...without(stamp, ['line']), aliasOf: null, actorIds, sourceIds,
       entries: kept, entriesOmitted: entries.length - kept.length, forks,
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
-      ...readingFields(readings.get(threadId)),
+      ...readingFields(readings.get(threadId)), // `line` here is the reading object {text, week, cites}, not the stamp's string (hence without(stamp, ['line']) above)
       analysis: analysisBy.get(threadId) ?? null, // the latest story analysis note (model text), as stored
     });
     rows.set(threadId, {
-      threadId, born, lastFactAt: maxOf(allFacts.map((f) => f.at)), iso3, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
+      ...stamp, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
       forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.legacy && !b.verdict && b.due && b.due >= today).length,
-      latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds, title,
-      ...(readings.get(threadId) && readings.get(threadId).line ? {line: readings.get(threadId).line.payload.text} : {}),
+      latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds,
     });
-    survivors.set(threadId, {iso3, actorIds, sourceIds});
+    survivors.set(threadId, {iso3: stamp.iso3, actorIds, sourceIds}); // link grounds use the stamp's cleaned codes: WLD, LAT, UNK and unknown codes are never a shared country
   }
-  return {stories, rows, survivors};
+  return {stories, rows, stamps, survivors};
 }
 
 /**
@@ -524,7 +531,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const {aliases} = resolved;
   const notesBy = entryNotesBy(noteLines);
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
-  const {stories, rows, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy: storyAnalysisBy(noteLines, aliases)});
+  const {stories, rows, stamps, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy: storyAnalysisBy(noteLines, aliases)});
 
   const forecasts = forecastViews(facts, stories, builtFrom);
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
@@ -547,6 +554,11 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const webTitleOf = (id) => rowTitles.get(id) ?? summaries.get(id) ?? null;
   const judged = judgedLinksBy(noteLines, newest, webTitleOf);
   const coverage = webCoverageBy(webs, judged, info, today, webTitleOf);
+  // themes (themes.js): groups of judged links; each story's stamp, row and view then carry its themeId (null when in no theme)
+  // a thread the record holds no row for (a node of a web whose id it never held) gets a stamp of its own once, so its themeId sticks
+  const stampFor = (id) => stamps.get(id) || stamps.set(id, storyStamp({threadId: id, title: webTitleOf(id), iso3: []})).get(id);
+  const themes = groupThemes({links: webLinks(judged), stampOf: stampFor, aliases, now: maxOf([...webs.values()].map((w) => w.at)) || null});
+  for (const t of themes.themes) for (const id of t.ids) for (const m of [stamps, rows, stories]) if (m.has(id)) m.get(id).themeId = t.themeId;
   for (const [id, view] of links) {
     view.judgedLinks = judged.get(id) || [];
     view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};
@@ -559,7 +571,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough} : {}), ...provisionalCounts(extra)};
   const countries = countryViews(noteLines, builtFrom);
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
-  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf}, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
+  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf, stampOf: stampFor, aliases}, themes, liveOf: (id) => (rows.has(id) ? rows.get(id).liveBranchCount : null), stamps, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
   // per-view stamps: a story, its forecasts and its links from the provisional entries and forks it holds; a day's count from the provisional facts of that day
   for (const [id, story] of stories) {
     const t = stampOf([...(story.entries || []).filter((e) => e.provisional).map((e) => e.date), ...(story.forks || []).filter((k) => k.provisional).map((k) => k.drawnAt.slice(0, 10))]);

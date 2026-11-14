@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-10-22",
+    "readingsThrough": null
+  },
+  "regions": [
+    {
+      "region": "Middle East",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Europe",
+      "state": "links",
+      "stories": 3,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 3,
+      "themeIds": [
+        "theme-thread-old"
+      ]
+    },
+    {
+      "region": "East Asia",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Southeast Asia",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "South Asia",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Central Asia",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Africa",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "North America",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Latin America",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    },
+    {
+      "region": "Oceania",
+      "state": "no stories",
+      "stories": 0,
+      "scored": 0,
+      "highTier": 0,
+      "linked": 0,
+      "themeIds": []
+    }
+  ]
+}

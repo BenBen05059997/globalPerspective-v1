@@ -252,8 +252,8 @@ test('views are written after the facts, in order: stories, links, counts, then 
   await handler({date: '2026-10-20'});
   const keys = viewKeys(f);
   const at = (k) => keys.indexOf(k);
-  assert.deepEqual(keys.slice(-10), ['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json', 'index/briefs.json', 'index/all.json', 'track-record.json', 'digests.json', 'manifest.json']);
-  const groups = keys.slice(0, -10).map((k) => k.split('/')[0]);
+  assert.deepEqual(keys.slice(-12), ['index/active.json', 'index/analyses.json', 'index/web.json', 'index/countries.json', 'index/weekly.json', 'index/briefs.json', 'index/themes.json', 'index/regions.json', 'index/all.json', 'track-record.json', 'digests.json', 'manifest.json']);
+  const groups = keys.slice(0, -12).map((k) => k.split('/')[0]);
   assert.deepEqual([...new Set(groups)], ['stories', 'links', 'counts']);
   assert.ok(groups.lastIndexOf('stories') < groups.indexOf('links') && groups.lastIndexOf('links') < groups.indexOf('counts'));
   assert.ok(f.puts.findIndex((p) => p.Key === `${P}facts/2026-10-20.jsonl`) < f.puts.findIndex((p) => p.Key === `${P}views/${keys[0]}`));

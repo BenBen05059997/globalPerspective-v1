@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Regions (record/views/index/regions.json)",
+  "description": "Decision 0058 rule 4, built by themes.js: one entry for each of the 10 board regions, always all ten, in the region table's order. The stories are the surviving stories of index/web.json `threads`; a story counts in every region its countries fall in, so the counts add up to more than the story count. `state`: 'no stories' (none in the region), 'no links judged' (stories, but no judged link has an end in the region), 'links' (at least one judged pair has one end in the region; a pair is not a theme, so `themeIds` can be empty). `scored`: the region's stories with a tier. `highTier`: those with tier high. `linked`: its stories that are an end of any judged pair, in a theme or not. `themeIds`: the themes with a story in the region, sorted.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "regions"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "regions": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["region", "state", "stories", "scored", "highTier", "linked", "themeIds"],
+        "additionalProperties": false,
+        "properties": {
+          "region": {"enum": ["Middle East", "Europe", "East Asia", "Southeast Asia", "South Asia", "Central Asia", "Africa", "North America", "Latin America", "Oceania"]},
+          "state": {"enum": ["no stories", "no links judged", "links"]},
+          "stories": {"type": "integer", "minimum": 0},
+          "scored": {"type": "integer", "minimum": 0},
+          "highTier": {"type": "integer", "minimum": 0},
+          "linked": {"type": "integer", "minimum": 0},
+          "themeIds": {"type": "array", "items": {"type": "string", "pattern": "^theme-"}, "uniqueItems": true}
+        }
+      }
+    }
+  }
+}

@@ -17,12 +17,12 @@ test('T1: ISO weeks, and the weeks to read run from the first fact day to today 
   assert.deepEqual(Rd.weeksBetween('2026-10-22', '2026-10-22'), ['2026-W43']);
 });
 
-test('T1: no readings leaves every view as before (reading none, readingsThrough null, no index line)', () => {
+test('T1: no readings leaves every view as before (reading none, readingsThrough null, index line null with its reason)', () => {
   const v = build(X.golden());
   const a = v.stories.get('thread-a');
   assert.deepEqual([a.line, a.chapters, a.reading], [null, [], {state: 'none', reason: 'no reading yet'}]);
   assert.deepEqual([v.manifest.readingsThrough, v.active.builtFrom.readingsThrough], [null, null]);
-  assert.equal('line' in rowOf(v, 'thread-a'), false);
+  assert.deepEqual([rowOf(v, 'thread-a').line, rowOf(v, 'thread-a').lineWeek, rowOf(v, 'thread-a').lineReason], [null, null, 'no reading yet']);
   assert.deepEqual(build(X.golden(), []), build(X.golden()));
 });
 
@@ -53,11 +53,12 @@ test('T1: malformed readings are skipped, never thrown on', () => {
   assert.deepEqual(build(X.golden(), bad).stories.get('thread-a').reading, {state: 'none', reason: 'no reading yet'});
 });
 
-test('T1: the index row gets line (text) only when a line reading exists; a merged story keeps its alias row', () => {
+test('T1: the index row gets line (text) and lineWeek only when a line reading exists, else null with lineReason; a merged story keeps its alias row', () => {
   const v = build(X.golden(), [X.reading('2026-W43', 'thread-a', 'line', {text: 'Macron holds'}), X.reading('2026-W43', 'thread-c', 'line', {text: 'ignored'})]);
   assert.equal(rowOf(v, 'thread-a').line, 'Macron holds');
-  assert.equal('line' in rowOf(v, 'thread-b'), false);
-  assert.equal('line' in rowOf(v, 'thread-c'), false);
+  assert.equal(rowOf(v, 'thread-a').lineWeek, '2026-W43');
+  assert.deepEqual([rowOf(v, 'thread-b').line, rowOf(v, 'thread-b').lineReason], [null, 'no reading yet']);
+  assert.deepEqual([rowOf(v, 'thread-c').line, rowOf(v, 'thread-c').lineReason], [null, 'no reading yet']);
   assert.deepEqual(Object.keys(v.stories.get('thread-c')).sort(), ['aliasOf', 'builtFrom', 'schemaVersion', 'threadId']);
   assert.equal(v.active.stories.find((r) => r.threadId === 'thread-a').line, 'Macron holds');
 });

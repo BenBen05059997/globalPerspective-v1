@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "story-stamp.schema.json",
+  "title": "Story stamp",
+  "description": "The shared story fields (decision 0058 rule 7), built once by src/storyStamp.js and carried by every view that names a story: index/active.json and all.json rows, the story view, index/web.json threads[id] (without iso3, which keeps its web meaning there) and index/analyses.json. The story view keeps its own `line` object {text, week, cites}, so it carries every field here except `line`. Each carrier references the single properties below ($ref) and lists them as required. `themeId` (step 4) is the id of the theme the story is in (index/themes.json), null when it is in none. A missing value is null and the field beside it says why (0037 section 6).",
+  "type": "object",
+  "required": ["threadId", "title", "line", "lineWeek", "lineReason", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId"],
+  "additionalProperties": false,
+  "properties": {
+    "threadId": {"type": "string"},
+    "title": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "the story's one title: the headline of its newest non-article entry within the last 30 days (titleOf, 0037 amendment of 2026-11-04), else its newest entry overall; null for a story with no entries. analysis.threadTitle is the model's paraphrase, not this."},
+    "line": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "description": "the weekly review's one-sentence reading, no fallback text (rule 5); null with lineReason when there is none"},
+    "lineWeek": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-W\\d{2}$"}, {"type": "null"}], "description": "the ISO week of that reading"},
+    "lineReason": {"anyOf": [{"const": "no reading yet"}, {"type": "null"}], "description": "set when line is null"},
+    "iso3": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]{3}$"}, "uniqueItems": true, "description": "valid country codes (iso3Names.json) plus EUU, sorted; WLD, LAT, UNK and anything else removed"},
+    "regions": {"type": "array", "items": {"enum": ["Middle East", "Europe", "East Asia", "Southeast Asia", "South Asia", "Central Asia", "Africa", "North America", "Latin America", "Oceania"]}, "uniqueItems": true, "description": "region names (rule 2) of every country, sorted; [] for no country"},
+    "tier": {"enum": ["low", "moderate", "elevated", "high", null], "description": "tierFromScore(riskScore); null with tierReason when the story has no scored analysis"},
+    "riskScore": {"anyOf": [{"type": "number", "minimum": 0, "maximum": 100}, {"type": "null"}], "description": "the story analysis score (worst axis)"},
+    "riskAt": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"}, {"type": "null"}], "description": "the analysis generatedAt that the score and tier are as old as"},
+    "tierReason": {"anyOf": [{"enum": ["no analysis yet", "analysis has no score"]}, {"type": "null"}], "description": "set when tier is null"},
+    "lastFactAt": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"}, {"type": "null"}]},
+    "lastEntryAt": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z$"}, {"type": "null"}], "description": "the `at` of the story's newest news entry (an entry fact, merged stories' entries included; forecasts, verdicts, story-born, merges and placed articles do not count); null when the story has no news entry. Themes count new facts from this, not from lastFactAt."},
+    "category": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}], "description": "the raw `category` of the newest news entry that has a non-empty one; null when none. Not a crisis type: the frontend (crisisHue.js) owns the category -> crisis type map."},
+    "born": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, {"type": "null"}]},
+    "themeId": {"anyOf": [{"type": "string", "pattern": "^theme-"}, {"type": "null"}], "description": "theme-<threadId of the theme anchor> (rule 4); null when the story is in no theme (themes hold 3 stories or more)"}
+  }
+}

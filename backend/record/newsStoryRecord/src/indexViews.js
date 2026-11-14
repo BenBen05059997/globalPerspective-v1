@@ -9,6 +9,7 @@
 const {iso3List} = require('./_shared/resolveIso3');
 const {addDays} = require('./_shared/world');
 const {byKey} = require('./_shared/placement');
+const {themesIndex, regionsIndex} = require('./themes');
 
 const SCHEMA_VERSION = 1;
 const INDEX_MAX_BYTES = 2 * 1024 * 1024; // per index; over this the run fails (like index/all.json) rather than truncate
@@ -26,9 +27,11 @@ const bytesOf = (obj) => Buffer.byteLength(`${JSON.stringify(obj)}\n`);
 const maxOf = (xs) => xs.reduce((m, x) => (m === null || x > m ? x : m), null);
 
 /** index/analyses.json: threadId -> the analysis fields above, for every story whose view carries an analysis (never an alias). */
-function analysesIndex(stories, builtFrom) {
+function analysesIndex(stories, stamps, builtFrom) {
   const out = {};
-  for (const [id, s] of [...stories].sort((a, b) => (a[0] < b[0] ? -1 : 1))) if (s.analysis) out[id] = {threadId: id, ...pick(s.analysis, ANALYSIS_FIELDS)};
+  // the shared story fields (storyStamp.js) beside the model's fields: `title` is the story's own (threadTitle stays the model's), and
+  // `riskScore` is the stamp's number (the analysis score, null when it has none), the one field both name
+  for (const [id, s] of [...stories].sort((a, b) => (a[0] < b[0] ? -1 : 1))) if (s.analysis) out[id] = {...pick(s.analysis, ANALYSIS_FIELDS), ...stamps.get(id)};
   return {schemaVersion: SCHEMA_VERSION, builtFrom, analyses: out};
 }
 
@@ -43,30 +46,38 @@ function countriesIndex(countries, builtFrom) {
   return {schemaVersion: SCHEMA_VERSION, builtFrom, countries: out};
 }
 
-/**
- * index/web.json: the old web_index action's object from the same results the links views use. `judged` (judgedLinksBy: each pair's
- * rows sit under both stories, so a link is taken once, from the story it starts at), `coverage` (webCoverageBy: state, entry count,
- * places, the webs a story is a node of, and its shared-actor backbone: a pair is taken once, from the smaller id), `webs`
- * (newestWebs: iso3 -> newest web note) and `titleOf`. Not in it: the run's `targets`, `coverage` totals and `runId` (no note carries
- * them); `generatedAt` is the newest web's time.
- */
-function webIndex({judged, coverage, webs, titleOf}, builtFrom) {
-  const iso3Of = (country) => iso3List([country]);
-  const websUsed = [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, w]) => ({country: w.payload.country, generatedAt: w.at, nodes: new Set(w.payload.nodes.map((x) => x.threadId)).size}));
+/** The judged links of the web index, each pair of rows taken once from the story it starts at (judgedLinksBy puts a row under both stories); also the input of the themes. */
+function webLinks(judged) {
   const links = [];
   for (const [id, rows] of [...judged].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     for (const r of rows) {
       if (r.from !== id) continue;
-      links.push({from: r.from, to: r.to, confidence: r.confidence || null, lagDays: r.lagDays ?? null, mechanism: r.mechanism || null, cited: r.cited || [], country: r.country, generatedAt: r.generatedAt, iso3: iso3Of(r.country)});
+      links.push({from: r.from, to: r.to, confidence: r.confidence || null, lagDays: r.lagDays ?? null, mechanism: r.mechanism || null, cited: r.cited || [], country: r.country, generatedAt: r.generatedAt, iso3: iso3List([r.country])});
     }
   }
+  return links;
+}
+
+/**
+ * index/web.json: the old web_index action's object from the same results the links views use. `judged` (judgedLinksBy: each pair's
+ * rows sit under both stories, so a link is taken once, from the story it starts at), `coverage` (webCoverageBy: state, entry count,
+ * places, the webs a story is a node of, and its shared-actor backbone: a pair is taken once, from the smaller id), `webs`
+ * (newestWebs: iso3 -> newest web note) and `stampOf` (the shared story fields, storyStamp.js, title included). Not in it: the run's `targets`, `coverage` totals and `runId` (no note carries
+ * them); `generatedAt` is the newest web's time.
+ */
+function webIndex({judged, coverage, webs, stampOf}, builtFrom) {
+  const iso3Of = (country) => iso3List([country]);
+  const websUsed = [...webs].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, w]) => ({country: w.payload.country, generatedAt: w.at, nodes: new Set(w.payload.nodes.map((x) => x.threadId)).size}));
+  const links = webLinks(judged);
   const shared = [];
   const threads = {};
   for (const [id, c] of [...coverage].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     if (c.state === null) continue; // not in the index: no entry in the scope window and in no web
     for (const b of c.backbone) if (id < b.otherThreadId) shared.push({a: id, b: b.otherThreadId, actors: b.actors, weight: b.weight, country: b.country, generatedAt: b.generatedAt, iso3: iso3Of(b.country)});
     const places = c.places.map(({name, n}) => ({name, n}));
-    threads[id] = {state: c.state, title: titleOf(id), entries: c.entries, places, analysedIn: c.analysedIn.map(({country, generatedAt}) => ({country, generatedAt})), iso3: iso3List(places.map((p) => p.name))};
+    // the stamp's `iso3` (all the story's countries) is not this thread's `iso3` (its top places in the web window): this one keeps its meaning
+    const {iso3: storyIso3, ...stamp} = stampOf(id);
+    threads[id] = {state: c.state, ...stamp, entries: c.entries, places, analysedIn: c.analysedIn.map(({country, generatedAt}) => ({country, generatedAt})), iso3: iso3List(places.map((p) => p.name))};
   }
   return {schemaVersion: SCHEMA_VERSION, builtFrom, generatedAt: maxOf(websUsed.map((w) => w.generatedAt)), maxAgeDays: WEB_MAX_AGE_DAYS, websUsed, links, shared, threads};
 }
@@ -121,9 +132,11 @@ function weeklyIndex(stories, refs, today, builtFrom) {
   return {schemaVersion: SCHEMA_VERSION, builtFrom, from, to: today, titles, days: out};
 }
 
-/** All indexes, keyed by file name under index/ (`briefs` is built by briefViews.js, decision 0048; `today` by todayView.js, decision 0051, only when the entries inbox has lines). Throws when one is over INDEX_MAX_BYTES. */
-function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, countries, web, weekly, briefs, today = null}) {
-  const out = {'analyses.json': analysesIndex(stories, builtFrom), 'web.json': webIndex(web, builtFrom), 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, weeklyFrom), 'briefs.json': briefs, ...(today ? {'today.json': today} : {})};
+/** All indexes (`themes.json` and `regions.json`: themes.js, decision 0058 rule 4), keyed by file name under index/ (`briefs` is built by briefViews.js, decision 0048; `today` by todayView.js, decision 0051, only when the entries inbox has lines). Throws when one is over INDEX_MAX_BYTES. */
+function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, stamps, countries, web, themes, liveOf, weekly, briefs, today = null}) {
+  // the surviving stories of web.json threads: a thread of the web that is a merged id is not a story of its own
+  const storyIds = [...web.coverage].filter(([id, c]) => c.state !== null && !web.aliases.has(id)).map(([id]) => id).sort();
+  const out = {'analyses.json': analysesIndex(stories, stamps, builtFrom), 'web.json': webIndex(web, builtFrom), 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, weeklyFrom), 'briefs.json': briefs, 'themes.json': themesIndex(themes, web.stampOf, liveOf, builtFrom), 'regions.json': regionsIndex(themes, storyIds, web.stampOf, builtFrom), ...(today ? {'today.json': today} : {})};
   for (const [name, obj] of Object.entries(out)) {
     const size = bytesOf(obj);
     if (size > INDEX_MAX_BYTES) throw new Error(`views: index/${name} is ${size} bytes, over the ${INDEX_MAX_BYTES} cap`);
@@ -131,4 +144,4 @@ function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, countries,
   return out;
 }
 
-module.exports = {buildIndexViews, analysesIndex, countriesIndex, webIndex, weeklyIndex, archiveRefOf, entryOrder, WEEKLY_DAYS, INDEX_MAX_BYTES, ANALYSIS_FIELDS, COUNTRY_FIELDS};
+module.exports = {buildIndexViews, webLinks, analysesIndex, countriesIndex, webIndex, weeklyIndex, archiveRefOf, entryOrder, WEEKLY_DAYS, INDEX_MAX_BYTES, ANALYSIS_FIELDS, COUNTRY_FIELDS};

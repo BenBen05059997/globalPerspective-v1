@@ -5,13 +5,26 @@
     "readingsThrough": null
   },
   "threadId": "thread-a",
-  "born": "2026-10-18",
-  "aliasOf": null,
   "title": "A second",
+  "lineWeek": null,
+  "lineReason": "no reading yet",
   "iso3": [
     "DEU",
     "FRA"
   ],
+  "regions": [
+    "Europe"
+  ],
+  "tier": null,
+  "riskScore": null,
+  "riskAt": null,
+  "tierReason": "no analysis yet",
+  "lastFactAt": "2026-10-22T06:00:00.000Z",
+  "lastEntryAt": "2026-10-22T06:00:00.000Z",
+  "category": "conflict",
+  "born": "2026-10-18",
+  "themeId": null,
+  "aliasOf": null,
   "actorIds": [
     "name:macron"
   ],

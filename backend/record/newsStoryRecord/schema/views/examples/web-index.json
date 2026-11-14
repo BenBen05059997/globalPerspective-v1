@@ -70,7 +70,23 @@
   "threads": {
     "thread-a": {
       "state": "linked",
+      "threadId": "thread-a",
       "title": "A second",
+      "line": null,
+      "lineWeek": null,
+      "lineReason": "no reading yet",
+      "regions": [
+        "Europe"
+      ],
+      "tier": "elevated",
+      "riskScore": 60,
+      "riskAt": "2026-10-21T05:00:00.000Z",
+      "tierReason": null,
+      "lastFactAt": "2026-10-22T06:00:00.000Z",
+      "lastEntryAt": "2026-10-20T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-10-18",
+      "themeId": null,
       "entries": 2,
       "places": [
         {
@@ -95,7 +111,23 @@
     },
     "thread-b": {
       "state": "linked",
+      "threadId": "thread-b",
       "title": "B first",
+      "line": null,
+      "lineWeek": null,
+      "lineReason": "no reading yet",
+      "regions": [
+        "Europe"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "riskAt": null,
+      "tierReason": "analysis has no score",
+      "lastFactAt": "2026-10-21T09:05:00.000Z",
+      "lastEntryAt": "2026-10-19T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-10-17",
+      "themeId": null,
       "entries": 1,
       "places": [
         {
@@ -115,7 +147,21 @@
     },
     "thread-c": {
       "state": "analysed_no_links",
+      "threadId": "thread-c",
       "title": "C first",
+      "line": null,
+      "lineWeek": null,
+      "lineReason": "no reading yet",
+      "regions": [],
+      "tier": null,
+      "riskScore": null,
+      "riskAt": null,
+      "tierReason": "no analysis yet",
+      "lastFactAt": "2026-10-17T05:00:00.000Z",
+      "lastEntryAt": "2026-10-17T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-10-17",
+      "themeId": null,
       "entries": 1,
       "places": [
         {

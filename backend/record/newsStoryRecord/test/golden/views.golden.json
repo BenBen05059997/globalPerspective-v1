@@ -7,13 +7,26 @@
         "readingsThrough": null
       },
       "threadId": "thread-a",
-      "born": "2026-10-18",
-      "aliasOf": null,
       "title": "A second",
+      "lineWeek": null,
+      "lineReason": "no reading yet",
       "iso3": [
         "DEU",
         "FRA"
       ],
+      "regions": [
+        "Europe"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "riskAt": null,
+      "tierReason": "no analysis yet",
+      "lastFactAt": "2026-10-22T06:00:00.000Z",
+      "lastEntryAt": "2026-10-20T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-10-18",
+      "themeId": null,
+      "aliasOf": null,
       "actorIds": [
         "name:macron"
       ],
@@ -185,13 +198,26 @@
         "readingsThrough": null
       },
       "threadId": "thread-b",
-      "born": "2026-10-17",
-      "aliasOf": null,
       "title": "B first",
+      "lineWeek": null,
+      "lineReason": "no reading yet",
       "iso3": [
         "FRA",
         "UKR"
       ],
+      "regions": [
+        "Europe"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "riskAt": null,
+      "tierReason": "no analysis yet",
+      "lastFactAt": "2026-10-21T09:05:00.000Z",
+      "lastEntryAt": "2026-10-19T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-10-17",
+      "themeId": null,
+      "aliasOf": null,
       "actorIds": [
         "name:putin"
       ],
@@ -285,12 +311,25 @@
         "readingsThrough": null
       },
       "threadId": "thread-old",
-      "born": "2026-07-01",
-      "aliasOf": null,
       "title": "Old first",
+      "lineWeek": null,
+      "lineReason": "no reading yet",
       "iso3": [
         "FRA"
       ],
+      "regions": [
+        "Europe"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "riskAt": null,
+      "tierReason": "no analysis yet",
+      "lastFactAt": "2026-07-01T04:00:00.000Z",
+      "lastEntryAt": "2026-07-01T04:00:00.000Z",
+      "category": "conflict",
+      "born": "2026-07-01",
+      "themeId": null,
+      "aliasOf": null,
       "actorIds": [],
       "sourceIds": [
         "s1"
@@ -534,12 +573,26 @@
     "stories": [
       {
         "threadId": "thread-a",
-        "born": "2026-10-18",
-        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "title": "A second",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [
           "DEU",
           "FRA"
         ],
+        "regions": [
+          "Europe"
+        ],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "lastEntryAt": "2026-10-20T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-10-18",
+        "themeId": null,
         "actorIds": [
           "name:macron"
         ],
@@ -550,17 +603,30 @@
         "liveBranchCount": 1,
         "latestVerdictAt": "2026-10-22T06:00:00.000Z",
         "aliasOf": null,
-        "aliases": [],
-        "title": "A second"
+        "aliases": []
       },
       {
         "threadId": "thread-b",
-        "born": "2026-10-17",
-        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "title": "B first",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [
           "FRA",
           "UKR"
         ],
+        "regions": [
+          "Europe"
+        ],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "lastEntryAt": "2026-10-19T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-10-17",
+        "themeId": null,
         "actorIds": [
           "name:putin"
         ],
@@ -573,8 +639,7 @@
         "aliasOf": null,
         "aliases": [
           "thread-c"
-        ],
-        "title": "B first"
+        ]
       }
     ]
   },
@@ -587,12 +652,26 @@
     "stories": [
       {
         "threadId": "thread-a",
-        "born": "2026-10-18",
-        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "title": "A second",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [
           "DEU",
           "FRA"
         ],
+        "regions": [
+          "Europe"
+        ],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-10-22T06:00:00.000Z",
+        "lastEntryAt": "2026-10-20T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-10-18",
+        "themeId": null,
         "actorIds": [
           "name:macron"
         ],
@@ -603,17 +682,30 @@
         "liveBranchCount": 1,
         "latestVerdictAt": "2026-10-22T06:00:00.000Z",
         "aliasOf": null,
-        "aliases": [],
-        "title": "A second"
+        "aliases": []
       },
       {
         "threadId": "thread-b",
-        "born": "2026-10-17",
-        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "title": "B first",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [
           "FRA",
           "UKR"
         ],
+        "regions": [
+          "Europe"
+        ],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-10-21T09:05:00.000Z",
+        "lastEntryAt": "2026-10-19T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-10-17",
+        "themeId": null,
         "actorIds": [
           "name:putin"
         ],
@@ -626,14 +718,25 @@
         "aliasOf": null,
         "aliases": [
           "thread-c"
-        ],
-        "title": "B first"
+        ]
       },
       {
         "threadId": "thread-c",
-        "born": "2026-10-17",
-        "lastFactAt": "2026-10-17T05:00:00.000Z",
+        "title": "C first",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [],
+        "regions": [],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-10-17T05:00:00.000Z",
+        "lastEntryAt": "2026-10-17T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-10-17",
+        "themeId": null,
         "actorIds": [],
         "sourceCount": 0,
         "entryCount": 0,
@@ -642,16 +745,29 @@
         "liveBranchCount": 0,
         "latestVerdictAt": null,
         "aliasOf": "thread-b",
-        "aliases": [],
-        "title": "C first"
+        "aliases": []
       },
       {
         "threadId": "thread-old",
-        "born": "2026-07-01",
-        "lastFactAt": "2026-07-01T04:00:00.000Z",
+        "title": "Old first",
+        "line": null,
+        "lineWeek": null,
+        "lineReason": "no reading yet",
         "iso3": [
           "FRA"
         ],
+        "regions": [
+          "Europe"
+        ],
+        "tier": null,
+        "riskScore": null,
+        "riskAt": null,
+        "tierReason": "no analysis yet",
+        "lastFactAt": "2026-07-01T04:00:00.000Z",
+        "lastEntryAt": "2026-07-01T04:00:00.000Z",
+        "category": "conflict",
+        "born": "2026-07-01",
+        "themeId": null,
         "actorIds": [],
         "sourceCount": 1,
         "entryCount": 1,
@@ -660,8 +776,7 @@
         "liveBranchCount": 0,
         "latestVerdictAt": null,
         "aliasOf": null,
-        "aliases": [],
-        "title": "Old first"
+        "aliases": []
       }
     ]
   },

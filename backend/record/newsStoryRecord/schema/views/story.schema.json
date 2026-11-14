@@ -70,9 +70,20 @@
         "builtFrom",
         "threadId",
         "born",
+        "themeId",
         "aliasOf",
         "title",
         "iso3",
+        "lineWeek",
+        "lineReason",
+        "regions",
+        "tier",
+        "riskScore",
+        "riskAt",
+        "tierReason",
+        "lastFactAt",
+        "lastEntryAt",
+        "category",
         "actorIds",
         "sourceIds",
         "entries",
@@ -93,29 +104,24 @@
         "builtFrom": {
           "$ref": "#/definitions/builtFrom"
         },
-        "threadId": {
-          "type": "string"
-        },
-        "born": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/day"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
+        "threadId": {"$ref": "story-stamp.schema.json#/properties/threadId"},
+        "born": {"$ref": "story-stamp.schema.json#/properties/born"},
+        "themeId": {"$ref": "story-stamp.schema.json#/properties/themeId"},
         "aliasOf": {
           "type": "null"
         },
-        "title": {
-          "anyOf": [{"type": "string"}, {"type": "null"}],
-          "description": "the story's one title: the headline of its newest non-article entry within the last 30 days (WINDOW_DAYS), else its newest entry overall; null only for a story with no entries. The same string is the index rows' title, index/web.json threads[id].title and links' otherTitle. analysis.threadTitle is the model's paraphrase, not this."
-        },
-        "iso3": {
-          "$ref": "#/definitions/strings"
-        },
+        "title": {"$ref": "story-stamp.schema.json#/properties/title"},
+        "iso3": {"$ref": "story-stamp.schema.json#/properties/iso3"},
+        "lineWeek": {"$ref": "story-stamp.schema.json#/properties/lineWeek"},
+        "lineReason": {"$ref": "story-stamp.schema.json#/properties/lineReason"},
+        "regions": {"$ref": "story-stamp.schema.json#/properties/regions"},
+        "tier": {"$ref": "story-stamp.schema.json#/properties/tier"},
+        "riskScore": {"$ref": "story-stamp.schema.json#/properties/riskScore"},
+        "riskAt": {"$ref": "story-stamp.schema.json#/properties/riskAt"},
+        "tierReason": {"$ref": "story-stamp.schema.json#/properties/tierReason"},
+        "lastFactAt": {"$ref": "story-stamp.schema.json#/properties/lastFactAt"},
+        "lastEntryAt": {"$ref": "story-stamp.schema.json#/properties/lastEntryAt"},
+        "category": {"$ref": "story-stamp.schema.json#/properties/category"},
         "actorIds": {
           "$ref": "#/definitions/strings"
         },

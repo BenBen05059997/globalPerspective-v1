@@ -80,9 +80,21 @@
       "type": "object",
       "required": [
         "threadId",
-        "born",
-        "lastFactAt",
+        "title",
+        "line",
+        "lineWeek",
+        "lineReason",
         "iso3",
+        "regions",
+        "tier",
+        "riskScore",
+        "riskAt",
+        "tierReason",
+        "lastFactAt",
+        "lastEntryAt",
+        "category",
+        "born",
+        "themeId",
         "actorIds",
         "sourceCount",
         "entryCount",
@@ -91,37 +103,26 @@
         "liveBranchCount",
         "latestVerdictAt",
         "aliasOf",
-        "aliases",
-        "title"
+        "aliases"
       ],
       "additionalProperties": false,
       "properties": {
-        "threadId": {
-          "type": "string"
-        },
-        "born": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/day"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "lastFactAt": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/iso"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "iso3": {
-          "$ref": "#/definitions/strings"
-        },
+        "threadId": {"$ref": "story-stamp.schema.json#/properties/threadId"},
+        "title": {"$ref": "story-stamp.schema.json#/properties/title"},
+        "line": {"$ref": "story-stamp.schema.json#/properties/line"},
+        "lineWeek": {"$ref": "story-stamp.schema.json#/properties/lineWeek"},
+        "lineReason": {"$ref": "story-stamp.schema.json#/properties/lineReason"},
+        "iso3": {"$ref": "story-stamp.schema.json#/properties/iso3"},
+        "regions": {"$ref": "story-stamp.schema.json#/properties/regions"},
+        "tier": {"$ref": "story-stamp.schema.json#/properties/tier"},
+        "riskScore": {"$ref": "story-stamp.schema.json#/properties/riskScore"},
+        "riskAt": {"$ref": "story-stamp.schema.json#/properties/riskAt"},
+        "tierReason": {"$ref": "story-stamp.schema.json#/properties/tierReason"},
+        "lastFactAt": {"$ref": "story-stamp.schema.json#/properties/lastFactAt"},
+        "lastEntryAt": {"$ref": "story-stamp.schema.json#/properties/lastEntryAt"},
+        "category": {"$ref": "story-stamp.schema.json#/properties/category"},
+        "born": {"$ref": "story-stamp.schema.json#/properties/born"},
+        "themeId": {"$ref": "story-stamp.schema.json#/properties/themeId"},
         "actorIds": {
           "$ref": "#/definitions/strings"
         },
@@ -167,22 +168,6 @@
         },
         "aliases": {
           "$ref": "#/definitions/strings"
-        },
-        "title": {
-          "description": "the story's one title (same as the story view's title): newest non-article entry in the last 30 days, else newest overall",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "line": {
-          "type": "string",
-          "maxLength": 200,
-          "description": "the story's current one-line reading; absent when there is none"
         }
       }
     }

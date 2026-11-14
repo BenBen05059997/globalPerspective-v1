@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Themes (record/views/index/themes.json)",
+  "description": "Decision 0058 rule 4, built by themes.js once a run: groups of 3 stories or more connected by judged links (index/web.json `links`; shared-actor pairs never join a group; merged ids resolved to the surviving story, one link per story pair: the strongest, ties by the newest). Strong and medium links join first; then each weak link, most cited entries first, then newest cited date, then from, to, joins two groups only if the smaller has at most 2 stories (it can attach one story or one pair, never two groups of 3 or more). A weak link inside one theme is a link of it; a refused weak link is in no theme. A pair or a lone story has no theme (its stamp `themeId` is null). `themeId` = theme-<threadId of the anchor>, the story with the earliest `born` (ties: smaller threadId). `lead`: the story with the most judged links inside the theme, ties by highest tier, then newest lastFactAt, then smaller threadId. `countries`: the stamps' iso3 counted per story. `tier`: the highest tier among the stories, null when none is scored. `stories` are full stamps plus `liveBranchCount` (the index rows' open forecast questions; null when the story has no row). A link's `reason` is the model's text with the (E..) evidence-code groups removed, `cited` the entries it pointed at; the data carries no line style and no confirmed state (the web notes hold neither). `newFacts`: stories whose stamp `lastEntryAt` is within 7 days before the web index's `generatedAt` (only news entries move it; forecasts, verdicts, merges and placed articles do not). `titleCountries`: the countries (iso3) of two or more of the theme's stories, in `countries` order, at most 4, or the first 4 of `countries` when none is in two stories; `moreCountries`: how many of the other countries are left out. `linkCounts`: the theme's links by strength. `strongestLink`: the best strength, ties by most cited entries, newest cited date, from, to. All three are stamped by the builder; readers never recompute them. Themes: most `newFacts` first, then most strong links, then most stories, then themeId.",
+  "type": "object",
+  "required": ["schemaVersion", "builtFrom", "themes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "builtFrom": {"type": "object"},
+    "themes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["themeId", "lead", "newFacts", "linkCounts", "strongestLink", "countries", "titleCountries", "moreCountries", "regions", "tier", "stories", "links"],
+        "additionalProperties": false,
+        "properties": {
+          "themeId": {"type": "string", "pattern": "^theme-"},
+          "lead": {"type": "string"},
+          "newFacts": {"type": "integer", "minimum": 0},
+          "linkCounts": {"type": "object", "required": ["strong", "medium", "weak"], "additionalProperties": false, "properties": {"strong": {"type": "integer", "minimum": 0}, "medium": {"type": "integer", "minimum": 0}, "weak": {"type": "integer", "minimum": 0}}},
+          "strongestLink": {"type": "object", "required": ["from", "to", "strength"], "additionalProperties": false, "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "strength": {"type": ["string", "null"]}}},
+          "countries": {"type": "array", "items": {"type": "object", "required": ["iso3", "stories"], "additionalProperties": false, "properties": {"iso3": {"type": "string", "pattern": "^[A-Z]{3}$"}, "stories": {"type": "integer", "minimum": 1}}}},
+          "titleCountries": {"type": "array", "maxItems": 4, "items": {"type": "string", "pattern": "^[A-Z]{3}$"}, "uniqueItems": true, "description": "the countries for the theme title: those of two or more of its stories, in `countries` order, at most 4; when no country is in two stories, the first 4 of `countries`"},
+          "moreCountries": {"type": "integer", "minimum": 0, "description": "how many of the theme's countries are left out of titleCountries"},
+          "regions": {"type": "array", "items": {"enum": ["Middle East", "Europe", "East Asia", "Southeast Asia", "South Asia", "Central Asia", "Africa", "North America", "Latin America", "Oceania"]}, "uniqueItems": true},
+          "tier": {"enum": ["low", "moderate", "elevated", "high", null]},
+          "stories": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["threadId", "title", "line", "lineWeek", "lineReason", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "liveBranchCount"],
+              "additionalProperties": false,
+              "properties": {
+          "threadId": {"$ref": "story-stamp.schema.json#/properties/threadId"},
+          "title": {"$ref": "story-stamp.schema.json#/properties/title"},
+          "line": {"$ref": "story-stamp.schema.json#/properties/line"},
+          "lineWeek": {"$ref": "story-stamp.schema.json#/properties/lineWeek"},
+          "lineReason": {"$ref": "story-stamp.schema.json#/properties/lineReason"},
+          "iso3": {"$ref": "story-stamp.schema.json#/properties/iso3"},
+          "regions": {"$ref": "story-stamp.schema.json#/properties/regions"},
+          "tier": {"$ref": "story-stamp.schema.json#/properties/tier"},
+          "riskScore": {"$ref": "story-stamp.schema.json#/properties/riskScore"},
+          "riskAt": {"$ref": "story-stamp.schema.json#/properties/riskAt"},
+          "tierReason": {"$ref": "story-stamp.schema.json#/properties/tierReason"},
+          "lastFactAt": {"$ref": "story-stamp.schema.json#/properties/lastFactAt"},
+          "lastEntryAt": {"$ref": "story-stamp.schema.json#/properties/lastEntryAt"},
+          "category": {"$ref": "story-stamp.schema.json#/properties/category"},
+          "born": {"$ref": "story-stamp.schema.json#/properties/born"},
+          "themeId": {"$ref": "story-stamp.schema.json#/properties/themeId"},
+          "liveBranchCount": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]}
+              }
+            }
+          },
+          "links": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["from", "to", "strength", "reason", "cited"],
+              "additionalProperties": false,
+              "properties": {
+                "from": {"type": "string"},
+                "to": {"type": "string"},
+                "strength": {"type": ["string", "null"]},
+                "reason": {"type": ["string", "null"]},
+                "cited": {"type": "array", "items": {"type": "object"}}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

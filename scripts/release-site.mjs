@@ -19,6 +19,45 @@ const WORKER_NAMES = {
   production: 'globalperspective-site',
 };
 
+// Tracked paths packaging reads (docs/config.js is operator-owned and deliberately not listed).
+const PACKAGE_SOURCE_PATHS = [
+  'global-perspectives-starter/frontend/index.html',
+  'global-perspectives-starter/frontend/package.json',
+  'global-perspectives-starter/frontend/package-lock.json',
+  'global-perspectives-starter/frontend/vite.config.js',
+  'global-perspectives-starter/frontend/wrangler.jsonc',
+  'global-perspectives-starter/frontend/src',
+  'global-perspectives-starter/frontend/public',
+  'global-perspectives-starter/frontend/worker',
+  'docs/blog',
+  'docs/sitemap.xml',
+  'docs/WHITEPAPER.md',
+  'deploy.sh',
+  'scripts/prepare-site-assets.mjs',
+  'scripts/release-site.mjs',
+  'scripts/site-release.config.json',
+];
+
+async function runGit(args) {
+  return (await execFileAsync('git', args, { cwd: REPO_ROOT })).stdout;
+}
+
+// Production uploads only what is committed and pushed. `git` is injectable for tests.
+export async function assertProductionSourceReleasable(git = runGit) {
+  const dirty = (await git(['status', '--porcelain', '--untracked-files=no', '--', ...PACKAGE_SOURCE_PATHS])).trimEnd();
+  if (dirty) throw new Error(`Production upload refused: uncommitted changes in packaged source (${dirty.split('\n').map((line) => line.slice(3)).join(', ')}).`);
+  try {
+    await git(['fetch', 'origin', 'main']);
+  } catch {
+    throw new Error('Production upload refused: could not fetch origin/main to confirm HEAD is pushed.');
+  }
+  try {
+    await git(['merge-base', '--is-ancestor', 'HEAD', 'origin/main']);
+  } catch {
+    throw new Error('Production upload refused: HEAD is not contained in origin/main; push the commit first.');
+  }
+}
+
 export function extractCurrentVersionId(output) {
   return output.match(/Current Version ID:\s*([0-9a-f-]{36})/i)?.[1] ?? null;
 }
@@ -227,6 +266,7 @@ async function assertWorkerTarget(target) {
 async function deploy(target, artifactHash) {
   const manifest = await readManifest(artifactHash, { verifyCurrentSource: true });
   await assertWorkerTarget(target);
+  if (target === 'production') await assertProductionSourceReleasable();
   if (target === 'candidate') {
     const auth = await requireCloudflareReadConfig();
     const check = await assertCandidateUnbound(auth);

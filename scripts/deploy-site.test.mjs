@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { assertCandidateUnbound, extractCurrentVersionId, stagePagesFromPackage } from './release-site.mjs';
+import { assertCandidateUnbound, assertProductionSourceReleasable, extractCurrentVersionId, stagePagesFromPackage } from './release-site.mjs';
 
 const auth = {
   token: 'unit-test-token',
@@ -105,4 +105,33 @@ test('stages an archived Pages artifact while preserving runtime config and Page
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+function fakeGit({ status = '', fetchFails = false, ancestor = true } = {}) {
+  const calls = [];
+  const run = async (args) => {
+    calls.push(args[0]);
+    if (args[0] === 'status') return status;
+    if (args[0] === 'fetch' && fetchFails) throw new Error('network down');
+    if (args[0] === 'merge-base' && !ancestor) throw new Error('exit 1');
+    return '';
+  };
+  return { run, calls };
+}
+
+test('production guard passes for a clean, pushed source', async () => {
+  const { run, calls } = fakeGit();
+  await assertProductionSourceReleasable(run);
+  assert.deepEqual(calls, ['status', 'fetch', 'merge-base']);
+});
+
+test('production guard refuses dirty packaged source before touching the remote', async () => {
+  const { run, calls } = fakeGit({ status: ' M global-perspectives-starter/frontend/src/a.js\n' });
+  await assert.rejects(assertProductionSourceReleasable(run), /uncommitted changes in packaged source \(global-perspectives-starter\/frontend\/src\/a\.js\)/);
+  assert.deepEqual(calls, ['status']);
+});
+
+test('production guard refuses when the fetch fails or HEAD is not in origin/main', async () => {
+  await assert.rejects(assertProductionSourceReleasable(fakeGit({ fetchFails: true }).run), /could not fetch origin\/main/);
+  await assert.rejects(assertProductionSourceReleasable(fakeGit({ ancestor: false }).run), /HEAD is not contained in origin\/main/);
 });

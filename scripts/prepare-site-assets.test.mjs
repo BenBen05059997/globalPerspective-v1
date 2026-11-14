@@ -12,6 +12,7 @@ const CONFIG_FIELDS = [
   'SENSITIVE_PROXY_ENDPOINT', 'FIREBASE_CONFIG', 'GOOGLE_MAPS_API_KEY',
   'CLIENT_ERRORS_ENDPOINT', 'NEWS_ANALYZE_ENDPOINT', 'NEWS_SHARE_ENDPOINT',
   'POLAR_BILLING_ENDPOINT', 'SAVED_ITEMS_ENDPOINT', 'USER_PREFS_ENDPOINT',
+  'BOARD_ENDPOINT',
 ];
 const BLOG_FILES = [
   'blog/index.html',
@@ -82,6 +83,16 @@ test('package hash is stable for identical inputs', async () => {
     const second = await prepareSiteAssets(fixture);
     assert.equal(first.manifest.artifactHash, second.manifest.artifactHash);
     assert.deepEqual(first.manifest.files, second.manifest.files);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('requires BOARD_ENDPOINT in runtime config', async () => {
+  const fixture = await makeFixture();
+  try {
+    await writeFile(path.join(fixture.docs, 'config.js'), fixture.config.replace("window.BOARD_ENDPOINT = '';", ''));
+    await assert.rejects(prepareSiteAssets(fixture), /missing required fields: BOARD_ENDPOINT/);
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }

@@ -174,7 +174,10 @@ export default function SituationMap3D({
   }, []);
   const onScreenRef = useRef(onScreen);
   onScreenRef.current = onScreen;
-  const animationPaused = useCallback(() => document.hidden || !onScreenRef.current || pointersDown.current.size > 0, []);
+  // Once the URL leaves the page the map mounted on, stop animating: the ~30fps spin commits
+  // otherwise starve React Router's navigation transition and the map never leaves the screen.
+  const mountPath = useRef(window.location.pathname);
+  const animationPaused = useCallback(() => document.hidden || !onScreenRef.current || pointersDown.current.size > 0 || window.location.pathname !== mountPath.current, []);
   useEffect(() => {
     const release = (event) => pointersDown.current.delete(event.pointerId);
     const reset = () => pointersDown.current.clear();

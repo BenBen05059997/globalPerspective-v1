@@ -49,10 +49,18 @@ Wrangler. Merging the two Workers is a separate, later decision (Phase E).
   `benben05059997.github.io`, Proxied, TTL Auto (expect a short gap again). Rollback of a release: restore the previous
   Worker version.
 - Still open: GitHub Pages is not retired and stays the fallback. The observation window (48 hours plus one verified
-  release, with each release also staged to Pages by `stage-pages`) began at the cutover. Retiring Pages needs an operator
-  yes. `docs/` cannot be deleted yet: packaging still reads `docs/config.js`, `docs/blog`, `docs/sitemap.xml` and
+  release) began at the cutover. Retiring Pages needs an operator yes. `docs/` cannot be deleted yet: packaging still reads `docs/config.js`, `docs/blog`, `docs/sitemap.xml` and
   `docs/WHITEPAPER.md` (`scripts/release-site.mjs`); those files must move first. Release records and rollback archives live
   only in the git-ignored `.site-releases/`. Merging the two Workers (Phase E) is still a separate, later decision.
+
+- Amendment 2026-11-14 (later, operator): no dual publish to Pages during the observation window. Releases go only to
+  Cloudflare with `./deploy.sh --target production`; there is no `stage-pages` step and no Pages push per release. Reason: a
+  bad release is rolled back by restoring the previous Worker version, which does not need GitHub. Pages is needed only if
+  Cloudflare hosting itself fails, and it still holds the build released from commit `a44c59b4` (bundle `index-BB5SVPaK`),
+  which is good enough as an emergency copy. Accepted cost: a fallback to Pages would serve that older build, not the newest
+  release. Unchanged: Pages is not retired yet; retiring it needs an operator yes after 48 hours from the cutover
+  (2026-11-14 07:49 UTC) and one verified release. `stage-pages` and `legacy-pages` stay in the code as emergency tools until
+  Pages is retired. Every production upload still needs a fresh operator yes.
 
 Source: `project-docs/plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md` (deleted 2026-10-26; in git history) (§1 and the 2026-10-05
 revisions); `git show a5c0de8:project-docs/plans/TASK_2026-10-05_cloudflare_frontend_migration.md` (deleted 2026-10-19);

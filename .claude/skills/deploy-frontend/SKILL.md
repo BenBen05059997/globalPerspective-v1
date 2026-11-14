@@ -20,12 +20,12 @@ or GitHub Pages push needs explicit current-message authorization (a fresh yes e
    - Production (the normal release, live since 2026-11-14): after explicit authorization for
      production upload, run `./deploy.sh --target production` (Worker `globalperspective-site`). It
      refuses uncommitted packaged source and a HEAD not contained in `origin/main`.
-   - Observation window (until Pages is retired): after each production release, stage the same
-     artifact for Pages with `./deploy.sh --target stage-pages --artifact HASH`. This copies the
-     archived package into `docs/` without commit/push. Committing and pushing it is a Pages release
-     and needs its own explicit operator yes.
-   - Legacy Pages (fallback path, not the normal one): after explicit authorization for the Pages
-     release, run `./deploy.sh --target legacy-pages`; this invokes the preserved script with its
+   - No dual publish: releases go only to Cloudflare. Do not stage or push Pages per release
+     (operator decision 2026-11-14).
+   - Emergency fallback tools (only if Cloudflare hosting itself fails, until Pages is retired):
+     `./deploy.sh --target stage-pages --artifact HASH` copies an archived package into `docs/`
+     without commit/push. For a Pages release, after explicit authorization, run
+     `./deploy.sh --target legacy-pages`; this invokes the preserved script with its
      existing `--commit`, `--push`, and `--skip-build` options.
    - If verification/build/package fails, stop before any upload or publish.
 2. Commit the change with a plain descriptive message (git log is the change log).
@@ -39,8 +39,8 @@ or GitHub Pages push needs explicit current-message authorization (a fresh yes e
 ## Rollback
 
 For a Cloudflare production release, restore the previous Worker version (a new code push alone is not a rollback).
-For Pages rollback, stage the prior artifact with `stage-pages`, then review, commit and push
-the staged `docs/` under Pages-release authorization. Do not run `legacy-pages` afterward: it
+Pages is only an emergency fallback if Cloudflare hosting itself fails (it holds an older build). Then
+stage an artifact with `stage-pages`, review, commit and push the staged `docs/` under Pages-release authorization. Do not run `legacy-pages` afterward: it
 would replace the selected archive with current build output. The cutover itself is rolled back as described in
 `project-docs/decisions/0019-frontend-hosting-two-worker-cloudflare.md` and
 `project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover).

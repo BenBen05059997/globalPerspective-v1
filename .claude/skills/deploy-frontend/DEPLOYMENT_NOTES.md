@@ -2,7 +2,7 @@
 
 **Production URL:** https://globalperspective.net, served since 2026-11-14 by the Cloudflare Worker `globalperspective-site`
 (Workers Static Assets) behind the front Worker `globalperspective-rss` (sources in `cloudflare/front-worker/`). GitHub Pages
-(`docs/` on `main`) is the fallback during the observation window and is not retired yet. The hosting design, rollback and
+(`docs/` on `main`) is an emergency fallback holding the older build from commit `a44c59b4`; it is not retired yet and is not updated per release. The hosting design, rollback and
 gates are in `project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover) and decision 0019. Which Worker
 version is live is a Cloudflare fact: read it from Cloudflare, not from this file.
 
@@ -17,8 +17,8 @@ production Cloudflare uploads and every Pages push each need explicit current-me
 ./deploy.sh                                  # verify + build + package locally; no upload
 ./deploy.sh --target candidate              # upload to globalperspective-site-candidate
 ./deploy.sh --target production             # the normal release: upload to globalperspective-site
-./deploy.sh --target legacy-pages           # fallback only: preserved GitHub Pages release flow
-./deploy.sh --target stage-pages --artifact HASH  # stage an archived package into docs/ only
+./deploy.sh --target legacy-pages           # emergency fallback only: preserved GitHub Pages release flow
+./deploy.sh --target stage-pages --artifact HASH  # emergency fallback only: stage an archived package into docs/
 ./deploy.sh --target mark-verified --artifact HASH --version-id UUID  # record after production smoke checks
 ./deploy.sh --target legacy-pages --commit "msg" --push
 ```
@@ -28,12 +28,12 @@ production Cloudflare uploads and every Pages push each need explicit current-me
 - `stage-pages` copies an exact archived package into `docs/` (keeps `config.js`, `CNAME`, `.nojekyll`; makes no commit and
   publishes nothing). Publishing the staged output is a Pages release and needs authorization. Do not run `legacy-pages`
   after staging: it rebuilds and would replace the selected archive.
-- Observation window: after each production release and its smoke checks, run `mark-verified`, then stage the same artifact
-  with `stage-pages` and (with its own operator yes) commit and push it, so Pages keeps the same build. Retiring Pages needs an
-  operator yes; `docs/` still holds files packaging reads (`config.js`, `blog`, `sitemap.xml`, `WHITEPAPER.md`).
+- Observation window: after each production release and its smoke checks, run `mark-verified`. There is no dual publish: do
+  not stage or push Pages per release (operator decision 2026-11-14). Pages holds the older `a44c59b4` build as an emergency
+  copy. Retiring Pages needs an operator yes after 48 hours from the cutover and one verified release; `docs/` still holds files packaging reads (`config.js`, `blog`, `sitemap.xml`, `WHITEPAPER.md`).
 - A `workers.dev` hostname does not isolate Worker code or configured backend integrations.
-- Recovery has two layers: roll back the Worker version, then use the recorded artifact hash with `stage-pages` and an
-  authorized Pages release if the static origin also needs restoring.
+- Recovery: roll back the Worker version. Only if Cloudflare hosting itself fails, fall back to Pages (older build) with
+  `stage-pages` or `legacy-pages` and an authorized Pages release.
 
 ## Legacy GitHub Pages release (fallback path, not the normal one)
 

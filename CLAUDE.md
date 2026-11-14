@@ -1,8 +1,9 @@
 # Global Perspectives — working notes for Claude
 
-AI global-news intelligence site (globalperspective.net). Production frontend: GitHub Pages `docs/`
-behind the Cloudflare `globalperspective-rss` Worker (a Workers Static Assets migration is prepared,
-not cut over). Backend: AWS ap-northeast-1 Lambdas + S3 world store + DynamoDB + Firebase Auth.
+AI global-news intelligence site (globalperspective.net). Production frontend: Cloudflare Worker
+`globalperspective-site` (Workers Static Assets, cut over 2026-11-14) behind the `globalperspective-rss`
+front Worker; GitHub Pages `docs/` is the fallback and is not retired. Backend: AWS ap-northeast-1
+Lambdas + S3 world store + DynamoDB + Firebase Auth.
 Solo developer; no CI by design.
 
 ## Facts come from code and live AWS, never from docs

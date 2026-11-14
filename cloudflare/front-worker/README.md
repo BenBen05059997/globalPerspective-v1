@@ -31,7 +31,7 @@ or `wrangler versions list`); it is not recorded here.
   `stories/<id>.json` (its `analysis`); a country `index/countries.json` (name to ISO3) and `countries/<ISO3>.json`. "The newest", the today view, the story
   and the country read only while `manifest.builtAt` is under 9 hours old. A missing, unreadable or stale view is not an error: the action (`topics`,
   `daily_brief`, `latest_daily_brief`, `weekly_brief`, `thread_preview`, `country_preview`) answers as before. The Worker reads no DynamoDB.
-- GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (static pages in `docs/blog/`).
+- GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin, the site Worker (static pages packaged from `docs/blog/`).
 - `HEAD` answers exactly as `GET` does (status and headers), without the body, for every path.
 - Content-hashed build files (`/assets/<name>-<hash>.<ext>`) are served `Cache-Control: public, max-age=31536000, immutable`; every other
   response keeps the origin's headers (HTML, `config.js`, `/data` are unchanged).

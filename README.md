@@ -1,6 +1,6 @@
 # Global Perspectives
 
-AI-powered global-news intelligence platform — [globalperspective.net](https://globalperspective.net). The production frontend is currently GitHub Pages (`docs/`) behind Cloudflare's `globalperspective-rss` Worker; a Workers Static Assets migration is in progress but has not been deployed. Backend: AWS Lambdas (list: `scripts/functions.json`) + S3 + DynamoDB + Firebase Auth. Content is public; Polar membership buys following countries and deeper history (the Analysis Studio was retired 2026-10-20).
+AI-powered global-news intelligence platform — [globalperspective.net](https://globalperspective.net). The production frontend is served by the Cloudflare Worker `globalperspective-site` (Workers Static Assets, since 2026-11-14) behind the `globalperspective-rss` Worker; GitHub Pages (`docs/`) stays as the fallback for now. Backend: AWS Lambdas (list: `scripts/functions.json`) + S3 + DynamoDB + Firebase Auth. Content is public; Polar membership buys following countries and deeper history (the Analysis Studio was retired 2026-10-20).
 
 ## Architecture
 

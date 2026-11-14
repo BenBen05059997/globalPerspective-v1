@@ -23,7 +23,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0016](0016-map-console-is-home.md) | 2026-10-01 | The map console is the home page | accepted |
 | [0017](0017-retired-routes-and-tours.md) | 2026-10-01 | /breaking and /weekly-markets redirect; guided tours removed | accepted (client-only redirects superseded by 0028) |
 | [0018](0018-spider-demo-retired-into-stories-web.md) | 2026-10-02 | /spider-demo retires into the Stories WEB view | accepted |
-| [0019](0019-frontend-hosting-two-worker-cloudflare.md) | 2026-10-05 | Hosting moves to Workers Static Assets behind the existing Worker | accepted (not cut over) |
+| [0019](0019-frontend-hosting-two-worker-cloudflare.md) | 2026-10-05 | Hosting moves to Workers Static Assets behind the existing Worker | accepted (cut over 2026-11-14; Pages kept as fallback) |
 | [0020](0020-editorial-selection-done-not-said.md) | 2026-10-18 | Story selection counts things done, not things said | accepted |
 | [0021](0021-rules-reset-code-is-truth.md) | 2026-10-19 | Rules reset: code and live AWS are the truth | accepted (archive/ part superseded by 0026) |
 | [0022](0022-crisis-hues-option-a.md) | 2026-10-19 | Crisis hues re-picked (option A) | accepted |

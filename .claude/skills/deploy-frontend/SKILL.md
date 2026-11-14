@@ -6,23 +6,27 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Deploy Frontend to Production
 
+Production is the Cloudflare Worker `globalperspective-site` (cut over 2026-11-14). GitHub Pages stays as the
+fallback until the operator retires it.
+
 The default build-only command is local and needs no deploy authorization. Any Cloudflare upload
-or GitHub Pages legacy release needs explicit current-message authorization, per repo `CLAUDE.md`.
+or GitHub Pages push needs explicit current-message authorization (a fresh yes every time), per repo `CLAUDE.md`.
 
 ## Steps
 
 1. Run `./deploy.sh` (repo root) for verify/build/package only. It does not upload or publish.
    - Candidate Worker: after explicit authorization for candidate upload, run
      `./deploy.sh --target candidate` (Worker `globalperspective-site-candidate`).
-   - Production Worker: after explicit authorization for production upload, run
-     `./deploy.sh --target production` (Worker `globalperspective-site`).
-   - Legacy Pages: after explicit authorization for the Pages release, run
-     `./deploy.sh --target legacy-pages`; this invokes the preserved script with its existing
-     `--commit`, `--push`, and `--skip-build` options.
-   - Exact Pages staging for dual-publish or rollback: run
-     `./deploy.sh --target stage-pages --artifact HASH`. This copies the archived package into
-     `docs/` without commit/push. Publishing that staged output still needs explicit legacy-release
-     authorization.
+   - Production (the normal release, live since 2026-11-14): after explicit authorization for
+     production upload, run `./deploy.sh --target production` (Worker `globalperspective-site`). It
+     refuses uncommitted packaged source and a HEAD not contained in `origin/main`.
+   - Observation window (until Pages is retired): after each production release, stage the same
+     artifact for Pages with `./deploy.sh --target stage-pages --artifact HASH`. This copies the
+     archived package into `docs/` without commit/push. Committing and pushing it is a Pages release
+     and needs its own explicit operator yes.
+   - Legacy Pages (fallback path, not the normal one): after explicit authorization for the Pages
+     release, run `./deploy.sh --target legacy-pages`; this invokes the preserved script with its
+     existing `--commit`, `--push`, and `--skip-build` options.
    - If verification/build/package fails, stop before any upload or publish.
 2. Commit the change with a plain descriptive message (git log is the change log).
 3. Follow `DEPLOYMENT_NOTES.md` (next to this file) for target-specific smoke checks and release
@@ -34,10 +38,12 @@ or GitHub Pages legacy release needs explicit current-message authorization, per
 
 ## Rollback
 
+For a Cloudflare production release, restore the previous Worker version (a new code push alone is not a rollback).
 For Pages rollback, stage the prior artifact with `stage-pages`, then review, commit and push
 the staged `docs/` under Pages-release authorization. Do not run `legacy-pages` afterward: it
-would replace the selected archive with current build output. For Cloudflare, roll back the recorded Worker version and artifact as described in
-`project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover). A new code push alone is not a rollback.
+would replace the selected archive with current build output. The cutover itself is rolled back as described in
+`project-docs/decisions/0019-frontend-hosting-two-worker-cloudflare.md` and
+`project-docs/architecture/ARCHITECTURE.md` (Hosting and the Cloudflare cutover).
 
 ## Notes
 

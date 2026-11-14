@@ -9,7 +9,7 @@
 
 **Product category:** Geopolitical intelligence / AI news analysis
 
-**Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (GitHub Pages frontend behind a Cloudflare Worker, AWS Lambda backend, DeepSeek models)
+**Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (Cloudflare Workers Static Assets frontend behind a Cloudflare front Worker, AWS Lambda backend, DeepSeek models)
 
 ## Positioning Statement
 **For analysts, executives, researchers, and globally-minded professionals who need to understand the world — not just follow it — Global Perspectives is the geopolitical intelligence platform that tracks how stories move, not just what happened today. Unlike Stratfor or Bloomberg Intelligence (which cost thousands and serve only large organizations) or basic news aggregators (which serve headlines without context), Global Perspectives provides narrative-level AI analysis at accessible pricing with free reading that requires no account.**

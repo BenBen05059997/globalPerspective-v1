@@ -7,7 +7,7 @@ const {
   PutCommand,
 } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
-const { chat, stripCodeFence } = require('./_shared/llm');
+const { chat, jsonText } = require('./_shared/llm');
 const { resolveStoryThreadIds, linkCountryToWatch } = require('./threadLinks');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const { writeBriefNote } = require('./_shared/briefNotes');
@@ -165,7 +165,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 async function callGrok(prompt) {
   if (!XAI_API_KEY) return null;
   const { content } = await chat({ step: 'daily_brief', model: GROK_MODEL, user: prompt, maxTokens: 2000, temperature: 0.3 });
-  return stripCodeFence(content);
+  return jsonText(content);
 }
 
 // The prompt asks for <= 350 words and exactly 4 bold phrases; models miss both often, so log the miss (no rejection).

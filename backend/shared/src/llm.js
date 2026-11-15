@@ -246,4 +246,10 @@ function parseJsonContent(content) {
   return JSON.parse(stripCodeFence(content) || '{}');
 }
 
-module.exports = { chat, buildRequest, resolveProvider, stripCodeFence, parseJsonContent };
+/** The JSON text of an answer for callers that ask for JSON in the prompt only (no json:true, so DeepSeek's request stays as is):
+ * fence-stripped; if prose surrounds the JSON, just the JSON; truncated or non-JSON text comes back fence-stripped as it is. */
+function jsonText(text) {
+  return stripCodeFence(jsonOnly(text));
+}
+
+module.exports = { chat, buildRequest, resolveProvider, stripCodeFence, parseJsonContent, jsonText };

@@ -2,7 +2,7 @@
 
 const archive = require('./_shared/archiveEntries');
 const archiveReads = require('./_shared/archiveReads');
-const { chat, stripCodeFence } = require('./_shared/llm');
+const { chat, jsonText } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
@@ -481,7 +481,7 @@ Generate a JSON object with exactly these fields:
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
   const { content, modelId, latencyMs } = await invokeGrok(prompt);
-  const cleaned = stripCodeFence(content);
+  const cleaned = jsonText(content);
 
   let parsed;
   try {

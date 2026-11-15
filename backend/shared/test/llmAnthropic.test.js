@@ -231,3 +231,15 @@ test('a deepseek: prefix is stripped from the request and the usage log', async 
   assert.equal(r.model, 'deepseek-flash');
   assert.ok(logs[0].includes('"model":"deepseek-flash"'));
 });
+
+test('jsonText: clean JSON equals stripCodeFence; fenced, prose before/after and arrays give the JSON; truncated or non-JSON comes back fence-stripped as is', () => {
+  const { jsonText, stripCodeFence } = require('../src/llm');
+  for (const s of ['{"a":1}', '  {"a":1}\n', '```json\n{"a":1}\n```', '```\n{"a":[1,]}\n```', '']) assert.equal(jsonText(s), stripCodeFence(s));
+  assert.equal(jsonText('```json\n{"a":1}\n```'), '{"a":1}');
+  assert.equal(jsonText('Here you go:\n{"a":{"b":2}}\nDone.'), '{"a":{"b":2}}');
+  assert.equal(jsonText('Sure:\n```json\n{"a":1}\n```\nHope it helps'), '{"a":1}');
+  assert.equal(jsonText('Result [1,2,3] ok'), '[1,2,3]');
+  assert.equal(jsonText('{"topics":[{"a":1},{"b":'), '{"topics":[{"a":1},{"b":');
+  assert.equal(jsonText('```json\n{"a":1,\n```'), '{"a":1,');
+  assert.equal(jsonText('no json'), 'no json');
+});

@@ -1,11 +1,11 @@
 'use strict';
 // newsPostDevTo daily brief: the prompt the model gets, what is done with its reply, the DAILY_BRIEF#<date> row that is stored, and the handler's skip paths.
-// Offline: the shared llm.chat is replaced with a fake (stripCodeFence stays the real one), DynamoDB is an in-memory fake via shared/test/stubAws.
+// Offline: the shared llm.chat is replaced with a fake (stripCodeFence and jsonText stay the real ones), DynamoDB is an in-memory fake via shared/test/stubAws.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { stubAws } = require('../../../shared/test/stubAws');
-const { stripCodeFence } = require('../../../shared/src/llm');
+const { stripCodeFence, jsonText } = require('../../../shared/src/llm');
 
 const INDEX = path.resolve(__dirname, '../src/index.js');
 const DAY = 86400000;
@@ -49,7 +49,7 @@ async function withHandler(env, fill, reply, fn) {
   const store = makeStore();
   fill(store);
   const chats = [];
-  const llm = { stripCodeFence, chat: async (args) => { chats.push(args); const c = typeof reply === 'function' ? reply(args) : reply; return { content: c }; } };
+  const llm = { stripCodeFence, jsonText, chat: async (args) => { chats.push(args); const c = typeof reply === 'function' ? reply(args) : reply; return { content: c }; } };
   const real = [console.log, console.warn, console.error];
   console.log = () => {}; console.warn = () => {}; console.error = () => {};
   const aws = stubAws({ ddb: store.ddb, modules: { './_shared/llm': llm } });

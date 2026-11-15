@@ -1,5 +1,5 @@
 {
-  "_about": "Operator-owned DeepSeek list prices in USD per million tokens, used to ESTIMATE spend from the [usage] log lines. Edit when DeepSeek changes prices: add a new entry with its validFrom date and keep the old one. A usage day older than every validFrom is priced with the earliest entry (an estimate at that rate, not the rate in force then).",
+  "_about": "Operator-owned list prices in USD per million tokens, used to ESTIMATE spend from the [usage] log lines. Edit when a provider changes prices: add a new entry with its validFrom date and keep the old one. A usage day older than every validFrom is priced with the earliest entry (an estimate at that rate, not the rate in force then). The peak window is DeepSeek's; the claude entries carry the same figure for peak and offPeak.",
   "source": "https://api-docs.deepseek.com/quick_start/pricing",
   "fetchedAt": "2026-11-04",
   "peak": {
@@ -21,6 +21,24 @@
       "validFrom": "2026-11-04",
       "offPeak": { "in": 0.66, "out": 1.98, "cacheHit": 0.022 },
       "peak": { "in": 1.32, "out": 3.96, "cacheHit": 0.044 }
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "aliases": [],
+      "validFrom": "2026-11-15",
+      "source": "Anthropic list price from the claude-api skill table, cached 2026-10-06. Check the Anthropic pricing page before relying on it.",
+      "note": "The rate for prompts up to 100K tokens. Longer prompts are 0.50 in / 2.50 out; the pipeline's prompts are far below 100K. Cache reads are 0.1x input. Cache writes are not used.",
+      "offPeak": { "in": 0.1, "out": 0.5, "cacheHit": 0.01 },
+      "peak": { "in": 0.1, "out": 0.5, "cacheHit": 0.01 }
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "aliases": [],
+      "validFrom": "2026-11-15",
+      "source": "Anthropic list price from the claude-api skill table, cached 2026-10-06. Check the Anthropic pricing page before relying on it.",
+      "note": "Cache reads are 0.1x input. Cache writes are not used.",
+      "offPeak": { "in": 2, "out": 10, "cacheHit": 0.2 },
+      "peak": { "in": 2, "out": 10, "cacheHit": 0.2 }
     }
   ]
 }

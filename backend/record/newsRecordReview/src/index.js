@@ -88,7 +88,7 @@ function makeHandler({store, chat, model, concurrency = CONCURRENCY, now = () =>
       try {
         const mine = assembled(row);
         const {system, user} = buildMessages(mine.bundle);
-        const res = await chat({step: 'review', provider: 'deepseek', model, system, user, maxTokens: MAX_TOKENS, temperature: 0, json: true});
+        const res = await chat({step: 'review', model, system, user, maxTokens: MAX_TOKENS, temperature: 0, json: true});
         const answer = parseAnswer(res.content);
         const {accepted, rejected} = checkAnswer(answer, {row, mine, world, assembleOther});
         const lines = readingLines({week, threadId: row.threadId, accepted, covers: mine.covers, runId: run.runId, model: res.model || model, promptVersion: PROMPT_VERSION, supersedable});

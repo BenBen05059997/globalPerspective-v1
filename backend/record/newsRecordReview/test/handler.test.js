@@ -42,7 +42,7 @@ test('end to end with a stub model: readings, Run and the merge inbox are writte
   const out = await make(f, stub(answers, calls))({...only});
   assert.deepEqual([out.week, out.status, out.runId], [WEEK, 'ok', `review-${WEEK}-1`]);
   assert.equal(calls.length, 3);
-  assert.deepEqual(calls[0].opts, {step: 'review', provider: 'deepseek', model: 'deepseek-large', system: calls[0].opts.system, user: calls[0].opts.user, maxTokens: 6000, temperature: 0, json: true});
+  assert.deepEqual(calls[0].opts, {step: 'review', model: 'deepseek-large', system: calls[0].opts.system, user: calls[0].opts.user, maxTokens: 6000, temperature: 0, json: true});
   const lines = f.lines(`${P}readings/${WEEK}.jsonl`);
   assert.ok(lines.every((l) => validReading(l)), JSON.stringify(lines.map((l) => validReading.errors)));
   assert.deepEqual(lines.map((l) => `${l.threadId}:${l.subtype}`).sort(), ['thread-a:chapter', 'thread-a:line', 'thread-a:merge_proposal', 'thread-b:line', 'thread-b:merge_proposal']);

@@ -36,6 +36,15 @@ test('usage cost: off-peak, peak, cache hits at the hit price, unknown model is 
   assert.equal(usageUsd(prices, { model: 'jev-1.14.0', hourIso: '2026-11-03T12:00:00.000Z', ...m }), null);
 });
 
+test('usage cost: Claude models are priced, peak or not, with cache reads at the cache price', () => {
+  const m = { promptTokens: 1000000, completionTokens: 1000000, cacheHitTokens: 0 };
+  for (const hourIso of ['2026-11-03T12:00:00.000Z', '2026-11-03T07:00:00.000Z']) { // off-peak and DeepSeek peak hour: the same
+    near(usageUsd(prices, { model: 'claude-haiku-5-5', hourIso, ...m }), 0.1 + 0.5);
+    near(usageUsd(prices, { model: 'claude-sonnet-5-5', hourIso, ...m }), 2 + 10);
+  }
+  near(usageUsd(prices, { model: 'claude-haiku-5-5', hourIso: '2026-11-16T12:00:00.000Z', promptTokens: 1000000, completionTokens: 0, cacheHitTokens: 500000 }), 0.5 * 0.01 + 0.5 * 0.1);
+});
+
 test('usage days: lines per fn/step/model, days outside the window ignored, an unpriced line has usd null', () => {
   const days = usageDays([row({}), row({ calls: 2 }), row({ fn: 'x', model: 'jev-1.14.0' }), row({ hourIso: '2026-09-01T00:00:00.000Z' })], prices, ['2026-11-03', '2026-11-04']);
   assert.equal(days['2026-11-03'].length, 2);

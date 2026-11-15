@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const lib = require('./lib');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const threading = require('./threading');
 const draw = require('./forecast-draw');
 const { staleReason, staleProcessedRun } = require('./run-guard');
@@ -21,8 +22,6 @@ const {
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (single grounded call); '' = same as GROK_MODEL
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
-const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
-const GROK_KEY = process.env.XAI_API_KEY || '';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
 const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '2500', 10);
 const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
@@ -812,82 +811,22 @@ function normalizeJsonResponse(raw, kind) {
 const modelFor = (kind) => lib.modelForKind(kind, { GROK_MODEL, PREDICTION_MODEL });
 
 async function invokeGrok(prompt, maxTokens, model = GROK_MODEL, step = 'call', json = false) {
-  if (!GROK_KEY) {
-    throw new Error('XAI_API_KEY is not configured');
-  }
-
-  const started = Date.now();
-  const response = await fetch(GROK_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROK_KEY}`,
-    },
-    body: JSON.stringify(lib.buildChatBody({
-      model,
-      prompt,
-      maxTokens: maxTokens || DEFAULT_MAX_TOKENS,
-      temperature: DEFAULT_TEMPERATURE,
-      topP: DEFAULT_TOP_P,
-      json,
-    })),
+  // The shared client (GROK_API_URL / XAI_API_KEY for DeepSeek, ANTHROPIC_API_KEY for an `anthropic:` model; thinking off).
+  // The Lambda timeout is 900 s, so one call is capped at 2 tries x 180 s.
+  const r = await chat({
+    step,
+    model,
+    user: prompt,
+    maxTokens: maxTokens || DEFAULT_MAX_TOKENS,
+    temperature: DEFAULT_TEMPERATURE,
+    topP: DEFAULT_TOP_P,
+    json,
+    timeoutMs: 180000,
+    retries: 1,
   });
-
-  const rawText = await response.text();
-  const latencyMs = Date.now() - started;
-
-  let parsed;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    parsed = rawText;
-  }
-
-  if (!response.ok) {
-    const message = parsed?.error?.message || rawText || `status ${response.status}`;
-    throw new Error(`OpenAI error: ${message}`);
-  }
-
-  const content = extractContent(parsed);
-  console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model: parsed?.model || model, ...parsed?.usage }));
-  return { modelId: parsed?.model || model, content, latencyMs, usage: parsed?.usage };
-}
-
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
-}
-
-function normalizeMessageContent(content) {
-  if (typeof content === 'string') {
-    return stripCodeFence(content);
-  }
-  if (Array.isArray(content)) {
-    return content
-      .map(part => {
-        if (typeof part === 'string') return part;
-        if (part && typeof part.text === 'string') return part.text;
-        if (part && typeof part.content === 'string') return part.content;
-        return '';
-      })
-      .join('')
-      .trim();
-  }
-  if (content && typeof content === 'object' && typeof content.text === 'string') {
-    return stripCodeFence(content.text);
-  }
-  return '';
-}
-
-function extractContent(payload) {
-  if (!payload) return '';
-
-  const openAIMessage = payload?.choices?.[0]?.message?.content;
-  const openAIString = normalizeMessageContent(openAIMessage);
-  if (openAIString) return openAIString;
-
-  if (typeof payload === 'string') return payload.trim();
-  return JSON.stringify(payload);
+  const content = stripCodeFence(r.content);
+  if (!content) throw new Error(`Empty response from ${r.model}`);
+  return { modelId: r.model, content, latencyMs: r.latencyMs, usage: r.usage };
 }
 
 async function readCache(topic, action) {

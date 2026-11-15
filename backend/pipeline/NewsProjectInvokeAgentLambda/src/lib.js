@@ -493,22 +493,10 @@ function modelForKind(kind, env = {}) {
   return (kind === 'prediction' || kind === 'research_briefing') ? (env.PREDICTION_MODEL || base) : base;
 }
 
-// One request body for EVERY LLM call. thinking must stay disabled: DeepSeek V4 (flash and pro)
-// defaults to thinking-on, which burns max_tokens on hidden reasoning and empties `content`.
-// json: DeepSeek JSON mode — guarantees a parseable object (without it the model sometimes wraps
-// the answer in ```json fences, which then failed JSON.parse and skipped the PRED# log).
-function buildChatBody({ model, prompt, maxTokens, temperature, topP, json = false }) {
-  return {
-    model,
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: maxTokens,
-    temperature,
-    top_p: topP,
-    thinking: { type: 'disabled' },
-    ...(json ? { response_format: { type: 'json_object' } } : {}),
-  };
-}
-
+// The request body for every LLM call is built by the shared client (_shared/llm.js): thinking stays off
+// (DeepSeek V4 defaults to thinking-on, which burns max_tokens on hidden reasoning and empties `content`),
+// and json: true is JSON mode (without it the model sometimes wrapped the answer in ```json fences,
+// which then failed JSON.parse and skipped the PRED# log).
 
 // "Was a forecast already generated today?" from the stored item itself: copies keep the original
 // generatedAt, so this survives sibling copies and reuse-by-fingerprint (which write no PRED# row).
@@ -573,7 +561,6 @@ module.exports = {
   stripUngroundedSentences,
   groundForecastContent,
   modelForKind,
-  buildChatBody,
   sourceFingerprint,
   decideReuse,
   siblingTopicIds,

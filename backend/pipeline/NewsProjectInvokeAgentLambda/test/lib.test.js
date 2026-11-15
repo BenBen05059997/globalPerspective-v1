@@ -306,7 +306,7 @@ test('R2 prune after an all-skipped run keeps reused items and still drops obsol
 });
 
 // ---------- Batch 2 / D3: forecast on PREDICTION_MODEL, thinking always disabled ----------
-const { modelForKind, buildChatBody } = require('../src/lib');
+const { modelForKind } = require('../src/lib');
 
 test('D3 modelForKind: forecast (research + prediction) uses PREDICTION_MODEL; summary / cause stay on GROK_MODEL', () => {
   const env = { GROK_MODEL: 'deepseek-flash', PREDICTION_MODEL: 'deepseek-v4-pro' };
@@ -322,13 +322,27 @@ test('D3 modelForKind: PREDICTION_MODEL unset or empty falls back to GROK_MODEL 
   assert.equal(modelForKind('prediction', {}), 'deepseek-flash');
 });
 
-test('D3 buildChatBody: every call disables thinking, for flash and for v4-pro', () => {
-  for (const model of ['deepseek-flash', 'deepseek-v4-pro']) {
-    const b = buildChatBody({ model, prompt: 'x', maxTokens: 800, temperature: 0.2, topP: 0.9 });
-    assert.deepEqual(b.thinking, { type: 'disabled' });
-    assert.equal(b.model, model);
-    assert.equal(b.max_tokens, 800);
-    assert.deepEqual(b.messages, [{ role: 'user', content: 'x' }]);
+// The agent's calls go through the shared client; its DeepSeek request must stay what the private fetch sent.
+test('D3 agent calls through the shared client: same DeepSeek body (thinking off, temp 0.2, top_p 0.9, JSON mode when asked), full or base URL', () => {
+  const { buildRequest } = require('../src/_shared/llm');
+  const saved = { u: process.env.GROK_API_URL, k: process.env.XAI_API_KEY };
+  process.env.XAI_API_KEY = 'test-key';
+  try {
+    for (const url of ['https://api.deepseek.com/chat/completions', 'https://api.deepseek.com']) {
+      process.env.GROK_API_URL = url;
+      for (const model of ['deepseek-flash', 'deepseek-v4-pro']) {
+        for (const json of [false, true]) {
+          const r = buildRequest({ model, user: 'x', maxTokens: 800, temperature: 0.2, topP: 0.9, json });
+          assert.equal(r.url, 'https://api.deepseek.com/chat/completions');
+          assert.deepEqual(r.body, {
+            model, messages: [{ role: 'user', content: 'x' }], max_tokens: 800, temperature: 0.2, top_p: 0.9,
+            thinking: { type: 'disabled' }, ...(json ? { response_format: { type: 'json_object' } } : {}),
+          });
+        }
+      }
+    }
+  } finally {
+    for (const [k, v] of [['GROK_API_URL', saved.u], ['XAI_API_KEY', saved.k]]) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
   }
 });
 

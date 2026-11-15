@@ -6,7 +6,7 @@ Date: 2026-11-15
 Code: built and committed on a branch. Not yet done: deploy, any env change, any Lambda switched to Claude. DeepSeek is the live provider until the operator switches a job.
 
 ## Context
-- DeepSeek ran out of credit on 2026-11-14 and news intake stopped (the third balance lapse; see 0014).
+- DeepSeek ran out of credit on 2026-11-14 and news intake stopped (balance lapses have happened before; see 0014).
 - On 2026-11-15 the operator decided to add Anthropic as a provider and run on Claude Haiku 5.5 first, to keep DeepSeek fully working because it may be used again, and to make switching provider easy, because other providers may come.
 - The Lambdas ship without `node_modules` (`"nodeModules": false` in `scripts/functions.json` for most of them), so the official SDK would mean a new dependency in every zip.
 

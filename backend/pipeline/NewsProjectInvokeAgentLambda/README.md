@@ -71,7 +71,8 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
   `forkId = <PK>|<SK>` and `scenarioIndex`; older rows lack them and stay readable.
 - `http()` emits `Access-Control-Allow-Origin: *`. `package.json` lists Bedrock SDK deps the code does not use.
 - Models: `XAI_API_KEY` / `GROK_API_URL` / `GROK_MODEL` are legacy names; the live provider is DeepSeek. `PREDICTION_MODEL` overrides the
-  forecast model. Calls share `lib.buildChatBody` (thinking off).
+  forecast model. Calls go through shared `_shared/llm.js` `chat()` (thinking off, timeout 180 s, one transport retry); a model value
+  `anthropic:<model>` runs that call on Anthropic with `ANTHROPIC_API_KEY` (decision 0059).
 
 ## Tests
 - `cd src && npm test` (`node --test ../test/*.test.js`). `test/inbox-reads.test.js` writes a fixture world with the agent's own code and

@@ -14,9 +14,13 @@ This folder is stage 4: world/, the only reader of the raw tables, plus the shar
 Who uses what: `git grep "_shared/" -- backend`. The "used by" notes below are a guide, not a list.
 
 LLM and time
-- `llm.js`: OpenAI-compatible `chat()` over fetch, no deps. Providers `deepseek` (`GROK_API_URL`, fallback
-  `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `openrouter`, `gemini`, `other`. Thinking is off
-  unless asked; transport failures retry with backoff, 4xx never; every call prints a `[usage]` line. Used by the Lambdas that call a model.
+- `llm.js`: `chat()` over fetch, no deps. Providers `deepseek` (OpenAI-style; `GROK_API_URL`, fallback
+  `https://api.deepseek.com`, key `XAI_API_KEY`; legacy names, DeepSeek values), `anthropic` (native Messages API, key `ANTHROPIC_API_KEY`;
+  decision 0059), `openrouter`, `gemini`, `other`. A model value with a known-provider prefix, `anthropic:claude-haiku-5-5`, picks the provider
+  and the prefix is stripped; a bare model keeps the caller's `provider` (default `deepseek`). Each provider reads only its own key. Thinking is off
+  unless asked; Anthropic gets no temperature/top_p and, with `json`, a JSON instruction in the system text. Transport failures retry with
+  backoff, 4xx never; every call prints a `[usage]` line (Anthropic usage is mapped to `prompt_tokens` / `completion_tokens`). Used by the
+  Lambdas that call a model, `newsAgent` included.
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API. `archiveEntries.js`: `readArchiveEntries({days, getRow, project, onError})`, the archive walk (`today-archive`, then `archive#<day>`) of the thread, country, systems and weekly Lambdas.
 - `archiveReads.js` (decision 0035 step 5d): the `ARCHIVE_READS=ddb|inbox|compare` switch for reading the archive from the entries inbox (`record/inbox/entries/DAY.jsonl`, under `ENTRIES_INBOX_PREFIX`) instead of NewsCache. `readMode`/`readBy` (the switch and the compare logging, also used by the agent's `inbox-reads.js`), `archiveRowReader({mode, prefix, ddbGetRow, readDay})` (a drop-in `getRow` for `readArchiveEntries`: `archive#DAY` and `today-archive` replayed from the inbox, compare on whole entries with the inbox side cut to 3 sources for `today-archive`), `s3EntriesDay(prefix)` (the world-bucket day reader, SDK required on first use). An unset prefix or unknown mode reads DynamoDB. Known compare difference: `today-archive` entries differ in `archivedAt` only, by about 0.15 s (the agent stamps `today-archive` and `archive#DAY` separately; the inbox matches `archive#DAY`); readers use it only for the 24 h cut-off, so it counts as clean.
 - `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.

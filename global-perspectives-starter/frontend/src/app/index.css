@@ -33,25 +33,7 @@ p {
   margin-bottom: 1rem;
 }
 
-/* Card — DEPRECATED (static/AboutContact, Contact, Disclosures and 2 more read `.card`); use <Card>. */
-.card {
-  background-color: var(--panel-2);
-  border: 1px solid var(--hairline);
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--hairline-strong);
-}
-
 @media (max-width: 768px) {
-  .card {
-    padding: 1rem;
-  }
-
   h1 {
     font-size: 2rem;
   }
@@ -70,19 +52,9 @@ p {
     padding: 0 0.75rem;
   }
 
-  .card {
-    padding: 0.75rem;
-  }
-
   h1 {
     font-size: 1.75rem;
   }
-}
-
-/* `spin` is read by features/home/Home.css */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* Touch: native selects get a 44px target on coarse pointers */

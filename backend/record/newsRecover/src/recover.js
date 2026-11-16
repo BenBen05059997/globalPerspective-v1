@@ -10,12 +10,12 @@ const { canonicalUrl, sha1 } = require('./_shared/record.js');
 const { getOutletMeta, registrableDomain } = require('./_shared/outlets.js');
 const { parseRssXml, decodeEntities } = require('./_shared/rss.js');
 
-// selector-source.js is a symlink to the ingest Lambda's index.js (scripts/lambda.sh follows symlinks, so the zip carries the text):
+// selector-source.js is a symlink to the ingest Lambda's selection.js, where the feed list lives (scripts/lambda.sh follows symlinks, so the zip carries the text):
 // the feed list has one copy.
 const SELECTOR_INDEX = path.join(__dirname, 'selector-source.js');
 const GDELT_MAX = 250;
 
-/** The selector's RSS_FEEDS ([{name,url,source}]), read from its source text: requiring index.js would pull in the AWS SDK. */
+/** The selector's RSS_FEEDS ([{name,url,source}]), read from its source text: requiring the selector's handler would pull in the AWS SDK. */
 function readFeeds(file = SELECTOR_INDEX) {
   const text = fs.readFileSync(file, 'utf8');
   const feeds = [];

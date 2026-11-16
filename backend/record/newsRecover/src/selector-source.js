@@ -1,1 +1,1 @@
-../../../pipeline/newsInvokeGemini/src/index.js
+../../../pipeline/newsInvokeGemini/src/selection.js

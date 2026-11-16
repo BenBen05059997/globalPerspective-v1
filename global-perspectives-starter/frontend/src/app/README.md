@@ -19,7 +19,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 - `layout/Layout.jsx` - top nav (Map, Stories, Briefings, Track record), a "?" link to the map's About (the breaking-alert bell is unmounted since 2026-11-06),
   a Board link (signed-in non-guest users, only when `boardAvailable()`), Account or Sign in; the
   paused-analysis status line (not on `/`), the footer (About, Membership, Privacy, Disclosures, Contact; hidden on the
-  desktop map console) and a phone tab bar with the four main items. `layout/AIToast.jsx` shows a toast while a generation runs.
+  desktop map console) and a phone tab bar with the four main items.
 - `errors/ErrorHandling.jsx` - `ErrorBoundary` renders nothing on a crash on purpose (no "something went wrong" card)
   and reports the crash to `shared/api/errorSink.js`. The nav and footer sit outside it and survive. `/__boom` is the
   deliberate crash used by the smoke test.

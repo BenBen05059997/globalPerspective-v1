@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { LoadTopBar } from '@/shared/ui/boot';
-import AIToast from '@/app/layout/AIToast';
 import { usePausedSince, useGdacsStatus, HudStatusLine } from '@/features/map';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { ROUTE } from '@/shared/lib/links.js';
@@ -113,7 +112,6 @@ function Layout({ children }) {
   return (
     <div className={`gp-app${isPhone ? ' gp-app-tabbar' : ''}${consoleShell ? ' gp-app-console' : ''}`}>
       <LoadTopBar />
-      <AIToast />
 
       <nav className="gp-nav gp-console">
         <div className="gp-brand">

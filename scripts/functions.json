@@ -256,6 +256,7 @@
       "group": "distribution",
       "features": [],
       "nodeModules": true,
+      "schedules": [],
       "deployBlocked": "Old name, replaced by newsDailyBrief 2026-11-04 (schedule repointed); kept unscheduled for rollback until it is deleted. Deploy newsDailyBrief."
     },
     "newsDailyBrief": {

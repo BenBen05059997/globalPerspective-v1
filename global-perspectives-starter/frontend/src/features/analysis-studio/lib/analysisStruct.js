@@ -5,7 +5,7 @@
 // model to append a fenced ```gp-struct block after its prose: a machine-readable INDEX of
 // numbers/names already stated in the analysis (scenario probability ranges, indicators,
 // economic ripples) — never new content. This module turns that optional block into data
-// the UI can render as compact visuals (see components/atoms/AnalysisVisuals.jsx), while
+// the UI can render as compact visuals (see components/AnalysisVisuals.jsx), while
 // keeping the anti-fabrication guarantee: nothing renders unless it can be traced back to
 // the prose the model actually wrote.
 //
@@ -56,13 +56,11 @@ const DIRECTIONS = new Set(['up', 'down', 'mixed']);
 const MAGNITUDES = new Set(['small', 'moderate', 'large']);
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// D4 (S5c, TASK_2026-09-27_pages_local.md): scenarios may optionally carry `places` (place
-// names) and `by` (a dated trigger) so the Scenario lens picture can draw real bands from
-// today to a dated trigger and an "our data vs this run" map. Both are index-only, same as
-// pLow/pHigh — never new content: `by`'s day-of-month digits must already appear in the
-// prose (the same anti-invention cross-check numsInProse applies elsewhere), and `places`
-// are cross-checked against the run's SOURCE regions downstream (lib/oursVsRun.js
-// dropUnbackedPlaces) — this module only enforces the shape + the prose cross-check.
+// Scenarios may optionally carry `places` (place names) and `by` (a dated trigger). Both are
+// index-only, same as pLow/pHigh — never new content: `by`'s day-of-month digits must already
+// appear in the prose (the same anti-invention cross-check numsInProse applies elsewhere).
+// This module only enforces the shape + the prose cross-check; no code checks `places`
+// against the run's sources.
 function isValidByDate(by) {
   return typeof by === 'string' && ISO_DATE_RE.test(by);
 }

@@ -1,8 +1,8 @@
 // analysisContext — turns selected stories into the numbered, typed, citable context a Studio run is
-// built on. PURE and IMPORT-FREE: every dependency is injected, so the identical file runs in the
-// browser (analysis.js wires restProxy) and in the newsSharedAnalysis Lambda (which wires plain HTTP
-// calls to the public proxy and re-derives the sources itself when a run is shared). The Lambda's copy
-// is byte-identical (scripts/check-shared-sync.mjs).
+// built on. PURE and IMPORT-FREE: every dependency is injected. The newsSharedAnalysis Lambda
+// (freeze.js) wires plain HTTP calls to the public proxy and re-derives the sources itself when a run
+// is shared; no site code imports the frontend copy. The Lambda's copy is byte-identical
+// (scripts/check-shared-sync.mjs).
 //
 // createContextBuilder({ fetchers, assembly, helpers, onError }) -> buildAnalysisContext(selectedTopics)
 //   fetchers: { summary(topicId), prediction(topicId), traceCause(topicId), narrativeThread(threadId),
@@ -11,11 +11,11 @@
 //     source: when it is absent, throws or does not answer (stale views), the story has no forecast source (prediction_snapshot is retired).
 //   assembly: { assembleContext, buildStorySources, pickText, clip, MAX_NEWS_PER_STORY }   (analysisPrompt.js)
 //   helpers:  { safeWhy, safeTriggerEvent, dropRedatedRepeats }
-//   onError:  (label, err) => void   (the browser reports to the error sink; the Lambda logs)
+//   onError:  (label, err) => void   (the Lambda logs)
 // Returns { context, citations, perStory, thin, thinTitles, totalChars, sources }, where `sources` is the
 // full numbered list ({ n, kind, date, label, storyTitle, url, text }) a share freezes.
 //
-// D2 (TASK_2026-09-27_pages_local.md S5b): every selected story becomes typed, dated sources — archive
+// Every selected story becomes typed, dated sources — archive
 // snippets (NEWS), the stored thread analysis (ANALYSIS), the latest drift note (DRIFT) and the forecast
 // log (FORECAST) — so any story in the archive is analysable, not only today's ~17.
 // A story with no threadId falls back to the per-topic SUMMARY/PREDICTION/TRACE_CAUSE cache as one

@@ -83,6 +83,8 @@ test('prompt: summary carries the hard word limit and the exact bold count; the 
     const p = buildBriefPrompt([entry(1)], {}, {}, 'November 2, 2026', '2026-11-02');
     assert.match(p, /HARD LIMITS for "summary": at most 350 words in total; count the words/);
     assert.match(p, /exactly 4 phrases with \*\*double asterisks\*\*/);
+    assert.match(p, /three or four paragraphs of 70 to 90 words/);
+    assert.match(p, /The asterisks are part of the summary text: this is the one place where markdown is wanted/);
     const ok = `${'word '.repeat(300)}**a** **b** **c** **d**`;
     assert.deepEqual({ ...checkSummaryFormat(ok) }, { words: 304, bold: 4, ok: true });
     assert.equal(checkSummaryFormat(`${'word '.repeat(400)}**a**`).ok, false);

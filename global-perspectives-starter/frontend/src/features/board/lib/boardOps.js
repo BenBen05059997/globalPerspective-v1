@@ -19,7 +19,7 @@ export function nextPinId(pins) {
 }
 
 /** Pins that count toward the budget: a retired pin (retiredAt) is greyed and does not. */
-export const livePins = (board) => board.pins.filter((p) => !p.retiredAt);
+const livePins = (board) => board.pins.filter((p) => !p.retiredAt);
 export const livePinCount = (board) => livePins(board).length;
 
 /** addPin(board, {kind, refId}, now) -> { board, status: 'added' | 'restored' | 'duplicate' | 'full', pin? }.

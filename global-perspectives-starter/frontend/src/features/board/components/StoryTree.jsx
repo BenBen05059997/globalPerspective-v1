@@ -7,8 +7,8 @@ import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordTe
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
 import { branchLine, branchScenario, branchPercent } from '@/features/board/lib/branchView.js';
 import { storyHref } from '@/shared/lib/links.js';
-import { factsRun, isLate, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
-import { branchCounts, branchCountText, todayUTC } from '@/features/board/lib/branchDays.js';
+import { factsRun, forkOutcome, forkClosed, drawnBranches, outcomeText, inChapter, foldTrunk } from '@/features/board/lib/storyTree.js';
+import { isLate, branchCounts, branchCountText, todayUTC } from '@/features/board/lib/branchDays.js';
 import { DEAD_BRANCH_P } from '@/features/board/lib/folding.js';
 import { weekMonday } from '@/features/board/lib/recordViews.js';
 import '@/features/board/storyTree.css';

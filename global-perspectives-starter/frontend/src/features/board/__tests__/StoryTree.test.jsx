@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import StoryTree from '../components/StoryTree.jsx';
-import { factsRun, isLate, forkOutcome, outcomeText, foldTrunk, inChapter, drawnBranches } from '../lib/storyTree.js';
+import { factsRun, forkOutcome, outcomeText, foldTrunk, inChapter, drawnBranches } from '../lib/storyTree.js';
+import { isLate } from '../lib/branchDays.js';
 import storyA from '../dev/recordViews/story-a.json';
 import storyB from '../dev/recordViews/story-b.json';
 import storyC from '../dev/recordViews/story-c.json';
@@ -205,7 +206,7 @@ describe('the tree reads today, not the facts day', () => {
   it('a branch under 20% starts folded and is drawn once the reader unfolds it', () => {
     const forks = [{ forkId: 'f', drawnAt: '2026-10-10', branches: [
       { branchId: 'a', text: 'High', p: 60, due: '2026-12-01' }, { branchId: 'b', text: 'Low', p: 10, due: '2026-12-01' }, { branchId: 'c', text: 'Settled', p: 5, verdict: { result: 'no', at: '2026-10-12' } }] }];
-    expect(drawnBranches(forks)).toEqual({ shown: [forks[0].branches[0]], folded: 1, low: 1 });
+    expect(drawnBranches(forks)).toEqual({ shown: [forks[0].branches[0]], low: 1 });
     expect(drawnBranches(forks, true).shown.map((b) => b.branchId)).toEqual(['a', 'b']);
     const { container } = show({ ...storyA, forks });
     expect(container.querySelectorAll('path.st-branch')).toHaveLength(1);

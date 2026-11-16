@@ -5,6 +5,6 @@ import { devMember } from '@/features/board/lib/boardApi.js';
 // acts as a signed-in member so it can be tried without Firebase (the dev fake takes no token).
 export function useMember() {
   const { user, loading } = useAuth();
-  if (devMember()) return { signedIn: true, loading: false, uid: 'dev-member' };
-  return { signedIn: !!user && !user.isAnonymous, loading, uid: user?.uid || null };
+  if (devMember()) return { signedIn: true, loading: false };
+  return { signedIn: !!user && !user.isAnonymous, loading };
 }

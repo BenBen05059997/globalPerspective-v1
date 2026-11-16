@@ -79,7 +79,7 @@ describe('story tree drawing', () => {
   it('draws only the open branches of the newest fork that has any, at most six', () => {
     const drawn = drawnBranches(story.forks);
     expect(drawn.shown.map((b) => b.branchId)).toEqual(['n1', 'n2']);
-    expect(drawn.folded).toBe(1); // n3 is at 15%: under the 20% line it starts folded
+    expect(drawn.low).toBe(1); // n3 is at 15%: under the 20% line it starts folded
     expect(drawnBranches(story.forks, true).shown.map((b) => b.branchId)).toEqual(['n1', 'n2', 'n3']);
     const big = [{ forkId: 'x', drawnAt: '2026-10-01', branches: Array.from({ length: 10 }, (_, i) => live(`b${i}`, 'Most Likely', 25, `q${i}`, '2026-12-01')) }];
     expect(drawnBranches(big).shown).toHaveLength(6);

@@ -3,7 +3,6 @@
 import { isOldNode, isDeadBranch } from '@/features/board/lib/folding.js';
 import { isOpen, isLate } from '@/features/board/lib/branchDays.js';
 const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
-export { isOpen, isLate };
 
 /** The day the facts run to, { day: '2026-10-18', own } or null when nothing says. The record's own day (the manifest's `factsThrough`,
  *  written every run) wins: a story view is rewritten only when its content changes, so a quiet story's `builtFrom` is the run that
@@ -27,13 +26,13 @@ export const openForkBranches = (forks) => (openFork(forks)?.branches || []).fil
 const DRAWN_BRANCHES = 6;
 
 /** The branches the drawing shows: the open ones of the open fork, at most DRAWN_BRANCHES. A branch under
- *  DEAD_BRANCH_P percent starts folded (not drawn) until `unfoldLow`; `folded` is how many are left out for that.
- *  Older forks stay in the text list. `low` is how many are under the line, folded or not. -> { shown, folded, low } */
+ *  DEAD_BRANCH_P percent starts folded (not drawn) until `unfoldLow`.
+ *  Older forks stay in the text list. `low` is how many are under the line, folded or not. -> { shown, low } */
 export function drawnBranches(forks, unfoldLow = false) {
   const open = openForkBranches(forks);
   const low = open.filter(isDeadBranch);
   const kept = unfoldLow ? open : open.filter((b) => !isDeadBranch(b));
-  return { shown: kept.slice(0, DRAWN_BRANCHES), folded: unfoldLow ? 0 : low.length, low: low.length };
+  return { shown: kept.slice(0, DRAWN_BRANCHES), low: low.length };
 }
 
 /** Counts of one fork's branches by outcome: { total, open, late, happened, notReported, unchecked }. */

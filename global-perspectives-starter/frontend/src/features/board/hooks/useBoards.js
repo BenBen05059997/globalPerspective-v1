@@ -29,14 +29,14 @@ export function useBoards(enabled) {
     return () => { live = false; };
   }, [enabled, refresh]);
 
-  const create = useCallback(async (name, presetFrom) => {
-    const board = await callBoard('create_board', { name, ...(presetFrom ? { presetFrom } : {}) });
+  const create = useCallback(async (name) => {
+    const board = await callBoard('create_board', { name });
     await refresh();
     return board;
   }, [refresh]);
 
-  const fork = useCallback(async (presetId, name) => {
-    const board = await callBoard('fork_preset', { presetId, ...(name ? { name } : {}) });
+  const fork = useCallback(async (presetId) => {
+    const board = await callBoard('fork_preset', { presetId });
     await refresh();
     return board;
   }, [refresh]);

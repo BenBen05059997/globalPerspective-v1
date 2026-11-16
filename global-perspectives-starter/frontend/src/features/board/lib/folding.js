@@ -19,10 +19,10 @@ export function isDeadBranch(branch) {
   return p != null && p < DEAD_BRANCH_P;
 }
 
-/** The strongest arrivals first (ties keep their order), at most ARRIVALS_SHOWN; `hidden` is the count left out. */
+/** The strongest arrivals first (ties keep their order), at most ARRIVALS_SHOWN. */
 export function strongestArrivals(arrivals = []) {
   const ranked = arrivals.map((a, i) => ({ a, i }))
     .sort((x, y) => (STRENGTH_RANK[y.a.strength] || 0) - (STRENGTH_RANK[x.a.strength] || 0) || x.i - y.i)
     .map((r) => r.a);
-  return { shown: ranked.slice(0, ARRIVALS_SHOWN), hidden: Math.max(0, ranked.length - ARRIVALS_SHOWN) };
+  return { shown: ranked.slice(0, ARRIVALS_SHOWN) };
 }

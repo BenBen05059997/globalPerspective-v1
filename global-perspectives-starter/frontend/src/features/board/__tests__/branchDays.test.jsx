@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { todayUTC, isOpen, isLate, isLive, isDueThisWeek, uniqueStories, branchCounts, branchCountText, dueCounts } from '../lib/branchDays.js';
-import DueStrip, { dueBranches } from '../components/DueStrip.jsx';
+import DueStrip from '../components/DueStrip.jsx';
 import { monthlyView } from '../lib/monthly.js';
 import { pinCountParts } from '../lib/graphText.js';
 import { writtenByYou, cutByYou } from '../lib/divergence.js';

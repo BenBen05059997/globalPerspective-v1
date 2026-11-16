@@ -66,9 +66,8 @@ it('folding rules: thresholds', () => {
   expect(isDeadBranch({ p: 20 })).toBe(false);
   expect(isDeadBranch({ p: null })).toBe(false);
   const arr = ['weak', 'strong', 'medium', 'weak', 'strong', 'medium', 'weak'].map((strength, i) => ({ i, strength }));
-  const { shown, hidden } = strongestArrivals(arr);
+  const { shown } = strongestArrivals(arr);
   expect(shown.map((a) => a.strength)).toEqual(['strong', 'strong', 'medium', 'medium', 'weak']);
-  expect(hidden).toBe(2);
 });
 it('folding page lists the rules', () => {
   render(<FoldingRules />);

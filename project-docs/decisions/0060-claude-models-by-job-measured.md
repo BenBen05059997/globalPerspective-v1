@@ -1,6 +1,6 @@
-# 60. Each job runs on Claude Haiku 5.5 or Sonnet 5.5, chosen by a recorded test; seven jobs are chosen but not yet live
+# 60. Each job runs on Claude Haiku 5.5 or Sonnet 5.5, chosen by a recorded test; all twelve jobs are switched, seven of them not yet seen running
 
-Status: accepted (operator decision 2026-11-16); follows 0056 (method) and 0059 (provider). Round one is live; round two (seven jobs) waits for the operator's yes.
+Status: accepted (operator decision 2026-11-16); follows 0056 (method) and 0059 (provider). Round one (five jobs) went live about 14:20 UTC; round two (seven jobs) after the operator's yes at about 15:05 UTC, env set 15:17 to 15:18 UTC.
 Date: 2026-11-16
 
 ## Context
@@ -13,7 +13,7 @@ Date: 2026-11-16
 
 ## Decision
 1. **The method is 0056's, with Haiku against Sonnet.** Same inputs for both models through the shared `chat()` with each Lambda's own prompt code and options, a blind judge in both orders, a hand check against the inputs, and the Lambda's own gates where they exist. Total spend of the three runs: $3.22 + $3.06 + about $1.27 of a $6 cap each.
-2. **The model per job.** "Live" is the env value read on 2026-11-16; "chosen" is the model this record picks.
+2. **The model per job.** "Live" is the env value read on 2026-11-16 after round two; "chosen" is the model this record picks. They now agree for every job.
 
 | Job | Env value | Chosen | Live now | Why |
 |---|---|---|---|---|
@@ -23,13 +23,13 @@ Date: 2026-11-16
 | `newsSituationIngest` classify | `GROK_MODEL` | Haiku | Haiku | 105 of 105 rows parsed and valid on both models; judge 4 to 2 for Sonnet (noisy); Sonnet costs 20 times more per call. |
 | `newsDailyBrief` | `GROK_MODEL` | Haiku | Haiku | Same content quality as live; no invented fact in either model. Neither model keeps the "exactly 4 bold phrases" rule (Haiku writes none). |
 | `newsWeeklyBrief` | `GROK_MODEL` | Haiku | Haiku | 0 cut-offs, 0 invented facts by hand, 0 rule breaks. Only 2 weeks tested. |
-| `newsThreadAnalysis` | `GROK_MODEL` | Haiku | `deepseek-flash` | Judge could not separate the models. 1 bad JSON in 20 for each model. |
-| `newsSystemsAnalysis` | `GROK_MODEL` | Haiku | `deepseek-flash` | Quality equal. Needs `MAX_TOKENS` 6000 (the live env already has it). |
-| `newsCountryIntelligence` | `GROK_MODEL` | Haiku | `deepseek-v4-pro` | Fewer invented facts than Sonnet and far fewer than the stored DeepSeek output (about 20 invented dated expectations, the 2026-11-04 failure). Sonnet padded thin countries with invented dates. |
-| `newsDriftCorrector` | `GROK_MODEL` | Haiku | `deepseek-flash` | Both models pick events from the list; Sonnet slightly more disciplined. Low confidence. |
-| `newsSourceAudit` | `AUDIT_MODEL` | Haiku | `deepseek-flash` | Sonnet over-flagged 1 of 5 summaries as drift (a false drift) and writes more commentary. |
-| `newsPredictionResolver` settle-draft | `DRAFT_MODEL` | Sonnet | unset, code default `deepseek-v4-pro` | Haiku wrote `yes` where its own reason says the criterion is not shown (2 of 3 yes cases). A wrong `yes` goes into the public record. Five cases only. |
-| `newsRecordReview` | `REVIEW_MODEL` | Sonnet | `deepseek-flash` | Haiku wrote "pending / not yet recorded" clauses in 7 of 25 lines against the review's rule and copied 2 details from forecast text; Sonnet 2 of 25 and no invented fact. |
+| `newsThreadAnalysis` | `GROK_MODEL` | Haiku | Haiku | Judge could not separate the models. 1 bad JSON in 20 for each model. |
+| `newsSystemsAnalysis` | `GROK_MODEL` | Haiku | Haiku | Quality equal. Needs `MAX_TOKENS` 6000 (the live env already has it). |
+| `newsCountryIntelligence` | `GROK_MODEL` | Haiku | Haiku | Fewer invented facts than Sonnet and far fewer than the stored DeepSeek output (about 20 invented dated expectations, the 2026-11-04 failure). Sonnet padded thin countries with invented dates. |
+| `newsDriftCorrector` | `GROK_MODEL` | Haiku | Haiku | Both models pick events from the list; Sonnet slightly more disciplined. Low confidence. |
+| `newsSourceAudit` | `AUDIT_MODEL` | Haiku | Haiku | Sonnet over-flagged 1 of 5 summaries as drift (a false drift) and writes more commentary. |
+| `newsPredictionResolver` settle-draft | `DRAFT_MODEL` | Sonnet | Sonnet (`DRAFT_MODEL`, newly set; the unused `GROK_MODEL` still says `deepseek-flash`) | Haiku wrote `yes` where its own reason says the criterion is not shown (2 of 3 yes cases). A wrong `yes` goes into the public record. Five cases only. |
+| `newsRecordReview` | `REVIEW_MODEL` | Sonnet | Sonnet | Haiku wrote "pending / not yet recorded" clauses in 7 of 25 lines against the review's rule and copied 2 details from forecast text; Sonnet 2 of 25 and no invented fact. |
 
 3. **Caps changed for Claude.** Claude writes longer than DeepSeek and cut-off JSON does not parse, so these were raised:
    - `newsAgent` env `MAX_TOKENS` 600 to 1500 (summary and trace_cause share it; trace_cause was cut off in 16 of 16 test calls at 600). Live.
@@ -39,15 +39,17 @@ Date: 2026-11-16
    - `newsSystemsAnalysis` env `MAX_TOKENS` 6000 (Iran with 15 threads needed 4,298 tokens on Haiku and was cut off at 3000). The live env already holds 6000.
    - Kept: `newsIngest` 12000 (Sonnet used at most 9,281 at `TOPICS_LIMIT` 13; raise it before raising the limit), `PREDICTION_MAX_TOKENS` 2500, `newsSituationIngest` 8192, `newsThreadAnalysis` (live 6000), `newsWeeklyBrief` 3500, `newsCountryIntelligence` 5000 (6500 if Sonnet is ever chosen), `newsPredictionResolver` 500, `newsRecordReview` 6000.
 4. **One retry on unparseable JSON** (commit `aad79a5c`, `backend/shared/src/llm.js`). For an Anthropic call with `json: true`, an answer that is complete (not cut off) but does not parse gets one more identical request; the second answer is returned whatever it is. A cut-off answer is not retried; DeepSeek is unchanged. The daily brief, country briefing and drift note ask for JSON in the prompt only (no `json: true`), so they do not get this retry. The test saw 1 bad JSON in 20 thread analyses per model.
-5. **What is live and what is not (2026-11-16).**
-   - Live since about 14:20 UTC: `newsIngest`, `newsAgent` (`GROK_MODEL`, `PREDICTION_MODEL`, `MAX_TOKENS` 1500), `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief`. All five hold `ANTHROPIC_API_KEY`. A manual intake run at 14:23 to 14:35 UTC produced 13 stories on Sonnet.
-   - Chosen, not live (round two): `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsSourceAudit` on Haiku; `newsPredictionResolver` and `newsRecordReview` on Sonnet. They have no `ANTHROPIC_API_KEY`, and their env values still name DeepSeek (the resolver has none and uses its code default). Going live for each is its env value plus the key plus a deploy of the current code (the drift and audit caps and the JSON retry are in the code, not in the deployed zips). It waits for the operator's yes.
+5. **What is live (2026-11-16).**
+   - Round one, live about 14:20 UTC: `newsIngest`, `newsAgent` (`GROK_MODEL`, `PREDICTION_MODEL`, `MAX_TOKENS` 1500), `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief`. A manual intake run at 14:23 to 14:35 UTC produced 13 stories on Sonnet; `newsSituationIngest` ran on Haiku at about 15:00 UTC (384 articles in 11 calls, no errors, per its log).
+   - Round two, deployed from main and env set about 15:10 to 15:18 UTC after the operator's yes: `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector` and `newsSourceAudit` on Haiku; `newsPredictionResolver` (`DRAFT_MODEL`, newly set) and `newsRecordReview` on Sonnet. Each now holds `ANTHROPIC_API_KEY`; the DeepSeek key stays.
+   - So all twelve model-calling jobs name Claude, and DeepSeek is called by no scheduled job except parked `newsAnalyze`.
+   - **Not yet seen:** a real run of any of the seven round-two jobs on Claude. The first are the analysis jobs 04:40 to 05:30 UTC on 2026-11-17, the resolver at 10:30 UTC, and the weekly review on Monday 2026-11-23 at 01:00 UTC. Their code paths and caps are tested only as the reports describe.
 6. **Reversal is one env value per job**: set `GROK_MODEL` (or `PREDICTION_MODEL`, `AUDIT_MODEL`, `DRAFT_MODEL`, `REVIEW_MODEL`) back to a bare DeepSeek name such as `deepseek-flash`; no code change. DeepSeek needs credit first. For code, `scripts/lambda.sh <name> rollback`. `newsAgent` `MAX_TOKENS` 1500 can stay on DeepSeek.
 
 ## Cost
 - At the test's per-call figures and the call counts the reports estimate (from the 2026-11-15 call-site map, not read from CloudWatch): intake on Sonnet about $1.16 a day (ingest 3 runs $0.43, summary $0.11, trace_cause $0.29, forecast $0.32); classify on Haiku about $0.09 a day (40 calls; hard cap 288 calls would be $0.63); the five analysis jobs on Haiku about $1.1 a month together; drift and audit on Haiku about $0.03 a month together; the resolver on Sonnet under $0.07 a day; the weekly review on Sonnet about $5.6 to $13.1 per Monday, about $24 to $56 a month (its live bundles are smaller than the fixture, so the range is the honest answer; Haiku would be $1.2 to $2.8).
 - One measured fact from the first live intake run: topic selection 47,421 tokens in and 10,829 out (about $0.20 at the rates above, against $0.14 in the test), the story agent run about $0.39, about $0.60 for the whole run. At 3 runs a day (schedules `InvokeGoogleGemini` and `InvokeNewsAgent`, `cron(.. 4/8 ..)`) that is about $1.80 a day if every run is that size; that is a projection from one run, not a measurement.
-- Together, with the review on Sonnet, these figures add up to roughly $65 to $115 a month for model calls (the sum is this record's arithmetic over the lines above). 0056 expected $2 to 3 a month on DeepSeek. The two largest lines are intake and the weekly review. The trace_cause step on Haiku (about $0.01 a day against $0.29) and the review on Haiku are the two switches that would save the most, and both lost on quality in the test or need a code split.
+- Together, with the review on Sonnet (now chosen and set), these figures add up to roughly $65 to $115 a month for model calls (the sum is this record's arithmetic over the lines above). 0056 expected $2 to 3 a month on DeepSeek. The two largest lines are intake and the weekly review. The trace_cause step on Haiku (about $0.01 a day against $0.29) and the review on Haiku are the two switches that would save the most, and both lost on quality in the test or need a code split.
 
 ## Consequences
 - 0056 rule 1 now covers Claude: a job's model is chosen by a recorded test. The next model change follows the same method.

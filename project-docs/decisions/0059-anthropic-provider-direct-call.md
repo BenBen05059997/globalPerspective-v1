@@ -2,7 +2,7 @@
 
 Status: accepted (operator decision 2026-11-15); amends 0014 ("no fallback provider"); relates to 0056.
 Date: 2026-11-15
-Amended 2026-11-16: decision 0060 records the model per job from the Haiku-versus-Sonnet test. The code is deployed and five Lambdas run on Claude since about 14:20 UTC (`newsIngest`, `newsAgent`, `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief`); seven more are chosen and not yet switched. So "Code: ... not yet deployed", "DeepSeek is the live provider", "Haiku 5.5 is the first choice because the operator picked it" and "Not yet done" below describe 2026-11-15. Commit `aad79a5c` adds one retry on unparseable JSON for Anthropic `json: true` calls.
+Amended 2026-11-16: decision 0060 records the model per job from the Haiku-versus-Sonnet test. The code is deployed and five Lambdas run on Claude since about 14:20 UTC (`newsIngest`, `newsAgent`, `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief`) and seven more since about 15:17 UTC. So "Code: ... not yet deployed", "DeepSeek is the live provider", "Haiku 5.5 is the first choice because the operator picked it" and "Not yet done" below describe 2026-11-15. Commit `aad79a5c` adds one retry on unparseable JSON for Anthropic `json: true` calls.
 
 Code: built and committed on a branch. Not yet done: deploy, any env change, any Lambda switched to Claude. DeepSeek is the live provider until the operator switches a job.
 

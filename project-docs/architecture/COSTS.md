@@ -64,7 +64,7 @@ The model providers (DeepSeek, Anthropic) are not on the AWS bill. Model spend i
 | S3 write requests (about 70% of AWS in early Nov; 46,491 Tier1 on Nov 4) | `newsStoryRecord` rewrote about 9,000 view files per run, 6 runs a day. Fixed in two steps, see "S3 writers on 2026-11-04" below. | `backend/record/newsStoryRecord/src/digests.js`; decision 0037, "Amended 2026-11-04" |
 | DynamoDB (about $9-10 a month in Sep-Oct; $0.24 in 3 days of Nov) | The old world tables, read and written until decision 0035 step 5 retires them. Table TTL is disabled, so rows only grow. | decision 0035; `STEP5_AUDIT.md` |
 | CloudWatch ($5-6 a month in Sep-Oct) | Alarms and custom metrics. The alarms were removed 2026-11-02 (operator decision). Nov shows about $0. | section 4 |
-| Model providers | On DeepSeek the weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, then Flash, about 4 times cheaper per call) was about half of model spend; the rest was `newsAgent` and the analysis Lambdas. On Claude the intake chain (`newsIngest`, `newsAgent` on Sonnet) and, once it moves, the review (Sonnet, about $5.6 to $13.1 a Monday) are the two largest lines. | decision 0060; `ARCHITECTURE_WEEKLY_REVIEW.md` |
+| Model providers | On DeepSeek the weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, then Flash, about 4 times cheaper per call) was about half of model spend; the rest was `newsAgent` and the analysis Lambdas. On Claude the intake chain (`newsIngest`, `newsAgent` on Sonnet) and the weekly review (Sonnet, about $5.6 to $13.1 a Monday, estimated; none has run on Sonnet yet) are the two largest lines. | decision 0060; `ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Lambda, API Gateway, SQS | Cents. | |
 
 ### S3 writers on 2026-11-04 (46,491 Tier1 requests)
@@ -115,24 +115,21 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
    baseline 156 h, open alert, coverage jump; never twice a UTC day; top `COUNTRY_TOP_N`).
 3. **Prompt caching.** Providers bill cache-hit tokens at about 1/50 of input; the `[usage]` cache-hit count shows how well
    prompts are laid out (stable prefix first).
-4. **Each job's model is chosen by a recorded test** (decision [0056](../decisions/0056-models-by-measured-quality.md) for the method; the 29 Sep choice of Pro for the "high-leverage" calls was a judgement; decision [0060](../decisions/0060-claude-models-by-job-measured.md) for Claude). Model env as read on 2026-11-16 (values are model names; the chosen model is from 0060):
+4. **Each job's model is chosen by a recorded test** (decision [0056](../decisions/0056-models-by-measured-quality.md) for the method; the 29 Sep choice of Pro for the "high-leverage" calls was a judgement; decision [0060](../decisions/0060-claude-models-by-job-measured.md) for Claude). Model env as read on 2026-11-16 (values are model names; why each model: 0060):
 
-| Lambda | Env value | Live 2026-11-16 | Chosen (0060) |
-|---|---|---|---|
-| `newsIngest` | `GROK_MODEL` | `anthropic:claude-sonnet-5-5` | Sonnet |
-| `newsAgent` | `GROK_MODEL` (summary, trace_cause); `PREDICTION_MODEL` (forecast) | both `anthropic:claude-sonnet-5-5`, `MAX_TOKENS` 1500 | Sonnet |
-| `newsSituationIngest` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` | Haiku |
-| `newsDailyBrief`, `newsWeeklyBrief` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` | Haiku |
-| `newsThreadAnalysis`, `newsSystemsAnalysis` | `GROK_MODEL` | `deepseek-flash` | Haiku |
-| `newsCountryIntelligence` | `GROK_MODEL` | `deepseek-v4-pro` | Haiku |
-| `newsDriftCorrector` | `GROK_MODEL` | `deepseek-flash` | Haiku |
-| `newsSourceAudit` | `AUDIT_MODEL` | `deepseek-flash` | Haiku |
-| `newsPredictionResolver` | `DRAFT_MODEL` | not set; code default `deepseek-v4-pro` | Sonnet |
-| `newsRecordReview` | `REVIEW_MODEL` | `deepseek-flash` | Sonnet |
-| `newsAnalyze` | | parked, `deepseek-v4-pro` | |
+| Lambda | Env value | Live 2026-11-16 (read after 15:18 UTC) |
+|---|---|---|
+| `newsIngest` | `GROK_MODEL` | `anthropic:claude-sonnet-5-5` |
+| `newsAgent` | `GROK_MODEL` (summary, trace_cause); `PREDICTION_MODEL` (forecast) | both Sonnet, `MAX_TOKENS` 1500 |
+| `newsRecordReview` | `REVIEW_MODEL` | Sonnet |
+| `newsPredictionResolver` | `DRAFT_MODEL` | Sonnet (the `GROK_MODEL` there, `deepseek-flash`, is read by no code) |
+| `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` |
+| `newsThreadAnalysis`, `newsSystemsAnalysis` (`MAX_TOKENS` 6000 on both), `newsCountryIntelligence`, `newsDriftCorrector` | `GROK_MODEL` | Haiku |
+| `newsSourceAudit` | `AUDIT_MODEL` | Haiku |
+| `newsAnalyze` | | parked, `deepseek-v4-pro` |
 
    The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` names are DeepSeek-era; the value decides
-   the provider). The rows whose live value is not Claude are chosen and not yet switched (waiting for the operator's yes). Claude counts about 1.5
+   the provider). Every scheduled job is on Claude; the seven switched at about 15:17 UTC on 2026-11-16 (thread, systems, country, drift, audit, resolver and review) have not yet run on it, so their cost is the test's estimate. Claude counts about 1.5
    times more input tokens than DeepSeek for the same text and writes longer answers, so output caps were raised
    (decision 0060 lists them). `newsDailyBrief` also carries an `AI_MODEL` env value that no code reads (checked 2026-11-16 in
    `backend/distribution/newsPostDevTo/src`); it has no effect.

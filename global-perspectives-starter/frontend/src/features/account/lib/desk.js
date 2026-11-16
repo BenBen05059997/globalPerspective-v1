@@ -83,21 +83,6 @@ function dateKeyOf(s) {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
 
-// notesSince(notes, lastVisitIso) — driftNotes dated on or after lastVisitIso's calendar day,
-// newest first. A missing/unparseable lastVisitIso or asOf drops the note (never guessed in).
-export function notesSince(notes, lastVisitIso) {
-  const list = Array.isArray(notes) ? notes : [];
-  if (lastVisitIso == null) return [];
-  const cutoffKey = dateKeyOf(lastVisitIso);
-  if (!cutoffKey) return [];
-  return list
-    .filter((n) => {
-      const k = dateKeyOf(n?.asOf);
-      return k != null && k >= cutoffKey;
-    })
-    .sort((a, b) => String(b.asOf || '').localeCompare(String(a.asOf || '')));
-}
-
 // snapshotPairForNote — the two consecutive HISTORY snapshots straddling a driftNote's `asOf`,
 // so we can compute which axis actually moved for THAT note (rather than the country's latest
 // move, which may be a different day). null when the country's snapshot log doesn't cover it.
@@ -177,8 +162,8 @@ export function buildDeskRows(countryResults, lastVisitIso) {
       .sort((a, b) => String(b.note?.asOf || '').localeCompare(String(a.note?.asOf || '')))
       .slice(0, 5);
   } else {
-    // F1.3: same calendar-day comparison as notesSince above — a note dated the last visit's own
-    // day is "since", not hidden.
+    // F1.3: compare calendar days (dateKeyOf above) — a note dated the last visit's own day is
+    // "since", not hidden.
     const cutoffKey = dateKeyOf(lastVisitIso);
     selected = flat
       .filter(({ note }) => {

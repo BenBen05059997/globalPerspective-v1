@@ -148,6 +148,7 @@ function coverageOf(run) {
   if (!['ok', 'partial'].includes(run.status)) return `run status ${run.status || 'missing'}`;
   const a = run.inputs && run.inputs.archiveDay;     // 'present' | 'missing' | { thin: n } (newsStoryRecord: fewer than THIN_ENTRIES entries)
   if (a !== 'present') return `archive day ${a && typeof a === 'object' ? `thin:${a.thin}` : a || 'unknown'}`;
+  if (run.inputs && run.inputs.lateWritten) return 'stories written late';   // decision 0061: the resolver counts the day as a gap
   return null;
 }
 

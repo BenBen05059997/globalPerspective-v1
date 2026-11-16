@@ -38,7 +38,7 @@
               "additionalProperties": false,
               "properties": {
                 "stage": { "type": "string" },
-                "status": { "enum": ["ok", "thin", "missing", "failed", "nodata", "recovered"], "description": "recovered: the agent row only, a day rebuilt from public records by the self-healing (raw articles, no entries, no forecasts)." },
+                "status": { "enum": ["ok", "thin", "missing", "failed", "nodata", "recovered", "late"], "description": "recovered: the agent row only, a day rebuilt from public records by the self-healing (raw articles, no entries, no forecasts). late: the agent row only, a day with stories written after their slot from the saved articles (decision 0061); facts.lateEntries counts them." },
                 "facts": { "type": "object" },
                 "source": { "type": "string" },
                 "at": { "type": ["string", "null"] },

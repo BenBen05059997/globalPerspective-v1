@@ -2,7 +2,8 @@
 
 // The pipeline panel: one row per stage per UTC day, facts only. Every row names its source and the time of that source.
 // A source that cannot be read gives status 'nodata' with the error text, never a made-up value.
-// Statuses: ok | thin (degraded) | missing | failed | nodata | recovered (the agent row only: a day rebuilt from public records, phase 4).
+// Statuses: ok | thin (degraded) | missing | failed | nodata | recovered (the agent row only: a day rebuilt from public records, phase 4) | late (the
+// agent row only: the day holds stories written after their slot from the saved articles, decision 0061).
 //
 // Ports (all injected, so tests run offline):
 //   readText(key)                  -> { text, at } | null (no such key); throws on any other failure
@@ -11,7 +12,7 @@
 //   compareCounts(days)            -> { [fn]: { [day]: n } } (DIFFER lines); throws on failure
 const { CONFIG, KEYS, STAGES } = require('./config');
 const { lastDays, isClosed, isSunday } = require('./days');
-const { readJson, readLines, errText } = require('./healthRead');
+const { readJson, readLines, readEntryLines, errText } = require('./healthRead');
 const { healFacts, ledgerKey } = require('./heal');
 
 const row = (stage, status, { facts = {}, source, at = null, error = null, note = null } = {}) => ({ stage, status, facts, source, at, error, note });
@@ -43,6 +44,13 @@ function agentRow(day, closed, entries, heal = null) {
   }
   const healNote = L ? `Self-healing: ${L.outcome ? `${L.outcome}${L.why ? `, ${L.why}` : ''}` : 'in progress'}.`
     : heal && heal.error && n < CONFIG.entries.thin ? `Self-healing ledger unreadable: ${heal.error}` : null;
+  // Stories written late (0061): the model did not run at the slot; the day's entries include stories written afterwards from the saved articles. Never 'ok'.
+  if (entries.late > 0 && n >= CONFIG.entries.thin) {
+    facts.lateEntries = entries.late;
+    return row('agent', 'late', { facts, source, at: entries.at || null,
+      note: `${entries.late} of ${n} entries were written after their slot, from the articles saved at the time (the model had no credit); the rest ran live. No forecasts for the late ones.` });
+  }
+  if (entries.late > 0) facts.lateEntries = entries.late;
   if (n >= CONFIG.entries.thin) return row('agent', 'ok', { facts, source, at: entries.at || null, note: L && L.outcome === 'healed' ? healNote : null });
   if (!closed) return { ...open('agent', source, facts), note: healNote ? `day in progress. ${healNote}` : 'day in progress' };
   return row('agent', n === 0 ? 'missing' : 'thin', { facts, source, at: entries.at || null, note: healNote });
@@ -142,7 +150,7 @@ async function buildHealth(ports, now, prev = null) {
   const perDay = await Promise.all(days.map(async (day) => {
     const [run, entries, daily, weekly, country, heal] = await Promise.all([
       readJson(ports, `record/runs/${day}.json`),
-      readLines(ports, `record/inbox/entries/${day}.jsonl`),
+      readEntryLines(ports, `record/inbox/entries/${day}.jsonl`),
       readLines(ports, `record/notes/daily_brief/${day}.jsonl`),
       isSunday(day) ? readLines(ports, `record/notes/weekly_brief/${day}.jsonl`) : Promise.resolve(null),
       readLines(ports, `record/notes/country/${day}.jsonl`),

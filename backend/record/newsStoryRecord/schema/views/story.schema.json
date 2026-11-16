@@ -11,6 +11,23 @@
     }
   ],
   "definitions": {
+    "writtenLate": {
+      "type": "object",
+      "required": [
+        "writtenAt",
+        "slot"
+      ],
+      "additionalProperties": false,
+      "description": "decision 0061: present on a story written after its slot from the articles saved then. writtenAt = when it was really written; slot = the missed news run it stands in for (both ISO times)",
+      "properties": {
+        "writtenAt": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        }
+      }
+    },
     "day": {
       "type": "string",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
@@ -625,6 +642,9 @@
             "type": "string"
           },
           "description": "countries of the entry (ISO3), as recorded on the fact"
+        },
+        "writtenLate": {
+          "$ref": "#/definitions/writtenLate"
         },
         "provisional": {
           "const": true,

@@ -21,6 +21,16 @@
           "anyOf": [{ "enum": ["present", "missing", null] }, { "type": "object", "required": ["thin"], "properties": { "thin": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }]
         },
         "todayArchive": { "enum": ["present", "missing", null], "description": "present when today-archive contributed entries for the day" },
+        "lateWritten": {
+          "type": "object",
+          "required": ["entries", "slots"],
+          "additionalProperties": false,
+          "description": "decision 0061: present when the day's entries include stories written after their slot (entry facts carry payload.writtenLate). The resolver counts the day as a record gap and /ops shows the agent row as late. entries = how many; slots = the missed runs they stand in for (ISO times)",
+          "properties": {
+            "entries": { "type": "integer", "minimum": 1 },
+            "slots": { "type": "array", "items": { "type": "string" } }
+          }
+        },
         "rawDay": {
           "description": "the run day's article inbox (record/inbox/articles/DAY.jsonl): present | missing | {thin: n} (fewer than 50 articles); null while started or when the file could not be read",
           "anyOf": [{ "enum": ["present", "missing", null] }, { "type": "object", "required": ["thin"], "properties": { "thin": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }]

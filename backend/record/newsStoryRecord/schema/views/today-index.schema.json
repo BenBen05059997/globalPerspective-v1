@@ -46,6 +46,7 @@
           "generationId": {"type": "string"},
           "ai": {"type": ["object", "null"], "description": "the archive's own text, each part cut at 1,500 characters (the today action's ai)"},
           "eventId": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "writtenLate": {"type": "object", "required": ["writtenAt", "slot"], "additionalProperties": false, "properties": {"writtenAt": {"type": "string"}, "slot": {"type": "string"}}, "description": "decision 0061: a story written after its slot from the articles saved then (ISO times); absent on a live entry"},
           "latest": {
             "type": "object",
             "description": "only on the entries of the latest run: what the latest item holds of the topic that an archive entry does not",

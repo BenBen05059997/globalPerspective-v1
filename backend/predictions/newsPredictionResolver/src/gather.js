@@ -29,12 +29,14 @@ function coverageDays(q) {
   return days;
 }
 
-/** Why a Run object does not prove the day was covered; null when it does (status ok|partial and archiveDay present). */
+/** Why a Run object does not prove the day was covered; null when it does (status ok|partial, archiveDay present, no story written late: 0061). */
 function runGap(run) {
   if (!run) return 'no run';
   if (run.status !== 'ok' && run.status !== 'partial') return `run ${run.status || 'unknown'}`;
   const a = run.inputs && run.inputs.archiveDay;
   if (a !== 'present') return `archiveDay ${a && typeof a === 'object' ? `thin:${a.thin}` : a || 'unknown'}`;
+  // Stories written after their slot may support a `yes`, but they cannot prove silence: the day is a gap (0061, 0055).
+  if (run.inputs && run.inputs.lateWritten) return 'stories written late';
   return null;
 }
 

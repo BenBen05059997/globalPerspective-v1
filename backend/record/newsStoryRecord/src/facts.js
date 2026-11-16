@@ -67,10 +67,12 @@ function entryFact(e, runId) {
   const sources = entrySources(e);
   const identity = R.entryIdentity({sources: e.sources, date: e.date, title: e.title});
   return makeFact({
-    kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: exact || e.archivedAt || `${e.date}T00:00:00Z`, precision: exact ? 'exact' : 'day', threadId: e.threadId,
+    // A story written late (0061) with no usable publish time stands on its slot's time, not on the day it was really written: the fact keeps the day the story is about.
+    kind: 'entry', eventId: identity.eventId, sourceKey: e.sourceKey, at: exact || (e.writtenLate && e.writtenLate.slot) || e.archivedAt || `${e.date}T00:00:00Z`, precision: exact ? 'exact' : 'day', threadId: e.threadId,
     iso3: e.iso3, actorIds: actorIdsOf(e.actors), sourceIds: sources.map((s) => s.sourceId), sourceRow: e.sourceRow, runId,
     payload: {title: e.title, summary: null, category: e.category, eventType: e.eventType, continuesTopic: e.continuesTopic, topicId: e.topicId,
       ...(Array.isArray(e.actors) && e.actors.length ? {actors: e.actors.filter((a) => typeof a === 'string' && a)} : {}), // display names, as captured
+      ...(e.writtenLate ? {writtenLate: e.writtenLate} : {}), // 0061: {writtenAt, slot}, a story written after its slot from the articles saved then
       ...(Array.isArray(e.regions) && e.regions.length ? {regions: e.regions.filter((r) => typeof r === 'string' && r)} : {})}, // the places text of the archive row, as captured (0047: before 2026-09-12 no row carries iso3)
     extra: {idBasis: identity.idBasis, sources},
   });

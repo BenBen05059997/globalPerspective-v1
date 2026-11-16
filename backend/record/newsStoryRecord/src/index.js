@@ -29,7 +29,10 @@ function makeHandler({store, s3json, manifest, now = () => new Date().toISOStrin
     if (!row) return {archiveDay: 'missing', todayArchive: 'missing'};
     const fromToday = input.entries.filter((e) => e.sourceRow.key.id === 'today-archive').length;
     const archiveDay = row.source === 'today-archive' ? 'missing' : input.entries.length < THIN_ENTRIES ? {thin: input.entries.length} : 'present';
-    return {archiveDay, todayArchive: fromToday ? 'present' : 'missing'};
+    // Stories written after their slot (0061): the day counts as a gap in our record for forecast settling (0055), whatever archiveDay says.
+    const late = input.entries.filter((e) => e.writtenLate);
+    const lateWritten = late.length ? {entries: late.length, slots: [...new Set(late.map((e) => e.writtenLate.slot))].sort()} : null;
+    return {archiveDay, todayArchive: fromToday ? 'present' : 'missing', ...(lateWritten ? {lateWritten} : {})};
   }
 
   function buildFacts(input, known, runId) {

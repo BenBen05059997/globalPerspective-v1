@@ -6,7 +6,6 @@ import TraceCauseDisplay from '@/features/home/components/TraceCauseDisplay';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
-import WrittenLate from '@/shared/ui/WrittenLate.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import contentService from '@/shared/data/contentService';
@@ -100,7 +99,6 @@ function ArchiveTopicModal({ entry, onClose }) {
                 </span>
               )}
             </div>
-            <WrittenLate entry={entry} />
           </div>
           <Button variant="icon" label="Close" onClick={onClose}>&times;</Button>
         </div>

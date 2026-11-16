@@ -2,7 +2,7 @@
 // (grouping, category chips, search, count), which entries are hidden because they are still live
 // topics, and the saved-analysis modal a row opens (tabs per available analysis, sources, close).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import archiveFixture from '@fixtures/archive.json';
 
@@ -189,16 +189,6 @@ describe('ArchiveTopicModal via the sidebar', () => {
     mount(<TodayArchiveSidebar entries={[withAi]} />);
     fireEvent.click(screen.getByText(withAi.title));
     expect(getTopicPrediction).not.toHaveBeenCalled();
-  });
-
-  it('an entry written late says so under its title; a live one or a malformed marker says nothing', () => {
-    const late = { writtenAt: '2026-11-16T23:30:00.000Z', slot: '2026-11-15T12:15:00.000Z' };
-    const open = (entry) => { mount(<TodayArchiveSidebar entries={[entry]} />); fireEvent.click(screen.getByText(entry.title)); return screen.getByRole('dialog'); };
-    expect(within(open({ ...withAi, writtenLate: late })).getByText('Written 16 Nov from articles saved on 15 Nov')).toBeInTheDocument();
-    cleanup();
-    expect(within(open(withAi)).queryByText(/Written .* from articles saved/)).toBeNull();
-    cleanup();
-    expect(within(open({ ...withAi, writtenLate: { writtenAt: late.writtenAt } })).queryByText(/Written .* from articles saved/)).toBeNull();
   });
 
   it('an entry with a threadId links its title to the story page', () => {

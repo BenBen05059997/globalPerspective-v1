@@ -1,4 +1,4 @@
-// countryWatch — the S4 WATCH flag (COUNTRY_VIEW_DISCUSSION.md): set when a live GDACS alert or
+// countryWatch — the S4 WATCH flag: set when a live GDACS alert or
 // an origin news situation touches the country. Pure function over the map's own `open`
 // situations list (features/map/SituationHome.jsx already fetches this via useWorld()) so the
 // country card never runs its own duplicate fetch.

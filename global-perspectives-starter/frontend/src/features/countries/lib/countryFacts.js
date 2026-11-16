@@ -1,4 +1,4 @@
-// Fact rows for the country card (Batch 3 / D, C1 fact rule): leader / capital / population from the
+// Fact rows for the country card (C1 fact rule): leader / capital / population from the
 // stored Wikidata facts, shown ONLY when the value has a source AND an as-of date AND that date is
 // recent. Nothing is ever guessed or shown undated:
 //   - every row carries `source` and `checkedAt` (when we last verified it) - a row without both is dropped;

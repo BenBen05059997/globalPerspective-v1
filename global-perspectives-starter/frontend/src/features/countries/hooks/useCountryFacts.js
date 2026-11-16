@@ -2,7 +2,7 @@ import { fetchCountryFacts } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { useCachedQuery, clearMemoryCache } from '@/shared/api/useCachedQuery.js';
 
-// Stored country facts for one country (Batch 3 / D). Memory-cached for 30 min with shared in-flight
+// Stored country facts for one country. Memory-cached for 30 min with shared in-flight
 // requests: the card mounts on /map and /weekly/country/:name and must not refetch on every selection.
 // A failure is reported and leaves `facts` null (no placeholder, no guess). A new name never shows the
 // previous country's facts while its own fetch is in flight.

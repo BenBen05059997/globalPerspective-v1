@@ -1,4 +1,4 @@
-// CountryCardV2 — the S4 one-screen country card (COUNTRY_VIEW_DISCUSSION.md "Debate outcome":
+// CountryCardV2 — the S4 one-screen country card (decision 0010):
 // state line -> verified facts only -> one-sentence summary -> RISK + DIRECTION -> 4 risk bars
 // (WHY on click) -> latest change (only with a cited event) -> <=3 stories -> <=2 future dated
 // triggers. Stored data only — no AI run on view.
@@ -52,7 +52,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const ageDays = intel?.generatedAt ? (now - new Date(intel.generatedAt).getTime()) / 86400000 : null;
   const fresh = intel && ageDays != null ? freshnessState(ageDays, COUNTRY_OLDER_AFTER_DAYS) : null;
 
-  // State (COUNTRY_VIEW_DISCUSSION.md "Frontend: four country states" + the v2 five-state note):
+  // State, one of five:
   // briefed (<14d, weekly cadence) / briefed-older (14-30d) / too-old (>30d, scores hidden) / never-briefed / quiet.
   let state;
   if (intel && fresh !== 'hidden') state = fresh === 'older' ? 'older' : 'briefed';

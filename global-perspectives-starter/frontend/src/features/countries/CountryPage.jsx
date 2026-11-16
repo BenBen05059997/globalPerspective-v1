@@ -19,7 +19,7 @@ import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
 // Lazy — matches WeeklyPage.jsx's existing split. A static import here previously defeated
 // that split: both files share the same module graph, so bundlers resolved WeeklyMap into the
-// main chunk regardless of WeeklyPage's own lazy() wrapper (STAGE0_FIXES_PLAN.md item (g)).
+// main chunk regardless of WeeklyPage's own lazy() wrapper.
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
@@ -322,7 +322,7 @@ export default function CountryPage() {
 
     const allCountries = Object.values(map)
       .filter(c => c.articles >= 2 || c.name === decodedName)
-      // Batch 3 / F: the country picker lists real countries only (regions stay in `map` for the broad-region coverage below)
+      // The country picker lists real countries only (regions stay in `map` for the broad-region coverage below)
       .filter(c => parentCountry(c.name) || c.name === decodedName)
       .sort((a, b) => b.articles - a.articles);
 
@@ -492,10 +492,6 @@ export default function CountryPage() {
           </ul>
         </>
       )}
-
-      {/* Thread/Category/Urgency filters moved into the Story Arcs tab (contextual). — Phase 3 IA */}
-
-      {/* "Actors tracked" removed — it duplicated the right-rail Key Actors. — Phase 3 IA */}
     </div>
   );
 
@@ -520,9 +516,6 @@ export default function CountryPage() {
           ))}
         </div>
       )}
-
-      {/* Risk Assessment moved UP into the header pill + stats strip (was a redundant rail block).
-          What to Watch moved into the Situation tab ("the read"). — Phase 1 IA cleanup */}
 
       {/* Live web evidence */}
       {intel?.groundingSources?.length > 0 && (
@@ -586,9 +579,8 @@ export default function CountryPage() {
     <>
       {/* S4: the same one-screen card the /map console shows (no watch flag here — this page
           doesn't fetch the world's live situations, to avoid a second world.json load on a
-          page that already loads the weekly archive + map). Everything below (coverage,
-          background timeline, systems web, disruptions, share) stays reachable underneath —
-          see TASK_2026-09-27_pages_local.md S4 for the old->new section mapping. */}
+          page that already loads the weekly archive + map). The rest of the page (coverage,
+          background timeline, share) stays reachable underneath. */}
       <div className="cpg-card-v2-wrap">
         <CountryCardV2 name={decodedName} linkName={false} archive={{ dayMap, loading }} />
       </div>
@@ -784,7 +776,7 @@ export default function CountryPage() {
                 )}
               </SectionHeader>
 
-              {/* Filters live HERE now (contextual to arcs), not floating in the left rail — Phase 3 IA */}
+              {/* Filters for the arcs list, kept next to it. */}
               {allArcs.length > 0 && (
                 <div className="cpg-arc-filters" role="group" aria-label="Filter story arcs">
                   <div className="cpg-fgroup">

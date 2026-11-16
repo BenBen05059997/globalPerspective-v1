@@ -1,8 +1,8 @@
-// countryDirection — the S4 "RISK + DIRECTION" arrow (COUNTRY_VIEW_DISCUSSION.md, "Direction
-// rule" / REDESIGN_MASTER_PLAN.md §3.5 C1). Pure, deterministic, no LLM: computed from the
+// countryDirection — the S4 "RISK + DIRECTION" arrow (decision 0010).
+// Pure, deterministic, no LLM: computed from the
 // country's own HISTORY# snapshots (see useCountryHistory.js), never from a prompt.
 //
-// Rule (revised 2026-09-29, Batch 1 / R1: country briefings are now WEEKLY + early refreshes, so
+// Rule (revised 2026-09-29: country briefings are now WEEKLY + early refreshes, so
 // the old "3 readings within 5 days" buckets can never fill):
 //   - "Now" = the latest reading (the median of the readings within 3 days of it when there are
 //     two or more). "Before" = the reading nearest 7 days earlier (accepted 4-10 days earlier).

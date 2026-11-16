@@ -22,7 +22,7 @@ export const WEB_LIST_DEFAULT = 10;
 export const WEB_LIST_MAX = 60;
 export const WEB_HIDE_DAYS = 30;
 
-export const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
+const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
 export const CONF_WIDTH = { strong: 3, medium: 2, weak: 1.2 };
 const rankOf = (c) => CONF_RANK[c] || 0;
 

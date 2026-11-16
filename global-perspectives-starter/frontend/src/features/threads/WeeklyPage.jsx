@@ -26,9 +26,6 @@ import '@/features/threads/Stories.css';
 
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 
-// Re-exported for callers that used the old export.
-export { CATEGORY_ORDER };
-
 const DEFAULT_SORT = 'articles';
 const VIEWS = ['list', 'board', 'timeline', 'map', 'web', 'changes'];
 

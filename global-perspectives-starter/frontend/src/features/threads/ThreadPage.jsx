@@ -113,6 +113,19 @@ function ClampText({ text, threshold = 360 }) {
   );
 }
 
+// One row of the left rail's related-story lists (same category, same region).
+function relatedRow(t) {
+  return (
+    <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
+      <div className="tp-related-kicker">
+        {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
+      </div>
+      <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
+      <div className="tp-related-meta">{t.count} events</div>
+    </EntityLink>
+  );
+}
+
 function formatDateRange(from, to) {
   if (!from) return '';
   const a = formatDateLabel(from);
@@ -345,32 +358,14 @@ export default function ThreadPage() {
       {relatedThreads.sameCategory.length > 0 && (
         <>
           <SectionHeader as="h3" label="Related stories" />
-          {relatedThreads.sameCategory.map(t => {
-            return (
-              <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
-                <div className="tp-related-kicker">
-                  {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
-                </div>
-                <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
-                <div className="tp-related-meta">{t.count} events</div>
-              </EntityLink>
-            );
-          })}
+          {relatedThreads.sameCategory.map(relatedRow)}
         </>
       )}
 
       {relatedThreads.sameRegion.length > 0 && (
         <>
           <SectionHeader as="h3" label="Watching · region" className="tp-left-sec" />
-          {relatedThreads.sameRegion.map(t => (
-            <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
-              <div className="tp-related-kicker">
-                {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
-              </div>
-              <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
-              <div className="tp-related-meta">{t.count} events</div>
-            </EntityLink>
-          ))}
+          {relatedThreads.sameRegion.map(relatedRow)}
         </>
       )}
     </div>

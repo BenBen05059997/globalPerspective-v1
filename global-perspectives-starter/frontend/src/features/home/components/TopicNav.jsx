@@ -3,6 +3,7 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
+import { getTopicId, sortRegions } from '@/features/home/lib/topics.js';
 import '@/features/home/components/TopicNav.css';
 
 // TopicNav — the /today right rail (inside EditorialShell): every topic grouped by region, the one
@@ -10,16 +11,6 @@ import '@/features/home/components/TopicNav.css';
 function TopicNav({ topics, categorizedTopics }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
   const observerRef = useRef(null);
-
-  const getTopicId = (t, idx) => {
-    const directId = t?.topicId || t?.topic_id || t?.id;
-    if (directId != null) {
-      const candidate = String(directId).trim();
-      if (candidate.length > 0) return candidate;
-    }
-    const slug = `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
-    return slug || `topic-${idx}`;
-  };
 
   useEffect(() => {
     if (!topics || topics.length === 0) return;
@@ -65,13 +56,7 @@ function TopicNav({ topics, categorizedTopics }) {
 
   if (!topics || topics.length === 0) return null;
 
-  const sortedRegions = Object.entries(categorizedTopics)
-    .filter(([, rt]) => rt.length > 0)
-    .sort((a, b) => {
-      if (a[0] === 'World') return 1;
-      if (b[0] === 'World') return -1;
-      return b[1].length - a[1].length;
-    });
+  const sortedRegions = sortRegions(categorizedTopics);
 
   return (
     <div className="topic-nav-rail">

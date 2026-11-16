@@ -25,6 +25,7 @@ This folder is stage 9: the today page (/today). Timeline: reads the record's to
   `PredictionDisplay`, `TraceCauseDisplay` render inside it; `AiUnavailable` is the honest unavailable state with Retry / Close
 - `components/TodayArchiveSidebar.jsx` + `ArchiveTopicModal.jsx` - the earlier-today rail and its modal (the archive keeps 1,500
   chars of a forecast / trace cause, so a cut note is read in full by topicId; none -> the tab is left out); `TopicNav.jsx` - right rail
+- `lib/topics.js` - topic ids and region order (Home, TopicNav) and the stored-JSON parse of the result cards
 - `lib/noForecast.js` - Predict says "no new forecast" at once when the today view shows the latest run wrote the topic without one (0038)
 - `hooks/useTodayArchive.js` - the only hook in this folder
 - Public API (`index.js`): `Home`

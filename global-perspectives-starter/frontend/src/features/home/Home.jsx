@@ -21,6 +21,7 @@ import SubscribeCard from '@/shared/ui/SubscribeCard';
 import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
 import { topicHasNoForecast } from '@/features/home/lib/noForecast';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
+import { getTopicId, sortRegions } from '@/features/home/lib/topics.js';
 import '@/features/home/AIComponents.css';
 import '@/features/home/Home.css';
 import Button from '@/shared/ui/Button.jsx';
@@ -56,15 +57,6 @@ function countryToFlag(cc) {
   const A = 0x1F1E6;
   const codePoints = cc.toUpperCase().split('').map(c => A + (c.charCodeAt(0) - 65));
   return String.fromCodePoint(...codePoints);
-}
-
-function getTopicId(t, idx) {
-  const directId = t?.topicId || t?.topic_id || t?.id;
-  if (directId != null) {
-    const c = String(directId).trim();
-    if (c.length > 0) return c;
-  }
-  return `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
 function Home() {
@@ -123,15 +115,7 @@ function Home() {
     return cards;
   }, [trackRecord, corrections, correctionsTotal, topics]);
 
-  const sortedRegions = React.useMemo(() =>
-    Object.entries(categorizedTopics)
-      .filter(([, rt]) => rt.length > 0)
-      .sort((a, b) => {
-        if (a[0] === 'World') return 1;
-        if (b[0] === 'World') return -1;
-        return b[1].length - a[1].length;
-      }),
-  [categorizedTopics]);
+  const sortedRegions = React.useMemo(() => sortRegions(categorizedTopics), [categorizedTopics]);
 
   const [summaries, setSummaries] = useState({});
   const [summaryLoading, setSummaryLoading] = useState({});

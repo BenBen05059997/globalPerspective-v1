@@ -1,11 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import AiResultCard from '@/features/home/components/AiResultCard';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
-
-function tryParseJson(content) {
-  if (!content) return null;
-  try { return JSON.parse(content); } catch { return null; }
-}
+import { tryParseJson } from '@/features/home/lib/topics.js';
 
 // ── JSON renderer ─────────────────────────────────────────────────────────────
 

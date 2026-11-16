@@ -2,11 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import AiResultCard from '@/features/home/components/AiResultCard';
 import Card from '@/shared/ui/Card.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
-
-function tryParseJson(content) {
-  if (!content) return null;
-  try { return JSON.parse(content); } catch { return null; }
-}
+import { tryParseJson } from '@/features/home/lib/topics.js';
 
 // Methodology-v1 triggers (2026-07-04) are structured { text, deadline } objects;
 // pre-v1 cached content has plain strings. Normalize both, drop anything else.

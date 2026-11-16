@@ -256,7 +256,7 @@ async function runPair(pair) {
 }
 
 async function main() {
-  console.log('Shared-module drift guard — ONE_TRUTH_EXECUTION_PLAN.md Phase 1\n');
+  console.log('Shared-module drift guard\n');
   let allPass = true;
   for (const pair of livePairs()) {
     // eslint-disable-next-line no-await-in-loop
@@ -319,7 +319,8 @@ async function selfTestEntityNormalization() {
   const a = path.join(dir, 'classifier-core.js');
   const b = path.join(dir, 'entity-normalize.js');
   fs.copyFileSync(srcA, a);
-  // classifier-core.js requires ./_shared/* (a Lambda's committed link to backend/shared/src); the temp copy needs the same.
+  // classifier-core.js requires ./countryBoxes.json and ./_shared/* (a Lambda's committed link to backend/shared/src); the temp copy needs both.
+  fs.copyFileSync(fnPath('newsSituationIngest', 'src/countryBoxes.json'), path.join(dir, 'countryBoxes.json'));
   fs.symlinkSync(abs(SHARED), path.join(dir, '_shared'), 'dir');
   let raw = fs.readFileSync(srcB, 'utf8');
   // Perturb one character inside an ACTOR_ALIASES value (still valid JS/JSON literal).

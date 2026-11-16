@@ -13,7 +13,7 @@
  * strict about the shape/type of fields we consume. A failure = real drift.
  *
  * Usage: node scripts/contract-check.mjs
- *        SMOKE_BASE=... (proxy endpoint override; defaults to production)
+ *        PROXY_ENDPOINT=... (proxy endpoint override; defaults to production)
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -27,6 +27,19 @@ export function chunkNames(names = [], size = MAX_NAMES_PER_CALL) {
   return out;
 }
 
+// A tiny promise pool: runs `worker(item, index)` over `items` with at most `limit` calls in flight.
+// Both country_intelligence callers send their chunkNames chunks through it.
+export async function runPooled(items, limit, worker) {
+  let i = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) {
+      const idx = i++;
+      await worker(items[idx], idx);
+    }
+  });
+  await Promise.all(runners);
+}
+
 // Outline weight by tier (px) — a double outline is reserved for HIGH, matching the situations
 // layer's "double ring = HIGH only" rule (lib/legend.js tierSize) so the two layers agree on what
 // "HIGH" looks like even though one draws points and the other draws polygons.

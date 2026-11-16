@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
-import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES, buildCountryRiskLayer } from '@/shared/map/countryRiskLayer.js';
+import { chunkNames, runPooled, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES, buildCountryRiskLayer } from '@/shared/map/countryRiskLayer.js';
 import { isCountry } from '@/shared/lib/countries.js';
 import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBriefingsIndex.js';
 
@@ -44,19 +44,6 @@ function namesFromArchive(dayMap) {
     .map(([name]) => name)
     .filter(isCountry) // never request a name this map can't draw
     .slice(0, MAX_CANDIDATES);
-}
-
-// A tiny promise pool — at most `limit` chunk requests in flight at once (same spirit as
-// restProxy's own MAX_PROXY_CONCURRENCY, scoped to this one batch of calls).
-async function runPooled(items, limit, worker) {
-  let i = 0;
-  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) {
-      const idx = i++;
-      await worker(items[idx], idx);
-    }
-  });
-  await Promise.all(runners);
 }
 
 export function useCountryRiskLayer(active) {

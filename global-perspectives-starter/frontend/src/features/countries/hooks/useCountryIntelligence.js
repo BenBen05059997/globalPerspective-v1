@@ -5,7 +5,7 @@ import { reportFetchError } from '@/shared/api/errorSink';
 import { resolveCountry } from '@/shared/lib/countries';
 import { intelligenceFromCountryView } from '@/features/countries/lib/viewIntelligence';
 import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
-import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
+import { chunkNames, runPooled, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
 import { loadCountriesIndex, briefingsFromIndex } from '@/shared/api/countryBriefingsIndex.js';
 
 // Only single-country loads are cached (the full briefing); the list's one index request is already shared for 30 minutes
@@ -40,21 +40,6 @@ function cacheWrite(name, value) {
     const all = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ...all, [name]: { value, ts: Date.now() } }));
   } catch { /* ignore */ }
-}
-
-// A tiny promise pool — mirrors useCountryRiskLayer.js's runPooled so both callers of
-// country_intelligence chunk the same way and neither silently truncates past the
-// backend's 15-name-per-call cap (`MAX_NAMES_PER_CALL` in shared/map/countryRiskLayer.js; the read
-// API slices `countryNames` to 15).
-async function runPooled(items, limit, worker) {
-  let i = 0;
-  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) {
-      const idx = i++;
-      await worker(items[idx], idx);
-    }
-  });
-  await Promise.all(runners);
 }
 
 export function useCountryIntelligence(countryNames) {

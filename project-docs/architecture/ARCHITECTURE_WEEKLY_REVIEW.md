@@ -24,7 +24,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- rule   : returns JSON only: line, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
 |  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
-|  +- model  : DeepSeek model from env `REVIEW_MODEL` (`deepseek-flash` since 2026-11-04, [0056](../decisions/0056-models-by-measured-quality.md)); a stub model in tests and in the golden-week run
+|  +- model  : model from env `REVIEW_MODEL` (`deepseek-flash` on 2026-11-16; Claude Sonnet 5.5 is chosen, not yet live, [0060](../decisions/0060-claude-models-by-job-measured.md)); a stub model in tests and in the golden-week run
 |
 +- 4 CHECK      no model            [newsRecordReview]
 |  +- rule   : citations exist and belong to the story (or both stories for a link); a chapter's from/to = the dates of its cited facts;
@@ -54,7 +54,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
    - `merge_proposal`: {otherThreadId, why};
    - `alias`: {variants, canonical, wikidataId};
    - `assignment`: {entryId, threadId, why}, an entry that belongs to another story (a proposal only).
-   Model: DeepSeek model from env `REVIEW_MODEL` (`deepseek-flash` since 2026-11-04, [0056](../decisions/0056-models-by-measured-quality.md)), through the shared `llm.js`, prompt version `review-5`, `MAX_TOKENS` 6000.
+   Model: from env `REVIEW_MODEL` (`deepseek-flash` since 2026-11-04, [0056](../decisions/0056-models-by-measured-quality.md); decision [0060](../decisions/0060-claude-models-by-job-measured.md) chooses `anthropic:claude-sonnet-5-5` after a Haiku-versus-Sonnet golden-week run: Haiku broke the no-pending-clause rule in 7 of 25 lines, Sonnet in 2 of 25; the switch is not live yet), through the shared `llm.js`, prompt version `review-5`, `MAX_TOKENS` 6000 (Sonnet used at most 1,242 output tokens a call).
 4. Check. Pure code. An item is rejected, with a reason kept in the Run, when it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter cites no dated fact; its shape or length is wrong; its confidence is low; or an auto-merge fails the merge rule. Branch status is not a reading: a branch's status is its verdict fact, else open or past due by its `due` date, derived where it is shown.
 5. Write. Accepted readings are appended to the week file; the review Run records counts and rejections; accepted auto-merges go to the inbox. Readings are never edited. A rerun for the same week writes readings whose `supersedes` points at the earlier `readingId`.
 6. Build. Not the review's job: `newsStoryRecord` rebuilds all views (nightly and at each refresh) and reads readings, inbox merges, `story_split` facts and the alias file.

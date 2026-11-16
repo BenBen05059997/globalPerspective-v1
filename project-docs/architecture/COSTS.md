@@ -1,4 +1,4 @@
-# Costs: what the site spends, why, and how to check (2026-11-05)
+# Costs: what the site spends, why, and how to check (2026-11-16)
 
 Read this first, then check the code. Numbers are from Cost Explorer and our own `[usage]` logs on the dates given;
 they go stale, so re-run the recipe in section 6 before quoting them.
@@ -41,11 +41,21 @@ Oct 31 is the record-migration day: 27 `newsStoryRecord` invocations (about 20 m
 That is inferred from git and invocation counts, not measured (there is no CloudTrail data-event log).
 Nov 1-4 are mostly `newsStoryRecord` view rewrites; the digests (section 4, rule 1) are what stops them (see below).
 
-DeepSeek (the model provider) is not on the AWS bill. It is estimated from our own usage logs: about $0.10-0.40 on a normal
-day, about $2.40 on the Monday weekly-review day (review on Pro), about $6-10 a month before the 2026-11-04 switch to Flash (decision [0056](../decisions/0056-models-by-measured-quality.md)); about $2-3 expected after it. List prices, per million tokens
-(`backend/monitoring/newsHealth/src/prices.json`, operator-owned, fetched 2026-11-04): Flash $0.15 in / $0.60 out / $0.003
-cache hit; Pro $0.66 / $1.98 / $0.022; both double at peak (01-04 and 06-10 UTC, Mon-Fri; holidays not modelled, so the
-estimate is an upper bound).
+The model providers (DeepSeek, Anthropic) are not on the AWS bill. Model spend is estimated from our own usage logs.
+- DeepSeek, until it ran out of credit on 2026-11-14: about $0.10-0.40 on a normal day, about $2.40 on the Monday
+  weekly-review day (review on Pro), about $6-10 a month before the 2026-11-04 switch to Flash (decision
+  [0056](../decisions/0056-models-by-measured-quality.md)); about $2-3 expected after it. List prices per million tokens
+  (`backend/monitoring/newsHealth/src/prices.json`, operator-owned, fetched 2026-11-04): Flash $0.15 in / $0.60 out / $0.003
+  cache hit; Pro $0.66 / $1.98 / $0.022; both double at peak (01-04 and 06-10 UTC, Mon-Fri; holidays not modelled, so the
+  estimate is an upper bound).
+- Anthropic, since 2026-11-16 (decision [0060](../decisions/0060-claude-models-by-job-measured.md)): Haiku 5.5 $0.10 in /
+  $0.50 out, Sonnet 5.5 $2 / $10, cache read 0.1 times input, no peak pricing (same file, valid from 2026-11-15; the
+  source is the claude-api skill's price table cached 2026-10-06, not yet checked against Anthropic's pricing page).
+  The first live intake run cost about $0.60 (topic selection 47,421 tokens in / 10,829 out; the story agent about $0.39).
+  Three runs a day is about $1.80 a day for intake if every run is that size, a projection from one run. With the weekly
+  review on Sonnet, decision 0060 adds up to roughly $65 to $115 a month for all model calls (an estimate from the test
+  reports' per-call figures and call counts, not read from CloudWatch). No full day on Claude has been read from the
+  `[usage]` logs yet; replace these figures with that reading when there is one.
 
 ## 2. Where each dollar comes from, and why
 
@@ -54,7 +64,7 @@ estimate is an upper bound).
 | S3 write requests (about 70% of AWS in early Nov; 46,491 Tier1 on Nov 4) | `newsStoryRecord` rewrote about 9,000 view files per run, 6 runs a day. Fixed in two steps, see "S3 writers on 2026-11-04" below. | `backend/record/newsStoryRecord/src/digests.js`; decision 0037, "Amended 2026-11-04" |
 | DynamoDB (about $9-10 a month in Sep-Oct; $0.24 in 3 days of Nov) | The old world tables, read and written until decision 0035 step 5 retires them. Table TTL is disabled, so rows only grow. | decision 0035; `STEP5_AUDIT.md` |
 | CloudWatch ($5-6 a month in Sep-Oct) | Alarms and custom metrics. The alarms were removed 2026-11-02 (operator decision). Nov shows about $0. | section 4 |
-| DeepSeek | The weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, now Flash, about 4 times cheaper per call) was about half of model spend. The rest is `newsAgent` (Flash for summaries, Pro for forecasts) and the analysis Lambdas. | `ARCHITECTURE_WEEKLY_REVIEW.md` |
+| Model providers | On DeepSeek the weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, then Flash, about 4 times cheaper per call) was about half of model spend; the rest was `newsAgent` and the analysis Lambdas. On Claude the intake chain (`newsIngest`, `newsAgent` on Sonnet) and, once it moves, the review (Sonnet, about $5.6 to $13.1 a Monday) are the two largest lines. | decision 0060; `ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Lambda, API Gateway, SQS | Cents. | |
 
 ### S3 writers on 2026-11-04 (46,491 Tier1 requests)
@@ -85,7 +95,7 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
 - **`[usage]` log lines**: every model call writes `[usage] {fn, step, model, ...tokens}` (`backend/shared/src/llm.js`),
   with prompt, completion and cache-hit tokens. Sum them with one Logs Insights query over the `/aws/lambda/news*` groups.
 - **Unit costs** (defined in `backend/monitoring/newsHealth/src/config.js` `units`; the model spend of the matching steps
-  divided by that day's fact counts), 3 Nov values:
+  divided by that day's fact counts), 3 Nov values, DeepSeek prices (not recomputed on Claude):
 
 | Unit | Spend per |
 |---|---|
@@ -105,19 +115,27 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
    baseline 156 h, open alert, coverage jump; never twice a UTC day; top `COUNTRY_TOP_N`).
 3. **Prompt caching.** Providers bill cache-hit tokens at about 1/50 of input; the `[usage]` cache-hit count shows how well
    prompts are laid out (stable prefix first).
-4. **Each job's model is chosen by a recorded Flash-vs-Pro test** (decision [0056](../decisions/0056-models-by-measured-quality.md); the 29 Sep choice of Pro for the "high-leverage" calls was a judgement). Flash is about 4 times cheaper per call. Live model env, 2026-11-04 (values are model names):
+4. **Each job's model is chosen by a recorded test** (decision [0056](../decisions/0056-models-by-measured-quality.md) for the method; the 29 Sep choice of Pro for the "high-leverage" calls was a judgement; decision [0060](../decisions/0060-claude-models-by-job-measured.md) for Claude). Model env as read on 2026-11-16 (values are model names; the chosen model is from 0060):
 
-| Lambda | Model |
-|---|---|
-| `newsAgent` | `GROK_MODEL=deepseek-flash` (summaries); `PREDICTION_MODEL=deepseek-v4-pro` (forecasts) |
-| `newsThreadAnalysis`, `newsDriftCorrector`, `newsPredictionResolver` | Flash |
-| `newsRecordReview` | `REVIEW_MODEL=deepseek-flash` (since 2026-11-04) |
-| `newsDailyBrief`, `newsSystemsAnalysis` | `GROK_MODEL=deepseek-flash` (since 2026-11-04) |
-| `newsWeeklyBrief`, `newsCountryIntelligence`, `newsAnalyze` | `GROK_MODEL=deepseek-v4-pro` (country: Flash invented facts in the test; weekly brief: equal quality, saving about 2 cents a month; `newsAnalyze` parked) |
-| `newsIngest` | `GROK_MODEL=deepseek-flash` (since 2026-11-04 about 21:45 JST, with its filter fixes) |
+| Lambda | Env value | Live 2026-11-16 | Chosen (0060) |
+|---|---|---|---|
+| `newsIngest` | `GROK_MODEL` | `anthropic:claude-sonnet-5-5` | Sonnet |
+| `newsAgent` | `GROK_MODEL` (summary, trace_cause); `PREDICTION_MODEL` (forecast) | both `anthropic:claude-sonnet-5-5`, `MAX_TOKENS` 1500 | Sonnet |
+| `newsSituationIngest` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` | Haiku |
+| `newsDailyBrief`, `newsWeeklyBrief` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` | Haiku |
+| `newsThreadAnalysis`, `newsSystemsAnalysis` | `GROK_MODEL` | `deepseek-flash` | Haiku |
+| `newsCountryIntelligence` | `GROK_MODEL` | `deepseek-v4-pro` | Haiku |
+| `newsDriftCorrector` | `GROK_MODEL` | `deepseek-flash` | Haiku |
+| `newsSourceAudit` | `AUDIT_MODEL` | `deepseek-flash` | Haiku |
+| `newsPredictionResolver` | `DRAFT_MODEL` | not set; code default `deepseek-v4-pro` | Sonnet |
+| `newsRecordReview` | `REVIEW_MODEL` | `deepseek-flash` | Sonnet |
+| `newsAnalyze` | | parked, `deepseek-v4-pro` | |
 
-   The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` hold DeepSeek). `newsDailyBrief` also has
-   an `AI_MODEL` set to a `:free` model name; check the code for which one it uses.
+   The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` names are DeepSeek-era; the value decides
+   the provider). The rows whose live value is not Claude are chosen and not yet switched (waiting for the operator's yes). Claude counts about 1.5
+   times more input tokens than DeepSeek for the same text and writes longer answers, so output caps were raised
+   (decision 0060 lists them). `newsDailyBrief` also carries an `AI_MODEL` env value that no code reads (checked 2026-11-16 in
+   `backend/distribution/newsPostDevTo/src`); it has no effect.
 5. **The Cost Explorer pull is $0.01 a call**, so `newsHealth` pulls once per UTC day (`awsPullDue` in
    `backend/monitoring/newsHealth/src/ops.js`); the monitor itself costs under $1 a month.
 6. **No alarms** (operator decision 2026-11-02): do not add CloudWatch alarms or custom metrics; health is read from the
@@ -131,11 +149,11 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
 |---|---|
 | Confirm 2026-11-06 shows `newsStoryRecord` at a few hundred writes (section 6, recipe 4) | About -$6 a month, from the digest fixes already deployed |
 | Retire the DynamoDB world tables (decision 0035 step 5) | About -$2.50 a month by the coordinator's estimate (Nov 1-3 run-rate: $0.24 in 3 days) |
-| Move the four jobs from Pro to Flash after tests (0056): review, systems, daily brief and `newsIngest` done 2026-11-04 | About -$4 to 7 a month of model spend (estimate from the test reports, not yet measured live) |
+| Move the four jobs from Pro to Flash after tests (0056): review, systems, daily brief and `newsIngest` done 2026-11-04 | About -$4 to 7 a month of model spend on DeepSeek (estimate from the test reports, not measured live); overtaken by the move to Claude on 2026-11-16 |
 | Items vs stories: a one-entry item gets no forecasts, links or analysis | An estimated third to half off model spend |
 | Incremental refresh; freeze cold stories | Headroom rather than money |
 
-Expected end state: AWS about $2-3 a month, DeepSeek about $2-3 a month with the Flash switches (less if items vs stories lands).
+Expected end state: AWS about $2-3 a month. Model spend was expected at about $2-3 a month on DeepSeek Flash; on Claude it is about $65 to $115 a month by decision 0060's estimate, and less if items vs stories lands. Cheaper choices that lost the quality test, or need a code split, are listed in 0060.
 
 After that about 4,400 Tier1 a day is left from the non-record writers, about $0.66 a month. Not worth building now:
 tracker skip-unchanged (about 1,200 a day, about $0.18 a month; first check whether anything reads `last_checked_at` in
@@ -145,6 +163,6 @@ tracker skip-unchanged (about 1,200 a day, about $0.18 a month; first check whet
 
 1. A day by usage type: `aws ce get-cost-and-usage --time-period Start=2026-11-03,End=2026-11-04 --granularity DAILY --metrics UnblendedCost --group-by Type=DIMENSION,Key=USAGE_TYPE` (swap the key for `SERVICE` for a service view; each call is $0.01).
 2. Model spend: Logs Insights over `/aws/lambda/news*`, `filter @message like /\[usage\]/ | parse @message '[usage] *' as j | stats count(*) by bin(1d)`, then sum the tokens per `fn` and `model` from `j` (fields `fn`, `step`, `model`, token counts) and price them with `prices.json`.
-3. Or read `monitoring/ops.json`: `aws.days`, `aws.monthToDate`, `deepseek.days`, `deepseek.yesterday`, `deepseek.monthToDate`, `unitCosts.days`, `unitCosts.weeklyReview`, and `errors`/`error` fields for a source that failed.
+3. Or read `monitoring/ops.json`: `aws.days`, `aws.monthToDate`, `deepseek.days`, `deepseek.yesterday`, `deepseek.monthToDate` (the key `deepseek` holds the estimate for every provider, decision 0059), `unitCosts.days`, `unitCosts.weeklyReview`, and `errors`/`error` fields for a source that failed.
 4. S3 requests per day: `aws ce get-cost-and-usage --time-period Start=2026-11-05,End=2026-11-06 --granularity DAILY --metrics UsageQuantity UnblendedCost --group-by Type=DIMENSION,Key=USAGE_TYPE --filter '{"Dimensions":{"Key":"SERVICE","Values":["Amazon Simple Storage Service"]}}'` (read `APN1-Requests-Tier1`), then the `newsStoryRecord` `[views] wrote N of M` log lines summed per UTC day (Logs Insights over `/aws/lambda/newsStoryRecord`). Other writers are the run count times the puts per run read from the code.
 5. S3 requests by prefix are not in Cost Explorer; that needs S3 server access logs or CloudTrail data events on a short window (both cost money; operator yes).

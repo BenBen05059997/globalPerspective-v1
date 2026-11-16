@@ -26,7 +26,7 @@ flowchart LR
   news[News RSS sources]
   haz[GDACS and GDELT]
   wd[Wikidata and ACLED]
-  llm[DeepSeek LLM API]
+  llm[LLM APIs: Anthropic, DeepSeek]
   jev[Jev scorer, shadow only]
   mail[Resend email]
   soc[LinkedIn and Bluesky]
@@ -47,7 +47,7 @@ flowchart LR
   back -->|posts| soc
   operator -->|deploys, corrections| back
 ```
-Every Lambda that calls an LLM uses `api.deepseek.com` through the live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`). Each job's model is chosen by a recorded Flash-versus-Pro test (decision 0056). Live 2026-11-04: `newsRecordReview`, `newsSystemsAnalysis`, `newsDailyBrief`, `newsIngest`, `newsAgent` summaries and the other analysis Lambdas run `deepseek-flash`; `newsCountryIntelligence`, `newsWeeklyBrief`, `newsAgent` forecasts (`PREDICTION_MODEL`) and parked `newsAnalyze` run `deepseek-v4-pro`. The exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsDailyBrief` (daily 23:00 JST) are ENABLED.
+Every Lambda that calls an LLM takes its model from a live env value (`GROK_MODEL`, `PREDICTION_MODEL`, `REVIEW_MODEL`, `AUDIT_MODEL`, `DRAFT_MODEL`); the value also names the provider ("LLM providers" below). Each job's model is chosen by a recorded test (decisions 0056 and 0060). DeepSeek ran out of credit on 2026-11-14, so on 2026-11-16 `newsIngest`, `newsAgent`, `newsSituationIngest`, `newsDailyBrief` and `newsWeeklyBrief` moved to Claude; the seven other model-calling jobs still hold DeepSeek values in their env and are chosen to move, waiting for the operator's yes (list and models: decision 0060, [COSTS.md](COSTS.md) section 4). Parked `newsAnalyze` keeps its own client and `deepseek-v4-pro`. The exception is `newsSelectionShadow`, which calls the external Jev scorer. The weekly email rule (`TriggerWeeklyEmailSend`) is ENABLED with `EMAIL_SEND_DRY_RUN=false`; the breaking and drift email rules are DISABLED; `newsPostLinkedin` (every 3 hours, JST) and `newsDailyBrief` (daily 23:00 JST) are ENABLED.
 
 ### Containers
 ```mermaid
@@ -71,7 +71,7 @@ flowchart LR
   mon[monitoring: monitors and audits]
   ddb[(DynamoDB tables)]
   s3[(S3 world bucket)]
-  ext[RSS, GDACS, GDELT, Wikidata, DeepSeek]
+  ext[RSS, GDACS, GDELT, Wikidata, Anthropic, DeepSeek]
   spa -->|SPA shell, /data/*| worker
   worker -->|signed GETs| s3
   spa -->|actions| proxy
@@ -293,7 +293,7 @@ Firebase Authentication in the browser (`src/shared/contexts/AuthContext.jsx`: e
 **Invariant:** a Function URL gets CORS from exactly one place. If the code emits `Access-Control-Allow-Origin` (`newsPolarBilling`, `newsAnalyze`, `newsSharedAnalysis`), the Function-URL CORS config stays empty; if it does not (`newsSavedItems`, `newsRecommend`, `newsClientErrors`, `newsBoard`), the config must be populated. Both at once sends a duplicate header and the browser fails with "Failed to fetch". Grep the source before touching either side.
 
 ### LLM providers
-Every LLM-calling Lambda calls its model through shared `llm.js` (`newsAnalyze`, parked, keeps its own client); the model is the live env value (job-by-job list: [COSTS.md](COSTS.md) section 4). The provider is part of that value: a bare name such as `deepseek-flash` is DeepSeek (`api.deepseek.com`), and `anthropic:claude-haiku-5-5` is Anthropic (`api.anthropic.com`, called directly, key `ANTHROPIC_API_KEY`); see decision 0059. DeepSeek is the live provider; the code supports Anthropic but no Lambda is switched to it yet (not yet done). `newsSelectionShadow` is the exception (external "Jev" scorer).
+Every LLM-calling Lambda calls its model through shared `llm.js` (`newsAnalyze`, parked, keeps its own client); the model is the live env value (job-by-job list: [COSTS.md](COSTS.md) section 4). The provider is part of that value: a bare name such as `deepseek-flash` is DeepSeek (`api.deepseek.com`), and `anthropic:claude-sonnet-5-5` or `anthropic:claude-haiku-5-5` is Anthropic (`api.anthropic.com`, called directly with `fetch`, key `ANTHROPIC_API_KEY`); decision 0059. Both providers are live: five Lambdas run on Claude (since 2026-11-16 about 14:20 UTC), the rest still name DeepSeek. There is no automatic fallback; a job is moved by changing its env value, and back the same way. For Anthropic calls with `json: true`, `llm.js` sends one more identical request when a complete answer does not parse (decision 0060); a cut-off answer is not retried, so output caps matter more on Claude (0060 lists the ones raised). `newsSelectionShadow` is the exception (external "Jev" scorer).
 
 **Invariant:** env names lie. `GROK_*` and `XAI_*` keys hold DeepSeek settings (`GROK_MODEL` holds the model of any provider); read the live value (`aws lambda get-function-configuration`), never infer the provider from the name.
 
@@ -301,7 +301,7 @@ Every LLM-calling Lambda calls its model through shared `llm.js` (`newsAnalyze`,
 There is no central cost store. Callers of `backend/shared/src/llm.js` (`newsAgent` included) and `newsSelectionShadow` `console.log` a `[usage]` JSON line (function, step, model, tokens) into CloudWatch Logs. `newsModelGuard` turns a fixed daily-burn constant (`DAILY_BURN_USD`, measured once from these logs on 2026-10-18) into a runway estimate in its balance alert; `newsAnalyze` logs no usage.
 
 ### Monitoring
-Alert email goes through SNS `GlobalPerspectiveAlerts`, and the operator cut it back on 2026-11-06 because `/ops` shows the same facts: `newsModelGuard` (DeepSeek balance, retired model ids) is the one email kept; `newsFreshnessMonitor` still publishes (rule ENABLED) and is to be disabled once `HEAL=on` (planned, not done); `newsErrorDigest` is DISABLED (the Quality panel's client-errors check replaces it); `newsSourceAudit` still runs and logs but has no `SNS_TOPIC_ARN`, so it emails nothing. What each watches is in [backend/monitoring/README.md](../../backend/monitoring/README.md). `newsHealth` (live since 2026-11-04; hourly, no model, no alerts) writes the public pipeline panel `record/views/health.json` and the private money panel `monitoring/ops.json`, which only `newsReadApi` action `ops` serves, to the uids in `OPS_OPERATOR_UIDS` ([ARCHITECTURE_OPS.md](ARCHITECTURE_OPS.md)). With `HEAL=on` it also re-runs a missing day's agent once and, failing that, invokes the unscheduled `newsRecover` (group `record`, deployed 2026-11-06; rebuilds the day's raw articles from GDELT and Wayback, no model); `HEAL` is `dry` for now (to be set `on` after the first dry tick is reviewed; planned 2026-11-06).
+Alert email goes through SNS `GlobalPerspectiveAlerts`, and the operator cut it back on 2026-11-06 because `/ops` shows the same facts: `newsModelGuard` (DeepSeek balance, retired DeepSeek model ids; it does not watch Anthropic) is the one email kept; `newsFreshnessMonitor` still publishes (rule ENABLED) and is to be disabled once `HEAL=on` (planned, not done); `newsErrorDigest` is DISABLED (the Quality panel's client-errors check replaces it); `newsSourceAudit` still runs and logs but has no `SNS_TOPIC_ARN`, so it emails nothing. What each watches is in [backend/monitoring/README.md](../../backend/monitoring/README.md). `newsHealth` (live since 2026-11-04; hourly, no model, no alerts) writes the public pipeline panel `record/views/health.json` and the private money panel `monitoring/ops.json`, which only `newsReadApi` action `ops` serves, to the uids in `OPS_OPERATOR_UIDS` ([ARCHITECTURE_OPS.md](ARCHITECTURE_OPS.md)). With `HEAL=on` it also re-runs a missing day's agent once and, failing that, invokes the unscheduled `newsRecover` (group `record`, deployed 2026-11-06; rebuilds the day's raw articles from GDELT and Wayback, no model); `HEAL` is `dry` for now (to be set `on` after the first dry tick is reviewed; planned 2026-11-06).
 
 Global Perspectives has no CloudWatch alarms (read live with `aws cloudwatch describe-alarms`): the per-function, proxy, DynamoDB and situation-tracker alarms were removed 2026-11-02 to 2026-11-04 by the operator, who does not want pipeline alarms for the record, the review or LLM 402 / insufficient balance. Do not propose them. Billing: `AWS-Bill-Over-5-Dollars` (us-east-1) and budget `Monthly-AWS-Budget` ($20) notify by email. `PPA*`, `ppa-*` and `so-v3-engine` alarms and `ppa-alerts` belong to other projects in the account. Known behaviour: stages swallow LLM errors, so Lambda `Errors` can stay 0; expected refusals (LinkedIn `429 share limit`, "no new topics") count as errors. Capacity, IAM or code changes are operator-asked work (CLAUDE.md, Authorization). Active checks (the `scripts/` list above) are run by hand; there is no CI by design.
 

@@ -60,5 +60,3 @@ export function storiesForShading(topics = [], situations = []) {
     };
   });
 }
-
-export default storiesForShading;

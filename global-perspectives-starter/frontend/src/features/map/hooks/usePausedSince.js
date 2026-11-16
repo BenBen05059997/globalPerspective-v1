@@ -24,5 +24,3 @@ export function usePausedSince() {
   }), [newestAt, loading, error]);
   return { paused, newestAt };
 }
-
-export default usePausedSince;

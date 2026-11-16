@@ -76,5 +76,3 @@ export function useStoryCardData(topic) {
 
   return state;
 }
-
-export default useStoryCardData;

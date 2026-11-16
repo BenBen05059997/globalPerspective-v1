@@ -20,5 +20,3 @@ export function hudCompactSummary(tierCounts, sensorRows, paused) {
 
   return bits.join(' · ');
 }
-
-export default hudCompactSummary;

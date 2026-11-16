@@ -104,9 +104,8 @@ exports.handler = async () => {
   // S8·T2 (2026-09-09): the GlobalPerspectiveGdeltConflict DDB mirror was DROPPED — its only reader
   // (newsImpactAudit, removed 2026-11-01) read the per-day S3 corpus below. Events live only in `corpus/gdelt/<day>.json`.
 
-  // S8·T2 (2026-09-09): the impact audit reads GDELT from S3 instead of scanning the DDB mirror.
-  // One file per day, overwritten each run (last-run-wins, same as the DDB `day#country` upserts);
-  // the audit reads today + yesterday to preserve its 2-day window. Best-effort — never fatal.
+  // One file per day, overwritten each run (last-run-wins, same as the old DDB `day#country` upserts).
+  // Nothing reads it since newsImpactAudit was removed 2026-11-01. Best-effort — never fatal.
   let corpus = null;
   try {
     const key = `${CORPUS_PREFIX}/${day}.json`;

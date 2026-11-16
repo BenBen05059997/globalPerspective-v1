@@ -13,7 +13,7 @@ Keyless ingest of GDELT 2.0 material-conflict events, used as the open replaceme
 - DynamoDB: none at runtime. The GlobalPerspectiveGdeltConflict mirror was dropped in S8·T2 (2026-09-09).
 
 ## Gotchas
-- The code no longer reads `GDELT_TABLE` or `GDELT_TTL_DAYS` (the DynamoDB mirror is gone); leftover values in the live env do nothing.
+- The code no longer reads `GDELT_TABLE` or `GDELT_TTL_DAYS` (the DynamoDB mirror is gone); the live env holds only `WORLD_BUCKET` (read 2026-11-16).
 - Column indexes (QuadClass 29, NumMentions 31, ActionGeo 52/53, SOURCEURL 60) are hard-coded from a 61-column export checked on 2026-06-24. Rows with fewer than 61 columns are skipped.
 - A run samples a single 15-minute export file, not a full day.
 - The S3 write is best-effort: a failure is logged and the run still returns `ok`.

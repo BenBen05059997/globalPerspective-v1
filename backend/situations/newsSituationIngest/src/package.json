@@ -1,7 +1,7 @@
 {
   "name": "newssituationingest",
   "version": "1.0.0",
-  "description": "News ingest — RSS → flash classify → cluster into stories/ + corpus/. Feeds the situation tracker's news layer (S3). OpenAI-compatible flash model via raw fetch; no openai dep.",
+  "description": "News ingest — RSS → model classify (shared llm.js, model in GROK_MODEL) → cluster into stories/ + corpus/. Feeds the situation tracker's news layer (S3).",
   "main": "index.js",
   "scripts": {
     "test": "node --test outage.test.js feeds.test.js classifier-core.test.mjs"

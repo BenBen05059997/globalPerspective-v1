@@ -31,7 +31,7 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 
 ## Shared code
 
-- `situations-core.js`: newsGdacsIngest and newsSituationTracker. `links.js`: newsSituationTracker. `llm.js`: newsSituationIngest.
+- `situations-core.js`: newsGdacsIngest and newsSituationTracker. `links.js`: newsSituationTracker. `llm.js`, `rss.js`, `outlets.js`, `resolveIso3.js`: newsSituationIngest.
 - newsSituationIngest's `classifier-core.js` is also linked into newsSelectionShadow.
 - newsGdeltConflict has no `_shared` link.
 
@@ -40,7 +40,7 @@ This folder is stage 1, 2: the map ingest and GDACS ingest (1), the map tracker 
 - The tracker writes to `shadow/situations/` and `world/shadow/` unless env `DRY_RUN` is exactly `false`. The live value is `false`.
 - `corpus/gdacs/latest.json` and `corpus/gdelt/<day>.json` have no reader since newsImpactAudit was removed 2026-11-01; newsGdeltConflict's only output is that unread file.
 - newsGdeltConflict samples one 15-minute export per run, and the last run of the day overwrites the day file.
-- newsGdacsIngest and newsGdeltConflict no longer write DynamoDB; some header comments and env names in their code are stale.
+- newsGdacsIngest and newsGdeltConflict no longer write DynamoDB. newsGdacsIngest still stamps a DynamoDB-style `ttl` (`GDACS_TTL_DAYS`, default 30) on the events it writes.
 - newsSituationIngest returns without fetching if its LLM key is unset. GDELT queries inside it are off unless `GDELT_ENABLED=true`.
 - Situation titles and classifications are model-written; the lede is templated.
 

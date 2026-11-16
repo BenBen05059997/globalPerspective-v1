@@ -4,12 +4,12 @@
 // Free, keyless, NO LLM. Every run (rate(20 minutes)):
 //   1. Mirrors the full current event set (alert level, severity, coordinates) to s3://<world>/corpus/gdacs/latest.json.
 //   2. Acts as a deterministic situation OPENER: writes ONE observation snapshot of all current
-//      Orange/Red events to s3://<world>/situations/inbox/<ts>-gdacs.json. It holds NO situation
+//      Orange/Red events to s3://<world>/situations/inbox/gdacs-latest.json. It holds NO situation
 //      state — the tracker (S2) folds observations into situation state and is the sole writer of it
 //      (DATA_STRATEGY.md: one writer per prefix; openers append, the folder owns state).
 //
 // History: shadow-only 2026-06-24; DDB situation opener 2026-09-08 (P1·T1, superseded);
-// S3 inbox opener 2026-09-08 (S1·T1 of MAP_HOME_SITUATION_PLAN.md).
+// S3 inbox opener 2026-09-08 (S1·T1).
 
 const {
   eventKeyOf, buildObservation, OPENING_LEVELS, parseGeometry,
@@ -81,10 +81,9 @@ async function writeInboxSnapshot(feats, nowIso) {
   return { key, count: events.length };
 }
 
-// S8·T2 (2026-09-09): the impact audit reads the current disaster set from S3 instead of scanning
-// the GdacsEvents DDB mirror. Full current event array, SAME field shape as the DDB items, at a
-// stable pointer overwritten each run — so the audit's Orange/Red + recency filter works unchanged.
-// Best-effort: an S3/IAM failure must never fail the events mirror (identical posture to the inbox).
+// S8·T2 (2026-09-09): the full current event array (same field shape as the old GdacsEvents DDB items) at a
+// stable pointer overwritten each run. Its reader, newsImpactAudit, was removed 2026-11-01; nothing reads it now.
+// Best-effort: an S3/IAM failure must never fail the run (identical posture to the inbox).
 async function writeCorpusSnapshot(items, nowIso) {
   const body = JSON.stringify({ source: 'gdacs', observed_at: nowIso, count: items.length, events: items });
   const key = `${CORPUS_PREFIX}/latest.json`;
@@ -128,7 +127,7 @@ exports.handler = async () => {
   // to PutItem each event (~1,100 writes/day). The events now live only in `corpus/gdacs/latest.json`.
   console.log(`[gdacs] ${stored}/${feats.length} events (${withGeo} with coordinates) | levels=${JSON.stringify(byLevel)}`);
 
-  // S8·T2: mirror the full current set to S3 for the impact audit (best-effort, never fatal).
+  // S8·T2: mirror the full current set to S3 (best-effort, never fatal; unread since 2026-11-01).
   let corpus = null;
   try {
     corpus = await writeCorpusSnapshot(items, now);

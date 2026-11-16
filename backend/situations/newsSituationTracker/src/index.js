@@ -2,7 +2,7 @@
 
 // newsSituationTracker — the FOLDER (DATA_STRATEGY.md). Sole writer of situation state + the map
 // bundle. Every rate(30 minutes) sweep:
-//   1. read the latest observation snapshot(s) from situations/inbox/ (written by openers: GDACS now)
+//   1. read the GDACS observation snapshot situations/inbox/gdacs-latest.json (a stable pointer, never consumed)
 //   2. load current state (situations/index.json → situations/state/<id>.json)
 //   3. FOLD: buildSituation for each observation, coolSituation for open situations gone from the
 //      snapshot, apply the close rule (cooling for N sweeps → closed)
@@ -10,7 +10,7 @@
 //   5. assemble world/latest.json (+ member + timestamped snapshot) — situations + freshness + lede
 //      + ranked + systemic
 // NO LLM in S2 (what_changed is templated by the fold). DRY_RUN writes a parallel shadow universe
-// under world/shadow/ and shadow/situations/ and never consumes the inbox.
+// under world/shadow/ and shadow/situations/.
 
 const core = require('./_shared/situations-core');
 const { storyHref, mapHref } = require('./_shared/links');

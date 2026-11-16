@@ -1,13 +1,13 @@
 'use strict';
 
 // classifier-core — pure helpers for newsSituationIngest (S3). NO AWS, NO network.
-//   buildMessages(articles)      — batch of articles → chat messages for the flash classifier
+//   buildMessages(articles)      — batch of articles → chat messages for the classifier model
 //   parseClassification(text)    — robust JSON extraction → array of per-article classifications
 //   normalizeClassified(raw,art) — merge a classification with its source article + validate
 //   clusterStories(classified, nowIso, prevIndex) — deterministic clustering → stories[]
 //
-// Axis is constrained to the 4 map hues; category is finer-grained. latlon is model-provided
-// (the flash model knows locations well enough to place a dot), so no iso3→centroid table is needed.
+// Axis is constrained to the 4 map hues; category is finer-grained. latlon is model-provided; a story's
+// centroid is checked against countryBoxes.json (iso3 → centre + boxes) and falls back to the country centre.
 
 const { getOutletMeta } = require('./_shared/outlets');
 

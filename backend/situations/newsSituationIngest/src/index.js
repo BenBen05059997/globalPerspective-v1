@@ -2,7 +2,7 @@
 
 // newsSituationIngest — the NEWS producer (S3, DATA_STRATEGY.md). Hourly:
 //   1. fetch RSS headlines (world news)
-//   2. classify each in batches on the flash model (GROK_MODEL; live: deepseek-flash) → iso3/latlon/axis/severity
+//   2. classify each in batches on the model in GROK_MODEL (live: Claude Haiku since 2026-11-16) → iso3/latlon/axis/severity
 //   3. deterministically cluster into STORIES (outlets, velocity, spread)
 //   4. write corpus/YYYY/MM/DD/HH.jsonl (classified articles) + stories/state/<id>.json + stories/index.json
 // The tracker (S3·T3) reads stories/index and opens situations for significant stories → the map's
@@ -16,7 +16,7 @@ const { buildMessages, parseClassification, normalizeClassified, clusterStories,
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
+const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the live env sets GROK_MODEL
 const API_KEY = process.env.XAI_API_KEY;
 const BATCH = Number(process.env.CLASSIFY_BATCH) || 35;
 const MAX_BATCHES = Number(process.env.MAX_BATCHES_PER_RUN) || 12; // ≤ ~420 articles/run
@@ -119,7 +119,7 @@ async function fetchRss() {
   return all.filter((a) => a.ageH <= MAX_AGE_H && !seen.has(a.url) && seen.add(a.url));
 }
 
-// ── classify one batch via the flash model (shared llm.js; thinking off) ─────
+// ── classify one batch via the GROK_MODEL model (shared llm.js; thinking off) ─────
 async function classifyBatch(articles, call = chat) {
   const { content } = await call({ step: 'classify_batch', model: MODEL, messages: buildMessages(articles), temperature: 0, json: true, maxTokens: 8192 });
   const raw = parseClassification(content);

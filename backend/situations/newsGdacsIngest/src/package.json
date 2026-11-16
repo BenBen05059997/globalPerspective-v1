@@ -1,7 +1,7 @@
 {
   "name": "newsgdacsingest",
   "version": "1.0.0",
-  "description": "Shadow ingest of GDACS (UN+EU) disaster alerts \u2014 direct-impact feed for the impact-first pipeline. Keyless, never touches the live feed. See IMPACT_FIRST_REDESIGN_PLAN.md",
+  "description": "Ingest of GDACS (UN+EU) disaster alerts: writes the situation tracker's inbox snapshot (situations/inbox/gdacs-latest.json) and corpus/gdacs/latest.json. Keyless, no LLM.",
   "main": "index.js",
   "scripts": {
     "test": "node --test index.test.js"

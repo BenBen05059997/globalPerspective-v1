@@ -1,7 +1,7 @@
 {
   "name": "newsgdeltconflict",
   "version": "1.0.0",
-  "description": "Shadow ingest of GDELT 2.0 material-conflict events — open conflict-impact feed (ACLED replacement). Never touches the live feed. See IMPACT_FIRST_REDESIGN_PLAN.md §3.5",
+  "description": "Ingest of GDELT 2.0 material-conflict events: a per-day country snapshot at corpus/gdelt/<day>.json. Keyless, no LLM.",
   "main": "index.js",
   "scripts": {
     "test": "node --test index.test.js"

@@ -824,7 +824,7 @@ export default function SituationHome() {
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" tone="dark" /></div>}>
             <SituationMap3D
               key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
-              situations={riskMode ? NO_ITEMS : situations} labelIds={riskMode ? NO_ITEMS : globeLabelIds} focusId={focusId} newIds={newIds} view="globe"
+              situations={riskMode ? NO_ITEMS : situations} labelIds={riskMode ? NO_ITEMS : globeLabelIds} focusId={focusId}
               onSelect={select} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
               shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
               onSelectCountry={selectStoryByCountry}
@@ -841,7 +841,7 @@ export default function SituationHome() {
         ) : (
           <RadarMap
             key={mapAttempt} onFirstDraw={onMapFirstDraw}
-            situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds}
+            situations={riskMode ? NO_ITEMS : situations} focusId={focusId}
             onSelect={select} onScan={markScanned} height={mapH}
             shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
             onSelectCountry={selectStoryByCountry}

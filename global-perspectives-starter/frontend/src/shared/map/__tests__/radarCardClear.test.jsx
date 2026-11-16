@@ -10,7 +10,7 @@ const SIT = [{
   id: 'a', source: 'news', verb_label: 'Strikes hit the port', axis: 'conflict', tier: 'high', state: 'peak', escalating: false,
   centroid: { lat: 30, lon: 50 }, iso3_affected: ['IRN'], affected_names: [], opened_at: recent, last_change_at: recent,
 }];
-const base = { focusId: null, newIds: null, height: 300, onSelect() {}, onScan() {}, shading: [], linkArcs: [], countryRisk: [], onSelectCountry() {} };
+const base = { focusId: null, height: 300, onSelect() {}, onScan() {}, shading: [], linkArcs: [], countryRisk: [], onSelectCountry() {} };
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 

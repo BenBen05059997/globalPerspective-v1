@@ -73,7 +73,7 @@ export default function ForecastBoard({ items = [], emptyText = null, focusQid =
         <div className="tr-fb-mapgrid">
           <div className="tr-fb-map">
             <RadarMap
-              situations={NO_SITUATIONS} focusId={null} newIds={null} height={340}
+              situations={NO_SITUATIONS} focusId={null} height={340}
               onSelect={() => {}} onScan={() => {}}
               shading={shading} storyFocusIso3={selectedIso3}
               onSelectCountry={(iso3) => setSelectedIso3((cur) => (cur === iso3 ? null : iso3))}

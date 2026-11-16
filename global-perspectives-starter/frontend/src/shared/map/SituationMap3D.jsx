@@ -78,10 +78,7 @@ function iso3Centroid(iso3) {
 function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
 // This component is globe-only: the flat "MapView" overview mode was replaced by RadarMap (M4),
-// which is now both the phone default and the no-WebGL fallback. The single call site
-// (SituationHome.jsx) always passes view="globe"; the flat-mode branches this file used to carry
-// (INITIAL_VIEW, MapView, WebMercatorViewport, the dragRotate:false controller) were unreachable
-// dead code and were removed (F2.21, map-console review R1).
+// which is now both the phone default and the no-WebGL fallback.
 const GLOBE_VIEW_BASE = { longitude: 12, latitude: 18, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
 // M6: the globe fills ~75–85% of the map panel's own height, computed from `height` — not a
 // fixed zoom that reads small on a tall panel and cramped on a short one.
@@ -97,7 +94,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  * hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], labelIds = [], focusId, newIds = null, view = 'globe', onSelect, height = 560, width = null,
+  situations = [], labelIds = [], focusId, onSelect, height = 560, width = null,
   shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw, onDrawError,
 }) {
@@ -107,9 +104,6 @@ export default function SituationMap3D({
   const drewOnce = useRef(false);
   const drawErrorRef = useRef(onDrawError);
   drawErrorRef.current = onDrawError;
-  // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
-  // passes "globe" — see the comment above GLOBE_VIEW_BASE); it no longer changes any behaviour.
-  void view;
   // M6: the globe's default zoom is computed from the panel height (~75–85% fill), read through a
   // ref so a later window resize alone never resets a zoom the visitor already chose by
   // interacting — only clearing a selection re-applies it.
@@ -229,8 +223,6 @@ export default function SituationMap3D({
       rgb: look.desaturate ? desaturateRgb(base) : base, position: [s.centroid.lon, s.centroid.lat, MARK_LIFT_M],
     };
   }), [active]);
-  // `newIds` (since-your-last-visit) is shown in the feed only.
-  void newIds;
 
   // Spread arcs + affected fill are a SELECTION STATE, never a base layer (the spaghetti answer):
   // they exist only while one situation is focused. Origin → each affected-country centroid.

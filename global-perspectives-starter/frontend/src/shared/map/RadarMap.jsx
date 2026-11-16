@@ -130,7 +130,7 @@ function useCardQueue(place) {
 // `= []` default parameter is a NEW array every render (a caller that omits one re-ran the draw on every render).
 const NONE = [];
 export default function RadarMap({
-  situations = NONE, focusId, newIds = null, onSelect, onScan, height = 560,
+  situations = NONE, focusId, onSelect, onScan, height = 560,
   shading = NONE, linkArcs = NONE, storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = NONE, onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
 }) {
@@ -213,8 +213,6 @@ export default function RadarMap({
     if (!reduceMotion && gainedIds(seenIdsRef.current, ids)) setLap((n) => n + 1);
     seenIdsRef.current = new Set(ids);
   }, [active, reduceMotion]);
-  // `newIds` (since-your-last-visit) is shown in the feed only.
-  void newIds;
 
   // Draw land + markers once per data/selection change — never per animation frame.
   useEffect(() => {

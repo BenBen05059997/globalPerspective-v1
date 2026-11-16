@@ -37,12 +37,12 @@ This folder is stage 9: the account desk. Timeline: reads country history and pr
   `usePreferences`, `useDailyBrief`; context `useAuth`.
 
 ## Backend
-- Guides: [read-api](../../../../../backend/read-api/README.md) (`newsSavedItems`, `newsRecommend`, `newsSensitiveData-dev`),
+- Guides: [read-api](../../../../../backend/read-api/README.md) (`newsSavedItems`, `newsRecommend`, `newsReadApi`),
   [membership-studio](../../../../../backend/membership-studio/README.md) (`newsPolarBilling`),
   [distribution](../../../../../backend/distribution/README.md) (`newsEmailSender`)
 - `newsSavedItems` (saved items), `newsRecommend` (prefs, follows, alert feed), `newsPolarBilling` (membership,
-  checkout, Polar webhook): each a Function URL with auth NONE, the Firebase token checked in code. `newsSensitiveData-dev`
-  serves `country_history`. `newsEmailSender` sends the weekly email; `newsDriftCorrector` writes the drift notes the desk shows.
+  checkout, Polar webhook): each a Function URL with auth NONE, the Firebase token checked in code. `newsReadApi`
+  (repo dir `backend/read-api/newsSensitiveData`) serves `country_history`. `newsEmailSender` sends the weekly email; `newsDriftCorrector` writes the drift notes the desk shows.
 
 ## Data
 - `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT`: `save_item`, `unsave_item`, `get_saved_items` (Firebase token required)

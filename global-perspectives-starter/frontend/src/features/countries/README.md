@@ -39,7 +39,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 - `newsCountryIntelligence` (Scheduler `countryIntelliegence`, 05:15 UTC daily) writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE`
   and `HISTORY#<date>`; `newsCountryFactsUpdater` (Scheduler `Fact`, Mondays 05:00 Asia/Tokyo) writes `FACTS#<name>`;
   `newsDriftCorrector` (rule `TriggerDriftCorrector`, 05:30 UTC) writes `DRIFT#` notes; `newsSystemsAnalysis` (05:00 UTC) the story web;
-  `newsSensitiveData-dev` serves all.
+  `newsReadApi` (repo dir `backend/read-api/newsSensitiveData`) serves all.
 
 ## Data
 - `useCountryIntelligence` (several countries: the list page) -> the record's countries index (`/data/record/views/index/countries.json`, one request for every briefed country; `@/shared/api/countryBriefingsIndex.js`: the fields the list and the risk layer read, only the first risk signal, no drift), falling back when the index is missing or unreadable (missing, unusable and failed reads are each reported once) to `country_intelligence`, chunked to the backend's 15-name cap (`@/shared/map/countryRiskLayer.js`);
@@ -61,7 +61,7 @@ This folder is stage 9: the country pages. Timeline: reads the country views (br
 2. `newsThreadAnalysis` (04:40 UTC) writes `THREAD_ANALYSIS`; `newsCountryFactsUpdater` (weekly) pulls Wikidata into `FACTS#`.
 3. `newsCountryIntelligence` (05:15 UTC) reads the archives, thread analyses and facts -> `COUNTRY#<name>` briefing and risk read.
 4. `newsDriftCorrector` (05:30 UTC) compares days -> `DRIFT#<date>` notes.
-5. `newsSensitiveData-dev` actions `country_intelligence`, `country_facts`, `country_history`, `archive_range`.
+5. `newsReadApi` actions `country_intelligence`, `country_facts`, `country_history`, `archive_range`.
 6. Hooks above -> `CountryCardV2`, `CountryPage` (`/weekly/country/:countryName`) and `CountryListPage` (`/weekly/countries`).
 7. In the browser, no model: `CountryPage` builds the sheet blocks and the copied text from what it read; "built only from our archive"
    is said only when the analysis has no `groundingSources`.

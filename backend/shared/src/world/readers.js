@@ -29,14 +29,7 @@ const num = (x) => (x === null || x === undefined || x === '' || !Number.isFinit
 const arr = (x) => (Array.isArray(x) ? x : []);
 const str = (x) => (typeof x === 'string' && x.trim() ? x.trim() : null);
 const strs = (x) => arr(x).filter((v) => typeof v === 'string' && v.trim());
-/**
- * The "written late" marker of an entry (decision 0061): {writtenAt, slot}, both ISO times, or null. `writtenAt` is when the story was really
- * written, `slot` the missed news run it stands in for. Anything else on the field is dropped, so a malformed marker is no marker.
- */
-const lateMarker = (m) => {
-  const ok = (t) => typeof t === 'string' && Number.isFinite(Date.parse(t));
-  return m && typeof m === 'object' && ok(m.writtenAt) && ok(m.slot) ? { writtenAt: new Date(Date.parse(m.writtenAt)).toISOString(), slot: new Date(Date.parse(m.slot)).toISOString() } : null;
-};
+const { lateMarker } = require('../entriesInbox'); // the one validator of the written-late marker (decision 0061)
 const inRange = (d, from, to) => !!d && (!from || d >= from) && (!to || d <= to);
 
 // ---- provenance --------------------------------------------------------------------------------------------------

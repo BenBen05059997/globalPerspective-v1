@@ -40,6 +40,14 @@ test('a day with late lines but too few entries is still thin, with the late cou
   assert.equal(r.facts.lateEntries, 6);
 });
 
+test('a malformed marker never makes a day late: the health check counts only what the shared validator accepts', async () => {
+  const bad = [JSON.stringify({ topicId: 't', writtenLate: { writtenAt: 'x', slot: MARK.slot } }), JSON.stringify({ topicId: 't', writtenLate: true }), JSON.stringify({ topicId: 't', writtenLate: 'late' })];
+  const { health } = await buildHealth(ports({ 'record/inbox/entries/2026-11-14.jsonl': [...Array.from({ length: 30 }, () => line(false)), ...bad].join('\n') + '\n' }), NOW);
+  const c = cell(health, '2026-11-14', 'agent');
+  assert.equal(c.status, 'ok');
+  assert.equal('lateEntries' in c.facts, false);
+});
+
 test('an unmarked day: ok at 20 entries or more, exactly as before', () => {
   const r = agentRow('2026-11-13', true, { lines: 47, late: 0, at: null });
   assert.equal(r.status, 'ok');

@@ -76,6 +76,16 @@ function inboxLines(entries, { batch, selection = null } = {}) {
   });
 }
 
+/**
+ * The "written late" marker of an entry or inbox line (decision 0061): {writtenAt, slot}, both ISO times, or null. `writtenAt` is when the story was
+ * really written, `slot` the missed news run it stands in for. Anything else on the field is dropped, so a malformed marker is no marker; every reader
+ * (the world reader, the health check) goes through this one function.
+ */
+function lateMarker(m) {
+  const ok = (t) => typeof t === 'string' && Number.isFinite(Date.parse(t));
+  return m && typeof m === 'object' && ok(m.writtenAt) && ok(m.slot) ? { writtenAt: new Date(Date.parse(m.writtenAt)).toISOString(), slot: new Date(Date.parse(m.slot)).toISOString() } : null;
+}
+
 /** A line without the inbox's own fields: the entry as the archive row stores it. */
 function entryOfLine(line) {
   const out = {};
@@ -137,4 +147,4 @@ function latestSelection(lines) {
   return { batch: b.batch, run: withRun.run, topicIds: b.lines.map((l) => l.topicId), lines: b.lines };
 }
 
-module.exports = { MAX_ARCHIVE_ENTRIES, MAX_AI_CHARS, TODAY_WINDOW_MS, LATEST_FIELDS, trimAi, trimSummary, mergeArchiveDay, inboxLines, entryOfLine, batchesOf, replayDay, replayToday, latestSelection };
+module.exports = { MAX_ARCHIVE_ENTRIES, MAX_AI_CHARS, TODAY_WINDOW_MS, LATEST_FIELDS, lateMarker, trimAi, trimSummary, mergeArchiveDay, inboxLines, entryOfLine, batchesOf, replayDay, replayToday, latestSelection };

@@ -80,6 +80,13 @@ test('a malformed marker is no marker', () => {
   assert.equal('writtenLate' in F.entryFact(day(null), 'r').payload, false);
 });
 
+test('a malformed marker on an inbox line makes no Run gap and no marker on the fact', async () => {
+  const badLate = [entry(5, WRITTEN, {writtenLate: {writtenAt: WRITTEN}}), entry(6, WRITTEN, {writtenLate: true})];
+  const {run, facts} = await runDay(linesOf([[live, `${DAY}T04:26:35.000Z`], [badLate, WRITTEN]]));
+  assert.equal('lateWritten' in run.inputs, false);
+  assert.equal(facts.filter((x) => x.kind === 'entry').every((x) => !('writtenLate' in x.payload)), true);
+});
+
 // ---- the schemas know the marker ----------------------------------------------------------------------------
 const {readFileSync} = require('node:fs');
 const {resolve} = require('node:path');

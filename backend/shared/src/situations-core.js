@@ -261,8 +261,7 @@ function newsSituationId(story, threadId) {
 // so they are not summed); countries and headlines are the union.
 function mergeStories(stories) {
   if (stories.length === 1) return { ...stories[0], storyIds: [stories[0].storyId] };
-  const weight = (s) => (Number(s.outlets) || 0) * (Number(s.max_severity) || 0);
-  const lead = stories.slice().sort((a, b) => weight(b) - weight(a))[0];
+  const lead = leadStory(stories);
   const union = (key) => [...new Set(stories.flatMap((s) => s[key] || []))];
   const seen = new Set();
   const headlines = [];

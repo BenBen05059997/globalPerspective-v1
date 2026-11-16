@@ -12,8 +12,8 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 ## Status
 - Live, public. Accuracy stays locked until 150 post-pilot questions are resolved (`ACCURACY_UNLOCK_AT` in `lib/accuracyLock.js`):
   no Brier score and no skill word before then. The July pilot is excluded from every headline number.
-- Read live 2026-11-04: 88 questions locked in samples, none resolved yet (79 open, 9 awaiting check); no sampled question has a verdict.
-  The happened / not reported / could not be checked wording is therefore covered by tests only, not yet visible on the live page.
+- The live counts (locked, resolved, void, awaiting) change every week: read `questions.counts` in the served view (How to check it).
+  The question-state wording (happened / not reported / could not be checked / awaiting check) is covered by tests.
 - The server caps the corrections ledger by tier (anonymous: newest 5 notes plus an honest `total` and `gated`). `useCorrectionsFeed`
   sends the auth header when signed in (`restProxy.js` `proxyActionWithAuth`), so members see the full ledger.
 

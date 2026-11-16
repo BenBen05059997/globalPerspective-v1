@@ -21,7 +21,8 @@ const METHODOLOGY_VERSION = 1;
 // one methodology; promptVersion lets the study split pre/post the 2026-10-17 grounded-forecast change).
 //   1 = research briefing + forecast (two calls); 2 = single grounded call + G13;
 //   3 = outcomes (decision 0038): at most 3 events DONE per story, due 7-90 days, own p and source.
-const PROMPT_VERSION = 3;
+//   4 = same outcomes, wording only: no statement verbs (says, announces, ...) in the outcome text, so G14 keeps more of them (2026-11-16).
+const PROMPT_VERSION = 4;
 const HORIZON_DAYS = 90;
 const MAX_OUTCOMES = 3;
 

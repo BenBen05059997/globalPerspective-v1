@@ -503,7 +503,7 @@ function buildSummaryPrompt(topic, generatedDate) {
     '2) Preserve hedges exactly: if a source says "could", "may", "is expected to", "is voting on", or "reportedly", keep it hedged — never turn it into a settled fact or a result.',
     '3) Do NOT state an outcome, verdict, vote result, casualty figure, or number the snippets do not report.',
     '4) Do NOT invent or infer dates. Include a date ONLY if it appears in a snippet; otherwise omit it. Do not add today\'s date.',
-    '5) If the event is unresolved or a detail is not reported, say it about the event itself (e.g. "the vote is pending; no result has been reported"). Never mention the snippets, the headline, the sources or their completeness, and never write "the snippet/source does not report…". If a source has no usable text, ignore it.',
+    '5) If the event is unresolved or a detail is not reported, say it about the event itself (e.g. "the vote is pending; no result has been reported"). Never mention the snippets, the headline, the sources or their completeness, and never write "the snippet/source does not report…". If a source has no usable text, ignore it. A fact that appears only in the title is stated plainly, never as "per the title" or "the title states". A snippet that breaks off mid-sentence is left out without comment.',
     '6) To attribute a claim, name the outlet given in brackets on its source line (e.g. "per Al Jazeera"); never write "the snippets", "the sources" or "the report" instead of the outlet.',
     `Title: ${topic.title || 'Untitled Topic'}`,
     snippets ? `Source article snippets (your ONLY material):\n${snippets}` : 'No source snippets were provided — summarize only what the title states, in one or two bullets, without commenting on the material.',
@@ -524,7 +524,7 @@ function buildTraceCausePrompt(topic, generatedDate) {
     'Article Snippets:',
     snippets,
     '',
-    'Grounding rule: the "proximate" event and ANY specific name, figure, or date must come from the Article Snippets — do not invent them or turn a hedge ("could") into a settled fact. The structural/contributing/alternativePerspective fields may use general background reasoning, but never fabricate a specific fact the snippets do not support; if unknown, keep it general.',
+    'Grounding rule: the "proximate" event and ANY specific name, figure, or date must come from the Article Snippets — do not invent them or turn a hedge ("could") into a settled fact. The structural/contributing/alternativePerspective fields may use general background reasoning, but never fabricate a specific fact the snippets do not support; if unknown, keep it general. The same holds for every "evidence" text: say about a snippet only what it says. If a snippet is just a headline, add no actor, place, cause or quote it does not name, and do not finish a sentence that is cut off. Background reasoning stays general: no names, dates or figures from memory.',
     'Return this exact JSON structure (all fields required):',
     `{
   "proximate": { "what": "string — the immediate trigger event in 1-2 sentences", "when": "string — approximate date or period" },

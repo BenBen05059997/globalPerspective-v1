@@ -23,6 +23,7 @@ test('the prompt asks for at most 3 outcomes, done not said, due 7-90 days, and 
   assert.match(p, /AT MOST 3 distinct outcomes/);
   assert.match(p, /"outcomes": \[/);
   assert.match(p, /DONE, not something SAID/);
+  assert.match(p, /keep statement verbs \(says, announces, states, claims, warns, urges\) out of the outcome text/);
   assert.ok(p.includes('on or after 2026-10-29'), 'lead 7 days');
   assert.ok(p.includes('on/before 2027-01-20'), 'lead 90 days');
   assert.match(p, /every outcome is due 7 to 90 days/);
@@ -31,8 +32,8 @@ test('the prompt asks for at most 3 outcomes, done not said, due 7-90 days, and 
   assert.doesNotMatch(p, /Optimistic|Pessimistic|Most Likely|"scenarios"|triggers per scenario/);
 });
 
-test('PROMPT_VERSION 3 and the horizon gate is 90 days', () => {
-  assert.equal(lib.PROMPT_VERSION, 3);
+test('PROMPT_VERSION 4 and the horizon gate is 90 days', () => {
+  assert.equal(lib.PROMPT_VERSION, 4);
   assert.equal(lib.HORIZON_DAYS, 90);
   assert.equal(lib.MAX_OUTCOMES, 3);
 });

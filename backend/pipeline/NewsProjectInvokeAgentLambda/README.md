@@ -46,7 +46,7 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 
 ## Forecast draw (decision 0038)
 - `src/forecast-draw.js` (prompt, cadence `drawDecision`, outcome adapter, open-branch texts), `src/questions.js` (gates),
-  `src/lib.js` (`buildGatedScenarios`, `MAX_OUTCOMES = 3`, `HORIZON_DAYS = 90`, `PROMPT_VERSION = 3`).
+  `src/lib.js` (`buildGatedScenarios`, `MAX_OUTCOMES = 3`, `HORIZON_DAYS = 90`, `PROMPT_VERSION = 4`).
 - Cadence: draw only when `decideReuse` says generate (no stored forecast or the article set changed) AND the thread has no fork in the last
   7 days; else keep the stored forecast (or none). Dry-run plans show `skip` / `reuse:fork-within-7d`.
 - Output: up to 3 outcomes, each stored as a one-trigger scenario (`label` = event, own p, `by <due>`, `qid`), `unit: 'outcome'`, so every

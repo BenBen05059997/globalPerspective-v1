@@ -53,6 +53,11 @@ test('the prompt states each moved axis direction in words and asks for axisEffe
   assert.doesNotMatch(p, /PREVIOUS ANSWER/);
   assert.match(buildDriftPrompt('Iran', prior, cur, events, 'X'), /PREVIOUS ANSWER WAS REJECTED because X/);
 });
+test('the prompt asks for the bare JSON object: first character "{", no reasoning or fence around it', () => {
+  const p = buildDriftPrompt('Iran', prior, cur, events);
+  assert.match(p, /Return ONLY JSON, in this shape: \{"triggerEventNumber"/);
+  assert.match(p, /The first character of your reply must be "\{" and the last "\}": no reasoning before or after the JSON and no code fence\. Put the reasoning in whyChanged\./);
+});
 test('parseDriftResponse keeps only the three allowed axisEffects words for the four axes', () => {
   const r = parseDriftResponse('{"triggerEventNumber":1,"whyChanged":"w","noSingleDriver":false,"axisEffects":{"conflict":"Worsens","humanitarian":"maybe","bogus":"improves"}}', events);
   assert.deepEqual(r.axisEffects, { conflict: 'worsens' });

@@ -161,7 +161,8 @@ function buildDriftPrompt(subject, prior, current, events, correction) {
     ] : []),
     '- whyChanged: 1–2 sentences, grounded strictly in the cited event, describing why risk moved in the stated direction (never call a worsening the reason a score fell, or an improvement the reason it rose).',
     ...(correction ? ['', `YOUR PREVIOUS ANSWER WAS REJECTED because ${correction}. Answer again and fix exactly that.`] : []),
-    `Return ONLY JSON: {"triggerEventNumber":<n or 0>,"whyChanged":"<text>","noSingleDriver":<true|false>${effectsExample}}`,
+    `Return ONLY JSON, in this shape: {"triggerEventNumber":<n or 0>,"whyChanged":"<text>","noSingleDriver":<true|false>${effectsExample}}`,
+    'The first character of your reply must be "{" and the last "}": no reasoning before or after the JSON and no code fence. Put the reasoning in whyChanged.',
   ].join('\n');
 }
 

@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-10-18
+Amended 2026-11-17: `newsSelectionShadow` now lives in `backend/pipeline/newsSelectionShadow/` (`src/selection-core.js`), not under `amplify/backend/function/`. Rule `TriggerSelectionShadow` is ENABLED in the 2026-11-16 AWS snapshot, `cron(20 4,12,20 * * ? *)`.
 
 ## Context
 Backtests of the layered story selector lost blind-review pairs to stories whose headline was only

@@ -2,6 +2,7 @@
 
 Date: 2026-11-04. Status: accepted (operator decision 2026-11-04, "switch the four"); partly supersedes the "four high-leverage calls on Pro" consequence of 0014 and the "larger model" wording of 0039. Live 2026-11-04 for `newsRecordReview`, `newsSystemsAnalysis` and `newsDailyBrief`; `newsIngest` is planned, after its filter fixes are deployed.
 Amended 2026-11-16: the models named below are the DeepSeek ones of 2026-11-04. DeepSeek ran out of credit on 2026-11-14; decision 0060 chooses Claude Haiku 5.5 or Sonnet 5.5 per job under this record's rule 1 (a recorded test) and moves all twelve model-calling jobs to Claude on 2026-11-16. For each job, read the live env value, not this list.
+Amended 2026-11-17: the golden-week script is `backend/record/newsRecordReview/scripts/golden-week.js`, not `scripts/golden-week.js`.
 
 ## Context
 - On 2026-09-29 (Batch 2, decision 0014) topic selection, the daily brief, the weekly brief and the story forecast went to `deepseek-v4-pro` as "high-leverage calls". That was a judgement; no test compared Pro with Flash. Decision 0039 later put the weekly review on "the larger model" the same way.

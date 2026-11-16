@@ -32,7 +32,7 @@ This folder is stage 9: the track record page. Timeline: reads views/track-recor
 - `components/ForecastBoard.jsx` (radar map via `@/shared/map/RadarMap.jsx`), `DrawRow.jsx` (a week's draw and its check),
   `SettlingLog.jsx`, `Unavailable.jsx`, `ForecastLinks.jsx` (a question's story, only when `clusterKey` is a real `thread-` id, and the countries its text names)
 - `lib/trackRecordView.js` - pure view model for both pages; `stageWording`, `accuracyLock`, `accuracyEstimate`, `notReadyCopy`,
-  `pilotExclusion`, `settlingLog`, `forecastPlaces` support it
+  `pilotExclusion`, `settlingLog`, `forecastPlaces` support it (`utcDay` holds the UTC day helpers the estimate and the copy share)
 - `lib/sampleRule.js` - browser re-check of the weekly draw (`verifyDraw`, WebCrypto sha256); mirrors
   `backend/shared/src/questionPool.js` (`rankKey`, `draw`); parity through `sampleRuleGolden.json`, guarded by `scripts/check-shared-sync.mjs`
 - Public API (`index.js`): `useTrackRecord`, `useCorrectionsFeed` (used by `home` for the trust strip)

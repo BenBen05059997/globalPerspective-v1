@@ -12,11 +12,9 @@
 //   - the earliest date assumes no voids, the latest assumes `voidHigh` (25%) voids.
 // Returns null when there is nothing to base it on (no committed week).
 
-const DAY = 86400000;
+import { DAY, ms, iso, mondayOnOrAfter } from '@/features/track-record/lib/utcDay.js';
+
 const GRACE = 3;
-const ms = (d) => Date.parse(`${String(d).slice(0, 10)}T00:00:00Z`);
-const iso = (t) => new Date(t).toISOString().slice(0, 10);
-const nextMondayOnOrAfter = (t) => t + ((8 - new Date(t).getUTCDay()) % 7) * DAY;
 
 export function estimateAccuracyWindow({
   sampled = [], weeks = [], target = 150, now = new Date(), plannedK = 22,
@@ -29,7 +27,7 @@ export function estimateAccuracyWindow({
   const events = [];
   for (const s of sampled) {
     if (s.state !== 'awaiting' && s.state !== 'past_deadline_unchecked') continue;
-    events.push(nextMondayOnOrAfter(Math.max(ms(s.deadline) + GRACE * DAY, nowDay)));
+    events.push(mondayOnOrAfter(Math.max(ms(s.deadline) + GRACE * DAY, nowDay)));
   }
 
   const drawn = weeks.filter((w) => w.drawn && typeof w.picked === 'number');
@@ -51,13 +49,13 @@ export function estimateAccuracyWindow({
     for (let i = 0; i < K; i++) {
       const issue = start + (i % 7) * DAY;
       const deadline = issue + L[(i * 37 + wi * 11) % L.length] * DAY;
-      events.push(nextMondayOnOrAfter(Math.max(deadline + GRACE * DAY, start + 7 * DAY)));
+      events.push(mondayOnOrAfter(Math.max(deadline + GRACE * DAY, start + 7 * DAY)));
     }
   });
   events.sort((a, b) => a - b);
 
   const reach = (v) => {
-    for (let t = nextMondayOnOrAfter(nowDay); t <= nowDay + horizonWeeks * 7 * DAY; t += 7 * DAY) {
+    for (let t = mondayOnOrAfter(nowDay); t <= nowDay + horizonWeeks * 7 * DAY; t += 7 * DAY) {
       let n = 0;
       while (n < events.length && events[n] <= t) n++;
       if (resolvedNow + n * (1 - v) >= target) return iso(t);

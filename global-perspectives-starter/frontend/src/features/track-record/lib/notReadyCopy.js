@@ -3,11 +3,8 @@
 // Rules: every date is computed from real data (a fixture without the date yields no date string);
 // every projection says "estimate"; nothing is shown as a placeholder.
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
+import { DAY, ms, iso, mondayOnOrAfter } from '@/features/track-record/lib/utcDay.js';
 
-const DAY = 86400000;
-const ms = (d) => Date.parse(`${String(d).slice(0, 10)}T00:00:00Z`);
-const iso = (t) => new Date(t).toISOString().slice(0, 10);
-const mondayOnOrAfter = (t) => t + ((8 - new Date(t).getUTCDay()) % 7) * DAY;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 function currentWeek(q, now) {

@@ -307,8 +307,8 @@ function NotificationsPanel() {
   );
 }
 
-// K1 (AccountDesk.dc.html, approved 2026-09-26): four left-rail sections replacing the old
-// 5-tab strip. Order and copy (label + one-line subtitle) match the design board exactly.
+// K1 (design approved 2026-09-26): four left-rail sections replacing the old 5-tab strip.
+// Order and copy (label + one-line subtitle) follow that design.
 const SECTIONS = [
   { id: 'desk',    label: 'Desk',              subtitle: 'what changed · following · saved', kicker: 'DESK',
     title: 'Your desk', sub: 'What changed since your last visit, what you follow, and what you saved.' },

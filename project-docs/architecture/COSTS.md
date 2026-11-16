@@ -1,4 +1,6 @@
-# Costs: what the site spends, why, and how to check (2026-11-16)
+# Costs: what the site spends, why, and how to check
+
+Dates: the model table in section 4 was read on 2026-11-16; the AWS figures are from 2026-11-04 and 2026-11-05.
 
 Read this first, then check the code. Numbers are from Cost Explorer and our own `[usage]` logs on the dates given;
 they go stale, so re-run the recipe in section 6 before quoting them.
@@ -54,8 +56,8 @@ The model providers (DeepSeek, Anthropic) are not on the AWS bill. Model spend i
   The first live intake run cost about $0.60 (topic selection 47,421 tokens in / 10,829 out; the story agent about $0.39).
   Three runs a day is about $1.80 a day for intake if every run is that size, a projection from one run. With the weekly
   review on Sonnet, decision 0060 adds up to roughly $65 to $115 a month for all model calls (an estimate from the test
-  reports' per-call figures and call counts, not read from CloudWatch). No full day on Claude has been read from the
-  `[usage]` logs yet; replace these figures with that reading when there is one.
+  reports' per-call figures and call counts, not read from CloudWatch). No full day on Claude is recorded here from the
+  `[usage]` logs; replace these figures with that reading when there is one.
 
 ## 2. Where each dollar comes from, and why
 
@@ -64,7 +66,7 @@ The model providers (DeepSeek, Anthropic) are not on the AWS bill. Model spend i
 | S3 write requests (about 70% of AWS in early Nov; 46,491 Tier1 on Nov 4) | `newsStoryRecord` rewrote about 9,000 view files per run, 6 runs a day. Fixed in two steps, see "S3 writers on 2026-11-04" below. | `backend/record/newsStoryRecord/src/digests.js`; decision 0037, "Amended 2026-11-04" |
 | DynamoDB (about $9-10 a month in Sep-Oct; $0.24 in 3 days of Nov) | The old world tables, read and written until decision 0035 step 5 retires them. Table TTL is disabled, so rows only grow. | decision 0035; `STEP5_AUDIT.md` |
 | CloudWatch ($5-6 a month in Sep-Oct) | Alarms and custom metrics. The alarms were removed 2026-11-02 (operator decision). Nov shows about $0. | section 4 |
-| Model providers | On DeepSeek the weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, then Flash, about 4 times cheaper per call) was about half of model spend; the rest was `newsAgent` and the analysis Lambdas. On Claude the intake chain (`newsIngest`, `newsAgent` on Sonnet) and the weekly review (Sonnet, about $5.6 to $13.1 a Monday, estimated; none has run on Sonnet yet) are the two largest lines. | decision 0060; `ARCHITECTURE_WEEKLY_REVIEW.md` |
+| Model providers | On DeepSeek the weekly review `newsRecordReview` (about 670 calls a week; Pro until 2026-11-04, then Flash, about 4 times cheaper per call) was about half of model spend; the rest was `newsAgent` and the analysis Lambdas. On Claude the intake chain (`newsIngest`, `newsAgent` on Sonnet) and the weekly review (Sonnet, about $5.6 to $13.1 a Monday, estimated; none had run on Sonnet by 2026-11-16) are the two largest lines. | decision 0060; `ARCHITECTURE_WEEKLY_REVIEW.md` |
 | Lambda, API Gateway, SQS | Cents. | |
 
 ### S3 writers on 2026-11-04 (46,491 Tier1 requests)
@@ -84,7 +86,7 @@ writes. The tracker is about 4% of the day.
 Fixes in place: (1) digests, so a view is written only when changed (deployed 2026-11-04 20:53 JST); (2) from 2026-11-05
 about 09:00 JST the digest leaves out the daily `builtFrom` stamp (commit 8cd2267d), because the nightly run on 11-04 23:46 UTC
 still wrote 9,293 of 9,293. Expected after both: `newsStoryRecord` a few hundred writes a day instead of about 40-55k, saving
-about $6 a month. **Not yet measured:** the first clean day to confirm it is 2026-11-06 (UTC).
+about $6 a month. **Not measured in this file:** no reading of a clean day (2026-11-06 UTC or later) is recorded here.
 
 ## 3. Where to look
 
@@ -111,7 +113,7 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
 2. **No model call on reuse.** `newsAgent` calls the model for a forecast only when `decideReuse` says generate (no stored
    forecast, or the article set changed) and the thread has no fork in the last 7 days
    (`backend/pipeline/NewsProjectInvokeAgentLambda/README.md`). `newsThreadAnalysis` re-analyses only threads with a new event
-   (`src/threadPolicy.js`, at most `MAX_THREADS`). `newsCountryIntelligence` re-briefs by `src/refreshPolicy.js` (new, weekly
+   (`backend/pipeline/newsThreadAnalysis/src/threadPolicy.js`, at most `MAX_THREADS`). `newsCountryIntelligence` re-briefs by `backend/pipeline/newsCountryIntelligence/src/refreshPolicy.js` (new, weekly
    baseline 156 h, open alert, coverage jump; never twice a UTC day; top `COUNTRY_TOP_N`).
 3. **Prompt caching.** Providers bill cache-hit tokens at about 1/50 of input; the `[usage]` cache-hit count shows how well
    prompts are laid out (stable prefix first).
@@ -129,7 +131,7 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
 | `newsAnalyze` | | parked, `deepseek-v4-pro` |
 
    The provider and model are the live env, not the variable name (`GROK_*`/`XAI_*` names are DeepSeek-era; the value decides
-   the provider). Every scheduled job is on Claude; the seven switched at about 15:17 UTC on 2026-11-16 (thread, systems, country, drift, audit, resolver and review) have not yet run on it, so their cost is the test's estimate. Claude counts about 1.5
+   the provider). Every scheduled job is on Claude; the seven switched at about 15:17 UTC on 2026-11-16 (thread, systems, country, drift, audit, resolver and review) had not run on it when this was read, so their cost is the test's estimate. Claude counts about 1.5
    times more input tokens than DeepSeek for the same text and writes longer answers, so output caps were raised
    (decision 0060 lists them). `newsDailyBrief` also carries an `AI_MODEL` env value that no code reads (checked 2026-11-16 in
    `backend/distribution/newsPostDevTo/src`); it has no effect.
@@ -144,7 +146,7 @@ about $6 a month. **Not yet measured:** the first clean day to confirm it is 202
 
 | Step | Expected effect |
 |---|---|
-| Confirm 2026-11-06 shows `newsStoryRecord` at a few hundred writes (section 6, recipe 4) | About -$6 a month, from the digest fixes already deployed |
+| Confirm a clean day (2026-11-06 or later) shows `newsStoryRecord` at a few hundred writes (section 6, recipe 4) | About -$6 a month, from the digest fixes already deployed |
 | Retire the DynamoDB world tables (decision 0035 step 5) | About -$2.50 a month by the coordinator's estimate (Nov 1-3 run-rate: $0.24 in 3 days) |
 | Move the four jobs from Pro to Flash after tests (0056): review, systems, daily brief and `newsIngest` done 2026-11-04 | About -$4 to 7 a month of model spend on DeepSeek (estimate from the test reports, not measured live); overtaken by the move to Claude on 2026-11-16 |
 | Items vs stories: a one-entry item gets no forecasts, links or analysis | An estimated third to half off model spend |

@@ -58,20 +58,20 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 - `src/threading.js` (pure): join an entry of the window on `continues_topic` or title (normalised), else composite score >= 0.4 with
   keyword Jaccard >= 0.15; else found `thread-<slug>-<sha1>`. The whole run is compared before ids are minted. Each assignment logs
   `[join] {topicId, threadId, via, score, kwScore}`.
-- Repair: `node backend/pipeline/cli/threads.mjs list-joins|merge|split` (writes only with `--apply`, operator yes).
+- Repair: `node backend/pipeline/cli/threads.mjs list-joins|merge|split|move` (writes only with `--apply`, operator yes).
 
 ## Gotchas
 - Freshness (`src/run-guard.js`): no writes from a missing/future/prior-day generation or one older than the latest archive write; checked
   before generation and again before publication. Zero generated returns 503 `[pipeline-status] {reason:"zero-generated"}`, stale staging
-  `reason:"stale-staging"`; neither swaps or archives. A processed staging from before the current gemini slot throws
+  `reason:"stale-staging"`; neither swaps or archives. A processed staging from before the current newsIngest slot throws
   `stale-processed-staging`; one from the current slot is a quiet skip.
 - The early exits (`zero-generated`, `stale-staging`) and the error path flush the forecasts-inbox lines of PRED# rows already put,
   since newsStoryRecord reads forecasts only from the inbox (FORECASTS_SOURCE=inbox, 2026-11-02).
 - Source fields: archive sources keep selector `publishedAt`, `outlet`, `age`; PRED# rows carry `threadId`, `category` (`categories[0]`),
   `forkId = <PK>|<SK>` and `scenarioIndex`; older rows lack them and stay readable.
 - `http()` emits `Access-Control-Allow-Origin: *`. `package.json` lists Bedrock SDK deps the code does not use.
-- Models: `GROK_MODEL` (summary and cause chain; the name is old, the value is a model id) and `PREDICTION_MODEL` (forecast and research
-  briefing; falls back to `GROK_MODEL` when unset). Both run on Claude Sonnet 5.5 since 2026-11-16 (decision 0060). Calls go through shared
+- Models: `GROK_MODEL` (summary and cause chain; the name is old, the value is a model id) and `PREDICTION_MODEL` (the forecast;
+  falls back to `GROK_MODEL` when unset). Both run on Claude Sonnet 5.5 since 2026-11-16 (decision 0060). Calls go through shared
   `_shared/llm.js` `chat()` (thinking off, timeout 180 s, one transport retry). The provider comes from the value: `anthropic:<model>` uses
   `ANTHROPIC_API_KEY` (decision 0059); a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, `XAI_API_KEY`). Token caps: `MAX_TOKENS`
   (code default 600, live 1500: Claude's cause chain was cut off at 600) and `PREDICTION_MAX_TOKENS` (2500).

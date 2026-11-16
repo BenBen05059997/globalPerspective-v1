@@ -6,7 +6,6 @@ const crypto = require('crypto');
 // OWN probability `p` and a NAMED resolution source, frozen at issue (the log write is
 // attribute_not_exists, so a question is never edited; a correction is a new question).
 // Pure: no network, no clock, no LLM. Gates G7-G12 sit AFTER the existing G1-G6 (lib.validateTrigger).
-// See project-docs/architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md phase A.
 
 const MIN_LEAD_DAYS = 7;
 const P_MIN = 2;
@@ -92,9 +91,4 @@ function questionGate(t, ctx) {
   return { action: 'keep', p, source };
 }
 
-// Cluster key for "max one per story" sampling.
-function clusterKeyFor(row) {
-  return (row && (row.threadId || row.topicId)) || null;
-}
-
-module.exports = { vagueActor, SAID, DONE, qidFor, tokens, jaccard, parseP, questionGate, clusterKeyFor, MIN_LEAD_DAYS, P_MIN, P_MAX };
+module.exports = { SAID, DONE, qidFor, tokens, jaccard, parseP, questionGate, daysBetween };

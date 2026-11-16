@@ -23,7 +23,7 @@ const {
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (single grounded call); '' = same as GROK_MODEL
-const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model
 const { maxTokens: DEFAULT_MAX_TOKENS, temperature: DEFAULT_TEMPERATURE, topP: DEFAULT_TOP_P } = storyDefaults(process.env);
 const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '2500', 10);
 
@@ -38,10 +38,9 @@ const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '259200', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '259200', 10);
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
-// v1 (methodology-v1) generation inputs — see PREDICTION_METHODOLOGY_V1_PLAN.md §3.
+// v1 (methodology-v1) generation inputs.
 const FACTS_PK_PREFIX = 'FACTS#';
 const FACTS_SK = 'COUNTRY_FACTS';
-const ARC_DIGEST_DAYS = parseInt(process.env.ARC_DIGEST_DAYS || '7', 10);
 const ARC_DIGEST_MAX = parseInt(process.env.ARC_DIGEST_MAX || '12', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const { mergeArchiveDay, inboxLines } = require('./_shared/entriesInbox');
@@ -59,7 +58,7 @@ const buildArchiveEntry = (topic, ai, generationId, sourceCap, threadId) => buil
 
 const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
 
-// ── Event-registry matcher (Phase 1 "the bridge", MATCHER_SPEC) — additive, fully isolated ──
+// ── Event-registry matcher (Phase 1 "the bridge") — additive, fully isolated ──
 // Links map stories (S3 stories/state) to editorial threads via URL-exact (Tier 1) + R3 fingerprint
 // (Tier 2, gated). Writes threads/story-map.json; the tracker reads it and stamps situation.threadId.
 const { buildStoryMap } = require('./matcher');
@@ -166,9 +165,9 @@ exports.handler = async (event) => {
     }
 
     // R2 run guard: this staging was already fully processed (agentProcessedAt is set only when every
-    // story succeeded; Gemini rewrites `staging` with a full Put, so a new staging clears it).
+    // story succeeded; newsIngest rewrites `staging` with a full Put, so a new staging clears it).
     if (!force && !topicId && !readOnly && !dryRun && stagingItem?.agentProcessedAt) {
-      // Processed but generated before this slot: gemini produced nothing new, so today's archive is
+      // Processed but generated before this slot: newsIngest produced nothing new, so today's archive is
       // never written. Fail loudly (rethrown below) so the Lambda Errors metric counts it.
       const stale = staleProcessedRun(stagingItem, new Date());
       if (stale) {
@@ -767,7 +766,7 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId, finge
 // Deadline parsing + probability midpoint now live in ./lib (single source, unit-tested) so the
 // capture gates and the log write can't drift apart. See lib.parseTriggerDeadline / probabilityMidpoint.
 
-/* ---- v1 grounded-generation helpers (PREDICTION_METHODOLOGY_V1_PLAN.md §3) ---- */
+/* ---- v1 grounded-generation helpers ---- */
 
 // De-duplicated list of every region named across the topics we're about to predict on.
 function collectRegions(topics) {
@@ -1125,7 +1124,7 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
     );
     console.log(`Today archive written: ${todayEntries.length} new + ${mergedToday.length - todayEntries.length} existing = ${mergedToday.length} total`);
 
-    // --- Daily archive (paid tiers, 7-day TTL, 10 sources) ---
+    // --- Daily archive (paid tiers, 90-day TTL, 10 sources) ---
     const dailyKey = formatDateKey(now);
     const { Item: existingDaily } = await ddb.send(
       new GetCommand({ TableName: TOPICS_TABLE, Key: { id: dailyKey } }),

@@ -6,6 +6,7 @@
 // index.js does the DynamoDB reads and the model call; everything decidable lives here so it is tested.
 
 const lib = require('./lib');
+const { daysBetween } = require('./questions');
 
 const MIN_GAP_DAYS = 7;
 const OPEN_LOOKBACK_DAYS = 90; // PRED# rows older than the horizon cannot hold an open branch
@@ -117,8 +118,6 @@ function openBranchTexts(rows, today) {
   return out;
 }
 
-function daysBetween(fromDay, toDay) { return Math.round((Date.parse(`${toDay}T00:00:00Z`) - Date.parse(`${fromDay}T00:00:00Z`)) / 86400000); }
-
 /**
  * Draw or not. `decision` is lib.decideReuse(...): it says "generate" exactly when the story moved
  * (new, or its article set changed). A story that did not move, or whose thread was drawn in the last
@@ -135,4 +134,4 @@ function drawDecision({ decision, existing, lastForkDay, today, force = false })
   return { draw: true, reason: decision.reason };
 }
 
-module.exports = { MIN_GAP_DAYS, OPEN_LOOKBACK_DAYS, forecastInputText, buildPredictionPrompt, outcomesToScenarios, latestForkDay, openBranchTexts, drawDecision };
+module.exports = { OPEN_LOOKBACK_DAYS, forecastInputText, buildPredictionPrompt, outcomesToScenarios, latestForkDay, openBranchTexts, drawDecision };

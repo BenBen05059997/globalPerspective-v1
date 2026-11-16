@@ -1,6 +1,6 @@
 'use strict';
 
-// Event-registry matcher (EVENT_REGISTRY_PLAN / MATCHER_SPEC). Pure, no AWS deps.
+// Event-registry matcher. Pure, no AWS deps.
 // Builds a storyId → { threadId, tier, evidence } map linking MAP stories (S3 stories/state) to
 // EDITORIAL threads (topics' threadId) via two tiers, BOTH null-on-ambiguity (a wrong "Full
 // analysis →" link is misinformation — the hard no):

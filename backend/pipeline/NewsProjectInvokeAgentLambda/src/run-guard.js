@@ -19,9 +19,9 @@ function staleReason(staging, archives = [], now = new Date()) {
   if (new Date(generated).toISOString().slice(0, 10) < now.toISOString().slice(0, 10)) return 'generation-prior-day';
   return generated <= lastArchiveWrite(archives) ? 'generation-already-archived' : null;
 }
-// newsInvokeGemini runs cron(15 4/8) UTC (04:15, 12:15, 20:15; scripts/functions.json) and this agent
-// follows at :25. Staging already processed is a quiet duplicate only if gemini wrote it in the current
-// slot; one generated before the latest slot start means this run's gemini output never arrived.
+// newsIngest (repo dir newsInvokeGemini) runs cron(15 4/8) UTC (04:15, 12:15, 20:15; scripts/functions.json) and this
+// agent follows at :25. Staging already processed is a quiet duplicate only if newsIngest wrote it in the current
+// slot; one generated before the latest slot start means this run's ingest output never arrived.
 const GEMINI_SLOT_HOURS = [4, 12, 20];
 const GEMINI_SLOT_MINUTE = 15;
 function currentSlotStart(now) {

@@ -78,4 +78,4 @@ async function captureRawArticles({ articles, s3json, now = new Date(), shadow =
   }
 }
 
-module.exports = { captureRawArticles, rawLine, groupByDay, INBOX_PREFIX, SHADOW_PREFIX };
+module.exports = { captureRawArticles, rawLine, groupByDay, INBOX_PREFIX };

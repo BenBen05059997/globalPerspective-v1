@@ -15,16 +15,11 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const ddbDoc = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const MODEL_NAME = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
+const MODEL_NAME = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; the env sets the live model
 const DEFAULT_LIMIT = 15;
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
-// Capture harness (foundation of IMPACT_VALIDATION_METHODOLOGY.md): log what the selector SAW vs
-// what it CHOSE each cycle, so an auditor can later check for missed high-impact events and a human
-// reference set can be built. Additive + fully fenced — never affects ingestion.
-const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
-const CAPTURE_TTL_DAYS = Number(process.env.CAPTURE_TTL_DAYS) || 45;
 
 // ============================================================
 // SEEN TOPICS - 24h soft dedup
@@ -223,12 +218,9 @@ async function writeCache({ topics, model, limit }) {
 // MAIN HANDLER
 // ============================================================
 
-// Log the cycle's input (every fetched article the selector saw) + output (chosen topics) to the
-// capture store. Fully fenced: any failure is swallowed so it can never break ingestion.
-// S8·T2b (2026-09-09): writes the selector's saw-vs-chose snapshot to S3
-// (audit/ingest-capture/latest.json; its former reader, newsImpactAudit, was removed 2026-11-01), replaces the
-// GlobalPerspectiveIngestCapture DDB table (dropped). A stable pointer overwritten each run
-// (the audit only ever needs the latest capture).
+// Log the cycle's input (every fetched article the selector saw) + output (chosen topics) to S3
+// (audit/ingest-capture/, below; it replaced the GlobalPerspectiveIngestCapture DDB table, dropped).
+// Fully fenced: any failure is swallowed so it can never break ingestion.
 async function captureIngestion(inputArticles, chosenTopics, generationId) {
   try {
     const input = (inputArticles || []).slice(0, 300).map((a) => ({
@@ -324,21 +316,21 @@ exports.handler = async (event) => {
     // One prompt row per event; the full pool stays for URL validation and source enrichment (selection.js).
     const { prompt } = selectionRequest({ articles: allArticles, limit, seenEntries, pastArchiveTitles });
 
-    console.log('Sending to Grok, article count:', allArticles?.length || 0);
+    console.log('Sending to the model, article count:', allArticles?.length || 0);
 
     // Shared llm.js (thinking off); the options are selection.js's, shared with the recovery script.
     const result = await chat(selectionChatOptions({ prompt, model: MODEL_NAME }));
     const text = result.content;
 
     console.log(
-      'Grok finish_reason:', result.finishReason,
+      'Model finish_reason:', result.finishReason,
       'chars:', text.length,
       'completion_tokens:', result.usage?.completion_tokens,
     );
-    console.log('Grok response preview:', text?.substring(0, 500));
+    console.log('Model response preview:', text?.substring(0, 500));
 
     if (!text) {
-      const msg = 'Empty response from Grok model';
+      const msg = 'Empty response from the model';
       if (isScheduledEvent(event)) {
         throw new Error(msg);
       }

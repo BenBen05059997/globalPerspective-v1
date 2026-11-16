@@ -1,6 +1,6 @@
 # newsInvokeGemini
 
-The topic selector at the head of the content pipeline. Despite the name, it does not call Gemini. It fetches 26 hard-coded RSS feeds (BBC, Al Jazeera, Guardian, AllAfrica, CNA and others) and sends them to one LLM call that picks up to `TOPICS_LIMIT` topics (default 15, max 20). Order of a run: fetch, **raw capture** (every fetched item to the inbox), collapse same-event items, model, drop repeats, write. The prompt carries the done-not-said rule (decision 0020), a significance floor instead of a quota, 24h soft dedup and narrative continuity (today plus 7 days). It drops source URLs that were not among the fetched articles, enriches sources (`src/source_enrichment.js`, `src/outlet_metadata.js`), and writes the topics cache item with `status: 'pending'`. It also writes a saw-vs-chose capture to S3, read by newsSelectionShadow and `predictions/jev-backtest` (the audit that once read it was removed 2026-11-01).
+The topic selector at the head of the content pipeline. Despite the name, it does not call Gemini. It fetches 26 hard-coded RSS feeds (BBC, Al Jazeera, Guardian, AllAfrica, CNA and others) and sends them to one LLM call that picks up to `TOPICS_LIMIT` topics (default 15, max 20). Order of a run: fetch, **raw capture** (every fetched item to the inbox), collapse same-event items, model, drop repeats, write. The prompt carries the done-not-said rule (decision 0020), a significance floor instead of a quota, 24h soft dedup and narrative continuity (today plus 7 days). It drops source URLs that were not among the fetched articles, enriches sources (`src/source_enrichment.js`, `src/_shared/outlets.js`), and writes the topics cache item with `status: 'pending'`. It also writes a saw-vs-chose capture to S3, read by newsSelectionShadow and `predictions/jev-backtest` (the audit that once read it was removed 2026-11-01).
 
 ## Deployment
 - Deployed name `newsIngest` since 2026-11-03 (was `newsInvokeGemini-dev`, deleted 2026-11-05; repo dir `newsInvokeGemini`) · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
@@ -10,7 +10,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE` (key `id`): reads `seen-today` and `archive#YYYY-MM-DD` (today and the previous 7 days); writes the cache item `id = TOPICS_CACHE_ITEM_ID` (default `staging`) and `seen-today`.
 - S3 `WORLD_BUCKET`: appends **every fetched item** to `record/inbox/articles/YYYY-MM-DD.jsonl` (raw capture, below; shadow `record/shadow/inbox/articles/` when `RAW_CAPTURE_SHADOW=1`). Also writes `audit/ingest-capture/latest.json` plus `audit/ingest-capture/YYYY-MM-DD/HHMM.json` (`INGEST_CAPTURE_PREFIX`). Fenced: a failure never breaks ingestion.
-- External: the RSS feed hosts listed in `src/index.js`, and the LLM endpoint below.
+- External: the RSS feed hosts listed in `src/selection.js` (`RSS_FEEDS`), and the LLM endpoint below.
 - Env: `WORLD_BUCKET`, `RAW_CAPTURE_SHADOW`, `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_THRESHOLD`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_CROSS_TOPIC`, `TOPICS_LIMIT`.
 
 ## Models
@@ -21,12 +21,11 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - A failed run on a scheduled event (missing key, model/upstream error, empty reply) throws, so the Lambda `Errors` metric counts it; only direct HTTP invocations get a 4xx/5xx response body. Test: `node --test src/scheduled-failure.test.js`.
 - The names "Gemini" and "Grok" in the code, logs and env names are historical.
 - It emits `Access-Control-Allow-Origin: *` on its HTTP-shaped responses. If a Function URL is ever added, its CORS config must stay empty.
-- `INGEST_CAPTURE_TABLE` and `CAPTURE_TTL_DAYS` are still read but unused; capture is in S3.
 - `max_tokens` is 12000; truncated JSON output goes through `salvageTruncatedTopics`.
 
 ## Source field contract
 
-Source fields are bound to the fetched RSS URL: `publishedAt` is ISO UTC (null when missing or invalid), while `age` stays for older readers. `outlet` comes only from `src/outlet_metadata.js`; unknown domains keep null. Country codes pass the shared `resolveIso3` resolver; unknown inputs are dropped and logged with their count.
+Source fields are bound to the fetched RSS URL: `publishedAt` is ISO UTC (null when missing or invalid), while `age` stays for older readers. `outlet` comes only from `src/_shared/outlets.js` (`getOutletMeta`); unknown domains keep null. Country codes pass the shared `resolveIso3` resolver; unknown inputs are dropped and logged with their count.
 
 Offline source-field regressions: `node --test src/source-fields.test.js` (from this folder).
 

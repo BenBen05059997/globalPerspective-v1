@@ -86,4 +86,4 @@ function newestPerFeed(articles, n) {
   return (articles || []).filter((_, i) => keep.has(i));
 }
 
-module.exports = { newestPerFeed, collapseSameEvent, dropRepeatTopics, titleTokens, jaccard, titleNumbers, PRE_JACCARD, POST_JACCARD };
+module.exports = { newestPerFeed, collapseSameEvent, dropRepeatTopics, titleTokens, jaccard };

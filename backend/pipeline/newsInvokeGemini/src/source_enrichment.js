@@ -8,8 +8,6 @@
 // Rationale: the LLM is told to pick the best few sources per topic and
 // to keep article-to-topic exclusivity. Both rules cause it to drop
 // matching articles. Deterministic post-pass re-attaches them.
-//
-// See SOURCE_DIVERSITY_PLAN.md for full design.
 
 const { normalizeOutlet, getOutletMeta } = require('./_shared/outlets');
 

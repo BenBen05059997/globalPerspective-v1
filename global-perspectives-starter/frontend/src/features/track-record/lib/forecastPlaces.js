@@ -42,7 +42,7 @@ export function itemPlaces(item) {
 
 /**
  * itemStoryId — the story a board item belongs to: its `clusterKey` when that is a real thread id
- * (`thread-…`). A sampled question's clusterKey is `threadId || topicId` (NewsProjectInvokeAgentLambda questions.js clusterKeyFor), and
+ * (`thread-…`). A sampled question's clusterKey is `threadId || topicId || PK` (backend/shared/src/questionPool.js eligibleQuestions), and
  * a topic id is not an address, so an un-threaded question gets no story link.
  */
 export function itemStoryId(item) {

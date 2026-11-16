@@ -57,3 +57,9 @@ test('W4: the limit follows the argument', () => {
   assert.match(p, /never more than 7 topics in total/);
   assert.match(p, /Identify up to 7 SIGNIFICANT/);
 });
+
+test('rule 5 keeps merging same-event articles but never merges two different events into one topic', () => {
+  const p = prompt();
+  assert.match(p, /Err on the side of merging, not splitting\./);
+  assert.match(p, /two different events never share a topic, even in the same country or on the same day/);
+});

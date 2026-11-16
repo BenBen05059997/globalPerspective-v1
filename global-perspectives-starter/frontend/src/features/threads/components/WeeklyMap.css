@@ -2,32 +2,8 @@
    Role and scale tokens only (tokens.css). Buttons and chips are the shared Button / Chip; marks
    take the crisis hue of the story's topic (type only), the selected state is the accent outline. */
 
-.wmap-page { display: flex; flex-direction: column; height: calc(100vh - 80px); overflow: hidden; }
-.wmap-page.embedded { height: calc(100vh - 160px); overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+.wmap-page { display: flex; flex-direction: column; height: calc(100vh - 160px); overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-lg); }
 
-.wmap-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-5); }
-.wmap-header-left { display: flex; align-items: center; gap: var(--space-3); }
-.wmap-back-link {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--r-md);
-  font-size: var(--text-ui);
-  font-weight: var(--weight-medium);
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
-}
-.wmap-back-link:hover { background: var(--panel-3); color: var(--text-head); }
-.wmap-header h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-head); }
-.wmap-date-range {
-  padding: 3px var(--space-2);
-  border-radius: var(--r-md);
-  background: var(--panel-3);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--text-muted);
-}
-.wmap-header-right { display: flex; align-items: center; gap: var(--space-3); }
-.wmap-stat { font-size: var(--text-sm); color: var(--text-muted); }
 .wmap-loading-full { flex: 1; display: flex; align-items: center; justify-content: center; }
 
 /* ===== MAP CONTAINER ===== */
@@ -221,9 +197,6 @@
   .wmap-backdrop { position: absolute; inset: 0; z-index: 20; display: block; background: var(--strip); }
   .wmap-thread-panel { position: absolute; left: 0; top: 0; bottom: 0; z-index: 25; width: 280px; box-shadow: var(--shadow-md); }
   .wmap-thread-panel.collapsed { width: 0; box-shadow: none; }
-  .wmap-header { padding: var(--space-2) var(--space-3); }
-  .wmap-header h1 { font-size: var(--text-lg); }
-  .wmap-date-range { display: none; }
   .wmap-legend { bottom: var(--space-2); left: var(--space-2); }
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode, regionToCountryCode } from '@/shared/lib/countryMapping';
@@ -19,8 +19,8 @@ import Chip from '@/shared/ui/Chip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
-import { ROUTE, mapHref } from '@/shared/lib/links.js';
-import { daysWithNews, listCounts, ARCHIVE_DAYS } from '@/features/threads/lib/storyGroups';
+import { mapHref } from '@/shared/lib/links.js';
+import { daysWithNews, listCounts, ARCHIVE_DAYS, CATEGORY_ORDER } from '@/features/threads/lib/storyGroups';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
 
@@ -150,7 +150,7 @@ function buildWeeklyMapData(dayMap, dates) {
   return { markers: Object.values(pointMarkers), lines: Object.values(lines), threadList, allRegions };
 }
 
-const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, countryPlay, onThreadSelect, countryThreadIds, disableInfoWindow, onCountryClick, activeCountry }, ref) {
+const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, countryPlay, onThreadSelect, countryThreadIds, onCountryClick, activeCountry }, ref) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const gMarkersRef = useRef([]);
@@ -252,7 +252,6 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       const hasCurrent = country.hasCurrent || !currentDate;
 
       // When a country is active: selected = bright + large, connected = same color but dimmed + smaller
-      const effectiveColor = primaryColor;
       const effectiveScale = activeCountry ? (isSelected ? size + 4 : size) : (currentDate ? (hasCurrent ? size + 2 : size - 1) : size);
       const effectiveOpacity = activeCountry ? (isSelected ? 1.0 : 0.35) : (currentDate ? (hasCurrent ? 1.0 : 0.25) : (isHighlighted ? 0.9 : 0.3));
 
@@ -263,7 +262,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: effectiveScale,
-          fillColor: effectiveColor,
+          fillColor: primaryColor,
           fillOpacity: effectiveOpacity,
           strokeColor: isSelected ? ring : (currentDate && hasCurrent ? primaryColor : ring),
           strokeWeight: isSelected ? 3 : (currentDate && hasCurrent ? 3 : 1.5),
@@ -278,7 +277,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       });
 
       marker.addListener('click', () => {
-        if (disableInfoWindow && onCountryClick) {
+        if (onCountryClick) {
           onCountryClick(country.name);
           return;
         }
@@ -322,7 +321,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
 
       gMarkersRef.current.push(marker);
     }
-  }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds, disableInfoWindow, onCountryClick, activeCountry]);
+  }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds, onCountryClick, activeCountry]);
 
   return <div ref={mapRef} className="wmap-gmap" />;
 });
@@ -587,15 +586,14 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               <div className="wmap-thread-empty">{search ? 'No matching threads' : 'No threads in this region'}</div>
             )}
             {(() => {
-              const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
               const groupMap = {};
               for (const t of visibleThreads) {
                 const cat = t.entries[0]?.category?.toLowerCase() || 'other';
-                const key = ORDER.includes(cat) ? cat : 'other';
+                const key = CATEGORY_ORDER.includes(cat) ? cat : 'other';
                 if (!groupMap[key]) groupMap[key] = [];
                 groupMap[key].push(t);
               }
-              const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
+              const groups = CATEGORY_ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
               return groups.map(({ category, threads }) => {
                 const isCollapsed = collapsedCategories.has(category);
                 const dot = crisisDotVar(category);
@@ -712,20 +710,14 @@ function MapLegend() {
 
 // frameInsets = { top, right, bottom, left } px of the map covered by an overlay (the country page's
 // header bar): with `defaultCountry` the map frames that country in the remaining visible band.
-export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, onCountryClick = null, frameInsets = null }) {
-  const isEmbedded = embedded;
+// The map is always embedded in a page (/weekly, the country page); callers still pass `embedded`,
+// and the root keeps the `embedded` class that CountryPage.css selects.
+export default function WeeklyMap({ hidePanel: hidePanelProp = false, defaultCountry = null, onCountryClick = null, frameInsets = null }) {
   const isMobile = useIsMobile();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
-  const [highlightThread, setHighlightThread] = useState(() => {
-    if (isEmbedded) return null;
-    return searchParams.get('thread') || null;
-  });
+  const [highlightThread, setHighlightThread] = useState(null);
   const [panelOpen, setPanelOpen] = useState(!isMobile && !hidePanelProp);
-  const [mapRegion, setMapRegion] = useState(() => {
-    if (isEmbedded) return null;
-    return searchParams.get('region') || null;
-  });
+  const [mapRegion, setMapRegion] = useState(null);
   const [storyPlay, setStoryPlay] = useState(null);
   const [countryPlay, setCountryPlay] = useState(null);
   const [activeCountry, setActiveCountry] = useState(null);
@@ -733,14 +725,6 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
   const googleMapRef = useRef(null);
 
   const chronoDates = useMemo(() => [...sortedDates].reverse(), [sortedDates]);
-
-  useEffect(() => {
-    if (isEmbedded) return;
-    const params = {};
-    if (highlightThread) params.thread = highlightThread;
-    if (mapRegion) params.region = mapRegion;
-    setSearchParams(params, { replace: true });
-  }, [highlightThread, mapRegion, isEmbedded, setSearchParams]);
 
   const { markers: allMarkers, lines: allLines, threadList: allThreads, allRegions } = useMemo(() => {
     if (chronoDates.length === 0) return { markers: [], lines: [], threadList: [], allRegions: [] };
@@ -992,12 +976,8 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
 
   const googleApiKey = window.GOOGLE_MAPS_API_KEY || '';
 
-  const dateRangeLabel = chronoDates.length > 0
-    ? `${formatDateLabel(chronoDates[0])} — ${formatDateLabel(chronoDates[chronoDates.length - 1])}`
-    : '';
-
   const render = (status) => {
-    if (status === 'FAILURE' || !googleApiKey) {
+    if (status === 'FAILURE') {
       return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} frameBounds={frameBounds} frameInsets={frameInsets} />;
     }
     if (status === 'LOADING') {
@@ -1013,7 +993,6 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
         countryPlay={countryPlay}
         onThreadSelect={handleMarkerThreadSelect}
         countryThreadIds={countryThreadIds}
-        disableInfoWindow={!!onCountryClick}
         onCountryClick={onCountryClick}
         activeCountry={activeCountry}
       />
@@ -1021,24 +1000,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
   };
 
   return (
-    <div className={`wmap-page ${isEmbedded ? 'embedded' : ''}`}>
-      {!isEmbedded && (
-        <div className="wmap-header">
-          <div className="wmap-header-left">
-            <Link to={ROUTE.stories} className="wmap-back-link">← Weekly</Link>
-            <h1>Evolution Map</h1>
-            {dateRangeLabel && <span className="wmap-date-range">{dateRangeLabel}</span>}
-          </div>
-          <div className="wmap-header-right">
-            {chronoDates.length > 0 && (
-              <span className="wmap-stat">
-                {filteredMarkers.length} markers · {threadList.length} threads
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
+    <div className="wmap-page embedded">
       {loading ? (
         <div className="wmap-loading-full"><BootLoader variant="inline" className="gp-boot--tight" label="Loading archive data" text="Loading archive data" /></div>
       ) : (

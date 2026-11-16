@@ -36,11 +36,11 @@ describe('BootLoader states', () => {
     expect(container.firstChild.className).toMatch(/gp-boot--dark/);
   });
 
-  it('is dark in every variant (one token set): no light class, whatever tone is passed', () => {
+  it('is dark in every variant (one token set): no light class', () => {
     const a = render(<BootLoader sensors={S('wait', 'wait', 'wait')} />);
     expect(a.container.firstChild.className).toMatch(/gp-boot--dark/);
     a.unmount();
-    const b = render(<BootLoader variant="inline" tone="light" />);
+    const b = render(<BootLoader variant="inline" />);
     expect(b.container.firstChild.className).toMatch(/gp-boot--dark/);
     expect(b.container.firstChild.className).not.toMatch(/light/);
   });

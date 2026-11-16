@@ -15,7 +15,6 @@ import { removeStaticBoot, bootWaitedMs } from './staticBoot.js';
 //
 // Props:
 //   sensors     [{ id, label, state: 'wait' | 'ok' | 'fail' }] — omit for the compact mark + sweep.
-//   tone        ignored: the boot screen is dark on every page (one token set, 2026-10-01)
 //   variant     'full' (fixed full-screen cover) | 'inline' (in flow, e.g. a Suspense fallback)
 //   ready       true => fill the globe and crossfade away. Default: every sensor is 'ok'.
 //   onDone      called once the crossfade finished (unmount the loader here).

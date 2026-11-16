@@ -353,7 +353,7 @@ export default function SituationHome() {
   const bootDone = useCallback(() => { bootShown = true; endFullBoot(); setBootOpen(false); }, []);
   const bootOverlay = bootOpen && typeof document !== 'undefined' ? createPortal(
     <BootLoader
-      sensors={bootSensors} tone="dark" variant="full" ready={bootForced || bootSensors.every((sn) => sn.state === 'ok')}
+      sensors={bootSensors} variant="full" ready={bootForced || bootSensors.every((sn) => sn.state === 'ok')}
       onRetry={retryBoot} onContinue={() => setBootForced(true)} onDone={bootDone}
     />,
     document.body,
@@ -821,7 +821,7 @@ export default function SituationHome() {
         {isPhone ? <div className="sh-controls">{controls}</div> : null}
 
         {showGlobe ? (
-          <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" tone="dark" /></div>}>
+          <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" /></div>}>
             <SituationMap3D
               key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
               situations={riskMode ? NO_ITEMS : situations} labelIds={riskMode ? NO_ITEMS : globeLabelIds} focusId={focusId}

@@ -192,7 +192,6 @@ export default function TrackRecordPage() {
         )}
       </section>
 
-
     </>
   );
   const mapBlocks = (
@@ -229,7 +228,6 @@ export default function TrackRecordPage() {
         )}
       </section>
 
-
     </>
   );
   const logBlocks = (
@@ -252,7 +250,6 @@ export default function TrackRecordPage() {
         </p>
         <CorrectionsLedger />
       </section>
-
 
     </>
   );
@@ -325,7 +322,6 @@ export default function TrackRecordPage() {
         </p>
         <p className="tr-textlink"><Link to={`${ROUTE.trackRecord}/text`}>Read as text →</Link></p>
       </header>
-
 
       {isPhone ? (
         <>

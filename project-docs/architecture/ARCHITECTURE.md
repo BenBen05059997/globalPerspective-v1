@@ -2,7 +2,7 @@
 
 This is the map, not the inventory. Lambdas, schedules, env keys, routes, feature folders and S3 prefixes are read from the source of truth: `scripts/functions.json`, `aws lambda list-functions`, `aws events list-rules`, `aws scheduler list-schedules`, `src/app/App.jsx`, `ls src/features`, `aws s3 ls`. When this file and those disagree, they win. Area designs: [the record](ARCHITECTURE_TIMELINE.md), [forecast loop](ARCHITECTURE_FORECAST_LOOP.md), [weekly review](ARCHITECTURE_WEEKLY_REVIEW.md), [board](ARCHITECTURE_BOARD.md), [storage rules](DATA_STRATEGY.md), [world model](WORLD_MODEL.md). What is stopped or waiting right now: `project-docs/START_HERE.md`.
 
-The live frontend is the build in `docs/` (the bundle `docs/index.html` names); a change in `src/` reaches the site only through a release. That build already has decisions 0048 to 0050 (briefs page on the record, economy removed, views-freshness rule).
+The live frontend is the build the Worker `globalperspective-site` serves (read the bundle name from `https://globalperspective.net/`). `docs/` is the packaging source and the GitHub Pages fallback copy, and its `index.html` names an older bundle. A change in `src/` reaches the site only through a release (see Hosting below).
 
 ## Purpose
 Global Perspectives (globalperspective.net) is an AI global-news intelligence site. Scheduled Lambdas pull news (RSS) and hazard feeds (GDACS, GDELT), use an LLM to select and explain the stories that matter, track situations on a world map, score country risk, make forecasts that are settled later in public, and send a weekly brief. Reading is free and needs no account. A paid membership (Polar) buys following countries and deeper history, not access to content.
@@ -20,7 +20,7 @@ flowchart LR
     back[AWS backend: Lambdas, DynamoDB, S3]
   end
   cf[Cloudflare Worker globalperspective-rss]
-  site[Worker globalperspective-site: static assets]
+  sw[Worker globalperspective-site: static assets]
   fb[Firebase Auth]
   polar[Polar billing]
   news[News RSS sources]
@@ -31,7 +31,7 @@ flowchart LR
   mail[Resend email]
   soc[LinkedIn and Bluesky]
   reader --> cf
-  cf -->|SPA files| site
+  cf -->|SPA files| sw
   cf -->|world and record JSON| back
   reader --> site
   site <-->|read API, member calls| back
@@ -111,7 +111,7 @@ Country names are canonical at the writers (United States, DR Congo, UAE; `resol
 React + Vite SPA. Build output goes to the repo-root `docs/`.
 - `src/app/`: routing (`App.jsx`), redirects for retired URLs, layout and chrome, the error boundary.
 - `src/features/<name>/`: 12 feature folders (`account`, `analysis-studio`, `board`, `breaking`, `briefings`, `countries`, `home`, `map`, `ops`, `static`, `threads`, `track-record`), each owning its pages, components, hooks and lib. `map` owns `/`, `home` owns `/today`, `threads` owns `/weekly` and the story pages, `countries` the country pages, `board` `/board`, `ops` `/ops` (the operator's page, noindex, the nav link only after the `ops` action answers 200), `briefings` `/briefings`, `track-record` `/track-record`, `analysis-studio` only the shared-run page `/analyze/s/:id` (`/analyze` is a redirect in `app/`). `/weekly`'s Countries tab links to `/weekly/countries`, which `App.jsx` routes to `countries`' `CountryListPage`, so `threads` never imports `countries`. Routes: `App.jsx`.
-- `src/features/<name>/index.js`: a feature's public API, only what other features and `app/` import (route pages are not in it; `App.jsx` lazy-loads them by path). `account`, `analysis-studio`, `static` and `weekly` have none.
+- `src/features/<name>/index.js`: a feature's public API, only what other features and `app/` import (route pages are not in it; `App.jsx` lazy-loads them by path). `account`, `analysis-studio` and `static` have none.
 - `src/shared/`: `api/` (`restProxy.js` the one client for the proxy and the Function-URL endpoints; `recordViews.js` the one reader of `/data/record/views/`; `viewsFresh.js` the 9-hour freshness rule; the per-view readers), `contexts/AuthContext.jsx`, `styles/` tokens, `lib/` pure helpers, `hooks/` shared data hooks, `ui/` shared blocks, `map/` the map drawing kit.
 - `worker/` + `wrangler.jsonc`: the Workers Static Assets site (`globalperspective-site`). It has served `globalperspective.net` since the cutover on 2026-11-14 (a Custom Domain; the front Worker still sits in front of it).
 
@@ -124,7 +124,7 @@ The repo copy of the `globalperspective-rss` Worker that fronts production (`pro
 
 ### Operator tools
 - `scripts/`: `lambda.sh` (diff, package, deploy, rollback one Lambda, driven by functions.json), `audit-lambda-drift.sh`, `errors.mjs`, `gen-pipeline-blocks.mjs`, and on-demand checks (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`, `situations-log.mjs`, `check-shared-sync.mjs`).
-- `quality/`: the frontend verify gate (`verify_pages.sh` and ratchets such as `check_color_literals.mjs`, `check_shared_blocks.mjs`, `check_docs.mjs`, `check_links.mjs`), eval harnesses.
+- `quality/`: the style and doc ratchets (`check_*.mjs`: colour literals, shared blocks, px, feature cycles, docs, links, AWS inventory), `verify_pages.sh` (per-page grep guards; run by hand, no hook or script calls it), eval harnesses. The gate: `npm run verify` in the frontend is `eslint .` then `vitest run`; the pre-push hook (`.githooks/`) runs it when frontend files are in the push, the pre-commit hook runs every `quality/check_*.mjs` when frontend `src` css, js or jsx is staged, and `deploy.sh` runs verify and `npm run test:hosting` before it builds.
 - `predictions/`: `settle-correct.js` (list settled and due questions; correct a verdict with a reason), `verify-draw.mjs`.
 - `backend/<group>/cli/`: operator CLIs next to their Lambdas: `distribution/cli/`, `pipeline/cli/threads.mjs` (list-joins, merge, split; print-only without `--apply`), `record/cli/` (note backfills, the history copy, day recovery, actor reconciliation, assignment benchmark).
 - `deploy.sh` (repo root): frontend verify, build, package and release targets.
@@ -211,7 +211,7 @@ flowchart LR
 
 Risk tiers are 0-24 low, 25-49 moderate, 50-74 elevated, 75-100 high: `src/shared/lib/riskTiers.js` on the frontend, `tierFromScore` in `backend/shared/src/riskDimensions.js` on the backend (`world/tier.js` wraps it).
 
-**Invariant:** a risk tier is never a traffic-light colour. Risk shows as a number, a tier word and a ring weight; the `--tier-*` tokens are neutral greys that get brighter with the tier, and `TierChip` has no fill. `quality/verify_pages.sh` fails if a `--tier-*` token gets a hue or `TierChip.css` gets a background.
+**Invariant:** a risk tier is never a traffic-light colour. Risk shows as a number, a tier word and a ring weight; the `--tier-*` tokens are neutral greys that get brighter with the tier, and `TierChip` has no fill. vitest fails if a `--tier-*` token gets a hue (`shared/styles/__tests__/tierNeutral.test.js`) or `TierChip.css` gets a background (`shared/ui/__tests__/blocks.test.jsx`).
 
 ### 5. Briefs, email and distribution
 ```mermaid
@@ -250,7 +250,7 @@ The site's memory is one append-only record in the world bucket (`record/`): **f
 
 Story stamp and themes (decision [0058](../decisions/0058-one-story-description-regions-themes.md), deployed 2026-11-14): `newsStoryRecord` stamps every story with one set of fields (`storyStamp.js`: title, `line`, cleaned `iso3`, `regions`, `tier` with `riskAt`, `lastEntryAt`, `category`, `themeId`) on the index rows, the story view, `index/web.json` and `index/analyses.json`. Regions come from one table, `backend/shared/src/regions.js` (10 board regions); `newsBoard` presets import it. Two new views are built with the rest: `index/themes.json` (groups of 3 or more stories joined by judged links, `themes.js`) and `index/regions.json` (one entry per region). Nothing reads either view yet (no frontend code, no Lambda); the frontend and board steps are not built.
 
-Design, ten stages, object model and open items: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Decisions 0035 to 0058: [decisions/README.md](../decisions/README.md). Rebuild test: `backend/record/newsStoryRecord/scripts/rebuild-test.js`.
+Design, ten stages, object model and open items: [ARCHITECTURE_TIMELINE.md](ARCHITECTURE_TIMELINE.md). Decisions 0035 to 0061: [decisions/README.md](../decisions/README.md). Rebuild test: `backend/record/newsStoryRecord/scripts/rebuild-test.js`.
 
 ## Links, identity and product rules
 ### One link system
@@ -280,7 +280,7 @@ Since 2026-11-14 (07:49 UTC) `globalperspective.net` is a Custom Domain of the W
 
 ## Cross-cutting concerns
 ### Auth
-Firebase Authentication in the browser (`src/shared/contexts/AuthContext.jsx`: email magic link and Google). `App.jsx` wires `getIdToken` into `restProxy.js` (`setAuthProvider`), which sends `Authorization: Bearer <id token>`. Lambdas that need identity verify the token themselves (Google's securetoken certs, RS256, issuer for `FIREBASE_PROJECT_ID`): `newsAnalyze`, `newsPolarBilling`, `newsSavedItems`, `newsRecommend`, `newsSensitiveData`, `newsSharedAnalysis`, `newsBoard`.
+Firebase Authentication in the browser (`src/shared/contexts/AuthContext.jsx`: email magic link and Google). `App.jsx` wires `getIdToken` into `restProxy.js` (`setAuthProvider`), which sends `Authorization: Bearer <id token>`. Lambdas that need identity verify the token themselves (Google's securetoken certs, RS256, issuer for `FIREBASE_PROJECT_ID`): `newsAnalyze`, `newsPolarBilling`, `newsSavedItems`, `newsRecommend`, `newsReadApi`, `newsSharedAnalysis`, `newsBoard`.
 
 **Invariant:** public data never needs sign-in. No proxy action requires auth; `newsReadApi` only reads the tier best-effort (falling back to `free`) to shorten two member extras (`country_history` drift notes, `corrections_feed`). Record views carry no member data: the country view holds only the newest drift note. Frontend data hooks must not gate on `user`; membership limits are enforced server-side.
 

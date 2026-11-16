@@ -52,6 +52,14 @@ test('a late entry with no publish time stands on its slot: the fact lands in th
   assert.deepEqual([timed.at, timed.precision], [`${DAY}T10:00:00.000Z`, 'exact']);
 });
 
+test('a story born from a late entry is born at its slot: the story_born fact stays in the slot day, not the day of writing', async () => {
+  const {facts, f} = await runDay(linesOf([[late, WRITTEN]]));
+  const born = facts.filter((x) => x.kind === 'story_born');
+  assert.equal(born.length, 2);
+  assert.ok(born.every((x) => x.date === DAY && x.at === SLOT), JSON.stringify(born.map((x) => [x.date, x.at])));
+  assert.deepEqual([...f.objs.keys()].filter((k) => /facts\/\d{4}-\d{2}-\d{2}\.jsonl$/.test(k)), [`${P}facts/${DAY}.jsonl`], 'no fact file of the day of writing');
+});
+
 test('the Run records the late stories; a day with none has no such key and the same facts as before', async () => {
   const mixed = await runDay(linesOf([[live, `${DAY}T04:26:35.000Z`], [late, WRITTEN]]));
   assert.deepEqual(mixed.run.inputs.lateWritten, {entries: 2, slots: [SLOT]});

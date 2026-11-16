@@ -45,7 +45,8 @@ function birthByThread(range, opts = {}) {
   const out = {};
   for (const [threadId, list] of Object.entries(entriesByThread(days))) {
     const born = list[0].date;
-    const stamps = list.filter((e) => e.date === born && e.archivedAt).map((e) => e.archivedAt).sort();
+    // a story written late (decision 0061) is born at its slot, not at the time it was really written: the fact stays in the story's own day file
+    const stamps = list.filter((e) => e.date === born && e.archivedAt).map((e) => (e.writtenLate && e.writtenLate.slot) || e.archivedAt).sort();
     const before = from && born > from ? eachDay(from, born).slice(0, -1) : [];
     out[threadId] = {
       threadId, born, bornAt: stamps[0] || `${born}T00:00:00Z`, bornAtApprox: !stamps.length,

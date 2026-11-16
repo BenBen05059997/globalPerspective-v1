@@ -1,6 +1,6 @@
 'use strict';
 
-// newsRecordReview: the weekly review (decision 0039, spec step3-spec.md). For the ISO week that ended, every active story gets one
+// newsRecordReview: the weekly review (decision 0039). For the ISO week that ended, every active story gets one
 // boxed model call; the answer is checked in code; accepted items become readings. Writes record/readings/YYYY-Www.jsonl,
 // record/runs/review-YYYY-Www.json and record/inbox/merges/YYYY-MM-DD.jsonl; it is the only writer of those keys. A run that does
 // not finish cleanly throws after writing its Run, so the schedule's Errors metric sees it.
@@ -124,4 +124,4 @@ function makeHandler({store, chat, model, concurrency = CONCURRENCY, now = () =>
   }
 }
 
-module.exports = {makeHandler, CONCURRENCY};
+module.exports = {makeHandler};

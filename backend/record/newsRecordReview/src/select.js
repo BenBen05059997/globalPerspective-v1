@@ -188,4 +188,4 @@ function neighboursOf(world, row) {
   }));
 }
 
-module.exports = {RECOVERED_NOTE, ENTRY_CAP, FORK_CAP, NEIGHBOURS, SPECIFIC_SHARE, NEAR_DAYS, READINGS_LOOKBACK_WEEKS, loadWorld, selectStories, assemble, keyOf, latestEarlier, shareIndex, isSpecific, factsOf};
+module.exports = {RECOVERED_NOTE, ENTRY_CAP, NEAR_DAYS, loadWorld, selectStories, assemble, keyOf, latestEarlier, shareIndex, isSpecific};

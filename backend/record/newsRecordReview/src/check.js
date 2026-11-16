@@ -171,4 +171,4 @@ function checkAnswer(answer, ctx) {
   return {accepted, rejected};
 }
 
-module.exports = {checkAnswer, mergeRule, operatorMap, CAPS};
+module.exports = {checkAnswer, mergeRule};

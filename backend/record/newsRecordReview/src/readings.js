@@ -2,7 +2,7 @@
 
 // S4 helpers: reading ids and lines, supersession, the merge inbox lines. Pure.
 const {createHash} = require('node:crypto');
-const {keyOf, latestEarlier} = require('./select');
+const {keyOf} = require('./select');
 
 const SCHEMA_VERSION = 1;
 const SUBTYPES = ['line', 'chapter', 'link', 'merge_proposal', 'alias', 'assignment'];
@@ -43,4 +43,4 @@ function inboxLines(items, at) {
   return lines;
 }
 
-module.exports = {SCHEMA_VERSION, SUBTYPES, readingId, readingLines, mergeWeekFile, inboxLines, latestEarlier};
+module.exports = {SUBTYPES, readingId, readingLines, mergeWeekFile, inboxLines};

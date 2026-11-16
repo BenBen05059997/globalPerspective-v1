@@ -55,7 +55,7 @@ Why inside `newsHealth`: it already holds the day's facts, ticks hourly, has no 
 - Switch: env `HEAL` `on` acts, `dry` reports only (`now.heal.actions` with `dry:true`), anything else is off. A test event can only lower the mode.
 - Does not heal: a thin day, downstream stages of a missing day (daily brief, country notes), a GDELT outage over 3 hourly attempts (`backend/record/cli/recover-day.mjs` stays the manual path).
 - IAM: `newsHealth` role adds `lambda:InvokeFunction` on `newsAgent`, `newsIngest`, `newsStoryRecord`, `newsRecover`, `dynamodb:GetItem` on `NewsCache` with leading key `staging`, Get and Put on `monitoring/heal/*`. `newsRecover` has its own role (`backend/record/newsRecover/iam/`).
-- Offline tests with injected ports: `newsHealth/test/heal.test.js`, `newsRecover/test/recover.test.js`.
+- Offline tests with injected ports: `backend/monitoring/newsHealth/test/heal.test.js`, `backend/record/newsRecover/test/recover.test.js`.
 
 ## Open
 - `HEAL` is `dry` (read 2026-11-17). The dry tick in `health.json` (asOf 2026-11-16T16:34:34Z) lists one action, recovery attempt 1 of 3 for 2026-11-15, whose agent row is `missing`. Setting `HEAL=on` is the operator's call after reading a dry tick (fetch the env, merge, write the full map; steps in the `newsHealth` README).

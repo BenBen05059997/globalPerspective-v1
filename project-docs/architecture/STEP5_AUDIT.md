@@ -1,85 +1,91 @@
-# Step 5 audit: what stands between the DynamoDB world tables and their deletion (updated 2026-11-04, evening JST)
+# Step 5 audit: what stands between the DynamoDB world tables and their deletion
 
-Replaces the 2026-10-31 audit; flags re-read live 2026-11-04. Method: live `aws lambda get-function-configuration` (one named variable at a time), `aws dynamodb describe-table`, `aws events` / `aws scheduler`, `aws s3`, and grep of `backend/`. Row counts and the file:line references below come from the 31 Oct key scans and greps unless marked "re-checked"; line numbers drift, grep the symbol. Git history keeps the 31 Oct text.
+Step 5 of decision 0035 is open: the three world tables still exist and are still read and written. This file is the work list. Delete it when step 5 ends (`project-docs/START_HERE.md`). Every state fact below was read on 2026-11-17 from the code, `aws lambda get-function-configuration`, `aws dynamodb` or `aws s3` (the 2026-11-16 17:00 UTC snapshot where noted; the flags the snapshot redacts were read live). Line numbers drift: grep the symbol.
 
 ## 0. Headline
-1. **NewsCache and SummarizeAndPredict cannot be deleted midweek.** Each needs code work first (sections 3 and 4). The order of work is in section 6 and in `START_HERE.md`.
-2. **Deleted from AWS on 2026-11-01** (re-checked, `ResourceNotFoundException`): `newsPredictionsSnapshot`, `newsSignals`, `newsImpactAudit`, with their rules, roles and log groups, and `predictions/track_record.json`. The table `GlobalPerspectiveMarkets` no longer exists (`describe-table`: not found; economy retired by 0049). The read API no longer has `prediction_snapshot` or `prediction_track_record`.
-3. **Kept on purpose:** `newsGdeltConflict` (rule `TriggerGdeltConflict` ENABLED; operator 2026-11-01). Nothing reads its output yet.
-4. **The record does not hold history before 2026-09-05** for entries, `THREAD_ANALYSIS` (202 of 330 rows are Mar-Sep stories not in the record), `THREAD_HISTORY#` and the older `PRED#` rows. Deleting loses it unless exported first (destructive, operator decision).
-5. **Several "world" rows are send guards or commitment state**: `EMAILLOG#weekly#`, the `DRIFT#` emailed flag, `WEEKLY_BRIEF#` (feeds the Sunday email), PredictionLog `SEED#` (unrevealed secret), `Q#`, `SAMPLE#`, `SETTLE#`. They stay.
+1. **Nothing in the world tables can be deleted today.** `NewsCache`, `SummarizeAndPredict` and the `PRED#` rows of `GlobalPerspectivePredictionLog` are all still written by live Lambdas (section 1) and read by the read API and the writers (sections 3 and 4). TTL is DISABLED on all three tables, so rows only grow.
+2. **Already gone** (read 2026-11-17): the table `GlobalPerspectiveMarkets` (`aws dynamodb list-tables`); the Lambdas `newsPredictionsSnapshot`, `newsSignals`, `newsImpactAudit`, `newsInvokeGemini-dev` and `NewsProjectInvokeAgentLambda-dev` (not in the snapshot).
+3. **Kept on purpose:** `newsGdeltConflict` (rule `TriggerGdeltConflict` ENABLED; operator 2026-11-01). The old names `newsPostDevTo` and `newsSensitiveData-dev` still exist, unscheduled and `deployBlocked` in `scripts/functions.json`, until the operator deletes them.
+4. **History before the record's first day was copied on 2026-10-31** (decision 0047); the facts manifest holds 254 days through 2026-11-15. Export before any delete is still required for the families the record holds no note for (section 5).
+5. **Some "world" rows are send guards or commitment state and stay:** `EMAILLOG#weekly#`, the `DRIFT#` emailed flag, `WEEKLY_BRIEF#` (feeds the Sunday email), PredictionLog `SEED#` (unrevealed secret), `Q#`, `SAMPLE#`, `SETTLE#`.
 
-## 1. Reader switches, live (re-read 2026-11-04, each named variable read with `get-function-configuration`)
-Deployed names are the new ones (renames 3 and 4 Nov: `newsIngest`, `newsAgent`, `newsDailyBrief`, `newsReadApi`; `NewsProjectInvokeAgentLambda-dev` and `newsInvokeGemini-dev` were deleted 2026-11-05; `newsPostDevTo` and `newsSensitiveData-dev` still exist, unscheduled and deploy-blocked in `scripts/functions.json`, until the operator deletes them).
-- `NOTES_READS` accepts only `ddb` (default), `notes` or `compare` (`backend/shared/src/noteReads.js:14-17`); any other value, including `record`, silently means `ddb`. It is `notes` on newsReadApi, newsBreakingAlert, newsDailyBrief, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector and newsSystemsAnalysis.
-- `RECORD_READS=record` on newsBoard, newsRecommend, newsPostLinkedin, newsDailyBrief, newsReadApi and newsBreakingAlert; `compare` on newsEmailSender (first compare of the weekly brief: Sun 8 Nov 14:00Z). `record` still falls back to DynamoDB when a view has no answer or is over 9 h old, so these readers are not DynamoDB-free. newsBoard reads the story web and the histories from the record (role policy `newsBoard-record`, operator yes 2026-11-01).
-- `NOTES_PREFIX=record/` on newsDailyBrief, newsWeeklyBrief, newsCountryIntelligence, newsDriftCorrector, newsSystemsAnalysis, newsAgent and newsCountryFactsUpdater.
-- `ARCHIVE_READS` (step 5d, shared `backend/shared/src/archiveReads.js`; values `ddb` (default), `inbox`, `compare`; anything else, or `inbox`/`compare` without `ENTRIES_INBOX_PREFIX`, means `ddb`): `newsAgent` is `inbox` since 2026-11-04 04:30Z, with `FORKS_READS=inbox` (its 90-day forecast forks from `record/inbox/forecasts/`). `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector` and `newsWeeklyBrief` are `compare` with `ENTRIES_INBOX_PREFIX=record/` (deployed 2026-11-04, function last-modified 09:00-09:03Z in AWS; their roles got the inline policy `entriesInboxReader`, `s3:GetObject` on `record/inbox/entries/*`). They answer from NewsCache and log differences. Known difference: `today-archive` `archivedAt` differs by about 0.15 s. Each moves to `inbox` after 3 clean nights (dailies from 5 Nov, weekly brief after Sun 8 Nov). Rollback zips: `.deploy-backups/<fn>/`.
-- `newsStoryRecord`: `ENTRIES_SOURCE=inbox`, `FORECASTS_SOURCE=inbox` (the 11-01 23:45Z compare: 0 differences over 647 snapshots). `newsPredictionResolver`: `QUESTIONS_SOURCE=record` (set 2026-11-02 ~13:40Z after W44's eligible pool matched, 295 = 295). `newsFreshnessMonitor`: `SETTLE_SOURCE=record`.
-- `newsReadApi` env is cut to the 8 keys its code reads: `FIREBASE_PROJECT_ID`, `NOTES_READS`, `RECORD_READS`, `REGION`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_CACHE_MAX_AGE_SECONDS`, `TOPICS_DDB_TABLE`, `USERS_DDB_TABLE`. API Gateway `ba4q3fnwq6` `/proxy` points at it. `newsIngest` has no reader flags (it reads `archive#` titles directly, see section 3).
+## 1. Reader and writer switches, live (read 2026-11-17)
+Deployed names are the new ones (`newsIngest`, `newsAgent`, `newsDailyBrief`, `newsReadApi`). Values are from `aws-lambdas.json` (2026-11-16 17:00 UTC) except `ENTRIES_SOURCE`, `FORECASTS_SOURCE`, `QUESTIONS_SOURCE`, `SETTLE_SOURCE`, which the snapshot redacts and were read one key at a time.
+
+| Switch (code that reads it) | Values | Live |
+|---|---|---|
+| `ENTRIES_SOURCE` (`newsStoryRecord` `src/store.js`) | `archive` (default), `inbox`, `compare` | `newsStoryRecord`: `inbox` |
+| `FORECASTS_SOURCE` (same) | `log` (default), `inbox`, `compare` | `newsStoryRecord`: `inbox` |
+| `QUESTIONS_SOURCE` (`backend/predictions/newsPredictionResolver/src/questions.js`) | `log` (default), `record`, ... | `newsPredictionResolver`: `record` |
+| `SETTLE_SOURCE` (`newsFreshnessMonitor`) | `action` (default), `record` | `newsFreshnessMonitor`: `record` |
+| `ARCHIVE_READS` (shared `archiveReads.js`; `inbox` and `compare` need `ENTRIES_INBOX_PREFIX`, else it reads `ddb`) | `ddb` (default), `inbox`, `compare` | `inbox` on `newsAgent`, `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`; **`compare` on `newsWeeklyBrief`** |
+| `FORKS_READS` (`newsAgent`, the 90-day forecast forks) | `ddb`, `inbox` | `newsAgent`: `inbox` (`FORECASTS_INBOX_PREFIX=record/`) |
+| `NOTES_READS` (shared `noteReads.js`; any other value means `ddb`) | `ddb` (default), `notes`, `compare` | `notes` on `newsReadApi`, `newsBreakingAlert`, `newsDailyBrief`, `newsWeeklyBrief`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsSystemsAnalysis`; unset on `newsThreadAnalysis` |
+| `RECORD_READS` (shared `recordReads.js`; `record` still falls back to DynamoDB when a view has no answer or is over 9 h old) | `ddb` (default), `record`, `compare` | `record` on `newsBoard`, `newsRecommend`, `newsPostLinkedin`, `newsDailyBrief`, `newsReadApi`, `newsBreakingAlert`; **`compare` on `newsEmailSender`** |
+| `NOTES_PREFIX` (writers copy what they store into the record as notes) | `record/` live | `newsAgent`, `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsWeeklyBrief`, `newsDailyBrief`, `newsCountryFactsUpdater` |
+
+`newsIngest` has no reader flag. It reads `archive#<day>` titles from NewsCache directly (`src/index.js`, for `continues_topic`) and writes `staging` and `seen-today`.
+
+Writers that still put to DynamoDB (grep of SDK calls, read 2026-11-17):
+- NewsCache: `newsIngest` (`staging`, `seen-today`); `newsAgent` (`latest`, `archive#DAY`, `today-archive`, the `staging` processed mark).
+- SummarizeAndPredict: `newsAgent` (`TOPIC#` summary, cause chain and prediction rows; the `THREAD#/TOPICS` pointer; prunes `TOPIC#`), `newsThreadAnalysis` (`THREAD_ANALYSIS`, `THREAD_HISTORY#`), `newsCountryIntelligence` (`COUNTRY_INTELLIGENCE`, `HISTORY#`), `newsDriftCorrector` (`DRIFT#`, `DRIFTLOG#`), `newsSystemsAnalysis` (`SYSTEMS#`, `WEB#INDEX`, `THREAD#/WEB`), `newsCountryFactsUpdater` (`FACTS#`), `newsDailyBrief` (`DAILY_BRIEF#`), `newsWeeklyBrief` (`WEEKLY_BRIEF#`), `newsEmailSender` (the `EMAILLOG#` sent marker).
+- PredictionLog: `newsAgent` (`PRED#` put and thread reconcile); `newsPredictionResolver` (`Q#`, `SEED#`, `SAMPLE#`, `SETTLE#`, which stay).
+- `newsStoryRecord` touches no DynamoDB table with both sources on `inbox`; its table env vars serve only the non-default source values.
+
+Compare results read from CloudWatch on 2026-11-17: `newsEmailSender` `[record-reads] email weekly_brief`: `equal` on 2026-11-08, `DIFFER, the record has no answer` on 2026-11-15 (cause not investigated). `newsWeeklyBrief` `[archive-compare]`: `equal` for `today-archive` and the seven days before on 2026-11-15 06:00Z; the run of 2026-11-08 06:00Z showed a `DIFFER` on `today-archive` (field `archivedAt`).
 
 ## 2. Tables and families (what is left)
-Other projects are out of scope (BestWaifuChatLogs, Currecy-past, Currency, Polybot*, ppa-*). `NewsProject-linkedin-posts` (about 16k rows) is the social dedupe table: operational, leave.
+Other projects' tables (BestWaifuChatLogs, Currecy-past, Currency, Polybot*, ppa-*) are out of scope. Operational and user tables stay (decision 0003): `GlobalPerspectiveBreakingAlerts`, `ClientErrors`, `UserTable`, `UserPrefs`, `SavedItems` (also boards), `Shares`, `ApiKeys`, `NewsProject-linkedin-posts` (social dedupe).
 
-| Table | Class |
+Key scans of 2026-11-17 (projection scan of the key attributes; `describe-table` item counts: 196, 4,289, 8,581):
+
+| Table | Families now |
 |---|---|
-| SummarizeAndPredict (PK,SK) | world, plus the ops family `EMAILLOG#` |
-| NewsCache (id) | ingest working store plus `archive#` days (2026-03-07 onward) |
-| GlobalPerspectivePredictionLog (PK,SK) | `PRED#` forecasts (world) plus commitment state (`Q#`, `SEED#`, `SAMPLE#`, `SETTLE#`) |
-| BreakingAlerts, ClientErrors, UserTable, UserPrefs, SavedItems (also boards), Shares, ApiKeys | operational or user data: stay (0003) |
+| NewsCache (196) | `archive#DAY` 192 (2026-03-07 to 2026-11-16), `staging`, `latest`, `today-archive`, `seen-today` |
+| SummarizeAndPredict (4,289) | `COUNTRY#` `HISTORY#` 1,619, `DRIFT#` 263, `DRIFTLOG#` 237, `COUNTRY_INTELLIGENCE` 50; `THREAD#` `THREAD_HISTORY#` 478, `TOPICS` 458, `THREAD_ANALYSIS` 388, `DRIFT#` 177, `DRIFTLOG#` 177, `WEB` 159; `DAILY_BRIEF#` 152; `FACTS#` 40; `SYSTEMS#` 23; `WEEKLY_BRIEF#` 17; `EMAILLOG#` 13; `TOPIC#` rows 37 (13 summary, 13 cause chain, 11 prediction); `WEB#INDEX` 1 |
+| GlobalPerspectivePredictionLog (8,581) | `PRED#` 6,956 (2026-06-02 to 2026-11-16; 5,153 of them before 2026-09-05), `Q#` 1,549, `SETTLE#` 48, `SEED#` 23, `SAMPLE#` 5 |
 
-Key scan 2026-11-02: SummarizeAndPredict 3,541 items, PredictionLog 7,170; every family is still read or written (PredictionLog `PRED#` by the agent), so no family is deletable yet. `GlobalPerspectiveMarkets` is gone.
+The old economy rows (`ECON#`, `PAIR#`, `WEEKLY_MARKETS#`) no longer appear in the key scan.
 
-SummarizeAndPredict families (31 Oct counts): country `HISTORY#` 1,560, `DRIFT#` 248, `DRIFTLOG#` 222, `COUNTRY_INTELLIGENCE` 48, `FACTS#` 40; thread `THREAD_HISTORY#` 338, `THREAD_ANALYSIS` 330, `TOPICS` pointer 135, `DRIFT#`/`DRIFTLOG#` 121 each, `WEB` 119; `WEB#INDEX` 1; `SYSTEMS#` 22; `DAILY_BRIEF#` 137; `WEEKLY_BRIEF#` 15; `TOPIC#` cache (short-lived, the agent prunes); `EMAILLOG#weekly#` 11. The parked economy rows (`ECON#`, `PAIR#`, `WEEKLY_MARKETS#`) belong to retired code (0049): export if wanted, then delete with a yes.
-
-## 3. NewsCache: blockers (grep-verified 2026-11-01, flags re-read 2026-11-04)
-- Done 2026-11-04: `newsAgent` reads the previous days' entries from `record/inbox/entries/` (`ARCHIVE_READS=inbox`). It still writes `archive#` / `today-archive` and `staging` / `latest`.
-- In `compare`, not yet switched: `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsWeeklyBrief` (section 1).
-- `newsIngest` reads `archive#` titles directly (`src/index.js`, for `continues_topic`), with no switch.
-- The read API actions `topics`, `today`, `archive_range`, `narrative_thread` have no record path (the story page and 30-day pages call `archive_range` / `narrative_thread` for the newest days; the countries list no longer calls `archive_range`, it reads the record's weekly index since 2026-11-03; `/`, `/today` and the board read `topics`/`today`).
-- `staging` and `seen-today` are the ingest handoff between `newsIngest` and `newsAgent`: needs a design decision.
-- The freshness monitor probes `topics`.
-- History: 141 archive days (6,919 entries) before 09-05 exist only here; export before any delete.
+## 3. NewsCache: blockers
+- Done: `newsAgent` and the four daily analysis Lambdas read archive days from `record/inbox/entries/` (`ARCHIVE_READS=inbox`); `newsStoryRecord` builds entries from the inbox. The agent still writes `archive#` and `today-archive`.
+- `newsWeeklyBrief` is still `compare` (section 1).
+- `newsIngest` reads `archive#` titles directly, with no switch and no record path.
+- `staging` and `seen-today` are the handoff between `newsIngest` and `newsAgent` (and `newsHealth`'s heal pass reads `staging`): needs a design decision before NewsCache can go.
+- `latest` and `today-archive` are still read by `newsPostLinkedin`, `newsBreakingAlert`, `newsRecommend`, `newsDailyBrief` and the read API behind `RECORD_READS`; with `record` they read the views and fall back to DynamoDB, so they are not DynamoDB-free until the fallback is removed.
+- Read API actions `topics`, `today`, `archive_range`, `narrative_thread` and `summary` / `prediction` / `trace_cause` answer from NewsCache and the `TOPIC#` rows only (`readTopicsCache`, `readTodayArchive`, `readArchiveRange`, `readNarrativeThread`, `readSummaryPredictionCache` in `backend/read-api/newsSensitiveData/src/index.js`); `rss` has a record path. The front Worker prerender is record-first and falls back to the actions `topics`, `daily_brief`, `latest_daily_brief`, `weekly_brief`. The frontend still calls the actions (`shared/api/restProxy.js`, `archiveRange.js`, `recordViews.js`, `contentService.js`, threads hooks); which calls are only fallbacks needs checking per call site.
+- `newsFreshnessMonitor` probes `?action=topics` (the rule is ENABLED).
 
 ## 4. SummarizeAndPredict and PredictionLog `PRED#`: blockers
 SummarizeAndPredict:
-- The writers read their own existing rows for refresh policy and merges (`newsThreadAnalysis`, `newsCountryIntelligence`, the `newsSystemsAnalysis` `SYSTEMS#` scan, the `newsCountryFactsUpdater` merge). Without the rows they regenerate everything (paid LLM).
-- `newsBoard` now reads the web and the histories from the record behind `RECORD_READS` (DynamoDB only as the fallback). `newsWeeklyBrief` reads `WEB#INDEX`.
-- Read API actions with no record path: `daily_brief`, `latest_daily_brief`, `weekly_brief`, `web_index`, `systems_analysis`, `summary` / `prediction` / `trace_cause`. The front Worker pre-render calls the brief actions and `topics`.
+- The writers read their own rows for refresh policy and merges (`newsThreadAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, the `newsSystemsAnalysis` `SYSTEMS#` scan, the `newsCountryFactsUpdater` merge). Without the rows they regenerate everything (paid model calls).
+- Read API actions with no record path: `daily_brief`, `latest_daily_brief`, `weekly_brief`, `systems_analysis` (`SYSTEMS#` has no note type), `web_index` (the record has `index/web.json`, which `newsBoard` reads). `thread_analysis`, `country_*`, `corrections_feed` and the previews read the notes behind `NOTES_READS=notes`.
+- `newsEmailSender` (weekly email, rule ENABLED Sun 14:00Z) reads `WEEKLY_BRIEF#` and `EMAILLOG#weekly#` and is on `compare`; the sent marker stays in DynamoDB unless moved by a separate design.
+- `newsCountryFactsUpdater` writes `country_facts` notes; its merge still reads `FACTS#`.
 - The agent's `TOPIC#` cache and the `THREAD#/TOPICS` pointer.
-- `newsEmailSender` (weekly email, ENABLED Sun 14:00Z) reads `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; the deployed build (2026-11-02) has the record path for the brief in `compare`; the sent marker stays in DynamoDB.
-- `newsCountryFactsUpdater` writes `country_facts` notes to `record/notes/`; its merge still reads `FACTS#`, and there is no view.
-- No record shape yet: `THREAD_HISTORY#`, `FACTS#`, `DAILY_BRIEF#`, `WEEKLY_BRIEF#`, `TOPIC#`.
+- Notes types that exist in the record: `entry`, `story_analysis`, `drift`, `country`, `link`, `web`, `daily_brief`, `weekly_brief`, `country_facts`, `story_history` (`backend/record/schema/note.schema.json`). No note type: `TOPIC#`, `SYSTEMS#`, `EMAILLOG#`, the `THREAD#/TOPICS` pointer.
 
 PredictionLog `PRED#`:
-- Done 2026-11-04: the agent's `readThreadForks` (90-day forks for draw cadence and the duplicate gate) reads `record/inbox/forecasts/` (`FORKS_READS=inbox`).
-- `newsStoryRecord` `FORECASTS_SOURCE=inbox` and the `PredictionLogScan` statement removed (operator yes); the first nightly without the scan is 2026-11-02 23:45Z.
-- Done 2026-11-02: `newsPredictionResolver` `QUESTIONS_SOURCE=record`. The 2026-11-02 nightly (`record/runs/2026-11-02.json`) is ok with no failures, the first without the scan: 21 `forecast_drawn` facts, a `question_commit`, a `question_draw`. Since 2026-11-04 04:30Z the agent's fork read is the inbox; it still puts the `PRED#` rows and reconciles threads, which are DynamoDB writes.
-- The agent's `PRED#` put and thread reconcile.
-- About 1,513 Jun-Sep `PRED#` rows are not in the facts. Operator decision 2026-11-03: dropped, not migrated. They go with the PredictionLog `PRED#` export and delete at the end of step 5. (Decision 0047 already keeps the whole rows under `record/legacy/predictions/`.)
-- Forecasts inbox matched the log on 2026-11-01 (639 rows, then 647 snapshots in the 23:45Z compare, 0 differences); inbox at `record/inbox/forecasts/`.
-- `Q#`, `SEED#`, `SAMPLE#`, `SETTLE#` stay in PredictionLog (resolver state, unrevealed seed). `draw.pool` and `settleHealth` lived in the deleted track-record snapshot; the record views and the freshness monitor (`SETTLE_SOURCE=record`) now carry what the pages need.
+- Done: forecasts reach the record through `record/inbox/forecasts/`; `newsStoryRecord` `FORECASTS_SOURCE=inbox` (no table scan); `newsPredictionResolver` `QUESTIONS_SOURCE=record`; the agent reads its forecast forks from the inbox.
+- Left: the agent's `PRED#` put and thread reconcile are still DynamoDB writes. The `PRED#` rows before 2026-09-05 (5,153) that no story places are kept whole under `record/legacy/predictions/` (decision 0047); the 1,513 Jun-Sep rows are not migrated as facts (operator 2026-11-03) and go with the `PRED#` export at the end.
+- `Q#`, `SEED#`, `SAMPLE#`, `SETTLE#` stay (resolver state, unrevealed seed).
 
-## 5. Record coverage (31 Oct measurements, not re-run)
-- Entries 2026-09-05..10-31 complete modulo the repeat rule (0046); the entries inbox and today view (0051) supply recent days. Before 09-05: not in the record.
-- Country intelligence, history and drift notes: complete or near (48 subjects, 1,560 history lines). 26 country `DRIFT#` rows and about 22 thread drift rows have no note.
-- `THREAD_ANALYSIS`: 128 of 330 have notes. `WEB`/`SYSTEMS#`: partial (web notes for 18 of 22 countries).
-- Forecasts: facts and inbox hold the drawn forecasts of the window; the older rows are section 4.
-- Verdicts, commits, draws: in facts and inboxes.
-- Not verified: entry-by-entry equality of facts and archive; why 2026-09-05 has 0 entry facts; why 4 of 22 SYSTEMS countries lack a web note; owner of `Currency`, `Currecy-past` and `so-v3-engine`; deployed diffs of about 35 Lambdas.
+## 5. Record coverage
+Read 2026-11-17: the facts manifest holds 254 days (2026-03-07 to 2026-11-15, `factsManifestDays` in `record/views/manifest.json`); `record/legacy/predictions/` exists; `record/shadow/` and `record/shadow-history/` still exist in the bucket (trial copies). Measurements of 2026-10-31 (entries, country notes, `THREAD_ANALYSIS` note counts, web notes for 18 of 22 countries) were not re-run. Before any export or delete, re-measure per family: note count against row count (`backend/record/cli/compare-reads.mjs`, `check-eligible.mjs`).
+Not verified: entry-by-entry equality of facts and archive; deployed-versus-repo diffs of the Lambdas (diff before deploying any: `newsAgent`, `newsIngest` and `newsWeeklyBrief` were all modified 2026-11-16).
 
 ## 6. Order of work from here (each switch at zero differences; each delete after an S3 export, with an operator yes)
-Done 1-4 Nov: forecasts nightly on the inbox and the scan removed; country facts notes live; `newsEmailSender` deployed in `compare`; `newsBoard` on the record; `QUESTIONS_SOURCE=record`; the four renames; the agent on the inboxes (`ARCHIVE_READS`/`FORKS_READS=inbox`); the five daily Lambdas deployed in `compare`.
-b. `newsEmailSender` `RECORD_READS=record` after the first compare (Sun 8 Nov 14:00Z).
-d. Move `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector` to `ARCHIVE_READS=inbox` after 3 clean nights (from 5 Nov) and `newsWeeklyBrief` after Sun 8 Nov; `newsIngest`'s `archive#` title read still needs a path.
-e. Record paths for the read API actions in sections 3 and 4; a design for `staging` / `seen-today`; the freshness monitor off `topics`; frontend fallbacks removed after each matching step.
-f. Writers stop their DynamoDB puts.
-g. Export, then delete per family with an operator yes each, and the full rebuild test after each. Derived and duplicate families first (`DRIFTLOG#`, `WEB`, `SYSTEMS#`, `TOPICS`), then thread and country families, then `PRED#`, then NewsCache last. `EMAILLOG#` and the PredictionLog commitment state stay unless moved to S3 by a separate design.
+Done: the forecast inbox and scan removal; country facts notes; `newsBoard` on the record; `QUESTIONS_SOURCE=record`; the four renames; the agent and four daily Lambdas on `ARCHIVE_READS=inbox`; `newsEmailSender` deployed in `compare`; history copy (decision 0047); briefs in the record (decision 0048).
+- b. `newsEmailSender` `RECORD_READS=record`: only after the compare is `equal` again. 2026-11-15 said "the record has no answer": find why first.
+- d. `newsWeeklyBrief` `ARCHIVE_READS=inbox` (the 2026-11-15 compare was equal); give `newsIngest`'s `archive#` title read a record path.
+- e. Record paths for the read API actions in sections 3 and 4; a design for `staging` / `seen-today`; the freshness monitor off `topics`; remove each frontend fallback after its matching step.
+- f. Writers stop their DynamoDB puts (agent first, then the analysis Lambdas, briefs, facts).
+- g. Export, then delete per family with an operator yes each, and the full rebuild test after each (decision 0037: delete the views in a copy, rebuild from facts, readings and notes). Order: derived and duplicate families first (`DRIFTLOG#`, `WEB`, `SYSTEMS#`, `TOPICS`), then thread and country families, then `PRED#`, then NewsCache last. `EMAILLOG#` and the PredictionLog commitment state stay unless moved to S3 by a separate design. The old economy rows, if any remain, are exported if wanted and deleted with a yes.
 
-Renames (approved 2026-11-01; create new, move trigger, test, delete old). Done: `NewsProjectInvokeAgentLambda-dev` to `newsAgent` and `newsInvokeGemini-dev` to `newsIngest` (3 Nov); `newsPostDevTo` to `newsDailyBrief` and `newsSensitiveData-dev` to `newsReadApi` (4 Nov). The schedules `InvokeGoogleGemini`, `InvokeNewsAgent`, `InvokeDev` and API Gateway `ba4q3fnwq6` `/proxy` point at the new functions (checked live 2026-11-04); the two old functions `NewsProjectInvokeAgentLambda-dev` and `newsInvokeGemini-dev` were deleted 2026-11-05 (operator yes), and `newsPostDevTo` and `newsSensitiveData-dev` stay unscheduled and deploy-blocked in `scripts/functions.json` until the operator deletes them. Planned, not done: schedule names InvokeGoogleGemini to TriggerIngest, InvokeNewsAgent to TriggerAgent, countryIntelliegence to TriggerCountryIntelligence, Fact to TriggerCountryFacts, InvokeDev to TriggerDailyBrief, InvokeLinkedIn to TriggerPostLinkedin, TriggerDailyAnalysis to TriggerThreadAnalysis; env `GROK_*` / `XAI_*` to `LLM_*`. Do these before the deletes touch the same code, or after; never mid-switch.
+Renames still open (approved 2026-11-01): schedule names `InvokeGoogleGemini` to `TriggerIngest`, `InvokeNewsAgent` to `TriggerAgent`, `countryIntelliegence` to `TriggerCountryIntelligence`, `Fact` to `TriggerCountryFacts`, `InvokeDev` to `TriggerDailyBrief`, `InvokeLinkedIn` to `TriggerPostLinkedin`, `TriggerDailyAnalysis` to `TriggerThreadAnalysis`. The env keys `GROK_*` / `XAI_*` keep their names (they hold DeepSeek or the way back to it). Do renames before or after a delete that touches the same code, never mid-switch.
 
 ## 7. What would break a user-facing send, billing, or user data
-- Weekly email (ENABLED): `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; deleting either gives no mail or a duplicate.
-- `newsBreakingAlert` (`cron(45 4/8)`, rule DISABLED and `DRY_RUN=true` since 2026-11-06; paused for a redesign) would read thread analysis and country intelligence when run; breaking and drift email rules are DISABLED but their code still reads `DRIFT#` and sets a sent flag.
-- `newsDailyBrief` (no longer posts to dev.to) builds the daily brief; `newsPostLinkedin` posts externally; dedupe rows live in `NewsProject-linkedin-posts` (leave).
+- Weekly email (rule ENABLED): `WEEKLY_BRIEF#` and `EMAILLOG#weekly#`; deleting either gives no mail or a duplicate.
+- `newsBreakingAlert` (rule `TriggerBreakingAlert` DISABLED, `DRY_RUN=true`) reads thread analysis and country intelligence when run; the breaking and drift email rules are DISABLED but their code still reads `DRIFT#` and sets a sent flag.
+- `newsDailyBrief` builds the daily brief; `newsPostLinkedin` posts externally; its dedupe rows live in `NewsProject-linkedin-posts` (leave).
 - Billing and user tables are untouched by every step. IAM changes need a fresh yes.

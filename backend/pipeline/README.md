@@ -47,11 +47,13 @@ Shared `backend/shared/src/archiveReads.js`, env `ARCHIVE_READS` = `ddb` (defaul
 
 ## Shared code
 
-- `llm.js` (chat client): newsIngest, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
-- `dayZero.js`: newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
-- `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsThreadAnalysis, newsCountryIntelligence, newsDriftCorrector.
+- Every Lambda here has `src/_shared` as a symlink to `backend/shared/src`; `scripts/lambda.sh` follows it, so the zip holds real files.
+- `llm.js` (chat client): newsIngest, newsAgent, newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector.
+- `dayZero.js`: newsDriftCorrector directly; newsThreadAnalysis, newsSystemsAnalysis and newsCountryIntelligence through `archiveEntries.js` / `archiveReads.js`.
+- `resolveIso3.js` (with `countries.js`, `iso3Names.json`): newsIngest, newsThreadAnalysis, newsSystemsAnalysis, newsCountryFactsUpdater, newsCountryIntelligence, newsDriftCorrector.
 - `placeFilter.js`: newsSystemsAnalysis, newsCountryIntelligence. `riskDimensions.js`: newsThreadAnalysis, newsCountryIntelligence.
-- newsAgent, newsCountryFactsUpdater and newsSelectionShadow have no `_shared` link. newsSelectionShadow symlinks `classifier-core.js` from newsSituationIngest.
+- newsAgent also uses `entriesInbox.js`, `forecastsInbox.js`, `archiveReads.js`, `s3json.js` and `notes.js`.
+- newsSelectionShadow's own files use nothing from `_shared`; its `classifier-core.js` is a symlink to newsSituationIngest's copy, which does.
 
 ## Known limits
 

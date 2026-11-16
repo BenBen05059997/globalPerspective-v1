@@ -191,46 +191,64 @@ async function chat(opts) {
   const { provider, model } = req;
   const init = { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) };
   const started = Date.now();
-  for (let attempt = 0; ; attempt++) {
-    let res;
-    let err;
-    try {
-      res = await fetch(req.url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
-    } catch (e) {
-      err = e.name === 'TimeoutError' ? new Error(`LLM timeout after ${timeoutMs}ms`) : e;
+  const anthropic = PROVIDERS[provider].format === 'anthropic';
+
+  // One request with its transport retries; logs its own [usage] line.
+  async function send() {
+    for (let attempt = 0; ; attempt++) {
+      let res;
+      let err;
+      try {
+        res = await fetch(req.url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+      } catch (e) {
+        err = e.name === 'TimeoutError' ? new Error(`LLM timeout after ${timeoutMs}ms`) : e;
+      }
+      const transient = err || res.status === 429 || res.status >= 500;
+      if (transient && attempt < retries) {
+        console.warn(`[llm] ${step}: ${err ? err.message : `HTTP ${res.status}`}; retry ${attempt + 1}/${retries}`);
+        await sleep(1000 * 2 ** attempt);
+        continue;
+      }
+      if (err) throw err;
+      let text;
+      try {
+        text = await res.text();
+      } catch (e) {
+        throw e.name === 'TimeoutError' ? new Error(`LLM timeout after ${timeoutMs}ms`) : e;
+      }
+      let data = null;
+      try { data = JSON.parse(text); } catch { /* non-JSON body */ }
+      if (!res.ok) {
+        const e = new Error(`LLM ${res.status}: ${data?.error?.message || text.slice(0, 300)}`);
+        e.status = res.status;
+        throw e;
+      }
+      if (!data) throw new Error(`LLM non-JSON response: ${text.slice(0, 200)}`);
+      const out = anthropic ? readAnthropic(data, opts.json) : readOpenAi(data);
+      logUsage(step, model, out.usage);
+      return { out, data };
     }
-    const transient = err || res.status === 429 || res.status >= 500;
-    if (transient && attempt < retries) {
-      console.warn(`[llm] ${step}: ${err ? err.message : `HTTP ${res.status}`}; retry ${attempt + 1}/${retries}`);
-      await sleep(1000 * 2 ** attempt);
-      continue;
-    }
-    if (err) throw err;
-    let text;
-    try {
-      text = await res.text();
-    } catch (e) {
-      throw e.name === 'TimeoutError' ? new Error(`LLM timeout after ${timeoutMs}ms`) : e;
-    }
-    let data = null;
-    try { data = JSON.parse(text); } catch { /* non-JSON body */ }
-    if (!res.ok) {
-      const e = new Error(`LLM ${res.status}: ${data?.error?.message || text.slice(0, 300)}`);
-      e.status = res.status;
-      throw e;
-    }
-    if (!data) throw new Error(`LLM non-JSON response: ${text.slice(0, 200)}`);
-    const out = PROVIDERS[provider].format === 'anthropic' ? readAnthropic(data, opts.json) : readOpenAi(data);
-    logUsage(step, model, out.usage);
-    return {
-      content: out.content,
-      model: data.model || model,
-      usage: out.usage,
-      finishReason: out.finishReason,
-      latencyMs: Date.now() - started,
-      raw: data,
-    };
   }
+
+  let { out, data } = await send();
+  // Anthropic has no schema-less JSON mode (DeepSeek's guarantees parseable JSON): one more identical request when the
+  // answer is complete but does not parse; the second answer is returned whatever it is. A cut-off answer is left to the caller's salvage.
+  if (anthropic && opts.json && out.finishReason !== 'length' && !parses(out.content)) {
+    console.warn(`[llm] ${step}: unparseable JSON; retry`);
+    ({ out, data } = await send());
+  }
+  return {
+    content: out.content,
+    model: data.model || model,
+    usage: out.usage,
+    finishReason: out.finishReason,
+    latencyMs: Date.now() - started,
+    raw: data,
+  };
+}
+
+function parses(content) {
+  try { JSON.parse(stripCodeFence(content)); return true; } catch { return false; }
 }
 
 /** Drop a leading ```/```json fence and a trailing ``` fence, then trim. trailingCommas also removes `,}` / `,]`. */

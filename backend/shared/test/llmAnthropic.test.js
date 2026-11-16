@@ -164,12 +164,13 @@ test('anthropic json:true: clean JSON and fenced JSON come back as the model wro
 
 test('anthropic json:true: prose around the JSON is cut off in the helper, so callers still parse', async (t) => {
   captureLogs(t);
-  stubFetch(t, [reply('Here is the result:\n{"a":[1,2],"b":"x"}\nHope that helps.'), reply('Sure! [1,2,3]'), reply('no json at all')]);
+  const calls = stubFetch(t, [reply('Here is the result:\n{"a":[1,2],"b":"x"}\nHope that helps.'), reply('Sure! [1,2,3]'), reply('no json at all'), reply('still no json')]);
   const { parseJsonContent } = require('../src/llm');
   const a = await chat({ step: 's', model: 'anthropic:claude-haiku-5-5', user: 'u', json: true });
   assert.deepEqual(parseJsonContent(a.content), { a: [1, 2], b: 'x' });
   assert.deepEqual(JSON.parse((await chat({ step: 's', model: 'anthropic:claude-haiku-5-5', user: 'u', json: true })).content), [1, 2, 3]);
-  assert.equal((await chat({ step: 's', model: 'anthropic:claude-haiku-5-5', user: 'u', json: true })).content, 'no json at all');
+  assert.equal((await chat({ step: 's', model: 'anthropic:claude-haiku-5-5', user: 'u', json: true })).content, 'still no json');
+  assert.equal(calls.length, 4);
 });
 
 test('anthropic without json:true leaves the text alone', async (t) => {

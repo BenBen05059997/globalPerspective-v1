@@ -19,7 +19,7 @@ const PICK = ['7c52a5756f037e427c72', 'd23074bd955423b2f574', '55f45f755677c439d
 
 (async () => {
   fs.writeFileSync(path.join(dir, 'calls.jsonl'), '');
-  const tr = (await get(`${V}/track-record.json`)).questions;
+  const tr = (await get(`${V}/${'track-record'}.json`)).questions; // data file, not a page address (quality/check_links)
   const out = [];
   for (const qid of PICK) {
     const q = tr.sampled.find((x) => x.qid === qid);

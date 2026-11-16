@@ -14,11 +14,11 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 // or <Markdown> (no raw HTML); links exist only where the server kept an http(s) URL.
 const LENS_LABEL = { scenario: 'Scenario forecast', whatchanged: 'What changed', economic: 'Economic ripple', compare: 'Compare stories', freeform: 'Free-form' };
 
-export default function SharedAnalysisView({ share, compact = false }) {
+export default function SharedAnalysisView({ share }) {
   const sources = share.sources || [];
   const dates = [...sources.map((s) => s.date).filter(Boolean).map((d) => String(d).slice(0, 10))];
   return (
-    <article className={`as-shared${compact ? ' compact' : ''}`}>
+    <article className="as-shared">
       <header className="as-shared-head">
         <div className="label">Shared analysis · read-only</div>
         <p className="as-shared-meta">

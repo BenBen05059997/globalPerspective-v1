@@ -164,7 +164,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
 async function callGrok(prompt) {
   if (!XAI_API_KEY) return null;
-  const { content } = await chat({ step: 'daily_brief', model: GROK_MODEL, user: prompt, maxTokens: 2000, temperature: 0.3 });
+  const { content } = await chat({ step: 'daily_brief', model: GROK_MODEL, user: prompt, maxTokens: 4000, temperature: 0.3 });
   return jsonText(content);
 }
 

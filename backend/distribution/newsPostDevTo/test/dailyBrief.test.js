@@ -152,7 +152,7 @@ test('the stored row: DAILY_BRIEF#<date> keys, the model text, the real model na
     assert.equal(chats.length, 1);
     assert.equal(chats[0].step, 'daily_brief');
     assert.equal(chats[0].model, 'test-model');
-    assert.equal(chats[0].maxTokens, 2000);
+    assert.equal(chats[0].maxTokens, 4000);
     assert.equal(chats[0].temperature, 0.3);
     assert.match(chats[0].user, /Headline number 1 about the world/);
   });

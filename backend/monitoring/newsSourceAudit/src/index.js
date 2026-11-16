@@ -66,7 +66,7 @@ async function fetchArticle(url) {
 const DRIFT_SYS = 'You are a source auditor. Given the FULL ARTICLE TEXT (may include nav noise — ignore it) and OUR SUMMARY, list any claim in OUR SUMMARY not supported by the article — hedge turned into assertion, an invented result/figure/date, or added framing. Only flag claims genuinely absent or contradicted. Reply with one terse line per drift, or EXACTLY "OK" if none.';
 
 async function deepseek(system, user) {
-  return (await chat({ step: 'source_audit', model: MODEL, system, user, maxTokens: 400, temperature: 0 })).content;
+  return (await chat({ step: 'source_audit', model: MODEL, system, user, maxTokens: 800, temperature: 0 })).content;
 }
 
 exports.handler = async () => {

@@ -17,7 +17,7 @@ const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require
 const { keepDayZero } = require('./_shared/dayZero');
 const archiveReads = require('./_shared/archiveReads');
 const { latestSelection } = require('./_shared/entriesInbox');
-const { chat } = require('./_shared/llm');
+const { chat, jsonText } = require('./_shared/llm');
 const { resolveIso3 } = require('./_shared/resolveIso3');
 const NR = require('./_shared/noteReads');
 const dir = require('./directionCheck');
@@ -123,9 +123,9 @@ async function alreadyNoted(country, dateKey) {
 }
 
 async function callLLM(prompt) {
-  const { content } = await chat({ step: 'drift_note', model: LLM_MODEL, user: prompt, temperature: 0.2, maxTokens: 500 });
+  const { content } = await chat({ step: 'drift_note', model: LLM_MODEL, user: prompt, temperature: 0.2, maxTokens: 1000 });
   if (!content) throw new Error('llm empty response');
-  return content;
+  return jsonText(content);
 }
 
 // D9 (Batch 3 / E): ask for the note, VALIDATE its direction against the stored numbers, retry once with

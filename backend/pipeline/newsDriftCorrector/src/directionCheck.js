@@ -120,4 +120,4 @@ function numbersOnlyText(drift) {
   return `${head} No listed event explains a move in this direction.`;
 }
 
-module.exports = { checkDrift, checkProseDirection, checkAxisClaims, checkAxisEffects, describeProblems, numbersOnlyText, clausesOf, WORSE_WORDS, BETTER_WORDS, DOWN_RE, UP_RE, CLAUSE_SPLIT, AXES };
+module.exports = { checkDrift, checkAxisClaims, checkAxisEffects, describeProblems, numbersOnlyText };

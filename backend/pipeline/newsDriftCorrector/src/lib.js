@@ -3,7 +3,7 @@
 // Pure helpers for newsDriftCorrector (no AWS SDK, no network) — unit-tested in
 // ../test/lib.test.js. The corrector is a GROUNDED EVENT-DETECTOR, not a self-reflection
 // loop: it only ever explains a *deterministically-detected* conclusion move by pointing at
-// a REAL, dated archive event (never invents a cause). See LIVING_ANALYSIS_PLAN.md.
+// a REAL, dated archive event (never invents a cause).
 
 const { jaccard } = require('./_shared/jaccard');
 
@@ -62,21 +62,6 @@ function conclusionMoved(prior, current) {
   return { levelChg, scoreChg, trajChg, axisChg, axisMoves: moves, any: !!(levelChg || scoreChg || trajChg || axisChg) };
 }
 
-// From dated snapshots (any order), return {current, prior} where prior is the most recent
-// snapshot whose conclusion differs from current — or null (no material move → no note).
-function findDrift(snapshots) {
-  if (!Array.isArray(snapshots) || snapshots.length < 2) return null;
-  const sorted = [...snapshots].sort((a, b) => String(a.dateKey || '').localeCompare(String(b.dateKey || '')));
-  const current = sorted[sorted.length - 1];
-  for (let i = sorted.length - 2; i >= 0; i--) {
-    if (conclusionMoved(sorted[i], current).any) {
-      const moved = conclusionMoved(sorted[i], current);
-      return { current, prior: sorted[i], moved };
-    }
-  }
-  return null;
-}
-
 // EVERY consecutive material move (day-by-day chain), not just the latest. This is what keeps
 // the read "not drifted": the corrector grounds each move it hasn't grounded yet, so a missed
 // day (or pre-live history) self-heals on the next run instead of leaving a stale gap.
@@ -106,17 +91,6 @@ function threadConclusionMoved(prior, current) {
   const moves = axisMoves(prior, current);
   const axisChg = moves.length > 0;
   return { scoreChg, titleChg, trajChg, axisChg, axisMoves: moves, any: !!(scoreChg || titleChg || trajChg || axisChg) };
-}
-
-function findThreadDrift(snapshots) {
-  if (!Array.isArray(snapshots) || snapshots.length < 2) return null;
-  const sorted = [...snapshots].sort((a, b) => String(a.dateKey || '').localeCompare(String(b.dateKey || '')));
-  const current = sorted[sorted.length - 1];
-  for (let i = sorted.length - 2; i >= 0; i--) {
-    const moved = threadConclusionMoved(sorted[i], current);
-    if (moved.any) return { current, prior: sorted[i], moved };
-  }
-  return null;
 }
 
 // The grounding prompt. Events = [{topicId, threadId, title, date}] within the change window; the
@@ -197,4 +171,4 @@ function parseDriftResponse(text, events) {
   };
 }
 
-module.exports = { conclusionMoved, findDrift, findAllDrifts, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom, tokens, jaccard };
+module.exports = { conclusionMoved, findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom };

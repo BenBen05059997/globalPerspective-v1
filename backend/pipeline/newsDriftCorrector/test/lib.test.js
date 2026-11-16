@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { conclusionMoved, findDrift, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom } = require('../src/lib');
+const { conclusionMoved, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom } = require('../src/lib');
 
 const snap = (dateKey, riskLevel, riskScore, trajectory = '', headline = '') => ({ dateKey, riskLevel, riskScore, trajectory, headline });
 const dsnap = (dateKey, dimensions, riskLevel = 'elevated', riskScore = 60) => ({ dateKey, riskLevel, riskScore, dimensions, trajectory: 'x', headline: 'h' });
@@ -49,23 +49,6 @@ test('conclusionMoved: level flip / big score / trajectory shift = moved; cosmet
   assert.equal(conclusionMoved(snap('a', 'high', 80, 'x'), snap('b', 'high', 80, 'x')).any, false); // empty tokens
 });
 
-test('findDrift: returns the most recent MATERIALLY-different prior, skipping cosmetic days', () => {
-  const d = findDrift([
-    snap('2026-06-01', 'elevated', 60, 'calm', 'A'),
-    snap('2026-06-02', 'high', 85, 'tense', 'B'),
-    snap('2026-06-03', 'high', 85, 'tense', 'B reworded'),
-  ]);
-  assert.ok(d);
-  assert.equal(d.prior.dateKey, '2026-06-01');
-  assert.equal(d.current.dateKey, '2026-06-03');
-  assert.equal(d.moved.levelChg, true);
-});
-
-test('findDrift: null when no material move / too few', () => {
-  assert.equal(findDrift([snap('2026-06-01', 'high', 80)]), null);
-  assert.equal(findDrift([snap('a', 'high', 80, 't'), snap('b', 'high', 82, 't')]), null);
-});
-
 test('buildDriftPrompt: numbers events and forbids invention', () => {
   const p = buildDriftPrompt('Ukraine',
     snap('2026-06-30', 'elevated', 68, '', 'prior'),
@@ -104,23 +87,13 @@ test('parseDriftResponse: explicit noSingleDriver (0) + empty/garbage handled', 
   assert.equal(parseDriftResponse('{"triggerEventNumber":1,"whyChanged":""}', events), null); // no why
 });
 
-const { threadConclusionMoved, findThreadDrift } = require('../src/lib');
+const { threadConclusionMoved } = require('../src/lib');
 const tsnap = (dateKey, riskScore, threadTitle = '', trajectory = '') => ({ dateKey, riskScore, threadTitle, trajectory });
 
 test('threadConclusionMoved: score jump / title change / trajectory shift = moved; reword = not', () => {
   assert.equal(threadConclusionMoved(tsnap('a', 40, 'Talks stall'), tsnap('b', 55, 'Talks stall')).any, true); // Δ15
   assert.equal(threadConclusionMoved(tsnap('a', 40, 'Ceasefire holds in region'), tsnap('b', 42, 'War resumes as ceasefire collapses')).any, true); // title
   assert.equal(threadConclusionMoved(tsnap('a', 40, 'Talks continue', 'diplomacy proceeds slowly'), tsnap('b', 42, 'Talks continue', 'diplomacy proceeds slowly')).any, false); // stable
-});
-
-test('findThreadDrift: finds most recent materially-different prior; null when stable', () => {
-  const d = findThreadDrift([
-    tsnap('2026-06-01', 30, 'Quiet diplomacy', 'calm'),
-    tsnap('2026-06-02', 70, 'Open conflict erupts', 'escalating fast'),
-  ]);
-  assert.ok(d);
-  assert.equal(d.prior.dateKey, '2026-06-01');
-  assert.equal(findThreadDrift([tsnap('a', 50, 'X', 't'), tsnap('b', 53, 'X', 't')]), null); // Δ3, same title/traj
 });
 
 const { findAllDrifts } = require('../src/lib');

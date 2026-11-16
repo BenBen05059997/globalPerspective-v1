@@ -1,6 +1,6 @@
 'use strict';
 
-// newsDriftCorrector — the "living analysis" corrector (Phase 1b; LIVING_ANALYSIS_PLAN.md).
+// newsDriftCorrector — the "living analysis" corrector (Phase 1b).
 //
 // Per covered country: (1) gate DETERMINISTICALLY on the daily HISTORY# snapshots — did the
 // conclusion move recently (risk level / |Δscore|≥8 / trajectory)? Most days → no-op, no LLM.
@@ -8,9 +8,9 @@
 // LLM to pick the single event that explains it (or honestly declare no single driver — it
 // can never invent a cause). (3) Write a DRIFT#<date> NOTE — never overwrite the analysis.
 //
-// Model = DeepSeek (same family as the analyzer): the corrector grounds a causal explanation
-// in real events (generation), it does NOT judge the analyzer's prose — so family-bias, which
-// bites on quality-judging, doesn't apply. See LIVING_ANALYSIS_PLAN.md non-negotiable #4.
+// The model may share the analyzer's family: the corrector grounds a causal explanation in real
+// events (generation), it does NOT judge the analyzer's prose — so family-bias, which bites on
+// quality-judging, doesn't apply.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
@@ -26,8 +26,8 @@ const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftRespon
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
-// Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
+// GROK_MODEL is an old env name; its value is the model id.
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const DRIFT_TTL_DAYS = parseInt(process.env.DRIFT_TTL_DAYS || '60', 10);
 const LOOKBACK_DAYS = parseInt(process.env.DRIFT_LOOKBACK_DAYS || '10', 10); // only note RECENT moves
@@ -156,7 +156,7 @@ async function explainMove(subject, drift, events, askLLM = callLLM) {
 // Write a drift note twice, idempotently (same SK per date):
 //  - DRIFT#<date>    — 60d TTL; powers the live "what changed" band + corrections ledger.
 //  - DRIFTLOG#<date> — NO TTL; the PERMANENT archive the member-only full correction history
-//    accrues into (MEMBER_GATING_PLAN.md P3). Without this, "full history" would cap at 60 days.
+//    accrues into. Without this, "full history" would cap at 60 days.
 async function putDriftNote(pk, dateKey, base, ttl) {
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { ...base, PK: pk, SK: `DRIFT#${dateKey}`, ttl } }));
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { ...base, PK: pk, SK: `DRIFTLOG#${dateKey}` } }));

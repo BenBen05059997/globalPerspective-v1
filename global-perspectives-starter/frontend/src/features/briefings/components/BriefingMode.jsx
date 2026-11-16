@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import StoryMap from '@/shared/map/StoryMap.jsx';
+import StoryMap, { STORY_MAP_FALLBACK_HEIGHT } from '@/shared/map/StoryMap.jsx';
 import {
   buildDailySlides, buildWeeklySlides, mapFocusForDailySlide, mapFocusForWeeklySlide,
   shadingForDailySlides, shadingForWeeklySlides,
@@ -11,7 +11,6 @@ import Tabs from '@/shared/ui/Tabs.jsx';
 import '@/shared/ui/deck.css';
 import '@/features/briefings/components/BriefingMode.css';
 
-const FALLBACK_STAGE_HEIGHT = 460;
 const MIN_ROOT_HEIGHT = 520;
 
 function prefersReducedMotion() {
@@ -103,7 +102,7 @@ export default function BriefingMode({
     };
   }, []);
   const stageRef = useRef(null);
-  const [stageHeight, setStageHeight] = useState(FALLBACK_STAGE_HEIGHT);
+  const [stageHeight, setStageHeight] = useState(STORY_MAP_FALLBACK_HEIGHT);
   useEffect(() => {
     if (!stageRef.current || typeof ResizeObserver !== 'function') return undefined;
     const ro = new ResizeObserver((entries) => {

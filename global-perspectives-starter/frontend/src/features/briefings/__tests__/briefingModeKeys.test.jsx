@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
-vi.mock('@/shared/map/StoryMap.jsx', () => ({ default: ({ storyFocusIso3 }) => <div data-testid="map" data-focus={storyFocusIso3 || ''} /> }));
+vi.mock('@/shared/map/StoryMap.jsx', () => ({ STORY_MAP_FALLBACK_HEIGHT: 460, default: ({ storyFocusIso3 }) => <div data-testid="map" data-focus={storyFocusIso3 || ''} /> }));
 vi.mock('@/features/briefings/hooks/useStoryQuestion.js', () => ({ useStoryQuestion: () => null }));
 
 import BriefingMode from '@/features/briefings/components/BriefingMode.jsx';

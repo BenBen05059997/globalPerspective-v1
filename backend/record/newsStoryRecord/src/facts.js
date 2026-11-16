@@ -306,4 +306,4 @@ function runFact(run, at = run.finishedAt) {
   });
 }
 
-module.exports = {SCHEMA_VERSION, MAX_PUBLISHED_AGE_DAYS, exactTimeOf, KINDS, makeFact, entryFact, provisionalEntryFact, bornFact, forecastFact, forecastFactsFor, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, LEGACY_VOID_REASON, LEGACY_VOID_DECIDER, correctionFact, mergedFact, splitFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, ASSIGNERS, runFact, uniqueSorted};
+module.exports = {KINDS, makeFact, entryFact, provisionalEntryFact, bornFact, forecastFact, forecastFactsFor, inboxVerdictFact, inboxDrawFact, legacyVoidFact, isResolvable, correctionFact, mergedFact, inboxMergeFact, inboxSplitFact, inboxArticleFact, assignmentFact, ingestAssignmentFor, inboxAssignmentFact, runFact};

@@ -43,4 +43,4 @@ function storyStamp({threadId, title, iso3, born, lastFactAt, entries = [], read
   };
 }
 
-module.exports = {storyStamp, cleanIso3, NO_READING, NO_ANALYSIS, NO_SCORE};
+module.exports = {storyStamp, cleanIso3, NO_READING};

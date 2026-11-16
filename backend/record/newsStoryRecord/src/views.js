@@ -7,15 +7,15 @@ const {isResolvable: resolvable} = require('./facts'); // a question with a ques
 const Rd = require('./readings');
 const Q = require('./_shared/questionState');
 const {buildTrackRecord} = require('./trackRecord');
-const {byKey, ordered, resolveAliases, currentAssignments, placeEntries} = require('./_shared/placement');
+const {byKey, ordered, resolveAliases, placeEntries} = require('./_shared/placement');
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
 const {iso3List} = require('./_shared/resolveIso3');
-const {buildIndexViews, webLinks, archiveRefOf, entryOrder} = require('./indexViews');
+const {buildIndexViews, webLinks, archiveRefOf, entryOrder, WEB_MAX_AGE_DAYS, bytesOf, maxOf} = require('./indexViews');
 const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
 const {todayIndex} = require('./todayView');
-const {storyStamp} = require('./storyStamp');
+const {storyStamp, NO_READING} = require('./storyStamp');
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -24,13 +24,10 @@ const LINKS_MAX = 50;
 const SPECIFIC_SHARE = 0.05; // an actor or country links two stories only when fewer than this share of active stories carry it
 const LINK_WINDOW_DAYS = 14; // and both stories' lastFactAt dates are at most this far apart
 const ALL_INDEX_MAX_BYTES = 5 * 1024 * 1024; // over this the run fails rather than truncate (0037 section 1)
-const NO_READING = 'no reading yet';
 
 const unique = (xs) => [...new Set(xs)].sort();
-const maxOf = (xs) => xs.reduce((m, x) => (m === null || x > m ? x : m), null);
 const minOf = (xs) => xs.reduce((m, x) => (m === null || x < m ? x : m), null);
 const without = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
-const bytesOf = (obj) => Buffer.byteLength(`${JSON.stringify(obj)}\n`);
 
 // outlet country and type come from the one outlet table at build time (not stored); snippet and tier where the fact has them
 const sourcesOf = (f) => (f.sources || []).map((s) => {
@@ -94,7 +91,6 @@ function storyAnalysisBy(noteLines, aliases = new Map()) {
  * `web` notes (one per country web, even one with no edge) say which webs there are; a country with link notes but no web note
  * (a web written before web notes) is read from its link notes alone. Returns {newest: iso3 -> at, webs: iso3 -> web note}.
  */
-const WEB_MAX_AGE_DAYS = 30;
 function newestWebs(noteLines, today) {
   const cutoff = `${addDays(today, -WEB_MAX_AGE_DAYS)}T00:00:00.000Z`;
   const newest = new Map();
@@ -596,4 +592,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {titleOf, entryNotesBy, SCHEMA_VERSION, ACTIVE_DAYS, ENTRY_CAP, LINKS_MAX, SPECIFIC_SHARE, LINK_WINDOW_DAYS, ALL_INDEX_MAX_BYTES, resolveAliases, currentAssignments, buildViews, countDaysFor, writeGroups, bytesOf};
+module.exports = {titleOf, entryNotesBy, resolveAliases, buildViews, countDaysFor, writeGroups};

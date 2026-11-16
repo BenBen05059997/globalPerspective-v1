@@ -174,4 +174,4 @@ function buildTrackRecord(allFacts, {today, now = `${today}T12:00:00.000Z`}) {
   };
 }
 
-module.exports = {SCHEMA_VERSION, METHOD, SAMPLED_WEEKS_SHOWN, POOL_WEEKS_PUBLISHED, buildTrackRecord};
+module.exports = {buildTrackRecord};

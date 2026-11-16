@@ -188,4 +188,4 @@ function regionsIndex({themes, pairs}, storyIds, stampOf, builtFrom) {
   return {schemaVersion: 1, builtFrom, regions};
 }
 
-module.exports = {groupThemes, groupStories, evidenceOrder, themesIndex, regionsIndex, pairLinks, cleanReason, survivorOf, MIN_STORIES, NO_STORIES, NO_LINKS, LINKS};
+module.exports = {groupThemes, groupStories, evidenceOrder, themesIndex, regionsIndex, pairLinks, cleanReason};

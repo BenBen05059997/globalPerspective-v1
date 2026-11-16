@@ -116,4 +116,4 @@ function makeStore(client, {env = {}, tables, s3json = null, log = console} = {}
   };
 }
 
-module.exports = {makeStore, WINDOW_DAYS, ENTRY_SOURCES, FORECAST_SOURCES};
+module.exports = {makeStore};

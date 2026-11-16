@@ -120,4 +120,4 @@ function actorAliases(operator, rs) {
   return {map, canon: (id) => map.get(id) ?? id, generic, isGeneric: (id) => generic.has(id)};
 }
 
-module.exports = {actorAliases, SUBTYPES, WIKIDATA, isoWeekOf, weeksBetween, standing, maxWeek, byThread, cites, text};
+module.exports = {actorAliases, isoWeekOf, weeksBetween, standing, maxWeek, byThread, cites};

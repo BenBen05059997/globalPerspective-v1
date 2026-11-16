@@ -13,7 +13,7 @@ const {themesIndex, regionsIndex} = require('./themes');
 
 const SCHEMA_VERSION = 1;
 const INDEX_MAX_BYTES = 2 * 1024 * 1024; // per index; over this the run fails (like index/all.json) rather than truncate
-const WEB_MAX_AGE_DAYS = 30; // the story web's window (views.js WEB_MAX_AGE_DAYS; the old web_index maxAgeDays)
+const WEB_MAX_AGE_DAYS = 30; // the story web's window (also read by views.js newestWebs; the old web_index maxAgeDays)
 const WEEKLY_DAYS = 30; // the archive_range window the weekly readers ask for: today and the 29 days before
 
 // the analysis fields the Stories page, its map-less views and the country page's arc list read: title, arc text, questions to
@@ -144,4 +144,4 @@ function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, stamps, co
   return out;
 }
 
-module.exports = {buildIndexViews, webLinks, analysesIndex, countriesIndex, webIndex, weeklyIndex, archiveRefOf, entryOrder, WEEKLY_DAYS, INDEX_MAX_BYTES, ANALYSIS_FIELDS, COUNTRY_FIELDS};
+module.exports = {buildIndexViews, webLinks, archiveRefOf, entryOrder, INDEX_MAX_BYTES, ANALYSIS_FIELDS, WEB_MAX_AGE_DAYS, bytesOf, maxOf};

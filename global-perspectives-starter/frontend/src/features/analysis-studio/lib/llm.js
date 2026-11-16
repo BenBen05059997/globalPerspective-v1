@@ -1,17 +1,10 @@
 // imported by Node tooling outside src/ — keep relative imports
-// BYOK (Bring-Your-Own-Key) LLM client for the Analysis Studio (/analyze).
-//
-// The user picks a provider + model and pastes THEIR OWN key. The key lives only
-// in the browser (see shared/lib/byok.js) and the chat call goes browser → provider
-// directly — our servers never see, log, or store it.
+// LLM client for the eval harness (quality/analysis/*.mjs, run in Node). No site code calls it;
+// it was the browser client of the retired Analysis Studio.
 //
 // Two code paths:
 //   - OpenAI-compatible chat/completions: OpenAI, DeepSeek, Gemini (compat)
 //   - Anthropic Messages API: separate shape + the direct-browser-access header
-//
-// ⚠️ Direct browser calls depend on each provider's CORS policy. Where a provider
-// blocks browser origins the fetch will fail with a CORS/network error — surfaced
-// honestly to the user. (The eventual fallback is a no-store pass-through Lambda.)
 
 import { getProvider } from '../../../shared/lib/llmProviders.js';
 

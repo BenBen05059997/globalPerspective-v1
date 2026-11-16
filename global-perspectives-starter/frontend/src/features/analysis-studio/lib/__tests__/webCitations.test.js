@@ -13,7 +13,7 @@ describe('renumberWebCitations', () => {
   it('renumbers native-provider [n] markers to [Wn], resolving the exact collision fixture (both kinds use [1])', () => {
     // Our own story is cited as [1] (from `citations`), and Perplexity's own
     // in-text marker for its ONE search result is ALSO literally "[1]" — the
-    // documented collision (TRACK_RECORD_AND_STUDIO_RULING.md, critic 2).
+    // known collision.
     const text = 'Our story [1] says the strike began. New reporting [1] adds the death toll.';
     const webSources = [{ title: 'Wire report', url: 'https://example.com/wire' }];
     const { text: out, webSources: numbered } = renumberWebCitations(text, webSources, { nativeNumbering: true });

@@ -1,7 +1,6 @@
 /**
- * Tests for the ```gp-struct``` parser (utils/analysisStruct.js) — the optional
- * machine-readable index appended to Analysis Studio output. See
- * ANALYSIS_PRO_STRUCTURE_PLAN.md §P2.2.
+ * Tests for the ```gp-struct``` parser (lib/analysisStruct.js) — the optional
+ * machine-readable index appended to Analysis Studio output.
  */
 
 import { describe, it, expect } from 'vitest';

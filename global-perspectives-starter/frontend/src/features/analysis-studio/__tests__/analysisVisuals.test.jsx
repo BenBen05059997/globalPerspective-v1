@@ -1,6 +1,6 @@
 /**
  * Smoke render tests for the Analysis Studio ```gp-struct``` visual atoms
- * (components/atoms/AnalysisVisuals.jsx). See ANALYSIS_PRO_STRUCTURE_PLAN.md §P2.4.
+ * (components/AnalysisVisuals.jsx).
  */
 
 import { describe, it, expect } from 'vitest';

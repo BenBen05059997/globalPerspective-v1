@@ -1,4 +1,4 @@
-// D2 (TASK_2026-09-27_pages_local.md S5b) — the typed, numbered, dated source
+// D2 — the typed, numbered, dated source
 // pipeline: buildStorySources() per story + assembleContext() across the selection.
 import { describe, it, expect } from 'vitest';
 import { buildStorySources, assembleContext } from '@/features/analysis-studio/lib/analysisPrompt';

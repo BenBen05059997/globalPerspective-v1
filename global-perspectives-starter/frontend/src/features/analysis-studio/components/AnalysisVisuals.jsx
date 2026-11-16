@@ -1,5 +1,5 @@
 // AnalysisVisuals — the visual atoms for Analysis Studio's optional ```gp-struct block
-// (parsed + sanitized by utils/analysisStruct.js). These are a compact SUMMARY DASHBOARD
+// (parsed + sanitized by lib/analysisStruct.js). These are a compact SUMMARY DASHBOARD
 // layered on top of the prose, never a replacement for it — every component renders null
 // on missing/empty input (the honest fallback: no struct → no extra UI, prose stands alone).
 // Pure CSS (no d3, no new deps) — see AnalysisVisuals.css, built from the existing design

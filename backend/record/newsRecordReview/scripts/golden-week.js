@@ -3,7 +3,7 @@
 // publisher, then runs this Lambda's handler for 2026-W42 (shadow prefix, nothing leaves the process). Not a test file.
 //
 //   node golden-week.js capture      bundles/<threadId>.txt and system.txt: exactly what the model is sent (no model call)
-//   node golden-week.js real         the model through shared llm.js (env GROK_API_URL, XAI_API_KEY, REVIEW_MODEL)
+//   node golden-week.js real         the model through shared llm.js (env REVIEW_MODEL; ANTHROPIC_API_KEY for an anthropic: model, GROK_API_URL and XAI_API_KEY for DeepSeek)
 //   node golden-week.js replay DIR   DIR/<threadId>.json answers (e.g. a drafted answer key) through the same check
 //
 // Output: fixtures/golden-week/runs/<promptVersion>-<mode>/ (readings.jsonl, run.json, and bundles/ for capture).

@@ -1,6 +1,6 @@
 # newsRecordReview
 
-The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: live since 2026-10-31. Rule `TriggerRecordReview` cron(0 1 ? * MON *) ENABLED with payload `{"shadow":false}`, env `REVIEW_CONCURRENCY` 12 (a week has about 520 active stories; 6 in flight needed about 870 s of the 900 s). Prompt review-4 passed the golden-week gates (fixture README); live canary 2026-W43 on 5 stories (operator checked); first full run 2026-11-02 for 2026-W44.
+The weekly review. For the ISO week that ended, every active story gets one boxed model call; the answer is checked in code; accepted items become readings with hindsight. Output: `record/readings/YYYY-Www.jsonl`, the Run `record/runs/review-YYYY-Www.json`, and accepted auto-merges in `record/inbox/merges/YYYY-MM-DD.jsonl`. The review is the only writer of those keys. It never writes facts or views (`newsStoryRecord` builds the views from readings) and never touches DynamoDB. Design: decision 0039 (written from the operator-approved step 3 spec, 2026-10-22). Status: live since 2026-10-31. Rule `TriggerRecordReview` cron(0 1 ? * MON *) ENABLED with payload `{"shadow":false}`, env `REVIEW_CONCURRENCY` 12 (read live 2026-11-17; a week has about 520 active stories; 6 in flight needed about 870 s of the 900 s). The current prompt (`PROMPT_VERSION` `review-6` in `src/prompt.js`) passed the golden-week gates on Sonnet 5.5 on 2026-11-16 (fixture README); live canary 2026-W43 on 5 stories (operator checked); first full run 2026-11-02 for 2026-W44.
 
 ## The loop
 
@@ -8,10 +8,10 @@ The six-stage loop (select, assemble, read, check, write, build) is drawn in [AR
 
 ## What a run does
 
-1. Writes `runs/review-WEEK.json` with `status:"started"` (a review Run left at `started` is the alarm).
+1. Writes `runs/review-WEEK.json` with `status:"started"`. A Run still at `started` means the invocation stopped before it wrote the final Run; nothing reads that state automatically.
 2. Select: reads `views/manifest.json` (its `factsThrough` must reach the week's Sunday, else the run fails) and `views/index/active.json`; reads every facts day in `facts/manifest.json` up to that Sunday once; reads the operator aliases (missing = empty) and the readings of the 8 weeks before. Skips a story with no `entry` or `verdict` fact newer than its last reading's `covers.to` (reason `no_new_fact`, listed in the Run).
 3. Assemble: per story, entries (newest 60, `entriesOmitted` says how many were cut), forks (newest 10) with each branch's verdict (legacy `issued_before_method` voids dropped), corrections, merges, the story's latest earlier readings, the operator aliases that touch its actors, and up to 5 neighbouring stories (specific shared actor or country, within 14 days) with their 3 newest entries, so a link or merge can cite both sides.
-4. Read: one call per story through shared `llm.js` (model `REVIEW_MODEL`, live `anthropic:claude-sonnet-5-5`, `json:true`, `maxTokens` 6000, 6 in flight; temperature 0 is sent only to DeepSeek). `src/prompt.js` holds the prompt and `PROMPT_VERSION`; the answer shape is `schema/model-output.schema.json`. A failed call or a non-JSON answer fails that story only (recorded; its old readings stay).
+4. Read: one call per story through shared `llm.js` (model `REVIEW_MODEL`, live `anthropic:claude-sonnet-5-5`, `json:true`, `maxTokens` 6000, `REVIEW_CONCURRENCY` in flight; temperature 0 is sent only to DeepSeek). `src/prompt.js` holds the prompt and `PROMPT_VERSION`; the answer shape is `schema/model-output.schema.json`. A failed call or a non-JSON answer fails that story only (recorded; its old readings stay).
 5. Check (`src/check.js`), then write: the week's file is rewritten whole (other stories' stored lines kept, the stories read this run replaced), then the inbox, then the Run (`ok`, `partial` or `failed`). The handler throws when the Run is not `ok`, so the schedule's Errors metric moves.
 
 | Check | Rejects with |
@@ -41,7 +41,7 @@ Reading: `{schemaVersion, readingId, week, threadId, subtype, payload, cites, co
 
 ## Environment
 
-`WORLD_BUCKET`, `REVIEW_MODEL` (a model id; the `anthropic:` prefix picks Anthropic, a bare name such as `deepseek-flash` picks DeepSeek), optional `REVIEW_CONCURRENCY` (model calls in flight, default 6), and the shared llm.js keys: `ANTHROPIC_API_KEY` for Anthropic, `GROK_API_URL` and `XAI_API_KEY` for DeepSeek. The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code. `src/runtime.js` stops starting stories when under 60 s of Lambda time remain and records them as `timeout` failures.
+`WORLD_BUCKET`, `REVIEW_MODEL` (a model id; the `anthropic:` prefix picks Anthropic, a bare name such as `deepseek-flash` picks DeepSeek), optional `REVIEW_CONCURRENCY` (model calls in flight, default 6), and the shared llm.js keys: `ANTHROPIC_API_KEY` for Anthropic, `GROK_API_URL` and `XAI_API_KEY` for DeepSeek. The runtime supplies AWS SDK v3; the committed `src/_shared` symlink supplies shared code. The handler (`src/index.js`, `SPARE_MS`) stops starting stories when under 60 s of Lambda time remain and records them as `timeout` failures; `src/runtime.js` only passes in the Lambda's remaining time.
 
 ## Choices
 

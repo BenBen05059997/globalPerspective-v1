@@ -7,6 +7,7 @@
 // feed lists only stories. Empty = one honest, computed line — never "the map is quiet".
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { iso3Name } from '@/shared/lib/situationLabels.js';
+import { AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { statusGlyph } from '@/shared/lib/statusGlyph.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import Card from '@/shared/ui/Card.jsx';
@@ -15,7 +16,6 @@ import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import { markerKind, kindLabel, situationFreshness, markerHex } from '@/shared/map/legend.js';
 import { ageShort } from '@/features/map/lib/alertStack.js';
 
-const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];
@@ -44,7 +44,7 @@ function AlertCard({ s, selected = false, isNew = false, scanned = false, onSele
         <span className={`al-mark al-mark-${kind}`} aria-hidden="true" />
         <span className="al-body">
           <span className="al-top">
-            <span className="al-kind">{kind === 'alert' ? 'GDACS' : (AXIS_LABEL[s.axis] || s.axis)}</span>
+            <span className="al-kind">{kind === 'alert' ? 'GDACS' : (AXIS_LABELS[s.axis] || s.axis)}</span>
             {place ? <span className="al-place" title={place}>{place}</span> : null}
             <span className="al-age">{age}</span>
           </span>

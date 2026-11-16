@@ -6,13 +6,12 @@
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
+import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { tierSize, TIERS, markerHex } from '@/shared/map/legend.js';
 import { outlineForTier } from '@/shared/map/countryRiskLayer.js';
 import { MOTION_BUDGET } from '@/shared/map/pulse.js';
 import Button from '@/shared/ui/Button.jsx';
 
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
-const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const SW = 22; // swatch box (px)
 const C = SW / 2;
 const GREY = TOKENS['text-muted'];
@@ -104,7 +103,7 @@ export default function MapLegend({
         <div className="sh-legrow">
           <b>Colour = worst-axis crisis type</b>
           {AXES.map((a) => (
-            <Item key={a} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
+            <Item key={a} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABELS[a]}</Item>
           ))}
           <span className="sh-leg"><i>never a red/amber/green severity scale — the tier is the number and the word</i></span>
         </div>
@@ -146,7 +145,7 @@ export default function MapLegend({
       <div className="sh-legrow">
         <b>Colour = crisis type</b>
         {AXES.map((a) => (
-          <Item key={a} on={has(present?.axes, a)} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
+          <Item key={a} on={has(present?.axes, a)} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABELS[a]}</Item>
         ))}
         {present?.neutral ? <Item mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE.neutral }} />}>Other topic</Item> : null}
       </div>

@@ -6,11 +6,10 @@
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
+import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { ROUTE, briefingHref, todayHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
-const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 
 // The first three affected countries, each linked to its country page.
 function AffectedNames({ codes }) {
@@ -66,7 +65,7 @@ export default function MapAbout({
             if (!items.length) return null;
             return (
               <div key={a} className="sh-idx-group">
-                <h5><span className="sh-leg-dot" style={{ background: `var(--hue-${a})` }} />{AXIS_LABEL[a]} · {items.length}</h5>
+                <h5><span className="sh-leg-dot" style={{ background: `var(--hue-${a})` }} />{AXIS_LABELS[a]} · {items.length}</h5>
                 <ul>
                   {items.map((s) => (
                     <li key={s.id}>

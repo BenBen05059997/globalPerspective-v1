@@ -22,6 +22,7 @@ import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/shared/map/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/shared/lib/situationLabels.js';
+import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { freshnessState, olderLabel } from '@/shared/lib/freshness.js';
 import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import { changeNote, differingStoryTitle } from '@/features/map/lib/situationText.js';
@@ -80,8 +81,6 @@ const FEED_UNAVAILABLE_TEXT = 'The situation feed is unavailable right now.';
 const STORY_UNAVAILABLE_TEXT = 'Stories could not be loaded right now, so this link cannot be opened.';
 const STORY_GONE_TEXT = 'That story is not on the map: it is not in today’s stories, has no situation, and is not in the story-web index.';
 const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
-const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
-const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
 
 function fmtAgo(iso) {
@@ -159,7 +158,7 @@ function SituationDetail({ selected, fromStoryTitle = null, ev, isGdacs, m, affe
       <div className="sh-detail-head">
         <span className="sh-meta-row">
           <TierChip tier={selected.tier} />
-          <span className="sh-axis" style={{ color: `var(--hue-${selected.axis})` }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
+          <span className="sh-axis" style={{ color: `var(--hue-${selected.axis})` }}>{AXIS_LABELS[selected.axis] || selected.axis}</span>
           <span className="sh-statelbl">{STATE_LABEL[selected.state] || selected.state}</span>
           {isGdacs ? <span className="sh-prov">UN/EU GDACS</span>
             : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
@@ -730,7 +729,7 @@ export default function SituationHome() {
   }, [isPhone, selectionId, escSelectedId, closeSelection, legendOpen, aboutOpen]);
   const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryName || null));
   const sheetSubtitle = selected
-    ? (AXIS_LABEL[selected.axis] || selected.axis)
+    ? (AXIS_LABELS[selected.axis] || selected.axis)
     : (selectedStory ? (selectedStory.category || null) : null);
   // F2.3: a stale `?story=` link resolves to no topic (selectedStory stays null) but `selectionId`
   // was still truthy, so the sheet used to open empty. Only open once the selection actually

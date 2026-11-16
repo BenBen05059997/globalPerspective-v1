@@ -2,6 +2,7 @@
 
 Status: accepted (operator, 2026-10-31, step 5 build B2); follows 0035, 0036, 0042, 0046, 0047, 0050. Built and proven locally; nothing is deployed, no env is set, no object is written. The coordinator deploys, backfills the inbox shadow first, and sets the env (hand-off below).
 Date: 2026-10-31
+Amended 2026-11-17: deployed. Live env (2026-11-16 snapshot, plus a read of `ENTRIES_SOURCE` on 2026-11-17): `newsStoryRecord` has `ENTRIES_SOURCE=inbox`; `ENTRIES_INBOX_PREFIX=record/` is set on `newsAgent`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsSystemsAnalysis`, `newsThreadAnalysis` and `newsWeeklyBrief`. "Nothing is deployed, no env is set" in the Status describes 2026-10-31.
 
 ## Context
 Step 5 retires the DynamoDB world tables. NewsCache `archive#DAY` and `today-archive` are still the only source of the day's entries for the facts run (`store.js`, `world.archiveRange` / `archiveDay`, day-zero rule) and for the refresh of 0050, and five live actions still answer "today" to the pages:

@@ -2,6 +2,7 @@
 
 Status: accepted (operator, 2026-10-31: step 5 build B4a); follows 0003, 0035, 0042, 0047, 0048, 0050; built and proven read-only, not deployed
 Date: 2026-10-31
+Amended 2026-11-17: deployed and switched. In the 2026-11-16 AWS snapshot `NOTES_READS=notes` is set on `newsReadApi`, `newsSensitiveData-dev`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsSystemsAnalysis`, `newsBreakingAlert`, `newsDailyBrief`, `newsPostDevTo` and `newsWeeklyBrief`, and `NOTES_PREFIX=record/` is set on them and on `newsCountryFactsUpdater`. "Not deployed" in the Status describes 2026-10-31.
 
 ## Context
 STEP5_AUDIT.md sections 3, 4D, 4E and 6 (steps 1, 3, 5, 6) list what still reads the country and story history families of `SummarizeAndPredict`:

@@ -98,7 +98,7 @@ async function main() {
   if (!drafts.length) { console.log('No draft weekly briefs awaiting review. ✓'); return; }
   console.log(`${drafts.length} draft brief(s) awaiting review.`);
 
-  if (LIST_ONLY) { for (const b of drafts) console.log(`  [draft] week of ${b.weekOf} — ${(b.keyDevelopments || []).length} developments`); return; }
+  if (LIST_ONLY) { for (const b of drafts) console.log(`  [draft] week of ${b.weekOf} — ${(b.signals || []).length} signals`); return; }
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = (q) => new Promise((res) => rl.question(q, res));

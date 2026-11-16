@@ -2,6 +2,7 @@
 
 Status: accepted (supersedes the forecast-resolver part of 0015)
 Date: 2026-09-30 (recorded 2026-10-19)
+Amended 2026-11-17: the operator confirm step is superseded by 0034 (the resolver writes verdicts itself). In the 2026-11-16 AWS snapshot rule `TriggerPredictionResolver` is ENABLED, `cron(30 10 * * ? *)`.
 
 ## Context
 Decision 0015 parked `newsPredictionResolver` on 2026-09-28: its verdict proposals needed a human

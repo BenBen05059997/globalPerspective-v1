@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-09-25
+Amended 2026-11-17: superseded by 0035. The Studio half was already retired in 0033; the country card split is carried by 0034 and the code, as 0035 says.
 
 ## Context
 The country page mixed quick status with expensive on-view AI analysis. Reader research

@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-09-25
+Amended 2026-11-17: superseded by 0035. The operator confirm step was replaced by 0034 and the Studio was retired in 0033; the lean sampled track record is carried by 0034 and the code, as 0035 says.
 
 ## Context
 A fact pass found all 122 scored forecasts came from one July week and nothing had been scored in

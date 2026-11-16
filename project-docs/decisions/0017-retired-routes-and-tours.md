@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-10-01
+Amended 2026-11-17: the client-only redirects are superseded by real 301 redirects in the Worker (0028); the client redirects stay as a fallback.
 
 ## Context
 The dark-site release (one token set, one frame) reviewed pages kept from before the redesign. The

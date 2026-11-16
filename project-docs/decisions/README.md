@@ -31,7 +31,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0024](0024-feature-public-api-and-lambda-grouping.md) | 2026-10-19 | Feature index.js public API; Lambdas grouped by feature | accepted |
 | [0025](0025-docs-storage-layout.md) | 2026-10-19 | How documentation is stored | partly superseded by 0026 and 0041 |
 | [0026](0026-delete-not-archive.md) | 2026-10-19 | Delete old docs instead of archiving them | accepted |
-| [0027](0027-forecast-resolver-unparked-as-weekly-settle.md) | 2026-09-30 | The forecast resolver is unparked as the weekly settle job | accepted |
+| [0027](0027-forecast-resolver-unparked-as-weekly-settle.md) | 2026-09-30 | The forecast resolver is unparked as the weekly settle job | accepted (confirm step superseded by 0034) |
 | [0028](0028-briefings-merge-real-301s.md) | 2026-10-19 | One Briefings page; old addresses get real 301s | accepted (supersedes 0017's client-only redirects) |
 | [0029](0029-today-kept-linked-from-map.md) | 2026-10-19 | /today is kept and linked from the map | accepted (refines 0016) |
 | [0030](0030-studio-out-of-menu.md) | 2026-10-19 | The Studio leaves the menu until its return criteria are met | superseded by 0033 |

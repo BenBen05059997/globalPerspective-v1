@@ -30,8 +30,6 @@ Keep both pipelines and schedules. Rename the cluster vocabulary internally, giv
 
 `newsSelectionShadow` (3 times a day, writes only `audit/selection-shadow/`) compares a layered candidate selector against what was published; the outcome review is the operator's selection decision.
 
-`newsSelectionShadow` (3 times a day, writes only `audit/selection-shadow/`) compares a layered candidate selector against what was published; the outcome review is the operator's selection decision.
-
 ## Decision
 Not made. Recommendation: converge on one ingest in stages, with the two pipelines kept as they are until a replay proves coverage and identity.
 

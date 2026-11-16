@@ -23,11 +23,30 @@ const TODAY_WINDOW_MS = 24 * 60 * 60 * 1000; // the `today-archive` item keeps t
 const OWN_FIELDS = ['inboxId', 'batch', 'n', 'latest', 'run'];
 const LATEST_FIELDS = ['urgency', 'urgencyReason', 'significance', 'x_trending', 'primaryCountry', 'mentionedCountries'];
 
-/** The agent's trim of stored ai text: strings longer than MAX_AI_CHARS are cut and end in '...'. Idempotent. */
+/**
+ * A summary over MAX_AI_CHARS, cut so that no reader sees half a bullet or half a word: at the last line break that fits (the model writes one
+ * bullet per line), else at the last sentence end that fits (no marker), else at the last space with '...'. Decision 0061: a Sonnet summary can be
+ * longer than the cap, and the cut-at-1500-and-'...' of the DeepSeek era left a bullet broken mid-word (the full text stays in the entry note).
+ */
+function trimSummary(text) {
+  const head = text.slice(0, MAX_AI_CHARS);
+  if (text[MAX_AI_CHARS] === '\n') return head.trimEnd();
+  const nl = head.lastIndexOf('\n');
+  if (nl >= MAX_AI_CHARS / 3) return head.slice(0, nl).trimEnd();
+  const end = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '));
+  if (end >= MAX_AI_CHARS / 3) return head.slice(0, end + 1);
+  const sp = head.lastIndexOf(' ');
+  return `${(sp > 0 ? head.slice(0, sp) : head).trimEnd()}...`;
+}
+
+/** The agent's trim of stored ai text: a summary over MAX_AI_CHARS is cut by trimSummary, any other string over it is cut and ends in '...'. Idempotent (a text already cut, up to MAX_AI_CHARS + 3 long and ending in '...', stays). */
 function trimAi(entry) {
   if (!entry.ai) return entry;
   const trimmed = {};
-  for (const [k, v] of Object.entries(entry.ai)) trimmed[k] = typeof v === 'string' && v.length > MAX_AI_CHARS ? `${v.slice(0, MAX_AI_CHARS)}...` : v;
+  for (const [k, v] of Object.entries(entry.ai)) {
+    if (typeof v !== 'string' || v.length <= MAX_AI_CHARS || (v.length <= MAX_AI_CHARS + 3 && v.endsWith('...'))) trimmed[k] = v;
+    else trimmed[k] = k === 'summary' ? trimSummary(v) : `${v.slice(0, MAX_AI_CHARS)}...`;
+  }
   return { ...entry, ai: trimmed };
 }
 
@@ -118,4 +137,4 @@ function latestSelection(lines) {
   return { batch: b.batch, run: withRun.run, topicIds: b.lines.map((l) => l.topicId), lines: b.lines };
 }
 
-module.exports = { MAX_ARCHIVE_ENTRIES, MAX_AI_CHARS, TODAY_WINDOW_MS, LATEST_FIELDS, trimAi, mergeArchiveDay, inboxLines, entryOfLine, batchesOf, replayDay, replayToday, latestSelection };
+module.exports = { MAX_ARCHIVE_ENTRIES, MAX_AI_CHARS, TODAY_WINDOW_MS, LATEST_FIELDS, trimAi, trimSummary, mergeArchiveDay, inboxLines, entryOfLine, batchesOf, replayDay, replayToday, latestSelection };

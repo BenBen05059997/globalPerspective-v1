@@ -124,3 +124,40 @@ test('a topic with more sources than the entry carries (the daily row caps at 10
   const [same] = I.inboxLines([entry], { batch: '2026-10-10T04:00:00.000Z', selection: { topics: { A: { urgency: 'high', sources: entry.sources } }, run: { of: 1 } } });
   assert.deepEqual(same.latest, { urgency: 'high' }, 'nothing is duplicated when the entry already holds every source');
 });
+
+// ---- a summary is cut at a clean line, never mid-word (decision 0061) ----------------------------------------------------------------
+const bullets = (n, len) => Array.from({ length: n }, (_, i) => `- Bullet ${i} ${'word '.repeat(len)}ends here.`).join('\n');
+test('a summary over the cap is cut at the last complete line that fits, with no marker', () => {
+  const full = bullets(6, 60); // each line about 320 chars: five fit under 1500
+  assert.ok(full.length > 1500);
+  const cut = I.trimAi({ ai: { summary: full } }).ai.summary;
+  assert.ok(cut.length <= 1500);
+  assert.equal(cut, full.split('\n').slice(0, 4).join('\n'));
+  assert.ok(cut.endsWith('ends here.'));
+  assert.equal(I.trimAi({ ai: { summary: cut } }).ai.summary, cut, 'idempotent');
+});
+
+test('a summary with no line break that fits is cut at a sentence end, else at a space with a marker', () => {
+  const sentences = 'A sentence about a thing. '.repeat(100);
+  const a = I.trimAi({ ai: { summary: sentences } }).ai.summary;
+  assert.ok(a.length <= 1500 && a.endsWith('thing.'));
+  const words = 'word '.repeat(400);
+  const b = I.trimAi({ ai: { summary: words } }).ai.summary;
+  assert.ok(b.endsWith('word...') && b.length <= 1503);
+  assert.equal(I.trimAi({ ai: { summary: b } }).ai.summary, b);
+});
+
+test('a summary at or under the cap, other ai keys and an old cut copy are untouched; other keys keep the 1500 + ... cut', () => {
+  const ok = { ai: { summary: 'x'.repeat(1500), prediction: null } };
+  assert.deepEqual(I.trimAi(ok), ok);
+  const old = { ai: { summary: `${'y'.repeat(1500)}...` } };
+  assert.deepEqual(I.trimAi(old), old);
+  const cause = I.trimAi({ ai: { summary: 's', trace_cause: 'c'.repeat(2000) } }).ai;
+  assert.equal(cause.trace_cause, `${'c'.repeat(1500)}...`);
+  assert.equal(cause.summary, 's');
+});
+
+test('a break exactly at the cap keeps the whole head', () => {
+  const full = `${'a'.repeat(1499)}\n- next`;
+  assert.equal(I.trimAi({ ai: { summary: full } }).ai.summary, 'a'.repeat(1499));
+});

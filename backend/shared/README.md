@@ -11,7 +11,9 @@ This folder is stage 4: world/, the only reader of the raw tables, plus the shar
 <!-- pipeline:end -->
 
 ## Modules (`src/`)
-Who uses what: `git grep "_shared/" -- backend`. The "used by" notes below are a guide, not a list.
+Who uses what: `git grep "_shared/" -- backend` (record CLIs require `../../shared/src/...` directly). The "used by" notes below
+are a guide, not a list, and use folder names: `newsPostDevTo/` deploys as `newsDailyBrief`, `newsSensitiveData/` as `newsReadApi`,
+`newsInvokeGemini/` as `newsIngest` and `NewsProjectInvokeAgentLambda/` as `newsAgent` (`scripts/functions.json`).
 
 LLM and time
 - `llm.js`: `chat()` over fetch, no deps. Providers `deepseek` (OpenAI-style; `GROK_API_URL`, fallback
@@ -24,7 +26,7 @@ LLM and time
 - `dayZero.js`: `keepDayZero` (an entry counts as today only if it was archived today, UTC) and `archiveRowKey(date)` (`archive#YYYY-MM-DD`, UTC). Used by the analysis and brief Lambdas and the read API. `archiveEntries.js`: `readArchiveEntries({days, getRow, project, onError})`, the archive walk (`today-archive`, then `archive#<day>`) of the thread, country, systems and weekly Lambdas.
 - `archiveReads.js` (decision 0035 step 5d): the `ARCHIVE_READS=ddb|inbox|compare` switch for reading the archive from the entries inbox (`record/inbox/entries/DAY.jsonl`, under `ENTRIES_INBOX_PREFIX`) instead of NewsCache. `readMode`/`readBy` (the switch and the compare logging, also used by the agent's `inbox-reads.js`), `archiveRowReader({mode, prefix, ddbGetRow, readDay})` (a drop-in `getRow` for `readArchiveEntries`: `archive#DAY` and `today-archive` replayed from the inbox, compare on whole entries with the inbox side cut to 3 sources for `today-archive`), `s3EntriesDay(prefix)` (the world-bucket day reader, SDK required on first use). An unset prefix or unknown mode reads DynamoDB. Known compare difference: `today-archive` entries differ in `archivedAt` only, by about 0.15 s (the agent stamps `today-archive` and `archive#DAY` separately; the inbox matches `archive#DAY`); readers use it only for the 24 h cut-off, so it counts as clean.
 - `firebaseAuth.js`: `makeFirebaseVerifier({projectId, logLabel})` -> `verifyFirebaseToken('Bearer <jwt>')` -> payload | null (exp, aud, iss, signature against Google's certs; no firebase-admin). Used by `newsRecommend`, `newsSavedItems`, `newsSensitiveData`.
-- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`, `newsPostDevTo`, `newsPostLinkedIn`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
+- `httpReply.js`: `httpReply(status, body)`, the JSON reply with Content-Type only (never a CORS header: the Function-URL CORS config owns CORS). Used by `newsClientErrors`, `newsSavedItems`, `newsRecommend`, `newsPostLinkedIn`. `jaccard.js`: `jaccard(setA, setB)` (`newsPostDevTo`, `newsDriftCorrector`).
 
 Countries and places
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`, short display names such as
@@ -37,19 +39,20 @@ Countries and places
 - `situations-core.js`: GDACS observation and situation fold (`buildSituation`, `coolSituation`, `buildStorySituation`; a threaded
   story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS. Used by the GDACS ingest and the tracker.
 - `links.js`: the site's page addresses for emails and posts, same rules as the frontend `shared/lib/links.js` (`storyHref`,
-  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`. `escapeHtml.js`: `escapeHtml(s)` (& < > "), the email renderers' text escape.
+  `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `todayHref`, `entityHref`) plus `absoluteUrl(path, site)`. `escapeHtml.js`: `escapeHtml(s)` (& < > "), the email renderers' text escape.
 
 The record
 - `record.js`: the record's and board's pure rules: `canonicalUrl`, `entryIdentity`, `sourceIdOf`, `actorIdOf`, `factId`, `noteId`,
   `sha1`, `pairKey`, `normalizeActor`, `stringTexture`, `PIN_BUDGET`, `pinBudgetOk`, `normalizeBoard`, `cheapGrounds` (shared
   actors, places and outlets, and score co-movement; never 'strong'). Used by `newsBoard`, `newsStoryRecord`, the selector's raw
-  capture and the record CLIs. Frontend mirror of the board block: `shared/lib/board.js`.
+  capture, `newsRecover`, `notes.js` and the record CLIs. Frontend mirror of the board block: `shared/lib/board.js`.
 - `placement.js`: where a fact sits in the record: `currentAssignments`, `placeEntries`, `resolveAliases` (latest assignment wins,
   merged stories fold into the survivor). One implementation for the `newsStoryRecord` views, `newsPredictionResolver` gather and
   `newsRecordReview` select. Pure.
 - `s3json.js`: `makeS3Json({client, GetObjectCommand, PutObjectCommand, bucket})` -> `getJson`, `getJsonEtag`, `putJsonIf`,
   `putOnce` (`If-None-Match: *`), `putLatest`, `getLines`, `appendLines` (JSONL append with eventId dedupe and an If-Match retry).
-  The client is injected so it tests without the SDK. Used by the record writers, the note writers, the resolver, the selector and `newsBoard`.
+  The client is injected so it tests without the SDK. Used by the record writers and readers, the note writers, the agent, the selector,
+  the resolver, the review, `newsRecover`, `newsBoard`, `world/` and the record CLIs.
 - `manifest.js`: `makeManifest(s3json).addDays(key, dates)`, the conditional day-manifest rewrite (412 re-read and union) for
   `record/facts/manifest.json` and each `record/notes/<subtype>/manifest.json`.
 - `notes.js`: the one builder and writer of notes (decision 0042, schema `backend/record/schema/note.schema.json`): `buildNote`
@@ -57,29 +60,51 @@ The record
   `driftNote`, `storyDriftNote`, `countryNote`, `countryHistoryNote`, `countryFactsNote`, `storyHistoryNote`, `linkNote`, `webNote`, `dailyBriefNote`, `weeklyBriefNote`),
   and `makeNoteWriter({s3json, prefix}).write(subtype, notes)` (manifest first, then `appendLines` deduped by `noteId`). Every note
   writer, Lambda or CLI, uses it.
-- `noteReads.js`: the readers of the notes for the rows SummarizeAndPredict used to hold (decision 0053): `countryIntelligence`, `countryHistory`, `countryDrift`, `storyDrift`, `storyAnalysis`, `threadHistory`, `countryFacts`, `driftFeed` (same field names, no gating), `makeNoteReader` (a subtype's days from its manifest, cached), `s3NoteReader`, `readMode` (env `NOTES_READS` = `ddb` | `compare` | `notes`), `viaMode`/`lambdaSource`/`rowReaders` (a Lambda's read under the flag; `compare` logs `[notes-compare]`) and `diff`. Used by the read API and seven Lambdas.
+- `entriesInbox.js` (decision 0051): the line format and replay rule of `record/inbox/entries/DAY.jsonl` (`inboxLines`, `replayDay`,
+  `replayToday`, `mergeArchiveDay`, `trimAi`, `latestSelection`, `lateMarker`). The agent writes with it; `newsStoryRecord`,
+  `archiveReads.js`, `world/` and the record CLIs replay it; `newsDriftCorrector` uses `latestSelection` and `newsHealth` `lateMarker`.
+- `forecastsInbox.js` (decision 0052): the line format and replay rule of `record/inbox/forecasts/DAY.jsonl` (`drawnLine`, `threadLine`,
+  `replay`). The agent writes with it; `newsStoryRecord` and `record/cli/build-forecasts-inbox.mjs` read with it.
+- `noteReads.js`: the readers of the notes for the rows SummarizeAndPredict used to hold (decision 0053): `countryIntelligence`, `countryHistory`, `countryDrift`, `storyDrift`, `storyAnalysis`, `threadHistory`, `countryFacts`, `driftFeed` (same field names, no gating), `makeNoteReader` (a subtype's days from its manifest, cached), `s3NoteReader`, `readMode` (env `NOTES_READS` = `ddb` | `compare` | `notes`), `viaMode`/`lambdaSource`/`rowReaders` (a Lambda's read under the flag; `compare` logs `[notes-compare]`). Used by the read API, seven other Lambdas and `record/cli/compare-reads.mjs`.
+- `recordReads.js` (decision 0054): the `RECORD_READS=ddb|record|compare` switch. Readers in the shape of the DynamoDB rows they replace
+  (NewsCache `latest` and `today-archive`, `THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `WEEKLY_BRIEF#`) built from the record views
+  (`makeRecordReads`, `lazyRecordReads`, `liveRecordReads`), plus `readMode`, `readBy`, `SAME` and `diffValues`; a view older than 9 h
+  answers nothing and the caller reads DynamoDB. Used by `newsBoard`, `newsBreakingAlert`, `newsEmailSender`, `newsPostDevTo`,
+  `newsPostLinkedIn`, `newsRecommend`, the read API and `record/cli/compare-record-reads.mjs`.
 - `briefNotes.js`: `writeBriefNote({subtype, item, lambda, runId})`, the brief writers' one helper (decision 0048). Gated by env
   `NOTES_PREFIX`: unset writes nothing; best-effort, a failure logs `[notes]` and never fails the run. Used by `newsPostDevTo` and
   `newsWeeklyBrief`. The brief writers and the analysis Lambdas' `recordNotes.js` build their S3 writer with `s3NoteWriter(prefix)` (`s3NoteWriter.js`; env `WORLD_BUCKET`, `AWS_REGION`).
 - `briefs.js`: `briefWithIso3`, `weeklyWithIso3`, `briefCountries`: the countries every reader gets on the daily and weekly brief
   (filled from names when the stored row has no `iso3`). Used by the read API's brief actions and by the record's brief views, so
   they answer the same.
-- `questionState.js`: where a forecast question stands in the weekly sample and in its outcome (decision 0043). `questionScoring.js`:
-  Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure, used by
-  `newsStoryRecord`'s views and track-record view.
-- `outlets.js`: the one outlet table (`OUTLET_METADATA`, `getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
+- `questionPool.js` (decisions 0038, 0043): the weekly sample's pool and draw rule (`SAMPLE_K`, `LEAD_MIN`/`LEAD_MAX`,
+  `eligibleQuestions`, `draw`, `poolOfDraw`, `rowsOfFacts`, the ISO-week day helpers). Pure. Used by `newsPredictionResolver` (draws),
+  `newsStoryRecord`'s track-record view and `record/cli/check-eligible.mjs`.
+- `questionState.js`: where a forecast question stands in the weekly sample and in its outcome (decision 0043), and `isoWeekOfDay`.
+  `questionScoring.js`: Brier score, skill against the base rate and the cluster-bootstrap interval of the sampled questions. Both pure,
+  used by `newsStoryRecord`'s views and track-record view; `newsPredictionResolver` uses `isoWeekOfDay`.
+- `outlets.js`: the one outlet table (`getOutletMeta`, `normalizeOutlet`) and `registrableDomain` /
   `TWO_LEVEL_SUFFIXES`. Unknown domains keep `outlet: null`. `categoryLabels.js`: `CATEGORY_LABEL`, the twelve category display names (digest, posts, RSS).
-- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `itemLink`, `decodeEntities`), shared by
-  `newsInvokeGemini` and `record/cli/recover-day.mjs` so a Wayback snapshot is read as the live feed is.
+- `rss.js`: RSS / Atom / RDF item parser (`parseRssXml`, `ageLabel`, `itemLink`, `decodeEntities`), shared by `newsInvokeGemini`,
+  `newsSituationIngest` and `newsRecover` (which `record/cli/recover-day.mjs` runs) so a Wayback snapshot is read as the live feed is.
+- `regions.js` (decision 0058): the one ISO3 -> region table (`REGIONS`, `regionOf`, `presetIdOf`, `regionsOfCountries`). Used by
+  `newsStoryRecord` (`index/regions.json`, story regions) and `newsBoard` (presets).
 
 The raw-table reader
 - `world/`: the one reader of the world's raw tables (`archive#` days, `THREAD_ANALYSIS`, `THREAD_HISTORY#`, `COUNTRY# HISTORY#`,
   `DRIFT#`/`DRIFTLOG#`, `PRED#` scenarios, `Q#` verdicts, `WEB#INDEX`, `web/latest.json`, the `latest` topic pool) plus the shared
   derivations (story birth, branches, coverage and missing days (which days have archive data; not the Run object's coverage),
   `tierFromScore`, outlets). **Rule: nobody else parses these rows.** Consumers require `./_shared/world` and pass an injected client
-  (`makeDynamoClient` / `makeS3Client`, no SDK import, no aws CLI). Today `newsStoryRecord` and `newsBoard` use it; other Lambdas
-  still parse their own rows and move to it as they are touched. Front door: `src/world/README.md` (row table, exact derivation
+  (`makeDynamoClient` / `makeS3Client`, no SDK import, no aws CLI). Used by `newsStoryRecord`, `newsBoard` and the record CLIs
+  (`backfill-forecasts`, `backfill-history`, `build-entries-inbox`, `build-forecasts-inbox`, `check-eligible`, `check-history`);
+  other Lambdas still parse their own rows and move to it as they are touched. Front door: `src/world/README.md` (row table, exact derivation
   rules, decisions). When step 5 retires a table, its reader here is what changes.
+
+## Scripts (`scripts/`)
+- `claude-compare-lib.js`: helpers for the Claude model comparison of 2026-11-16 (decision 0060): a logged `chat()` wrapper, a 429
+  retry and the blind A/B judge. It reads the Anthropic key from `~/.gp-anthropic-key.txt` when required. Used by the
+  `scripts/claude-compare*.js` of `newsSourceAudit`, `newsDriftCorrector` and `newsPredictionResolver`, and by
+  `claude-compare-rejudge.js` (re-runs the judge over those results). Local tools, not deployed.
 
 ## Checks
 - Tests: `cd backend/shared && node --test test/*.test.*` (world fixtures are in `test/world.fake.js`).

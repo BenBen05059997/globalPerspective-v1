@@ -94,7 +94,7 @@ dropped entry never shifts the next one's index.
 - **`branchesFromScenarios(snapshots)`**: one fork per PRED# snapshot, `forkId = '<PRED#topicId>/<date>'`, `drawnAt = date`, `atEvent = topicId`; one branch per trigger, `branchId = '<forkId>/<trigger id>'` (`<scenario>-<trigger>` index when the row has no id), `text` = scenario label (else the trigger text), `p` = the **trigger's** probability in percent (null when the trigger has none: only question triggers carry `p`), `scenarioP` = the scenario's probability in percent, `trigger`, `resolutionSource` (`''` when absent), `due`, `question`, `qid`. Sorted by `drawnAt`, then `forkId`. Branch status (fired/hold/dead/late) is the record's judgment and is not derived here.
 - **`coverage(range, {since?, births?, analyses?})`** -> `{from, to, since, expectedDays, daysWithData, missingDays (from since on), windowMissingDays (whole window), entries, stories (distinct threadIds), outlets (distinct count), analysedNew:{analysed,total}\|null}`. A missing day is a day with no `archive#` row; a row with no entries is a present day. `analysedNew` counts stories born on or after `since`; "analysed" = `analyses[threadId]` is truthy (resolve it with `analysisAsOf` first).
 - **`analysisAsOf(analysis, history, asOf)`**: the thread's `THREAD_ANALYSIS` when generated on or before `asOf` (any when `asOf` is omitted), else the last `THREAD_HISTORY` point on or before it, else null. An undated analysis cannot be placed in time and falls through to history. A current analysis never leaks backward into a historical replay.
-- **`tierFromScore(score)`**: `>=75` high, `>=50` elevated, `>=25` moderate, else low; null / '' / non-numeric -> null; numeric strings are coerced. The bands are `riskDimensions.js`'s (reused, not copied) and equal the frontend `shared/lib/riskTiers.js` (a test compares them at every integer; no `check-shared-sync` guard compares the two files yet, a later item).
+- **`tierFromScore(score)`**: `>=75` high, `>=50` elevated, `>=25` moderate, else low; null / '' / non-numeric -> null; numeric strings are coerced. The bands are `riskDimensions.js`'s (reused, not copied) and equal the frontend `shared/lib/riskTiers.js` (`test/world.derive.test.js` compares them at every integer; `check-shared-sync` does not).
 
 ## Decisions (where the three old parsers disagreed)
 1. **Birth**: by archive **date**, with `bornAt` from `archivedAt` of that date's entries (record: min `archivedAt` of all entries, `T00:00:00Z` fallback; weekly: date only; the board: none). Same `born` in all three; `windowLimited` is new in this shape (weekly flagged only `born == first day`; record had no flag).
@@ -112,9 +112,10 @@ dropped entry never shifts the next one's index.
 
 ## Who imports it
 `newsStoryRecord` (the record's reads) and `newsBoard` (`src/world.js`). Each Lambda reaches it as `require('./_shared/world')` through its committed
-`src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The weekly will run from the repo
-and require it with a relative path. The weekly and the board read `record/*` views and use this reader only for what
-the record does not hold (ARCHITECTURE_TIMELINE §6).
+`src/_shared -> ../../../shared/src` symlink (`scripts/lambda.sh` ships it as real files). The record CLIs `backfill-forecasts`,
+`backfill-history`, `build-entries-inbox`, `build-forecasts-inbox`, `check-eligible` and `check-history` (`backend/record/cli/`)
+require it with a relative path. The board reads `record/*` views and uses this reader only for what the record does not
+hold (ARCHITECTURE_TIMELINE §6).
 
 ## Test
 `cd backend/shared && node --test test/world.*.test.js` (fixtures in `test/world.fake.js` are shaped like the live rows).

@@ -25,7 +25,7 @@ test('PRED writer always assigns a thread and accepts older singular categories'
 });
 
 test('summary prompt forbids commenting on the source text or its completeness',()=>{
- const src=fs.readFileSync(require.resolve('../src/index.js'),'utf8');
+ const src=fs.readFileSync(require.resolve('../src/story-text.js'),'utf8');
  const body=src.slice(src.indexOf('function buildSummaryPrompt'),src.indexOf('function buildSummaryPrompt')+2500);
  assert.match(body,/Never mention the snippets, the headline, the sources or their completeness/);
  assert.match(body,/never write "the snippet\/source does not report/);
@@ -36,7 +36,7 @@ assert.match(body,/name the outlet given in brackets on its source line \(e\.g\.
 });
 
 test('trace_cause grounding rule covers the evidence texts and keeps background general',()=>{
- const src=fs.readFileSync(require.resolve('../src/index.js'),'utf8');
+ const src=fs.readFileSync(require.resolve('../src/story-text.js'),'utf8');
  const body=src.slice(src.indexOf('function buildTraceCausePrompt'),src.indexOf('function buildTraceCausePrompt')+3000);
  assert.match(body,/The same holds for every "evidence" text: say about a snippet only what it says/);
  assert.match(body,/do not finish a sentence that is cut off/);

@@ -1,9 +1,11 @@
 'use strict';
 
-const crypto = require('crypto');
 const lib = require('./lib');
-const { chat, stripCodeFence } = require('./_shared/llm');
+const { chat } = require('./_shared/llm');
 const threading = require('./threading');
+// The topic and archive-entry shapes, the summary and cause-chain prompts, the call options and the stored item live in story-text.js,
+// shared with the recovery script (decision 0061).
+const { buildTopic, buildStableTopicId, buildArchiveEntry: buildEntry, textPrompt, storyChatOptions, storyAnswer, finishText, buildCacheItem } = require('./story-text');
 const draw = require('./forecast-draw');
 const { staleReason, staleProcessedRun } = require('./run-guard');
 const { slugify } = threading;
@@ -53,6 +55,9 @@ const DAILY_ARCHIVE_MAX_SOURCES = 10;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
+
+// The archive entry as written now (the clock is read here, the shape is story-text.js's).
+const buildArchiveEntry = (topic, ai, generationId, sourceCap, threadId) => buildEntry(topic, ai, generationId, sourceCap, threadId, new Date().toISOString());
 
 const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
 
@@ -455,94 +460,6 @@ async function loadTopics() {
   };
 }
 
-function buildTopic(t, idx) {
-  const stableId = buildStableTopicId(t, idx);
-  const categories = Array.isArray(t.categories)
-    ? t.categories
-    : t.category
-      ? [t.category]
-      : [];
-
-  return {
-    id: stableId,
-    topicId: stableId,
-    title: t.title,
-    description: t.description || '',
-    categories,
-    regions: Array.isArray(t.regions) ? t.regions : [],
-    primary_location: t.primary_location,
-    location_context: t.location_context,
-    sources: t.sources || [],
-    // Carried through so archive entries retain the fields next-day narrative
-    // threading reads (Jaccard keyword overlap + continues_topic inheritance).
-    // Without these, past archive entries had empty search_keywords and the
-    // Jaccard threading fallback was effectively blind.
-    search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
-    // Phase 1b — carry the event fingerprint through so active + archive retain it
-    // (the map↔editorial linking tier reads these; without carry-through they'd be dropped here).
-    iso3: Array.isArray(t.iso3) ? t.iso3 : [],
-    actors: Array.isArray(t.actors) ? t.actors : [],
-    event_type: typeof t.event_type === 'string' ? t.event_type : 'other',
-    ...(t.continues_topic ? { continues_topic: t.continues_topic } : {}),
-  };
-}
-
-function buildSummaryPrompt(topic, generatedDate) {
-  // Ground the summary in the ACTUAL article snippets — not just the headline. Summarizing
-  // from title alone made the model confabulate (e.g. asserting a vote "rejected" before it
-  // happened, stapling the run-date into the text). The snippets are the only material.
-  const snippets = topic.sources && topic.sources.length
-    ? topic.sources.map((s) => `- (${s.source || 'source'}) ${s.snippet || ''}`).filter((l) => l.trim().length > 6).join('\n')
-    : '';
-
-  return [
-    'You are an analyst summarizing a news story. Write directly — no preface, meta-commentary, or restatement of these instructions.',
-    'Summarize, in 3-4 bullet points, ONLY what the source snippets below actually report.',
-    'Strict rules — accuracy over richness:',
-    '1) Use ONLY facts present in the snippets. Do NOT add outside knowledge, history, or framing the snippets do not contain.',
-    '2) Preserve hedges exactly: if a source says "could", "may", "is expected to", "is voting on", or "reportedly", keep it hedged — never turn it into a settled fact or a result.',
-    '3) Do NOT state an outcome, verdict, vote result, casualty figure, or number the snippets do not report.',
-    '4) Do NOT invent or infer dates. Include a date ONLY if it appears in a snippet; otherwise omit it. Do not add today\'s date.',
-    '5) If the event is unresolved or a detail is not reported, say it about the event itself (e.g. "the vote is pending; no result has been reported"). Never mention the snippets, the headline, the sources or their completeness, and never write "the snippet/source does not report…". If a source has no usable text, ignore it. A fact that appears only in the title is stated plainly, never as "per the title" or "the title states". A snippet that breaks off mid-sentence is left out without comment.',
-    '6) To attribute a claim, name the outlet given in brackets on its source line (e.g. "per Al Jazeera"); never write "the snippets", "the sources" or "the report" instead of the outlet.',
-    `Title: ${topic.title || 'Untitled Topic'}`,
-    snippets ? `Source article snippets (your ONLY material):\n${snippets}` : 'No source snippets were provided — summarize only what the title states, in one or two bullets, without commenting on the material.',
-    'Also note the main countries or regions involved if the snippets mention them.',
-  ].join('\n\n');
-}
-
-function buildTraceCausePrompt(topic, generatedDate) {
-  const snippets = topic.sources
-    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
-    : 'No article snippets available.';
-
-  return [
-    `You are a "Council of Experts" analyzing news from ${generatedDate}. Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
-    `Topic: ${topic.title || 'Untitled'}`,
-    `Description: ${topic.description || ''}`,
-    '',
-    'Article Snippets:',
-    snippets,
-    '',
-    'Grounding rule: the "proximate" event and ANY specific name, figure, or date must come from the Article Snippets — do not invent them or turn a hedge ("could") into a settled fact. The structural/contributing/alternativePerspective fields may use general background reasoning, but never fabricate a specific fact the snippets do not support; if unknown, keep it general. The same holds for every "evidence" text: say about a snippet only what it says. If a snippet is just a headline, add no actor, place, cause or quote it does not name, and do not finish a sentence that is cut off. Background reasoning stays general: no names, dates or figures from memory.',
-    'Return this exact JSON structure (all fields required):',
-    `{
-  "proximate": { "what": "string — the immediate trigger event in 1-2 sentences", "when": "string — approximate date or period" },
-  "contributing": [
-    { "factor": "string — a structural or proximate contributing factor", "evidence": "string — specific evidence from snippets or context" },
-    { "factor": "...", "evidence": "..." }
-  ],
-  "structural": { "factor": "string — the deep root cause that predates recent events", "depth": "string — how long this root cause has been building (e.g. '30 years')" },
-  "impactScores": { "humanImpact": <integer 1-10>, "economicReach": <integer 1-10>, "geopolitical": <integer 1-10> },
-  "biasNote": "string — explicitly name any geopolitical or ideological tilt in the source coverage",
-  "alternativePerspective": "string — the view from the affected region or opposing side that major outlets underreport",
-  "signalVsNoise": { "verdict": "True Signal" | "Noise" | "Uncertain", "confidence": "High" | "Medium" | "Low" }
-}`,
-    '',
-    'contributing array: include 2-4 items. impactScores: integer 1-10 each. Output only the JSON object.',
-  ].join('\n');
-}
-
 // ── Grounded single-call forecast (2026-10-17, replaces the research briefing + forecast pair) ──
 
 const KIND_SK = (kind) => (kind === 'prediction' ? PREDICTION_SK : kind === 'trace_cause' ? 'TRACE_CAUSE' : SUMMARY_SK);
@@ -746,10 +663,8 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   let prompt;
   let maxTokens = DEFAULT_MAX_TOKENS;
   let inputText = null;
-  if (kind === 'summary') {
-    prompt = buildSummaryPrompt(topic, generatedDate);
-  } else if (kind === 'trace_cause') {
-    prompt = buildTraceCausePrompt(topic, generatedDate);
+  if (kind === 'summary' || kind === 'trace_cause') {
+    prompt = textPrompt(kind, topic, generatedDate);
   } else {
     // Single grounded forecast call (2026-10-17; was research briefing + forecast). Inputs are the
     // story's own snippets, verified FACTS# premises and the dated arc digest from our archive;
@@ -764,11 +679,9 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
-  const response = await invokeGrok(prompt, maxTokens, modelFor(kind), kind === 'prediction' ? 'forecast' : kind, kind === 'prediction' || kind === 'trace_cause');
+  let response = await invokeGrok(prompt, maxTokens, modelFor(kind), kind === 'prediction' ? 'forecast' : kind, kind === 'prediction' || kind === 'trace_cause');
 
-  if (kind === 'prediction' || kind === 'trace_cause') {
-    response.content = normalizeJsonResponse(response.content, kind);
-  }
+  response = finishText(kind, response);
   if (kind === 'prediction') {
     // Outcomes -> the stored scenario shape readers use (one outcome per scenario, label = the event).
     try { response.content = JSON.stringify(draw.outcomesToScenarios(JSON.parse(response.content))); } catch { /* non-JSON content is stored as-is */ }
@@ -795,38 +708,11 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   return item;
 }
 
-function normalizeJsonResponse(raw, kind) {
-  let text = (raw || '').trim();
-  // Strip markdown code fences if model wrapped the JSON
-  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-  try {
-    JSON.parse(text);
-    return text;
-  } catch {
-    console.warn(`${kind} response was not valid JSON — storing raw. First 200 chars: ${text.slice(0, 200)}`);
-    return raw;
-  }
-}
-
 const modelFor = (kind) => lib.modelForKind(kind, { GROK_MODEL, PREDICTION_MODEL });
 
 async function invokeGrok(prompt, maxTokens, model = GROK_MODEL, step = 'call', json = false) {
-  // The shared client (GROK_API_URL / XAI_API_KEY for DeepSeek, ANTHROPIC_API_KEY for an `anthropic:` model; thinking off).
-  // The Lambda timeout is 900 s, so one call is capped at 2 tries x 180 s.
-  const r = await chat({
-    step,
-    model,
-    user: prompt,
-    maxTokens: maxTokens || DEFAULT_MAX_TOKENS,
-    temperature: DEFAULT_TEMPERATURE,
-    topP: DEFAULT_TOP_P,
-    json,
-    timeoutMs: 180000,
-    retries: 1,
-  });
-  const content = stripCodeFence(r.content);
-  if (!content) throw new Error(`Empty response from ${r.model}`);
-  return { modelId: r.model, content, latencyMs: r.latencyMs, usage: r.usage };
+  // The shared client (GROK_API_URL / XAI_API_KEY for DeepSeek, ANTHROPIC_API_KEY for an `anthropic:` model; thinking off); options in story-text.js.
+  return storyAnswer(await chat(storyChatOptions({ prompt, maxTokens: maxTokens || DEFAULT_MAX_TOKENS, model, step, json, temperature: DEFAULT_TEMPERATURE, topP: DEFAULT_TOP_P })));
 }
 
 async function readCache(topic, action) {
@@ -867,31 +753,7 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId, finge
   let sk = SUMMARY_SK;
   if (kind === 'prediction') sk = PREDICTION_SK;
   else if (kind === 'trace_cause') sk = 'TRACE_CAUSE';
-  const ttl = Math.floor(Date.now() / 1000) + ttlSeconds;
-
-  const isJson = (kind === 'prediction' || kind === 'trace_cause') && (() => {
-    try { JSON.parse(response.content); return true; } catch { return false; }
-  })();
-
-  const item = {
-    PK: pk,
-    SK: sk,
-    topicId: topic.id,
-    ...lib.threadAttr(threadId),
-    title: topic.title,
-    action: kind,
-    content: response.content,
-    contentFormat: isJson ? 'json' : 'markdown',
-    model: response.modelId,
-    provider: 'openai',
-    generatedAt: new Date().toISOString(),
-    generationId,
-    ttl,
-    latencyMs: response.latencyMs,
-    ...(kind === 'prediction' ? { promptVersion: lib.PROMPT_VERSION } : {}),
-    ...(fingerprint ? { sourceFingerprint: fingerprint } : {}),
-    lastVerifiedAt: new Date().toISOString(),
-  };
+  const item = buildCacheItem({ pk, sk, topic, kind, response, ttlSeconds, generationId, fingerprint, threadId, nowMs: Date.now() });
 
   await ddb.send(
     new PutCommand({
@@ -1147,25 +1009,6 @@ async function fetchAiContent(topicId) {
   };
 }
 
-function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
-  return {
-    topicId: topic.id,
-    threadId: threadId || threading.generateThreadId(topic),
-    title: topic.title,
-    category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
-    regions: topic.regions || [],
-    search_keywords: topic.search_keywords || [],
-    iso3: topic.iso3 || [],
-    actors: topic.actors || [],
-    event_type: topic.event_type || 'other',
-    sources: (topic.sources || []).slice(0, sourceCap),
-    archivedAt: new Date().toISOString(),
-    generationId,
-    ai,
-    ...(topic.continues_topic && { continues_topic: topic.continues_topic }),
-  };
-}
-
 function isoDay(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -1378,45 +1221,6 @@ async function flushForecastsInbox() {
   } catch (e) {
     console.error(`[inbox] forecasts not written: ${e.message}`);
   }
-}
-
-function normalizeList(input) {
-  if (!Array.isArray(input)) {
-    return [];
-  }
-  return input
-    .map((entry) => String(entry || '').trim().toLowerCase())
-    .filter(Boolean)
-    .sort();
-}
-
-function buildStableTopicId(topic, idx = 0) {
-  if (topic?.id) {
-    return String(topic.id);
-  }
-  if (topic?.topicId) {
-    return String(topic.topicId);
-  }
-
-  const title = String(topic?.title || '').trim();
-  const category = String(
-    Array.isArray(topic?.categories) && topic.categories.length ? topic.categories[0] : topic?.category || '',
-  ).trim();
-  const primaryLocation = String(topic?.primary_location || '').trim();
-  const regions = normalizeList(topic?.regions);
-  const keywords = normalizeList(topic?.search_keywords);
-
-  const payload = JSON.stringify({
-    title: title.toLowerCase(),
-    category: category.toLowerCase(),
-    primaryLocation: primaryLocation.toLowerCase(),
-    regions,
-    keywords,
-  });
-
-  const hash = crypto.createHash('sha1').update(payload || `${idx}`).digest('hex').slice(0, 10);
-  const slugBase = slugify(title || primaryLocation || `topic-${idx}`, `topic-${idx}`);
-  return `${slugBase}-${hash}`;
 }
 
 function http(statusCode, body) {

@@ -2,6 +2,7 @@
 
 Status: accepted (operator, 2026-10-31, step 5 build B3); follows 0035, 0038, 0043, 0044, 0045, 0050, 0051. Built and proven locally 2026-10-31, deployed 2026-11-01: the inbox, the views, the readers and the snapshot retirement are live (see Consequences and "Retired and not retired"); the hand-off below is the order it was done in.
 Date: 2026-10-31
+Amended 2026-11-17: `newsPredictionsSnapshot` is no longer deployed: it was removed on 2026-11-01 (commit 899af309; absent from the 2026-11-16 AWS snapshot and from `scripts/functions.json`). Whether `predictions/track_record.json` still exists was not checked.
 
 ## Context
 Step 5 retires the `PRED#` rows of the PredictionLog (the commitment state stays, below). `PRED#` still has four readers besides the pages:

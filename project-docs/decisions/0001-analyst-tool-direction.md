@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-06-26
+Amended 2026-11-17: the Lambda `newsSignals` was removed on 2026-11-01 (commit 899af309; it is absent from the 2026-11-16 AWS snapshot and from `scripts/functions.json`). "Whether to park it is still open" was settled by 0032, then by the removal.
 
 ## Context
 The earlier framing was to sell machine-readable signals (a pure signal API). Two deep-research

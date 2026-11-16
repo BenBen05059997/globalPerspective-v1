@@ -2,6 +2,7 @@
 
 Status: accepted (extends 0015's list of parked jobs)
 Date: 2026-10-19
+Amended 2026-11-17: the Lambda `newsSignals` was removed on 2026-11-01 (commit 899af309; it is absent from the 2026-11-16 AWS snapshot and from `scripts/functions.json`, and no rule targets it). The key-table decision below stands as history.
 
 ## Context
 Decision 0001 ruled the signal API is not the product; 0015 left `newsSignals` running because the operator

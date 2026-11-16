@@ -2,6 +2,7 @@
 
 Status: accepted (operator, 2026-10-31); supersedes 0009 and 0031; trims 0032
 Date: 2026-10-31
+Amended 2026-11-17: the five economy Lambdas (`newsMarketsData`, `newsEconomicImpact`, `newsEconomicQuality`, `newsPairIntelligence`, `newsWeeklyMarkets`) are absent from the 2026-11-16 AWS snapshot and from `scripts/functions.json`, and no Markets or Economic rule exists, so "AWS still holds the five Lambdas" no longer holds. `newsSignals` was removed on 2026-11-01 (commit 899af309), so "stays parked" and "is kept" no longer hold. Whether the economy data in DynamoDB and S3 is deleted was not checked.
 
 ## Context
 Economy was parked in September 2026 (0009, 0031): the economic-impact, quality-judge, pair and weekly-markets jobs were switched off and the surfaces

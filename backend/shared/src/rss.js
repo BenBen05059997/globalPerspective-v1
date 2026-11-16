@@ -33,6 +33,15 @@ function itemLink(block) {
   return best ? href(best) : '';
 }
 
+/** The prompt's "Published" label of an item published at `pubTime` (ms) as of `nowMs`: Just now, N hours ago, N days ago. */
+function ageLabel(pubTime, nowMs) {
+  const hoursAgo = Math.floor((nowMs - pubTime) / (1000 * 60 * 60));
+  if (hoursAgo < 1) return 'Just now';
+  if (hoursAgo < 24) return `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
+  const daysAgo = Math.floor(hoursAgo / 24);
+  return `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
+}
+
 function parseRssXml(xml, sourceName, nowMs = Date.now()) {
   const articles = [];
   const firstItem = xml.search(/<(item|entry)[\s>]/i);
@@ -60,13 +69,7 @@ function parseRssXml(xml, sourceName, nowMs = Date.now()) {
       const pubTime = new Date(stripMarkup(rawDate)).getTime();
       if (!isNaN(pubTime)) {
         publishedAt = new Date(pubTime).toISOString();
-        const hoursAgo = Math.floor((nowMs - pubTime) / (1000 * 60 * 60));
-        if (hoursAgo < 1) age = 'Just now';
-        else if (hoursAgo < 24) age = `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
-        else {
-          const daysAgo = Math.floor(hoursAgo / 24);
-          age = `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
-        }
+        age = ageLabel(pubTime, nowMs);
       }
     }
 
@@ -79,4 +82,4 @@ function parseRssXml(xml, sourceName, nowMs = Date.now()) {
   return articles;
 }
 
-module.exports = { parseRssXml, itemLink, decodeEntities };
+module.exports = { parseRssXml, ageLabel, itemLink, decodeEntities };

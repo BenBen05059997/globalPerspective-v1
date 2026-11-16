@@ -450,11 +450,11 @@ Generate a JSON object with exactly these fields:
 
 2. "bluf": ONE sentence — the bottom-line-up-front assessment. This is the single most important thing a reader needs to know. Be direct and specific.
 
-3. "keyDevelopments": Array of 5-7 objects, each with "date" (YYYY-MM-DD) and "text" (one sentence describing what happened). Most recent first. Reference specific events, actors, and numbers. These form a visual timeline.
+3. "keyDevelopments": Array of up to 7 objects (5-7 when the data above has that many events, fewer when it does not), each with "date" (YYYY-MM-DD) and "text" (one sentence describing what happened). Most recent first. Reference specific events, actors, and numbers. These form a visual timeline.
 
 4. "whyItMatters": 2-3 sentences explaining the broader significance. Use **double asterisks** around the 3-5 most critical phrases so the frontend can bold them for scanners. Example: "**Oil supply disruption** threatens **European energy security** as winter approaches."
 
-5. "backgroundTimeline": Array of 10-15 objects representing ALL significant events chronologically (oldest first). Each object has:
+5. "backgroundTimeline": Array of up to 15 objects (10-15 when the data above has that many significant events, fewer when it does not; never pad the list) representing ALL significant events chronologically (oldest first). Every "date" in keyDevelopments and backgroundTimeline must be a date the data above gives or clearly implies; never invent a date to fill a list. Each object has:
    - "date" (YYYY-MM-DD)
    - "event" (1 sentence describing what happened — specific actors, numbers, outcomes)
    - "category" (one of: "conflict", "politics", "economy", "diplomacy", "security", "society")
@@ -467,7 +467,7 @@ Generate a JSON object with exactly these fields:
 
 8. "trajectoryDetail": 2 paragraphs on where ${country.countryName} is heading in the next 1-4 weeks. Name the 2-3 most likely scenarios (most likely first), with specific triggers or dates. Use **double asterisks** on key phrases.
 
-9. "riskSignals": Array of 3-4 strings — specific, concrete events or thresholds to watch in the NEXT 1-2 weeks from today (${new Date().toISOString().slice(0, 10)}). All dates must be in the future. Name institutions, actors, and approximate dates. Example: "Congressional vote on defense spending expected by April 1" — NOT references to past events or vague statements.
+9. "riskSignals": Array of 3-4 strings — specific, concrete events or thresholds to watch in the NEXT 1-2 weeks from today (${new Date().toISOString().slice(0, 10)}). Name institutions and actors. Give a date or window only when the data above states or implies it; otherwise name the event or threshold with no date. Never invent a scheduled date, meeting or vote. Any date must be in the future. Example: "Congressional vote on defense spending, if an arc above says one is pending" — NOT references to past events or vague statements.
 
 10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event from the data above that justifies the score} — or null when the data gives genuinely no signal for that axis. Be sparing: most countries are NOT elevated on all four — use null rather than a filler mid-number. Axes:
    - "conflict": armed violence, military operations, armed-actor intensity

@@ -419,3 +419,15 @@ test('ARCHIVE_READS=inbox reads the window from the entries inbox: no archive ro
   assert.equal(row(ddb, 'Japan').totalArticles, 2);
   assert.ok(!ddb.sent.some((c) => c.name === 'GetCommand' && c.input.TableName === 'topics'), 'no NewsCache read');
 });
+
+test('prompt: lists are "up to" the rule counts, dates come from the data, and risk signals carry no invented dates', async () => {
+  const prompts = [];
+  // the prompt text is built in generateCountryIntelligence; read it from the source so no model call is needed
+  const src = require('node:fs').readFileSync(require.resolve('../src/index.js'), 'utf8');
+  prompts.push(src);
+  assert.match(prompts[0], /"keyDevelopments": Array of up to 7 objects \(5-7 when the data above has that many events, fewer when it does not\)/);
+  assert.match(prompts[0], /"backgroundTimeline": Array of up to 15 objects \(10-15 when the data above has that many significant events, fewer when it does not; never pad the list\)/);
+  assert.match(prompts[0], /must be a date the data above gives or clearly implies; never invent a date to fill a list/);
+  assert.match(prompts[0], /Give a date or window only when the data above states or implies it/);
+  assert.match(prompts[0], /Never invent a scheduled date, meeting or vote/);
+});

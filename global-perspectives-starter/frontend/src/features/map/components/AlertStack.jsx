@@ -1,4 +1,4 @@
-// AlertStack — the console's alert stack (Console.dc.html, R4a): open situations (GDACS alerts +
+// AlertStack — the console's alert stack (R4a): open situations (GDACS alerts +
 // news situations) as small cards at the map's edge, most severe / newest first
 // (lib/alertStack.js). A card click selects the situation and the map flies to it. Replaces the
 // need for the retired /breaking feed (that route now redirects). The phone ALERTS tab reuses this same

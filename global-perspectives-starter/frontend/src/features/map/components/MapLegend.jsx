@@ -1,6 +1,6 @@
 // MapLegend — the "Key" panel (L2: collapsed by default, toggled by the Key button). R4a: it now
-// describes exactly the approved token channels the globe and radar draw (lib/legend.js,
-// Legend.dc.html) and nothing else — shape = kind, hue = crisis type, size + double ring = HIGH,
+// describes exactly the approved token channels the globe and radar draw (shared/map/legend.js)
+// and nothing else — shape = kind, hue = crisis type, size + double ring = HIGH,
 // brightness = freshness, motion budget, GDACS level as text. Items with nothing on
 // the map right now are dimmed with "none now" rather than hidden, so the key never changes shape.
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';

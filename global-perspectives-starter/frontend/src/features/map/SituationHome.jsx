@@ -374,7 +374,7 @@ export default function SituationHome() {
     () => (storyParam && !storyTopic && topicsSettled ? situationForThread(situations, storyParam) : null),
     [storyParam, storyTopic, topicsSettled, situations],
   );
-  // Batch 4 / F (S8): when a story is selected, faint dashed lines to the stories it is judged linked to (strong + medium
+  // S8: when a story is selected, faint dashed lines to the stories it is judged linked to (strong + medium
   // only, approx. places). One cached `web_index` read, fetched once a ?story= is set (it also resolves
   // a thread that is not in today's feed).
   const { index: webIndex, loading: webIndexLoading, failed: webFailed } = useWebIndex(Boolean(storyParam && (storySituation || !storyTopic || storyTopic.threadId)));
@@ -467,13 +467,9 @@ export default function SituationHome() {
   }, [open]);
   const newsAxesEmpty = counts.conflict + counts.political + counts.economic === 0;
 
-  // Honesty status line + sensor panel (M2). newestAnalysisAt is reused from the /daily page's
-  // own "find the latest published edition" lookup — useDailyBrief() with no dateKey defaults to
-  // today and searches backward through real DAILY_BRIEF# records (hooks/useDailyBrief.js); its
-  // `generatedAt` is the same field DailyPage.jsx shows as "Generated Xh ago". No new endpoint.
+  // Honesty status line + sensor panel (M2). useDailyBrief() with no date looks up the newest
+  // published daily brief (shared/hooks/useDailyBrief.js). No new endpoint.
   const { brief: latestBrief } = useDailyBrief();
-  // searched = the lookup finished without an error; then "nothing found" is itself a fact
-  // (no brief in the lookback window) and must be shown, not hidden.
   // Same computation as the site-wide line: the newest generation time across the brief, the stories feed
   // (reported by useGeminiTopics above) and any country briefing already loaded.
   const { paused } = usePausedSince();
@@ -572,9 +568,6 @@ export default function SituationHome() {
   const setView = (v) => { setViewMode(v); try { localStorage.setItem('gp_map_view', v); } catch { /* storage blocked */ } };
   const showGlobe = USE_3D && view === 'globe';
 
-  // R4b: the SITUATIONS / COUNTRY RISK layer switch. `?layer=` in the URL wins (a shareable deep
-  // link), else the remembered choice (this browser only), else SITUATIONS. Same precedence order
-  // as the Globe/Radar switch above.
   // Radar's "◉ scanned" mark on the feed (M4): fired by RadarMap's sweep, cleared a few seconds
   // later. Never scrolls the feed or moves focus — it only toggles a class on an existing row.
   const [scannedIds, setScannedIds] = useState(() => new Set());
@@ -685,7 +678,7 @@ export default function SituationHome() {
     // the sheet at half — "list-select → map + half" from the M7 spec.
     if (isPhone && selectionId && selectionId !== prevSelectionRef.current) {
       setPhoneTab('map');
-      // Batch 3 / H2: a country opens at `peek` (its card is long and `half` hid the whole visible map);
+      // A country opens at `peek` (its card is long and `half` hid the whole visible map);
       // situations and stories keep `half`. Then scroll the map pane into view so the selection is visible.
       setSheetStop(phoneSheetStopFor({ focus, storyParam, countryParam }));
       setTimeout(() => { // not cleared on purpose: StrictMode re-runs this effect and the 2nd run is a no-op
@@ -754,7 +747,7 @@ export default function SituationHome() {
     return { kinds, tiers, fresh, axes, neutral };
   }, [open, visibleShading, topicsFreshness]);
 
-  // Situation brief's LEAD line (Console.dc.html): the top-ranked open situation; else the first
+  // Situation brief's LEAD line: the top-ranked open situation; else the first
   // story in the latest stories feed, labelled as exactly that and dated (never "lead by severity"
   // — the stories feed carries no rank). A story page link when one exists, else select it here.
   const storiesDateLabel = fmtShortDate(topicsAsOf);
@@ -973,7 +966,7 @@ export default function SituationHome() {
   const staleBanner = stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null;
 
   if (!isPhone) {
-    // R4a · desktop full-bleed console (Console.dc.html): the map is the page. HUD panels float
+    // R4a · desktop full-bleed console: the map is the page. HUD panels float
     // over it — brief + alert stack on the left, sensor status + intel feed (or the selected
     // card) on the right, the orientation line at the top of the free band, view controls
     // at its bottom. Nothing below the fold: "About this map" opens the old fold as a drawer.

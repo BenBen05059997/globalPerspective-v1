@@ -1,4 +1,4 @@
-// Phone map sheet policy (Batch 3 / H2). On a phone the map pane sits BELOW the compact HUD (its top was
+// Phone map sheet policy. On a phone the map pane sits BELOW the compact HUD (its top was
 // measured at y=499..556 on a 390x844 screen), and the bottom sheet at `half` (45vh) covered y=406..786 -
 // so selecting a country (whose card is long) hid the whole visible map. A country now opens at `peek`
 // (title up to 2 lines, ~128px) and the map pane is scrolled into view, so the country stays visible above the

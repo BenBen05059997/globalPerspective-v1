@@ -1,4 +1,4 @@
-// OrientationBanner — H1 (REDESIGN_MASTER_PLAN.md §3.2): a slim, dismissible one-line
+// OrientationBanner — H1: a slim, dismissible one-line
 // orientation banner replaces the old guided-tour popover on the console. It never blocks
 // navigation (it's a static line, not a modal/overlay) and is remembered per-browser via
 // localStorage — wrapped in try/catch so a blocked/throwing storage still renders correctly

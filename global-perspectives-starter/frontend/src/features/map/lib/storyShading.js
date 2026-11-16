@@ -1,4 +1,4 @@
-// storyShading — pure helper for H2 (REDESIGN_MASTER_PLAN.md §3.2): a story with no exact place
+// storyShading — pure helper for H2: a story with no exact place
 // shades its country instead of getting a made-up pin. Used by both map modes (globe GeoJsonLayer,
 // radar SVG fills) so they never disagree about which countries are shaded or why.
 //

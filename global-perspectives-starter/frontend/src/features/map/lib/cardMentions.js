@@ -1,5 +1,5 @@
-// cardMentions — deterministic in-text links for the story card (STORY_DOSSIER_BOARD_DESIGN_BRIEF
-// "Links inside the summary text"): a mention becomes a link ONLY when it is an exact, whole-word,
+// cardMentions — deterministic in-text links in the story card's summary text: a mention becomes
+// a link ONLY when it is an exact, whole-word,
 // case-insensitive occurrence of the full title of a story that really exists in the story-web index
 // (`web_index.threads{id:{title}}`, already loaded by the console). Nothing is matched loosely (no
 // keywords, no partial titles); an unmatched mention stays plain text. Pure and DOM-free.

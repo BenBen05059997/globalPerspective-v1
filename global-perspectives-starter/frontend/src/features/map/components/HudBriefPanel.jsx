@@ -1,4 +1,4 @@
-// HudBriefPanel — the console's situation brief. R4a (Console.dc.html, top-left): the computed
+// HudBriefPanel — the console's situation brief. R4a (top-left): the computed
 // lede line, the LEAD item (the top-ranked open situation, else the first story in the latest
 // stories feed, honestly dated), its reading link and map action, and the tier breakdown. Zero-count tiers
 // are shown dimmed, never hidden (an honest "0 high" reads better than a missing row that looks

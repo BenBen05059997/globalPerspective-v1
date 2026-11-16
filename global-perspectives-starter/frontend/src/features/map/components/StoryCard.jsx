@@ -1,5 +1,5 @@
-// StoryCard — the console's "click a story → its card" (M5b), per the story dossier board
-// decision: header -> WHAT IS HAPPENING (summary) -> WHAT IT MEANS (trajectory) -> WHY (root
+// StoryCard — the console's "click a story → its card" (M5b):
+// header -> WHAT IS HAPPENING (summary) -> WHAT IT MEANS (trajectory) -> WHY (root
 // cause) -> [Open full story]. Every block is a strict subset of the data
 // already on file for this topic/thread — a block with no data is omitted, never padded with
 // placeholder text (CLAUDE.md). Data sources:

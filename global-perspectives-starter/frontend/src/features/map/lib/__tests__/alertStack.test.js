@@ -1,4 +1,4 @@
-// R4a · desktop alert stack (Console.dc.html): open situations, most severe → escalating → newest
+// R4a · desktop alert stack: open situations, most severe → escalating → newest
 // first; 30d+ ones hidden and counted; an honest, computed empty line.
 import { describe, it, expect } from 'vitest';
 import { alertStackItems, alertEmptyText, alertStackNote, ageShort } from '@/features/map/lib/alertStack.js';

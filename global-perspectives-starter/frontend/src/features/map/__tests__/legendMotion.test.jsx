@@ -1,5 +1,5 @@
 // Key panel, Motion row: the budget text is built from the same constants the maps use
-// (lib/pulse.js MOTION_BUDGET), so the number on screen is the number in the code.
+// (shared/map/pulse.js MOTION_BUDGET), so the number on screen is the number in the code.
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import MapLegend from '@/features/map/components/MapLegend.jsx';

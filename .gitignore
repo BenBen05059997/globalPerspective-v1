@@ -9,16 +9,8 @@ __pycache__/
 # Env files (keep examples)
 .env*
 !.env.example
-frontend/.env*
-!frontend/.env.example
-
-# Amplify config (keep examples only)
-src/amplifyconfiguration.json
-src/aws-exports.js
 
 # Vite/React build artifacts
-frontend/dist/
-frontend/dist-ssr/
 global-perspectives-starter/frontend/site-dist/
 global-perspectives-starter/frontend/.wrangler/
 .site-releases/
@@ -28,22 +20,13 @@ backend/**/*.zip
 backend/**/*.zip.bak
 .deploy-backups/
 
-# Local design mockups / scratch archives (public repo — keep them out)
-global perspective.zip
-
 # IDE/editor
 .vscode/*
 !.vscode/extensions.json
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
 # Firebase Admin SDK service account (sensitive credentials)
 *-firebase-adminsdk-*.json
 
 # smoke-test screenshots
 scripts/smoke-artifacts/
-worklist*.json
-verdicts*.json

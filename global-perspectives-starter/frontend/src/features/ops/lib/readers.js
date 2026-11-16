@@ -6,7 +6,7 @@ export function count(n) {
 }
 
 /** The families that count toward totals (the ops page itself is shown apart). */
-export function countedFamilies(cf) {
+function countedFamilies(cf) {
   return (cf?.families || []).filter((f) => !f.excluded);
 }
 

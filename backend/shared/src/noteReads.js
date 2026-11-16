@@ -231,7 +231,7 @@ function rowReaders(src, ddbGet) {
 }
 
 module.exports = {
-  s3NoteReader, diff, viaMode, lambdaSource, rowReaders,
+  s3NoteReader, viaMode, lambdaSource, rowReaders,
   readMode, iso3Of, makeNoteReader,
   countryIntelligence, countryHistory, countryDrift, storyDrift, storyAnalysis, threadHistory, countryFacts, driftFeed,
 };

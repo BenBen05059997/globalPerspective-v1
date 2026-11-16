@@ -112,6 +112,6 @@ function absoluteUrl(path, site = SITE_URL) {
 }
 
 module.exports = {
-  SITE_URL, ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref,
+  storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref,
   breakingHref, entityHref, absoluteUrl,
 };

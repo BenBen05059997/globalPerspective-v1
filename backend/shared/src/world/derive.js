@@ -3,7 +3,6 @@
 // Pure derivations over what readers.js returns. No client, no clock, no AWS. Every consumer that needs one of these
 // numbers calls it here instead of computing it again.
 
-const { tierFromScore } = require('./tier');
 const { eachDay } = require('./dates');
 
 const arr = (x) => (Array.isArray(x) ? x : []);
@@ -118,4 +117,4 @@ function analysisAsOf(analysis, history, asOf) {
   return h ? { source: 'history', date: h.date, riskScore: h.score, tier: h.tier, title: h.title || null, trajectory: h.trajectory } : null;
 }
 
-module.exports = { outletName, outletsOf, entriesByThread, birthByThread, branchesFromScenarios, coverage, analysisAsOf, tierFromScore };
+module.exports = { outletsOf, entriesByThread, birthByThread, branchesFromScenarios, coverage, analysisAsOf };

@@ -49,4 +49,4 @@ function makeFirebaseVerifier({ projectId, logLabel } = {}) {
   };
 }
 
-module.exports = { makeFirebaseVerifier, getGoogleCerts };
+module.exports = { makeFirebaseVerifier };

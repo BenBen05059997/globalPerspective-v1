@@ -109,4 +109,4 @@ function registrableDomain(input) {
   return labels.slice(-take).join('.');
 }
 
-module.exports = { OUTLET_METADATA, TWO_LEVEL_SUFFIXES, normalizeOutlet, getOutletMeta, registrableDomain };
+module.exports = { TWO_LEVEL_SUFFIXES, normalizeOutlet, getOutletMeta, registrableDomain };

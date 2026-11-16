@@ -18,7 +18,7 @@ story arc (`thread-<slug>-<hash>`); **cluster** = the map pipeline's internal he
 | `client.js` | the injected-client contract, `makeDynamoClient`, `makeS3Client`, `makeClient`. No AWS SDK import, no aws CLI anywhere |
 | `readers.js` | one function per row type (below) and `resolveTables` |
 | `derive.js` | pure derivations: `outletsOf`, `entriesByThread`, `birthByThread`, `branchesFromScenarios`, `coverage`, `analysisAsOf` |
-| `tier.js` | `tierFromScore`, `TIER_BANDS` |
+| `tier.js` | `tierFromScore` |
 | `dates.js` | `day`, `isDay`, `addDays`, `eachDay` (UTC days) |
 | `index.js` | re-exports all of the above: `require('./_shared/world')` |
 

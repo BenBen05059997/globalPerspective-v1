@@ -8,8 +8,6 @@
 
 const { tierFromScore: bands } = require('../riskDimensions');
 
-const TIER_BANDS = [{ tier: 'high', min: 75 }, { tier: 'elevated', min: 50 }, { tier: 'moderate', min: 25 }, { tier: 'low', min: 0 }];
-
 /** 'low' | 'moderate' | 'elevated' | 'high' | null (null / undefined / '' / non-numeric score). */
 function tierFromScore(score) {
   if (score === null || score === undefined || score === '') return null;
@@ -17,4 +15,4 @@ function tierFromScore(score) {
   return Number.isFinite(n) ? bands(n) : null;
 }
 
-module.exports = { tierFromScore, TIER_BANDS };
+module.exports = { tierFromScore };

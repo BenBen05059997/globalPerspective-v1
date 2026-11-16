@@ -52,4 +52,4 @@ function replay(lines) {
   return { rows: [...rows.values()], orphans };
 }
 
-module.exports = { DRAWN, THREAD, drawnLine, threadLine, replay };
+module.exports = { drawnLine, threadLine, replay };

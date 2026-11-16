@@ -18,7 +18,6 @@ const { resolveIso3 } = require('./resolveIso3');
 const VIEWS = 'record/views';
 const MODES = ['ddb', 'record', 'compare'];
 const MAX_VIEW_AGE_MS = 9 * 60 * 60 * 1000;
-const DAY_MS = 86400000;
 const TODAY_SOURCES = 3; // the today-archive item keeps the first 3 sources of an entry; the view keeps up to 10
 const THREAD_TTL_DAYS = 90; // newsThreadAnalysis stores ttl = generatedAt + 90 days; the note carries no ttl
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
@@ -248,6 +247,6 @@ function liveRecordReads(env = process.env) {
 }
 
 module.exports = {
-  SAME, lazyRecordReads, liveRecordReads, MODES, MAX_VIEW_AGE_MS, TODAY_SOURCES, DAY_MS, readMode, readBy, diffValues, makeRecordReads,
+  SAME, lazyRecordReads, liveRecordReads, readMode, readBy, diffValues, makeRecordReads,
   latestItemOfView, todayArchiveItemOfView, threadAnalysisRowOfView, countryIntelligenceRowOfView,
 };

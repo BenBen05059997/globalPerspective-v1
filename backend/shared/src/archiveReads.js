@@ -130,4 +130,4 @@ function archiveRowReader({ mode, prefix, ddbGetRow, readDay, log = console, now
   };
 }
 
-module.exports = { MODES, TODAY_SOURCES, readMode, readBy, sameJson, archiveOfLines, inboxDayLines, s3EntriesDay, diffRows, archiveRowReader };
+module.exports = { MODES, readMode, readBy, sameJson, archiveOfLines, inboxDayLines, s3EntriesDay, archiveRowReader };

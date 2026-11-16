@@ -12,7 +12,6 @@ test('tierFromScore: band edges, null for non-numbers, numeric strings coerced',
   const cases = [[0, 'low'], [24, 'low'], [24.9, 'low'], [25, 'moderate'], [49, 'moderate'], [50, 'elevated'], [74, 'elevated'], [75, 'high'], [100, 'high'],
     [null, null], [undefined, null], ['', null], ['abc', null], [NaN, null], ['80', 'high'], ['24', 'low']];
   for (const [score, tier] of cases) assert.strictEqual(w.tierFromScore(score), tier, String(score));
-  assert.deepStrictEqual(w.TIER_BANDS.map((b) => b.min), [75, 50, 25, 0]);
 });
 
 test('tierFromScore agrees with the frontend riskTiers.js at every integer score', async () => {

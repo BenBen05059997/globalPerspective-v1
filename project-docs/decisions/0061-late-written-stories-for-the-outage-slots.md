@@ -10,7 +10,7 @@ Date: 2026-11-17
 - The record stores an entry's event time as the earliest source publish time, so a late entry's fact would be indistinguishable from a live one. Nothing marked a story as written late. `newsHealth` shows an agent row `ok` from 20 entries in the day file, so late lines would have hidden the outage. The resolver calls a day a gap only when its Run is not `ok` or `partial`, or `archiveDay` is not `present` (0055); after a re-run the Run of 2026-11-15 would have been `ok`.
 
 ## Decision
-1. **One script, run from a laptop; no Lambda is invoked or changed in behaviour.** `backend/record/cli/recover-late-slots.mjs`. It runs the live code of `newsIngest` (`src/selection.js`: prompt, answer validation, source enrichment, filters, repeat check) and `newsAgent` (`src/story-text.js`: summary and cause-note prompts, call options, stored item). That code was lifted out of the two handlers into exported functions with no change to the live path (commits `f83c72ef`, `5ee41c7a`); the handlers call the same functions in the same order. No prompt text is copied.
+1. **One script, run from a laptop; no Lambda is invoked, and the lift itself changed no behaviour.** `backend/record/cli/recover-late-slots.mjs`. It runs the live code of `newsIngest` (`src/selection.js`: prompt, answer validation, source enrichment, filters, repeat check) and `newsAgent` (`src/story-text.js`: summary and cause-note prompts, call options, stored item). That code was lifted out of the two handlers into exported functions with no change to the live path (commits `f83c72ef`, `5ee41c7a`); the handlers call the same functions in the same order. No prompt text is copied. The live behaviour changes of this decision are only these, each takes effect at the Lambda's next deploy: (a) the marker, the Run field, the `story_born` day and the resolver and health rules (newsStoryRecord, newsPredictionResolver, newsHealth); (b) the summary cut in the shared `entriesInbox.js` `trimSummary` (a summary over 1500 characters is cut at a complete line, not mid-word), which every carrier of that file picks up, newsAgent first; (c) the cause-chain prompt rule and the `promptVersion` stamp on cause items (newsAgent); (d) `derive.js` `birthByThread`, which takes a late entry's slot as its birth time (newsStoryRecord).
 2. **Per missed slot** (2026-11-14 20:15, 2026-11-15 04:15, 12:15, 20:15 UTC), in time order:
    - Rebuild the article pool as of the slot from the saved lines: lines first seen by that run or earlier, the age label computed at the slot, the newest 25 per feed, the live age and blocked-domain filter, one row per url, the feed order of the live list.
    - Rebuild the "seen today" list and the 7-day archive titles and the threading window from the entries inbox as of the slot, plus the script's own earlier slots. DynamoDB (`staging`, `seen-today`, `archive#`) is not read or written.
@@ -41,12 +41,12 @@ Date: 2026-11-17
 ## What stays missing
 - No forecast for these four slots, and no daily or weekly brief for the gap.
 - The DynamoDB rows a live run writes: `staging`, `seen-today`, `archive#DAY`, `today-archive`, `TOPIC#` rows, thread pointers, the story map. Readers that still read DynamoDB archive rows do not see the late stories (the weekly brief reads in `compare` mode and answers from DynamoDB; the selector's 7-day titles are always read from DynamoDB). The threading readers set to `inbox` (agent, thread, systems, country, drift) see them.
-- The live path is unchanged, so a later live run does not know these stories except through the inbox.
+- The lift changed no live behaviour (the named changes in Decision 1 are the live changes), so a later live run does not know these stories except through the inbox.
 
 ## Where the replay differs from a live run
 - The pool is rebuilt from lines, not from the feeds: items that had left a feed's newest 25 by the slot still appear; items without a publish time are placed after the dated ones; a feed that failed that run is absent.
 - The seen-today list and archive titles come from the entries inbox, not from DynamoDB; the live `seen-today` was written at ingest time even where the agent later failed.
-- `TOPICS_LIMIT` is 13 as 0060 records it; the live value was not read. `SOURCE_ENRICH_*` are unset on the live ingest, so the defaults apply.
+- `TOPICS_LIMIT` on newsIngest is 13 (read live 2026-11-16, as 0060 records). `ENTRIES_SOURCE` on newsStoryRecord is `inbox` (read 2026-11-16). The bucket has no versioning, hence the backup before `--write`. `SOURCE_ENRICH_*` are unset on the live ingest, so the defaults apply.
 - A story whose summary and cause note both failed is left out and listed in the manifest; the live agent would have archived it with empty text.
 - The model answers are new: the stories are not what a live run on 2026-11-14 would have written.
 
@@ -55,10 +55,10 @@ Date: 2026-11-17
 - Facts are append-only (0036). The entry, ingest `assignment` and `story_born` facts written from the lines stay; each entry fact carries `payload.writtenLate`, so every reader can tell them apart. Removing them means rewriting the day fact files and is a separate operator decision.
 
 ## Readers that pick entries by `archivedAt` or `batch` recency, not by file day
-Checked 2026-11-17 (not changed). With the day-file rule none of them sees a late line as new; without it they would:
+Checked 2026-11-17 (not changed). With the day-file rule none of them sees a late line as new, except the join in `threading.js` described below; without the rule they would:
 - `publish.js:55-57` and `todayView.js:35,40,54`: the Today view (above).
 - `run-guard.js:11-12` (`lastArchiveWrite`) and `:20`, fed by the agent's `readFreshnessArchives` (today's and yesterday's inbox files): a late line newer than the staging generation makes the next agent run fail as `generation-already-archived`.
-- `threading.js:86-88` (`latest`): the thread join prefers the newest `archivedAt`; a late entry in the 7-day window counts as newer than live entries of earlier days.
+- `threading.js:86-88` (`latest`): a late entry written on 16 Nov has an `archivedAt` newer than live entries archived earlier on 16 Nov, and stays in the 7-day window. `latest` is used in one place: when a new topic matches two different threads at once (one by `continues_topic`, one by identical title), `matchThread` joins the thread whose newest `archivedAt` is later (`threading.js:93-99`, logged as `reason: latest-thread-entry`). In such a clash a late thread beats a live thread whose newest entry was archived before the late story was written, although the live story may be newer in the news. Every other join path (a single match, or the score) ignores `latest`. It is rare and it ends when the late entries leave the 7-day window; it is not worth a change.
 - `archiveReads.js:105-109` with `entriesInbox.js:130` (`replayToday`): the `today-archive` row is rebuilt from today's file only, keeping entries archived within 24 h of the last batch.
 - `world/derive.js:48` (`birthByThread`): fixed for late entries (see Decision 4).
 - `newsRecommend` `scoring.js:86` scores a topic by `archivedAt` recency; it would rate a late story as new if it reads one from the Today view.
@@ -67,7 +67,11 @@ The readers set to `inbox` (agent, thread, systems, country, drift) otherwise re
 ## Consequences
 - 0040's rule "no retroactive forecasts" holds: no forecast is written for these slots.
 - The marker is the one way to tell a story written after its slot from a live one in facts, views and `/ops`; a later outage can use the same script and field.
-- Deploys needed (nothing is deployed by this decision): `newsIngest` and `newsAgent` (the lifted modules; behaviour unchanged), `newsStoryRecord` (marker, Run field), `newsPredictionResolver` (the gap rule), `newsHealth` (`late` status, coverage rule). `newsReadApi` and the frontend are not touched.
+- Deploys (nothing is deployed by this decision; the script itself needs none):
+  - Needed for this decision: `newsStoryRecord` (marker, Run field, `story_born` day, schemas, shared `entriesInbox.js` and `readers.js`), `newsPredictionResolver` (the gap rule), `newsHealth` (`late` status, coverage rule; it now packages `_shared`, which it did not before).
+  - `newsAgent` changes behaviour at its next deploy: the summary cut (`entriesInbox.js`), the cause-chain prompt rule and the cause item's `promptVersion` stamp. `newsIngest` carries only the lift (no behaviour change; `selection.js`, `rss.js`). `newsRecover` needs the new `selector-source.js` link only at its next deploy.
+  - Carriers of the changed `entriesInbox.js` that pick up the summary cut at their next deploy and need no deploy for this decision: newsThreadAnalysis, newsSystemsAnalysis, newsCountryIntelligence, newsDriftCorrector, newsWeeklyBrief (through `archiveReads.js`). Their reads of the late lines are unaffected: the late lines are already cut.
+  - `newsReadApi` is not touched. The frontend is not touched here; a separate frontend change (the reader line "Written ... from articles saved on ..." and the `/ops` `late` status) is being built on its own branch.
 - Where it shows: [ARCHITECTURE_TIMELINE.md](../architecture/ARCHITECTURE_TIMELINE.md) (Run), [ARCHITECTURE_OPS.md](../architecture/ARCHITECTURE_OPS.md) (agent row), [ARCHITECTURE_FORECAST_LOOP.md](../architecture/ARCHITECTURE_FORECAST_LOOP.md) (coverage), [backend/record/cli/README.md](../../backend/record/cli/README.md).
 
 Source: `.board/reviews/backfill-design-facts-2026-11-16.md` (local, not in git); live S3 and Lambda env read 2026-11-17 (`HEAL` is `dry`; `ARCHIVE_READS` is `inbox` on agent, thread, systems, country and drift, `compare` on the weekly brief); `record/views/track-record.json` of 2026-11-16.

@@ -24,7 +24,7 @@ This folder is stage 9: the home map (/). Timeline: reads world/latest.json from
   (lazy); radar: `@/shared/map/RadarMap.jsx`
 - `components/` - `Hud*` panels (status line, brief, sensor, intel feed, compact line, country-risk feed), `AlertStack`,
   `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone uses `@/shared/ui/Tabs` and `BottomSheet`
-- `api/worldData.js` - the only fetch of the world bundle; `hooks/` - `useWorld`, `useSituationDetail`,
+- `api/worldData.js` - the only fetch of the world bundle; `hooks/` - `useWorld` (the same file exports `useSituationDetail`),
   `useStoryCardData`, `useCountryRiskLayer`, `useGdacsStatus`, `usePausedSince`
 - `lib/` - pure helpers: alert stack, boot sensors, deep links, card mentions, layer mode, phone sheet, story shading, `threadKeys` (a situation's `threadId` plus `threadIds[]`; used by deep links and story shading, so a grouped situation shades its countries and hides its topics once)
 - Public API (`index.js`): `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (used by `app/layout/Layout.jsx`),

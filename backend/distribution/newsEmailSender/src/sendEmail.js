@@ -4,7 +4,7 @@
 // the provider — swapping later is a rewrite of this one function; callers pass plain
 // { from, to, subject, text, html, headers }.
 //
-// No npm dependency — uses global fetch (Node 18+ / Lambda nodejs20.x). Key from
+// No npm dependency — uses global fetch (Node 18+; the Lambda runs nodejs22.x). Key from
 // RESEND_API_KEY (plaintext env, project convention — see feedback-no-secrets-manager).
 //
 // Copied from newsBreakingAlert/src/sendEmail.js and EXTENDED with a `headers` param

@@ -12,7 +12,7 @@
 //   }
 //
 // score = Σ weight·normalizedSignal. A story is "breaking" when score ≥ threshold.
-// The threshold + weights are tuned via the dry-run log (see BREAKING_ALERTS_PLAN.md);
+// The threshold + weights are tuned via the dry-run log;
 // `reasons[]` exists so the dry-run shows *why* each candidate qualified.
 
 // Tunable weights — named constants, not magic numbers in the formula.
@@ -59,7 +59,6 @@ function breadth(topicCount) {
 // 88/100 country could clear the bar on its own (62-88% of threshold) for a routine
 // story. Cap the contribution at 0.5 so risk only TILTS the decision; real event
 // signals (sources/breadth/velocity) must do the rest.
-// See SCORING_RUBRIC.md §2a / BREAKING_ALERT_V2_BUILD_PLAN.md (Stage 1).
 const RISK_CAP = 50;
 function risk(riskScore) {
   return clamp01(Math.min(Number(riskScore) || 0, RISK_CAP) / 100);

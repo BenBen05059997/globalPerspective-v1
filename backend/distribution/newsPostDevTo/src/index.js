@@ -69,7 +69,7 @@ async function loadCountryIntelligence(entries) {
 
 // The LLM never sees a trustworthy threadId list, so it tends to echo the
 // thread's title into risingThread.threadId — which then dead-ends the
-// /daily "Rising Thread" deep-link (ThreadPage looks up by real id). Resolve
+// /briefings "Rising Thread" deep-link (ThreadPage looks up by real id). Resolve
 // the real id deterministically by matching the rising thread's title against
 // the loaded thread analyses; return null when there's no confident match so
 // the frontend links to /weekly instead of a broken thread page.
@@ -208,7 +208,7 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
   }
 
   // Batch 3 / C: each top story gets the real threadId of the archive entry it was written from
-  // (or null), so /briefings and /daily can link to the story page. Never model-supplied.
+  // (or null), so /briefings (where /daily redirects) can link to the story page. Never model-supplied.
   if (Array.isArray(brief.topStories)) {
     brief.topStories = resolveStoryThreadIds(brief.topStories, entries, threadAnalyses);
     console.log(`[DAILY_BRIEF] topStories with threadId: ${brief.topStories.filter(s => s && s.threadId).length}/${brief.topStories.length}`);
@@ -271,7 +271,7 @@ exports.handler = async (event) => {
     console.log(`[DAILY_BRIEF] Building brief from ${archive.entries.length} entries for ${dateKey}`);
 
     // Dev.to publish path was removed 2026-05-18 — key was 401-broken and the
-    // in-app /daily page consumes DAILY_BRIEF#<date> directly from DDB.
+    // in-app /briefings page shows the stored daily brief.
     let dailyBrief = null;
     try {
       dailyBrief = await generateAndStoreDailyBrief(archive.entries, dateKey);

@@ -12,7 +12,7 @@
 //            → email operator (live) → operator confirms via review.js → public.
 //
 // DRY_RUN (default true): logs the candidate + the full would-be email, writes the
-// proposal/dedupe row, sends nothing. See BREAKING_ALERTS_PLAN.md.
+// proposal/dedupe row, sends nothing.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');

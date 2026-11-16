@@ -137,9 +137,8 @@ async function main() {
         const note = (await ask('Your words (one line, leads the email; Enter to skip):\n> ')).trim();
         if (note) {
           item.editorNote = note;
-          // Reflect the note at the top of the stored draft so the confirmed record
-          // previews exactly what will send. (The Phase-3 sender re-renders from
-          // editorNote as the source of truth.)
+          // Put the note at the top of the stored draft: newsEmailSender sends the
+          // stored draft as is, so the confirmed record is exactly what will send.
           item.draft = item.draft || {};
           item.draft.text = `${note}\n\n${item.draft.text || ''}`.trim();
         }

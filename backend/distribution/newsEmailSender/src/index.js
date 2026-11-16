@@ -1,9 +1,10 @@
 'use strict';
 
-// newsEmailSender — ONE sender for both email products, dispatched by event.mode.
+// newsEmailSender — ONE sender for the email products, dispatched by event.mode.
 //
-//   { mode: 'weekly' }   → email the latest published WEEKLY_BRIEF to digestOptIn subscribers
-//   { mode: 'breaking' } → email fresh confirmed breaking alerts to breakingOptIn subscribers
+//   { mode: 'weekly' }      → email the latest published WEEKLY_BRIEF to digestOptIn subscribers
+//   { mode: 'breaking' }    → email fresh confirmed breaking alerts to breakingOptIn subscribers
+//   { mode: 'drift_alert' } → email fresh country drift notes to driftOptIn followers of that country
 //
 // Subscribers live in GlobalPerspectiveUserPrefs (written by newsRecommend set_prefs on
 // opt-in, with email + unsubToken). Sending goes through the shared Resend seam
@@ -13,7 +14,7 @@
 // sends nothing. TEST_RECIPIENT overrides the audience to a single address (send-to-self).
 // Real delivery to arbitrary subscribers additionally needs a verified EMAIL_FROM domain.
 //
-// No bundled deps — nodejs20 runtime provides @aws-sdk; fetch is global.
+// No bundled deps — the Lambda Node.js runtime (nodejs22.x) provides @aws-sdk; fetch is global.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand, GetCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
@@ -241,7 +242,7 @@ async function runBreaking() {
   return { ok: true, mode: 'breaking', alerts: alerts.length, recipients: recipients.length, sent: totalSent, perAlert, dryRun: DRY_RUN };
 }
 
-// ── DRIFT ALERTS (the member "follow a country" perk, MEMBER_GATING_PLAN.md P5) ──
+// ── DRIFT ALERTS (the member "follow a country" perk) ──
 // Fresh, not-yet-emailed COUNTRY drift notes (DRIFT#<date>, 60d-TTL rows). begins_with
 // 'DRIFT#' excludes the permanent 'DRIFTLOG#' archive (6th char differs). Country only
 // (PK 'COUNTRY#…') — threads aren't followable yet. The corrector's alreadyNoted guard

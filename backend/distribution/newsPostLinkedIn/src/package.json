@@ -1,7 +1,7 @@
 {
   "name": "newspostlinkedin",
   "version": "1.0.0",
-  "description": "Lambda function to post new Global Perspectives topics to LinkedIn",
+  "description": "Lambda that posts new Global Perspectives topics to LinkedIn and Bluesky",
   "main": "index.js",
   "scripts": {
     "test": "node --test ../test/*.test.js"

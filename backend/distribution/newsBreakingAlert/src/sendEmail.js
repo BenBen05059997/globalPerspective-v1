@@ -1,11 +1,11 @@
 'use strict';
 
 // Provider-agnostic email send. Currently Resend (chosen 2026-06-10 over SES for DX +
-// no sandbox-approval wait; see BREAKING_ALERTS_PLAN.md). This is the ONLY file that
+// no sandbox-approval wait). This is the ONLY file that
 // knows the provider — swapping providers later is a rewrite of this one function;
 // callers pass plain { from, to, subject, text, html }.
 //
-// No npm dependency — uses global fetch (Node 18+ / Lambda nodejs20.x). The API key is
+// No npm dependency — uses global fetch (Node 18+; the Lambda runs nodejs22.x). The API key is
 // read from RESEND_API_KEY (a plaintext env var, matching the project's chosen secret
 // store — see feedback-no-secrets-manager).
 

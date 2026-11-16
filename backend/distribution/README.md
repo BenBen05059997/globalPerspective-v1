@@ -35,8 +35,9 @@ The two brief writers also copy each brief into the record as a `daily_brief` / 
 
 ## Shared code
 
-- newsBreakingAlert: `links`, `placeFilter`. newsEmailSender: `links`. newsPostLinkedin: `links`.
-- newsDailyBrief (dir newsPostDevTo) and newsWeeklyBrief: `dayZero`, `llm`, `placeFilter`, `resolveIso3`, `briefNotes` (with `notes`, `briefs`, `s3json`).
+- newsBreakingAlert: `escapeHtml`, `links`, `noteReads`, `placeFilter`, `recordReads`. newsEmailSender: `escapeHtml`, `links`, `recordReads`. newsPostLinkedin: `categoryLabels`, `httpReply`, `links`, `recordReads`.
+- newsDailyBrief (dir newsPostDevTo): `briefNotes` (with `notes`, `s3NoteWriter`), `categoryLabels`, `dayZero`, `jaccard`, `llm`, `noteReads`, `placeFilter`, `recordReads`, `resolveIso3`.
+- newsWeeklyBrief: `archiveEntries`, `archiveReads`, `briefNotes`, `llm`, `noteReads`, `placeFilter`, `resolveIso3`.
 - Each reaches them through its `src/_shared` link to `backend/shared/src`. Details: [shared README](../shared/README.md).
 - Operator scripts live in [cli](cli/README.md).
 

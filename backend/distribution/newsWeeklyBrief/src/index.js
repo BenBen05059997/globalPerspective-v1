@@ -3,11 +3,9 @@
 // newsWeeklyBrief — generates a professional, analyst-grade WEEKLY INTELLIGENCE BRIEF
 // by synthesizing the week's already-generated, already-cited analysis (THREAD_ANALYSIS,
 // COUNTRY_INTELLIGENCE). The LLM connects + elevates grounded analysis;
-// it never mints new facts. Writes a `status:'draft'` record for one-click human approval
-// (weekly/review.js) before publish/send. See WEEKLY_DIGEST_PLAN.md.
-//
-// Manual-invoke first (no EventBridge schedule) until output quality is trusted —
-// mirrors the breaking-detector dry-run approach.
+// it never mints new facts. Writes the `WEEKLY_BRIEF#<weekKey>` record with `status:'published'`
+// (served at once). Runs on the EventBridge rule TriggerWeeklyBrief (Sundays 06:00 UTC).
+// To hold a bad brief back, set its status to 'draft' by hand; cli/weekly/review.js then publishes or rejects it.
 
 const archive = require('./_shared/archiveEntries');
 const archiveReads = require('./_shared/archiveReads');
@@ -20,8 +18,8 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-// Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
+// Legacy GROK_* names hold the model id (live: Claude Haiku since 2026-11-16); the fallback is the DeepSeek way back.
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; the live env sets GROK_MODEL
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
@@ -51,10 +49,9 @@ const generateBrief = async (event = {}) => {
   if (!LLM_KEY) return fail('Missing LLM key (XAI_API_KEY)');
 
   const weekKey = (event.weekKey || new Date().toISOString().slice(0, 10));
-  // Default is FREE (richer analysis); the mandatory human review (weekly/review.js) is the
-  // grounding/verification layer before publish. Pass {mode:'grounded'} to force strict.
+  // {mode:'grounded'} or the default 'free' is only logged: both send the same prompt.
   const mode = event.mode === 'grounded' ? 'grounded' : 'free';
-  const SK = 'WEEKLY_BRIEF'; // canonical record the serving layer reads (mode stored as an attr)
+  const SK = 'WEEKLY_BRIEF'; // canonical record the serving layer reads
   console.log(`[weekly] generating ${mode} brief for week ending ${weekKey}`);
 
   const entries = await readArchiveEntries(WEEK_DAYS);

@@ -1,7 +1,7 @@
 'use strict';
 
 // Renders a country's fresh drift notes (the self-correcting-analysis "what changed & why")
-// to { subject, text, html } for the member drift-alert email (MEMBER_GATING_PLAN.md P5).
+// to { subject, text, html } for the member drift-alert email.
 // No new facts minted — this only formats fields newsDriftCorrector already wrote to the
 // DRIFT#<date> rows: the change (risk level / score) + the grounded, cited reason.
 

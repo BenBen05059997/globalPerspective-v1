@@ -253,7 +253,7 @@ test('write mode appends exactly the generated files under record/ (or record/sh
   assert.equal(again.code, 0);
   assert.equal(lines('record/shadow/inbox/entries/2026-11-15.jsonl').length, 9, 'a second write appends nothing');
   // refusals
-  await assert.rejects(() => main(['--write', '--out', out], { s3json: w.s3json, now: () => '2026-11-15T10:00:00.000Z' }), /refusing to write into today's or a later file/);
+  await assert.rejects(() => main(['--write', '--out', out], { s3json: w.s3json, now: () => '2026-11-15T10:00:00.000Z' }), /refusing to write into today's, yesterday's or a later file/);
   const f = path.join(out, 'entries', '2026-11-14.jsonl');
   const bad = readLines(f);
   delete bad[0].writtenLate;
@@ -267,6 +267,57 @@ test('no forecast path: neither module of the script loads the forecast, questio
     const code = fs.readFileSync(path.join(here, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, '');
     assert.equal(code.match(/forecast-draw|forecastsInbox|questions|PredictionLog|PRED#|buildPredictionPrompt|drawDecision|dynamodb/i), null, f);
     const hits = code.split('\n').filter((l) => /'prediction'|"prediction"/.test(l));
-    assert.ok(hits.length === 0 || (f === 'recover-late-slots.mjs' && hits.length === 1 && /throw new Error/.test(hits[0])), `${f}: only the write mode's refusal may name a forecast`);
+    assert.ok(hits.every((h) => f === 'recover-late-slots.mjs' && /throw new Error|FORECAST_KEYS/.test(h)), `${f}: only the write mode's refusals may name a forecast`);
+  }
+});
+
+const generated = async (nowIso = REAL_NOW) => {
+  const dir = fixtures();
+  const out = path.join(dir, 'out');
+  await quietRun(['--data-dir', dir, '--out', out], { chat: stubChat(), resolveProvider, now: () => nowIso });
+  return { dir, out };
+};
+
+test('write mode refuses the file of UTC yesterday (the Today view reads it) and says when it becomes possible', async () => {
+  const { out } = await generated();
+  const w = fakeS3();
+  // on 2026-11-16 UTC the 11-15 file is still read by index/today.json; the 11-14 file is not, but the whole write stops
+  await assert.rejects(() => main(['--write', '--out', out], { s3json: w.s3json, now: () => '2026-11-16T20:00:00.000Z' }), /2026-11-15: refusing .*possible from 2026-11-17 00:00 UTC/);
+  assert.equal(w.objs.size, 0, 'nothing appended');
+  const ok = await quietRun(['--write', '--out', out], { s3json: w.s3json, now: () => '2026-11-17T00:00:00.000Z' });
+  assert.equal(ok.code, 0);
+});
+
+test('write mode saves what an object holds before the first append, and stops when the copy cannot be written', async () => {
+  const { out } = await generated();
+  const w = fakeS3();
+  const live = { inboxId: 'live|0', topicId: 'L-0', title: 'live', batch: '2026-11-14T12:26:00.000Z' };
+  await w.s3json.appendLines('record/inbox/entries/2026-11-14.jsonl', [live], { idKey: 'inboxId' });
+  // the backup folder cannot be created: a file sits where it must go
+  fs.writeFileSync(path.join(out, 'backup'), 'in the way');
+  await assert.rejects(() => main(['--write', '--out', out], { s3json: w.s3json, now: () => REAL_NOW }), /backup of .* could not be written .*nothing was appended/);
+  assert.equal(w.objs.get('record/inbox/entries/2026-11-14.jsonl').body.trim().split('\n').length, 1, 'nothing appended');
+  fs.unlinkSync(path.join(out, 'backup'));
+  const r = await quietRun(['--write', '--out', out], { s3json: w.s3json, now: () => REAL_NOW });
+  assert.equal(r.code, 0);
+  assert.deepEqual(readLines(path.join(out, 'backup', 'record/inbox/entries/2026-11-14.jsonl')), [live]);
+  assert.equal(fs.existsSync(path.join(out, 'backup', 'record/inbox/entries/2026-11-15.jsonl')), false, 'an object that did not exist has no backup');
+});
+
+test('write mode refuses a second generate run for slots already written, and any line with a forecast key', async () => {
+  const first = await generated();
+  const second = await generated('2026-11-17T05:00:00.000Z');
+  const w = fakeS3();
+  assert.equal((await quietRun(['--write', '--out', first.out], { s3json: w.s3json, now: () => '2026-11-18T00:00:00.000Z' })).code, 0);
+  await assert.rejects(() => main(['--write', '--out', second.out], { s3json: w.s3json, now: () => '2026-11-18T00:00:00.000Z' }), /already holds \d+ late line\(s\) of the same slot with other inboxIds/);
+  // the same out dir again is still a no-op
+  assert.equal((await quietRun(['--write', '--out', first.out], { s3json: w.s3json, now: () => '2026-11-18T00:00:00.000Z' })).code, 0);
+  for (const bad of [{ scenarios: [{}] }, { forecast: 'x' }, { prediction: 'p' }, { ai: { forecast: 'x' } }, { ai: { scenarios: [1] } }]) {
+    const { out } = await generated();
+    const f = path.join(out, 'entries', '2026-11-14.jsonl');
+    const rows = readLines(f);
+    Object.assign(rows[0], bad.ai ? { ai: { ...rows[0].ai, ...bad.ai } } : bad);
+    fs.writeFileSync(f, rows.map((l) => JSON.stringify(l)).join('\n') + '\n');
+    await assert.rejects(() => main(['--write', '--out', out], { s3json: fakeS3().s3json, now: () => '2026-11-18T00:00:00.000Z' }), /carries a forecast/, JSON.stringify(bad));
   }
 });

@@ -11,8 +11,14 @@
 //                        so no AWS call at all) or, without it, read-only from S3 (--bucket). The key is read from --key-file into the
 //                        process env and never printed.
 //   --write --out DIR    Appends exactly the files of an earlier generate run (the ones the operator read) to record/inbox/entries/DAY.jsonl
-//                        and record/notes/entry/ (record/shadow/ with --shadow). No model call. Idempotent: same inboxId / noteId, a second
-//                        run appends nothing. Then run newsStoryRecord for the two days (see decision 0061).
+//                        and record/notes/entry/ (record/shadow/ with --shadow). No model call. Idempotent per out dir only: the same inboxId /
+//                        noteId appends nothing, but a second generate makes new inboxIds, so write the files of ONE generate run; the write
+//                        refuses when the target day file already holds late lines of the same slot with other inboxIds. Before the first append
+//                        to each object it saves the object's current content under OUT/backup/<key> (the bucket has no versioning) and refuses
+//                        to go on if that fails. It refuses a day file the Today view still reads: index/today.json reads the inbox files of
+//                        the last two UTC days (publish.js readTodayInbox) and keeps entries archived within 24 h of the newest write, so a late
+//                        line in the file of UTC yesterday or today would show as fresh; a day D can be written from D+2 00:00 UTC. It also
+//                        refuses a line without the marker or with any forecast key. Then run newsStoryRecord for the two days (decision 0061).
 // Every entry line carries writtenLate {writtenAt: the real write time, slot: the missed run}. Day keys come from the slot, never from the clock.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -49,7 +55,7 @@ function makeReader({ dataDir, bucket }) {
   return { source: `s3 ${bucket} (read only)`, lines: async (kind, day) => (await s3.getLines(`record/inbox/${kind}/${day}.jsonl`)).lines };
 }
 
-function storiesMarkdown(r) {
+export function storiesMarkdown(r) {
   const head = `# Slot ${r.slot}\n\nPool ${r.pool.pool} articles (${r.promptArticles} in the prompt). ${r.topicTitles.length} topics, ${r.stories.length} stories written.\n`;
   const body = r.stories.map((s, i) => `\n## ${i + 1}. ${s.title}\n\n${s.category} | thread ${s.threadId}\n\n**Summary**\n\n${s.summary || '(none)'}\n\n**Cause note**\n\n${s.cause || '(none)'}\n\n**Sources**\n\n${s.sources.map((x) => `- ${x.outlet || x.source}: ${x.title} (${x.url})`).join('\n')}\n`).join('');
   return head + body;
@@ -122,6 +128,24 @@ async function generate(v, deps0) {
   return exit;
 }
 
+const FORECAST_KEYS = ['prediction', 'forecast', 'scenarios'];
+const hasForecast = (l) => FORECAST_KEYS.some((k) => l[k]) || (l.ai && typeof l.ai === 'object' && FORECAST_KEYS.some((k) => l.ai[k]));
+
+/** Save what the object holds now to OUT/backup/<key> before the first append (nothing to save when it does not exist). Throws when the copy cannot be written. */
+async function backupObject(s3, out, key, kind) {
+  let text = '';
+  if (kind === 'json') { const o = await s3.getJson(key); text = o === null ? '' : `${JSON.stringify(o)}\n`; }
+  else { const { lines } = await s3.getLines(key); text = lines.length ? `${lines.map((l) => JSON.stringify(l)).join('\n')}\n` : ''; }
+  if (!text) return { key, existed: false };
+  const file = path.join(out, 'backup', key);
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, text);
+    if (fs.statSync(file).size !== Buffer.byteLength(text)) throw new Error('size differs');
+  } catch (e) { throw new Error(`backup of ${key} could not be written (${e.message}): nothing was appended`); }
+  return { key, existed: true, file };
+}
+
 /** The write mode: the files of an earlier generate run -> the inbox and the entry notes. No model, no key. */
 async function writeOut(v, deps) {
   const out = path.resolve(v.out);
@@ -136,16 +160,31 @@ async function writeOut(v, deps) {
   const plan = files.map((f) => ({ day: f.slice(0, -6), lines: readJsonl(path.join(out, 'entries', f)) }));
   for (const { day, lines } of plan) {
     if (!slotDays.has(day)) throw new Error(`${day}: not the day of a generated slot`);
-    if (day >= today) throw new Error(`${day}: refusing to write into today's or a later file`);
+    // index/today.json reads the inbox files of the last two UTC days and shows entries archived within 24 h of the newest write: the file of UTC yesterday or today must stay untouched
+    if (day >= addDays(today, -1)) throw new Error(`${day}: refusing to write into today's, yesterday's or a later file (the Today view still reads it and would show these stories as new); possible from ${addDays(day, 2)} 00:00 UTC`);
     for (const l of lines) {
       if (!l.writtenLate || dayOf(l.writtenLate.slot) !== day) throw new Error(`${day}: a line without a writtenLate marker for this day (${l.inboxId})`);
-      if (l.ai && l.ai.prediction) throw new Error(`${day}: a line carries a forecast (${l.inboxId})`);
+      if (hasForecast(l)) throw new Error(`${day}: a line carries a forecast (${l.inboxId})`);
     }
   }
   const noteLines = readJsonl(path.join(out, OUT_FILES.notes));
   for (const n of noteLines) if (n.subtype !== 'entry' || n.part === 'prediction') throw new Error(`notes: ${n.noteId} is not a summary or cause note`);
-  console.log(`WRITE to ${bucket}/${prefix}: ${plan.map((p) => `${p.day} ${p.lines.length} lines`).join(', ')}; ${noteLines.length} notes`);
   const s3 = deps.s3json || loadS3(bucket);
+  // a second generate run has other inboxIds: refuse when the target already holds late lines of the same slot that are not these
+  for (const { day, lines } of plan) {
+    const ours = new Set(lines.map((l) => l.inboxId));
+    const slots = new Set(lines.map((l) => l.writtenLate.slot));
+    const clash = (await s3.getLines(`${prefix}inbox/entries/${day}.jsonl`)).lines.filter((l) => l.writtenLate && slots.has(l.writtenLate.slot) && !ours.has(l.inboxId));
+    if (clash.length) throw new Error(`${day}: the file already holds ${clash.length} late line(s) of the same slot with other inboxIds (an earlier generate run was written); not appending a second set`);
+  }
+  console.log(`WRITE to ${bucket}/${prefix}: ${plan.map((p) => `${p.day} ${p.lines.length} lines`).join(', ')}; ${noteLines.length} notes`);
+  // every object this write appends to is saved first; one failed copy stops the whole write before any append
+  const noteDays = [...new Set(noteLines.map((n) => n.date))].sort();
+  const backups = [];
+  for (const { day } of plan) backups.push(await backupObject(s3, out, `${prefix}inbox/entries/${day}.jsonl`, 'lines'));
+  for (const d of noteDays) backups.push(await backupObject(s3, out, `${prefix}notes/entry/${d}.jsonl`, 'lines'));
+  backups.push(await backupObject(s3, out, `${prefix}notes/entry/manifest.json`, 'json'));
+  console.log(`  backups: ${backups.filter((b) => b.existed).length} saved under ${path.join(out, 'backup')}, ${backups.filter((b) => !b.existed).length} object(s) did not exist`);
   for (const { day, lines } of plan) {
     const r = await s3.appendLines(`${prefix}inbox/entries/${day}.jsonl`, lines, { idKey: 'inboxId' });
     console.log(`  ${prefix}inbox/entries/${day}.jsonl: ${r.appended} appended, ${r.skipped} already there`);

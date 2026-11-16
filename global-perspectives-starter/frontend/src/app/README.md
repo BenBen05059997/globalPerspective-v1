@@ -7,7 +7,7 @@ retired addresses. Every page itself lives in a folder under `features/`.
 ## What it does
 - `main.jsx` (one level up) loads `index.css`, runs `bootstrapProxy.js`, installs the error sink, then renders `App`.
 - `bootstrapProxy.js` reads `window.SENSITIVE_PROXY_ENDPOINT` (set by the runtime `config.js`) and calls `configureProxy`,
-  so `shared/api/restProxy.js` knows the one backend door. It also adds a console test hook, `window.testProxyGeocode`.
+  so `shared/api/restProxy.js` knows the one backend door.
 - `App.jsx` wraps everything in `AuthProvider` and a router, then `Layout`, `ErrorBoundary`, `Suspense` and the `Routes`.
   `AuthBridge` hands Firebase's `getIdToken` to `restProxy` so gated requests carry the token.
 - `pageViews.jsx` - `PageViewBridge` sends the Google Analytics `page_view` (`index.html` sets `send_page_view:false`): one per route,

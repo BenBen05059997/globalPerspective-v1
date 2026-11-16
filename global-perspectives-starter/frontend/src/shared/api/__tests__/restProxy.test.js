@@ -59,7 +59,6 @@ describe('read proxy: request shape per action', () => {
     ['fetchSystemsAnalysis', ['France'], 'systems_analysis', { countryName: 'France' }],
     ['fetchWebIndex', [], 'web_index', {}],
     ['fetchWebIndex', ['thread-a'], 'web_index', { threadId: 'thread-a' }],
-    ['geocodeProxy', ['Paris'], 'geocode', { address: 'Paris' }],
   ])('%s(%j) POSTs {action: %s, payload} to the proxy with no Authorization header', async (fn, args, action, payload) => {
     await api[fn](...args);
     const { url, init, body } = lastCall();

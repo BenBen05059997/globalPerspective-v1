@@ -130,10 +130,6 @@ async function proxyAction(action, payload = {}) {
   return body;
 }
 
-export async function geocodeProxy(address) {
-  return proxyAction('geocode', { address });
-}
-
 export async function fetchTopicsCache() {
   return proxyAction('topics');
 }

@@ -23,7 +23,9 @@ function loadLambda() {
   vm.runInNewContext(fs.readFileSync(path.join(SRC, 'index.js'), 'utf8'), context);
   return context;
 }
-const lam = loadLambda();
+// the summary and cause prompts live in story-text.js since decision 0061; an older SRC copy (the "before" arm) still has them in index.js
+const storyText = path.join(SRC, 'story-text.js');
+const lam = fs.existsSync(storyText) ? require(storyText) : loadLambda();
 const inp = JSON.parse(fs.readFileSync(INPUTS, 'utf8'));
 
 const nums = (t) => (String(t).replace(/(\d),(?=\d{3})/g, '$1').match(/\d+(?:\.\d+)?/g) || []);

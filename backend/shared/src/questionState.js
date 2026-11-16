@@ -1,9 +1,7 @@
 'use strict';
 
 // Where a forecast question stands in the weekly sample and in its outcome (decision 0043). The one implementation the record
-// views use; pure, no I/O. Ported rule for rule from the read API's prediction_snapshot (read-api/newsSensitiveData/src/lib.js
-// questionSampleState / questionOutcomeState / isoWeekOfDay); that copy stays until the read API is retired, and
-// newsStoryRecord/test/questionState.test.js pins the two to the same answers.
+// views use; pure, no I/O. Tested in backend/shared/test/questionState.test.js.
 
 // the eligibility window of the snapshot (days from the issue day to the deadline) and the day arithmetic are questionPool's
 const { LEAD_MIN, LEAD_MAX, ms, daysBetween } = require('./questionPool');

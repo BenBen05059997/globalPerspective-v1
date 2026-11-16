@@ -3,8 +3,8 @@
 //
 // One copy, used by the generators (newsCountryIntelligence,
 // newsThreadAnalysis) through src/_shared; mirrors the frontend adapter in
-// src/utils/riskTiers.js (headlineFromDimensions): the headline is the WORST
-// axis, NEVER a weighted average. See SCORING_MODEL_V2_PLAN.md.
+// global-perspectives-starter/frontend/src/shared/lib/riskTiers.js
+// (headlineFromDimensions): the headline is the WORST axis, NEVER a weighted average.
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 

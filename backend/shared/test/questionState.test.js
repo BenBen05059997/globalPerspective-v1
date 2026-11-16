@@ -1,6 +1,6 @@
 'use strict';
 // questionState.js: where a forecast question stands in the weekly sample (sampleState) and in its outcome (outcomeState), and the ISO week
-// of a day. The record views call these; newsStoryRecord/test/questionState.test.js pins them to the read API's copy.
+// of a day. The record views call these; this is the one implementation.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { LEAD_MIN, LEAD_MAX, isoWeekOfDay, sampleState, outcomeState } = require('../src/questionState');

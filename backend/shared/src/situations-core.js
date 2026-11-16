@@ -1,7 +1,7 @@
 'use strict';
 
 // situations-core — pure, no-I/O helpers shared by the situation subsystem
-// (MAP_HOME_SITUATION_PLAN.md / DATA_STRATEGY.md). NO AWS, NO LLM.
+// (storage rules: DATA_STRATEGY.md). NO AWS, NO LLM.
 //
 //   buildObservation(feature)  — GDACS GeoJSON feature → a compact "observation" (a fact about the
 //                                world right now). Openers write observations; they hold no state.
@@ -10,13 +10,13 @@
 //                                'cooled'). Used by the tracker (S2), which is the sole writer of
 //                                situation state in S3.
 //
-// Tiers are canonical utils/riskTiers.js bands: low · moderate · elevated · high. No 'critical'
+// Tiers are the frontend shared/lib/riskTiers.js bands: low · moderate · elevated · high. No 'critical'
 // ("critical" on the map is display-only = high + escalating). GDACS Red→high, Orange→elevated.
 
 const OPENING_LEVELS = new Set(['Orange', 'Red']);
 const LEVEL_RANK = { Green: 0, Orange: 1, Red: 2 };
 const LEVEL_TIER = { Red: 'high', Orange: 'elevated', Green: 'low' };
-// Re-check cadence by tier (plan §4 WS2 cadence table), minutes.
+// Re-check cadence by tier, minutes.
 const TIER_CADENCE_MIN = { high: 30, elevated: 120, moderate: 360, low: 360 };
 const EVENT_LABEL = {
   EQ: 'earthquake', TC: 'tropical cyclone', FL: 'flood', VO: 'volcanic eruption',

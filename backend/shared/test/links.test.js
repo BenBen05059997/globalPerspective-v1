@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const L = require('../src/links');
 
-test('story, country, map, briefing, forecast, studio, today and breaking addresses (same rules as the frontend)', () => {
+test('story, country, map, briefing, forecast, today and breaking addresses (same rules as the frontend)', () => {
   assert.strictEqual(L.storyHref('thread-a-1'), '/weekly/thread/thread-a-1');
   assert.strictEqual(L.storyHref('t-1', { tab: 'timeline' }), '/weekly/thread/t-1?tab=timeline');
   assert.strictEqual(L.storyHref(null), '/weekly');

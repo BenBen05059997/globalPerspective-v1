@@ -3,8 +3,9 @@
 // → { outlet: display name, country: ISO-3166-1 alpha-2, type: 'wire'|'national'|'regional'|'specialist' }
 //
 // The one outlet table (moved to backend/shared 2026-10-20 from newsInvokeGemini). Used by:
-//   - newsInvokeGemini source_enrichment.js (outlet name on each topic source)
+//   - newsInvokeGemini source_enrichment.js and rawCapture.js (outlet name on each topic source and raw item)
 //   - newsSituationIngest classifier-core.js (outlet name on corpus rows)
+//   - newsStoryRecord facts.js and views.js, newsRecover recover.js, and record.js here (registrableDomain)
 // Unknown domains keep `outlet: null`; never invent a name.
 //
 // Add new outlets as Brave Search returns them. Unknown outlets degrade

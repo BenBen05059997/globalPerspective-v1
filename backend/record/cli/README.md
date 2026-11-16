@@ -31,7 +31,7 @@ All of these have been run live: the record's facts now start 2026-03-07 and eve
 
 ## Tools still in use
 
-## recover-day.mjs
+### recover-day.mjs
 
 Rebuilds a missed day's raw articles from public records, with no model (decision 0040 rule 2, [0040](../../../project-docs/decisions/0040-raw-before-model.md)). The library and the fetchers now live in [`newsRecover/src/recover.js`](../newsRecover/src/recover.js) (one copy, shared with the `newsRecover` Lambda that `newsHealth` calls for self-healing); `recover-lib.mjs` re-exports them and this script keeps the S3 write and the arguments. It writes the same inbox lines the selector writes (`record/inbox/articles/DAY.jsonl`, `rawId = sha1(canonical url)`), plus `recoveredAt` and `recoveredFrom`.
 
@@ -66,11 +66,11 @@ Re-run recipe (DOC only; GKG just re-runs): run one day, then wait. If GDELT com
 
 Write path (`--write`): uses `backend/shared/src/s3json.js` `appendLines` (conditional put, retry on 412; ids already stored are skipped), bucket from `--bucket` or `WORLD_BUCKET`, shadow prefix `record/shadow/inbox/articles/`. It needs `@aws-sdk/client-s3`, which the repo does not install: `npm i --no-save @aws-sdk/client-s3` in a scratch directory and set `RECOVER_SDK_DIR` to it. The writer's IAM is the operator's; the coordinator runs `--write`, a lane never does.
 
-### Deadline
+#### Deadline
 
 GDELT DOC reaches back three months only; the GKG files go back much further (checked for 2026-09-14, 09-20, 10-14, 10-22). Wayback has no window.
 
-### How the coordinator runs it
+#### How the coordinator runs it
 
 1. Dry run a gap day, read the manifest counts, check `failures`.
 2. `--write --shadow` once, then without `--shadow`.
@@ -78,11 +78,11 @@ GDELT DOC reaches back three months only; the GKG files go back much further (ch
 
 Recovered days never draw forecasts: `newsStoryRecord` refuses `forecast_drawn` on a recovered day, and runs without `recovery:true` are not meant for gap days. Recovered days are unscored and labelled "recovered from public records" (0040 recovery rules).
 
-## recover.test.mjs
+### recover.test.mjs
 
 Offline tests (URL building, GKG zip fixtures built in the test, GDELT JSON and CDX fixtures in `fixtures/`, line shape, dedupe, window split, fake-fetch walk, throttle classification, cool-down, exit code 2): `node --test backend/record/cli/recover.test.mjs`. The shared parser has its own test in `backend/shared/test/rss.test.js`.
 
-## recover-late-slots.mjs
+### recover-late-slots.mjs
 
 One-off (decision [0061](../../../project-docs/decisions/0061-late-written-stories-for-the-outage-slots.md)): writes the stories of the four news runs a model outage lost (2026-11-14 20:15, 2026-11-15 04:15, 12:15, 20:15 UTC) from the raw articles saved in `record/inbox/articles/`, and marks each `writtenLate {writtenAt, slot}`. It runs the live code of `newsIngest` (`selection.js`) and `newsAgent` (`story-text.js`): topic selection, then a summary and a cause note per topic, on `anthropic:claude-sonnet-5-5` through the shared `chat()`. It never makes a forecast. The live Lambdas are not invoked and DynamoDB is not touched.
 
@@ -90,7 +90,7 @@ One-off (decision [0061](../../../project-docs/decisions/0061-late-written-stori
 - **Write (`--write --out OUT [--shadow]`):** appends exactly the files of ONE generate run to `record/inbox/entries/DAY.jsonl` and `record/notes/entry/` (under `record/shadow/` with `--shadow`); no model call. Idempotent per out dir (same `inboxId` and `noteId`); a second generate makes new `inboxId`s, so it refuses when the day file already holds late lines of the same slot with other `inboxId`s. Before the first append to each object it saves the current content to `OUT/backup/<key>` and stops if that fails. It refuses a line without the marker, a line with a `prediction`, `forecast` or `scenarios` key, and any day file of UTC yesterday or later (the Today view reads the last two UTC days; a day D can be written from D+2 00:00 UTC). The notes land in the file of the day the generate ran. After it: `newsStoryRecord` for each of the two days, then `{"refresh":true,"shadow":false}` (decision 0061).
 - Tests: `node --test backend/record/cli/recover-late.test.mjs` (a stub replaces the model; no network, no AWS).
 
-## reconcile-actors.mjs
+### reconcile-actors.mjs
 Operator script, no model: reads actor ids from the live `views/index/active.json` (`--live`, read-only) or a local file (`--input`), asks Wikidata (`wbsearchentities` and, for offices, one SPARQL query; 1 request/second in total) for the top N (`--top`) or all (`--all`), and keeps a hit only when its description names an allowed class (person, office, government, ministry, armed forces, police, central bank, court, parliament, party, company, NGO, international organisation, armed group, country/region).
 
 Match tiers (`confidence`/`via`): `exact` (top hit's label equals the name, accents folded), `alias` (matched alias equals the name), `near` (spelling variant: label or alias within 2 edits, same word set after folding word order, "of/the", demonyms and "military" = armed forces, or the same surname with a first name within 2 edits or an initial; any of the top 3 hits, but a lower hit sharing the exact name is a namesake and never counts; legal suffixes such as AG/Inc are ignored). A hit with no usable description is judged by its label ("Armed Forces of X"). A "<demonym> <org>" name also searches its entity title ("Government of South Korea").
@@ -101,7 +101,7 @@ Dry run by default; `--write --out DIR` writes `aliases.candidate.json` (the ali
 
 Choices: ready = exact, alias, or an office with exactly one holder; check = near, ambiguous_period, position items. Only the operator promotes a candidate; wrong confident hits are caught in review, not by tightening the rule further.
 
-## build-entries-inbox.mjs
+### build-entries-inbox.mjs
 
 Builds the entries inbox (decision 0051) for the last N days from the NewsCache `archive#DAY` rows into **local files** and proves that the facts built from them are byte-identical to the facts built from the archive. DynamoDB is only read (`GetItem`, as the nightly run does); nothing is written to AWS.
 
@@ -110,7 +110,7 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/build-entries-inbox.mjs [--days
 ```
 Writes `<out>/record/inbox/entries/DAY.jsonl` (one batch per run, in the row's order, so the replay is the row), reads them back through `newsStoryRecord`'s own reader (`ENTRIES_SOURCE=inbox`) and prints the inbox path and the proof: days and entries compared, entry facts compared (whole JSON, `sourceKey`, `sourceRow` and position included), story births, thread of each topic, the provisional facts a refresh builds for the last day, and any difference (exit code 2). The only tolerated difference, named in the output, is a `today-archive` entry the day row lacks on the last day (day-zero rule). The output directory is also the 30-day start for the live inbox: upload it to `record/shadow/inbox/entries/` then `record/inbox/entries/` (coordinator). Test: `node --test backend/record/cli/build-entries-inbox.test.mjs`.
 
-## compare-record-reads.mjs
+### compare-record-reads.mjs
 
 Equality of the record readers with the DynamoDB rows they replace (decision 0054), on live data, read only (GetItem, BatchGetItem, GetObject and one GET of the public `/rss`; nothing is written or sent). Sections: `today` (NewsCache `latest` and `today-archive` against `index/today.json`; simulated from the live archive rows when the view does not exist yet), `analyses` (every `THREAD_ANALYSIS` row against its story view), `countries` (every `COUNTRY_INTELLIGENCE` row), `weekly` (every published `WEEKLY_BRIEF#` row against its view, and the weekly email rendered from both), `rss` (the feed from DynamoDB, from the record, and as served).
 
@@ -119,7 +119,7 @@ RECORD_SDK_DIR=<sdk dir> NODE_PATH=<sdk dir>/node_modules node backend/record/cl
 ```
 Test: `node --test backend/record/cli/compare-record-reads.test.mjs`.
 
-## build-forecasts-inbox.mjs
+### build-forecasts-inbox.mjs
 
 Builds the forecasts inbox (decision 0052) for the last N days from the PredictionLog `PRED#` rows into **local files**, and proves that the `forecast_drawn` facts built from the inbox are byte-identical to the facts built from the log. Read only: one Scan of the window's `PRED#` rows and GetItem on the archive rows (the day's entries are the context `forecastFact` takes); the inbox is written under `--out`.
 
@@ -128,7 +128,7 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/build-forecasts-inbox.mjs [--da
 ```
 Writes `<out>/record/inbox/forecasts/DAY.jsonl` (a `drawn` line for each row, the thread it was drawn under; a row the reconcile moved also gets a later `thread` line, so the last-wins replay is exercised), reads them back through `newsStoryRecord`'s own reader (`FORECASTS_SOURCE=inbox`) and prints the files and lines, the rows moved by the reconcile, orphan thread lines, the snapshots that differ (whole JSON, provenance included), the fact builds compared for each day of the window (with that day's archive entries) and their bytes, and the real nightly path for the last day (`store.load` in both modes). Exit code 2 on any difference. 2026-10-31: 669 rows, 23 files, 0 differences, 20,070 fact builds and 78,262,264 bytes identical. The output is the 30-day start for the live inbox: upload `record/inbox/forecasts/` to `record/shadow/inbox/forecasts/` then `record/inbox/forecasts/` (coordinator); only days before the agent's first line, then once more for the switch-on day after it has ended (decision 0052 hand-off). Test: `node --test backend/record/cli/build-forecasts-inbox.test.mjs`.
 
-## check-eligible.mjs
+### check-eligible.mjs
 
 Checks that the resolver finds the same questions in the record as in the PredictionLog (decision 0052, `QUESTIONS_SOURCE`). Read only: one Scan of the `PRED#` rows with `questionSchema`, GetItem on `SAMPLE#<week>/DRAW` (never a seed row), and the facts and Runs from S3 or from a local copy.
 
@@ -137,7 +137,7 @@ RECORD_SDK_DIR=<sdk dir> node backend/record/cli/check-eligible.mjs [--days 120]
 ```
 `--facts-dir` reads `DIR/record/facts/DAY.jsonl` and `DIR/record/runs/DAY.json` (a copy of the bucket) instead of S3. Prints, from the resolver's own code and the shared pool rules: the watch's question list from the log against the facts' (qids on one side only, fields that differ); for every committed week the eligible set from both; for every drawn week the stored `pool` and `eligible` against the pool rebuilt from the facts, and whether the draw is reproduced (under the current 7-90 lead window or the 7-84 one before 0045; `picksReproducedIgnoringClusterKeys` when only a story key changed after the draw); and the facts Run of each day of the week. Today's forecasts are left out of both sides (the record lags the log until the 23:45 UTC run). Exit code 2 on any difference. 2026-10-31: 5,276 questions on both sides, eligible sets of W41-W46 equal, W42 and W43 pools equal the stored ones, W41 reproduced but for one cluster key. Test: `node --test backend/record/cli/check-eligible.test.mjs`.
 
-## hold-weekly-brief.mjs
+### hold-weekly-brief.mjs
 
 Holds a weekly brief back from the web path, or publishes it again. Setting `status: draft` on the DynamoDB row `WEEKLY_BRIEF#<weekOf>` holds back only the `weekly_brief` action and the email; the record's views are built from append-only `weekly_brief` notes, so they keep serving the brief. This appends a later `weekly_brief` note for the week: the newest note's content with `status: draft` (or `published` with `--publish`) and an `at` after it, through shared `notes.js` (`buildNote`, `makeNoteWriter`; the same writer `briefNotes.writeBriefNote` uses). `newsStoryRecord` (`briefViews.js`) takes the newest note by `at`, so on its next rebuild a held week leaves `index/briefs.json` and `briefs/weekly/<weekOf>.json` becomes a tombstone `{held: true, brief: null}` (view files are never deleted, so a plain drop would leave the old published file served to a direct read and to the Worker pre-render; the tombstone needs the `newsStoryRecord` that writes it deployed). A later `--publish` note brings the week back. If the newest note already has that status nothing is written.
 

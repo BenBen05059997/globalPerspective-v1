@@ -1,8 +1,8 @@
 'use strict';
 
 // Dead-man's alarm for the weekly prediction settle flow (Batch 4 phase C). Pure: no network, no
-// SNS, no clock. The monitor feeds it the `questions` block of `prediction_track_record` (SETTLE_SOURCE=action), or the record's track-record view,
-// manifest and the resolver's heartbeat put together by settleFromRecord (SETTLE_SOURCE=record, decision 0052).
+// SNS, no clock. The monitor feeds it the record's track-record view, manifest and the resolver's heartbeat,
+// put together by settleFromRecord (decision 0052).
 // Every condition needs something to have been committed first, so nothing can fire during the
 // warm-up (before the first seed commitment exists) and an empty board is silent.
 

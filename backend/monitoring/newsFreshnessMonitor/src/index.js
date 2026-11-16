@@ -2,8 +2,8 @@
 
 // newsFreshnessMonitor — data-freshness dead-man's-switch.
 //
-// The content pipeline (newsInvokeGemini → NewsProjectInvokeAgentLambda) runs on
-// a schedule every eight hours. If it silently stalls, the site keeps serving the last
+// The content pipeline (newsIngest, then newsAgent) runs on a schedule every
+// eight hours. If it silently stalls, the site keeps serving the last
 // good topics and NOTHING tells the operator — the active smoke-test/link-crawl
 // checks only run on demand, so a scheduled stall is their blind spot. This
 // Lambda is the passive complement: a scheduled probe that fails loudly.
@@ -26,9 +26,6 @@ const PROXY_URL = process.env.PROXY_URL;            // proxy base, e.g. https://
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const STALE_HOURS = Number(process.env.STALE_HOURS || 9);
 const SITE_URL = process.env.SITE_URL || 'https://globalperspective.net';
-// Where the settle check reads the board (decision 0052): `action` = the proxy's prediction_track_record (the PredictionLog snapshot file, default),
-// `record` = the record's track-record view, manifest and the resolver's heartbeat, served under /data/record/views/ on SITE_URL (no table, no proxy).
-const SETTLE_SOURCE = process.env.SETTLE_SOURCE || 'action';
 
 let _sns = null;
 function sns() {
@@ -50,7 +47,8 @@ async function alert(subject, lines) {
   }));
 }
 
-// The record's board: three public JSON files. The heartbeat may not exist yet (404 = no tick seen); the view and the manifest must.
+// The settle check reads the record's board (decision 0052): the track-record view, the manifest and the resolver's
+// heartbeat, three public JSON files under /data/record/views/ on SITE_URL (no table, no proxy). The heartbeat may not exist yet (404 = no tick seen); the view and the manifest must.
 async function fetchJson(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8000); // the function's own timeout is 30 s: keep this step short
@@ -81,19 +79,10 @@ async function runSettleCheck(event = {}) {
   try {
     const nowIso = event.now || new Date().toISOString();
     let questions = event.fixture || null;
-    if (!questions && SETTLE_SOURCE === 'record') {
+    if (!questions) {
       const got = await recordBoard(nowIso);
       if (got.skipped) return { skipped: got.skipped };
       questions = got.questions;
-    } else if (!questions) {
-      if (!PROXY_URL) return { skipped: 'PROXY_URL missing' };
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 8000); // the function's own timeout is 30 s: keep this step short
-      const resp = await fetch(`${PROXY_URL}${PROXY_URL.includes('?') ? '&' : '?'}action=prediction_track_record`, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (!resp.ok) return { skipped: `proxy HTTP ${resp.status}` };
-      const j = await resp.json();
-      questions = (j.data || j).questions || null;
     }
     const evaluation = evaluateSettle(questions, nowIso);
     const message = evaluation.alert ? buildMessage(evaluation, questions, { siteUrl: SITE_URL, nowIso }) : null;

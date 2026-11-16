@@ -1,10 +1,9 @@
 'use strict';
-// The settle check reading the record (SETTLE_SOURCE=record, decision 0052): three public files under /data/record/views/, through the handler.
+// The settle check reads the record (decision 0052): three public files under /data/record/views/, through the handler, with no SETTLE_SOURCE needed.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
-process.env.SETTLE_SOURCE = 'record';
 process.env.SITE_URL = 'https://site.test';
 process.env.SNS_TOPIC_ARN = 'arn:test';
 const load = Module._load;

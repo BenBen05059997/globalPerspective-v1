@@ -1,7 +1,6 @@
 /* =============================================================
    GLOBAL PERSPECTIVES — Design Tokens
    Single source of truth. Import this before all other CSS.
-   Matches Design System.html from the redesign package.
    ============================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -42,7 +41,6 @@
   --warn:          #ffb347;                    /* warning amber: older / paused / needs attention */
   --ok:            #6fd29a;                    /* checks passed */
   --error:         #f2689a;                    /* failed check (rose: kept off the conflict hue) */
-  --run-hatch:     #e8d5a8;                    /* reserved: a reader's own AI run marker */
   --focus-ring:    var(--accent);           /* one focus colour: the accent */
 
   /* Crisis hues (hue = crisis TYPE only, never severity). Re-picked 2026-10-19 (operator, option A):
@@ -52,7 +50,7 @@
   --hue-economic:     #8fd46a;
   --hue-humanitarian: #d987e0;
 
-  /* Tier = risk. DS1 (REDESIGN_MASTER_PLAN §3.1): risk is a NUMBER + a tier WORD + RING WEIGHT, never
+  /* Tier = risk. Risk is a NUMBER + a tier WORD + RING WEIGHT, never
      a traffic-light colour. These tokens are therefore neutral text/hairline greys that get brighter
      (heavier) with the tier; the weight of the ring / the font carries the rest (see TierChip). Crisis
      hues (--hue-*) mean crisis TYPE, amber (--warn) means a warning / staleness, --ok / --error mean a
@@ -164,21 +162,6 @@
   --space-16: 64px;
   --space-20: 80px;
 
-  /* ═════════ ALIASES — DEPRECATED, kept only so current consumers keep working ═════════
-     Do not use these in new code. Wave 2 (page migrations, 2026-10) moves each caller onto the
-     role/scale tokens above; delete an alias when nothing reads it any more (counts are uses of
-     `var(--name)` in src/ on 2026-10-19). Light names flipped to the dark values: a "paper" is a
-     dark surface and an "ink" is light text. */
-
-  /* Light name -> role token (ink-dim: read by `.label` below) */
-  --ink-dim:   var(--text-muted);
-
-  /* Names pages read that were never defined (they rendered unspaced / transparent until
-     2026-10-19): home/AIComponents.css (space-*, font-size-*, font-weight-*, line-height-*),
-     static/WhitepaperPage.jsx (card-bg), countries CSS (font-mono, border, ink-soft). */
-
-  /* Console (--c-*) names -> role tokens (315 uses in 15 files; only the names still read are kept) */
-
   scrollbar-color: var(--hairline-strong) var(--bg);
 }
 
@@ -224,6 +207,6 @@ body {
   font-size: var(--text-xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-dim);
+  color: var(--text-muted);
 }
 

@@ -1,4 +1,4 @@
-/* Design tokens — single source of truth (the old alias names live in tokens.css's ALIASES block) */
+/* Design tokens — single source of truth */
 @import '@/shared/styles/tokens.css';
 
 /* Layout container (app/layout/Layout.jsx, threads/ThreadPage.jsx) */

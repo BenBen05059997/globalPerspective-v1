@@ -1,6 +1,5 @@
 // One token set (2026-10-01): the console palette is the `:root` default. This asserts the role
-// tokens exist with the approved values, that the old `--c-*` console names still resolve to them,
-// and that `.gp-console` is now a no-op class.
+// tokens exist with the approved values and that `.gp-console` is now a no-op class.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

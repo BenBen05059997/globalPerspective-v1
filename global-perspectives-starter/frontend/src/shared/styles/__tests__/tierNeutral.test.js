@@ -1,4 +1,4 @@
-// DS1 (REDESIGN_MASTER_PLAN §3.1): risk is a number + a tier word + ring weight, NOT a traffic-light
+// Risk is a number + a tier word + ring weight, NOT a traffic-light
 // colour. The --tier-* tokens (and every JS spelling of them) must therefore be neutral greys that
 // get brighter with the tier: no red / orange / yellow / green may ever encode a risk tier.
 import { describe, it, expect } from 'vitest';

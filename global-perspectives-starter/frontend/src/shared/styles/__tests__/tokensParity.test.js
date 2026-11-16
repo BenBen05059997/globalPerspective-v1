@@ -6,7 +6,7 @@ import path from 'node:path';
 import { TOKENS, RISK_SOLID } from '../tokens.js';
 
 const css = readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../tokens.css'), 'utf8');
-const rootBody = css.slice(css.indexOf(':root {'), css.indexOf('/* ═════════ ALIASES'));
+const rootBody = css.slice(css.indexOf(':root {'), css.indexOf('\n}\n', css.indexOf(':root {')));
 const norm = (v) => String(v).toLowerCase().replace(/\s+/g, '');
 const cssVal = (name) => {
   const m = rootBody.match(new RegExp(`^\\s*--${name}:\\s*([^;]+);`, 'm'));
@@ -23,12 +23,5 @@ describe('tokens.js == tokens.css :root', () => {
 
   it('RISK_SOLID is the tier-* role tokens', () => {
     for (const t of ['low', 'moderate', 'elevated', 'high']) expect(RISK_SOLID[t]).toBe(TOKENS[`tier-${t}`]);
-  });
-
-  it('every remaining alias is a var() of a role token, never a second palette', () => {
-    const aliasBody = css.slice(css.indexOf('/* ═════════ ALIASES'), css.indexOf('scrollbar-color'));
-    const defs = [...aliasBody.matchAll(/^\s*--([a-z0-9-]+):\s*([^;]+);/gm)];
-    expect(defs.length).toBeGreaterThan(0);
-    for (const [, n, v] of defs) expect(v.trim(), `--${n}`).toMatch(/^var\(--/);
   });
 });

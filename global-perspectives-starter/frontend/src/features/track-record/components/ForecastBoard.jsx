@@ -9,8 +9,8 @@ import { questionLine } from '@/features/track-record/lib/questionLine.js';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/ForecastBoard.css';
 
-// ForecastBoard — the E2 "Forecast board: MAP (default) | BOARD" (TRACK_RECORD_AND_STUDIO_
-// RULING.md). Reuses the console's own RadarMap (2D fallback, no WebGL needed for a small
+// ForecastBoard — the E2 "Forecast board: MAP (default) | BOARD".
+// Reuses the console's own RadarMap (2D fallback, no WebGL needed for a small
 // analytics widget) with the same `shading` contract StoryMode uses: a country wash + a count
 // badge, never a made-up pin, never a per-country accuracy score (too few resolved per place —
 // the ruling is explicit: "revisit only at >=30 per country"). Clicking a place opens the right

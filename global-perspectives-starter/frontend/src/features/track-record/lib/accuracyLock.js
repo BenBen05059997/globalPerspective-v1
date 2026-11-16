@@ -1,5 +1,4 @@
-// accuracyLock — "Accuracy locked until 150 resolved" (TRACK_RECORD_AND_STUDIO_RULING.md, Track
-// record page design: "Accuracy... locked with a progress bar until 150 resolved"). Below the
+// accuracyLock — "Accuracy locked until 150 resolved". Below the
 // threshold: no Brier, no skill, no STRONG/WEAK word — only "n resolved of 150 needed". `n` here
 // must already be the POST-PILOT count (see pilotExclusion.js) — the pilot's 122 never count
 // toward unlocking this.

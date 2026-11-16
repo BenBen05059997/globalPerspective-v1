@@ -29,8 +29,8 @@ const PHONE_TABS = [
   { key: 'log', label: 'Log' },
 ];
 
-// S6: this page is the E2 "Service record" one-screen view (TRACK_RECORD_AND_STUDIO_RULING.md,
-// "Track record page design"). E1 (a plain, printable text version for search/screen readers)
+// S6: this page is the E2 "Service record" one-screen view.
+// E1 (a plain, printable text version for search/screen readers)
 // lives at TrackRecordText.jsx, reachable via the link below.
 //
 // The 122 triggers of the July pilot share one confirmedAt (2026-07-24) and were scored against the
@@ -150,7 +150,7 @@ export default function TrackRecordPage() {
 
   const readBlocks = (
     <>
-      {/* ---- Status line (stage 0-3, TRACK_RECORD_AND_STUDIO_RULING.md) ---- */}
+      {/* ---- Status line (stage 0-3) ---- */}
       <Card as="section" className="tr-status">
         <span className="tr-status-tag">{stage.label}</span>
         <h2 className="tr-status-headline">{stage.headline}</h2>

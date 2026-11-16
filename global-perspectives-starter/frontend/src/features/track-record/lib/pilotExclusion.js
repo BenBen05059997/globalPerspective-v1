@@ -1,7 +1,6 @@
 // pilotExclusion — the 122 resolved triggers on record today were ALL confirmed in one 24 Jul
-// scoring run against the flawed "score at scenario probability" method (TRACK_RECORD_AND_
-// STUDIO_RULING.md: "The 122 become an archived pilot under a flawed method... No aggregate
-// score shown"). This module draws the line, from the real `confirmedAt` timestamp, between
+// scoring run against the flawed "score at scenario probability" method, so they are an archived
+// pilot with no aggregate score shown. This module draws the line, from the real `confirmedAt` timestamp, between
 // pilot items and anything resolved after the pilot under the (still unbuilt) hybrid method —
 // never a hand-picked ID list.
 //

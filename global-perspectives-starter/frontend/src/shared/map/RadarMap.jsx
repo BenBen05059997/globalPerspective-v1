@@ -111,8 +111,8 @@ function useCardQueue(place) {
 }
 
 /**
- * RadarMap — the flat console mode (M4): real coastlines (the same bundled countries-110m data
- * and crop as SituationMap), drawn once with d3/SVG. No WebGL, so it's also the automatic
+ * RadarMap — the flat console mode (M4): real coastlines (the bundled countries-110m data and
+ * the ±60° crop frame from landGeometry.js), drawn once with d3/SVG. No WebGL, so it's also the automatic
  * fallback when the globe can't run.
  *
  * Colour plan C6 ("one sweep that reveals"): a faint beam runs ONE lap (lib/radar.js LAP_MS) the

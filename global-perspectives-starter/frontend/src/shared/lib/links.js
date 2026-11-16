@@ -1,4 +1,4 @@
-// links — the only place page addresses are built (PLAN_2026-10-19_linking_and_pages.md, "Link design").
+// links — the only place page addresses are built.
 // Every reader destination has one canonical address; callers still choose <Link> vs navigate() themselves,
 // only the string is shared. quality/check_links.mjs counts hand-built route strings anywhere else.
 // The block between the markers is kept identical to backend/shared/src/links.js (emails) by

@@ -38,7 +38,7 @@ export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = fal
   return { date, label, beyondLookback: false, text: `analysis paused since ${label}` };
 }
 
-// freshnessState — the console's shared freshness ramp (REDESIGN_MASTER_PLAN.md §3.1):
+// freshnessState — the console's shared freshness ramp:
 //   live   <24h    — glows, counts as "now"
 //   plain  1–7d    — shown at normal weight, no glow
 //   older  7–30d   — desaturated + an honest "older · <date>" label

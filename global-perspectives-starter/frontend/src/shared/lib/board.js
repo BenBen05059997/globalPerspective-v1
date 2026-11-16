@@ -1,4 +1,4 @@
-// board — the board's drawing rules, shared with the backend (PLAN_2026-10-20_board.md, Stage 1).
+// board — the board's drawing rules, shared with the backend.
 // The block between the markers is kept identical to backend/shared/src/record.js (newsBoard) by
 // scripts/check-shared-sync.mjs. Pure: no network, no clock.
 

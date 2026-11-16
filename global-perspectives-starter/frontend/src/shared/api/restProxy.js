@@ -11,7 +11,6 @@ const PROXY_TIMEOUT_MS = 15000;
 const TOKEN_TIMEOUT_MS = 4000;
 
 // Set by AuthContext on init — returns a Promise<string|null> for the Firebase ID token.
-// Falls back to legacy x-api-key if not set (migration period).
 let getAuthToken = null;
 export function setAuthProvider(getTokenFn) {
   getAuthToken = getTokenFn;
@@ -68,7 +67,7 @@ function runLimited(task) {
 // proxyActionWithAuth calls per-auth-state, so two different signed-in users (or signed-in vs
 // anon) never share a de-duped response. This is de-dupe, not a cache: the map entry is cleared
 // as soon as the promise settles (success OR failure — an in-flight error is not cached), so the
-// next call after completion always re-fetches. See STAGE0_FIXES_PLAN.md item (f).
+// next call after completion always re-fetches.
 const inFlightRequests = new Map();
 
 // Single proxy POST + JSON parse, run through the concurrency limiter + in-flight de-dupe.

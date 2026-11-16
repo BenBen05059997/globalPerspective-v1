@@ -1,4 +1,4 @@
-// storyLinkArcs — story-to-story lines on the maps (STORY_WEB_RETHINK_PLAN S7 / S8).
+// storyLinkArcs — story-to-story lines on the maps.
 // Only STRONG and MEDIUM judged links are drawn (weak stay list-only), never a link older than 30
 // days. The line runs from the selected story's main country to the linked story's most-mentioned
 // country OTHER than the focal one; a linked story with no real country gets NO line (a broad

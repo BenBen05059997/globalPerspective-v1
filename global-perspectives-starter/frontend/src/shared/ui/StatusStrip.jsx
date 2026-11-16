@@ -5,11 +5,9 @@
 //   stats:       array of { value, unit } pairs rendered as  N unit  segments
 //   updatedAt:   ISO string or ms timestamp for "updated Xm ago" badge
 
-// Freshness cutoff for the "LIVE" chip: the topics/news pipeline that feeds most StatusStrip
-// callers runs on a 4-hourly cadence (InvokeGoogleGemini/InvokeNewsAgent, ARCHITECTURE.md
-// "Lambda #1/#2"), so a strip is still describing genuinely fresh data up to roughly one missed
-// cycle later. Named constant so the threshold is a one-line follow-up to tune, per
-// STAGE0_FIXES_PLAN.md item (b).
+// Freshness cutoff for the "LIVE" chip: 6 hours. The news intake that feeds most StatusStrip
+// callers (newsIngest, schedule InvokeGoogleGemini) runs every 8 hours at 04:15, 12:15 and
+// 20:15 UTC (live schedule read 2026-11-17). Named constant so the threshold is easy to tune.
 const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 function timeAgo(ts) {

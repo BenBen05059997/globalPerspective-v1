@@ -1,11 +1,10 @@
 // Single source of truth for risk + category colors across the app.
 //
-// Band SEMANTICS (score → tier) live in utils/riskTiers.js; this file is paint.
+// Band SEMANTICS (score → tier) live in shared/lib/riskTiers.js; this file is paint.
 //
 // Consolidates what were four divergent risk representations (pastel badge
 // pairs, solid editorial hex, canvas RGB arrays, score→CSS-var) and three
-// category maps, previously copy-pasted across ~10 components
-// (see PRODUCT_IMPROVEMENT_PLAN.md → P2 "shared tokens").
+// category maps, previously copy-pasted across ~10 components.
 //
 
 import { tierFromScore } from '@/shared/lib/riskTiers';

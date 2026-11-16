@@ -1,7 +1,6 @@
 // radar — pure geometry/timing helpers for RadarMap (M4: the flat radar mode; colour plan C6: one
 // sweep that reveals). Kept UI-free (no DOM/canvas/SVG) so the sweep maths, the lap timing and the
-// beam-pass card queue are testable in plain vitest. See
-// project-docs/redesign-ux/_active/CONSOLE_WIREFRAME_TECHNIQUE.md §3 for the original sweep design.
+// beam-pass card queue are testable in plain vitest.
 import { AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import { changedAt } from '@/shared/map/pulse.js';

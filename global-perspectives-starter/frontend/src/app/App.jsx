@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
 // Home (the old topics page, now at /today since the 2026-10-01 S6 swap) stays an eager import
-// from STAGE0_FIXES_PLAN.md item (g), when it was the most common first paint. `/` is now the
+// from when it was the most common first paint. `/` is now the
 // lazy SituationHome console; revisit whether /today should be lazy too.
 import { Home } from '@/features/home';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
@@ -22,7 +22,7 @@ import { WAITING_SENSORS } from '@/features/map';
 import { ROUTE } from '@/shared/lib/links.js';
 import { OPS_ROUTE } from '@/features/ops';
 
-// Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
+// Route-level code splitting: every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
 const PrivacyTerms = lazy(() => import('@/features/static/PrivacyTerms'));
 const AboutContact = lazy(() => import('@/features/static/AboutContact'));

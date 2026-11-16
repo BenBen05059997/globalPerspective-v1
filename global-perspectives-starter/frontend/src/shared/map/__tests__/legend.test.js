@@ -1,4 +1,4 @@
-// R4a · the approved map tokens (Legend.dc.html / STORY_WEB_RETHINK_PLAN.md §8) as pure helpers:
+// R4a · the approved map tokens as pure helpers:
 // shape = kind, size + double ring = HIGH only, brightness = freshness.
 import { describe, it, expect } from 'vitest';
 import {

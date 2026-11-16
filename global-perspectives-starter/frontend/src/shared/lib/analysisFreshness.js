@@ -1,6 +1,5 @@
 // analysisFreshness — one tiny module store for "when was the newest AI-generated content on this
-// site made" (REDESIGN_MASTER_PLAN §3.1 status line: computed from the newest `generatedAt`, never
-// typed). Hooks that ALREADY load analysis content report its real timestamp here
+// site made" (the status line: computed from the newest `generatedAt`, never typed). Hooks that ALREADY load analysis content report its real timestamp here
 // (daily brief, stories feed, country intelligence); the site-wide status line reads the newest.
 // No fetch happens in this file — nothing extra goes to the proxy (concurrency cap 4).
 import { useSyncExternalStore } from 'react';

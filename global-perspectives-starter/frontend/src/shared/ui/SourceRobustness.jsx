@@ -2,7 +2,7 @@
 // Implements "faithfulness ≠ truth": a story resting on a single outlet must
 // visibly read as less corroborated than one carried by many. This is the
 // anti-Bloomberg posture — we lead with our doubt instead of printing every
-// claim with equal authority (ANALYSIS_SOURCE_TRUTH_PLAN.md L1).
+// claim with equal authority.
 //
 // Honesty contract: render NOTHING when there is no source data. Never default
 // to a "corroborated" badge on missing data — that would be the exact fabricated

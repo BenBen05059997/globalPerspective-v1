@@ -80,9 +80,8 @@ function Layout({ children }) {
   // `short` + `icon` feed the phone tab bar (P1/A2) — same items, short labels, a small
   // inline-SVG icon per item (no icon library).
   // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up
-  // while analysis is paused, no "every forecast publicly scored" (only 122 resolved, one week,
-  // unscored track record). The Studio retired 2026-10-20: `/analyze` redirects, shared runs
-  // (`/analyze/s/:id`) stay routed.
+  // while analysis is paused, and no "every forecast publicly scored". The Studio retired
+  // 2026-10-20: `/analyze` redirects, shared runs (`/analyze/s/:id`) stay routed.
   const navLinks = [
     { to: ROUTE.map, exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
     { to: ROUTE.stories, label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
@@ -211,7 +210,7 @@ function Layout({ children }) {
       )}
 
       {/* P1 phone tab bar (A2): the main-nav items as a fixed bottom bar under 900px,
-          replacing the old hamburger dropdown (removed above). Dark like the rest of the shell. The map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
+          replacing the old hamburger dropdown. Dark like the rest of the shell. The map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
           are unaffected — they sit above this bar (SituationHome.css). */}
       {isPhone && (
         <nav className="gp-tabbar gp-console" aria-label="Primary, phone">

@@ -1,11 +1,11 @@
-// pulse — the console's motion-budget helper (STORY_WEB_RETHINK_PLAN.md §8 / M6), now the
+// pulse — the console's motion-budget helper (M6), now the
 // "happening now" rule (colour plan C6 R2, operator 2026-10-19): a situation is happening now when
 // it CHANGED within the last 12 hours, at most `cap` of them, highest tier first, then the most
 // recent. Those markers breathe (a soft ~2.4s glow); everything else is still. Pure and DOM-free so
 // both map modes (globe, radar) agree on exactly which ids move, and it's testable without a browser.
 
 /**
- * The motion budget (STORY_WEB_RETHINK_PLAN §8 / T4): at most `movers` kinds of thing may move at
+ * The motion budget (T4): at most `movers` kinds of thing may move at
  * once and at most `pulses` items breathe. The maps and the legend both read these numbers.
  */
 export const MOTION_BUDGET = Object.freeze({ movers: 3, pulses: 5 });

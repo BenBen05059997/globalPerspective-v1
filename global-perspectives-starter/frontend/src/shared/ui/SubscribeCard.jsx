@@ -10,8 +10,8 @@ import '@/shared/ui/SubscribeCard.css';
 // new backend. Signed-in users opt in one click; anonymous users sign in (Google), after
 // which we set the opt-in immediately so the intent isn't lost.
 //
-//   kind="digest"   → Weekly Signals Brief (digestOptIn)   [Home, /weekly-brief]
-//   kind="breaking" → Breaking alerts (breakingOptIn)       [no page now: /breaking redirects to the map]
+//   kind="digest"   → Weekly Signals Brief (digestOptIn)   [/today, /briefings weekly mode and weekly deck]
+//   kind="breaking" → Breaking alerts (breakingOptIn)       [no caller passes it now]
 const COPY = {
   digest: {
     field: 'digestOptIn',

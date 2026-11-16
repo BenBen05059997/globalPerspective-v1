@@ -1,4 +1,4 @@
-// legend — the approved default map tokens (STORY_WEB_RETHINK_PLAN.md §8, Legend.dc.html), as pure
+// legend — the approved default map tokens, as pure
 // helpers so the globe (deck.gl), the radar (SVG), the Key panel and the alert cards all read the
 // SAME channel rules and can never drift apart. Each visual channel means exactly one thing:
 //
@@ -15,7 +15,7 @@ import { freshnessState } from '@/shared/lib/freshness.js';
 
 export const TIERS = ['low', 'moderate', 'elevated', 'high'];
 
-// Legend.dc.html §2 (USGS-style steps, not a smooth scale): LOW r4 · MODERATE r6.5 · ELEVATED r9 ·
+// USGS-style steps, not a smooth scale: LOW r4 · MODERATE r6.5 · ELEVATED r9 ·
 // HIGH r9 + an outer ring at r14. The double ring — not a bigger dot — is what marks HIGH.
 const TIER_SIZE = {
   low: { r: 4, ringR: null },
@@ -104,7 +104,7 @@ export function hexToRgb(hex) {
 /**
  * desaturateRgb(rgb, amount) — the "older" look: pull each channel toward the colour's own
  * luminance grey by `amount` (0 = unchanged, 1 = fully grey). Keeps the hue family readable
- * (Legend.dc.html shows the political violet turning a greyed violet) while clearly reading as faded.
+ * (the political violet turns a greyed violet) while clearly reading as faded.
  */
 export function desaturateRgb(rgb, amount = 0.6) {
   if (!Array.isArray(rgb) || rgb.length < 3) return rgb;

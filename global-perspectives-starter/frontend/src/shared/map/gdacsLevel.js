@@ -1,4 +1,4 @@
-// gdacsLevel — L1 (STORY_WEB_RETHINK_PLAN.md §8): a GDACS situation's alert level shown as a TEXT
+// gdacsLevel — L1: a GDACS situation's alert level shown as a TEXT
 // badge ("ORANGE ALERT"), never inferred from marker colour (marker hue stays = crisis type, per
 // the legend rule). Two places carry the level:
 //   - the situation detail's `evidence.gdacs_level` (structured, e.g. "Orange") — preferred;

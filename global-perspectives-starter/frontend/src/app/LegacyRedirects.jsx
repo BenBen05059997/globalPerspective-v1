@@ -1,4 +1,4 @@
-// Retired routes (REDESIGN_MASTER_PLAN.md §3.1 / §3.9, operator 2026-10-01). Client redirects, so old
+// Retired routes (operator 2026-10-01). Client redirects, so old
 // links and emailed URLs keep working on any host. cloudflare/front-worker/production/worker.mjs
 // answers the same addresses with real 301s once it is uploaded; these stay as the fallback.
 //   /spider-demo         -> /weekly?view=web          (the unlisted prototype retired into the Stories WEB view)

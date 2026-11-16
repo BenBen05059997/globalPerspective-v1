@@ -1,7 +1,8 @@
 // landGeometry — the real-coastline land features + the console's ±60° crop frame, shared by
-// every consumer that needs "the world outline" (RadarMap, SituationMap3D, SituationMap, and the
-// Desk's small following map in deskMap.js). Split out in F1.10 (map-console review R1) because
-// deskMap.js — loaded on /account — used to reach into SituationMap.jsx for these two constants,
+// every consumer that needs "the world outline" (RadarMap, the Desk's small following map in
+// deskMap.js, the board's mapPlaces.js and the threads' countryFrame.js). Split out in F1.10
+// (map-console review R1) because deskMap.js — loaded on /account — used to reach into the
+// since-removed SituationMap.jsx for these two constants,
 // which dragged that file's `import * as d3 from 'd3'` (the whole library) and its unused default
 // component into the /account bundle. This module only needs topojson-client to decode the
 // bundled topology; no consumer of `land`/`FRAME` needs a d3 namespace import for that.

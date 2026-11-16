@@ -280,7 +280,7 @@ export function regionToCountryCode(regionName) {
 export function getTopicCountryCodes(topic) {
     const codes = new Set();
 
-    // From regions array only - trust Gemini's country extraction
+    // From regions array only - trust the model's country extraction
     // Note: Source URL inference removed to prevent mapping news to where it's REPORTED
     // instead of where it HAPPENED (e.g., Ukraine news from BBC was mapping to GB)
     if (Array.isArray(topic.regions)) {

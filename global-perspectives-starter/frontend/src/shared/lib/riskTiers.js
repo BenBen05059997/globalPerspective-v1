@@ -46,7 +46,7 @@ export function tierLabel(tier) {
 }
 
 // ---------------------------------------------------------------------------
-// Scoring model v2 — multi-dimensional risk (SCORING_MODEL_V2_PLAN.md).
+// Scoring model v2 — multi-dimensional risk.
 //
 // A record may carry a `dimensions` vector (new) and/or the legacy scalar
 // riskScore/riskLevel (always written, derived from the vector in Phase B).

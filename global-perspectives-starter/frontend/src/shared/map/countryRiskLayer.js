@@ -1,5 +1,4 @@
-// countryRiskLayer — pure helpers for the R4b COUNTRY RISK map layer (REDESIGN_MASTER_PLAN.md
-// §3.1 design system + §3.5 country states, project_risk_scoring: tiers 25/50/75, worst axis
+// countryRiskLayer — pure helpers for the R4b COUNTRY RISK map layer (tiers 25/50/75, worst axis
 // leads, never an average). Kept separate from lib/legend.js (the SITUATIONS layer's tokens)
 // because the two layers draw different things and must never blend their rules:
 //
@@ -16,7 +15,7 @@ import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
 
 // Backend cap (newsSensitiveData's country_intelligence action silently slices to 15 — see
-// CLAUDE.md's "batch ≤15 names per call"): any request bigger than this loses the tail silently,
+// backend/read-api/newsSensitiveData/src/index.js `.slice(0, 15)`): any request bigger than this loses the tail silently,
 // so every caller MUST chunk through this helper rather than call the proxy directly.
 export const MAX_NAMES_PER_CALL = 15;
 export const MAX_CONCURRENT_BATCHES = 3;

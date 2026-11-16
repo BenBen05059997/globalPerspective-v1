@@ -35,7 +35,7 @@ const SPIN_DEG_PER_SEC = 3; // "a few degrees a second at most" (task M3 spec)
 // Hue = kind of crisis, as RGB: CRISIS_RGB (shared/lib/crisisHue.js) is derived from the tokens.
 const rgbOf = (axis) => CRISIS_RGB[axis] || CRISIS_RGB.neutral;
 
-// R4a · the approved map tokens (lib/legend.js, Legend.dc.html) drawn with deck.gl:
+// R4a · the approved map tokens (lib/legend.js) drawn with deck.gl:
 //   shape = kind (◆ GDACS alert = a diamond · news situation = a small dot in a soft, feathered
 //   halo · selected = HUD brackets), hue = crisis type, size steps + a double ring for HIGH only,
 //   brightness = freshness (live glows · plain · older desaturated · 30d+ not drawn).
@@ -503,7 +503,7 @@ export default function SituationMap3D({
     }) : null;
   }, [storyFocusIso3]);
 
-  // Motion budget (M6, STORY_WEB_RETHINK_PLAN.md §8): only 3 things on the whole page may move —
+  // Motion budget (M6): only 3 things on the whole page may move —
   // the radar sweep, this 2.4s breathing pulse (recently changed situations, capped and
   // ranked by tier in pulse.js), and the selected story's travelling arc dashes.
   // Everything else stays static. Recomputed only when `active` changes (the 5-min poll), not

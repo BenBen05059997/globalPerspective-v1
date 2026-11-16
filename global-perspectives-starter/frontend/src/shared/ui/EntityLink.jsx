@@ -9,7 +9,7 @@ import { entityHref, storyHref } from '@/shared/lib/links.js';
 import { normKey, parentCountry } from '@/shared/lib/countries.js';
 import '@/shared/ui/blocks.css';
 
-// EntityLink — the one link for "a thing is named here" (PLAN_2026-10-19_linking_and_pages.md): a router link
+// EntityLink — the one link for "a thing is named here": a router link
 // to the entity's canonical address (shared/lib/links.js) that opens the shared hover/focus preview after a
 // short delay, closes on leave / blur / Esc, and never opens a popover on touch (a tap navigates).
 //   kind      'story' | 'country' | 'situation' | 'forecast'

@@ -2,7 +2,7 @@ import { deriveHeadline, AXES, AXIS_LABELS, tierLabel } from '@/shared/lib/riskT
 import { riskScoreToVar } from '@/shared/styles/tokens';
 import '@/shared/ui/risk/RiskScorecard.css';
 
-// Scoring-model-v2 scorecard (SCORING_MODEL_V2_PLAN.md Phase C). Renders a
+// Scoring-model-v2 scorecard. Renders a
 // country/thread record's dimension breakdown: a worst-axis headline + one bar
 // per axis + the per-axis grounding ("why"), so risk explains itself rather than
 // hiding behind one number. Renders NOTHING for scalar-only (pre-v2) records —

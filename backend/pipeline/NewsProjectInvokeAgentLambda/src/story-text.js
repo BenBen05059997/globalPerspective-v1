@@ -80,6 +80,7 @@ function buildTraceCausePrompt(topic, generatedDate) {
     snippets,
     '',
     'Grounding rule: the "proximate" event and ANY specific name, figure, or date must come from the Article Snippets — do not invent them or turn a hedge ("could") into a settled fact. The structural/contributing/alternativePerspective fields may use general background reasoning, but never fabricate a specific fact the snippets do not support; if unknown, keep it general. The same holds for every "evidence" text: say about a snippet only what it says. If a snippet is just a headline, add no actor, place, cause or quote it does not name, and do not finish a sentence that is cut off. Background reasoning stays general: no names, dates or figures from memory.',
+    'Talk about the event, never about the material: do not write that a snippet is cut off, empty or silent on something, and do not write "not stated in the snippet" or "not stated in the source". Where a detail is unknown, leave it out or keep the sentence general. In "when", name a weekday or a date only if a snippet states it; otherwise give the period in general words, for example "mid-November 2026".',
     'Return this exact JSON structure (all fields required):',
     `{
   "proximate": { "what": "string — the immediate trigger event in 1-2 sentences", "when": "string — approximate date or period" },
@@ -179,6 +180,9 @@ function buildStableTopicId(topic, idx = 0) {
 
 const TEXT_KINDS = ['summary', 'trace_cause'];
 
+/** The cause-chain prompt's version, stamped on its stored item (and so on the entry note). 2 = the rule against talking about the source text and against invented weekdays (decision 0061). The forecast's own lib.PROMPT_VERSION is a different number and is not touched. */
+const TRACE_CAUSE_PROMPT_VERSION = 2;
+
 /** The caps and sampling of the agent's text calls from its env (MAX_TOKENS, TEMPERATURE, TOP_P; the live MAX_TOKENS is 1500, decision 0060). */
 function storyDefaults(env) {
   return { maxTokens: parseInt(env.MAX_TOKENS || '600', 10), temperature: Number(env.TEMPERATURE || '0.2'), topP: Number(env.TOP_P || '0.9') };
@@ -229,12 +233,13 @@ function buildCacheItem({ pk, sk, topic, kind, response, ttlSeconds, generationI
     ttl: Math.floor(nowMs / 1000) + ttlSeconds,
     latencyMs: response.latencyMs,
     ...(kind === 'prediction' ? { promptVersion: lib.PROMPT_VERSION } : {}),
+    ...(kind === 'trace_cause' ? { promptVersion: TRACE_CAUSE_PROMPT_VERSION } : {}),
     ...(fingerprint ? { sourceFingerprint: fingerprint } : {}),
     lastVerifiedAt: new Date(nowMs).toISOString(),
   };
 }
 
 module.exports = {
-  TEXT_KINDS, storyDefaults, buildTopic, buildStableTopicId, normalizeList, buildSummaryPrompt, buildTraceCausePrompt, normalizeJsonResponse, buildArchiveEntry,
+  TEXT_KINDS, TRACE_CAUSE_PROMPT_VERSION, storyDefaults, buildTopic, buildStableTopicId, normalizeList, buildSummaryPrompt, buildTraceCausePrompt, normalizeJsonResponse, buildArchiveEntry,
   textPrompt, storyChatOptions, storyAnswer, finishText, buildCacheItem,
 };

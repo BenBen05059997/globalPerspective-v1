@@ -44,3 +44,13 @@ test('buildArchiveEntry stamps the archive time it is given', () => {
   assert.equal(e.archivedAt, '2026-11-17T01:02:03.000Z');
   assert.equal(e.category, 'disaster');
 });
+
+test('the cause-chain prompt forbids talking about the source text and an invented weekday; its item carries the prompt version', () => {
+  const prompt = T.textPrompt('trace_cause', topic, 'November 15, 2026');
+  assert.match(prompt, /do not write that a snippet is cut off, empty or silent on something/);
+  assert.match(prompt, /not stated in the snippet/);
+  assert.match(prompt, /name a weekday or a date only if a snippet states it/);
+  const item = (kind) => T.buildCacheItem({ pk: 'p', sk: 's', topic, kind, response: { content: '{}', modelId: 'm' }, ttlSeconds: 1, generationId: 'g', nowMs: 0 });
+  assert.equal(item('trace_cause').promptVersion, T.TRACE_CAUSE_PROMPT_VERSION);
+  assert.equal('promptVersion' in item('summary'), false);
+});

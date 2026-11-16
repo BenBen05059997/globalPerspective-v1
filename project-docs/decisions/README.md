@@ -18,7 +18,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0011](0011-track-record-and-studio.md) | 2026-09-25 | Track record lean and sampled; Studio stays a page | superseded by 0035 (confirm step by 0034, Studio by 0033) |
 | [0012](0012-story-web-is-news-based.md) | 2026-09-25 | A story's web is its own news; "judged to feed into", never "caused" | accepted (themes amended by 0058) |
 | [0013](0013-ds1-design-system-tier-never-a-colour.md) | 2026-09-26 | DS1: hue = crisis type; risk tier is never a colour | accepted (hues amended by 0022) |
-| [0014](0014-deepseek-replaces-gemini-no-fallback.md) | 2026-09-27 | DeepSeek replaces Gemini; no fallback provider | accepted (the "no fallback provider" rule amended by 0059) |
+| [0014](0014-deepseek-replaces-gemini-no-fallback.md) | 2026-09-27 | DeepSeek replaces Gemini; no fallback provider | accepted (the "no fallback provider" rule amended by 0059; models moved to Claude by 0060) |
 | [0015](0015-park-jobs-that-feed-nothing-shown.md) | 2026-09-28 | Park scheduled AI jobs whose output no page shows | accepted (resolver part superseded by 0027; Signals parked by 0032) |
 | [0016](0016-map-console-is-home.md) | 2026-10-01 | The map console is the home page | accepted |
 | [0017](0017-retired-routes-and-tours.md) | 2026-10-01 | /breaking and /weekly-markets redirect; guided tours removed | accepted (client-only redirects superseded by 0028) |
@@ -43,7 +43,7 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0036](0036-facts-file-format.md) | 2026-10-21 | Facts file format: layout, fact object, content IDs, Run, backfill | accepted (implements step 1 of 0035) |
 | [0037](0037-views-from-facts.md) | 2026-10-21 | Views rebuilt from facts: files, builder, serving, board contract | accepted (implements step 2 of 0035; amended by 0058) |
 | [0038](0038-forecast-loop.md) | 2026-10-22 | Forecast loop: few resolvable outcomes, nightly watch, verdict facts | accepted (refines 0034 and 0036, keeps 0011's sample) |
-| [0039](0039-weekly-review.md) | 2026-10-22 | Weekly review: DeepSeek per story, narrow auto-merge, operator aliases, golden week | accepted (implements step 3 of 0035; amends 0036 kinds and 0037 §2) |
+| [0039](0039-weekly-review.md) | 2026-10-22 | Weekly review: DeepSeek per story, narrow auto-merge, operator aliases, golden week | accepted (implements step 3 of 0035; amends 0036 kinds and 0037 §2; model amended by 0060) |
 | [0040](0040-raw-before-model.md) | 2026-10-22 | Raw before model, recovered days, re-assignable stories, canonical actors | accepted (amends 0036, 0037, 0038, 0039) |
 | [0041](0041-docs-slimmed-to-architecture-decisions-readmes.md) | 2026-10-26 | Docs slimmed to architecture, decisions, READMEs and one start file | accepted |
 | [0042](0042-notes-move-to-the-record.md) | 2026-10-31 | The daily model notes move to the record (`record/notes/`), one schema and ID rule | accepted; amends 0040 (reason text amended by 0058) |

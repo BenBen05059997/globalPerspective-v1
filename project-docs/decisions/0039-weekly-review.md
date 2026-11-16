@@ -2,6 +2,7 @@
 
 Status: accepted (operator, 2026-10-22; implements step 3 of 0035; amends 0036 kinds and 0037 section 2)
 Date: 2026-10-22
+Amended 2026-11-17: the weekly review model is now Claude Sonnet 5.5 (live `REVIEW_MODEL=anthropic:claude-sonnet-5-5` on `newsRecordReview`, decision 0060); "DeepSeek" and "the larger model" below describe 2026-10-22. The DeepSeek provider code stays as the way back.
 
 ## Context
 0035 gives the system a weekly clock: facts are daily, readings are the weekly understanding with hindsight. Step 3 builds the Lambda that writes them. Open questions were the model, whether the review may merge stories, how spelling variants of an actor become one, and how to test a model Lambda before it runs live. Design: `architecture/ARCHITECTURE_WEEKLY_REVIEW.md`.

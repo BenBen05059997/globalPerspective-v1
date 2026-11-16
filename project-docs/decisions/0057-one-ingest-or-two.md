@@ -2,6 +2,7 @@
 
 Status: proposed, operator has not decided (revisit after the record and the weekly are live; START_HERE lists the open selection decision). Moved here on 2026-11-04 from `ARCHITECTURE_INGEST_DESIGN.md`, which was a decision paper, not architecture; the text below is that paper unchanged except for headings. Follows 0035, 0040, 0042; context: [ARCHITECTURE_TIMELINE.md](../architecture/ARCHITECTURE_TIMELINE.md) (the record), [WORLD_MODEL.md](../architecture/WORLD_MODEL.md) (identity), `backend/pipeline/cli/README.md` (cleanup tools and the append-only repair policy).
 Date: 2026-11-04 (moved; the paper itself is older)
+Amended 2026-11-17: `newsIngest` now runs on Claude Sonnet 5.5 (live `GROK_MODEL=anthropic:claude-sonnet-5-5`, decision 0060), so "calls DeepSeek" below describes 2026-11-04. The DeepSeek provider code stays as the way back. The question is still undecided.
 
 ## Context
 Today, read from code and AWS when the paper was written:

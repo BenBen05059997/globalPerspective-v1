@@ -3,6 +3,7 @@
 Status: accepted
 Date: 2026-09-27
 Amended 2026-11-15: decision 0059 adds Anthropic as a second provider (chosen per job by the model value); the "no fallback provider" rule above no longer holds. DeepSeek stays supported.
+Amended 2026-11-17: decision 0060 moved all twelve model-calling jobs to Claude on 2026-11-16 (Haiku 5.5 or Sonnet 5.5 per job, set by env value; 0056 had moved four jobs to Flash first). So the consequence "four high-leverage calls on `deepseek-v4-pro`" no longer holds. The DeepSeek provider code stays as the way back.
 
 ## Context
 Story analysis ran on Gemini 2.5 Flash; most other jobs ran on DeepSeek. The AI pipeline had been

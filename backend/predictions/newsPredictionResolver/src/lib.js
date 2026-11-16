@@ -8,7 +8,7 @@
 
 const crypto = require('crypto');
 // The pool and draw rules (eligibility, lead window, the draw) are shared with the record's track-record view: _shared/questionPool.js.
-const { SAMPLE_K, LEAD_MIN, LEAD_MAX, sha256hex, rankKey, eligibleQuestions, draw, day, addDays, daysBetween, weekStart, weekEnd } = require('./_shared/questionPool');
+const { SAMPLE_K, sha256hex, eligibleQuestions, draw, day, addDays, weekStart, weekEnd } = require('./_shared/questionPool');
 const { isoWeekOfDay: weekOf } = require('./_shared/questionState'); // ISO week id of a YYYY-MM-DD day, e.g. 2026-10-05 -> "2026-W41"
 
 const RULE = 'v1';
@@ -74,8 +74,8 @@ function combinePasses(a, b) {
 }
 
 module.exports = {
-  RULE, SAMPLE_K, LEAD_MIN, LEAD_MAX, GRACE_DAYS, COVERAGE_GAP, RECORD_GAP, VOID_REASONS,
-  sha256hex, addDays, daysBetween, weekOf, weekStart, weekEnd, addWeeks,
-  newSeed, commitOf, rankKey, eligibleQuestions, draw, canConcludeNo, isDue,
+  RULE, SAMPLE_K, GRACE_DAYS, COVERAGE_GAP, RECORD_GAP, VOID_REASONS,
+  addDays, weekOf, weekStart, weekEnd, addWeeks,
+  newSeed, commitOf, eligibleQuestions, draw, canConcludeNo, isDue,
   quoteInEntry, validateDraft, combinePasses,
 };

@@ -134,4 +134,4 @@ function buildBundle(q, loaded, today) {
   return { entries, complete: Boolean(loaded.available && q.threadId && !failed), failed, coverageGaps };
 }
 
-module.exports = { runKey, factsKey, windowOf, loadEntries, movedThreads, buildBundle };
+module.exports = { factsKey, runKey, windowOf, loadEntries, movedThreads, buildBundle };

@@ -12,11 +12,10 @@
 const lib = require('./lib');
 const { rowsOfFacts } = require('./_shared/questionPool');
 const watch = require('./watch');
+const { factsKey, runKey } = require('./gather');
 
 const MODES = ['log', 'record', 'compare'];
 const FACT_DAYS = 120; // WATCH reads this many days of facts: a question lives at most LEAD_MAX (90) days to its deadline plus its grace and re-draft days
-const factsKey = (day) => `record/facts/${day}.jsonl`;
-const runKey = (day) => `record/runs/${day}.json`;
 
 const addDays = (d, n) => lib.addDays(d, n);
 const eachDay = (from, to) => { const out = []; for (let d = from; d <= to; d = addDays(d, 1)) out.push(d); return out; };

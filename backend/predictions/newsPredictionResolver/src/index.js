@@ -29,7 +29,7 @@ const { chat, parseJsonContent } = require('./_shared/llm');
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const LLM_KEY = process.env.XAI_API_KEY || '';
-const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // Q6: judgment on evidence; not the GROK_MODEL (flash)
+const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // the judge model (judgment on evidence)
 const DRAFT_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
 const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || String(watch.MAX_CANDIDATES), 10); // candidates per run
 const CHECK_BUDGET_MS = 420000; // stop starting checks after 7 minutes (Lambda timeout is 10)
@@ -373,6 +373,4 @@ function defaultDeps() {
 }
 
 exports.run = run;
-exports.MAX_UNCLEAR_DRAFTS = MAX_UNCLEAR_DRAFTS;
-exports.REDRAFT_AFTER_DAYS = REDRAFT_AFTER_DAYS;
 exports.handler = async (event = {}) => run(event, defaultDeps());

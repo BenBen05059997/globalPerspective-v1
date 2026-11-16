@@ -8,7 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import { corsHeaders, DEFAULT_ORIGINS } from './cors.js';
 import { verifyFirebaseToken } from './auth.js';
-import { checkPayload, utcDayStart, MAX_BODY_BYTES, DAILY_CAP, LENS_IDS } from './limits.js';
+import { checkPayload, utcDayStart, MAX_BODY_BYTES, DAILY_CAP } from './limits.js';
 import { freezeSources, makeProxyFetchers, sameNumbering } from './freeze.js';
 import { validateAnalysis } from './analysisValidator.js';
 import { validateStruct } from './analysisStruct.js';
@@ -172,5 +172,3 @@ export const handler = async (event = {}) => {
     return { statusCode: 500, headers: { ...corsHeaders(lowerHeaders(event.headers).origin, realDeps.config.origins), 'Content-Type': 'application/json', 'X-Robots-Tag': 'noindex, nofollow' }, body: JSON.stringify({ error: 'server_error' }) };
   }
 };
-
-export { LENS_IDS };

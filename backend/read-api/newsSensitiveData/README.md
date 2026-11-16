@@ -5,7 +5,7 @@ The site's public REST read proxy: one handler, many `action` values. It serves 
 Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `daily_brief`, `latest_daily_brief`, `weekly_brief` (`week=YYYY-MM-DD` for a past published brief), `narrative_thread`, `archive_range`, `thread_analysis`, `country_intelligence`, `country_facts`, `country_history`, `corrections_feed`, `systems_analysis`, `web_index`, `country_preview`, `thread_preview`, `ops` (the operator's money file, gated: see Gotchas). Which page calls which is in the group README.
 
 ## Deployment
-- Deployed name `newsReadApi` since 2026-11-04 (was `newsSensitiveData-dev`, kept for rollback until its removal; env cut to the 8 keys the code reads) · runtime `nodejs22.x` · 85 s · 512 MB · group `read-api` (scripts/functions.json)
+- Deployed name `newsReadApi` since 2026-11-04 (was `newsSensitiveData-dev`, kept for rollback until its removal; env cut to the 8 keys the code reads; 9 since `OPS_OPERATOR_UIDS` was added) · runtime `nodejs22.x` · 85 s · 512 MB · group `read-api` (scripts/functions.json)
 - Trigger: API Gateway REST API, path `/proxy` (`window.SENSITIVE_PROXY_ENDPOINT` is its `execute-api` URL; frontend via `shared/api/restProxy.js`); no schedule, no Function URL
 - Deploy: `scripts/lambda.sh newsReadApi diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
@@ -16,7 +16,7 @@ Actions: `topics`, `summary` / `prediction` / `trace_cause`, `today`, `rss`, `da
 - S3 `WORLD_BUCKET`: `ops` reads `monitoring/ops.json` (the role needs `s3:GetObject` on that key: `backend/monitoring/newsHealth/iam/read-api-ops-read.json`); with `NOTES_READS=notes|compare` `record/notes/{country,drift,story_analysis,story_history,country_facts}/` (decision 0053)
 - Env `OPS_OPERATOR_UIDS`: comma-separated Firebase uids allowed to call `ops`; unset or empty means nobody. Added at the newsHealth deploy (the live function had 8 env keys before it).
 - External: Google securetoken certs (`FIREBASE_PROJECT_ID`) for optional member-depth checks
-- No model key is needed. The live env still carries many names the code no longer reads (for example `GROK_*`, `XAI_API_KEY`, `MAPBOX_GEOCODING_KEY`, Firebase service-account fields); pruning them is an operator change after checking the deployed code.
+- No model key is needed. The live `newsReadApi` env has no model or service-account keys. The old-name Lambda `newsSensitiveData-dev` still carries many names this code does not read (for example `GROK_*`, `XAI_API_KEY`, `MAPBOX_GEOCODING_KEY`, Firebase service-account fields) until the operator deletes it.
 - `rss`: env `RECORD_READS` = `ddb` (default, unset = this) | `record` | `compare` (decision 0054). `record` builds the feed from `index/today.json` (the entries of the last 24 h, then the latest run when there are none) while the views are under 9 h old; the XML is byte-identical to the DynamoDB feed (live check 2026-10-31: 26 items, 31,923 bytes, equal to the served `/rss`). Needs `s3:GetObject` on `record/views/*` on the shared role `newsprojectLambdaRolefcb19312-dev`. The other actions are unchanged.
 
 ## Gotchas

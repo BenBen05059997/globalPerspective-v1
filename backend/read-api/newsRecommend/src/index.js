@@ -4,13 +4,11 @@
 //
 // One job: rank the current topic pool for a user. Personalized when a valid Firebase
 // JWT is supplied (interest profile derived from the user's saved items); otherwise
-// returns a "Trending" ranking (popularity × recency). The scoring lives in scoring.js
-// and is shared verbatim with the email digest sender — see
-// RECOMMENDATIONS_AND_DIGEST_PLAN.md.
+// returns a "Trending" ranking (popularity × recency). The scoring lives in scoring.js.
 //
 // Invocation: HTTP (Function URL or proxy passthrough) with optional
 // `Authorization: Bearer <token>`; body `{ limit? }`. Also callable directly with
-// `{ uid?, limit? }` for the digest cron.
+// `{ uid?, limit? }` (no schedule or Lambda invokes it that way today).
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
@@ -143,7 +141,6 @@ const DEFAULT_PREFS = Object.freeze({ breakingOptIn: false, digestOptIn: false, 
 // Membership tier — the drift-alert "follow a country" feature is a MEMBER perk
 // (MEMBER_GATING_PLAN.md P5). Reads the tier authority written by newsPolarBilling.
 // Fail-CLOSED (any miss/error → 'free'): a paid gate must not open on a lookup failure.
-// ⚠️ DEPLOY: needs USERS_DDB_TABLE env + dynamodb:GetItem on GlobalPerspectiveUserTable.
 async function getTier(uid) {
   if (!uid || !USERS_DDB_TABLE) return 'free';
   try {

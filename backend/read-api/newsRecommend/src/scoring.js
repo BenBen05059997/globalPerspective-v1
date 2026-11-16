@@ -1,8 +1,7 @@
 'use strict';
 
 // Pure, deterministic recommendation scoring — no AWS, no I/O, so it unit-tests
-// in isolation AND is imported verbatim by the digest sender (one algorithm, two
-// consumers: see RECOMMENDATIONS_AND_DIGEST_PLAN.md).
+// in isolation. Used only by this Lambda's index.js.
 //
 // Content-based, no ML. Inputs are already-resolved plain objects:
 //   topic        = { topicId, threadId, category, regions[], sources[] | sourceCount }

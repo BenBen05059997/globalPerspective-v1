@@ -4,7 +4,7 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 
 ## Deployment
 - Deployed name `newsRecommend` · runtime `nodejs22.x` · group `read-api` (scripts/functions.json)
-- Trigger: Function URL (frontend via `shared/api/restProxy.js`; newsEmailSender uses it as `UNSUB_BASE_URL`); no schedule
+- Trigger: Function URL (frontend via `shared/api/restProxy.js` for prefs, follows and alerts; no frontend caller asks for recommendations; newsEmailSender uses it as `UNSUB_BASE_URL`); no schedule
 - Deploy: `scripts/lambda.sh newsRecommend diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). Zip does not ship node_modules.
 
 ## Reads / writes
@@ -24,4 +24,4 @@ Content-based recommendations (no ML) plus notification preferences. Default act
 - Following a country also opts the user into drift email and stamps consent + unsubscribe token.
 
 ## Tests
-- `cd backend/read-api/newsRecommend/src && npm test` (`node test-scoring.mjs`, offline).
+- `cd backend/read-api/newsRecommend/src && npm test` (`node test-scoring.mjs`, then `node --test ../test/*.test.js`; offline).

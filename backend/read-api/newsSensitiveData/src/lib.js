@@ -1,11 +1,7 @@
 'use strict';
 
-// Pure helpers for the self-correction DEPTH gate (MEMBER_GATING_PLAN.md).
-// Dependency-free so it unit-tests standalone (node --test), matching the
-// newsAnalyze/NewsProjectInvokeAgentLambda src/lib.js pattern.
-//
-// ⚠️ DEPLOY: this file must be included in the newsSensitiveData deploy zip
-// (index.js requires it). The zip currently lists files explicitly — add lib.js.
+// Pure helpers for the read API (teaser cap, drift-note and topic dedupe, briefs, country facts, linking).
+// No AWS calls, so it unit-tests standalone (node --test).
 
 const { resolveIso3, iso3List } = require('./_shared/resolveIso3');
 const { briefWithIso3, weeklyWithIso3 } = require('./_shared/briefs'); // shared with the record's brief views (decision 0048)

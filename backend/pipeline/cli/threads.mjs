@@ -4,11 +4,12 @@
 //   node backend/pipeline/cli/threads.mjs list-joins --since 2026-10-12 [--all]
 //   node backend/pipeline/cli/threads.mjs merge <fromThreadId> <intoThreadId> [--days 90] [--apply]
 //   node backend/pipeline/cli/threads.mjs split <threadId> <topicId...> [--days 90] [--apply]
+//   node backend/pipeline/cli/threads.mjs move <fromThreadId> <intoThreadId> <topicId...> [--days 90] [--apply]
 //
 // list-joins is read-only: for every archived topic since <date> that joined an existing thread it
 // prints the score and keyword-only score against the entry it joined, both titles, and the route
 // the current rule (NewsProjectInvokeAgentLambda/src/threading.js) gives it.
-// merge / split READ live state, then PRINT every DynamoDB / S3 change; they write only with --apply
+// merge / split / move READ live state, then PRINT every DynamoDB / S3 change; they write only with --apply
 // (prod data: run --apply only with the operator's yes). Writes are conditional on the value read,
 // so a row the pipeline changed in between is skipped, not overwritten.
 // Uses the AWS CLI (no npm deps), like backend/distribution/cli/*.
@@ -384,7 +385,7 @@ function main(argv) {
     report(changes, apply);
     console.log('Situations keep their latched threadId until the next story-map match.');
   } else {
-    console.error('usage: threads.mjs list-joins --since YYYY-MM-DD [--all] | merge <from> <into> [--days N] [--apply] | split <threadId> <topicId...> [--days N] [--apply]');
+    console.error('usage: threads.mjs list-joins --since YYYY-MM-DD [--all] | merge <from> <into> [--days N] [--apply] | split <threadId> <topicId...> [--days N] [--apply] | move <from> <into> <topicId...> [--days N] [--apply]');
     process.exitCode = 2;
   }
 }

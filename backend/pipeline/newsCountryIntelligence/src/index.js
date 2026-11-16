@@ -48,7 +48,7 @@ async function mapWithConcurrency(items, limit, worker) {
 }
 const COUNTRY_TTL_DAYS = 90;
 const TOP_THREAD_IDS = 10;
-const MAX_COUNTRIES = 20; // kept for reference; the policy's topN / maxExtras (below) now set the cap
+const MAX_COUNTRIES = 20; // default of COUNTRY_TOP_N, the policy's topN (below)
 const WORLD_LATEST_URL = process.env.WORLD_LATEST_URL || 'https://globalperspective.net/data/world/latest.json';
 const POLICY_CFG = {
   baselineHours: Number(process.env.COUNTRY_BASELINE_HOURS || refreshPolicy.DEFAULT_CFG.baselineHours),

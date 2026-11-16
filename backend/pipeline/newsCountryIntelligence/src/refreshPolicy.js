@@ -14,7 +14,7 @@
 // candidates ONLY while they have an active alert.
 
 // Country identity (names, aliases, sub-national places) is the one shared resolver.
-const { isCountryName, normKey, canonicalName } = require('./_shared/placeFilter');
+const { isCountryName, canonicalName } = require('./_shared/placeFilter');
 
 const ACTIVE_STATES = new Set(['emerging', 'escalating']);
 
@@ -113,4 +113,4 @@ function unmatchedAlerts(hot, countries) {
   return [...hot.keys()].filter((n) => !have.has(n));
 }
 
-module.exports = { isCountryName, normKey, DEFAULT_CFG, canonicalName, hotCountriesFromWorld, decideRefresh, planRun, unmatchedAlerts };
+module.exports = { isCountryName, DEFAULT_CFG, canonicalName, hotCountriesFromWorld, decideRefresh, planRun, unmatchedAlerts };

@@ -4,6 +4,8 @@ Daily country briefings. Reads 30 days of topic archive (`today-archive` filtere
 then `archive#<date>`), joins thread analyses, groups by country, and asks `src/refreshPolicy.js` which
 countries to re-brief (new / weekly baseline 156 h / open alert in the public world file / coverage jump;
 never twice a UTC day; top `COUNTRY_TOP_N` plus up to `COUNTRY_MAX_ALERT_EXTRAS` alert-only countries).
+The baseline and the jump also read env `COUNTRY_BASELINE_HOURS`, `COVERAGE_JUMP_MIN` and `COVERAGE_JUMP_FACTOR`
+(defaults 156, 8 and 2 in `DEFAULT_CFG`; none is set in the live env on 2026-11-16).
 Each refresh grounds the LLM with editorial facts, `FACTS#` records, prior `DRIFT#` notes,
 then writes a 4-axis risk read (`src/_shared/riskDimensions.js`). `{ "dryRun": true }` returns the plan only.
 

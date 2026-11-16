@@ -1,6 +1,6 @@
 'use strict';
 
-// selection-core — the layered story selector (plan P7, project-docs/prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md).
+// selection-core — the layered story selector (plan step P7; making it the live selector is the P7d operator go, decision 0020).
 // One copy, used by the newsSelectionShadow Lambda and by predictions/jev-backtest/run.mjs. Pure except jevAsk (fetch).
 //   candidates(articles, earlierUrls) — story-scan articles → merged stories (clusterStories groups + same-story merge)
 //   attachAlerts(cands, sits, t)      — tag disaster stories that match an active GDACS Red/Orange event

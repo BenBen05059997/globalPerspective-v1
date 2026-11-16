@@ -120,4 +120,4 @@ function buildWebIndex({ rows, entries, now, targets = [], runId = null, isCount
   return { index, records };
 }
 
-module.exports = { buildWebIndex, MAX_AGE_DAYS, SCOPE_DAYS };
+module.exports = { buildWebIndex };

@@ -29,4 +29,4 @@ function pickSpreadEntries(entries, max = MAX_SHOWN) {
   return [...picked].sort((a, b) => a - b).map((i) => list[i]);
 }
 
-module.exports = { pickSpreadEntries, cleanTitle, MAX_SHOWN };
+module.exports = { pickSpreadEntries };

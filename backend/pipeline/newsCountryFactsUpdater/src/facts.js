@@ -84,4 +84,4 @@ function parseQidByIso3(bindings) {
   return m;
 }
 
-module.exports = { parseCapitals, parsePopulations, buildCapPop, CAPITALS_QUERY, POPULATIONS_QUERY, QID_BY_ISO3_QUERY, parseQidByIso3, qidOf };
+module.exports = { parseCapitals, parsePopulations, buildCapPop, CAPITALS_QUERY, POPULATIONS_QUERY, QID_BY_ISO3_QUERY, parseQidByIso3 };

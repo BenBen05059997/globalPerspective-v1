@@ -16,7 +16,7 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require(
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; the env sets the live model
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3000', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');

@@ -47,9 +47,9 @@ test('the model-output schema accepts the example and rejects shape errors', () 
   assert.equal(valid({}), true);
 });
 
-test('prompt: recovered headlines may be cited for what happened but carry no detail (review-4, kept in review-5)', () => {
+test('prompt: recovered headlines may be cited for what happened but carry no detail (review-4, kept in review-6)', () => {
   const {SYSTEM, PROMPT_VERSION} = require('../src/prompt');
-  assert.equal(PROMPT_VERSION, 'review-5');
+  assert.equal(PROMPT_VERSION, 'review-6');
   assert.match(SYSTEM, /recovered headlines/);
   assert.match(SYSTEM, /\[recovered headline, no text\]/);
 });
@@ -58,4 +58,9 @@ test('prompt: state only what the cited entries say; forecasts and absent entrie
   assert.match(SYSTEM, /State only what the cited entries say/);
   assert.match(SYSTEM, /Never describe a forecast branch or its trigger, or the absence of an entry, as the story's current status/);
   assert.match(SYSTEM, /neighbour story must cite that story's entry/);
+});
+
+test('prompt: no clause about what is missing, and no mention of the bundle in reader-facing text (review-6)', () => {
+  assert.match(SYSTEM, /A line says what happened and stops: add no clause about what is missing or not yet known/);
+  assert.match(SYSTEM, /never mention the bundle, the record or the entries in a line, chapter or flag text/);
 });

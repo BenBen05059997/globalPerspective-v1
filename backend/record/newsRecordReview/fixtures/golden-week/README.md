@@ -38,6 +38,8 @@ puts drafted answers through the same check.
 | review-4 | deepseek-v4-pro, 3 runs | 27 of 27 | 25 of 26 | 48-51 | 2-3 shape slips, 0 citation; plus 15 `over_cap` assignments on one story | pass the gates |
 | review-4 | deepseek-flash, 2 runs (2026-11-04) | 27 of 27 | 26 / 25 | 46 / 43 | 18 / 20 (alias and line shape slips, 1 chapter duplicate, 15 `over_cap`), 0 citation | pass the gates; 6 and 4 lines with a "still / pending / yet / remains" clause |
 | review-5 | deepseek-flash, 2 runs (2026-11-04) | 27 of 27 | 26 / 26 | 46 / 47 | 18 / 21 (alias shape slips, 1 chapter duplicate, 15 `over_cap`), 0 citation | pass the gates; 0 and 0 such lines |
+| review-5 | anthropic:claude-sonnet-5-5, 1 run (2026-11-16, `scripts/golden-week-claude.js`) | 27 of 27 | 25 | 30 | 1 (line over 200 chars), 0 citation | pass the gates; 3 lines with a missing-detail or "still reporting" clause, 1 of them naming "the bundle" |
+| review-6 | anthropic:claude-sonnet-5-5, 2 runs (2026-11-16) | 27 of 27 | 24 / 24 | 31 / 32 | 2 / 2 (lines over 200 chars), 0 citation | pass the gates; 0 and 0 such clauses, 0 and 0 "bundle"; run 1 had one line with a date found only in forecast text |
 
 Runs: `runs/review-4-real/readings-N.jsonl`, `run-N.json` (Pro). The Flash runs are not committed.
 

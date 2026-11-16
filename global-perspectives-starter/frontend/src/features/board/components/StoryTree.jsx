@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
+import WrittenLate from '@/shared/ui/WrittenLate.jsx';
 import StoryTreeDrawing from '@/features/board/components/StoryTreeDrawing.jsx';
 import { RECOVERED_LABEL, RECOVERED_DETAIL } from '@/features/board/lib/recordText.js';
 import { branchStatus, dayMonth } from '@/shared/lib/branchWording.js';
@@ -49,7 +50,7 @@ export default function StoryTree({ story, loading, error, today = todayUTC(), r
   const scoped = inChapter(story, level === 3 ? chapter : null);
   const pickEvent = (e) => { setEvent(e); setLevel(4); };
 
-  const trunk = scoped.entries.length ? <><h3>Trunk</h3><ol>{scoped.entries.map((e) => <li key={e.eventId}><time dateTime={e.date}>{dayMonth(e.date)}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => pickEvent(e)}>{e.title}</button>{e.recovered ? <span className="board-line"> · {RECOVERED_LABEL}</span> : null}</li>)}</ol></> : null;
+  const trunk = scoped.entries.length ? <><h3>Trunk</h3><ol>{scoped.entries.map((e) => <li key={e.eventId}><time dateTime={e.date}>{dayMonth(e.date)}</time> <ClaimTag kind="fact" /> <button className="board-strings__btn" onClick={() => pickEvent(e)}>{e.title}</button>{e.recovered ? <span className="board-line"> · {RECOVERED_LABEL}</span> : null}<WrittenLate entry={e} /></li>)}</ol></> : null;
 
   const forkRow = (f) => {
     const o = forkOutcome(f, present);
@@ -86,6 +87,7 @@ export default function StoryTree({ story, loading, error, today = todayUTC(), r
     return <div className="story-tree__body">
       <p className="board-line"><ClaimTag kind="fact" /> <time dateTime={event.date}>{dayMonth(event.date)}</time> {event.title}</p>
       {event.recovered ? <p className="board-line">{RECOVERED_LABEL} · {RECOVERED_DETAIL}</p> : null}
+      <WrittenLate entry={event} />
       {event.summary ? <p className="board-line">{event.summary}</p> : null}
       {event.sources?.map((s, i) => s.url ? <a className="board-link" key={i} href={s.url} target="_blank" rel="noreferrer">{s.outlet || s.title || s.url}</a> : null)}
       {drawn.length ? <><h3>Branches drawn this day</h3><ul>{drawn.map((b) => <li key={b.branchId}>{branchLine(b)}{branchPercent(b) != null ? ` · ${branchPercent(b)}%` : ''}</li>)}</ul></> : null}

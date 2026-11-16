@@ -147,6 +147,18 @@ describe('OpsPage pipeline panel', () => {
     expect(within(detail).getByText('heal')).toBeTruthy();
   });
 
+  it('a day with stories written late is its own warning status, with its late count in the detail card', async () => {
+    renderPage();
+    const grid = await screen.findByRole('region', { name: 'Pipeline by stage and day' });
+    expect(screen.getByLabelText('Cell key').textContent).toContain('written late');
+    fireEvent.click(within(grid).getByRole('button', { name: 'Agent wrote the archive, 2 Nov: written late' }));
+    const detail = screen.getByText(/Agent wrote the archive/, { selector: 'strong' }).closest('.ops-detail__body');
+    expect(within(detail).getByText('written late')).toBeTruthy();
+    expect(within(detail).getByText('lateEntries')).toBeTruthy();
+    expect(within(detail).getByText('12')).toBeTruthy();
+    expect(within(detail).getByText(/12 of 41 entries were written late/)).toBeTruthy();
+  });
+
   it('a cell that could not be read shows its error text', async () => {
     const health = devHealth();
     const row = health.days[5].rows[2];

@@ -65,6 +65,14 @@ describe('the index as the action\'s day map', () => {
     expect(dayMapFromIndex({ days: { '2026-10-30': { entries: [{ title: 't', iso3: ['EUU', 'WLD', 'FRA'], sources: [] }] } } }, '2026-10-31')['2026-10-30'].entries[0].regions).toEqual(['European Union', 'France']);
   });
 
+  it('carries a valid writtenLate marker into the day map and leaves a malformed one out', () => {
+    const ok = { writtenAt: '2026-11-16T23:30:00.000Z', slot: '2026-11-15T12:15:00.000Z' };
+    const day = (writtenLate) => dayMapFromIndex({ days: { '2026-11-15': { entries: [{ title: 't', iso3: [], sources: [], ...(writtenLate ? { writtenLate } : {}) }] } } }, '2026-11-17')['2026-11-15'].entries[0];
+    expect(day(ok).writtenLate).toEqual(ok);
+    expect(day(null)).not.toHaveProperty('writtenLate');
+    expect(day({ writtenAt: 'x', slot: ok.slot })).not.toHaveProperty('writtenLate');
+  });
+
   it('names a source by its outlet, else by the host of its url, and drops days outside the 30-day window', () => {
     const day = { entries: [{ title: 't', iso3: [], sources: [{ outlet: 'France 24', url: 'https://www.france24.com/x' }, { outlet: null, url: 'https://www.dawn.com/news/1' }] }] };
     const out = dayMapFromIndex({ days: { '2026-10-30': day, '2026-09-30': day } }, '2026-10-31');

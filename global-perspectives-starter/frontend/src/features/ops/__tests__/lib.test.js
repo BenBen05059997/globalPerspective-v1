@@ -31,6 +31,7 @@ describe('pipeline lib', () => {
     expect(dayParts('2026-11-03')).toEqual({ day: '3', month: 'Nov', long: '3 Nov' });
     expect(dayParts('bad').long).toBe('bad');
     expect(statusOf('weird').label).toBe('no data');
+    expect(statusOf('late')).toEqual({ glyph: '◷', label: 'written late' });
   });
 });
 

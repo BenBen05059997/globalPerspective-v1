@@ -5,6 +5,7 @@ export const STATUS = {
   ok: { glyph: '✓', label: 'ok' },
   thin: { glyph: '~', label: 'thin' },
   recovered: { glyph: '↺', label: 'recovered' },   // the agent row only: a day rebuilt from public records (raw articles, no entries, no forecasts)
+  late: { glyph: '◷', label: 'written late' },   // the agent row only: the day's stories were written after their run slot from saved articles (decision 0061)
   missing: { glyph: '✕', label: 'missing' },
   failed: { glyph: '!', label: 'failed' },
   nodata: { glyph: '·', label: 'no data' },

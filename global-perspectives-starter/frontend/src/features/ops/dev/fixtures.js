@@ -32,6 +32,8 @@ function dayRows(d) {
       : gap ? row('agent', 'missing', { entries: 0, normalRange: [25, 47], thinBelow: 20 }, s.agent)
         : d === '2026-11-01' ? row('agent', 'recovered', { entries: 0, normalRange: [25, 47], thinBelow: 20, heal: { outcome: 'recovered', agent: 'no_archive', recoveryAttempts: 1, recoveredArticles: 1624 } }, s.agent,
           { note: 'Recovered from public records: 1624 raw articles (GDELT GKG, Wayback); the model did not run for this day, so there are no story entries and no forecasts.' })
+        : d === '2026-11-02' ? row('agent', 'late', { entries: 41, lateEntries: 12, normalRange: [25, 47], thinBelow: 20 }, s.agent,
+          { note: '12 of 41 entries were written late, from articles saved on the day, after their run slots (decision 0061).' })
         : row('agent', d === '2026-10-31' ? 'thin' : 'ok', { entries: d === '2026-10-31' ? 17 : 41, normalRange: [25, 47], thinBelow: 20 }, s.agent),
     open ? row('record', 'nodata', {}, s.record, { note: 'day in progress' })
       : gap ? row('record', 'failed', { runStatus: 'failed', failures: ['facts: no archive entries for the day'] }, s.record)

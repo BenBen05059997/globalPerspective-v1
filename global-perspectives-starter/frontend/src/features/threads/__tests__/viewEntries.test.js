@@ -52,4 +52,12 @@ describe('combineTimeline', async () => {
     expect(combineTimeline(null, archive)).toBe(archive);
     expect(combineTimeline({ threadId: 't', entries: [], builtFrom: { factsThrough: '2026-10-30' } }, archive)).toBe(archive);
   });
+
+  it('carries a valid writtenLate marker and drops a malformed one', () => {
+    const ok = { writtenAt: '2026-11-16T23:30:00.000Z', slot: '2026-11-15T12:15:00.000Z' };
+    const row = (writtenLate) => ({ threadId: 't', entries: [{ eventId: 'e', date: '2026-11-15', at: ok.writtenAt, title: 'T', sources: [], ...(writtenLate ? { writtenLate } : {}) }] });
+    expect(viewEntriesToThread(row(ok))[0].writtenLate).toEqual(ok);
+    expect(viewEntriesToThread(row(null))[0]).not.toHaveProperty('writtenLate');
+    expect(viewEntriesToThread(row({ slot: ok.slot }))[0]).not.toHaveProperty('writtenLate');
+  });
 });

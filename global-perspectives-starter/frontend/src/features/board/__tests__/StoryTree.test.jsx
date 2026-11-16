@@ -246,4 +246,17 @@ describe('the drawn tree for a dense story', () => {
     expect(svg.querySelector('.st-present')).not.toBeNull();
     spy.mockRestore();
   });
+
+  it('an event written late carries one plain line in the trunk and on its card; a live or malformed one carries none', () => {
+    const late = { writtenAt: '2026-11-16T23:30:00.000Z', slot: '2026-11-15T12:15:00.000Z' };
+    const entries = storyA.entries.map((e) => (e.eventId === 'e2' ? { ...e, writtenLate: late } : e.eventId === 'e1' ? { ...e, writtenLate: { writtenAt: 'x', slot: late.slot } } : e));
+    show({ ...storyA, entries });
+    expect(screen.getAllByText('Written 16 Nov from articles saved on 15 Nov')).toHaveLength(1);
+    expect(screen.getByText('Written 16 Nov from articles saved on 15 Nov').closest('a, button')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Insurers raise war-risk premiums' }));
+    expect(screen.getAllByText('Written 16 Nov from articles saved on 15 Nov')).toHaveLength(1);
+    cleanup();
+    show(storyA);
+    expect(screen.queryByText(/Written .* from articles saved/)).toBeNull();
+  });
 });

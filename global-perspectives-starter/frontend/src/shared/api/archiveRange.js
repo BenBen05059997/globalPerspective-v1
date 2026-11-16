@@ -17,6 +17,7 @@ import { makeRecordViews } from '@/shared/api/recordViews.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
+import { writtenLateOf } from '@/shared/lib/writtenLate.js';
 
 const WINDOW_DAYS = 30;
 const DAY_MS = 86400000;
@@ -43,6 +44,7 @@ function entryFromRecord(e) {
     iso3,
     regions: iso3.map(placeOf).filter(Boolean),
     sources: (e.sources || []).map((s) => ({ source: s.outlet || hostOf(s.url) || '', url: s.url ?? undefined })),
+    ...writtenLateOf(e),
   };
 }
 

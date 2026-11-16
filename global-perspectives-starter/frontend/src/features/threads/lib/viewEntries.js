@@ -3,6 +3,7 @@
 // article rows are not shown here yet). Entry notes become `ai` text exactly as the archive stored it: markdown as is,
 // json as its text, cut at the archive's 1,500 characters.
 import { resolveCountry } from '@/shared/lib/countries.js';
+import { writtenLateOf } from '@/shared/lib/writtenLate.js';
 
 const MAX_AI_CHARS = 1500; // the agent's archive trim (NewsProjectInvokeAgentLambda trimAi)
 const AI_FIELD = { summary: 'summary', prediction: 'prediction', cause: 'trace_cause' };
@@ -45,6 +46,7 @@ export function viewEntriesToThread(view) {
         outletType: s.outletType ?? null, ...(s.tier ? { tier: s.tier } : {}), ...(s.snippet ? { snippet: s.snippet } : {}),
       })),
       ...(ai ? { ai } : {}),
+      ...writtenLateOf(e),
       fromRecord: true,
     };
   });

@@ -5,7 +5,7 @@ and then builds the thread, country and cause-web analyses that the site shows. 
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch
-This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3, daily notes). Timeline: writes no facts or readings; writes the entry, story_analysis, drift, country, link and web notes into record/notes/ (NOTES_PREFIX); its raw rows are still the source of entry, story_born and forecast_drawn facts, read only through world/ until the entries and forecasts inboxes exist. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 1, 2, 3: the selector (1), the story writer and forecasts (2), story analysis, country briefings, drift notes and the story web (3, daily notes). Timeline: writes no facts or readings; writes the entry, story_analysis, drift, country, link and web notes into record/notes/ (NOTES_PREFIX); newsAgent appends each entry and forecast line to the entries and forecasts inboxes (record/inbox/), and newsStoryRecord builds the entry, story_born and forecast_drawn facts from them (ENTRIES_SOURCE and FORECASTS_SOURCE are inbox live); the DynamoDB rows are still written. See [ARCHITECTURE_TIMELINE.md](../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Architecture

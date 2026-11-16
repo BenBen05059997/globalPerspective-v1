@@ -6,7 +6,7 @@ and to open a stored Summary, Prediction or Trace Cause for any topic.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: 1 Ingest → 2 Stories → 3 Daily notes → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → **9 Delivery** → 10 Watch
-This folder is stage 9: the today page (/today). Timeline: reads today's topics from raw tables; target: a today view of the daily facts. See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
+This folder is stage 9: the today page (/today). Timeline: reads the record's today view (index/today.json) first and falls back to the topics and today actions when the view is missing, stale or cannot answer (decision 0051). See [ARCHITECTURE_TIMELINE.md](../../../../../project-docs/architecture/ARCHITECTURE_TIMELINE.md).
 <!-- pipeline:end -->
 
 ## Status

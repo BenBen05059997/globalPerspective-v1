@@ -79,9 +79,11 @@ One JSON line per fact in `record/facts/YYYY-MM-DD.jsonl`; the file is the UTC d
   "sourceKey": "archive#2026-10-16|<generationId>|<topicId>",
   "sourceRow": { "store": "NewsCache", "key": "archive#2026-10-16", "index": 7 } }
 ```
+An entry written after its slot (decision 0061) carries `payload.writtenLate {writtenAt, slot}` on its fact and `writtenLate` on its story row and in `index/today.json`; a live entry has none.
+
 Rules: a fact is never edited or deleted; a change is a new fact (`correction`, `story_merged`) or a reading that supersedes. `eventId` makes re-runs safe (`appendLines` dedupes by it). Every fact names its source. Facts carry no judgment label.
 
-Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status `started|ok|partial|failed`, `inputs.archiveDay` `present|missing|thin`, counts, failures). The Run is the one mutable object and holds no world data. A day with no archive row gets a failed Run and no facts, except a recovered day (`recovery:true`), whose missing archive is expected (`inputs.recovered:true`, status ok).
+Each day also has a Run (`record/runs/YYYY-MM-DD.json`: status `started|ok|partial|failed`, `inputs.archiveDay` `present|missing|thin`, `inputs.lateWritten` `{entries, slots}` only on a day with stories written after their slot (decision 0061; the resolver counts such a day as a gap), counts, failures). The Run is the one mutable object and holds no world data. A day with no archive row gets a failed Run and no facts, except a recovered day (`recovery:true`), whose missing archive is expected (`inputs.recovered:true`, status ok).
 
 **Extent.** The facts start 2026-03-07, the first day of the archive. The days before the live replay began (2026-09-06) were copied in from the archive by replaying them through the nightly code (decision 0047; `backend/record/cli/backfill-history.mjs`, checked by `check-history.mjs`), so they carry the same facts, with these differences: no `iso3`, no actors and no `publishedAt` on any of those entries (`precision: day`; the archive row's places text is kept as `payload.regions`; deriving `iso3` from it is an open operator decision), and days where the archive had no row at all stay empty with a `failed` Run (`archiveDay: missing`). Forecasts that no rule can place on a story are not facts: the whole DynamoDB row is kept under `record/legacy/predictions/` (below). `record/facts/manifest.json` lists the days; read it for the first and last day.
 

@@ -32,7 +32,8 @@ FORECAST LOOP  (weekly draw, nightly watch; one story = one thread)
 |  |           also counted: operator-assigned recovered articles (latest assignment per id), reassigned entries and the survivor of a
 |  |           merged story; a recovered article is a headline only and may support `yes`, but its silence never supports `no`
 |  +- coverage: record/runs/DAY.json for each day from the draw to the due day; a day without a Run of status ok|partial and
-|  |           archiveDay present is a coverage gap (our outage is not silence in the world)
+|  |           archiveDay present, or with `inputs.lateWritten` (stories written after their slot, decision 0061), is a
+|  |           coverage gap (our outage is not silence in the world)
 |
 +- 4 JUDGE    boxed model, never sees p               [src/draft.js, src/lib.js]
 |  +- yes  = a verbatim quote of at least 12 characters found by code in the title or summary of a cited entry, then a second

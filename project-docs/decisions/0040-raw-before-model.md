@@ -54,5 +54,7 @@ What changes in 0035-0039:
 
 Source: the foundation review and selection audit (lost 2026-10-25 with the old mailbox).
 
+Amended 2026-11-17: decision 0061 is the "later decision" for model replay of recovered days, for the four runs the 2026-11-14/15 model outage lost: stories are written late from the saved articles, marked `writtenLate`, with no forecast.
+
 ## Amendment 2026-10-24: recovery source
 The GDELT DOC API rate-limits a single client for hours, so recovery reads GDELT's raw 15-minute GKG 2.1 files instead (static downloads, same coverage, headline from `PAGE_TITLE`, time = when GDELT saw the article, so `precision:"day"`). The DOC API stays as an opt-in fallback; Wayback RSS stays as the source with real publish times. Operator agreed 2026-10-24.

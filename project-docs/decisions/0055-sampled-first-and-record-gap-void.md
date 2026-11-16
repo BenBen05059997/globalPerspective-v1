@@ -18,3 +18,5 @@ The public track record scores only the pre-registered weekly sample (0011). The
 - Voids are final at once like every verdict (0034); the operator can still append a correction.
 - Not changed: the draw, the sample size, the eligibility window (0045), the coverage guard for `no`.
 - Design and code: `ARCHITECTURE_FORECAST_LOOP.md` section 2, `backend/predictions/newsPredictionResolver/README.md`.
+
+Amended 2026-11-17: decision 0061 adds a gap reason. A day whose Run carries `inputs.lateWritten` (stories written after their slot) counts as a record gap, so those stories may support a `yes` and never let a `no` stand.

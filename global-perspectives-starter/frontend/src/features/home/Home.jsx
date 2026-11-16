@@ -336,7 +336,7 @@ function Home() {
 
   const leftRail = (
     <>
-      <TodayArchiveSidebar mode="rail" entries={filteredArchiveEntries} />
+      <TodayArchiveSidebar entries={filteredArchiveEntries} />
       {archiveError && archiveEntries.length === 0 && (
         <div className="home-unavailable home-unavailable--rail" role="status" data-testid="today-archive-unavailable">
           <p>Couldn't load today's archive.</p>
@@ -359,7 +359,7 @@ function Home() {
   );
 
   const rightRail = (
-    <TopicNav mode="rail" topics={topics} categorizedTopics={categorizedTopics} />
+    <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
   );
 
   return (

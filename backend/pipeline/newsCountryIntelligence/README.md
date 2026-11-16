@@ -21,7 +21,7 @@ then writes a 4-axis risk read (`src/_shared/riskDimensions.js`). `{ "dryRun": t
 - External: `WORLD_LATEST_URL` (default `https://globalperspective.net/data/world/latest.json`). Bundled: `src/country_facts.json` (editorial facts).
 
 ## Models
-- `XAI_API_KEY` / `GROK_API_URL` (fallback `https://api.deepseek.com`) / `GROK_MODEL` (fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`: legacy names; the live model is DeepSeek. Thinking is disabled. Tunables `MAX_TOKENS` (5000), `TEMPERATURE`, `TOP_P`, `LLM_CONCURRENCY` (4).
+- `GROK_MODEL` (the name is old; the value is a model id) through the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: fewer invented facts than Sonnet, which padded thin countries with invented dates). Code fallback `deepseek-v4-pro`. The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). Thinking is off. Tunables `MAX_TOKENS` (5000; decision 0060 says 6500 if Sonnet is ever chosen), `TEMPERATURE`, `TOP_P` (DeepSeek only, see below), `LLM_CONCURRENCY` (4). Temperature and top_p are not sent to Claude, so `TEMPERATURE`/`TOP_P` only apply to DeepSeek. The code logs `Missing XAI_API_KEY` and stops when that key is unset.
 
 ## Gotchas
 - A failed world-file fetch means no alert refreshes; the weekly baseline still runs. Region / aggregate keys are not briefed (`isCountryName`); aliases (USA/US) canonicalize for alerts only, record keys stay verbatim.

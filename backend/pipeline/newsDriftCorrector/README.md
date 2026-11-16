@@ -3,7 +3,7 @@
 Living-analysis corrector. Per covered country (and per thread in the latest topics): (1) a deterministic
 gate on daily `HISTORY#` / `THREAD_HISTORY#` snapshots asks whether the conclusion moved recently (risk
 level / |delta score| >= 8 / trajectory, within `DRIFT_LOOKBACK_DAYS`); most days are a no-op with no LLM.
-(2) If it moved, DeepSeek picks the single numbered real archive event that explains it, or declares no
+(2) If it moved, the model picks the single numbered real archive event that explains it, or declares no
 single driver. (3) It writes a note and never overwrites the analysis. `src/directionCheck.js` rejects
 explanations whose direction contradicts the score delta (one retry, then a numbers-only note).
 Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` mails fresh country notes.
@@ -22,7 +22,7 @@ Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` ma
 - Countries: `DRIFT_COUNTRIES` (comma list; code default is 12 countries). `DRIFT_MAX_EVENTS` (25) events per prompt.
 
 ## Models
-- `XAI_API_KEY` / `GROK_API_URL` (fallback `https://api.deepseek.com`) / `GROK_MODEL` (fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`: legacy names hold DeepSeek. Thinking is disabled.
+- `GROK_MODEL` (the name is old; the value is a model id; code fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060; low confidence, Sonnet was slightly more disciplined). The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name uses DeepSeek (`GROK_API_URL`, `XAI_API_KEY`). `maxTokens` is 1000. Claude may write prose before the JSON, so the note is read through `jsonText`. Thinking is off. The code still skips a country or thread with status `no-llm-key` when `XAI_API_KEY` is unset, whichever model is set.
 
 ## Gotchas
 - Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink. `src/directionCheck.js` holds the direction-check prose rules (the frontend copy no longer exists).

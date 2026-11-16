@@ -14,12 +14,12 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - Env: `WORLD_BUCKET`, `RAW_CAPTURE_SHADOW`, `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_THRESHOLD`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_CROSS_TOPIC`, `TOPICS_LIMIT`.
 
 ## Models
-- `GROK_MODEL` (live `deepseek-flash` since 2026-11-04, decision 0056; fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
+- `GROK_MODEL` (the name is old; the value is a model id) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK). Live since 2026-11-16: Claude Sonnet 5.5 (`anthropic:claude-sonnet-5-5`, decision 0060: Sonnet won 8 of 8 against Haiku on topic selection). The prefix picks Anthropic with key `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` picks DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). The code fallback when `GROK_MODEL` is unset is `deepseek-v4-pro`. Thinking is off. The handler still stops with a missing-key error when `XAI_API_KEY` is unset, whichever model is set.
 
 ## Gotchas
 - Model-reply checks (whole or salvaged from a truncated reply): source URLs match the fetched pool after one HTML-entity decode and a trim (`&amp;` vs `&`); category `diplomacy` is mapped to `politics`, any other unlisted category is dropped; after the repeat drop, only the first `limit` topics are kept. Test: `test/topicFilters.test.js`.
 - A failed run on a scheduled event (missing key, model/upstream error, empty reply) throws, so the Lambda `Errors` metric counts it; only direct HTTP invocations get a 4xx/5xx response body. Test: `node --test src/scheduled-failure.test.js`.
-- The names "Gemini" and "Grok" in the code and logs are historical.
+- The names "Gemini" and "Grok" in the code, logs and env names are historical.
 - It emits `Access-Control-Allow-Origin: *` on its HTTP-shaped responses. If a Function URL is ever added, its CORS config must stay empty.
 - `INGEST_CAPTURE_TABLE` and `CAPTURE_TTL_DAYS` are still read but unused; capture is in S3.
 - `max_tokens` is 12000; truncated JSON output goes through `salvageTruncatedTopics`.

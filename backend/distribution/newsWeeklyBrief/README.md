@@ -17,7 +17,7 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.3)
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-v4-pro`) via the shared client `src/_shared/llm.js` (`GROK_API_URL`, fallback `https://api.deepseek.com`; key `XAI_API_KEY`). The GROK_/XAI_ names hold DeepSeek values.
+- `GROK_MODEL` (the name is old; the value is a model id) via the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: 0 cut-offs, 0 invented facts and 0 rule breaks by hand, tested on 2 weeks only). Code fallback `deepseek-v4-pro`. The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). `MAX_TOKENS` stays 3500. Temperature and top_p are not sent to Claude, so `TEMPERATURE`/`TOP_P` only apply to DeepSeek. The code fails with `Missing LLM key (XAI_API_KEY)` when that key is unset.
 
 ## Gotchas
 - Writes `status: 'published'` directly (auto-publish). To hold a bad brief back, set its status to `draft`; the serving action only serves `published`.

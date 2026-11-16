@@ -1,6 +1,6 @@
 # newsSituationIngest
 
-The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h max age), classifies new headlines in batches on a flash LLM (iso3, latlon, axis, category, severity, entities, English title), clusters them deterministically into stories (`src/classifier-core.js`), and keeps only stories with >=2 outlets or severity >=3 (max 80). newsSituationTracker reads the result.
+The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h max age), classifies new headlines in batches on a small LLM (iso3, latlon, axis, category, severity, entities, English title), clusters them deterministically into stories (`src/classifier-core.js`), and keeps only stories with >=2 outlets or severity >=3 (max 80). newsSituationTracker reads the result.
 
 ## Deployment
 - Deployed name `newsSituationIngest` · runtime `nodejs22.x` · group `situations` (scripts/functions.json)
@@ -14,10 +14,10 @@ The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h 
 - Tuning env names: `CLASSIFY_BATCH`, `MAX_BATCHES_PER_RUN`, `CLASSIFY_CONCURRENCY`, `MAX_AGE_HOURS`, `GDELT_PER_QUERY`
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-flash`) through the shared client `src/_shared/llm.js` (`backend/shared/src`): `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek, not xAI. Thinking mode is disabled in the request.
+- `GROK_MODEL` (the name is old; the value is a model id) through the shared client `src/_shared/llm.js` (`backend/shared/src`). Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: 105 of 105 test rows parsed and valid on both Claude models, and Sonnet costs 20 times more per call). Code fallback `deepseek-flash`. The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). Each batch call uses `json: true` and `maxTokens` 8192. Thinking is off.
 
 ## Gotchas
-- Returns `{ ok: false }` without fetching anything when `XAI_API_KEY` is unset.
+- Returns `{ ok: false }` without fetching anything when `XAI_API_KEY` is unset (the check is on that key even when the model is Claude).
 - RSS is parsed by `src/_shared/rss.js` (shared with newsInvokeGemini) through a small `parseRss` adapter in `src/index.js`: RSS 2.0, RDF (`<item rdf:about>`, `<dc:date>`: DW English, AllAfrica) and Atom; decimal and hex entities. The adapter keeps the article shape `{title, url, description (<=220), source, ageH, publishedAt}`; undated items get `ageH` 0. Since the 2026-11-02 fix DW appears (21 articles in the 12:00Z hour, was 0).
 - GDELT is off because Lambda egress IPs get throttled or refused by GDELT (code comment, 2026-09-09).
 - `classifier-core.js` entity normalization is checked against NewsProjectInvokeAgentLambda's `entity-normalize.js` by `scripts/check-shared-sync.mjs`.

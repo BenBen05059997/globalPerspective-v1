@@ -70,9 +70,11 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
 - Source fields: archive sources keep selector `publishedAt`, `outlet`, `age`; PRED# rows carry `threadId`, `category` (`categories[0]`),
   `forkId = <PK>|<SK>` and `scenarioIndex`; older rows lack them and stay readable.
 - `http()` emits `Access-Control-Allow-Origin: *`. `package.json` lists Bedrock SDK deps the code does not use.
-- Models: `XAI_API_KEY` / `GROK_API_URL` / `GROK_MODEL` are legacy names; the live provider is DeepSeek. `PREDICTION_MODEL` overrides the
-  forecast model. Calls go through shared `_shared/llm.js` `chat()` (thinking off, timeout 180 s, one transport retry); a model value
-  `anthropic:<model>` runs that call on Anthropic with `ANTHROPIC_API_KEY` (decision 0059).
+- Models: `GROK_MODEL` (summary and cause chain; the name is old, the value is a model id) and `PREDICTION_MODEL` (forecast and research
+  briefing; falls back to `GROK_MODEL` when unset). Both run on Claude Sonnet 5.5 since 2026-11-16 (decision 0060). Calls go through shared
+  `_shared/llm.js` `chat()` (thinking off, timeout 180 s, one transport retry). The provider comes from the value: `anthropic:<model>` uses
+  `ANTHROPIC_API_KEY` (decision 0059); a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, `XAI_API_KEY`). Token caps: `MAX_TOKENS`
+  (code default 600, live 1500: Claude's cause chain was cut off at 600) and `PREDICTION_MAX_TOKENS` (2500).
 
 ## Tests
 - `cd src && npm test` (`node --test ../test/*.test.js`). `test/inbox-reads.test.js` writes a fixture world with the agent's own code and

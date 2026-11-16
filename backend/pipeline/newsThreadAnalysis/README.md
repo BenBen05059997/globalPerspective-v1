@@ -15,7 +15,7 @@ Daily thread-level AI analysis. Reads 30 days of topic archives, groups entries 
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.2), `TOP_P` (0.9), `INTER_CALL_DELAY_MS`
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values.
+- `GROK_MODEL` (the name is old; the value is a model id) through the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: the judge could not separate it from Sonnet; 1 unparseable JSON answer in 20 on each model). Code fallback `deepseek-flash`. The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). The call uses `json: true`, so on Claude an answer that is complete but does not parse is asked once more. Live `MAX_TOKENS` is 6000 (code default 3500). Temperature and top_p are not sent to Claude, so `TEMPERATURE`/`TOP_P` only apply to DeepSeek. The code logs `Missing XAI_API_KEY` and stops when that key is unset.
 
 ## Gotchas
 - `ttl` attributes are set, but the SummarizeAndPredict table's TTL is disabled, so rows do not expire.

@@ -27,7 +27,7 @@ no entry anywhere) and were left out; that is a data finding, not a fixture choi
 29 stories, 462 fact lines, 19 day files, about 1.36 MB.
 
 ## Scoring (decision 0039, amended 2026-10-31)
-Run: `node scripts/golden-week.js real` from `backend/record/newsRecordReview` (env `GROK_API_URL`, `XAI_API_KEY`, `REVIEW_MODEL` as on the
+Run: `node scripts/golden-week.js real` from `backend/record/newsRecordReview` (env `REVIEW_MODEL` and the matching key, `ANTHROPIC_API_KEY` for an `anthropic:` value or `GROK_API_URL` and `XAI_API_KEY` for DeepSeek, as on the
 Lambda). Pass: over three runs, no story fails, no `no_citation`/`unknown_eventId` rejection, no other rejection beyond the odd shape
 slip; then an operator spot check of a few stories and the 2-3 story canary. `capture` writes the exact model input; `replay DIR`
 puts drafted answers through the same check.

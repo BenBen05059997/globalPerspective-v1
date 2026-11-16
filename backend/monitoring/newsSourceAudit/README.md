@@ -15,7 +15,7 @@ Scheduled source-truth audit for the summarizer. For the top `AUDIT_N` (default 
 - No S3 or DynamoDB writes
 
 ## Models
-- `AUDIT_MODEL` (code fallback `deepseek-v4-pro`; the live env sets it to `deepseek-flash`) at `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek. Thinking mode disabled.
+- `AUDIT_MODEL` (code fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: Sonnet over-flagged 1 of 5 summaries as a false drift and wrote more commentary). The `anthropic:` prefix uses `ANTHROPIC_API_KEY`; a bare name uses DeepSeek (`GROK_API_URL`, `XAI_API_KEY`). `maxTokens` is 800 (raised from 400 for Claude). Thinking is off. Any answer other than "OK" counts as drift (decision 0060 lists this as an open prompt problem).
 
 ## Gotchas
 - The rule is named `...Daily` but runs Mon/Wed/Fri only.

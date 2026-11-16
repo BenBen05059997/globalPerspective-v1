@@ -17,7 +17,7 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 - Other env names: `SYSTEMS_TEST_COUNTRIES` (comma list restricting targets), `MAX_TOKENS` (default 3000), `TEMPERATURE` (default 0.3)
 
 ## Models
-- `GROK_MODEL` (live `deepseek-flash` since 2026-11-04, decision 0056: as good in the test, valid graphs; code fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values. Thinking mode disabled.
+- `GROK_MODEL` (the name is old; the value is a model id) through the shared client `src/_shared/llm.js`. Live since 2026-11-16: Claude Haiku 5.5 (decision 0060: quality equal to Sonnet). Code fallback `deepseek-v4-pro`. The prefix `anthropic:` uses `ANTHROPIC_API_KEY`; a bare name such as `deepseek-flash` uses DeepSeek (`GROK_API_URL`, fallback `https://api.deepseek.com`, key `XAI_API_KEY`). Claude needs `MAX_TOKENS` 6000 here (a 15-thread country needed 4,298 tokens on Haiku and was cut off at 3000); the live env holds 6000 and the code default is 3000. Temperature and top_p are not sent to Claude, so `TEMPERATURE`/`TOP_P` only apply to DeepSeek. Thinking is off. The code logs `Missing XAI_API_KEY` and stops when that key is unset.
 
 ## Gotchas
 - `SYSTEMS#` rows carry a 14-day `ttl`, but the table's TTL is disabled, so old webs never expire; readers judge freshness from `generatedAt`.

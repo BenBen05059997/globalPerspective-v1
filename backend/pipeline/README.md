@@ -1,7 +1,7 @@
 # pipeline
 
 The content pipeline. It picks the day's news topics from RSS feeds, writes the story text and forecasts, links stories into threads,
-and then builds the thread, country and cause-web analyses that the site shows. It serves readers of the site pages. Every job runs on a schedule; all model calls go to a DeepSeek endpoint set in each Lambda's live env.
+and then builds the thread, country and cause-web analyses that the site shows. It serves readers of the site pages. Every job runs on a schedule; all model calls go through the shared client `backend/shared/src/llm.js`. Each Lambda's model env value picks the provider by a prefix (`anthropic:claude-haiku-5-5`, `anthropic:claude-sonnet-5-5`). Since 2026-11-16 the pipeline jobs run on Claude, Sonnet for topic selection and the story writer, Haiku for the rest (decision 0060). A bare name such as `deepseek-flash` selects DeepSeek.
 
 <!-- pipeline:begin (generated from project-docs/architecture/pipeline.json; do not edit) -->
 Pipeline: **1 Ingest** → **2 Stories** → **3 Daily notes** → 4 One reader → 5 Facts → 6 Review → 7 Views → 8 Weekly report → 9 Delivery → 10 Watch

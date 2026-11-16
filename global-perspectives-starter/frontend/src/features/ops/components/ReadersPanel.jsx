@@ -1,20 +1,10 @@
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import AsOf from '@/shared/ui/AsOf.jsx';
+import Stat from '@/features/ops/components/Stat.jsx';
 import { usd } from '@/features/ops/lib/money.js';
 import { dayParts } from '@/features/ops/lib/pipeline.js';
 import { count, familyBars, recent, storyLabel } from '@/features/ops/lib/readers.js';
-
-function Stat({ label, value, sub }) {
-  if (value == null) return null;
-  return (
-    <Card level={2} pad="sm" className="ops-stat">
-      <div className="ops-stat__label">{label}</div>
-      <div className="ops-stat__value">{value}</div>
-      {sub ? <div className="ops-stat__sub">{sub}</div> : null}
-    </Card>
-  );
-}
 
 function NotConnected() {
   return (

@@ -44,7 +44,8 @@ function cacheWrite(name, value) {
 
 // A tiny promise pool — mirrors useCountryRiskLayer.js's runPooled so both callers of
 // country_intelligence chunk the same way and neither silently truncates past the
-// backend's 15-name-per-call cap (newsSensitiveData index.js:517).
+// backend's 15-name-per-call cap (`MAX_NAMES_PER_CALL` in shared/map/countryRiskLayer.js; the read
+// API slices `countryNames` to 15).
 async function runPooled(items, limit, worker) {
   let i = 0;
   const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {

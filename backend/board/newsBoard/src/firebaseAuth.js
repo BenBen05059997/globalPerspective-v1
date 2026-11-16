@@ -1,7 +1,7 @@
 'use strict';
 
-// Firebase JWT verification without firebase-admin. COPIED from backend/read-api/newsSavedItems/src/index.js
-// (newsRecommend carries the same block): a candidate for backend/shared, not moved in this stage.
+// Firebase JWT verification without firebase-admin. A local copy of the logic in backend/shared/src/firebaseAuth.js
+// (makeFirebaseVerifier), which the read-api Lambdas use; newsBoard is the one Lambda still on its own copy.
 // verifyFirebaseToken('Bearer <jwt>') -> payload | null. The project id comes from FIREBASE_PROJECT_ID.
 
 const { createVerify } = require('crypto');

@@ -56,7 +56,7 @@ Errors: 401 no/invalid token; 400 validation (`code` `pin_budget_exceeded` + `bu
 
 ## Gotchas
 - **Inferred only:** every ours-string is stored `strength:'inferred'`; the web's own strength is shown, never stored as confirmed.
-- **Duplicated JWT block:** `src/firebaseAuth.js` is copied from `newsSavedItems` (`newsRecommend` carries the same one).
+- **Duplicated JWT block:** `src/firebaseAuth.js` is a local copy of `backend/shared/src/firebaseAuth.js` (`makeFirebaseVerifier`), which `newsSavedItems`, `newsRecommend` and `newsSensitiveData` use. newsBoard is the one Lambda still on its own copy.
 - `newsSavedItems` `get_saved_items` filters out `board#` keys; `newsRecommend` ignores board items (no `itemType`).
 - Follow lists are read-modify-write (no condition): two simultaneous follows can lose one.
 - A cold `connect` in record mode loads every notes day of three subtypes (about 310 small files, 5 MB) before answering.

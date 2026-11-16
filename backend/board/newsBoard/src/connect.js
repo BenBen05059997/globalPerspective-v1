@@ -73,4 +73,4 @@ async function connect(store, env, nowMs, rawA, rawB) {
   return { result: { pairKey: pairKey(a.key, b.key), a: { kind: a.kind, refId: a.refId }, b: { kind: b.kind, refId: b.refId }, ...result, limits } };
 }
 
-module.exports = { connect, parsePin };
+module.exports = { connect };

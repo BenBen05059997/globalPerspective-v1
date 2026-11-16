@@ -75,4 +75,4 @@ function presetCache(store, env, now) {
   };
 }
 
-module.exports = { computePresets, presetCache, PRESET_TTL_MS, PRESET_THREADS };
+module.exports = { computePresets, presetCache };

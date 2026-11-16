@@ -3,28 +3,6 @@ import { viewFirst, topicsPayload, todayPayload, notePayload } from '@/shared/ap
 
 // While the record's views are fresh (0050) the five calls below are answered from the today view (0051); each action is the fallback.
 
-const PREDICTION_WORD_LIMIT = 500;
-
-function trimToCompleteSentence(text, maxWords) {
-  if (!text || typeof text !== 'string') return '';
-  const words = text.trim().split(/\s+/);
-  if (words.length <= maxWords) return text.trim();
-  const trimmed = words.slice(0, maxWords).join(' ');
-
-  const boundaries = [];
-  for (let i = 0; i < trimmed.length; i += 1) {
-    const ch = trimmed[i];
-    if (ch === '.' || ch === '!' || ch === '?' || ch === '\n') {
-      boundaries.push(i);
-    }
-  }
-  if (boundaries.length) {
-    const lastBoundary = boundaries[boundaries.length - 1];
-    return trimmed.slice(0, lastBoundary + 1).trim();
-  }
-  return `${trimmed}...`;
-}
-
 function resolveTopicId(input, fallback) {
   if (!input) return fallback ?? null;
   if (typeof input === 'string') {
@@ -145,48 +123,6 @@ class ContentService {
       entries: Array.isArray(data.entries) ? data.entries : [],
       updatedAt: data.updatedAt || null,
     };
-  }
-
-  async generateSummary(topicOrId) {
-    const topicId = resolveTopicId(topicOrId);
-    if (!topicId) {
-      throw new Error('Summaries are only available for cached Gemini topics');
-    }
-    const data = await this.getTopicSummary(topicId);
-    return data?.content ?? '';
-  }
-
-  async generateTraceCause(topicOrId) {
-    const topicId = resolveTopicId(topicOrId);
-    if (!topicId) {
-      throw new Error('Trace Cause is only available for cached Gemini topics');
-    }
-    const data = await this.getTopicTraceCause(topicId);
-    return data?.content ?? ''; // Markdown content
-  }
-
-  async generatePredictions(topicOrArticle) {
-    const topicId = resolveTopicId(topicOrArticle);
-    if (!topicId) {
-      throw new Error('Predictions are only available for cached Gemini topics');
-    }
-    const data = await this.getTopicPrediction(topicId);
-    const content = typeof data?.content === 'string' ? data.content : '';
-    return {
-      impact_analysis: trimToCompleteSentence(content, PREDICTION_WORD_LIMIT),
-      cached: data?.cached ?? true,
-      raw: data,
-    };
-  }
-
-  async testConnection() {
-    try {
-      await this.getGeminiTopics(1);
-      return true;
-    } catch (error) {
-      console.error('Topics cache test failed:', error);
-      return false;
-    }
   }
 }
 

@@ -19,12 +19,12 @@ const TIERS = ['high', 'elevated', 'moderate', 'low'];
  *   href   → a real story page (threadId) — rendered as a link;
  *   onOpen → select it on the map.
  */
-export default function HudBriefPanel({ counts, lede = null, lead = null, heading = 'Situation brief', readingFallback = null, className = '' }) {
+export default function HudBriefPanel({ counts, lede = null, lead = null, heading = 'Situation brief', readingFallback = null }) {
   const tipId = useId();
   const tip = usePeek({ peekHeight: 200 });
   const explain = tip.openId === tipId;
   return (
-    <Card level="hud" pad="sm" className={`hud-panel hud-brief ${className}`.trim()} role="region" aria-label="Situation brief">
+    <Card level="hud" pad="sm" className="hud-panel hud-brief" role="region" aria-label="Situation brief">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <SectionHeader label={heading} />

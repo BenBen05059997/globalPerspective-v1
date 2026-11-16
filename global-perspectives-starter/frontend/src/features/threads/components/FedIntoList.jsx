@@ -7,12 +7,12 @@ import '@/features/threads/components/FedIntoList.css';
 
 const CONF_DOTS = { strong: 3, medium: 2, weak: 1 };
 
-// FedIntoList — the one rendering of a story-link row (STORY_WEB_RETHINK_PLAN §5.2b/c), shared by
+// FedIntoList — the one rendering of a story-link row, shared by
 // StoryMode's FED INTO slide, the Read-in-full Timeline "Show linked news" toggle, and the
 // Read-in-full "Why" section, so the wording and fields never drift between the three surfaces.
 // `direction`: 'into' (this story feeds the target — FedIntoSlide) or 'from' (the source story
 // fed into this one — "earlier news judged to feed in"). Every field is read straight off the
-// derived link record (storyLinks.js); nothing here invents a date, a headline or a confidence.
+// derived link record (webIndexLinks.js); nothing here invents a date, a headline or a confidence.
 export default function FedIntoList({ links, direction = 'into' }) {
   if (!links?.length) return null;
   return (

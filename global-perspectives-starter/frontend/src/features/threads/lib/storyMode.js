@@ -1,8 +1,8 @@
-// storyMode — pure logic for the story-mode slide deck (S2.1, TASK_2026-09-27_pages_local).
+// storyMode — pure logic for the story-mode slide deck.
 // Everything here is a pure function of real data (entries / analysis / forecast / links): no
 // invented dates, no placeholder copy. Freshness gating reuses the shared freshnessState ramp
 // (live <24h · plain 1–7d · older 7–30d amber · hidden 30d+) so this file, the map and the feed
-// never disagree about what "older" or "too old to show" means (CLAUDE.md, S5).
+// never disagree about what "older" or "too old to show" means.
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { resolveCountry } from '@/shared/lib/countries.js';
 
@@ -18,7 +18,7 @@ function ageDays(iso, now = Date.now()) {
 
 /**
  * analysisTextState(generatedAt) -> 'fresh' | 'older' | 'hidden' | 'unknown'
- * S5: amber "older" label after 7 days; the AI text itself is hidden after 30 days (the computed
+ * Amber "older" label after 7 days; the AI text itself is hidden after 30 days (the computed
  * date is still shown so the page stays honest about when the analysis was last run).
  */
 export function analysisTextState(generatedAt, now = Date.now()) {
@@ -40,8 +40,7 @@ export { shortDate };
 /**
  * rawDateLabel(dateStr) -> "Fri, Sep 4" — like formatDateLabel, but never collapses a date that
  * happens to equal today/yesterday to the word "Today"/"Yesterday". Used for the story's overall
- * date SPAN (BRIEF header), where "Today" would misstate a fixed historical range as still-live
- * (review: S2.1 monitor fix #3).
+ * date SPAN (BRIEF header), where "Today" would misstate a fixed historical range as still-live.
  */
 export function rawDateLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00Z');
@@ -63,7 +62,7 @@ function mostFrequent(list) {
  *   [{ key, label, from, to, country, iso3, mentionCount, entries, isInflection, inflectionDate }]
  * `entries` must be sorted OLDEST-FIRST (chronological chapters). Splits into up to
  * MAX_CHAPTERS contiguous, roughly-even groups — a thin story (1–3 entries) gets 1–3 chapters,
- * never an empty one (S6-style "no empty slides" rule applied to chapters too).
+ * never an empty one (no empty slides, chapters included).
  */
 export function buildChapters(entries, entryShortTitles, inflectionTopicId) {
   if (!Array.isArray(entries) || entries.length === 0) return [];
@@ -121,7 +120,7 @@ export function buildScrubberDays(entries) {
 
 /**
  * buildSlides(...) -> [{ key, label }] — the horizontal slide order: BRIEF, CH1..CHn (n<=4),
- * FED INTO (only when fedInto has entries — S6), WATCH (only when there are real deadlines).
+ * FED INTO (only when fedInto has entries), WATCH (only when there are real deadlines).
  */
 export function buildSlides({ chapters = [], fedInto = [], deadlines = [] }) {
   const slides = [{ key: 'brief', label: 'BRIEF' }];
@@ -131,12 +130,6 @@ export function buildSlides({ chapters = [], fedInto = [], deadlines = [] }) {
   return slides;
 }
 
-/**
- * viewFrom(entries) -> { byCountry: [{ code, count }], byType: [{ type, count }], total,
- *   unknownCount } | null — coverage by outlet country/type from the story's own `sources[]`
- *   metadata (STORY_DOSSIER_BOARD_DESIGN_BRIEF §"the view from"). Null when no source carries
- *   this metadata at all (hide the drawer rather than show an empty shell).
- */
 /**
  * scrubberRange(fromDate, toDate, deadlines, now) -> { startMs, endMs } — the scrubber's date
  * span. Extends past the story's newest entry to the furthest real forecast deadline (so ◆ marks
@@ -194,7 +187,7 @@ export function buildScrubberTicks(startMs, endMs, targetCount = 5) {
 /**
  * mostLikelyScenario(forecast) -> { name, probability, lead } | null — the forecast's own highest-
  * probability scenario (real `probability` field from the v1 prediction snapshot, never a
- * guess). Null when there's no forecast or no scenario carries a probability (S6-style: never
+ * guess). Null when there's no forecast or no scenario carries a probability (never
  * invent a "most likely" label the data doesn't support).
  *   name  the scenario's own name, or null when it is only the rank ("Most Likely"): printing it
  *         after "Most likely:" read "Most likely: Most Likely (60%)"
@@ -216,6 +209,12 @@ export function mostLikelyScenario(forecast) {
   return { name: label && !/^most likely$/i.test(label) ? label : null, probability: best.probability, lead };
 }
 
+/**
+ * viewFrom(entries) -> { byCountry: [{ code, count }], byType: [{ type, count }], total,
+ *   unknownCount } | null — coverage by outlet country/type from the story's own `sources[]`
+ *   metadata. Null when no source carries this metadata at all (hide the drawer rather than
+ *   show an empty shell).
+ */
 export function viewFrom(entries) {
   if (!Array.isArray(entries)) return null;
   const byCountry = new Map();

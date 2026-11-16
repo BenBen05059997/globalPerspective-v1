@@ -1,5 +1,5 @@
 // useDailyEditionsIndex — the /briefings editions strip must never fire one request per day for
-// 30 days (TASK_2026-09-27_pages_local.md S3: "watch the fan-out"). These tests cover: the probe
+// 30 days. These tests cover: the probe
 // window is capped at LOOKBACK_DAYS, a second mount for the same anchor makes zero new requests
 // (sessionStorage cache), and a probe failure is reported but never rendered as a false "no
 // edition" claim.

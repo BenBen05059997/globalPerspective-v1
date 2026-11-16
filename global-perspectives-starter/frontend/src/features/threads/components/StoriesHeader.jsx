@@ -23,7 +23,7 @@ const PHONE_TABS = [
   { key: 'timeline', label: 'Timeline' },
 ];
 
-// READ's own List | Board | Web toggle (phone): Board and Web are reachable without a fourth tab (P1 keeps READ / MAP / TIMELINE).
+// READ's own List | Board | Web toggle (phone): Board and Web are reachable without a fourth tab (the phone keeps READ / MAP / TIMELINE).
 const READ_VIEWS = [
   { key: 'list', label: 'List' },
   { key: 'board', label: 'Board' },

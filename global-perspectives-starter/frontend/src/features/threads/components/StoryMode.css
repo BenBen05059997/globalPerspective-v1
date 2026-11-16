@@ -161,7 +161,7 @@
   white-space: nowrap;
   color: var(--accent);
 }
-/* Review fix #4: date ticks along the axis so the scrubber's scale is legible, not just marks
+/* Date ticks along the axis so the scrubber's scale is legible, not just marks
    with no reference. */
 .sm-scrubber-axis { position: relative; height: 14px; margin-top: 2px; }
 .sm-scrubber-tick {

@@ -53,7 +53,7 @@ function AnalysisNote({ generatedAt, children }) {
   );
 }
 
-// Review fix #8: the AI story-arc paragraph used to run off the bottom of the card with no cue.
+// The AI story-arc paragraph would run off the bottom of the card with no cue.
 // Show the first ~3 sentences (cardText.js's shared summarizer, so story mode reads the same as
 // the map's story card) with an explicit "Read more" toggle, instead of relying only on scroll.
 function ExpandableText({ text, tag }) {
@@ -300,9 +300,9 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
   const scrubberDays = useMemo(() => buildScrubberDays(thread.entries), [thread.entries]);
   const inflectionDate = chapters.find((c) => c.isInflection)?.inflectionDate || null;
 
-  // Review fix #1: while the fed-into fetch is in flight, treat it as empty so the FED INTO dot
+  // While the fed-into fetch is in flight, treat it as empty so the FED INTO dot
   // never appears (and disappears again) mid-load — it only ever shows once we KNOW there's a
-  // real link (S6).
+  // real link.
   const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = links;
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
   const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
@@ -344,15 +344,15 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
   const who = analysis?.keyActors || [];
   const view = useMemo(() => viewFrom(thread.entries), [thread.entries]);
   const sourceCount = thread.allSources.length;
-  // Review fix #2: a drawer with nothing behind it is hidden entirely (button included), not shown
-  // as an empty "not analysed yet" shell — the task said hide, not stub.
+  // A drawer with nothing behind it is hidden entirely (button included), not shown
+  // as an empty "not analysed yet" shell.
   const hasWhy = whySteps.length > 0;
   const hasWho = who.length > 0;
   const hasViewFrom = !!view;
   const hasSources = sourceCount > 0;
   const anyDrawer = hasWhy || hasWho || hasViewFrom || hasSources;
 
-  // Map shading: every chapter's country gets a wash (S7 — never a made-up pin).
+  // Map shading: every chapter's country gets a wash (never a made-up pin).
   const activeChapter = chapters.find((c) => c.key === activeSlide?.key) || null;
   const shading = useMemo(() => {
     const out = [];
@@ -367,19 +367,19 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
     }
     return out;
   }, [chapters, category]);
-  // Review fix #5: the map used to open on its generic default view (Africa) until a chapter slide
+  // The map would otherwise open on its generic default view (Africa) until a chapter slide
   // was visited. Default to the story's own primary country (its first chapter's) on every slide,
   // including BRIEF/FED INTO/WATCH, so it always opens centred on the story, never adrift.
   const primaryIso3 = chapters.find((c) => c.iso3)?.iso3 || null;
   const mapFocusIso3 = activeChapter?.iso3 || primaryIso3;
-  // Batch 4 / F: judged links (strong + medium) to other stories, drawn between approx. places; memoised so the map
+  // Judged links (strong + medium) to other stories, drawn between approx. places; memoised so the map
   // does not redraw on every render.
   const linkArcs = useMemo(
     () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...(fedIntoLoading ? [] : fedFromRaw)], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
     [webIndex, thread.threadId, fedInto, fedFromRaw, fedIntoLoading, primaryIso3],
   );
 
-  // Review fix #9: size the console to the space actually available under the fixed nav/status
+  // Size the console to the space actually available under the fixed nav/status
   // header, so nothing scrolls at 1440×900. Measured (not guessed) from this element's own
   // position, so it stays correct whatever banners/breadcrumbs sit above it.
   const rootRef = useRef(null);

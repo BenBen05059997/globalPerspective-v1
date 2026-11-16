@@ -4,7 +4,7 @@ import { shortDate } from '@/features/threads/lib/storyMode.js';
 import Button from '@/shared/ui/Button.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 
-// SharedActorsList — "Shares actors with" (STORY_WEB_RETHINK_PLAN §5.2d), the Read-in-full Why
+// SharedActorsList — "Shares actors with", the Read-in-full Why
 // section's FACT line: other stories whose analyses name the same actors. Rows come from
 // webIndexLinks.deriveFromIndex().shared (web_index.shared[], ambient actors already removed by the
 // backend; analyses over 30 days old already dropped). Two or more shared actors are shown; a single

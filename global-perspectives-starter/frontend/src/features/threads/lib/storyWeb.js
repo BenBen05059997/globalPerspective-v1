@@ -1,4 +1,4 @@
-// storyWeb — the pure logic behind the Stories WEB view (/weekly?view=web, REDESIGN_MASTER_PLAN §3.4):
+// storyWeb — the pure logic behind the Stories WEB view (/weekly?view=web):
 // the union of every analysis's story links as ONE story graph. No React, no fetching, no clock
 // reads (callers pass `now`), so every rule is unit-tested.
 //
@@ -8,10 +8,10 @@
 //   websUsed[] the analyses the index was built from: { country, generatedAt, nodes }
 //   threads    { id: { title, state, places } }
 //
-// Honesty rules (master plan §1, STORY_WEB_RETHINK_PLAN §5): a link is a MODEL JUDGMENT ("judged to
+// Honesty rules: a link is a MODEL JUDGMENT ("judged to
 // feed into", never "caused"); the mechanism text is verbatim; each analysis keeps its OWN
 // confidence (the merged edge shows the strongest AND lists every analysis's word); analyses older
-// than 30 days are hidden and COUNTED (S5; the table's TTL is off, so the cut is client-side); a
+// than 30 days are hidden and COUNTED (the table's TTL is off, so the cut is client-side); a
 // story with no archive coverage has no date and is not drawn (never placed by a guess).
 import { analysisTextState } from '@/features/threads/lib/storyMode.js';
 import { crisisOf } from '@/features/threads/lib/storyGroups.js';

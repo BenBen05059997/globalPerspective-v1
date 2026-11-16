@@ -1,8 +1,7 @@
-// editions.js — pure date-range helpers for the /briefings editions strip (S3). No fetching, no
+// editions.js — pure date-range helpers for the /briefings editions strip. No fetching, no
 // fabricated dates: every dateKey/weekKey these functions produce is a real calendar date derived
 // from a real anchor the caller already has (e.g. the last edition the daily-brief hook served,
-// or the weekOf of the one weekly brief the backend can return). Kept pure + tested per CLAUDE.md
-// ("pure logic in lib/ with vitest tests").
+// or the weekOf of the one weekly brief the backend can return). Pure and unit-tested.
 
 /** todayKey — UTC date key (YYYY-MM-DD), the same convention useDailyBrief uses. */
 export function todayKey(now = new Date()) {

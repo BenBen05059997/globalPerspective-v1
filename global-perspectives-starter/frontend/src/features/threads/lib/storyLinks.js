@@ -1,10 +1,9 @@
 // storyLinks — pure derivation of "news this story is judged to feed into" (the FED INTO slide)
-// from the country systems-analysis graphs (SYSTEMS#<place> — see newsSystemsAnalysis /
-// STORY_WEB_RETHINK_PLAN.md §5). Each graph has `nodes[{ threadId, summary }]`,
+// from the country systems-analysis graphs (SYSTEMS#<place> — see newsSystemsAnalysis).
+// Each graph has `nodes[{ threadId, summary }]`,
 // `edges[{ from, to, confidence, lagDays, mechanism, citedEntries }]` and its own `generatedAt`.
 // A story "feeds into" the news at `edge.to` when `edge.from === threadId` — that is this story's
-// own outgoing causal edges, never inferred, never a max-confidence guess across disagreeing webs
-// (STORY_WEB_RETHINK_PLAN §5: "when webs disagree, show each web's confidence; never take the max").
+// own outgoing causal edges, never inferred.
 import { analysisTextState } from '@/features/threads/lib/storyMode.js';
 
 const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
@@ -14,7 +13,7 @@ const CONF_RANK = { strong: 3, medium: 2, weak: 1 };
  *   mechanism, citedEntries, country, generatedAt, freshness }]
  * `systemsRecords`: [{ country, generatedAt, nodes, edges }]. De-duplicated by target thread,
  * keeping the strongest-confidence, most-recent record for each. Records whose analysis is more
- * than 30 days old are dropped (S5 "hide after 30 days"); 7–30 day records are kept but flagged
+ * than 30 days old are dropped (hidden after 30 days); 7–30 day records are kept but flagged
  * `freshness: 'older'` so the UI can show the amber label.
  */
 export function deriveFedInto(threadId, systemsRecords = []) {
@@ -24,7 +23,7 @@ export function deriveFedInto(threadId, systemsRecords = []) {
   for (const record of systemsRecords) {
     if (!record) continue;
     const freshness = analysisTextState(record.generatedAt);
-    if (freshness === 'hidden') continue; // S5: analysis older than 30 days is not shown
+    if (freshness === 'hidden') continue; // analysis older than 30 days is not shown
     const nodeById = new Map((record.nodes || []).map((n) => [n.threadId, n]));
     for (const edge of record.edges || []) {
       if (edge.from !== threadId || !edge.to || edge.to === threadId) continue;
@@ -52,8 +51,8 @@ export function deriveFedInto(threadId, systemsRecords = []) {
 
 /**
  * deriveFedFrom(threadId, systemsRecords) -> same shape as deriveFedInto, but for INCOMING
- * edges (edge.to === threadId) — STORY_WEB_RETHINK_PLAN §5(c) "Earlier news judged to feed in".
- * Only rendered by callers when non-empty (S6-style: no empty-shell sections).
+ * edges (edge.to === threadId) — "Earlier news judged to feed in".
+ * Only rendered by callers when non-empty (no empty-shell sections).
  */
 export function deriveFedFrom(threadId, systemsRecords = []) {
   if (!threadId || !Array.isArray(systemsRecords)) return [];

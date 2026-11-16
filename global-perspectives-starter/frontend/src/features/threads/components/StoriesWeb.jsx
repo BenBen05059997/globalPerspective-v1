@@ -17,7 +17,7 @@ import {
   layoutWeb, mergeWebLinks, nodeLinkWords, pickWebNodes, strongestLinks, webDateLabel, webFootnote,
 } from '@/features/threads/lib/storyWeb.js';
 
-// StoriesWeb — the WEB view (/weekly?view=web, REDESIGN_MASTER_PLAN §3.4 B4): the union of every
+// StoriesWeb — the WEB view (/weekly?view=web): the union of every
 // analysis's story links as a story graph, plus its accessible list twin "Strongest links".
 //   graph: the N most-linked stories as nodes in crisis-type lanes, x = the story's peak coverage
 //          day (the archive day with the most articles), node size = link degree, dashed edges

@@ -90,10 +90,10 @@ export default function BriefingMode({
     };
     measure();
     const raf = requestAnimationFrame(measure);
-    // Layout's own "AI paused" banner loads asynchronously (a separate network round-trip) and,
+    // Layout's "paused since" status line loads asynchronously (a separate network round-trip) and,
     // when it lands after this mount's first measurement, pushes the console down without firing
     // a `resize` event — re-measuring shortly after catches that late shift instead of baking in
-    // a too-tall height from before the banner existed.
+    // a too-tall height from before the line existed.
     const settleTimer = setTimeout(measure, 400);
     window.addEventListener('resize', measure);
     return () => {

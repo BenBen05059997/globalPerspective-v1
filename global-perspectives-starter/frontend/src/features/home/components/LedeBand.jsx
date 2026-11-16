@@ -1,5 +1,5 @@
 // LedeBand — the deterministic "Today's lede" orientation strip shown at the top
-// of Home and the Map. Fed by utils/composeTopicsLede (pure, no LLM). Renders
+// of Home (/today). Fed by lib/composeTopicsLede (pure, no LLM). Renders
 // NOTHING when there is no real lede, so it can never show a fabricated headline.
 //
 // Props: the spread result of composeTopicsLede() — { empty, lede, topicCount,

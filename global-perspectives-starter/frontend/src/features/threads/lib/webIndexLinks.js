@@ -1,8 +1,8 @@
 // webIndexLinks — derives one story's links and state from the whole `web_index` object. The link
 // rows keep the shape storyLinks.js (the pre-index derivation) produced, so FedIntoList and the
 // slides did not change, and add `cited` (dated, titled headlines) when the web stored them.
-// Each web keeps its OWN confidence: two webs that link the same pair give two rows, never the max
-// (STORY_WEB_RETHINK_PLAN §5). Freshness: amber after 7 days, hidden after 30 (client-side, the
+// Each web keeps its OWN confidence: two webs that link the same pair give two rows, never the max.
+// Freshness: amber after 7 days, hidden after 30 (client-side, the
 // table's TTL is off).
 import { analysisTextState } from '@/features/threads/lib/storyMode.js';
 

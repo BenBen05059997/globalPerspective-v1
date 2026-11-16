@@ -52,7 +52,7 @@ function humanizeThreadId(id) {
     .join(' ') || 'Story Arc';
 }
 
-// Living-analysis drift note helpers (Phase 3): tidy the "event [n]" artifact + format the date.
+// Living-analysis drift note helpers: tidy the "event [n]" artifact + format the date.
 const DRIFT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function driftDay(s) {
   const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -150,9 +150,8 @@ export default function ThreadPage() {
   const requestedTab = searchParams.get('tab');
   const allowedTabs = ['overview', 'timeline', 'actors', 'sources'];
   const contentTab = allowedTabs.includes(requestedTab) ? requestedTab : 'overview';
-  // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page, on desktop and phone
-  // alike (S2.2 — PhoneStoryMode replaces the phone's former long-page default). "Read in full" is
-  // the alternate, long accessible page (same component on both breakpoints).
+  // Story mode is the default story page, on desktop and phone alike (PhoneStoryMode on the phone).
+  // "Read in full" is the alternate, long accessible page (same component on both breakpoints).
   const isPhone = useIsPhone();
   const readFull = requestedTab != null;
   const showStoryMode = !readFull;
@@ -231,7 +230,7 @@ export default function ThreadPage() {
   const sourceRollup = thread?.sourceRollup || [];
   const sourceCounts = rollupCounts(sourceRollup);
 
-  // Phase 4 — Living forecast. Fetch the thread's newest v1 prediction snapshot (across all its
+  // Living forecast. Fetch the thread's newest v1 prediction snapshot (across all its
   // topic entries). Hook is unconditional (before early returns); honest-empty when no v1 forecast.
   // A story with no entries on record (once the read has answered) asks for its forecast whole: it has no topics to name.
   const forecastTopicIds = useMemo(
@@ -241,7 +240,7 @@ export default function ThreadPage() {
   const { snapshot: forecast, loading: forecastLoading } = useThreadForecast(forecastTopicIds, threadId);
   const hasForecast = !!(forecast && forecast.scenarios?.length);
 
-  // S2.2 (STORY_WEB_RETHINK_PLAN.md §5): the same news-based links story mode's FED INTO slide
+  // The same news-based links story mode's FED INTO slide
   // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
   // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
@@ -463,7 +462,7 @@ export default function ThreadPage() {
           <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
           <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />
           <SaveButton itemType="thread" itemId={threadId} metadata={{ title: displayTitle, category }} />
-          {/* Review fix #7: story mode has its own "Read in full" entry in its header — this is
+          {/* Story mode has its own "Read in full" entry in its header — this is
               only the way BACK, shown once we're actually on the full page, so there is never
               more than one "Read in full"-ish control on screen at once. */}
           {readFull && (
@@ -597,9 +596,8 @@ export default function ThreadPage() {
                 ))}
               </OverviewSection>
             )}
-            {/* STORY_WEB_RETHINK_PLAN.md §5.2: "Why" = the cause chain above, then the news this
-                story is judged to feed into / feed in from (S6-style honest-empty when the story
-                hasn't been part of a cross-story analysis, or the analysis found no links). */}
+            {/* "Why" = the cause chain above, then the news this story is judged to feed into / feed
+                in from; each list shows only when it has links. */}
             {fedInto.length > 0 && (
               <OverviewSection label="News this story is judged to feed into" count={distinctTargets(fedInto)} unit="stories">
                 <p className="tp-ov-text tp-ov-text--note">
@@ -676,9 +674,9 @@ export default function ThreadPage() {
             </div>
           ) : null
         )}
-        {/* "Show linked news" (STORY_WEB_RETHINK_PLAN.md §5.1): the story's own chapters (same
-            buildChapters grouping story mode's CH1-CH4 slides use), each with a toggle for the
-            links this story feeds into / from — S6-style, hidden entirely when there are none. */}
+        {/* "Show linked news": the story's own chapters (same buildChapters grouping story mode's
+            CH1-CH4 slides use), each with a toggle for the links this story feeds into / from;
+            hidden entirely when there are none. */}
         {activeTab === 'timeline' && chapters.length > 0 && (fedInto.length > 0 || fedFrom.length > 0) && (
           <div className="tp-chapters-web">
             <SectionHeader as="h3" label="Chapters" />

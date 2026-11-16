@@ -6,9 +6,8 @@ import { loadViewsFresh } from '@/shared/api/viewsFresh.js';
 import { lastNDateKeys, todayKey, addDaysKey } from '@/features/briefings/lib/editions.js';
 import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief.js';
 
-// useDailyEditionsIndex — powers the daily editions strip without a request-per-day fan-out
-// (TASK_2026-09-27_pages_local.md S3: "watch the fan-out"). Probes at most LOOKBACK_DAYS dates
-// (the design brief's own §6.7 interim: "probe backwards … stopping after 14 dates"), in small
+// useDailyEditionsIndex — powers the daily editions strip without a request-per-day fan-out.
+// Probes at most LOOKBACK_DAYS dates backwards, in small
 // batches, and caches the found/not-found result in sessionStorage so re-opening /briefings in
 // the same tab costs zero extra requests. A network failure leaves that date 'unknown' (never
 // silently 'no edition') and is reported once via reportFetchError. A probe's "no edition" is

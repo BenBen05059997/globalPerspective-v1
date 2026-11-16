@@ -1,5 +1,5 @@
-/* LedeBand — "Today's lede" orientation strip (Home + Map). Compact, editorial,
-   sits directly under the StatusStrip / map title. */
+/* LedeBand — "Today's lede" orientation strip (Home). Compact, editorial,
+   sits directly under the StatusStrip. */
 .lede-band {
   display: flex;
   flex-wrap: wrap;

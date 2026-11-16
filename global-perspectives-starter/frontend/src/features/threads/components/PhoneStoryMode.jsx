@@ -83,7 +83,7 @@ function DrawerSheet({ drawerKey, onClose, whySteps, who, view, sources }) {
   );
 }
 
-// PhoneStoryMode — P1 + PH (TASK_2026-09-27_pages_local S2.2): the phone default for the story
+// PhoneStoryMode — the phone default for the story
 // page. READ (default) shows the same slide deck as desktop, one slide at a time (swipe or ◀▶,
 // dots); MAP loads the WebGL/radar map only once this tab opens, with the active slide as a
 // BottomSheet; TIMELINE is the scrubber's chapters + deadlines as a vertical dated list, tapping

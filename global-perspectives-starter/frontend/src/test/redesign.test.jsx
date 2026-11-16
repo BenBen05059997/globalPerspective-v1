@@ -242,20 +242,6 @@ describe('Atom: StatusStrip', () => {
   });
 });
 
-describe('Atom: RiskScoreBadge', () => {
-  it('renders numeric score', async () => {
-    const { default: B } = await import('@/shared/ui/risk/RiskScoreBadge');
-    render(<B score={75} />);
-    expect(document.querySelector('.rsb')).toHaveTextContent('75');
-    expect(document.querySelector('.rsb-high')).toBeInTheDocument();
-  });
-  it('renders enum level when score absent', async () => {
-    const { default: B } = await import('@/shared/ui/risk/RiskScoreBadge');
-    render(<B level="elevated" />);
-    expect(document.querySelector('.rsb-elevated')).toBeInTheDocument();
-  });
-});
-
 describe('Atom: RiskDeltaPill', () => {
   it('returns null with fewer than 2 snapshots', async () => {
     const { default: P } = await import('@/shared/ui/risk/RiskDeltaPill');

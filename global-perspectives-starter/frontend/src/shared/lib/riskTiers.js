@@ -7,7 +7,7 @@
 // Canonical tiers (4):  low 0-24 · moderate 25-49 · elevated 50-74 · high 75-100.
 //
 // Historically three call sites each invented their own bands — tokens.js
-// riskScoreToVar (75/50, no "moderate"), RiskScoreBadge (70/40), and a
+// riskScoreToVar (75/50, no "moderate"), a risk score badge (70/40, since deleted), and a
 // moderate→elevated string alias — so a score of 72 read "high" in one place and
 // "elevated" in another, and "moderate" always rendered as orange "elevated".
 // This collapses all three onto the canonical definition.

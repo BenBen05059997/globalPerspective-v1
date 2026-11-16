@@ -12,7 +12,7 @@ import from here; here imports from no feature and not from `app/`.
 - `lib/` - pure helpers with no UI: links, countries, risk tiers, dates and freshness, branch and question wording, board constants, view-to-page mappers (`viewAnalysis.js`), LLM provider catalog (used by the eval client only).
 - `map/` - the shared map kit: `RadarMap`, `SituationMap3D` (deck.gl globe), `StoryMap`, country geometry and coordinates (`countryGeo.js` is generated: `node scripts/gen-country-geo.mjs`), the country risk layer, legend and pulse helpers.
 - `styles/` - `tokens.css` (the one token set) and `tokens.js` (the same colors for canvas and JS).
-- `ui/` - shared building blocks (Button, Card, Chip, Tabs, SectionHeader, TierChip, PhoneTabs, StoryRow, ...), their CSS (`primitives.css`, `blocks.css`, `atoms.css`), `boot/` (loader) and `risk/` (risk badges).
+- `ui/` - shared building blocks (Button, Card, Chip, Tabs, SectionHeader, TierChip, PhoneTabs, StoryRow, ...), their CSS (`primitives.css`, `blocks.css`, `atoms.css`), `boot/` (loader) and `risk/` (risk scorecard and delta pill).
 
 ## Single-source modules: reuse, do not copy
 - Page addresses: `lib/links.js` (`ROUTE`, `storyHref`, `countryHref`, `briefingHref`, `mapHref`, `breakingHref`, `entityHref`). Never type a route string elsewhere.

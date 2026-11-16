@@ -179,6 +179,11 @@ function buildStableTopicId(topic, idx = 0) {
 
 const TEXT_KINDS = ['summary', 'trace_cause'];
 
+/** The caps and sampling of the agent's text calls from its env (MAX_TOKENS, TEMPERATURE, TOP_P; the live MAX_TOKENS is 1500, decision 0060). */
+function storyDefaults(env) {
+  return { maxTokens: parseInt(env.MAX_TOKENS || '600', 10), temperature: Number(env.TEMPERATURE || '0.2'), topP: Number(env.TOP_P || '0.9') };
+}
+
 /** The prompt of a summary or cause-chain call. Throws for any other kind. */
 function textPrompt(kind, topic, generatedDate) {
   if (kind === 'summary') return buildSummaryPrompt(topic, generatedDate);
@@ -230,6 +235,6 @@ function buildCacheItem({ pk, sk, topic, kind, response, ttlSeconds, generationI
 }
 
 module.exports = {
-  TEXT_KINDS, buildTopic, buildStableTopicId, normalizeList, buildSummaryPrompt, buildTraceCausePrompt, normalizeJsonResponse, buildArchiveEntry,
+  TEXT_KINDS, storyDefaults, buildTopic, buildStableTopicId, normalizeList, buildSummaryPrompt, buildTraceCausePrompt, normalizeJsonResponse, buildArchiveEntry,
   textPrompt, storyChatOptions, storyAnswer, finishText, buildCacheItem,
 };

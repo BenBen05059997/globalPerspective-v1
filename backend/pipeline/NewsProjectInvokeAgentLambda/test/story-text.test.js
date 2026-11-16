@@ -34,6 +34,11 @@ test('buildCacheItem is the stored row: keys, json flag, the write time it is gi
   assert.deepEqual([item.PK, item.SK, item.topicId, item.action, item.model, item.sourceFingerprint, item.threadId], ['TOPIC#Quake-0', 'TRACE_CAUSE', 'Quake-0', 'trace_cause', 'm', 'fp', 'thread-x']);
 });
 
+test('storyDefaults reads the agent caps from its env, with the old fallbacks', () => {
+  assert.deepEqual(T.storyDefaults({}), { maxTokens: 600, temperature: 0.2, topP: 0.9 });
+  assert.deepEqual(T.storyDefaults({ MAX_TOKENS: '1500', TEMPERATURE: '0.5', TOP_P: '0.8' }), { maxTokens: 1500, temperature: 0.5, topP: 0.8 });
+});
+
 test('buildArchiveEntry stamps the archive time it is given', () => {
   const e = T.buildArchiveEntry(topic, { summary: 's' }, 'g', 10, 'thread-x', '2026-11-17T01:02:03.000Z');
   assert.equal(e.archivedAt, '2026-11-17T01:02:03.000Z');

@@ -5,7 +5,7 @@ const { chat } = require('./_shared/llm');
 const threading = require('./threading');
 // The topic and archive-entry shapes, the summary and cause-chain prompts, the call options and the stored item live in story-text.js,
 // shared with the recovery script (decision 0061).
-const { buildTopic, buildStableTopicId, buildArchiveEntry: buildEntry, textPrompt, storyChatOptions, storyAnswer, finishText, buildCacheItem } = require('./story-text');
+const { buildTopic, buildStableTopicId, buildArchiveEntry: buildEntry, textPrompt, storyDefaults, storyChatOptions, storyAnswer, finishText, buildCacheItem } = require('./story-text');
 const draw = require('./forecast-draw');
 const { staleReason, staleProcessedRun } = require('./run-guard');
 const { slugify } = threading;
@@ -24,10 +24,8 @@ const {
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (single grounded call); '' = same as GROK_MODEL
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
-const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
+const { maxTokens: DEFAULT_MAX_TOKENS, temperature: DEFAULT_TEMPERATURE, topP: DEFAULT_TOP_P } = storyDefaults(process.env);
 const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '2500', 10);
-const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
-const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const STAGING_ITEM_ID = 'staging';

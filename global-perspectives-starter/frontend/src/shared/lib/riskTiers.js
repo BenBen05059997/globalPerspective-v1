@@ -12,8 +12,6 @@
 // "elevated" in another, and "moderate" always rendered as orange "elevated".
 // This collapses all three onto the canonical definition.
 
-export const TIERS = ['low', 'moderate', 'elevated', 'high'];
-
 // Sort rank — most severe first (high 0 … low 3). Matches the old local
 // RISK_ORDER in CountryListPage so existing sorts are unchanged.
 export const TIER_ORDER = { high: 0, elevated: 1, moderate: 2, low: 3 };
@@ -68,8 +66,6 @@ export const AXIS_LABELS = {
 
 // An axis with score >= this reads "elevated" (matches the elevated band).
 const AXIS_ELEVATED = 50;
-// Surface the compound breadth flag when at least this many axes are elevated.
-export const BREADTH_MIN = 3;
 
 // Pull a numeric 0-100 out of an axis value that may be a bare number or a
 // { score, why } object. Anything else → null.

@@ -28,7 +28,7 @@ let leaving = false; // pagehide fired: in-flight fetches are cancelled, not bro
 const NETWORK_FAILURE = /Request timed out after|Failed to fetch|Load failed|NetworkError/i;
 
 // True when this failure is not a reader-visible problem. Exported for tests.
-export function isNoise(message) {
+function isNoise(message) {
   if (typeof navigator !== 'undefined' && navigator.webdriver) return true;
   if (!NETWORK_FAILURE.test(String(message))) return false;
   if (leaving) return true;

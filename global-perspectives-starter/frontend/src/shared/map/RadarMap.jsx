@@ -144,7 +144,6 @@ export default function RadarMap({
   const markerElsRef = useRef(new Map());   // situation id -> its <g class="rd-marker"> node
   const bearingsRef = useRef(new Map());    // situation id -> bearing deg from map centre
   const projectionRef = useRef(null);
-  const zoomRef = useRef(null);             // the d3-zoom behavior, rebound on every redraw
   const zoomTransformRef = useRef(null);    // F2.2: last user zoom/pan, reapplied after each redraw
   const seenIdsRef = useRef(new Set());     // situation ids the last lap trigger saw (C6 R1/R5)
   const onSelectRef = useRef(onSelect);
@@ -470,7 +469,6 @@ export default function RadarMap({
         root.attr('transform', e.transform);
         layoutLabels(e.transform);
       });
-      zoomRef.current = zoom;
       svg.call(zoom).on('dblclick.zoom', null);
       if (zoomTransformRef.current) svg.call(zoom.transform, zoomTransformRef.current);
 

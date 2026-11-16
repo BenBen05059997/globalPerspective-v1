@@ -13,9 +13,6 @@ export const STATE_META = {
   past_deadline_unchecked: { glyph: '▢', label: 'Awaiting check', short: 'awaiting check', kind: 'past' },
 };
 
-// Void reasons are worded once, in branchWording (0038); re-exported so question surfaces share them.
-export { VOID_REASON_WORDS as VOID_REASON_LABEL } from '@/shared/lib/branchWording.js';
-
 export function stateMeta(state) {
   return STATE_META[state] || null;
 }

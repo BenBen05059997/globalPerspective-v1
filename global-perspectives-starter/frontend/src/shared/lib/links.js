@@ -118,7 +118,7 @@ function absoluteUrl(path) {
 }
 
 export {
-  SITE_URL, absoluteUrl,
+  absoluteUrl,
   ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, todayHref, breakingHref,
   entityHref, boardHref,
 };

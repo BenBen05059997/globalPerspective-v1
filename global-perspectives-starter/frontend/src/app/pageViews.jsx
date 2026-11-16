@@ -16,7 +16,7 @@ function send() {
   window.gtag?.('event', 'page_view', { page_title: document.title, page_location: href });
 }
 
-export function trackPageView(href) {
+function trackPageView(href) {
   if (pending?.href === href) return; // StrictMode runs a layout effect twice in dev
   send(); // a route left before its title arrived still counts, with the title it had
   const watcher = new MutationObserver(send); // any write to <title> (document.title = ...) is the page naming itself

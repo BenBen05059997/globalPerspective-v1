@@ -8,7 +8,7 @@
 //   absent   — the API cannot search; Deep-research mode is disabled for it (honest gating,
 //              never silently degraded: a "search the web" prompt to a no-search API would
 //              make the model FAKE having searched).
-export const PROVIDERS = [
+const PROVIDERS = [
   {
     id: 'deepseek',
     label: 'DeepSeek',

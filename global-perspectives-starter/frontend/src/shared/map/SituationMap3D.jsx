@@ -231,8 +231,6 @@ export default function SituationMap3D({
   }), [active]);
   // `newIds` (since-your-last-visit) is shown in the feed only.
   void newIds;
-  // reduceMotion kept for future globe-view motion; the map itself is now static (see below).
-  void reduceMotion;
 
   // Spread arcs + affected fill are a SELECTION STATE, never a base layer (the spaghetti answer):
   // they exist only while one situation is focused. Origin → each affected-country centroid.

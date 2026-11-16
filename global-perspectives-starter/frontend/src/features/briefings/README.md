@@ -35,7 +35,7 @@ This folder is stage 9: the daily and weekly briefs page. Timeline: reads the br
 - `components/BriefingSlides.jsx` (slide bodies; the weekly deck ends with `SubscribeCard`), `EditionsStrip.jsx`, `BriefingError.jsx`
   (failed request: reported, with retry), `Trajectory.jsx`, `PlaceLinks.jsx`
 - `lib/dateKey.js`, `lib/briefingSlides.js` (slide builders, map focus), `lib/editions.js` (date helpers, `nearestWeek`)
-- `hooks/` - `useWeeklyBrief`, `useDailyEditionsIndex`, `useBriefEditions` (newest daily key, weekly edition keys), `useStoryQuestion`;
+- `hooks/` - `useWeeklyBrief`, `useDailyEditionsIndex`, `useBriefEditions` (`useWeeklyEditionKeys`: weekly edition keys), `useStoryQuestion`;
   the daily brief hook is shared (`@/shared/hooks/useDailyBrief.js`).
   Both brief hooks read the record through `@/shared/api/briefViews.js`.
 - Public API (`index.js`): `useWeeklyBrief` (used by `account` and `map`; keep its return shape). Imports from other features: none.

@@ -41,7 +41,7 @@ This folder is stage 9: the today page (/today). Timeline: reads the record's to
 - Group guides: [pipeline](../../../../../backend/pipeline/README.md), [predictions](../../../../../backend/predictions/README.md)
 - `newsIngest` (Scheduler `InvokeGoogleGemini`, 04:15 / 12:15 / 20:15 UTC) picks the topics;
   `newsAgent` (Scheduler `InvokeNewsAgent`, 25 min later) writes summaries, trace causes and forecasts and
-  publishes the list; `newsSensitiveData-dev` serves the list data (forecasts and the track record come from the record views, not the proxy).
+  publishes the list; `newsReadApi` serves the list data (forecasts and the track record come from the record views, not the proxy).
 
 ## Data
 - The five calls below (`topics`, `today`, `summary`, `prediction`, `trace_cause`) go through `contentService`, which answers from the record's today view (`index/today.json`, `@/shared/api/todayView.js`, decision 0051) while the views are fresh (0050) and asks the action when the view is missing, stale, unreadable (reported as `today-view`) or cannot answer that call (a topic outside the latest run, a note the run did not write).
@@ -56,7 +56,7 @@ This folder is stage 9: the today page (/today). Timeline: reads the record's to
 1. RSS feeds -> `newsIngest` (3x a day) picks topics -> NewsCache `staging`.
 2. `newsAgent` writes per-topic summary, trace cause and forecast to `SummarizeAndPredict` (`TOPIC#`), gives each topic a `threadId`.
 3. It copies `staging` to NewsCache `latest` and adds the entries to `today-archive`.
-4. `newsSensitiveData-dev` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
+4. `newsReadApi` action `topics` returns `latest`; action `today` returns `today-archive` entries from the last 24 hours.
 5. `useGeminiTopics` -> `Home.jsx` groups by region and renders the topic cards on `/today`.
 6. A click calls `summary`, `prediction` or `trace_cause` -> `SummaryDisplay` / `PredictionDisplay` / `TraceCauseDisplay`.
 7. Trust strip: `newsStoryRecord` builds `record/views/track-record.json` from the forecast facts -> `useTrackRecord` (no fallback).

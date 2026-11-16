@@ -31,8 +31,8 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 
 ## Backend
 - No Lambda lists this feature.
-- About reads the daily brief written by `newsPostDevTo` (scheduler `InvokeDev`): from the record's brief views (decision 0048, built by
-  `newsStoryRecord`), else from `newsSensitiveData-dev` ([read-api guide](../../../../../backend/read-api/README.md)).
+- About reads the daily brief written by `newsDailyBrief` (repo dir `backend/distribution/newsPostDevTo`; scheduler `InvokeDev`): from the
+  record's brief views (decision 0048, built by `newsStoryRecord`), else from `newsReadApi` ([read-api guide](../../../../../backend/read-api/README.md)).
 
 ## Data
 - `AboutContact` only: `useDailyBrief()` -> the record's `index/briefs.json` and brief view (today's brief from the `daily_brief` action when the
@@ -42,9 +42,9 @@ This folder is stage 9: static pages. Timeline: reads the daily brief only; not 
 
 ## Pipeline
 1. `app/App.jsx` lazy-loads the page chunk for the route on first visit.
-2. Four pages are plain JSX: the copy is the content, wrapped by `StaticPage` and styled by `StaticPage.css`.
+2. All five pages are plain JSX: the copy is the content, styled by `StaticPage.css`; four are wrapped by `StaticPage`, the White Paper is not.
 3. About also runs `useDailyBrief`, which reads the record's brief views first (`shared/api/briefViews.js`).
-4. For what the views lack, `restProxy.js` posts `daily_brief` / `latest_daily_brief`; `newsSensitiveData-dev` reads the `DAILY_BRIEF#<date>` rows from `SummarizeAndPredict` (written daily by `newsPostDevTo`).
+4. For what the views lack, `restProxy.js` posts `daily_brief` / `latest_daily_brief`; `newsReadApi` reads the `DAILY_BRIEF#<date>` rows from `SummarizeAndPredict` (written daily by `newsDailyBrief`).
 5. `pausedSince` (`shared/lib/freshness.js`) gets the brief's `generatedAt`: null when it is under 36 hours old, else "analysis paused since <date>"; with no brief found after a finished search, "no analysis in the last 30 days" (`MAX_LOOKBACK_DAYS`).
 6. `AboutContact` renders that text as the paused note.
 

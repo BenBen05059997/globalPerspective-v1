@@ -38,7 +38,7 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 - `newsAgent` (Scheduler `InvokeNewsAgent`, 3x a day) writes topics, archive rows and thread ids;
   `newsThreadAnalysis` (rule `TriggerDailyAnalysis`, 04:40 UTC) writes thread analyses; `newsSystemsAnalysis`
   (`TriggerNewsSystemsAnalysis`, 05:00 UTC) writes the story web; `newsDriftCorrector` (`TriggerDriftCorrector`, 05:30 UTC) writes change notes.
-  All are served by `newsSensitiveData-dev`.
+  All are served by `newsReadApi`.
 
 ## Data
 - `useWeeklyArchive()` -> `loadArchive` (`shared/api/archiveRange.js`, decision 0046; `loadArchiveDayMap` is its day map alone, for the countries and map readers): the record's weekly index (`/data/record/views/index/weekly.json`) for every day, today included (decision 0050: the views are rebuilt after each ingest). Only when the views are not fresh (`shared/api/viewsFresh.js`: manifest `builtAt` over 9 h old, missing or unreadable; reported) does it ask `archive_range` for the newest recorded day and after; all 30 days come from the action when the index is missing or unreadable (reported); localStorage `gp_weekly_archive_v4` (`useCachedQuery`; the cached value is `{ dayMap, titles }`), 30 min. It reads no sign-in state and needs no `AuthProvider`; the page does not wait for sign-in. A failed load is reported (`weekly-archive`), not cached, and `/weekly` says the archive is unavailable with a retry. `titles` is the index's `{ threadId: title }` (the record's one title per story, `titleOf` in newsStoryRecord), null when the index has none or the action answered. Returns `{ dayMap, titles, sortedDates, loading, error, dataUpdatedAt, refetch }`.
@@ -54,7 +54,7 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 2. `newsAgent` assigns each topic a `threadId`, copies `staging` to `latest`, writes `archive#<date>` rows.
 3. `newsThreadAnalysis` (daily) reads 30 days of archive -> `THREAD#<id>` / `THREAD_ANALYSIS`.
 4. `newsSystemsAnalysis` (daily) -> `WEB#INDEX` / `LATEST` and `THREAD#<id>` / `WEB`.
-5. `newsSensitiveData-dev` actions `archive_range`, `narrative_thread`, `thread_analysis`, `web_index`.
+5. `newsReadApi` actions `archive_range`, `narrative_thread`, `thread_analysis`, `web_index`.
 6. Hooks `useWeeklyArchive`, `useNarrativeThread`, `useThreadAnalyses`, `useWebIndex`, `useThreadForecast`.
 7. `WeeklyPage` on `/weekly` and `ThreadPage` on `/weekly/thread/:threadId`.
 

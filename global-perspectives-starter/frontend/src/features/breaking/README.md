@@ -45,7 +45,7 @@ This folder is stage 9: breaking-alert redirects; bell and strip switched off 20
 ## Backend
 - Guides: [distribution](../../../../../backend/distribution/README.md) (`newsBreakingAlert`, `newsEmailSender`),
   [read-api](../../../../../backend/read-api/README.md) (`newsRecommend`)
-- `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(35 4/8 * * ? *)`, DISABLED since 2026-11-06) writes rows to `GlobalPerspectiveBreakingAlerts`;
+- `newsBreakingAlert` (rule `TriggerBreakingAlert`, `cron(45 4/8 * * ? *)`, DISABLED since 2026-11-06) writes rows to `GlobalPerspectiveBreakingAlerts`;
   `newsRecommend` (Function URL) serves `confirmed` rows only; `newsEmailSender` would email subscribers (cron disabled).
 
 ## Data

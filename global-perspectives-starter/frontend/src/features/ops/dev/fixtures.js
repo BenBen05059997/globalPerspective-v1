@@ -114,7 +114,7 @@ const READERS_ATTENTION = (connected) => [
   ['board', 'Board', null, []],
 ].map(([id, label, usdv, lambdas]) => ({ id, label, views: connected ? READERS_CF.families.find((f) => f.id === id).views : null, usd: usdv, lambdas: lambdas.map(([fn, u]) => ({ fn, usd: u })) }));
 
-const READERS_NOTE = "Cloudflare Web Analytics counts page loads in browsers that run its beacon. It has no user identity, so the counts include our own testing, and there is no way to exclude it in this source. Attention vs effort: a Lambda's DeepSeek spend over the 14 days is split evenly across the features it serves (scripts/functions.json); AWS cost is not included.";
+const READERS_NOTE = "Cloudflare Web Analytics counts page loads in browsers that run its beacon. It has no user identity, so the counts include our own testing, and there is no way to exclude it in this source. Attention vs effort: a Lambda's estimated model spend (DeepSeek and Claude) over the 14 days is split evenly across the features it serves (scripts/functions.json); AWS cost is not included.";
 
 /** The readers section: Cloudflare 'ok' (connected), 'not_connected' or 'error'; the own-table counts are there in every case. */
 export function devReaders(cloudflare = 'ok') {

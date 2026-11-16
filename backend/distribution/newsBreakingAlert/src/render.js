@@ -254,4 +254,4 @@ function renderAlert(story = {}) {
   return { subject, text: renderText(story), html: renderHtml(story) };
 }
 
-module.exports = { renderAlert, _internals: { renderText, renderHtml, escapeHtml } };
+module.exports = { renderAlert };

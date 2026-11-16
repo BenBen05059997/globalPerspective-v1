@@ -2,7 +2,7 @@
 
 // The real ports for health.js / ops.js: S3, the resolver invoke, CloudWatch metrics, Logs Insights, Cost Explorer.
 // The SDK v3 clients ship with the Lambda runtime and are required lazily, so the pure modules and the tests need none.
-const { CONFIG, KEYS, BUCKET, REGION, READERS, QUALITY, HEAL } = require('./config');
+const { CONFIG, BUCKET, REGION, READERS, QUALITY, HEAL } = require('./config');
 const { dayStart, dayOf } = require('./days');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -235,4 +235,4 @@ function makeAws({ s3Client, lambdaClient, cwClient, logsClient, ceClient, ddbCl
   };
 }
 
-module.exports = { makeAws, insights, parseUsageRows, parseDifferRows, parseErrorSeries, USAGE_QUERY, DIFFER_QUERY, AUDIT_QUERY, KEYS };
+module.exports = { makeAws, insights, parseUsageRows, parseDifferRows, parseErrorSeries, USAGE_QUERY, AUDIT_QUERY };

@@ -120,7 +120,7 @@ function readersPullDue(prev, now) {
   return !r.cloudflare || r.cloudflare.status !== 'ok';
 }
 
-const NOTE = 'Cloudflare Web Analytics counts page loads in browsers that run its beacon. It has no user identity, so the counts include our own testing, and there is no way to exclude it in this source. Attention vs effort: a Lambda\'s DeepSeek spend over the 14 days is split evenly across the features it serves (scripts/functions.json); AWS cost is not included.';
+const NOTE = 'Cloudflare Web Analytics counts page loads in browsers that run its beacon. It has no user identity, so the counts include our own testing, and there is no way to exclude it in this source. Attention vs effort: a Lambda\'s estimated model spend (DeepSeek and Claude) over the 14 days is split evenly across the features it serves (scripts/functions.json); AWS cost is not included.';
 
 /**
  * pull: null when not due this run (the earlier sections stay), else
@@ -167,4 +167,4 @@ async function pullReaders({ aws, now, days, env = process.env, fetchFn = fetch 
   return { cloudflare, own, pulledAt };
 }
 
-module.exports = { pullReaders, storyTitles, familyOf, normalizePath, summarize, ownCounts, countByDay, attention, buildReaders, readersPullDue };
+module.exports = { pullReaders, familyOf, normalizePath, summarize, ownCounts, attention, buildReaders, readersPullDue };

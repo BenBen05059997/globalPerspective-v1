@@ -262,4 +262,4 @@ function healSummary(h) {
   return { mode: h.mode, at: h.at, actions: h.actions.map((a) => ({ day: a.day, step: a.step, note: a.note, dry: a.dry })), skipped: h.skipped, errors: h.errors };
 }
 
-module.exports = { effectiveMode, healSummary, heal, healDay, healFacts, ledgerKey, recoverKey, inScheduledWindow, inAgentWindow, stagingState, generationTime };
+module.exports = { effectiveMode, healSummary, heal, healFacts, ledgerKey, inScheduledWindow, inAgentWindow, stagingState };

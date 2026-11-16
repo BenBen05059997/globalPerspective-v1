@@ -1,14 +1,14 @@
 // newsModelGuard — model-retirement dead-man's-switch (built 2026-07-28).
 //
 // The 2026-07-24 `deepseek-chat` retirement became a 36h silent outage because
-// nothing was watching the deadline (BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md lesson).
+// nothing was watching the deadline.
 // This is the passive guard against a repeat: daily it scans EVERY Lambda's env for
 // DeepSeek model IDs and SNS-alerts if any is (a) a deprecated alias slated for
 // retirement, or (b) absent from DeepSeek's live /models list (already retired/invalid).
 //
 // Roll-your-own, no paid infra; mirrors newsFreshnessMonitor / newsErrorDigest.
 // Alerts route to SNS GlobalPerspectiveAlerts. Honest-empty: silent when all clear.
-// No bundled deps — @aws-sdk/* v3 + fetch are in the Node 20 runtime.
+// No bundled deps — @aws-sdk/* v3 + fetch come with the Lambda Node.js runtime (nodejs22.x live).
 
 const { LambdaClient, ListFunctionsCommand } = require('@aws-sdk/client-lambda');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');

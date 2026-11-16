@@ -52,4 +52,4 @@ async function pullCloudflare({ token, days, now, fetchFn = fetch }) {
   return parseGraphql(await res.json());
 }
 
-module.exports = { pullCloudflare, parseGraphql, QUERY };
+module.exports = { pullCloudflare, parseGraphql };

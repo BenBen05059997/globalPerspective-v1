@@ -28,7 +28,7 @@ This folder is stage 10: model guard, freshness monitor, error digest (disabled)
 
 ## Shared code
 
-- newsFreshnessMonitor: `links`. newsSourceAudit: `llm`.
+- newsFreshnessMonitor: `links`. newsSourceAudit: `llm`. newsHealth: `entriesInbox` (`lateMarker`).
 - newsErrorDigest and newsModelGuard use no shared module.
 - See the [shared README](../shared/README.md).
 

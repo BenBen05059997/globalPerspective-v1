@@ -154,4 +154,4 @@ function buildOps({ usage, cost, readers: readersPull, quality: qualityPull = nu
 /** True when the AWS cost pull is due: never pulled, or the last pull was on an earlier UTC day. */
 const awsPullDue = (prev, now) => !(prev && prev.aws && prev.aws.pulledAt) || prev.aws.pulledAt.slice(0, 10) < dayOf(now);
 
-module.exports = { buildOps, usageDays, unitCostsFor, awsDays, mergeDays, monthToDate, awsPullDue };
+module.exports = { buildOps, usageDays, awsDays, mergeDays, monthToDate, awsPullDue };

@@ -1,5 +1,5 @@
 // Run: node --test backend/monitoring/newsModelGuard/test/
-// The @aws-sdk/* packages are provided by the Lambda Node 20 runtime, not the repo, so they are stubbed here.
+// The @aws-sdk/* packages are provided by the Lambda Node.js runtime, not the repo, so they are stubbed here.
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');

@@ -153,7 +153,7 @@ export default function WeeklyPage() {
         {threads.length ? strip : null}
         {header}
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
-          <WeeklyMap embedded />
+          <WeeklyMap />
         </Suspense>
       </div>
     );

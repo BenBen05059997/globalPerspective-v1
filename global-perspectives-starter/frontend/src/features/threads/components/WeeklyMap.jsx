@@ -710,8 +710,8 @@ function MapLegend() {
 
 // frameInsets = { top, right, bottom, left } px of the map covered by an overlay (the country page's
 // header bar): with `defaultCountry` the map frames that country in the remaining visible band.
-// The map is always embedded in a page (/weekly, the country page); callers still pass `embedded`,
-// and the root keeps the `embedded` class that CountryPage.css selects.
+// The map is always embedded in a page (/weekly, the country page); the root keeps the `embedded`
+// class that CountryPage.css selects.
 export default function WeeklyMap({ hidePanel: hidePanelProp = false, defaultCountry = null, onCountryClick = null, frameInsets = null }) {
   const isMobile = useIsMobile();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();

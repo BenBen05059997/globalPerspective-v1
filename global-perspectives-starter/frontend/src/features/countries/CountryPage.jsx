@@ -571,7 +571,7 @@ export default function CountryPage() {
     <div className={`cpg-map-hero${isPhone ? ' cpg-map-hero--phone' : ''}`}>
       {heroBar}
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
-          <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} frameInsets={overlayInset} />
+          <WeeklyMap defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} frameInsets={overlayInset} />
         </Suspense>
     </div>
   );

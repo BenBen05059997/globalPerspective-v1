@@ -9,7 +9,7 @@
 // Precedence (operator JSON > Wikidata FACTS# > search): the card reads FACTS# only; the operator JSON
 // feeds the briefing prompts, and only Iran is operator-verified (it agrees with Wikidata).
 export const FACTS_MAX_AGE_DAYS = 10;
-export const POP_MAX_AGE_YEARS = 8;
+const POP_MAX_AGE_YEARS = 8;
 
 const DAY = 86400000;
 const isFresh = (iso, now) => {

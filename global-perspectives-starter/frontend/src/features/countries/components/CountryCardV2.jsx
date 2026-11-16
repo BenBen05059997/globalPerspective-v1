@@ -101,7 +101,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           (factRows drops anything undated, unsourced or stale); nothing is guessed. */}
       {facts.length ? (
         <div className="ccv2-facts">
-          {facts.length ? <ClaimTag kind="fact" /> : null}
+          <ClaimTag kind="fact" />
           {facts.map((r) => (
             <span key={r.key} className="ccv2-fact ccv2-fact-stored">
               <b>{r.value}</b> {r.label}

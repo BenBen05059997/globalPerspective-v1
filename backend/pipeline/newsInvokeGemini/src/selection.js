@@ -229,6 +229,31 @@ function shouldFilterArticle(article) {
   return false;
 }
 
+// The rules part of the selection prompt: who uses the topics, then each rule with its reason (decision 0062; test of 2026-11-17).
+function selectionRules(limit) {
+  return [
+    'HOW YOUR TOPICS ARE USED: each topic becomes one story page and one thread in a record that readers follow over days and weeks. A reader sees only the title and a short summary, never these articles.',
+    '',
+    'RULES, WITH THE REASON FOR EACH:',
+    '1. One event per topic. A page that joins two events cannot be followed over time: later news about one of them has nowhere clean to go, and the other one rides along. If a title needs "and", "as", "while" or a semicolon to hold two events, make two topics or keep only the more significant one. The same cost runs the other way: articles about the SAME event, whatever their headlines, angles or names for the actors, go into ONE topic, or the record gets two pages for one story. Err on the side of merging same-event articles, never of joining different events.',
+    '   - Avoid: "Istanbul Hit by Heaviest Rainfall in 84 Years; Pope Leo to Undergo Lung Surgery" (two events: make two topics)',
+    '   - Good: "Istanbul Hit by Heaviest Rainfall in 84 Years, Two Dead"',
+    '2. Title only what the articles state. Readers take a title as reported fact, so EVERY figure, date, death toll or superlative ("record", "first ever", "since YYYY") in it must appear verbatim in a source article above. A grounded vague title beats a specific invented one.',
+    '3. Sources come only from the list above, with the URL copied exactly: an invented URL is a dead link on a public page. Each article URL goes in exactly ONE topic, so no article supports two pages. Within that, list every article that reports the topic\'s event, not only the best one: readers judge a story by how many outlets confirm it, and an article left out of its own topic supports no page at all.',
+    '4. Select what was DONE, not what was said. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is not an event (judge by the headline\'s main clause: "X blasts Y as strikes kill 78" is said), because readers can find statements anywhere and the record exists for what happened. Write the title about the event and put a speaker in it only when the statement is itself the act: a declaration of war, a formal resignation, a signed decree.',
+    '   - Avoid: "UN official warns Ukraine faces its toughest winter"',
+    '   - Good: "Prime Minister resigns after losing confidence vote"',
+    `5. Significance floor, not a quota. A topic costs a reader's attention, so select EVERY event that clears the floor, then fill remaining slots by significance. The limit is ${limit} topics in total and it is a hard cap: the record keeps the first ${limit} of your list and discards the rest unread, so a ${limit + 1}th topic is lost, and the one lost is the last you wrote, not the least significant. Count your topics before you answer, and if there are more than ${limit}, remove the least significant yourself. Fewer than ${limit} is correct when fewer events matter. No category minimums, no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough. Beyond the floor, prefer material impact on how people live, work, eat, move or breathe over political theater.`,
+    '',
+    'TITLE EXAMPLES (specific, one event each):',
+    '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
+    '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
+    '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
+    '- Too vague: "Middle East Conflict Updates"',
+    '',
+  ];
+}
+
 // The selection prompt for one run. Pure: all inputs are arguments, so tests can read the text.
 function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTitles = [] }) {
   const articlesText = articles
@@ -287,32 +312,7 @@ function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTi
     '',
     'REJECT these categories: entertainment, sports, celebrity, lifestyle',
     '',
-    'CRITICAL RULES:',
-    '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
-    '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
-    '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
-    '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
-    '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting. But two different events never share a topic, even in the same country or on the same day: if a title needs "and" or "as" to cover two events, make them two topics or keep only the more significant one.',
-    '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
-    `7. SIGNIFICANCE FLOOR, NOT A QUOTA: Select EVERY event that clears the floor below, then fill any remaining slots by significance, never more than ${limit} topics in total. Fewer than ${limit} is correct when fewer events matter. There are no category minimums and no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough.`,
-    '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
-    '9. DONE, NOT SAID (editorial rule, decision 0020): select only things that were DONE. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is NOT a topic, judged on the headline\'s main clause ("X blasts Y as strikes kill 78" is said). The one exception is a statement that is itself the event: a declaration of war, a formal resignation, a signed decree.',
-    '   - REJECT (said): "UN official warns Ukraine faces its toughest winter"',
-    '   - REJECT (said): "G7 plans to release emergency fuel stocks"',
-    '   - SELECT (the statement is the act): "Prime Minister resigns after losing confidence vote"',
-    '',
-    'BAD EXAMPLES (too vague):',
-    '- "East Asian Economy and Geopolitical Relations"',
-    '- "Middle East Conflict Updates"',
-    '',
-    'GOOD EXAMPLES (specific, diverse):',
-    '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
-    '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
-    '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
-    '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
-    '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
-    '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
-    '',
+    ...selectionRules(limit),
     'REGIONAL DIVERSITY (soft note):',
     '- Among events of similar significance, prefer a spread across Americas, Europe, Asia, Middle East, Africa',
     '- Do NOT let one story dominate all topics',

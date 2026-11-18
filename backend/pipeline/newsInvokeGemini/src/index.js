@@ -5,8 +5,8 @@ const { captureRawArticles } = require('./rawCapture');
 const { makeS3Json } = require('./_shared/s3json');
 // The selection rules (feeds, prompt, validation, filters, seen list) live in selection.js, shared with the recovery script (decision 0061).
 const {
-  FEED_FETCH_CAP, RSS_FEEDS, shouldFilterArticle, buildSelectionPrompt, dedupeByUrl, freshSeen, nextSeenEntries,
-  selectionRequest, selectionChatOptions, processSelection,
+  FEED_FETCH_CAP, FOLLOWED_DAYS, RSS_FEEDS, shouldFilterArticle, buildSelectionPrompt, dedupeByUrl, freshSeen, nextSeenEntries,
+  followedStories, selectionRequest, selectionChatOptions, processSelection,
   canonicalIso3, normalizeSourceUrl, filterTopics, capTopics, extractJson,
 } = require('./selection');
 
@@ -56,42 +56,30 @@ async function writeSeenTopics(entries) {
 }
 
 // ============================================================
-// PAST ARCHIVE TITLES - For narrative continuity threading
+// ARCHIVE ENTRIES - the stories we follow and the repeat drop
 // ============================================================
 
-async function readPastArchiveTitles(days) {
+// The entries of the daily archive rows (`archive#YYYY-MM-DD`, written by the agent) of today and the `days` before, as
+// {date, title, threadId, archivedAt}. Today is included, so a story moved by an earlier run today is listed. A day that cannot be read
+// is left out and logged; the run goes on with what was read (decision 0057), at worst an empty list.
+async function readArchiveEntries(days) {
   if (!CACHE_TABLE) return [];
-  try {
-    const titles = [];
-    const now = new Date();
-    // i = 0 is today's earlier runs, so a same-day re-run of a story can name its title in
-    // continues_topic (the agent joins threads on it; it also reads today).
-    for (let i = 0; i <= days; i++) {
-      const date = new Date(now);
-      date.setUTCDate(date.getUTCDate() - i);
-      const y = date.getUTCFullYear();
-      const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const d = String(date.getUTCDate()).padStart(2, '0');
-      const key = `archive#${y}-${m}-${d}`;
-      const dateLabel = `${y}-${m}-${d}`;
-      try {
-        const result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: key } }));
-        const entries = result?.Item?.entries;
-        if (Array.isArray(entries)) {
-          for (const entry of entries) {
-            if (entry.title) titles.push({ date: dateLabel, title: entry.title });
-          }
-        }
-      } catch (dayErr) {
-        console.warn(`Failed to read archive for ${dateLabel}:`, dayErr.message);
-      }
+  const now = Date.now();
+  const dates = Array.from({ length: days + 1 }, (_, i) => new Date(now - i * 86400000).toISOString().slice(0, 10));
+  const perDay = await Promise.all(dates.map(async (date) => {
+    try {
+      const result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: `archive#${date}` } }));
+      const entries = result?.Item?.entries;
+      return (Array.isArray(entries) ? entries : []).filter((e) => e && e.title)
+        .map((e) => ({ date, title: e.title, threadId: e.threadId || null, archivedAt: e.archivedAt || null }));
+    } catch (err) {
+      console.warn(`ARCHIVE: failed to read archive#${date}, left out of the stories we follow: ${err.message}`);
+      return [];
     }
-    console.log(`Past archive titles loaded: ${titles.length} entries across ${days} days`);
-    return titles;
-  } catch (err) {
-    console.warn('Failed to read past archive titles:', err.message);
-    return [];
-  }
+  }));
+  const entries = perDay.flat();
+  console.log(`ARCHIVE: ${entries.length} entries across ${dates.length} days`);
+  return entries;
 }
 
 // ============================================================
@@ -297,10 +285,10 @@ exports.handler = async (event) => {
       : Math.max(1, Math.min(20, parseInt(qs.limit || DEFAULT_LIMIT, 10) || DEFAULT_LIMIT));
 
     // Fetch news + read DynamoDB context in parallel
-    const [allArticles, seenEntries, pastArchiveTitles] = await Promise.all([
+    const [allArticles, seenEntries, archiveEntries] = await Promise.all([
       fetchAllNews(),
       readSeenTopics(),
-      readPastArchiveTitles(7),
+      readArchiveEntries(FOLLOWED_DAYS),
     ]);
     // RAW CAPTURE (0040 rule 1): everything fetched is stored before the model sees it. Fenced; never blocks the run.
     await captureRawArticles({
@@ -311,10 +299,11 @@ exports.handler = async (event) => {
     });
 
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
-    console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
+    // The stories we follow, numbered for this run: the prompt lists them and the answer's `follows` names one by number.
+    const { stories } = followedStories(archiveEntries, Date.now());
 
     // One prompt row per event; the full pool stays for URL validation and source enrichment (selection.js).
-    const { prompt } = selectionRequest({ articles: allArticles, limit, seenEntries, pastArchiveTitles });
+    const { prompt } = selectionRequest({ articles: allArticles, limit, stories });
 
     console.log('Sending to the model, article count:', allArticles?.length || 0);
 
@@ -338,7 +327,7 @@ exports.handler = async (event) => {
     }
 
     // Parse, validate the source urls against the pool, enrich, filter, drop repeats of the last 24 h, cap (selection.js).
-    const { topics: filtered } = processSelection({ text, articles: allArticles, seenEntries, pastArchiveTitles, limit, nowMs: Date.now(), env: process.env });
+    const { topics: filtered } = processSelection({ text, articles: allArticles, seenEntries, archiveEntries, stories, limit, nowMs: Date.now(), env: process.env });
 
     const cacheResult = await writeCache({ topics: filtered, model: MODEL_NAME, limit });
 

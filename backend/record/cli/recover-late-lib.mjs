@@ -3,7 +3,8 @@
 // (the real clock, used only for the written-at time). No AWS, no env, no key: the script owns those. Tests: recover-late.test.mjs.
 //
 // What a live run reads that the script has to rebuild as of the slot: the article pool (from the saved raw lines), the seen-today list and the
-// 7-day archive titles (from the entries inbox, plus the script's own earlier replayed slots). The live DynamoDB rows are never read.
+// archive entries of the slot's day and the 14 before (from the entries inbox, plus the script's own earlier replayed slots), from which the
+// shared followedStories builds the stories we follow. The live DynamoDB rows are never read.
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -23,7 +24,7 @@ export const PRODUCER = 'recover-late-slots';
 export const FETCH_WINDOW_MS = 5 * 60 * 1000;
 const TEXT_TTL_SECONDS = 259200; // the agent's SUMMARY_PREDICT_TTL_SECONDS default (the item is only a carrier for the entry note here)
 const ARCHIVE_SOURCE_CAP = 10; // the daily archive row's source cap (DAILY_ARCHIVE_MAX_SOURCES)
-const THREADING_DAYS = 7;
+const THREADING_DAYS = 7; // the agent's threading window (readPastArchiveEntries(7))
 const iso = (ms) => new Date(ms).toISOString();
 export const dayOf = (v) => String(v).slice(0, 10);
 export const addDays = (day, n) => iso(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).slice(0, 10);
@@ -87,21 +88,21 @@ function dayLines(day, slotMs, liveByDay, replayed) {
 
 /**
  * What the live run read from DynamoDB, rebuilt from the entries inbox as of the slot:
- *   pastArchiveTitles  the titles of the slot's day and the 7 before, newest day first (readPastArchiveTitles)
- *   pastEntries        the same days as the agent's threading window (readPastArchiveEntries)
+ *   archiveEntries     {date, title, threadId, archivedAt} of the slot's day and the S.FOLLOWED_DAYS before, newest day first (the selector's readArchiveEntries)
+ *   pastEntries        the slot's day and the THREADING_DAYS before, as the agent's threading window (readPastArchiveEntries)
  *   seenEntries        the seen-today list: every earlier run's topics, merged as the selector merges them, the last 24 h
  * `liveByDay` = day -> the entries inbox lines of the live runs; `replayed` = day -> the lines of the script's own earlier slots.
  */
 export function windowAsOf({ liveByDay, replayed, slotMs }) {
   const slotDay = dayOf(iso(slotMs));
-  const days = Array.from({ length: THREADING_DAYS + 1 }, (_, i) => addDays(slotDay, -i));
-  const pastArchiveTitles = [];
+  const archiveEntries = [];
   const pastEntries = [];
-  for (const day of days) {
+  for (let i = 0; i <= S.FOLLOWED_DAYS; i++) {
+    const day = addDays(slotDay, -i);
     const item = reads.archiveOfLines(dayLines(day, slotMs, liveByDay, replayed));
     if (!item) continue;
-    for (const e of item.entries) if (e.title) pastArchiveTitles.push({ date: day, title: e.title });
-    pastEntries.push(...reads.pastEntriesOfDay(day, item.entries));
+    for (const e of item.entries) if (e.title) archiveEntries.push({ date: day, title: e.title, threadId: e.threadId || null, archivedAt: e.archivedAt || null });
+    if (i <= THREADING_DAYS) pastEntries.push(...reads.pastEntriesOfDay(day, item.entries));
   }
   // the seen-today list: runs in time order; the ingest wrote it at its own time (the staging item's updatedAt), the replayed ones at the slot
   const runs = [];
@@ -118,7 +119,7 @@ export function windowAsOf({ liveByDay, replayed, slotMs }) {
   }
   let seen = [];
   for (const r of runs.sort((a, b) => a.atMs - b.atMs)) seen = S.nextSeenEntries(S.freshSeen(seen, r.atMs), r.titles.map((title) => ({ title })), r.atMs);
-  return { pastArchiveTitles, pastEntries, seenEntries: S.freshSeen(seen, slotMs) };
+  return { archiveEntries, pastEntries, seenEntries: S.freshSeen(seen, slotMs) };
 }
 
 // ---- the model, metered -----------------------------------------------------------------------------------------------------------------
@@ -210,10 +211,11 @@ export async function replaySlot({ slot, articleLines, liveByDay, replayed, deps
   const { articles, stats } = poolAsOf(articleLines, slotMs);
   const win = windowAsOf({ liveByDay, replayed, slotMs });
   out.pool = stats;
-  out.window = { pastArchiveTitles: win.pastArchiveTitles.length, pastEntries: win.pastEntries.length, seenEntries: win.seenEntries.length };
+  const { stories } = S.followedStories(win.archiveEntries, slotMs);
+  out.window = { archiveEntries: win.archiveEntries.length, followedStories: stories.length, pastEntries: win.pastEntries.length, seenEntries: win.seenEntries.length };
 
   // 1. topic selection: the live prompt, options and rules
-  const { prompt, promptCount } = S.selectionRequest({ articles, limit: cfg.limit, seenEntries: win.seenEntries, pastArchiveTitles: win.pastArchiveTitles });
+  const { prompt, promptCount } = S.selectionRequest({ articles, limit: cfg.limit, stories });
   out.promptArticles = promptCount;
   out.selectionPrompt = prompt;
   const reply = await deps.call(S.selectionChatOptions({ prompt, model: cfg.selectionModel }));
@@ -221,7 +223,7 @@ export async function replaySlot({ slot, articleLines, liveByDay, replayed, deps
   out.selectionFinish = reply.finishReason;
   let selection;
   try {
-    selection = S.processSelection({ text: reply.content, articles, seenEntries: win.seenEntries, pastArchiveTitles: win.pastArchiveTitles, limit: cfg.limit, nowMs: slotMs, env: {} });
+    selection = S.processSelection({ text: reply.content, articles, seenEntries: win.seenEntries, archiveEntries: win.archiveEntries, stories, limit: cfg.limit, nowMs: slotMs, env: {} });
   } catch (e) {
     out.failures.push({ stage: 'selection-parse', message: e.message });
     return out;

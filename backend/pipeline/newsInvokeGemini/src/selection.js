@@ -1,7 +1,7 @@
 'use strict';
 
 // The topic selector's own rules, apart from the handler: the feed list, the selection prompt, the model-answer parsing and validation, the
-// source enrichment call, the filters and the seen-today list. No AWS client and no clock of its own (`nowMs` is an argument), so the handler
+// source enrichment call, the filters, the seen-today list (the repeat drop) and the stories we follow. No AWS client and no clock of its own (`nowMs` is an argument), so the handler
 // (index.js) and the one-off recovery script (backend/record/cli/recover-late-slots.mjs, decision 0061) run the same code.
 
 const { collapseSameEvent, dropRepeatTopics, newestPerFeed } = require('./dedupe');
@@ -229,10 +229,17 @@ function shouldFilterArticle(article) {
   return false;
 }
 
-// The rules part of the selection prompt: who uses the topics, then each rule with its reason (decision 0062; test of 2026-11-17).
-function selectionRules(limit) {
+// The rules part of the selection prompt: who uses the topics, the three kinds of event that get in, each rule with its reason, then the
+// stories we follow (decision 0062 rules; story-kinds plan 2026-11-18). `stories` = followedStories(...).stories.
+function selectionRules(limit, stories = []) {
   return [
-    'HOW YOUR TOPICS ARE USED: each topic becomes one story page and one thread in a record that readers follow over days and weeks. A reader sees only the title and a short summary, never these articles.',
+    'HOW YOUR TOPICS ARE USED: each topic becomes one entry on a story page in a record that readers follow over days and weeks. A story is a line of entries about one situation. A reader sees each entry\'s title and a short summary, never these articles. So the first question for every event is: does it START a story, or MOVE a story we already follow? The list STORIES WE FOLLOW below holds every story with an entry in the last 14 days, newest first.',
+    '',
+    'WHAT GETS IN (three kinds; nothing else):',
+    'A. A start: an event that opens a new story readers will want to follow because more will come of it: a war, a crisis, a negotiation, an investigation, a disaster and its aftermath, a policy that takes effect in steps. Leave "follows" out.',
+    'B. A move: something DONE in a story we follow, even a quiet step: a vote held, a ruling issued, troops moved, a deal signed, talks held. Set "follows" to that story\'s number. A move is a new development: an article that only retells what the story\'s latest entry says is not a move.',
+    'C. A measured change: an official figure (a statistics office, central bank, UN agency or government data release) or a major published study, when the change it reports is large by the source\'s own account (a record, the biggest change in years, a figure crossing an official threshold), or when it feeds a story we follow (then set "follows" too). Set event_type to "measure". An opinion piece, a forecast, a poll, a commentary or one expert\'s view is never a measured change.',
+    'Leave out an event that connects to nothing before or after it: a one-off with no story behind it and nothing likely to follow, such as a single crime, a minor accident or a one-day stunt. A reader cannot follow it, so it does not belong in the record.',
     '',
     'RULES, WITH THE REASON FOR EACH:',
     '1. One event per topic. A page that joins two events cannot be followed over time: later news about one of them has nowhere clean to go, and the other one rides along. If a title needs "and", "as", "while" or a semicolon to hold two events, make two topics or keep only the more significant one. The same cost runs the other way: articles about the SAME event, whatever their headlines, angles or names for the actors, go into ONE topic, or the record gets two pages for one story. Err on the side of merging same-event articles, never of joining different events.',
@@ -240,61 +247,75 @@ function selectionRules(limit) {
     '   - Good: "Istanbul Hit by Heaviest Rainfall in 84 Years, Two Dead"',
     '2. Title only what the articles state. Readers take a title as reported fact, so EVERY figure, date, death toll or superlative ("record", "first ever", "since YYYY") in it must appear verbatim in a source article above. A grounded vague title beats a specific invented one.',
     '3. Sources come only from the list above, with the URL copied exactly: an invented URL is a dead link on a public page. Each article URL goes in exactly ONE topic, so no article supports two pages. Within that, list every article that reports the topic\'s event, not only the best one: readers judge a story by how many outlets confirm it, and an article left out of its own topic supports no page at all.',
-    '4. Select what was DONE, not what was said. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is not an event (judge by the headline\'s main clause: "X blasts Y as strikes kill 78" is said), because readers can find statements anywhere and the record exists for what happened. Write the title about the event and put a speaker in it only when the statement is itself the act: a declaration of war, a formal resignation, a signed decree.',
+    '4. Select what was DONE, not what was said. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is not an event (judge by the headline\'s main clause: "X blasts Y as strikes kill 78" is said), because readers can find statements anywhere and the record exists for what happened. Write the title about the event and put a speaker in it only when the statement is itself the act: a declaration of war, a formal resignation, a signed decree. This holds for moves too: a reaction, warning or claim in a story we follow is not a move, however quiet the story has been.',
     '   - Avoid: "UN official warns Ukraine faces its toughest winter"',
     '   - Good: "Prime Minister resigns after losing confidence vote"',
-    `5. Significance floor, not a quota. A topic costs a reader's attention, so select EVERY event that clears the floor, then fill remaining slots by significance. The limit is ${limit} topics in total and it is a hard cap: the record keeps the first ${limit} of your list and discards the rest unread, so a ${limit + 1}th topic is lost, and the one lost is the last you wrote, not the least significant. Count your topics before you answer, and if there are more than ${limit}, remove the least significant yourself. Fewer than ${limit} is correct when fewer events matter. No category minimums, no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough. Beyond the floor, prefer material impact on how people live, work, eat, move or breathe over political theater.`,
+    `5. Significance floor, not a quota. A topic costs a reader's attention, so select EVERY event that clears the floor, then fill remaining slots by significance. The limit is ${limit} topics in total and it is a hard cap: the record keeps the first ${limit} of your list and discards the rest unread, so a ${limit + 1}th topic is lost, and the one lost is the last you wrote, not the least significant. Count your topics before you answer, and if there are more than ${limit}, remove the least significant yourself. Fewer than ${limit} is correct when fewer events matter. No category minimums, no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough. Beyond the floor, prefer material impact on how people live, work, eat, move or breathe over political theater. An event that clears the floor always gets in: it starts a story or moves one. Fewer than ${limit} is correct when few events are of the three kinds: never fill the list with one-offs or statements to reach ${limit}.`,
+    '6. Name a followed story only by its number, copied exactly as listed (for example "S12"). Name one only when the event is plainly part of that story; when unsure, leave "follows" out and the topic starts a story. A wrong number puts the event on the wrong page. When several listed stories cover the same situation, name the one with the most entries.',
     '',
     'TITLE EXAMPLES (specific, one event each):',
     '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
     '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
     '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
     '- Too vague: "Middle East Conflict Updates"',
+    '- Measured change: "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
+    '',
+    'STORIES WE FOLLOW (number · last entry date · entries in 14 days · newest title):',
+    ...(stories.length ? stories.map((s) => `${s.key} · ${s.lastDate} · ${s.count} · ${s.title}`) : ['(none)']),
     '',
   ];
 }
 
-// The selection prompt for one run. Pure: all inputs are arguments, so tests can read the text.
-function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTitles = [] }) {
+// ---- the stories we follow ------------------------------------------------------------------------------------------------------------
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const FOLLOWED_DAYS = 14;  // the list holds every story with an entry today or in the 14 days before
+const FOLLOWED_CAP = 350;  // lines; about 314 stories had an entry in 14 days (active.json, 2026-11-18)
+
+/**
+ * The stories we follow, from the archive entries ({date, title, threadId, archivedAt?}) of today and the FOLLOWED_DAYS before `nowMs`
+ * (UTC days). One line per threadId: a run-local number (S1, S2...), the last entry date, the entries in the window, the newest entry's
+ * title. Stories with 2 or more entries first, then single-entry ones, newest first inside each group; the cap cuts from the end, so the
+ * oldest single-entry stories go first. An entry without a threadId or title is not listed. Pure.
+ * -> { stories: [{ key, threadId, lastDate, count, title }], cut }.
+ */
+function followedStories(entries, nowMs) {
+  const today = new Date(nowMs).toISOString().slice(0, 10);
+  const from = new Date(nowMs - FOLLOWED_DAYS * DAY_MS).toISOString().slice(0, 10);
+  // an entry's place in time: its day, then its archive time, then its place in the input (the rows are oldest generation first)
+  const later = (a, b) => (a.date !== b.date ? a.date > b.date : a.at !== b.at ? a.at > b.at : a.i > b.i);
+  const byThread = new Map();
+  (entries || []).forEach((e, i) => {
+    if (!e || !e.threadId || !e.title || !e.date || e.date < from || e.date > today) return;
+    const pos = { date: e.date, at: String(e.archivedAt || ''), i };
+    const s = byThread.get(e.threadId);
+    if (!s) byThread.set(e.threadId, { threadId: e.threadId, count: 1, title: e.title, pos });
+    else {
+      s.count += 1;
+      if (later(pos, s.pos)) Object.assign(s, { title: e.title, pos });
+    }
+  });
+  const all = [...byThread.values()].sort((a, b) => ((b.count >= 2) - (a.count >= 2)) || (later(a.pos, b.pos) ? -1 : later(b.pos, a.pos) ? 1 : 0));
+  const stories = all.slice(0, FOLLOWED_CAP).map((s, n) => ({ key: `S${n + 1}`, threadId: s.threadId, lastDate: s.pos.date, count: s.count, title: s.title }));
+  const cut = all.length - stories.length;
+  console.log(`FOLLOWED: ${stories.length} stories listed, ${cut} cut`);
+  return { stories, cut };
+}
+
+// The selection prompt for one run. Pure: all inputs are arguments, so tests can read the text. `stories` = followedStories(...).stories.
+function buildSelectionPrompt({ articles, limit, stories = [] }) {
   const articlesText = articles
     .map((a, i) => `${i + 1}. ${a.title}\n   Source: ${a.source}\n   Published: ${a.age}\n   URL: ${a.url}\n   ${a.description}`)
     .join('\n\n');
 
-  // Build soft dedup prompt section
-  const seenTopicsPromptLines = [];
-  if (seenEntries.length > 0) {
-    seenTopicsPromptLines.push(
-      'DEDUPLICATION - PREVIOUSLY COVERED TODAY:',
-      'These topics were already covered in earlier runs today.',
-      'PRIORITIZE genuinely NEW events not in this list.',
-      'Only include a previously-covered topic if there is a significant new development with fresh sources.',
-      ...seenEntries.map(e => `  - ${e.title}`),
-      '',
-    );
-  }
-
-  // Build narrative continuity prompt section
-  const narrativeContinuityLines = [];
-  if (pastArchiveTitles.length > 0) {
-    narrativeContinuityLines.push(
-      'NARRATIVE CONTINUITY:',
-      'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
-      'or development of one of these stories, add "continues_topic" with the exact previous title.',
-      'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
-      'Previous topics:',
-      ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
-      '',
-    );
-  }
-
   return [
-    'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
+    'You are the editor of a record of world news stories. Read the articles below and pick the events that start a story or move a story we follow.',
     '',
     '=== NEWS ARTICLES ===',
     articlesText,
     '=== END OF ARTICLES ===',
     '',
-    `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
+    `Task: pick up to ${limit} events of the three kinds described below. Return a JSON object with a single key "topics" containing an array of topic objects.`,
     '',
     'ALLOWED CATEGORIES (use ONLY these):',
     '- politics (elections, policy changes, diplomatic relations, government actions)',
@@ -312,14 +333,12 @@ function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTi
     '',
     'REJECT these categories: entertainment, sports, celebrity, lifestyle',
     '',
-    ...selectionRules(limit),
+    ...selectionRules(limit, stories),
     'REGIONAL DIVERSITY (soft note):',
     '- Among events of similar significance, prefer a spread across Americas, Europe, Asia, Middle East, Africa',
     '- Do NOT let one story dominate all topics',
     '- Never skip an event that clears the floor to improve the spread, and never pad with weak items to cover a region',
     '',
-    ...seenTopicsPromptLines,
-    ...narrativeContinuityLines,
     'Each topic object MUST have:',
     '- title: string (SPECIFIC event with key details)',
     '- category: string (one of the 12 allowed categories)',
@@ -332,10 +351,10 @@ function buildSelectionPrompt({ articles, limit, seenEntries = [], pastArchiveTi
     '- urgencyReason: string (one sentence explaining the urgency classification)',
     '- primaryCountry: string (the single country most central to this event — the anchor)',
     '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
-    '- continues_topic: string (optional — exact title of a previous topic this story continues)',
+    '- follows: string (optional) — the number of the followed story this topic moves, exactly as listed (e.g. "S12"); leave it out for a start',
     '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
     '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
-    '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
+    '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, measure, other ("measure" only for a measured change, kind C)',
   ].join('\n');
 }
 
@@ -375,12 +394,12 @@ function nextSeenEntries(seenEntries, topics, nowMs) {
  * pool stays with the caller for URL validation and source enrichment. With no article at all: the "X trends" fallback prompt.
  * -> { prompt, collapsed, promptCount }.
  */
-function selectionRequest({ articles, limit, seenEntries = [], pastArchiveTitles = [] }) {
+function selectionRequest({ articles, limit, stories = [] }) {
   if (articles && articles.length > 0) {
     const { items: collapsedArticles, collapsed } = collapseSameEvent(articles);
     const promptArticles = newestPerFeed(collapsedArticles, PROMPT_POOL_PER_FEED);
     console.log(`DEDUPE: ${collapsed} feed items collapsed into the same event; ${promptArticles.length} of ${articles.length} fetched items go to the model (newest ${PROMPT_POOL_PER_FEED} per feed)`);
-    return { prompt: buildSelectionPrompt({ articles: promptArticles, limit, seenEntries, pastArchiveTitles }), collapsed, promptCount: promptArticles.length };
+    return { prompt: buildSelectionPrompt({ articles: promptArticles, limit, stories }), collapsed, promptCount: promptArticles.length };
   }
   console.warn('No articles available, falling back to Grok X-knowledge mode');
   const prompt = [
@@ -409,23 +428,26 @@ function selectionChatOptions({ prompt, model }) {
     user: prompt,
     json: true,
     temperature: 0.5,
-    // Raised 8192→12000 (Phase 1b): the added event-fingerprint fields (iso3/actors/event_type)
-    // push the heaviest runs near the old ceiling, where truncation-salvage was already firing.
-    maxTokens: 12000,
+    // 16000 (story-kinds plan 2026-11-18): answers reached 10,800 tokens live and 11,098 in testing under the old 12000, and a cut
+    // reply loses its last topics. The cap costs nothing unless used.
+    maxTokens: 16000,
     timeoutMs: 600000,
     retries: 2,
   };
 }
 
-// Phase 1b event-fingerprint vocabulary (shared with the map classifier's event types).
-const EVENT_TYPES = new Set(['war', 'unrest', 'diplomacy', 'election', 'policy', 'economy', 'markets', 'disaster', 'health', 'tech', 'other']);
+// Phase 1b event-fingerprint vocabulary (shared with the map classifier's event types), plus `measure`: a measured change (an official
+// figure or a major study), the picking rules' kind C.
+const EVENT_TYPES = new Set(['war', 'unrest', 'diplomacy', 'election', 'policy', 'economy', 'markets', 'disaster', 'health', 'tech', 'measure', 'other']);
 
 /**
  * The model's answer -> the run's topics: parse, validate the source urls against the pool, build each topic with its event fingerprint,
+ * map its `follows` number to the followed story (`continues_thread` = the story's thread id, `continues_topic` = its listed title),
  * enrich the sources from the pool, filter the category, drop repeats of the last 24 h, cap to `limit`. `env` carries the SOURCE_ENRICH_* switches.
+ * `stories` = the list the prompt carried (followedStories(...).stories); `archiveEntries` = the archive entries ({date, title}) it was built from.
  * -> { topics, normalizedCount } (normalizedCount = topics before the filters).
  */
-function processSelection({ text, articles: allArticles, seenEntries = [], pastArchiveTitles = [], limit, nowMs, env = process.env }) {
+function processSelection({ text, articles: allArticles, seenEntries = [], archiveEntries = [], stories = [], limit, nowMs, env = process.env }) {
   const parsed = extractJson(text);
   const topics = Array.isArray(parsed) ? parsed : (parsed?.topics || []);
 
@@ -434,6 +456,7 @@ function processSelection({ text, articles: allArticles, seenEntries = [], pastA
   const validUrls = new Map(allArticles.map(a => [normalizeSourceUrl(a.url), a.url]));
   let totalSourcesBefore = 0;
   let totalSourcesAfter = 0;
+  const storyByKey = new Map(stories.map((s) => [s.key, s]));
 
   const normalized = topics.map((t, idx) => {
     const title = String(t?.title || '').trim();
@@ -453,9 +476,10 @@ function processSelection({ text, articles: allArticles, seenEntries = [], pastA
     });
     totalSourcesAfter += validatedSources.length;
 
-    const continuesTopic = typeof t?.continues_topic === 'string' && t.continues_topic.trim()
-      ? t.continues_topic.trim()
-      : undefined;
+    // the followed story this topic moves: only a listed number counts; the model never names a title itself
+    const follows = t?.follows == null ? '' : String(t.follows).trim();
+    const story = follows ? storyByKey.get(follows.toUpperCase()) : undefined;
+    if (follows && !story) console.warn(`FOLLOWS: unknown "${follows.substring(0, 20)}" for: ${title.substring(0, 40)}`);
 
     const urgency = ['high', 'medium', 'low'].includes(String(t?.urgency || '').toLowerCase())
       ? String(t.urgency).toLowerCase()
@@ -496,7 +520,7 @@ function processSelection({ text, articles: allArticles, seenEntries = [], pastA
       ...(Array.isArray(t?.mentionedCountries) && t.mentionedCountries.length > 0 && {
         mentionedCountries: t.mentionedCountries.map(c => String(c)),
       }),
-      ...(continuesTopic && { continues_topic: continuesTopic }),
+      ...(story && { continues_thread: story.threadId, continues_topic: story.title }),
     };
   });
 
@@ -534,10 +558,14 @@ function processSelection({ text, articles: allArticles, seenEntries = [], pastA
   const yesterday = new Date(nowMs - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const earlierTitles = [
     ...seenEntries.map(e => e.title),
-    ...pastArchiveTitles.filter(e => e.date >= yesterday).map(e => e.title),
+    ...archiveEntries.filter(e => e.date >= yesterday).map(e => e.title),
   ];
   const repeats = dropRepeatTopics(filtered, earlierTitles);
-  for (const d of repeats.dropped) console.warn(`DEDUPE: dropped repeat "${d.title?.substring(0, 60)}" (repeats "${d.repeats?.substring(0, 60)}")`);
+  const keyByThread = new Map(stories.map((s) => [s.threadId, s.key]));
+  for (const d of repeats.dropped) {
+    const key = keyByThread.get((filtered.find((t) => t.title === d.title) || {}).continues_thread);
+    console.warn(`DEDUPE: dropped repeat "${d.title?.substring(0, 60)}"${key ? ` [follows ${key}]` : ''} (repeats "${d.repeats?.substring(0, 60)}")`);
+  }
   filtered = repeats.topics;
   filtered = capTopics(filtered, limit);
 
@@ -557,5 +585,5 @@ module.exports = {
   VALID_CATEGORIES, CATEGORY_ALIASES, FEED_FETCH_CAP, PROMPT_POOL_PER_FEED, RSS_FEEDS, SEEN_TOPICS_TTL_HOURS,
   canonicalIso3, slugifyTitle, createStableTopicId, extractJson, normalizeSourceUrl, filterTopics, capTopics,
   parseAgeToHours, shouldFilterArticle, buildSelectionPrompt, dedupeByUrl, freshSeen, nextSeenEntries,
-  selectionRequest, selectionChatOptions, processSelection,
+  FOLLOWED_DAYS, FOLLOWED_CAP, followedStories, selectionRules, selectionRequest, selectionChatOptions, processSelection,
 };

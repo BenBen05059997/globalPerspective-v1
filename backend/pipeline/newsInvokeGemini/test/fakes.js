@@ -36,19 +36,25 @@ class FakeS3 {
 const FIXTURES = path.join(__dirname, 'fixtures', 'feeds');
 const NOW = '2026-10-22T12:00:00.000Z';
 
-/** Runs the handler once. opts: env, s3 (FakeS3), failPuts, topics(urls) -> model topics, archive: {[date]: [titles]}, seen: [titles]. */
-async function runHandler({ feedXml, env = {}, s3 = new FakeS3(), topics, archive = {}, seen = [], modelError } = {}) {
+/**
+ * Runs the handler once. opts: env, s3 (FakeS3), failPuts, topics(urls, prompt) -> model topics, archive: {[date]: [title | entry]},
+ * archiveError (every archive read throws), seen: [titles]. -> { result, events, prompts, written, reads (the DynamoDB keys read), s3 }.
+ */
+async function runHandler({ feedXml, env = {}, s3 = new FakeS3(), topics, archive = {}, archiveError, seen = [], modelError } = {}) {
   const events = s3.events;
   const { client, GetObjectCommand, PutObjectCommand } = s3.makeClient();
   const prompts = [];
   const written = [];
+  const reads = [];
   const ddb = {
     send: async (cmd) => {
       const i = cmd.input || {};
       if (cmd.constructor.name === 'PutCommand') { written.push(i.Item); return {}; }
+      reads.push(i.Key && i.Key.id);
       if (i.Key && i.Key.id === 'seen-today') return { Item: { entries: seen.map((title) => ({ title, fingerprint: title, seenAt: Date.parse(NOW) - 1000 })) } };
       const m = i.Key && String(i.Key.id).match(/^archive#(.+)$/);
-      if (m && archive[m[1]]) return { Item: { entries: archive[m[1]].map((title) => ({ title })) } };
+      if (m && archiveError) throw new Error(archiveError);
+      if (m && archive[m[1]]) return { Item: { entries: archive[m[1]].map((e) => (typeof e === 'string' ? { title: e } : e)) } };
       return {};
     },
   };
@@ -71,14 +77,14 @@ async function runHandler({ feedXml, env = {}, s3 = new FakeS3(), topics, archiv
           prompts.push(user);
           if (modelError) throw new Error(modelError);
           const urls = [...user.matchAll(/URL: (\S+)/g)].map((m) => m[1]);
-          const list = topics ? topics(urls) : [{ title: 'Test topic one', category: 'politics', sources: [{ url: urls[0] }] }];
+          const list = topics ? topics(urls, user) : [{ title: 'Test topic one', category: 'politics', sources: [{ url: urls[0] }] }];
           return { content: JSON.stringify({ topics: list }), finishReason: 'stop', usage: {} };
         },
       },
     },
   });
   const result = await mod.handler({ source: 'aws.events' });
-  return { result, events, prompts, written, s3 };
+  return { result, events, prompts, written, reads, s3 };
 }
 
 module.exports = { FakeS3, runHandler, NOW };

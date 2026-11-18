@@ -48,7 +48,7 @@ function fixtures() {
   return dir;
 }
 
-// A stub of llm.js chat: the selection picks the first 3 prompt rows not already covered; summary and cause answer with fixed text. Prints [usage] as llm.js does.
+// A stub of llm.js chat: the selection picks the first 3 prompt rows not already in the stories we follow; summary and cause answer with fixed text. Prints [usage] as llm.js does.
 function stubChat(log = []) {
   let inFlight = 0;
   let peak = 0;
@@ -62,7 +62,7 @@ function stubChat(log = []) {
     let content;
     if (opts.step === 'topic_selection') {
       const rows = [...opts.user.matchAll(/\d+\. (\S+ \d+x \d+y \d+z happens)\n\s+Source: (\S+)\n\s+Published: [^\n]*\n\s+URL: (\S+)/g)];
-      const seenBlock = opts.user.includes('PREVIOUSLY COVERED TODAY') ? opts.user.split('PREVIOUSLY COVERED TODAY')[1].split('NARRATIVE')[0] : '';
+      const seenBlock = opts.user.split('STORIES WE FOLLOW (')[1].split('REGIONAL DIVERSITY')[0];
       const pick = rows.filter((r) => !seenBlock.includes(r[1])).slice(0, 3);
       content = JSON.stringify({ topics: pick.map((r, i) => ({ title: `${r[1]} lands in ${i}`, category: 'politics', search_keywords: ['k'], regions: ['France'], sources: [{ url: r[3], title: r[1], tier: 'primary' }], x_trending: false, significance: 'high', urgency: 'high', urgencyReason: 'r', primaryCountry: 'France', mentionedCountries: [], iso3: ['FRA'], actors: ['Someone Named'], event_type: 'policy' })) });
     } else if (opts.step === 'summary') content = '- The thing happened per BBC.';
@@ -103,15 +103,19 @@ test('poolAsOf: first seen by the slot, age as of the slot, live age filter, fee
 });
 const feedSource = (name) => require('../../pipeline/newsInvokeGemini/src/selection.js').RSS_FEEDS.find((f) => f.name === name).source;
 
-test('windowAsOf: titles, threading window and seen-today list as of the slot, from live lines and the script\'s own earlier slots', () => {
+test('windowAsOf: archive entries (14 days, with thread ids), threading window (7 days) and seen-today list as of the slot, from live lines and the script\'s own earlier slots', () => {
   const line = (title, batch, extra = {}) => ({ topicId: `${title}-0`, threadId: 'th', title, archivedAt: batch, batch, inboxId: `${batch}|0`, n: 0, ...extra });
   const liveByDay = {
     '2026-11-14': [line('Early live', '2026-11-14T04:26:00.000Z', { run: { of: 1, updatedAt: '2026-11-14T04:15:50.000Z' } }), line('After the slot', '2026-11-14T23:00:00.000Z')],
     '2026-11-13': [line('Day before', '2026-11-13T04:26:00.000Z')],
+    '2026-11-04': [line('Eleven days back', '2026-11-04T04:26:00.000Z', { threadId: 'th-old' })],
+    '2026-10-31': [line('Fifteen days back', '2026-10-31T04:26:00.000Z')],
   };
   const replayed = { '2026-11-15': [line('Replayed one', '2026-11-17T01:00:00.000Z', { writtenLate: { writtenAt: '2026-11-17T01:00:00.000Z', slot: S2 } })] };
   const w = windowAsOf({ liveByDay, replayed, slotMs: Date.parse(S3) });
-  assert.deepEqual(w.pastArchiveTitles.map((t) => [t.date, t.title]).sort(), [['2026-11-13', 'Day before'], ['2026-11-14', 'After the slot'], ['2026-11-14', 'Early live'], ['2026-11-15', 'Replayed one']].sort());
+  assert.deepEqual(w.archiveEntries.map((t) => [t.date, t.title, t.threadId]).sort(), [['2026-11-04', 'Eleven days back', 'th-old'], ['2026-11-13', 'Day before', 'th'], ['2026-11-14', 'After the slot', 'th'], ['2026-11-14', 'Early live', 'th'], ['2026-11-15', 'Replayed one', 'th']].sort());
+  assert.ok(!w.pastEntries.some((e) => e.title === 'Eleven days back'), 'the threading window stays at 7 days');
+  assert.equal(w.pastEntries.length, 4);
   assert.deepEqual(w.seenEntries.map((e) => e.title).sort(), ['After the slot', 'Replayed one'], 'the runs at or before the slot and inside 24 h: not the 04:15 run of the day before (32 h), not the run after the slot');
 });
 
@@ -166,10 +170,17 @@ test('generate: four slots, lines in the 11-14 and 11-15 files (never the clock\
   assert.deepEqual([...new Set(d14.map((l) => l.writtenLate.slot))], [S1]);
   assert.deepEqual([...new Set(d15.map((l) => l.writtenLate.slot))], [S2, S3, S4]);
   assert.deepEqual(d15.map((l) => l.n), [0, 1, 2, 0, 1, 2, 0, 1, 2]);
-  // each slot sees the earlier ones: its picks differ (the stub skips covered titles) and the seen-today list was in its prompt
+  // each slot sees the earlier ones: its picks differ (the stub skips followed titles) and the earlier slot's stories are in its followed list
   assert.equal(new Set([...d14, ...d15].map((l) => l.title)).size, 12);
-  assert.match(fs.readFileSync(path.join(out, 'slots', '2026-11-15T0415', 'selection-prompt.txt'), 'utf8'), /PREVIOUSLY COVERED TODAY/);
-  assert.match(fs.readFileSync(path.join(out, 'slots', '2026-11-14T2015', 'selection-prompt.txt'), 'utf8'), /Live story about Zulu/);
+  const p2 = fs.readFileSync(path.join(out, 'slots', '2026-11-15T0415', 'selection-prompt.txt'), 'utf8');
+  assert.match(p2, /^STORIES WE FOLLOW /m);
+  assert.doesNotMatch(p2, /PREVIOUSLY COVERED TODAY|NARRATIVE CONTINUITY/);
+  // the stub's three slot-1 topics join one thread (same region and category), so that thread is one line with its newest title
+  const followed2 = p2.split('STORIES WE FOLLOW (')[1].split('REGIONAL DIVERSITY')[0];
+  assert.equal(new Set(d14.map((l) => l.threadId)).size, 1);
+  assert.match(followed2, new RegExp(`^S\\d+ · 2026-11-14 · 3 · ${d14[2].title}$`, 'm'));
+  assert.match(fs.readFileSync(path.join(out, 'slots', '2026-11-14T2015', 'selection-prompt.txt'), 'utf8'), /^S\d+ · 2026-11-14 · 1 · Live story about Zulu$/m);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(out, 'slots', '2026-11-15T0415', 'slot.json'), 'utf8')).window.followedStories, 2, 'the live Zulu story and the slot-1 thread');
   // the pool never held a line first seen after its slot
   assert.doesNotMatch(fs.readFileSync(path.join(out, 'slots', '2026-11-15T2015', 'selection-prompt.txt'), 'utf8'), /Echo \d+x/);
   // notes: a summary and a cause note per story, written at the real time, none for a forecast

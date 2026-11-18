@@ -120,12 +120,12 @@ export function buildScrubberDays(entries) {
 
 /**
  * buildSlides(...) -> [{ key, label }] — the horizontal slide order: BRIEF, CH1..CHn (n<=4),
- * FED INTO (only when fedInto has entries), WATCH (only when there are real deadlines).
+ * FED INTO (only when the story feeds into or is fed by a linked story), WATCH (only when there are real deadlines).
  */
-export function buildSlides({ chapters = [], fedInto = [], deadlines = [] }) {
+export function buildSlides({ chapters = [], fedInto = [], fedFrom = [], deadlines = [] }) {
   const slides = [{ key: 'brief', label: 'BRIEF' }];
   chapters.forEach((c, i) => slides.push({ key: c.key, label: `CH${i + 1}` }));
-  if (fedInto.length > 0) slides.push({ key: 'fedinto', label: 'FED INTO' });
+  if (fedInto.length > 0 || fedFrom.length > 0) slides.push({ key: 'fedinto', label: 'FED INTO' });
   if (deadlines.length > 0) slides.push({ key: 'watch', label: 'WATCH' });
   return slides;
 }

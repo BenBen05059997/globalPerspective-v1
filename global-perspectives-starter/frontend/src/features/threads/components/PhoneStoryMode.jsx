@@ -29,7 +29,7 @@ function prefersReducedMotion() {
   } catch { return false; }
 }
 
-function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, forecast, deadlines, fedInto, linkNote, onJumpTimeline, onJumpOutlook }) {
+function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, forecast, deadlines, fedInto, fedFrom, linkNote, onJumpTimeline, onJumpOutlook }) {
   if (activeSlide?.key === 'brief') {
     return (
       <BriefSlide
@@ -40,7 +40,7 @@ function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, dis
     );
   }
   if (activeChapter) return <ChapterSlide chapter={activeChapter} index={chapters.indexOf(activeChapter)} />;
-  if (activeSlide?.key === 'fedinto') return <FedIntoSlide fedInto={fedInto} />;
+  if (activeSlide?.key === 'fedinto') return <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} />;
   if (activeSlide?.key === 'watch') return <WatchSlide deadlines={deadlines} />;
   return null;
 }
@@ -99,7 +99,8 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
 
   const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = links;
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
-  const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
+  const fedFrom = useMemo(() => (fedIntoLoading ? [] : fedFromRaw), [fedIntoLoading, fedFromRaw]);
+  const slides = useMemo(() => buildSlides({ chapters, fedInto, fedFrom, deadlines }), [chapters, fedInto, fedFrom, deadlines]);
 
   const [slideIdx, setSlideIdx] = useState(0);
   useEffect(() => { if (slideIdx >= slides.length) setSlideIdx(0); }, [slides.length, slideIdx]);
@@ -155,8 +156,8 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
   const primaryIso3 = chapters.find((c) => c.iso3)?.iso3 || null;
   const mapFocusIso3 = activeChapter?.iso3 || primaryIso3;
   const linkArcs = useMemo(
-    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...(fedIntoLoading ? [] : fedFromRaw)], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
-    [webIndex, thread.threadId, fedInto, fedFromRaw, fedIntoLoading, primaryIso3],
+    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...fedFrom], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
+    [webIndex, thread.threadId, fedInto, fedFrom, primaryIso3],
   );
 
   return (
@@ -178,7 +179,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
               thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
-              forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
+              forecast={forecast} deadlines={deadlines} fedInto={fedInto} fedFrom={fedFrom} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
             />
@@ -214,7 +215,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
               thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
-              forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
+              forecast={forecast} deadlines={deadlines} fedInto={fedInto} fedFrom={fedFrom} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
             />

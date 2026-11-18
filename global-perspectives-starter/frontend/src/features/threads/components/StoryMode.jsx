@@ -18,7 +18,6 @@ import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { legacyNote, boardQid } from '@/shared/lib/questionChips.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
-import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import AsOf from '@/shared/ui/AsOf.jsx';
@@ -145,16 +144,32 @@ export function ChapterSlide({ chapter, index }) {
   );
 }
 
-export function FedIntoSlide({ fedInto }) {
+// Both directions, with the Read-in-full wording: the news this story feeds into, then the earlier news judged to feed in.
+export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
+  const linked = new Set([...fedInto.map((l) => l.targetThreadId), ...fedFrom.map((l) => l.sourceThreadId)]).size;
+  const caption = (
+    <p className="sm-caption">
+      <ClaimTag kind="inference" /> Links are between stories; we don&apos;t know which event in
+      this story drove each one.
+    </p>
+  );
   return (
     <div className="sm-slide sm-slide-fedinto">
-      <div className="sm-slide-kicker">FED INTO · {distinctTargets(fedInto)} linked {distinctTargets(fedInto) === 1 ? 'story' : 'stories'}</div>
-      <h2 className="sm-slide-title">News this story is judged to feed into</h2>
-      <p className="sm-caption">
-        <ClaimTag kind="inference" /> Links are between stories; we don&apos;t know which event in
-        this story drove each one.
-      </p>
-      <FedIntoList links={fedInto} direction="into" />
+      <div className="sm-slide-kicker">FED INTO · {linked} linked {linked === 1 ? 'story' : 'stories'}</div>
+      {fedInto.length > 0 && (
+        <>
+          <h2 className="sm-slide-title">News this story is judged to feed into</h2>
+          {caption}
+          <FedIntoList links={fedInto} direction="into" />
+        </>
+      )}
+      {fedFrom.length > 0 && (
+        <>
+          <h2 className="sm-slide-title">Earlier news judged to feed in</h2>
+          {fedInto.length === 0 && caption}
+          <FedIntoList links={fedFrom} direction="from" />
+        </>
+      )}
     </div>
   );
 }
@@ -306,7 +321,8 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
   // real link.
   const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = links;
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
-  const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
+  const fedFrom = useMemo(() => (fedIntoLoading ? [] : fedFromRaw), [fedIntoLoading, fedFromRaw]);
+  const slides = useMemo(() => buildSlides({ chapters, fedInto, fedFrom, deadlines }), [chapters, fedInto, fedFrom, deadlines]);
 
   const [slideIdx, setSlideIdx] = useState(0);
   useEffect(() => { if (slideIdx >= slides.length) setSlideIdx(0); }, [slides.length, slideIdx]);
@@ -376,8 +392,8 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
   // Judged links (strong + medium) to other stories, drawn between approx. places; memoised so the map
   // does not redraw on every render.
   const linkArcs = useMemo(
-    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...(fedIntoLoading ? [] : fedFromRaw)], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
-    [webIndex, thread.threadId, fedInto, fedFromRaw, fedIntoLoading, primaryIso3],
+    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...fedFrom], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
+    [webIndex, thread.threadId, fedInto, fedFrom, primaryIso3],
   );
 
   // Size the console to the space actually available under the fixed nav/status
@@ -489,7 +505,7 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
                   />
                 )}
                 {activeChapter && <ChapterSlide chapter={activeChapter} index={chapters.indexOf(activeChapter)} />}
-                {activeSlide?.key === 'fedinto' && <FedIntoSlide fedInto={fedInto} />}
+                {activeSlide?.key === 'fedinto' && <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} />}
                 {activeSlide?.key === 'watch' && <WatchSlide deadlines={deadlines} />}
               </div>
             </div>

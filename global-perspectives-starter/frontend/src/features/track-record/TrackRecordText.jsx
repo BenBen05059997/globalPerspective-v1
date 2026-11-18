@@ -172,7 +172,7 @@ export default function TrackRecordText() {
                     <strong>{l.threadId ? <EntityLink kind="story" id={l.threadId}>{l.name}</EntityLink> : l.name}</strong>
                     {' — '}{l.change}{' — '}{fmtDay(l.asOf)}
                     {l.noSingleDriver ? ` — ${NO_SINGLE_DRIVER}` : ''}
-                    {l.event ? ` — because: ${l.event.title}` : ''}
+                    {l.event ? <>{' — because: '}<EntityLink kind="story" id={l.event.threadId} topic={{ title: l.event.title }}>{l.event.title}</EntityLink></> : ''}
                     {l.why ? ` — ${l.why}` : ''}
                   </li>
                 );

@@ -220,3 +220,21 @@ describe('honest failure states and shared wording', () => {
     expect(text.container.textContent).toContain('Awaiting check, deadline passed: 9');
   });
 });
+
+describe('text page ledger: "because" event', () => {
+  const note = (triggerEvent) => ({ scope: 'thread', threadId: 'thread-a-1', name: 'thread-a-1', asOf: '2026-11-04', changeScore: { from: 90, to: 95 }, triggerEvent });
+  const renderLedger = (triggerEvent) => {
+    trackRecordValue = { data: legacy({ questions: questions() }), loading: false, error: null };
+    feedValue = { notes: [note(triggerEvent)], total: 1, gated: false, loading: false, error: null };
+    renderPage(TrackRecordText);
+  };
+  it('links the event title to its story when the note carries a thread id', () => {
+    renderLedger({ title: 'Russia bombards the grid', threadId: 'thread-x', date: '2026-11-03' });
+    expect(screen.getByRole('link', { name: 'Russia bombards the grid' })).toHaveAttribute('href', '/weekly/thread/thread-x');
+  });
+  it('keeps the event title plain without a thread id', () => {
+    renderLedger({ title: 'Russia bombards the grid', date: '2026-11-03' });
+    expect(screen.getByText(/because:/)).toHaveTextContent('because: Russia bombards the grid');
+    expect(screen.queryByRole('link', { name: 'Russia bombards the grid' })).toBeNull();
+  });
+});

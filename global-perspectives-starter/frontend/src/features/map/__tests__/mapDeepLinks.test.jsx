@@ -143,7 +143,9 @@ describe('map deep links — the console', () => {
 
   it('?story=<thread of a situation> names the story too when its title differs from the situation heading', async () => {
     await renderAt('/?story=thread-ukraine-war-abc123');
-    expect(await screen.findByText('From the story: Ukraine war: front lines hold')).toBeInTheDocument();
+    const link = await screen.findByRole('link', { name: 'Ukraine war: front lines hold' });
+    expect(link).toHaveAttribute('href', '/weekly/thread/thread-ukraine-war-abc123');
+    expect(link.closest('p')).toHaveTextContent('From the story: Ukraine war: front lines hold');
   });
 
   it('?focus=<situation> never shows a "From the story" line', async () => {

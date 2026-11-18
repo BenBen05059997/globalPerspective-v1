@@ -149,7 +149,7 @@ function AlsoReported({ titles }) {
 // SituationDetail — the situation half of the rail (M2–M6), factored out in M7 so the exact same
 // markup can render inside the phone bottom sheet (showBack=false there — the sheet's own
 // Collapse/Close buttons replace the "back" affordance) without duplicating it.
-function SituationDetail({ selected, fromStoryTitle = null, ev, isGdacs, m, affected, detailStatus = 'ready', activeCount = 0, onBack, showBack = true }) {
+function SituationDetail({ selected, fromStoryTitle = null, fromStoryId = null, ev, isGdacs, m, affected, detailStatus = 'ready', activeCount = 0, onBack, showBack = true }) {
   return (
     <div className="sh-detail">
       {showBack ? (
@@ -164,7 +164,7 @@ function SituationDetail({ selected, fromStoryTitle = null, ev, isGdacs, m, affe
             : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
         </span>
         <h2 className="sh-detail-title">{selected.verb_label}</h2>
-        {fromStoryTitle ? <p className="sh-fromstory">From the story: {fromStoryTitle}</p> : null}
+        {fromStoryTitle ? <p className="sh-fromstory">From the story: <EntityLink kind="story" id={fromStoryId} topic={{ title: fromStoryTitle }}>{fromStoryTitle}</EntityLink></p> : null}
         <div className="sh-substamp">
           {isGdacs && ev.gdacs_severity_text ? <span>{ev.gdacs_severity_text}</span> : (changeNote(selected) ? <span>{changeNote(selected)}</span> : null)}
           <span className="sh-dim"> · first seen {fmtAgo(selected.opened_at)} · updated {fmtAgo(selected.last_change_at)}</span>
@@ -389,6 +389,8 @@ export default function SituationHome() {
     () => (storySituation ? differingStoryTitle(storySituation, webIndex?.threads?.[storyParam]?.title) : null),
     [storySituation, webIndex, storyParam],
   );
+  // The title only exists when webIndex holds this thread, so ?story= is a real thread id then.
+  const fromStoryId = fromStoryTitle ? storyParam : null;
   // A ?story= that resolves nowhere, once everything it could resolve against has answered.
   const storySourcesFailed = Boolean(topicsError || webFailed);
   const storyMissing = Boolean(storyParam && topicsSettled && world && !webIndexLoading && !storySourcesFailed && !selectedStory && !storySituation);
@@ -910,7 +912,7 @@ export default function SituationHome() {
       <p className="sh-muted sh-gone-text">{storyMissing ? STORY_GONE_TEXT : STORY_UNAVAILABLE_TEXT}</p>
     </div>
   ) : selected ? (
-    <SituationDetail selected={selected} fromStoryTitle={fromStoryTitle} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} />
+    <SituationDetail selected={selected} fromStoryTitle={fromStoryTitle} fromStoryId={fromStoryId} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} />
   ) : selectedStory ? (
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={openCount} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
   ) : countryParam ? (
@@ -942,7 +944,7 @@ export default function SituationHome() {
   ) : (storyMissing || storyUnavailable) ? (
     <p className="sh-muted sh-gone-text">{storyMissing ? STORY_GONE_TEXT : STORY_UNAVAILABLE_TEXT}</p>
   ) : selected ? (
-    <SituationDetail selected={selected} fromStoryTitle={fromStoryTitle} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} showBack={false} />
+    <SituationDetail selected={selected} fromStoryTitle={fromStoryTitle} fromStoryId={fromStoryId} ev={ev} isGdacs={isGdacs} m={m} affected={affected} detailStatus={detailStatus} activeCount={openCount} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={selectedStory.fromIndex ? null : topicsAsOf} activeCount={openCount} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
   ) : countryParam ? (

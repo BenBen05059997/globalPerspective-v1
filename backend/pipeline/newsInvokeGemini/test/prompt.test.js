@@ -42,6 +42,8 @@ test('story kinds: the opening and task lines ask for starts and moves, the thre
   assert.match(p, /This holds for moves too: a reaction, warning or claim in a story we follow is not a move/);
   assert.match(p, /An event that clears the floor always gets in: it starts a story or moves one\. Fewer than 15 is correct when fewer events matter or few are of the three kinds: never fill/);
   assert.equal((p.match(/Fewer than 15 is correct/g) || []).length, 1, 'one "fewer is correct" sentence');
+  assert.match(p, /least significant event\. A quiet move \(a step in a followed story that does not itself clear the floor\) never takes the place of an event that clears the floor: when the list is full, the quiet move is the one left out, and one story never gets two quiet moves while an event that clears the floor is left out\. No category/);
+  assert.match(p, /A grounded vague title beats a specific invented one\. Build each title from its own source articles only: words from a listed story line or from another topic do not belong in it\./);
   assert.match(p, /remove the least significant yourself\. Write the list in order of significance, every event that clears the floor first, so that a list that runs long loses only the least significant event\./);
   assert.match(p, /- Measured change: "Argentina Inflation Falls to 2\.4% Monthly, Lowest Since 2017"/);
 });
@@ -49,7 +51,7 @@ test('story kinds: the opening and task lines ask for starts and moves, the thre
 test('rule 6: a followed story is named by its number, and the one with the most entries wins among duplicates', () => {
   const p = prompt();
   assert.match(p, /^6\. Name a followed story only by its number, copied exactly as listed \(for example "S12"\)\./m);
-  assert.match(p, /when unsure, leave "follows" out and the topic starts a story\. A wrong number puts the event on the wrong page\. When several listed stories cover the same situation, name the one with the most entries, even when another story's newest title matches the event more closely\.$/m);
+  assert.match(p, /when unsure, leave "follows" out and the topic starts a story\. A wrong number puts the event on the wrong page\. When several listed stories cover the same situation, name the one with the most entries, even when another story's newest title matches the event more closely\. The same situation means the same line of events \(the same talks, the same campaign, the same scandal\), not the same country or war: a military strike is not part of a peace-talks story, and a sanction or another summit is not part of a trip story\.$/m);
 });
 
 test('STORIES WE FOLLOW replaces the continuity and seen-today blocks; one numbered line per story', () => {

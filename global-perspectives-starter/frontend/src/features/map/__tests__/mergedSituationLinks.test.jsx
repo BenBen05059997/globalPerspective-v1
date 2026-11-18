@@ -64,11 +64,11 @@ describe('merged situation links', () => {
 
   it('a single-thread lead still links to its story', async () => {
     await renderWith(sit({ threadIds: ['thread-old-1'] }), '/');
-    expect(screen.getByRole('link', { name: /^Read ·/ })).toHaveAttribute('href', expect.stringContaining('thread-old-1'));
+    expect(screen.getByRole('link', { name: /^Read ·/ })).toHaveAttribute('href', '/weekly/thread/thread-old-1');
   });
 
   it('a single-thread situation detail still has "Full analysis →"', async () => {
     await renderWith(sit({ threadIds: ['thread-old-1'] }), '/?focus=news%23UKR%23thread-old-1');
-    expect(screen.getByRole('link', { name: /Full analysis/ })).toHaveAttribute('href', expect.stringContaining('thread-old-1'));
+    expect(screen.getByRole('link', { name: /Full analysis/ })).toHaveAttribute('href', '/weekly/thread/thread-old-1');
   });
 });

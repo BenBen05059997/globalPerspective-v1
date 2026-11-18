@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-freight-rates",
+  "title": "Fixture: test freight index edges up",
+  "lineWeek": null,
+  "lineReason": "no reading yet",
+  "iso3": [
+    "NZL"
+  ],
+  "regions": [
+    "Oceania"
+  ],
+  "tier": null,
+  "riskScore": null,
+  "riskAt": null,
+  "tierReason": "no analysis yet",
+  "lastFactAt": "2026-11-18T01:00:00.000Z",
+  "lastEntryAt": "2026-11-18T01:00:00.000Z",
+  "category": "economy",
+  "born": "2026-11-16",
+  "themeId": null,
+  "aliasOf": null,
+  "actorIds": [],
+  "sourceIds": [
+    "fixture-src-fx-d1",
+    "fixture-src-fx-d2"
+  ],
+  "entries": [
+    {
+      "eventId": "fx-d1",
+      "date": "2026-11-16",
+      "at": "2026-11-16T09:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: test freight index holds steady",
+      "summary": null,
+      "category": "economy",
+      "eventType": "markets",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-d1",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-d1",
+          "title": "Fixture source text for fx-d1",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-d1-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "start"
+    },
+    {
+      "eventId": "fx-d2",
+      "date": "2026-11-18",
+      "at": "2026-11-18T01:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: test freight index edges up",
+      "summary": null,
+      "category": "economy",
+      "eventType": "markets",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-d2",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-d2",
+          "title": "Fixture source text for fx-d2",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-d2-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "move"
+    }
+  ],
+  "entriesOmitted": 0,
+  "forks": [],
+  "merges": [],
+  "corrections": [],
+  "line": null,
+  "chapters": [],
+  "reading": {
+    "state": "none",
+    "reason": "no reading yet"
+  },
+  "analysis": null
+}

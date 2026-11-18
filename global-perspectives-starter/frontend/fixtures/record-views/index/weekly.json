@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "from": "2026-10-20",
+  "to": "2026-11-18",
+  "titles": {
+    "thread-fixture-harbour-plan": "Fixture: harbour plan passes its first reading",
+    "thread-fixture-port-strike": "Fixture: test strike ends after two days",
+    "thread-fixture-freight-rates": "Fixture: test freight index edges up"
+  },
+  "days": {
+    "2026-11-03": {
+      "updatedAt": "2026-11-03T02:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-u1-topic",
+          "threadId": "thread-fixture-port-strike",
+          "title": "Fixture: port workers stage a test strike",
+          "category": "labor",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-u1"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-05": {
+      "updatedAt": "2026-11-05T02:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-u2-topic",
+          "threadId": "thread-fixture-port-strike",
+          "title": "Fixture: test strike ends after two days",
+          "category": "labor",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-u2"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-06": {
+      "updatedAt": "2026-11-06T03:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e1-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: council proposes harbour plan",
+          "category": "politics",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e1"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-08": {
+      "updatedAt": "2026-11-08T05:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e2-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: dockworkers' union sets out its terms for the harbour plan",
+          "category": "labor",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e2"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-10": {
+      "updatedAt": "2026-11-10T06:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e3-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: harbour authority publishes silt figures, highest in its series",
+          "category": "environment",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e3"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-12": {
+      "updatedAt": "2026-11-12T12:15:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e4-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: council delays harbour vote by one week",
+          "category": "politics",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e4"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-15": {
+      "updatedAt": "2026-11-15T04:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e5-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: council votes on harbour plan",
+          "category": "politics",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e5"
+            },
+            {
+              "outlet": "Fixture Wire 2",
+              "url": "https://fixture.test/fx-e5b"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-16": {
+      "updatedAt": "2026-11-16T09:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-d1-topic",
+          "threadId": "thread-fixture-freight-rates",
+          "title": "Fixture: test freight index holds steady",
+          "category": "economy",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-d1"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-17": {
+      "updatedAt": "2026-11-17T04:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-e6-topic",
+          "threadId": "thread-fixture-harbour-plan",
+          "title": "Fixture: harbour plan passes its first reading",
+          "category": "politics",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-e6"
+            }
+          ]
+        }
+      ]
+    },
+    "2026-11-18": {
+      "updatedAt": "2026-11-18T01:00:00.000Z",
+      "entries": [
+        {
+          "topicId": "fx-d2-topic",
+          "threadId": "thread-fixture-freight-rates",
+          "title": "Fixture: test freight index edges up",
+          "category": "economy",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-d2"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

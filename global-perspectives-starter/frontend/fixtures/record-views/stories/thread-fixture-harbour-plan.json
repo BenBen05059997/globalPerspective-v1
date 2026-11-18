@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-harbour-plan",
+  "title": "Fixture: harbour plan passes its first reading",
+  "lineWeek": null,
+  "lineReason": "no reading yet",
+  "iso3": [
+    "NZL"
+  ],
+  "regions": [
+    "Oceania"
+  ],
+  "tier": "moderate",
+  "riskScore": 30,
+  "riskAt": "2026-11-17T06:00:00.000Z",
+  "tierReason": null,
+  "lastFactAt": "2026-11-17T04:00:00.000Z",
+  "lastEntryAt": "2026-11-17T04:00:00.000Z",
+  "category": "politics",
+  "born": "2026-11-06",
+  "themeId": null,
+  "aliasOf": null,
+  "actorIds": [],
+  "sourceIds": [
+    "fixture-src-fx-e1",
+    "fixture-src-fx-e2",
+    "fixture-src-fx-e3",
+    "fixture-src-fx-e4",
+    "fixture-src-fx-e5",
+    "fixture-src-fx-e5b",
+    "fixture-src-fx-e6"
+  ],
+  "entries": [
+    {
+      "eventId": "fx-e1",
+      "date": "2026-11-06",
+      "at": "2026-11-06T03:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: council proposes harbour plan",
+      "summary": null,
+      "category": "politics",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e1",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e1",
+          "title": "Fixture source text for fx-e1",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e1-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "notes": {
+        "summary": {
+          "format": "markdown",
+          "content": "- Fixture summary: the test council puts a harbour plan on its agenda.",
+          "at": "2026-11-06T03:10:00.000Z",
+          "model": "fixture-model"
+        }
+      },
+      "role": "start"
+    },
+    {
+      "eventId": "fx-a1",
+      "date": "2026-11-07",
+      "at": "2026-11-07T08:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture article: local paper reprints the harbour plan map",
+      "summary": "Fixture snippet text.",
+      "sources": [
+        {
+          "outlet": "Fixture Gazette",
+          "url": "https://fixture.test/article-a1"
+        }
+      ],
+      "kind": "article",
+      "recovered": true,
+      "recoveredFrom": "fixture"
+    },
+    {
+      "eventId": "fx-e2",
+      "date": "2026-11-08",
+      "at": "2026-11-08T05:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: dockworkers' union sets out its terms for the harbour plan",
+      "summary": null,
+      "category": "labor",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e2",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e2",
+          "title": "Fixture source text for fx-e2",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e2-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "fromThreadId": "thread-fixture-harbour-union",
+      "role": "move"
+    },
+    {
+      "eventId": "fx-e3",
+      "date": "2026-11-10",
+      "at": "2026-11-10T06:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: harbour authority publishes silt figures, highest in its series",
+      "summary": null,
+      "category": "environment",
+      "eventType": "measure",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e3",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e3",
+          "title": "Fixture source text for fx-e3",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e3-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "notes": {
+        "summary": {
+          "format": "markdown",
+          "content": "- Fixture summary: a test figure for the measured-change label.",
+          "at": "2026-11-10T06:10:00.000Z",
+          "model": "fixture-model"
+        }
+      },
+      "role": "measure"
+    },
+    {
+      "eventId": "fx-e4",
+      "date": "2026-11-12",
+      "at": "2026-11-12T12:15:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: council delays harbour vote by one week",
+      "summary": null,
+      "category": "politics",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e4",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e4",
+          "title": "Fixture source text for fx-e4",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e4-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "writtenLate": {
+        "writtenAt": "2026-11-14T01:30:00.000Z",
+        "slot": "2026-11-12T12:15:00.000Z"
+      },
+      "role": "move"
+    },
+    {
+      "eventId": "fx-e5",
+      "date": "2026-11-15",
+      "at": "2026-11-15T04:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: council votes on harbour plan",
+      "summary": null,
+      "category": "politics",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e5",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e5",
+          "title": "Fixture source text for fx-e5",
+          "outletCountry": null,
+          "outletType": null
+        },
+        {
+          "sourceId": "fixture-src-fx-e5b",
+          "outlet": "Fixture Wire 2",
+          "url": "https://fixture.test/fx-e5b",
+          "title": "Fixture source text for fx-e5b",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e5-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "move"
+    },
+    {
+      "eventId": "fx-e6",
+      "date": "2026-11-17",
+      "at": "2026-11-17T04:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: harbour plan passes its first reading",
+      "summary": null,
+      "category": "politics",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-e6",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-e6",
+          "title": "Fixture source text for fx-e6",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-e6-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "move"
+    }
+  ],
+  "entriesOmitted": 0,
+  "forks": [],
+  "merges": [
+    {
+      "from": "thread-fixture-harbour-union",
+      "into": "thread-fixture-harbour-plan",
+      "at": "2026-11-09T00:00:00.000Z",
+      "reason": "Fixture: the same harbour plan"
+    }
+  ],
+  "corrections": [],
+  "line": null,
+  "chapters": [],
+  "reading": {
+    "state": "none",
+    "reason": "no reading yet"
+  },
+  "analysis": {
+    "threadId": "thread-fixture-harbour-plan",
+    "generatedAt": "2026-11-17T06:00:00.000Z",
+    "model": "fixture-model",
+    "iso3": [
+      "NZL"
+    ],
+    "threadTitle": "Fixture: the harbour plan",
+    "storyArc": "Fixture text, not news. A test council proposed a harbour plan, a test union set out terms, a test figure was published, and the plan passed a first reading. This paragraph only fills the story arc slot for local checks.",
+    "trajectory": "Fixture text: a second reading would be the next test step.",
+    "rootCauseChain": {
+      "proximate": "Fixture text: the test plan reached the agenda."
+    },
+    "keyActors": [
+      {
+        "name": "Fixture Harbour Council",
+        "role": "Test institution",
+        "mentionCount": 4
+      }
+    ],
+    "watchQuestions": [
+      "Fixture: does the plan pass a second reading?"
+    ],
+    "riskScore": 30,
+    "inflectionTopicId": "fx-e3-topic"
+  }
+}

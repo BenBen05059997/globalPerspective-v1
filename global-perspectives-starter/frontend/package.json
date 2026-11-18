@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:fixture": "vite --mode fixture",
     "prebuild": "eslint . --max-warnings 20",
     "build": "vite build",
     "postbuild": "cp dist/index.html dist/404.html",

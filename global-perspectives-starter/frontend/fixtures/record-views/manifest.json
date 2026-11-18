@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "builtAt": "2026-11-18T06:00:00.000Z",
+  "runId": "fixture",
+  "factsManifestDays": 7,
+  "factsThrough": "2026-11-18",
+  "readingsThrough": null,
+  "forecastViews": 0
+}

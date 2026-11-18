@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-port-strike",
+  "title": "Fixture: test strike ends after two days",
+  "lineWeek": null,
+  "lineReason": "no reading yet",
+  "iso3": [
+    "NZL"
+  ],
+  "regions": [
+    "Oceania"
+  ],
+  "tier": null,
+  "riskScore": null,
+  "riskAt": null,
+  "tierReason": "no analysis yet",
+  "lastFactAt": "2026-11-05T02:00:00.000Z",
+  "lastEntryAt": "2026-11-05T02:00:00.000Z",
+  "category": "labor",
+  "born": "2026-11-03",
+  "themeId": null,
+  "aliasOf": null,
+  "actorIds": [],
+  "sourceIds": [
+    "fixture-src-fx-u1",
+    "fixture-src-fx-u2"
+  ],
+  "entries": [
+    {
+      "eventId": "fx-u1",
+      "date": "2026-11-03",
+      "at": "2026-11-03T02:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: port workers stage a test strike",
+      "summary": null,
+      "category": "labor",
+      "eventType": "unrest",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-u1",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-u1",
+          "title": "Fixture source text for fx-u1",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-u1-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "start"
+    },
+    {
+      "eventId": "fx-u2",
+      "date": "2026-11-05",
+      "at": "2026-11-05T02:00:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: test strike ends after two days",
+      "summary": null,
+      "category": "labor",
+      "eventType": "unrest",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-u2",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-u2",
+          "title": "Fixture source text for fx-u2",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-u2-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "move"
+    }
+  ],
+  "entriesOmitted": 0,
+  "forks": [],
+  "merges": [],
+  "corrections": [],
+  "line": null,
+  "chapters": [],
+  "reading": {
+    "state": "none",
+    "reason": "no reading yet"
+  },
+  "analysis": null
+}

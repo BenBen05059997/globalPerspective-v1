@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-port-strike",
+  "links": [],
+  "confirmedLinks": [],
+  "confirmedLinksReason": "no reading yet",
+  "judgedLinks": [
+    {
+      "otherThreadId": "thread-fixture-harbour-plan",
+      "otherTitle": "Fixture: harbour plan passes its first reading",
+      "iso3": "NZL",
+      "from": "thread-fixture-port-strike",
+      "to": "thread-fixture-harbour-plan",
+      "country": "New Zealand",
+      "confidence": "strong",
+      "lagDays": 2,
+      "mechanism": "Fixture text: the test strike put the harbour plan on the agenda.",
+      "cited": [
+        {
+          "topicId": "fx-u1-topic",
+          "date": "2026-11-03",
+          "title": "Fixture: port workers stage a test strike"
+        }
+      ],
+      "generatedAt": "2026-11-17T05:00:00.000Z",
+      "model": "fixture-model"
+    }
+  ],
+  "web": {
+    "state": "linked",
+    "entries": 2,
+    "places": [
+      {
+        "iso3": "NZL",
+        "name": "New Zealand",
+        "n": 2
+      }
+    ],
+    "analysedIn": [
+      {
+        "iso3": "NZL",
+        "country": "New Zealand",
+        "generatedAt": "2026-11-17T05:00:00.000Z",
+        "nodes": 3
+      }
+    ],
+    "backbone": [],
+    "otherPlaces": {
+      "thread-fixture-harbour-plan": [
+        {
+          "iso3": "NZL",
+          "name": "New Zealand",
+          "n": 2
+        }
+      ]
+    }
+  }
+}

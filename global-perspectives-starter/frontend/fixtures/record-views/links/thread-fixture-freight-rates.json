@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-freight-rates",
+  "links": [],
+  "confirmedLinks": [],
+  "confirmedLinksReason": "no reading yet",
+  "judgedLinks": [
+    {
+      "otherThreadId": "thread-fixture-harbour-plan",
+      "otherTitle": "Fixture: harbour plan passes its first reading",
+      "iso3": "NZL",
+      "from": "thread-fixture-harbour-plan",
+      "to": "thread-fixture-freight-rates",
+      "country": "New Zealand",
+      "confidence": "medium",
+      "lagDays": 2,
+      "mechanism": "Fixture text: the test plan changes freight capacity.",
+      "cited": [
+        {
+          "topicId": "fx-e6-topic",
+          "date": "2026-11-17",
+          "title": "Fixture: harbour plan passes its first reading"
+        }
+      ],
+      "generatedAt": "2026-11-17T05:00:00.000Z",
+      "model": "fixture-model"
+    }
+  ],
+  "web": {
+    "state": "linked",
+    "entries": 2,
+    "places": [
+      {
+        "iso3": "NZL",
+        "name": "New Zealand",
+        "n": 2
+      }
+    ],
+    "analysedIn": [
+      {
+        "iso3": "NZL",
+        "country": "New Zealand",
+        "generatedAt": "2026-11-17T05:00:00.000Z",
+        "nodes": 3
+      }
+    ],
+    "backbone": [],
+    "otherPlaces": {
+      "thread-fixture-harbour-plan": [
+        {
+          "iso3": "NZL",
+          "name": "New Zealand",
+          "n": 2
+        }
+      ]
+    }
+  }
+}

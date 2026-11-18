@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'node:child_process'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -12,8 +13,38 @@ let gitSha = 'dev'
 try { gitSha = execSync('git rev-parse --short HEAD').toString().trim() } catch { /* not a git checkout */ }
 const buildDate = new Date().toISOString().slice(0, 10)
 
+// `npm run dev:fixture` (`vite --mode fixture`): the dev server answers /data/record/views/* from fixtures/record-views/, so the
+// story page and the Stories list open with no network. Dev server only (`apply: 'serve'`): the build never loads it. Every date in a
+// file moves by the days from the fixture manifest's factsThrough to today (the pages' 30-day windows and analysis age stay in reach)
+// and the manifest's builtAt is now (the freshness check passes). A file the fixture lacks is a 404, which the pages read as "not generated".
+const FIXTURE_DIR = path.resolve(__dirname, 'fixtures/record-views')
+const DAY_MS = 86400000
+function recordViewsFixture() {
+  return {
+    name: 'record-views-fixture',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/data/record/views', (req, res) => {
+        const rel = decodeURIComponent((req.url || '').split('?')[0]).replace(/^\/+/, '')
+        const file = path.resolve(FIXTURE_DIR, rel)
+        if (!/^[\w./-]+\.json$/.test(rel) || !file.startsWith(`${FIXTURE_DIR}${path.sep}`) || !fs.existsSync(file)) {
+          res.statusCode = 404
+          res.end()
+          return
+        }
+        const through = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'manifest.json'), 'utf8')).factsThrough
+        const shift = Math.round((Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(through)) / DAY_MS) * DAY_MS
+        const body = JSON.parse(fs.readFileSync(file, 'utf8').replace(/\d{4}-\d{2}-\d{2}/g, (d) => new Date(Date.parse(d) + shift).toISOString().slice(0, 10)))
+        if (rel === 'manifest.json') body.builtAt = new Date().toISOString()
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(body))
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   define: {
     __APP_VERSION__: JSON.stringify(gitSha),
     __BUILD_DATE__: JSON.stringify(buildDate),
@@ -23,7 +54,7 @@ export default defineConfig({
   // ./assets against /weekly/thread/ → 404 → blank). The github.io subpath
   // 301-redirects to the custom domain, so '/' is correct for the live site.
   base: '/',
-  plugins: [react()],
+  plugins: [react(), ...(mode === 'fixture' ? [recordViewsFixture()] : [])],
   // '@' -> src/, '@fixtures' -> tests/fixtures/ (used by test/redesign.test.jsx).
   // Vitest shares this `resolve` block since `test` is defined in the same
   // defineConfig call, so `vi.mock('@/…')` resolves without extra config.
@@ -49,4 +80,4 @@ export default defineConfig({
     testTimeout: 15000,
     exclude: ['**/node_modules/**', '**/dist/**', '**/site-dist/**', 'worker/**'],
   },
-})
+}))

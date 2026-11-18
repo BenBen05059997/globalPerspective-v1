@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "threadId": "thread-fixture-harbour-union",
+  "aliasOf": "thread-fixture-harbour-plan"
+}

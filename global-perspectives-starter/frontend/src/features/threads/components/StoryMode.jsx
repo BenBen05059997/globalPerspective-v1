@@ -24,6 +24,7 @@ import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import AsOf from '@/shared/ui/AsOf.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import WrittenLate from '@/shared/ui/WrittenLate.jsx';
+import EntryRole from '@/shared/ui/EntryRole.jsx';
 import StoryMap, { STORY_MAP_FALLBACK_HEIGHT } from '@/shared/map/StoryMap.jsx';
 import '@/shared/ui/deck.css';
 import '@/features/threads/components/StoryMode.css';
@@ -136,7 +137,7 @@ export function ChapterSlide({ chapter, index }) {
         {chapter.entries.map((e, i) => (
           <li key={`${e.topicId || e.date}-${i}`}>
             <span className="sm-chapter-date">{formatDateLabel(e.date)}</span>
-            <div className="sm-chapter-hl">{e.title}<WrittenLate entry={e} /></div>
+            <div className="sm-chapter-hl"><EntryRole role={e.role} />{e.title}<WrittenLate entry={e} /></div>
           </li>
         ))}
       </ul>

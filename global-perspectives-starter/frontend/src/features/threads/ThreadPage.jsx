@@ -39,6 +39,7 @@ import { ROUTE, mapHref } from '@/shared/lib/links.js';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import WrittenLate from '@/shared/ui/WrittenLate.jsx';
+import EntryRole from '@/shared/ui/EntryRole.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
@@ -656,7 +657,7 @@ export default function ThreadPage() {
                     <div className={`tp-tl-node${entry.topicId === analysis?.inflectionTopicId ? ' inflect' : ''}`} />
                   </div>
                   <div className="tp-tl-body">
-                    <div className="tp-tl-hl">{entry.title}</div>
+                    <div className="tp-tl-hl"><EntryRole role={entry.role} />{entry.title}</div>
                     <WrittenLate entry={entry} />
                     {entry.sources?.length > 0 && (
                       <div className="tp-tl-srcs">

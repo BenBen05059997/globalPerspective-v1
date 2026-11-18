@@ -1,5 +1,5 @@
 // A story view of the record (decisions 0037, 0042) -> the timeline entries the story page has always read from the
-// archive (`narrative_thread`), so the page switches source without changing what readers see. Entries only (recovered
+// archive (`narrative_thread`), so the page switches source without changing what readers see (plus `role`, which only the record has). Entries only (recovered
 // article rows are not shown here yet). Entry notes become `ai` text exactly as the archive stored it: markdown as is,
 // json as its text, cut at the archive's 1,500 characters.
 import { resolveCountry } from '@/shared/lib/countries.js';
@@ -38,6 +38,7 @@ export function viewEntriesToThread(view) {
       archivedAt: e.at,
       category: e.category ?? '',
       event_type: e.eventType ?? null,
+      role: e.role ?? null, // the builder's stamp (start | move | measure), shown by EntryRole; the archive path has none
       iso3,
       regions: iso3.map((c) => resolveCountry(c)?.name).filter(Boolean),
       actors: Array.isArray(e.actors) ? e.actors : [],

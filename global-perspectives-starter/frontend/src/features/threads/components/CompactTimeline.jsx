@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryEntryCard from '@/features/threads/components/StoryEntryCard';
+import EntryRole from '@/shared/ui/EntryRole.jsx';
 
 export default function CompactTimeline({ entries, entryShortTitles, onEntryFocus }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
@@ -37,6 +38,8 @@ export default function CompactTimeline({ entries, entryShortTitles, onEntryFocu
                 <span className="compact-timeline-meta">{sourceCount} source{sourceCount !== 1 ? 's' : ''}</span>
                 <span className={`story-card-chevron ${isExpanded ? 'open' : ''}`} aria-hidden="true">▾</span>
               </button>
+              {/* under the one-line row, not inside it (a long label would push the headline out of the row on a phone); an open row's card shows it */}
+              {!isExpanded && <EntryRole role={entry.role} />}
               {isExpanded && (
                 <div className="compact-timeline-expanded">
                   <StoryEntryCard entry={entry} />

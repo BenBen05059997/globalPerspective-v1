@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import WrittenLate from '@/shared/ui/WrittenLate.jsx';
+import EntryRole from '@/shared/ui/EntryRole.jsx';
 
 const AI_TABS = [
   { key: 'summary', field: 'summary', label: 'Summarize' },
@@ -16,7 +17,8 @@ export default function StoryEntryCard({ entry, compact }) {
 
   return (
     <div className={`story-entry-card ${compact ? 'compact' : ''}`}>
-      <CategoryTag category={entry.category?.toLowerCase()} className="story-entry-cat" />
+      <CategoryTag category={entry.category?.toLowerCase()} className="story-entry-cat" />{' '}
+      <EntryRole role={entry.role} className="story-entry-cat" />
       <div className="story-entry-title">{entry.title}</div>
       <WrittenLate entry={entry} />
       {entry.sources && entry.sources.length > 0 && (

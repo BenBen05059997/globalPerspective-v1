@@ -479,3 +479,64 @@ test('titleOf: the newest non-article entry in the 30-day window, else the newes
   assert.equal(titleOf([t('x2'), t('x4')], today, refs), 'x4'); // listed on a later archive day
   assert.equal(titleOf([t('b'), t('a')], today), 'b'); // no refs: eventId breaks the tie
 });
+
+// role (decision 0058: the builder stamps an entry's place in our record; pages show it and never compute it)
+const roles = (v, id) => v.stories.get(id).entries.map((e) => [e.eventId, e.role]);
+const measure = (f) => ({...f, payload: {...f.payload, eventType: 'measure'}});
+const limitedBorn = (threadId, at) => ({...X.born(threadId, at, at.slice(0, 10)), payload: {born: at.slice(0, 10), firstTitle: 'x', windowLimited: true, missingBefore: []}});
+
+test('role: a single entry is start; later entries are move; merged-in entries count, the oldest by entry order starts', () => {
+  assert.deepEqual(roles(build([X.entry('one', '2026-10-20T00:00:00.000Z', 'only', {id: 'o1'})]), 'one'), [['o1', 'start']]);
+  const v = build(X.golden());
+  assert.deepEqual(roles(v, 'thread-a'), [['ea1', 'start'], ['ea2', 'move']]);
+  assert.deepEqual(roles(v, 'thread-b'), [['ec1', 'start'], ['eb1', 'move']]); // ec1 came from the merged thread-c and is older
+  assert.deepEqual(roles(v, 'thread-old'), [['eo1', 'start']]);
+});
+
+test('role: the first entry follows the title rule\'s order (archive day and place) when date and time tie', () => {
+  const at = '2026-10-20T10:00:00.000Z';
+  const listed = (id, index) => ({...X.entry('tie', at, id, {id}), sourceKey: `archive#2026-10-20|${id}`, sourceRow: {store: 'NewsCache', key: {id: 'archive#2026-10-20'}, index}});
+  assert.deepEqual(roles(build([listed('a', 5), listed('b', 2)]), 'tie'), [['a', 'move'], ['b', 'start']]);
+});
+
+test('role: reassignment re-labels on the next build: the moved entry is a move in its new story, the old story starts with what is left', () => {
+  const v = build([...X.golden(), X.assignment('ea1', 'thread-b', '2026-10-21T10:00:00.000Z')]);
+  assert.deepEqual(roles(v, 'thread-a'), [['ea2', 'start']]);
+  assert.deepEqual(roles(v, 'thread-b'), [['ec1', 'start'], ['ea1', 'move'], ['eb1', 'move']]);
+});
+
+test('role: set before the 400 cap, so a capped view keeps no start', () => {
+  const f = Array.from({length: 405}, (_, i) => X.entry('big', `2026-10-${String(1 + Math.floor(i / 24)).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00.000Z`, `e${i}`, {id: `id${String(i).padStart(3, '0')}`}));
+  const s = build(f).stories.get('big');
+  assert.equal(s.entriesOmitted, 5);
+  assert.deepEqual([...new Set(s.entries.map((e) => e.role))], ['move']);
+  assert.equal(build(f.slice(0, 400)).stories.get('big').entries[0].role, 'start');
+});
+
+test('role: a story_born that says windowLimited leaves the first entry null; the birth of the story the entry came from counts', () => {
+  const at = '2026-10-18T04:00:00.000Z';
+  const base = [X.entry('w', at, 'first', {id: 'w1'}), X.entry('w', '2026-10-19T04:00:00.000Z', 'second', {id: 'w2'})];
+  assert.deepEqual(roles(build([limitedBorn('w', at), ...base]), 'w'), [['w1', null], ['w2', 'move']]);
+  assert.deepEqual(roles(build([X.born('w', at, '2026-10-18'), ...base]), 'w'), [['w1', 'start'], ['w2', 'move']]); // windowLimited absent: a start
+  const cLimited = X.golden().map((f) => (f.kind === 'story_born' && f.threadId === 'thread-c' ? limitedBorn('thread-c', f.at) : f));
+  assert.deepEqual(roles(build(cLimited), 'thread-b'), [['ec1', null], ['eb1', 'move']]); // the merged-in thread-c may be older than the record
+  const bLimited = X.golden().map((f) => (f.kind === 'story_born' && f.threadId === 'thread-b' ? limitedBorn('thread-b', f.at) : f));
+  assert.deepEqual(roles(build(bLimited), 'thread-b'), [['ec1', 'start'], ['eb1', 'move']]); // its first entry is thread-c's, born inside the window
+});
+
+test('role: an entry whose eventType is measure is measure, first or later, and even when the story may be older', () => {
+  const e1 = X.entry('m', '2026-10-18T04:00:00.000Z', 'figure', {id: 'm1'});
+  const e2 = X.entry('m', '2026-10-19T04:00:00.000Z', 'vote', {id: 'm2'});
+  const e3 = X.entry('m', '2026-10-20T04:00:00.000Z', 'study', {id: 'm3'});
+  assert.deepEqual(roles(build([measure(e1), e2, e3]), 'm'), [['m1', 'measure'], ['m2', 'move'], ['m3', 'move']]);
+  assert.deepEqual(roles(build([e1, e2, measure(e3)]), 'm'), [['m1', 'start'], ['m2', 'move'], ['m3', 'measure']]);
+  assert.deepEqual(roles(build([limitedBorn('m', e1.at), measure(e1), e2]), 'm'), [['m1', 'measure'], ['m2', 'move']]);
+});
+
+test('role: an article row has no role and never takes the start, even when it is older than every entry', () => {
+  const v = build([...X.golden(), A1(), X.assignment('art1', 'thread-a', '2026-10-24T00:00:00.000Z')]);
+  const a = v.stories.get('thread-a').entries;
+  assert.equal(a[0].kind, 'article');
+  assert.equal('role' in a[0], false);
+  assert.deepEqual(roles(v, 'thread-a').slice(1), [['ea1', 'start'], ['ea2', 'move']]);
+});

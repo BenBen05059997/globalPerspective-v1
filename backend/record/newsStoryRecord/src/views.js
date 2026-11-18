@@ -225,9 +225,16 @@ function articleRow(f, corrected) {
   };
 }
 
-/** The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending. */
-function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()) {
-  return group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.kind === 'article' ? {...articleRow(f, corrected), ...(own ? {} : {fromThreadId: threadId})} : ({
+/**
+ * The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending.
+ * Each non-article row carries `role`, the entry's place in our record (decision 0058: the builder stamps it, pages only show it): the
+ * first non-article row by entryOrder (the order titleOf uses, merged stories included) is `start`, every later one `move`, and an
+ * entry whose eventType is `measure` (a measured change, a model call) is `measure` wherever it stands. The first is null instead of
+ * `start` when the birth fact of the story it came from says that story may be older than the record (`limited`: story_born
+ * windowLimited). Roles are set over every row before the view's cap, so a capped view can show no `start`.
+ */
+function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map(), {refs = new Map(), limited = new Set()} = {}) {
+  const rows = group.flatMap(({threadId, own, facts}) => facts.filter((f) => f.kind === 'entry' || f.kind === 'article').map((f) => f.kind === 'article' ? {...articleRow(f, corrected), ...(own ? {} : {fromThreadId: threadId})} : ({
     eventId: f.eventId, date: f.date, at: f.at, precision: f.precision, title: f.payload.title, summary: f.payload.summary ?? null,
     category: f.payload.category ?? null, eventType: f.payload.eventType ?? null, sources: sourcesOf(f),
     topicId: f.payload.topicId ?? null, iso3: f.iso3 || [], // the story page looks up forecasts and analysis by topicId and shows countries
@@ -235,6 +242,10 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
     ...(f.provisional ? {provisional: true} : {}), // today's archive entry before the nightly run has frozen it (0050)
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
+  const order = entryOrder(refs);
+  const first = rows.filter((e) => e.kind !== 'article').reduce((a, e) => (!a || order(e, a) < 0 ? e : a), null);
+  const roleOf = (e) => (e.eventType === 'measure' ? 'measure' : e !== first ? 'move' : limited.has(e.fromThreadId || group[0].threadId) ? null : 'start');
+  return rows.map((e) => (e.kind === 'article' ? e : {...e, role: roleOf(e)}));
 }
 
 /** The weekly sample on record (0043): weeks with a commit, weeks with a draw, and every sampled qid. Built once from all facts. */
@@ -294,6 +305,8 @@ function groupStories(facts, aliases, keep = new Set()) {
  */
 function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy = new Map()}) {
   const {own, merged} = groupStories(facts, aliases, keep);
+  // stories whose birth fact says they may be older than the record: their first entry is not stamped `start` (entryRows)
+  const limited = new Set(facts.filter((f) => f.kind === 'story_born' && f.payload && f.payload.windowLimited === true).map((f) => f.threadId));
   const ledger = sampleLedger(facts);
   const stories = new Map();
   const rows = new Map();
@@ -324,7 +337,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const mergeFacts = applied.filter((f) => ids.has(f.payload.into));
     const corrections = allFacts.filter((f) => f.kind === 'correction');
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
-    const entries = entryRows(group, corrected, reassigned, notesBy);
+    const entries = entryRows(group, corrected, reassigned, notesBy, {refs, limited});
     const kept = entries.slice(-ENTRY_CAP);
     const title = titleOf(entries, today, refs); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
     const forks = forkRows(mine, ledger, today);

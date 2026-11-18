@@ -467,6 +467,15 @@
             "$ref": "#/definitions/source"
           }
         },
+        "role": {
+          "enum": [
+            "start",
+            "move",
+            "measure",
+            null
+          ],
+          "description": "the entry's place in our record, stamped by the builder (pages show it, never compute it): start = the story's first entry by the title rule's entry order, merged stories included; move = a later entry; measure = an entry whose eventType is measure (a measured change, model judgment), wherever it stands; null on the first entry when its story's story_born says windowLimited (the story may be older than the record)"
+        },
         "fromThreadId": {
           "type": "string",
           "description": "present on an entry that came from a story merged into this one"

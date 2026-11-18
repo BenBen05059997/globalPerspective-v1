@@ -175,3 +175,51 @@ test('predThreadFix does nothing when the row is missing, agrees, or no final id
   assert.equal(lib.predThreadFix(row, null), null);
   assert.equal(lib.predThreadFix({ PK: 'PRED#b', SK: 'd' }, 'thread-y').ExpressionAttributeValues[':old'], 'none');
 });
+
+// continues_thread: the picking step's thread id joins straight to that thread.
+const daysAgo = (n) => new Date(Date.UTC(2026, 10, 18) - n * 864e5).toISOString();
+const quiet = (t, threadId, n) => ({ ...past(t, threadId), archivedAt: daysAgo(n) });
+
+test('continues_thread wins over a continues_topic, a same title and a passing score', () => {
+  const topic = { ...plagueRu, continues_topic: 'Other story', continues_thread: 'thread-chosen' };
+  const rows = [past(plagueUs, 'thread-score'), past({ title: 'Other story' }, 'thread-cont'), past(plagueRu, 'thread-title')];
+  const m = matchThread(topic, rows);
+  assert.equal(m.threadId, 'thread-chosen');
+  assert.equal(m.via, 'continues_thread');
+  assert.equal(matchThread({ ...topic, continues_thread: undefined }, rows).threadId, 'thread-cont');
+});
+
+test('continues_thread joins a thread quiet for 10 days that is not in the window at all', () => {
+  const topic = { id: 'a', title: 'Fresh angle', continues_thread: 'thread-old' };
+  const m = matchThread(topic, []);
+  assert.deepEqual([m.threadId, m.via, m.score], ['thread-old', 'continues_thread', 0]);
+  const [r] = joinRun([topic], [quiet({ title: 'Old' }, 'thread-other', 1)]);
+  assert.equal(r.threadId, 'thread-old');
+  assert.equal(r.via, 'continues_thread');
+  const near = matchThread({ ...plagueRu, continues_thread: 'thread-p' }, [quiet(plagueUs, 'thread-p', 10)]);
+  assert.ok(near.score > 0 && near.matched.threadId === 'thread-p');
+});
+
+test('without continues_thread the join is unchanged', () => {
+  const rows = [past(plagueUs, 'thread-plague')];
+  for (const t of [plagueRu, { ...plagueRu, continues_thread: undefined }, { ...plagueRu, continues_thread: null }]) {
+    const m = matchThread(t, rows);
+    assert.deepEqual([m.threadId, m.via], ['thread-plague', 'score']);
+  }
+});
+
+test('an empty or malformed continues_thread falls back to today rules and is logged once per topic', () => {
+  const rows = [past(plagueUs, 'thread-plague')];
+  const warn = console.warn; const lines = [];
+  console.warn = (m) => lines.push(m);
+  try {
+    for (const bad of ['', '  ', 'S12', 'plague', 'thread-', 42, {}]) {
+      assert.equal(joinRecord({ ...plagueRu, continues_thread: bad }, rows).via, 'score');
+    }
+    assert.equal(lines.length, 7);
+    lines.length = 0;
+    const out = joinRun([{ ...plagueRu, id: 'a', continues_thread: 'bad' }, { id: 'b', title: 'Nothing like it', continues_thread: '' }], rows);
+    assert.deepEqual(out.map(r => r.via), ['score', 'new']);
+    assert.equal(lines.length, 2);
+  } finally { console.warn = warn; }
+});

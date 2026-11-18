@@ -9,6 +9,8 @@
 //   3. the composite score (0.5*keywords + 0.3*regions + 0.2*category) is >= JOIN_MIN_SCORE AND the
 //      keyword-only Jaccard is >= JOIN_MIN_KW. Same region + same category alone scores 0.5 with zero
 //      shared words; every judged wrong join had keyword overlap <= 0.10, every right one >= 0.14.
+// A topic that carries a valid continues_thread (a thread id the picking step mapped from its numbered
+// list of followed stories) joins that thread first, whatever the age of the thread's last entry.
 // Otherwise it starts a new thread. Titles compare normalised (case, whitespace, punctuation), so
 // "Former German spy chief…" and "Former German Spy Chief…" are one story.
 
@@ -77,12 +79,32 @@ const passesJoin = ({ score, kwScore }) => score >= JOIN_MIN_SCORE && kwScore >=
 const continuesEntry = (topic, entry) => Boolean(normalizeTitle(topic.continues_topic)) && normalizeTitle(entry.title) === normalizeTitle(topic.continues_topic);
 const sameTitle = (topic, entry) => Boolean(normalizeTitle(topic.title)) && normalizeTitle(entry.title) === normalizeTitle(topic.title);
 
+// The topic's continues_thread when it is a usable thread id, else null (absent, empty or malformed).
+function continuesThreadId(topic) {
+  const v = topic && topic.continues_thread;
+  return typeof v === 'string' && /^thread-\S+$/.test(v.trim()) ? v.trim() : null;
+}
+
+// Logs a continues_thread that is present but unusable (once per topic: the callers run before matching).
+function warnBadContinuesThread(topic) {
+  const v = topic && topic.continues_thread;
+  if (v === undefined || v === null || continuesThreadId(topic)) return;
+  console.warn(`[join] ignoring bad continues_thread ${JSON.stringify({ topicId: topic.id || topic.topicId || null, continues_thread: v })}`);
+}
+
 // The thread a topic joins among past archive entries:
-// { threadId (null = start a new thread), via: 'continues_topic'|'title'|'score'|'new', score, kwScore, matched }.
+// { threadId (null = start a new thread), via: 'continues_thread'|'continues_topic'|'title'|'score'|'new', score, kwScore, matched }.
+// continues_thread wins and needs no entry in pastEntries (the thread may be quiet for more than the 7-day window);
+// score/kwScore then come from its newest entry in pastEntries, or are 0.
 // pastEntries come newest first, so a title match takes the most recent entry.
 // score/kwScore are the best composite seen (for the log), or the joined entry's when it joined.
 function matchThread(topic, pastEntries = []) {
   const withThread = pastEntries.filter(e => e && e.threadId);
+  const direct = continuesThreadId(topic);
+  if (direct) {
+    const matched = withThread.find(e => e.threadId === direct) || null;
+    return { threadId: direct, via: 'continues_thread', ...(matched ? joinScore(topic, matched) : { score: 0, kwScore: 0 }), matched };
+  }
   // Preserve newest-first order for undated legacy entries; dated entries use real time.
   const latest = (entry) => Math.max(0, ...withThread.filter(e => e.threadId === entry.threadId)
     .map(e => Date.parse(e.archivedAt || e.date || '')).filter(Number.isFinite));
@@ -114,6 +136,7 @@ function matchThread(topic, pastEntries = []) {
 // { topicId, threadId, via, score, kwScore } — score/kwScore are the joined entry's, or the best seen
 // for a new thread, rounded to 3 places.
 function joinRecord(topic, pastEntries = []) {
+  warnBadContinuesThread(topic);
   const m = matchThread(topic, pastEntries);
   const round = (n) => Math.round(n * 1000) / 1000;
   return {
@@ -130,6 +153,7 @@ function joinRecord(topic, pastEntries = []) {
 // assigned members before minting another id. Reverse explicit continuation handles a
 // topic naming a later member. Existing historical threads are never silently merged.
 function joinRun(topics, pastEntries = []) {
+  topics.forEach(warnBadContinuesThread);
   const records = topics.map(t => ({ topicId: t.id || t.topicId || null, ...matchThread(t, pastEntries) }));
   const pending = new Set(records.flatMap((r,i) => r.threadId ? [] : [i]));
   while (pending.size) {

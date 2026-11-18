@@ -55,7 +55,7 @@ the draw cadence, never freshness), `dryRun` (plan only, no LLM, no writes).
   without an action verb, already true in a story entry of the window, generic actor, more than 3.
 
 ## Threading
-- `src/threading.js` (pure): join an entry of the window on `continues_topic` or title (normalised), else composite score >= 0.4 with
+- `src/threading.js` (pure): a topic with a valid `continues_thread` (`thread-…`, set by the picking step from its numbered list of followed stories) joins that thread first, even when its last entry is older than the 7-day window (`via: continues_thread`); a bad value is logged and ignored. Else join an entry of the window on `continues_topic` or title (normalised), else composite score >= 0.4 with
   keyword Jaccard >= 0.15; else found `thread-<slug>-<sha1>`. The whole run is compared before ids are minted. Each assignment logs
   `[join] {topicId, threadId, via, score, kwScore}`.
 - Repair: `node backend/pipeline/cli/threads.mjs list-joins|merge|split|move` (writes only with `--apply`, operator yes).

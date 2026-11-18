@@ -88,11 +88,11 @@ test('followedStories: one line per thread, numbered in order, multi-entry stori
     entry('2026-11-13', 'th-quake', 'Quake Hits Chile Coast'),
   ];
   const { value: { stories, cut }, out } = quietly(() => S.followedStories(entries, NOW));
-  assert.deepEqual(stories.map((s) => [s.key, s.threadId, s.lastDate, s.count, s.title]), [
-    ['S1', 'th-iran', '2026-11-14', 3, 'Iran Seizes Second Tanker'],
-    ['S2', 'th-kenya', '2026-11-13', 2, 'Kenya Senate Passes Budget'],
-    ['S3', 'th-crash', '2026-11-14', 1, 'Bus Crash Kills 12 in Peru'],
-    ['S4', 'th-quake', '2026-11-13', 1, 'Quake Hits Chile Coast'],
+  assert.deepEqual(stories.map((s) => [s.key, s.threadId, s.lastDate, s.count, s.title, s.firstTitle]), [
+    ['S1', 'th-iran', '2026-11-14', 3, 'Iran Seizes Second Tanker', 'Iran Closes Hormuz Lane'],
+    ['S2', 'th-kenya', '2026-11-13', 2, 'Kenya Senate Passes Budget', 'Kenya Budget Passes First Reading'],
+    ['S3', 'th-crash', '2026-11-14', 1, 'Bus Crash Kills 12 in Peru', 'Bus Crash Kills 12 in Peru'],
+    ['S4', 'th-quake', '2026-11-13', 1, 'Quake Hits Chile Coast', 'Quake Hits Chile Coast'],
   ]);
   assert.equal(cut, 0);
   assert.deepEqual(out, ['FOLLOWED: 4 stories listed, 0 cut']);
@@ -106,7 +106,7 @@ test('followedStories: the newest title is by day, then archive time, then input
     entry('2026-11-13', 'u', 'First of the row'),
     entry('2026-11-13', 'u', 'Second of the row'),
   ], NOW));
-  assert.deepEqual(value.stories.map((s) => s.title), ['Later in the day', 'Second of the row']);
+  assert.deepEqual(value.stories.map((s) => [s.title, s.firstTitle]), [['Later in the day', 'Day before'], ['Second of the row', 'First of the row']]);
 });
 
 test('followedStories: today and the 14 days before only; entries without a thread id or title are not listed; empty input', () => {
@@ -194,7 +194,7 @@ test('the repeat drop is unchanged and its log line names the followed story', (
 
 test('selectionRequest puts the followed list in the prompt', () => {
   const { value } = quietly(() => S.selectionRequest({ articles: pool, limit: 13, stories: followed }));
-  assert.match(value.prompt, /^S1 · 2026-11-14 · 3 · Quake Hits Chile Coast$/m);
+  assert.match(value.prompt, /^S1 · 2026-11-14 · 3 · Quake Hits Chile Coast$/m, 'no firstTitle: no began part');
   assert.match(value.prompt, /^S2 · 2026-11-13 · 1 · Kenya Budget Passes First Reading$/m);
 });
 
@@ -219,7 +219,7 @@ test('handler: reads today and 14 days of archive rows, lists the stories by thr
   assert.equal(archiveReads.length, 15);
   assert.deepEqual([archiveReads[0], archiveReads[14]], ['archive#2026-10-08', 'archive#2026-10-22']);
   const p = prompts[0];
-  assert.match(p, /^STORIES WE FOLLOW .*\nS1 · 2026-10-22 · 2 · Earlier quake run\nS2 · 2026-10-08 · 1 · Fourteen days back\n\n/m);
+  assert.match(p, /^STORIES WE FOLLOW .*\nS1 · 2026-10-22 · 2 · Earlier quake run \(began: Chile Quake Kills 40\)\nS2 · 2026-10-08 · 1 · Fourteen days back\n\n/m);
   assert.doesNotMatch(p, /An entry with no thread|Fifteen days back|Something seen today|PREVIOUSLY COVERED/);
   const staged = written.find((i) => i.id === 'staging').topics;
   assert.deepEqual(staged.map((t) => [t.title, t.continues_thread || null, t.continues_topic || null, t.event_type]), [
@@ -234,4 +234,23 @@ test('handler: an unreadable archive leaves an empty list and the run goes on (d
   assert.equal(result.status, 'ok');
   assert.match(prompts[0], /^STORIES WE FOLLOW .*\n\(none\)$/m);
   assert.equal(written.find((i) => i.id === 'staging').topics.length, 1);
+});
+
+test('story lines: one entry has no began part, two or more show the oldest title, equal titles show none; the cap still cuts oldest singles', () => {
+  const entries = [
+    entry('2026-11-10', 'th-two', 'Kerch Bridge Struck by Ukrainian Missiles'),
+    entry('2026-11-14', 'th-two', 'Russian Strikes Hit Two Dnipro Bridges in Kyiv'),
+    entry('2026-11-12', 'th-same', 'Measles Elimination Status Lost'),
+    entry('2026-11-13', 'th-same', 'Measles Elimination Status Lost'),
+    entry('2026-11-14', 'th-one', 'Quake Hits Chile Coast'),
+  ];
+  for (let i = 0; i < 360; i++) entries.push(entry(i < 300 ? '2026-11-13' : '2026-11-01', `single${i}`, `Single ${i}`));
+  const { value: { stories, cut } } = quietly(() => S.followedStories(entries, NOW));
+  const p = quietly(() => S.selectionRequest({ articles: pool, limit: 13, stories })).value.prompt;
+  assert.match(p, /^S1 · 2026-11-14 · 2 · Russian Strikes Hit Two Dnipro Bridges in Kyiv \(began: Kerch Bridge Struck by Ukrainian Missiles\)$/m);
+  assert.match(p, /^S2 · 2026-11-13 · 2 · Measles Elimination Status Lost$/m);
+  assert.match(p, /^S3 · 2026-11-14 · 1 · Quake Hits Chile Coast$/m);
+  assert.equal((p.match(/\(began: /g) || []).length - 1, 1, 'one began line besides the header');
+  assert.equal(cut, 13);
+  assert.equal(stories.filter((s) => s.lastDate === '2026-11-01').length, 47, 'the oldest singles are the ones cut');
 });

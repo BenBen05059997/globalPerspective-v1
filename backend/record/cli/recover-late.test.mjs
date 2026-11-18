@@ -48,10 +48,12 @@ function fixtures() {
   return dir;
 }
 
-// A stub of llm.js chat: the selection picks the first 3 prompt rows not already in the stories we follow; summary and cause answer with fixed text. Prints [usage] as llm.js does.
+// A stub of llm.js chat: the selection picks the first 3 prompt rows it has not picked in an earlier slot (a story line shows only its newest
+// and oldest titles, so the prompt alone cannot tell); summary and cause answer with fixed text. Prints [usage] as llm.js does.
 function stubChat(log = []) {
   let inFlight = 0;
   let peak = 0;
+  const picked = new Set();
   const chat = async (opts) => {
     log.push({ step: opts.step, model: opts.model, maxTokens: opts.maxTokens, json: opts.json });
     inFlight += 1; peak = Math.max(peak, inFlight);
@@ -62,8 +64,8 @@ function stubChat(log = []) {
     let content;
     if (opts.step === 'topic_selection') {
       const rows = [...opts.user.matchAll(/\d+\. (\S+ \d+x \d+y \d+z happens)\n\s+Source: (\S+)\n\s+Published: [^\n]*\n\s+URL: (\S+)/g)];
-      const seenBlock = opts.user.split('STORIES WE FOLLOW (')[1].split('REGIONAL DIVERSITY')[0];
-      const pick = rows.filter((r) => !seenBlock.includes(r[1])).slice(0, 3);
+      const pick = rows.filter((r) => !picked.has(r[1])).slice(0, 3);
+      for (const r of pick) picked.add(r[1]);
       content = JSON.stringify({ topics: pick.map((r, i) => ({ title: `${r[1]} lands in ${i}`, category: 'politics', search_keywords: ['k'], regions: ['France'], sources: [{ url: r[3], title: r[1], tier: 'primary' }], x_trending: false, significance: 'high', urgency: 'high', urgencyReason: 'r', primaryCountry: 'France', mentionedCountries: [], iso3: ['FRA'], actors: ['Someone Named'], event_type: 'policy' })) });
     } else if (opts.step === 'summary') content = '- The thing happened per BBC.';
     else content = JSON.stringify({ proximate: { what: 'w', when: 'now' }, contributing: [], structural: { factor: 'f', depth: 'd' }, impactScores: { humanImpact: 1, economicReach: 1, geopolitical: 1 }, biasNote: 'b', alternativePerspective: 'a', signalVsNoise: { verdict: 'Uncertain', confidence: 'Low' } });
@@ -170,15 +172,15 @@ test('generate: four slots, lines in the 11-14 and 11-15 files (never the clock\
   assert.deepEqual([...new Set(d14.map((l) => l.writtenLate.slot))], [S1]);
   assert.deepEqual([...new Set(d15.map((l) => l.writtenLate.slot))], [S2, S3, S4]);
   assert.deepEqual(d15.map((l) => l.n), [0, 1, 2, 0, 1, 2, 0, 1, 2]);
-  // each slot sees the earlier ones: its picks differ (the stub skips followed titles) and the earlier slot's stories are in its followed list
+  // each slot sees the earlier ones: the earlier slot's stories are in its followed list
   assert.equal(new Set([...d14, ...d15].map((l) => l.title)).size, 12);
   const p2 = fs.readFileSync(path.join(out, 'slots', '2026-11-15T0415', 'selection-prompt.txt'), 'utf8');
   assert.match(p2, /^STORIES WE FOLLOW /m);
   assert.doesNotMatch(p2, /PREVIOUSLY COVERED TODAY|NARRATIVE CONTINUITY/);
-  // the stub's three slot-1 topics join one thread (same region and category), so that thread is one line with its newest title
+  // the stub's three slot-1 topics join one thread (same region and category), so that thread is one line: newest title, began with the oldest
   const followed2 = p2.split('STORIES WE FOLLOW (')[1].split('REGIONAL DIVERSITY')[0];
   assert.equal(new Set(d14.map((l) => l.threadId)).size, 1);
-  assert.match(followed2, new RegExp(`^S\\d+ · 2026-11-14 · 3 · ${d14[2].title}$`, 'm'));
+  assert.match(followed2, new RegExp(`^S\\d+ · 2026-11-14 · 3 · ${d14[2].title} \\(began: ${d14[0].title}\\)$`, 'm'));
   assert.match(fs.readFileSync(path.join(out, 'slots', '2026-11-14T2015', 'selection-prompt.txt'), 'utf8'), /^S\d+ · 2026-11-14 · 1 · Live story about Zulu$/m);
   assert.equal(JSON.parse(fs.readFileSync(path.join(out, 'slots', '2026-11-15T0415', 'slot.json'), 'utf8')).window.followedStories, 2, 'the live Zulu story and the slot-1 thread');
   // the pool never held a line first seen after its slot

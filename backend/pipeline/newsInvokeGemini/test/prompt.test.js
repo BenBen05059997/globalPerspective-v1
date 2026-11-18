@@ -38,25 +38,28 @@ test('story kinds: the opening and task lines ask for starts and moves, the thre
   assert.match(p, /^WHAT GETS IN \(three kinds; nothing else\):$/m);
   assert.equal((p.match(/^[ABC]\. A (start|move|measured change):/gm) || []).length, 3);
   assert.match(p, /Set event_type to "measure"\. An opinion piece, a forecast, a poll, a commentary or one expert's view is never a measured change\./);
-  assert.match(p, /Leave out an event that connects to nothing before or after it/);
+  assert.match(p, /Leave out an event that connects to nothing before or after it: a one-off with no story behind it and nothing likely to follow, such as a single crime or a criminal case against a private person \(a case against an office-holder or a political figure is not a one-off\), a minor accident, a one-day stunt, a celebrity or entertainment announcement, or one expert's opinion\./);
   assert.match(p, /This holds for moves too: a reaction, warning or claim in a story we follow is not a move/);
-  assert.match(p, /An event that clears the floor always gets in: it starts a story or moves one\. Fewer than 15 is correct when few events are of the three kinds/);
+  assert.match(p, /An event that clears the floor always gets in: it starts a story or moves one\. Fewer than 15 is correct when fewer events matter or few are of the three kinds: never fill/);
+  assert.equal((p.match(/Fewer than 15 is correct/g) || []).length, 1, 'one "fewer is correct" sentence');
+  assert.match(p, /remove the least significant yourself\. Write the list in order of significance, every event that clears the floor first, so that a list that runs long loses only the least significant event\./);
   assert.match(p, /- Measured change: "Argentina Inflation Falls to 2\.4% Monthly, Lowest Since 2017"/);
 });
 
 test('rule 6: a followed story is named by its number, and the one with the most entries wins among duplicates', () => {
   const p = prompt();
   assert.match(p, /^6\. Name a followed story only by its number, copied exactly as listed \(for example "S12"\)\./m);
-  assert.match(p, /when unsure, leave "follows" out and the topic starts a story\. A wrong number puts the event on the wrong page\. When several listed stories cover the same situation, name the one with the most entries\.$/m);
+  assert.match(p, /when unsure, leave "follows" out and the topic starts a story\. A wrong number puts the event on the wrong page\. When several listed stories cover the same situation, name the one with the most entries, even when another story's newest title matches the event more closely\.$/m);
 });
 
 test('STORIES WE FOLLOW replaces the continuity and seen-today blocks; one numbered line per story', () => {
   const stories = [
-    { key: 'S1', threadId: 'thread-a', lastDate: '2026-11-17', count: 4, title: 'Houthis Strike Riyadh Airport' },
-    { key: 'S2', threadId: 'thread-b', lastDate: '2026-11-10', count: 1, title: 'Cyclone Arnab Makes Landfall' },
+    { key: 'S1', threadId: 'thread-a', lastDate: '2026-11-17', count: 4, title: 'Houthis Strike Riyadh Airport', firstTitle: 'Houthis Seize Hodeidah Port' },
+    { key: 'S2', threadId: 'thread-c', lastDate: '2026-11-12', count: 2, title: 'Same Title Twice', firstTitle: 'Same Title Twice' },
+    { key: 'S3', threadId: 'thread-b', lastDate: '2026-11-10', count: 1, title: 'Cyclone Arnab Makes Landfall', firstTitle: 'Cyclone Arnab Makes Landfall' },
   ];
   const p = prompt({ stories });
-  assert.match(p, /^STORIES WE FOLLOW \(number · last entry date · entries in 14 days · newest title\):\nS1 · 2026-11-17 · 4 · Houthis Strike Riyadh Airport\nS2 · 2026-11-10 · 1 · Cyclone Arnab Makes Landfall\n/m);
+  assert.match(p, /^STORIES WE FOLLOW \(number · last entry date · entries in 14 days · newest title; for a story with 2 or more entries, "\(began: \.\.\.\)" is its oldest title in the 14 days\):\nS1 · 2026-11-17 · 4 · Houthis Strike Riyadh Airport \(began: Houthis Seize Hodeidah Port\)\nS2 · 2026-11-12 · 2 · Same Title Twice\nS3 · 2026-11-10 · 1 · Cyclone Arnab Makes Landfall\n/m);
   assert.doesNotMatch(p, /NARRATIVE CONTINUITY|PREVIOUSLY COVERED TODAY|continues_topic|thread-a/);
   assert.match(prompt(), /^STORIES WE FOLLOW .*\n\(none\)$/m, 'an empty list says so');
 });

@@ -239,7 +239,7 @@ function selectionRules(limit, stories = []) {
     'A. A start: an event that opens a new story readers will want to follow because more will come of it: a war, a crisis, a negotiation, an investigation, a disaster and its aftermath, a policy that takes effect in steps. Leave "follows" out.',
     'B. A move: something DONE in a story we follow, even a quiet step: a vote held, a ruling issued, troops moved, a deal signed, talks held. Set "follows" to that story\'s number. A move is a new development: an article that only retells what the story\'s latest entry says is not a move.',
     'C. A measured change: an official figure (a statistics office, central bank, UN agency or government data release) or a major published study, when the change it reports is large by the source\'s own account (a record, the biggest change in years, a figure crossing an official threshold), or when it feeds a story we follow (then set "follows" too). Set event_type to "measure". An opinion piece, a forecast, a poll, a commentary or one expert\'s view is never a measured change.',
-    'Leave out an event that connects to nothing before or after it: a one-off with no story behind it and nothing likely to follow, such as a single crime, a minor accident or a one-day stunt. A reader cannot follow it, so it does not belong in the record.',
+    'Leave out an event that connects to nothing before or after it: a one-off with no story behind it and nothing likely to follow, such as a single crime or a criminal case against a private person (a case against an office-holder or a political figure is not a one-off), a minor accident, a one-day stunt, a celebrity or entertainment announcement, or one expert\'s opinion. A reader cannot follow it, so it does not belong in the record.',
     '',
     'RULES, WITH THE REASON FOR EACH:',
     '1. One event per topic. A page that joins two events cannot be followed over time: later news about one of them has nowhere clean to go, and the other one rides along. If a title needs "and", "as", "while" or a semicolon to hold two events, make two topics or keep only the more significant one. The same cost runs the other way: articles about the SAME event, whatever their headlines, angles or names for the actors, go into ONE topic, or the record gets two pages for one story. Err on the side of merging same-event articles, never of joining different events.',
@@ -250,8 +250,8 @@ function selectionRules(limit, stories = []) {
     '4. Select what was DONE, not what was said. A statement, plan, warning, call, claim, reaction, threat, pledge, poll or anniversary is not an event (judge by the headline\'s main clause: "X blasts Y as strikes kill 78" is said), because readers can find statements anywhere and the record exists for what happened. Write the title about the event and put a speaker in it only when the statement is itself the act: a declaration of war, a formal resignation, a signed decree. This holds for moves too: a reaction, warning or claim in a story we follow is not a move, however quiet the story has been.',
     '   - Avoid: "UN official warns Ukraine faces its toughest winter"',
     '   - Good: "Prime Minister resigns after losing confidence vote"',
-    `5. Significance floor, not a quota. A topic costs a reader's attention, so select EVERY event that clears the floor, then fill remaining slots by significance. The limit is ${limit} topics in total and it is a hard cap: the record keeps the first ${limit} of your list and discards the rest unread, so a ${limit + 1}th topic is lost, and the one lost is the last you wrote, not the least significant. Count your topics before you answer, and if there are more than ${limit}, remove the least significant yourself. Fewer than ${limit} is correct when fewer events matter. No category minimums, no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough. Beyond the floor, prefer material impact on how people live, work, eat, move or breathe over political theater. An event that clears the floor always gets in: it starts a story or moves one. Fewer than ${limit} is correct when few events are of the three kinds: never fill the list with one-offs or statements to reach ${limit}.`,
-    '6. Name a followed story only by its number, copied exactly as listed (for example "S12"). Name one only when the event is plainly part of that story; when unsure, leave "follows" out and the topic starts a story. A wrong number puts the event on the wrong page. When several listed stories cover the same situation, name the one with the most entries.',
+    `5. Significance floor, not a quota. A topic costs a reader's attention, so select EVERY event that clears the floor, then fill remaining slots by significance. The limit is ${limit} topics in total and it is a hard cap: the record keeps the first ${limit} of your list and discards the rest unread, so a ${limit + 1}th topic is lost, and the one lost is the last you wrote, not the least significant. Count your topics before you answer, and if there are more than ${limit}, remove the least significant yourself. Write the list in order of significance, every event that clears the floor first, so that a list that runs long loses only the least significant event. No category minimums, no category cap. The floor: (a) 10 or more deaths, or 100 or more injured or displaced; (b) a decision by a head of state or government, or by a parliament; (c) a nationally significant court ruling; (d) a border or diplomatic act: treaty, sanction, expulsion, recognition; (e) a strike or attack on infrastructure; (f) a disaster declaration. A single source is enough. Beyond the floor, prefer material impact on how people live, work, eat, move or breathe over political theater. An event that clears the floor always gets in: it starts a story or moves one. Fewer than ${limit} is correct when fewer events matter or few are of the three kinds: never fill the list with one-offs or statements to reach ${limit}.`,
+    '6. Name a followed story only by its number, copied exactly as listed (for example "S12"). Name one only when the event is plainly part of that story; when unsure, leave "follows" out and the topic starts a story. A wrong number puts the event on the wrong page. When several listed stories cover the same situation, name the one with the most entries, even when another story\'s newest title matches the event more closely.',
     '',
     'TITLE EXAMPLES (specific, one event each):',
     '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
@@ -260,13 +260,16 @@ function selectionRules(limit, stories = []) {
     '- Too vague: "Middle East Conflict Updates"',
     '- Measured change: "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
     '',
-    'STORIES WE FOLLOW (number · last entry date · entries in 14 days · newest title):',
-    ...(stories.length ? stories.map((s) => `${s.key} · ${s.lastDate} · ${s.count} · ${s.title}`) : ['(none)']),
+    'STORIES WE FOLLOW (number · last entry date · entries in 14 days · newest title; for a story with 2 or more entries, "(began: ...)" is its oldest title in the 14 days):',
+    ...(stories.length ? stories.map(followedLine) : ['(none)']),
     '',
   ];
 }
 
 // ---- the stories we follow ------------------------------------------------------------------------------------------------------------
+
+/** One list line: `S2 · 2026-11-17 · 3 · <newest title> (began: <oldest title>)`; the began part only when the two titles differ. */
+const followedLine = (s) => `${s.key} · ${s.lastDate} · ${s.count} · ${s.title}${s.firstTitle && s.firstTitle !== s.title ? ` (began: ${s.firstTitle})` : ''}`;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FOLLOWED_DAYS = 14;  // the list holds every story with an entry today or in the 14 days before
@@ -275,9 +278,9 @@ const FOLLOWED_CAP = 350;  // lines; about 314 stories had an entry in 14 days (
 /**
  * The stories we follow, from the archive entries ({date, title, threadId, archivedAt?}) of today and the FOLLOWED_DAYS before `nowMs`
  * (UTC days). One line per threadId: a run-local number (S1, S2...), the last entry date, the entries in the window, the newest entry's
- * title. Stories with 2 or more entries first, then single-entry ones, newest first inside each group; the cap cuts from the end, so the
+ * title and the oldest entry's title (`firstTitle`; the line shows it only when it differs). Stories with 2 or more entries first, then single-entry ones, newest first inside each group; the cap cuts from the end, so the
  * oldest single-entry stories go first. An entry without a threadId or title is not listed. Pure.
- * -> { stories: [{ key, threadId, lastDate, count, title }], cut }.
+ * -> { stories: [{ key, threadId, lastDate, count, title, firstTitle }], cut }.
  */
 function followedStories(entries, nowMs) {
   const today = new Date(nowMs).toISOString().slice(0, 10);
@@ -289,14 +292,15 @@ function followedStories(entries, nowMs) {
     if (!e || !e.threadId || !e.title || !e.date || e.date < from || e.date > today) return;
     const pos = { date: e.date, at: String(e.archivedAt || ''), i };
     const s = byThread.get(e.threadId);
-    if (!s) byThread.set(e.threadId, { threadId: e.threadId, count: 1, title: e.title, pos });
+    if (!s) byThread.set(e.threadId, { threadId: e.threadId, count: 1, title: e.title, pos, firstTitle: e.title, firstPos: pos });
     else {
       s.count += 1;
       if (later(pos, s.pos)) Object.assign(s, { title: e.title, pos });
+      if (later(s.firstPos, pos)) Object.assign(s, { firstTitle: e.title, firstPos: pos });
     }
   });
   const all = [...byThread.values()].sort((a, b) => ((b.count >= 2) - (a.count >= 2)) || (later(a.pos, b.pos) ? -1 : later(b.pos, a.pos) ? 1 : 0));
-  const stories = all.slice(0, FOLLOWED_CAP).map((s, n) => ({ key: `S${n + 1}`, threadId: s.threadId, lastDate: s.pos.date, count: s.count, title: s.title }));
+  const stories = all.slice(0, FOLLOWED_CAP).map((s, n) => ({ key: `S${n + 1}`, threadId: s.threadId, lastDate: s.pos.date, count: s.count, title: s.title, firstTitle: s.firstTitle }));
   const cut = all.length - stories.length;
   console.log(`FOLLOWED: ${stories.length} stories listed, ${cut} cut`);
   return { stories, cut };

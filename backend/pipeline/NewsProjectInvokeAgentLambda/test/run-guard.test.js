@@ -29,7 +29,9 @@ function harness(item, archive = null, cached = false) {
  const commands=Object.fromEntries(['PutCommand','GetCommand','ScanCommand','BatchWriteCommand','BatchGetCommand','QueryCommand','UpdateCommand'].map(kind=>[kind,class {constructor(input){this.kind=kind;this.input=input;}}]));
  const realRequire=createRequire(require.resolve('../src/index.js'));
  class Clock extends Date {constructor(...args){super(...(args.length?args:[now.toISOString()]));}static now(){return now.getTime();}}
- const sandbox={exports:{},require:name=>name==='@aws-sdk/client-dynamodb'?{DynamoDBClient:class{}}:name==='@aws-sdk/lib-dynamodb'?{...commands,DynamoDBDocumentClient:{from:()=>client}}:realRequire(name),process:{env:{TOPICS_DDB_TABLE:'NewsCache',SUMMARIZE_PREDICT_TABLE:'SummarizeAndPredict',CACHE_CLEANUP_ENABLED:'false'}},Date:Clock,console:Object.fromEntries(['log','warn','error','info'].map(k=>[k,(...args)=>logs.push(args.join(' '))])),setTimeout,clearTimeout};
+ // run-guard's staleReason/staleProcessedRun default `now` to `new Date()`: load it under the same fake clock, or the gate reads the real date
+ const clocked=(file)=>{const m={exports:{}};vm.runInNewContext(fs.readFileSync(require.resolve(file),'utf8'),{module:m,exports:m.exports,require:realRequire,Date:Clock});return m.exports;};
+ const sandbox={exports:{},require:name=>name==='./run-guard'?clocked('../src/run-guard.js'):name==='@aws-sdk/client-dynamodb'?{DynamoDBClient:class{}}:name==='@aws-sdk/lib-dynamodb'?{...commands,DynamoDBDocumentClient:{from:()=>client}}:realRequire(name),process:{env:{TOPICS_DDB_TABLE:'NewsCache',SUMMARIZE_PREDICT_TABLE:'SummarizeAndPredict',CACHE_CLEANUP_ENABLED:'false'}},Date:Clock,console:Object.fromEntries(['log','warn','error','info'].map(k=>[k,(...args)=>logs.push(args.join(' '))])),setTimeout,clearTimeout};
  vm.runInNewContext(fs.readFileSync(require.resolve('../src/index.js'),'utf8'),sandbox);
  return {handler:sandbox.exports.handler,calls,logs};
 }

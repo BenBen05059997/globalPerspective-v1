@@ -1,7 +1,7 @@
-// OrientationBanner — the Map's first line (SPEC §2, decision 0064): the promise sentence, the key to the two kind chips, and
-// (where a map is on screen) one line on the dots. A slim, dismissible note, never a modal; the × is remembered per browser in
-// localStorage, wrapped in try/catch so blocked storage still renders (it just re-shows next visit). The key moved to v2 when
-// the sentence came in, so readers who closed the old line see the new one once.
+// OrientationBanner — the Map's first lines (SPEC §2, decision 0064; design round 8): the promise sentence and, on desktop, the
+// two kind chips on one line. On a phone it is the sentence only (the kinds are in Map key there), so the map fits the first
+// screen. What the dots and the ◆ mean is in Map key and About this map. A slim, dismissible note, never a modal; the × is
+// remembered per browser in localStorage, wrapped in try/catch so blocked storage still renders (it just re-shows next visit).
 import { useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import ReaderPromise from '@/shared/ui/ReaderPromise.jsx';
@@ -13,12 +13,7 @@ function readDismissed() {
   try { return localStorage.getItem(DISMISSED_KEY) === '1'; } catch { return false; }
 }
 
-// Phones have no hover: say "tap" there (monitor fix, M7 review).
-function canHover() {
-  try { return !(window.matchMedia && window.matchMedia('(hover: none)').matches); } catch { return true; }
-}
-
-export default function OrientationBanner({ withMap = true }) {
+export default function OrientationBanner({ phone = false }) {
   const [dismissed, setDismissed] = useState(readDismissed);
   if (dismissed) return null;
 
@@ -31,13 +26,7 @@ export default function OrientationBanner({ withMap = true }) {
     <div className="sh-orient" role="note">
       <div className="sh-orient-text">
         <ReaderPromise className="sh-orient-promise" />
-        <KindKey />
-        {withMap ? (
-          <p className="sh-orient-dots">
-            On the map, each dot is a story; ◆ is an official disaster alert.{' '}
-            {canHover() ? 'Hover anything for a preview; Map key explains the rest.' : 'Tap anything to open it; Map key explains the rest.'}
-          </p>
-        ) : null}
+        {phone ? null : <KindKey oneLine />}
       </div>
       <Button variant="icon" className="sh-orient-close" onClick={dismiss} label="Dismiss this note">×</Button>
     </div>

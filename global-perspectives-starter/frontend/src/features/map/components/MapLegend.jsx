@@ -11,6 +11,7 @@ import { tierSize, TIERS, markerHex } from '@/shared/map/legend.js';
 import { outlineForTier } from '@/shared/map/countryRiskLayer.js';
 import { MOTION_BUDGET } from '@/shared/map/pulse.js';
 import Button from '@/shared/ui/Button.jsx';
+import KindKey from '@/shared/ui/KindKey.jsx';
 
 const SW = 22; // swatch box (px)
 const C = SW / 2;
@@ -92,7 +93,7 @@ function OutlineMark({ width, double }) {
  */
 export default function MapLegend({
   id = 'sh-legend-panel', present, hiddenCount = 0, storiesOlderLabel = null, onClose,
-  layer = 'situations', riskHiddenOld = 0, linksNow = 0,
+  layer = 'situations', riskHiddenOld = 0, linksNow = 0, kinds = false,
 }) {
   const has = (set, k) => !!set && set.has(k);
 
@@ -135,6 +136,8 @@ export default function MapLegend({
   return (
     <div id={id} className="sh-legend sh-legend-open" role="region" aria-label="How to read the map">
       <Button variant="icon" className="sh-legend-close" onClick={onClose} label="Close">×</Button>
+      {/* `kinds`: on a phone the Map box is the sentence only, so the kind chips are read here (design round 8). */}
+      {kinds ? <div className="sh-legrow"><b>Story kinds</b><KindKey /></div> : null}
       <div className="sh-legrow">
         <b>Shape = what it is</b>
         <Item on={has(present?.kinds, 'alert')} mark={<DiamondMark />}>Official disaster alert (GDACS)</Item>

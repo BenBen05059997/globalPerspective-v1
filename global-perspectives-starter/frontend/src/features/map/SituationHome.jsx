@@ -648,6 +648,19 @@ export default function SituationHome() {
     return () => ro.disconnect();
   }, [isPhone]);
   const mapH = isPhone ? phoneMapH : band.h;
+  // Desktop: the map band starts under the open Map box, so the globe is sized and centred in the free area and shows whole
+  // (design round 8). Box closed (or empty): the band uses the full height, as before.
+  const toplineRef = useRef(null);
+  const [mapTop, setMapTop] = useState(0);
+  useEffect(() => {
+    const el = toplineRef.current;
+    if (isPhone || !el || typeof ResizeObserver !== 'function') return undefined;
+    const measure = () => setMapTop(el.offsetHeight > 0 ? Math.round(el.offsetTop + el.offsetHeight) : 0);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, [isPhone]);
 
   // The honesty status line sits in the console top bar on desktop /map (Layout renders an empty
   // slot there, #gp-console-status); rendered inline when no slot exists (phone, tests).
@@ -890,6 +903,7 @@ export default function SituationHome() {
 
         {legendOpen ? (
           <MapLegend
+            kinds={isPhone}
             present={legendPresent}
             hiddenCount={alertStack.hiddenCount}
             storiesOlderLabel={topicsFreshness === 'older' && topicsAsOf ? olderLabel(topicsAsOf) : null}
@@ -990,7 +1004,7 @@ export default function SituationHome() {
     // card) on the right, the orientation line at the top of the free band, view controls
     // at its bottom. Nothing below the fold: "About this map" opens the old fold as a drawer.
     return (
-      <div className={`sh-root gp-console sh-console${stale ? ' sh-stale' : ''}`}>
+      <div className={`sh-root gp-console sh-console${stale ? ' sh-stale' : ''}`} style={{ '--sh-map-top': `${mapTop}px` }}>
         <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
         <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
         {bootOverlay}
@@ -1000,7 +1014,7 @@ export default function SituationHome() {
           <div className="sh-mapwrap">{mapPane}</div>
         </div>
 
-        <div className="sh-topline">
+        <div className="sh-topline" ref={toplineRef}>
           <OrientationBanner />
           {staleBanner}
         </div>
@@ -1069,7 +1083,7 @@ export default function SituationHome() {
       <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
       {bootOverlay}
       {/* SPEC §2 phone: the sentence and key line come first; the old header lines fold into "Map summary" below. */}
-      <OrientationBanner withMap={false} />
+      <OrientationBanner phone />
 
       {statusLine}
 
@@ -1087,6 +1101,8 @@ export default function SituationHome() {
 
       {phoneTab === 'map' ? (
         <div {...tabPanelProps('sh', 'map')} className="sh-phone-panel">
+          {/* The map first, so the MAP tab shows a map on its first screen (design round 8); Top stories follow. */}
+          <div className="sh-mapwrap">{mapPane}</div>
           <HudIntelFeed topics={topics} topicsAsOf={topicsAsOf} label="Top stories" directLimit={3} stories={editionStories} />
           <FoldRow className="sh-fold-brief" title="Map summary" hint={hudSummary}>
             <div className="sh-lede">{worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}</div>
@@ -1101,7 +1117,6 @@ export default function SituationHome() {
               {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
             </div>
           </FoldRow>
-          <div className="sh-mapwrap">{mapPane}</div>
           {/* The stale-feed filter creates a containing block for fixed descendants.
               Keep the detail sheet fixed to the phone viewport. */}
           {phoneSheetOpen ? createPortal(

@@ -104,6 +104,8 @@
 .gp-kind[data-kind='measure'] { border: 1px dashed var(--text-muted); color: var(--text-head); }
 .gp-kindkey { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; font-size: var(--text-ui); line-height: 1.5; color: var(--text-body); }
 .gp-kindkey__item { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.gp-kindkey--line { gap: var(--space-2); font-size: var(--text-sm); }
+.gp-kindkey__sep { color: var(--text-dim); }
 
 /* ---- PageLine (what this page holds, one line) ---- */
 .gp-pageline { margin: 0 0 var(--space-3); font-size: var(--text-base); line-height: 1.5; color: var(--text-muted); }

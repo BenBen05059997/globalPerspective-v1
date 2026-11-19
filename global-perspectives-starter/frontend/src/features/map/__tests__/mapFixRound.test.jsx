@@ -191,7 +191,16 @@ describe('one freshness stamp and one count', () => {
     expect(screen.getByRole('tab', { name: /alerts/i }).textContent).toMatch(/3$/);
     fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
     expect(within(screen.getByRole('tabpanel')).getAllByRole('button').filter((b) => b.classList.contains('al-card'))).toHaveLength(3);
-    expect(within(screen.getByLabelText('Alerts')).getByText(/3 open/)).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Alerts')).getByText(/3 stories, 3 alerts/)).toBeInTheDocument();
+  });
+
+  it('two alerts of one story: one row, and the header counts both (design round 8: "{r} stories, {a} alerts")', async () => {
+    S.isPhone = true;
+    S.world = world([sit({ id: 'a', verb_label: 'A', threadId: 'thread-one' }), sit({ id: 'b', verb_label: 'B', tier: 'moderate', threadId: 'thread-one' }), sit({ id: 'c', verb_label: 'C', tier: 'low' })]);
+    await renderAt('/');
+    expect(screen.getByRole('tab', { name: /alerts/i }).textContent).toMatch(/3$/);
+    fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
+    expect(within(screen.getByLabelText('Alerts')).getByText(/2 stories, 3 alerts/)).toBeInTheDocument();
   });
 });
 

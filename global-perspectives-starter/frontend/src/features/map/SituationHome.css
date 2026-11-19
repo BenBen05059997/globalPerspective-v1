@@ -235,7 +235,6 @@ a.hud-brief-title { display: block; color: var(--accent); }
 }
 .sh-orient-text { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); }
 .sh-orient .gp-promise.sh-orient-promise { margin: 0; padding: 0; border: 0; background: none; }
-.sh-orient-dots { margin: 0; }
 .sh-orient-close { flex: none; font-size: var(--text-xl); }
 
 /* ---- M7 phone pattern (P1): one tab switch (MAP · LIST · ALERTS) under the status line, then one
@@ -297,7 +296,7 @@ a.hud-brief-title { display: block; color: var(--accent); }
   background-image: linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
   background-size: 48px 48px;
 }
-.sh-console .sh-band { position: absolute; top: 0; bottom: 0; left: var(--sh-band-l); right: var(--sh-band-r); }
+.sh-console .sh-band { position: absolute; top: var(--sh-map-top, 0); bottom: 0; left: var(--sh-band-l); right: var(--sh-band-r); }
 .sh-console .sh-mapwrap, .sh-console .sh-mapinner { height: 100%; }
 .sh-console .sm-wrap { border: 0; border-radius: 0; background: transparent; }
 

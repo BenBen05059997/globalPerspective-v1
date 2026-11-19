@@ -117,15 +117,18 @@ export default function AlertStack({
   storyOf = null,
 }) {
   const now = Date.now();
+  // One row per story, so the header says both counts (design round 8): rows, and every alert on the map (the count production shows).
+  const rows = alertRows(items);
+  const count = `${rows.length} ${rows.length === 1 ? 'story' : 'stories'}, ${items.length} ${items.length === 1 ? 'alert' : 'alerts'}`;
   return (
     <Card as="section" level="hud" pad="sm" className={`hud-panel al-stack ${className}`.trim()} role="region" aria-label={label}>
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
-      <SectionHeader className="al-head" label={label} count={`${items.length} open`} />
+      <SectionHeader className="al-head" label={label} count={count} />
       <p className="al-note">Stories that are developing, and official disaster alerts.</p>
       {items.length ? (
         <ul className="al-list">
-          {alertRows(items).map((row) => (
+          {rows.map((row) => (
             <AlertRow key={row.key} row={row} story={storyOf ? storyOf(row.alerts[0]) : null} focusId={focusId} newIds={newIds} scannedIds={scannedIds} onSelect={onSelect} now={now} />
           ))}
         </ul>

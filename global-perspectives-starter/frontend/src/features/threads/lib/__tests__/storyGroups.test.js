@@ -67,15 +67,15 @@ describe('buildThreads', () => {
 
 describe('eventCount (R3-2)', () => {
   it('is the one word for a story\'s headline count, the story page\'s own term', () => {
-    expect(eventCount(1)).toBe('1 event');
-    expect(eventCount(12)).toBe('12 events');
+    expect(eventCount(1)).toBe('1 step');
+    expect(eventCount(12)).toBe('12 steps');
   });
 });
 
 describe('listCounts', () => {
   it('says the 30-day span once, for both counts', () => {
-    expect(listCounts(25, 13)).toBe('In 30 days: 25 events, 13 days with news');
-    expect(listCounts(1, 1)).toBe('In 30 days: 1 event, 1 day with news');
+    expect(listCounts(25, 13)).toBe('In 30 days: 25 steps, 13 days with news');
+    expect(listCounts(1, 1)).toBe('In 30 days: 1 step, 1 day with news');
   });
 });
 

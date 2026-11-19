@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import PageLine from '@/shared/ui/PageLine.jsx';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useDailyBrief } from '@/shared/hooks/useDailyBrief';
 import { useWeeklyBrief } from '@/features/briefings/hooks/useWeeklyBrief.js';
@@ -100,6 +101,7 @@ export default function BriefingsPage() {
 
   return (
     <div className="bm-page">
+      <PageLine>The day and the week, told through the stories that moved most.</PageLine>
       <div className="bm-page-head">
         <Tabs variant="segmented" idBase="brf-mode" label="Briefing mode" tabs={MODES} active={mode} onChange={setMode} />
       </div>

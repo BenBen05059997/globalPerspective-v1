@@ -27,7 +27,7 @@ function ScenarioCard({ scenario }) {
       <p className="ai-body">{scenario.rationale}</p>
       {triggers.length > 0 && (
         <div>
-          <div className="ai-kicker">Watch for</div>
+          <div className="ai-kicker">What we watch next</div>
           <ul className="ai-glyph-list">
             {triggers.map((t, i) => (
               <li key={i}>

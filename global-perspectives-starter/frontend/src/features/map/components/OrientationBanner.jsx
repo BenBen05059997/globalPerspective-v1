@@ -1,12 +1,13 @@
-// OrientationBanner — H1: a slim, dismissible one-line
-// orientation banner replaces the old guided-tour popover on the console. It never blocks
-// navigation (it's a static line, not a modal/overlay) and is remembered per-browser via
-// localStorage — wrapped in try/catch so a blocked/throwing storage still renders correctly
-// (it just re-shows next visit instead of crashing).
+// OrientationBanner — the Map's first line (SPEC §2, decision 0064): the promise sentence, the key to the two kind chips, and
+// (where a map is on screen) one line on the dots. A slim, dismissible note, never a modal; the × is remembered per browser in
+// localStorage, wrapped in try/catch so blocked storage still renders (it just re-shows next visit). The key moved to v2 when
+// the sentence came in, so readers who closed the old line see the new one once.
 import { useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
+import ReaderPromise from '@/shared/ui/ReaderPromise.jsx';
+import KindKey from '@/shared/ui/KindKey.jsx';
 
-const DISMISSED_KEY = 'gp_map_orientation_dismissed_v1';
+const DISMISSED_KEY = 'gp_map_orientation_dismissed_v2';
 
 function readDismissed() {
   try { return localStorage.getItem(DISMISSED_KEY) === '1'; } catch { return false; }
@@ -17,7 +18,7 @@ function canHover() {
   try { return !(window.matchMedia && window.matchMedia('(hover: none)').matches); } catch { return true; }
 }
 
-export default function OrientationBanner() {
+export default function OrientationBanner({ withMap = true }) {
   const [dismissed, setDismissed] = useState(readDismissed);
   if (dismissed) return null;
 
@@ -28,11 +29,16 @@ export default function OrientationBanner() {
 
   return (
     <div className="sh-orient" role="note">
-      <span className="sh-orient-text">
-        The map shows world events where they happen: ◆ official disaster alerts, soft dots for
-        situations at an approximate place, shaded countries for stories without an exact place.
-        {' '}{canHover() ? 'Hover anything for a preview; Key explains the rest.' : 'Tap anything to open it; Key explains the rest.'}
-      </span>
+      <div className="sh-orient-text">
+        <ReaderPromise className="sh-orient-promise" />
+        <KindKey />
+        {withMap ? (
+          <p className="sh-orient-dots">
+            On the map, each dot is a story; ◆ is an official disaster alert.{' '}
+            {canHover() ? 'Hover anything for a preview; Map key explains the rest.' : 'Tap anything to open it; Map key explains the rest.'}
+          </p>
+        ) : null}
+      </div>
       <Button variant="icon" className="sh-orient-close" onClick={dismiss} label="Dismiss this note">×</Button>
     </div>
   );

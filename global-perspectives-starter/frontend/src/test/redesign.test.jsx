@@ -79,8 +79,8 @@ describe('Redesign v2 — WeeklyPage', () => {
     const strip = document.querySelector('.ss-strip');
     expect(strip).toBeInTheDocument();
     expect(strip.textContent).toMatch(/LIVE/);
-    expect(strip.textContent).toMatch(/arcs/);
-    expect(strip.textContent).toMatch(/events/);
+    expect(strip.textContent).toMatch(/stories/);
+    expect(strip.textContent).toMatch(/steps/);
   });
 
   it('never claims LIVE for stale data', () => {

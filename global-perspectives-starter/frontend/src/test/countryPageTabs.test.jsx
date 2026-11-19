@@ -43,7 +43,7 @@ vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({ default: () => <div data-tes
 vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => <div data-testid="weekly-map" /> }));
 
 describe('CountryPage — views', () => {
-  it('offers Situation, Story Arcs and Coverage, and no country Causal Web', async () => {
+  it('offers Situation, Stories and Coverage, and no country Causal Web', async () => {
     const CountryPage = (await import('@/features/countries/CountryPage')).default;
     render(
       <MemoryRouter initialEntries={['/weekly/country/United%20States']}>
@@ -52,11 +52,11 @@ describe('CountryPage — views', () => {
     );
     const tabs = screen.getAllByRole('tab').map(t => t.textContent);
     expect(tabs.some(t => t.startsWith('Situation'))).toBe(true);
-    expect(tabs.some(t => t.startsWith('Story Arcs'))).toBe(true);
+    expect(tabs.some(t => t.startsWith('Stories'))).toBe(true);
     expect(tabs.some(t => t.startsWith('Coverage'))).toBe(true);
     expect(screen.queryByText(/Causal Web/i)).toBeNull();
 
-    for (const name of [/Story Arcs/, /Coverage/, /Situation/]) {
+    for (const name of [/Stories/, /Coverage/, /Situation/]) {
       const tab = screen.getByRole('tab', { name });
       fireEvent.click(tab);
       expect(tab.getAttribute('aria-selected')).toBe('true');

@@ -24,8 +24,8 @@ export default function CopyBriefing({ getText }) {
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 
-export function formatThreadBriefing(thread, analysis) {
-  const title = analysis?.threadTitle || thread.latestTitle;
+export function formatThreadBriefing(thread, analysis, name = null) {
+  const title = name || analysis?.threadTitle || thread.latestTitle; // the story's name when it has one (SPEC §6b)
   const lines = [];
 
   lines.push(`🧵 ${title}`);
@@ -137,7 +137,7 @@ export function formatDailyBrief(brief) {
   }
 
   if (brief.risingThread?.title) {
-    lines.push('RISING THREAD');
+    lines.push('RISING STORY');
     lines.push(`${brief.risingThread.title} — ${brief.risingThread.articleCount || '?'} articles, ${brief.risingThread.dayCount || '?'} days`);
     if (brief.risingThread.oneLiner) lines.push(brief.risingThread.oneLiner);
     lines.push('');

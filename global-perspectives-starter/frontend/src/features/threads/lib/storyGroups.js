@@ -64,9 +64,9 @@ export function daysWithNews(n, inDays = null) {
   return `${n} ${n === 1 ? 'day' : 'days'} with news${inDays ? ` in ${inDays} days` : ''}`;
 }
 
-/** eventCount(n) -> "12 events": the one word for a story's number of headlines (entries), as the story page says it. */
+/** eventCount(n) -> "12 steps": the one word for a story's number of headlines (entries), as the story page says it (0064). */
 export function eventCount(n) {
-  return `${n} ${n === 1 ? 'event' : 'events'}`;
+  return `${n} ${n === 1 ? 'step' : 'steps'}`;
 }
 
 // FALLBACK for the `archive_range` action path only (no record titles): the first entry of the newest day, `entries` being sorted
@@ -77,7 +77,7 @@ function actionPathTitle(entries) {
 }
 
 /**
- * listCounts(events, days) -> "In 30 days: 25 events, 13 days with news": a list row's two counts, both taken from the
+ * listCounts(events, days) -> "In 30 days: 25 steps, 13 days with news": a list row's two counts, both taken from the
  * weekly index's 30 days, with the span said once up front so it reads as covering both. Every list, rail, timeline and
  * map row that shows the two uses this; the story page keeps the bare all-time `eventCount` / `daysWithNews`.
  */
@@ -444,7 +444,7 @@ export const BOARD_COLUMNS = [
   { key: 'quieter', glyph: '▼', label: 'Quieter', short: 'Quieter' },
 ];
 
-export const BOARD_RULE = `Status from coverage, not from risk. ● New: first covered ${BOARD_NEW_DAYS} days ago or less. ▲ Rising: at least ${BOARD_MIN} events in the last ${BOARD_WINDOW} days and more than in the ${BOARD_WINDOW} days before. ▼ Quieter: no events in the last ${BOARD_WINDOW} days, or at least ${BOARD_MIN} in the ${BOARD_WINDOW} days before and fewer now. ◆ Steady: everything else. Counted from each story's own events per day, today included.`;
+export const BOARD_RULE = `Status from coverage, not from risk. ● New: first covered ${BOARD_NEW_DAYS} days ago or less. ▲ Rising: at least ${BOARD_MIN} steps in the last ${BOARD_WINDOW} days and more than in the ${BOARD_WINDOW} days before. ▼ Quieter: no steps in the last ${BOARD_WINDOW} days, or at least ${BOARD_MIN} in the ${BOARD_WINDOW} days before and fewer now. ◆ Steady: everything else. Counted from each story's own events per day, today included.`;
 
 /** dayCounts(thread, days, now) -> articles per day for the last `days` days, oldest first, today last. */
 export function dayCounts(thread, days = BOARD_SPARK_DAYS, now = Date.now()) {

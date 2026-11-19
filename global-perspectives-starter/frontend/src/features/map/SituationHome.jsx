@@ -11,7 +11,6 @@ import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
 import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
-import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
@@ -37,13 +36,14 @@ import { reportFetchError } from '@/shared/api/errorSink.js';
 import { deriveBootSensors } from '@/features/map/lib/bootSensors.js';
 import StoryCard from '@/features/map/components/StoryCard.jsx';
 import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
+import FoldRow from '@/shared/ui/FoldRow.jsx';
 import AlertStack from '@/features/map/components/AlertStack.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
 import { useWebIndex, deriveFromIndex } from '@/features/threads';
 import { linkedStoryLines } from '@/features/map/lib/cardMentions.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
-import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
+import { alertStackItems, alertEmptyText, alertStackNote, alertStoryId } from '@/features/map/lib/alertStack.js';
 import { markerKind, situationFreshness } from '@/shared/map/legend.js';
 import { storyHref, countryHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
@@ -111,8 +111,10 @@ function fmtShortDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// A merged situation (several story threads) keeps the oldest member's threadId, which is not the story its label names.
+// A merged situation (several story threads) keeps the oldest member's threadId, which is not the story its label names; the
+// tracker now writes `leadThreadId`, the story the label names (CONTRACT). Link that; a merged one without it gets no link.
 const isMerged = (s) => s?.threadIds?.length > 1;
+const storyLinkId = (s) => s?.leadThreadId || (s?.threadId && !isMerged(s) ? s.threadId : null);
 
 // Structured metrics for the detail panel. VS-PRIOR / outlet count are carried inside the
 // tracker's `what_changed` string today ("5 outlets · coverage 1.67× prior"); parse them here
@@ -223,10 +225,10 @@ function SituationDetail({ selected, fromStoryTitle = null, fromStoryId = null, 
         </>
       )}
 
-      {((selected.threadId && !isMerged(selected)) || (isGdacs && ev.gdacs_report_url)) && (
+      {(storyLinkId(selected) || (isGdacs && ev.gdacs_report_url)) && (
         <div className="sh-detail-foot">
-          {selected.threadId && !isMerged(selected)
-            ? <Link to={storyHref(selected.threadId)}>Full analysis →</Link>
+          {storyLinkId(selected)
+            ? <Link to={storyHref(storyLinkId(selected))}>Full analysis →</Link>
             : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
         </div>
       )}
@@ -309,8 +311,17 @@ export default function SituationHome() {
   // M5a — stories (current topics feed) reused as-is from the existing public hook; no re-fetch.
   const {
     topics, updatedAt: topicsUpdatedAt, generatedDate: topicsGeneratedDate,
-    settled: topicsSettled, error: topicsError, refetch: refetchTopics,
+    settled: topicsSettled, error: topicsError, refetch: refetchTopics, stories: editionStories,
   } = useGeminiTopics();
+  // An alert's story stamp (CONTRACT "per map alert"): today.json `stories[leadThreadId ?? threadId]`, else the story of an edition item that
+  // carries that threadId (`storyId`). None: the row shows no kind and no step text. Nothing is computed here.
+  const storyOfAlert = useCallback((s) => {
+    const id = alertStoryId(s);
+    if (!editionStories || !id) return null;
+    if (editionStories[id]) return editionStories[id];
+    const item = topics.find((t) => t.threadId === id && t.storyId);
+    return (item && editionStories[item.storyId]) || null;
+  }, [editionStories, topics]);
 
   // Boot screen (shared BootLoader): three sensors, each ticked ONLY by real data — News desk =
   // the stories feed settled, Disaster alerts = world/latest.json arrived with a checked GDACS
@@ -661,18 +672,20 @@ export default function SituationHome() {
   // section under the tabs (phone), then drop the param so the next "?" works. The Key stays one click away.
   const foldRef = useRef(null);
   const aboutParam = params.get('about');
-  useEffect(() => {
-    if (!aboutParam) return;
+  const openAbout = useCallback(() => {
     if (isPhone) {
       requestAnimationFrame(() => { foldRef.current?.scrollIntoView?.({ block: 'start' }); foldRef.current?.focus?.({ preventScroll: true }); });
     } else {
       setAboutOpen(true);
     }
+  }, [isPhone]);
+  useEffect(() => {
+    if (!aboutParam) return;
+    openAbout();
     setParams((p) => { const n = new URLSearchParams(p); n.delete('about'); return n; }, { replace: true });
-  }, [aboutParam, isPhone, setParams]);
+  }, [aboutParam, openAbout, setParams]);
   const [phoneTab, setPhoneTab] = useState('map');
   const [sheetStop, setSheetStop] = useState('half');
-  const [hudExpanded, setHudExpanded] = useState(false);
   const selectionId = focus || storyParam || countryParam || null;
   const prevSelectionRef = useRef(null);
   useEffect(() => {
@@ -759,8 +772,7 @@ export default function SituationHome() {
       return {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
-        // A merged situation keeps its oldest member's threadId but shows the lead story's headline: no link beats a wrong one.
-        href: hero.threadId && !isMerged(hero) ? storyHref(hero.threadId) : null,
+        href: storyLinkId(hero) ? storyHref(storyLinkId(hero)) : null,
         onOpen: () => select(hero.id),
       };
     }
@@ -798,7 +810,7 @@ export default function SituationHome() {
       ) : null}
       <Tabs
         variant="segmented" idBase="sh-layer" label="Map layer" className="sh-onmap" active={riskMode ? 'risk' : 'situations'} onChange={setLayer}
-        tabs={[{ key: 'situations', label: 'Situations' }, { key: 'risk', label: 'Country risk' }]}
+        tabs={[{ key: 'situations', label: 'Stories & alerts' }, { key: 'risk', label: 'How serious, by country' }]}
       />
       <Button
         ref={legendBtnRef}
@@ -808,7 +820,7 @@ export default function SituationHome() {
         aria-expanded={legendOpen}
         aria-controls="sh-legend-panel"
       >
-        {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: `var(--hue-${a})` }} />)} Key
+        {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: `var(--hue-${a})` }} />)} Map key
       </Button>
     </>
   );
@@ -935,7 +947,7 @@ export default function SituationHome() {
   ) : (
     <HudIntelFeed
       situations={situations} topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-      onSelectStory={selectStory} peek={mapPeek}
+      onSelectStory={selectStory} peek={mapPeek} stories={editionStories}
     />
   );
 
@@ -959,6 +971,11 @@ export default function SituationHome() {
   ) : null;
 
   const statusLine = <HudStatusLine paused={paused} gdacs={gdacs} />;
+  // "news 12 min ago · disaster alerts 4 min ago": the same fmtAgo ages the sensor rows print.
+  const dataChecksHint = [
+    world?.sources?.news ? `news ${fmtAgo(world.sources.news)}` : null,
+    world?.sources?.gdacs ? `disaster alerts ${fmtAgo(world.sources.gdacs)}` : null,
+  ].filter(Boolean).join(' · ') || null;
   const aboutContent = (
     <MapAbout
       paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}
@@ -989,24 +1006,32 @@ export default function SituationHome() {
         </div>
 
         <div className="sh-col sh-col-left">
-          <HudBriefPanel
-            heading={worldDateLabel ? `Situation brief · ${worldDateLabel}` : 'Situation brief'}
-            counts={world ? tierCounts : null}
-            lede={worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}
-            lead={world ? lead : null} readingFallback={readingFallback}
-          />
           {world ? (
             <AlertStack
               className="sh-alertstack"
               items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focusId} newIds={newIds} scannedIds={scannedIds}
-              onSelect={select} emptyText={alertEmpty} note={alertNote}
+              onSelect={select} emptyText={alertEmpty} note={alertNote} storyOf={storyOfAlert}
             />
           ) : null}
+          {/* SPEC §2: the situation brief folds into a closed row under the alerts; opened, it is the same panel. */}
+          <FoldRow className="sh-fold-brief" title="Map summary" hint="lead story and counts by level">
+            <HudBriefPanel
+              heading={worldDateLabel ? `Situation brief · ${worldDateLabel}` : 'Situation brief'}
+              counts={world ? tierCounts : null}
+              lede={worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}
+              lead={world ? lead : null} readingFallback={readingFallback}
+            />
+          </FoldRow>
         </div>
 
         <div className="sh-col sh-col-right">
-          {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
           <aside className="sh-rail">{railContent}</aside>
+          {/* SPEC §2: sensor status folds into a closed row; its hint carries the two ages, the panel stays the same inside. */}
+          {sensorRows.length ? (
+            <FoldRow className="sh-fold-checks" title="Data checks" hint={dataChecksHint}>
+              <HudSensorPanel rows={sensorRows} />
+            </FoldRow>
+          ) : null}
         </div>
 
         <div className="sh-viewbar" role="toolbar" aria-label="Map controls">
@@ -1043,19 +1068,8 @@ export default function SituationHome() {
       <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
       <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
       {bootOverlay}
-      <header className="sh-bar">
-        <div>
-          <div className="sh-lede">{worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}</div>
-          <div className="sh-sub">Global news intelligence, scored and mapped.{world?.next_expected_at ? ` Next update ${fmtIn(world.next_expected_at)}.` : ''}</div>
-        </div>
-        <div className="sh-live">
-          <span className={`sh-dot${stale ? ' sh-dot-stale' : ''}`} />
-          {stale ? 'Data delayed · ' : ''}{mapFileText}
-          {world?.next_expected_at && !stale ? <span className="sh-next"> · next {fmtIn(world.next_expected_at)}</span> : null}
-        </div>
-      </header>
-
-      <OrientationBanner />
+      {/* SPEC §2 phone: the sentence and key line come first; the old header lines fold into "Map summary" below. */}
+      <OrientationBanner withMap={false} />
 
       {statusLine}
 
@@ -1073,15 +1087,20 @@ export default function SituationHome() {
 
       {phoneTab === 'map' ? (
         <div {...tabPanelProps('sh', 'map')} className="sh-phone-panel">
-          <HudIntelFeed topics={topics} topicsAsOf={topicsAsOf} label="Top stories" directLimit={3} />
-          {world || sensorRows.length ? (
-            <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
-              <div className="sh-hud-row">
-                {world ? <HudBriefPanel counts={tierCounts} lead={lead} readingFallback={readingFallback} /> : null}
-                {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
-              </div>
-            </HudCompactLine>
-          ) : null}
+          <HudIntelFeed topics={topics} topicsAsOf={topicsAsOf} label="Top stories" directLimit={3} stories={editionStories} />
+          <FoldRow className="sh-fold-brief" title="Map summary" hint={hudSummary}>
+            <div className="sh-lede">{worldUnavailable ? FEED_UNAVAILABLE_TEXT : (world ? lede : 'Loading the world…')}</div>
+            <div className="sh-sub">Global news intelligence, scored and mapped.{world?.next_expected_at ? ` Next update ${fmtIn(world.next_expected_at)}.` : ''}</div>
+            <div className="sh-live">
+              <span className={`sh-dot${stale ? ' sh-dot-stale' : ''}`} />
+              {stale ? 'Data delayed · ' : ''}{mapFileText}
+              {world?.next_expected_at && !stale ? <span className="sh-next"> · next {fmtIn(world.next_expected_at)}</span> : null}
+            </div>
+            <div className="sh-hud-row">
+              {world ? <HudBriefPanel counts={tierCounts} lead={lead} readingFallback={readingFallback} /> : null}
+              {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
+            </div>
+          </FoldRow>
           <div className="sh-mapwrap">{mapPane}</div>
           {/* The stale-feed filter creates a containing block for fixed descendants.
               Keep the detail sheet fixed to the phone viewport. */}
@@ -1117,7 +1136,7 @@ export default function SituationHome() {
           {world ? (
             <AlertStack
               items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focusId} newIds={newIds} scannedIds={scannedIds}
-              onSelect={select} emptyText={alertEmpty} note={alertNote}
+              onSelect={select} emptyText={alertEmpty} note={alertNote} storyOf={storyOfAlert}
             />
           ) : (
             worldUnavailable ? <p className="sh-muted">{FEED_UNAVAILABLE_TEXT}</p> : <BootLoader variant="inline" className="gp-boot--tight" label="Loading alerts" text="Loading alerts" />

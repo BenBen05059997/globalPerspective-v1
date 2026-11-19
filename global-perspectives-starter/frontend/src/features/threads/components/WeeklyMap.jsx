@@ -258,7 +258,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       const marker = new window.google.maps.Marker({
         position: { lat: country.lat, lng: country.lng },
         map,
-        title: `${country.name}: ${count} topic${count !== 1 ? 's' : ''}`,
+        title: `${country.name}: ${count} stor${count !== 1 ? 'ies' : 'y'}`,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: effectiveScale,
@@ -403,7 +403,7 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
 
   return (
     <div className="wmap-thread-detail">
-      <button type="button" className="wmap-detail-back" onClick={onBack}>← All threads</button>
+      <button type="button" className="wmap-detail-back" onClick={onBack}>← All stories</button>
       <div className="wmap-detail-header">
         <EntityLink kind="story" id={thread.threadId} className="wmap-detail-title">{displayTitle}</EntityLink>
       </div>
@@ -512,7 +512,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
         </>
       ) : (
         <>
-          <SectionHeader as="h2" label={`${threadList.length} Thread${threadList.length !== 1 ? 's' : ''}`} className="wmap-panel-top">
+          <SectionHeader as="h2" label={`${threadList.length} Stor${threadList.length !== 1 ? 'ies' : 'y'}`} className="wmap-panel-top">
             <Button variant="icon" compact label="Close panel" onClick={onClose}>✕</Button>
           </SectionHeader>
           {allRegions.length > 1 && (
@@ -538,7 +538,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                 max={6}
               />
               {!activeCountry && (
-                <div className="wmap-country-hint">Select a country to filter threads and replay its news day by day</div>
+                <div className="wmap-country-hint">Select a country to filter stories and replay its news day by day</div>
               )}
             </div>
           )}
@@ -575,7 +575,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               <input
                 type="text"
                 className="wmap-search-input"
-                placeholder="Search threads..."
+                placeholder="Search stories..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -583,7 +583,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
           )}
           <div className="wmap-thread-list">
             {visibleThreads.length === 0 && (
-              <div className="wmap-thread-empty">{search ? 'No matching threads' : 'No threads in this region'}</div>
+              <div className="wmap-thread-empty">{search ? 'No matching stories' : 'No stories in this region'}</div>
             )}
             {(() => {
               const groupMap = {};
@@ -688,7 +688,7 @@ function MapLegend() {
           </div>
           <div className="wmap-legend-item">
             <svg width="16" height="16"><circle cx="8" cy="8" r="7" className="wmap-legend-mark" /><text x="8" y="11" textAnchor="middle" className="wmap-legend-num">3</text></svg>
-            <span>Multiple topics (count shown)</span>
+            <span>Multiple stories (count shown)</span>
           </div>
           <div className="wmap-legend-item">
             <svg width="24" height="16"><line x1="0" y1="8" x2="24" y2="8" className="wmap-legend-line" /></svg>
@@ -700,7 +700,7 @@ function MapLegend() {
           </div>
           <div className="wmap-legend-item">
             <svg width="16" height="16"><circle cx="8" cy="8" r="5" className="wmap-legend-mark wmap-legend-mark--dim" /></svg>
-            <span>Dimmed (other threads / past days)</span>
+            <span>Dimmed (other stories / past days)</span>
           </div>
         </div>
       )}

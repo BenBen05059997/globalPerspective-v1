@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { LoadTopBar } from '@/shared/ui/boot';
@@ -7,6 +8,9 @@ import { ROUTE } from '@/shared/lib/links.js';
 import { boardAvailable } from '@/features/board';
 import { useOpsAccess, OPS_ROUTE } from '@/features/ops';
 import '@/app/layout/Layout.css';
+// After Layout.css on purpose: HelpPanel pulls in shared/ui, and Layout.css and shared/ui/primitives.css both style `.gp-btn`
+// (same specificity, so the later file wins). Importing it earlier flipped every button on the site.
+import HelpPanel from '@/app/layout/HelpPanel.jsx';
 
 // P1 phone tab bar (A2): simple inline-SVG line icons, no icon library. 20x20 viewBox, stroke
 // only (matches the existing `.gp-help` icon's style), so they read at 20px in the bar.
@@ -15,6 +19,14 @@ function IconMap() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
       <path d="M2 5.5l5-2 6 2 5-2v11l-5 2-6-2-5 2z" />
       <path d="M7 3.5v11M13 5.5v11" />
+    </svg>
+  );
+}
+function IconToday() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+      <rect x="3" y="4" width="14" height="13" rx="1.5" />
+      <path d="M3 8h14M7 2.5v3M13 2.5v3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -55,6 +67,10 @@ function Layout({ children }) {
   const opsAccess = useOpsAccess();
   // P1 phone tab bar (A2): shared 900px breakpoint — same one the map's own MAP·LIST·ALERTS tabs use.
   const isPhone = useIsPhone();
+  // "?" panel (R7): over the current page; closing it puts focus back on "?".
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useRef(null);
+  const closeHelp = useCallback(() => { setHelpOpen(false); helpRef.current?.focus(); }, []);
 
   // Site-wide honesty line (N1/DS1): the same computed "paused since" text the map page shows
   // itself (hidden here on the map home to avoid a duplicate claim — see the render guard below).
@@ -74,7 +90,8 @@ function Layout({ children }) {
   })();
 
   // N1 (approved 2026-09-26): plain, flat menu items — no groups, no dropdowns. "Map" is `/`
-  // (the logo goes there too); the old "Topics" page stays live at `/today` (linked from the map); "Countries" (`/weekly/countries`) is
+  // (the logo goes there too); "Today" (`/today`) is a tab between Map and Stories (decision 0064, amends 0029; the map's
+  // About content still links it too); "Countries" (`/weekly/countries`) is
   // reachable from the Stories page instead of the menu. "Briefings" is `/briefings` (read, weekly and present
   // modes); `/daily` and `/weekly-brief` redirect there.
   // `short` + `icon` feed the phone tab bar (P1/A2) — same items, short labels, a small
@@ -84,6 +101,7 @@ function Layout({ children }) {
   // 2026-10-20: `/analyze` redirects, shared runs (`/analyze/s/:id`) stay routed.
   const navLinks = [
     { to: ROUTE.map, exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
+    { to: ROUTE.today, label: 'Today', short: 'Today', icon: IconToday, title: 'Today’s stories from the latest news run, with their sources.' },
     { to: ROUTE.stories, label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
     { to: ROUTE.briefings, label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
     { to: ROUTE.trackRecord, label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
@@ -138,14 +156,17 @@ function Layout({ children }) {
         {consoleShell ? <div id="gp-console-status" className="gp-nav-status" /> : null}
 
         <div className="gp-nav-right">
-          {/* "?" opens the map's About content (How we read the world; a drawer on desktop, the section
-              under the tabs on a phone). It is a link to /?about=1, so it behaves the same on every
-              page: from another page it goes to the map first. */}
+          {/* "?" opens the help panel over the current page (R7, HelpPanel). It stays a link to /?about=1 (the Map's About drawer),
+              so it works without the panel too; the panel itself links there. */}
           <Link
+            ref={helpRef}
             to={helpTo}
+            onClick={(e) => { e.preventDefault(); setHelpOpen(true); }}
             className="gp-help"
-            aria-label="About this map: how to read it"
-            title="About this map: how to read it"
+            aria-label="How this site works"
+            aria-haspopup="dialog"
+            aria-expanded={helpOpen}
+            title="How this site works"
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="8" cy="8" r="6.5" />
@@ -231,6 +252,7 @@ function Layout({ children }) {
           })}
         </nav>
       )}
+      {helpOpen ? <HelpPanel onClose={closeHelp} aboutTo={helpTo} /> : null}
     </div>
   );
 }

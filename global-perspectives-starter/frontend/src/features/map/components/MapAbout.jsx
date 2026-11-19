@@ -2,13 +2,17 @@
 // phones this still sits below the map (the page scrolls there); on the desktop full-bleed console
 // (R4a) the map is the whole page, so the same content opens from a small "About this map" control
 // as a drawer instead — nothing was dropped, it moved. Every date is computed by the caller.
-// "Read today's topics →" heads it so /today is reachable from the map (decision 0029).
+// The "?" page (SPEC §5) puts the site first: the promise sentence (decision 0064), the three kinds, the leave-out line and what
+// each tab holds; then "Read today's stories →", which keeps /today reachable from the map (decision 0029) beside the Today tab.
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
 import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { ROUTE, briefingHref, todayHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
+import ReaderPromise from '@/shared/ui/ReaderPromise.jsx';
+import SiteGuide from '@/shared/ui/SiteGuide.jsx';
+import HowWeRead from '@/shared/ui/HowWeRead.jsx';
 
 
 // The first three affected countries, each linked to its country page.
@@ -24,22 +28,12 @@ export default function MapAbout({
 }) {
   return (
     <>
-      <p><Link to={todayHref()}>Read today’s topics →</Link></p>
-      <div className="sh-fold-method">
-        <h2>How we read the world</h2>
-        <p className="sh-dim">The map is the output of a fixed pipeline, not an editor’s judgement call.</p>
-        {coverageNote ? <p className="sh-coverage">{coverageNote}</p> : null}
-        <div className="sh-fold-cols">
-          <div><h4>What we track</h4><p>Every situation belongs to one of four axes — conflict, political, economic, humanitarian. A situation opens when independent outlets converge on the same event in the same place, and it stays open while coverage continues. Severe natural disasters come straight from the UN/EU GDACS feed.</p></div>
-          <div><h4>How severity is scored</h4><p>The tier — low, moderate, elevated, high — is derived from how many outlets are covering a situation, how far it has spread, and how fast that is changing since the last run. Disaster tiers come from the reported hazard values. The inputs are shown on every situation.</p></div>
-          <div><h4>How often it updates</h4><p>
-            {paused
-              ? `The GDACS disaster feed is checked on a fixed cycle. News situations are re-scored when the classification pipeline runs — that has been paused since ${paused.beyondLookback ? paused.text : paused.label}.`
-              : 'The GDACS disaster feed is checked on a fixed cycle, and news situations are re-scored each time the classification pipeline runs.'}
-            {' '}The freshness stamps on this page show the age of the data you are looking at, not the age of the page. Alerts and situation cards show how each situation is trending.
-          </p></div>
-        </div>
+      <div className="sh-fold-site">
+        <ReaderPromise />
+        <SiteGuide />
       </div>
+      <p><Link to={todayHref()}>Read today’s stories →</Link></p>
+      <HowWeRead paused={paused} coverageNote={coverageNote} />
 
       <p className="sh-dim sh-imagery">Globe imagery: Earth at night, NASA Black Marble.</p>
 
@@ -70,7 +64,7 @@ export default function MapAbout({
                   {items.map((s) => (
                     <li key={s.id}>
                       <button className="sh-idx-link" onClick={() => onSelect && onSelect(s.id)}>{s.verb_label}</button>
-                      <span className="sh-dim"> — {TIER_LABEL[s.tier]}{s.escalating ? ' · escalating' : ''}<AffectedNames codes={s.iso3_affected} /></span>
+                      <span className="sh-dim"> — {TIER_LABEL[s.tier]}{s.escalating ? ' · ▲ getting worse' : ''}<AffectedNames codes={s.iso3_affected} /></span>
                     </li>
                   ))}
                 </ul>

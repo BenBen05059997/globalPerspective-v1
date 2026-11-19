@@ -163,7 +163,8 @@
   white-space: nowrap;
   cursor: help;
 }
-.srb-sm { font-size: 9px; padding: 1px 6px; }
+.srb-sm { font-size: var(--text-xs); padding: 1px 6px; } /* at least 11 px desktop, 12 px phone (R8) */
+@media (max-width: 600px) { .srb-sm { font-size: var(--text-sm); } }
 .srb-md { font-size: 11px; padding: 3px 10px; }
 
 /* Single-source: amber caution — confidence is reduced, not asserted. */

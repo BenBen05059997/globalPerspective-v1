@@ -59,7 +59,7 @@ describe('ThreadPage failures (S4)', () => {
     H.analysis = { analysis: null, loading: false, error: null, refetch: vi.fn() };
     await renderPage('/weekly/thread/a');
     expect(screen.getByText('This story could not be loaded')).toBeInTheDocument();
-    expect(screen.queryByText('Story arc not found')).toBeNull();
+    expect(screen.queryByText('Story not found')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(H.thread.refetch).toHaveBeenCalled();
   });
@@ -73,7 +73,7 @@ describe('ThreadPage failures (S4)', () => {
     H.thread = { entries: null, loading: false, error: null, refetch: vi.fn() };
     H.analysis = { analysis: null, loading: false, error: null, refetch: vi.fn() };
     await renderPage('/weekly/thread/a');
-    expect(screen.getByText('Story arc not found')).toBeInTheDocument();
+    expect(screen.getByText('Story not found')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Back to Stories/ })).toBeInTheDocument();
   });
 });
@@ -85,9 +85,9 @@ describe('a story with a forecast but no entries (R4-3)', () => {
     H.analysis = { analysis: null, loading: false, error: null, refetch: vi.fn() };
     H.forecast = forecast;
     await renderPage('/weekly/thread/thread-ahead-of-us-midterms-voters-fr-b1e699');
-    expect(screen.queryByText('Story arc not found')).toBeNull();
+    expect(screen.queryByText('Story not found')).toBeNull();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ahead Of Us Midterms Voters Fr');
-    expect(document.body.textContent).toMatch(/No news entries are on record for this story/);
+    expect(document.body.textContent).toMatch(/No steps are on record for this story/);
     expect(document.body.textContent).toMatch(/Democrats win at least 218 House seats/);
     expect(H.forecastIds).toBeNull(); // asks for the story's forecast whole: there are no topics to name
   });
@@ -198,7 +198,7 @@ describe('hooks (S4)', () => {
     await waitFor(() => expect(b.result.current.loading).toBe(false));
     expect(b.result.current.error).toBeNull();
     expect(b.result.current.entries).toBeNull();
-    expect(sessionStorage.getItem('gp_narrative_thread_v3_t10')).toBeNull();
+    expect(sessionStorage.getItem('gp_narrative_thread_v4_t10')).toBeNull();
   });
   it('useStoryAnalysis: a failed read is reported and exposed', async () => {
     vi.doMock('@/shared/api/storyAnalysis.js', () => sa);

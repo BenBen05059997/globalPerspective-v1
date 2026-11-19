@@ -51,12 +51,12 @@ describe('composeTopicsLede', () => {
   });
 
   it('text pluralises stories / countries / threads and leaves out zero parts', () => {
-    expect(composeTopicsLede({ topics: [t({ title: 'Solo' })] }).text).toBe("Today's lede: Solo. 1 story.");
+    expect(composeTopicsLede({ topics: [t({ title: 'Solo' })] }).text).toBe("Today's lead story: Solo. 1 story.");
     const many = composeTopicsLede({
       topics: [t({ title: 'A', regions: ['France'], threadId: 'x' }), t({ title: 'B', regions: ['Spain'], threadId: 'y' })],
     });
-    expect(many.text).toBe("Today's lede: A. 2 stories, 2 countries involved, 2 active threads.");
+    expect(many.text).toBe("Today's lead story: A. 2 stories, 2 countries involved, 2 stories with news today.");
     const one = composeTopicsLede({ topics: [t({ title: 'A', regions: ['France'], threadId: 'x' })] });
-    expect(one.text).toBe("Today's lede: A. 1 story, 1 country involved, 1 active thread.");
+    expect(one.text).toBe("Today's lead story: A. 1 story, 1 country involved, 1 story with news today.");
   });
 });

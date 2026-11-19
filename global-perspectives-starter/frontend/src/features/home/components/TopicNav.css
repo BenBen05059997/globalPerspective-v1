@@ -13,3 +13,4 @@
   text-transform: uppercase;
   color: var(--accent);
 }
+.topic-nav-rail-kind { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }

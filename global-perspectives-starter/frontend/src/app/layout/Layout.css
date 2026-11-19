@@ -107,7 +107,7 @@
 .gp-nav-right > * { flex-shrink: 0; }
 .gp-btn-account-initial { display: none; }
 
-/* "?" link: opens the map About drawer (/?about=1) */
+/* "?": opens the help panel (HelpPanel); a link to /?about=1 underneath */
 .gp-help {
   display: inline-flex;
   align-items: center;

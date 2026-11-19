@@ -69,7 +69,7 @@ function ArchiveTopicModal({ entry, onClose }) {
   const sections = [
     { key: 'summary', label: 'Summary', available: !!entry?.ai?.summary },
     { key: 'prediction', label: 'Prediction', available: saved.prediction !== null },
-    { key: 'trace_cause', label: 'Trace Cause', available: saved.trace_cause !== null },
+    { key: 'trace_cause', label: 'Why it happened', available: saved.trace_cause !== null },
   ].filter(s => s.available);
   const sectionKeys = sections.map(s => s.key).join();
 
@@ -149,7 +149,7 @@ function ArchiveTopicModal({ entry, onClose }) {
 
           {sections.length === 0 && (
             <div className="archive-modal-empty">
-              No AI analysis available for this topic yet.
+              No AI analysis available for this story yet.
             </div>
           )}
         </div>

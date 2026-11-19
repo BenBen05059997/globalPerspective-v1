@@ -32,6 +32,7 @@ export function viewEntriesToThread(view) {
     const ai = aiOf(e.notes);
     return {
       topicId: e.topicId ?? null,
+      eventId: e.eventId ?? null,
       threadId: view.threadId,
       title: e.title,
       date: e.date,

@@ -82,8 +82,8 @@ export default function ShareButtons({ path, title, threadId, preview }) {
   return (
     <div className="share-buttons">
       <span className="share-buttons-label">Share</span>
-      <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy link">
-        {copied ? <IconCheck /> : <IconLink />}
+      <button className={`share-btn share-btn--text ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy link">
+        {copied ? <IconCheck /> : <IconLink />}<span>{copied ? 'Copied' : 'Copy link'}</span>
       </button>
       {canNativeShare && (
         <button className="share-btn share" onClick={handleNativeShare} title="Share">

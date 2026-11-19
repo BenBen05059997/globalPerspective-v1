@@ -1,5 +1,7 @@
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import EntryRole from '@/shared/ui/EntryRole.jsx';
+import { StoryName, storyName, shortDay } from '@/shared/ui/StoryCard.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
 import { storyHref } from '@/shared/lib/links.js';
 import { crisisOf, tierOf, storySummary, watchingOf, listCounts, deriveBoardStatus } from '@/features/threads/lib/storyGroups';
@@ -20,6 +22,10 @@ export function placeOf(thread) {
 
 export default function StoryLine({ thread, analysis = null, now, peek = null, dim = false, showCount = true, showText = true, scope = 'feed' }) {
   const title = thread.latestTitle;
+  // Entries are newest day first, each day in the order we recorded them: the newest is the last of the first day.
+  const newestDay = thread.entries?.[0]?.date;
+  const newestEntry = (thread.entries || []).filter((e) => e.date === newestDay).at(-1) || null;
+  const name = storyName(analysis?.name, title); // SPEC §6b: the stamped name + tag, then the newest step under it
   const { tier, score } = tierOf(analysis);
   const crisis = crisisOf(thread);
   const data = peekData(
@@ -31,7 +37,8 @@ export default function StoryLine({ thread, analysis = null, now, peek = null, d
     <StoryRow
       id={`${scope}:${thread.threadId}`}
       to={storyHref(thread.threadId)}
-      title={title}
+      title={name ? <StoryName name={name} interactive={false} small /> : title}
+      newest={name && newestEntry ? `Newest step ${shortDay(newestEntry.date)}: ${title}` : null}
       place={placeOf(thread)}
       crisis={crisis === 'neutral' ? null : crisis}
       tier={tier}
@@ -45,13 +52,14 @@ export default function StoryLine({ thread, analysis = null, now, peek = null, d
       peekData={data}
       meta={(
         <>
+          <EntryRole role={newestEntry?.role} />
           <CategoryTag category={thread.category} />
           {showCount ? (
             <span className="sf-count">
               {listCounts(thread.articleCount, thread.dayCount)}
             </span>
           ) : null}
-          {deriveBoardStatus(thread, now).key === 'rising' ? <span className="sf-rising" title="Rising on the Board: more events in the last 3 days than in the 3 before">▲ rising</span> : null}
+          {deriveBoardStatus(thread, now).key === 'rising' ? <span className="sf-rising" title="Rising on the Board: more steps in the last 3 days than in the 3 before">▲ rising</span> : null}
         </>
       )}
     />

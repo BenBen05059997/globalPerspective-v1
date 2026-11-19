@@ -62,6 +62,8 @@ class ContentService {
       updatedAt: item.updatedAt,
       generatedDate: item.generatedDate || null,
       generatedYear: item.generatedYear || null,
+      stories: item.stories || null,
+      roles: item.roles || null,
     };
   }
 

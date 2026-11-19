@@ -77,15 +77,15 @@ describe('StoryLine renders the summary / Watching lines only with data', () => 
   it('with an analysis -> a dim summary line and "Watching: <question>"', () => {
     const { container } = renderLine(base, { storyArc: 'The arc in one line. Then more.', watchQuestions: ['Will the ceasefire hold?'] });
     expect(container.querySelector('.gp-row__sum').textContent).toBe('The arc in one line.');
-    expect(container.querySelector('.gp-row__watch').textContent).toBe('Watching: Will the ceasefire hold?');
+    expect(container.querySelector('.gp-row__watch').textContent).toBe('What we watch next: Will the ceasefire hold?');
   });
   it('the count says "events", not "articles" (R3-2)', () => {
     const { container } = renderLine({ ...base, articleCount: 12, dayCount: 3 }, null);
-    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: 12 events, 3 days with news$/);
+    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: 12 steps, 3 days with news$/);
   });
   it('the day count names its 30-day span (R3-1)', () => {
     const { container } = renderLine({ ...base, dayCount: 13 }, null);
-    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: \d+ events?, 13 days with news$/);
+    expect(container.querySelector('.sf-count').textContent).toMatch(/^In 30 days: \d+ steps?, 13 days with news$/);
   });
   it('the ▲ rising mark follows the Board status, not the old half-vs-half trend', () => {
     const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);

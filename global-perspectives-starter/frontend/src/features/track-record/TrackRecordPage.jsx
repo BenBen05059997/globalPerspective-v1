@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import PageLine from '@/shared/ui/PageLine.jsx';
 import { Link, useSearchParams } from 'react-router';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
@@ -314,6 +315,7 @@ export default function TrackRecordPage() {
   return (
     <div className="tr-page">
       <header className="tr-head">
+        <PageLine>Did what we watched happen? We count only checked forecasts.</PageLine>
         <h1>Accountability</h1>
         <p className="tr-sub">
           We keep score on ourselves. Every forecast is logged the moment it&apos;s made with dated,

@@ -102,8 +102,8 @@ export function BriefSlide({ thread, analysis, displayTitle, category, forecast,
         </div>
       )}
       <div className="sm-slide-stats">
-        <span><b>{thread.entries.length}</b> {thread.entries.length === 1 ? 'event' : 'events'}</span>
-        <span><b>{thread.allSources.length}</b> sources</span>
+        <span><b>{thread.entries.length}</b> {thread.entries.length === 1 ? 'step' : 'steps'}</span>
+        <span><b>{thread.allSources.length}</b> {thread.allSources.length === 1 ? 'source' : 'sources'}</span>
         {analysis?.riskScore != null && (
           <span className="sm-slide-risk"><TierChip tier={tierFromScore(analysis.riskScore)} /> risk</span>
         )}
@@ -149,13 +149,13 @@ export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
   const linked = new Set([...fedInto.map((l) => l.targetThreadId), ...fedFrom.map((l) => l.sourceThreadId)]).size;
   const caption = (
     <p className="sm-caption">
-      <ClaimTag kind="inference" /> Links are between stories; we don&apos;t know which event in
+      <ClaimTag kind="inference" /> Links are between stories; we don&apos;t know which step in
       this story drove each one.
     </p>
   );
   return (
     <div className="sm-slide sm-slide-fedinto">
-      <div className="sm-slide-kicker">FED INTO · {linked} linked {linked === 1 ? 'story' : 'stories'}</div>
+      <div className="sm-slide-kicker">JUDGED TO FEED INTO · {linked} linked {linked === 1 ? 'story' : 'stories'}</div>
       {fedInto.length > 0 && (
         <>
           <h2 className="sm-slide-title">News this story is judged to feed into</h2>
@@ -179,8 +179,8 @@ export function WatchSlide({ deadlines }) {
   const note = legacyNote(deadlines);
   return (
     <div className="sm-slide sm-slide-watch">
-      <div className="sm-slide-kicker">WATCH · {deadlines.length} dated {deadlines.length === 1 ? 'trigger' : 'triggers'}</div>
-      <h2 className="sm-slide-title">What to watch</h2>
+      <div className="sm-slide-kicker">{deadlines.length} dated {deadlines.length === 1 ? 'forecast' : 'forecasts'}</div>
+      <h2 className="sm-slide-title">What we watch next</h2>
       <ul className="sm-watch-list">
         {deadlines.map((d) => {
           const ms = new Date(d.deadline).getTime();
@@ -430,7 +430,7 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
   return (
     <div className="gp-console sm-root" ref={rootRef} style={{ height: rootHeight }}>
       <div className="sm-topbar">
-        <div className="sm-topbar-label">STORY MODE</div>
+        <div className="sm-topbar-label">STORY MODE · the story slide by slide, on the map</div>
         <Button compact onClick={onReadFull}>Read in full →</Button>
       </div>
 
@@ -448,7 +448,7 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
               </Drawer>
             )}
             {hasWho && (
-              <Drawer label="WHO" open={drawer === 'who'} onToggle={() => toggleDrawer('who')}>
+              <Drawer label="WHO IS INVOLVED" open={drawer === 'who'} onToggle={() => toggleDrawer('who')}>
                 <ul className="sm-who-list">
                   {who.map((a, i) => (
                     <li key={i}><b>{a.name}</b>{a.role ? ` — ${a.role}` : ''}{a.mentionCount != null ? ` · ${a.mentionCount} mentions` : ''}</li>
@@ -457,7 +457,7 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
               </Drawer>
             )}
             {hasViewFrom && (
-              <Drawer label="VIEW FROM" open={drawer === 'viewfrom'} onToggle={() => toggleDrawer('viewfrom')}>
+              <Drawer label="WHO REPORTED IT" open={drawer === 'viewfrom'} onToggle={() => toggleDrawer('viewfrom')}>
                 <div className="sm-viewfrom-hd">{view.total} outlets identified{view.unknownCount ? ` · ${view.unknownCount} without country data` : ''}</div>
                 {view.byCountry.length > 0 && (
                   <div className="sm-viewfrom-row"><span className="sm-drawer-step-label">By country</span> {view.byCountry.map((c) => `${c.code} ${c.count}`).join(' · ')}</div>

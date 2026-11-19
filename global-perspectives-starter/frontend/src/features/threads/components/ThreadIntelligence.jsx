@@ -30,7 +30,7 @@ export default function ThreadIntelligence({ analysis }) {
           </ul>
         </div>
       )}
-      <SectionHeader as="h3" label="AI Arc Analysis" />
+      <SectionHeader as="h3" label="AI Story Analysis" />
       <div className="story-entry-toolbar">
         {available.map(tab => (
           <Button key={tab.key} compact selected={activeTab === tab.key} onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}>

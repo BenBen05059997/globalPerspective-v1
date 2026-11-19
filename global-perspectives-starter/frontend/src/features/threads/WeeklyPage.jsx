@@ -139,8 +139,8 @@ export default function WeeklyPage() {
     <StatusStrip
       label="LIVE"
       stats={[
-        { value: listed.length, unit: 'arcs' },
-        { value: totalEvents, unit: 'events' },
+        { value: listed.length, unit: 'stories' },
+        { value: totalEvents, unit: 'steps' },
         { value: allDates.length, unit: 'days with stories' },
       ]}
       updatedAt={dataUpdatedAt}

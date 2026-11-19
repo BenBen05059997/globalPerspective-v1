@@ -59,8 +59,8 @@ import { HowItConnects, WhatWeDontKnow, YourView, CopyAsText, PrintButton, Sheet
 // The three AI read-outs on a coverage item. The kind is the button label, never a colour.
 const AI_VIEWS = [
   { key: 'summary', field: 'summary', label: 'Summarize' },
-  { key: 'prediction', field: 'prediction', label: 'Predict' },
-  { key: 'trace', field: 'trace_cause', label: 'Trace Cause' },
+  { key: 'prediction', field: 'prediction', label: 'Likely outcomes' },
+  { key: 'trace', field: 'trace_cause', label: 'Why it happened' },
 ];
 
 function BoldText({ text }) {
@@ -642,7 +642,7 @@ export default function CountryPage() {
               <div className="cpg-stat-d">past 30 days</div>
             </div>
             <div className="cpg-stat">
-              <div className="cpg-stat-k">Story arcs</div>
+              <div className="cpg-stat-k">Stories</div>
               <div className="cpg-stat-v accent">{countryData.arcs?.length || 0}</div>
               <div className="cpg-stat-d">{anchorCount} anchor · {linkedCount} linked</div>
             </div>
@@ -684,7 +684,7 @@ export default function CountryPage() {
             className="cpg-views"
             tabs={[
               { key: 'situation', label: 'Situation' },
-              { key: 'arcs', label: 'Story Arcs', count: filteredArcs.length },
+              { key: 'arcs', label: 'Stories', count: filteredArcs.length },
               { key: 'coverage', label: 'Coverage', count: countryData.totalArticles },
             ]}
             active={mainTab}
@@ -710,7 +710,7 @@ export default function CountryPage() {
 
               {intel?.riskSignals?.length > 0 && (
                 <>
-                  <SectionHeader label="What to Watch" hint={<ClaimTag kind="judgment" />} />
+                  <SectionHeader label="What we watch next" hint={<ClaimTag kind="judgment" />} />
                   <ul className="cpg-watch-list">
                     {intel.riskSignals.slice(0, 5).map((s, i) => (
                       <li key={i}>{s}</li>
@@ -740,7 +740,7 @@ export default function CountryPage() {
                 <div className="cp-deep">
                   {[
                     { key: 'trajectoryDetail', label: "What's Next" },
-                    { key: 'crossThreadInsight', label: 'Cross-Thread Connections' },
+                    { key: 'crossThreadInsight', label: 'Cross-Story Connections' },
                   ].filter(t => intel[t.key]).map(tab => (
                     <div key={tab.key} className="cp-deep-section">
                       <button
@@ -768,7 +768,7 @@ export default function CountryPage() {
           {/* Story arcs tab */}
           {mainTab === 'arcs' && (
             <div className="cpg-view" {...tabPanelProps('country', 'arcs')}>
-              <SectionHeader label="Story Arcs" count={filteredArcs.length} hint={<><ClaimTag kind="fact" /> titles and counts <ClaimTag kind="judgment" /> one-line summaries</>}>
+              <SectionHeader label="Stories" count={filteredArcs.length} hint={<><ClaimTag kind="fact" /> titles and counts <ClaimTag kind="judgment" /> one-line summaries</>}>
                 {(arcTypeFilter !== 'all' || catFilter || urgFilter) && (
                   <Button compact onClick={() => { setArcTypeFilter('all'); setCatFilter(null); setUrgFilter(null); }}>
                     Clear filters ×
@@ -778,7 +778,7 @@ export default function CountryPage() {
 
               {/* Filters for the arcs list, kept next to it. */}
               {allArcs.length > 0 && (
-                <div className="cpg-arc-filters" role="group" aria-label="Filter story arcs">
+                <div className="cpg-arc-filters" role="group" aria-label="Filter stories">
                   <div className="cpg-fgroup">
                     <span className="cpg-fgroup-lbl">Type</span>
                     {[
@@ -840,7 +840,7 @@ export default function CountryPage() {
                   })}
                 </ul>
               ) : (
-                <div className="cpg-empty">No story arcs match this filter</div>
+                <div className="cpg-empty">No stories match this filter</div>
               )}
             </div>
           )}

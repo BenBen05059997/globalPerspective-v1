@@ -12,11 +12,11 @@ const schemas = path.resolve(here, '../../../../../../backend/record/newsStoryRe
 const load = (dir, file) => JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
 const ajv = new Ajv({ allErrors: true });
 ajv.addSchema(load(schemas, 'story-stamp.schema.json'));
-const SCHEMA = { stories: 'story', links: 'links', 'index/weekly.json': 'weekly-index', 'index/analyses.json': 'analyses-index', 'manifest.json': 'manifest' };
+const SCHEMA = { stories: 'story', links: 'links', 'index/weekly.json': 'weekly-index', 'index/analyses.json': 'analyses-index', 'index/today.json': 'today-index', 'manifest.json': 'manifest' };
 const files = (dir) => fs.readdirSync(path.join(fixtures, dir)).map((f) => `${dir}/${f}`);
 
 describe('record-views fixture', () => {
-  it.each([...files('stories'), ...files('links'), 'index/weekly.json', 'index/analyses.json', 'manifest.json'])('%s passes its view schema', (file) => {
+  it.each([...files('stories'), ...files('links'), 'index/weekly.json', 'index/analyses.json', 'index/today.json', 'manifest.json'])('%s passes its view schema', (file) => {
     const validate = ajv.compile(load(schemas, `${SCHEMA[file] || SCHEMA[file.split('/')[0]]}.schema.json`));
     expect(validate(load(fixtures, file)), JSON.stringify(validate.errors)).toBe(true);
   });

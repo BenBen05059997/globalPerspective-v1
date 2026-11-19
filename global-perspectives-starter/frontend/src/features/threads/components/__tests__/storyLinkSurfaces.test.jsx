@@ -27,7 +27,7 @@ describe('FED INTO slide', () => {
   });
   it('two webs linking the same story: two rows (own confidence each) but ONE linked story in the kicker', () => {
     wrap(<FedIntoSlide fedInto={[row(), row({ confidence: 'weak', country: 'Israel' })]} />);
-    expect(screen.getByText(/FED INTO · 1 linked story/)).toBeInTheDocument();
+    expect(screen.getByText(/JUDGED TO FEED INTO · 1 linked story/)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Story B' })).toHaveLength(2);
   });
 });

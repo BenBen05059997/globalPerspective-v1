@@ -43,13 +43,13 @@ describe('viewEntriesToThread maps role', () => {
 });
 
 describe('chapter slide (desktop and phone)', () => {
-  it('labels each entry with its word, MEASURED CHANGE with the model judgment tag, and a null role with nothing', () => {
+  it('labels each entry with its word, Measured change with the model judgment tag, and a null role with nothing', () => {
     wrap(<ChapterSlide chapter={{ key: 'ch1', label: 'Chapter', from: '2026-11-06', to: '2026-11-12', country: null, entries, isInflection: false }} index={0} />);
-    expect(labelOf('Opening headline').getByText('START')).toBeInTheDocument();
-    expect(labelOf('Later headline').getByText('MOVE')).toBeInTheDocument();
-    expect(labelOf('Figure headline').getByText('MEASURED CHANGE')).toBeInTheDocument();
+    expect(labelOf('Opening headline').getByText('Starts a story')).toBeInTheDocument();
+    expect(labelOf('Later headline').getByText('Moves a story')).toBeInTheDocument();
+    expect(labelOf('Figure headline').getByText('Measured change')).toBeInTheDocument();
     expect(labelOf('Figure headline').getByText('MODEL JUDGMENT')).toBeInTheDocument();
-    expect(labelOf('Unlabelled headline').queryByText(/^(START|MOVE|MEASURED CHANGE)$/)).toBeNull();
+    expect(labelOf('Unlabelled headline').queryByText(/^(Starts a story|Moves a story|Measured change)$/)).toBeNull();
     expect(screen.getAllByText('MODEL JUDGMENT')).toHaveLength(1);
     expect(screen.queryByText('Placed article')).toBeNull();
   });
@@ -58,19 +58,19 @@ describe('chapter slide (desktop and phone)', () => {
     const thread = { threadId: 'thread-x', entries: newestFirst, allSources: [], dateRange: { from: '2026-11-06', to: '2026-11-12' }, dayCount: 4 };
     wrap(<PhoneStoryMode thread={thread} analysis={null} forecast={null} displayTitle="X" category="politics" links={{ fedInto: [], fedFrom: [], loading: false, note: null, index: null }} onReadFull={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Next slide' }));
-    expect(screen.getByText('START')).toBeInTheDocument();
+    expect(screen.getByText('Starts a story')).toBeInTheDocument();
   });
 });
 
 describe('Read in full', () => {
   it('CompactTimeline rows carry the label, and the opened entry card shows it again', () => {
     wrap(<CompactTimeline entries={newestFirst} entryShortTitles={[]} />);
-    expect(labelOf('Opening headline').getByText('START')).toBeInTheDocument();
-    expect(labelOf('Figure headline').getByText('MEASURED CHANGE')).toBeInTheDocument();
-    expect(labelOf('Unlabelled headline').queryByText(/^(START|MOVE|MEASURED CHANGE)$/)).toBeNull();
+    expect(labelOf('Opening headline').getByText('Starts a story')).toBeInTheDocument();
+    expect(labelOf('Figure headline').getByText('Measured change')).toBeInTheDocument();
+    expect(labelOf('Unlabelled headline').queryByText(/^(Starts a story|Moves a story|Measured change)$/)).toBeNull();
     fireEvent.click(screen.getByText('Later headline').closest('button'));
     const card = within(document.querySelector('.story-entry-card'));
-    expect(card.getByText('MOVE')).toBeInTheDocument();
+    expect(card.getByText('Moves a story')).toBeInTheDocument();
     expect(card.getByText('Later headline')).toBeInTheDocument();
   });
 
@@ -78,9 +78,9 @@ describe('Read in full', () => {
     H.thread = { entries, title: 'X', loading: false, error: null, refetch: vi.fn() };
     H.analysis = { analysis: null, loading: false, error: null, refetch: vi.fn() };
     render(<MemoryRouter initialEntries={['/weekly/thread/thread-x?tab=timeline']}><Routes><Route path="/weekly/thread/:threadId" element={<ThreadPage />} /></Routes></MemoryRouter>);
-    expect(labelOf('Opening headline').getByText('START')).toBeInTheDocument();
-    expect(labelOf('Later headline').getByText('MOVE')).toBeInTheDocument();
+    expect(labelOf('Opening headline').getByText('Starts a story')).toBeInTheDocument();
+    expect(labelOf('Later headline').getByText('Moves a story')).toBeInTheDocument();
     expect(labelOf('Figure headline').getByText('MODEL JUDGMENT')).toBeInTheDocument();
-    expect(labelOf('Unlabelled headline').queryByText(/^(START|MOVE|MEASURED CHANGE)$/)).toBeNull();
+    expect(labelOf('Unlabelled headline').queryByText(/^(Starts a story|Moves a story|Measured change)$/)).toBeNull();
   });
 });

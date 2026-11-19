@@ -46,7 +46,7 @@ beforeEach(() => {
 describe('TodayArchiveSidebar', () => {
   it('lists every archived title under its category group, with the total as the count', () => {
     mount(<TodayArchiveSidebar entries={ENTRIES} />);
-    expect(screen.getByText("Today's Archive")).toBeInTheDocument();
+    expect(screen.getByText('Earlier today')).toBeInTheDocument();
     for (const e of ENTRIES) expect(screen.getByText(e.title)).toBeInTheDocument();
     // one group header per category present
     const groups = new Set(ENTRIES.map((e) => e.category));
@@ -89,12 +89,12 @@ describe('TodayArchiveSidebar', () => {
 
   it('search matches titles case-insensitively and shows "No matching topics" when nothing does', () => {
     mount(<TodayArchiveSidebar entries={ENTRIES} />);
-    const box = screen.getByRole('textbox', { name: 'Search archived topics' });
+    const box = screen.getByRole('textbox', { name: 'Search earlier stories' });
     fireEvent.change(box, { target: { value: 'deepseek' } });
     expect(screen.getByText(/DeepSeek releases V4/)).toBeInTheDocument();
     expect(screen.queryByText(/Hong Kong IPO/)).toBeNull();
     fireEvent.change(box, { target: { value: 'zzzz-no-such-story' } });
-    expect(screen.getByText('No matching topics')).toBeInTheDocument();
+    expect(screen.getByText('No matching stories')).toBeInTheDocument();
   });
 
   it('society, science and uncategorised entries each get a chip that filters to them', () => {
@@ -136,7 +136,7 @@ describe('ArchiveTopicModal via the sidebar', () => {
     // Summary and Prediction exist; Trace Cause does not
     expect(within(dialog).getByRole('tab', { name: 'Summary' })).toBeInTheDocument();
     expect(within(dialog).getByRole('tab', { name: 'Prediction' })).toBeInTheDocument();
-    expect(within(dialog).queryByRole('tab', { name: 'Trace Cause' })).toBeNull();
+    expect(within(dialog).queryByRole('tab', { name: 'Why it happened' })).toBeNull();
     expect(within(dialog).getByText('First takeaway')).toBeInTheDocument();
     expect(within(dialog).getByText('Second takeaway')).toBeInTheDocument();
 
@@ -167,7 +167,7 @@ describe('ArchiveTopicModal via the sidebar', () => {
     expect(getTopicPrediction).toHaveBeenCalledWith(cutEntry.topicId);
     fireEvent.click(await within(dialog).findByRole('tab', { name: 'Prediction' }));
     expect(await within(dialog).findByText('From the full note.')).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Trace Cause' }));
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Why it happened' }));
     expect(await within(dialog).findByText('Full trace from the note.')).toBeInTheDocument();
     expect(dialog.textContent).not.toMatch(/generation failed/);
   });
@@ -179,7 +179,7 @@ describe('ArchiveTopicModal via the sidebar', () => {
     fireEvent.click(screen.getByText(cutEntry.title));
     const dialog = screen.getByRole('dialog');
     await waitFor(() => expect(within(dialog).queryByRole('tab', { name: 'Prediction' })).toBeNull());
-    await waitFor(() => expect(within(dialog).queryByRole('tab', { name: 'Trace Cause' })).toBeNull());
+    await waitFor(() => expect(within(dialog).queryByRole('tab', { name: 'Why it happened' })).toBeNull());
     expect(within(dialog).getByRole('tab', { name: 'Summary' })).toBeInTheDocument();
     expect(dialog.textContent).not.toMatch(/generation failed/);
     expect(report.mock.calls.map((c) => c[0])).toEqual(['today-archive-trace_cause']);
@@ -203,7 +203,7 @@ describe('ArchiveTopicModal via the sidebar', () => {
     mount(<TodayArchiveSidebar entries={[ENTRIES[0]]} />);
     fireEvent.click(screen.getByText(ENTRIES[0].title));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('No AI analysis available for this topic yet.')).toBeInTheDocument();
+    expect(within(dialog).getByText('No AI analysis available for this story yet.')).toBeInTheDocument();
     expect(within(dialog).queryByRole('tab')).toBeNull();
   });
 
@@ -234,11 +234,11 @@ describe('Home with an archive', () => {
   it('shows the archive rail beside the topics and counts it in the status strip', () => {
     topicsState = { ...baseTopics, topics: [otherTopic] };
     mount(<Home />);
-    expect(screen.getByText("Today's Archive")).toBeInTheDocument();
+    expect(screen.getByText('Earlier today')).toBeInTheDocument();
     expect(screen.getByText(ENTRIES[3].title)).toBeInTheDocument();
     const strip = document.querySelector('.ss-strip');
-    expect(strip).toHaveTextContent(/1\s*topics/);
-    expect(strip).toHaveTextContent(new RegExp(`${ENTRIES.length}\\s*archive`));
+    expect(strip).toHaveTextContent(/1\s*story12/);
+    expect(strip).toHaveTextContent(new RegExp(`${ENTRIES.length}\\s*earlier today`));
   });
 
   it('hides an archived entry that is still one of today\'s live topics, and the strip counts the same rows as the rail', () => {
@@ -249,7 +249,7 @@ describe('Home with an archive', () => {
     expect(within(rail).getByText(ENTRIES[1].title)).toBeInTheDocument();
     expect(rail.querySelector('.gp-sec__count')).toHaveTextContent(String(ENTRIES.length - 1));
     // the strip counts what the rail lists
-    expect(document.querySelector('.ss-strip')).toHaveTextContent(new RegExp(`${ENTRIES.length - 1}\\s*archive`));
+    expect(document.querySelector('.ss-strip')).toHaveTextContent(new RegExp(`${ENTRIES.length - 1}\\s*earlier today`));
     // the live topic is still on the page body
     expect(document.getElementById(`topic-${liveTopic.topicId}`)).not.toBeNull();
   });
@@ -260,7 +260,7 @@ describe('Home with an archive', () => {
     mount(<Home />);
     fireEvent.click(within(document.querySelector('.archive-rail')).getByText(ENTRIES[3].title));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByRole('tab', { name: 'Trace Cause' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('tab', { name: 'Why it happened' })).toBeInTheDocument();
     expect(within(dialog).getByText('Rebel offensive began in March.')).toBeInTheDocument();
   });
 
@@ -269,7 +269,7 @@ describe('Home with an archive', () => {
     topicsState = { ...baseTopics, topics: [otherTopic] };
     mount(<Home />);
     expect(document.querySelector('.archive-rail')).toBeNull();
-    expect(document.querySelector('.ss-strip')).not.toHaveTextContent(/archive/);
+    expect(document.querySelector('.ss-strip')).not.toHaveTextContent(/earlier today/);
   });
 
   it('with every archived entry also live, the rail shows nothing rather than an empty box', () => {

@@ -11,6 +11,7 @@
   color: var(--text-muted); cursor: pointer; transition: border-color var(--fast), color var(--fast), background var(--fast);
   text-decoration: none; padding: 0;
 }
+.share-btn--text { width: auto; gap: var(--space-1); padding: 0 var(--space-2); font-size: var(--text-xs); white-space: nowrap; }
 .share-btn:hover { border-color: var(--hairline-strong); background: var(--panel-3); color: var(--text-head); }
 .share-btn:focus-visible, .copy-briefing-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .share-btn.copied { color: var(--ok); border-color: var(--ok); }

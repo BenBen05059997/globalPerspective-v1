@@ -1,4 +1,4 @@
-// /today links through shared/lib/links.js: "Story arc" opens the story itself (only with a real
+// /today links through shared/lib/links.js: "Open the story →" opens the story itself (only with a real
 // threadId), a topic's country goes to its country page, a region is plain text.
 import { describe, it, expect, vi } from 'vitest';
 import { render, within } from '@testing-library/react';
@@ -15,7 +15,7 @@ vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
 import Home from '@/features/home/Home';
 
 describe('/today links', () => {
-  it('Story arc goes to the thread; countries link, regions do not; no arc link without a thread', () => {
+  it('Open the story goes to the thread; countries link, regions do not; no story link without a thread', () => {
     topicsState = {
       topics: [
         { topicId: 't1', threadId: 'thread-france-strike-abc123', title: 'French strike', category: 'politics', primaryCountry: 'France', sources: [] },
@@ -26,11 +26,11 @@ describe('/today links', () => {
     render(<MemoryRouter><Home /></MemoryRouter>);
 
     const first = document.getElementById('topic-t1');
-    expect(within(first).getByRole('link', { name: /Story arc/ })).toHaveAttribute('href', '/weekly/thread/thread-france-strike-abc123');
+    expect(within(first).getByRole('link', { name: 'Open the story →' })).toHaveAttribute('href', '/weekly/thread/thread-france-strike-abc123');
     expect(within(first).getByRole('link', { name: 'France' })).toHaveAttribute('href', '/weekly/country/France');
 
     const second = document.getElementById('topic-t2');
-    expect(within(second).queryByRole('link', { name: /Story arc/ })).toBeNull();
+    expect(within(second).queryByRole('link', { name: 'Open the story →' })).toBeNull();
     expect(within(second).getByText('Strait of Hormuz').closest('a')).toBeNull();
   });
 });

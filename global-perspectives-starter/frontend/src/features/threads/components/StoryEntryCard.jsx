@@ -6,8 +6,8 @@ import EntryRole from '@/shared/ui/EntryRole.jsx';
 
 const AI_TABS = [
   { key: 'summary', field: 'summary', label: 'Summarize' },
-  { key: 'prediction', field: 'prediction', label: 'Predict' },
-  { key: 'trace', field: 'trace_cause', label: 'Trace Cause' },
+  { key: 'prediction', field: 'prediction', label: 'Likely outcomes' },
+  { key: 'trace', field: 'trace_cause', label: 'Why it happened' },
 ];
 
 export default function StoryEntryCard({ entry, compact }) {

@@ -40,6 +40,8 @@ import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import WrittenLate from '@/shared/ui/WrittenLate.jsx';
 import EntryRole from '@/shared/ui/EntryRole.jsx';
+import StoryLife from '@/features/threads/components/StoryLife.jsx';
+import { StoryName, storyName } from '@/shared/ui/StoryCard.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
@@ -50,7 +52,7 @@ function humanizeThreadId(id) {
     .replace(/-[a-f0-9]{4,}$/, '')
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ') || 'Story Arc';
+    .join(' ') || 'Story';
 }
 
 // Living-analysis drift note helpers: tidy the "event [n]" artifact + format the date.
@@ -143,7 +145,7 @@ export default function ThreadPage() {
   // so deep-links resolve long after a story's articles age out of the 30-day
   // rolling archive. The weekly archive (below) is used only for the
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
-  const { entries: narrativeEntries, title: viewTitle, loading: threadLoading, error: threadError, refetch: refetchThread } = useNarrativeThread(threadId);
+  const { entries: narrativeEntries, title: viewTitle, stamp, loading: threadLoading, error: threadError, refetch: refetchThread } = useNarrativeThread(threadId);
   const { dayMap, titles, sortedDates } = useWeeklyArchive();
   // The URL is the state: `?tab=` opens Read in full on that tab (unknown values, an old ?tab=economy link
   // included, decision 0049, land on Overview); no `tab` is story mode. Following the URL on every change means
@@ -260,9 +262,13 @@ export default function ThreadPage() {
   );
 
   const displayTitle = thread?.latestTitle || humanizeThreadId(threadId);
+  // SPEC §6b: the stamped name, when there is one, names the page (title, crumbs, share and briefing text); the headline stays the
+  // newest step. No name: the headline, as before.
+  const name = storyName(stamp?.name, displayTitle);
+  const headTitle = name || displayTitle;
   useEffect(() => {
-    document.title = `${displayTitle} — Story Arc | Global Perspectives`;
-  }, [displayTitle]);
+    document.title = `${headTitle} — Story | Global Perspectives`;
+  }, [headTitle]);
 
   if (threadLoading) return <BootLoader variant="inline" label="Loading story" text="Loading story" />;
 
@@ -296,14 +302,14 @@ export default function ThreadPage() {
           <p className="tp-fallback-dek">
             {analysis
               ? <>Full timeline isn&apos;t available for this story (it&apos;s aged out of the 90-day window), but here&apos;s the analysis we have.</>
-              : <>No news entries are on record for this story. Here is the forecast we have for it.</>}
+              : <>No steps are on record for this story. Here is the forecast we have for it.</>}
           </p>
 
           {(analysis?.storyArc || analysis?.trajectory) && (
             <div className="tp-fallback-analysis">
               {analysis.storyArc && (
                 <>
-                  <SectionHeader label="Story arc" />
+                  <SectionHeader label="Story" />
                   <p className="tp-fallback-text">{analysis.storyArc}</p>
                 </>
               )}
@@ -321,8 +327,8 @@ export default function ThreadPage() {
     }
     return (
       <div className="tp-page tp-notfound">
-        <h3 className="tp-notfound-h">Story arc not found</h3>
-        <p className="tp-notfound-p">This thread may have expired or the link may be incorrect.</p>
+        <h3 className="tp-notfound-h">Story not found</h3>
+        <p className="tp-notfound-p">This story may have expired or the link may be incorrect.</p>
         <Link to={ROUTE.stories} className="tp-notfound-link">← Back to Stories</Link>
       </div>
     );
@@ -335,7 +341,7 @@ export default function ThreadPage() {
   // Status strip
   const statusStats = [
     analysis?.riskScore != null && { value: tierLabel(tierFromScore(analysis.riskScore)), unit: 'risk' },
-    { value: thread.entries.length, unit: 'events' },
+    { value: thread.entries.length, unit: 'steps' },
     { value: thread.allSources.length, unit: 'sources' },
     thread.regions.length > 0 && { value: thread.regions.slice(0, 3).join(' · '), unit: '' },
   ].filter(Boolean);
@@ -352,7 +358,7 @@ export default function ThreadPage() {
         <span className="tp-crumb-sep">/</span>
         {category && <Link to={`${ROUTE.stories}?category=${encodeURIComponent(category)}`}>{category}</Link>}
         {category && <span className="tp-crumb-sep">/</span>}
-        <span>{displayTitle.length > 20 ? displayTitle.slice(0, 20) + '…' : displayTitle}</span>
+        <span>{headTitle.length > 20 ? headTitle.slice(0, 20) + '…' : headTitle}</span>
       </div>
 
       {relatedThreads.sameCategory.length > 0 && (
@@ -437,6 +443,23 @@ export default function ThreadPage() {
   // over when it does, and stays put if it never materializes.
   const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : (contentTabs[0]?.key || 'timeline');
 
+  // The share row (Show on map, share, Copy briefing, save). On a phone's story view it moves down, under the story facts (SPEC §4 phone 9).
+  const topbarActions = (
+    <div className="tp-topbar-right">
+      <Link to={mapHref({ story: threadId })} className="tp-analyze-link" title="Show this story on the map">
+        Show on map
+      </Link>
+      <ShareButtons threadId={thread.threadId} title={headTitle} preview={{ t: headTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
+      <CopyBriefing getText={() => formatThreadBriefing(thread, analysis, name)} />
+      <SaveButton itemType="thread" itemId={threadId} metadata={{ title: headTitle, category }} />
+      {/* Story mode has its own "Read in full" entry in its header — this is
+          only the way BACK, shown once we're actually on the full page, so there is never
+          more than one "Read in full"-ish control on screen at once. */}
+      {readFull && (
+        <Button compact onClick={() => setTab(null)}>← Story mode</Button>
+      )}
+    </div>
+  );
   return (
     <div className={`tp-page${showStoryMode ? ' tp-page-story' : ''}`}>
 
@@ -455,25 +478,14 @@ export default function ThreadPage() {
             <span className="tp-topbar-sep">/</span>
           </>
         )}
-        <span className="tp-topbar-current">{displayTitle.length > 48 ? displayTitle.slice(0, 48) + '…' : displayTitle}</span>
-        <div className="tp-topbar-right">
-          <Link to={mapHref({ story: threadId })} className="tp-analyze-link" title="Show this story on the map">
-            Show on map
-          </Link>
-          <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
-          <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />
-          <SaveButton itemType="thread" itemId={threadId} metadata={{ title: displayTitle, category }} />
-          {/* Story mode has its own "Read in full" entry in its header — this is
-              only the way BACK, shown once we're actually on the full page, so there is never
-              more than one "Read in full"-ish control on screen at once. */}
-          {readFull && (
-            <Button compact onClick={() => setTab(null)}>← Story mode</Button>
-          )}
-        </div>
+        <span className="tp-topbar-current">{headTitle.length > 48 ? headTitle.slice(0, 48) + '…' : headTitle}</span>
+        {!(isPhone && showStoryMode) && topbarActions}
       </div>
 
       {showStoryMode ? (
-        isPhone ? (
+        <>
+        <StoryLife thread={thread} stamp={stamp} analysis={analysis} displayTitle={displayTitle} name={name} category={category} isPhone={isPhone} actions={isPhone ? topbarActions : null} />
+        {isPhone ? (
           <PhoneStoryMode
             key={threadId}
             thread={thread}
@@ -495,7 +507,8 @@ export default function ThreadPage() {
             links={storyLinks}
             onReadFull={() => setTab('overview')}
           />
-        )
+        )}
+        </>
       ) : (
       <EditorialShell
         strip={
@@ -512,10 +525,10 @@ export default function ThreadPage() {
         <div className="tp-hd">
           <div className="tp-hd-kicker">
             <CategoryTag category={category} />
-            <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
-            Story Arc · {daysWithNews(thread.dayCount)}
+            <SourceRobustness outlets={thread.allSources.length} size="md" />
+            Story · {daysWithNews(thread.dayCount)}
           </div>
-          <h1 className="tp-hd-h1">{displayTitle}</h1>
+          <h1 className="tp-hd-h1">{name ? <StoryName name={name} /> : displayTitle}</h1>
           {analysis?.storyArc && (
             <p className="tp-hd-dek">
               {analysis.storyArc.split(/[.!?]/)[0].trim()}.
@@ -544,14 +557,14 @@ export default function ThreadPage() {
         {/* Stats row */}
         <div className="tp-stats">
           <div className="tp-stat">
-            <div className="tp-stat-k">Story risk</div>
+            <div className="tp-stat-k">How serious</div>
             <div className="tp-stat-v tp-stat-v--chip">
               <TierChip tier={tierFromScore(analysis?.riskScore)} />
             </div>
             <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : 'not scored yet'}</div>
           </div>
           <div className="tp-stat">
-            <div className="tp-stat-k">Events</div>
+            <div className="tp-stat-k">Steps</div>
             <div className="tp-stat-v">{thread.entries.length}</div>
             <div className="tp-stat-d">{inflectionEntry ? '1 inflection' : 'no inflection'}</div>
           </div>
@@ -570,7 +583,7 @@ export default function ThreadPage() {
         </div>
 
         {/* Content tabs */}
-        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setTab} className="tp-views" />
+        <Tabs idBase="tp" label="Story evidence views" tabs={contentTabs} active={activeTab} onChange={setTab} className="tp-views" />
         <div className="tp-tabpanel" {...tabPanelProps('tp', activeTab)}>
 
         {/* Overview tab — the synthesis, as short collapsible sections in reading order */}
@@ -632,7 +645,7 @@ export default function ThreadPage() {
               <div className="tp-ov-linknote"><StoryLinkNote note={linkNote} /></div>
             )}
             {analysis.watchQuestions?.length > 0 && (
-              <OverviewSection label="Watch" count={analysis.watchQuestions.length}>
+              <OverviewSection label="What we watch next" count={analysis.watchQuestions.length}>
                 <ul className="tp-watch-list">
                   {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
                 </ul>

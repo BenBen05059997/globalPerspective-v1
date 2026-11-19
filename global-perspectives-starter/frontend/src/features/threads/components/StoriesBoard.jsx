@@ -67,7 +67,7 @@ function Card({ item, analysis, now, peek, colKey }) {
         <span className="sb-card__title">{title}</span>
         <Spark
           counts={counts}
-          title={`Events per day, last ${BOARD_SPARK_DAYS} days, oldest first: ${counts.join(', ')}. ${total} in total.`}
+          title={`Steps per day, last ${BOARD_SPARK_DAYS} days, oldest first: ${counts.join(', ')}. ${total} in total.`}
         />
         <span className="sb-card__meta">
           <TierChip tier={tier} score={score} />

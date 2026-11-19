@@ -11,7 +11,7 @@ import '@/features/account/components/SavedPanel.css';
 // drawn the same neutral way; the type is the word on the tag, not a colour.
 
 const TYPE_LABELS = {
-  thread: 'Thread',
+  thread: 'Story',
   country: 'Country',
   daily: 'Daily',
   weekly: 'Weekly',
@@ -139,7 +139,7 @@ export function SavedPanel({ savedItems, savedLoading, onUnsave }) {
     : savedItems.filter(item => item.itemType === filter);
 
   const emptyHint = filter === 'all'
-    ? 'Tap the heart on any thread, country, or daily brief to save it here.'
+    ? 'Tap the heart on any story, country, or daily brief to save it here.'
     : `No saved ${TYPE_LABELS[filter]?.toLowerCase() || filter}s yet.`;
 
   return (

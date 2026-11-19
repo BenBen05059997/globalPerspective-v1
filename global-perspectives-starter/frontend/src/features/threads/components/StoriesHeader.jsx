@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import PageLine from '@/shared/ui/PageLine.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
 import { ROUTE } from '@/shared/lib/links.js';
 
@@ -40,6 +41,7 @@ export default function StoriesHeader({ view, setView, isPhone, counts = null, w
   const shownView = view === 'changes' ? 'list' : view; // the old CHANGES view is the list
   return (
     <header className="sf-head">
+      <PageLine>Every story we follow, most recently moved first.</PageLine>
       <div className="sf-head__row">
         <nav className="gp-tabs gp-tabs--line wp-section-tabs" aria-label="Stories or countries">
           <span className="gp-tabs__tab" aria-current="page">Stories</span>

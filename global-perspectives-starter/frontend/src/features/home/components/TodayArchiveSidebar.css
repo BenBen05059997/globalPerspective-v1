@@ -140,3 +140,4 @@
   .archive-modal-content { padding: var(--space-3) var(--space-4) var(--space-4); }
   .archive-modal-sources { padding: var(--space-3) var(--space-4); }
 }
+.archive-rail-line { margin: 0; padding: 0 var(--space-4) var(--space-2); font-size: var(--text-xs); color: var(--text-muted); }

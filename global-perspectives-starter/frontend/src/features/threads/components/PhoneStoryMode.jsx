@@ -47,7 +47,7 @@ function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, dis
 
 function DrawerSheet({ drawerKey, onClose, whySteps, who, view, sources }) {
   if (!drawerKey) return null;
-  const titles = { why: 'WHY', who: 'WHO', viewfrom: 'VIEW FROM', sources: 'SOURCES' };
+  const titles = { why: 'WHY', who: 'WHO IS INVOLVED', viewfrom: 'WHO REPORTED IT', sources: 'SOURCES' };
   return (
     <BottomSheet stop="full" onStopChange={onClose} onClose={onClose} title={titles[drawerKey]}>
       {drawerKey === 'why' && whySteps.map((s) => (
@@ -163,7 +163,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
   return (
     <div className="gp-console psm-root">
       <div className="psm-topbar">
-        <div className="psm-topbar-label">STORY MODE</div>
+        <div className="psm-topbar-label">STORY MODE · the story slide by slide, on the map</div>
         <Button compact onClick={onReadFull}>Read in full →</Button>
       </div>
 
@@ -200,8 +200,8 @@ export default function PhoneStoryMode({ thread, analysis, forecast, links, disp
           {anyDrawer && (
             <div className="psm-drawer-row" role="group" aria-label="Story drawers">
               {hasWhy && <Button compact className="psm-drawer-open" onClick={() => setDrawer('why')}>WHY</Button>}
-              {hasWho && <Button compact className="psm-drawer-open" onClick={() => setDrawer('who')}>WHO</Button>}
-              {hasViewFrom && <Button compact className="psm-drawer-open" onClick={() => setDrawer('viewfrom')}>VIEW FROM</Button>}
+              {hasWho && <Button compact className="psm-drawer-open" onClick={() => setDrawer('who')}>WHO IS INVOLVED</Button>}
+              {hasViewFrom && <Button compact className="psm-drawer-open" onClick={() => setDrawer('viewfrom')}>WHO REPORTED IT</Button>}
               {hasSources && <Button compact className="psm-drawer-open" onClick={() => setDrawer('sources')}>SOURCES</Button>}
             </div>
           )}

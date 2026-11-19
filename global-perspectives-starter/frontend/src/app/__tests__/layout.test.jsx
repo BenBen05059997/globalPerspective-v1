@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
 
@@ -77,10 +77,11 @@ describe('Layout — N1 menu', () => {
     const nav = document.querySelector('.gp-nav-links');
     expect(nav).toBeTruthy();
     const links = nav.querySelectorAll('a');
-    expect(links.length).toBe(4);
+    expect(links.length).toBe(5);
     const byLabel = Array.from(links).map((a) => [a.textContent, a.getAttribute('href')]);
     expect(byLabel).toEqual([
       ['Map', '/'],
+      ['Today', '/today'],
       ['Stories', '/weekly'],
       ['Briefings', '/briefings'],
       ['Track record', '/track-record'],
@@ -116,7 +117,7 @@ describe('Layout — breaking-alert bell switched off (2026-11-06)', () => {
 });
 
 describe('Layout — P1 phone tab bar (A2)', () => {
-  it('shows four links with the right hrefs and aria-current on the active route when isPhone', async () => {
+  it('shows five links with the right hrefs and aria-current on the active route when isPhone', async () => {
     fetchDailyBrief.mockResolvedValue({ data: null });
     isPhoneMock.mockReturnValue(true);
     renderLayout('/briefings');
@@ -124,10 +125,11 @@ describe('Layout — P1 phone tab bar (A2)', () => {
     expect(bar).toBeTruthy();
     expect(bar.getAttribute('aria-label')).toBeTruthy();
     const links = bar.querySelectorAll('a');
-    expect(links.length).toBe(4);
+    expect(links.length).toBe(5);
     const byHref = Array.from(links).map((a) => [a.getAttribute('href'), a.getAttribute('aria-current')]);
     expect(byHref).toEqual([
       ['/', null],
+      ['/today', null],
       ['/weekly', null],
       ['/briefings', 'page'],
       ['/track-record', null],
@@ -197,7 +199,7 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     expect(nav.classList.contains('gp-console')).toBe(true);
     expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(true);
     const hrefs = [...document.querySelectorAll('.gp-nav-links a')].map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/', '/weekly', '/briefings', '/track-record']);
+    expect(hrefs).toEqual(['/', '/today', '/weekly', '/briefings', '/track-record']);
     expect(document.querySelector('#gp-console-status')).toBeTruthy();
     expect(document.querySelector('.gp-footer')).toBeNull();
   });
@@ -216,7 +218,8 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     // P6 (decision 14): the footer is exactly About, Membership, Privacy, Disclosures, Contact.
     const footerLinks = [...document.querySelectorAll('.gp-footer-links a')].map((a) => [a.textContent, a.getAttribute('href')]);
     expect(footerLinks).toEqual([['About', '/about'], ['Membership', '/membership'], ['Privacy', '/privacy'], ['Disclosures', '/disclosures'], ['Contact', '/contact']]);
-    expect(document.querySelector('.gp-nav-link.active')).toBeNull();
+    // Today is a tab since decision 0064, so /today marks it active.
+    expect(document.querySelector('.gp-nav-link.active')?.textContent).toBe('Today');
     today.unmount();
     isPhoneMock.mockReturnValue(true);
     renderLayout('/');
@@ -233,6 +236,28 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     unmount();
     renderLayout('/?focus=s9');
     expect(document.querySelector('a.gp-help').getAttribute('href')).toBe('/?focus=s9&about=1');
+  });
+
+  it('"?" opens "How this site works" over the page (R7): no route change, no sentence, Esc closes and focus returns', () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(false);
+    renderLayout('/weekly');
+    const help = document.querySelector('a.gp-help');
+    fireEvent.click(help);
+    const panel = screen.getByRole('dialog', { name: 'How this site works' });
+    expect(panel).toHaveTextContent('A step is one piece of news that starts, moves or measures a story.');
+    expect(panel).toHaveTextContent('How we read the world');
+    expect(panel).not.toHaveTextContent('We follow the world’s stories');
+    expect(within(panel).getByRole('link', { name: /About this map/ })).toHaveAttribute('href', '/?about=1');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(help);
+  });
+
+  it('Layout.css is imported before HelpPanel: both it and shared/ui/primitives.css style .gp-btn, and the later file wins (main order)', () => {
+    const src = readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../layout/Layout.jsx'), 'utf8');
+    expect(src.indexOf("import '@/app/layout/Layout.css'")).toBeGreaterThan(-1);
+    expect(src.indexOf("import '@/app/layout/Layout.css'")).toBeLessThan(src.indexOf('import HelpPanel'));
   });
 
   it('the dark frame is one token set: Layout.css reads role tokens, with no light literals and no console-only nav class', () => {

@@ -199,7 +199,7 @@ describe('map deep links — the console', () => {
 
   it('?layer=risk still selects the risk layer alongside a country', async () => {
     await renderAt('/?country=FRA&layer=risk');
-    expect(screen.getByRole('radio', { name: 'Country risk' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'How serious, by country' })).toHaveAttribute('aria-checked', 'true');
     expect(radar()).toHaveAttribute('data-focus-iso3', 'FRA');
   });
 });

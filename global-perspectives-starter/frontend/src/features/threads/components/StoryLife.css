@@ -1,0 +1,28 @@
+/* StoryLife — the story page's top (SPEC §4). Tokens only. */
+.sl { margin: 0 0 var(--space-6); }
+.sl-cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+.sl-since { margin: 0 0 var(--space-2); font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
+.sl-where { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-ui); }
+.sl-title { margin: var(--space-2) 0 var(--space-4); font-family: var(--serif); font-weight: var(--weight-semibold); font-size: var(--text-3xl); line-height: var(--leading-tight); color: var(--text-head); }
+.sl-steps { list-style: none; margin: 0; padding: 0 0 0 var(--space-3); border-left: 1px solid var(--hairline); }
+/* One flowing line per step: the date stays inline before the text, never on a line of its own (design review 5). */
+.sl-step { display: block; padding: var(--space-1) 0; font-size: var(--text-ui); line-height: 1.5; color: var(--text-dim); }
+.sl-step b { color: var(--text-muted); font-weight: var(--weight-semibold); }
+.sl-step--now { color: var(--text-body); }
+.sl-date { margin-right: var(--space-2); font-family: var(--mono); font-size: var(--text-xs); white-space: nowrap; }
+.sl-step .gp-kind { margin-right: var(--space-1); }
+.sl-note { display: block; font-size: var(--text-sm); color: var(--text-muted); }
+.sl-actions { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
+.sl-actions .tp-topbar-right { flex-wrap: wrap; margin-left: 0; }
+.sl-fold-btn { min-height: var(--tap-min); padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-ui); cursor: pointer; }
+.sl-fold-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.sl-side .gp-watch { margin-top: 0; }
+.sl-fact { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; font-size: var(--text-ui); color: var(--text-muted); }
+@media (max-width: 900px) {
+  .sl-cols { grid-template-columns: 1fr; gap: var(--space-4); }
+  .sl-title { font-size: var(--text-2xl); }
+}
+/* Touch: the place links reach 44 px without spacing the line apart (tester round 6). */
+@media (pointer: coarse) {
+  .sl-where a { display: inline-block; padding-block: calc((var(--tap-min) - 1lh) / 2); margin-block: calc((var(--tap-min) - 1lh) / -2); }
+}

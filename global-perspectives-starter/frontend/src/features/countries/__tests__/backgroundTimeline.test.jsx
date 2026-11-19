@@ -27,7 +27,7 @@ describe('BackgroundTimeline', () => {
     const { container } = render(<BackgroundTimeline events={events} entries={entries} />);
     const days = [...container.querySelectorAll('.bgt-day')];
     expect(days.map((d) => d.querySelector('.bgt-day-date').textContent)).toEqual(['Tue, Oct 27', 'Thu, Oct 29', 'Fri, Oct 30']);
-    expect(days.map((d) => d.querySelector('.bgt-day-count').textContent)).toEqual(['1 event', '2 events', '1 event']);
+    expect(days.map((d) => d.querySelector('.bgt-day-count').textContent)).toEqual(['1 step', '2 steps', '1 step']);
     // only the day's primary event is visible until expanded
     expect(screen.queryByText('Army counterattack on the crossing')).toBeNull();
   });
@@ -58,7 +58,7 @@ describe('BackgroundTimeline', () => {
   it('expanding a day reveals its other events and the articles that match, exact topic first, then keyword matches', () => {
     const onEventClick = vi.fn();
     render(<BackgroundTimeline events={events} entries={entries} onEventClick={onEventClick} />);
-    fireEvent.click(screen.getByRole('button', { name: '+1 more event' }));
+    fireEvent.click(screen.getByRole('button', { name: '+1 more step' }));
     expect(screen.getByText('Army counterattack on the crossing')).toBeInTheDocument();
 
     const linked = document.querySelectorAll('.bgt-linked-item');

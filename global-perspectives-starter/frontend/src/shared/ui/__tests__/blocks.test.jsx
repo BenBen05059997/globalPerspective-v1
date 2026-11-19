@@ -17,10 +17,10 @@ const ago = (days) => new Date(NOW - days * 86400000).toISOString();
 
 describe('StatusGlyph', () => {
   it('renders the legend glyph for each key with an accessible name', () => {
-    const want = { escalating: '▲', new: '●', steady: '◆', cooling: '▼' };
-    for (const [k, g] of Object.entries(want)) {
+    const want = { escalating: ['▲', 'getting worse'], new: ['●', 'new'], steady: ['◆', 'steady'], cooling: ['▼', 'cooling'] };
+    for (const [k, [g, name]] of Object.entries(want)) {
       const { unmount } = render(<StatusGlyph status={k} />);
-      expect(screen.getByRole('img', { name: k })).toHaveTextContent(g);
+      expect(screen.getByRole('img', { name })).toHaveTextContent(g);
       unmount();
     }
   });
@@ -77,7 +77,7 @@ describe('StoryRow', () => {
     expect(link).toHaveTextContent('Strait tensions');
     expect(link).toHaveTextContent('Iran');
     expect(link).toHaveTextContent('High');
-    expect(link.querySelector('[role=img]')).toHaveAttribute('aria-label', 'escalating');
+    expect(link.querySelector('[role=img]')).toHaveAttribute('aria-label', 'getting worse');
     expect(screen.getAllByRole('link')).toHaveLength(1);
   });
   it('as a button: onClick fires; href gives a plain anchor', () => {

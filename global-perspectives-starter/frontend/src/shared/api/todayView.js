@@ -38,6 +38,10 @@ export function topicsPayload(view, now = Date.now()) {
     data: {
       model: latest.model, limit: latest.limit, id: 'latest', topics, updatedAt: latest.updatedAt, generationId: latest.generationId, status: 'active',
       generatedYear: latest.generatedYear, generatedDate: latest.generatedDate,
+      // The builder's story stamps (SPEC §7, CONTRACT): each item's `role` and `storyId` ride on the topic; the story facts and the
+      // edition's counts by kind come here. Absent until newsStoryRecord stamps them: the page then shows none of those lines.
+      stories: view.stories && typeof view.stories === 'object' ? view.stories : null,
+      roles: latest.roles && typeof latest.roles === 'object' ? latest.roles : null,
     },
   };
 }

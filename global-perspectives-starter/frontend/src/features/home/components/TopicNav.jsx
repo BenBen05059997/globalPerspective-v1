@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
+import { KIND_WORD } from '@/shared/ui/EntryRole.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { getTopicId, sortRegions } from '@/features/home/lib/topics.js';
@@ -8,7 +9,7 @@ import '@/features/home/components/TopicNav.css';
 
 // TopicNav — the /today right rail (inside EditorialShell): every topic grouped by region, the one
 // in view marked as the selected row; a click scrolls to it.
-function TopicNav({ topics, categorizedTopics }) {
+function TopicNav({ topics, categorizedTopics, kindOf = (t) => t.role }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
   const observerRef = useRef(null);
 
@@ -60,7 +61,7 @@ function TopicNav({ topics, categorizedTopics }) {
 
   return (
     <div className="topic-nav-rail">
-      <SectionHeader label="Topics" count={topics.length} />
+      <SectionHeader label="This edition by region" count={topics.length} />
       {sortedRegions.map(([region, regionTopics]) => (
         <div key={region} className="topic-nav-rail-region">
           <SectionHeader as="h3" label={region} count={regionTopics.length} />
@@ -75,7 +76,12 @@ function TopicNav({ topics, categorizedTopics }) {
                   title={topic.title}
                   hue={crisisDotVar(category)}
                   chip={<CategoryTag category={category} />}
-                  meta={topic.x_trending ? <span className="topic-nav-rail-trend">Trending</span> : null}
+                  meta={(KIND_WORD[kindOf(topic)] || topic.x_trending) ? (
+                    <>
+                      {KIND_WORD[kindOf(topic)] ? <span className="topic-nav-rail-kind">{KIND_WORD[kindOf(topic)]}</span> : null}
+                      {topic.x_trending ? <span className="topic-nav-rail-trend">Trending on X</span> : null}
+                    </>
+                  ) : null}
                   active={activeTopicId === `topic-${id}`}
                   onClick={() => scrollToTopic(id)}
                 />

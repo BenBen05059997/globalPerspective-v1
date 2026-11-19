@@ -18,7 +18,7 @@ export default function HudCountryRiskFeed({
 }) {
   return (
     <div className="hud-feed" role="region" aria-label="Country risk feed">
-      <SectionHeader className="hud-feed-head" label="Country risk" count={drawn.length ? `${drawn.length} briefed` : null} />
+      <SectionHeader className="hud-feed-head" label="How serious, by country" count={drawn.length ? `${drawn.length} briefed` : null} />
       {drawn.length ? <AsOf generatedAt={newestBriefing(drawn)} source="country briefings" /> : null}
       {loading && !drawn.length ? <BootLoader variant="inline" label="Loading country briefings" text="Loading country briefings" /> : null}
       {!loading && !drawn.length ? <p className="sh-muted">No country briefings available right now.</p> : null}

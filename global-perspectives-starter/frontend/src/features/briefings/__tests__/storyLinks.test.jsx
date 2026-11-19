@@ -51,7 +51,7 @@ describe('/briefings story slide links', () => {
     wrap(<SignalSlide signal={{ lede: 'L', region: 'Israel · Gaza Strip · Global', threadId: 'thread-gaza-1', riskLevel: 'high' }} index={0} />);
     expect(screen.getByRole('link', { name: 'Israel' }).getAttribute('href')).toBe('/weekly/country/Israel');
     expect(screen.getByText('Global').closest('a')).toBeNull();
-    expect(screen.getByRole('link', { name: /full story arc/i }).getAttribute('href')).toBe('/weekly/thread/thread-gaza-1');
+    expect(screen.getByRole('link', { name: /full story/i }).getAttribute('href')).toBe('/weekly/thread/thread-gaza-1');
   });
   it('a signal slide shows its as-of date', () => {
     wrap(<SignalSlide signal={{ lede: 'L', region: 'Sudan', asOf: '2026-10-10', riskLevel: 'high' }} index={0} />);

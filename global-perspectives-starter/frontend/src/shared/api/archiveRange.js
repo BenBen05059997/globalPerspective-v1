@@ -40,6 +40,7 @@ function entryFromRecord(e) {
     topicId: e.topicId ?? null,
     threadId: e.threadId ?? null,
     title: e.title,
+    role: e.role ?? null, // the builder's kind stamp (weekly.json); the Stories rows show the newest entry's
     category: e.category ?? '',
     iso3,
     regions: iso3.map(placeOf).filter(Boolean),

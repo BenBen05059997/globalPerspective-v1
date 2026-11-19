@@ -11,7 +11,7 @@ function ts(iso) {
 }
 
 /** Most recent of last_change_at / opened_at, as epoch ms (0 when neither parses). */
-function lastActivity(s) {
+export function lastActivity(s) {
   return Math.max(ts(s?.last_change_at), ts(s?.opened_at));
 }
 
@@ -74,4 +74,24 @@ export function ageShort(s, now = Date.now()) {
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
+}
+
+/** An alert's story id (CONTRACT "per map alert"): the story its label names (`leadThreadId`), else `threadId`; GDACS: null. */
+export const alertStoryId = (s) => s?.leadThreadId || s?.threadId || null;
+
+/**
+ * alertRows(items) — one row per story (SPEC §2): alerts sharing a story id become one row, placed at its best-ranked alert
+ * (items come ranked). An alert with no story is its own row. Each row: { key, storyId, alerts } with alerts in rank order.
+ */
+export function alertRows(items = []) {
+  const rows = [];
+  const byStory = new Map();
+  for (const s of items) {
+    const id = alertStoryId(s);
+    if (id && byStory.has(id)) { byStory.get(id).alerts.push(s); continue; }
+    const row = { key: id ? `story:${id}` : s.id, storyId: id, alerts: [s] };
+    if (id) byStory.set(id, row);
+    rows.push(row);
+  }
+  return rows;
 }

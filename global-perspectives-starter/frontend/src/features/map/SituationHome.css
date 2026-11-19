@@ -28,8 +28,7 @@
 .sh-dim { color: var(--text-dim); }
 
 /* ---- header (phone): lede + freshness ---- */
-.sh-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; padding-bottom: var(--space-3); border-bottom: 1px solid var(--hairline); }
-.sh-lede { font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: -0.015em; color: var(--text-head); }
+.sh-lede { font-size: var(--text-lg); font-weight: var(--weight-semibold); letter-spacing: -0.015em; color: var(--text-head); }
 .sh-sub { font-size: var(--text-ui); color: var(--text-muted); margin-top: var(--space-1); }
 .sh-live { font-size: var(--text-sm); color: var(--text-muted); display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; padding-top: var(--space-1); }
 .sh-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
@@ -214,16 +213,13 @@ a.hud-brief-title { display: block; color: var(--accent); }
 
 /* ---- below the fold (phone) / "About this map" drawer (desktop) ---- */
 .sh-fold { margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--hairline); display: flex; flex-direction: column; gap: var(--space-8); }
-.sh-fold h2 { font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: -0.015em; margin: 0 0 var(--space-1); color: var(--text-head); }
-.sh-fold-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); margin-top: var(--space-3); }
-@media (max-width: 720px) { .sh-fold-cols { grid-template-columns: 1fr; } }
-.sh-fold-cols h4 { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: 0 0 var(--space-2); }
-.sh-fold-cols p { font-size: var(--text-ui); color: var(--text-muted); line-height: 1.5; margin: 0; }
 .sh-teasers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2); margin-top: var(--space-1); }
 .sh-teasers a { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--r-md); text-decoration: none; }
 .sh-teasers a:hover { border-color: var(--hairline-3); }
 .sh-teasers b { color: var(--text-head); font-size: var(--text-base); }
 .sh-teasers span { color: var(--text-muted); font-size: var(--text-sm); line-height: 1.4; }
+.sh-fold-site { display: flex; flex-direction: column; gap: var(--space-3); }
+.sh-fold-site .gp-promise, .sh-fold-site p { margin: 0; }
 .sh-fold-index ul { list-style: none; margin: 0; padding: 0; }
 .sh-fold-index h5 { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-ui); font-weight: var(--weight-semibold); margin: var(--space-4) 0 var(--space-2); color: var(--text-head); }
 .sh-fold-index li { font-size: var(--text-ui); padding: var(--space-1) 0; line-height: 1.4; }
@@ -233,11 +229,13 @@ a.hud-brief-title { display: block; color: var(--accent); }
 
 /* ---- orientation banner (H1, M5b) — replaces the guided tour ---- */
 .sh-orient {
-  display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); padding: 0 0 0 var(--space-3);
+  display: flex; align-items: flex-start; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-2) 0 var(--space-2) var(--space-3);
   min-height: var(--tap-min); background: var(--panel-2); border: 1px solid var(--hairline);
   border-radius: var(--r-sm); color: var(--text-muted); font-size: var(--text-sm); line-height: 1.4;
 }
-.sh-orient-text { flex: 1; }
+.sh-orient-text { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); }
+.sh-orient .gp-promise.sh-orient-promise { margin: 0; padding: 0; border: 0; background: none; }
+.sh-orient-dots { margin: 0; }
 .sh-orient-close { flex: none; font-size: var(--text-xl); }
 
 /* ---- M7 phone pattern (P1): one tab switch (MAP · LIST · ALERTS) under the status line, then one
@@ -246,17 +244,9 @@ a.hud-brief-title { display: block; color: var(--accent); }
 .sh-phone-panel .hud-feed { padding: var(--space-2) var(--space-3); }
 .sh-phone-panel .hud-feed-list { max-height: none; }
 
-/* compact HUD line (MAP tab): one summary line above the map, expandable inline — never a popover. */
-.sh-hud-compact { margin-bottom: var(--space-2); }
-.sh-hud-compact-btn {
-  width: 100%; min-height: var(--tap-min); display: flex; align-items: center; justify-content: space-between;
-  gap: var(--space-2); background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 0 var(--space-3);
-  color: var(--text-head); font-size: var(--text-sm); cursor: pointer;
-}
-.sh-hud-compact-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sh-hud-compact-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.sh-hud-compact-caret { flex: none; color: var(--text-dim); font-size: var(--text-2xs); }
-.sh-hud-compact-body { margin-top: var(--space-2); }
+/* phone MAP tab: the "Map summary" fold holds the old header lines, the brief and the sensors (SPEC §2 phone). */
+.sh-phone-panel .sh-fold-brief { margin-bottom: var(--space-2); }
+.sh-phone-panel .sh-fold-brief .sh-live { white-space: normal; flex-wrap: wrap; }
 
 /* bottom sheet: base in shared/ui/BottomSheet.css; the detail fills the sheet body edge to edge */
 .sheet-body .sh-detail { border: 0; border-radius: 0; max-height: none; }
@@ -281,6 +271,7 @@ a.hud-brief-title { display: block; color: var(--accent); }
 .al-mark-situation { border-radius: 50%; box-shadow: 0 0 0 3px var(--hairline), 0 0 0 5px var(--accent-wash); }
 .al-fresh-live .al-mark { box-shadow: 0 0 8px 1px var(--pin); }
 .al-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.al-story { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
 .al-top { display: flex; align-items: baseline; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-xs); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
 .al-kind { color: var(--pin); flex: none; }
 .al-place { color: var(--text-head); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -351,7 +342,7 @@ a.hud-brief-title { display: block; color: var(--accent); }
 .sh-about:focus-visible { outline: 2px solid var(--focus-ring); }
 .sh-about-close { position: sticky; top: 0; float: right; z-index: 1; margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0; background: var(--panel-2); font-size: var(--text-2xl); }
 .sh-fold.sh-fold-drawer { margin-top: 0; padding-top: 0; border-top: 0; gap: var(--space-5); }
-.sh-fold-drawer .sh-fold-cols { grid-template-columns: 1fr; gap: var(--space-3); }
+.sh-fold-drawer .gp-howread__cols { grid-template-columns: 1fr; gap: var(--space-3); }
 .sh-about-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
 .sh-about-links a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-min); min-width: var(--tap-min); color: var(--text-muted); font-size: var(--text-sm); text-decoration: none; }
 .sh-about-links a:hover { color: var(--text-head); text-decoration: underline; }
@@ -367,3 +358,12 @@ a.hud-brief-title { display: block; color: var(--accent); }
   }
   .sh-legrow { gap: var(--space-2) var(--space-3); }
 }
+.al-story .al-age { margin-left: auto; }
+.al-more { display: block; width: 100%; min-height: var(--tap-min); padding: 0 var(--space-3); border: 0; background: none; text-align: left; font-family: var(--mono); font-size: var(--text-xs); color: var(--accent); cursor: pointer; }
+.al-more:hover { text-decoration: underline; }
+.al-sub { list-style: none; margin: 0; padding: 0 0 var(--space-2) var(--space-4); display: grid; gap: var(--space-1); }
+.al-sub-btn { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; width: 100%; min-height: var(--tap-min); padding: var(--space-1) var(--space-2); border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--panel-2); text-align: left; color: var(--text-head); font-size: var(--text-sm); cursor: pointer; }
+.al-sub-btn[aria-pressed="true"] { border-color: var(--accent); }
+.al-sub-btn:hover { background: var(--panel-3); }
+.al-sub-btn:focus-visible, .al-more:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.al-sub-place { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; }

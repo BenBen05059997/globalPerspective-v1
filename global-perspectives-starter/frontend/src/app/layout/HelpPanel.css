@@ -1,0 +1,23 @@
+/* "?" panel (R7): over the page, right side on desktop, full sheet on a phone. Above the nav bar (z 100) and the tab bar. */
+.gp-helppanel-scrim { position: fixed; inset: 0; z-index: 120; background: var(--strip); }
+.gp-helppanel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 121; box-sizing: border-box; width: min(440px, 100vw);
+  display: flex; flex-direction: column; gap: var(--space-5); overflow-y: auto; overscroll-behavior: contain;
+  padding: var(--space-4) var(--space-5) var(--space-8); border-left: 1px solid var(--hairline-strong); background: var(--panel-2);
+  box-shadow: var(--shadow-lg); color: var(--text-body);
+}
+.gp-helppanel:focus { outline: none; }
+.gp-helppanel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.gp-helppanel__head h2 { margin: 0; font-family: var(--serif); font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--text-head); }
+.gp-helppanel__close {
+  flex: none; width: var(--tap-min); height: var(--tap-min); border: 1px solid var(--hairline); border-radius: var(--r-sm);
+  background: transparent; color: var(--text-muted); font-size: var(--text-xl); cursor: pointer;
+}
+.gp-helppanel__close:hover { color: var(--text-head); border-color: var(--hairline-strong); }
+.gp-helppanel__close:focus-visible, .gp-helppanel a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.gp-helppanel .gp-howread__cols { grid-template-columns: 1fr; gap: var(--space-3); }
+.gp-helppanel__more { margin: 0; font-size: var(--text-ui); }
+.gp-helppanel__more a { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--accent); }
+@media (max-width: 600px) {
+  .gp-helppanel { width: 100vw; border-left: 0; padding: var(--space-3) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom, 0px)); }
+}

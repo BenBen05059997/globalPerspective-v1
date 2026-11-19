@@ -34,7 +34,8 @@ describe('CategoryTag', () => {
   });
   it('the CSS paints the tag with tokens only', () => {
     const css = fs.readFileSync(path.resolve(here, '../blocks.css'), 'utf8');
-    const block = css.slice(css.indexOf('/* ---- CategoryTag'));
+    const start = css.indexOf('/* ---- CategoryTag');
+    const block = css.slice(start, css.indexOf('/* ----', start + 1)); // its own block only
     expect(block).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/);
     expect(block).not.toMatch(/background:\s*var\(--(hue|tier)/);
   });

@@ -64,7 +64,7 @@ function SignalCard({ s, signals }) {
       {(outlets.length > 0 || s.related || threadId) && (
         <div className="wb-sig-src">
           {threadId && (
-            <EntityLink kind="story" className="wb-sig-arc" id={threadId} topic={topic} asOf={s.asOf}>Full story arc →</EntityLink>
+            <EntityLink kind="story" className="wb-sig-arc" id={threadId} topic={topic} asOf={s.asOf}>Full story →</EntityLink>
           )}
           {outlets.length > 0 && (
             <>{threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (

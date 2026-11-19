@@ -10,6 +10,7 @@ import { topicsWithoutSituation } from '@/features/map/lib/storyShading.js';
 import { storyHref } from '@/shared/lib/links.js';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import { NewestStepLine, StoryName, storyName } from '@/shared/ui/StoryCard.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 
 function storiesDateLabel(asOf) {
@@ -21,14 +22,17 @@ function storiesDateLabel(asOf) {
 
 export default function HudIntelFeed({
   situations = [], topics = [], topicsAsOf = null, storyFocusId = null, onSelectStory = null, peek = null,
-  label = 'Intel feed', directLimit = 0,
+  label = 'Intel feed', directLimit = 0, stories = null,
 }) {
   const dateLabel = storiesDateLabel(topicsAsOf);
   const ageDays = topicsAsOf ? (Date.now() - new Date(topicsAsOf).getTime()) / 86400000 : null;
   const state = ageDays != null ? freshnessState(ageDays) : null;
+  // One row per story (R1): a story's later items in the edition are dropped (its row shows the story's title).
+  const seen = new Set();
+  const oncePerStory = (t) => !t.storyId || (seen.has(t.storyId) ? false : (seen.add(t.storyId), true));
   const titled = directLimit
-    ? topics.filter((t) => t?.title && t.threadId).slice(0, directLimit)
-    : topicsWithoutSituation(topics, situations).filter((t) => t.title);
+    ? topics.filter((t) => t?.title && t.threadId).filter(oncePerStory).slice(0, directLimit)
+    : topicsWithoutSituation(topics, situations).filter((t) => t.title).filter(oncePerStory);
   const visibleTopics = state === 'hidden' ? [] : titled;
   const hiddenCount = state === 'hidden' ? titled.length : 0;
 
@@ -37,10 +41,12 @@ export default function HudIntelFeed({
   return (
     <div className="hud-feed" role="region" aria-label={label}>
       <SectionHeader
-        className="hud-feed-head hud-stories-head" label={directLimit ? 'Top stories' : 'Stories'} count={dateLabel ? `from ${dateLabel}` : null}
+        className="hud-feed-head hud-stories-head"
+        label={directLimit ? 'Top stories' : 'More from today'}
+        count={directLimit ? (dateLabel ? `from ${dateLabel}` : null) : `${visibleTopics.length}${dateLabel ? ` · from ${dateLabel}` : ''}`}
         hint={state === 'older' ? <span className="sh-paused">paused</span> : null}
       />
-      {!directLimit ? <p className="hud-stories-hidden sh-muted">{ageDays != null && ageDays < 1 ? 'Today’s news stories.' : 'News stories from the latest edition.'}</p> : null}
+      {!directLimit ? <p className="hud-stories-hidden sh-muted">{ageDays != null && ageDays < 1 ? 'Stories in today’s edition that have no alert on the map.' : 'Stories in the latest edition that have no alert on the map.'}</p> : null}
       {visibleTopics.length ? (
         <ul className="hud-feed-list hud-stories-list">
           {visibleTopics.map((t, i) => {
@@ -48,18 +54,20 @@ export default function HudIntelFeed({
             const rowId = t.threadId || t.topicId || `story-${i}`;
             const data = peekData(t, { asOf: topicsAsOf });
             const crisis = crisisTypeForCategory(t.category);
+            const name = storyName(stories?.[t.storyId]?.name, stories?.[t.storyId]?.title || t.title); // §6b: name + tag, else the headline
             return (
               <StoryRow
                 key={rowId}
                 id={rowId}
                 active={rowId === storyFocusId}
                 dim={state === 'older'}
-                to={directLimit ? storyHref(t.threadId) : null}
+                to={directLimit ? storyHref(t.storyId || t.threadId) : null}
                 onClick={directLimit ? null : () => onSelectStory && onSelectStory(t)}
-                title={t.title}
+                title={name ? <StoryName name={name} interactive={false} small /> : (stories?.[t.storyId]?.title || t.title)}
                 place={t.primaryCountry || null}
                 crisis={crisis === 'neutral' ? null : crisis}
                 chip={t.category ? <CategoryTag category={t.category} /> : null}
+                meta={<NewestStepLine story={stories?.[t.storyId]} role={t.role} />}
                 peek={peek}
                 peekData={data}
               />

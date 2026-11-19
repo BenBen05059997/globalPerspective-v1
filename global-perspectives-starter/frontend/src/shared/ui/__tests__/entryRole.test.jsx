@@ -3,12 +3,12 @@ import { render, screen } from '@testing-library/react';
 import EntryRole from '@/shared/ui/EntryRole.jsx';
 
 describe('EntryRole', () => {
-  it.each([['start', 'START'], ['move', 'MOVE'], ['measure', 'MEASURED CHANGE']])('%s reads %s as a dotless category word', (role, word) => {
+  it.each([['start', 'Starts a story'], ['move', 'Moves a story'], ['measure', 'Measured change']])('%s reads %s as the kind chip', (role, word) => {
     render(<EntryRole role={role} />);
     const el = screen.getByText(word);
-    expect(el.className).toBe('gp-cat');
-    expect(el.getAttribute('data-dot')).toBe('off');
-    expect(el.getAttribute('style')).toBeNull(); // no colour of its own
+    expect(el.className).toBe('gp-kind');
+    expect(el.getAttribute('data-kind')).toBe(role);
+    expect(el.tagName).toBe('SPAN'); // a label, not a button
   });
 
   it('a measured change carries the MODEL JUDGMENT tag; start and move carry none', () => {
@@ -30,6 +30,6 @@ describe('EntryRole', () => {
 
   it('takes a caller class beside gp-cat', () => {
     render(<EntryRole role="move" className="story-entry-cat" />);
-    expect(screen.getByText('MOVE').className).toBe('gp-cat story-entry-cat');
+    expect(screen.getByText('Moves a story').className).toBe('gp-kind story-entry-cat');
   });
 });

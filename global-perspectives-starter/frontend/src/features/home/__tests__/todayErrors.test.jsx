@@ -50,7 +50,7 @@ describe('/today failure states', () => {
     topicsState = { topics: [], loading: false, error: 'Network error', refetch, isStale: false, updatedAt: null, hasNewData: false };
     wrap();
     expect(screen.getByTestId('today-unavailable')).toBeTruthy();
-    expect(screen.getByText("Couldn't load today's topics.")).toBeTruthy();
+    expect(screen.getByText("Couldn't load today's stories.")).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/Something went wrong/);
     expect(report).toHaveBeenCalledWith('today-topics', expect.any(Error));
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -63,7 +63,7 @@ describe('/today failure states', () => {
       loading: false, error: null, refetch, isStale: false, updatedAt: null, hasNewData: false,
     };
     wrap();
-    for (const label of ['Summary', 'Predict', 'Trace Cause']) fireEvent.click(screen.getByRole('button', { name: label }));
+    for (const label of ['Summary', 'Likely outcomes', 'Why it happened']) fireEvent.click(screen.getByRole('button', { name: label }));
     expect(await screen.findByText('Summary unavailable right now')).toBeTruthy();
     expect(await screen.findByText('Prediction unavailable right now')).toBeTruthy();
     expect(await screen.findByText('Trace cause unavailable right now')).toBeTruthy();
@@ -78,7 +78,7 @@ describe('/today failure states', () => {
     svc.getTopicTraceCause.mockResolvedValue({ content: '' });
     wrap();
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Trace Cause' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Why it happened' }));
     expect(await screen.findByText('Summary unavailable right now')).toBeTruthy();
     expect(await screen.findByText('Trace cause unavailable right now')).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/generation failed/);
@@ -119,7 +119,7 @@ describe('/today failure states', () => {
       entries: [{ topicId: 't1', generationId: 'g1', notes: { summary: {}, trace_cause: {} } }],
     };
     wrap();
-    fireEvent.click(screen.getByRole('button', { name: 'Predict' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Likely outcomes' }));
     const card = await screen.findByTestId('no-forecast');
     expect(card.textContent).toMatch(/No new forecast was drawn for this story in the latest run/);
     expect(card.textContent).toMatch(/at most once a week/);
@@ -137,7 +137,7 @@ describe('/today failure states', () => {
     views.fresh = true;
     views.view = { schemaVersion: 1, latest: { topicIds: ['t1'], generationId: 'g1' }, entries: [{ topicId: 't1', generationId: 'g1', notes: { summary: {}, prediction: {} } }] };
     wrap();
-    fireEvent.click(screen.getByRole('button', { name: 'Predict' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Likely outcomes' }));
     expect(await screen.findByText('Prediction unavailable right now')).toBeTruthy();
     expect(svc.getTopicPrediction).toHaveBeenCalledTimes(1);
   });
@@ -163,7 +163,7 @@ describe('/today failure states', () => {
   it('zero topics with no error says so honestly instead of a blank page', () => {
     topicsState = { topics: [], loading: false, error: null, refetch, isStale: false, updatedAt: null, hasNewData: false };
     wrap();
-    expect(screen.getByTestId('today-empty').textContent).toMatch(/No topics are published yet/);
+    expect(screen.getByTestId('today-empty').textContent).toMatch(/No stories are published yet/);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(refetch).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('today-unavailable')).toBeNull();

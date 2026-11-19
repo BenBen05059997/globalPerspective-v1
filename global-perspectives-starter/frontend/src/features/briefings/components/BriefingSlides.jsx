@@ -172,7 +172,7 @@ export function SignalSlide({ signal, index }) {
       )}
       {signal.fact && <p className="bm-slide-text"><span className="bm-fact-badge">FACT</span> {signal.fact}</p>}
       {signal.soWhat && <p className="bm-slide-text"><span className="bm-inference-badge">so what</span> {signal.soWhat}</p>}
-      {threadIdOf(signal) && <Link to={storyHref(threadIdOf(signal))} className="bm-slide-link">Read the full story arc →</Link>}
+      {threadIdOf(signal) && <Link to={storyHref(threadIdOf(signal))} className="bm-slide-link">Read the full story →</Link>}
     </div>
   );
 }

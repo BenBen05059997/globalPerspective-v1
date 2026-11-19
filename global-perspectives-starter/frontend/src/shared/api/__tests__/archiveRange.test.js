@@ -33,7 +33,7 @@ describe('the index as the action\'s day map', () => {
   it('has the same days, each with entries and the day\'s time, in the action\'s entry shape', () => {
     expect(Object.keys(rec).sort()).toEqual(Object.keys(action.data).sort());
     const [e] = rec['2026-10-30'].entries;
-    expect(Object.keys(e).sort()).toEqual(['category', 'iso3', 'regions', 'sources', 'threadId', 'title', 'topicId']);
+    expect(Object.keys(e).sort()).toEqual(['category', 'iso3', 'regions', 'role', 'sources', 'threadId', 'title', 'topicId']);
     expect(rec['2026-10-30'].updatedAt).toMatch(/^2026-10-30T/);
     expect(e.sources[0]).toEqual({ source: expect.any(String), url: expect.stringMatching(/^https?:/) });
   });

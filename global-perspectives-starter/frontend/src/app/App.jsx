@@ -9,7 +9,7 @@ import { Home } from '@/features/home';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
-import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import { useEffect, useLayoutEffect, useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import { PageViewBridge } from '@/app/pageViews';
@@ -24,26 +24,56 @@ import { OPS_ROUTE } from '@/features/ops';
 
 // Route-level code splitting: every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
+// `lazyPage`: a split page that, once its code is here, renders directly instead of through React.lazy. URL changes render
+// at once, outside a transition (see BrowserRouter below), and React.lazy suspends on first render even when the code is
+// already loaded, so the old page gave way to the loading mark. A mounted page keeps the component it mounted with.
+function lazyPage(load) {
+  let loaded = null;
+  const preload = () => load().then((m) => { loaded = m.default; return m; });
+  const Lazy = lazy(preload);
+  function Page(props) {
+    const [C] = useState(() => loaded || Lazy);
+    return <C {...props} />;
+  }
+  Page.preload = preload;
+  return Page;
+}
+
 const PrivacyTerms = lazy(() => import('@/features/static/PrivacyTerms'));
 const AboutContact = lazy(() => import('@/features/static/AboutContact'));
 const Disclosures = lazy(() => import('@/features/static/Disclosures'));
 const Contact = lazy(() => import('@/features/static/Contact'));
 const SharedAnalysisPage = lazy(() => import('@/features/analysis-studio/SharedAnalysisPage'));
-const WeeklyPage = lazy(() => import('@/features/threads/WeeklyPage'));
-const ThreadPage = lazy(() => import('@/features/threads/ThreadPage'));
-const CountryPage = lazy(() => import('@/features/countries/CountryPage'));
-const CountryListPage = lazy(() => import('@/features/countries/CountryListPage'));
+const WeeklyPage = lazyPage(() => import('@/features/threads/WeeklyPage'));
+const ThreadPage = lazyPage(() => import('@/features/threads/ThreadPage'));
+const CountryPage = lazyPage(() => import('@/features/countries/CountryPage'));
+const CountryListPage = lazyPage(() => import('@/features/countries/CountryListPage'));
 const SignIn = lazy(() => import('@/features/account/SignIn'));
 const AuthCallback = lazy(() => import('@/features/account/AuthCallback'));
 const Account = lazy(() => import('@/features/account/Account'));
 const WhitepaperPage = lazy(() => import('@/features/static/WhitepaperPage'));
-const SituationHome = lazy(() => import('@/features/map/SituationHome'));
+const SituationHome = lazyPage(() => import('@/features/map/SituationHome'));
 const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
-const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
+const TrackRecordPage = lazyPage(() => import('@/features/track-record/TrackRecordPage'));
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
-const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
+const BriefingsPage = lazyPage(() => import('@/features/briefings/BriefingsPage'));
 const BoardPage = lazy(() => import('@/features/board/BoardPage'));
 const OpsPage = lazy(() => import('@/features/ops/OpsPage'));
+
+// The pages the nav, the tab bar and story links reach: their code loads once the first page is idle, so moving between them
+// never shows the loading mark. A failed preload is ignored; the page's own load reports it.
+const NAV_PAGES = [SituationHome, WeeklyPage, ThreadPage, BriefingsPage, TrackRecordPage, CountryPage, CountryListPage];
+function usePreloadNavPages() {
+  useEffect(() => {
+    const run = () => NAV_PAGES.forEach((Page) => Page.preload().catch(() => {}));
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = setTimeout(run, 1500);
+    return () => clearTimeout(t);
+  }, []);
+}
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
 // BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
@@ -58,7 +88,7 @@ function NotFound() {
       <div style={{ fontSize: '3rem', marginBottom: 16 }}>—</div>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Page not found</h2>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
-        That URL doesn't lead anywhere. Head back to the map or browse the weekly story arcs.
+        That URL doesn't lead anywhere. Head back to the map or browse the stories we follow.
       </p>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
         <Link to={ROUTE.map} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
@@ -111,10 +141,13 @@ export default function App() {
   const basename = resolveBasename();
   // Hand off from the pre-JS boot screen in index.html on the very first React commit, before paint.
   useLayoutEffect(() => { removeStaticBoot(); }, []);
+  usePreloadNavPages();
 
   return (
     <AuthProvider>
-      <BrowserRouter basename={basename}>
+      {/* useTransitions={false}: a URL change renders at once. Inside a transition, the map's constant animation updates kept
+          interrupting the heavy re-render, so a same-page change (a Map row's ?focus=, "?") showed nothing for seconds. */}
+      <BrowserRouter basename={basename} useTransitions={false}>
         <AuthBridge />
         <PageViewBridge />
         <Layout>

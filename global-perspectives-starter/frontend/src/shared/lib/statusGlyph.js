@@ -3,7 +3,7 @@
 // derived only from the tracker's own `state` / `escalating` fields. Lives in shared/ so shared UI
 // (StatusGlyph, StoryRow) can read it.
 const GLYPHS = {
-  escalating: { glyph: '▲', key: 'escalating', label: 'escalating' },
+  escalating: { glyph: '▲', key: 'escalating', label: 'getting worse' }, // reader word (SPEC R8); the key stays the tracker's
   new: { glyph: '●', key: 'new', label: 'new' },
   steady: { glyph: '◆', key: 'steady', label: 'steady' },
   cooling: { glyph: '▼', key: 'cooling', label: 'cooling' },

@@ -11,7 +11,7 @@
 // Props:
 //   outlets:  number of DISTINCT outlets (the real corroboration signal)
 //   sources:  total source count (fallback when distinct-outlet count is absent)
-//   regions:  number of distinct covering regions/countries (optional enrichment)
+//   regions:  number of distinct OUTLET countries (optional; SPEC words: "from c countries")
 //   size:     "sm" | "md"   default "sm"
 
 export default function SourceRobustness({ outlets, sources, regions, size = 'sm' }) {
@@ -23,7 +23,7 @@ export default function SourceRobustness({ outlets, sources, regions, size = 'sm
 
   const single = n < 2;
   const cls = `srb srb-${size} ${single ? 'srb-warn' : 'srb-ok'}`;
-  const regionTail = !single && Number.isFinite(regions) && regions >= 2 ? ` · ${regions} regions` : '';
+  const countryTail = !single && Number.isFinite(regions) && regions >= 1 ? ` from ${regions} ${regions === 1 ? 'country' : 'countries'}` : '';
 
   if (single) {
     return (
@@ -31,7 +31,7 @@ export default function SourceRobustness({ outlets, sources, regions, size = 'sm
         className={cls}
         title="Built on a single outlet — treat as unverified until a second source corroborates it."
       >
-        ⚠ Single-source
+        Only one outlet so far
       </span>
     );
   }
@@ -39,9 +39,9 @@ export default function SourceRobustness({ outlets, sources, regions, size = 'sm
   return (
     <span
       className={cls}
-      title={`Corroborated by ${n} distinct outlets${regionTail ? `, ${regions} regions` : ''}.`}
+      title={`Reported by ${n} distinct outlets${countryTail}.`}
     >
-      ✓ Corroborated · {n} outlets{regionTail}
+      Reported by {n} outlets{countryTail}
     </span>
   );
 }

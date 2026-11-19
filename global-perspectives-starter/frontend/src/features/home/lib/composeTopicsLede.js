@@ -20,7 +20,7 @@ const sourceCountOf = (t) => (Array.isArray(t && t.sources) ? t.sources.length :
 export function ledeMeta({ topicCount = 0, countryCount = 0, threadCount = 0 }) {
   const parts = [`${topicCount} ${topicCount === 1 ? 'story' : 'stories'}`];
   if (countryCount) parts.push(`${countryCount} ${countryCount === 1 ? 'country' : 'countries'} involved`);
-  if (threadCount) parts.push(`${threadCount} active ${threadCount === 1 ? 'thread' : 'threads'}`);
+  if (threadCount) parts.push(`${threadCount} ${threadCount === 1 ? 'story' : 'stories'} with news today`);
   return parts;
 }
 
@@ -36,7 +36,7 @@ export function composeTopicsLede({ topics = [] } = {}) {
       topicCount: 0,
       countryCount: 0,
       threadCount: 0,
-      text: 'No topics loaded yet.',
+      text: 'No stories loaded yet.',
     };
   }
 
@@ -82,7 +82,7 @@ export function composeTopicsLede({ topics = [] } = {}) {
   const countryCount = countries.size;
   const threadCount = threads.size;
 
-  const text = `Today's lede: ${lede.title}. ${ledeMeta({ topicCount, countryCount, threadCount }).join(', ')}.`;
+  const text = `Today's lead story: ${lede.title}. ${ledeMeta({ topicCount, countryCount, threadCount }).join(', ')}.`;
 
   return { empty: false, lede, topicCount, countryCount, threadCount, text };
 }

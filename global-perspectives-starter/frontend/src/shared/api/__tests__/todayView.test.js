@@ -25,7 +25,17 @@ describe('topics', () => {
     expect(got.data.topics.every((t) => t.urgency && typeof t.x_trending === 'boolean' && t.primaryCountry)).toBe(true);
     const { topics: _a, ...gotRun } = got.data;
     const { topics: _b, ...wantRun } = want.data;
-    expect(gotRun).toEqual({ ...wantRun, activatedAt: undefined, updatedAt: wantRun.updatedAt });
+    expect(gotRun).toEqual({ ...wantRun, activatedAt: undefined, updatedAt: wantRun.updatedAt, stories: null, roles: null });
+  });
+  it('passes the builder stamps through: role and storyId on each topic, the stories map and latest.roles', () => {
+    const stampedView = clone(view);
+    stampedView.entries.forEach((e) => { e.role = 'move'; e.storyId = 'thread-s'; });
+    stampedView.stories = { 'thread-s': { title: 'S', stepCount: 3 } };
+    stampedView.latest.roles = { move: stampedView.latest.topicIds.length, start: 0, measure: 0, none: 0 };
+    const out = topicsPayload(stampedView, NOW);
+    expect(out.data.topics.every((t) => t.role === 'move' && t.storyId === 'thread-s')).toBe(true);
+    expect(out.data.stories).toEqual(stampedView.stories);
+    expect(out.data.roles).toEqual(stampedView.latest.roles);
   });
   it('the envelope: success, cached, stale (older than the 9 h limit), asOf', () => {
     expect([got.success, got.cached, got.stale, got.asOf]).toEqual([want.success, want.cached, want.stale, want.asOf]);

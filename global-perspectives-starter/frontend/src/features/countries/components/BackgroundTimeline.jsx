@@ -96,7 +96,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
             <div key={date} className="bgt-day">
               <div className="bgt-day-header">
                 <span className="bgt-day-date">{formatDateLabel(date)}</span>
-                <span className="bgt-day-count">{dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}</span>
+                <span className="bgt-day-count">{dayEvents.length} step{dayEvents.length !== 1 ? 's' : ''}</span>
               </div>
 
               <div className="bgt-day-body">
@@ -139,7 +139,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
                 {/* Expand toggle */}
                 {(rest.length > 0 || (entriesByDate[date]?.length > 0 && !isExpanded)) && !isExpanded && (
                   <Button compact className="bgt-expand" onClick={() => toggleDate(date)}>
-                    {rest.length > 0 ? `+${rest.length} more event${rest.length !== 1 ? 's' : ''}` : 'Show related articles'}
+                    {rest.length > 0 ? `+${rest.length} more step${rest.length !== 1 ? 's' : ''}` : 'Show related articles'}
                   </Button>
                 )}
 

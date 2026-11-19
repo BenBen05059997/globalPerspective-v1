@@ -78,7 +78,7 @@ function RisingThreadCard({ thread }) {
   const body = (
     <>
       <div className="daily-highlight-kicker">
-        <span>Rising Thread</span>
+        <span>Rising Story</span>
         <Trajectory value={thread.trajectory} className="daily-traj daily-traj--pill" />
         {thread.articleCount > 0 && (
           <span className="daily-highlight-meta">
@@ -88,7 +88,7 @@ function RisingThreadCard({ thread }) {
       </div>
       <h3 className="daily-highlight-h3">{thread.title}</h3>
       {thread.oneLiner && <p className="daily-highlight-deck">{thread.oneLiner}</p>}
-      {threadId && <span className="daily-highlight-cta">Read full arc →</span>}
+      {threadId && <span className="daily-highlight-cta">Read the full story →</span>}
     </>
   );
   return threadId

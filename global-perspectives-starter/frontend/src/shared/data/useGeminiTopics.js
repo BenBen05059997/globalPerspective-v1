@@ -12,6 +12,8 @@ export function useGeminiTopics() {
   const [isStale, setIsStale] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [generatedDate, setGeneratedDate] = useState(null);
+  // The edition's story stamps (`stories` by storyId, `roles` counts by kind); null until the builder stamps them.
+  const [edition, setEdition] = useState({ stories: null, roles: null });
   const [hasNewData, setHasNewData] = useState(false);
   // true once a load attempt has finished (success or failure) — lets a caller tell "still
   // fetching" from "fetched, nothing came back" (the map's boot sensors need that).
@@ -33,6 +35,7 @@ export function useGeminiTopics() {
           setTopics(list);
           setUpdatedAt(cached?.updatedAt || null);
           setGeneratedDate(cached?.generatedDate || null);
+          setEdition({ stories: cached?.stories || null, roles: cached?.roles || null });
           reportAnalysisAt('topics', cached?.updatedAt);
           setIsStale(!isFresh);
           hadCachedTopics = true;
@@ -53,6 +56,7 @@ export function useGeminiTopics() {
       setIsStale(Boolean(data?.stale));
       setUpdatedAt(data?.updatedAt || null);
       setGeneratedDate(data?.generatedDate || null);
+      setEdition({ stories: data?.stories || null, roles: data?.roles || null });
       reportAnalysisAt('topics', data?.updatedAt);
       setHasNewData(false);
       try {
@@ -63,6 +67,8 @@ export function useGeminiTopics() {
             timestamp: Date.now(),
             updatedAt: data?.updatedAt || null,
             generatedDate: data?.generatedDate || null,
+            stories: data?.stories || null,
+            roles: data?.roles || null,
           })
         );
       } catch {
@@ -102,5 +108,5 @@ export function useGeminiTopics() {
     return () => clearInterval(intervalId);
   }, [updatedAt]);
 
-  return { topics, loading, error, settled, refetch: loadTopics, isStale, updatedAt, generatedDate, hasNewData };
+  return { topics, loading, error, settled, refetch: loadTopics, isStale, updatedAt, generatedDate, hasNewData, stories: edition.stories, roles: edition.roles };
 }

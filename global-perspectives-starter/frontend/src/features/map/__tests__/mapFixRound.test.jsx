@@ -151,7 +151,7 @@ describe('?layer= is followed after mount', () => {
     let go;
     function Nav() { go = useNavigate(); return null; }
     await renderAt('/', <Nav />);
-    const riskTab = () => screen.getAllByRole('radio', { name: 'Country risk' })[0];
+    const riskTab = () => screen.getAllByRole('radio', { name: 'How serious, by country' })[0];
     expect(riskTab()).toHaveAttribute('aria-checked', 'false');
     act(() => go('/?layer=risk'));
     expect(riskTab()).toHaveAttribute('aria-checked', 'true');
@@ -230,20 +230,25 @@ describe('Alerts is the one situations list; Intel keeps only stories', () => {
     expect(within(intel()).queryByText('Topic that is a situation')).toBeNull();
     expect(within(intel()).getByText('A plain story')).toBeInTheDocument();
   });
-  it('every plotted situation is in Alerts as a keyboard-reachable button (a same-thread sibling keeps its own row)', async () => {
+  it('every plotted situation is in Alerts as a keyboard-reachable button; alerts of one story are one row with a fold (SPEC §2)', async () => {
     await renderAt('/');
     const cards = within(alerts()).getAllByRole('button').filter((b) => b.classList.contains('al-card'));
     const titles = cards.map((b) => within(b).getByText(/—|quiet/).textContent);
     expect(titles).toEqual(expect.arrayContaining(['Mexico — tropical cyclone', 'Ukraine — fighting spreads', 'A quiet one']));
-    expect(titles).toContain('Ukraine — dup of the same thread'); // same thread, own situation: own row
+    expect(titles).not.toContain('Ukraine — dup of the same thread'); // same story: one row
     for (const b of cards) { expect(b.tabIndex).toBeGreaterThanOrEqual(0); expect(b.tagName).toBe('BUTTON'); }
+    fireEvent.click(within(alerts()).getByRole('button', { name: '2 alerts on the map ▾' }));
+    const sub = within(alerts()).getAllByRole('button').filter((x) => x.classList.contains('al-sub-btn'));
+    expect(sub.map((x) => x.querySelector('.al-sub-label').textContent)).toEqual(['Ukraine — fighting spreads', 'Ukraine — dup of the same thread']);
+    fireEvent.click(sub[1]); // each alert in the fold selects its own pin
+    expect(document.querySelector('.sh-detail-title')).toHaveTextContent('Ukraine — dup of the same thread');
     fireEvent.click(cards[0]);
     expect(document.querySelector('.sh-detail-title')).toHaveTextContent('Ukraine — fighting spreads');
   });
   it('a quiet day is a dated header with zero or few stories, no placeholder text', async () => {
     S.topics = [];
     const none = await renderAt('/');
-    expect(within(intel()).getByText('Stories')).toBeInTheDocument();
+    expect(within(intel()).getByText('More from today')).toBeInTheDocument();
     expect(within(intel()).getByText(/from NOV 3/i)).toBeInTheDocument();
     expect(within(intel()).queryAllByRole('button')).toHaveLength(0);
     expect(intel().textContent).not.toMatch(/quiet|no stories|nothing/i);

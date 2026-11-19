@@ -60,14 +60,15 @@ function TodayArchiveSidebar({ entries }) {
   return (
     <>
       <div className="archive-rail">
-        <SectionHeader label="Today's Archive" count={entries.length} />
+        <SectionHeader label="Earlier today" count={entries.length} />
+        <p className="archive-rail-line">News from today’s earlier editions.</p>
 
         <div className="archive-rail-filters">
           <input
             className="archive-rail-search"
             type="text"
-            placeholder="Search topics…"
-            aria-label="Search archived topics"
+            placeholder="Search earlier today…"
+            aria-label="Search earlier stories"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -89,7 +90,7 @@ function TodayArchiveSidebar({ entries }) {
 
         <div className="archive-rail-list">
           {filtered.length === 0 && (
-            <div className="archive-rail-empty">No matching topics</div>
+            <div className="archive-rail-empty">No matching stories</div>
           )}
           {sortedCategories.map(category => (
             <div key={category} className="archive-rail-group">

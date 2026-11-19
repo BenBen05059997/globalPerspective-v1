@@ -14,7 +14,13 @@
     "generatedYear": 2026,
     "topicIds": [
       "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion-0"
-    ]
+    ],
+    "roles": {
+      "start": 0,
+      "move": 1,
+      "measure": 0,
+      "none": 0
+    }
   },
   "entries": [
     {
@@ -60,7 +66,9 @@
       "threadId": "thread-russia-forces-closure-of-novay-566ffe",
       "title": "Russia Forces Closure of Novaya Gazeta, Independent Newspaper",
       "topicId": "Russia Forces Closure of Novaya Gazeta, Independent Newspaper-0",
-      "eventId": "b10136585f03900d09315ed744054e5a6990cda5"
+      "eventId": "b10136585f03900d09315ed744054e5a6990cda5",
+      "storyId": null,
+      "role": null
     },
     {
       "actors": [
@@ -142,7 +150,43 @@
           "at": "2026-10-31T04:25:48.645Z",
           "model": "deepseek-v4-pro"
         }
-      }
+      },
+      "storyId": "thread-us-approves-sale-of-500-patrio-1d1f7c",
+      "role": "move"
     }
-  ]
+  ],
+  "stories": {
+    "thread-us-approves-sale-of-500-patrio-1d1f7c": {
+      "title": "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion",
+      "born": "2026-10-29",
+      "category": "military",
+      "iso3": [
+        "UKR",
+        "USA"
+      ],
+      "regions": [
+        "Europe",
+        "North America"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "stepCount": 2,
+      "stepDays": 2,
+      "firstStep": {
+        "eventId": "0000000000000000000000000000000000000000",
+        "date": "2026-10-29",
+        "title": "US Weighs Patriot Missile Sale to Ukraine",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "b00de1b50cfb16efee29a1903eb37332e6d805b0",
+        "date": "2026-10-31",
+        "title": "US Approves Sale of 500 Patriot Missiles to Ukraine for $2.1 Billion",
+        "role": "move",
+        "sourceCount": 1
+      },
+      "watch": [],
+      "watchAt": null
+    }
+  }
 }

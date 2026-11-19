@@ -35,7 +35,7 @@ test('days are record dates, ordered by archive day, place in the list, at, even
   // 'A late' was listed on the 21st but its record date is the 20th: it is under the 20th, as in its story view
   assert.deepEqual(w.days['2026-10-20'].entries.map((x) => x.title), ['A late']);
   assert.deepEqual(w.days['2026-10-21'].entries.map((x) => [x.title, x.threadId]), [['B first in list', 'thread-b'], ['C merged into B', 'thread-b']]);
-  assert.deepEqual(w.days['2026-10-21'].entries[0], {topicId: 'B first in list-1', threadId: 'thread-b', title: 'B first in list', category: 'conflict', iso3: ['DEU', 'FRA'], sources: [{outlet: 'S1', url: 'https://s1.test/a'}, {outlet: 'S2', url: 'https://s2.test/a'}]});
+  assert.deepEqual(w.days['2026-10-21'].entries[0], {topicId: 'B first in list-1', threadId: 'thread-b', title: 'B first in list', role: 'start', category: 'conflict', iso3: ['DEU', 'FRA'], sources: [{outlet: 'S1', url: 'https://s1.test/a'}, {outlet: 'S2', url: 'https://s2.test/a'}]});
   assert.equal(w.days['2026-10-21'].updatedAt, '2026-10-21T05:00:00.000Z'); // the newest entry time of the day
 });
 

@@ -301,6 +301,7 @@
             "topicId": "C first-1",
             "threadId": "thread-b",
             "title": "C first",
+            "role": "start",
             "category": "conflict",
             "iso3": [
               "UKR"
@@ -321,6 +322,7 @@
             "topicId": "A first-1",
             "threadId": "thread-a",
             "title": "A first",
+            "role": "start",
             "category": "conflict",
             "iso3": [
               "FRA"
@@ -345,6 +347,7 @@
             "topicId": "B first-1",
             "threadId": "thread-b",
             "title": "B first",
+            "role": "move",
             "category": "conflict",
             "iso3": [
               "FRA"
@@ -365,6 +368,7 @@
             "topicId": "A second-1",
             "threadId": "thread-a",
             "title": "A second",
+            "role": "move",
             "category": "conflict",
             "iso3": [
               "FRA",

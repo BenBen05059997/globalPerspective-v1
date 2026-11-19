@@ -59,4 +59,40 @@ function todayIndex(days, notesBy, builtFrom) {
   return {schemaVersion: SCHEMA_VERSION, builtFrom, updatedAt, latest, entries};
 }
 
-module.exports = {todayIndex, SCHEMA_VERSION};
+const ROLES = ['start', 'move', 'measure'];
+
+/** What a Today card or a map row shows of a story, copied from its view (decision 0058: the builder stamps, pages display). */
+function storyCard(s) {
+  const a = s.analysis || null;
+  return {
+    title: s.title, born: s.born, category: s.category, iso3: s.iso3, regions: s.regions, tier: s.tier, riskScore: s.riskScore,
+    stepCount: s.stepCount, stepDays: s.stepDays, firstStep: s.firstStep, newestStep: s.newestStep,
+    // the model's watch questions (analysis note, model text) and when it wrote them; none is an empty list
+    watch: a && Array.isArray(a.watchQuestions) ? a.watchQuestions.filter((q) => typeof q === 'string' && q.trim()) : [], watchAt: a ? a.generatedAt ?? null : null,
+  };
+}
+
+/**
+ * The today view with each entry placed in its story (decisions 0058, 0063): `storyId` is the story view that holds the entry's eventId now
+ * (merges and moves applied; the entry's own `threadId` stays as the agent wrote it), `role` its kind there (the story view row's role);
+ * both null when no story view holds it. `stories` holds a storyCard per storyId, and `latest.roles` counts the latest run's items by role
+ * (`none`: no story, or role null). Pure; null in, null out.
+ */
+function withStories(view, stories) {
+  if (!view) return null;
+  const at = new Map();
+  for (const [id, s] of stories) if (!s.aliasOf) for (const e of s.entries || []) if (e.kind !== 'article') at.set(e.eventId, {storyId: id, role: e.role ?? null});
+  const entries = view.entries.map((e) => ({...e, ...(at.get(e.eventId) || {storyId: null, role: null})}));
+  const ids = [...new Set(entries.map((e) => e.storyId).filter(Boolean))].sort();
+  let latest = view.latest;
+  if (latest) {
+    const byTopic = new Map();
+    for (const e of entries) if (!byTopic.has(e.topicId) || e.latest) byTopic.set(e.topicId, e); // the latest run's entry of a topic carries `latest`
+    const roles = {start: 0, move: 0, measure: 0, none: 0};
+    for (const id of latest.topicIds) { const r = (byTopic.get(id) || {}).role; roles[ROLES.includes(r) ? r : 'none'] += 1; }
+    latest = {...latest, roles};
+  }
+  return {...view, latest, entries, stories: Object.fromEntries(ids.map((id) => [id, storyCard(stories.get(id))]))};
+}
+
+module.exports = {todayIndex, withStories, SCHEMA_VERSION};

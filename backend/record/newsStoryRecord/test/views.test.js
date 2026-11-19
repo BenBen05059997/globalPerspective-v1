@@ -540,3 +540,46 @@ test('role: an article row has no role and never takes the start, even when it i
   assert.equal('role' in a[0], false);
   assert.deepEqual(roles(v, 'thread-a').slice(1), [['ea1', 'start'], ['ea2', 'move']]);
 });
+
+// steps (decision 0058: the builder counts and picks them, so no page does)
+test('steps: count and days over every non-article row, merged-in ones included; the first is the role rule\'s, the newest the title rule\'s', () => {
+  const v = build(X.golden());
+  const b = v.stories.get('thread-b');
+  assert.deepEqual([b.stepCount, b.stepDays], [2, 2]);
+  assert.deepEqual(b.firstStep, {eventId: 'ec1', date: '2026-10-17', title: 'C first', role: 'start'}); // from the merged thread-c
+  assert.deepEqual(b.newestStep, {eventId: 'eb1', date: '2026-10-19', title: 'B first', role: 'move', sourceCount: 1});
+  assert.equal(b.newestStep.title, b.title);
+  const row = v.all.stories.find((r) => r.threadId === 'thread-b');
+  assert.deepEqual([row.stepCount, row.stepDays], [2, 2]);
+  const alias = v.all.stories.find((r) => r.threadId === 'thread-c');
+  assert.deepEqual([alias.stepCount, alias.stepDays], [0, 0]);
+});
+
+test('steps: an article row is not a step; a story of articles only has no first or newest step', () => {
+  const v = build([...X.golden(), A1(), X.assignment('art1', 'thread-a', '2026-10-24T00:00:00.000Z')]);
+  const a = v.stories.get('thread-a');
+  assert.equal(a.entries.length, 3);
+  assert.deepEqual([a.stepCount, a.firstStep.eventId, a.newestStep.eventId], [2, 'ea1', 'ea2']);
+});
+
+test('steps: counted before the 400 cap; ties on date and time go by archive place, as role and title do', () => {
+  const f = Array.from({length: 405}, (_, i) => X.entry('big', `2026-10-${String(1 + Math.floor(i / 24)).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00.000Z`, `e${i}`, {id: `id${String(i).padStart(3, '0')}`}));
+  const s = build(f).stories.get('big');
+  assert.deepEqual([s.stepCount, s.stepDays, s.entries.length, s.firstStep.eventId, s.firstStep.role], [405, 17, 400, 'id000', 'start']);
+  const at = '2026-10-20T10:00:00.000Z';
+  const listed = (id, index) => ({...X.entry('tie', at, id, {id}), sourceKey: `archive#2026-10-20|${id}`, sourceRow: {store: 'NewsCache', key: {id: 'archive#2026-10-20'}, index}});
+  const t = build([listed('a', 5), listed('b', 2)]).stories.get('tie');
+  assert.deepEqual([t.firstStep.eventId, t.newestStep.eventId, t.title], ['b', 'a', 'a']);
+});
+
+// Known limit of 0063 item 6 (board fault 2): the order starts with the record date, which comes from the earliest source's publish time.
+// A step recorded later whose sources were published before the story's first step takes the start, and the old start becomes a move.
+test('role (0063 item 6 as written): a later-recorded step with an earlier record date takes the start on the next build', () => {
+  const rec = (id, at, archiveDay) => ({...X.entry('flip', at, id, {id}), sourceKey: `archive#${archiveDay}|${id}`, sourceRow: {store: 'NewsCache', key: {id: `archive#${archiveDay}`}, index: 0}});
+  const first = rec('first', '2026-10-20T10:00:00.000Z', '2026-10-20');
+  assert.deepEqual(roles(build([first]), 'flip'), [['first', 'start']]);
+  const late = rec('late', '2026-10-19T22:00:00.000Z', '2026-10-21'); // recorded a day later, one source published the evening before
+  assert.deepEqual(roles(build([first, late]), 'flip'), [['late', 'start'], ['first', 'move']]);
+  const sameDay = rec('same', '2026-10-20T09:00:00.000Z', '2026-10-21'); // same record date: the archive day decides, no flip
+  assert.deepEqual(roles(build([first, sameDay]), 'flip'), [['same', 'move'], ['first', 'start']]);
+});

@@ -98,6 +98,8 @@
         "actorIds",
         "sourceCount",
         "entryCount",
+        "stepCount",
+        "stepDays",
         "forkCount",
         "branchCount",
         "liveBranchCount",
@@ -132,7 +134,18 @@
         },
         "entryCount": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "rows of the story view before the cap, placed articles included"
+        },
+        "stepCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the story's steps (non-article rows), as the story view's stepCount; 0 on an alias row"
+        },
+        "stepDays": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the distinct record dates of those steps; 0 on an alias row"
         },
         "forkCount": {
           "type": "integer",

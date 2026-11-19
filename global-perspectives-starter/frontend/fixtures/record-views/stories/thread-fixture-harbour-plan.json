@@ -34,6 +34,21 @@
     "fixture-src-fx-e5b",
     "fixture-src-fx-e6"
   ],
+  "stepCount": 6,
+  "stepDays": 6,
+  "firstStep": {
+    "eventId": "fx-e1",
+    "date": "2026-11-06",
+    "title": "Fixture: council proposes harbour plan",
+    "role": "start"
+  },
+  "newestStep": {
+    "eventId": "1569aaa8981ab4572d3cc9c3dba452f4c4fbdda8",
+    "date": "2026-11-17",
+    "title": "Fixture: harbour plan passes its first reading",
+    "role": "move",
+    "sourceCount": 1
+  },
   "entries": [
     {
       "eventId": "fx-e1",
@@ -207,7 +222,7 @@
       "role": "move"
     },
     {
-      "eventId": "fx-e6",
+      "eventId": "1569aaa8981ab4572d3cc9c3dba452f4c4fbdda8",
       "date": "2026-11-17",
       "at": "2026-11-17T04:00:00.000Z",
       "precision": "exact",

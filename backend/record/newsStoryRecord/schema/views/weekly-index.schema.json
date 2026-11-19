@@ -24,12 +24,13 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["topicId", "threadId", "title", "category", "iso3", "sources"],
+              "required": ["topicId", "threadId", "title", "role", "category", "iso3", "sources"],
               "additionalProperties": false,
               "properties": {
                 "topicId": {"type": ["string", "null"]},
                 "threadId": {"type": "string"},
                 "title": {"type": "string"},
+                "role": {"enum": ["start", "move", "measure", null], "description": "the step's kind, as its story view row (decision 0063 item 6)"},
                 "category": {"type": ["string", "null"]},
                 "iso3": {"type": "array", "items": {"type": "string"}},
                 "sources": {

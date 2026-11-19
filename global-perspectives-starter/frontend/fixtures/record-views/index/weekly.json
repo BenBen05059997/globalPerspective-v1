@@ -7,9 +7,12 @@
   "from": "2026-10-20",
   "to": "2026-11-18",
   "titles": {
+    "thread-fixture-cargo-volumes": "Fixture: test statistics office reports cargo volumes up 12 percent",
+    "thread-fixture-ferry-route": "Fixture: test rival operator bids for the same island route",
+    "thread-fixture-freight-rates": "Fixture: test freight index edges up",
     "thread-fixture-harbour-plan": "Fixture: harbour plan passes its first reading",
-    "thread-fixture-port-strike": "Fixture: test strike ends after two days",
-    "thread-fixture-freight-rates": "Fixture: test freight index edges up"
+    "thread-fixture-lighthouse": "Fixture: test lighthouse closes for repairs after storm damage",
+    "thread-fixture-port-strike": "Fixture: test strike ends after two days"
   },
   "days": {
     "2026-11-03": {
@@ -19,6 +22,7 @@
           "topicId": "fx-u1-topic",
           "threadId": "thread-fixture-port-strike",
           "title": "Fixture: port workers stage a test strike",
+          "role": "start",
           "category": "labor",
           "iso3": [
             "NZL"
@@ -39,6 +43,7 @@
           "topicId": "fx-u2-topic",
           "threadId": "thread-fixture-port-strike",
           "title": "Fixture: test strike ends after two days",
+          "role": "move",
           "category": "labor",
           "iso3": [
             "NZL"
@@ -59,6 +64,7 @@
           "topicId": "fx-e1-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: council proposes harbour plan",
+          "role": "start",
           "category": "politics",
           "iso3": [
             "NZL"
@@ -79,6 +85,7 @@
           "topicId": "fx-e2-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: dockworkers' union sets out its terms for the harbour plan",
+          "role": "move",
           "category": "labor",
           "iso3": [
             "NZL"
@@ -99,6 +106,7 @@
           "topicId": "fx-e3-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: harbour authority publishes silt figures, highest in its series",
+          "role": "measure",
           "category": "environment",
           "iso3": [
             "NZL"
@@ -119,6 +127,7 @@
           "topicId": "fx-e4-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: council delays harbour vote by one week",
+          "role": "move",
           "category": "politics",
           "iso3": [
             "NZL"
@@ -139,6 +148,7 @@
           "topicId": "fx-e5-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: council votes on harbour plan",
+          "role": "move",
           "category": "politics",
           "iso3": [
             "NZL"
@@ -163,6 +173,7 @@
           "topicId": "fx-d1-topic",
           "threadId": "thread-fixture-freight-rates",
           "title": "Fixture: test freight index holds steady",
+          "role": "start",
           "category": "economy",
           "iso3": [
             "NZL"
@@ -183,6 +194,7 @@
           "topicId": "fx-e6-topic",
           "threadId": "thread-fixture-harbour-plan",
           "title": "Fixture: harbour plan passes its first reading",
+          "role": "move",
           "category": "politics",
           "iso3": [
             "NZL"
@@ -197,12 +209,13 @@
       ]
     },
     "2026-11-18": {
-      "updatedAt": "2026-11-18T01:00:00.000Z",
+      "updatedAt": "2026-11-18T03:00:00.000Z",
       "entries": [
         {
           "topicId": "fx-d2-topic",
           "threadId": "thread-fixture-freight-rates",
           "title": "Fixture: test freight index edges up",
+          "role": "move",
           "category": "economy",
           "iso3": [
             "NZL"
@@ -211,6 +224,74 @@
             {
               "outlet": "Fixture Wire 1",
               "url": "https://fixture.test/fx-d2"
+            }
+          ]
+        },
+        {
+          "topicId": "fx-l1-topic",
+          "threadId": "thread-fixture-lighthouse",
+          "title": "Fixture: test lighthouse closes for repairs after storm damage",
+          "role": "start",
+          "category": "disaster",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-l1-0"
+            }
+          ]
+        },
+        {
+          "topicId": "fx-f1-topic",
+          "threadId": "thread-fixture-ferry-route",
+          "title": "Fixture: test ferry operator announces a new island route",
+          "role": "start",
+          "category": "transport",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-f1-0"
+            },
+            {
+              "outlet": "Fixture Wire 2",
+              "url": "https://fixture.test/fx-f1-1"
+            }
+          ]
+        },
+        {
+          "topicId": "fx-f2-topic",
+          "threadId": "thread-fixture-ferry-route",
+          "title": "Fixture: test rival operator bids for the same island route",
+          "role": "move",
+          "category": "transport",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-f2-0"
+            }
+          ]
+        },
+        {
+          "topicId": "fx-c1-topic",
+          "threadId": "thread-fixture-cargo-volumes",
+          "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+          "role": "measure",
+          "category": "economy",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-c1-0"
             }
           ]
         }

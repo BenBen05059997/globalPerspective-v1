@@ -120,7 +120,7 @@ function weeklyIndex(stories, refs, today, builtFrom) {
       if (e.kind === 'article') continue;
       if (e.date < from || e.date > today) continue;
       if (s.title != null) titles[id] = s.title; // the story view's own title (titleOf output, not recomputed); a missing key means no title
-      (days[e.date] ||= []).push({e, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}});
+      (days[e.date] ||= []).push({e, row: {topicId: e.topicId ?? null, threadId: id, title: e.title, role: e.role ?? null, category: e.category ?? null, iso3: e.iso3 || [], sources: (e.sources || []).map((x) => ({outlet: x.outlet ?? null, url: x.url ?? null}))}});
     }
   }
   const out = {};

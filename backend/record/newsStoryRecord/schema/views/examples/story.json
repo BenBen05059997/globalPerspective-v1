@@ -32,6 +32,21 @@
     "s1",
     "s2"
   ],
+  "stepCount": 2,
+  "stepDays": 2,
+  "firstStep": {
+    "eventId": "ea1",
+    "date": "2026-10-18",
+    "title": "A first",
+    "role": "start"
+  },
+  "newestStep": {
+    "eventId": "ea2",
+    "date": "2026-10-20",
+    "title": "A second",
+    "role": "move",
+    "sourceCount": 1
+  },
   "entries": [
     {
       "eventId": "ea1",

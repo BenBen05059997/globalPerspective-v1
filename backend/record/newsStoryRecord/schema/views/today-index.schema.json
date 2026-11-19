@@ -3,7 +3,7 @@
   "title": "Today index (record/views/index/today.json)",
   "description": "Decision 0051. What the pages that still read DynamoDB for 'today' need: the entries archived in the last 24 hours of the newest write (the `today` action's entries, in the today-archive item's order and with its replacement rule), the latest run's selection (the `topics` action: `latest` names its topics in order, and the entries of that run carry `latest`, the fields only the latest item holds), and the full model text of the latest run's entries (`notes`, from the entry notes of decision 0042; the summary, prediction and trace_cause actions). Built by todayView.js from record/inbox/entries/ (the agent's lines of the last two UTC days) and the entry notes; absent until the agent writes the inbox. Public data only: everything here is what those five actions answer to an anonymous caller. The page cuts the entries at its own read time (24 h).",
   "type": "object",
-  "required": ["schemaVersion", "builtFrom", "updatedAt", "latest", "entries"],
+  "required": ["schemaVersion", "builtFrom", "updatedAt", "latest", "entries", "stories"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {"const": 1},
@@ -12,7 +12,7 @@
     "latest": {
       "description": "The newest run when its lines are all there; null when the newest run carries no selection (an older agent, or a single-topic manual run): the page then asks the topics action.",
       "type": ["object", "null"],
-      "required": ["batch", "generationId", "model", "limit", "updatedAt", "generatedDate", "generatedYear", "topicIds"],
+      "required": ["batch", "generationId", "model", "limit", "updatedAt", "generatedDate", "generatedYear", "topicIds", "roles"],
       "additionalProperties": false,
       "properties": {
         "batch": {"type": "string"},
@@ -22,15 +22,24 @@
         "updatedAt": {"type": ["string", "null"], "description": "when the ingest wrote the staging item; the page's 'as of'"},
         "generatedDate": {"type": ["string", "null"]},
         "generatedYear": {"type": ["integer", "null"]},
-        "topicIds": {"type": "array", "items": {"type": "string"}, "description": "the topics of the run, in the order of the latest item"}
+        "topicIds": {"type": "array", "items": {"type": "string"}, "description": "the topics of the run, in the order of the latest item"},
+        "roles": {
+          "type": "object",
+          "description": "the run's items counted by their entry's role (decision 0063 item 6); none = no story view holds the item, or its role is null. Items, not distinct stories",
+          "required": ["start", "move", "measure", "none"],
+          "additionalProperties": false,
+          "properties": {"start": {"type": "integer", "minimum": 0}, "move": {"type": "integer", "minimum": 0}, "measure": {"type": "integer", "minimum": 0}, "none": {"type": "integer", "minimum": 0}}
+        }
       }
     },
     "entries": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["topicId", "threadId", "title", "archivedAt", "sources", "eventId"],
+        "required": ["topicId", "threadId", "title", "archivedAt", "sources", "eventId", "storyId", "role"],
         "properties": {
+          "storyId": {"type": ["string", "null"], "description": "the story view that holds this entry's eventId now (merges and moves applied; threadId stays as the agent wrote it); null when none does"},
+          "role": {"enum": ["start", "move", "measure", null], "description": "the entry's role in that story view (decision 0063 item 6); null when storyId is null"},
           "topicId": {"type": "string"},
           "threadId": {"type": ["string", "null"]},
           "title": {"type": "string"},
@@ -67,9 +76,38 @@
           }
         }
       }
+    },
+    "stories": {
+      "type": "object",
+      "description": "storyId -> storyCard, for every storyId the entries name",
+      "additionalProperties": {"$ref": "#/definitions/storyCard"}
     }
   },
   "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["eventId", "date", "title", "role"],
+      "properties": {
+        "eventId": {"type": "string"}, "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, "title": {"type": ["string", "null"]},
+        "role": {"enum": ["start", "move", "measure", null]}, "sourceCount": {"type": "integer", "minimum": 0}
+      }
+    },
+    "storyCard": {
+      "type": "object",
+      "description": "what a Today card or a map row shows of a story, copied from its story view (decision 0058: the builder stamps, pages display)",
+      "required": ["title", "born", "category", "iso3", "regions", "tier", "riskScore", "stepCount", "stepDays", "firstStep", "newestStep", "watch", "watchAt"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {"type": ["string", "null"]}, "born": {"type": ["string", "null"]}, "category": {"type": ["string", "null"]},
+        "iso3": {"type": "array", "items": {"type": "string"}}, "regions": {"type": "array", "items": {"type": "string"}},
+        "tier": {"type": ["string", "null"]}, "riskScore": {"type": ["number", "null"]},
+        "stepCount": {"type": "integer", "minimum": 0}, "stepDays": {"type": "integer", "minimum": 0},
+        "firstStep": {"anyOf": [{"$ref": "#/definitions/step"}, {"type": "null"}]},
+        "newestStep": {"anyOf": [{"$ref": "#/definitions/step"}, {"type": "null"}]},
+        "watch": {"type": "array", "items": {"type": "string"}, "description": "the story analysis note's watchQuestions (model text); empty when none"},
+        "watchAt": {"type": ["string", "null"], "description": "when the model wrote them; null with no analysis"}
+      }
+    },
     "note": {
       "type": "object",
       "required": ["format", "content", "at", "model"],

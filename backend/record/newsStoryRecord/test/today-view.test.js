@@ -10,7 +10,7 @@ const Ajv = requireFrontend('ajv');
 const {fakeS3} = require('./fake-s3');
 const {makeHandler} = require('../src/index');
 const {buildViews, writeGroups, entryNotesBy} = require('../src/views');
-const {todayIndex} = require('../src/todayView');
+const {todayIndex, withStories} = require('../src/todayView');
 const inbox = require('../../../shared/src/entriesInbox');
 const R = require('../../../shared/src/record');
 const N = require('../../../shared/src/notes');
@@ -130,5 +130,38 @@ test('a topic with more than 10 sources keeps them whole in the entry\'s latest.
   const v = todayIndex([{day: D1, lines}], new Map(), {});
   assert.equal(v.entries[0].latest.sources.length, 12);
   assert.equal(v.entries[0].sources.length, 10);
-  assert.ok(validate(v), JSON.stringify(validate.errors));
+  const placed = withStories(v, new Map());
+  assert.ok(validate(placed), JSON.stringify(validate.errors));
+});
+
+// Each today entry in its story (decisions 0058, 0063): the builder stamps storyId, role, the story's card and the run's counts by role.
+test('withStories: storyId and role from the story view that holds the eventId now; merged-away ids resolve; unknown entries stay null', () => {
+  const hex = (c) => c.repeat(40);
+  const f = X.golden().map((x) => (x.eventId === 'ea2' ? {...x, eventId: hex('a')} : x.eventId === 'ec1' ? {...x, eventId: hex('c')} : x));
+  const views = buildViews(f, {today: D1, builtAt: `${D1}T04:35:00.000Z`, runId: 'r', factsManifestDays: 1});
+  const e = (topicId, threadId, eventId, extra = {}) => ({topicId, threadId, title: topicId, archivedAt: `${D1}T04:00:00.000Z`, sources: [], eventId, ...extra});
+  const view = {schemaVersion: 1, builtFrom: {}, updatedAt: `${D1}T04:00:00.000Z`,
+    latest: {batch: 'b', generationId: null, model: null, limit: 13, updatedAt: null, generatedDate: null, generatedYear: null, topicIds: ['A second-1', 'C first-1', 'gone-1']},
+    entries: [e('A second-1', 'thread-a', hex('a'), {latest: {urgency: 'low'}}), e('C first-1', 'thread-c', hex('c'), {latest: {urgency: 'low'}}), e('gone-1', 'thread-x', hex('f'), {latest: {urgency: 'low'}})]};
+  const v = withStories(view, views.stories);
+  assert.deepEqual(v.entries.map((x) => [x.threadId, x.storyId, x.role]), [['thread-a', 'thread-a', 'move'], ['thread-c', 'thread-b', 'start'], ['thread-x', null, null]]);
+  assert.deepEqual(v.latest.roles, {start: 1, move: 1, measure: 0, none: 1});
+  assert.deepEqual(Object.keys(v.stories), ['thread-a', 'thread-b']);
+  const a = v.stories['thread-a'];
+  const s = views.stories.get('thread-a');
+  assert.deepEqual(a, {title: s.title, born: '2026-10-18', category: 'conflict', iso3: s.iso3, regions: s.regions, tier: null, riskScore: null,
+    stepCount: 2, stepDays: 2, firstStep: s.firstStep, newestStep: s.newestStep, watch: [], watchAt: null});
+  assert.equal(validate(v), true, JSON.stringify(validate.errors));
+  assert.equal(withStories(null, views.stories), null);
+});
+
+test('withStories: the card carries the analysis watch questions (model text) and when they were written; the run\'s entry of a topic is the one with `latest`', () => {
+  const story = {aliasOf: null, title: 'T', born: D0, category: null, iso3: [], regions: [], tier: 'high', riskScore: 80, stepCount: 1, stepDays: 1,
+    firstStep: {eventId: 'e1', date: D0, title: 'T', role: 'measure'}, newestStep: {eventId: 'e1', date: D0, title: 'T', role: 'measure', sourceCount: 2},
+    entries: [{eventId: 'e1', role: 'measure'}], analysis: {watchQuestions: ['Will it?', '', 7, 'And then?'], generatedAt: `${D0}T09:00:00.000Z`}};
+  const view = {latest: {topicIds: ['t-1']}, entries: [{topicId: 't-1', eventId: 'old'}, {topicId: 't-1', eventId: 'e1', latest: {}}]};
+  const v = withStories(view, new Map([['thread-t', story]]));
+  assert.deepEqual(v.stories['thread-t'].watch, ['Will it?', 'And then?']);
+  assert.equal(v.stories['thread-t'].watchAt, `${D0}T09:00:00.000Z`);
+  assert.deepEqual(v.latest.roles, {start: 0, move: 0, measure: 1, none: 0});
 });

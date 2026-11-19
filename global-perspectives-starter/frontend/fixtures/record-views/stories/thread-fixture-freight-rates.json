@@ -29,6 +29,21 @@
     "fixture-src-fx-d1",
     "fixture-src-fx-d2"
   ],
+  "stepCount": 2,
+  "stepDays": 2,
+  "firstStep": {
+    "eventId": "fx-d1",
+    "date": "2026-11-16",
+    "title": "Fixture: test freight index holds steady",
+    "role": "start"
+  },
+  "newestStep": {
+    "eventId": "124c252ab0548cba45d6cac61a482117fce4a151",
+    "date": "2026-11-18",
+    "title": "Fixture: test freight index edges up",
+    "role": "move",
+    "sourceCount": 1
+  },
   "entries": [
     {
       "eventId": "fx-d1",
@@ -56,7 +71,7 @@
       "role": "start"
     },
     {
-      "eventId": "fx-d2",
+      "eventId": "124c252ab0548cba45d6cac61a482117fce4a151",
       "date": "2026-11-18",
       "at": "2026-11-18T01:00:00.000Z",
       "precision": "exact",

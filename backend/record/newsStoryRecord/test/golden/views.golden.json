@@ -34,6 +34,21 @@
         "s1",
         "s2"
       ],
+      "stepCount": 2,
+      "stepDays": 2,
+      "firstStep": {
+        "eventId": "ea1",
+        "date": "2026-10-18",
+        "title": "A first",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "ea2",
+        "date": "2026-10-20",
+        "title": "A second",
+        "role": "move",
+        "sourceCount": 1
+      },
       "entries": [
         {
           "eventId": "ea1",
@@ -227,6 +242,21 @@
         "s1",
         "s3"
       ],
+      "stepCount": 2,
+      "stepDays": 2,
+      "firstStep": {
+        "eventId": "ec1",
+        "date": "2026-10-17",
+        "title": "C first",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "eb1",
+        "date": "2026-10-19",
+        "title": "B first",
+        "role": "move",
+        "sourceCount": 1
+      },
       "entries": [
         {
           "eventId": "ec1",
@@ -338,6 +368,21 @@
       "sourceIds": [
         "s1"
       ],
+      "stepCount": 1,
+      "stepDays": 1,
+      "firstStep": {
+        "eventId": "eo1",
+        "date": "2026-07-01",
+        "title": "Old first",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "eo1",
+        "date": "2026-07-01",
+        "title": "Old first",
+        "role": "start",
+        "sourceCount": 1
+      },
       "entries": [
         {
           "eventId": "eo1",
@@ -603,6 +648,8 @@
         ],
         "sourceCount": 2,
         "entryCount": 2,
+        "stepCount": 2,
+        "stepDays": 2,
         "forkCount": 1,
         "branchCount": 4,
         "liveBranchCount": 1,
@@ -637,6 +684,8 @@
         ],
         "sourceCount": 2,
         "entryCount": 2,
+        "stepCount": 2,
+        "stepDays": 2,
         "forkCount": 0,
         "branchCount": 0,
         "liveBranchCount": 0,
@@ -682,6 +731,8 @@
         ],
         "sourceCount": 2,
         "entryCount": 2,
+        "stepCount": 2,
+        "stepDays": 2,
         "forkCount": 1,
         "branchCount": 4,
         "liveBranchCount": 1,
@@ -716,6 +767,8 @@
         ],
         "sourceCount": 2,
         "entryCount": 2,
+        "stepCount": 2,
+        "stepDays": 2,
         "forkCount": 0,
         "branchCount": 0,
         "liveBranchCount": 0,
@@ -745,6 +798,8 @@
         "actorIds": [],
         "sourceCount": 0,
         "entryCount": 0,
+        "stepCount": 0,
+        "stepDays": 0,
         "forkCount": 0,
         "branchCount": 0,
         "liveBranchCount": 0,
@@ -776,6 +831,8 @@
         "actorIds": [],
         "sourceCount": 1,
         "entryCount": 1,
+        "stepCount": 1,
+        "stepDays": 1,
         "forkCount": 0,
         "branchCount": 0,
         "liveBranchCount": 0,

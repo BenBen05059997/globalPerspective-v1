@@ -14,7 +14,7 @@ const {iso3List} = require('./_shared/resolveIso3');
 const {buildIndexViews, webLinks, archiveRefOf, entryOrder, WEB_MAX_AGE_DAYS, bytesOf, maxOf} = require('./indexViews');
 const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
-const {todayIndex} = require('./todayView');
+const {todayIndex, withStories} = require('./todayView');
 const {storyStamp, NO_READING} = require('./storyStamp');
 
 const SCHEMA_VERSION = 1;
@@ -225,6 +225,27 @@ function articleRow(f, corrected) {
   };
 }
 
+// The first and the last of a story's rows in entryOrder (`order`); a tie on the whole order goes to the earlier row for the first, the later for the last.
+const firstOf = (rows, order) => rows.reduce((a, e) => (!a || order(e, a) < 0 ? e : a), null);
+const lastOf = (rows, order) => rows.reduce((a, e) => (!a || order(a, e) <= 0 ? e : a), null);
+
+/**
+ * What the pages show of a story's steps (its non-article rows, every one, before the view's cap), so no page counts or picks them:
+ * stepCount, stepDays (distinct record dates), firstStep (the row entryRows judges first: the `start` unless its role is null or
+ * measure) and newestStep (the last in entryOrder, the row titleOf names the story after when it is in the 30-day window), each
+ * {eventId, date, title, role}; newestStep also carries sourceCount (the articles of that step). Null steps for a story with none.
+ */
+function stepSummary(entries, refs) {
+  const steps = entries.filter((e) => e.kind !== 'article');
+  const order = entryOrder(refs);
+  const brief = (e) => (e ? {eventId: e.eventId, date: e.date, title: e.title ?? null, role: e.role ?? null} : null);
+  const newest = lastOf(steps, order);
+  return {
+    stepCount: steps.length, stepDays: new Set(steps.map((e) => e.date)).size,
+    firstStep: brief(firstOf(steps, order)), newestStep: newest ? {...brief(newest), sourceCount: (newest.sources || []).length} : null,
+  };
+}
+
 /**
  * The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending.
  * Each non-article row carries `role`, the entry's place in our record (decision 0058: the builder stamps it, pages only show it): the
@@ -242,8 +263,7 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
     ...(f.provisional ? {provisional: true} : {}), // today's archive entry before the nightly run has frozen it (0050)
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
-  const order = entryOrder(refs);
-  const first = rows.filter((e) => e.kind !== 'article').reduce((a, e) => (!a || order(e, a) < 0 ? e : a), null);
+  const first = firstOf(rows.filter((e) => e.kind !== 'article'), entryOrder(refs));
   const roleOf = (e) => (e.eventType === 'measure' ? 'measure' : e !== first ? 'move' : limited.has(e.fromThreadId || group[0].threadId) ? null : 'start');
   return rows.map((e) => (e.kind === 'article' ? e : {...e, role: roleOf(e)}));
 }
@@ -321,7 +341,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
       const stamp = storyStamp({threadId, title: titleOf(rows0, today, refs), iso3: [], born: bornOf(facts0), lastFactAt: maxOf(facts0.map((f) => f.at)), entries: rows0});
       stamps.set(threadId, stamp);
       rows.set(threadId, {
-        ...stamp, actorIds: [], sourceCount: 0, entryCount: 0, forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [],
+        ...stamp, actorIds: [], sourceCount: 0, entryCount: 0, stepCount: 0, stepDays: 0, forkCount: 0, branchCount: 0, liveBranchCount: 0, latestVerdictAt: null, aliasOf, aliases: [],
       });
       continue;
     }
@@ -339,6 +359,7 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
     const entries = entryRows(group, corrected, reassigned, notesBy, {refs, limited});
     const kept = entries.slice(-ENTRY_CAP);
+    const steps = stepSummary(entries, refs);
     const title = titleOf(entries, today, refs); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
     const forks = forkRows(mine, ledger, today);
     const branches = forks.flatMap((k) => k.branches);
@@ -351,14 +372,14 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     stamps.set(threadId, stamp);
     stories.set(threadId, {
       schemaVersion: SCHEMA_VERSION, builtFrom, ...without(stamp, ['line']), aliasOf: null, actorIds, sourceIds,
-      entries: kept, entriesOmitted: entries.length - kept.length, forks,
+      ...steps, entries: kept, entriesOmitted: entries.length - kept.length, forks,
       merges: mergeFacts.map((f) => ({from: f.payload.from, into: f.payload.into, at: f.at, reason: f.payload.reason})),
       corrections: corrections.map((f) => ({corrects: f.payload.corrects, at: f.at, reason: f.payload.reason})),
       ...readingFields(readings.get(threadId)), // `line` here is the reading object {text, week, cites}, not the stamp's string (hence without(stamp, ['line']) above)
       analysis: analysisBy.get(threadId) ?? null, // the latest story analysis note (model text), as stored
     });
     rows.set(threadId, {
-      ...stamp, actorIds, sourceCount: sourceIds.length, entryCount: entries.length,
+      ...stamp, actorIds, sourceCount: sourceIds.length, entryCount: entries.length, stepCount: steps.stepCount, stepDays: steps.stepDays,
       forkCount: forks.length, branchCount: branches.length, liveBranchCount: branches.filter((b) => !b.legacy && !b.verdict && b.due && b.due >= today).length,
       latestVerdictAt: maxOf(verdictAts), aliasOf: null, aliases: aliasIds,
     });
@@ -403,7 +424,7 @@ function readingFields(t) {
 function titleOf(entries, today, refs = new Map()) {
   const from = addDays(today, -WINDOW_DAYS);
   const order = entryOrder(refs);
-  const last = (list) => list.reduce((best, e) => (!best || order(best, e) <= 0 ? e : best), null);
+  const last = (list) => lastOf(list, order);
   const real = entries.filter((e) => e.kind !== 'article');
   const pick = last(real.filter((e) => e.date >= from && e.date <= today)) || last(real) || last(entries);
   return pick ? pick.title ?? null : null;
@@ -580,7 +601,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const manifest = {schemaVersion: SCHEMA_VERSION, builtAt, runId, factsManifestDays, factsThrough, readingsThrough, forecastViews: forecasts.size, ...(provisionalThrough ? {provisionalThrough} : {}), ...provisionalCounts(extra)};
   const countries = countryViews(noteLines, builtFrom);
   const briefs = buildBriefViews(noteLines, builtFrom); // the daily and weekly briefs (briefViews.js, decision 0048)
-  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf, stampOf: stampFor, aliases}, themes, liveOf: (id) => (rows.has(id) ? rows.get(id).liveBranchCount : null), stamps, weekly: {refs, today}, briefs: briefs.index, today: todayIndex(todayDays, notesBy, indexFrom)}); // the many-at-once readers' indexes (indexViews.js)
+  const indexes = buildIndexViews({builtFrom, weeklyFrom: indexFrom, stories, countries, web: {judged, coverage, webs, titleOf: webTitleOf, stampOf: stampFor, aliases}, themes, liveOf: (id) => (rows.has(id) ? rows.get(id).liveBranchCount : null), stamps, weekly: {refs, today}, briefs: briefs.index, today: withStories(todayIndex(todayDays, notesBy, indexFrom), stories)}); // the many-at-once readers' indexes (indexViews.js)
   // per-view stamps: a story, its forecasts and its links from the provisional entries and forks it holds; a day's count from the provisional facts of that day
   for (const [id, story] of stories) {
     const t = stampOf([...(story.entries || []).filter((e) => e.provisional).map((e) => e.date), ...(story.forks || []).filter((k) => k.provisional).map((k) => k.drawnAt.slice(0, 10))]);

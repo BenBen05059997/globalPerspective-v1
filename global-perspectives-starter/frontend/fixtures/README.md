@@ -30,6 +30,10 @@ plugin (`vite.config.js`, `apply: 'serve'`) that answers `/data/record/views/*` 
 Open `/weekly/thread/thread-fixture-harbour-plan`: an entry of each `role` (start, move, measure), a written-late
 entry (0061), a placed article row, an entry merged in from `thread-fixture-harbour-union` (alias view), and judged
 links in both directions (`thread-fixture-port-strike` feeds in, `thread-fixture-freight-rates` is fed into; that one
-has no analysis, so Read in full shows its plain timeline list). Every headline starts with "Fixture" and is test text,
+has no analysis, so Read in full shows its plain timeline list). `index/today.json` is today's edition placed in its stories (`storyId`, `role`, `stories` cards, `latest.roles`): the latest
+run holds a move with a watch question (harbour plan, 6 steps), a one-step start (`thread-fixture-lighthouse`), a start and a move of one
+story in the same run (`thread-fixture-ferry-route`: a start whose story has 2 steps), a measured change that is its story's only step
+(`thread-fixture-cargo-volumes`, so its first step is not a start) and an item no story view holds (no chip); an earlier run holds a move
+with no watch question (freight rates). The story files of those ids are here, so "Open the story" works. Every headline starts with "Fixture" and is test text,
 not news. `src/features/threads/__tests__/recordViewsFixture.test.js` checks every file against the schemas in
 `backend/record/newsStoryRecord/schema/views/`.

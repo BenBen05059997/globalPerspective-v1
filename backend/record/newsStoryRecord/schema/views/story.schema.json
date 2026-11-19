@@ -11,6 +11,16 @@
     }
   ],
   "definitions": {
+    "stepBrief": {
+      "type": "object",
+      "required": ["eventId", "date", "title", "role"],
+      "properties": {
+        "eventId": {"type": "string"},
+        "date": {"$ref": "#/definitions/day"},
+        "title": {"type": ["string", "null"]},
+        "role": {"enum": ["start", "move", "measure", null]}
+      }
+    },
     "writtenLate": {
       "type": "object",
       "required": [
@@ -103,6 +113,10 @@
         "category",
         "actorIds",
         "sourceIds",
+        "stepCount",
+        "stepDays",
+        "firstStep",
+        "newestStep",
         "entries",
         "entriesOmitted",
         "forks",
@@ -162,6 +176,31 @@
         "entriesOmitted": {
           "type": "integer",
           "minimum": 0
+        },
+        "stepCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the story's steps: its non-article rows, all of them (also those beyond the view's entry cap), merged-in stories included"
+        },
+        "stepDays": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the distinct record dates of those steps"
+        },
+        "firstStep": {
+          "anyOf": [{"$ref": "#/definitions/stepBrief"}, {"type": "null"}],
+          "description": "the step the role rule judges first (entryOrder); its role is start, or null (windowLimited) or measure. Null for a story with no step"
+        },
+        "newestStep": {
+          "anyOf": [
+            {
+              "allOf": [{"$ref": "#/definitions/stepBrief"}],
+              "required": ["sourceCount"],
+              "properties": {"sourceCount": {"type": "integer", "minimum": 0, "description": "the articles of that step"}}
+            },
+            {"type": "null"}
+          ],
+          "description": "the last step in entryOrder (the one titleOf names the story after when it is in the 30-day window), with its article count. Null for a story with no step"
         },
         "forks": {
           "type": "array",

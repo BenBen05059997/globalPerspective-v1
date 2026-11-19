@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 1,
+  "builtFrom": {
+    "factsThrough": "2026-11-18",
+    "readingsThrough": null
+  },
+  "updatedAt": "2026-11-18T04:26:43.000Z",
+  "latest": {
+    "batch": "2026-11-18T04:26:43.000Z",
+    "generationId": "gen-fixture-2",
+    "model": "fixture",
+    "limit": 13,
+    "updatedAt": "2026-11-18T04:16:00.000Z",
+    "generatedDate": "November 18, 2026",
+    "generatedYear": 2026,
+    "topicIds": [
+      "Fixture: harbour plan passes its first reading-0",
+      "Fixture: test ferry operator announces a new island route-1",
+      "Fixture: test rival operator bids for the same island route-4",
+      "Fixture: test lighthouse closes for repairs after storm damage-5",
+      "Fixture: test statistics office reports cargo volumes up 12 percent-2",
+      "Fixture: test item that no story view holds-3"
+    ],
+    "roles": {
+      "start": 2,
+      "move": 2,
+      "measure": 1,
+      "none": 1
+    }
+  },
+  "entries": [
+    {
+      "topicId": "Fixture: test freight index edges up-0",
+      "threadId": "thread-fixture-freight-rates",
+      "title": "Fixture: test freight index edges up",
+      "category": "economy",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "markets",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-d2",
+          "url": "https://fixture.test/fx-d2",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-17T20:26:43.000Z",
+      "generationId": "gen-fixture-1",
+      "eventId": "124c252ab0548cba45d6cac61a482117fce4a151",
+      "storyId": "thread-fixture-freight-rates",
+      "role": "move"
+    },
+    {
+      "topicId": "Fixture: harbour plan passes its first reading-0",
+      "threadId": "thread-fixture-harbour-plan",
+      "title": "Fixture: harbour plan passes its first reading",
+      "category": "politics",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "policy",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-e6",
+          "url": "https://fixture.test/fx-e6",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "1569aaa8981ab4572d3cc9c3dba452f4c4fbdda8",
+      "latest": {
+        "urgency": "high",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-harbour-plan",
+      "role": "move"
+    },
+    {
+      "topicId": "Fixture: test ferry operator announces a new island route-1",
+      "threadId": "thread-fixture-ferry-route",
+      "title": "Fixture: test ferry operator announces a new island route",
+      "category": "transport",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "policy",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-f1",
+          "url": "https://fixture.test/fx-f1-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        },
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-f1",
+          "url": "https://fixture.test/fx-f1-1",
+          "outlet": "Fixture Wire 2",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "e5088003a5cea4e846f795dae5946c8734b99ebf",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-ferry-route",
+      "role": "start"
+    },
+    {
+      "topicId": "Fixture: test rival operator bids for the same island route-4",
+      "threadId": "thread-fixture-ferry-route",
+      "title": "Fixture: test rival operator bids for the same island route",
+      "category": "transport",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "policy",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-f2",
+          "url": "https://fixture.test/fx-f2-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "b47210302cf8ef6b2495be1f9d08febbd387b0d1",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-ferry-route",
+      "role": "move"
+    },
+    {
+      "topicId": "Fixture: test lighthouse closes for repairs after storm damage-5",
+      "threadId": "thread-fixture-lighthouse",
+      "title": "Fixture: test lighthouse closes for repairs after storm damage",
+      "category": "disaster",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "disaster",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-l1",
+          "url": "https://fixture.test/fx-l1-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "0b14d2e2826cfd94099087f11cdc69fedb323e91",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-lighthouse",
+      "role": "start"
+    },
+    {
+      "topicId": "Fixture: test statistics office reports cargo volumes up 12 percent-2",
+      "threadId": "thread-fixture-cargo-volumes",
+      "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+      "category": "economy",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "measure",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-c1",
+          "url": "https://fixture.test/fx-c1-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "a9a21d52e4b8f0c06eca6850d72850e5ba545017",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-cargo-volumes",
+      "role": "measure"
+    },
+    {
+      "topicId": "Fixture: test item that no story view holds-3",
+      "threadId": "thread-fixture-not-built",
+      "title": "Fixture: test item that no story view holds",
+      "category": "other",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "other",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-x1",
+          "url": "https://fixture.test/fx-x1-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "98ac06aa2958bcfb4fb95039a42bc556c3f27276",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": null,
+      "role": null
+    }
+  ],
+  "stories": {
+    "thread-fixture-cargo-volumes": {
+      "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+      "born": "2026-11-18",
+      "category": "economy",
+      "iso3": [
+        "NZL"
+      ],
+      "regions": [
+        "Oceania"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "stepCount": 1,
+      "stepDays": 1,
+      "firstStep": {
+        "eventId": "a9a21d52e4b8f0c06eca6850d72850e5ba545017",
+        "date": "2026-11-18",
+        "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+        "role": "measure"
+      },
+      "newestStep": {
+        "eventId": "a9a21d52e4b8f0c06eca6850d72850e5ba545017",
+        "date": "2026-11-18",
+        "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+        "role": "measure",
+        "sourceCount": 1
+      },
+      "watch": [],
+      "watchAt": null
+    },
+    "thread-fixture-ferry-route": {
+      "title": "Fixture: test rival operator bids for the same island route",
+      "born": "2026-11-18",
+      "category": "transport",
+      "iso3": [
+        "NZL"
+      ],
+      "regions": [
+        "Oceania"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "stepCount": 2,
+      "stepDays": 1,
+      "firstStep": {
+        "eventId": "e5088003a5cea4e846f795dae5946c8734b99ebf",
+        "date": "2026-11-18",
+        "title": "Fixture: test ferry operator announces a new island route",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "b47210302cf8ef6b2495be1f9d08febbd387b0d1",
+        "date": "2026-11-18",
+        "title": "Fixture: test rival operator bids for the same island route",
+        "role": "move",
+        "sourceCount": 1
+      },
+      "watch": [],
+      "watchAt": null
+    },
+    "thread-fixture-freight-rates": {
+      "title": "Fixture: test freight index edges up",
+      "born": "2026-11-16",
+      "category": "economy",
+      "iso3": [
+        "NZL"
+      ],
+      "regions": [
+        "Oceania"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "stepCount": 2,
+      "stepDays": 2,
+      "firstStep": {
+        "eventId": "fx-d1",
+        "date": "2026-11-16",
+        "title": "Fixture: test freight index holds steady",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "124c252ab0548cba45d6cac61a482117fce4a151",
+        "date": "2026-11-18",
+        "title": "Fixture: test freight index edges up",
+        "role": "move",
+        "sourceCount": 1
+      },
+      "watch": [],
+      "watchAt": null
+    },
+    "thread-fixture-harbour-plan": {
+      "title": "Fixture: harbour plan passes its first reading",
+      "born": "2026-11-06",
+      "category": "politics",
+      "iso3": [
+        "NZL"
+      ],
+      "regions": [
+        "Oceania"
+      ],
+      "tier": "moderate",
+      "riskScore": 30,
+      "stepCount": 6,
+      "stepDays": 6,
+      "firstStep": {
+        "eventId": "fx-e1",
+        "date": "2026-11-06",
+        "title": "Fixture: council proposes harbour plan",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "1569aaa8981ab4572d3cc9c3dba452f4c4fbdda8",
+        "date": "2026-11-17",
+        "title": "Fixture: harbour plan passes its first reading",
+        "role": "move",
+        "sourceCount": 1
+      },
+      "watch": [
+        "Fixture: does the plan pass a second reading?"
+      ],
+      "watchAt": "2026-11-17T06:00:00.000Z"
+    },
+    "thread-fixture-lighthouse": {
+      "title": "Fixture: test lighthouse closes for repairs after storm damage",
+      "born": "2026-11-18",
+      "category": "disaster",
+      "iso3": [
+        "NZL"
+      ],
+      "regions": [
+        "Oceania"
+      ],
+      "tier": null,
+      "riskScore": null,
+      "stepCount": 1,
+      "stepDays": 1,
+      "firstStep": {
+        "eventId": "0b14d2e2826cfd94099087f11cdc69fedb323e91",
+        "date": "2026-11-18",
+        "title": "Fixture: test lighthouse closes for repairs after storm damage",
+        "role": "start"
+      },
+      "newestStep": {
+        "eventId": "0b14d2e2826cfd94099087f11cdc69fedb323e91",
+        "date": "2026-11-18",
+        "title": "Fixture: test lighthouse closes for repairs after storm damage",
+        "role": "start",
+        "sourceCount": 1
+      },
+      "watch": [],
+      "watchAt": null
+    }
+  }
+}

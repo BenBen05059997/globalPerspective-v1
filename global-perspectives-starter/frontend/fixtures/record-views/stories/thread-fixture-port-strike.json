@@ -29,6 +29,21 @@
     "fixture-src-fx-u1",
     "fixture-src-fx-u2"
   ],
+  "stepCount": 2,
+  "stepDays": 2,
+  "firstStep": {
+    "eventId": "fx-u1",
+    "date": "2026-11-03",
+    "title": "Fixture: port workers stage a test strike",
+    "role": "start"
+  },
+  "newestStep": {
+    "eventId": "fx-u2",
+    "date": "2026-11-05",
+    "title": "Fixture: test strike ends after two days",
+    "role": "move",
+    "sourceCount": 1
+  },
   "entries": [
     {
       "eventId": "fx-u1",

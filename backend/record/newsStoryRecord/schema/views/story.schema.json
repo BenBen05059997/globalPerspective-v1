@@ -189,7 +189,7 @@
         },
         "firstStep": {
           "anyOf": [{"$ref": "#/definitions/stepBrief"}, {"type": "null"}],
-          "description": "the step the role rule judges first (entryOrder); its role is start, or null (windowLimited) or measure. Null for a story with no step"
+          "description": "the step the role rule judges first (recordOrder: archive day, place in its list, then date); its role is start, or null (windowLimited) or measure. Null for a story with no step"
         },
         "newestStep": {
           "anyOf": [
@@ -513,7 +513,7 @@
             "measure",
             null
           ],
-          "description": "the entry's place in our record, stamped by the builder (pages show it, never compute it): start = the story's first entry by the title rule's entry order, merged stories included; move = a later entry; measure = an entry whose eventType is measure (a measured change, model judgment), wherever it stands; null on the first entry when its story's story_born says windowLimited (the story may be older than the record)"
+          "description": "the entry's place in our record, stamped by the builder (pages show it, never compute it): start = the story's first entry in the order we first recorded the entries (archive day, place in that day's list, then record date), merged stories included; move = a later entry; measure = an entry whose eventType is measure (a measured change, model judgment), wherever it stands; null on the first entry when its story's story_born says windowLimited (the story may be older than the record)"
         },
         "fromThreadId": {
           "type": "string",

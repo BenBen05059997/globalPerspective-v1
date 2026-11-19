@@ -99,6 +99,17 @@ function entryOrder(refs) {
 }
 
 /**
+ * The order in which we first recorded a story's entries (decision 0063 item 6, the role rule): archive day, then the place in that
+ * archive day's list, then record date, `at`, eventId. Unlike entryOrder it does not start with the record date, which comes from the
+ * earliest source's publish time and can lie before steps we recorded earlier; so a later build cannot put a new step before the start.
+ * Same `refs` and fallback as entryOrder.
+ */
+function recordOrder(refs) {
+  const ref = (e) => refs.get(e.eventId) || {day: e.date, index: 0};
+  return byKey((e) => ref(e).day, (e) => ref(e).index, (e) => e.date, (e) => e.at, (e) => e.eventId);
+}
+
+/**
  * index/weekly.json: the `archive_range` action's days (the last 30 archive days), for the Stories page, the Stories map, the
  * countries list and the map's risk layer, built from the story views' entries (so placement, merges and reassignment apply: an
  * entry is under the story it belongs to now). Per day, in the archive's order (see below): `topicId`, `threadId`, `title`, `category`, `iso3`
@@ -144,4 +155,4 @@ function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, stamps, co
   return out;
 }
 
-module.exports = {buildIndexViews, webLinks, archiveRefOf, entryOrder, INDEX_MAX_BYTES, ANALYSIS_FIELDS, WEB_MAX_AGE_DAYS, bytesOf, maxOf};
+module.exports = {buildIndexViews, webLinks, archiveRefOf, entryOrder, recordOrder, INDEX_MAX_BYTES, ANALYSIS_FIELDS, WEB_MAX_AGE_DAYS, bytesOf, maxOf};

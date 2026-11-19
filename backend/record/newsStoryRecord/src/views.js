@@ -11,7 +11,7 @@ const {byKey, ordered, resolveAliases, placeEntries} = require('./_shared/placem
 const {getOutletMeta, registrableDomain} = require('./_shared/outlets');
 const {COUNTRIES} = require('./_shared/countries');
 const {iso3List} = require('./_shared/resolveIso3');
-const {buildIndexViews, webLinks, archiveRefOf, entryOrder, WEB_MAX_AGE_DAYS, bytesOf, maxOf} = require('./indexViews');
+const {buildIndexViews, webLinks, archiveRefOf, entryOrder, recordOrder, WEB_MAX_AGE_DAYS, bytesOf, maxOf} = require('./indexViews');
 const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
 const {todayIndex, withStories} = require('./todayView');
@@ -225,14 +225,14 @@ function articleRow(f, corrected) {
   };
 }
 
-// The first and the last of a story's rows in entryOrder (`order`); a tie on the whole order goes to the earlier row for the first, the later for the last.
+// The first and the last of a story's rows in an order (`order`: recordOrder or entryOrder); a tie on the whole order goes to the earlier row for the first, the later for the last.
 const firstOf = (rows, order) => rows.reduce((a, e) => (!a || order(e, a) < 0 ? e : a), null);
 const lastOf = (rows, order) => rows.reduce((a, e) => (!a || order(a, e) <= 0 ? e : a), null);
 
 /**
  * What the pages show of a story's steps (its non-article rows, every one, before the view's cap), so no page counts or picks them:
- * stepCount, stepDays (distinct record dates), firstStep (the row entryRows judges first: the `start` unless its role is null or
- * measure) and newestStep (the last in entryOrder, the row titleOf names the story after when it is in the 30-day window), each
+ * stepCount, stepDays (distinct record dates), firstStep (the row entryRows judges first, by recordOrder: the `start` unless its role is
+ * null or measure) and newestStep (the last in entryOrder, the row titleOf names the story after when it is in the 30-day window), each
  * {eventId, date, title, role}; newestStep also carries sourceCount (the articles of that step). Null steps for a story with none.
  */
 function stepSummary(entries, refs) {
@@ -242,14 +242,15 @@ function stepSummary(entries, refs) {
   const newest = lastOf(steps, order);
   return {
     stepCount: steps.length, stepDays: new Set(steps.map((e) => e.date)).size,
-    firstStep: brief(firstOf(steps, order)), newestStep: newest ? {...brief(newest), sourceCount: (newest.sources || []).length} : null,
+    firstStep: brief(firstOf(steps, recordOrder(refs))), newestStep: newest ? {...brief(newest), sourceCount: (newest.sources || []).length} : null,
   };
 }
 
 /**
  * The entry rows of one story: its own entry facts and placed articles plus those of stories merged into it (tagged), date ascending.
  * Each non-article row carries `role`, the entry's place in our record (decision 0058: the builder stamps it, pages only show it): the
- * first non-article row by entryOrder (the order titleOf uses, merged stories included) is `start`, every later one `move`, and an
+ * first non-article row by recordOrder (the order we first recorded them: archive day, place in its list, then date; merged stories
+ * included) is `start`, every later one `move`, and an
  * entry whose eventType is `measure` (a measured change, a model call) is `measure` wherever it stands. The first is null instead of
  * `start` when the birth fact of the story it came from says that story may be older than the record (`limited`: story_born
  * windowLimited). Roles are set over every row before the view's cap, so a capped view can show no `start`.
@@ -263,7 +264,7 @@ function entryRows(group, corrected, reassigned = new Map(), notesBy = new Map()
     ...(own ? {} : {fromThreadId: threadId}), ...(reassigned.has(f.eventId) ? {reassignedFrom: reassigned.get(f.eventId)} : {}), ...(corrected.has(f.eventId) ? {corrected: true} : {}),
     ...(f.provisional ? {provisional: true} : {}), // today's archive entry before the nightly run has frozen it (0050)
   }))).sort(byKey((e) => e.date, (e) => e.at, (e) => e.eventId));
-  const first = firstOf(rows.filter((e) => e.kind !== 'article'), entryOrder(refs));
+  const first = firstOf(rows.filter((e) => e.kind !== 'article'), recordOrder(refs));
   const roleOf = (e) => (e.eventType === 'measure' ? 'measure' : e !== first ? 'move' : limited.has(e.fromThreadId || group[0].threadId) ? null : 'start');
   return rows.map((e) => (e.kind === 'article' ? e : {...e, role: roleOf(e)}));
 }

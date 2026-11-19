@@ -191,16 +191,24 @@ describe('one freshness stamp and one count', () => {
     expect(screen.getByRole('tab', { name: /alerts/i }).textContent).toMatch(/3$/);
     fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
     expect(within(screen.getByRole('tabpanel')).getAllByRole('button').filter((b) => b.classList.contains('al-card'))).toHaveLength(3);
-    expect(within(screen.getByLabelText('Alerts')).getByText(/3 stories, 3 alerts/)).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Alerts')).getByText(/^· 3 stories · 3 on the map$/)).toBeInTheDocument();
   });
 
-  it('two alerts of one story: one row, and the header counts both (design round 8: "{r} stories, {a} alerts")', async () => {
+  it('two alerts of one story: one row, and the header counts both (design round 8: "{s} stories, {g} official alerts · {a} on the map")', async () => {
     S.isPhone = true;
     S.world = world([sit({ id: 'a', verb_label: 'A', threadId: 'thread-one' }), sit({ id: 'b', verb_label: 'B', tier: 'moderate', threadId: 'thread-one' }), sit({ id: 'c', verb_label: 'C', tier: 'low' })]);
     await renderAt('/');
     expect(screen.getByRole('tab', { name: /alerts/i }).textContent).toMatch(/3$/);
     fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
-    expect(within(screen.getByLabelText('Alerts')).getByText(/2 stories, 3 alerts/)).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Alerts')).getByText(/^· 2 stories · 3 on the map$/)).toBeInTheDocument();
+  });
+
+  it('official-alert-only rows are counted apart from stories, with right plurals; a zero part is left out', async () => {
+    S.isPhone = true;
+    S.world = world([sit({ id: 'a', verb_label: 'A', threadId: 'thread-one' }), sit({ id: 'g1', verb_label: 'G1', source: 'gdacs', kind: 'alert' }), sit({ id: 'g2', verb_label: 'G2', source: 'gdacs', kind: 'alert' })]);
+    await renderAt('/');
+    fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
+    expect(within(screen.getByLabelText('Alerts')).getByText(/^· 1 story, 2 official alerts · 3 on the map$/)).toBeInTheDocument();
   });
 });
 

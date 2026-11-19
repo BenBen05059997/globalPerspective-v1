@@ -822,7 +822,7 @@ export default function SituationHome() {
         />
       ) : null}
       <Tabs
-        variant="segmented" idBase="sh-layer" label="Map layer" className="sh-onmap" active={riskMode ? 'risk' : 'situations'} onChange={setLayer}
+        variant="segmented" idBase="sh-layer" label="Map layer" className="sh-onmap sh-layer" active={riskMode ? 'risk' : 'situations'} onChange={setLayer}
         tabs={[{ key: 'situations', label: 'Stories & alerts' }, { key: 'risk', label: 'How serious, by country' }]}
       />
       <Button
@@ -869,7 +869,7 @@ export default function SituationHome() {
           <RadarMap
             key={mapAttempt} onFirstDraw={onMapFirstDraw}
             situations={riskMode ? NO_ITEMS : situations} focusId={focusId}
-            onSelect={select} onScan={markScanned} height={mapH}
+            onSelect={select} onScan={markScanned} height={mapH} beamCards={!isPhone}
             shading={riskMode ? NO_ITEMS : mapShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={mapFocusIso3}
             onSelectCountry={selectStoryByCountry}
             onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}

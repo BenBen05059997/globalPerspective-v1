@@ -59,7 +59,7 @@ describe('map console — desktop alert stack (R4a)', () => {
     await renderHome();
     const stack = screen.getByRole('region', { name: 'Alerts' });
     expect(within(stack).getAllByRole('button')).toHaveLength(3); // two rows and one fold
-    expect(within(stack).getByText(/2 stories, 3 alerts/)).toBeInTheDocument();
+    expect(within(stack).getByText(/1 story, 1 official alert · 3 on the map/)).toBeInTheDocument();
     fireEvent.click(within(stack).getByText('Mexico — tropical cyclone').closest('button'));
     expect(screen.getAllByText(/← All situations \(3\)/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/← All situations \(2\)/)).not.toBeInTheDocument();

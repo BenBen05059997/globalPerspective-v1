@@ -117,14 +117,21 @@ export default function AlertStack({
   storyOf = null,
 }) {
   const now = Date.now();
-  // One row per story, so the header says both counts (design round 8): rows, and every alert on the map (the count production shows).
+  // Header (design round 8): story rows, then rows that are only official disaster alerts (not stories), then every alert on
+  // the map (the count production shows). A part that is 0 is left out.
   const rows = alertRows(items);
-  const count = `${rows.length} ${rows.length === 1 ? 'story' : 'stories'}, ${items.length} ${items.length === 1 ? 'alert' : 'alerts'}`;
+  const official = rows.filter((r) => r.alerts.every((a) => markerKind(a) === 'alert')).length;
+  const storyRows = rows.length - official;
+  const kinds = [
+    storyRows ? `${storyRows} ${storyRows === 1 ? 'story' : 'stories'}` : null,
+    official ? `${official} official ${official === 1 ? 'alert' : 'alerts'}` : null,
+  ].filter(Boolean).join(', ');
+  const count = [kinds, items.length ? `${items.length} on the map` : null].filter(Boolean).join(' · ');
   return (
     <Card as="section" level="hud" pad="sm" className={`hud-panel al-stack ${className}`.trim()} role="region" aria-label={label}>
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
-      <SectionHeader className="al-head" label={label} count={count} />
+      <SectionHeader className="al-head" label={label} count={count || null} />
       <p className="al-note">Stories that are developing, and official disaster alerts.</p>
       {items.length ? (
         <ul className="al-list">

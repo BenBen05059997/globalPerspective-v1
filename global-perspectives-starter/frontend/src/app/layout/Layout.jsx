@@ -210,7 +210,7 @@ function Layout({ children }) {
         </div>
       )}
 
-      <main className="gp-main">
+      <main className={`gp-main${location.pathname === ROUTE.map && isPhone ? ' gp-main--phonemap' : ''}`}>
         <div className="container">
           {children}
         </div>

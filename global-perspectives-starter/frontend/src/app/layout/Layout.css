@@ -173,6 +173,8 @@
   min-height: calc(100vh - var(--nav-h) - var(--strip-h) - var(--footer-h));
   padding: 2rem 0;
 }
+/* Phone Map: no empty band above the map (tester round 9); the map keeps its own small top gap. */
+.gp-main--phonemap { padding-top: 0; }
 
 /* ── Footer (26px status bar) ────────────────────────────── */
 .gp-footer {

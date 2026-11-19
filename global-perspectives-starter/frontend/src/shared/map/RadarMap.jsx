@@ -132,7 +132,7 @@ const NONE = [];
 export default function RadarMap({
   situations = NONE, focusId, onSelect, onScan, height = 560,
   shading = NONE, linkArcs = NONE, storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
-  countryRisk = NONE, onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
+  countryRisk = NONE, onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw, beamCards = true,
 }) {
   const onFirstDrawRef = useRef(onFirstDraw);
   onFirstDrawRef.current = onFirstDraw;
@@ -158,6 +158,10 @@ export default function RadarMap({
   const onLeaveCountryRiskRef = useRef(onLeaveCountryRisk);
   onSelectRef.current = onSelect;
   onScanRef.current = onScan;
+  // `beamCards` false (phone, design round 8): the sweep shows no cards over the map; a tap on a dot opens the selection
+  // sheet docked at the bottom instead. The sweep still marks the feed rows (onScan).
+  const beamCardsRef = useRef(beamCards);
+  beamCardsRef.current = beamCards;
   onSelectCountryRef.current = onSelectCountry;
   onHoverCountryRef.current = onHoverCountry;
   onFocusCountryRef.current = onFocusCountry;
@@ -509,7 +513,7 @@ export default function RadarMap({
       for (const [id, bearing] of bearingsRef.current) {
         if (!beamCrossed(prev, angle, bearing)) continue;
         if (onScanRef.current) onScanRef.current(id);
-        if (nowIdsRef.current.has(id)) cards.show(id);
+        if (beamCardsRef.current && nowIdsRef.current.has(id)) cards.show(id);
       }
       prev = angle;
       if (done) { setScanning(false); return; }

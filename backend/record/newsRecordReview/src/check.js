@@ -6,13 +6,16 @@ const {isSpecific, shareIndex, NEAR_DAYS} = require('./select');
 const {daysBetween} = require('./week');
 
 const CAPS = {chapter: 8, link: 5, merge_proposal: 3, alias: 5, assignment: 5};
-const LIMITS = {line: 200, chapter: 300, mechanism: 200};
+const LIMITS = {line: 200, chapter: 300, mechanism: 200, name: 80, nameWords: 8};
 const CONFIDENCE = ['high', 'medium', 'low'];
 const DIRECTIONS = ['drives', 'driven_by', 'shared_cause'];
 const NEW_STORY = 'new';
 const QNUM = /^Q[1-9]\d*$/;
 
 const str = (v, max) => typeof v === 'string' && v.trim().length > 0 && (max === undefined || v.length <= max);
+// a name that is one of the story's headlines adds nothing (the page shows the headline until a name exists) and pins one step as the name
+const plain = (v) => String(v).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const words = (v) => v.trim().split(/\s+/).length;
 const strs = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string');
 
 /** Merge rule of the spec (decision 0039 / 0037 5% rule). rowA/rowB = active index rows; entry dates = last entry date of each. */
@@ -87,6 +90,17 @@ function checkAnswer(answer, ctx) {
     const it = answer.line;
     if (typeof it !== 'object' || !str(it.text, LIMITS.line)) reject('line', 'bad_shape', 'text missing or over 200 chars');
     else take('line', '', it, ({cites}) => (ownCites('line', cites) ? {payload: {text: it.text.trim()}} : null));
+  }
+
+  // name (decision 0065): at most 8 words and 80 characters, cites this story, and is not a copy of a headline the model was shown
+  if (answer.name !== undefined && answer.name !== null) {
+    const it = answer.name;
+    if (typeof it !== 'object' || !str(it.text, LIMITS.name) || words(it.text) > LIMITS.nameWords) reject('name', 'bad_shape', 'text missing, over 80 chars or over 8 words');
+    else {
+      const headlines = new Set([row.title, ...mine.bundle.entries.map((e) => e.title)].filter(Boolean).map(plain));
+      if (headlines.has(plain(it.text))) reject('name', 'name_is_headline', it.text);
+      else take('name', '', it, ({cites}) => (ownCites('name', cites) ? {payload: {text: it.text.trim()}} : null));
+    }
   }
 
   // chapters: the model gives title, summary and cites; the span is the dates of the cited facts (so it is the chapter key too)

@@ -63,6 +63,38 @@ test('T1: the index row gets line (text) and lineWeek only when a line reading e
   assert.equal(v.active.stories.find((r) => r.threadId === 'thread-a').line, 'Macron holds');
 });
 
+test('name (0065): the standing name reading is stamped on the story view, the index rows and the Today story card; null when there is none', () => {
+  const v = build(X.golden(), [X.reading('2026-W43', 'thread-a', 'name', {text: 'French budget fight'}), X.reading('2026-W43', 'thread-a', 'line', {text: 'Macron holds'})]);
+  const a = v.stories.get('thread-a');
+  assert.deepEqual([a.name, a.line.text], ['French budget fight', 'Macron holds']);
+  assert.deepEqual([rowOf(v, 'thread-a').name, v.active.stories.find((r) => r.threadId === 'thread-a').name], ['French budget fight', 'French budget fight']);
+  assert.equal(v.indexes['analyses.json'].analyses['thread-a'], undefined); // no analysis note in this build; the analyses rows carry the same stamp (index-views.test.js)
+  assert.deepEqual([v.stories.get('thread-b').name, rowOf(v, 'thread-b').name], [null, null]);
+  const {withStories} = require('../src/todayView');
+  const today = withStories({latest: {topicIds: []}, entries: [{topicId: 't', eventId: a.entries[0].eventId}]}, v.stories);
+  assert.equal(today.stories['thread-a'].name, 'French budget fight');
+  // a name never changes the title: pages show the name when there is one and the headline when there is none
+  assert.equal(a.title, build(X.golden()).stories.get('thread-a').title);
+});
+
+test('name (0065): a story keeps its name in later weeks with no new name reading (a review that answers null writes nothing); a newer name replaces it; a bad one is skipped', () => {
+  const named = X.reading('2026-W41', 'thread-a', 'name', {text: 'French budget fight'});
+  const later = [named, X.reading('2026-W43', 'thread-a', 'line', {text: 'Macron holds'})];
+  assert.equal(build(X.golden(), later).stories.get('thread-a').name, 'French budget fight');
+  assert.equal(build(X.golden(), [...later, X.reading('2026-W43', 'thread-a', 'name', {text: 'Assembly budget vote'})]).stories.get('thread-a').name, 'Assembly budget vote');
+  for (const text of ['', 'x'.repeat(81)]) assert.equal(build(X.golden(), [named, X.reading('2026-W43', 'thread-a', 'name', {text}, {key: 'bad'})]).stories.get('thread-a').name, 'French budget fight', 'a malformed newer name is skipped and the older one stands');
+});
+
+test('name (0065) on a merge: the survivor keeps its own name; the merged-away story\'s name is not carried over and its alias row has none', () => {
+  const both = [X.reading('2026-W43', 'thread-b', 'name', {text: 'Budget strike'}), X.reading('2026-W43', 'thread-c', 'name', {text: 'Other name'})];
+  const v = build(X.golden(), both);
+  assert.equal(v.stories.get('thread-c').aliasOf, 'thread-b');
+  assert.deepEqual([v.stories.get('thread-b').name, rowOf(v, 'thread-b').name, rowOf(v, 'thread-c').name], ['Budget strike', 'Budget strike', null]);
+  // a survivor without a name of its own stays without one (its headline shows) until the review names it; it does not take the merged story's
+  const only = build(X.golden(), [both[1]]);
+  assert.deepEqual([only.stories.get('thread-b').name, rowOf(only, 'thread-c').name], [null, null]);
+});
+
 const pad = (at, n = 100) => Array.from({length: n}, (_, i) => X.entry(`pad${String(i).padStart(3, '0')}`, at, 'x', {sources: [`p${i}`]}));
 test('T1: confirmedLinks come from link readings of the story, point at the survivor of a merged story, and drop self links', () => {
   const at = '2026-10-20T04:00:00.000Z';

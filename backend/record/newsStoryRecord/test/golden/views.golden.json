@@ -10,6 +10,7 @@
       "title": "A second",
       "lineWeek": null,
       "lineReason": "no reading yet",
+      "name": null,
       "iso3": [
         "DEU",
         "FRA"
@@ -218,6 +219,7 @@
       "title": "B first",
       "lineWeek": null,
       "lineReason": "no reading yet",
+      "name": null,
       "iso3": [
         "FRA",
         "UKR"
@@ -348,6 +350,7 @@
       "title": "Old first",
       "lineWeek": null,
       "lineReason": "no reading yet",
+      "name": null,
       "iso3": [
         "FRA"
       ],
@@ -627,6 +630,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "DEU",
           "FRA"
@@ -663,6 +667,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "FRA",
           "UKR"
@@ -710,6 +715,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "DEU",
           "FRA"
@@ -746,6 +752,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "FRA",
           "UKR"
@@ -784,6 +791,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [],
         "regions": [],
         "tier": null,
@@ -813,6 +821,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "FRA"
         ],

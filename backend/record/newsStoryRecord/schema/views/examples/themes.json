@@ -48,6 +48,7 @@
           "line": null,
           "lineWeek": null,
           "lineReason": "no reading yet",
+          "name": null,
           "iso3": [
             "FRA"
           ],
@@ -71,6 +72,7 @@
           "line": null,
           "lineWeek": null,
           "lineReason": "no reading yet",
+          "name": null,
           "iso3": [
             "FRA",
             "UKR"
@@ -95,6 +97,7 @@
           "line": null,
           "lineWeek": null,
           "lineReason": "no reading yet",
+          "name": null,
           "iso3": [
             "DEU",
             "FRA"

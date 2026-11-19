@@ -47,9 +47,9 @@ test('the model-output schema accepts the example and rejects shape errors', () 
   assert.equal(valid({}), true);
 });
 
-test('prompt: recovered headlines may be cited for what happened but carry no detail (review-4, kept in review-6)', () => {
+test('prompt: recovered headlines may be cited for what happened but carry no detail (review-4, kept in review-7)', () => {
   const {SYSTEM, PROMPT_VERSION} = require('../src/prompt');
-  assert.equal(PROMPT_VERSION, 'review-6');
+  assert.equal(PROMPT_VERSION, 'review-7');
   assert.match(SYSTEM, /recovered headlines/);
   assert.match(SYSTEM, /\[recovered headline, no text\]/);
 });
@@ -62,5 +62,12 @@ test('prompt: state only what the cited entries say; forecasts and absent entrie
 
 test('prompt: no clause about what is missing, and no mention of the bundle in reader-facing text (review-6)', () => {
   assert.match(SYSTEM, /A line says what happened and stops: add no clause about what is missing or not yet known/);
-  assert.match(SYSTEM, /never mention the bundle, the record or the entries in a line, chapter or flag text/);
+  assert.match(SYSTEM, /never mention the bundle, the record or the entries in a line, name, chapter or flag text/);
+});
+
+test('prompt: a name of at most 8 words for the whole story, no headline copy, kept by answering null while it still fits (review-7, decision 0065)', () => {
+  assert.equal(PROMPT_VERSION, 'review-7');
+  assert.match(SYSTEM, /"name": null \| \{"text": "at most 8 words: what the whole story is about", "cites": \[eventId\]/);
+  assert.match(SYSTEM, /not a copy of an entry's title/);
+  assert.match(SYSTEM, /The bundle's "name" is the story's current name: if it is set and still fits, return name null and it stays/);
 });

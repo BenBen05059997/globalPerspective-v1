@@ -149,14 +149,14 @@ test('withStories: storyId and role from the story view that holds the eventId n
   assert.deepEqual(Object.keys(v.stories), ['thread-a', 'thread-b']);
   const a = v.stories['thread-a'];
   const s = views.stories.get('thread-a');
-  assert.deepEqual(a, {title: s.title, born: '2026-10-18', category: 'conflict', iso3: s.iso3, regions: s.regions, tier: null, riskScore: null,
+  assert.deepEqual(a, {title: s.title, name: null, born: '2026-10-18', category: 'conflict', iso3: s.iso3, regions: s.regions, tier: null, riskScore: null,
     stepCount: 2, stepDays: 2, firstStep: s.firstStep, newestStep: s.newestStep, watch: [], watchAt: null});
   assert.equal(validate(v), true, JSON.stringify(validate.errors));
   assert.equal(withStories(null, views.stories), null);
 });
 
 test('withStories: the card carries the analysis watch questions (model text) and when they were written; the run\'s entry of a topic is the one with `latest`', () => {
-  const story = {aliasOf: null, title: 'T', born: D0, category: null, iso3: [], regions: [], tier: 'high', riskScore: 80, stepCount: 1, stepDays: 1,
+  const story = {aliasOf: null, title: 'T', name: 'The T affair', born: D0, category: null, iso3: [], regions: [], tier: 'high', riskScore: 80, stepCount: 1, stepDays: 1,
     firstStep: {eventId: 'e1', date: D0, title: 'T', role: 'measure'}, newestStep: {eventId: 'e1', date: D0, title: 'T', role: 'measure', sourceCount: 2},
     entries: [{eventId: 'e1', role: 'measure'}], analysis: {watchQuestions: ['Will it?', '', 7, 'And then?'], generatedAt: `${D0}T09:00:00.000Z`}};
   const view = {latest: {topicIds: ['t-1']}, entries: [{topicId: 't-1', eventId: 'old'}, {topicId: 't-1', eventId: 'e1', latest: {}}]};
@@ -164,4 +164,5 @@ test('withStories: the card carries the analysis watch questions (model text) an
   assert.deepEqual(v.stories['thread-t'].watch, ['Will it?', 'And then?']);
   assert.equal(v.stories['thread-t'].watchAt, `${D0}T09:00:00.000Z`);
   assert.deepEqual(v.latest.roles, {start: 0, move: 0, measure: 1, none: 0});
+  assert.equal(v.stories['thread-t'].name, 'The T affair'); // the stamp's name (0065), beside the title
 });

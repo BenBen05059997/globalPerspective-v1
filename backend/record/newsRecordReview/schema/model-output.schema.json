@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "properties": {
     "line": { "anyOf": [{ "type": "null" }, { "$ref": "#/definitions/line" }] },
+    "name": { "anyOf": [{ "type": "null" }, { "$ref": "#/definitions/name" }] },
     "chapters": { "type": "array", "items": { "$ref": "#/definitions/chapter" } },
     "links": { "type": "array", "items": { "$ref": "#/definitions/link" } },
     "mergeProposals": { "type": "array", "items": { "$ref": "#/definitions/mergeProposal" } },
@@ -16,6 +17,7 @@
     "cites": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "confidence": { "enum": ["high", "medium", "low"] },
     "line": { "type": "object", "required": ["text", "cites", "confidence"], "properties": { "text": { "type": "string", "maxLength": 200 }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
+    "name": { "type": "object", "required": ["text", "cites", "confidence"], "properties": { "text": { "type": "string", "maxLength": 80, "description": "at most 8 words, not a copy of a headline (checked in code)" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "chapter": { "type": "object", "required": ["title", "summary", "cites", "confidence"], "properties": { "title": { "type": "string" }, "summary": { "type": "string", "maxLength": 300 }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "link": { "type": "object", "required": ["otherThreadId", "mechanism", "direction", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "mechanism": { "type": "string", "maxLength": 200 }, "direction": { "enum": ["drives", "driven_by", "shared_cause"] }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },
     "mergeProposal": { "type": "object", "required": ["otherThreadId", "why", "cites", "confidence"], "properties": { "otherThreadId": { "type": "string" }, "why": { "type": "string" }, "cites": { "$ref": "#/definitions/cites" }, "confidence": { "$ref": "#/definitions/confidence" } }, "additionalProperties": false },

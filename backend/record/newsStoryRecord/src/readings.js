@@ -4,7 +4,7 @@
 // plain objects out. A reading is never trusted past its shape: a malformed line is skipped, never thrown on.
 const {addDays} = require('./_shared/world');
 
-const SUBTYPES = ['line', 'chapter', 'link', 'merge_proposal', 'alias'];
+const SUBTYPES = ['line', 'name', 'chapter', 'link', 'merge_proposal', 'alias'];
 const WEEK = /^\d{4}-W\d{2}$/;
 const WIKIDATA = /^Q\d+$/;
 
@@ -30,6 +30,7 @@ function weeksBetween(from, to) {
 // What identifies "the same reading" across weeks: a re-reading of the same thing replaces the older one.
 const KEY = {
   line: () => '',
+  name: () => '',
   chapter: (p) => p.from,
   link: (p) => p.otherThreadId,
   merge_proposal: (p) => p.otherThreadId,
@@ -42,6 +43,7 @@ function valid(r) {
   const p = r.payload;
   switch (r.subtype) {
     case 'line': return text(p.text);
+    case 'name': return text(p.text) && p.text.length <= 80;
     case 'chapter': return text(p.title) && text(p.from) && text(p.to) && text(p.summary);
     case 'link': return text(p.otherThreadId) && text(p.mechanism) && ['drives', 'driven_by', 'shared_cause'].includes(p.direction);
     case 'merge_proposal': return text(p.otherThreadId);
@@ -69,13 +71,14 @@ function standing(lines) {
 
 const maxWeek = (rs) => rs.reduce((m, r) => (m === null || r.week > m ? r.week : m), null);
 
-/** thread -> {line, chapters, links: [reading], week} from the standing readings. */
+/** thread -> {line, name, chapters, links: [reading], week} from the standing readings. */
 function byThread(rs) {
   const out = new Map();
   for (const r of rs) {
-    if (!['line', 'chapter', 'link'].includes(r.subtype)) continue;
-    const t = out.get(r.threadId) || out.set(r.threadId, {line: null, chapters: [], links: [], week: null}).get(r.threadId);
+    if (!['line', 'name', 'chapter', 'link'].includes(r.subtype)) continue;
+    const t = out.get(r.threadId) || out.set(r.threadId, {line: null, name: null, chapters: [], links: [], week: null}).get(r.threadId);
     if (r.subtype === 'line') t.line = r;
+    else if (r.subtype === 'name') t.name = r;
     else if (r.subtype === 'chapter') t.chapters.push(r);
     else t.links.push(r);
     if (!t.week || r.week > t.week) t.week = r.week;

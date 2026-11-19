@@ -30,7 +30,7 @@
             "minItems": 3,
             "items": {
               "type": "object",
-              "required": ["threadId", "title", "line", "lineWeek", "lineReason", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "liveBranchCount"],
+              "required": ["threadId", "title", "line", "lineWeek", "lineReason", "name", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "liveBranchCount"],
               "additionalProperties": false,
               "properties": {
           "threadId": {"$ref": "story-stamp.schema.json#/properties/threadId"},
@@ -38,6 +38,7 @@
           "line": {"$ref": "story-stamp.schema.json#/properties/line"},
           "lineWeek": {"$ref": "story-stamp.schema.json#/properties/lineWeek"},
           "lineReason": {"$ref": "story-stamp.schema.json#/properties/lineReason"},
+          "name": {"$ref": "story-stamp.schema.json#/properties/name"},
           "iso3": {"$ref": "story-stamp.schema.json#/properties/iso3"},
           "regions": {"$ref": "story-stamp.schema.json#/properties/regions"},
           "tier": {"$ref": "story-stamp.schema.json#/properties/tier"},

@@ -24,6 +24,25 @@ test('an item with no citation, or with an eventId that is not in the bundle, is
   assert.equal(r.accepted.length, 0);
 });
 
+test('name (0065): accepted with its own cites; empty, over 8 words, over 80 chars, a copy of a headline or a foreign cite is rejected and nothing is written', async () => {
+  const f = mkWorld();
+  const ctx = await ctxFor(f);
+  const ok = checkAnswer({name: {text: '  Grain border dispute ', cites: ['a2'], confidence: 'medium'}}, ctx);
+  assert.deepEqual(ok.accepted.map((a) => [a.subtype, a.payload, a.cites]), [['name', {text: 'Grain border dispute'}, ['a2']]]);
+  assert.deepEqual(ok.rejected, []);
+  const headline = ctx.mine.bundle.entries[0].title;
+  for (const [text, reason] of [['', 'bad_shape'], ['   ', 'bad_shape'], ['one two three four five six seven eight nine', 'bad_shape'], ['x'.repeat(81), 'bad_shape'],
+    [`${headline.toUpperCase()}!`, 'name_is_headline'], [ctx.row.title, 'name_is_headline']]) {
+    const r = checkAnswer({name: {text, cites: ['a2'], confidence: 'high'}}, ctx);
+    assert.deepEqual([r.accepted.length, reasons(r)], [0, [`name:${reason}`]], text);
+  }
+  assert.deepEqual(reasons(checkAnswer({name: {text: 'Grain dispute', cites: ['b1e'], confidence: 'high'}}, ctx)), ['name:unknown_eventId']);
+  assert.deepEqual(reasons(checkAnswer({name: {text: 'Grain dispute', cites: [], confidence: 'high'}}, ctx)), ['name:no_citation']);
+  assert.deepEqual(reasons(checkAnswer({name: 'Grain dispute'}, ctx)), ['name:bad_shape']);
+  assert.deepEqual(checkAnswer({name: null}, ctx), {accepted: [], rejected: []});
+  assert.equal(checkAnswer({name: {text: 'one two three four five six seven eight', cites: ['a2'], confidence: 'low'}}, ctx).accepted.length, 1);
+});
+
 test('an eventId of another story is foreign to a line', async () => {
   const r = await run({line: {text: 'ok', cites: ['b1e'], confidence: 'high'}});
   assert.deepEqual(reasons(r), ['line:unknown_eventId']);

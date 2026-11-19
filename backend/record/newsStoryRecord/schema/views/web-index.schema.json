@@ -60,7 +60,7 @@
       "additionalProperties": {
         "type": "object",
         "description": "the shared story fields of story-stamp.schema.json except iso3 (here `iso3` stays the thread's top places in the web window); `title` is the story's one title, the web node summary only for a thread the record holds no row for (its other stamp fields are then null or empty with their reasons)",
-        "required": ["state", "threadId", "title", "line", "lineWeek", "lineReason", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "entries", "places", "analysedIn", "iso3"],
+        "required": ["state", "threadId", "title", "line", "lineWeek", "lineReason", "name", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "entries", "places", "analysedIn", "iso3"],
         "additionalProperties": false,
         "properties": {
           "state": {"enum": ["linked", "analysed_no_links", "single_update", "country_not_analysed"]},
@@ -69,6 +69,7 @@
           "line": {"$ref": "story-stamp.schema.json#/properties/line"},
           "lineWeek": {"$ref": "story-stamp.schema.json#/properties/lineWeek"},
           "lineReason": {"$ref": "story-stamp.schema.json#/properties/lineReason"},
+          "name": {"$ref": "story-stamp.schema.json#/properties/name"},
           "regions": {"$ref": "story-stamp.schema.json#/properties/regions"},
           "tier": {"$ref": "story-stamp.schema.json#/properties/tier"},
           "riskScore": {"$ref": "story-stamp.schema.json#/properties/riskScore"},

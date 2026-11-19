@@ -61,7 +61,7 @@ async function loadReadings({store, prefix, week}) {
 
 /** (subtype, key) of a reading: what a later reading of the same thing supersedes. */
 function keyOf(subtype, payload) {
-  if (subtype === 'line') return '';
+  if (subtype === 'line' || subtype === 'name') return '';
   if (subtype === 'chapter') return payload.from;
   if (subtype === 'link' || subtype === 'merge_proposal') return payload.otherThreadId;
   if (subtype === 'alias') return payload.canonical;
@@ -150,7 +150,7 @@ function assemble(world, row, {withNeighbours = true} = {}) {
   const wanted = new Set(actorIds);
   const operatorAliases = world.operatorAliases.filter((a) => [a.canonical, ...(a.variants || [])].some((x) => wanted.has(x)));
   const bundle = {
-    threadId: row.threadId, week: world.week, weekFrom: world.range.from, weekTo: world.range.to, title: row.title ?? null, born: row.born ?? null,
+    threadId: row.threadId, week: world.week, weekFrom: world.range.from, weekTo: world.range.to, title: row.title ?? null, name: row.name ?? null, born: row.born ?? null, // name: the stamped standing name (decision 0065), any age; null when none
     iso3, actorIds,
     entriesOmitted: items.length - shown.length,
     entries: shown.map((f) => f.kind === 'article' ? articleItem(f) : ({eventId: f.eventId, date: f.date, title: trim(f.payload.title, 200), summary: trim(f.payload.summary, 280), category: f.payload.category ?? null, eventType: f.payload.eventType ?? null,

@@ -22,7 +22,7 @@ const cleanIso3 = (codes) => [...new Set((codes || []).filter((c) => c === 'EUU'
  * @param lastFactAt ISO time or null (a fact of any kind)
  * @param entries    the story's entry rows (views.js entryRows; placed articles are rows marked kind 'article' and do not count). Sets `lastEntryAt` (the `at` of the newest news entry)
  *                   and `category` (the raw category of the newest news entry that has one; the frontend's crisisHue.js owns the category -> crisis type map, not this file)
- * @param reading    the story's standing readings ({line: reading|null, ...}) or undefined
+ * @param reading    the story's standing readings ({line: reading|null, name: reading|null, ...}) or undefined
  * @param analysis   the story's latest story-analysis note as stored ({riskScore, generatedAt, ...}) or null
  */
 function storyStamp({threadId, title, iso3, born, lastFactAt, entries = [], reading, analysis}) {
@@ -37,6 +37,7 @@ function storyStamp({threadId, title, iso3, born, lastFactAt, entries = [], read
   return {
     threadId, title: title ?? null,
     line: line ? line.payload.text : null, lineWeek: line ? line.week : null, lineReason: line ? null : NO_READING,
+    name: reading && reading.name ? reading.name.payload.text : null, // decision 0065: the review's standing story name; null until one is accepted (pages show `title`)
     iso3: countries, regions: regionsOfCountries(countries),
     tier, riskScore: score, riskAt: score === null ? null : analysis.generatedAt ?? null, tierReason: tier ? null : analysis ? NO_SCORE : NO_ANALYSIS,
     lastFactAt: lastFactAt ?? null, lastEntryAt: lastEntry ? lastEntry.at : null, category: categorised ? categorised.category : null, born: born ?? null, themeId: null,

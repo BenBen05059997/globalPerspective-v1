@@ -8,6 +8,7 @@
   "title": "Fixture: test rival operator bids for the same island route",
   "lineWeek": null,
   "lineReason": "no reading yet",
+  "name": "Fixture: island ferry route",
   "iso3": [
     "NZL"
   ],

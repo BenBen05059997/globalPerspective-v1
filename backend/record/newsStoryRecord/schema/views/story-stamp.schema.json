@@ -4,7 +4,7 @@
   "title": "Story stamp",
   "description": "The shared story fields (decision 0058 rule 7), built once by src/storyStamp.js and carried by every view that names a story: index/active.json and all.json rows, the story view, index/web.json threads[id] (without iso3, which keeps its web meaning there) and index/analyses.json. The story view keeps its own `line` object {text, week, cites}, so it carries every field here except `line`. Each carrier references the single properties below ($ref) and lists them as required. `themeId` (step 4) is the id of the theme the story is in (index/themes.json), null when it is in none. A missing value is null and the field beside it says why (0037 section 6).",
   "type": "object",
-  "required": ["threadId", "title", "line", "lineWeek", "lineReason", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId"],
+  "required": ["threadId", "title", "line", "lineWeek", "lineReason", "name", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId"],
   "additionalProperties": false,
   "properties": {
     "threadId": {"type": "string"},
@@ -12,6 +12,7 @@
     "line": {"anyOf": [{"type": "string", "maxLength": 200}, {"type": "null"}], "description": "the weekly review's one-sentence reading, no fallback text (rule 5); null with lineReason when there is none"},
     "lineWeek": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-W\\d{2}$"}, {"type": "null"}], "description": "the ISO week of that reading"},
     "lineReason": {"anyOf": [{"const": "no reading yet"}, {"type": "null"}], "description": "set when line is null"},
+    "name": {"anyOf": [{"type": "string", "minLength": 1, "maxLength": 80}, {"type": "null"}], "description": "decision 0065: the story's name from the weekly review (reading subtype `name`, at most 8 words, cites the story, not a copy of a headline); the newest standing one, kept across weeks until the review gives another. null when the review has not named the story or every name was rejected; pages then show `title`. A merged-away story's alias row has null; the survivor keeps its own name."},
     "iso3": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]{3}$"}, "uniqueItems": true, "description": "valid country codes (iso3Names.json) plus EUU, sorted; WLD, LAT, UNK and anything else removed"},
     "regions": {"type": "array", "items": {"enum": ["Middle East", "Europe", "East Asia", "Southeast Asia", "South Asia", "Central Asia", "Africa", "North America", "Latin America", "Oceania"]}, "uniqueItems": true, "description": "region names (rule 2) of every country, sorted; [] for no country"},
     "tier": {"enum": ["low", "moderate", "elevated", "high", null], "description": "tierFromScore(riskScore); null with tierReason when the story has no scored analysis"},

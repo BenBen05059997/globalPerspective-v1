@@ -285,6 +285,7 @@
   "stories": {
     "thread-fixture-cargo-volumes": {
       "title": "Fixture: test statistics office reports cargo volumes up 12 percent",
+      "name": null,
       "born": "2026-11-18",
       "category": "economy",
       "iso3": [
@@ -315,6 +316,7 @@
     },
     "thread-fixture-ferry-route": {
       "title": "Fixture: test rival operator bids for the same island route",
+      "name": "Fixture: island ferry route",
       "born": "2026-11-18",
       "category": "transport",
       "iso3": [
@@ -345,6 +347,7 @@
     },
     "thread-fixture-freight-rates": {
       "title": "Fixture: test freight index edges up",
+      "name": null,
       "born": "2026-11-16",
       "category": "economy",
       "iso3": [
@@ -375,6 +378,7 @@
     },
     "thread-fixture-harbour-plan": {
       "title": "Fixture: harbour plan passes its first reading",
+      "name": "Fixture: harbour expansion plan",
       "born": "2026-11-06",
       "category": "politics",
       "iso3": [
@@ -407,6 +411,7 @@
     },
     "thread-fixture-lighthouse": {
       "title": "Fixture: test lighthouse closes for repairs after storm damage",
+      "name": null,
       "born": "2026-11-18",
       "category": "disaster",
       "iso3": [

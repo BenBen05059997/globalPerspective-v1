@@ -25,6 +25,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "DEU",
           "FRA"
@@ -49,6 +50,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "iso3": [
           "FRA",
           "UKR"
@@ -145,6 +147,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "regions": [
           "Europe"
         ],
@@ -186,6 +189,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "regions": [
           "Europe"
         ],
@@ -222,6 +226,7 @@
         "line": null,
         "lineWeek": null,
         "lineReason": "no reading yet",
+        "name": null,
         "regions": [],
         "tier": null,
         "riskScore": null,

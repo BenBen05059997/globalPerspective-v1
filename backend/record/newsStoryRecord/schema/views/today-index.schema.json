@@ -95,10 +95,10 @@
     "storyCard": {
       "type": "object",
       "description": "what a Today card or a map row shows of a story, copied from its story view (decision 0058: the builder stamps, pages display)",
-      "required": ["title", "born", "category", "iso3", "regions", "tier", "riskScore", "stepCount", "stepDays", "firstStep", "newestStep", "watch", "watchAt"],
+      "required": ["title", "name", "born", "category", "iso3", "regions", "tier", "riskScore", "stepCount", "stepDays", "firstStep", "newestStep", "watch", "watchAt"],
       "additionalProperties": false,
       "properties": {
-        "title": {"type": ["string", "null"]}, "born": {"type": ["string", "null"]}, "category": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]}, "name": {"anyOf": [{"type": "string", "minLength": 1, "maxLength": 80}, {"type": "null"}], "description": "the story stamp name (decision 0065); null until the review names the story"}, "born": {"type": ["string", "null"]}, "category": {"type": ["string", "null"]},
         "iso3": {"type": "array", "items": {"type": "string"}}, "regions": {"type": "array", "items": {"type": "string"}},
         "tier": {"type": ["string", "null"]}, "riskScore": {"type": ["number", "null"]},
         "stepCount": {"type": "integer", "minimum": 0}, "stepDays": {"type": "integer", "minimum": 0},

@@ -91,6 +91,13 @@ test('assemble caps entries at the newest 60 and reports the omitted count', asy
   assert.equal(a.bundle.entries.at(-1).eventId, 'e074');
 });
 
+test('assemble carries the story\'s current name from its index row (any age, 0065), null when the row has none', async () => {
+  const f = mkWorld({rows: [row('thread-a', {name: 'Grain border dispute'}), row('thread-b')]});
+  const w = await load(f);
+  assert.equal(assemble(w, w.rows.find((r) => r.threadId === 'thread-a')).bundle.name, 'Grain border dispute');
+  assert.equal(assemble(w, w.rows.find((r) => r.threadId === 'thread-b')).bundle.name, null);
+});
+
 test('assemble carries the previous readings, the operator aliases that touch the story, and cheap neighbours', async () => {
   const f = mkWorld();
   f.put(`${P}operator/aliases.json`, {schemaVersion: 1, aliases: [{canonical: 'name:donald tusk', variants: ['name:tusk'], wikidataId: 'Q946'}, {canonical: 'name:other', variants: ['name:o'], wikidataId: null}]});
@@ -152,5 +159,5 @@ test('placement: a merged-away story is read as part of its survivor (entries an
 test('placement: a story with no assignments, articles or merges gives byte-identical bundles to before', async () => {
   const w = await load(mkWorld());
   const out = selectStories(w).selected.map((r) => JSON.stringify(assemble(w, r).bundle));
-  assert.equal(require('node:crypto').createHash('sha256').update(out.join('\n')).digest('hex'), '3ad83aefa33c944522cec1d4778a478069a6af1fe2f745487c981dfd0c2ee922');
+  assert.equal(require('node:crypto').createHash('sha256').update(out.join('\n')).digest('hex'), '2c747ebcde53f00bdbe0b92a8ee00f58a0950d4843c04dd54cd44e9877c414d0'); // re-pinned 2026-11-19: the bundle gained `name` (review-7, 0065); nothing else changed
 });

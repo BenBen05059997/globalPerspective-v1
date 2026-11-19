@@ -65,7 +65,7 @@ const ROLES = ['start', 'move', 'measure'];
 function storyCard(s) {
   const a = s.analysis || null;
   return {
-    title: s.title, born: s.born, category: s.category, iso3: s.iso3, regions: s.regions, tier: s.tier, riskScore: s.riskScore,
+    title: s.title, name: s.name ?? null, born: s.born, category: s.category, iso3: s.iso3, regions: s.regions, tier: s.tier, riskScore: s.riskScore,
     stepCount: s.stepCount, stepDays: s.stepDays, firstStep: s.firstStep, newestStep: s.newestStep,
     // the model's watch questions (analysis note, model text) and when it wrote them; none is an empty list
     watch: a && Array.isArray(a.watchQuestions) ? a.watchQuestions.filter((q) => typeof q === 'string' && q.trim()) : [], watchAt: a ? a.generatedAt ?? null : null,

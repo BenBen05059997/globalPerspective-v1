@@ -36,10 +36,10 @@ const build = (n = notes(), o = {}) => V.buildViews(X.golden(), {...opts, ...o, 
 test('analyses index: the read fields of every story with an analysis (latest note), never the drift note or the long texts', () => {
   const idx = build().indexes['analyses.json'];
   assert.deepEqual(Object.keys(idx.analyses), ['thread-a', 'thread-b']);
-  const {title, line, lineWeek, lineReason, iso3, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = idx.analyses['thread-a'];
+  const {title, line, lineWeek, lineReason, name, iso3, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = idx.analyses['thread-a'];
   assert.deepEqual(own, {threadId: 'thread-a', threadTitle: 'A title', storyArc: 'A arc', watchQuestions: ['Q1?'], dimensions: {conflict: {score: 60, why: 'w'}}, generatedAt: T1});
   // the shared story fields beside the model's: the story's own title (not the model's), the analysis score as the tier's source, its date as riskAt
-  assert.deepEqual([title, line, lineWeek, lineReason, iso3, regions, tier, riskScore, riskAt, tierReason, born], ['A second', null, null, 'no reading yet', ['DEU', 'FRA'], ['Europe'], 'elevated', 60, T1, null, '2026-10-18']);
+  assert.deepEqual([title, line, lineWeek, lineReason, name, iso3, regions, tier, riskScore, riskAt, tierReason, born], ['A second', null, null, 'no reading yet', null, ['DEU', 'FRA'], ['Europe'], 'elevated', 60, T1, null, '2026-10-18']);
   assert.equal(lastFactAt, '2026-10-22T06:00:00.000Z');
   assert.deepEqual([lastEntryAt, category], ['2026-10-20T04:00:00.000Z', 'conflict']); // the newest news entry, not the newer fact of another kind
   assert.deepEqual([idx.analyses['thread-b'].tier, idx.analyses['thread-b'].riskScore, idx.analyses['thread-b'].riskAt, idx.analyses['thread-b'].tierReason], [null, null, null, 'analysis has no score']);
@@ -65,7 +65,7 @@ test('web index: links once per direction, shared once per pair, threads with st
   assert.deepEqual(w.websUsed, [{country: 'Germany', generatedAt: T1, nodes: 1}, {country: 'France', generatedAt: T1, nodes: 2}]); // by ISO3 (DEU, FRA)
   assert.equal(w.generatedAt, T1);
   assert.equal(w.maxAgeDays, 30);
-  const {threadId, title, line, lineWeek, lineReason, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = w.threads['thread-a'];
+  const {threadId, title, line, lineWeek, lineReason, name, regions, tier, riskScore, riskAt, tierReason, lastFactAt, lastEntryAt, category, born, themeId, ...own} = w.threads['thread-a'];
   assert.deepEqual(own, {state: 'linked', entries: 2, places: [{name: 'France', n: 2}, {name: 'Germany', n: 1}], analysedIn: [{country: 'France', generatedAt: T1}], iso3: ['FRA', 'DEU']}); // `iso3` stays the web's own (top places), not the stamp's
   assert.deepEqual([threadId, title, regions, tier, riskScore, riskAt, tierReason], ['thread-a', 'A second', ['Europe'], 'elevated', 60, T1, null]);
   assert.equal(w.threads['thread-c'].state, 'analysed_no_links');

@@ -13,12 +13,24 @@ let gitSha = 'dev'
 try { gitSha = execSync('git rev-parse --short HEAD').toString().trim() } catch { /* not a git checkout */ }
 const buildDate = new Date().toISOString().slice(0, 10)
 
-// `npm run dev:fixture` (`vite --mode fixture`): the dev server answers /data/record/views/* from fixtures/record-views/, so the
-// story page and the Stories list open with no network. Dev server only (`apply: 'serve'`): the build never loads it. Every date in a
-// file moves by the days from the fixture manifest's factsThrough to today (the pages' 30-day windows and analysis age stay in reach)
-// and the manifest's builtAt is now (the freshness check passes). A file the fixture lacks is a 404, which the pages read as "not generated".
+// `npm run dev:fixture` (`vite --mode fixture`): the dev server answers /data/record/views/* from fixtures/record-views/ and
+// /data/world/latest.json (the map bundle) from fixtures/world.json, so the story page, the Stories list, Today and the Map open with no
+// network. Dev server only (`apply: 'serve'`, and only in fixture mode): the build never loads it. Every date in a file moves by the days
+// from the fixture manifest's factsThrough to today (the pages' 30-day windows and analysis age stay in reach); the manifest's builtAt and
+// the bundle's generated_at, next_expected_at and source times are now (the freshness checks pass). A file the fixture lacks is a 404,
+// which the pages read as "not generated".
 const FIXTURE_DIR = path.resolve(__dirname, 'fixtures/record-views')
+const WORLD_FIXTURE = path.resolve(__dirname, 'fixtures/world.json')
 const DAY_MS = 86400000
+function shiftedFixture(file) {
+  const through = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'manifest.json'), 'utf8')).factsThrough
+  const shift = Math.round((Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(through)) / DAY_MS) * DAY_MS
+  return JSON.parse(fs.readFileSync(file, 'utf8').replace(/\d{4}-\d{2}-\d{2}/g, (d) => new Date(Date.parse(d) + shift).toISOString().slice(0, 10)))
+}
+function sendJson(res, body) {
+  res.setHeader('Content-Type', 'application/json')
+  res.end(JSON.stringify(body))
+}
 function recordViewsFixture() {
   return {
     name: 'record-views-fixture',
@@ -32,12 +44,17 @@ function recordViewsFixture() {
           res.end()
           return
         }
-        const through = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'manifest.json'), 'utf8')).factsThrough
-        const shift = Math.round((Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(through)) / DAY_MS) * DAY_MS
-        const body = JSON.parse(fs.readFileSync(file, 'utf8').replace(/\d{4}-\d{2}-\d{2}/g, (d) => new Date(Date.parse(d) + shift).toISOString().slice(0, 10)))
+        const body = shiftedFixture(file)
         if (rel === 'manifest.json') body.builtAt = new Date().toISOString()
-        res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify(body))
+        sendJson(res, body)
+      })
+      server.middlewares.use('/data/world/latest.json', (req, res) => {
+        const body = shiftedFixture(WORLD_FIXTURE)
+        const now = new Date()
+        body.generated_at = now.toISOString()
+        body.next_expected_at = new Date(now.getTime() + 30 * 60000).toISOString()
+        body.sources = { ...body.sources, gdacs: now.toISOString(), news: now.toISOString() }
+        sendJson(res, body)
       })
     },
   }

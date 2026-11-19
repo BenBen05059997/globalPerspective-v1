@@ -1,73 +1,206 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-08T14:20:00Z",
-  "next_expected_at": "2026-09-08T14:30:00Z",
+  "generated_at": "2026-11-18T05:13:00.000Z",
+  "next_expected_at": "2026-11-18T05:43:00.000Z",
   "sources": {
-    "gdacs": "2026-09-08T14:18:00Z",
-    "ingest": "2026-09-08T14:00:00Z",
-    "topics": "2026-09-08T12:00:00Z",
-    "markets": "2026-09-08T14:00:00Z"
+    "gdacs": "2026-11-18T05:05:00.000Z",
+    "news": "2026-11-18T04:50:00.000Z",
+    "newsDegraded": false,
+    "gdacsDegraded": false
   },
   "stale": false,
   "situations": [
     {
-      "id": "gdacs#FL#1104081",
+      "id": "news#NZL#thread-fixture-harbour-plan",
+      "source": "news",
+      "verb_label": "Fixture: harbour plan passes its first reading",
+      "axis": "political",
+      "tier": "elevated",
+      "state": "escalating",
+      "escalating": true,
+      "centroid": {
+        "lat": -36.85,
+        "lon": 174.76
+      },
+      "iso3_affected": [
+        "NZL",
+        "AUS"
+      ],
+      "affected_names": [],
+      "spread_arcs": [],
+      "opened_at": "2026-11-18T01:13:00.000Z",
+      "last_change_at": "2026-11-18T04:43:00.000Z",
+      "tier_changed_at": "2026-11-18T01:13:00.000Z",
+      "what_changed": "Fixture · 4 outlets · coverage 1.5× prior",
+      "threadId": "thread-fixture-harbour-plan",
+      "leadThreadId": "thread-fixture-harbour-plan",
+      "threadIds": [
+        "thread-fixture-harbour-plan"
+      ]
+    },
+    {
+      "id": "news#AUS#thread-fixture-harbour-plan",
+      "source": "news",
+      "verb_label": "Fixture: Australian ports watch the harbour plan vote",
+      "axis": "political",
+      "tier": "moderate",
+      "state": "peak",
+      "escalating": false,
+      "centroid": {
+        "lat": -33.87,
+        "lon": 151.21
+      },
+      "iso3_affected": [
+        "AUS",
+        "NZL"
+      ],
+      "affected_names": [],
+      "spread_arcs": [],
+      "opened_at": "2026-11-18T02:13:00.000Z",
+      "last_change_at": "2026-11-18T04:13:00.000Z",
+      "tier_changed_at": "2026-11-18T02:13:00.000Z",
+      "what_changed": "Fixture · 2 outlets · coverage 1.2× prior",
+      "threadId": "thread-fixture-harbour-plan",
+      "leadThreadId": "thread-fixture-harbour-plan",
+      "threadIds": [
+        "thread-fixture-harbour-plan"
+      ]
+    },
+    {
+      "id": "news#NZL#thread-fixture-freight-rates",
+      "source": "news",
+      "verb_label": "Fixture: test ferry operator announces a new island route",
+      "axis": "economic",
+      "tier": "moderate",
+      "state": "peak",
+      "escalating": false,
+      "centroid": {
+        "lat": -41.29,
+        "lon": 174.78
+      },
+      "iso3_affected": [
+        "NZL"
+      ],
+      "affected_names": [],
+      "spread_arcs": [],
+      "opened_at": "2026-11-16T09:13:59.000Z",
+      "last_change_at": "2026-11-18T04:43:00.000Z",
+      "tier_changed_at": "2026-11-16T09:13:59.000Z",
+      "what_changed": "Fixture · 3 outlets · coverage 2× prior",
+      "threadId": "thread-fixture-freight-rates",
+      "leadThreadId": "thread-fixture-ferry-route",
+      "aliases": [
+        "news#economic#NZL#freight",
+        "news#NZL#thread-fixture-ferry-route"
+      ],
+      "threadIds": [
+        "thread-fixture-freight-rates",
+        "thread-fixture-ferry-route"
+      ],
+      "also_reported_as": [
+        "Fixture: test freight index edges up"
+      ]
+    },
+    {
+      "id": "news#NZL#thread-fixture-port-strike",
+      "source": "news",
+      "verb_label": "Fixture: port workers weigh a second test strike",
+      "axis": "conflict",
+      "tier": "moderate",
+      "state": "peak",
+      "escalating": false,
+      "centroid": {
+        "lat": -43.53,
+        "lon": 172.64
+      },
+      "iso3_affected": [
+        "NZL"
+      ],
+      "affected_names": [],
+      "spread_arcs": [],
+      "opened_at": "2026-11-17T10:13:59.000Z",
+      "last_change_at": "2026-11-18T03:13:00.000Z",
+      "tier_changed_at": "2026-11-17T10:13:59.000Z",
+      "what_changed": "Fixture · 2 outlets · coverage 1.1× prior",
+      "threadId": "thread-fixture-port-strike",
+      "leadThreadId": "thread-fixture-port-strike",
+      "threadIds": [
+        "thread-fixture-port-strike"
+      ]
+    },
+    {
+      "id": "gdacs#FL#9000001",
       "source": "gdacs",
-      "verb_label": "China — flood",
+      "verb_label": "New Zealand — flood (fixture)",
       "axis": "humanitarian",
       "tier": "elevated",
       "state": "emerging",
       "escalating": false,
-      "centroid": { "lat": 28.0, "lon": 116.0 },
-      "iso3_affected": ["CHN"],
+      "centroid": {
+        "lat": -45.87,
+        "lon": 170.5
+      },
+      "iso3_affected": [
+        "NZL"
+      ],
+      "affected_names": [
+        "New Zealand"
+      ],
       "spread_arcs": [],
-      "opened_at": "2026-09-08T09:20:00Z",
-      "last_change_at": "2026-09-08T09:20:00Z",
-      "what_changed": "GDACS Orange alert opened · flood · 1 country affected",
-      "threadId": null
-    },
-    {
-      "id": "gdacs#TC#1104120",
-      "source": "gdacs",
-      "verb_label": "Philippines — tropical cyclone",
-      "axis": "humanitarian",
-      "tier": "high",
-      "state": "escalating",
-      "escalating": true,
-      "centroid": { "lat": 13.0, "lon": 122.0 },
-      "iso3_affected": ["PHL", "VNM"],
-      "spread_arcs": [{ "from": "PHL", "to": "VNM", "since": "2026-09-08T11:00:00Z" }],
-      "opened_at": "2026-09-08T06:00:00Z",
-      "last_change_at": "2026-09-08T11:00:00Z",
-      "what_changed": "Alert raised Orange→Red · Spread to 1 new country: VNM",
-      "threadId": null
-    },
-    {
-      "id": "breaking#thread-iran-strait-2026-09-08",
-      "source": "breaking",
-      "verb_label": "Hormuz — shipping disrupted",
-      "axis": "conflict",
-      "tier": "high",
-      "state": "escalating",
-      "escalating": true,
-      "centroid": { "lat": 26.6, "lon": 56.3 },
-      "iso3_affected": ["IRN", "ARE", "OMN"],
-      "spread_arcs": [],
-      "opened_at": "2026-09-08T08:00:00Z",
-      "last_change_at": "2026-09-08T13:30:00Z",
-      "what_changed": "9 outlets in the last cycle · velocity 2.4× prior",
-      "threadId": "thread-iran-strait-2026-09-08"
+      "opened_at": "2026-11-18T03:43:00.000Z",
+      "last_change_at": "2026-11-18T03:43:00.000Z",
+      "tier_changed_at": null,
+      "what_changed": "Fixture GDACS Orange alert opened · flood · 1 country affected",
+      "threadId": null,
+      "listed": true
     }
   ],
-  "lede": "A Red-alert cyclone is spreading across the western Pacific while shipping disruption in the Strait of Hormuz draws widening coverage.",
-  "systemic": [
-    { "label": "Brent $91 ▲4%", "href": "/economy" },
-    { "label": "Fed hold", "href": "/economy" }
-  ],
+  "lede": "5 situations are being tracked; the most severe is Fixture: harbour plan passes its first reading (elevated-severity). 1 of them is escalating.",
+  "systemic": [],
   "ranked": [
-    { "id": "gdacs#TC#1104120", "title": "Philippines — tropical cyclone", "tier": "high", "href": "/map?focus=gdacs%23TC%231104120" },
-    { "id": "breaking#thread-iran-strait-2026-09-08", "title": "Hormuz — shipping disrupted", "tier": "high", "href": "/weekly/thread/thread-iran-strait-2026-09-08" },
-    { "id": "gdacs#FL#1104081", "title": "China — flood", "tier": "elevated", "href": "/map?focus=gdacs%23FL%231104081" }
+    {
+      "id": "news#NZL#thread-fixture-harbour-plan",
+      "title": "Fixture: harbour plan passes its first reading",
+      "tier": "elevated",
+      "axis": "political",
+      "escalating": true,
+      "href": "/weekly/thread/thread-fixture-harbour-plan"
+    },
+    {
+      "id": "gdacs#FL#9000001",
+      "title": "New Zealand — flood (fixture)",
+      "tier": "elevated",
+      "axis": "humanitarian",
+      "escalating": false,
+      "href": "/?focus=gdacs%23FL%239000001"
+    },
+    {
+      "id": "news#NZL#thread-fixture-freight-rates",
+      "title": "Fixture: test ferry operator announces a new island route",
+      "tier": "moderate",
+      "axis": "economic",
+      "escalating": false,
+      "href": "/weekly/thread/thread-fixture-ferry-route"
+    },
+    {
+      "id": "news#AUS#thread-fixture-harbour-plan",
+      "title": "Fixture: Australian ports watch the harbour plan vote",
+      "tier": "moderate",
+      "axis": "political",
+      "escalating": false,
+      "href": "/weekly/thread/thread-fixture-harbour-plan"
+    },
+    {
+      "id": "news#NZL#thread-fixture-port-strike",
+      "title": "Fixture: port workers weigh a second test strike",
+      "tier": "moderate",
+      "axis": "conflict",
+      "escalating": false,
+      "href": "/weekly/thread/thread-fixture-port-strike"
+    }
   ],
-  "_note": "FIXTURE — hand-authored 2026-09-08 for S0·T3 (read-path proof + local dev). Replaced by the live tracker bundle from S2."
+  "_counts": {
+    "open": 5,
+    "total": 5
+  }
 }

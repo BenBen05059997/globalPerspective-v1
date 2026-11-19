@@ -157,6 +157,8 @@ function summarize(state) {
     centroid: state.centroid, iso3_affected: state.iso3_affected, affected_names: state.affected_names || [], spread_arcs: state.spread_arcs || [],
     opened_at: state.opened_at, last_change_at: state.last_change_at, tier_changed_at: state.tier_changed_at || null,
     what_changed: state.what_changed, threadId: state.threadId || null,
+    // the label's story (buildStorySituation); absent on a state written before the field and on a GDACS situation
+    ...(state.leadThreadId ? { leadThreadId: state.leadThreadId } : {}),
     // GDACS only: the feed still lists the event, so the map keeps it however long ago it last changed.
     ...(state.source === 'gdacs' ? { listed: !(state.evidence && state.evidence.gdacs_listed === false) } : {}),
     ...(state.aliases && state.aliases.length ? { aliases: state.aliases } : {}),
@@ -166,7 +168,8 @@ function summarize(state) {
 }
 
 function situationHref(s) {
-  return s.threadId ? storyHref(s.threadId) : mapHref({ situation: s.id });
+  const thread = s.leadThreadId || s.threadId; // the story the row's label names
+  return thread ? storyHref(thread) : mapHref({ situation: s.id });
 }
 
 function rankKey(s) {
@@ -312,7 +315,7 @@ exports.handler = async () => {
   const { groups, absorbed, merges } = planNews(stories, priorStates, storyMap, gdacsIso, { grouping: NEWS_GROUPING, titleSim: NEWS_GROUPING_TITLE_SIM, now });
   const extraBuilt = {};
   for (const g of groups) {
-    extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, situationId: g.id, aliases: g.aliases, grouping: g.grouping });
+    extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, leadThreadId: g.leadThreadId, situationId: g.id, aliases: g.aliases, grouping: g.grouping });
   }
   // Absorbed old-id states live on inside their group: archive them (below) rather than cool them.
   const foldPrior = { ...priorStates };

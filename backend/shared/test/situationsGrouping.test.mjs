@@ -25,7 +25,7 @@ function sweep(stories, prior, hour, { threads = {} } = {}) {
   const next = { ...prior };
   for (const id of plan.absorbed) delete next[id];
   for (const g of plan.groups) {
-    next[g.id] = buildStorySituation(g.prev, core.mergeStories(g.stories), T(hour), TTL, { situationId: g.id, threadId: g.threadId, aliases: g.aliases, grouping: g.grouping }).item;
+    next[g.id] = buildStorySituation(g.prev, core.mergeStories(g.stories), T(hour), TTL, { situationId: g.id, threadId: g.threadId, leadThreadId: g.leadThreadId, aliases: g.aliases, grouping: g.grouping }).item;
   }
   return { ...plan, next };
 }
@@ -361,6 +361,34 @@ t('titleSim: no chaining (a join must match the group LEAD directly)', () => {
   assert.strictEqual(r.groups.length, 2);
   assert.strictEqual(r.merges.length, 1);
   assert.deepStrictEqual(r.groups.map((g) => g.stories.length).sort(), [1, 2]);
+});
+
+t('leadThreadId: a merged situation keeps the oldest threadId (the latch) but names the thread of the story its label comes from', () => {
+  const aid = story('political#USA#aid', { title: 'Trump ends military aid', outlets: 2, headlines: heads('https://a.com/1', 'https://b.com/2') });
+  const r1 = sweep([aid], {}, 1, { threads: { 'political#USA#aid': 'thread-aid' } });
+  const lone = r1.next['news#political#USA#aid'];
+  assert.deepStrictEqual([lone.threadId, lone.leadThreadId], ['thread-aid', 'thread-aid'], 'a lone situation: the same thread');
+  // a later, heavier story of another thread shares two URLs with it: it joins the older situation and becomes its label
+  const meet = story('political#USA#trump', { title: 'Trump to hold three-way meeting', outlets: 9, headlines: heads('https://a.com/1', 'https://b.com/2', 'https://c.com/3') });
+  const r2 = sweep([meet], r1.next, 5, { threads: { 'political#USA#trump': 'thread-meet' } });
+  assert.strictEqual(r2.groups.length, 1);
+  assert.strictEqual(r2.groups[0].id, 'news#political#USA#aid', 'the older situation survives');
+  assert.strictEqual(r2.groups[0].leadThreadId, 'thread-meet');
+  const s = r2.next['news#political#USA#aid'];
+  assert.strictEqual(s.verb_label, 'Trump to hold three-way meeting');
+  assert.strictEqual(s.threadId, 'thread-aid', 'the latch is unchanged');
+  assert.strictEqual(s.leadThreadId, 'thread-meet', 'the label names the meeting story');
+  assert.ok(s.threadIds.includes('thread-aid') && s.threadIds.includes('thread-meet'));
+});
+
+t('leadThreadId: an unthreaded lead story falls back to the situation threadId; none at all is null', () => {
+  const a = story('conflict#UKR#a', { title: 'A', outlets: 2, headlines: heads('https://a.com/1', 'https://b.com/2') });
+  const b = story('conflict#UKR#b', { title: 'B', outlets: 9, headlines: heads('https://a.com/1', 'https://b.com/2') });
+  const r = sweep([a, b], {}, 1, { threads: { 'conflict#UKR#a': 'thread-a' } });
+  assert.strictEqual(r.groups.length, 1);
+  assert.strictEqual(r.groups[0].leadThreadId, 'thread-a');
+  const n = sweep([story('conflict#UKR#n', { title: 'N' })], {}, 1);
+  assert.strictEqual(n.next['news#conflict#UKR#n'].leadThreadId, null);
 });
 
 console.log(`\n${pass} tests passed`);

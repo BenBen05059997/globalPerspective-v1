@@ -536,7 +536,11 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
     }
     absorbed.push(...abs);
     // Persisted membership (grows). Every news situation carries it so a later sweep can match against it.
-    const leadTitle = leadStory(allStories).title;
+    const leadSt = leadStory(allStories);
+    const leadTitle = leadSt.title;
+    // the thread of the story the label comes from (buildStorySituation labels with mergeStories' lead, the same leadStory of the same
+    // list): a merged situation keeps the oldest situation's threadId (the latch), so its link would open another story than its label
+    const leadThreadId = (gs.find((n) => n.g.stories.includes(leadSt)) || { g: {} }).g.threadId || threadId || null;
     const seenTitle = new Set([normalizeTitle(leadTitle)]);
     const also = [];
     for (const t of [...allStories.map((st) => st.title), ...ps.flatMap((n) => [n.st.title, ...(n.st.also_reported_as || [])])]) {
@@ -544,7 +548,7 @@ function planNewsGrouping(groups, priorStates, opts = {}) {
       if (nt && !seenTitle.has(nt)) { seenTitle.add(nt); also.push(t); }
     }
     out.push({
-      id, threadId, stories: allStories, aliases, prev, absorbedIds: abs, groupIds: gs.map((n) => n.id),
+      id, threadId, leadThreadId, stories: allStories, aliases, prev, absorbedIds: abs, groupIds: gs.map((n) => n.id),
       grouping: {
         // set only once the situation has merged (now or earlier); empty for a lone situation
         member_story_ids: (h.joined.length || ps.some((n) => n.ids.size))
@@ -621,6 +625,9 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
     // blink off when its topic ages out. Situations close in days ≪ 90d, so a latched link can't
     // outlive its page.
     threadId: opts.threadId || (prev && prev.threadId) || null,
+    // The thread of the story the label (title, verb_label) names; equals threadId unless the situation merged stories of several threads.
+    // Readers link the alert to it; the latch above stays on threadId, so grouping is unchanged.
+    leadThreadId: opts.leadThreadId || opts.threadId || (prev && prev.threadId) || null,
     title: story.title, verb_label: label, axis: story.axis || 'political', tier,
     iso3_origin: affected.slice(0, 1), iso3_affected: affected, affected_names: [],
     centroid: story.centroid || (prev && prev.centroid) || null,

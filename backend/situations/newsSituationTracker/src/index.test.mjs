@@ -143,6 +143,17 @@ t('summarize: threadIds and also_reported_as only when present', () => {
   assert.deepStrictEqual(s.also_reported_as, ['Other title']);
 });
 
+t('summarize and href: leadThreadId only when present; the row links the label\'s story, else threadId, else the map', () => {
+  const { situationHref } = _internal;
+  assert.ok(!('leadThreadId' in summarize({ situationId: 'gdacs#FL#1', source: 'gdacs' })));
+  const merged = summarize({ situationId: 'news#USA#thread-aid', source: 'news', threadId: 'thread-aid', leadThreadId: 'thread-meet' });
+  assert.deepStrictEqual([merged.threadId, merged.leadThreadId], ['thread-aid', 'thread-meet']);
+  assert.ok(situationHref(merged).includes('thread-meet'));
+  const old = summarize({ situationId: 'news#USA#thread-aid', source: 'news', threadId: 'thread-aid' }); // a state written before the field
+  assert.ok(!('leadThreadId' in old) && situationHref(old).includes('thread-aid'));
+  assert.ok(!situationHref({ id: 'news#x' }).includes('thread'));
+});
+
 t('planNews: grouping off = planNewsSituations exactly; on = strict merge pass', () => {
   const { planNews } = _internal;
   const a = story('conflict#UKR#a'); a.headlines = [{ title: 'x', url: 'https://x.com/1', domain: 'x.com' }, { title: 'x', url: 'https://y.com/2', domain: 'y.com' }];

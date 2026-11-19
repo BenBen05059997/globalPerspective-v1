@@ -8,7 +8,7 @@
   "to": "2026-11-18",
   "titles": {
     "thread-fixture-cargo-volumes": "Fixture: test statistics office reports cargo volumes up 12 percent",
-    "thread-fixture-ferry-route": "Fixture: test rival operator bids for the same island route",
+    "thread-fixture-ferry-route": "Fixture: test island council asks both operators for timetables",
     "thread-fixture-freight-rates": "Fixture: test freight index edges up",
     "thread-fixture-harbour-plan": "Fixture: harbour plan passes its first reading",
     "thread-fixture-lighthouse": "Fixture: test lighthouse closes for repairs after storm damage",
@@ -276,6 +276,22 @@
             {
               "outlet": "Fixture Wire 1",
               "url": "https://fixture.test/fx-f2-0"
+            }
+          ]
+        },
+        {
+          "topicId": "fx-f3-topic",
+          "threadId": "thread-fixture-ferry-route",
+          "title": "Fixture: test island council asks both operators for timetables",
+          "role": "move",
+          "category": "transport",
+          "iso3": [
+            "NZL"
+          ],
+          "sources": [
+            {
+              "outlet": "Fixture Wire 1",
+              "url": "https://fixture.test/fx-f3-0"
             }
           ]
         },

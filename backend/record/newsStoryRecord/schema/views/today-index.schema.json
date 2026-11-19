@@ -25,7 +25,7 @@
         "topicIds": {"type": "array", "items": {"type": "string"}, "description": "the topics of the run, in the order of the latest item"},
         "roles": {
           "type": "object",
-          "description": "the run's items counted by their entry's role (decision 0063 item 6); none = no story view holds the item, or its role is null. Items, not distinct stories",
+          "description": "SPEC R1: start, move and measure count STORIES of the run (the latest edition) by stories[id].editionRole, one per card, so the count line and the card groups agree. none counts the run's ITEMS that sit in no kind group: no story view holds the item, or its story's editionRole is null",
           "required": ["start", "move", "measure", "none"],
           "additionalProperties": false,
           "properties": {"start": {"type": "integer", "minimum": 0}, "move": {"type": "integer", "minimum": 0}, "measure": {"type": "integer", "minimum": 0}, "none": {"type": "integer", "minimum": 0}}
@@ -95,7 +95,7 @@
     "storyCard": {
       "type": "object",
       "description": "what a Today card or a map row shows of a story, copied from its story view (decision 0058: the builder stamps, pages display)",
-      "required": ["title", "name", "born", "category", "iso3", "regions", "tier", "riskScore", "stepCount", "stepDays", "firstStep", "newestStep", "watch", "watchAt"],
+      "required": ["title", "name", "born", "category", "iso3", "regions", "tier", "riskScore", "stepCount", "stepDays", "firstStep", "newestStep", "watch", "watchAt", "editionRole", "alsoToday"],
       "additionalProperties": false,
       "properties": {
         "title": {"type": ["string", "null"]}, "name": {"anyOf": [{"type": "string", "minLength": 1, "maxLength": 80}, {"type": "null"}], "description": "the story stamp name (decision 0065); null until the review names the story"}, "born": {"type": ["string", "null"]}, "category": {"type": ["string", "null"]},
@@ -105,7 +105,9 @@
         "firstStep": {"anyOf": [{"$ref": "#/definitions/step"}, {"type": "null"}]},
         "newestStep": {"anyOf": [{"$ref": "#/definitions/step"}, {"type": "null"}]},
         "watch": {"type": "array", "items": {"type": "string"}, "description": "the story analysis note's watchQuestions (model text); empty when none"},
-        "watchAt": {"type": ["string", "null"], "description": "when the model wrote them; null with no analysis"}
+        "watchAt": {"type": ["string", "null"], "description": "when the model wrote them; null with no analysis"},
+        "editionRole": {"enum": ["start", "move", "measure", null], "description": "SPEC R1, one card per story: the story's kind in this edition (the latest run, latest.topicIds). start when one of its edition steps has role start (its first step, when that step is the real start), else move when one is a move, else measure when one is a measured change; null when the story has no step in the edition or only steps with role null. Group and chip the card by this; the page never derives it from entries"},
+        "alsoToday": {"type": "array", "items": {"$ref": "#/definitions/step"}, "description": "SPEC R1 'Also today': the story's steps in this edition that are neither newestStep (the card's title) nor firstStep, in record order, from the story view rows; empty when none. One: show its headline; more: show the count"}
       }
     },
     "note": {

@@ -150,7 +150,7 @@ test('withStories: storyId and role from the story view that holds the eventId n
   const a = v.stories['thread-a'];
   const s = views.stories.get('thread-a');
   assert.deepEqual(a, {title: s.title, name: null, born: '2026-10-18', category: 'conflict', iso3: s.iso3, regions: s.regions, tier: null, riskScore: null,
-    stepCount: 2, stepDays: 2, firstStep: s.firstStep, newestStep: s.newestStep, watch: [], watchAt: null});
+    stepCount: 2, stepDays: 2, firstStep: s.firstStep, newestStep: s.newestStep, watch: [], watchAt: null, editionRole: 'move', alsoToday: []});
   assert.equal(validate(v), true, JSON.stringify(validate.errors));
   assert.equal(withStories(null, views.stories), null);
 });
@@ -165,4 +165,40 @@ test('withStories: the card carries the analysis watch questions (model text) an
   assert.equal(v.stories['thread-t'].watchAt, `${D0}T09:00:00.000Z`);
   assert.deepEqual(v.latest.roles, {start: 0, move: 0, measure: 1, none: 0});
   assert.equal(v.stories['thread-t'].name, 'The T affair'); // the stamp's name (0065), beside the title
+});
+
+test('withStories (SPEC R1): one card per story; editionRole from the edition\'s steps; latest.roles counts stories, none counts unplaced items; alsoToday lists the other edition steps', () => {
+  const step = (eventId, role, date = D1) => ({eventId, date, title: `H ${eventId}`, role, kind: 'entry'});
+  const card = (entries, first, newest) => ({aliasOf: null, title: newest.title, name: null, born: D0, category: null, iso3: [], regions: [], tier: null, riskScore: null,
+    stepCount: entries.length, stepDays: 1, firstStep: first, newestStep: {...newest, sourceCount: 1}, entries, analysis: null});
+  // ferry: born in this edition with a start, then a move and one more move, all in the edition; title = newest move, first step = the start
+  const ferry = [step('f1', 'start'), step('f2', 'move'), step('f3', 'move')];
+  // old: started long ago, two moves in the edition
+  const old = [step('o0', 'start', D0), step('o1', 'move'), step('o2', 'move')];
+  // gauge: first step is a measured change (not a start), measured again in the edition
+  const gauge = [step('g1', 'measure'), step('g2', 'measure')];
+  // limited: the record may not hold its real start (role null)
+  const limited = [step('l1', null)];
+  // earlier: a step earlier today, none in the edition
+  const earlier = [step('e1', 'move')];
+  const stories = new Map([
+    ['ferry', card(ferry, ferry[0], ferry[2])], ['old', card(old, old[0], old[2])], ['gauge', card(gauge, gauge[0], gauge[1])],
+    ['limited', card(limited, limited[0], limited[0])], ['earlier', card(earlier, earlier[0], earlier[0])],
+  ]);
+  const e = (topicId, eventId, inRun = true) => ({topicId, threadId: 'x', title: topicId, archivedAt: `${D1}T04:00:00.000Z`, sources: [], eventId, ...(inRun ? {latest: {}} : {})});
+  const run = ['t-f1', 't-f2', 't-f3', 't-o1', 't-o2', 't-g1', 't-g2', 't-l1', 't-none'];
+  const view = {latest: {topicIds: run}, entries: [...run.map((t) => e(t, t.slice(2))), e('t-e1', 'e1', false)]};
+  const v = withStories(view, stories);
+  const pick = (id) => [v.stories[id].editionRole, v.stories[id].alsoToday.map((x) => x.eventId)];
+  assert.deepEqual(pick('ferry'), ['start', ['f2']]); // f1 is the first-step line, f3 the title: only f2 is "Also today"
+  assert.deepEqual(pick('old'), ['move', ['o1']]);
+  assert.deepEqual(pick('gauge'), ['measure', []]); // its first step is a measured change, so never a start
+  assert.deepEqual(pick('limited'), [null, []]);
+  assert.deepEqual(pick('earlier'), [null, []]); // no step in this edition
+  assert.deepEqual(v.stories.ferry.alsoToday, [{eventId: 'f2', date: D1, title: 'H f2', role: 'move'}]);
+  // 9 items in the run: 3 stories by kind (ferry once, not three times), none = the unplaced item + the limited story's item
+  assert.deepEqual(v.latest.roles, {start: 1, move: 1, measure: 1, none: 2});
+  // every card in a kind group is counted once: the count line and the groups agree
+  const grouped = Object.values(v.stories).filter((c) => c.editionRole);
+  assert.deepEqual(['start', 'move', 'measure'].map((r) => grouped.filter((c) => c.editionRole === r).length), [1, 1, 1]);
 });

@@ -17,13 +17,14 @@
       "Fixture: harbour plan passes its first reading-0",
       "Fixture: test ferry operator announces a new island route-1",
       "Fixture: test rival operator bids for the same island route-4",
+      "Fixture: test island council asks both operators for timetables-6",
       "Fixture: test lighthouse closes for repairs after storm damage-5",
       "Fixture: test statistics office reports cargo volumes up 12 percent-2",
       "Fixture: test item that no story view holds-3"
     ],
     "roles": {
       "start": 2,
-      "move": 2,
+      "move": 1,
       "measure": 1,
       "none": 1
     }
@@ -174,6 +175,42 @@
       "role": "move"
     },
     {
+      "topicId": "Fixture: test island council asks both operators for timetables-6",
+      "threadId": "thread-fixture-ferry-route",
+      "title": "Fixture: test island council asks both operators for timetables",
+      "category": "transport",
+      "regions": [
+        "New Zealand"
+      ],
+      "iso3": [
+        "NZL"
+      ],
+      "event_type": "policy",
+      "sources": [
+        {
+          "source": "fixture.test",
+          "title": "Fixture source text for fx-f3",
+          "url": "https://fixture.test/fx-f3-0",
+          "outlet": "Fixture Wire 1",
+          "outletCountry": "NZ",
+          "outletType": "wire"
+        }
+      ],
+      "archivedAt": "2026-11-18T04:26:43.000Z",
+      "generationId": "gen-fixture-2",
+      "eventId": "ed75cb3f065a6fd77516febe5e04e8752c136eeb",
+      "latest": {
+        "urgency": "low",
+        "urgencyReason": "Fixture reason",
+        "significance": "medium",
+        "x_trending": false,
+        "primaryCountry": "New Zealand",
+        "mentionedCountries": []
+      },
+      "storyId": "thread-fixture-ferry-route",
+      "role": "move"
+    },
+    {
       "topicId": "Fixture: test lighthouse closes for repairs after storm damage-5",
       "threadId": "thread-fixture-lighthouse",
       "title": "Fixture: test lighthouse closes for repairs after storm damage",
@@ -312,10 +349,12 @@
         "sourceCount": 1
       },
       "watch": [],
-      "watchAt": null
+      "watchAt": null,
+      "editionRole": "measure",
+      "alsoToday": []
     },
     "thread-fixture-ferry-route": {
-      "title": "Fixture: test rival operator bids for the same island route",
+      "title": "Fixture: test island council asks both operators for timetables",
       "name": "Fixture: island ferry route",
       "born": "2026-11-18",
       "category": "transport",
@@ -327,7 +366,7 @@
       ],
       "tier": null,
       "riskScore": null,
-      "stepCount": 2,
+      "stepCount": 3,
       "stepDays": 1,
       "firstStep": {
         "eventId": "e5088003a5cea4e846f795dae5946c8734b99ebf",
@@ -336,14 +375,23 @@
         "role": "start"
       },
       "newestStep": {
-        "eventId": "b47210302cf8ef6b2495be1f9d08febbd387b0d1",
+        "eventId": "ed75cb3f065a6fd77516febe5e04e8752c136eeb",
         "date": "2026-11-18",
-        "title": "Fixture: test rival operator bids for the same island route",
+        "title": "Fixture: test island council asks both operators for timetables",
         "role": "move",
         "sourceCount": 1
       },
       "watch": [],
-      "watchAt": null
+      "watchAt": null,
+      "editionRole": "start",
+      "alsoToday": [
+        {
+          "eventId": "b47210302cf8ef6b2495be1f9d08febbd387b0d1",
+          "date": "2026-11-18",
+          "title": "Fixture: test rival operator bids for the same island route",
+          "role": "move"
+        }
+      ]
     },
     "thread-fixture-freight-rates": {
       "title": "Fixture: test freight index edges up",
@@ -374,7 +422,9 @@
         "sourceCount": 1
       },
       "watch": [],
-      "watchAt": null
+      "watchAt": null,
+      "editionRole": null,
+      "alsoToday": []
     },
     "thread-fixture-harbour-plan": {
       "title": "Fixture: harbour plan passes its first reading",
@@ -407,7 +457,9 @@
       "watch": [
         "Fixture: does the plan pass a second reading?"
       ],
-      "watchAt": "2026-11-17T06:00:00.000Z"
+      "watchAt": "2026-11-17T06:00:00.000Z",
+      "editionRole": "move",
+      "alsoToday": []
     },
     "thread-fixture-lighthouse": {
       "title": "Fixture: test lighthouse closes for repairs after storm damage",
@@ -438,7 +490,9 @@
         "sourceCount": 1
       },
       "watch": [],
-      "watchAt": null
+      "watchAt": null,
+      "editionRole": "start",
+      "alsoToday": []
     }
   }
 }

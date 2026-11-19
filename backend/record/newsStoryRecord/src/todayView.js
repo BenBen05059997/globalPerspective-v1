@@ -73,10 +73,21 @@ function storyCard(s) {
 }
 
 /**
+ * The story's kind for this edition (SPEC R1, one card per story): `start` when one of its steps in the edition is the story's start
+ * (role `start`), else `move` when one is a move, else `measure` when one is a measured change, else null (no step in the edition, or
+ * only steps whose role is null: the record may not hold the story's real start). The entry roles decide, so a first step that is a
+ * measured change, or that may not be the real start, is never called a start.
+ */
+const editionRoleOf = (roles) => ROLES.find((r) => roles.includes(r)) ?? null;
+
+/**
  * The today view with each entry placed in its story (decisions 0058, 0063): `storyId` is the story view that holds the entry's eventId now
  * (merges and moves applied; the entry's own `threadId` stays as the agent wrote it), `role` its kind there (the story view row's role);
- * both null when no story view holds it. `stories` holds a storyCard per storyId, and `latest.roles` counts the latest run's items by role
- * (`none`: no story, or role null). Pure; null in, null out.
+ * both null when no story view holds it. `stories` holds a storyCard per storyId, plus, for this edition (the latest run, `latest.topicIds`):
+ * `editionRole` (editionRoleOf) and `alsoToday`, the story's other steps in the edition that are neither its newest step (the card's
+ * title) nor its first step (the card's first-step line), in record order. `latest.roles` counts stories by `editionRole` (start, move,
+ * measure: one per card) and, in `none`, the edition's items that sit in no kind group (no story view, or editionRole null).
+ * Pure; null in, null out.
  */
 function withStories(view, stories) {
   if (!view) return null;
@@ -85,14 +96,32 @@ function withStories(view, stories) {
   const entries = view.entries.map((e) => ({...e, ...(at.get(e.eventId) || {storyId: null, role: null})}));
   const ids = [...new Set(entries.map((e) => e.storyId).filter(Boolean))].sort();
   let latest = view.latest;
+  const edition = new Map(); // storyId -> this edition's entries of the story
+  let unplaced = 0;
   if (latest) {
     const byTopic = new Map();
     for (const e of entries) if (!byTopic.has(e.topicId) || e.latest) byTopic.set(e.topicId, e); // the latest run's entry of a topic carries `latest`
-    const roles = {start: 0, move: 0, measure: 0, none: 0};
-    for (const id of latest.topicIds) { const r = (byTopic.get(id) || {}).role; roles[ROLES.includes(r) ? r : 'none'] += 1; }
+    for (const id of latest.topicIds) {
+      const e = byTopic.get(id);
+      if (e && e.storyId) (edition.get(e.storyId) || edition.set(e.storyId, []).get(e.storyId)).push(e);
+      else unplaced += 1;
+    }
+  }
+  const cards = Object.fromEntries(ids.map((id) => {
+    const s = stories.get(id);
+    const mine = edition.get(id) || [];
+    const shown = new Set([s.newestStep && s.newestStep.eventId, s.firstStep && s.firstStep.eventId]);
+    const rows = new Map((s.entries || []).map((e, i) => [e.eventId, {...e, i}])); // the view's rows, in date, at, eventId order; date and headline come from there
+    const also = [...new Set(mine.map((e) => e.eventId))].filter((e) => !shown.has(e)).map((e) => rows.get(e)).filter(Boolean).sort((a, b) => a.i - b.i)
+      .map((e) => ({eventId: e.eventId, date: e.date, title: e.title ?? null, role: e.role ?? null}));
+    return [id, {...storyCard(s), editionRole: editionRoleOf(mine.map((e) => e.role)), alsoToday: also}];
+  }));
+  if (latest) {
+    const roles = {start: 0, move: 0, measure: 0, none: unplaced};
+    for (const [id, mine] of edition) { const r = cards[id].editionRole; if (r) roles[r] += 1; else roles.none += mine.length; }
     latest = {...latest, roles};
   }
-  return {...view, latest, entries, stories: Object.fromEntries(ids.map((id) => [id, storyCard(stories.get(id))]))};
+  return {...view, latest, entries, stories: cards};
 }
 
 module.exports = {todayIndex, withStories, SCHEMA_VERSION};

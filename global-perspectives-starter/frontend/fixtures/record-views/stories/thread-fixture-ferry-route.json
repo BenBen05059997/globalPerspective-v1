@@ -5,7 +5,7 @@
     "readingsThrough": null
   },
   "threadId": "thread-fixture-ferry-route",
-  "title": "Fixture: test rival operator bids for the same island route",
+  "title": "Fixture: test island council asks both operators for timetables",
   "lineWeek": null,
   "lineReason": "no reading yet",
   "name": "Fixture: island ferry route",
@@ -19,8 +19,8 @@
   "riskScore": null,
   "riskAt": null,
   "tierReason": "no analysis yet",
-  "lastFactAt": "2026-11-18T02:30:00.000Z",
-  "lastEntryAt": "2026-11-18T02:30:00.000Z",
+  "lastFactAt": "2026-11-18T02:50:00.000Z",
+  "lastEntryAt": "2026-11-18T02:50:00.000Z",
   "category": "transport",
   "born": "2026-11-18",
   "themeId": null,
@@ -29,9 +29,10 @@
   "sourceIds": [
     "fixture-src-fx-f1-0",
     "fixture-src-fx-f1-1",
-    "fixture-src-fx-f2-0"
+    "fixture-src-fx-f2-0",
+    "fixture-src-fx-f3-0"
   ],
-  "stepCount": 2,
+  "stepCount": 3,
   "stepDays": 1,
   "firstStep": {
     "eventId": "e5088003a5cea4e846f795dae5946c8734b99ebf",
@@ -40,9 +41,9 @@
     "role": "start"
   },
   "newestStep": {
-    "eventId": "b47210302cf8ef6b2495be1f9d08febbd387b0d1",
+    "eventId": "ed75cb3f065a6fd77516febe5e04e8752c136eeb",
     "date": "2026-11-18",
-    "title": "Fixture: test rival operator bids for the same island route",
+    "title": "Fixture: test island council asks both operators for timetables",
     "role": "move",
     "sourceCount": 1
   },
@@ -100,6 +101,31 @@
         }
       ],
       "topicId": "fx-f2-topic",
+      "iso3": [
+        "NZL"
+      ],
+      "role": "move"
+    },
+    {
+      "eventId": "ed75cb3f065a6fd77516febe5e04e8752c136eeb",
+      "date": "2026-11-18",
+      "at": "2026-11-18T02:50:00.000Z",
+      "precision": "exact",
+      "title": "Fixture: test island council asks both operators for timetables",
+      "summary": null,
+      "category": "transport",
+      "eventType": "policy",
+      "sources": [
+        {
+          "sourceId": "fixture-src-fx-f3-0",
+          "outlet": "Fixture Wire 1",
+          "url": "https://fixture.test/fx-f3-0",
+          "title": "Fixture source text for fx-f3",
+          "outletCountry": null,
+          "outletType": null
+        }
+      ],
+      "topicId": "fx-f3-topic",
       "iso3": [
         "NZL"
       ],

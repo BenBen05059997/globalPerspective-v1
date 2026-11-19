@@ -187,7 +187,9 @@
         "sourceCount": 1
       },
       "watch": [],
-      "watchAt": null
+      "watchAt": null,
+      "editionRole": "move",
+      "alsoToday": []
     }
   }
 }

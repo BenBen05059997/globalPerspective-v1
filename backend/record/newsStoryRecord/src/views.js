@@ -16,6 +16,7 @@ const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
 const {todayIndex, withStories} = require('./todayView');
 const {storyStamp, NO_READING} = require('./storyStamp');
+const {dropRedatedRepeats} = require('./_shared/dropRedatedRepeats'); // the page's rule, same text (scripts/check-shared-sync.mjs)
 
 const SCHEMA_VERSION = 1;
 const ACTIVE_DAYS = 60; // a story is active when a fact of its own falls in the last 60 UTC days, today included
@@ -360,8 +361,11 @@ function projectStories(facts, {aliases, applied}, {today, builtFrom, readings, 
     const corrected = new Set(corrections.map((f) => f.payload.corrects));
     const entries = entryRows(group, corrected, reassigned, notesBy, {refs, limited});
     const kept = entries.slice(-ENTRY_CAP);
-    const steps = stepSummary(entries, refs);
-    const title = titleOf(entries, today, refs); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
+    // What a reader is shown: the page drops a headline repeated under a later date (dropRedatedRepeats). The step counts, first and
+    // newest step and the title are taken from those rows, so the stamps match the page; the view keeps every row (facts are not hidden).
+    const shown = dropRedatedRepeats(entries);
+    const steps = stepSummary(shown, refs);
+    const title = titleOf(shown, today, refs); // the story's one title (see titleOf): the story view, its index row, the web index and the links' otherTitle all carry it
     const forks = forkRows(mine, ledger, today);
     const branches = forks.flatMap((k) => k.branches);
     const sourceIds = unique(group.flatMap((g) => g.facts.flatMap((f) => f.sourceIds)));

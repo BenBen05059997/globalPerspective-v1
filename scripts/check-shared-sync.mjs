@@ -28,6 +28,8 @@
  *   (f) board rules                     — the drawing/pairing core (between the markers) in
  *                                          backend/shared/src/record.js == frontend shared/lib/board.js
  *   (e) Studio share modules, sampleRuleGolden.json — byte-identical frontend/Lambda copies
+ *   (g) re-dated repeats rule           — the function dropRedatedRepeats in backend/shared/src/dropRedatedRepeats.js
+ *                                          (CommonJS) == the one in frontend shared/lib/dropRedatedRepeats.js (ES module)
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
  * mode). It never touches the checked files themselves.
@@ -134,6 +136,22 @@ function checkMarkedCore(pathA, pathB, marker) {
   return { pass: false, diff: textDiff(path.basename(pathA), a, `frontend-${path.basename(pathB)}`, b) };
 }
 
+/** The text of one named top-level function (from `function NAME(` to the first line that is just `}`), `export ` stripped. */
+function functionText(src, name) {
+  const a = src.indexOf(`function ${name}(`);
+  const b = a < 0 ? -1 : src.indexOf('\n}\n', a);
+  return a >= 0 && b > a ? src.slice(a, b + 2) : null;
+}
+
+/** One function must be the same text in a CommonJS file and an ES module file. */
+function checkFunctionText(pathA, pathB, name) {
+  const a = functionText(fs.readFileSync(pathA, 'utf8'), name);
+  const b = functionText(fs.readFileSync(pathB, 'utf8'), name);
+  if (a === null || b === null) return { pass: false, diff: `function ${name} missing in ${a === null ? pathA : pathB}` };
+  if (a === b) return { pass: true };
+  return { pass: false, diff: textDiff(path.basename(pathA), a, `frontend-${path.basename(pathB)}`, b) };
+}
+
 /** Country identity: the country table is byte-identical to the frontend data copy, and the resolver
  *  core in backend/shared/src/countries.js is the same text as in the frontend shared/lib/countries.js. */
 function checkCountryIdentity(backendPath = abs(`${SHARED}/countries.js`), frontendPath = abs(`${FE_LIB}/countries.js`)) {
@@ -205,6 +223,10 @@ function livePairs() {
     {
       name: 'link rules (backend/shared/src/links.js vs frontend shared/lib/links.js)',
       run: () => checkMarkedCore(abs(`${SHARED}/links.js`), abs(`${FE_LIB}/links.js`), 'link rules core'),
+    },
+    {
+      name: 're-dated repeats rule (backend/shared/src/dropRedatedRepeats.js vs frontend shared/lib/dropRedatedRepeats.js)',
+      run: () => checkFunctionText(abs(`${SHARED}/dropRedatedRepeats.js`), abs(`${FE_LIB}/dropRedatedRepeats.js`), 'dropRedatedRepeats'),
     },
     {
       name: 'board rules (backend/shared/src/record.js vs frontend shared/lib/board.js)',
@@ -300,6 +322,18 @@ async function selfTestLinkRules() {
   return result;
 }
 
+async function selfTestRedatedRepeats() {
+  const dir = mkTmp();
+  const b = path.join(dir, 'dropRedatedRepeats.js');
+  const ref = fs.readFileSync(abs(`${FE_LIB}/dropRedatedRepeats.js`), 'utf8');
+  const perturbed = ref.replace('.trim().toLowerCase();', '.toLowerCase();');
+  if (perturbed === ref) throw new Error('self-test fixture assumption broke: .trim().toLowerCase() not found');
+  fs.writeFileSync(b, perturbed);
+  const result = checkFunctionText(abs(`${SHARED}/dropRedatedRepeats.js`), b, 'dropRedatedRepeats');
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTestBoardRules() {
   const dir = mkTmp();
   const b = path.join(dir, 'board.js');
@@ -357,6 +391,7 @@ async function selfTest() {
   const cases = [
     ['country identity', selfTestCountryIdentity],
     ['link rules', selfTestLinkRules],
+    ['re-dated repeats rule', selfTestRedatedRepeats],
     ['board rules', selfTestBoardRules],
     ['entity-normalization', selfTestEntityNormalization],
     ['sampleRuleGolden.json', selfTestSampleGolden],

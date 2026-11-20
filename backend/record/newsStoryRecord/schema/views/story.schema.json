@@ -182,7 +182,7 @@
         "stepCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "the story's steps: its non-article rows, all of them (also those beyond the view's entry cap), merged-in stories included"
+          "description": "the story's steps: its non-article rows, all of them (also those beyond the view's entry cap), merged-in stories included, minus re-dated repeats (a row whose headline, trimmed and lower-cased, already appears at an earlier date or earlier in the same date: dropRedatedRepeats, the rule the story page applies). firstStep, newestStep and title are taken from the same rows. `entries` keeps every row"
         },
         "stepDays": {
           "type": "integer",

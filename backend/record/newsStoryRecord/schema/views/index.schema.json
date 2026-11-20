@@ -142,7 +142,7 @@
         "stepCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "the story's steps (non-article rows), as the story view's stepCount; 0 on an alias row"
+          "description": "the story's steps (non-article rows, re-dated repeats left out), as the story view's stepCount; 0 on an alias row"
         },
         "stepDays": {
           "type": "integer",

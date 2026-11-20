@@ -562,6 +562,25 @@ test('steps: an article row is not a step; a story of articles only has no first
   assert.deepEqual([a.stepCount, a.firstStep.eventId, a.newestStep.eventId], [2, 'ea1', 'ea2']);
 });
 
+test('steps: a headline re-dated to a later day is not a step (the page\'s dropRedatedRepeats, same text); the view keeps the row', () => {
+  const day = (d, h = 4) => `2026-10-${d}T0${h}:00:00.000Z`;
+  const f = [
+    X.entry('h', day(10), 'Strike on the airport', {id: 'h1'}),
+    X.entry('h', day(11), 'Port closed', {id: 'h2'}),
+    X.entry('h', day(12), '  strike on the AIRPORT ', {id: 'h3'}), // the same headline a day later: dropped (trim, lower case)
+    X.entry('h', day(12, 6), 'Port closed', {id: 'h4'}), // and again
+  ];
+  const s = build(f).stories.get('h');
+  assert.deepEqual(s.entries.map((e) => e.eventId), ['h1', 'h2', 'h3', 'h4']); // every row stays in the view
+  assert.deepEqual([s.stepCount, s.stepDays, s.firstStep.eventId, s.newestStep.eventId, s.title], [2, 2, 'h1', 'h2', 'Port closed']);
+  const row = build(f).all.stories.find((r) => r.threadId === 'h');
+  assert.deepEqual([row.stepCount, row.stepDays, row.entryCount], [2, 2, 4]); // entryCount still counts every row
+  // the page's own rule, run on the view's rows, leaves exactly the counted steps
+  const {dropRedatedRepeats} = require('../src/_shared/dropRedatedRepeats');
+  const kept = dropRedatedRepeats(s.entries).filter((e) => e.kind !== 'article');
+  assert.deepEqual([kept.length, new Set(kept.map((e) => e.date)).size], [s.stepCount, s.stepDays]);
+});
+
 test('steps: counted before the 400 cap; ties on date and time go by archive place, as role and title do', () => {
   const f = Array.from({length: 405}, (_, i) => X.entry('big', `2026-10-${String(1 + Math.floor(i / 24)).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00.000Z`, `e${i}`, {id: `id${String(i).padStart(3, '0')}`}));
   const s = build(f).stories.get('big');

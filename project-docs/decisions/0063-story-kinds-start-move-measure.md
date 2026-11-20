@@ -1,6 +1,6 @@
 # 63. The news picking step asks of each event "does it start a story, or move a story we follow?"; three kinds get in, each entry carries a role label, and the story page shows it
 
-Status: built on branch `story-kinds` and tested offline and by a paid replay on 2026-11-18/19; NOT DEPLOYED. No Lambda zip, setting or frontend release has changed. Each deploy step below needs the operator's yes in the message that asks for it. Two replay pass lines failed as written (see Evidence). Takes over the `newsIngest` part of 0062 only (see "Relation to 0062"). Amends 0040 (selector rules). Follows 0020, 0057, 0058, 0060.
+Status: built on branch `story-kinds`, tested offline and by a paid replay on 2026-11-18/19, and on `main`; deployed 2026-11-19: the Lambdas `newsAgent`, `newsStoryRecord` and `newsIngest` that day, and the site (Cloudflare versions cc697763 then a1787828, about 22:00 to 23:10 UTC, verified). Each deploy step took the operator's yes in the message that asked for it. Two replay pass lines failed as written (see Evidence). Takes over the `newsIngest` part of 0062 only (see "Relation to 0062"). Amends 0040 (selector rules). Follows 0020, 0057, 0058, 0060.
 Date: 2026-11-19
 
 ## Context
@@ -30,7 +30,7 @@ Date: 2026-11-19
 8. **Links into the story page.** The FED INTO slide in story mode lists both directions (the stories this feeds into and the earlier news judged to feed in). Map story links open the normal story page again, not the Read in full view (commit `21274c77`, undoes `53ae49b6` of 2026-11-09). The "From the story" title in the map's situation detail and the track-record text page's "because" event link to their story (`31ea5328`, `63185ee5`).
 9. **Local fixture.** `npm run dev:fixture` serves a record-views fixture (`fixtures/record-views/`, one story with start, move, measure, a written-late entry, an article row and a merged-in entry, plus links in both directions); nothing ships in the build. A test checks its entry keys against `story.schema.json`.
 
-## What changes (code, nothing deployed)
+## What changes
 | Part | Where | Change |
 |---|---|---|
 | `newsIngest` | `backend/pipeline/newsInvokeGemini/src/{selection.js,index.js}`, README | prompt, `followedStories`, `follows`, `measure`, 14-day archive read with `threadId`, cap 16000, repeat-drop log line carries the story number |
@@ -78,7 +78,7 @@ The repeat drop (`dropRepeatTopics`, Jaccard 0.5 against today's and yesterday's
 - **The 0061 outage-recovery note** says the selector's archive titles are always read from DynamoDB; the same holds for this list, so late-written stories (0061) are not on it until the rows exist for them.
 - Order of deploy matters (below): the builder and agent must be ready before the picker sets `continues_thread`.
 
-## Rollout (nothing is deployed; each step needs the operator's yes in that message)
+## Rollout (the plan; deployed 2026-11-19; each step needed the operator's yes in that message)
 Readers before writers. Offline checks first (`node --test` in each package, `npm run verify`).
 1. `newsAgent` (reads `continues_thread`; does nothing while it is absent). Check: next run's `[join]` lines and run time are normal. Diff deployed against the repo first (`scripts/lambda.sh newsAgent diff`).
 2. `newsStoryRecord` (stamps `role`; start and move show on old data at once). Check: the next refresh Run is `ok` and a public story view has `role`. The first run rewrites every story view once.

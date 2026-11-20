@@ -1,6 +1,6 @@
 # 65. A story gets a short name from the weekly review; pages show it beside the newest headline
 
-Status: accepted (operator, chat, 2026-11-19: the coordinator recommended option B of the back-end scope, a name from the weekly review's existing call, and the operator answered "I mean go"); built on branch `story-kinds`, tested offline; NOT DEPLOYED. The review prompt `review-7` has not run the golden-week gates. Every Lambda update and site release needs the operator's yes. Amends 0058 rule 1 and the second "Not decided here" line of 0064. Follows 0037, 0039, 0060, 0063.
+Status: accepted (operator, chat, 2026-11-19: the coordinator recommended option B of the back-end scope, a name from the weekly review's existing call, and the operator answered "I mean go"); built on branch `story-kinds`, tested offline, and on `main`. `newsRecordReview` (prompt `review-7`), `newsStoryRecord` and the site were deployed 2026-11-19. The review prompt `review-7` has not run the golden-week gates. Every Lambda update and site release needs the operator's yes. Amends 0058 rule 1 and the second "Not decided here" line of 0064. Follows 0037, 0039, 0060, 0063.
 Date: 2026-11-19
 
 ## Context

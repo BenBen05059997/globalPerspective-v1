@@ -21,7 +21,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- output : one bundle per story; every fact carries its eventId so the model can cite it
 |
 +- 3 READ       model, boxed        [newsRecordReview]
-|  +- rule   : returns JSON only: line, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
+|  +- rule   : returns JSON only: line, name, chapters (title, summary, cites; no dates), links, merge proposal, alias proposals
 |  |           assignment proposals: an entry that does not belong to the story, with the story it belongs to (or new); a flag only
 |  |           every item cites >= 1 eventId from THIS bundle (links: >= 1 from each story); no citation -> item rejected
 |  +- model  : model from env `REVIEW_MODEL` (`anthropic:claude-sonnet-5-5` since 2026-11-16, [0060](../decisions/0060-claude-models-by-job-measured.md)); a stub model in tests and in the golden-week run
@@ -38,7 +38,7 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 |  +- record/inbox/merges/YYYY-MM-DD.jsonl  accepted auto-merges, for newsStoryRecord to turn into story_merged facts
 |
 +- 6 BUILD      no model            [newsStoryRecord, nightly]
-|  +- reads readings + inbox merges + operator aliases; fills line, chapters, confirmedLinks in the views;
+|  +- reads readings + inbox merges + operator aliases; fills line, name, chapters, confirmedLinks in the views;
 |  |   applies story_merged / story_split; applies aliases to actorIds in views only (facts never rewritten)
 |
 +- LOOP BACK : new entries all week -> nightly facts and views -> Monday review reads them with hindsight -> views show it
@@ -49,13 +49,14 @@ WEEKLY REVIEW LOOP  (Monday 01:00 UTC, after the ISO week ends · one call per a
 2. Assemble. Facts for the story across all its days, entries capped at the newest 60 (`ENTRY_CAP`) and forks at the newest 10; the story's previous readings (the last 8 weekly files); verdict facts; the alias file; up to 5 neighbouring stories, each with 3 entry titles, for links and merges. Each fact is shown with its `eventId`. No other input: no raw tables, no DynamoDB, no search.
 3. Read. One call, JSON only. The model proposes:
    - `line`: one sentence, at most 200 characters;
+   - `name` (prompt review-7, decision [0065](../decisions/0065-story-name-from-the-weekly-review.md)): a short label for the whole story, at most 8 words and 80 characters, citing the entries it covers; the model sees the story's current name and answers null while it still fits;
    - `chapter`s: {title, summary at most 300, cites}; the code sets from/to from the cited facts;
    - `link`s: {otherThreadId, mechanism at most 200, direction drives|driven_by|shared_cause};
    - `merge_proposal`: {otherThreadId, why};
    - `alias`: {variants, canonical, wikidataId};
    - `assignment`: {entryId, threadId, why}, an entry that belongs to another story (a proposal only).
-   Model: from env `REVIEW_MODEL` (`anthropic:claude-sonnet-5-5` since 2026-11-16, decision [0060](../decisions/0060-claude-models-by-job-measured.md), after a Haiku-versus-Sonnet golden-week run: Haiku broke the no-pending-clause rule in 7 of 25 lines, Sonnet in 2 of 25; `deepseek-flash` from 2026-11-04, [0056](../decisions/0056-models-by-measured-quality.md), before; the Run of 2026-W46 (2026-11-16) used `deepseek-flash` and ended `failed` with LLM 402, insufficient balance, which is why the model moved), through the shared `llm.js`, prompt version `review-6` (`PROMPT_VERSION` in `src/prompt.js`), `MAX_TOKENS` 6000 (Sonnet used at most 1,242 output tokens a call).
-4. Check. Pure code. An item is rejected, with a reason kept in the Run, when it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter cites no dated fact; its shape or length is wrong; its confidence is low; or an auto-merge fails the merge rule. Branch status is not a reading: a branch's status is its verdict fact, else open or past due by its `due` date, derived where it is shown.
+   Model: from env `REVIEW_MODEL` (`anthropic:claude-sonnet-5-5` since 2026-11-16, decision [0060](../decisions/0060-claude-models-by-job-measured.md), after a Haiku-versus-Sonnet golden-week run: Haiku broke the no-pending-clause rule in 7 of 25 lines, Sonnet in 2 of 25; `deepseek-flash` from 2026-11-04, [0056](../decisions/0056-models-by-measured-quality.md), before; the Run of 2026-W46 (2026-11-16) used `deepseek-flash` and ended `failed` with LLM 402, insufficient balance, which is why the model moved), through the shared `llm.js`, prompt version `review-7` (`PROMPT_VERSION` in `src/prompt.js`, live since 2026-11-19), `MAX_TOKENS` 6000 (Sonnet used at most 1,242 output tokens a call).
+4. Check. Pure code. An item is rejected, with a reason kept in the Run, when it has no citation; a cited `eventId` is not in the bundle (a link needs one from each story); a chapter cites no dated fact; its shape or length is wrong; its confidence is low; or an auto-merge fails the merge rule. A `name` is also rejected when it is empty, over 8 words or 80 characters, or the same as the story's title or any headline the model was shown (lower case, punctuation removed); a rejected name is no name, and nothing replaces it. Branch status is not a reading: a branch's status is its verdict fact, else open or past due by its `due` date, derived where it is shown.
 5. Write. Accepted readings are appended to the week file; the review Run records counts and rejections; accepted auto-merges go to the inbox. Readings are never edited. A rerun for the same week writes readings whose `supersedes` points at the earlier `readingId`.
 6. Build. Not the review's job: `newsStoryRecord` rebuilds all views (nightly and at each refresh) and reads readings, inbox merges, `story_split` facts and the alias file.
 
@@ -66,7 +67,7 @@ Concurrency: calls run in parallel up to `REVIEW_CONCURRENCY` (live 12; the code
 ## 4. Objects and where they live
 | Object | Where | Shape and rules |
 |---|---|---|
-| Readings | `record/readings/YYYY-Www.jsonl` | One line: `{schemaVersion:1, readingId: sha1(week+threadId+subtype+key), week, threadId, subtype: line\|chapter\|link\|merge_proposal\|alias\|assignment, payload, cites[eventId], covers{from,to}, supersedes: readingId\|null, run, model, promptVersion, confidence: high\|medium\|low}`. Append-only per week |
+| Readings | `record/readings/YYYY-Www.jsonl` | One line: `{schemaVersion:1, readingId: sha1(week+threadId+subtype+key), week, threadId, subtype: line\|name\|chapter\|link\|merge_proposal\|alias\|assignment, payload, cites[eventId], covers{from,to}, supersedes: readingId\|null, run, model, promptVersion, confidence: high\|medium\|low}`. Append-only per week |
 | Review Run | `record/runs/review-YYYY-Www.json` | started, then ok \| partial \| failed; counts; rejected items with reasons. The one mutable object |
 | Inbox merges | `record/inbox/merges/YYYY-MM-DD.jsonl` | `{from, into, at, reason, cites, readingId}`; `newsStoryRecord` turns each into a `story_merged` fact |
 | Operator aliases (the who's who file) | `record/operator/aliases.json` | `{schemaVersion:1, aliases:[{canonical:'name:...', variants:['name:...'], wikidataId\|null}]}`; written only by the operator |

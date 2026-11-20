@@ -1,6 +1,6 @@
 # threads
 
-The Stories pages. A "thread" is one story arc followed across days. This folder holds the Stories page (`/weekly`, the name is
+The Stories pages. A story is one thread of events followed across days (readers see "story" and "step"; the code keeps `thread`; decision 0064). This folder holds the Stories page (`/weekly`, the name is
 historical) and the story page (`/weekly/thread/:threadId`). Readers use `/weekly` to browse the last 30 days of stories as a list,
 board, timeline, map or story web, and a story page to read one arc (story mode first, "Read in full" for the long tabbed page).
 
@@ -21,7 +21,7 @@ This folder is stage 9: the story page and the stories list. Timeline: reads the
 
 ## Frontend
 - `WeeklyPage.jsx` - Stories page; `components/Stories*.jsx` are its header, filters and the views (feed, board, timeline, web, changed-since-visit)
-- `ThreadPage.jsx` - arc page; `components/StoryMode.jsx` (desktop) and `PhoneStoryMode.jsx` (phone); tabs Overview, Timeline, Actors, Sources
+- `ThreadPage.jsx` - story page; its top is `components/StoryLife.jsx` (decision 0064: "A story we follow since {date} · {n} steps", every dated step oldest first with a fold for the middle, the kind chip on the newest, "What we watch next", outlets and risk), built from the view's rows and the builder's stamp (`firstStep`, `newestStep`, `stepCount`, `stepDays`); the stamped `name` (decision 0065), when set, is the page title and the newest headline closes the step list. `components/StoryMode.jsx` (desktop) and `PhoneStoryMode.jsx` (phone); tabs Overview, Timeline, Actors, Sources
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY` is set, else `WeeklyFallbackMap`
 - `components/ThreadForecast.jsx` (outcome wording: open / happened / not reported / awaiting check; the intro promises no check by a deadline, 0038), `ThreadIntelligence.jsx`, `FedIntoList.jsx`, `SharedActorsList.jsx` - forecast, analysis and story-link blocks
 - `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`; day maths is on the UTC calendar because archive day keys are UTC days; `buildThreads(dayMap, sortedDates, now, titles)` sets `latestTitle` to the record's `titles[threadId]`; only on the `archive_range` action path (no titles) it falls back to the story's newest day's first entry, the one place the frontend picks a title; it drops re-dated repeats with the shared `dropRedatedRepeats`, as the story page does). The story page's title is the story view's `title`, else the list's, else the humanised id; `storyWeb`, `webIndexLinks`, `linksFromView`, `storyLinks`, `linkStates` (story links)

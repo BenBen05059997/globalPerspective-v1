@@ -15,7 +15,7 @@ This folder is stage 9: the board page (/board). Timeline: reads boards via news
 
 ## Routes
 - `/board` opens the newest board (or the empty state with presets); `/board/:boardId` opens that one. `ROUTE.board` and `boardHref()` in `@/shared/lib/links.js`; lazy-loaded in `app/App.jsx`; noindex.
-- The Board link sits in the account area (`app/layout/Layout.jsx`) for a signed-in, non-guest user when `boardAvailable()` is true. Signed out, the page shows a sign-in line and the region presets.
+- The Board link shows to every visitor when `boardAvailable()` is true: in the top bar (`app/layout/Layout.jsx`) on desktop, and on a phone there for a signed-in, non-guest member only; a signed-out phone visitor finds it in the "?" help panel's page list (`app/layout/HelpPanel.jsx`). Signed out, the page shows the public region boards and a "Sign in to build your own board" button.
 
 ## Frontend
 `BoardPage.jsx` holds the state and lays out: `BoardTopBar`, board switcher, toolbar (Connect, Delete board), then the canvas (graph, `DueStrip`, story tree on desktop, `WeekScrubber`, folded strings and pins lists) beside a right rail (side sheet, `BoardWeekly`, `RailBranches`, `MissingCard`, `DivergencePanel`); below: `ArrivalsTray`, `UnsettledZone`, "How the board folds". On a phone the sheet and story tree are a `BottomSheet`. Styles: `board.css`, `panels.css`, `storyTree.css`, `presets.css` (tokens only).

@@ -22,7 +22,8 @@ export function storyFacts(id, row = {}, view = null) {
     category: view?.category || row.category || null,
     tier: view?.tier || row.tier || null,
     riskScore: view?.riskScore ?? row.riskScore ?? null,
-    born: day(view?.born || row.born) || null,
+    // "began": the first step's date where stamped (design review 1: `born` can precede it), else `born`
+    born: day(row.firstStep?.date || view?.firstStep?.date || view?.born || row.born) || null,
     newest,
     stepCount: Number(row.stepCount ?? view?.stepCount) || null,
   };
@@ -102,6 +103,20 @@ export function linkCountText({ feeds, fedBy }) {
   return [feeds.length && `Feeds ${feeds.length}`, fedBy.length && `Fed by ${fedBy.length}`].filter(Boolean).join(' · ');
 }
 
+const IS_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** One board's visit record (SPEC §3.6 as amended): `{ seen, prev }` per board, all boards in one map. A view on a
+ *  later day moves `seen` to `prev` and sets `seen` to today; another view the same day keeps both, so a reload or a
+ *  look at another board never wipes what this board compares against. Returns { since: prev or null, next: map }. */
+export function visitBoard(map, key, today) {
+  const all = map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+  const rec = all[key] || {};
+  const seen = IS_DAY.test(rec.seen || '') ? rec.seen : null;
+  const prev = IS_DAY.test(rec.prev || '') ? rec.prev : null;
+  const now = seen && seen < today ? { seen: today, prev: seen } : { seen: today, prev: seen === today ? prev : null };
+  return { since: now.prev, next: { ...all, [key]: now } };
+}
+
 /** What moved (SPEC §3.6). With `lastSeen` (a returning reader): stories born after it, and stories whose newest
  *  step is after it. Without: the same from this ISO week's Monday (UTC), inclusive.
  *  Returns { mode: 'since'|'week', from, stepped: [{id, date}], joined: [{id, date}], mark: { id: kind } }. */
@@ -127,6 +142,9 @@ export function whatMoved(ids, stories, lastSeen, today) {
 }
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+/** The box's leading glyph: ● when any story took a new step, ✦ when the only news is new stories, none otherwise. */
+export const movedGlyph = ({ stepped, joined }) => (stepped.length ? '●' : joined.length ? '✦' : null);
 
 /** The box's summary line, without its leading mark. */
 export function movedSummary({ mode, from, stepped, joined }, fmt) {

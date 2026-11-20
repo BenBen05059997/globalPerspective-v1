@@ -108,7 +108,9 @@ describe('graph parts that need data', () => {
     expect(card).toHaveTextContent('A one-line reading.');
     expect(card).toHaveTextContent('3 chapters \u00B7 2 live branches');
     expect(card.getAttribute('data-tier')).toBe('high');
-    expect(screen.getByRole('button', { name: /Talks/ })).toHaveTextContent('Political \u00B7 Story');
+    const talks = screen.getByRole('button', { name: /Talks/ });
+    expect(talks.querySelector('.gp-cat')).toHaveTextContent(/^politics$/); // the card's own CategoryTag word, no "· Story"
+    expect(talks).not.toHaveTextContent('Story');
     expect(screen.getByRole('button', { name: /Iran/ })).toHaveTextContent('Country');
   });
   it('leaves out what the data does not hold', () => {

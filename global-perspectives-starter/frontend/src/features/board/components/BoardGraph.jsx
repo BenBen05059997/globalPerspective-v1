@@ -3,6 +3,7 @@ import { stringTexture, pairKey } from '@/shared/lib/board.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { layoutPins, layoutColumns, ghostPosition, placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { pinTypeLine, pinCountParts, stringLabel, shortHead } from '@/features/board/lib/graphText.js';
 
@@ -63,16 +64,22 @@ export function StringLabel({ at, head, body, ghost = false }) {
   );
 }
 
-function Legend() {
-  const key = (cls, label) => <span><svg width="26" height="8" aria-hidden="true"><line className={`board-key ${cls}`} x1="0" y1="4" x2="26" y2="4" /></svg> {label}</span>;
+// Only the line styles drawn on this board (board look review 1): a strength width where a solid string has it, and
+// each texture present; "cut, or no link" also covers the failed tests drawn as cut lines.
+function Legend({ strings, failed }) {
+  const textures = new Set(strings.map(stringTexture));
+  const strengths = new Set(strings.filter((s) => stringTexture(s) === 'solid').map((s) => s.strength));
+  const keys = [
+    ['strong', strengths.has('strong')], ['medium', strengths.has('medium')], ['weak', strengths.has('weak')],
+    ['dashed', textures.has('dashed'), 'inferred'], ['dashed-alt', textures.has('dashed-alt'), 'yours'],
+    ['cut', textures.has('cut') || failed.length > 0, 'cut, or no link'],
+  ].filter(([, on]) => on);
+  if (!keys.length) return null;
   return (
     <div className="board-legend" aria-label="How strings are drawn">
-      {key('board-key--strong', 'strong')}
-      {key('board-key--medium', 'medium')}
-      {key('board-key--weak', 'weak')}
-      {key('board-key--dashed', 'inferred')}
-      {key('board-key--dashed-alt', 'yours')}
-      {key('board-key--cut', 'cut, or no link')}
+      {keys.map(([cls, , label]) => (
+        <span key={cls}><svg width="26" height="8" aria-hidden="true"><line className={`board-key board-key--${cls}`} x1="0" y1="4" x2="26" y2="4" /></svg> {label || cls}</span>
+      ))}
     </div>
   );
 }
@@ -146,7 +153,7 @@ export default function BoardGraph({ pins, strings, info, selected = [], pickedK
 
   return (
     <div className="board-graph" data-testid="board-graph" ref={frameRef}>
-      <Legend />
+      <Legend strings={strings} failed={failed} />
       <div className={`board-stage${narrow ? ' board-stage--narrow' : ''}`}>
         {coverageGap ? (
           <div className="board-fog" data-testid="board-fog">
@@ -237,7 +244,9 @@ export default function BoardGraph({ pins, strings, info, selected = [], pickedK
                   onClick={onSelectPin ? () => onPinClick(pin.pinId) : undefined}
                   onKeyDown={onSelectPin ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectPin(pin.pinId); } } : undefined}
                 >
-                  <span className="board-pin__kind"><span className="board-pin__dot" style={type.dot ? { '--pin-hue': type.dot } : undefined} aria-hidden="true" />{pin.retiredAt ? `Retired ${dayMonth(pin.retiredAt)} · ${KIND_WORD[pin.kind]}` : type.text}</span>
+                  {type.category && !pin.retiredAt
+                    ? <span className="board-pin__kind"><CategoryTag category={type.category} /></span>
+                    : <span className="board-pin__kind"><span className="board-pin__dot" style={type.dot ? { '--pin-hue': type.dot } : undefined} aria-hidden="true" />{pin.retiredAt ? `Retired ${dayMonth(pin.retiredAt)} · ${KIND_WORD[pin.kind]}` : type.text}</span>}
                   <span className="board-pin__title">{i.label}</span>
                   {pin.recordAvailable && pin.line ? <span className="board-pin__line">{pin.line}</span> : null}
                   {counts.length ? <span className="board-pin__counts">{counts.join(' · ')}</span> : null}

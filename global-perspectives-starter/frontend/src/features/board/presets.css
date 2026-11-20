@@ -7,7 +7,6 @@
 .pin-budget__seg--on { background: var(--accent); border-color: var(--accent); }
 
 .presets { display: flex; flex-direction: column; gap: var(--space-3); }
-.presets__group { margin: 0; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-dim); font-weight: 500; }
 .presets__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
 .preset-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-3); min-width: 0; }
 a.preset-card { text-decoration: none; }

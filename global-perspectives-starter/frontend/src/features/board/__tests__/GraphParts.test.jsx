@@ -122,8 +122,9 @@ describe('what is missing', () => {
 
 describe('graph text', () => {
   const now = new Date('2026-10-20T12:00:00Z');
-  it('words the type line from crisis type and kind, "New this week" for a story born in the last seven days', () => {
-    expect(pinTypeLine({ kind: 'thread' }, { category: 'conflict' }, now).text).toBe('Conflict · Story');
+  it('words the type line with the story\'s own category word (as its card), "New this week" for a story born in the last seven days', () => {
+    expect(pinTypeLine({ kind: 'thread' }, { category: 'conflict' }, now)).toMatchObject({ text: 'conflict', category: 'conflict' });
+    expect(pinTypeLine({ kind: 'thread' }, { category: 'energy' }, now).text).toBe('energy');
     expect(pinTypeLine({ kind: 'thread' }, { category: 'conflict' }, now).dot).toBe('var(--hue-conflict)');
     expect(pinTypeLine({ kind: 'thread', born: '2026-10-18' }, {}, now).text).toBe('New this week');
     expect(pinTypeLine({ kind: 'thread', born: '2026-09-01' }, {}, now)).toEqual({ text: 'Story', dot: undefined });

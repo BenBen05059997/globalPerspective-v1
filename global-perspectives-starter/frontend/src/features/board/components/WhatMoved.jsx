@@ -2,12 +2,12 @@
 // date this browser last opened a board); a first visit sees this week. Native <details>: open on desktop, closed on phone.
 import { useState } from 'react';
 import { shortDay } from '@/shared/ui/StoryCard.jsx';
-import { movedSummary } from '@/features/board/lib/linkedBoard.js';
+import { movedSummary, movedGlyph } from '@/features/board/lib/linkedBoard.js';
 import { cardHref } from '@/features/board/components/StoryLinkCard.jsx';
 
 export default function WhatMoved({ moved, storyOf, startOpen }) {
   const [open, setOpen] = useState(startOpen);
-  const any = moved.stepped.length + moved.joined.length > 0;
+  const glyph = movedGlyph(moved);
   const since = moved.mode === 'since';
   const rows = [
     ...moved.joined.map((r) => ({ ...r, glyph: '✦', text: since ? 'is new since your visit' : `began this week (${shortDay(r.date)})` })),
@@ -16,7 +16,7 @@ export default function WhatMoved({ moved, storyOf, startOpen }) {
   return (
     <details className="bl-moved" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary className="bl-moved__sum">
-        {any ? <span className="bl-moved__glyph" aria-hidden="true">●</span> : null}
+        {glyph ? <span className="bl-moved__glyph" aria-hidden="true">{glyph}</span> : null}
         <span>{movedSummary(moved, shortDay)}</span>
       </summary>
       {rows.length ? (

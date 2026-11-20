@@ -17,7 +17,8 @@ vi.mock('@/shared/data/useGeminiTopics', () => ({
 }));
 vi.mock('@/shared/api/restProxy', () => ({ fetchThreadAnalyses: vi.fn(() => Promise.resolve({ data: { 'thread-a': { threadTitle: 'Hormuz shipping', riskScore: 62 } } })), boardConfigured: () => true }));
 let themesIndex = { themes: [] };
-vi.mock('@/features/board/lib/recordViews.js', async (orig) => ({ ...(await orig()), fetchStoryView: vi.fn(async () => null), fetchLinksView: vi.fn(async () => null), fetchCounts: vi.fn(async () => null), fetchThemesIndex: vi.fn(async () => themesIndex) }));
+let presetsFail = false;
+vi.mock('@/features/board/lib/recordViews.js', async (orig) => ({ ...(await orig()), fetchStoryView: vi.fn(async () => null), fetchLinksView: vi.fn(async () => null), fetchCounts: vi.fn(async () => null), fetchThemesIndex: vi.fn(async () => themesIndex) })); // a rejected promise as themesIndex is a failed read
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({ useIsPhone: () => false }));
 vi.mock('@/features/board/lib/boardApi.js', () => ({
@@ -32,7 +33,7 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
       case 'update_board': boardStore = { ...body.board, ...(serverVisit ? { lastVisitedAt: serverVisit } : {}) }; return JSON.parse(JSON.stringify(boardStore));
       case 'get_follows': return { followedThreads: ['thread-c'], followedActors: ['Oman'] };
-      case 'list_presets': return [{ presetId: 'r-mena', name: 'Stories touching MENA', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62, lead: 'humanitarian' }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'Shared shipping routes.' }], links: [{ from: 'p01', to: 'p02', strength: 'medium', judgedAt: '2026-11-18T05:00:00Z' }], shared: [] }];
+      case 'list_presets': if (presetsFail) throw new Error('presets 500'); return [{ presetId: 'r-mena', name: 'Stories touching MENA', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62, lead: 'humanitarian' }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'Shared shipping routes.' }], links: [{ from: 'p01', to: 'p02', strength: 'medium', judgedAt: '2026-11-18T05:00:00Z' }], shared: [] }];
       case 'connect': return connectReply;
       default: throw new Error(`unexpected ${action}`);
     }
@@ -87,7 +88,7 @@ it('opens a region board as the list of linked stories, with the diagram (and it
   expect(first).toHaveTextContent('→ feeds into');
   expect(first).toHaveTextContent('medium');
   expect(document.getElementById('bl-thread-b')).toHaveTextContent('Fed by 1');
-  expect(screen.getByText(/the links our model judged between them on Nov 18/)).toBeInTheDocument();
+  expect(screen.getByText('The 2 highest-risk stories that touch MENA. Every link is our model’s judgment, made on Nov 18, so every link is drawn dashed.')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Sign in to build your own board' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Show as a diagram' }));
   expect(screen.getByTestId('board-graph')).toBeInTheDocument();
@@ -118,7 +119,7 @@ describe('theme boards (board look)', () => {
     renderPage('/board');
     const card = await screen.findByRole('link', { name: /^Open the board: 3 linked stories/ });
     expect(card).toHaveAttribute('href', '/board?theme=theme-1');
-    expect(screen.getByText('3 stories · 2 judged links')).toBeInTheDocument();
+    expect(screen.getByText('2 judged links')).toBeInTheDocument();
     expect(screen.getByText('Newest step Nov 19')).toBeInTheDocument();
     const order = [...document.querySelectorAll('.bl-section, .bl-signin, [aria-label="Stories touching a region"]')].map((el) => el.className || el.getAttribute('aria-label'));
     expect(order[0]).toMatch(/bl-section/);
@@ -138,18 +139,54 @@ describe('theme boards (board look)', () => {
     expect(document.querySelectorAll('.bl-arcs path').length).toBeGreaterThanOrEqual(0); // jsdom has no layout; arcs carry no meaning
   });
 
-  it('a first visit shows this week; a returning reader sees what moved since the stored date, and the date is stored', async () => {
+  it('a first visit shows this week; the visit is kept per board, so another board and a reload the same day keep their own news', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-20T12:00:00Z'));
-    const first = renderPage('/board?theme=theme-1');
-    expect(await screen.findByText(/^This week: 1 story took a new step$/)).toBeInTheDocument();
-    await waitFor(() => expect(localStorage.getItem('gp-board-last-seen')).toBe('2026-11-20'));
-    first.unmount();
-    localStorage.setItem('gp-board-last-seen', '2026-11-05');
-    renderPage('/board?theme=theme-1');
+    themesIndex = { themes: [theme, { ...theme, themeId: 'theme-2' }] };
+    const visits = () => JSON.parse(localStorage.getItem('gp-board-visits'));
+    const open = async (id, text) => {
+      const view = renderPage(`/board?theme=${id}`);
+      expect(await screen.findByText(text)).toBeInTheDocument();
+      view.unmount();
+    };
+    await open('theme-1', /^This week: 1 story took a new step$/);
+    expect(visits()).toEqual({ 'theme:theme-1': { seen: '2026-11-20', prev: null } });
+    await open('theme-1', /^This week: 1 story took a new step$/); // same day, no earlier visit: still the first-visit state
+
+    localStorage.setItem('gp-board-visits', JSON.stringify({ 'theme:theme-1': { seen: '2026-11-05', prev: null }, 'theme:theme-2': { seen: '2026-11-05', prev: null } }));
+    await open('theme-1', /^Since your last visit \(Nov 5\): 2 stories took a new step$/);
+    await open('theme-2', /^Since your last visit \(Nov 5\): 2 stories took a new step$/); // board 2 opened first does not wipe board 3
+    renderPage('/board?theme=theme-1'); // a reload the same day keeps the box
     expect(await screen.findByText(/^Since your last visit \(Nov 5\): 2 stories took a new step$/)).toBeInTheDocument();
     expect(document.getElementById('bl-t-c')).toHaveTextContent('● New step since your visit');
+    expect(document.querySelector('.bl-moved__sum .bl-moved__glyph')).toHaveTextContent('●');
+    expect(visits()['theme:theme-1']).toEqual({ seen: '2026-11-20', prev: '2026-11-05' });
     vi.useRealTimers();
+  });
+
+  it('storage that throws still draws the board, in the first-visit state', async () => {
+    const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    renderPage('/board?theme=theme-1');
+    expect(await screen.findByText(/^This week:/)).toBeInTheDocument();
+    expect(document.querySelectorAll('.bl-list .bl-card')).toHaveLength(3);
+    get.mockRestore(); set.mockRestore();
+  });
+
+  it('with both lists failing, the page says so plainly and reports both to the error sink', async () => {
+    const sink = (await import('@/shared/api/errorSink')).reportFetchError;
+    sink.mockClear();
+    themesIndex = Promise.reject(new Error('themes 500'));
+    themesIndex.catch(() => {});
+    presetsFail = true;
+    renderPage('/board');
+    expect(await screen.findByText('The boards could not be loaded.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Linked stories')).toBeNull();
+    expect(screen.queryByLabelText('Stories touching a region')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in to build your own board' })).toBeInTheDocument();
+    expect(sink.mock.calls.map(([where]) => where).sort()).toEqual(['board-presets', 'board-themes']);
+    presetsFail = false;
   });
 
   it('an unknown theme says it is no longer listed', async () => {

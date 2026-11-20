@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   storyFacts, judgedLinks, sharedPairs, stripEvidence, linkOrder, cardLinks, linkCountText, whatMoved, movedSummary, markText,
-  themeTitle, themeNewest, themesByNewest, presetLinks, judgedOn,
+  themeTitle, themeNewest, themesByNewest, presetLinks, judgedOn, visitBoard, movedGlyph,
 } from '@/features/board/lib/linkedBoard.js';
 
 const st = (newest, born = '2026-10-01') => ({ newest: newest ? { date: newest, role: 'move' } : null, born });
@@ -109,5 +109,38 @@ describe('facts, titles and presets', () => {
     expect(presetLinks({ pins, links: [{ from: 'p02', to: 'p01', strength: 'weak' }], shared: [{ a: 'p01', b: 'p02', actors: ['X', 'Y'] }] }))
       .toEqual({ links: [{ from: 't-b', to: 't-a', strength: 'weak' }], shared: [{ a: 't-a', b: 't-b', actors: ['X', 'Y'] }] });
     expect(presetLinks({ pins }).links).toBeNull();
+  });
+});
+
+describe('the visit record, per board', () => {
+  it('a first view stores {seen: today, prev: null} and compares against nothing', () => {
+    expect(visitBoard(null, 'theme:a', '2026-11-20')).toEqual({ since: null, next: { 'theme:a': { seen: '2026-11-20', prev: null } } });
+  });
+  it('a view on a later day moves seen to prev; a second view that day keeps both', () => {
+    const day2 = visitBoard({ 'theme:a': { seen: '2026-11-17', prev: null } }, 'theme:a', '2026-11-20');
+    expect(day2.since).toBe('2026-11-17');
+    const again = visitBoard(day2.next, 'theme:a', '2026-11-20');
+    expect(again).toEqual(day2);
+  });
+  it('one board\'s view never touches another board\'s record; junk reads as no record', () => {
+    const { next } = visitBoard({ 'theme:b': { seen: '2026-11-01', prev: '2026-10-20' } }, 'theme:a', '2026-11-20');
+    expect(next['theme:b']).toEqual({ seen: '2026-11-01', prev: '2026-10-20' });
+    expect(visitBoard('junk', 'theme:a', '2026-11-20').since).toBeNull();
+    expect(visitBoard({ 'theme:a': { seen: 'x', prev: 7 } }, 'theme:a', '2026-11-20').since).toBeNull();
+  });
+});
+
+describe('the box glyph matches its rows', () => {
+  it('● for any new step, ✦ for only new stories, none when nothing moved', () => {
+    expect(movedGlyph({ stepped: [1], joined: [1] })).toBe('●');
+    expect(movedGlyph({ stepped: [], joined: [1] })).toBe('✦');
+    expect(movedGlyph({ stepped: [], joined: [] })).toBeNull();
+  });
+});
+
+describe('began', () => {
+  it('is the first step\'s date where stamped, else born', () => {
+    expect(storyFacts('a', { born: '2026-11-09', firstStep: { date: '2026-11-12' } }).born).toBe('2026-11-12');
+    expect(storyFacts('a', { born: '2026-11-09' }).born).toBe('2026-11-09');
   });
 });

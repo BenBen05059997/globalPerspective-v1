@@ -33,7 +33,6 @@ export default function PresetsPanel({ presets, loading, canFork, onFork }) {
   if (!presets.length) return <p className="board-line">No region presets are available right now.</p>;
   return (
     <div className="presets">
-      <h3 className="presets__group">By region</h3>
       <ul className="presets__grid">
         {presets.map((p) => {
           const content = (

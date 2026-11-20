@@ -3,7 +3,7 @@
 // arcs beside it), the stories with no judged link, "How this board is made", and the buttons to the diagram and map.
 // `rows` are the board's stories ({ id, title, category, tier, riskScore, born, newestStep?, stepCount? }); `links` are
 // its judged links in story ids, or null when the board carries none; `shared` its shared-name pairs.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { boardHref } from '@/shared/lib/links.js';
@@ -16,7 +16,7 @@ import { shortDay } from '@/shared/ui/StoryCard.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
 import { todayUTC } from '@/features/board/lib/branchDays.js';
 import {
-  storyFacts, judgedLinks, sharedPairs, linkOrder, cardLinks, whatMoved, judgedOn,
+  storyFacts, judgedLinks, sharedPairs, linkOrder, cardLinks, whatMoved, judgedOn, visitBoard,
 } from '@/features/board/lib/linkedBoard.js';
 import StoryLinkCard from '@/features/board/components/StoryLinkCard.jsx';
 import StrengthBars from '@/features/board/components/StrengthBars.jsx';
@@ -26,14 +26,16 @@ import PublicDiagram from '@/features/board/components/PublicDiagram.jsx';
 import '@/features/board/linked.css';
 
 export const CENTRE = 'A board shows which stories we judge feed into others, which way, how strongly, and which moved lately.';
-const LAST_SEEN_KEY = 'gp-board-last-seen';
+const VISITS_KEY = 'gp-board-visits'; // { [boardKey]: { seen, prev } }: visitBoard in lib/linkedBoard.js
 const ARCS_FROM = 701; // px: arcs and their gutter from this width up; below, the rows carry the links
 
-function readLastSeen() {
-  try { return localStorage.getItem(LAST_SEEN_KEY); } catch { return null; }
-}
-function writeLastSeen(today) {
-  try { localStorage.setItem(LAST_SEEN_KEY, today); } catch { /* storage blocked: the next visit is a first visit */ }
+// This board's visit, read and recorded once when it opens. Storage that throws or holds junk gives a first visit.
+function openVisit(boardKey, today) {
+  let map = null;
+  try { map = JSON.parse(localStorage.getItem(VISITS_KEY) || 'null'); } catch { map = null; }
+  const { since, next } = visitBoard(map, boardKey, today);
+  try { localStorage.setItem(VISITS_KEY, JSON.stringify(next)); } catch { /* storage blocked: every visit is a first visit */ }
+  return since;
 }
 
 function Legend({ links, shared, arcs }) {
@@ -48,11 +50,11 @@ function Legend({ links, shared, arcs }) {
   );
 }
 
-export default function LinkedBoard({ kind, title, region = null, rows, links: linkRows, shared: sharedRows = [], diagram }) {
+export default function LinkedBoard({ boardKey, kind, title, region = null, rows, links: linkRows, shared: sharedRows = [], diagram }) {
   const isPhone = useIsPhone();
   const arcs = !useIsPhone(ARCS_FROM);
   const today = todayUTC();
-  const [lastSeen] = useState(readLastSeen);
+  const [lastSeen] = useState(() => openVisit(boardKey, today));
   const [view, setView] = useState('list');
   const listRef = useRef(null);
 
@@ -71,9 +73,6 @@ export default function LinkedBoard({ kind, title, region = null, rows, links: l
   const judged = judgedOn(links);
   const ready = !views.loading;
 
-  // After the board has drawn with its facts, remember today as this browser's last visit.
-  useEffect(() => { if (ready) writeLastSeen(today); }, [ready, today]);
-
   const card = (id) => (
     <StoryLinkCard key={id} story={storyOf(id)} rows={known ? cardLinks(id, links, shared) : { feeds: [], fedBy: [], notes: [] }}
       storyOf={storyOf} mark={moved.mark[id]} mode={moved.mode} />
@@ -81,9 +80,13 @@ export default function LinkedBoard({ kind, title, region = null, rows, links: l
   const { linked: list, alone } = order;
   const legend = links.length ? <Legend links={links} shared={shared} arcs={arcs} /> : null;
 
+  // design review 1: no confirmed state exists, so none is claimed; ", made on {date}" only when a link carries its date
+  const linkLine = links.length
+    ? ` Every link is our model’s judgment${judged ? `, made on ${shortDay(judged)}` : ''}, so every link is drawn dashed.`
+    : known && kind === 'region' ? ' No links were judged between these stories.' : '';
   const made = kind === 'theme'
-    ? `These ${ids.length} stories are one group in our story web: each is joined to another by at least one link our model judged${judged ? ` on ${shortDay(judged)}` : ''}. Every link is the model's judgment, so every link is drawn dashed.`
-    : `The ${ids.length} highest-risk stories that touch ${region}, and the links our model judged between them${judged ? ` on ${shortDay(judged)}` : ''}.${known && !links.length ? ' No links were judged between these stories.' : ''}`;
+    ? `These ${ids.length} stories are one group in our story web.${linkLine}`
+    : `The ${ids.length} highest-risk stories that touch ${region}.${linkLine}`;
 
   return (
     <div className="bl-board">

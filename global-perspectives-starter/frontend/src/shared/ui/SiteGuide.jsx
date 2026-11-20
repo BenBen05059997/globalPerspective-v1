@@ -14,14 +14,18 @@ const TAB_LINES = [
   ['Track record', ROUTE.trackRecord, 'did what we watched happen? We count only checked forecasts.'],
 ];
 
-export default function SiteGuide({ onNavigate = null }) {
+// `board`: the shell says a board backend exists (the shell may ask features/board; shared/ui may not). Then the list also
+// names the Board: the public region boards, and your own once signed in.
+const BOARD_LINE = ['Board', ROUTE.board, 'region boards anyone can read; sign in to build your own'];
+
+export default function SiteGuide({ onNavigate = null, board = false }) {
   return (
     <div className="gp-guide">
       <KindKey kinds={['move', 'start', 'measure']} />
       <p>A step is one piece of news that starts, moves or measures a story.</p>
       <p>News that starts or moves no story is left out.</p>
       <ul className="gp-guide__tabs">
-        {TAB_LINES.map(([label, to, line]) => <li key={label}><Link to={to} onClick={onNavigate || undefined}>{label}</Link>: {line}</li>)}
+        {(board ? [...TAB_LINES, BOARD_LINE] : TAB_LINES).map(([label, to, line]) => <li key={label}><Link to={to} onClick={onNavigate || undefined}>{label}</Link>: {line}</li>)}
       </ul>
     </div>
   );

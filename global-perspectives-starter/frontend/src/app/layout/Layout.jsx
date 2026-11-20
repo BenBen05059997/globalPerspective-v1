@@ -67,6 +67,7 @@ function Layout({ children }) {
   const opsAccess = useOpsAccess();
   // P1 phone tab bar (A2): shared 900px breakpoint — same one the map's own MAP·LIST·ALERTS tabs use.
   const isPhone = useIsPhone();
+  const member = !authLoading && !!user && !user.isAnonymous;
   // "?" panel (R7): over the current page; closing it puts focus back on "?".
   const [helpOpen, setHelpOpen] = useState(false);
   const helpRef = useRef(null);
@@ -175,10 +176,18 @@ function Layout({ children }) {
             </svg>
           </Link>
 
-          {/* The board is a member tool: its link sits in the account area, only for a signed-in member and only
-              where a board backend is configured. */}
-          {!authLoading && user && !user.isAnonymous && boardAvailable() ? (
-            <Link to={ROUTE.board} className={`gp-nav-link${isActive(ROUTE.board) ? ' active' : ''}`} title="Your board: pins, strings and the tests between them.">Board</Link>
+          {/* The board, wherever a board backend is configured: signed out it opens the public region boards to read (with
+              "Sign in to build your own board"); a member gets their own boards. Public pages never gate on sign-in. On a phone
+              the header has no room beside "?" and "Sign in", so a signed-out visitor finds it in the "?" panel's page list;
+              a member keeps it here. */}
+          {boardAvailable() && (!isPhone || member) ? (
+            <Link
+              to={ROUTE.board}
+              className={`gp-nav-link${isActive(ROUTE.board) ? ' active' : ''}`}
+              title={member ? 'Your board: pins, strings and the tests between them.' : 'Region boards anyone can read. Sign in to build your own.'}
+            >
+              Board
+            </Link>
           ) : null}
           {/* The operator's page: the link appears only after the server's `ops` action has answered 200 once this session. */}
           {opsAccess ? (
@@ -252,7 +261,7 @@ function Layout({ children }) {
           })}
         </nav>
       )}
-      {helpOpen ? <HelpPanel onClose={closeHelp} aboutTo={helpTo} /> : null}
+      {helpOpen ? <HelpPanel onClose={closeHelp} aboutTo={helpTo} board={boardAvailable()} /> : null}
     </div>
   );
 }

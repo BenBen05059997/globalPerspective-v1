@@ -35,11 +35,13 @@ vi.mock('@/shared/api/restProxy', () => ({
   fetchLatestDailyBrief: (...args) => fetchDailyBrief(...args),
   fetchAlerts: (...args) => fetchAlerts(...args),
   billingConfigured: () => false,
+  boardConfigured: () => boardOn(),
   fetchMembership: vi.fn(),
 }));
 
 // useIsPhone (shared/hooks, moved from features/map in A2) drives the P1 phone tab bar — mocked
 // directly per the M7 convention (jsdom's window can't be resized) rather than mocking innerWidth.
+let boardOn = () => true; // a board backend exists (window.BOARD_ENDPOINT on production)
 const isPhoneMock = vi.fn(() => false);
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({
   useIsPhone: (...args) => isPhoneMock(...args),
@@ -258,6 +260,29 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     const src = readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../layout/Layout.jsx'), 'utf8');
     expect(src.indexOf("import '@/app/layout/Layout.css'")).toBeGreaterThan(-1);
     expect(src.indexOf("import '@/app/layout/Layout.css'")).toBeLessThan(src.indexOf('import HelpPanel'));
+  });
+
+  it('the Board link shows to a signed-out visitor on desktop (public region boards), titled for them; not in the phone header', () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(false);
+    const { unmount } = renderLayout('/weekly');
+    const link = screen.getByRole('link', { name: 'Board' });
+    expect(link).toHaveAttribute('href', '/board');
+    expect(link).toHaveAttribute('title', 'Region boards anyone can read. Sign in to build your own.');
+    unmount();
+    isPhoneMock.mockReturnValue(true);
+    renderLayout('/weekly');
+    expect(screen.queryByRole('link', { name: 'Board' })).toBeNull();
+  });
+
+  it('on a phone, the "?" panel lists the Board for everyone', () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(true);
+    renderLayout('/weekly');
+    fireEvent.click(document.querySelector('a.gp-help'));
+    const panel = screen.getByRole('dialog', { name: 'How this site works' });
+    expect(within(panel).getByRole('link', { name: 'Board' })).toHaveAttribute('href', '/board');
+    expect(panel).toHaveTextContent('Board: region boards anyone can read; sign in to build your own');
   });
 
   it('the dark frame is one token set: Layout.css reads role tokens, with no light literals and no console-only nav class', () => {

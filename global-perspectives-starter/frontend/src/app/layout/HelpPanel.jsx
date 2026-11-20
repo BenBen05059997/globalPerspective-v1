@@ -9,7 +9,7 @@ import '@/app/layout/HelpPanel.css';
 // desktop, a full sheet on a phone. It starts at the kinds (the pages already show the sentence), then "How we read the world".
 // The Map's own About drawer (`/?about=1`, with the map's index and teasers) stays one link away. Esc, × or the scrim close it, and
 // focus goes back to "?"; following a link closes it too.
-export default function HelpPanel({ onClose, aboutTo }) {
+export default function HelpPanel({ onClose, aboutTo, board = false }) {
   const ref = useRef(null);
   useEffect(() => {
     ref.current?.focus();
@@ -25,7 +25,7 @@ export default function HelpPanel({ onClose, aboutTo }) {
           <h2 id="gp-helppanel-title">How this site works</h2>
           <button type="button" className="gp-helppanel__close" onClick={onClose} aria-label="Close how this site works">×</button>
         </div>
-        <SiteGuide onNavigate={onClose} />
+        <SiteGuide onNavigate={onClose} board={board} />
         <HowWeRead />
         <p className="gp-helppanel__more"><Link to={aboutTo} onClick={onClose}>About this map: every open situation and the latest editions →</Link></p>
       </section>

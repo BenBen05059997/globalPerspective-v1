@@ -12,11 +12,11 @@
 .preset-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-3); min-width: 0; }
 a.preset-card { text-decoration: none; }
 a.preset-card:hover { border-color: var(--accent); }
-.preset-card__tag { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--accent); }
+.preset-card__tag { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--hud-label-tracking); text-transform: uppercase; color: var(--text-muted); }
 .preset-card__name { font-size: var(--text-base); color: var(--text-head); overflow-wrap: anywhere; }
 .preset-card__mini { width: 100%; height: auto; color: var(--text-dim); }
-.preset-card__line { stroke: var(--hairline-3); stroke-width: 1; }
-.preset-card__pin { fill: var(--accent); }
+.preset-card__line { stroke: var(--text-body); stroke-width: 1; }
+.preset-card__pin { fill: var(--text-body); } /* board look §5: no accent on pins or strings */
 .preset-card__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
 
 .divergence { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }

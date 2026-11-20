@@ -26,7 +26,7 @@ function getView(path) {
   return promise;
 }
 
-export const { fetchStoryView, fetchLinksView, fetchCounts } = makeRecordViews(getView);
+export const { fetchStoryView, fetchLinksView, fetchCounts, fetchThemesIndex } = makeRecordViews(getView);
 
 /** UTC dates from `from` to `to` inclusive (YYYY-MM-DD). */
 export function datesBetween(from, to) {

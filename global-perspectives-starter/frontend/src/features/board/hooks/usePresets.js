@@ -8,11 +8,13 @@ import { rememberPinInfo } from '@/features/board/hooks/usePinInfo.js';
 export function usePresets(enabled = true) {
   const [presets, setPresets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!enabled) return undefined;
     let live = true;
     setLoading(true);
+    setFailed(false);
     callBoard('list_presets', {}, { auth: false })
       .then((list) => {
         if (!live) return;
@@ -20,10 +22,10 @@ export function usePresets(enabled = true) {
         rows.forEach((p) => rememberPinInfo(p.pins));
         setPresets(rows);
       })
-      .catch((err) => reportFetchError('board-presets', err))
+      .catch((err) => { reportFetchError('board-presets', err); if (live) setFailed(true); })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [enabled]);
 
-  return { presets, loading };
+  return { presets, loading, failed };
 }

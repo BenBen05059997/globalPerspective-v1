@@ -16,7 +16,8 @@ vi.mock('@/shared/data/useGeminiTopics', () => ({
   ] }),
 }));
 vi.mock('@/shared/api/restProxy', () => ({ fetchThreadAnalyses: vi.fn(() => Promise.resolve({ data: { 'thread-a': { threadTitle: 'Hormuz shipping', riskScore: 62 } } })), boardConfigured: () => true }));
-vi.mock('@/features/board/lib/recordViews.js', async (orig) => ({ ...(await orig()), fetchStoryView: vi.fn(async () => null), fetchLinksView: vi.fn(async () => null), fetchCounts: vi.fn(async () => null) }));
+let themesIndex = { themes: [] };
+vi.mock('@/features/board/lib/recordViews.js', async (orig) => ({ ...(await orig()), fetchStoryView: vi.fn(async () => null), fetchLinksView: vi.fn(async () => null), fetchCounts: vi.fn(async () => null), fetchThemesIndex: vi.fn(async () => themesIndex) }));
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({ useIsPhone: () => false }));
 vi.mock('@/features/board/lib/boardApi.js', () => ({
@@ -31,7 +32,7 @@ vi.mock('@/features/board/lib/boardApi.js', () => ({
       case 'get_board': return JSON.parse(JSON.stringify(boardStore));
       case 'update_board': boardStore = { ...body.board, ...(serverVisit ? { lastVisitedAt: serverVisit } : {}) }; return JSON.parse(JSON.stringify(boardStore));
       case 'get_follows': return { followedThreads: ['thread-c'], followedActors: ['Oman'] };
-      case 'list_presets': return [{ presetId: 'r-mena', name: 'MENA: highest-risk stories', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62, lead: 'Shipping is under review.' }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'Shared shipping routes.' }] }];
+      case 'list_presets': return [{ presetId: 'r-mena', name: 'Stories touching MENA', region: 'MENA', pins: [{ pinId: 'p01', kind: 'thread', refId: 'thread-a', title: 'Hormuz shipping', riskScore: 62, lead: 'humanitarian' }, { pinId: 'p02', kind: 'thread', refId: 'thread-b', title: 'Gulf talks' }], strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred', mechanism: 'Shared shipping routes.' }], links: [{ from: 'p01', to: 'p02', strength: 'medium', judgedAt: '2026-11-18T05:00:00Z' }], shared: [] }];
       case 'connect': return connectReply;
       default: throw new Error(`unexpected ${action}`);
     }
@@ -75,24 +76,87 @@ async function selectBoth() {
   fireEvent.click(pinEl(/Gulf talks/));
 }
 
-it('opens a public preset with both read-only views, pin details and story links', async () => {
+it('opens a region board as the list of linked stories, with the diagram (and its kept Pins and Strings lists) and the map behind buttons', async () => {
   user = null;
   renderPage('/board');
-  fireEvent.click(await screen.findByRole('link', { name: /^Open preview: MENA/ }));
-  expect(await screen.findByRole('heading', { name: 'MENA: highest-risk stories' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Hormuz shipping' })).toHaveAttribute('href', '/weekly/thread/thread-a');
-  expect(screen.getByText('Shipping is under review.')).toBeInTheDocument();
-  expect(within(screen.getByLabelText('Preset pins')).getByText(/62/)).toBeInTheDocument();
-  expect(within(screen.getByLabelText('Preset strings')).getByText('Shared shipping routes.')).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('link', { name: /^Open preview: Stories touching MENA/ }));
+  expect(await screen.findByRole('heading', { level: 1, name: 'Stories touching MENA' })).toBeInTheDocument();
+  expect(screen.getAllByRole('link', { name: 'Hormuz shipping' })[0]).toHaveAttribute('href', '/weekly/thread/thread-a');
+  const first = document.getElementById('bl-thread-a');
+  expect(first).toHaveTextContent('Feeds 1');
+  expect(first).toHaveTextContent('→ feeds into');
+  expect(first).toHaveTextContent('medium');
+  expect(document.getElementById('bl-thread-b')).toHaveTextContent('Fed by 1');
+  expect(screen.getByText(/the links our model judged between them on Nov 18/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Sign in to build your own board' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Show as a diagram' }));
+  expect(screen.getByTestId('board-graph')).toBeInTheDocument();
+  expect(within(screen.getByLabelText('Board pins')).getByText('Most serious for: humanitarian')).toBeInTheDocument();
+  expect(within(screen.getByLabelText('Board pins')).getByText(/62/)).toBeInTheDocument();
+  expect(within(screen.getByLabelText('Board strings')).getByText('Shared shipping routes.')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Connect|Retire|Add pin/ })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Map' }));
   expect(screen.getByTestId('board-map')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Graph' }));
-  expect(screen.getByTestId('board-graph')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('link', { name: /All region presets/ }));
-  expect(await screen.findByRole('link', { name: /^Open preview: MENA/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('link', { name: /All boards/ }));
+  expect(await screen.findByRole('link', { name: /^Open preview: Stories touching MENA/ })).toBeInTheDocument();
   expect(calls.length).toBeGreaterThan(0);
   expect(calls.every(([action, , options]) => action === 'list_presets' && options?.auth === false)).toBe(true);
+});
+
+describe('theme boards (board look)', () => {
+  const story = (id, title, category, newest, born) => ({ threadId: id, title, category, born, newestStep: { date: newest, role: 'move' }, stepCount: 3, tier: null, riskScore: null });
+  const theme = {
+    themeId: 'theme-1', titleCountries: ['RUS', 'UKR'], moreCountries: 0,
+    stories: [story('t-c', 'Story C', 'conflict', '2026-11-19', '2026-10-01'), story('t-a', 'Story A', 'political', '2026-11-01', '2026-10-01'), story('t-b', 'Story B', 'economic', '2026-11-10', '2026-10-01')],
+    links: [{ from: 't-a', to: 't-b', strength: 'weak', reason: 'A fed B (E12).', judgedAt: '2026-11-18T05:00:00Z' }, { from: 't-b', to: 't-c', strength: 'strong', reason: 'B fed C.', judgedAt: '2026-11-17T05:00:00Z' }],
+    shared: [{ a: 't-a', b: 't-c', actors: ['Russia', 'Ukraine'] }],
+  };
+  beforeEach(() => { themesIndex = { themes: [theme] }; user = null; localStorage.clear(); });
+  afterEach(() => { themesIndex = { themes: [] }; localStorage.clear(); });
+
+  it('lists each theme first, then the sign-in line, then the region boards; the hook never waits on sign-in', async () => {
+    renderPage('/board');
+    const card = await screen.findByRole('link', { name: /^Open the board: 3 linked stories/ });
+    expect(card).toHaveAttribute('href', '/board?theme=theme-1');
+    expect(screen.getByText('3 stories · 2 judged links')).toBeInTheDocument();
+    expect(screen.getByText('Newest step Nov 19')).toBeInTheDocument();
+    const order = [...document.querySelectorAll('.bl-section, .bl-signin, [aria-label="Stories touching a region"]')].map((el) => el.className || el.getAttribute('aria-label'));
+    expect(order[0]).toMatch(/bl-section/);
+    expect(order[1]).toMatch(/bl-signin/);
+  });
+
+  it('opens a theme in link order, with feeds and fed-by rows, the reason without evidence codes, and the shared names as a note, never a line', async () => {
+    renderPage('/board?theme=theme-1');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/^3 linked stories: /);
+    const cards = [...document.querySelectorAll('.bl-list .bl-card')].map((el) => el.dataset.story);
+    expect(cards).toEqual(['t-a', 't-b', 't-c']);
+    expect(document.getElementById('bl-t-b')).toHaveTextContent('Feeds 1 · Fed by 1');
+    expect(document.getElementById('bl-t-a')).toHaveTextContent('A fed B.');
+    expect(document.getElementById('bl-t-a')).not.toHaveTextContent('E12');
+    const note = document.getElementById('bl-t-c').querySelector('.bl-note');
+    expect(note).toHaveTextContent('Also named in both with Story A: Russia, Ukraine. Not a judged link.');
+    expect(document.querySelectorAll('.bl-arcs path').length).toBeGreaterThanOrEqual(0); // jsdom has no layout; arcs carry no meaning
+  });
+
+  it('a first visit shows this week; a returning reader sees what moved since the stored date, and the date is stored', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-20T12:00:00Z'));
+    const first = renderPage('/board?theme=theme-1');
+    expect(await screen.findByText(/^This week: 1 story took a new step$/)).toBeInTheDocument();
+    await waitFor(() => expect(localStorage.getItem('gp-board-last-seen')).toBe('2026-11-20'));
+    first.unmount();
+    localStorage.setItem('gp-board-last-seen', '2026-11-05');
+    renderPage('/board?theme=theme-1');
+    expect(await screen.findByText(/^Since your last visit \(Nov 5\): 2 stories took a new step$/)).toBeInTheDocument();
+    expect(document.getElementById('bl-t-c')).toHaveTextContent('● New step since your visit');
+    vi.useRealTimers();
+  });
+
+  it('an unknown theme says it is no longer listed', async () => {
+    renderPage('/board?theme=gone');
+    expect(await screen.findByText('This board is no longer listed.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /All boards/ })).toHaveAttribute('href', '/board');
+  });
 });
 
 describe('record views', () => {
@@ -110,11 +174,12 @@ describe('record views', () => {
 });
 
 describe('B0 list fixes', () => {
-  it('presets count pins and strings in the singular and plural', () => {
-    const preset = (id, pins, strings) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: Array.from({ length: strings }, () => ({})) });
-    render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0)]} canFork onFork={() => {}} /></MemoryRouter>);
-    expect(screen.getByText('8 pins · 1 string')).toBeInTheDocument();
-    expect(screen.getByText('1 pin · 0 strings')).toBeInTheDocument();
+  it('presets count stories and judged links in the singular and plural; none judged says so; an old preset counts stories only', () => {
+    const preset = (id, pins, links) => ({ presetId: id, name: id, region: 'X', pins: Array.from({ length: pins }, (_, i) => ({ pinId: `p${i}` })), strings: [], ...(links == null ? {} : { links: Array.from({ length: links }, () => ({})) }) });
+    render(<MemoryRouter><PresetsPanel presets={[preset('a', 8, 1), preset('b', 1, 0), preset('c', 3, null)]} canFork onFork={() => {}} /></MemoryRouter>);
+    expect(screen.getByText('8 stories · 1 link')).toBeInTheDocument();
+    expect(screen.getByText('1 story · no links judged')).toBeInTheDocument();
+    expect(screen.getByText('3 stories')).toBeInTheDocument();
   });
   it('the strings list sits under a disclosure with its count; the pin list gives the headline tag its own element', async () => {
     boardStore = { ...baseBoard(), strings: [{ a: 'p01', b: 'p02', owner: 'ours', strength: 'inferred' }] };
@@ -133,7 +198,7 @@ describe('signed out', () => {
     renderPage('/board');
     expect(screen.getByText(/With a free account/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sign in to build your own board' }).getAttribute('href')).toMatch(/^\/signin\?returnTo=/);
-    await screen.findByText(/MENA: highest-risk stories/); // presets are public and may render
+    await screen.findByText(/Stories touching MENA/); // presets are public and may render
     expect(screen.getByText(/Open preview/)).toBeInTheDocument();
     expect(calls.map(([a]) => a).every((a) => a === 'list_presets')).toBe(true);
   });

@@ -42,6 +42,8 @@ export function makeRecordViews(getView = fetchRecordView) {
     // the analysis fields of every story, the whole story web in `web_index` shape, the briefing fields of every country.
     fetchAnalysesIndex() { return getView('index/analyses.json'); },
     fetchWebIndexView() { return getView('index/web.json'); },
+    // The story web's linked groups (decision 0058 rule 4): each theme's stories, its judged links and its title countries.
+    fetchThemesIndex() { return getView('index/themes.json'); },
     fetchCountriesIndex() { return getView('index/countries.json'); },
     // The last 30 archive days (the `archive_range` action's days: topic, story, category, countries, sources).
     fetchWeeklyIndex() { return getView('index/weekly.json'); },

@@ -4,7 +4,14 @@ import { boardHref } from '@/shared/lib/links.js';
 import { layoutPins } from '@/features/board/lib/boardOps.js';
 import '@/features/board/presets.css';
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+// '{n} stories · {j} links' from the preset's judged links (newsBoard since the board look); with none judged, says so.
+// A preset from before then has no `links`: only the story count.
+function presetCount(p) {
+  const n = plural(p.pins.length, 'story', 'stories');
+  if (!Array.isArray(p.links)) return n;
+  return p.links.length ? `${n} · ${plural(p.links.length, 'link', 'links')}` : `${n} · no links judged`;
+}
 const W = 96;
 const H = 56;
 
@@ -22,7 +29,7 @@ function MiniGraph({ pins, strings }) {
 // Region presets: a starting board of the region's highest-risk stories with the strings we infer between
 // them. Listing is public; forking needs a member. Only region presets exist, so there is one group.
 export default function PresetsPanel({ presets, loading, canFork, onFork }) {
-  if (loading && !presets.length) return <p className="board-line">Loading presets.</p>;
+  if (loading && !presets.length) return null; // no placeholder while the list loads
   if (!presets.length) return <p className="board-line">No region presets are available right now.</p>;
   return (
     <div className="presets">
@@ -35,7 +42,7 @@ export default function PresetsPanel({ presets, loading, canFork, onFork }) {
               <strong className="preset-card__name">{p.name}</strong>
               <MiniGraph pins={p.pins} strings={p.strings} />
               <span className="preset-card__foot">
-                <span className="board-note">{plural(p.pins.length, 'pin')} · {plural(p.strings.length, 'string')}</span>
+                <span className="board-note">{presetCount(p)}</span>
                 {canFork
                   ? <Button compact onClick={() => onFork(p)} aria-label={`Fork ${p.name}`}>Fork →</Button>
                   : <span className="board-link">Open preview →</span>}

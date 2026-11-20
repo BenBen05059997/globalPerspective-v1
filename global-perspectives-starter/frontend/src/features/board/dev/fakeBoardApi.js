@@ -45,10 +45,29 @@ const persist = () => { try { sessionStorage.setItem(STORE_KEY, JSON.stringify(d
 const pinIdAt = (i) => `p${String(i + 1).padStart(2, '0')}`;
 const fail = (status, error, extra = {}) => Object.assign(new Error(error), { status, ...extra });
 
+// The live record indexes by plain GET (null when unreachable), so the dev presets carry `links` and `shared` like
+// newsBoard's list_presets: judged links from the story web, directed and in pin ids; shared-name pairs apart.
+async function liveIndex(name) {
+  try {
+    const res = await fetch(`/data/record/views/index/${name}.json`, { headers: { Accept: 'application/json' } });
+    return res.ok ? await res.json() : null;
+  } catch { return null; }
+}
+
+function withLinks(preset, webLinks, webShared) {
+  const pinOf = Object.fromEntries(preset.pins.map((p) => [p.refId, p.pinId]));
+  const links = (webLinks || []).filter((l) => pinOf[l.from] && pinOf[l.to])
+    .map((l) => ({ from: pinOf[l.from], to: pinOf[l.to], strength: l.strength || l.confidence || null, judgedAt: l.judgedAt || l.generatedAt || null }));
+  const judged = new Set(links.flatMap((l) => [`${l.from}|${l.to}`, `${l.to}|${l.from}`]));
+  const shared = (webShared || []).filter((x) => pinOf[x.a] && pinOf[x.b] && !judged.has(`${pinOf[x.a]}|${pinOf[x.b]}`))
+    .map((x) => ({ a: pinOf[x.a], b: pinOf[x.b], actors: x.actors || [] }));
+  return { ...preset, links, shared };
+}
+
 async function presets() {
-  const list = await topics();
+  const [list, web, themes] = await Promise.all([topics(), liveIndex('web'), liveIndex('themes')]);
   const groups = [list.slice(0, 5), list.slice(5, 10)].filter((g) => g.length >= 2);
-  return groups.map((g, gi) => {
+  const out = groups.map((g, gi) => {
     const pins = g.map((t, i) => ({ pinId: pinIdAt(i), kind: 'thread', refId: t.threadId, title: t.title }));
     const strings = [];
     for (let i = 0; i < g.length; i += 1) {
@@ -57,8 +76,14 @@ async function presets() {
         if (shared.length) strings.push({ a: pins[i].pinId, b: pins[j].pinId, owner: 'ours', strength: 'inferred', mechanism: `Shared actors: ${shared.join(', ')}` });
       }
     }
-    return { presetId: `dev-preset-${gi + 1}`, name: gi === 0 ? 'Dev set A: the first five stories today' : 'Dev set B: the next stories today', region: 'Dev', pins, strings };
+    return withLinks({ presetId: `dev-preset-${gi + 1}`, name: gi === 0 ? 'Dev set A: the first five stories today' : 'Dev set B: the next stories today', region: 'Dev', pins, strings }, web?.links, web?.shared);
   });
+  const theme = themes?.themes?.[0];
+  if (theme) { // a linked group, so a dev region board shows judged links
+    const pins = theme.stories.slice(0, 8).map((t, i) => ({ pinId: pinIdAt(i), kind: 'thread', refId: t.threadId, title: t.title, riskScore: t.riskScore ?? undefined }));
+    out.push(withLinks({ presetId: 'dev-preset-linked', name: 'Dev set C: one linked group', region: 'Dev', pins, strings: [] }, theme.links, theme.shared || web?.shared));
+  }
+  return out;
 }
 
 function own(board) {

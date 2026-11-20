@@ -17,7 +17,7 @@ it('preset card: tag, counts, fork, footer sentence', () => {
   const onFork = vi.fn();
   render(<MemoryRouter><PresetsPanel presets={[preset]} canFork onFork={onFork} /></MemoryRouter>);
   expect(screen.getByText('Ours · read-only')).toBeInTheDocument();
-  expect(screen.getByText('2 pins · 1 string')).toBeInTheDocument();
+  expect(screen.getByText('2 stories')).toBeInTheDocument(); // a preset with no `links`: the story count only
   expect(screen.getByText(/Forking makes a copy that is yours/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Fork Gulf: highest-risk stories' }));
   expect(onFork).toHaveBeenCalledWith(preset);

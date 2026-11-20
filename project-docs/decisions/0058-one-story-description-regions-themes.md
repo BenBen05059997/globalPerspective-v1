@@ -1,6 +1,6 @@
 # 0058. One story description, one region table, themes from judged links
 
-Status: accepted in direction (operator, chat, 2026-11-10); rules 8 to 10 were approved by the operator on 2026-11-13; the items under "Open details" that are not marked answered are not decided. Steps 2, 3 and 4 are built, committed (57ef9582, 7136de0d, 8d8fd084) and deployed on 2026-11-14 about 06:12Z (`newsStoryRecord` and `newsBoard`); the first scheduled builder run on the new code (12:35Z, 2026-11-14) is not verified yet. Steps 5 to 9 (everything that reads the new data in the frontend or the board) are not built. Amends 0005, 0012, 0037, 0042 and 0054 as each step ships (see the last section).
+Status: accepted in direction (operator, chat, 2026-11-10); rules 8 to 10 were approved by the operator on 2026-11-13; the items under "Open details" that are not marked answered are not decided. Steps 2, 3 and 4 are built, committed (57ef9582, 7136de0d, 8d8fd084) and deployed on 2026-11-14 about 06:12Z (`newsStoryRecord` and `newsBoard`); the first scheduled builder run on the new code (12:35Z, 2026-11-14) is not verified yet. Steps 5 to 9 (everything that reads the new data in the frontend or the board) are not built. Amends 0005, 0012, 0037, 0042 and 0054 as each step ships (see the last section). Rule 1 amended by 0065 (a story may also carry a `name`); steps 5 and 6 and the section "What the theme page and the index show" amended by 0066 (the public board from the themes, region boards second).
 Date: 2026-11-10
 
 ## Context

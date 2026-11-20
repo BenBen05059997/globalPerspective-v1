@@ -1,6 +1,6 @@
 # 5. One importance scale: the canonical risk tier
 
-Status: accepted
+Status: accepted (stamping amended by 0058)
 Date: 2026-09-12 (amended 2026-09-15)
 
 ## Context

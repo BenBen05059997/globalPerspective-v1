@@ -1,6 +1,6 @@
 # 17. /breaking and /weekly-markets retire to redirects; guided tours are removed
 
-Status: accepted
+Status: accepted (the client-only redirects superseded by 0028)
 Date: 2026-10-01
 Amended 2026-11-17: the client-only redirects are superseded by real 301 redirects in the Worker (0028); the client redirects stay as a fallback.
 

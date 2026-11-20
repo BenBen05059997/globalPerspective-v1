@@ -1,6 +1,6 @@
 # 21. Rules reset: code and live AWS are the truth; docs only on architecture changes
 
-Status: accepted
+Status: accepted (the archive/ part superseded by 0026)
 Date: 2026-10-19
 Amended 2026-11-17: the archive/ part, including the line "`CHANGES.md` is a frozen archive", is superseded by 0026 (`CHANGES.md` was deleted; git log is the change log).
 

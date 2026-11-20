@@ -1,6 +1,6 @@
 # 10. The country view is split by job
 
-Status: accepted
+Status: superseded by 0035 (the Studio half was already gone in 0033)
 Date: 2026-09-25
 Amended 2026-11-17: superseded by 0035. The Studio half was already retired in 0033; the country card split is carried by 0034 and the code, as 0035 says.
 

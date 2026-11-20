@@ -1,6 +1,6 @@
 # 11. Track record stays lean and sampled; the Studio stays a page
 
-Status: accepted
+Status: superseded by 0035 (the confirm step by 0034, the Studio by 0033)
 Date: 2026-09-25
 Amended 2026-11-17: superseded by 0035. The operator confirm step was replaced by 0034 and the Studio was retired in 0033; the lean sampled track record is carried by 0034 and the code, as 0035 says.
 

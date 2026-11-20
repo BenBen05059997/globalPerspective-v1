@@ -1,6 +1,6 @@
 # 63. The news picking step asks of each event "does it start a story, or move a story we follow?"; three kinds get in, each entry carries a role label, and the story page shows it
 
-Status: built on branch `story-kinds`, tested offline and by a paid replay on 2026-11-18/19, and on `main`; deployed 2026-11-19: the Lambdas `newsAgent`, `newsStoryRecord` and `newsIngest` that day, and the site (Cloudflare versions cc697763 then a1787828, about 22:00 to 23:10 UTC, verified). Each deploy step took the operator's yes in the message that asked for it. Two replay pass lines failed as written (see Evidence). Takes over the `newsIngest` part of 0062 only (see "Relation to 0062"). Amends 0040 (selector rules). Follows 0020, 0057, 0058, 0060.
+Status: built on branch `story-kinds` (since merged to `main`), tested offline and by a paid replay on 2026-11-18/19; deployed 2026-11-19: the Lambdas `newsAgent`, `newsStoryRecord` and `newsIngest` that day, and the site (Cloudflare versions cc697763 then a1787828, about 22:00 to 23:10 UTC, verified). Each deploy step took the operator's yes in the message that asked for it. Two replay pass lines failed as written (see Evidence). Takes over the `newsIngest` part of 0062 only (see "Relation to 0062"). Amends 0040 (selector rules). Follows 0020, 0057, 0058, 0060.
 Date: 2026-11-19
 
 ## Context
@@ -94,4 +94,4 @@ In reverse: frontend (restore the previous Worker version; a new push alone is n
 - The record gets `event_type: "measure"` entries for the first time. The plan found no reader that branches on `eventType` (`plan-proposal.md` section 2, read on `main`; not re-checked here).
 - A story's label can change after a merge or reassignment, on the next build.
 
-Source: code on branch `story-kinds` (14 commits ahead of `main`, `git log main..story-kinds`); `.board/reviews/story-kinds-plan-2026-11-18/{settled.md,plan-proposal.md,shadow/REPORT.md,replay/}` (local, not in git); 0062 as of commit `f6505163`.
+Source: code on `main` (built on branch `story-kinds`, merged); `.board/reviews/story-kinds-plan-2026-11-18/{settled.md,plan-proposal.md,shadow/REPORT.md,replay/}` (local, not in git); 0062 as of commit `f6505163`.

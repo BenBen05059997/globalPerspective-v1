@@ -1,6 +1,6 @@
 # 64. One promise sentence for readers, the words "story" and "step" on every page, plain words for the three kinds, and Today as a tab
 
-Status: accepted (operator, chat, 2026-11-19: "Okay, I agree with you. This choices, so you can mark it down."); built and live: the site was released 2026-11-19 (Cloudflare versions cc697763 then a1787828, about 22:00 to 23:10 UTC, verified), with the screens in commit 9605062e. Amends 0029 (Today becomes a tab) and 0063 item 7 (label words). Follows 0016, 0058, 0063.
+Status: accepted (operator, chat, 2026-11-19: "Okay, I agree with you. This choices, so you can mark it down."); built and live: the site was released 2026-11-19 (Cloudflare versions cc697763 then a1787828, about 22:00 to 23:10 UTC, verified), with the screens in commit 9605062e. Amends 0029 (Today becomes a tab) and 0063 item 7 (label words). Follows 0016, 0058, 0063. Its second "Not decided here" line is replaced by 0065.
 Date: 2026-11-19
 
 ## Context

@@ -1,6 +1,6 @@
 # 0054. The Worker, the rss feed, the posting and alert Lambdas and the weekly email read the record, behind a flag
 
-Status: accepted (operator, 2026-10-31); follows 0035, 0037, 0048, 0050, 0051; step 5 build B4b (STEP5_AUDIT 4A, 4F, 6 steps 9-11, 7, 8). Built and measured read-only; nothing deployed, uploaded or set
+Status: accepted (operator, 2026-10-31; the preset region rule amended by 0058, the preset name refined by 0066); follows 0035, 0037, 0048, 0050, 0051; step 5 build B4b (STEP5_AUDIT 4A, 4F, 6 steps 9-11, 7, 8). Built and measured read-only; nothing deployed, uploaded or set
 Date: 2026-10-31
 Amended 2026-11-17: deployed. In the 2026-11-16 AWS snapshot `RECORD_READS=record` is set on `newsBoard`, `newsBreakingAlert`, `newsDailyBrief`, `newsPostDevTo`, `newsPostLinkedin`, `newsRecommend`, `newsReadApi` and `newsSensitiveData-dev`; `newsEmailSender` is still `compare`. The Worker pre-render flag was not checked. "Nothing deployed" in the Status describes 2026-10-31.
 

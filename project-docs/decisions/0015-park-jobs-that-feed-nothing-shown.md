@@ -1,6 +1,6 @@
 # 15. Park scheduled AI jobs whose output no page shows
 
-Status: accepted
+Status: accepted (the resolver part superseded by 0027; Signals parked by 0032)
 Date: 2026-09-28
 Amended 2026-11-17: the forecast-resolver part is superseded by 0027. `newsSignals`, left running here, was parked by 0032 and its Lambda was later removed (see 0032).
 

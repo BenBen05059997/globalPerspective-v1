@@ -1,6 +1,6 @@
 # 0037. Views rebuilt from facts: files, builder, serving, contract
 
-Status: accepted, links rule amended 2026-10-22 (implements step 2 of 0035; `ARCHITECTURE_TIMELINE.md` §5 and §6 are narrowed by this record where they differ)
+Status: accepted, links rule amended 2026-10-22 and index rows, story stamp and tier amended by 0058 (implements step 2 of 0035; `ARCHITECTURE_TIMELINE.md` §5 and §6 are narrowed by this record where they differ)
 Date: 2026-10-21
 
 ## Context

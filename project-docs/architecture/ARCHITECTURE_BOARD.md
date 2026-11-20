@@ -15,7 +15,7 @@ The board drifted because it was built data-first, so the screen became a list o
 - Each artboard is eye-checked in a browser against the canvas before release.
 - Dates and labels are formatted for a reader, never raw.
 - Wording follows decision 0038 (`shared/lib/branchWording.js`): never "DEAD". A branch that did not happen reads "not reported by D MON", one that cannot be checked "could not be checked · reason", a late one "open · due D MON".
-- Decision 0058 (regions and themes) applies this rule to its own board redesign.
+- Decisions 0058 (regions and themes) and 0066 (the board look) apply this rule to the board redesign.
 
 ## 3. The object
 - Pins: thread (`threadId`), country (ISO3), actor (the id the views carry: `wd:Q...` or `name:`; compared trimmed, whitespace-collapsed, lowercase). Budget 12 live pins per board (schema constant); a retired pin (`retiredAt`) is greyed, keeps its strings and the reader's lines and does not count. A member holds at most 20 boards and 40 pins per board.
@@ -44,7 +44,7 @@ No popups and no notification stack; the pool badge counts only unseen cards. Bi
 Age over 4 weeks folds to one node with a count; a branch under 20% starts folded in the story tree (`isDeadBranch`); at most five arrivals show; several changes on one string become one summary edge (not built). One-line chapter and fork summaries are written by the weekly run, dated, and never rewritten; paragraph summaries are versioned; counts are computed. Never delete, never rewrite a dated line, never show unfolded what the reader did not open. The numbers live once in `features/board/lib/folding.js`.
 
 ## 8. Alerts and presets
-Alerts come only from what the reader pinned or wrote (branch fired, a date is tomorrow, string strength changed, my line was tested); at most one daily email, nothing if nothing fired; a quiet board gets the weekly only. Enabling sends needs a fresh yes. Presets are ours, read-only, forked to become theirs (by region now; theme and desk later). Region presets are built by `newsBoard` `list_presets` from the region table in `backend/shared/src/regions.js`; decision 0058 plans to move them onto the record's `index/regions.json` and `index/themes.json` (its steps 5 to 9, not built, read 2026-11-17: nothing in `newsBoard` or the frontend reads those two files).
+Alerts come only from what the reader pinned or wrote (branch fired, a date is tomorrow, string strength changed, my line was tested); at most one daily email, nothing if nothing fired; a quiet board gets the weekly only. Enabling sends needs a fresh yes. Presets are ours, read-only, forked to become theirs (by region now; theme and desk later). Region presets are built by `newsBoard` `list_presets` from the region table in `backend/shared/src/regions.js`; decision 0058 planned to move them onto the record's `index/regions.json` and `index/themes.json`. Today nothing in `newsBoard` or the frontend reads those two files (checked in the code, 2026-11-20). Decision 0066 plans a public board that the browser builds from `themes.json` (see the end of section 10).
 
 ## 9. Pricing
 Deferred (operator, 2026-10-20): the board is free for signed-in members until the verdict panel exists. If a seam is needed: verdict plus joint trace free, the rest paid. A business decision for the operator.
@@ -69,9 +69,11 @@ Rules in the code worth keeping:
 - Dev harness: `/board?devBoard=1` (member on an in-memory fake), `&devRecord=1` serves `features/board/dev/recordViews/`.
 
 Open, not built:
-- Decision 0058 steps 5 to 9: the backend reading themes and regions, the frontend board redesign, theme pages.
+- The board redesign of decision 0066 (next paragraph) and 0058 steps 7 to 9.
 - Everything in section 11 marked data, model, later or UI.
-- A live browser re-check of the current build (arrivals Keep and fade, the signed-out view and network failures were never recorded as checked). A test board named "QA test 2026-11-03" was left on the operator's account for the operator to delete (from the earlier doc, not re-verified).
+- A live browser re-check of the current build (arrivals Keep and fade, the signed-out view and network failures were never recorded as checked).
+
+Next, accepted and being built, not live: decision [0066](../decisions/0066-board-look-judged-links-and-change.md) (operator, chat, 2026-11-20). The public board will be built from the six live themes, with the region boards as a second list, judged links shown with direction and strength, shared names as a dotted note and never a line, the sentence list first with the graph behind "Show as a diagram", no lag, and a "This week" or "Since your last visit" box. Region boards will be named "Stories touching <Region>". Direction in members' own boards is later. Nothing in this document describes that board as existing; this document changes when it is live.
 
 ## 11. Checklist
 Gap kinds: **data** (waits on a field or history that does not exist yet), **model** (a model call and a price decision), **later** (named by the operator as after this build), **UI** (only the build is missing). Status read from the board feature source, 2026-11-17.
@@ -85,7 +87,7 @@ Gap kinds: **data** (waits on a field or history that does not exist yet), **mod
 | 5 | Arrivals | partly built | Dragging a card onto a pin (UI). Landed-on-string node (data). Medium overflow and "came back" (data: server side) |
 | 6 | Story tree | built | The reader's weighting as a thin dashed row on the tree (UI). Live branches only for stories a review has read (data) |
 | 7 | Summary and monthly | partly built | Summary paragraph and "the surprise" (model, later). The arc and previous summaries need stored `summary.versions`, which `newsBoard` creates empty and nothing in `backend/board` fills (data: a weekly summary writer). "What we missed" needs `coverage.note` (data) |
-| 8 | Presets | built | Only the "By region" group exists; theme and desk presets come with decision 0058 (data) |
+| 8 | Presets | built | Only the "By region" group exists; theme and desk presets are not built (decision 0066 plans public theme boards that the browser builds from `themes.json`, not presets) |
 | 9 | Alerts | partly built | Panel is dev builds only; choices are not stored (the schema has no field) and nothing sends. Storing needs a schema field; delivery needs a fresh yes (later) |
 | 10 | Divergence | partly built | "You cut it and it held" needs strength after the cut (data) |
 | 11 | Zoom ladder | partly built | The day's drift note on rung 4 (data: no such field in the story view). Rungs 1 and 2 only after a review (data). The same rungs on a string and on the board (the board rung needs the summary, model) |

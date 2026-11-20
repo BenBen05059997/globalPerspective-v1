@@ -1,6 +1,6 @@
 # 12. A story's web is its own news; links are "judged to feed into", never "caused"
 
-Status: accepted
+Status: accepted (themes amended by 0058)
 Date: 2026-09-25
 
 ## Context

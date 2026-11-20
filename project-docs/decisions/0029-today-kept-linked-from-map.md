@@ -1,6 +1,6 @@
 # 0029. /today is kept and linked from the map
 
-Status: accepted (refines 0016)
+Status: accepted (refines 0016; Today becoming a tab amended by 0064)
 Date: 2026-10-19
 
 ## Context

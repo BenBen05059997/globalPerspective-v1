@@ -1,6 +1,6 @@
 # 0042. The daily model notes move to the record (`record/notes/`)
 
-Status: accepted (amends 0040 and ARCHITECTURE_TIMELINE.md "daily notes stay raw"; follows 0003)
+Status: accepted (reason text amended by 0058; amends 0040 and ARCHITECTURE_TIMELINE.md "daily notes stay raw"; follows 0003)
 Date: 2026-10-31
 
 ## Context

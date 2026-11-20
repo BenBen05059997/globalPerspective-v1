@@ -1,6 +1,6 @@
 # 61. The four news runs lost to the model outage are written late from the saved articles, marked as written late, and the two days stay a gap in our record
 
-Status: accepted (operator, chat, 2026-11-16); the script is built and was dry-run on 2026-11-16 UTC (16:09 to 16:16, about 01:09 JST on 17 Nov); the live write has not been run. Follows 0040 (this is the "later decision" it deferred for model replay), 0055, 0060; amends 0036 (additive fields), 0040, 0055.
+Status: accepted (operator, chat, 2026-11-16); the script is built and was dry-run on 2026-11-16 UTC (16:09 to 16:16, about 01:09 JST on 17 Nov); the live write has run by 2026-11-20 (the date is not known): `record/views/health.json` shows `lateEntries` 13 on one gap day and 36 on the other, 49 late-written entries (read 2026-11-20). Follows 0040 (this is the "later decision" it deferred for model replay), 0055, 0060; amends 0036 (additive fields), 0040, 0055.
 Date: 2026-11-17
 
 ## Context

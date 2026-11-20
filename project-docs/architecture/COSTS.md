@@ -123,7 +123,7 @@ about $6 a month. **Not measured in this file:** no reading of a clean day (2026
 |---|---|---|
 | `newsIngest` | `GROK_MODEL` | `anthropic:claude-sonnet-5-5` |
 | `newsAgent` | `GROK_MODEL` (summary, trace_cause); `PREDICTION_MODEL` (forecast) | both Sonnet, `MAX_TOKENS` 1500 |
-| `newsRecordReview` | `REVIEW_MODEL` | Sonnet |
+| `newsRecordReview` | `REVIEW_MODEL` | Sonnet (`anthropic:claude-sonnet-5-5`, read 2026-11-20) |
 | `newsPredictionResolver` | `DRAFT_MODEL` | Sonnet (the `GROK_MODEL` there, `deepseek-flash`, is read by no code) |
 | `newsSituationIngest`, `newsDailyBrief`, `newsWeeklyBrief` | `GROK_MODEL` | `anthropic:claude-haiku-5-5` |
 | `newsThreadAnalysis`, `newsSystemsAnalysis` (`MAX_TOKENS` 6000 on both), `newsCountryIntelligence`, `newsDriftCorrector` | `GROK_MODEL` | Haiku |

@@ -241,3 +241,33 @@ test('themes.json and regions.json satisfy their schemas, and the examples are t
   t.themes[0].links[0].dashed = true;
   assert.equal(validate(t), false); // no line style in the data
 });
+
+test('themes.json (board look 2026-11-20): each story carries its view\'s step stamps; each link the time its web note judged it', () => {
+  const t = parse(built.indexes['themes.json']);
+  for (const theme of t.themes) {
+    for (const s of theme.stories) {
+      const v = built.stories.get(s.threadId);
+      const want = v && !v.aliasOf ? [v.stepCount, v.stepDays, v.firstStep, v.newestStep] : [null, null, null, null];
+      assert.deepEqual([s.stepCount, s.stepDays, s.firstStep, s.newestStep], parse(want), s.threadId);
+    }
+    for (const l of theme.links) assert.ok(l.judgedAt === null || !Number.isNaN(Date.parse(l.judgedAt)), `${l.from}->${l.to}`);
+  }
+  assert.ok(t.themes.some((x) => x.stories.some((s) => s.stepCount !== null)), 'the fixture has a story with a view');
+  assert.ok(t.themes.some((x) => x.links.some((l) => l.judgedAt)), 'the fixture has a judged time');
+});
+
+test('themesIndex: a theme lists its shared-name pairs (both ends inside, no judged link between them), one row per pair with every web\'s names', () => {
+  const {themesIndex: TI} = require('../src/themes');
+  const stamp = (id) => ({threadId: id, iso3: [], regions: [], tier: null, born: null});
+  const theme = {themeId: 'theme-a', lead: 'a', newFacts: 0, linkCounts: {strong: 0, medium: 0, weak: 2}, strongest: {from: 'a', to: 'b', strength: 'weak'}, ids: ['a', 'b', 'c'],
+    pairs: [{from: 'a', to: 'b', strength: 'weak', reason: null, cited: [], generatedAt: T1}, {from: 'c', to: 'b', strength: 'weak', reason: null, cited: [], generatedAt: null}]};
+  const shared = [
+    {a: 'a', b: 'c', actors: ['Putin']}, {a: 'c', b: 'a', actors: ['Trump', 'Putin']}, // the same pair from two webs
+    {a: 'a', b: 'b', actors: ['X']}, // a judged pair: not a note
+    {a: 'a', b: 'z', actors: ['Y']}, // one end outside the theme
+  ];
+  const t = TI({themes: [theme]}, stamp, () => null, {}, () => null, shared).themes[0];
+  assert.deepEqual(t.shared, [{a: 'a', b: 'c', actors: ['Putin', 'Trump']}]);
+  assert.deepEqual(t.links.map((l) => l.judgedAt), [T1, null]);
+  assert.deepEqual(Object.values(t.stories[0]).slice(-4), [null, null, null, null]); // no story view: no step stamps
+});

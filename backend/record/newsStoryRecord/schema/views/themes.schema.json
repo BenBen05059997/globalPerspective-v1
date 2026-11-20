@@ -12,7 +12,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["themeId", "lead", "newFacts", "linkCounts", "strongestLink", "countries", "titleCountries", "moreCountries", "regions", "tier", "stories", "links"],
+        "required": ["themeId", "lead", "newFacts", "linkCounts", "strongestLink", "countries", "titleCountries", "moreCountries", "regions", "tier", "stories", "links", "shared"],
         "additionalProperties": false,
         "properties": {
           "themeId": {"type": "string", "pattern": "^theme-"},
@@ -30,7 +30,7 @@
             "minItems": 3,
             "items": {
               "type": "object",
-              "required": ["threadId", "title", "line", "lineWeek", "lineReason", "name", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "liveBranchCount"],
+              "required": ["threadId", "title", "line", "lineWeek", "lineReason", "name", "iso3", "regions", "tier", "riskScore", "riskAt", "tierReason", "lastFactAt", "lastEntryAt", "category", "born", "themeId", "liveBranchCount", "stepCount", "stepDays", "firstStep", "newestStep"],
               "additionalProperties": false,
               "properties": {
           "threadId": {"$ref": "story-stamp.schema.json#/properties/threadId"},
@@ -50,23 +50,33 @@
           "category": {"$ref": "story-stamp.schema.json#/properties/category"},
           "born": {"$ref": "story-stamp.schema.json#/properties/born"},
           "themeId": {"$ref": "story-stamp.schema.json#/properties/themeId"},
-          "liveBranchCount": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]}
+          "liveBranchCount": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+          "stepCount": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}], "description": "the story view's stepCount (re-dated repeats left out); null when the record holds no view of the story"},
+          "stepDays": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}], "description": "the story view's stepDays; null with no view"},
+          "firstStep": {"anyOf": [{"type": "object", "required": ["eventId", "date", "title", "role"], "properties": {"eventId": {"type": "string"}, "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, "title": {"type": ["string", "null"]}, "role": {"enum": ["start", "move", "measure", null]}, "sourceCount": {"type": "integer", "minimum": 0}}}, {"type": "null"}], "description": "the story view's firstStep {eventId, date, title, role}; null with no view or no step"},
+          "newestStep": {"anyOf": [{"type": "object", "required": ["eventId", "date", "title", "role"], "properties": {"eventId": {"type": "string"}, "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, "title": {"type": ["string", "null"]}, "role": {"enum": ["start", "move", "measure", null]}, "sourceCount": {"type": "integer", "minimum": 0}}}, {"type": "null"}], "description": "the story view's newestStep {eventId, date, title, role, sourceCount}; role is the kind of that step; null with no view or no step"}
               }
             }
+          },
+          "shared": {
+            "type": "array",
+            "description": "shared-name pairs (index/web.json shared, ids resolved to survivors) with both stories in the theme and no judged link between them; one row per pair, a < b, actors from every country web that saw it. Not a link: show as a note",
+            "items": {"type": "object", "required": ["a", "b", "actors"], "additionalProperties": false, "properties": {"a": {"type": "string"}, "b": {"type": "string"}, "actors": {"type": "array", "items": {"type": "string"}}}}
           },
           "links": {
             "type": "array",
             "minItems": 2,
             "items": {
               "type": "object",
-              "required": ["from", "to", "strength", "reason", "cited"],
+              "required": ["from", "to", "strength", "reason", "cited", "judgedAt"],
               "additionalProperties": false,
               "properties": {
                 "from": {"type": "string"},
                 "to": {"type": "string"},
                 "strength": {"type": ["string", "null"]},
                 "reason": {"type": ["string", "null"]},
-                "cited": {"type": "array", "items": {"type": "object"}}
+                "cited": {"type": "array", "items": {"type": "object"}},
+                "judgedAt": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "the generatedAt of the country web note whose judgement this pair keeps (the model's judgement time); null when the note has none. Not a review confirmation"}
               }
             }
           }

@@ -44,7 +44,7 @@ Parity on live data (2026-11-01, local, read-only): histories identical (44 stor
 | `follow_thread` / `unfollow_thread` | `threadId` | `{followedThreads, followedActors}`; idempotent (max 300 each) |
 | `follow_actor` / `unfollow_actor` | `name` | same; stored trimmed and whitespace-collapsed, compared with `normalizeActor` |
 | `get_follows` | | `{followedThreads, followedActors}` |
-| `list_presets` (public) | | one preset per region with 2+ analysed threads: up to 8 highest-risk threads as pins `p01..`, ours-strings (`inferred`) from the web's shared-actor pairs and causal links. A thread is in every region its countries (`threadIso3`) fall in (operator rule 2026-10-31). A pair judged by several country webs shows the newest judgement. Cached in memory 10 minutes |
+| `list_presets` (public) | | one preset per region with 2+ analysed threads, named `Stories touching <Region>` (board look 2026-11-20, decision 5): up to 8 highest-risk threads as pins `p01..`, ours-strings (`inferred`) from the web's shared-actor pairs and causal links. A thread is in every region its countries (`threadIso3`) fall in (operator rule 2026-10-31). A pair judged by several country webs shows the newest judgement. Read-time only (board look 2026-11-20): `links` `[{from, to, strength, judgedAt}]` (pin ids; the judged links with direction, newest judgement per direction) and `shared` `[{a, b, actors}]` (shared-name pairs that are not also a judged pair); `fork_preset` copies pins and strings only. Cached in memory 10 minutes |
 | `fork_preset` | `presetId`, `name?` | a new board owned by the caller with `presetFrom` set |
 | `connect` | `a`, `b` = `{kind, refId}` | `{pairKey, a, b, strength: none|weak|medium, grounds[], note, limits[]}` from `cheapGrounds` |
 

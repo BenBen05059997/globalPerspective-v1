@@ -136,9 +136,32 @@ const highestTier = (tiers) => [...tiers].filter((t) => t !== null && t !== unde
  * index/themes.json. Per theme: the countries by story count (the stamp's `iso3` of each story), the lead story id, the stories (each the full
  * stamp plus `liveBranchCount`, the open forecast questions of the index rows, null when the story has no row), the links (strength is the
  * model's `confidence`; the reason has the evidence codes removed; `cited` is the data the codes pointed at), the regions of the stories and the
- * highest tier among them (null when none is scored), the title countries (`titleCountries`: the countries of two or more stories, in `countries` order, at most 4; when none is in two stories, the first 4 of `countries`; `moreCountries`: the other countries left out) and the stamps of groupThemes (`newFacts`, `linkCounts`, `strongestLink`). The links carry no line style and no confirmed state: the web notes hold neither.
+ * highest tier among them (null when none is scored), the title countries (`titleCountries`: the countries of two or more stories, in `countries` order, at most 4; when none is in two stories, the first 4 of `countries`; `moreCountries`: the other countries left out) and the stamps of groupThemes (`newFacts`, `linkCounts`, `strongestLink`). The links carry no line style and no confirmed state: the web notes hold neither. Each story also carries the story view's `stepCount`, `stepDays`, `firstStep` and `newestStep` (null with no view), and each link `judgedAt`, the `generatedAt` of the web note that judged it (board look 2026-11-20).
  */
-function themesIndex({themes}, stampOf, liveOf, builtFrom) {
+/** The story view's step stamps (decision 0058; board look 2026-11-20): null for a story the record holds no view of, or a merged-away one. */
+const stepsOf = (v) => (v && !v.aliasOf
+  ? {stepCount: v.stepCount ?? null, stepDays: v.stepDays ?? null, firstStep: v.firstStep ?? null, newestStep: v.newestStep ?? null}
+  : {stepCount: null, stepDays: null, firstStep: null, newestStep: null});
+
+/**
+ * The shared-name pairs of a theme (index/web.json `shared`, ids resolved to survivors): both stories in the theme and no judged link between
+ * them. One row per pair (a < b) with the names of every country web that saw it, sorted. Never a link: the page shows it as a note.
+ */
+function sharedIn(t, shared) {
+  const ids = new Set(t.ids);
+  const judged = new Set(t.pairs.map((p) => [p.from, p.to].sort().join('|')));
+  const out = new Map();
+  for (const x of shared) {
+    const [a, b] = [x.a, x.b].sort();
+    const key = `${a}|${b}`;
+    if (a === b || !ids.has(a) || !ids.has(b) || judged.has(key)) continue;
+    const row = out.get(key) || out.set(key, {a, b, actors: new Set()}).get(key);
+    for (const n of x.actors || []) row.actors.add(n);
+  }
+  return [...out.values()].map((r) => ({a: r.a, b: r.b, actors: [...r.actors].sort()})).sort((x, y) => cmp(x.a, y.a) || cmp(x.b, y.b));
+}
+
+function themesIndex({themes}, stampOf, liveOf, builtFrom, viewOf = () => null, webShared = []) {
   const out = themes.map((t) => {
     const stamps = t.ids.map(stampOf).sort((a, b) => cmp(a.born || '9999-99-99', b.born || '9999-99-99') || cmp(a.threadId, b.threadId));
     const counts = new Map();
@@ -155,8 +178,9 @@ function themesIndex({themes}, stampOf, liveOf, builtFrom) {
       countries, titleCountries, moreCountries: countries.length - titleCountries.length,
       regions: [...new Set(stamps.flatMap((s) => s.regions))].sort(),
       tier: highestTier(stamps.map((s) => s.tier)),
-      stories: stamps.map((s) => ({...s, liveBranchCount: liveOf(s.threadId)})),
-      links: t.pairs.map(({from, to, strength, reason, cited}) => ({from, to, strength, reason, cited})),
+      stories: stamps.map((s) => ({...s, liveBranchCount: liveOf(s.threadId), ...stepsOf(viewOf(s.threadId))})),
+      links: t.pairs.map(({from, to, strength, reason, cited, generatedAt}) => ({from, to, strength, reason, cited, judgedAt: generatedAt ?? null})),
+      shared: sharedIn(t, webShared),
     };
   });
   return {schemaVersion: 1, builtFrom, themes: out};

@@ -30,7 +30,8 @@ async function computePresets(store, env, nowMs) {
   const byRegion = new Map();
   for (const [id, a] of rows) {
     if (a.riskScore === null) continue;
-    // a story belongs to every region its countries fall in (a place involved is a place affected), so the order of iso3 never matters
+    // a story belongs to every region its countries fall in (a place involved is a place affected), so the order of iso3 never matters;
+    // hence the name "Stories touching <Region>" (board look 2026-11-20, decision 5)
     const regions = new Set(world.threadIso3(a, index.threads[id], topicOf.get(id)).map(regionOf).filter(Boolean));
     const title = a.title || (index.threads[id] && index.threads[id].title) || (topicOf.get(id) && topicOf.get(id).title) || id;
     for (const region of regions) {
@@ -55,9 +56,26 @@ async function computePresets(store, env, nowMs) {
       if (!pinOf.has(l.from) || !pinOf.has(l.to)) continue;
       strings.push({ a: pinOf.get(l.from), b: pinOf.get(l.to), owner: 'ours', strength: 'inferred', ...(l.mechanism ? { mechanism: String(l.mechanism).slice(0, 280) } : {}) });
     }
+    // read-time only (board look 2026-11-20, QUESTIONS 3): the judged links with their direction and strength, and the shared-name pairs,
+    // apart, so a region board can draw them like a theme board. `strings` stay as they were (what a fork stores).
+    const judged = new Map();
+    for (const l of oldestFirst(index.links)) if (pinOf.has(l.from) && pinOf.has(l.to) && l.from !== l.to) judged.set(`${l.from}|${l.to}`, { from: pinOf.get(l.from), to: pinOf.get(l.to), strength: l.confidence ?? null, judgedAt: l.generatedAt ?? null });
+    const pairOf = (a, b) => [pinOf.get(a), pinOf.get(b)].sort().join('|');
+    const judgedPairs = new Set([...judged.keys()].map((k) => pairOf(...k.split('|'))));
+    const shared = new Map();
+    for (const x of index.shared) {
+      if (!pinOf.has(x.a) || !pinOf.has(x.b) || x.a === x.b || judgedPairs.has(pairOf(x.a, x.b))) continue;
+      const [a, b] = [pinOf.get(x.a), pinOf.get(x.b)].sort();
+      const row = shared.get(`${a}|${b}`) || shared.set(`${a}|${b}`, { a, b, actors: new Set() }).get(`${a}|${b}`);
+      for (const n of x.actors || []) row.actors.add(n);
+    }
     const pins = top.map((t) => ({ pinId: pinOf.get(t.threadId), kind: 'thread', refId: t.threadId, title: t.title, riskScore: t.riskScore, lead: t.lead }));
     const clean = normalizeBoard({ pins, strings });
-    presets.push({ presetId: presetIdOf(region), name: `${region}: highest-risk stories`, region, pins: clean.pins, strings: clean.strings, generatedAt });
+    presets.push({
+      presetId: presetIdOf(region), name: `Stories touching ${region}`, region, pins: clean.pins, strings: clean.strings, generatedAt,
+      links: [...judged.values()].sort((x, y) => (x.from + x.to < y.from + y.to ? -1 : 1)),
+      shared: [...shared.values()].map((r) => ({ a: r.a, b: r.b, actors: [...r.actors].sort() })).sort((x, y) => (x.a + x.b < y.a + y.b ? -1 : 1)),
+    });
   }
   return presets.sort((x, y) => (x.region < y.region ? -1 : 1));
 }

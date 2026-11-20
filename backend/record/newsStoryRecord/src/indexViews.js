@@ -147,7 +147,9 @@ function weeklyIndex(stories, refs, today, builtFrom) {
 function buildIndexViews({builtFrom, weeklyFrom = builtFrom, stories, stamps, countries, web, themes, liveOf, weekly, briefs, today = null}) {
   // the surviving stories of web.json threads: a thread of the web that is a merged id is not a story of its own
   const storyIds = [...web.coverage].filter(([id, c]) => c.state !== null && !web.aliases.has(id)).map(([id]) => id).sort();
-  const out = {'analyses.json': analysesIndex(stories, stamps, builtFrom), 'web.json': webIndex(web, builtFrom), 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, weeklyFrom), 'briefs.json': briefs, 'themes.json': themesIndex(themes, web.stampOf, liveOf, builtFrom), 'regions.json': regionsIndex(themes, storyIds, web.stampOf, builtFrom), ...(today ? {'today.json': today} : {})};
+  const webOut = webIndex(web, builtFrom);
+  const webShared = webOut.shared.map((x) => ({...x, a: (web.aliases && web.aliases.get(x.a)) || x.a, b: (web.aliases && web.aliases.get(x.b)) || x.b}));
+  const out = {'analyses.json': analysesIndex(stories, stamps, builtFrom), 'web.json': webOut, 'countries.json': countriesIndex(countries, builtFrom), 'weekly.json': weeklyIndex(stories, weekly.refs, weekly.today, weeklyFrom), 'briefs.json': briefs, 'themes.json': themesIndex(themes, web.stampOf, liveOf, builtFrom, (id) => stories.get(id), webShared), 'regions.json': regionsIndex(themes, storyIds, web.stampOf, builtFrom), ...(today ? {'today.json': today} : {})};
   for (const [name, obj] of Object.entries(out)) {
     const size = bytesOf(obj);
     if (size > INDEX_MAX_BYTES) throw new Error(`views: index/${name} is ${size} bytes, over the ${INDEX_MAX_BYTES} cap`);

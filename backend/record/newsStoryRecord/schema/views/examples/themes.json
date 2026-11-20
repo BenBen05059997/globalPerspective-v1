@@ -64,7 +64,22 @@
           "category": "conflict",
           "born": "2026-07-01",
           "themeId": "theme-thread-old",
-          "liveBranchCount": 0
+          "liveBranchCount": 0,
+          "stepCount": 1,
+          "stepDays": 1,
+          "firstStep": {
+            "eventId": "eo1",
+            "date": "2026-07-01",
+            "title": "Old first",
+            "role": "start"
+          },
+          "newestStep": {
+            "eventId": "eo1",
+            "date": "2026-07-01",
+            "title": "Old first",
+            "role": "start",
+            "sourceCount": 1
+          }
         },
         {
           "threadId": "thread-b",
@@ -89,7 +104,22 @@
           "category": "conflict",
           "born": "2026-10-17",
           "themeId": "theme-thread-old",
-          "liveBranchCount": 0
+          "liveBranchCount": 0,
+          "stepCount": 2,
+          "stepDays": 2,
+          "firstStep": {
+            "eventId": "ec1",
+            "date": "2026-10-17",
+            "title": "C first",
+            "role": "start"
+          },
+          "newestStep": {
+            "eventId": "eb1",
+            "date": "2026-10-19",
+            "title": "B first",
+            "role": "move",
+            "sourceCount": 1
+          }
         },
         {
           "threadId": "thread-a",
@@ -114,7 +144,22 @@
           "category": "conflict",
           "born": "2026-10-18",
           "themeId": "theme-thread-old",
-          "liveBranchCount": 1
+          "liveBranchCount": 1,
+          "stepCount": 2,
+          "stepDays": 2,
+          "firstStep": {
+            "eventId": "ea1",
+            "date": "2026-10-18",
+            "title": "A first",
+            "role": "start"
+          },
+          "newestStep": {
+            "eventId": "ea2",
+            "date": "2026-10-20",
+            "title": "A second",
+            "role": "move",
+            "sourceCount": 1
+          }
         }
       ],
       "links": [
@@ -129,16 +174,19 @@
               "date": "2026-10-20",
               "title": "T"
             }
-          ]
+          ],
+          "judgedAt": "2026-10-21T05:00:00.000Z"
         },
         {
           "from": "thread-b",
           "to": "thread-old",
           "strength": "weak",
           "reason": "B and old",
-          "cited": []
+          "cited": [],
+          "judgedAt": "2026-10-21T05:00:00.000Z"
         }
-      ]
+      ],
+      "shared": []
     }
   ]
 }

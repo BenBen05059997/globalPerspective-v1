@@ -209,6 +209,7 @@ test('list_presets: one preset per region with at least two analysed threads, hi
   assert.deepEqual(r.data.map((p) => p.presetId), ['preset-middle-east'], 'Europe has one thread, nowhere has no region');
   const p = r.data[0];
   assert.equal(p.region, 'Middle East');
+  assert.equal(p.name, 'Stories touching Middle East'); // board look decision 5: a story counts in every region it touches
   assert.deepEqual(p.pins.map((x) => x.refId), ['thread-hormuz', 'thread-gaza', 'thread-oil']);
   assert.deepEqual(p.pins.map((x) => x.pinId), ['p01', 'p02', 'p03']);
   assert.deepEqual(Object.keys(p.pins[0]).sort(), ['kind', 'lead', 'pinId', 'refId', 'riskScore', 'title']);
@@ -220,6 +221,9 @@ test('list_presets: one preset per region with at least two analysed threads, hi
   }
   const oilLink = p.strings.find((s) => s.a === 'p01' && s.b === 'p03');
   assert.match(oilLink.mechanism, /closure raises crude/, 'the causal link wins over the shared-actor string');
+  // read-time (board look): judged links keep their direction and strength; shared names are apart, and a judged pair is never also a shared note
+  assert.deepEqual(p.links, [{ from: 'p01', to: 'p03', strength: 'medium', judgedAt: '2026-10-19T05:00:00.000Z' }]);
+  assert.deepEqual(p.shared, [{ a: 'p01', b: 'p02', actors: ['Hezbollah', 'Iran'] }]);
 });
 
 test('list_presets is cached for 10 minutes', async () => {
@@ -240,10 +244,12 @@ test('fork_preset creates an owned, valid copy with presetFrom; unknown preset i
   assert.equal(r.data.uid, 'u1');
   assert.equal(r.data.presetFrom, 'preset-middle-east');
   assert.equal(r.data.pins.length, 3);
+  assert.equal('links' in r.data || 'shared' in r.data, false, 'a fork stores pins and strings only');
   assert.ok(r.data.strings.every((s) => s.owner === 'ours' && s.strength === 'inferred'));
   assert.ok(store.rows.has(`saved|u1|board#${r.data.boardId}`));
   assert.equal((await call('u2', { action: 'get_board', boardId: r.data.boardId })).status, 404);
   const named = await call('u1', { action: 'fork_preset', presetId: 'preset-middle-east', name: 'Mine' });
+  assert.equal(r.data.name, 'Stories touching Middle East'); // an unnamed fork takes the preset name
   assert.equal(named.data.name, 'Mine');
   assert.equal((await call('u1', { action: 'fork_preset', presetId: 'preset-mars' })).status, 404);
   assert.equal((await call('u1', { action: 'list_boards' })).data.length, 2);

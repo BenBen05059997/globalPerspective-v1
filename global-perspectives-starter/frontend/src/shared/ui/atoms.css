@@ -40,9 +40,10 @@
   font-size: 10px;
 }
 
-.ss-stat + .ss-stat::before {
+/* The "·" closes a stat that has another after it, so a strip that wraps never starts a line with a dot. */
+.ss-stat:has(+ .ss-stat)::after {
   content: '·';
-  margin-right: 16px;
+  margin-left: 16px;
   color: var(--text-dim);
 }
 

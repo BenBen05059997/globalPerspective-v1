@@ -156,3 +156,7 @@
 /* a retired pin: greyed, still there with its strings (Restore brings it back) */
 .board-pin.is-retired, .bm-pin.is-retired { opacity: 0.5; filter: grayscale(1); }
 .board-pin.is-retired { border-style: dashed; }
+/* A frame narrower than the wide drawing (a phone): the pins sit in two columns (BoardGraph's layoutColumns) and the
+   drawing fits the frame's width, as tall as its pins need; it does not grow past two card widths on a wider frame. */
+.board-stage--narrow { min-width: 0; }
+.board-stage--narrow .board-svg { max-height: none; max-width: 560px; margin-inline: auto; }

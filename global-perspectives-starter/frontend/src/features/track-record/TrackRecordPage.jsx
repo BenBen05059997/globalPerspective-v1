@@ -322,7 +322,7 @@ export default function TrackRecordPage() {
           falsifiable triggers; every read that changes is corrected in the open with the event that moved it.
           This page is the running record — the forecasts scored, and the analysis corrected — not a marketing claim.
         </p>
-        <p className="tr-textlink"><Link to={`${ROUTE.trackRecord}/text`}>Read as text →</Link></p>
+        <p className="tr-textlink"><Link to={`${ROUTE.trackRecord}/text`} className="gp-hit">Read as text →</Link></p>
       </header>
 
       {isPhone ? (

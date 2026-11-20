@@ -261,6 +261,7 @@
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
+  align-items: center; /* the outlet count sits on the sources link's line, not at the top of its 44 px touch box */
 }
 .home-topic-meta b { color: var(--text-head); font-weight: var(--weight-semibold); }
 

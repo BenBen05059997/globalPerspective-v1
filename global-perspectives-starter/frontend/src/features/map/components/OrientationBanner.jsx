@@ -1,5 +1,5 @@
 // OrientationBanner — the Map's first lines (SPEC §2, decision 0064; design round 8): the promise sentence and, on desktop, the
-// two kind chips on one line. On a phone it is the sentence only (the kinds are in Map key there), so the map fits the first
+// two kind chips on one line. With `phone` (a phone, or a desktop under 1100 px) it is the sentence only (the kinds are in Map key there), so the map fits the first
 // screen. What the dots and the ◆ mean is in Map key and About this map. A slim, dismissible note, never a modal; the × is
 // remembered per browser in localStorage, wrapped in try/catch so blocked storage still renders (it just re-shows next visit).
 import { useState } from 'react';

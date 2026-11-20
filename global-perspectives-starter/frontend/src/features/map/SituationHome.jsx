@@ -57,6 +57,8 @@ import { CountryCardV2 } from '@/features/countries';
 import { normalizeLayer, DEFAULT_LAYER } from '@/features/map/lib/layerMode.js';
 import '@/features/map/SituationHome.css';
 
+const KINDS_IN_KEY_BELOW = 1100; // px: below it the promise box takes the phone form (see kindsInKey)
+
 // deck.gl is heavy — code-split so it loads only on this route.
 const SituationMap3D = lazy(() => import('@/shared/map/SituationMap3D.jsx'));
 
@@ -638,6 +640,9 @@ export default function SituationHome() {
   // M7: phone layout (< 900px) — MAP (default) · LIST · ALERTS tabs, one screen at a time (P1).
   // On MAP, a selection opens as a bottom sheet instead of the desktop rail.
   const isPhone = useIsPhone();
+  // Below 1100 px the promise box takes the phone form (the sentence and × only) and the story kinds move to Map key,
+  // so the box stays short and the globe is not covered (design round 6, 8-design.md).
+  const kindsInKey = useIsPhone(KINDS_IN_KEY_BELOW);
   useEffect(() => {
     if (isPhone || !bandRef.current || typeof ResizeObserver !== 'function') return undefined;
     const ro = new ResizeObserver((entries) => {
@@ -903,7 +908,7 @@ export default function SituationHome() {
 
         {legendOpen ? (
           <MapLegend
-            kinds={isPhone}
+            kinds={kindsInKey}
             present={legendPresent}
             hiddenCount={alertStack.hiddenCount}
             storiesOlderLabel={topicsFreshness === 'older' && topicsAsOf ? olderLabel(topicsAsOf) : null}
@@ -1015,7 +1020,7 @@ export default function SituationHome() {
         </div>
 
         <div className="sh-topline" ref={toplineRef}>
-          <OrientationBanner />
+          <OrientationBanner phone={kindsInKey} />
           {staleBanner}
         </div>
 

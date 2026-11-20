@@ -558,6 +558,6 @@
      "updated" stamp at 390px). Scoped here because shared/ui/atoms.css is not edited from this page. */
   .tp-page .ss-strip { height: auto; min-height: 34px; flex-wrap: wrap; overflow-x: visible; padding: var(--space-2) var(--space-4); gap: var(--space-1) var(--space-3); }
   .tp-page .ss-strip > * { flex: 0 1 auto; }
-  .tp-page .ss-stat + .ss-stat::before { margin-right: var(--space-3); }
+  .tp-page .ss-stat:has(+ .ss-stat)::after { margin-left: var(--space-3); }
   .tp-page .ss-ago { margin-left: 0; }
 }

@@ -425,7 +425,7 @@ function Home() {
           {t.x_trending && <span className="home-flag-tag home-flag-tag--trend">Trending on X</span>}
           {t.urgency === 'high' && !isLead && <span className="home-flag-tag">Urgent</span>}
           {country && (
-            <EntityLink kind="country" id={country} className="home-topic-country-link">{country}</EntityLink>
+            <EntityLink kind="country" id={country} className="home-topic-country-link gp-hit">{country}</EntityLink>
           )}
           {isLead && <span className="home-lead-flag">Lead story{t.urgency === 'high' ? ' · urgent' : ''}</span>}
         </div>

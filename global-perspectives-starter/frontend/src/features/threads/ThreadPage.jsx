@@ -446,7 +446,7 @@ export default function ThreadPage() {
   // The share row (Show on map, share, Copy briefing, save). On a phone's story view it moves down, under the story facts (SPEC §4 phone 9).
   const topbarActions = (
     <div className="tp-topbar-right">
-      <Link to={mapHref({ story: threadId })} className="tp-analyze-link" title="Show this story on the map">
+      <Link to={mapHref({ story: threadId })} className="tp-analyze-link gp-hit" title="Show this story on the map">
         Show on map
       </Link>
       <ShareButtons threadId={thread.threadId} title={headTitle} preview={{ t: headTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
@@ -465,16 +465,16 @@ export default function ThreadPage() {
 
       {/* Topbar */}
       <div className="tp-topbar">
-        <Link to={ROUTE.map}>Home</Link>
+        <Link to={ROUTE.map} className="gp-hit">Home</Link>
         <span className="tp-topbar-sep">/</span>
         {fromCountry ? (
           <>
-            <EntityLink kind="country" id={fromCountry}>{fromCountry}</EntityLink>
+            <EntityLink kind="country" id={fromCountry} className="gp-hit">{fromCountry}</EntityLink>
             <span className="tp-topbar-sep">/</span>
           </>
         ) : (
           <>
-            <Link to={ROUTE.stories}>Stories</Link>
+            <Link to={ROUTE.stories} className="gp-hit">Stories</Link>
             <span className="tp-topbar-sep">/</span>
           </>
         )}

@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { stringTexture, pairKey } from '@/shared/lib/board.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import { dayMonth } from '@/shared/lib/branchWording.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { layoutPins, ghostPosition, placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
+import { layoutPins, layoutColumns, ghostPosition, placeLabels, KIND_WORD } from '@/features/board/lib/boardOps.js';
 import { pinTypeLine, pinCountParts, stringLabel, shortHead } from '@/features/board/lib/graphText.js';
 
 // The graph view: pins and strings in plain SVG. Pin positions come from layoutPins (an ellipse; pins joined by a
@@ -12,10 +12,14 @@ import { pinTypeLine, pinCountParts, stringLabel, shortHead } from '@/features/b
 // Drag a pin onto another to test the pair; or select two pins (click / Enter) and use Connect (or press "c").
 // Optional parts, each drawn only when the board holds the data: `ghosts` (suggested pins: actors on two or more of
 // your pins that you do not follow), `failed` (tests that found no link) and `coverageGap` (a day with no archive).
-const W = 1080;
-const H = 660;
+const WIDE_W = 1080;
+const WIDE_H = 660;
+const STAGE_MIN = 760; // the wide drawing's narrowest frame (.board-stage min-width); a narrower frame gets the columns
 const PIN_W = 190;
 const PIN_H = 136;
+const COL_GAP = 12;
+const NARROW_W = 2 * PIN_W + 3 * COL_GAP; // two columns of cards
+const NARROW_STEP = PIN_H + 16; // one column's card-to-card distance; the other column sits half a step lower
 const GHOST_W = 150;
 const GHOST_H = 72;
 const LABEL_W = 190;
@@ -24,6 +28,25 @@ const SMALL_W = 130; // a label with no free room at full size shows only its sh
 const SMALL_H = 24;
 const PIN_MARGIN = { x: PIN_W / 2 + 12, y: PIN_H / 2 + 12 }; // pin centres stay a card's half-size (and a gap) inside the edges
 const DRAG_PX = 6;
+
+// True when the frame is narrower than the wide drawing (a phone): the pins then go down two columns and the drawing
+// fits the frame's width, instead of a wide drawing scrolled sideways with pins cut off at the edge.
+// Returns [ref callback for the frame, narrow]: a callback ref, so a frame that first appears later (an empty board
+// gaining its first pin) is still measured.
+function useNarrow() {
+  const [el, setEl] = useState(null);
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    if (!el || typeof ResizeObserver !== 'function') return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setNarrow(w < STAGE_MIN);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [el]);
+  return [setEl, narrow];
+}
 
 // `at` is { x, y, small } from placeLabels. The full text stays in the string's <title> and the string list.
 export function StringLabel({ at, head, body, ghost = false }) {
@@ -56,12 +79,17 @@ function Legend() {
 
 export default function BoardGraph({ pins, strings, info, selected = [], pickedKey, onSelectPin, onPickString, onConnect, ghosts = [], failed = [], onAddGhost, coverageGap = null, stories = {}, today }) {
   const svgRef = useRef(null);
+  const [frameRef, narrow] = useNarrow();
   const suppressClick = useRef(false);
   const [drag, setDragState] = useState(null);
   const dragRef = useRef(null); // the handlers read the ref: a fast press-move-release can arrive before a re-render
   const setDrag = (d) => { dragRef.current = d; setDragState(d); };
-  const pos = useMemo(() => layoutPins(pins, W, H, strings, PIN_MARGIN), [pins, strings]);
-  const ghostAt = useMemo(() => Object.fromEntries(ghosts.map((g) => [g.name, ghostPosition(g.pins.map((id) => pos[id]).filter(Boolean), Object.values(pos), W, H)])), [ghosts, pos]);
+  const { pos, W, H } = useMemo(() => {
+    if (!narrow) return { pos: layoutPins(pins, WIDE_W, WIDE_H, strings, PIN_MARGIN), W: WIDE_W, H: WIDE_H };
+    const col = layoutColumns(pins, NARROW_W, strings, PIN_MARGIN, NARROW_STEP);
+    return { pos: col.pos, W: NARROW_W, H: col.height };
+  }, [pins, strings, narrow]);
+  const ghostAt = useMemo(() => Object.fromEntries(ghosts.map((g) => [g.name, ghostPosition(g.pins.map((id) => pos[id]).filter(Boolean), Object.values(pos), W, H)])), [ghosts, pos, W, H]);
   const now = useMemo(() => new Date(), []);
   const labelAt = useMemo(() => {
     const cards = [
@@ -76,7 +104,7 @@ export default function BoardGraph({ pins, strings, info, selected = [], pickedK
     ].filter((it) => it.a);
     // a label with no clear spot is left off (its string's title and the string list carry the text) rather than drawn over another
     return placeLabels(items, cards, W, H, { w: LABEL_W, h: LABEL_H }, { w: SMALL_W, h: SMALL_H }, { dropBlocked: true });
-  }, [pins, strings, failed, ghosts, pos, ghostAt]);
+  }, [pins, strings, failed, ghosts, pos, ghostAt, W, H]);
 
   const toSvg = (e) => {
     const r = svgRef.current.getBoundingClientRect();
@@ -117,9 +145,9 @@ export default function BoardGraph({ pins, strings, info, selected = [], pickedK
   }
 
   return (
-    <div className="board-graph" data-testid="board-graph">
+    <div className="board-graph" data-testid="board-graph" ref={frameRef}>
       <Legend />
-      <div className="board-stage">
+      <div className={`board-stage${narrow ? ' board-stage--narrow' : ''}`}>
         {coverageGap ? (
           <div className="board-fog" data-testid="board-fog">
             <span className="board-fog__head">No coverage {dayMonth(coverageGap.date)}</span>

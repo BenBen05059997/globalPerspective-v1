@@ -54,6 +54,18 @@
 .gp-tabs--segmented .gp-tabs__tab[aria-checked='true'] { border-color: var(--accent); color: var(--accent); }
 @media (pointer: coarse) { .gp-tabs--segmented .gp-tabs__tab { min-height: calc(var(--tap-min) - 6px); } }
 
+/* ---- Touch hit area ----
+   `.gp-hit` on a small link gives it a 44 px (--tap-min) touch target on a touch screen without changing how it
+   looks or moving anything: an invisible box centred on the link, at least --tap-min each way. Segmented tabs get
+   the same, so their 38 px segments reach across the group's 3 px frame. */
+@media (pointer: coarse) {
+  .gp-hit, .gp-tabs--segmented .gp-tabs__tab { position: relative; }
+  .gp-hit::after, .gp-tabs--segmented .gp-tabs__tab::after {
+    content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: max(100%, var(--tap-min)); height: max(100%, var(--tap-min));
+  }
+}
+
 /* ---- Card (panel ladder) ---- */
 .gp-card {
   box-sizing: border-box; min-width: 0; padding: var(--space-4);

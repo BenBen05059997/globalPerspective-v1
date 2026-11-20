@@ -198,7 +198,7 @@ export default function ReadMode({ dateParam }) {
             <div className="daily-verdict-kicker">
               <span className="daily-kicker-pill">Lead Story</span>
               {brief.countryToWatch?.countryName && (
-                <span className="daily-verdict-loc">· <EntityLink kind="country" id={brief.countryToWatch.countryName}>{brief.countryToWatch.countryName}</EntityLink></span>
+                <span className="daily-verdict-loc">· <EntityLink kind="country" id={brief.countryToWatch.countryName} className="gp-hit">{brief.countryToWatch.countryName}</EntityLink></span>
               )}
             </div>
             <h2 className="daily-verdict-h3">{brief.headline}</h2>
@@ -269,7 +269,7 @@ export default function ReadMode({ dateParam }) {
                   <div className="daily-story-body">
                     <div className="daily-story-kicker">
                       <CategoryTag category={story.category} />
-                      <PlaceLinks names={(story.regions || []).slice(0, 3)} className="daily-tag-region" />
+                      <PlaceLinks names={(story.regions || []).slice(0, 3)} className="daily-tag-region gp-hit" />
                       {story.sourceCount > 0 && (
                         <span className="daily-tag-src">{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
                       )}

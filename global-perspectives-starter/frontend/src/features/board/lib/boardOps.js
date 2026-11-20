@@ -87,11 +87,10 @@ export function restoreString(board, idA, idB) {
   }) };
 }
 
-/** Pins on an ellipse (a point at the centre for one). The order starts as kind then pin id; with `strings` given,
- *  pins that are joined by an uncut string are walked one after another so they sit next to each other. The order
- *  depends only on the pins and strings, so a pin keeps its place between renders. Returns { pinId: {x, y} }
- *  inside a width x height box, every centre at least `margin` {x, y} from the edges. */
-export function layoutPins(pins, width, height, strings = [], margin = { x: 0, y: 0 }) {
+/** The order pins are laid out in: kind then pin id; with `strings` given, pins joined by an uncut string are
+ *  walked one after another so they sit next to each other. It depends only on the pins and strings, so a pin keeps
+ *  its place between renders. */
+function pinOrder(pins, strings) {
   const kindOrder = { thread: 0, country: 1, actor: 2 };
   const base = [...pins].sort((p, q) => (kindOrder[p.kind] - kindOrder[q.kind]) || (p.pinId < q.pinId ? -1 : 1));
   const rank = Object.fromEntries(base.map((p, i) => [p.pinId, i]));
@@ -110,6 +109,13 @@ export function layoutPins(pins, width, height, strings = [], margin = { x: 0, y
     (near[id] || []).sort((x, y) => rank[x] - rank[y]).forEach(walk);
   };
   base.forEach((p) => walk(p.pinId));
+  return sorted;
+}
+
+/** Pins on an ellipse (a point at the centre for one), in pinOrder. Returns { pinId: {x, y} } inside a
+ *  width x height box, every centre at least `margin` {x, y} from the edges. */
+export function layoutPins(pins, width, height, strings = [], margin = { x: 0, y: 0 }) {
+  const sorted = pinOrder(pins, strings);
   const out = {};
   const n = sorted.length;
   const cx = width / 2;
@@ -122,6 +128,18 @@ export function layoutPins(pins, width, height, strings = [], margin = { x: 0, y
     out[p.pinId] = { x: Math.round(cx + rx * Math.cos(t)), y: Math.round(cy + ry * Math.sin(t)) };
   });
   return out;
+}
+
+/** The narrow (phone) layout: pins in pinOrder down two columns, zigzag, each a half `step` below the last, so
+ *  neighbours in the order (often joined by a string) sit side by side. Returns { pos: { pinId: {x, y} }, height }:
+ *  the box is `width` wide and as tall as the pins need, every centre `margin` {x, y} from the edges. */
+export function layoutColumns(pins, width, strings = [], margin = { x: 0, y: 0 }, step = 0) {
+  const sorted = pinOrder(pins, strings);
+  const pos = {};
+  sorted.forEach((p, i) => {
+    pos[p.pinId] = { x: i % 2 ? width - margin.x : margin.x, y: Math.round(margin.y + (i * step) / 2) };
+  });
+  return { pos, height: Math.round(2 * margin.y + (Math.max(sorted.length - 1, 0) * step) / 2) };
 }
 
 /** Where a suggested (ghost) pin sits: near the pins it touches, on the free spot farthest from every pin.

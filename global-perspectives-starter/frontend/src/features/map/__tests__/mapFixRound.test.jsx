@@ -8,7 +8,7 @@ import { MemoryRouter, useNavigate } from 'react-router';
 const S = vi.hoisted(() => ({
   world: null, loading: false, error: null,
   topics: [], topicsError: null, topicsSettled: true,
-  webFailed: false, detailArgs: [], detailStatus: 'ready', detail: null, isPhone: false,
+  webFailed: false, detailArgs: [], detailStatus: 'ready', detail: null, isPhone: false, width: null,
 }));
 
 vi.mock('@/features/map/hooks/useWorld.js', () => ({
@@ -38,7 +38,7 @@ vi.mock('@/features/map/hooks/useCountryRiskLayer.js', () => ({
   useCountryRiskLayer: () => ({ drawn: [], hiddenOld: 0, loading: false }),
 }));
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({
-  useIsPhone: () => S.isPhone, default: () => S.isPhone, PHONE_BREAKPOINT: 900,
+  useIsPhone: (bp = 900) => S.isPhone || (S.width != null && S.width < bp), default: () => S.isPhone, PHONE_BREAKPOINT: 900,
 }));
 vi.mock('@/shared/map/RadarMap.jsx', () => ({
   default: (p) => <div data-testid="radar" data-situations={p.situations.length} />,
@@ -209,6 +209,20 @@ describe('one freshness stamp and one count', () => {
     await renderAt('/');
     fireEvent.click(screen.getByRole('tab', { name: /alerts/i }));
     expect(within(screen.getByLabelText('Alerts')).getByText(/^· 1 story, 2 official alerts · 3 on the map$/)).toBeInTheDocument();
+  });
+});
+
+describe('promise box below 1100 px (design round 6)', () => {
+  it('a desktop under 1100 px shows the sentence only and puts the story kinds in Map key; 1100 px and up keeps them in the box', async () => {
+    S.width = 1000;
+    const narrow = await renderAt('/');
+    expect(document.querySelector('.sh-orient')).toBeInTheDocument();
+    expect(document.querySelector('.sh-orient .gp-kindkey')).toBeNull();
+    narrow.unmount();
+    S.width = 1440;
+    vi.resetModules();
+    await renderAt('/');
+    expect(document.querySelector('.sh-orient .gp-kindkey')).toBeInTheDocument();
   });
 });
 

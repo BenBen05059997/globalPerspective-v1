@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PIN_BUDGET } from '@/shared/lib/board.js';
-import { placeLabels, addPin, retirePin, restorePin, livePinCount, keepString, cutString, restoreString, layoutPins, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
+import { placeLabels, addPin, retirePin, restorePin, livePinCount, keepString, cutString, restoreString, layoutPins, layoutColumns, missingActors, nextPinId } from '@/features/board/lib/boardOps.js';
 
 const pin = (i, kind = 'thread', refId = `thread-${i}`) => ({ pinId: `p${String(i).padStart(2, '0')}`, kind, refId, addedAt: '2026-10-20T00:00:00Z' });
 const empty = () => ({ boardId: 'b1', name: 'Test', pins: [], strings: [] });
@@ -77,6 +77,20 @@ describe('strings', () => {
     const back = restorePin(retired, 'p01');
     expect(back.pins.find((p) => p.pinId === 'p01').retiredAt).toBeUndefined();
     expect(retirePin(retired, 'p01', 'later').pins[0].retiredAt).toBe('2026-10-21T00:00:00Z'); // retiring twice keeps the first date
+  });
+});
+
+describe('layoutColumns (the phone graph)', () => {
+  it('puts 8 pins down two zigzag columns inside the width, no two cards overlapping, and sizes the box to them', () => {
+    const W = 416; const card = { w: 190, h: 136 }; const margin = { x: 107, y: 80 };
+    const { pos, height } = layoutColumns(withPins(8).pins, W, [], margin, 152);
+    const at = Object.values(pos);
+    expect(at).toHaveLength(8);
+    expect(new Set(at.map((p) => p.x))).toEqual(new Set([107, 309]));
+    expect(height).toBe(160 + 7 * 76);
+    expect(at.every((p) => p.x - card.w / 2 >= 0 && p.x + card.w / 2 <= W && p.y - card.h / 2 >= 0 && p.y + card.h / 2 <= height)).toBe(true);
+    const overlap = (a, b) => Math.abs(a.x - b.x) < card.w && Math.abs(a.y - b.y) < card.h;
+    expect(at.some((a, i) => at.some((b, j) => i < j && overlap(a, b)))).toBe(false);
   });
 });
 

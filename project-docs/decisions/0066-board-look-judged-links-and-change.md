@@ -1,6 +1,6 @@
 # 66. The public board shows judged links, their direction and strength, and what moved lately
 
-Status: accepted (operator, chat, 2026-11-20: "ok that looks better and you can do it"); being built, not live. The code on `main` does not carry it yet. Amends 0058 steps 5 and 6 and its section "What the theme page and the index show"; refines the preset naming of 0054; follows 0012, 0013, 0058, 0064.
+Status: accepted (operator, chat, 2026-11-20: "ok that looks better and you can do it"); live since 2026-11-20 (back end 384e524a; front end 6979d01d and 7923f388; production Worker version 1ff14993-843f-46e7-a6bc-19bf40c872dd, verified). Amends 0058 steps 5 and 6 and its section "What the theme page and the index show"; refines the preset naming of 0054; follows 0012, 0013, 0058, 0064. What differs from the plan is under "As built".
 Date: 2026-11-20
 
 ## Context
@@ -33,9 +33,19 @@ Change is shown for every reader. The box at the top says "This week" on a first
 - The phone page length (about four screens for 8 stories) and the crowded arc ends at the busiest card.
 
 ## Consequences
-- Front-end work only for points 1 to 3: the public theme file already has stories and directed links. The preset path, which loses direction, is not used for the public theme boards. Point 5 is a one-line change in `backend/board/newsBoard/src/presets.js`.
+- The public theme boards need no preset path: the browser reads `index/themes.json`, which already had stories and directed links. The preset path loses direction, so it was not used for them.
+- Back end: `newsStoryRecord` adds to `themes.json` per story `stepCount`, `stepDays`, `firstStep` and `newestStep`, per link `judgedAt`, and per theme `shared` (shared-name pairs with no judged link). `newsBoard` names the region presets "Stories touching <Region>" and `list_presets` adds `links` and `shared` per preset (read time only; `strings` and forks are unchanged).
 - 0058 step 5 (`newsBoard` presets read the theme and region files and drop their own grouping code) is not needed for the public theme boards, because the browser reads `themes.json`. Step 6 is taken over by this record: the index and board layout it describes are replaced by the themes list first and the region boards second. 0058 steps 7 to 9 are not touched.
-- `ARCHITECTURE_BOARD.md` describes the board as the code has it today and says this record is being built; it changes when the build is live.
-- The release needs a fresh yes (CLAUDE.md).
+- `ARCHITECTURE_BOARD.md` section 10 describes the live board. The release needed a fresh yes (CLAUDE.md).
+
+## As built
+What differs from the plan above:
+- No "confirmed by our weekly review" sentence. A theme link has no confirmed state, so the page does not claim one. Under "How this board is made" it says: "Every link is our model's judgment, made on {date}, so every link is drawn dashed." The date is left out when no link carries one.
+- The Pins and Strings lists are kept. They sit under the drawing when a reader opens "Show as a diagram" or "Map". The sign-in line is kept too: on the list page and at the foot of an opened board.
+- The last visit is kept per board, not once for the page. `localStorage` key `gp-board-visits` holds `{ seen, prev }` for each board; a view on a later day moves `seen` to `prev`; a reload the same day keeps both. Storage that throws or holds junk gives "This week".
+- Region boards use the same list as theme boards, built from the new `links` and `shared` of `list_presets`. Those links carry no reason, so a region card has no "why".
+- Direction in members' own boards is still later (point 7). Members' boards are unchanged apart from colour: strings and preset pins use the body text colour instead of the accent blue.
+- No history of link changes or of stories that left a board is stored (see "Not decided here"). "What moved" compares story dates only: a story that took a new step, or began, since the last visit.
+- No lag is shown (point 4).
 
 Source: `.board/reviews/board-look-2026-11-20/` (local, not in git): `BUILD.md`, `3-planner.md`, `3-designer.md`, `3-tester.md`; public `record/views/index/themes.json` and `index/web.json` read 2026-11-20 by the planner.

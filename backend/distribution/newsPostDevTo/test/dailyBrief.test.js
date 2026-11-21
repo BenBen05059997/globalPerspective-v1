@@ -156,6 +156,7 @@ test('the stored row: DAILY_BRIEF#<date> keys, the model text, the real model na
     assert.equal(chats[0].model, 'test-model');
     assert.equal(chats[0].maxTokens, 4000);
     assert.equal(chats[0].temperature, 0.3);
+    assert.equal(chats[0].json, true); // an unreadable Anthropic answer is asked once more (llm.js)
     assert.match(chats[0].user, /Headline number 1 about the world/);
   });
 });

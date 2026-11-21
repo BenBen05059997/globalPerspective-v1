@@ -10,9 +10,11 @@
 //   category: string,                                    the story's category; picks the crisis colour and word
 //   newestDate: 'YYYY-MM-DD', firstDate?: 'YYYY-MM-DD', stepCount?: number, stepDays?: number,   the since line
 //   countries: [ISO3],                                   this story's places, the most "where it happens" first (solid on the map)
+//   linkPlaces?: [ISO3],                                 this story's top places from its links view (web.places); with a link they are framed first
 //   contextCountries?: [ISO3],                           other countries of the newest step, named dim when they are in frame
 //   link?: { direction: 'feeds' | 'fed', strength: 'medium' | 'strong', confirmed: boolean,
-//            title: string, category?: string, countries: [ISO3] },   countries = the other story's newest-step countries
+//            title: string, category?: string, countries: [ISO3], places?: [ISO3] },   countries = the other story's newest-step countries;
+//            places = its top places from the links view (web.otherPlaces[otherId]); the newest-step countries are kept to them when any match
 //   forecast?: { chance: number, text: string, due: 'YYYY-MM-DD' },
 //   sourceCount?: number,
 // }
@@ -68,6 +70,9 @@ function sinceLine({ stepCount, stepDays, kind }) {
 const MAX_W = WORLD.w / 3; // this story and the link never stretch the frame past a third of the world
 const MAX_H = WORLD.h / 3;
 const MIN_FRAME_W = 110;
+const MIN_ARROW = 70; // the least visible arrow length (px at 1200)
+const MIN_ZOOM_W = 10; // the tightest frame a zoom for the arrow may reach (map units; the panel is 504 px wide)
+const ZOOM_FILL = 0.9; // zooming in for the arrow keeps drawn countries within 90% of the frame
 const FILL = 0.76; // the drawn countries take at most this share of the frame: the rest is margin on every side
 
 const boxUnion = (a, b) => (a ? [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])] : b);
@@ -75,7 +80,9 @@ const fits = (box) => box[2] - box[0] <= MAX_W && box[3] - box[1] <= MAX_H;
 
 /**
  * Decide what the map draws. Pure; exported for tests.
- * Returns { own, striped, dotted, notes, placeNames, frame: {x, y, w, h, scale}, sameAsOwn }:
+ * Returns { own, striped, dotted, notes, placeNames, frame: {x, y, w, h, scale}, arrow, arrowFault }:
+ *   arrow       { tail, target, headShape } in map units, set on every link card that has a new place to point at; arrowFault says why
+ *               an arrow is missing or shorter than MIN_ARROW (the generator zooms in first; it never hides the case)
  *   own      this story's countries that are drawn solid (first = most "where it happens"); the first is always drawn, the others only
  *            while the frame stays within a third of the world
  *   notes    names of this story's countries left off the map for that reason ("Also in this story")
@@ -83,56 +90,104 @@ const fits = (box) => box[2] - box[0] <= MAX_W && box[3] - box[1] <= MAX_H;
  *   placeNames  the names the link block says ("a story in ..."); [] when the other story is in the same places
  */
 function planMap(data) {
-  const seen = new Set();
+  const link = data.link;
+  // A link frames the two linked stories first. This story's countries are ordered: the ones the links view names as its places
+  // (`data.linkPlaces`, web.places) first, then by distance to the other story's places (`link.places` = web.otherPlaces[otherId],
+  // kept to the other story's newest-step countries; else those countries). The first is always drawn, the rest while the frame stays
+  // within a third of the world; a main country far from the other story is therefore not drawn and falls into "Also in this story".
+  // Without a link the order is the story's own (the main country leads).
+  let order = [...new Set(data.countries || [])];
+  const otherIsos = (() => {
+    if (!link) return [];
+    const all = [...new Set(link.countries || [])];
+    const top = all.filter((c) => (link.places || []).includes(c));
+    return top.length ? top : all;
+  })();
+  if (link) {
+    const targets = otherIsos.map((c) => countryShape(c)).filter(Boolean).map((sh) => sh.anchor);
+    const dist = (iso) => { const sh = countryShape(iso); return sh && targets.length ? Math.min(...targets.map((t) => Math.hypot(t[0] - sh.anchor[0], t[1] - sh.anchor[1]))) : 0; };
+    const key = (iso) => [(data.linkPlaces || []).includes(iso) ? 0 : 1, dist(iso)];
+    order = order.map((iso, i) => ({ iso, i, k: key(iso) })).sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i).map((o) => o.iso);
+  }
   const own = [];
   const notes = [];
   let box = null;
-  for (const iso of data.countries || []) {
-    if (seen.has(iso)) continue;
-    seen.add(iso);
+  const joinOwn = (shape) => { own.push(shape); box = boxUnion(box, shape.box); };
+  // Countries that take part in the link (named in the links view's places, or shared with the other story) join while the frame stays within
+  // a third of the world. Any other country of this story joins only after the other story is placed, and only if it hardly widens that frame.
+  const takesPart = (iso) => !link || (data.linkPlaces || []).includes(iso) || otherIsos.includes(iso);
+  const later = [];
+  for (const iso of order) {
     const shape = countryShape(iso);
     if (!shape) continue;
-    if (!box || fits(boxUnion(box, shape.box))) { own.push(shape); box = boxUnion(box, shape.box); } else notes.push(shape.name);
+    if (link && box && !takesPart(iso)) later.push(shape);
+    else if (!box || fits(boxUnion(box, shape.box))) joinOwn(shape);
+    else notes.push(shape.name);
   }
-  const link = data.link;
   const striped = [];
   let placeNames = [];
   if (link && box) {
     const onMap = new Set(own.map((s) => s.iso3));
-    const fresh = [];
+    const fresh = otherIsos.filter((iso) => !onMap.has(iso));
+    // the link's own countries come first, then any other newest-step country
     for (const iso of link.countries || []) if (!onMap.has(iso) && !fresh.includes(iso)) fresh.push(iso);
     const named = fresh.slice(0, 2).map((iso) => ({ iso, shape: countryShape(iso) })).filter((c) => c.shape);
     placeNames = named.map((c) => c.shape.name);
     for (const { shape } of named) if (fits(boxUnion(box, shape.box))) { striped.push(shape); box = boxUnion(box, shape.box); }
   }
-  if (!box) return { own, striped, dotted: new Set(), notes, placeNames, frame: null };
-
-  // frame: fit the boxes (a dot is padded by its radius) with a margin; solve twice since the dot radius depends on the scale
-  const all = [...own, ...striped];
-  let fw = MIN_FRAME_W;
-  let dotted = new Set();
-  let content = null;
-  for (let pass = 0; pass < 3; pass++) {
-    const scale = MAP_W / fw;
-    dotted = new Set(all.filter((s) => s.kind === 'point' || Math.max(s.box[2] - s.box[0], s.box[3] - s.box[1]) * scale < DOT_MIN).map((s) => s.iso3));
-    let b = null;
-    for (const s of all) {
-      const pad = dotted.has(s.iso3) ? (DOT_R + 4) / scale : 0;
-      const sb = dotted.has(s.iso3) ? [s.anchor[0] - pad, s.anchor[1] - pad, s.anchor[0] + pad, s.anchor[1] + pad] : s.box;
-      b = boxUnion(b, sb);
-    }
-    const cw = b[2] - b[0];
-    const ch = b[3] - b[1];
-    fw = Math.max(MIN_FRAME_W, cw / FILL, (ch / FILL) * (MAP_W / H));
-    content = b;
+  // the other countries of this story: drawn when they widen the link frame by no more than half (+40 map units), else named in the note
+  for (const shape of later) {
+    const u = boxUnion(box, shape.box);
+    if (fits(u) && u[2] - u[0] <= (box[2] - box[0]) * 1.5 + 40 && u[3] - u[1] <= (box[3] - box[1]) * 1.5 + 40) joinOwn(shape);
+    else notes.push(shape.name);
   }
-  const scale = MAP_W / fw;
-  const fh = H / scale;
-  let fx = (content[0] + content[2]) / 2 - fw / 2;
-  let fy = (content[1] + content[3]) / 2 - fh / 2;
-  fx = Math.max(Math.min(fx, WORLD.w - fw), 0);
-  fy = fh >= WORLD.h ? (WORLD.h - fh) / 2 : Math.max(Math.min(fy, WORLD.h - fh), 0);
-  return { own, striped, dotted, notes, placeNames, frame: { x: fx, y: fy, w: fw, h: fh, scale } };
+  if (!box) return { own, striped, dotted: new Set(), notes, placeNames, frame: null, arrow: null };
+
+  const all = [...own, ...striped];
+  const arrow = link && striped.length ? arrowEnds(own, striped, link.direction === 'feeds') : null;
+  // frame: fit the boxes (a dot is padded by its radius) with a margin; solve a few times since the dot radius depends on the scale
+  const frameAt = (fwMin, fill) => {
+    let fw = fwMin;
+    let dotted = new Set();
+    for (let pass = 0; pass < 3; pass++) {
+      const scale = MAP_W / fw;
+      dotted = new Set(all.filter((s) => s.kind === 'point' || Math.max(s.box[2] - s.box[0], s.box[3] - s.box[1]) * scale < DOT_MIN).map((s) => s.iso3));
+      let b = null;
+      for (const s of all) {
+        const pad = dotted.has(s.iso3) ? (DOT_R + 4) / scale : 0;
+        b = boxUnion(b, dotted.has(s.iso3) ? [s.anchor[0] - pad, s.anchor[1] - pad, s.anchor[0] + pad, s.anchor[1] + pad] : s.box);
+      }
+      fw = Math.max(fwMin, (b[2] - b[0]) / fill, ((b[3] - b[1]) / fill) * (MAP_W / H));
+      if (pass === 2) {
+        const scale2 = MAP_W / fw;
+        const fh = H / scale2;
+        const fx = Math.max(Math.min((b[0] + b[2]) / 2 - fw / 2, WORLD.w - fw), 0);
+        const fy = fh >= WORLD.h ? (WORLD.h - fh) / 2 : Math.max(Math.min((b[1] + b[3]) / 2 - fh / 2, WORLD.h - fh), 0);
+        return { dotted, frame: { x: fx, y: fy, w: fw, h: fh, scale: scale2 } };
+      }
+    }
+    return null;
+  };
+  let cur = frameAt(MIN_FRAME_W, FILL);
+  // The arrow is always drawn on a link card. If its visible length is under the minimum, zoom in (smaller frame, less margin) until
+  // it is long enough; countries are never cut (the content keeps 90% of the frame at most). If that cannot be done, report it.
+  let arrowFault = link && !arrow ? (placeNames.length ? 'the other story\'s new places do not fit the map frame (a third of the world): no arrow' : 'the other story is in the same places as this one: no arrow') : null;
+  if (arrow) {
+    const visible = (c) => { const g = arrowGeometry(arrow, c.frame, c.dotted); return g ? g.visible : 0; };
+    if (visible(cur) < MIN_ARROW) {
+      let fwMin = cur.frame.w;
+      let best = cur;
+      for (let i = 0; i < 40 && visible(best) < MIN_ARROW; i++) {
+        fwMin *= 0.93;
+        const next = frameAt(Math.max(fwMin, MIN_ZOOM_W), ZOOM_FILL);
+        if (next.frame.w >= best.frame.w - 0.01) break; // the content already fills the frame: cannot zoom in further
+        best = next;
+      }
+      cur = best;
+      if (visible(cur) < MIN_ARROW) arrowFault = `the arrow is ${Math.round(visible(cur))} px long at best (minimum ${MIN_ARROW}): the two stories' places are too close to zoom in further without cutting a country`;
+    }
+  }
+  return { own, striped, dotted: cur.dotted, notes, placeNames, frame: cur.frame, arrow, arrowFault };
 }
 
 const rectsOverlap = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
@@ -142,6 +197,65 @@ const bez = (p0, c, p1, t) => [
   (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p1[0],
   (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p1[1],
 ];
+
+/** Where the arrow goes, in map units: { tail, target, headShape }. Feeds: from the middle of this story's drawn countries to the other
+ *  story's farthest new country. Fed: from that country to this story's nearest drawn country. */
+function arrowEnds(own, striped, feeds) {
+  const ownMid = [own.reduce((a, o) => a + o.anchor[0], 0) / own.length, own.reduce((a, o) => a + o.anchor[1], 0) / own.length];
+  const d = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+  const far = [...striped].sort((a, b) => d(b.anchor, ownMid) - d(a.anchor, ownMid))[0];
+  if (feeds) return { tail: ownMid, target: far.anchor, headShape: far };
+  const near = [...own].sort((a, b) => d(a.anchor, far.anchor) - d(b.anchor, far.anchor))[0];
+  return { tail: far.anchor, target: near.anchor, headShape: near };
+}
+
+/** The arrow in pixels for a frame: { d, tri, tail, tip, along, visible } or null when the ends are under 24 px apart. The head stops
+ *  8 px short of the border of the head's country (walks the curve against the real outline). `visible` = tail to tip. */
+function arrowGeometry(arrow, frame, dotted) {
+  const s = frame.scale;
+  const P = ([x, y]) => [(x - frame.x) * s, (y - frame.y) * s];
+  const tail = P(arrow.tail);
+  const target = P(arrow.target);
+  const { headShape } = arrow;
+  const len = Math.hypot(target[0] - tail[0], target[1] - tail[1]);
+  if (len <= 24) return null;
+  const nx = -(target[1] - tail[1]) / len;
+  const ny = (target[0] - tail[0]) / len;
+  const sign = ny <= 0 ? 1 : -1; // bend upwards
+  const ctrl = [(tail[0] + target[0]) / 2 + nx * sign * len * 0.2, (tail[1] + target[1]) / 2 + ny * sign * len * 0.2];
+  const inv = ([x, y]) => [x / s + frame.x, y / s + frame.y];
+  let tStop = 1;
+  const dotStop = dotted.has(headShape.iso3);
+  for (let i = 1; i <= 200; i++) {
+    const t = i / 200;
+    const q = bez(tail, ctrl, target, t);
+    const hit = dotStop ? Math.hypot(q[0] - target[0], q[1] - target[1]) <= DOT_R + 8 : insideShape(headShape, ...inv(q));
+    if (hit && t > 0.2) { tStop = t; break; }
+  }
+  // back off 8 px (map-border gap) along the curve
+  let tEnd = tStop;
+  for (let i = 0; i < 200 && tEnd > 0.1; i++) { if (Math.hypot(...bez(tail, ctrl, target, tEnd).map((v, k) => v - bez(tail, ctrl, target, tStop)[k])) >= 8) break; tEnd -= 0.005; }
+  const tip = bez(tail, ctrl, target, tEnd);
+  const before = bez(tail, ctrl, target, Math.max(tEnd - 0.04, 0));
+  const ang = Math.atan2(tip[1] - before[1], tip[0] - before[0]);
+  const HL = 30; const HW = 26;
+  const base = [tip[0] - Math.cos(ang) * HL, tip[1] - Math.sin(ang) * HL];
+  const l = [base[0] + Math.cos(ang + Math.PI / 2) * HW / 2, base[1] + Math.sin(ang + Math.PI / 2) * HW / 2];
+  const rr = [base[0] - Math.cos(ang + Math.PI / 2) * HW / 2, base[1] - Math.sin(ang + Math.PI / 2) * HW / 2];
+  // the line ends inside the head: re-solve the curve to end at `base`
+  let tb = tEnd;
+  for (let i = 0; i < 200 && tb > 0.05; i++) { const q = bez(tail, ctrl, target, tb); if (Math.hypot(q[0] - tip[0], q[1] - tip[1]) >= HL - 2) break; tb -= 0.005; }
+  const e = bez(tail, ctrl, target, tb);
+  const c2 = [tail[0] + (ctrl[0] - tail[0]) * tb, tail[1] + (ctrl[1] - tail[1]) * tb]; // sub-curve control point by de Casteljau
+  const along = [];
+  for (let i = 0; i <= 24; i++) along.push(bez(tail, ctrl, target, (i / 24) * tb));
+  return {
+    d: `M${r1(tail[0])},${r1(tail[1])} Q${r1(c2[0])},${r1(c2[1])} ${r1(e[0])},${r1(e[1])}`,
+    tri: `${r1(tip[0])},${r1(tip[1])} ${r1(l[0])},${r1(l[1])} ${r1(rr[0])},${r1(rr[1])}`,
+    tail, tip, along, visible: Math.hypot(tip[0] - tail[0], tip[1] - tail[1]),
+  };
+}
+
 
 function buildMapSvg(data, plan) {
   const { frame, own, striped, dotted, notes } = plan;
@@ -165,59 +279,16 @@ function buildMapSvg(data, plan) {
   for (const sh of striped) if (dotted.has(sh.iso3)) { const [x, y] = P(sh.anchor); parts.push(`<circle cx="${r1(x)}" cy="${r1(y)}" r="${DOT_R}" fill="url(#hatch)" stroke="${otherHue}" stroke-width="3" stroke-dasharray="6 4"/>`); circ(x, y, DOT_R); }
   for (const sh of own) if (dotted.has(sh.iso3)) { const [x, y] = P(sh.anchor); parts.push(`<circle cx="${r1(x)}" cy="${r1(y)}" r="${DOT_R}" fill="${hue}" stroke="${C.light}" stroke-width="3"/>`); circ(x, y, DOT_R); }
 
-  // the arrow: from the feeding story to the fed one. Only when the other story has a new country on the map.
+  // the arrow: from the feeding story to the fed one (planMap decided its ends and made the frame long enough for it)
   let arrowSvg = '';
-  if (data.link && striped.length) {
-    const ownMid = P([own.reduce((a, o) => a + o.anchor[0], 0) / own.length, own.reduce((a, o) => a + o.anchor[1], 0) / own.length]);
-    const far = striped.map((sh) => ({ sh, p: P(sh.anchor) })).sort((a, b) => Math.hypot(b.p[0] - ownMid[0], b.p[1] - ownMid[1]) - Math.hypot(a.p[0] - ownMid[0], a.p[1] - ownMid[1]))[0];
-    const feeds = data.link.direction === 'feeds';
-    let tail; let target; let color; let headShape;
-    if (feeds) { tail = ownMid; target = far.p; color = hue; headShape = far.sh; } else {
-      tail = far.p; color = otherHue;
-      // the head goes to this story's nearest drawn country
-      const near = own.map((o) => ({ o, p: P(o.anchor) })).sort((a, b) => Math.hypot(a.p[0] - tail[0], a.p[1] - tail[1]) - Math.hypot(b.p[0] - tail[0], b.p[1] - tail[1]))[0];
-      target = near.p; headShape = near.o;
-    }
-    const len = Math.hypot(target[0] - tail[0], target[1] - tail[1]);
-    if (len > 24) {
-      const nx = -(target[1] - tail[1]) / len;
-      const ny = (target[0] - tail[0]) / len;
-      const sign = ny <= 0 ? 1 : -1; // bend upwards
-      const ctrl = [(tail[0] + target[0]) / 2 + nx * sign * len * 0.2, (tail[1] + target[1]) / 2 + ny * sign * len * 0.2];
-      // walk from the tail until the curve reaches the head country's outline (or its dot); stop 8 px short of it
-      const inv = ([x, y]) => [x / s + frame.x, y / s + frame.y];
-      let tStop = 1;
-      const dotStop = dotted.has(headShape.iso3);
-      for (let i = 1; i <= 200; i++) {
-        const t = i / 200;
-        const q = bez(tail, ctrl, target, t);
-        const hit = dotStop ? Math.hypot(q[0] - target[0], q[1] - target[1]) <= DOT_R + 8 : insideShape(headShape, ...inv(q));
-        if (hit && t > 0.2) { tStop = t; break; }
-      }
-      // back off 8 px (map-border gap) along the curve
-      let tEnd = tStop;
-      for (let i = 0; i < 200 && tEnd > 0.1; i++) { if (Math.hypot(...bez(tail, ctrl, target, tEnd).map((v, k) => v - bez(tail, ctrl, target, tStop)[k])) >= 8) break; tEnd -= 0.005; }
-      const tip = bez(tail, ctrl, target, tEnd);
-      const before = bez(tail, ctrl, target, Math.max(tEnd - 0.04, 0));
-      const ang = Math.atan2(tip[1] - before[1], tip[0] - before[0]);
-      const HL = 30; const HW = 26;
-      const base = [tip[0] - Math.cos(ang) * HL, tip[1] - Math.sin(ang) * HL];
-      const l = [base[0] + Math.cos(ang + Math.PI / 2) * HW / 2, base[1] + Math.sin(ang + Math.PI / 2) * HW / 2];
-      const rr = [base[0] - Math.cos(ang + Math.PI / 2) * HW / 2, base[1] - Math.sin(ang + Math.PI / 2) * HW / 2];
-      // the line ends inside the head: re-solve the curve to end at `base`
-      let tb = tEnd;
-      for (let i = 0; i < 200 && tb > 0.05; i++) { const q = bez(tail, ctrl, target, tb); if (Math.hypot(q[0] - tip[0], q[1] - tip[1]) >= HL - 2) break; tb -= 0.005; }
-      const e = bez(tail, ctrl, target, tb);
-      // a curve that ends at tb, with the same bend: sub-curve control point by de Casteljau
-      const c2 = [tail[0] + (ctrl[0] - tail[0]) * tb, tail[1] + (ctrl[1] - tail[1]) * tb];
-      const d = `M${r1(tail[0])},${r1(tail[1])} Q${r1(c2[0])},${r1(c2[1])} ${r1(e[0])},${r1(e[1])}`;
-      const tri = `${r1(tip[0])},${r1(tip[1])} ${r1(l[0])},${r1(l[1])} ${r1(rr[0])},${r1(rr[1])}`;
-      arrowSvg = `<path d="${d}" fill="none" stroke="${C.halo}" stroke-width="15" stroke-linecap="round" opacity=".85"/><polygon points="${tri}" fill="${C.halo}" stroke="${C.halo}" stroke-width="7" stroke-linejoin="round" opacity=".85"/>`
-        + `<path d="${d}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round"/><polygon points="${tri}" fill="${color}"/>`
-        + `<circle cx="${r1(tail[0])}" cy="${r1(tail[1])}" r="9" fill="${color}" stroke="${C.halo}" stroke-width="3"/>`;
-      for (let i = 0; i <= 24; i++) { const q = bez(tail, ctrl, target, (i / 24) * tb); circ(q[0], q[1], 12); }
-      circ(tip[0], tip[1], 20);
-    }
+  const g = plan.arrow ? arrowGeometry(plan.arrow, frame, dotted) : null;
+  if (g) {
+    const color = data.link.direction === 'feeds' ? hue : otherHue;
+    arrowSvg = `<path d="${g.d}" fill="none" stroke="${C.halo}" stroke-width="15" stroke-linecap="round" opacity=".85"/><polygon points="${g.tri}" fill="${C.halo}" stroke="${C.halo}" stroke-width="7" stroke-linejoin="round" opacity=".85"/>`
+      + `<path d="${g.d}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round"/><polygon points="${g.tri}" fill="${color}"/>`
+      + `<circle cx="${r1(g.tail[0])}" cy="${r1(g.tail[1])}" r="9" fill="${color}" stroke="${C.halo}" stroke-width="3"/>`;
+    for (const [x, y] of g.along) circ(x, y, 12);
+    circ(g.tip[0], g.tip[1], 20);
   }
   parts.push(arrowSvg);
 
@@ -271,6 +342,8 @@ function buildMapSvg(data, plan) {
     const bot = isDot ? ay + DOT_R : by1;
     const top = isDot ? ay - DOT_R : by0;
     cands.push([ax, bot + r + labelH / 2], [ax, top - r - labelH / 2], [(isDot ? ax + DOT_R : bx1) + r + lw / 2, ty], [(isDot ? ax - DOT_R : bx0) - r - lw / 2, ty]);
+    // second ring, one label further out, for crowded corners
+    cands.push([ax, bot + r + labelH * 1.5 + 4], [ax, top - r - labelH * 1.5 - 4], [(isDot ? ax + DOT_R : bx1) + r + lw / 2 + 24, ty + labelH], [(isDot ? ax - DOT_R : bx0) - r - lw / 2 - 24, ty + labelH]);
     let best = null;
     for (const [cx0, cy0] of cands) {
       const cx = Math.min(Math.max(cx0, 8 + lw / 2), MAP_W - 8 - lw / 2);
@@ -458,4 +531,4 @@ async function renderStoryCardPng(data, { width = W, sharp = require('sharp') } 
   return width === W ? full.png().toBuffer() : full.resize(width, Math.round((H * width) / W), { kernel: 'lanczos3' }).png().toBuffer();
 }
 
-module.exports = { buildStoryCardSvg, renderStoryCardPng, planMap, crisisOf, fmtDate, sinceLine, FITS };
+module.exports = { buildStoryCardSvg, renderStoryCardPng, planMap, arrowGeometry, crisisOf, fmtDate, sinceLine, FITS };

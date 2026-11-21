@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { buildStoryCardSvg, renderStoryCardPng, planMap, crisisOf, fmtDate, sinceLine } = require('../src/storyCardImage');
+const { buildStoryCardSvg, renderStoryCardPng, planMap, arrowGeometry, crisisOf, fmtDate, sinceLine } = require('../src/storyCardImage');
 const { pickLinkLine, pickForecast, placeCountries, storyCardData } = require('../src/storyCardData');
 const { countryShape, insideShape } = require('../src/storyCardGeo');
 const { wrapText, textWidth } = require('../src/fontMetrics');
@@ -219,4 +219,64 @@ test('storyCardImage: the headline is set in Fraunces, the rest in Inter', () =>
   assert.match(svg, /font-family="'Fraunces 72pt'"[^>]*>Saudi/);
   assert.ok((svg.match(/font-family="'Fraunces 72pt'"/g) || []).length >= 1);
   assert.ok(/font-family="Inter"/.test(svg));
+});
+
+// ── a link frames the two linked stories first (operator 2026-11-21) ──
+const GULF_OIL = { ...BASE, category: 'energy', countries: ['JPN', 'SAU'], linkPlaces: ['IRN', 'USA', 'BHR'],
+  link: { direction: 'fed', strength: 'strong', confirmed: false, title: 'Iran Strikes US Base in Bahrain', category: 'conflict', countries: ['BHR', 'IRN', 'USA'], places: ['BHR', 'IRN', 'USA'] } };
+
+test('planMap: a linked card with a far main country frames the link; the main country is named in the note, the arrow is drawn', () => {
+  const p = planMap(GULF_OIL); // JPN leads the list (main country) but sits far from the Gulf
+  assert.deepEqual(p.own.map((s) => s.iso3), ['SAU']);
+  assert.deepEqual(p.notes, ['Japan']);
+  assert.deepEqual(p.striped.map((s) => s.iso3), ['BHR', 'IRN']);
+  assert.ok(p.frame.w < 250, 'the frame is the Gulf, not Saudi Arabia to Japan');
+  assert.equal(p.arrowFault, null);
+  const g = arrowGeometry(p.arrow, p.frame, p.dotted);
+  assert.ok(g && g.visible >= 70, 'an arrow of at least 70 px');
+  assert.equal(p.arrow.headShape.iso3, 'SAU', 'fed: the head is on this story');
+  assert.equal(p.arrow.tail.join(), p.striped.find((s) => s.iso3 === 'IRN').anchor.join(), 'fed: the tail is on the other (feeding) story');
+  const svg = buildStoryCardSvg(GULF_OIL);
+  assert.ok(svg.includes('Also in this story') && svg.includes('>Japan<'));
+});
+
+test('planMap: the links view places pull this story\'s countries in first; without them the nearest to the other story leads', () => {
+  const near = planMap({ ...GULF_OIL, countries: ['JPN', 'SAU', 'IRN'], linkPlaces: undefined, link: { ...GULF_OIL.link, countries: ['BHR'], places: undefined } });
+  assert.ok(['SAU', 'IRN'].includes(near.own[0].iso3), 'a Gulf country leads, not Japan');
+  assert.ok(!near.own.some((s) => s.iso3 === 'JPN'));
+  const named = planMap({ ...GULF_OIL, countries: ['JPN', 'SAU'], linkPlaces: ['JPN'], link: { ...GULF_OIL.link, countries: ['KOR'], places: undefined, direction: 'feeds' } });
+  assert.equal(named.own[0].iso3, 'JPN', 'a country the links view names as a place is framed first, whatever its place in the list');
+});
+
+test('planMap: a link with ends too close for an arrow zooms in; a case that cannot be zoomed is reported, never hidden', () => {
+  const close = planMap({ ...BASE, countries: ['BEL'], link: { direction: 'feeds', strength: 'strong', countries: ['NLD'] } });
+  const g = arrowGeometry(close.arrow, close.frame, close.dotted);
+  assert.ok(g && g.visible >= 70 && !close.arrowFault, 'zoomed in until the arrow is long enough');
+  assert.ok(close.frame.w < 40);
+  for (const s of [...close.own, ...close.striped]) assert.ok(s.box[0] >= close.frame.x && s.box[2] <= close.frame.x + close.frame.w, 'no country cut');
+  const stuck = planMap({ ...BASE, countries: ['SAU'], link: { direction: 'fed', strength: 'strong', countries: ['SAU', 'BHR'] } });
+  assert.match(stuck.arrowFault, /arrow is \d+ px long/);
+  const same = planMap({ ...BASE, link: { ...LINK, countries: ['SAU', 'YEM'] } });
+  assert.match(same.arrowFault, /same places/);
+  assert.equal(planMap({ ...BASE, link: LINK }).arrowFault, null);
+});
+
+test('planMap: a card with no link keeps the main country first and the same map as before', () => {
+  const p = planMap({ ...BASE, countries: ['POL', 'RUS'] });
+  assert.deepEqual(p.own.map((s) => s.iso3), ['POL']);
+  assert.deepEqual(p.notes, ['Russia']);
+  assert.equal(p.arrow, null);
+  assert.equal(p.arrowFault, null);
+  const lead = planMap({ ...BASE, countries: ['JPN', 'SAU'] }); // no link: JPN leads and both are drawn while they fit a third of the world
+  assert.deepEqual(lead.own.map((s) => s.iso3), ['JPN', 'SAU']);
+});
+
+test('storyCardData: the links view places go into the card data', () => {
+  const story = { threadId: 'a', title: 'T', category: 'conflict', entries: [{ iso3: ['SAU'] }], newestStep: { role: 'move' } };
+  const lv = { judgedLinks: [{ from: 'a', to: 'b', confidence: 'strong', otherTitle: 'B', generatedAt: '2026-11-20' }],
+    web: { places: [{ iso3: 'SAU' }, { iso3: 'YEM' }], otherPlaces: { b: [{ iso3: 'IRN' }] } } };
+  const d = storyCardData({ story, linkViews: [lv], otherStory: { title: 'B', entries: [{ iso3: ['IRN', 'BHR'] }] }, today: '2026-11-21' });
+  assert.deepEqual(d.linkPlaces, ['SAU', 'YEM']);
+  assert.deepEqual(d.link.places, ['IRN']);
+  assert.equal(storyCardData({ story, linkViews: [{ ...lv, web: undefined }], today: '2026-11-21' }).linkPlaces, undefined);
 });

@@ -104,7 +104,15 @@ function storyCardData({ story, linkViews = [], otherStory = null, forecastView 
   };
   if (line) {
     const otherStep = newest(otherStory);
+    // The links view says where the two stories sit: this story's top places (web.places) and the other story's (web.otherPlaces[otherId]).
+    // The card map frames those first (storyCardImage planMap).
+    const webs = (linkViews || []).filter(Boolean).map((v) => v.web).filter(Boolean);
+    const isos = (list) => (Array.isArray(list) ? list.map((p) => p?.iso3).filter(Boolean) : []);
+    const mine = webs.map((w) => isos(w.places)).find((l) => l.length);
+    const theirs = webs.map((w) => isos(w.otherPlaces?.[line.otherId])).find((l) => l.length);
+    if (mine) data.linkPlaces = mine;
     data.link = { direction: line.dir, strength: line.strength, confirmed: line.confirmed, title: line.title || otherStory?.title || '', category: otherStory?.category || null, countries: Array.isArray(otherStep?.iso3) ? otherStep.iso3 : [], otherId: line.otherId };
+    if (theirs) data.link.places = theirs;
   } else {
     data.forecast = pickForecast(forecastView || story, today);
   }

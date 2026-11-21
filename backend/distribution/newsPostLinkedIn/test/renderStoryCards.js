@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const { storyCardData } = require('../src/storyCardData');
-const { buildStoryCardSvg, renderStoryCardPng } = require('../src/storyCardImage');
+const { buildStoryCardSvg, renderStoryCardPng, planMap } = require('../src/storyCardImage');
 
 const BASE = 'https://globalperspective.net/data';
 const VIEWS = `${BASE}/record/views`;
@@ -18,6 +18,7 @@ const EXAMPLES = [
   { name: 'card-near-link-houthi', id: 'thread-houthi-attacks-on-saudi-arabia-ed2d26' },
   { name: 'card-far-link-bahrain', id: 'thread-iran-strikes-us-base-in-bahrai-6ba80b' },
   { name: 'card-no-link-poland', id: 'thread-russian-missiles-hit-poland-ne-021311' },
+  { name: 'card-extra-gulf-oil', id: 'thread-iaea-says-cannot-verify-iran-s-c660a5' }, // a far main country (JPN) next to a Gulf link
 ];
 
 async function get(url) {
@@ -47,10 +48,12 @@ async function main() {
     const data = storyCardData({ story, linkViews, otherStory, forecastView, situations: world?.situations, today });
     fs.writeFileSync(path.join(OUT, `${ex.name}.json`), `${JSON.stringify(data, null, 2)}\n`);
     fs.writeFileSync(path.join(OUT, `${ex.name}.svg`), buildStoryCardSvg(data));
+    const plan = planMap(data);
     for (const width of [1200, 360]) {
       const png = await renderStoryCardPng(data, { width, sharp });
       fs.writeFileSync(path.join(OUT, `${ex.name}-${width}.png`), png);
     }
+    if (plan.arrowFault) console.log(`  ARROW FAULT: ${plan.arrowFault}`);
     console.log(`${ex.name}: ${data.link ? `${data.link.direction} ${data.link.strength} link` : data.forecast ? `forecast ${data.forecast.chance}%` : 'nothing focal'}; countries ${data.countries.join(',')}`);
   }
 }

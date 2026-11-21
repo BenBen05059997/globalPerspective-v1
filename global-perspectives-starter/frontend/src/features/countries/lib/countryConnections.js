@@ -10,7 +10,7 @@ export const lagText = (lagDays) => (Number.isFinite(lagDays) && lagDays >= 0 ? 
 /**
  * @param index  the web index or null
  * @param arcs   [{ threadId, latestTitle }]
- * @returns {Array<{fromId, fromTitle, toId, toTitle, confidence, lag, mechanism, cited:[{title,date,topicId}], asOf}>}
+ * @returns {Array<{fromId, fromTitle, toId, toTitle, fromCategory, toCategory (the web index's, for the link sign), confidence, lag, mechanism, cited:[{title,date,topicId}], asOf}>}
  *   strongest first, one row per (from, to) pair, at most `limit`
  */
 export function connectionRows(index, arcs, { limit = 6, now = Date.now() } = {}) {
@@ -27,6 +27,8 @@ export function connectionRows(index, arcs, { limit = 6, now = Date.now() } = {}
         fromTitle: arc.latestTitle || index.threads?.[arc.threadId]?.title || arc.threadId,
         toId: l.targetThreadId,
         toTitle: l.targetTitle || l.targetThreadId,
+        fromCategory: index.threads?.[arc.threadId]?.category || null,
+        toCategory: index.threads?.[l.targetThreadId]?.category || null,
         confidence: l.confidence,
         lag: lagText(l.lagDays),
         mechanism: l.mechanism,

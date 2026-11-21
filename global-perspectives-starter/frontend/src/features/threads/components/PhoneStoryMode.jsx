@@ -40,7 +40,7 @@ function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, dis
     );
   }
   if (activeChapter) return <ChapterSlide chapter={activeChapter} index={chapters.indexOf(activeChapter)} />;
-  if (activeSlide?.key === 'fedinto') return <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} />;
+  if (activeSlide?.key === 'fedinto') return <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} story={{ id: thread.threadId, category: category || null }} />;
   if (activeSlide?.key === 'watch') return <WatchSlide deadlines={deadlines} />;
   return null;
 }

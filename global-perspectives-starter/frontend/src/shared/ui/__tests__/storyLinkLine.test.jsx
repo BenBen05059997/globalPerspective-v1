@@ -55,9 +55,9 @@ describe('StoryLinkLine', () => {
     expect(sign.querySelectorAll('.gp-sign__sw')[0]).toHaveClass('gp-sign__sw--solid');
     expect(sign).toHaveTextContent('same places');
   });
-  it('a link with no country data: the squares and arrow without places, no "same places"', () => {
+  it('a link with no country data: the squares and arrow and "places not given", no "same places"', () => {
     H.line = { dir: 'feeds', otherId: 'thread-b', title: 'Story B', strength: 'medium', confirmed: false, places: { mine: [], other: [], same: false } };
     mount();
-    expect(screen.getByTestId('link-sign').textContent).toBe('→');
+    expect(screen.getByTestId('link-sign').textContent).toBe('→places not given');
   });
 });

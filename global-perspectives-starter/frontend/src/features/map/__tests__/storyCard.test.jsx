@@ -159,6 +159,11 @@ describe('StoryCard', () => {
     expect(screen.getByRole('link', { name: 'Story B' })).toHaveAttribute('href', '/weekly/thread/thread-b');
     expect(screen.getByText(/← Fed by:/)).toBeInTheDocument();
     expect(screen.getByTestId('card-linked')).toHaveTextContent(/model judgment/i);
+    // the link sign heads the strong row only; the weak row keeps its words and no sign
+    const rows = screen.getAllByTestId('card-link-row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelector('[data-testid="link-sign"]')).not.toBeNull();
+    expect(rows[1].querySelector('[data-testid="link-sign"]')).toBeNull();
   });
 
   it('has no Linked stories block without links', async () => {

@@ -145,7 +145,7 @@ export function ChapterSlide({ chapter, index }) {
 }
 
 // Both directions, with the Read-in-full wording: "Feeds into", then "Fed by".
-export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
+export function FedIntoSlide({ fedInto = [], fedFrom = [], story = null }) {
   const linked = new Set([...fedInto.map((l) => l.targetThreadId), ...fedFrom.map((l) => l.sourceThreadId)]).size;
   const caption = (
     <p className="sm-caption">
@@ -160,14 +160,14 @@ export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
         <>
           <h2 className="sm-slide-title">Feeds into</h2>
           {caption}
-          <FedIntoList links={fedInto} direction="into" />
+          <FedIntoList links={fedInto} direction="into" story={story} />
         </>
       )}
       {fedFrom.length > 0 && (
         <>
           <h2 className="sm-slide-title">Fed by</h2>
           {fedInto.length === 0 && caption}
-          <FedIntoList links={fedFrom} direction="from" />
+          <FedIntoList links={fedFrom} direction="from" story={story} />
         </>
       )}
     </div>
@@ -505,7 +505,7 @@ export default function StoryMode({ thread, analysis, forecast, links, displayTi
                   />
                 )}
                 {activeChapter && <ChapterSlide chapter={activeChapter} index={chapters.indexOf(activeChapter)} />}
-                {activeSlide?.key === 'fedinto' && <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} />}
+                {activeSlide?.key === 'fedinto' && <FedIntoSlide fedInto={fedInto} fedFrom={fedFrom} story={{ id: thread.threadId, category: category || null }} />}
                 {activeSlide?.key === 'watch' && <WatchSlide deadlines={deadlines} />}
               </div>
             </div>

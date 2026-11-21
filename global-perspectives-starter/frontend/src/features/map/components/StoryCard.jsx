@@ -24,6 +24,9 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { storyHref } from '@/shared/lib/links.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
+import LinkSign from '@/shared/ui/LinkSign.jsx';
+import { useLinksView } from '@/shared/api/linksView.js';
+import { pairPlaces, signEligible } from '@/shared/lib/linkLine.js';
 
 // Summary/trajectory text shaping lives in shared/lib/cardText.js (bullet-aware; see its header).
 
@@ -45,6 +48,8 @@ function Mentions({ text, known }) {
 export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThreads = null, linked = null }) {
   const { loading, summary, analysis, summaryError, analysisError } = useStoryCardData(topic);
   const known = useMemo(() => knownStoryTitles(webThreads, topic?.threadId || null), [webThreads, topic?.threadId]);
+  // The story's own links view (one cached GET, the story page's key) holds the places of every pair the sign shows.
+  const linksView = useLinksView(topic?.threadId || null).data;
   if (!topic) return null;
 
   // F1.7 (review R2): show the topic's real category word (e.g. "climate", "energy") — the
@@ -131,22 +136,17 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
           {linkedInto.length || linkedFrom.length ? (
             <section className="sc-section" data-testid="card-linked">
               <SectionHeader as="h3" label="Linked stories" />
-              {linkedInto.length ? (
-                <p className="sc-text">
-                  → Feeds into:{' '}
-                  {linkedInto.map((l, i) => (
-                    <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
-                  ))}
+              {[['feeds', '→ Feeds into:', linkedInto], ['fed', '← Fed by:', linkedFrom]].flatMap(([dir, word, list]) => list.map((l) => (
+                <p key={`${dir}-${l.id}`} className="gp-linkline gp-linkline--row" data-testid="card-link-row">
+                  {signEligible(l.confidence) ? (
+                    <span className="gp-linkline__sign">
+                      <LinkSign dir={dir} mineCategory={category} otherCategory={webThreads?.[l.id]?.category || null} places={pairPlaces([topic.threadId], [linksView], l.id)} />
+                    </span>
+                  ) : null}
+                  <span className="gp-linkline__dir">{word}</span>
+                  <span className="gp-linkline__story"><EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
                 </p>
-              ) : null}
-              {linkedFrom.length ? (
-                <p className="sc-text">
-                  ← Fed by:{' '}
-                  {linkedFrom.map((l, i) => (
-                    <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
-                  ))}
-                </p>
-              ) : null}
+              )))}
               <p className="sc-model-tag"><span className="sc-basis sc-basis--inference">INFERENCE</span> model judgment from the story-web index, not a reported fact</p>
             </section>
           ) : null}

@@ -5,6 +5,10 @@ import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import Button from '@/shared/ui/Button.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import StrengthBars from '@/shared/ui/StrengthBars.jsx';
+import LinkSign from '@/shared/ui/LinkSign.jsx';
+import { useLinksView } from '@/shared/api/linksView.js';
+import { pairPlaces, signEligible } from '@/shared/lib/linkLine.js';
+import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 import '@/features/threads/components/FedIntoList.css';
 
 // FedIntoList — the one rendering of a story-link row, shared by
@@ -15,7 +19,14 @@ import '@/features/threads/components/FedIntoList.css';
 // derived link record (webIndexLinks.js); nothing here invents a date, a headline or a confidence. The words are the board's:
 // "→ feeds into" / "← fed by", the strength as the board's bars and word, the MODEL JUDGMENT tag. A lag below zero is a wrong
 // value (an effect dated before its cause) and is not shown; a lag of zero or more stays as it was.
-export default function FedIntoList({ links, direction = 'into' }) {
+//
+// The link sign (LinkSign) heads a row when the caller passes `story` ({ id, category }: the story this list belongs to) and the
+// row's link is medium or strong: this story = solid square, the other = striped, the arrow by `direction`. A weak or unrated
+// row keeps its words and gets no sign. Places: the story's own links view (the one the page already reads, no new request);
+// the other story's colour: the story-web index (one shared read). Without `story` no sign is drawn.
+export default function FedIntoList({ links, direction = 'into', story = null }) {
+  const view = useLinksView(story?.id || null).data;
+  const { index } = useWebIndex(Boolean(story?.id));
   if (!links?.length) return null;
   return (
     <ul className="fi-list">
@@ -25,6 +36,11 @@ export default function FedIntoList({ links, direction = 'into' }) {
         return (
           <li key={`${targetId}-${link.country || ''}`} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
             <div className="fi-head">
+              {story?.id && signEligible(link.confidence) ? (
+                <span className="gp-linkline__sign">
+                  <LinkSign dir={direction === 'into' ? 'feeds' : 'fed'} mineCategory={story.category || null} otherCategory={index?.threads?.[targetId]?.category || null} places={pairPlaces([story.id], [view], targetId)} />
+                </span>
+              ) : null}
               <span className="fi-dir">{direction === 'into' ? '→ feeds into' : '← fed by'}</span>
               <EntityLink
                 kind="story" id={targetId}
@@ -61,7 +77,7 @@ export default function FedIntoList({ links, direction = 'into' }) {
   );
 }
 
-export function FedIntoToggle({ label, links, direction, defaultOpen = false }) {
+export function FedIntoToggle({ label, links, direction, story = null, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   if (!links?.length) return null;
   return (
@@ -69,7 +85,7 @@ export function FedIntoToggle({ label, links, direction, defaultOpen = false }) 
       <Button compact aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {label} ({distinctTargets(links, direction === 'into' ? 'targetThreadId' : 'sourceThreadId')}) {open ? '▴' : '▾'}
       </Button>
-      {open && <FedIntoList links={links} direction={direction} />}
+      {open && <FedIntoList links={links} direction={direction} story={story} />}
     </div>
   );
 }

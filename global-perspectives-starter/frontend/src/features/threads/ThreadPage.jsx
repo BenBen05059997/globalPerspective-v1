@@ -254,6 +254,7 @@ export default function ThreadPage() {
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
   const storyLinks = useStoryLinks(threadId, thread?.regions);
   const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, shared: sharedRaw = [], hiddenOlder = 0, provenance = null, loading: fedLoading, note: linkNote } = storyLinks;
+  const linkStory = useMemo(() => ({ id: threadId, category: category || null }), [threadId, category]); // the link sign's "this story"
   const fedInto = fedLoading ? [] : fedIntoRaw;
   const fedFrom = fedLoading ? [] : fedFromRaw;
   const sharedActors = fedLoading ? [] : sharedRaw;
@@ -622,12 +623,12 @@ export default function ThreadPage() {
                 <p className="tp-ov-text tp-ov-text--note">
                   Links are between stories; we don&apos;t know which event in this story drove each one.
                 </p>
-                <FedIntoList links={fedInto} direction="into" />
+                <FedIntoList links={fedInto} direction="into" story={linkStory} />
               </OverviewSection>
             )}
             {fedFrom.length > 0 && (
               <OverviewSection label="Fed by" count={distinctTargets(fedFrom, 'sourceThreadId')} unit="stories">
-                <FedIntoList links={fedFrom} direction="from" />
+                <FedIntoList links={fedFrom} direction="from" story={linkStory} />
               </OverviewSection>
             )}
             {sharedActors.length > 0 && (
@@ -704,8 +705,8 @@ export default function ThreadPage() {
               don&apos;t know which event in this story drove each one, so they&apos;re listed once below, not
               pinned to a chapter.
             </p>
-            {fedInto.length > 0 && <FedIntoToggle label="Show linked news — feeds into" links={fedInto} direction="into" />}
-            {fedFrom.length > 0 && <FedIntoToggle label="Show linked news — fed in from earlier" links={fedFrom} direction="from" />}
+            {fedInto.length > 0 && <FedIntoToggle label="Show linked news — feeds into" links={fedInto} direction="into" story={linkStory} />}
+            {fedFrom.length > 0 && <FedIntoToggle label="Show linked news — fed in from earlier" links={fedFrom} direction="from" story={linkStory} />}
           </div>
         )}
 

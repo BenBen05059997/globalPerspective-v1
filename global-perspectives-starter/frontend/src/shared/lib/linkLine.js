@@ -13,6 +13,10 @@ const RANK = { strong: 3, medium: 2 };
 const asc = (x) => String(x || '');
 const MAX_PLACES = 2;
 
+/** True when a link's strength lets it carry a direction sign: medium or strong. A weak or unrated link keeps its words and no
+ *  sign (the one rule every surface asks, so none repeats it). */
+export const signEligible = (confidence) => Boolean(RANK[confidence]);
+
 /** The places of the link sign: this story's countries and the other story's countries NOT already this story's, at most
  *  two each, in the order given (both are lists of { iso3, name }). `same` is true when the other story has countries and
  *  every one is this story's ("same places"). No countries in the data: empty lists and `same` false; nothing is invented. */
@@ -26,10 +30,11 @@ export function signPlaces(mine, other) {
 }
 
 /** The places of one pair, by the rule the story page uses: from the links view that holds the judged link between the story
- *  (any of `ids`, either direction, any strength) and `otherId`. Null when no view holds it: no places, never a guess. */
+ *  (any of `ids`, either direction, any strength) and `otherId`, taken only from a view OF one of `ids`. Null when no view holds it: no places, never a guess. */
 export function pairPlaces(ids, views, otherId) {
   const own = new Set((ids || []).filter(Boolean));
   for (const v of (views || []).filter(Boolean)) {
+    if (v.threadId && !own.has(v.threadId)) continue; // the OTHER story's view also names this pair, but its places are that story's own
     const held = (Array.isArray(v.judgedLinks) ? v.judgedLinks : []).some((l) => (own.has(l.from) && l.to === otherId) || (own.has(l.to) && l.from === otherId));
     if (held) return signPlaces(v.web?.places, v.web?.otherPlaces?.[otherId]);
   }
@@ -45,7 +50,7 @@ export function pickLinkLine(ids, views) {
     for (const l of Array.isArray(v.judgedLinks) ? v.judgedLinks : []) {
       const fromOwn = own.has(l.from);
       const toOwn = own.has(l.to);
-      if (fromOwn === toOwn || !RANK[l.confidence]) continue;
+      if (fromOwn === toOwn || !signEligible(l.confidence)) continue;
       const otherId = fromOwn ? l.to : l.from;
       judged.push({ dir: fromOwn ? 'feeds' : 'fed', otherId, title: l.otherTitle || null, strength: l.confidence, confirmed: confirmedIds.has(otherId), places: signPlaces(v.web?.places, v.web?.otherPlaces?.[otherId]), at: asc(l.generatedAt) });
     }

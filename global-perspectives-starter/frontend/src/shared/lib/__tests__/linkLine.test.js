@@ -73,3 +73,12 @@ describe('signPlaces', () => {
     expect(pickLinkLine(['a', 'm'], [view(), merged]).otherId).toBe('x');
   });
 });
+
+describe('pairPlaces: the view must be the story\'s own', () => {
+  it('the other end\'s view also names the pair but is not used for this story\'s places', () => {
+    const own = { threadId: 'a', judgedLinks: [{ from: 'a', to: 'x', confidence: 'strong' }], web: { places: [{ iso3: 'IRN', name: 'Iran' }], otherPlaces: { x: [{ iso3: 'IRN', name: 'Iran' }] } } };
+    const theirs = { threadId: 'x', judgedLinks: [{ from: 'a', to: 'x', confidence: 'strong' }], web: { places: [{ iso3: 'BHR', name: 'Bahrain' }], otherPlaces: {} } };
+    expect(pairPlaces(['a'], [theirs, own], 'x')).toEqual({ mine: ['Iran'], other: [], same: true });
+    expect(pairPlaces(['a'], [theirs], 'x')).toBeNull();
+  });
+});

@@ -12,6 +12,9 @@ import { storyHref } from '@/shared/lib/links.js';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import ClaimTag from '@/shared/ui/ClaimTag.jsx';
+import LinkSign from '@/shared/ui/LinkSign.jsx';
+import { signEligible, pairPlaces } from '@/shared/lib/linkLine.js';
+import { useLinksViews } from '@/shared/api/linksView.js';
 import {
   CONF_WIDTH, LAYOUT, WEB_DEFAULT_NODES, WEB_HIDE_DAYS, WEB_LIST_DEFAULT, WEB_LIST_MAX, WEB_MAX_NODES,
   layoutWeb, mergeWebLinks, nodeLinkWords, pickWebNodes, strongestLinks, webDateLabel, webFootnote,
@@ -140,12 +143,18 @@ function Graph({ picked, titleOf, peek }) {
   );
 }
 
-function LinkItem({ edge, titleOf }) {
+// The list twin's row. The sign (from = solid square, to = striped) is on a medium or strong merged link that has places only; a weak
+// link, or one whose places are unknown, keeps its words and gets no sign (never bare squares). Places: the first SIGNED_ROWS signed
+// rows read their from-story's links view (cached GETs, see StoriesWeb); rows past that cap have no places and so no sign.
+const SIGNED_ROWS = 10;
+const hasPlaces = (p) => Boolean(p && (p.mine.length || p.other.length || p.same));
+function LinkItem({ edge, titleOf, categoryOf, places }) {
   const n = edge.webs.length;
   const cites = edge.cited.slice(0, 3);
   const more = edge.cited.length - cites.length;
   return (
     <li className="sw-link" data-conf={edge.confidence} data-edge={edge.key}>
+      {signEligible(edge.confidence) && hasPlaces(places) ? <p className="gp-linkline" data-testid="web-sign"><LinkSign dir="feeds" mineCategory={categoryOf(edge.from)} otherCategory={categoryOf(edge.to)} places={places} /></p> : null}
       <EntityLink className="sw-link__story" kind="story" id={edge.from} topic={{ title: titleOf(edge.from) }}>{titleOf(edge.from)}</EntityLink>
       <p className="sw-link__rel">
         <span aria-hidden="true">{'↓'} </span>feeds into <ClaimTag kind="judgment" /> {'·'} <b className="sw-link__conf">{edge.confidence || 'unrated'}</b> {'·'} {n} {plural(n, 'analysis', 'analyses')}
@@ -183,10 +192,17 @@ export default function StoriesWeb({ threads, now, peek, isPhone }) {
   );
   const list = useMemo(() => (picked ? strongestLinks(picked.edges) : []), [picked]);
 
+  // The signed rows (first SIGNED_ROWS medium/strong of the rows shown) read their from-story's links view: at most 10 small cached GETs.
+  const signedEdges = useMemo(() => list.slice(0, listAll ? WEB_LIST_MAX : WEB_LIST_DEFAULT).filter((e) => signEligible(e.confidence)).slice(0, SIGNED_ROWS), [list, listAll]);
+  const signViews = useLinksViews(signedEdges.map((e) => e.from)).data;
+  const placesOf = (e) => (signedEdges.includes(e) ? pairPlaces([e.from], signViews, e.to) : null);
+
   const titleOf = (id) => {
     const t = threadsById.get(id);
     return t?.latestTitle || index?.threads?.[id]?.title || id;
   };
+
+  const categoryOf = (id) => threadsById.get(id)?.category || index?.threads?.[id]?.category || null;
 
   if (loading) return <BootLoader variant="inline" className="gp-boot--tight" label="Loading story links" text="Loading story links" />;
   if (failed) {
@@ -229,7 +245,7 @@ export default function StoriesWeb({ threads, now, peek, isPhone }) {
       {list.length ? (
         <>
           <ol className="sw-links">
-            {shownList.map((e) => <LinkItem key={e.key} edge={e} titleOf={titleOf} />)}
+            {shownList.map((e) => <LinkItem key={e.key} edge={e} titleOf={titleOf} categoryOf={categoryOf} places={placesOf(e)} />)}
           </ol>
           {list.length > shownList.length ? (
             <Button className="sf-more" onClick={() => setListAll(true)}>Show {Math.min(list.length, WEB_LIST_MAX) - shownList.length} more links</Button>

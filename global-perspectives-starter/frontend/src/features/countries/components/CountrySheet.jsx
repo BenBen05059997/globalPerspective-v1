@@ -6,10 +6,18 @@ import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
+import LinkSign from '@/shared/ui/LinkSign.jsx';
+import { useLinksViews } from '@/shared/api/linksView.js';
+import { pairPlaces, signEligible } from '@/shared/lib/linkLine.js';
 import { emptyRow, loadView, saveView, ROWS_MAX, VIEW_MAX } from '@/features/countries/lib/countryYourView.js';
 import '@/features/countries/components/CountrySheet.css';
 
+// "How it connects": each row is "from feeds into to". The sign (the one LinkSign: from = solid square, to = striped) shows only on a
+// medium or strong row; a weak row keeps its words alone. Places come from the links views of the rows' `from` stories (at most six
+// small cached reads, the same ones the story pages use).
 export function HowItConnects({ rows, country }) {
+  const signed = (rows || []).filter((r) => signEligible(r.confidence));
+  const views = useLinksViews(signed.map((r) => r.fromId)).data;
   if (!rows?.length) return null;
   return (
     <section className="cs-block" aria-label="How it connects">
@@ -17,6 +25,11 @@ export function HowItConnects({ rows, country }) {
       <ul className="cs-links">
         {rows.map((r) => (
           <li key={`${r.fromId}>${r.toId}`}>
+            {signEligible(r.confidence) ? (
+              <p className="gp-linkline" data-testid="cs-sign">
+                <LinkSign dir="feeds" mineCategory={r.fromCategory} otherCategory={r.toCategory} places={pairPlaces([r.fromId], views, r.toId)} />
+              </p>
+            ) : null}
             <EntityLink kind="story" id={r.fromId} pathOpts={{ from: 'country', country }} topic={{ title: r.fromTitle }}>{r.fromTitle}</EntityLink>
             {' '}<span className="cs-feeds">feeds into</span>{' '}
             <EntityLink kind="story" id={r.toId} topic={{ title: r.toTitle }}>{r.toTitle}</EntityLink>

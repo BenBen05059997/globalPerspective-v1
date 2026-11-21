@@ -182,6 +182,7 @@ button.gp-jtip:focus-visible { outline: 2px solid var(--focus-ring); outline-off
 .gp-linkline__dir { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-muted); white-space: nowrap; }
 .gp-linkline__story { min-width: 0; }
 .gp-linkline__sign { flex-basis: 100%; }
+.gp-linkline--row { margin: 0; padding: var(--space-2) 0; border-top: 1px solid var(--hairline); } /* one link of a list: its own ruled row, so a sign reads with its own words */
 .gp-linkline__note { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-dim); }
 
 /* ---- LinkSign: the one sign "this story -> the other story" (story page, Home card, board row) ----

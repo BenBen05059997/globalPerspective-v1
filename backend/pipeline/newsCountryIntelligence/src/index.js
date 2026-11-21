@@ -576,7 +576,7 @@ async function writeAnalysis(countryName, analysis, country) {
 // ─── Grok API ────────────────────────────────────────────────────────────────
 
 async function invokeGrok(prompt) {
-  const r = await chat({ step: 'country_intel', model: GROK_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P });
+  const r = await chat({ step: 'country_intel', model: GROK_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P, json: true });
   return { modelId: r.model, content: r.content, latencyMs: r.latencyMs };
 }
 

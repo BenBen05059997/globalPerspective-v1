@@ -123,7 +123,7 @@ async function alreadyNoted(country, dateKey) {
 }
 
 async function callLLM(prompt) {
-  const { content } = await chat({ step: 'drift_note', model: LLM_MODEL, user: prompt, temperature: 0.2, maxTokens: 1000 });
+  const { content } = await chat({ step: 'drift_note', model: LLM_MODEL, user: prompt, temperature: 0.2, maxTokens: 1000, json: true });
   if (!content) throw new Error('llm empty response');
   return jsonText(content);
 }

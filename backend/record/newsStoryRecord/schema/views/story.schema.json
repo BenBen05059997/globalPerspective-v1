@@ -189,6 +189,11 @@
           "minimum": 0,
           "description": "the distinct record dates of those steps"
         },
+        "primaryIso3": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "the story's main country: the newestStep's primaryIso3. Present only when known (never guessed); not stored with the entry facts, so it is there while the newest step is of the last two UTC days"
+        },
         "firstStep": {
           "anyOf": [{"$ref": "#/definitions/stepBrief"}, {"type": "null"}],
           "description": "the step the role rule judges first (recordOrder: archive day, place in its list, then date); its role is start, or null (windowLimited) or measure. Null for a story with no step"
@@ -198,7 +203,7 @@
             {
               "allOf": [{"$ref": "#/definitions/stepBrief"}],
               "required": ["sourceCount"],
-              "properties": {"sourceCount": {"type": "integer", "minimum": 0, "description": "the articles of that step"}}
+              "properties": {"sourceCount": {"type": "integer", "minimum": 0, "description": "the articles of that step"}, "primaryIso3": {"type": "string", "pattern": "^[A-Z]{3}$", "description": "the step's main country: the model's primaryCountry of the entry resolved to ISO3; present only when known (the entry is of the last two UTC days and a selection run wrote it)"}}
             },
             {"type": "null"}
           ],

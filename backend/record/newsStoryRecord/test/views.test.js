@@ -461,6 +461,14 @@ test('an analysis or drift note filed under a merged-away story id is served on 
   assert.equal(v.stories.get('thread-c').analysis, undefined); // the alias view stays a stub
 });
 
+test('a survivor\'s links view also holds the judged links of the stories merged into it, pointed at the survivor; the merged view and a link to itself stay out', () => {
+  const link = (pair, from, to) => ({subtype: 'link', subject: {kind: 'pair', id: pair}, part: 'FRA', at: '2026-10-22T05:00:00.000Z', model: 'm', noteId: pair, iso3: ['FRA'], payload: {from, to, confidence: 'medium', mechanism: 'm'}});
+  const v = build(X.golden(), {notes: [link('thread-a__thread-c', 'thread-c', 'thread-a'), link('thread-b__thread-c', 'thread-c', 'thread-b')]});
+  assert.deepEqual(v.links.get('thread-b').judgedLinks.map((l) => [l.otherThreadId, l.from, l.to]), [['thread-a', 'thread-b', 'thread-a']]);
+  assert.deepEqual(v.links.get('thread-c').judgedLinks.map((l) => [l.from, l.to]).sort(), [['thread-c', 'thread-a'], ['thread-c', 'thread-b']]); // the alias view keeps what it had
+  assert.deepEqual(v.links.get('thread-a').judgedLinks.map((l) => [l.otherThreadId]), [['thread-c']]); // other stories' views are not changed
+});
+
 test('titleOf: the newest non-article entry in the 30-day window, else the newest entry overall, else the newest article, else null', () => {
   const {titleOf} = require('../src/views');
   const e = (date, title, kind) => ({date, title, ...(kind ? {kind} : {})});

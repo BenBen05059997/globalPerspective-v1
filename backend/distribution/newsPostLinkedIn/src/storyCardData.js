@@ -57,16 +57,22 @@ function pickForecast(view, today) {
  * is ordered (the keyed country first) and drops pure actors, so the step's countries are ordered and filtered by it; countries of the
  * step it does not name become `context`. Without a situation the step's list stays as it is and the map's frame rule
  * (nothing farther than a third of the world) drops far-away actors.
+ * primaryIso3: the story view's main country, when it has one (the model's primaryCountry of the newest step; absent when unknown): it comes first.
  * situations: world/latest.json `situations`; ids: the story's own ids.
  */
-function placeCountries(step, situations, ids) {
+function placeCountries(step, situations, ids, primaryIso3 = null) {
   const stepIso = Array.isArray(step?.iso3) ? step.iso3 : [];
   const own = new Set((ids || []).filter(Boolean));
   const keyed = (situations || []).find((s) => own.has(s.threadId) && new RegExp(`^news#[A-Z]{3}#${s.threadId}$`).test(s.id));
-  if (!keyed) return { countries: stepIso, context: [], source: 'step' };
-  const affected = (keyed.iso3_affected || []).filter((c) => stepIso.includes(c));
-  if (!affected.length) return { countries: stepIso, context: [], source: 'step' };
-  return { countries: affected, context: stepIso.filter((c) => !affected.includes(c)), source: 'situation' };
+  const affected = keyed ? (keyed.iso3_affected || []).filter((c) => stepIso.includes(c)) : [];
+  const out = affected.length
+    ? { countries: affected, context: stepIso.filter((c) => !affected.includes(c)), source: 'situation' }
+    : { countries: stepIso, context: [], source: 'step' };
+  // The story's main country (view `primaryIso3`, the model's primaryCountry of the newest step) leads: it is always drawn and the arrow starts there.
+  if (/^[A-Z]{3}$/.test(primaryIso3 || '')) {
+    return { countries: [primaryIso3, ...out.countries.filter((c) => c !== primaryIso3)], context: out.context.filter((c) => c !== primaryIso3), source: 'primary' };
+  }
+  return out;
 }
 
 const newest = (story) => (Array.isArray(story?.entries) && story.entries.length ? story.entries[story.entries.length - 1] : null);
@@ -80,7 +86,7 @@ const newest = (story) => (Array.isArray(story?.entries) && story.entries.length
 function storyCardData({ story, linkViews = [], otherStory = null, forecastView = null, situations = [], ids = null, today }) {
   const myIds = ids || [story.threadId, ...(story.merges || []).map((m) => m.from)];
   const step = newest(story);
-  const place = placeCountries(step, situations, myIds);
+  const place = placeCountries(step, situations, myIds, story.primaryIso3 || story.newestStep?.primaryIso3 || null);
   const line = pickLinkLine(myIds, linkViews);
   const data = {
     headline: story.title,

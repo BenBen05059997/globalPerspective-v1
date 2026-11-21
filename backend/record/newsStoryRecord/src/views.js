@@ -14,7 +14,7 @@ const {iso3List} = require('./_shared/resolveIso3');
 const {buildIndexViews, webLinks, archiveRefOf, entryOrder, recordOrder, WEB_MAX_AGE_DAYS, bytesOf, maxOf} = require('./indexViews');
 const {groupThemes} = require('./themes');
 const {buildBriefViews} = require('./briefViews');
-const {todayIndex, withStories} = require('./todayView');
+const {todayIndex, withStories, primaryCountryBy} = require('./todayView');
 const {storyStamp, NO_READING} = require('./storyStamp');
 const {dropRedatedRepeats} = require('./_shared/dropRedatedRepeats'); // the page's rule, same text (scripts/check-shared-sync.mjs)
 
@@ -493,6 +493,55 @@ function confirmedLinks(t, aliases, self) {
     .sort(byKey((l) => l.otherThreadId, (l) => l.week, (l) => l.direction));
 }
 
+/**
+ * A survivor's links view also holds what was judged for the stories merged into it (their webs keep the old ids): their judged links,
+ * the review's confirmed links and their other-story places, re-pointed so `from`/`to`/`otherThreadId` name the survivor. A link between
+ * the survivor and a story merged into it is dropped, on the survivor's own rows too (a link to itself). The merged story's own view is left as it was.
+ */
+function foldMerged(view, aliasIds, links, judged, coverage) {
+  if (!aliasIds || !aliasIds.length) return;
+  const own = new Set([view.threadId, ...aliasIds]);
+  const point = (x) => (aliasIds.includes(x) ? view.threadId : x);
+  view.judgedLinks = view.judgedLinks.filter((l) => !own.has(l.otherThreadId));
+  const seen = new Set(view.judgedLinks.map((l) => `${l.otherThreadId}|${l.iso3}|${l.from}`));
+  const add = [];
+  for (const a of aliasIds) {
+    for (const l of judged.get(a) || []) {
+      if (own.has(l.otherThreadId)) continue;
+      const row = {...l, from: point(l.from), to: point(l.to)};
+      const key = `${row.otherThreadId}|${row.iso3}|${row.from}`;
+      if (!seen.has(key)) { seen.add(key); add.push(row); }
+    }
+  }
+  if (add.length) view.judgedLinks = [...view.judgedLinks, ...add].sort(byKey((l) => l.otherThreadId, (l) => l.iso3, (l) => (l.from === l.otherThreadId ? 1 : 0)));
+  const have = new Set(view.confirmedLinks.map((c) => `${c.otherThreadId}|${c.week}|${c.direction}`));
+  const more = aliasIds.flatMap((a) => (links.get(a) ? links.get(a).confirmedLinks : [])).filter((c) => !own.has(c.otherThreadId) && !have.has(`${c.otherThreadId}|${c.week}|${c.direction}`));
+  if (more.length) {
+    view.confirmedLinks = [...view.confirmedLinks, ...more].sort(byKey((l) => l.otherThreadId, (l) => l.week, (l) => l.direction));
+    view.confirmedLinksReason = null;
+  }
+  const others = {...view.web.otherPlaces};
+  for (const a of aliasIds) for (const [o, places] of Object.entries((coverage.get(a) || {}).otherPlaces || {})) if (!own.has(o) && !(o in others)) others[o] = places;
+  view.web = {...view.web, otherPlaces: others};
+  if (!view.web.places.length) { const p = aliasIds.map((a) => (coverage.get(a) || {}).places || []).find((x) => x.length); if (p) view.web = {...view.web, places: p}; }
+}
+
+/**
+ * The main country of a story, from the model's own `primaryCountry` of its newest step (todayView.primaryCountryBy: known for the entries of the
+ * last two UTC days that a selection run wrote), resolved to ISO3 by the one country resolver. Set as `primaryIso3` on the story view and on its
+ * newestStep; left out (unknown, never guessed) when the newest step has none or the name resolves to no country.
+ */
+function setPrimaryIso3(stories, primaryBy) {
+  if (!primaryBy.size) return;
+  for (const s of stories.values()) {
+    const name = s.newestStep ? primaryBy.get(s.newestStep.eventId) : null;
+    const iso3 = name ? iso3List([name])[0] : null;
+    if (!iso3) continue;
+    s.primaryIso3 = iso3;
+    s.newestStep = {...s.newestStep, primaryIso3: iso3};
+  }
+}
+
 /** counts/{date}.json: per story, entries added that day, resolvable branches due that day, verdicts that day (by fact date); `articles` = article facts of that day (raw, not stories); `articlesPlaced` (only when nonzero) = those placed on a story by an assignment. */
 function buildCount(date, facts, aliases, builtFrom) {
   const byStory = {};
@@ -568,6 +617,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   const refs = new Map(facts.filter((f) => f.kind === 'entry').map((f) => [f.eventId, archiveRefOf(f)]).filter(([, r]) => r));
   const {stories, rows, stamps, survivors} = projectStories(facts, resolved, {today, builtFrom, readings, canon, reassigned, keep, notesBy, refs, analysisBy: storyAnalysisBy(noteLines, aliases)});
 
+  setPrimaryIso3(stories, primaryCountryBy(todayDays));
   const forecasts = forecastViews(facts, stories, builtFrom);
   const cutoff = addDays(today, 1 - ACTIVE_DAYS);
   const all = [...rows.values()].sort(rowOrder);
@@ -597,6 +647,7 @@ function buildViews(allFacts, {today, builtAt, runId, factsManifestDays, countDa
   for (const [id, view] of links) {
     view.judgedLinks = judged.get(id) || [];
     view.web = coverage.get(id) || {state: null, entries: 0, places: [], analysedIn: [], backbone: [], otherPlaces: {}};
+    foldMerged(view, rows.has(id) ? rows.get(id).aliases : [], links, judged, coverage);
   }
   const counts = new Map(countDays.map((d) => [d, buildCount(d, facts, aliases, builtFrom)]));
   const active = {schemaVersion: SCHEMA_VERSION, builtFrom: indexFrom, stories: activeRows};
@@ -631,4 +682,4 @@ function writeGroups(views) {
   ];
 }
 
-module.exports = {titleOf, entryNotesBy, resolveAliases, buildViews, countDaysFor, writeGroups};
+module.exports = {titleOf, entryNotesBy, resolveAliases, setPrimaryIso3, buildViews, countDaysFor, writeGroups};

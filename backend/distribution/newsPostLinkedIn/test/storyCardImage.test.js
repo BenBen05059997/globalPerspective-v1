@@ -66,6 +66,20 @@ test('pickForecast: open question due soonest with its own chance; past, settled
   assert.equal(pickForecast({ forks: [] }, '2026-11-21'), null);
 });
 
+test('placeCountries: the story view\'s primaryIso3 leads, from the step list, the situation list or outside them; absent or malformed changes nothing', () => {
+  const sit = [{ id: 'news#POL#thread-p', threadId: 'thread-p', iso3_affected: ['POL', 'RUS'] }];
+  const step = { iso3: ['POL', 'RUS', 'UKR'] };
+  assert.deepEqual(placeCountries(step, sit, ['thread-p'], 'RUS'), { countries: ['RUS', 'POL'], context: ['UKR'], source: 'primary' });
+  assert.deepEqual(placeCountries(step, sit, ['thread-p'], 'UKR'), { countries: ['UKR', 'POL', 'RUS'], context: [], source: 'primary' });
+  assert.deepEqual(placeCountries({ iso3: ['BHR', 'IRN'] }, [], ['x'], 'BHR').countries, ['BHR', 'IRN']);
+  assert.deepEqual(placeCountries({ iso3: ['BHR', 'IRN'] }, [], ['x'], 'SAU').countries, ['SAU', 'BHR', 'IRN']);
+  assert.deepEqual(placeCountries(step, sit, ['thread-p'], 'poland'), placeCountries(step, sit, ['thread-p']));
+  assert.deepEqual(placeCountries(step, sit, ['thread-p'], null), placeCountries(step, sit, ['thread-p']));
+  const story = { threadId: 'thread-p', title: 'T', category: 'conflict', primaryIso3: 'RUS', newestStep: { role: 'move', date: '2026-11-20', sourceCount: 2 }, entries: [step], stepCount: 1, stepDays: 1 };
+  assert.deepEqual(storyCardData({ story, situations: sit, today: '2026-11-21' }).countries, ['RUS', 'POL']);
+  assert.deepEqual(storyCardData({ story: { ...story, primaryIso3: undefined }, situations: sit, today: '2026-11-21' }).countries, ['POL', 'RUS']);
+});
+
 test('placeCountries: a story-keyed situation orders and filters the step countries; otherwise the step list stands', () => {
   const step = { iso3: ['POL', 'RUS', 'UKR'] };
   const sit = [{ id: 'news#POL#thread-p', threadId: 'thread-p', iso3_affected: ['POL', 'RUS'] }, { id: 'news#conflict#POL#polish', threadId: 'thread-p', iso3_affected: ['POL', 'UKR'] }];

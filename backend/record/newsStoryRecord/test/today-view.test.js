@@ -9,8 +9,8 @@ const requireFrontend = createRequire(resolve(process.env.FRONTEND_NODE_MODULES 
 const Ajv = requireFrontend('ajv');
 const {fakeS3} = require('./fake-s3');
 const {makeHandler} = require('../src/index');
-const {buildViews, writeGroups, entryNotesBy} = require('../src/views');
-const {todayIndex, withStories} = require('../src/todayView');
+const {buildViews, writeGroups, entryNotesBy, setPrimaryIso3} = require('../src/views');
+const {todayIndex, withStories, primaryCountryBy} = require('../src/todayView');
 const inbox = require('../../../shared/src/entriesInbox');
 const R = require('../../../shared/src/record');
 const N = require('../../../shared/src/notes');
@@ -201,4 +201,23 @@ test('withStories (SPEC R1): one card per story; editionRole from the edition\'s
   // every card in a kind group is counted once: the count line and the groups agree
   const grouped = Object.values(v.stories).filter((c) => c.editionRole);
   assert.deepEqual(['start', 'move', 'measure'].map((r) => grouped.filter((c) => c.editionRole === r).length), [1, 1, 1]);
+});
+
+test('primaryIso3: the model\'s primaryCountry of the newest step, resolved to ISO3; unknown stays absent (never guessed)', () => {
+  const by = primaryCountryBy(days());
+  assert.deepEqual([...by.values()].sort(), ['France', 'France', 'France'], 'only the lines of the selection run carry primaryCountry (topics 2, 3, 4)');
+  assert.equal(by.get(eventOf(entry(3, ''), D1)), 'France');
+  assert.equal(by.has(eventOf(entry(1, ''), D0)), false);
+  const step = (n, day) => ({eventId: eventOf(entry(n, ''), day), date: day, title: `Title ${n}`, role: 'move', sourceCount: 1});
+  const stories = new Map([['a', {newestStep: step(3, D1)}], ['b', {newestStep: step(1, D0)}], ['c', {newestStep: null}], ['d', {threadId: 'd', aliasOf: 'a'}]]);
+  setPrimaryIso3(stories, by);
+  assert.equal(stories.get('a').primaryIso3, 'FRA');
+  assert.equal(stories.get('a').newestStep.primaryIso3, 'FRA');
+  assert.equal('primaryIso3' in stories.get('b'), false);
+  assert.equal('primaryIso3' in stories.get('b').newestStep, false);
+  assert.equal('primaryIso3' in stories.get('c'), false);
+  const odd = primaryCountryBy([{day: D1, lines: inbox.inboxLines([entry(5, `${D1}T04:00:00.000Z`, 'gen-3')], {batch: `${D1}T04:00:00.000Z`, selection: {topics: {'Topic 5-5': {primaryCountry: 'the Middle East'}}, run: run(1)}})}]);
+  const s2 = new Map([['x', {newestStep: step(5, D1)}]]);
+  setPrimaryIso3(s2, odd);
+  assert.equal('primaryIso3' in s2.get('x'), false, 'a region is not a country');
 });

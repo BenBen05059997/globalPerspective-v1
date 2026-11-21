@@ -59,6 +59,25 @@ function todayIndex(days, notesBy, builtFrom) {
   return {schemaVersion: SCHEMA_VERSION, builtFrom, updatedAt, latest, entries};
 }
 
+/**
+ * eventId -> the model's `primaryCountry` (the single anchor country of the topic, a country name) for the entries of the inbox lines that carry it
+ * (the lines of a run that was the day's selection: `latest.primaryCountry`). The entry facts do not keep it, so only the last two days have it. A later line of
+ * the same entry wins. Pure.
+ */
+function primaryCountryBy(days) {
+  const out = new Map();
+  for (const {day, lines} of days || []) {
+    for (const b of inbox.batchesOf(lines)) {
+      for (const l of b.lines) {
+        const e = inbox.entryOfLine(l);
+        const name = l.latest && typeof l.latest.primaryCountry === 'string' ? l.latest.primaryCountry.trim() : '';
+        if (name) out.set(R.entryIdentity({sources: e.sources, date: day, title: e.title}).eventId, name);
+      }
+    }
+  }
+  return out;
+}
+
 const ROLES = ['start', 'move', 'measure'];
 
 /** What a Today card or a map row shows of a story, copied from its view (decision 0058: the builder stamps, pages display). */
@@ -124,4 +143,4 @@ function withStories(view, stories) {
   return {...view, latest, entries, stories: cards};
 }
 
-module.exports = {todayIndex, withStories, SCHEMA_VERSION};
+module.exports = {todayIndex, withStories, primaryCountryBy, SCHEMA_VERSION};

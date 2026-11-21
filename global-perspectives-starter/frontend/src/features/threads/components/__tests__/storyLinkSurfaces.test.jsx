@@ -22,12 +22,14 @@ describe('FED INTO slide', () => {
     wrap(<FedIntoSlide fedInto={[row()]} />);
     expect(screen.getByText(/US diesel prices hit all-time high/)).toBeInTheDocument();
     expect(screen.getByText(/\+1 more cited headline/)).toBeInTheDocument();
-    expect(screen.getByText(/● ● ● strong|●●● strong/)).toBeInTheDocument();
+    expect(screen.getByText('strong')).toBeInTheDocument(); // the board's strength bars and word
+    expect(screen.getByText('→ feeds into')).toBeInTheDocument();
+    expect(screen.getByText('MODEL JUDGMENT')).toBeInTheDocument();
     expect(screen.getByText(/from Iran's analysis, as of/)).toBeInTheDocument();
   });
   it('two webs linking the same story: two rows (own confidence each) but ONE linked story in the kicker', () => {
     wrap(<FedIntoSlide fedInto={[row(), row({ confidence: 'weak', country: 'Israel' })]} />);
-    expect(screen.getByText(/JUDGED TO FEED INTO · 1 linked story/)).toBeInTheDocument();
+    expect(screen.getByText(/FEEDS INTO · 1 linked story/)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Story B' })).toHaveLength(2);
   });
 });
@@ -50,5 +52,25 @@ describe('StoryLinkNote', () => {
   it('renders nothing for a linked story or while unknown', () => {
     const { container } = render(<StoryLinkNote note={null} />);
     expect(container.firstChild).toBeNull();
+  });
+});
+
+describe('FedIntoList words (the board\'s)', () => {
+  it('"→ feeds into" / "← fed by", the strength bars and word, the MODEL JUDGMENT tag', () => {
+    const { unmount } = wrap(<FedIntoList links={[row()]} direction="into" />);
+    expect(screen.getByText('→ feeds into')).toBeInTheDocument();
+    expect(document.querySelectorAll('.gp-strength__bar.is-on')).toHaveLength(3);
+    expect(screen.getByText('MODEL JUDGMENT')).toBeInTheDocument();
+    unmount();
+    wrap(<FedIntoList links={[{ ...row(), sourceThreadId: 'thread-c', sourceTitle: 'Story C', confidence: 'weak' }]} direction="from" />);
+    expect(screen.getByText('← fed by')).toBeInTheDocument();
+    expect(document.querySelectorAll('.gp-strength__bar.is-on')).toHaveLength(1);
+  });
+  it('a negative lag is a wrong value and is hidden; a positive lag stays', () => {
+    const { unmount } = wrap(<FedIntoList links={[row({ lagDays: -24 })]} direction="into" />);
+    expect(screen.queryByText(/lag/)).toBeNull();
+    unmount();
+    wrap(<FedIntoList links={[row({ lagDays: 3 })]} direction="into" />);
+    expect(screen.getByText('lag 3d (model)')).toBeInTheDocument();
   });
 });

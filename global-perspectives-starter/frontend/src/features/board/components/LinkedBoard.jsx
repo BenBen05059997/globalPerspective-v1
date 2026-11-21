@@ -19,7 +19,7 @@ import {
   storyFacts, judgedLinks, sharedPairs, linkOrder, cardLinks, whatMoved, judgedOn, visitBoard,
 } from '@/features/board/lib/linkedBoard.js';
 import StoryLinkCard from '@/features/board/components/StoryLinkCard.jsx';
-import StrengthBars from '@/features/board/components/StrengthBars.jsx';
+import StrengthBars from '@/shared/ui/StrengthBars.jsx';
 import WhatMoved from '@/features/board/components/WhatMoved.jsx';
 import LinkArcs, { GUTTER } from '@/features/board/components/LinkArcs.jsx';
 import PublicDiagram from '@/features/board/components/PublicDiagram.jsx';

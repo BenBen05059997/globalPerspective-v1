@@ -6,16 +6,7 @@ import { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
 import { linkNote } from '@/features/threads/lib/linkStates.js';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 import { indexFromView, viewHasLinks, needsTargets } from '@/features/threads/lib/linksFromView.js';
-import { makeRecordViews } from '@/shared/api/recordViews.js';
-import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
-
-const views = makeRecordViews();
-const VIEW_TTL_MS = 30 * 60 * 1000;
-
-// The story's links view, or null when it is not generated (404). A failed read is reported and thrown (not cached).
-function loadLinksView(threadId) {
-  return views.fetchLinksView(threadId).catch((err) => { reportFetchError('links-view', err); throw err; });
-}
+import { useLinksView } from '@/shared/api/linksView.js';
 
 const MAX_REGIONS = 3; // legacy fallback only: each region is one systems-analysis fetch
 
@@ -56,7 +47,7 @@ function useLegacyLinks(threadId, regions, enabled) {
  * Returns { fedInto, fedFrom, shared, hiddenOlder, provenance, loading, state, note, index, meta }.
  */
 export function useStoryLinks(threadId, regions) {
-  const { data: view, loading: viewLoading } = useCachedQuery(threadId ? `gp_links_view_v1_${threadId}` : null, () => loadLinksView(threadId), { ttl: VIEW_TTL_MS });
+  const { data: view, loading: viewLoading } = useLinksView(threadId);
   const viewSettled = Boolean(threadId) && !viewLoading;
   const fromView = viewSettled && viewHasLinks(view) && view.threadId === threadId;
   const { index: actionIndex, loading: actionLoading, failed } = useWebIndex(viewSettled && (!fromView || needsTargets(view)), { source: 'action' }); // the action alone has the run's country count

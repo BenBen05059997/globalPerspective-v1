@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+const H = vi.hoisted(() => ({ line: null }));
+vi.mock('@/shared/hooks/useStoryLinkLine', () => ({ useStoryLinkLine: () => H.line }));
+
 import StoryLife from '@/features/threads/components/StoryLife.jsx';
 import { storyStamp } from '@/features/threads/hooks/useNarrativeThread';
 
@@ -71,7 +74,32 @@ describe('StoryLife (story page top, SPEC §4)', () => {
   });
 
   it('storyStamp keeps the stamped fields and nulls the missing ones', () => {
-    expect(storyStamp({ born: '2026-11-01', sourceIds: ['a', 'b'] })).toEqual({ name: null, born: '2026-11-01', stepCount: null, stepDays: null, firstStep: null, newestStep: null, outletCount: 2 });
+    expect(storyStamp({ born: '2026-11-01', sourceIds: ['a', 'b'] })).toEqual({ id: null, name: null, born: '2026-11-01', stepCount: null, stepDays: null, firstStep: null, newestStep: null, outletCount: 2 });
     expect(storyStamp(null)).toBeNull();
+  });
+
+  it('top of the page: the newest step\'s kind chip beside the category; a forecast line chance first; one link line; the board button; the step list is unchanged', () => {
+    H.line = { dir: 'feeds', otherId: 'thread-egypt', title: 'Egypt approves support', strength: 'medium', confirmed: true };
+    const forecast = { scenarios: [{ label: 'S', triggers: [{ question: true, p: 22, text: 'Poland invokes Article 4', deadline: '2099-12-20', state: null, verdict: null }] }] };
+    mount({ thread: thread(3), forecast, threadId: 'thread-a', board: { href: '/board?theme=theme-a', count: 6 } });
+    const where = document.querySelector('.sl-where');
+    expect(where.querySelector('.gp-kind').textContent).toBe('Moves a story');
+    expect(document.querySelector('.sl-forecast').textContent).toBe('22% that Poland invokes Article 4, by Dec 20');
+    const line = screen.getByTestId('story-link-line');
+    expect(line.textContent).toContain('→ feeds into');
+    expect(line.textContent).toContain('Egypt approves support');
+    expect(line.textContent).toContain('confirmed in our weekly review');
+    expect(screen.getByRole('link', { name: /Open the story’s board · 6 stories/ })).toHaveAttribute('href', '/board?theme=theme-a');
+    const order = [...document.querySelectorAll('.sl-title, .sl-forecast, .gp-linkline, .sl-board, .sl-steps')].map((e) => e.className.split(' ')[0]);
+    expect(order).toEqual(['sl-title', 'sl-forecast', 'gp-linkline', 'sl-board', 'sl-steps']);
+    expect(document.querySelectorAll('.sl-steps > li')).toHaveLength(3);
+  });
+
+  it('no forecast, no link, no board: those lines are absent (no placeholder)', () => {
+    H.line = null;
+    mount({ thread: thread(3), forecast: null });
+    expect(document.querySelector('.sl-forecast')).toBeNull();
+    expect(screen.queryByTestId('story-link-line')).toBeNull();
+    expect(document.querySelector('.sl-board')).toBeNull();
   });
 });

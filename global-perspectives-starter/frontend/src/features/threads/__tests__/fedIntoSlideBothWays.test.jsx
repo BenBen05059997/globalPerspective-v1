@@ -18,8 +18,8 @@ const headings = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h
 describe('FED INTO slide, both directions', () => {
   it('lists the stories this one feeds into, then the earlier news judged to feed in, each linked', () => {
     wrap(<FedIntoSlide fedInto={[into]} fedFrom={[from]} />);
-    expect(headings()).toEqual(['News this story is judged to feed into', 'Earlier news judged to feed in']);
-    expect(screen.getByText('JUDGED TO FEED INTO · 2 linked stories')).toBeInTheDocument();
+    expect(headings()).toEqual(['Feeds into', 'Fed by']);
+    expect(screen.getByText('FEEDS INTO · 2 linked stories')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Downstream story' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Upstream story' })).toBeInTheDocument();
     expect(screen.getAllByText(/Links are between stories/)).toHaveLength(1);
@@ -27,15 +27,15 @@ describe('FED INTO slide, both directions', () => {
 
   it('a story only fed by others shows just the earlier news, with the caption', () => {
     wrap(<FedIntoSlide fedInto={[]} fedFrom={[from]} />);
-    expect(headings()).toEqual(['Earlier news judged to feed in']);
-    expect(screen.getByText('JUDGED TO FEED INTO · 1 linked story')).toBeInTheDocument();
+    expect(headings()).toEqual(['Fed by']);
+    expect(screen.getByText('FEEDS INTO · 1 linked story')).toBeInTheDocument();
     expect(within(screen.getByRole('list')).getByRole('link', { name: 'Upstream story' })).toBeInTheDocument();
     expect(screen.getByText(/Links are between stories/)).toBeInTheDocument();
   });
 
   it('a story linked both ways to the same story counts it once', () => {
     wrap(<FedIntoSlide fedInto={[into]} fedFrom={[{ ...from, sourceThreadId: 'thread-down' }]} />);
-    expect(screen.getByText('JUDGED TO FEED INTO · 1 linked story')).toBeInTheDocument();
+    expect(screen.getByText('FEEDS INTO · 1 linked story')).toBeInTheDocument();
   });
 
   it('buildSlides adds the slide for fed-by rows alone, and not with neither', () => {

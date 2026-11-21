@@ -308,6 +308,8 @@
 }
 .tp-fc-mark { font-family: var(--mono); font-size: var(--text-sm); text-align: center; user-select: none; }
 .tp-fc-text { color: var(--text-head); }
+.tp-fc-sentence { min-width: 0; }
+.tp-fc-item > .qchip { grid-column: 2; width: fit-content; }
 .tp-fc-meta { grid-column: 2; font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
 .tp-fc-cite { grid-column: 2; width: fit-content; font-size: var(--text-xs); color: var(--accent); text-decoration: none; }
 .tp-fc-cite:hover { text-decoration: underline; }

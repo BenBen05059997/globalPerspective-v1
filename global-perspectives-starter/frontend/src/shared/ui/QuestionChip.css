@@ -1,4 +1,5 @@
 .qchip { display: inline-block; font-size: var(--text-xs); line-height: 1.4; color: var(--text-dim); overflow-wrap: anywhere; }
+.qchip--lead { margin-right: var(--space-2); }
 .qchip .qchip-pct { color: var(--text-head); font-family: var(--mono); font-size: var(--text-sm); }
 /* outcome state = status colour: yes = check passed, no = not reported, awaiting check = needs attention */
 .qchip.yes .qchip-state { color: var(--ok); }

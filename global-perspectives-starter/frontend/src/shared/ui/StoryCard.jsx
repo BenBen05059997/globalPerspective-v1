@@ -41,10 +41,22 @@ export function firstStepLabel(role) {
 /** "since" or "in our record since": a story whose stamped first step is not a start may be older than our record. */
 export const sinceWord = (story) => (story?.firstStep && story.firstStep.role !== 'start' && story.firstStep.role !== 'measure' ? 'in our record since' : 'since');
 
-/** Top line: the kind chip, then "since {born} · {n} steps", or the step's own date for a one-step story. */
+/** The one since phrase every place uses (Home card, board card, story page): "since Sep 8 · 64 steps on 37 days", or
+ * "in our record since Sep 8 · …" where the first step is not a start. Reads the builder's stamps (`born`, `stepCount`,
+ * `stepDays`, `firstStep`); a count or day count the stamp lacks is left out, and no `born` gives ''. */
+export function sinceText(story) {
+  if (!story?.born) return '';
+  const n = Number(story.stepCount) || 0;
+  const d = Number(story.stepDays) || 0;
+  const parts = [`${sinceWord(story)} ${shortDay(story.born)}`];
+  if (n) parts.push(d ? `${steps(n)} on ${d} ${d === 1 ? 'day' : 'days'}` : steps(n));
+  return parts.join(' · ');
+}
+
+/** Top line: the kind chip, then the since phrase, or the step's own date for a one-step story. */
 export function StoryTopLine({ role, story, stepDate = null, children = null, interactive = false }) {
   const n = Number(story?.stepCount) || 0;
-  const since = n > 1 && story?.born ? `${sinceWord(story)} ${shortDay(story.born)} · ${steps(n)}` : shortDay(stepDate || story?.newestStep?.date);
+  const since = n > 1 && story?.born ? sinceText(story) : shortDay(stepDate || story?.newestStep?.date);
   if (!role && !since && !children) return null;
   return (
     <div className="gp-scard__top">

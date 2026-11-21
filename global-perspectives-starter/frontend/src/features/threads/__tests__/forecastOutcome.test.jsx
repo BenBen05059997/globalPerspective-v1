@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { triggerState, outcomeTag } from '@/features/threads/lib/forecastOutcome.js';
+import { triggerState, outcomeTag, forecastLine } from '@/features/threads/lib/forecastOutcome.js';
 import { WatchSlide } from '@/features/threads/components/StoryMode.jsx';
 import ThreadForecast from '@/features/threads/components/ThreadForecast.jsx';
 import { rollupSources, rollupCounts } from '@/features/threads/lib/sourceRollup.js';
@@ -49,5 +49,24 @@ describe('rollupSources', () => {
     expect(Object.fromEntries(rows.map((r) => [r.name, r.tier]))).toEqual({ AP: 'primary', B: 'secondary', C: 'primary' });
     expect(rows.find((r) => r.name === 'B')).toMatchObject({ count: 2, latest: '2026-09-21' });
     expect(rollupCounts(rows)).toEqual({ outlets: 3, primary: 2, secondary: 1 });
+  });
+});
+
+describe('forecastLine (the one forecast line at the top of the story page)', () => {
+  const q = (o) => ({ question: true, p: 22, text: 'Poland formally invokes Article 4', deadline: '2026-12-20', state: null, verdict: null, ...o });
+  const snap = (...triggers) => ({ scenarios: [{ label: 'S', triggers }] });
+  it('is the open question due soonest, chance first, the date as the deadline', () => {
+    const line = forecastLine(snap(q({ p: 35, text: 'Again strikes', deadline: '2027-01-31' }), q()), '2026-11-21');
+    expect(line).toEqual({ pct: '22%', text: 'Poland formally invokes Article 4', by: '2026-12-20' });
+  });
+  it('a tie on the date goes to the higher chance; a trailing full stop is dropped', () => {
+    expect(forecastLine(snap(q({ p: 10, text: 'Low' }), q({ p: 40, text: 'High.' })), '2026-11-21')).toMatchObject({ pct: '40%', text: 'High' });
+  });
+  it('none for: no snapshot, no probability of its own, a settled or past-due question, or a "Will ..." question', () => {
+    expect(forecastLine(null)).toBeNull();
+    expect(forecastLine(snap({ text: 'Legacy', deadline: '2026-12-20' }), '2026-11-21')).toBeNull();
+    expect(forecastLine(snap(q({ state: 'yes' })), '2026-11-21')).toBeNull();
+    expect(forecastLine(snap(q()), '2026-12-21')).toBeNull();
+    expect(forecastLine(snap(q({ text: 'Will Poland invoke Article 4?' })), '2026-11-21')).toBeNull();
   });
 });

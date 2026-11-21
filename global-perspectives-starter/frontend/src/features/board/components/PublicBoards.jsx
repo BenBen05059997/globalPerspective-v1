@@ -11,13 +11,12 @@ import PageLine from '@/shared/ui/PageLine.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { shortDay } from '@/shared/ui/StoryCard.jsx';
 import { useThemes } from '@/features/board/hooks/useThemes.js';
-import { themeTitle, themeNewest, themesByNewest, themeCategories, presetLinks } from '@/features/board/lib/linkedBoard.js';
+import { themeTitle, themeNewest, themesByNewest, themeCategories, presetLinks, themeHref } from '@/features/board/lib/linkedBoard.js';
 import LinkedBoard, { CENTRE, themeDiagram } from '@/features/board/components/LinkedBoard.jsx';
 import PresetsPanel from '@/features/board/components/PresetsPanel.jsx';
 
 const MAX_TAGS = 4;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-const themeHref = (id) => `${boardHref()}?theme=${encodeURIComponent(id)}`;
 
 function ThemeCard({ theme }) {
   const cats = themeCategories(theme);
@@ -84,7 +83,7 @@ export default function PublicBoards({ search, presets, signIn }) {
       {shownThemes.length ? (
         <section className="bl-section" aria-label="Linked stories">
           <SectionHeader as="h2" label="Linked stories" count={shownThemes.length} />
-          <p className="board-line">Groups of stories our model judged to feed into each other.</p>
+          <p className="board-line">Groups of stories that feed into each other, by our model’s judgment.</p>
           <ul className="bl-themes">{shownThemes.map((t) => <ThemeCard key={t.themeId} theme={t} />)}</ul>
         </section>
       ) : null}

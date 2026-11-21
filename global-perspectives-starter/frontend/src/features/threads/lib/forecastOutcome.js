@@ -2,6 +2,8 @@
 // open / happened / not reported / could not be checked / awaiting check). ThreadForecast (Read in full) and the
 // WATCH slide both use it, so the two never print different words for the same outcome.
 
+import { hasOwnProbability } from '@/shared/lib/questionChips.js';
+
 const utcToday = () => new Date().toISOString().slice(0, 10);
 
 /** 'fired' | 'notfired' | 'unclear' | 'awaiting' | 'pending' for a trigger-like { state, verdict, deadline }. */
@@ -26,6 +28,18 @@ export const OUTCOME_TAG = {
   awaiting: 'awaiting check',
   pending: null,
 };
+
+/** The ONE forecast line of a story card (story page top): the open question due soonest that has a probability of its own
+ *  (a tie goes to the higher chance) -> { pct, text, by } ("22% that <outcome>, by Dec 20"), or null. Reads the stored question
+ *  forecast the page already holds (`snapshot`, the shape of useThreadForecast); a question already settled or past its date is
+ *  not a forecast any more (its outcome shows in the forecast board, decision 0038). */
+export function forecastLine(snapshot, today) {
+  const open = (snapshot?.scenarios || []).flatMap((s) => s.triggers || [])
+    .filter((t) => hasOwnProbability(t) && t.deadline && typeof t.text === 'string' && t.text.trim() && !/^will\s/i.test(t.text.trim()) && triggerState(t, today) === 'pending')
+    .sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || b.p - a.p);
+  const t = open[0];
+  return t ? { pct: `${t.p}%`, text: t.text.trim().replace(/[.?]$/, ''), by: t.deadline } : null;
+}
 
 /** The words for a trigger-like object, or null while it is open. */
 export function outcomeTag(t, today) {

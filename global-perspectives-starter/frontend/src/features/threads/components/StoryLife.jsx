@@ -2,9 +2,12 @@ import { useState } from 'react';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import EntryRole from '@/shared/ui/EntryRole.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import PageLine from '@/shared/ui/PageLine.jsx';
+import StoryLinkLine from '@/shared/ui/StoryLinkLine.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { WatchNext, StoryName, shortDay, firstStepLabel, sinceWord } from '@/shared/ui/StoryCard.jsx';
+import { forecastLine } from '@/features/threads/lib/forecastOutcome.js';
+import { WatchNext, StoryName, shortDay, firstStepLabel, sinceWord, sinceText } from '@/shared/ui/StoryCard.jsx';
 import { MEASURE_NOTE } from '@/shared/ui/JudgmentTip.jsx';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
 import '@/features/threads/components/StoryLife.css';
@@ -17,11 +20,10 @@ const KEEP_LAST = 5;
 
 const stepsWord = (n) => `${n} ${n === 1 ? 'step' : 'steps'}`;
 
+// "A story we follow since Sep 8 · 64 steps on 37 days": the page's lead-in before the shared since phrase.
 function sinceLine(stamp) {
-  if (!stamp?.born) return null;
-  const parts = [`A story ${sinceWord(stamp) === 'since' ? 'we follow since' : 'in our record since'} ${shortDay(stamp.born)}`];
-  if (stamp.stepCount != null && stamp.stepDays != null) parts.push(`${stepsWord(stamp.stepCount)} on ${stamp.stepDays} ${stamp.stepDays === 1 ? 'day' : 'days'}`);
-  return parts.join(' · ');
+  const since = sinceText(stamp);
+  return since ? `A story ${sinceWord(stamp) === 'since' ? 'we follow ' : ''}${since}` : null;
 }
 
 // One dated line per step. The newest line refers to the h1 ("the headline above") unless the h1 is the story's name; a one-step
@@ -41,7 +43,9 @@ function StepLine({ entry, first, newest, firstRole, named }) {
     </li>
   );
 }
-export default function StoryLife({ thread, stamp, analysis, displayTitle, name = null, category, isPhone, actions = null }) {
+// `forecast` is the story's stored question forecast the page already loaded (no second read); `threadId` / `aliasId` name the
+// story and the story it is an alias of (for the link line); `board` is { href, count } of the theme board that holds it, or null.
+export default function StoryLife({ thread, stamp, analysis, displayTitle, name = null, category, isPhone, actions = null, forecast = null, threadId = null, aliasId = null, board = null }) {
   const [open, setOpen] = useState(false);
   const [allQs, setAllQs] = useState(false);
   // Oldest first. Rows of one day can come in either order, so the stamped first and newest steps are put at the ends by their
@@ -64,6 +68,7 @@ export default function StoryLife({ thread, stamp, analysis, displayTitle, name 
   const hidden = n - shown.length;
   const questions = analysis?.watchQuestions || [];
   const score = analysis?.riskScore;
+  const fline = forecastLine(forecast);
 
   return (
     <section className="sl" aria-label="The story so far">
@@ -72,10 +77,14 @@ export default function StoryLife({ thread, stamp, analysis, displayTitle, name 
         <div className="sl-main">
           {sinceLine(stamp) ? <p className="sl-since">{sinceLine(stamp)}</p> : null}
           <div className="sl-where">
+            <EntryRole role={ns?.role || steps[n - 1]?.role} />
             <CategoryTag category={category} />
             {thread.regions.slice(0, 3).map((r) => <EntityLink key={r} kind="country" id={r}>{r}</EntityLink>)}
           </div>
           <h1 className="sl-title">{name ? <StoryName name={name} /> : displayTitle}</h1>
+          {fline ? <p className="sl-forecast"><b>{fline.pct}</b> that {fline.text}, by {shortDay(fline.by)}</p> : null}
+          <StoryLinkLine id={threadId} aliasId={aliasId} />
+          {board ? <p className="sl-board"><Button compact to={board.href}>Open the story’s board · {board.count} stories</Button></p> : null}
           <ol className="sl-steps">
             {shown.map((e, i) => (
               <StepLineWithFold

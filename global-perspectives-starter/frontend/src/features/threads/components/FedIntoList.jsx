@@ -3,16 +3,18 @@ import { shortDate } from '@/features/threads/lib/storyMode.js';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import Button from '@/shared/ui/Button.jsx';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
+import StrengthBars from '@/shared/ui/StrengthBars.jsx';
 import '@/features/threads/components/FedIntoList.css';
-
-const CONF_DOTS = { strong: 3, medium: 2, weak: 1 };
 
 // FedIntoList — the one rendering of a story-link row, shared by
 // StoryMode's FED INTO slide, the Read-in-full Timeline "Show linked news" toggle, and the
 // Read-in-full "Why" section, so the wording and fields never drift between the three surfaces.
 // `direction`: 'into' (this story feeds the target — FedIntoSlide) or 'from' (the source story
-// fed into this one — "earlier news judged to feed in"). Every field is read straight off the
-// derived link record (webIndexLinks.js); nothing here invents a date, a headline or a confidence.
+// fed into this one — "← fed by"). Every field is read straight off the
+// derived link record (webIndexLinks.js); nothing here invents a date, a headline or a confidence. The words are the board's:
+// "→ feeds into" / "← fed by", the strength as the board's bars and word, the MODEL JUDGMENT tag. A lag below zero is a wrong
+// value (an effect dated before its cause) and is not shown; a lag of zero or more stays as it was.
 export default function FedIntoList({ links, direction = 'into' }) {
   if (!links?.length) return null;
   return (
@@ -23,6 +25,7 @@ export default function FedIntoList({ links, direction = 'into' }) {
         return (
           <li key={`${targetId}-${link.country || ''}`} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
             <div className="fi-head">
+              <span className="fi-dir">{direction === 'into' ? '→ feeds into' : '← fed by'}</span>
               <EntityLink
                 kind="story" id={targetId}
                 target="_blank"
@@ -32,12 +35,11 @@ export default function FedIntoList({ links, direction = 'into' }) {
               >
                 {targetTitle || targetId}
               </EntityLink>
-              <span className={`fi-conf-badge fi-conf-${link.confidence || 'weak'}`}>
-                {link.confidence ? `${'●'.repeat(CONF_DOTS[link.confidence] || 1)} ${link.confidence}` : 'unrated'} · model judgment
-              </span>
+              {link.confidence ? <StrengthBars strength={link.confidence} /> : <span className="fi-unrated">unrated</span>}
+              <ClaimTag kind="judgment" />
             </div>
             <div className="fi-meta">
-              {link.lagDays != null && <span>lag {link.lagDays}d (model)</span>}
+              {link.lagDays != null && link.lagDays >= 0 && <span>lag {link.lagDays}d (model)</span>}
               {link.country && <span>from {link.country}&apos;s analysis{link.generatedAt ? `, as of ${shortDate(link.generatedAt)}` : ''}</span>}
               {link.freshness === 'older' && <span className="fi-older-tag">older analysis</span>}
             </div>

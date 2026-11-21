@@ -144,7 +144,7 @@ export function ChapterSlide({ chapter, index }) {
   );
 }
 
-// Both directions, with the Read-in-full wording: the news this story feeds into, then the earlier news judged to feed in.
+// Both directions, with the Read-in-full wording: "Feeds into", then "Fed by".
 export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
   const linked = new Set([...fedInto.map((l) => l.targetThreadId), ...fedFrom.map((l) => l.sourceThreadId)]).size;
   const caption = (
@@ -155,17 +155,17 @@ export function FedIntoSlide({ fedInto = [], fedFrom = [] }) {
   );
   return (
     <div className="sm-slide sm-slide-fedinto">
-      <div className="sm-slide-kicker">JUDGED TO FEED INTO · {linked} linked {linked === 1 ? 'story' : 'stories'}</div>
+      <div className="sm-slide-kicker">FEEDS INTO · {linked} linked {linked === 1 ? 'story' : 'stories'}</div>
       {fedInto.length > 0 && (
         <>
-          <h2 className="sm-slide-title">News this story is judged to feed into</h2>
+          <h2 className="sm-slide-title">Feeds into</h2>
           {caption}
           <FedIntoList links={fedInto} direction="into" />
         </>
       )}
       {fedFrom.length > 0 && (
         <>
-          <h2 className="sm-slide-title">Earlier news judged to feed in</h2>
+          <h2 className="sm-slide-title">Fed by</h2>
           {fedInto.length === 0 && caption}
           <FedIntoList links={fedFrom} direction="from" />
         </>

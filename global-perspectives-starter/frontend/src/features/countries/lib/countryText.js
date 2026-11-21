@@ -50,9 +50,9 @@ export function formatCountrySheet(m) {
   }
 
   if (m.connections?.length) {
-    section('HOW IT CONNECTS', 'MODEL JUDGMENT', 'judged to feed into; not proof of cause');
+    section('HOW IT CONNECTS', 'MODEL JUDGMENT', 'feeds into; not proof of cause');
     for (const c of m.connections) {
-      out.push(`- ${c.fromTitle} ${ref(storyHref(c.fromId))} judged to feed into ${c.toTitle} ${ref(storyHref(c.toId))} (${c.confidence || 'unrated'}, ${c.lag})`);
+      out.push(`- ${c.fromTitle} ${ref(storyHref(c.fromId))} feeds into ${c.toTitle} ${ref(storyHref(c.toId))} (${c.confidence || 'unrated'}, ${c.lag})`);
       if (c.mechanism) out.push(`  Mechanism (model): ${clean(c.mechanism)}`);
       for (const h of (c.cited || []).slice(0, 3)) out.push(`  [FACT] ${h.date ? `${h.date} ` : ''}${h.title}`);
     }

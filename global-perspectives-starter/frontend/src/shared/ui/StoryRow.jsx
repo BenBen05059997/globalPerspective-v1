@@ -9,9 +9,9 @@ import '@/shared/ui/blocks.css';
 
 // StoryRow — the one list row for a story / situation: crisis-hue bar · tier chip · status glyph ·
 // title · place · last-change age. The WHOLE row is one control: a real <a> (`to` router link or
-// `href`) or a <button> (`onClick`). Age text turns amber once the last change is older than 7
-// days (the legend's "older" band) — it is read from `changedAt`, a real ISO timestamp, and shown
-// only when there is one.
+// `href`) or a <button> (`onClick`). Age text is dim, and says "older" once the last change is more than 7
+// days back (amber is kept for "moved lately", never for age) — it is read from `changedAt`, a real ISO
+// timestamp, and shown only when there is one.
 //
 // Props
 //   title, place            text

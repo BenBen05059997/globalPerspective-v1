@@ -1,13 +1,14 @@
 /* fi-* — FedIntoList / FedIntoToggle: one rendering of a story-link row, wherever it shows (story
-   mode's FED INTO slide, Read in full's Why section and Timeline "Show linked news"). Confidence is
-   the word and the dots, never a colour; "older analysis" is the one amber (stale) mark. */
+   mode's FED INTO slide, Read in full's Why section and Timeline "Show linked news"). Strength is
+   the bars and the word, never a colour; "older analysis" is the one amber (stale) mark. */
 .fi-list { list-style: none; margin: 0; padding: 0; }
 .fi-row { position: relative; padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); }
 .fi-row.fi-older { filter: var(--fresh-older-filter); }
-.fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+.fi-head { display: flex; align-items: center; gap: var(--space-1) var(--space-2); flex-wrap: wrap; }
+.fi-dir { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-muted); white-space: nowrap; }
 .fi-head a { color: var(--accent); font-size: var(--text-ui); text-decoration: none; }
 .fi-head a:hover { text-decoration: underline; }
-.fi-conf-badge { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.04em; color: var(--text-muted); }
+.fi-unrated { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
 .fi-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: calc(var(--space-1) / 2); font-size: var(--text-xs); color: var(--text-dim); }
 .fi-older-tag { font-family: var(--mono); font-size: var(--text-2xs); color: var(--warn); }
 .fi-mechanism { margin: var(--space-1) 0 0; font-size: var(--text-ui); font-style: italic; color: var(--text-body); }

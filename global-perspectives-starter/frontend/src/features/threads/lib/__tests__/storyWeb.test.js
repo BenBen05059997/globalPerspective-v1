@@ -176,10 +176,10 @@ describe('strongestLinks / nodeLinkWords', () => {
     const d = E('d', 'e', 'medium');
     expect(strongestLinks([a, d, c, b]).map((e) => e.key)).toEqual(['b->c', 'c->d', 'd->e', 'a->b']);
   });
-  it('node words say judged to feed into / fed by with the strongest word, or nothing without links', () => {
+  it('node words say feeds into / fed by with the strongest word, or nothing without links', () => {
     const edges = [E('A', 'B', 'weak'), E('A', 'C', 'strong'), E('D', 'A', 'medium')];
-    expect(nodeLinkWords('A', edges)).toBe('judged to feed into 2, judged fed by 1 · strongest strong (model judgment)');
-    expect(nodeLinkWords('B', edges)).toBe('judged fed by 1 · strongest weak (model judgment)');
+    expect(nodeLinkWords('A', edges)).toBe('feeds into 2, fed by 1 · strongest strong (model judgment)');
+    expect(nodeLinkWords('B', edges)).toBe('fed by 1 · strongest weak (model judgment)');
     expect(nodeLinkWords('Q', edges)).toBeNull();
   });
 });

@@ -30,6 +30,7 @@ export function storyStamp(view) {
   if (!view) return null;
   const num = (v) => (Number.isFinite(v) ? v : null);
   return {
+    id: typeof view.threadId === 'string' ? view.threadId : null, // the survivor's id: differs from the page's id for a merged story
     name: typeof view.name === 'string' ? view.name : null,
     born: view.born || null,
     stepCount: num(view.stepCount),

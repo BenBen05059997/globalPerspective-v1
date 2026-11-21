@@ -71,7 +71,7 @@ describe('Stories WEB (?view=web)', () => {
   it('the merged A->B row: strongest word, 2 analyses, each analysis\'s own word, mechanism labelled model judgment, dated cite; never "caused"', () => {
     renderAt('/weekly?view=web');
     const row = document.querySelector('.sw-link[data-edge="' + A + '->' + B + '"]');
-    expect(row.querySelector('.sw-link__rel').textContent).toMatch(/judged to feed into · strong · 2 analyses/);
+    expect(row.querySelector('.sw-link__rel').textContent).toMatch(/feeds into MODEL JUDGMENT · strong · 2 analyses/);
     expect(row.querySelector('.sw-link__webs').textContent).toMatch(/Iran \(strong, .*\) · Israel \(weak, /);
     expect(row.querySelector('.sw-link__mech .claim-tag').textContent).toBe('MODEL JUDGMENT');
     expect(row.querySelector('.sw-link__mech').textContent).toContain('Iran mechanism');

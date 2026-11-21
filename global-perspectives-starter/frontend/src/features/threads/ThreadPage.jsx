@@ -40,6 +40,7 @@ import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import WrittenLate from '@/shared/ui/WrittenLate.jsx';
 import EntryRole from '@/shared/ui/EntryRole.jsx';
+import { useThemes, boardOfStory } from '@/features/board';
 import StoryLife from '@/features/threads/components/StoryLife.jsx';
 import { StoryName, storyName } from '@/shared/ui/StoryCard.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -242,10 +243,14 @@ export default function ThreadPage() {
   );
   const { snapshot: forecast, loading: forecastLoading } = useThreadForecast(forecastTopicIds, threadId);
   const hasForecast = !!(forecast && forecast.scenarios?.length);
+  // A merged story's page shows the survivor's record (`stamp.id`): its links and its theme board count for this story too.
+  const aliasId = stamp?.id && stamp.id !== threadId ? stamp.id : null;
+  const { themes } = useThemes();
+  const board = useMemo(() => boardOfStory(themes, [threadId, aliasId]), [themes, threadId, aliasId]);
 
   // The same news-based links story mode's FED INTO slide
   // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
-  // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
+  // the "Feeds into" / "Fed by" rows under
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
   const storyLinks = useStoryLinks(threadId, thread?.regions);
   const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, shared: sharedRaw = [], hiddenOlder = 0, provenance = null, loading: fedLoading, note: linkNote } = storyLinks;
@@ -484,7 +489,7 @@ export default function ThreadPage() {
 
       {showStoryMode ? (
         <>
-        <StoryLife thread={thread} stamp={stamp} analysis={analysis} displayTitle={displayTitle} name={name} category={category} isPhone={isPhone} actions={isPhone ? topbarActions : null} />
+        <StoryLife thread={thread} stamp={stamp} analysis={analysis} displayTitle={displayTitle} name={name} category={category} isPhone={isPhone} actions={isPhone ? topbarActions : null} forecast={forecast} threadId={threadId} aliasId={aliasId} board={board} />
         {isPhone ? (
           <PhoneStoryMode
             key={threadId}
@@ -610,10 +615,10 @@ export default function ThreadPage() {
                 ))}
               </OverviewSection>
             )}
-            {/* "Why" = the cause chain above, then the news this story is judged to feed into / feed
+            {/* "Why" = the cause chain above, then the news this story feeds into / is fed by;
                 in from; each list shows only when it has links. */}
             {fedInto.length > 0 && (
-              <OverviewSection label="News this story is judged to feed into" count={distinctTargets(fedInto)} unit="stories">
+              <OverviewSection label="Feeds into" count={distinctTargets(fedInto)} unit="stories">
                 <p className="tp-ov-text tp-ov-text--note">
                   Links are between stories; we don&apos;t know which event in this story drove each one.
                 </p>
@@ -621,7 +626,7 @@ export default function ThreadPage() {
               </OverviewSection>
             )}
             {fedFrom.length > 0 && (
-              <OverviewSection label="Earlier news judged to feed in" count={distinctTargets(fedFrom, 'sourceThreadId')} unit="stories">
+              <OverviewSection label="Fed by" count={distinctTargets(fedFrom, 'sourceThreadId')} unit="stories">
                 <FedIntoList links={fedFrom} direction="from" />
               </OverviewSection>
             )}

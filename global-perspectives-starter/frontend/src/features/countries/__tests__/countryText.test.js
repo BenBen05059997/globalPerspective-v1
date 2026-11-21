@@ -32,7 +32,7 @@ describe('formatCountrySheet', () => {
     expect(t).toContain('BOTTOM LINE [MODEL JUDGMENT]\nA bold line.');
     expect(t).toContain('[FACT] Trigger headline: Quake hits [');
     expect(t).toContain('[MODEL JUDGMENT] Why it changed: Damage widened.');
-    expect(t).toContain('judged to feed into Supply cut');
+    expect(t).toContain('feeds into Supply cut');
     expect(t).toContain('order unclear');
     expect(t).not.toMatch(/caused/);
     expect(t).toContain('WHAT HAPPENED [FACT]');

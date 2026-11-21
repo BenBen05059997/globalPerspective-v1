@@ -198,6 +198,10 @@ describe('theme boards (board look)', () => {
 
 describe('record views', () => {
   it('shows pin readings as absent and the unsettled counts of the pinned story', async () => {
+    // Pin the clock (Date only): the page reads counts back at most 31 days from today (useWeekCounts MAX_SINCE_DAYS), so the
+    // fixed 20 Oct visit below only counts as a visit date while today is within that window.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-25T12:00:00Z'));
     const views = await import('@/features/board/lib/recordViews.js');
     const today = new Date().toISOString().slice(0, 10);
     views.fetchCounts.mockImplementation(async (d) => (d === today ? { date: d, byStory: { 'thread-a': { newEntries: 2, branchesDue: 0, verdicts: 1 } } } : null));
@@ -207,6 +211,7 @@ describe('record views', () => {
     expect(document.body.textContent).not.toMatch(/no reading yet|first weekly review pending/);
     expect(screen.getAllByText('1 live branches').length).toBeGreaterThan(0);
     views.fetchCounts.mockImplementation(async () => null);
+    vi.useRealTimers();
   });
 });
 
@@ -393,11 +398,16 @@ describe('keeping a string on a pair that holds one of ours', () => {
 
 describe('the visit date', () => {
   it('"new entries since" keeps the date the session started with, printed as day and month, after an edit', async () => {
+    // Pin the clock (Date only): the page counts back at most 31 days from today (useWeekCounts MAX_SINCE_DAYS), so the fixed
+    // 20 Oct visit below only shows as "since 20 Oct" while today is inside that window.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-25T12:00:00Z'));
     const views = await import('@/features/board/lib/recordViews.js');
     const today = new Date().toISOString().slice(0, 10);
     views.fetchCounts.mockImplementation(async (d) => ({ date: d, byStory: { 'thread-a': { newEntries: 1, branchesDue: 0, verdicts: 0 } } }));
     boardStore = { ...baseBoard(), recordAvailable: true, lastVisitedAt: '2026-10-20T08:00:00Z', pins: baseBoard().pins.map((p) => ({ ...p, recordAvailable: true })) };
     renderPage();
+    await new Promise((r) => setTimeout(r, 300)); console.log("DBG", document.body.textContent.slice(0, 1500));
     await screen.findByText(/new entries since 20 Oct/);
     serverVisit = `${today}T09:00:00Z`; // the arrivals read has since moved the stamp on
     fireEvent.click(screen.getByRole('button', { name: /Board name/ }));
@@ -407,5 +417,6 @@ describe('the visit date', () => {
     await waitFor(() => expect(boardStore.lastVisitedAt).toBe(serverVisit)); // the save echoed the moved-on stamp
     expect(screen.getByText(/new entries since 20 Oct/)).toBeInTheDocument();
     views.fetchCounts.mockImplementation(async () => null);
+    vi.useRealTimers();
   });
 });

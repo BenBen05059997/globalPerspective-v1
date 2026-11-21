@@ -29,6 +29,7 @@ import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import ReaderPromise from '@/shared/ui/ReaderPromise.jsx';
 import PageLine from '@/shared/ui/PageLine.jsx';
+import StoryLinkLine from '@/shared/ui/StoryLinkLine.jsx';
 import { StoryTopLine, StorySteps, WatchNext, storyName } from '@/shared/ui/StoryCard.jsx';
 import JudgmentTip, { NAME_NOTE } from '@/shared/ui/JudgmentTip.jsx';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
@@ -438,6 +439,7 @@ function Home() {
         {!isPhone && context}
 
         <StorySteps role={kind} story={story} newest={name ? { date: story?.newestStep?.date, title: headline } : null} />
+        {sid && story ? <StoryLinkLine id={sid} /> : null}
         <WatchNext questions={story?.watch} />
         {/* Phone: the item's own description moves under the box, so What we watch next is in the first screen (SPEC §0 order). */}
         {isPhone && context}

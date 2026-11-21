@@ -232,7 +232,7 @@ export function nodeLinkWords(id, edges) {
   if (!out.length && !inn.length) return null;
   const best = [...out, ...inn].reduce((b, e) => (rankOf(e.confidence) > rankOf(b) ? e.confidence : b), null);
   const bits = [];
-  if (out.length) bits.push(`judged to feed into ${out.length}`);
-  if (inn.length) bits.push(`judged fed by ${inn.length}`);
+  if (out.length) bits.push(`feeds into ${out.length}`);
+  if (inn.length) bits.push(`fed by ${inn.length}`);
   return `${bits.join(', ')} · strongest ${best || 'unrated'} (model judgment)`;
 }

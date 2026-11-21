@@ -44,7 +44,9 @@ describe('ThreadForecast (story page)', () => {
     const t2 = { id: '0-1', text: 'Q two', deadline: '2026-11-20', question: true, qid: 'b', p: 30, source: 'Reuters', scoring: 'not_sampled', state: null, verdict: null };
     render(<MemoryRouter><ThreadForecast snapshot={snapshot([t1, t2])} /></MemoryRouter>);
     const chips = screen.getAllByTestId('question-chip').map((c) => c.textContent);
-    expect(chips).toEqual(['62% · source: AP · awaiting check', '30% · source: Reuters · not in a scored sample']);
+    // the chance comes BEFORE the sentence, the source and state after it
+    expect(chips).toEqual(['62%', 'source: AP · awaiting check', '30%', 'source: Reuters · not in a scored sample']);
+    expect(screen.getByText('Q one').closest('.tp-fc-sentence').textContent).toBe('62%Q one');
     expect(screen.getAllByText(/awaiting check/).length).toBeGreaterThan(0);
     // each question links to its track-record entry and carries its anchor id
     expect(screen.getByRole('link', { name: 'Q one' })).toHaveAttribute('href', '/track-record?q=a');
@@ -55,7 +57,15 @@ describe('ThreadForecast (story page)', () => {
     const t = { id: '0-0', text: 'Q one', deadline: '2026-10-20', question: true, qid: 'a', p: 62, source: 'AP', scoring: 'sampled', state: 'yes', verdict: null };
     render(<MemoryRouter><ThreadForecast snapshot={snapshot([t])} /></MemoryRouter>);
     expect(screen.getByText(/1\/1 resolved so far/)).toBeInTheDocument();
-    expect(screen.getByTestId('question-chip').textContent).toMatch(/happened/);
+    expect(screen.getAllByTestId('question-chip').at(-1).textContent).toBe('source: AP · happened');
+    expect(document.querySelector('.tp-fc-meta').textContent).toMatch(/happened/);
+  });
+  it('a scenario that is one question does not print its number twice (the chance leads the sentence)', () => {
+    const t = { id: '0-0', text: 'Q one', deadline: '2099-10-20', question: true, qid: 'a', p: 62, source: 'AP', scoring: 'sampled', state: null, verdict: null };
+    render(<MemoryRouter><ThreadForecast snapshot={{ generatedAt: '2026-10-06T05:00:00Z', scenarios: [{ label: 'Q one', probability: 0.62, triggers: [t] }] }} /></MemoryRouter>);
+    expect(document.querySelector('.tp-fc-prob')).toBeNull();
+    expect(document.querySelector('.tp-fc-sentence').textContent).toBe('62%Q one');
+    expect(document.querySelector('.tp-fc-meta').textContent).toBe('by Oct 20');
   });
   it('legacy snapshot: no chips, unchanged rendering plus the note', () => {
     render(<MemoryRouter><ThreadForecast snapshot={snapshot([{ id: '0-0', text: 'Old', deadline: '2026-11-20', verdict: null }])} /></MemoryRouter>);

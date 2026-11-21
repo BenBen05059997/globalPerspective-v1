@@ -38,7 +38,7 @@
   --accent-strong: #8fe1ff;                    /* hover */
   --accent-wash:   rgba(95, 212, 255, 0.12);   /* tinted background */
   --on-accent:     #06131c;                    /* text on an accent fill (11:1) */
-  --warn:          #ffb347;                    /* warning amber: older / paused / needs attention */
+  --warn:          #ffb347;                    /* amber: moved lately (board, story cards); paused / needs attention. Never age. */
   --ok:            #6fd29a;                    /* checks passed */
   --error:         #f2689a;                    /* failed check (rose: kept off the conflict hue) */
   --focus-ring:    var(--accent);           /* one focus colour: the accent */

@@ -125,7 +125,7 @@ export function buildScrubberDays(entries) {
 export function buildSlides({ chapters = [], fedInto = [], fedFrom = [], deadlines = [] }) {
   const slides = [{ key: 'brief', label: 'BRIEF' }];
   chapters.forEach((c, i) => slides.push({ key: c.key, label: `CH${i + 1}` }));
-  if (fedInto.length > 0 || fedFrom.length > 0) slides.push({ key: 'fedinto', label: 'JUDGED TO FEED INTO' });
+  if (fedInto.length > 0 || fedFrom.length > 0) slides.push({ key: 'fedinto', label: 'FEEDS INTO' });
   if (deadlines.length > 0) slides.push({ key: 'watch', label: 'WHAT WE WATCH NEXT' });
   return slides;
 }

@@ -13,12 +13,12 @@ export function HowItConnects({ rows, country }) {
   if (!rows?.length) return null;
   return (
     <section className="cs-block" aria-label="How it connects">
-      <SectionHeader label="How it connects" hint={<><ClaimTag kind="judgment" /> judged to feed into, not proof of cause</>} />
+      <SectionHeader label="How it connects" hint={<><ClaimTag kind="judgment" /> feeds into, not proof of cause</>} />
       <ul className="cs-links">
         {rows.map((r) => (
           <li key={`${r.fromId}>${r.toId}`}>
             <EntityLink kind="story" id={r.fromId} pathOpts={{ from: 'country', country }} topic={{ title: r.fromTitle }}>{r.fromTitle}</EntityLink>
-            {' '}<span className="cs-feeds">judged to feed into</span>{' '}
+            {' '}<span className="cs-feeds">feeds into</span>{' '}
             <EntityLink kind="story" id={r.toId} topic={{ title: r.toTitle }}>{r.toTitle}</EntityLink>
             <span className="cs-meta"> · {r.confidence || 'unrated'} · {r.lag}</span>
             {r.mechanism ? <p className="cs-mech">&ldquo;{r.mechanism}&rdquo;</p> : null}

@@ -89,7 +89,7 @@ describe('StoryRow', () => {
     wrap(<StoryRow href="https://example.org/x" title="T" />);
     expect(screen.getByRole('link')).toHaveAttribute('href', 'https://example.org/x');
   });
-  it('age is amber only when the last change is older than 7 days; hidden when there is no timestamp', () => {
+  it('age says older past 7 days and is never amber; hidden when there is no timestamp', () => {
     const { container, rerender } = wrap(<StoryRow onClick={() => {}} title="T" changedAt={ago(3)} now={NOW} />);
     expect(container.querySelector('.gp-row__age')).toHaveTextContent('3d');
     expect(container.querySelector('.gp-row__age')).toHaveAttribute('data-fresh', 'ok');

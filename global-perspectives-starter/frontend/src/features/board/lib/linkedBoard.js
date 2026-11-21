@@ -1,11 +1,12 @@
 // linkedBoard: the reading of one public board (a theme from index/themes.json, or a region preset) as a list of story
 // cards (board look SPEC, 2026-11-20). Pure functions; the page only arranges what these return.
-//   story  { id, title, category, tier, riskScore, born, newest: { date, role } | null, stepCount }
+//   story  { id, title, category, tier, riskScore, born, newest: { date, role } | null, stepCount, stepDays, firstStep }
 //   link   { from, to, strength: 'weak'|'medium'|'strong'|null, reason }   a judged link, one way
 //   shared { a, b, names: [..] }                                           only named in both, never a line
 // Days are UTC 'YYYY-MM-DD' compared as text (branchDays' rule).
 import { isoWeekStart } from '@/features/board/lib/recordViews.js';
 import { iso3Name } from '@/shared/lib/situationLabels.js';
+import { boardHref } from '@/shared/lib/links.js';
 
 const day = (iso) => (typeof iso === 'string' ? iso.slice(0, 10) : '');
 const STRENGTHS = ['weak', 'medium', 'strong'];
@@ -26,6 +27,8 @@ export function storyFacts(id, row = {}, view = null) {
     born: day(row.firstStep?.date || view?.firstStep?.date || view?.born || row.born) || null,
     newest,
     stepCount: Number(row.stepCount ?? view?.stepCount) || null,
+    stepDays: Number(row.stepDays ?? view?.stepDays) || null,
+    firstStep: row.firstStep || view?.firstStep || null, // its role decides "since" or "in our record since"
   };
 }
 
@@ -203,3 +206,14 @@ export function themesByNewest(themes) {
 
 /** The categories of a theme's stories, each once, in story order. */
 export const themeCategories = (theme) => [...new Set((theme.stories || []).map((s) => s.category).filter(Boolean))];
+
+/** The address of a theme board. */
+export const themeHref = (id) => `${boardHref()}?theme=${encodeURIComponent(id)}`;
+
+/** The public theme board that holds a story (or the story it is an alias of): { href, count } with `count` its stories, or
+ *  null when no theme holds it (most stories sit in none; the caller shows nothing then). `ids` are the story's own ids. */
+export function boardOfStory(themes, ids) {
+  const own = new Set((ids || []).filter(Boolean));
+  const theme = (themes || []).find((t) => (t.stories || []).some((s) => own.has(s.threadId)));
+  return theme ? { href: themeHref(theme.themeId), count: theme.stories.length } : null;
+}

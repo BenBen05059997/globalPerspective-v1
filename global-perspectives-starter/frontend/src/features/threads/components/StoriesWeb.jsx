@@ -22,7 +22,7 @@ import {
 //   graph: the N most-linked stories as nodes in crisis-type lanes, x = the story's peak coverage
 //          day (the archive day with the most articles), node size = link degree, dashed edges
 //          (thicker = stronger; the confidence WORD on hover). Hover/focus = StoryPeek; click opens.
-//   twin:  "<from> ↓ judged to feed into · <confidence> · <n> analyses <to>", the mechanism text
+//   twin:  "<from> ↓ feeds into · MODEL JUDGMENT · <confidence> · <n> analyses <to>", the mechanism text
 //          labelled "model judgment", dated cited headlines. Default on phones (<900 px), where the
 //          graph sits below it inside a sideways-scrolling frame.
 //   footnote: computed from the data (analyses merged, newest date, how many older than 30 days hidden).
@@ -148,7 +148,7 @@ function LinkItem({ edge, titleOf }) {
     <li className="sw-link" data-conf={edge.confidence} data-edge={edge.key}>
       <EntityLink className="sw-link__story" kind="story" id={edge.from} topic={{ title: titleOf(edge.from) }}>{titleOf(edge.from)}</EntityLink>
       <p className="sw-link__rel">
-        <span aria-hidden="true">{'↓'} </span>judged to feed into {'·'} <b className="sw-link__conf">{edge.confidence || 'unrated'}</b> {'·'} {n} {plural(n, 'analysis', 'analyses')}
+        <span aria-hidden="true">{'↓'} </span>feeds into <ClaimTag kind="judgment" /> {'·'} <b className="sw-link__conf">{edge.confidence || 'unrated'}</b> {'·'} {n} {plural(n, 'analysis', 'analyses')}
         {edge.older ? <span className="sw-link__older"> {'·'} older analysis</span> : null}
       </p>
       <EntityLink className="sw-link__story" kind="story" id={edge.to} topic={{ title: titleOf(edge.to) }}>{titleOf(edge.to)}</EntityLink>

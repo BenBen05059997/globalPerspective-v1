@@ -166,7 +166,7 @@ describe('linked-story count (S12)', () => {
     const row = (o) => ({ targetThreadId: 'B', targetTitle: 'Story B', confidence: 'strong', country: 'Iran', freshness: 'fresh', ...o });
     H.links = { ...baseLinks, fedInto: [row(), row({ country: 'Israel' }), row({ targetThreadId: 'C', targetTitle: 'Story C' })] };
     await renderPage('/weekly/thread/a?tab=overview');
-    expect(screen.getByRole('button', { name: /News this story is judged to feed into/ })).toHaveTextContent('2 stories');
+    expect(screen.getByRole('button', { name: /Feeds into/ })).toHaveTextContent('2 stories');
   });
 });
 

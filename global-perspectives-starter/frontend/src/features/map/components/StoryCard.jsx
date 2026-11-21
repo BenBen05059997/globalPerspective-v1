@@ -133,7 +133,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
               <SectionHeader as="h3" label="Linked stories" />
               {linkedInto.length ? (
                 <p className="sc-text">
-                  Judged to feed into:{' '}
+                  → Feeds into:{' '}
                   {linkedInto.map((l, i) => (
                     <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
                   ))}
@@ -141,7 +141,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
               ) : null}
               {linkedFrom.length ? (
                 <p className="sc-text">
-                  Earlier news judged to feed in:{' '}
+                  ← Fed by:{' '}
                   {linkedFrom.map((l, i) => (
                     <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
                   ))}

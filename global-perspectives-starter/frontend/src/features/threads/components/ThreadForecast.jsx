@@ -38,15 +38,18 @@ export default function ThreadForecast({ snapshot }) {
         {total > 0 && <> {resolved}/{total} resolved so far.</>}
       </p>
 
-      {snapshot.scenarios.map((s, si) => (
+      {snapshot.scenarios.map((s, si) => {
+        const showLabel = !s.triggers.some(t => t.text === s.label); // a scenario named after its one question would print that sentence twice
+        // the chance now leads each question's sentence: a scenario that IS one question would print its number twice
+        const showProb = s.probability != null && !(s.triggers.length === 1 && s.triggers[0].p === Math.round(s.probability * 100));
+        return (
         <div key={si} className="tp-fc-scenario">
-          <div className="tp-fc-shead">
-            {/* a scenario named after its one question would print that sentence twice */}
-            {!s.triggers.some(t => t.text === s.label) && <span className="tp-fc-slabel">{s.label}</span>}
-            {s.probability != null && (
-              <span className="tp-fc-prob">{Math.round(s.probability * 100)}%</span>
-            )}
-          </div>
+          {showLabel || showProb ? (
+            <div className="tp-fc-shead">
+              {showLabel && <span className="tp-fc-slabel">{s.label}</span>}
+              {showProb && <span className="tp-fc-prob">{Math.round(s.probability * 100)}%</span>}
+            </div>
+          ) : null}
           <ul className="tp-fc-list">
             {s.triggers.map((t, ti) => {
               const st = triggerState(t);
@@ -55,14 +58,17 @@ export default function ThreadForecast({ snapshot }) {
               return (
                 <li key={t.id || ti} id={qid ? forecastAnchorId(qid) : undefined} className={`tp-fc-item ${st}`}>
                   <span className="tp-fc-mark" aria-hidden="true">{MARK[st]}</span>
-                  {boardQid(t)
-                    ? <EntityLink kind="forecast" id={qid} className="tp-fc-text">{t.text}</EntityLink>
-                    : <span className="tp-fc-text">{t.text}</span>}
-                  <QuestionChip trigger={t} />
+                  <span className="tp-fc-sentence">
+                    <QuestionChip trigger={t} part="pct" />
+                    {boardQid(t)
+                      ? <EntityLink kind="forecast" id={qid} className="tp-fc-text">{t.text}</EntityLink>
+                      : <span className="tp-fc-text">{t.text}</span>}
+                  </span>
+                  <QuestionChip trigger={t} part="rest" />
                   <span className="tp-fc-meta">
                     {st === 'fired' || st === 'notfired' || st === 'unclear'
                       ? <>{fcDay(t.deadline)} · {TAG[st]}</>
-                      : <>due {fcDay(t.deadline)}{TAG[st] ? ` · ${TAG[st]}` : ''}</>}
+                      : <>by {fcDay(t.deadline)}{TAG[st] ? ` · ${TAG[st]}` : ''}</>}
                   </span>
                   {t.citation && (st === 'fired' || st === 'notfired') && (
                     /^https?:\/\//.test(t.citation)
@@ -74,7 +80,8 @@ export default function ThreadForecast({ snapshot }) {
             })}
           </ul>
         </div>
-      ))}
+        );
+      })}
 
       {note && <p className="tp-fc-intro">{note}</p>}
       <div className="tp-fc-foot">

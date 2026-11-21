@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   storyFacts, judgedLinks, sharedPairs, stripEvidence, linkOrder, cardLinks, linkCountText, whatMoved, movedSummary, markText,
-  themeTitle, themeNewest, themesByNewest, presetLinks, judgedOn, visitBoard, movedGlyph,
+  themeTitle, themeNewest, themesByNewest, presetLinks, judgedOn, visitBoard, movedGlyph, boardOfStory,
 } from '@/features/board/lib/linkedBoard.js';
 
 const st = (newest, born = '2026-10-01') => ({ newest: newest ? { date: newest, role: 'move' } : null, born });
@@ -142,5 +142,19 @@ describe('began', () => {
   it('is the first step\'s date where stamped, else born', () => {
     expect(storyFacts('a', { born: '2026-11-09', firstStep: { date: '2026-11-12' } }).born).toBe('2026-11-12');
     expect(storyFacts('a', { born: '2026-11-09' }).born).toBe('2026-11-09');
+  });
+});
+
+describe('story page: facts for the shared since phrase, and the board that holds a story', () => {
+  it('storyFacts carries the day count and the first step (its role decides "since" or "in our record since")', () => {
+    expect(storyFacts('a', { stepCount: 64, stepDays: 37, firstStep: { date: '2026-09-08', role: 'start' } })).toMatchObject({ stepCount: 64, stepDays: 37, born: '2026-09-08', firstStep: { role: 'start' } });
+    expect(storyFacts('a', {}, null)).toMatchObject({ stepDays: null, firstStep: null });
+  });
+  const themes = [{ themeId: 'theme-x', stories: [{ threadId: 'p' }, { threadId: 'q' }] }, { themeId: 'theme-y', stories: [{ threadId: 'r' }, { threadId: 's' }, { threadId: 't' }] }];
+  it('boardOfStory finds the theme holding the story or its alias target; none holds it: null', () => {
+    expect(boardOfStory(themes, ['t'])).toEqual({ href: '/board?theme=theme-y', count: 3 });
+    expect(boardOfStory(themes, ['alias', 'q'])).toEqual({ href: '/board?theme=theme-x', count: 2 });
+    expect(boardOfStory(themes, ['alias', null])).toBeNull();
+    expect(boardOfStory([], ['p'])).toBeNull();
   });
 });

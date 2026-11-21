@@ -27,7 +27,6 @@
 .gp-row__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 14px; }
 .gp-row__place { font-size: 11px; color: var(--text-dim); }
 .gp-row__age { margin-left: auto; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
-.gp-row__age[data-fresh='older'] { color: var(--warn); }
 .gp-row__title { font-size: 14px; line-height: 1.3; }
 .gp-row__sum, .gp-row__watch { font-size: 12px; line-height: 1.4; color: var(--text-dim); }
 .gp-row__sum { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -170,3 +169,16 @@ button.gp-jtip:focus-visible { outline: 2px solid var(--focus-ring); outline-off
   .gp-watch__tr a, button.gp-jtip { display: inline-flex; align-items: center; min-height: var(--tap-min); margin-block: calc((var(--tap-min) - 1lh) / -2); }
   button.gp-jtip::before { content: none; }
 }
+
+/* ---- StrengthBars: a judged link's strength, three bars and the word (board cards, story-link line) ---- */
+.gp-strength { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
+.gp-strength__bars { display: inline-flex; gap: calc(var(--space-1) / 2); }
+.gp-strength__bar { box-sizing: border-box; width: 5px; height: 11px; border: 1px solid var(--text-dim); } /* empty: an outline, so 1 of 3 reads as 1 of 3 */
+.gp-strength__bar.is-on { border-color: var(--text-head); background: var(--text-head); }
+@media (max-width: 700px) { .gp-strength { font-size: var(--text-sm); } }
+
+/* ---- StoryLinkLine: the one link line of a story card (story page top, Home card) ---- */
+.gp-linkline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); margin: var(--space-2) 0 0; font-size: var(--text-ui); line-height: 1.4; color: var(--text-body); }
+.gp-linkline__dir { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-muted); white-space: nowrap; }
+.gp-linkline__story { min-width: 0; }
+.gp-linkline__note { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-dim); }

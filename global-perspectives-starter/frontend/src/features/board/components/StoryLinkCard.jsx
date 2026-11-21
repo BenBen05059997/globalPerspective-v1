@@ -7,10 +7,10 @@ import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import EntryRole from '@/shared/ui/EntryRole.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
-import { shortDay } from '@/shared/ui/StoryCard.jsx';
+import { shortDay, sinceText } from '@/shared/ui/StoryCard.jsx';
 import { crisisHueForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
-import StrengthBars from '@/features/board/components/StrengthBars.jsx';
+import StrengthBars from '@/shared/ui/StrengthBars.jsx';
 import { linkCountText, markText, stripEvidence } from '@/features/board/lib/linkedBoard.js';
 
 export const cardDomId = (id) => `bl-${id}`;
@@ -23,7 +23,8 @@ function StoryRef({ story }) {
 export default function StoryLinkCard({ story, rows, storyOf, mark, mode }) {
   const count = linkCountText(rows);
   const tier = story.tier || (story.riskScore != null ? tierFromScore(story.riskScore) : null);
-  const role = story.newest?.role && story.newest.role !== 'move' ? story.newest.role : null;
+  const role = story.newest?.role || null;
+  const since = story.stepCount > 1 ? sinceText(story) : '';
   return (
     <Card as="article" className="bl-card" id={cardDomId(story.id)} style={{ '--edge': crisisHueForCategory(story.category) }} data-story={story.id}>
       <div className="bl-card__top">
@@ -35,11 +36,7 @@ export default function StoryLinkCard({ story, rows, storyOf, mark, mode }) {
       <div className="bl-card__facts">
         {role ? <EntryRole role={role} /> : null}
         {story.newest ? <span className={`bl-card__date${mark === 'stepped' ? ' is-moved' : ''}`}>newest step {shortDay(story.newest.date)}</span> : null}
-        {story.stepCount || story.born ? (
-          <span className="bl-card__date">
-            {[story.stepCount && `${story.stepCount} ${story.stepCount === 1 ? 'step' : 'steps'}`, story.born && `began ${shortDay(story.born)}`].filter(Boolean).join(' · ')}
-          </span>
-        ) : null}
+        {since ? <span className="bl-card__date">{since}</span> : null}
         <span className="bl-card__serious">
           How serious:{' '}
           {tier ? <TierChip tier={tier} score={story.riskScore} /> : <span className="bl-card__unrated">not rated yet</span>}

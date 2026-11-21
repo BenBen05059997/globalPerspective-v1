@@ -155,9 +155,9 @@ describe('StoryCard', () => {
       linked: { into: [{ id: 'thread-b', title: 'Story B', confidence: 'strong' }], from: [{ id: 'thread-c', title: 'Story C', confidence: 'weak' }] },
     });
     await waitFor(() => expect(screen.getByTestId('card-linked')).toBeInTheDocument());
-    expect(screen.getByText(/Judged to feed into:/)).toBeInTheDocument();
+    expect(screen.getByText(/→ Feeds into:/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Story B' })).toHaveAttribute('href', '/weekly/thread/thread-b');
-    expect(screen.getByText(/Earlier news judged to feed in:/)).toBeInTheDocument();
+    expect(screen.getByText(/← Fed by:/)).toBeInTheDocument();
     expect(screen.getByTestId('card-linked')).toHaveTextContent(/model judgment/i);
   });
 

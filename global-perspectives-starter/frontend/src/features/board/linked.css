@@ -66,12 +66,6 @@
 .bl-note { margin: 0; padding-top: var(--space-2); border-top: 1px dotted var(--hairline-strong); font-size: var(--text-ui); color: var(--text-dim); }
 .bl-note .bl-row__story { display: inline; white-space: normal; color: var(--text-dim); text-decoration: underline; }
 
-/* strength: three bars and the word */
-.bl-strength { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--mono); font-size: var(--text-xs); color: var(--text-muted); }
-.bl-strength__bars { display: inline-flex; gap: calc(var(--space-1) / 2); }
-.bl-strength__bar { box-sizing: border-box; width: 5px; height: 11px; border: 1px solid var(--text-dim); } /* empty: an outline, so 1 of 3 reads as 1 of 3 */
-.bl-strength__bar.is-on { border-color: var(--text-head); background: var(--text-head); }
-
 @media (pointer: coarse) {
   .bl-row { min-height: var(--tap-min); }
 }
@@ -82,7 +76,7 @@
 @media (max-width: 700px) {
   /* phone: the linked story takes its own line, then the strength and "why" */
   .bl-row__story { flex-basis: 100%; order: 1; }
-  .bl-row .bl-strength, .bl-row .bl-why { order: 2; }
+  .bl-row .gp-strength, .bl-row .bl-why { order: 2; }
   .bl-row .bl-why { margin-left: 0; }
 }
 
@@ -92,5 +86,5 @@
   .bl-why > summary { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-min); min-width: var(--tap-min); }
 }
 @media (max-width: 700px) {
-  .bl-strength, .bl-why__text .claim-tag { font-size: var(--text-sm); }
+  .bl-why__text .claim-tag { font-size: var(--text-sm); }
 }

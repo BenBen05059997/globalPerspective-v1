@@ -6,7 +6,7 @@ import '@/shared/ui/blocks.css';
 // places; when the data holds none for it, the words "places not given", never a bare square), joined by the arrow; "fed by" flips the arrow, never which square is which. The stripe is the second sign, so the pair
 // reads without colour. The board row passes `showMine={false}`: the card is this story. Squares and arrow are decoration
 // (aria-hidden); the places are words, with hidden words saying which story they belong to.
-//   places  { mine: [name], other: [name], same: bool } from signPlaces; null shows the squares only
+//   places  { mine: [name], other: [name], same: bool } from signPlaces; null says "places not given"
 //   dir     'feeds' | 'fed'
 export default function LinkSign({ dir = 'feeds', mineCategory = null, otherCategory = null, places = null, showMine = true }) {
   const mineHue = crisisHueForCategory(mineCategory);
@@ -25,7 +25,7 @@ export default function LinkSign({ dir = 'feeds', mineCategory = null, otherCate
       ) : null}
       <span className="gp-sign__sw gp-sign__sw--stripe" style={{ '--h': otherHue }} aria-hidden="true" />
       {otherText ? <span className="gp-sign__places"><span className="gp-sign__sr">The other story: </span>{otherText}</span>
-        : showMine ? <span className="gp-sign__places">places not given</span> : null}
+        : <span className="gp-sign__places">places not given</span>}
     </span>
   );
 }

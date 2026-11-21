@@ -38,9 +38,15 @@ describe('StoryLinkCard', () => {
     unmount();
     expect(go({ mine: ['Yemen'], other: [], same: true }).container.querySelector('[data-testid="link-sign"]')).toHaveTextContent('same places');
   });
-  it('no places known for the pair: the striped square alone, no "same places"', () => {
+  it('no places known for the pair: "places not given", never a square alone and no "same places"', () => {
     const feeds = { feeds: [{ from: 'a', to: 'b', strength: 'strong', reason: '' }], fedBy: [], notes: [] };
     const { container } = render(<MemoryRouter><StoryLinkCard story={story()} rows={feeds} storyOf={() => ({ id: 'b', title: 'B', category: 'economy' })} mark={null} mode="week" /></MemoryRouter>);
-    expect(container.querySelector('[data-testid="link-sign"]').textContent).toBe('');
+    expect(container.querySelector('[data-testid="link-sign"]').textContent).toBe('places not given');
+  });
+  it('a weak link keeps its row and bars but carries no sign, as on every other page', () => {
+    const feeds = { feeds: [{ from: 'a', to: 'b', strength: 'weak', reason: '' }], fedBy: [], notes: [] };
+    const { container } = render(<MemoryRouter><StoryLinkCard story={story()} rows={feeds} storyOf={() => ({ id: 'b', title: 'B', category: 'economy' })} mark={null} mode="week" /></MemoryRouter>);
+    expect(container.querySelector('[data-testid="link-sign"]')).toBeNull();
+    expect(container.querySelector('.bl-row')).toHaveTextContent('feeds into');
   });
 });

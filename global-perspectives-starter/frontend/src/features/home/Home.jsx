@@ -439,7 +439,7 @@ function Home() {
         {!isPhone && context}
 
         <StorySteps role={kind} story={story} newest={name ? { date: story?.newestStep?.date, title: headline } : null} />
-        {sid && story ? <StoryLinkLine id={sid} /> : null}
+        {sid && story ? <StoryLinkLine id={sid} aliasIds={story?.mergedFrom} category={story?.category || t.category} /> : null}
         <WatchNext questions={story?.watch} />
         {/* Phone: the item's own description moves under the box, so What we watch next is in the first screen (SPEC §0 order). */}
         {isPhone && context}

@@ -74,7 +74,8 @@ describe('StoryLife (story page top, SPEC §4)', () => {
   });
 
   it('storyStamp keeps the stamped fields and nulls the missing ones', () => {
-    expect(storyStamp({ born: '2026-11-01', sourceIds: ['a', 'b'] })).toEqual({ id: null, name: null, born: '2026-11-01', stepCount: null, stepDays: null, firstStep: null, newestStep: null, outletCount: 2 });
+    expect(storyStamp({ born: '2026-11-01', sourceIds: ['a', 'b'] })).toEqual({ id: null, name: null, born: '2026-11-01', stepCount: null, stepDays: null, firstStep: null, newestStep: null, mergedFrom: [], outletCount: 2 });
+    expect(storyStamp({ threadId: 'S', merges: [{ from: 'A', into: 'S' }, { from: 'A', into: 'S' }, { from: 'Z', into: 'other' }] }).mergedFrom).toEqual(['A']); // the stories merged into this one
     expect(storyStamp(null)).toBeNull();
   });
 

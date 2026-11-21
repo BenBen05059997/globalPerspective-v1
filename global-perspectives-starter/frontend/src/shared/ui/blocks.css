@@ -181,4 +181,16 @@ button.gp-jtip:focus-visible { outline: 2px solid var(--focus-ring); outline-off
 .gp-linkline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); margin: var(--space-2) 0 0; font-size: var(--text-ui); line-height: 1.4; color: var(--text-body); }
 .gp-linkline__dir { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-muted); white-space: nowrap; }
 .gp-linkline__story { min-width: 0; }
+.gp-linkline__sign { flex-basis: 100%; }
 .gp-linkline__note { font-family: var(--mono); font-size: var(--text-sm); color: var(--text-dim); }
+
+/* ---- LinkSign: the one sign "this story -> the other story" (story page, Home card, board row) ----
+   Solid = this story, striped with a dashed edge = the other story; colour = the story's crisis colour (--h). The stripe is the
+   second sign, so the pair reads without colour; its dark bands (--panel-3) keep light-on-dark contrast on every card surface. */
+.gp-sign { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); font-family: var(--mono); font-size: var(--text-sm); color: var(--text-muted); min-width: 0; }
+.gp-sign__sw { flex: none; box-sizing: border-box; width: 12px; height: 12px; }
+.gp-sign__sw--solid { background: var(--h); box-shadow: 0 0 0 1px var(--text-head); }
+.gp-sign__sw--stripe { background: repeating-linear-gradient(45deg, var(--h) 0 2px, var(--panel-3) 2px 4.5px); outline: 1.5px dashed var(--h); outline-offset: 0; }
+.gp-sign__arr { color: var(--h); font-family: var(--sans); font-size: var(--text-base); font-weight: 700; line-height: 1; }
+.gp-sign__places { min-width: 0; }
+.gp-sign__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -83,7 +83,7 @@ export default function StoryLife({ thread, stamp, analysis, displayTitle, name 
           </div>
           <h1 className="sl-title">{name ? <StoryName name={name} /> : displayTitle}</h1>
           {fline ? <p className="sl-forecast"><b>{fline.pct}</b> that {fline.text}, by {shortDay(fline.by)}</p> : null}
-          <StoryLinkLine id={threadId} aliasId={aliasId} />
+          <StoryLinkLine id={threadId} aliasIds={[aliasId, ...(stamp?.mergedFrom || [])]} category={category} />
           {board ? <p className="sl-board"><Button compact to={board.href}>Open the story’s board · {board.count} stories</Button></p> : null}
           <ol className="sl-steps">
             {shown.map((e, i) => (

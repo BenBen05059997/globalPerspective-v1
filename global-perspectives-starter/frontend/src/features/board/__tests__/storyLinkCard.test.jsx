@@ -25,4 +25,22 @@ describe('StoryLinkCard', () => {
     mount(story({ stepCount: 1, stepDays: 1 }));
     expect(screen.queryByText(/since Sep 8/)).toBeNull();
   });
+  it('a link row carries only the other story\'s striped square and the places the page rule gave; "same places" when none are left', () => {
+    const feeds = { feeds: [{ from: 'a', to: 'b', strength: 'strong', reason: '' }], fedBy: [], notes: [] };
+    const storyOf = () => ({ id: 'b', title: 'Oil deal', category: 'economy' });
+    const go = (places) => render(<MemoryRouter><StoryLinkCard story={story()} rows={feeds} storyOf={storyOf} placesOf={(id, other) => (id === 'a' && other === 'b' ? places : null)} mark={null} mode="week" /></MemoryRouter>);
+    const { container, unmount } = go({ mine: ['Saudi Arabia'], other: ['Japan'], same: false });
+    const sign = container.querySelector('[data-testid="link-sign"]');
+    expect(sign.querySelectorAll('.gp-sign__sw--solid')).toHaveLength(0);
+    expect(sign.querySelector('.gp-sign__sw--stripe').style.getPropertyValue('--h')).toBe('#8fd46a');
+    expect(sign).toHaveTextContent('Japan');
+    expect(sign).not.toHaveTextContent('Saudi');
+    unmount();
+    expect(go({ mine: ['Yemen'], other: [], same: true }).container.querySelector('[data-testid="link-sign"]')).toHaveTextContent('same places');
+  });
+  it('no places known for the pair: the striped square alone, no "same places"', () => {
+    const feeds = { feeds: [{ from: 'a', to: 'b', strength: 'strong', reason: '' }], fedBy: [], notes: [] };
+    const { container } = render(<MemoryRouter><StoryLinkCard story={story()} rows={feeds} storyOf={() => ({ id: 'b', title: 'B', category: 'economy' })} mark={null} mode="week" /></MemoryRouter>);
+    expect(container.querySelector('[data-testid="link-sign"]').textContent).toBe('');
+  });
 });

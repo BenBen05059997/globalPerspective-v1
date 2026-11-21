@@ -37,6 +37,7 @@ export function storyStamp(view) {
     stepDays: num(view.stepDays),
     firstStep: view.firstStep || null,
     newestStep: view.newestStep || null,
+    mergedFrom: [...new Set((Array.isArray(view.merges) ? view.merges : []).filter((m) => m?.into === view.threadId && typeof m.from === 'string').map((m) => m.from))], // the stories merged into this one: their judged links sit on their own records
     outletCount: Array.isArray(view.sourceIds) ? view.sourceIds.length : null,
   };
 }

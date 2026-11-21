@@ -10,17 +10,24 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import { shortDay, sinceText } from '@/shared/ui/StoryCard.jsx';
 import { crisisHueForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers.js';
+import LinkSign from '@/shared/ui/LinkSign.jsx';
 import StrengthBars from '@/shared/ui/StrengthBars.jsx';
 import { linkCountText, markText, stripEvidence } from '@/features/board/lib/linkedBoard.js';
 
 export const cardDomId = (id) => `bl-${id}`;
 export const cardHref = (id) => `#bl-${id}`; // the in-page link to a card
 
+// The board row's sign: the other story's striped square and its places not already this card's (the card is this story). The
+// places are the story page's (`placesOf` reads the same links views); none known: the square alone.
+function RowSign({ other, places }) {
+  return <LinkSign showMine={false} otherCategory={other.category} places={places} />;
+}
+
 function StoryRef({ story }) {
   return <a className="bl-row__story" href={cardHref(story.id)} title={story.title}>{story.title}</a>;
 }
 
-export default function StoryLinkCard({ story, rows, storyOf, mark, mode }) {
+export default function StoryLinkCard({ story, rows, storyOf, placesOf = () => null, mark, mode }) {
   const count = linkCountText(rows);
   const tier = story.tier || (story.riskScore != null ? tierFromScore(story.riskScore) : null);
   const role = story.newest?.role || null;
@@ -45,6 +52,7 @@ export default function StoryLinkCard({ story, rows, storyOf, mark, mode }) {
       {rows.feeds.map((l) => (
         <div key={`f-${l.to}`} className="bl-row">
           <span className="bl-row__dir">→ feeds into</span>
+          <RowSign other={storyOf(l.to)} places={placesOf(story.id, l.to)} />
           <StoryRef story={storyOf(l.to)} />
           <StrengthBars strength={l.strength} />
           {l.reason ? (
@@ -58,6 +66,7 @@ export default function StoryLinkCard({ story, rows, storyOf, mark, mode }) {
       {rows.fedBy.map((l) => (
         <div key={`b-${l.from}`} className="bl-row">
           <span className="bl-row__dir">← fed by</span>
+          <RowSign other={storyOf(l.from)} places={placesOf(story.id, l.from)} />
           <StoryRef story={storyOf(l.from)} />
           <StrengthBars strength={l.strength} />
         </div>

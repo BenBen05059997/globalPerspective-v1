@@ -14,6 +14,8 @@ import PageLine from '@/shared/ui/PageLine.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { shortDay } from '@/shared/ui/StoryCard.jsx';
 import { useStoryViews } from '@/features/board/hooks/useStoryViews.js';
+import { useCardLinkViews } from '@/features/board/hooks/useCardLinkViews.js';
+import { pairPlaces } from '@/shared/lib/linkLine.js';
 import { todayUTC } from '@/features/board/lib/branchDays.js';
 import {
   storyFacts, judgedLinks, sharedPairs, linkOrder, cardLinks, whatMoved, judgedOn, visitBoard,
@@ -65,6 +67,8 @@ export default function LinkedBoard({ boardKey, kind, title, region = null, rows
   const stories = useMemo(() => Object.fromEntries(rows.map((r) => [r.id, storyFacts(r.id, r, views.stories[r.id])])), [rows, views.stories]);
   const storyOf = (id) => stories[id] || { id, title: id };
 
+  const cardViews = useCardLinkViews(ids);
+  const placesOf = (id, otherId) => (cardViews[id] ? pairPlaces(cardViews[id].ids, cardViews[id].views, otherId) : null);
   const known = linkRows != null;
   const links = useMemo(() => judgedLinks(linkRows || [], ids), [linkRows, ids]);
   const shared = useMemo(() => sharedPairs(sharedRows, ids, links), [sharedRows, ids, links]);
@@ -75,7 +79,7 @@ export default function LinkedBoard({ boardKey, kind, title, region = null, rows
 
   const card = (id) => (
     <StoryLinkCard key={id} story={storyOf(id)} rows={known ? cardLinks(id, links, shared) : { feeds: [], fedBy: [], notes: [] }}
-      storyOf={storyOf} mark={moved.mark[id]} mode={moved.mode} />
+      storyOf={storyOf} placesOf={placesOf} mark={moved.mark[id]} mode={moved.mode} />
   );
   const { linked: list, alone } = order;
   const legend = links.length ? <Legend links={links} shared={shared} arcs={arcs} /> : null;

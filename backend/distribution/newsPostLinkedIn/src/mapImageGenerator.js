@@ -4,50 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 
-// ── Install TTF fonts to /tmp for librsvg/fontconfig ────────────────────────
-// librsvg ignores @font-face/woff2. It only uses system TTF/OTF via fontconfig.
-// Lambda has no /usr/share/fonts, so we bundle TTFs and configure fontconfig.
-(function setupFonts() {
-  try {
-    const fontDir = '/tmp/fonts';
-    const configDir = '/tmp/fontconfig';
-    fs.mkdirSync(fontDir, { recursive: true });
-    fs.mkdirSync(configDir, { recursive: true });
-    fs.mkdirSync('/tmp/fontconfig-cache', { recursive: true });
+const { setupFonts } = require('./fontSetup');
 
-    // Copy bundled TTF fonts to /tmp
-    const srcFonts = path.join(__dirname, 'fonts');
-    if (fs.existsSync(srcFonts)) {
-      for (const file of fs.readdirSync(srcFonts)) {
-        if (file.endsWith('.ttf') || file.endsWith('.otf')) {
-          const dest = path.join(fontDir, file);
-          if (!fs.existsSync(dest)) {
-            fs.copyFileSync(path.join(srcFonts, file), dest);
-          }
-        }
-      }
-    }
-
-    // Write fontconfig pointing to /tmp/fonts
-    const fontsConf = `<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-  <dir>/tmp/fonts</dir>
-  <cachedir>/tmp/fontconfig-cache</cachedir>
-  <config><rescan><int>0</int></rescan></config>
-</fontconfig>`;
-    fs.writeFileSync(path.join(configDir, 'fonts.conf'), fontsConf);
-
-    // Must be set BEFORE sharp renders anything
-    process.env.FONTCONFIG_PATH = configDir;
-    process.env.FONTCONFIG_FILE = path.join(configDir, 'fonts.conf');
-
-    const installed = fs.readdirSync(fontDir).filter(f => f.endsWith('.ttf'));
-    console.log(`mapImageGenerator: ${installed.length} fonts installed in /tmp/fonts: ${installed.join(', ')}`);
-  } catch (e) {
-    console.error('mapImageGenerator: font setup failed:', e.message);
-  }
-})();
+// Fonts for librsvg: installed to /tmp and fontconfig pointed at them (see fontSetup.js) before sharp renders anything.
+setupFonts('mapImageGenerator');
 
 const SVG_PATH = path.join(__dirname, 'world-map-template.svg');
 const LOGO_PATH = path.join(__dirname, 'logo_small.png');

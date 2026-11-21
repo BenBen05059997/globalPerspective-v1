@@ -6,13 +6,15 @@ const path = require('path');
 // Text widths for the bundled Inter TTFs, read straight from the font (cmap format 4 + hmtx). The story card wraps and clips
 // text with these so a line that fits here fits in librsvg. Kerning is ignored (a fraction of a percent), callers keep a margin.
 
+// The headline serif: Fraunces 72pt SemiBold (static instance, family name "Fraunces 72pt", weight 600). Pass family 'serif'.
 const FILES = { 400: 'Inter-Regular.ttf', 600: 'Inter-SemiBold.ttf', 700: 'Inter-Bold.ttf' };
+const SERIF = 'Fraunces72pt-SemiBold.ttf';
 const cache = new Map();
 
-function load(weight) {
-  const w = FILES[weight] ? weight : 400;
-  if (cache.has(w)) return cache.get(w);
-  const b = fs.readFileSync(path.join(__dirname, 'fonts', FILES[w]));
+function load(weight, family = 'sans') {
+  const file = family === 'serif' ? SERIF : FILES[FILES[weight] ? weight : 400];
+  if (cache.has(file)) return cache.get(file);
+  const b = fs.readFileSync(path.join(__dirname, 'fonts', file));
   const tables = {};
   for (let i = 0, n = b.readUInt16BE(4); i < n; i++) {
     const o = 12 + i * 16;
@@ -27,7 +29,7 @@ function load(weight) {
     const off = cmap + b.readUInt32BE(o + 4);
     if (b.readUInt16BE(o) === 3 && b.readUInt16BE(o + 2) === 1 && b.readUInt16BE(off) === 4) sub = off;
   }
-  if (!sub) throw new Error('fontMetrics: no cmap format 4 in ' + FILES[w]);
+  if (!sub) throw new Error('fontMetrics: no cmap format 4 in ' + file);
   const segX2 = b.readUInt16BE(sub + 6);
   const endO = sub + 14;
   const startO = endO + segX2 + 2;
@@ -55,13 +57,13 @@ function load(weight) {
       return widths.get(cp);
     },
   };
-  cache.set(w, font);
+  cache.set(file, font);
   return font;
 }
 
-/** Width in px of `text` set in Inter `weight` at `size` px, with `spacing` px letter-spacing after every character. */
-function textWidth(text, size, weight = 400, spacing = 0) {
-  const f = load(weight);
+/** Width in px of `text` set in Inter `weight` (or the Fraunces serif when family is 'serif') at `size` px, with `spacing` px letter-spacing after every character. */
+function textWidth(text, size, weight = 400, spacing = 0, family = 'sans') {
+  const f = load(weight, family);
   let w = 0;
   let n = 0;
   for (const ch of String(text)) { w += f.em(ch) * size + spacing; n++; }
@@ -72,9 +74,9 @@ function textWidth(text, size, weight = 400, spacing = 0) {
  * Greedy wrap into at most `maxLines` lines no wider than `maxWidth`. Text that does not fit ends its last line with an ellipsis.
  * Returns { lines, clipped }. A single word wider than a line is broken by characters.
  */
-function wrapText(text, { size, weight = 400, maxWidth, maxLines, spacing = 0 }) {
+function wrapText(text, { size, weight = 400, maxWidth, maxLines, spacing = 0, family = 'sans' }) {
   const words = String(text || '').trim().split(/\s+/).filter(Boolean);
-  const w = (s) => textWidth(s, size, weight, spacing);
+  const w = (s) => textWidth(s, size, weight, spacing, family);
   const lines = [];
   let cur = '';
   let i = 0;

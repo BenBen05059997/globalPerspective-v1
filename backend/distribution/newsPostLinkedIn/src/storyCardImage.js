@@ -298,7 +298,10 @@ function buildMapSvg(data, plan) {
 const X0 = MAP_W + EDGE + 42;
 const X1 = W - 41;
 const TW = X1 - X0;
-const text = (x, y, size, weight, fill, str, extra = '') => `<text x="${r1(x)}" y="${r1(y)}" font-family="Inter" font-size="${size}" font-weight="${weight}" fill="${fill}"${extra}>${esc(str)}</text>`;
+// The headline is Fraunces SemiBold (static "Fraunces 72pt" in src/fonts, weight 600); everything else is Inter.
+// Quoted: unquoted, "72pt" is not a valid CSS identifier and the whole family is dropped (the headline falls back to Times).
+const HEAD_FONT = "'Fraunces 72pt'";
+const text = (x, y, size, weight, fill, str, extra = '', family = 'Inter') => `<text x="${r1(x)}" y="${r1(y)}" font-family="${family}" font-size="${size}" font-weight="${weight}" fill="${fill}"${extra}>${esc(str)}</text>`;
 /** Baseline for a line box [top, top + lineH). */
 const base = (top, lineH, size) => top + lineH / 2 + size * 0.36;
 
@@ -344,8 +347,8 @@ function layoutText(data, plan, opts) {
   y += 46 + 12;
 
   // headline: at most four lines, then an ellipsis
-  const title = wrapText(data.headline, { size: opts.titleSize, weight: 600, maxWidth: TW - 6, maxLines: 4 });
-  title.lines.forEach((ln, i) => out.push(text(X0, base(y + i * opts.titleLead, opts.titleLead, opts.titleSize), opts.titleSize, 600, C.fg, ln)));
+  const title = wrapText(data.headline, { size: opts.titleSize, weight: 600, family: 'serif', maxWidth: TW - 6, maxLines: 4 });
+  title.lines.forEach((ln, i) => out.push(text(X0, base(y + i * opts.titleLead, opts.titleLead, opts.titleSize), opts.titleSize, 600, C.fg, ln, '', HEAD_FONT)));
   y += title.lines.length * opts.titleLead + 14;
 
   // since line: first date, a rule, the newest date in amber with its dot and words

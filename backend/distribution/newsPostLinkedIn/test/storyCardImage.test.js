@@ -202,3 +202,21 @@ test('png: renders at 1200 and 360 wide', async (t) => {
     assert.equal(meta.height, Math.round((630 * width) / 1200));
   }
 });
+
+test('fontMetrics: the serif headline face is measured from Fraunces, not Inter', () => {
+  const sans = textWidth('Houthi attacks on Saudi Arabia', 34, 600);
+  const serif = textWidth('Houthi attacks on Saudi Arabia', 34, 600, 0, 'serif');
+  assert.ok(serif > 0 && Math.abs(serif - sans) > 1);
+  // Fraunces 72pt SemiBold, 2048 upem: H measures 80.75 px at 100 px, i 28.2 px (read from the font file)
+  assert.ok(Math.abs(textWidth('H', 100, 600, 0, 'serif') - 80.75) < 0.1);
+  assert.ok(textWidth('H', 100, 600, 0, 'serif') > 2.5 * textWidth('i', 100, 600, 0, 'serif'));
+  const { lines } = wrapText('word '.repeat(60), { size: 34, weight: 600, family: 'serif', maxWidth: 500, maxLines: 3 });
+  for (const l of lines) assert.ok(textWidth(l, 34, 600, 0, 'serif') <= 500);
+});
+
+test('storyCardImage: the headline is set in Fraunces, the rest in Inter', () => {
+  const svg = buildStoryCardSvg({ ...BASE, forecast: FORECAST });
+  assert.match(svg, /font-family="'Fraunces 72pt'"[^>]*>Saudi/);
+  assert.ok((svg.match(/font-family="'Fraunces 72pt'"/g) || []).length >= 1);
+  assert.ok(/font-family="Inter"/.test(svg));
+});

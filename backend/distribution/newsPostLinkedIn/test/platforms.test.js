@@ -66,7 +66,7 @@ const ENV = {
   MAX_POSTS_PER_RUN: '5', MAX_POSTS_PER_DAY: '100', SITE_URL: 'https://site.example/', RECORD_READS: undefined, SUMMARY_PREDICT_PK_PREFIX: undefined,
 };
 
-async function withHandler({ env = {}, fill = () => {}, behave, image = null }, fn) {
+async function withHandler({ env = {}, fill = () => {}, behave, image = null, card = null }, fn) {
   const store = makeStore();
   fill(store);
   const api = fakeApis(behave);
@@ -74,7 +74,7 @@ async function withHandler({ env = {}, fill = () => {}, behave, image = null }, 
   globalThis.fetch = api.fn;
   const real = [console.log, console.warn, console.error];
   console.log = () => {}; console.warn = () => {}; console.error = () => {};
-  const aws = stubAws({ ddb: store.ddb, modules: { './mapImageGenerator': { generateTopicMapImage: async () => image } } });
+  const aws = stubAws({ ddb: store.ddb, modules: { './mapImageGenerator': { generateTopicMapImage: async () => image }, './storyCardPost': { storyCardPng: async (id) => (card ? card(id) : null) } } });
   try {
     const mod = aws.load(INDEX, { ...ENV, ...env });
     return await fn(mod.handler, { store, api });
@@ -316,5 +316,23 @@ test('no platform configured, no topics, or a missing table env: 200 skipped, 20
 test('LinkedIn needs both the token and the person id; Bluesky needs both the identifier and the app password', async () => {
   await withHandler({ env: only({ LINKEDIN_ACCESS_TOKEN: 'li-token', BLUESKY_IDENTIFIER: 'x.bsky.social' }) }, async (handler) => {
     assert.equal(JSON.parse((await handler({})).body).reason, 'no platforms configured');
+  });
+});
+
+// ── the post picture ────────────────────────────────────────────────────────
+
+test('the picture is the story card of the topic\'s story; the old map only when the card fails or the topic has no story', async () => {
+  const cardPng = Buffer.from('card');
+  const mapPng = Buffer.from('map');
+  const seen = [];
+  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card: (id) => { seen.push(id); return cardPng; } }, async (handler, { api }) => {
+    await handler({});
+    assert.deepEqual(seen, ['thr-sudan']);
+    const blob = api.calls.find((c) => c.url.includes('uploadBlob'));
+    assert.equal(String(blob.body), 'card');
+  });
+  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card: () => { throw new Error('views down'); } }, async (handler, { api }) => {
+    await handler({});
+    assert.equal(String(api.calls.find((c) => c.url.includes('uploadBlob')).body), 'map');
   });
 });

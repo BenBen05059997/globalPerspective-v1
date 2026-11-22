@@ -1,6 +1,7 @@
 'use strict';
 
 const { generateTopicMapImage } = require('./mapImageGenerator');
+const { storyCardPng } = require('./storyCardPost');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 const { httpReply: response } = require('./_shared/httpReply');
 const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
@@ -198,18 +199,8 @@ async function runPlatform(platform, allTopics) {
         postText = formatFn(topic);
       }
 
-      // Generate map image if platform supports it
       let imageBuffer = null;
-      if (platform.supportsImage) {
-        try {
-          imageBuffer = await generateTopicMapImage(topic);
-          if (imageBuffer) {
-            console.log(`[${name}] Map image generated (${Math.round(imageBuffer.length / 1024)}KB)`);
-          }
-        } catch (imgErr) {
-          console.warn(`[${name}] Map image failed, posting text-only:`, imgErr.message);
-        }
-      }
+      if (platform.supportsImage) imageBuffer = await postImage(name, topic);
 
       console.log(`[${name}] Posting: "${topic.title.substring(0, 50)}..." (${postText.length} chars${imageBuffer ? ' + image' : ''})`);
 
@@ -247,6 +238,29 @@ async function runPlatform(platform, allTopics) {
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
+
+/** The post picture: the story card (storyCardPost) for a topic in a story; else, or when the card fails, the old map; null posts text-only. */
+async function postImage(name, topic) {
+  if (topic.threadId) {
+    try {
+      const card = await storyCardPng(topic.threadId, { siteUrl: SITE_URL });
+      if (card) {
+        console.log(`[${name}] Story card generated (${Math.round(card.length / 1024)}KB)`);
+        return card;
+      }
+    } catch (err) {
+      console.warn(`[${name}] Story card failed, using the map:`, err.message);
+    }
+  }
+  try {
+    const map = await generateTopicMapImage(topic);
+    if (map) console.log(`[${name}] Map image generated (${Math.round(map.length / 1024)}KB)`);
+    return map;
+  } catch (err) {
+    console.warn(`[${name}] Map image failed, posting text-only:`, err.message);
+    return null;
+  }
+}
 
 function titleFingerprint(title) {
   return String(title || '')

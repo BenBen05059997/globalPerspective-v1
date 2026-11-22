@@ -6,11 +6,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
-const { storyCardData } = require('../src/storyCardData');
+const { storyCardFor, siteDataReader } = require('../src/storyCardPost');
 const { buildStoryCardSvg, renderStoryCardPng, planMap } = require('../src/storyCardImage');
 
-const BASE = 'https://globalperspective.net/data';
-const VIEWS = `${BASE}/record/views`;
 const REPO = path.resolve(__dirname, '../../../..');
 const OUT = path.resolve(process.argv[2] || path.join(REPO, '.board/reviews/story-card-2026-11-21/card-build'));
 
@@ -21,13 +19,6 @@ const EXAMPLES = [
   { name: 'card-extra-gulf-oil', id: 'thread-iaea-says-cannot-verify-iran-s-c660a5' }, // a far main country (JPN) next to a Gulf link
 ];
 
-async function get(url) {
-  const res = await fetch(url, { method: 'GET' });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
-  return res.json();
-}
-
 function loadSharp() {
   try { return require('sharp'); } catch { return createRequire(path.join(REPO, 'global-perspectives-starter/frontend/package.json'))('sharp'); }
 }
@@ -36,16 +27,11 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const sharp = loadSharp();
   const today = new Date().toISOString().slice(0, 10);
-  const world = await get(`${BASE}/world/latest.json`);
+  const read = siteDataReader('https://globalperspective.net/');
   for (const ex of EXAMPLES) {
-    const story = await get(`${VIEWS}/stories/${ex.id}.json`);
-    const ids = [story.threadId, ...(story.merges || []).map((m) => m.from)];
-    const linkViews = await Promise.all([...new Set(ids)].map((id) => get(`${VIEWS}/links/${id}.json`)));
-    const forecastView = await get(`${VIEWS}/forecasts/${ex.id}.json`);
-    // first pass picks the link, then the other story is read for its category and newest-step countries
-    const probe = storyCardData({ story, linkViews, forecastView, situations: world?.situations, today });
-    const otherStory = probe.link ? await get(`${VIEWS}/stories/${probe.link.otherId}.json`) : null;
-    const data = storyCardData({ story, linkViews, otherStory, forecastView, situations: world?.situations, today });
+    // the poster's own path (storyCardPost): same views, same same-places rule
+    const data = await storyCardFor(ex.id, { get: read, today });
+    if (!data) { console.log(`${ex.name}: no story view`); continue; }
     fs.writeFileSync(path.join(OUT, `${ex.name}.json`), `${JSON.stringify(data, null, 2)}\n`);
     fs.writeFileSync(path.join(OUT, `${ex.name}.svg`), buildStoryCardSvg(data));
     const plan = planMap(data);

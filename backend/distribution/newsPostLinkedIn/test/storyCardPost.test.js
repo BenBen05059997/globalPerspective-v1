@@ -13,7 +13,7 @@ test('a link to a story in new places leads the card', async () => {
   const get = reader({ 'record/views/stories/a.json': story('a', ['SAU']), 'record/views/stories/b.json': story('b', ['EGY']), 'record/views/links/a.json': links(['EGY']), 'record/views/forecasts/a.json': { forks: [fork] } });
   const d = await storyCardFor('a', { get, today: '2026-11-22' });
   assert.equal(d.link.direction, 'feeds');
-  assert.equal(d.forecast, null);
+  assert.equal(d.forecast.chance, 0.22);
 });
 
 test('a link to a story in the same places does not lead: the forecast does', async () => {

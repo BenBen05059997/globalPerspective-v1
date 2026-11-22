@@ -1,7 +1,8 @@
 'use strict';
 
 const { generateTopicMapImage } = require('./mapImageGenerator');
-const { storyCardPng } = require('./storyCardPost');
+const { storyCard, cardPng } = require('./storyCardPost');
+const { forecastSentence } = require('./storyCardImage');
 const { storyHref, absoluteUrl } = require('./_shared/links');
 const { httpReply: response } = require('./_shared/httpReply');
 const { CATEGORY_LABEL } = require('./_shared/categoryLabels');
@@ -133,8 +134,8 @@ function buildPlatformList() {
       name: 'BLUESKY',
       maxPerRun: MAX_POSTS_PER_RUN,
       maxPerDay: MAX_POSTS_PER_DAY,
-      formatFn: (topic) => formatShortPost(topic, 300),
-      postFn: async (text, imageBuffer) => postToBluesky(BLUESKY_IDENTIFIER, BLUESKY_APP_PASSWORD, text, imageBuffer),
+      formatFn: (topic, summary, forecast) => formatShortPost(topic, 300, forecast),
+      postFn: async (text, imageBuffer, topic) => postToBluesky(BLUESKY_IDENTIFIER, BLUESKY_APP_PASSWORD, text, imageBuffer, [postLink(topic)]),
       needsSummary: false,
       supportsImage: true,
     });
@@ -187,24 +188,18 @@ async function runPlatform(platform, allTopics) {
 
   for (const { topic, fingerprint } of toPost) {
     try {
-      let postText;
-
-      if (needsSummary) {
-        const [summary, prediction] = await Promise.all([
-          readSummaryContent(topic.id || topic.topicId, 'SUMMARY'),
-          readSummaryContent(topic.id || topic.topicId, 'PREDICTION'),
-        ]);
-        postText = formatFn(topic, summary, prediction);
-      } else {
-        postText = formatFn(topic);
-      }
+      // The story card: the picture, and our forecast (the story's) in the text.
+      const card = await cardOf(name, topic);
+      const forecast = forecastSentence(card?.forecast);
+      const summary = needsSummary ? await readSummaryContent(topic.id || topic.topicId, 'SUMMARY') : '';
+      const postText = formatFn(topic, summary, forecast);
 
       let imageBuffer = null;
-      if (platform.supportsImage) imageBuffer = await postImage(name, topic);
+      if (platform.supportsImage) imageBuffer = await postImage(name, topic, card);
 
       console.log(`[${name}] Posting: "${topic.title.substring(0, 50)}..." (${postText.length} chars${imageBuffer ? ' + image' : ''})`);
 
-      const postResult = await postFn(postText, imageBuffer);
+      const postResult = await postFn(postText, imageBuffer, topic);
 
       await recordPostedTopicForPlatform(name, fingerprint, topic, postResult.postUrn || postResult.postId || null);
 
@@ -239,15 +234,24 @@ async function runPlatform(platform, allTopics) {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-/** The post picture: the story card (storyCardPost) for a topic in a story; else, or when the card fails, the old map; null posts text-only. */
-async function postImage(name, topic) {
-  if (topic.threadId) {
+/** The story card data of a topic in a story (storyCardPost), with the topic's title as its headline; null without one or on failure. */
+async function cardOf(name, topic) {
+  if (!topic.threadId) return null;
+  try {
+    return await storyCard(topic.threadId, { siteUrl: SITE_URL, headline: topic.title });
+  } catch (err) {
+    console.warn(`[${name}] Story card data failed, using the map:`, err.message);
+    return null;
+  }
+}
+
+/** The post picture: the story card; without one, or when drawing it fails, the old map; null posts text-only. */
+async function postImage(name, topic, card) {
+  if (card) {
     try {
-      const card = await storyCardPng(topic.threadId, { siteUrl: SITE_URL });
-      if (card) {
-        console.log(`[${name}] Story card generated (${Math.round(card.length / 1024)}KB)`);
-        return card;
-      }
+      const png = await cardPng(card);
+      console.log(`[${name}] Story card generated (${Math.round(png.length / 1024)}KB)`);
+      return png;
     } catch (err) {
       console.warn(`[${name}] Story card failed, using the map:`, err.message);
     }
@@ -343,29 +347,6 @@ function buildHashtags(topic) {
   if (topic.category) tags.push(`#${topic.category}`);
   tags.push('#GlobalPerspectives');
   return tags.join(' ');
-}
-
-// The PREDICTION content is structured JSON (methodology-v1, contentFormat='json'):
-//   { scenarios: [{ label, probability_range, horizon, rationale, triggers:[...] }] }
-// Older records are prose. Render the top scenarios as readable prose either way —
-// NEVER dump raw JSON into a post (was doing exactly that pre-2026-09-08).
-function formatPredictionText(raw) {
-  if (!raw) return '';
-  const s = String(raw).trim();
-  if (s[0] === '{' || s[0] === '[') {
-    try {
-      const obj = JSON.parse(s);
-      const scenarios = Array.isArray(obj) ? obj : (obj.scenarios || []);
-      const lines = scenarios.slice(0, 2).map((sc) => {
-        const label = sc.label || 'Scenario';
-        const meta = [sc.probability_range || sc.probability, sc.horizon].filter(Boolean).join(', ');
-        const rationale = stripMarkdown(sc.rationale || sc.text || '');
-        return rationale ? `${label}${meta ? ` (${meta})` : ''}: ${rationale}` : '';
-      }).filter(Boolean);
-      if (lines.length) return lines.join('\n\n');
-    } catch (_) { /* not valid JSON — fall through to prose */ }
-  }
-  return stripMarkdown(s);
 }
 
 // ---------------------------------------------------------------------------
@@ -472,7 +453,7 @@ async function recordPostedTopicForPlatform(platform, fingerprint, topic, postId
 // Formatters
 // ---------------------------------------------------------------------------
 
-function formatLinkedInPost(topic, summary, prediction) {
+function formatLinkedInPost(topic, summary, forecast) {
   const category = CATEGORY_LABEL[topic.category] || 'World';
   const MAX_CHARS = 3000;
 
@@ -486,24 +467,10 @@ function formatLinkedInPost(topic, summary, prediction) {
   const reservedChars = header.length + footer.length + 20;
   const availableChars = MAX_CHARS - reservedChars;
 
-  let cleanSummary = summary ? stripMarkdown(summary) : '';
-  let cleanPrediction = prediction ? formatPredictionText(prediction) : '';
-
-  let body = '';
-
-  if (cleanSummary && cleanPrediction) {
-    const summaryBudget = Math.floor(availableChars * 0.45);
-    const predictionBudget = Math.floor(availableChars * 0.50);
-
-    const trimmedSummary = truncateAtSentence(cleanSummary, summaryBudget);
-    const trimmedPrediction = truncateAtSentence(cleanPrediction, predictionBudget);
-
-    body = `${trimmedSummary}\n\n---\nForecast:\n\n${trimmedPrediction}`;
-  } else if (cleanSummary) {
-    body = truncateAtSentence(cleanSummary, availableChars);
-  } else if (cleanPrediction) {
-    body = `Forecast:\n\n${truncateAtSentence(cleanPrediction, availableChars)}`;
-  }
+  // Our forecast (one sentence, from the story) follows the summary.
+  const tail = forecast ? `\n\n${forecast}` : '';
+  const cleanSummary = summary ? stripMarkdown(summary) : '';
+  const body = (cleanSummary ? truncateAtSentence(cleanSummary, availableChars - tail.length) : '') + tail;
 
   let post = `${header}${body}\n${footer}`.trim();
 
@@ -514,22 +481,33 @@ function formatLinkedInPost(topic, summary, prediction) {
   return post;
 }
 
-function formatShortPost(topic, maxLen) {
+/** The link of a post: the story's page (else the site), shown as the site's bare name; Bluesky makes the name a link (a facet). */
+function postLink(topic) {
+  const uri = topic.threadId ? absoluteUrl(storyHref(topic.threadId), SITE_URL) : SITE_URL;
+  return { uri, display: new URL(SITE_URL).host };
+}
+
+/** A short post (Bluesky, 300 characters): [Category] title, our forecast, the link (postLink's short name), hashtags. Over the limit
+ *  the forecast's words are cut first, then the forecast goes, then the title is cut. */
+function formatShortPost(topic, maxLen, forecast = '') {
   const category = CATEGORY_LABEL[topic.category] || 'World';
-  const hashtags = buildHashtags(topic);
-  const link = SITE_URL;
+  const tail = `\n\n${postLink(topic).display}\n\n${buildHashtags(topic)}`;
+  const len = (t) => [...t].length;
+  const head = `[${category}] ${topic.title}`;
+  const room = maxLen - len(head) - len(tail) - 2; // room for "\n\n" + forecast
+  if (forecast && len(forecast) <= room) return `${head}\n\n${forecast}${tail}`;
+  if (forecast && room >= 40) return `${head}\n\n${cutAtWord(forecast, room)}${tail}`;
+  if (len(head) + len(tail) <= maxLen) return `${head}${tail}`;
+  return `${cutAtWord(head, maxLen - len(tail))}${tail}`;
+}
 
-  // Build: [Category] Title\n\nlink\n\nhashtags
-  const base = `[${category}] ${topic.title}\n\n${link}\n\n${hashtags}`;
-
-  if (base.length <= maxLen) return base;
-
-  // Trim title if needed
-  const overhead = `[${category}] `.length + `\n\n${link}\n\n${hashtags}`.length + 3;
-  const titleBudget = maxLen - overhead;
-  const trimmedTitle = topic.title.substring(0, titleBudget) + '...';
-
-  return `[${category}] ${trimmedTitle}\n\n${link}\n\n${hashtags}`;
+/** Cut text to at most max characters at a word break, ending in '…'. */
+function cutAtWord(text, max) {
+  const chars = [...text];
+  if (chars.length <= max) return text;
+  const cut = chars.slice(0, max - 1).join('');
+  const sp = cut.lastIndexOf(' ');
+  return `${(sp > max / 2 ? cut.slice(0, sp) : cut).replace(/[\s,;:]+$/, '')}…`;
 }
 
 // ---------------------------------------------------------------------------
@@ -643,7 +621,19 @@ async function postToLinkedIn(accessToken, personId, commentary, imageBuffer) {
 // Platform poster: Bluesky (AT Protocol)
 // ---------------------------------------------------------------------------
 
-async function postToBluesky(identifier, appPassword, text, imageBuffer) {
+/** Bluesky shows a link only through a facet: the UTF-8 byte range of the link's shown text (its last place in the post) and its address. */
+function linkFacets(text, links) {
+  const out = [];
+  for (const { display, uri } of links || []) {
+    const at = text.lastIndexOf(display);
+    if (at < 0) continue;
+    const byteStart = Buffer.byteLength(text.slice(0, at), 'utf8');
+    out.push({ index: { byteStart, byteEnd: byteStart + Buffer.byteLength(display, 'utf8') }, features: [{ $type: 'app.bsky.richtext.facet#link', uri }] });
+  }
+  return out;
+}
+
+async function postToBluesky(identifier, appPassword, text, imageBuffer, links = []) {
   // Step 1: Create session (login)
   const sessionRes = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
     method: 'POST',
@@ -698,6 +688,8 @@ async function postToBluesky(identifier, appPassword, text, imageBuffer) {
     createdAt: now,
   };
   if (embed) record.embed = embed;
+  const facets = linkFacets(text, links);
+  if (facets.length) record.facets = facets;
 
   const postRes = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
     method: 'POST',

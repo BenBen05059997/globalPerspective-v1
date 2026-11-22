@@ -88,7 +88,7 @@ test('placeCountries: a story-keyed situation orders and filters the step countr
   assert.deepEqual(placeCountries({ iso3: ['BHR', 'IRN', 'USA'] }, sit, ['other']).countries, ['BHR', 'IRN', 'USA']);
 });
 
-test('storyCardData: the link wins over the forecast; no link keeps the forecast', () => {
+test('storyCardData: the link leads and the forecast is still carried (a short line on a link card); no link keeps the forecast', () => {
   const story = { threadId: 'A', title: 'T', category: 'conflict', newestStep: { role: 'move', date: '2026-11-20', sourceCount: 3 }, firstStep: { date: '2026-09-08' }, stepCount: 2, stepDays: 1, entries: [{ iso3: ['SAU'] }], merges: [],
     forks: [{ drawnAt: '2026-11-20', branches: [{ branchId: 'PRED#T-0/2026-11-20/0-0', trigger: 'It happens', p: 40, due: '2099-01-01', question: true, qid: 'q' }] }] };
   const links = { judgedLinks: [{ from: 'A', to: 'B', otherTitle: 'Other', confidence: 'strong' }] };
@@ -96,7 +96,7 @@ test('storyCardData: the link wins over the forecast; no link keeps the forecast
   const withLink = storyCardData({ story, linkViews: [links], otherStory: other, today: '2026-11-21' });
   assert.equal(withLink.link.direction, 'feeds');
   assert.deepEqual(withLink.link.countries, ['JPN', 'SAU']);
-  assert.equal(withLink.forecast, null);
+  assert.deepEqual(withLink.forecast, { chance: 40, text: 'It happens', due: '2099-01-01' });
   const noLink = storyCardData({ story, linkViews: [], today: '2026-11-21' });
   assert.equal(noLink.link, null);
   assert.deepEqual(noLink.forecast, { chance: 40, text: 'It happens', due: '2099-01-01' });
@@ -288,4 +288,12 @@ test('planMap: a country of both stories too big to draw (Russia) is named once,
   assert.deepEqual(p.placeNames, ['Russia', 'Germany']);
   assert.equal(p.notes.includes('Russia'), false);
   assert.ok(!buildStoryCardSvg(data).includes('Also in this story'));
+});
+
+test('a link card with a forecast shows a short forecast line under the link; it gives way before the link does', () => {
+  const data = { ...GULF_OIL, forecast: { chance: 35, text: 'Saudi Arabia ships the first cargo', due: '2026-12-31' } };
+  const svg = buildStoryCardSvg(data);
+  assert.ok(svg.includes('Our forecast: ') && svg.includes('35% by Dec 31'));
+  assert.ok(svg.includes('FED BY'), 'the link still leads');
+  assert.ok(!buildStoryCardSvg({ ...GULF_OIL, forecast: null }).includes('Our forecast'));
 });

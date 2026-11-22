@@ -37,7 +37,7 @@ const stubs = {
     BatchGetCommand: class BatchGetCommand extends Cmd {},
     ScanCommand: class ScanCommand extends Cmd {},
   },
-  './mapImageGenerator': { generateTopicMapImage: async () => null }, './storyCardPost': { storyCardPng: async () => null },
+  './mapImageGenerator': { generateTopicMapImage: async () => null }, './storyCardPost': { storyCard: async () => null, cardPng: async () => null },
 };
 const origLoad = Module._load;
 Module._load = function (request, ...rest) {

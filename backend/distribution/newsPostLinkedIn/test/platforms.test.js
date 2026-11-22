@@ -74,7 +74,7 @@ async function withHandler({ env = {}, fill = () => {}, behave, image = null, ca
   globalThis.fetch = api.fn;
   const real = [console.log, console.warn, console.error];
   console.log = () => {}; console.warn = () => {}; console.error = () => {};
-  const aws = stubAws({ ddb: store.ddb, modules: { './mapImageGenerator': { generateTopicMapImage: async () => image }, './storyCardPost': { storyCardPng: async (id) => (card ? card(id) : null) } } });
+  const aws = stubAws({ ddb: store.ddb, modules: { './mapImageGenerator': { generateTopicMapImage: async () => image }, './storyCardPost': { storyCard: async (id, o) => (card ? card(id, o) : null), cardPng: async (d) => { if (d.fail) throw new Error('draw failed'); return Buffer.from(`card:${d.headline}`); } } } });
   try {
     const mod = aws.load(INDEX, { ...ENV, ...env });
     return await fn(mod.handler, { store, api });
@@ -115,20 +115,20 @@ test('LinkedIn: a text post is a PUBLISHED, public post authored by the configur
   });
 });
 
-test('LinkedIn: the summary and the structured forecast are rendered as prose in the post, never as raw JSON', async () => {
+const FORECAST = { chance: 55, due: '2027-01-15', text: 'Russia launches a single overnight attack of 500 drones' };
+
+test('LinkedIn: the summary as prose, then our forecast from the story\'s card in one sentence', async () => {
   await withHandler({
     env: { ...LI, MAX_POSTS_PER_RUN: '1' },
+    card: () => ({ headline: 'x', forecast: FORECAST }),
     fill: (s) => {
       s.summaries['TOPIC#t-high|SUMMARY'] = { content: '## Heading\nThe **ceasefire** collapsed overnight.\n\nWatchlist Signals\n- hidden' };
-      s.summaries['TOPIC#t-high|PREDICTION'] = { content: JSON.stringify({ scenarios: [{ label: 'Escalation', probability_range: '60-70%', horizon: '2 weeks', rationale: 'Talks have stalled.' }] }) };
     },
   }, async (handler, { api }) => {
     await handler({});
     const text = JSON.parse(liPosts(api)[0].body).commentary;
-    assert.match(text, /The ceasefire collapsed overnight\./);
+    assert.match(text, /The ceasefire collapsed overnight\.\n\nOur forecast: 55% by Jan 15 that Russia launches a single overnight attack of 500 drones\.\n/);
     assert.doesNotMatch(text, /\*\*|##|Watchlist Signals|hidden/);
-    assert.match(text, /Forecast:\n\nEscalation \(60-70%, 2 weeks\): Talks have stalled\./);
-    assert.doesNotMatch(text, /scenarios|probability_range/);
   });
 });
 
@@ -168,7 +168,7 @@ test('Bluesky: logs in with the identifier and app password, then creates a post
     assert.equal(body.repo, 'did:plc:abc');
     assert.equal(body.collection, 'app.bsky.feed.post');
     assert.equal(body.record.$type, 'app.bsky.feed.post');
-    assert.match(body.record.text, /^\[[^\]]+\] Ceasefire collapses in Sudan\n\nhttps:\/\/site\.example\/\n\n#Sudan #Chad #conflict #GlobalPerspectives$/);
+    assert.match(body.record.text, /^\[[^\]]+\] Ceasefire collapses in Sudan\n\nsite\.example\n\n#Sudan #Chad #conflict #GlobalPerspectives$/);
     assert.equal('embed' in body.record, false);
     assert.ok(!Number.isNaN(Date.parse(body.record.createdAt)));
   });
@@ -179,7 +179,7 @@ test('Bluesky: a long title is trimmed so the whole post fits in 300 characters'
     await handler({});
     const text = JSON.parse(bskyRecords(api)[0].body).record.text;
     assert.ok(text.length <= 300, `length ${text.length}`);
-    assert.match(text, /\.\.\.\n\nhttps:\/\/site\.example\/\n\n#Sudan/);
+    assert.match(text, /…\n\nsite\.example\n\n#Sudan/);
   });
 });
 
@@ -321,18 +321,38 @@ test('LinkedIn needs both the token and the person id; Bluesky needs both the id
 
 // ── the post picture ────────────────────────────────────────────────────────
 
-test('the picture is the story card of the topic\'s story; the old map only when the card fails or the topic has no story', async () => {
-  const cardPng = Buffer.from('card');
+test('the picture is the story card of the topic\'s story, headed by the post\'s own title; the old map when the card cannot be read or drawn', async () => {
   const mapPng = Buffer.from('map');
   const seen = [];
-  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card: (id) => { seen.push(id); return cardPng; } }, async (handler, { api }) => {
+  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card: (id, o) => { seen.push([id, o.headline]); return { headline: o.headline }; } }, async (handler, { api }) => {
     await handler({});
-    assert.deepEqual(seen, ['thr-sudan']);
-    const blob = api.calls.find((c) => c.url.includes('uploadBlob'));
-    assert.equal(String(blob.body), 'card');
+    assert.deepEqual(seen, [['thr-sudan', 'Ceasefire collapses in Sudan']]);
+    assert.equal(String(api.calls.find((c) => c.url.includes('uploadBlob')).body), 'card:Ceasefire collapses in Sudan');
   });
-  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card: () => { throw new Error('views down'); } }, async (handler, { api }) => {
+  for (const card of [() => { throw new Error('views down'); }, () => ({ headline: 'x', fail: true })]) {
+    await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: mapPng, card }, async (handler, { api }) => {
+      await handler({});
+      assert.equal(String(api.calls.find((c) => c.url.includes('uploadBlob')).body), 'map');
+    });
+  }
+});
+
+test('Bluesky: the post carries our forecast and the story\'s own link, made clickable with a link facet; it stays within 300 characters', async () => {
+  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, card: () => ({ headline: 'x', forecast: FORECAST }) }, async (handler, { api }) => {
     await handler({});
-    assert.equal(String(api.calls.find((c) => c.url.includes('uploadBlob')).body), 'map');
+    const rec = JSON.parse(bskyRecords(api)[0].body).record;
+    assert.match(rec.text, /^\[Conflict\] Ceasefire collapses in Sudan\n\nOur forecast: 55% by Jan 15 that Russia launches/);
+    assert.ok(rec.text.includes('\n\nsite.example\n\n'), 'the link shows as the site\'s short name');
+    assert.ok([...rec.text].length <= 300);
+    const [f] = rec.facets;
+    assert.equal(f.features[0].uri, 'https://site.example/weekly/thread/thr-sudan', 'and opens the story');
+    assert.equal(Buffer.from(rec.text, 'utf8').subarray(f.index.byteStart, f.index.byteEnd).toString(), 'site.example');
+  });
+  const long = { ...FORECAST, text: 'a '.repeat(200).trim() };
+  await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, card: () => ({ headline: 'x', forecast: long }) }, async (handler, { api }) => {
+    await handler({});
+    const text = JSON.parse(bskyRecords(api)[0].body).record.text;
+    assert.ok([...text].length <= 300);
+    assert.match(text, /Our forecast: 55% by Jan 15 that a a .*…\n\nsite\.example/);
   });
 });

@@ -58,6 +58,13 @@ function fmtDate(iso) {
   return m && MONTHS[Number(m[2]) - 1] ? `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}` : '';
 }
 
+/** The forecast as one sentence for a post's text: 'Our forecast: 55% by Jan 15 that Russia ...' ('' without a forecast). */
+function forecastSentence(f) {
+  if (!f || !Number.isFinite(f.chance) || !String(f.text || '').trim()) return '';
+  const due = fmtDate(f.due) ? ` by ${fmtDate(f.due)}` : '';
+  return `Our forecast: ${Math.round(f.chance)}%${due} that ${String(f.text).trim().replace(/[.?]$/, '')}.`;
+}
+
 /** The since line: '64 steps on 37 days', 'first step of a new story', '2 steps on 1 day'. */
 function sinceLine({ stepCount, stepDays, kind }) {
   if (!(stepCount >= 1)) return '';
@@ -460,6 +467,17 @@ function layoutText(data, plan, opts) {
   // the one focal block, pinned above the footer: the link, else the forecast
   let focalTop = footTop - 8;
   let focal = '';
+  const hasForecast = data.forecast && Number.isFinite(data.forecast.chance);
+  // On a link card the forecast is one short line pinned above the footer, "Our forecast: 55% by Jan 15" (its words are in the post text).
+  if (data.link && hasForecast && opts.forecastLine) {
+    const f = data.forecast;
+    const ly = focalTop - 38;
+    const lead = 'Our forecast: ';
+    const due = fmtDate(f.due) ? ` by ${fmtDate(f.due)}` : '';
+    focal += text(X0, base(ly, 38, MIN_TEXT), MIN_TEXT, 500, C.muted, lead);
+    focal += text(X0 + textWidth(lead, MIN_TEXT, 500), base(ly, 38, MIN_TEXT), MIN_TEXT, 700, C.fg, `${Math.round(f.chance)}%${due}`);
+    focalTop = ly - 2;
+  }
   if (data.link) {
     const lk = data.link;
     const other = wrapText(lk.title, { size: MIN_TEXT, weight: 400, maxWidth: TW, maxLines: opts.otherLines });
@@ -484,7 +502,7 @@ function layoutText(data, plan, opts) {
     ly += place.lines.length * 40;
     other.lines.forEach((ln, i) => { focal += text(X0, base(ly + i * 36, 36, MIN_TEXT), MIN_TEXT, 400, C.muted, ln); });
     focalTop = top;
-  } else if (data.forecast && Number.isFinite(data.forecast.chance)) {
+  } else if (hasForecast) {
     const f = data.forecast;
     const body = wrapText(`that ${String(f.text || '').trim().replace(/[.?]$/, '')}`, { size: 32, weight: 400, maxWidth: TW, maxLines: opts.forecastLines });
     const pctSize = 104;
@@ -507,11 +525,13 @@ function layoutText(data, plan, opts) {
 }
 
 // Fit the text side: shrink the least important things first (the other story's title, then the forecast words, then the headline).
+// On a link card the forecast line gives way last, after the other story's title is down to one line and the headline has shrunk.
 const FITS = [
-  { titleSize: 34, titleLead: 40, otherLines: 2, placeLines: 1, forecastLines: 3 },
-  { titleSize: 34, titleLead: 40, otherLines: 1, placeLines: 1, forecastLines: 2 },
-  { titleSize: 32, titleLead: 38, otherLines: 1, placeLines: 1, forecastLines: 2 },
-  { titleSize: 30, titleLead: 36, otherLines: 1, placeLines: 1, forecastLines: 1 },
+  { titleSize: 34, titleLead: 40, otherLines: 2, placeLines: 1, forecastLines: 3, forecastLine: true },
+  { titleSize: 34, titleLead: 40, otherLines: 1, placeLines: 1, forecastLines: 2, forecastLine: true },
+  { titleSize: 32, titleLead: 38, otherLines: 1, placeLines: 1, forecastLines: 2, forecastLine: true },
+  { titleSize: 30, titleLead: 36, otherLines: 1, placeLines: 1, forecastLines: 1, forecastLine: true },
+  { titleSize: 30, titleLead: 36, otherLines: 1, placeLines: 1, forecastLines: 1, forecastLine: false },
 ];
 
 /** The card as SVG text (1200 x 630). */
@@ -533,4 +553,4 @@ async function renderStoryCardPng(data, { width = W, sharp = require('sharp') } 
   return width === W ? full.png().toBuffer() : full.resize(width, Math.round((H * width) / W), { kernel: 'lanczos3' }).png().toBuffer();
 }
 
-module.exports = { buildStoryCardSvg, renderStoryCardPng, planMap, arrowGeometry, crisisOf, fmtDate, sinceLine, FITS };
+module.exports = { buildStoryCardSvg, renderStoryCardPng, planMap, arrowGeometry, crisisOf, fmtDate, forecastSentence, sinceLine, FITS };

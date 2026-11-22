@@ -4,8 +4,10 @@
 // (<SITE_URL>/data/record/views/..., the same files the site reads) and draws the story card (storyCardImage).
 // Operator 2026-11-22: the card replaces the old map picture; a link to a story in the same places does not lead
 // the picture (no arrow, says little), so the story's forecast leads instead.
+// Operator 2026-11-23: the picture's headline is the post's (the step being posted); on a link card the forecast is one short
+// line, "Our forecast: 55% by Jan 15", and its words go in the post text (index.js).
 
-const { storyCardData, pickForecast } = require('./storyCardData');
+const { storyCardData } = require('./storyCardData');
 const { planMap, renderStoryCardPng } = require('./storyCardImage');
 
 const ID = /^[A-Za-z0-9_-]{1,120}$/;
@@ -41,13 +43,16 @@ async function storyCardFor(threadId, { get, today }) {
   const data = storyCardData({ ...base, otherStory });
   if (planMap(data).placeNames.length) return data;
   const { linkPlaces, ...rest } = data; // eslint-disable-line no-unused-vars
-  return { ...rest, link: null, forecast: pickForecast(forecastView || story, today) };
+  return { ...rest, link: null };
 }
 
-/** The post picture (PNG buffer, 1200x630) of a story, or null when it has no view. */
-async function storyCardPng(threadId, { siteUrl, fetchFn, now = new Date() } = {}) {
+/** The card data of a post: the story's card with the post's own headline (the step being posted), or null without a story view. */
+async function storyCard(threadId, { siteUrl, headline, fetchFn, now = new Date() } = {}) {
   const data = await storyCardFor(threadId, { get: siteDataReader(siteUrl, { fetchFn }), today: now.toISOString().slice(0, 10) });
-  return data ? renderStoryCardPng(data) : null;
+  return data ? { ...data, headline: headline || data.headline } : null;
 }
 
-module.exports = { siteDataReader, storyCardFor, storyCardPng };
+/** The post picture (PNG buffer, 1200x630) of card data. */
+const cardPng = (data) => renderStoryCardPng(data);
+
+module.exports = { siteDataReader, storyCardFor, storyCard, cardPng };

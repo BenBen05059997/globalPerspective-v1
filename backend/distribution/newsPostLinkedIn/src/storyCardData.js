@@ -113,9 +113,9 @@ function storyCardData({ story, linkViews = [], otherStory = null, forecastView 
     if (mine) data.linkPlaces = mine;
     data.link = { direction: line.dir, strength: line.strength, confirmed: line.confirmed, title: line.title || otherStory?.title || '', category: otherStory?.category || null, countries: Array.isArray(otherStep?.iso3) ? otherStep.iso3 : [], otherId: line.otherId };
     if (theirs) data.link.places = theirs;
-  } else {
-    data.forecast = pickForecast(forecastView || story, today);
   }
+  // The forecast is always carried: it leads a card without a link and is a short line under the link on a link card.
+  data.forecast = pickForecast(forecastView || story, today);
   return data;
 }
 

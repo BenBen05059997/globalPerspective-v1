@@ -16,7 +16,7 @@ const view = () => ({
 });
 
 const run = async (mode, files) => {
-  const aws = stubAws({ modules: { './mapImageGenerator': { generateTopicMapImage: async () => null }, './storyCardPost': { storyCardPng: async () => null } }, files, ddb: () => ({ Item: { id: 'latest', topics, updatedAt: hoursAgo(2) } }) });
+  const aws = stubAws({ modules: { './mapImageGenerator': { generateTopicMapImage: async () => null }, './storyCardPost': { storyCard: async () => null, cardPng: async () => null } }, files, ddb: () => ({ Item: { id: 'latest', topics, updatedAt: hoursAgo(2) } }) });
   try {
     const mod = aws.load(path.resolve(__dirname, '../src/index.js'), { TOPICS_DDB_TABLE: 'T', SUMMARIZE_PREDICT_TABLE: 'S', SOCIAL_POSTS_TABLE: 'P', RECORD_READS: mode });
     return { topics: await mod.loadLatestTopics(), reads: aws.reads };

@@ -133,6 +133,8 @@ function planMap(data) {
     for (const iso of link.countries || []) if (!onMap.has(iso) && !fresh.includes(iso)) fresh.push(iso);
     const named = fresh.slice(0, 2).map((iso) => ({ iso, shape: countryShape(iso) })).filter((c) => c.shape);
     placeNames = named.map((c) => c.shape.name);
+    // A country of both stories that could not be drawn is named once, in the link block ("a story in ..."), not also under "Also in this story".
+    for (let i = notes.length - 1; i >= 0; i--) if (placeNames.includes(notes[i])) notes.splice(i, 1);
     for (const { shape } of named) if (fits(boxUnion(box, shape.box))) { striped.push(shape); box = boxUnion(box, shape.box); }
   }
   // the other countries of this story: drawn when they widen the link frame by no more than half (+40 map units), else named in the note

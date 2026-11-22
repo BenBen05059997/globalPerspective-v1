@@ -280,3 +280,12 @@ test('storyCardData: the links view places go into the card data', () => {
   assert.deepEqual(d.link.places, ['IRN']);
   assert.equal(storyCardData({ story, linkViews: [{ ...lv, web: undefined }], today: '2026-11-21' }).linkPlaces, undefined);
 });
+
+test('planMap: a country of both stories too big to draw (Russia) is named once, in the link block, not also under "Also in this story"', () => {
+  const data = { headline: 'Dymer strike', category: 'conflict', countries: ['UKR', 'RUS'], linkPlaces: ['UKR'], contextCountries: [], stepCount: 2, stepDays: 1,
+    link: { direction: 'fed', strength: 'medium', confirmed: false, title: 'Merz talks', category: 'conflict', countries: ['RUS', 'DEU'], places: ['RUS', 'DEU'], otherId: 'b' }, forecast: null };
+  const p = planMap(data);
+  assert.deepEqual(p.placeNames, ['Russia', 'Germany']);
+  assert.equal(p.notes.includes('Russia'), false);
+  assert.ok(!buildStoryCardSvg(data).includes('Also in this story'));
+});

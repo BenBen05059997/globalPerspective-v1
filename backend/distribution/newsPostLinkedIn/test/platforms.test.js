@@ -193,6 +193,7 @@ test('Bluesky: with a map image the blob is uploaded and embedded with alt text;
     assert.equal(rec.embed.$type, 'app.bsky.embed.images');
     assert.deepEqual(rec.embed.images[0].image, { ref: 'blob-1' });
     assert.equal(rec.embed.images[0].alt, rec.text.substring(0, 300));
+    assert.deepEqual(rec.embed.images[0].aspectRatio, { width: 1200, height: 630 });
   });
   const behave = (url) => (url.includes('uploadBlob') ? { ok: false, status: 413, text: async () => 'big', json: async () => ({}), headers: { get: () => null } } : undefined);
   await withHandler({ env: { ...BSKY, MAX_POSTS_PER_RUN: '1' }, image: Buffer.from('png'), behave }, async (handler, { api }) => {

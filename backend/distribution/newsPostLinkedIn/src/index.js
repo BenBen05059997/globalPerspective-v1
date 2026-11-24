@@ -23,6 +23,8 @@ const POSTS_TABLE = process.env.SOCIAL_POSTS_TABLE || process.env.LINKEDIN_POSTS
 const SITE_URL = process.env.SITE_URL || 'https://globalperspective.net/';
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const POST_TTL_DAYS = 30;
+// Both post pictures (the story card and the map fallback) are 1200 x 630 PNGs.
+const POST_IMAGE_SIZE = { width: 1200, height: 630 };
 
 // LinkedIn
 const LINKEDIN_ACCESS_TOKEN = process.env.LINKEDIN_ACCESS_TOKEN || '';
@@ -669,6 +671,7 @@ async function postToBluesky(identifier, appPassword, text, imageBuffer, links =
           images: [{
             alt: text.substring(0, 300),
             image: blobData.blob,
+            aspectRatio: POST_IMAGE_SIZE,
           }],
         };
         console.log('[BLUESKY] Image uploaded successfully');

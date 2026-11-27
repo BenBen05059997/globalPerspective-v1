@@ -1,4 +1,4 @@
-// Reading ops.json (the operator's money file written hourly by newsHealth). DeepSeek is an estimate; AWS is Cost Explorer.
+// Reading ops.json (the operator's money file written hourly by newsHealth). AI-model spend is an estimate; AWS is Cost Explorer.
 // Nothing here invents a number: a null stays absent and the caller says so.
 
 /** '$0.37' · '$0.0037' · '$12.40'; null for a missing number. */
@@ -17,14 +17,14 @@ export function tokens(n) {
 }
 
 /**
- * DeepSeek by Lambda: yesterday and the month to date, from the per-day lines.
+ * AI-model spend by Lambda: yesterday and the month to date, from the per-day lines.
  * -> [{ fn, calls, promptTokens, completionTokens, yesterday, month, unpriced }] sorted by month spend.
  * `yesterday` / `month` are null when the Lambda has only unpriced lines in that span.
  */
-export function byLambda(deepseek) {
-  const days = deepseek?.days || [];
-  const yDate = deepseek?.yesterday?.date;
-  const month = deepseek?.monthToDate?.month;
+export function byLambda(models) {
+  const days = models?.days || [];
+  const yDate = models?.yesterday?.date;
+  const month = models?.monthToDate?.month;
   const acc = new Map();
   for (const d of days) {
     const inMonth = month && d.date.startsWith(month);
@@ -43,12 +43,12 @@ export function byLambda(deepseek) {
     .sort((a, b) => (b.month || 0) - (a.month || 0) || a.fn.localeCompare(b.fn));
 }
 
-/** The last `n` days for the bars: [{ date, deepseek, aws }] (null = no data that day), oldest first. */
+/** The last `n` days for the bars: [{ date, models, aws }] (null = no data that day), oldest first. */
 export function dailyBars(ops, n = 14) {
-  const ds = new Map((ops?.deepseek?.days || []).map((d) => [d.date, d.usd]));
+  const models = new Map((ops?.models?.days || []).map((d) => [d.date, d.usd]));
   const aws = new Map((ops?.aws?.days || []).map((d) => [d.date, d.usd]));
-  const dates = [...new Set([...ds.keys(), ...aws.keys()])].sort().slice(-n);
-  return dates.map((date) => ({ date, deepseek: ds.has(date) ? ds.get(date) : null, aws: aws.has(date) ? aws.get(date) : null }));
+  const dates = [...new Set([...models.keys(), ...aws.keys()])].sort().slice(-n);
+  return dates.map((date) => ({ date, models: models.has(date) ? models.get(date) : null, aws: aws.has(date) ? aws.get(date) : null }));
 }
 
 /** Unit costs of the newest day that has a count: [{ id, label, date, usd, count, per }]. A unit with no count anywhere is left out. */

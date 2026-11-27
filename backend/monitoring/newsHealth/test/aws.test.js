@@ -87,7 +87,7 @@ test('run: Cost Explorer is called once per UTC day, not every hour', async () =
 test('run: a source that fails is named in the files, the run still writes', async () => {
   const aws = fakeAws({}, { usageRows: async () => { throw new Error('query Failed'); }, costByService: async () => { throw new Error('ce denied'); } });
   const out = await run({ aws, now: NOW, log: quiet });
-  assert.equal(out.ops.deepseek.error, 'query Failed');
+  assert.equal(out.ops.models.error, 'query Failed');
   assert.equal(out.ops.aws.error, 'ce denied');
   assert.equal(aws.puts.length, 2);
 });

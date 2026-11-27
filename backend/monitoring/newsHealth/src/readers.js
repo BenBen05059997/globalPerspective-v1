@@ -90,12 +90,12 @@ function ownCounts({ userCreated, savedKeys, shareCreated }, days) {
 
 /**
  * Attention vs effort. A Lambda's model spend over the window is split evenly across its features; a feature belongs to at most one
- * family, so a family's effort is the sum of those shares. dsDays = ops.deepseek.days. Lambdas with no feature (or only `ops`) cost nothing here.
+ * family, so a family's effort is the sum of those shares. modelDays = ops.models.days. Lambdas with no feature (or only `ops`) cost nothing here.
  * -> [{ id, label, views, usd, lambdas:[{fn, usd}] }] in family order; views null when Cloudflare is not connected; usd null when no spend data.
  */
-function attention(cfFamilies, dsDays, window) {
+function attention(cfFamilies, modelDays, window) {
   const spend = new Map(); let any = false;
-  for (const d of dsDays) {
+  for (const d of modelDays) {
     if (!window.includes(d.date) || d.usd == null) continue;
     any = true;
     for (const l of d.lines || []) if (l.usd != null) spend.set(l.fn, (spend.get(l.fn) || 0) + l.usd);
@@ -126,7 +126,7 @@ const NOTE = 'Cloudflare Web Analytics counts page loads in browsers that run it
  * pull: null when not due this run (the earlier sections stay), else
  *   { cloudflare: summary | {status:'not_connected'} | {status:'error', error}, own: ownCounts | {status:'error', error}, pulledAt }.
  */
-function buildReaders({ pull, prev, dsDays, now }) {
+function buildReaders({ pull, prev, modelDays, now }) {
   const p = (prev && prev.readers) || {};
   const cloudflare = pull ? pull.cloudflare : p.cloudflare || { status: 'not_connected' };
   const own = pull ? pull.own : p.own || { status: 'error', error: 'not pulled yet' };
@@ -136,7 +136,7 @@ function buildReaders({ pull, prev, dsDays, now }) {
     note: NOTE,
     cloudflare,
     own,
-    attention: attention(cloudflare.status === 'ok' ? cloudflare.families : null, dsDays || [], lastDays(now, 14)),
+    attention: attention(cloudflare.status === 'ok' ? cloudflare.families : null, modelDays || [], lastDays(now, 14)),
   };
 }
 

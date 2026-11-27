@@ -188,7 +188,7 @@ export function devOpsData(cloudflare = 'ok') {
   });
   return {
     schemaVersion: 1, asOf: new Date(Date.now() - 12 * 60000).toISOString(), producer: 'newsHealth',
-    deepseek: {
+    models: {
       estimate: true, method: 'tokens from the [usage] log lines, priced hour by hour (peak and off-peak) with src/prices.json',
       pricesSource: 'https://api-docs.deepseek.com/quick_start/pricing', pricesFetchedAt: '2026-11-04', error: null,
       yesterday: { date: '2026-11-03', usd: 0.373 }, monthToDate: { month: '2026-11', from: '2026-11-01', days: 4, usd: 3.19 },

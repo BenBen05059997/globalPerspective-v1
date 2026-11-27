@@ -1,6 +1,6 @@
 'use strict';
 
-// Prices for the DeepSeek estimate (prices.json, operator-owned). Pure functions.
+// Prices for the AI-model spend estimate (prices.json, operator-owned). Pure functions.
 
 /** The price entry for a model on a day: the latest entry with validFrom <= day, else the earliest entry; null for an unknown model. */
 function priceFor(prices, model, day) {

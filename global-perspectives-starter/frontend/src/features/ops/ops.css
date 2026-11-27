@@ -19,12 +19,12 @@
 .ops-bars__plot { display: flex; align-items: flex-end; gap: var(--space-1); height: 7rem; border-bottom: 1px solid var(--hairline-strong); }
 .ops-bars__day { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: var(--space-1); }
 .ops-bars__bar { flex: 1 1 0; max-width: 0.9rem; min-height: 0; border-radius: var(--r-xs) var(--r-xs) 0 0; }
-.ops-bars__bar--ds { background: var(--accent); }
+.ops-bars__bar--models { background: var(--accent); }
 .ops-bars__bar--aws { background: var(--hue-economic); }
 .ops-bars__date { position: absolute; bottom: -1.2rem; font-family: var(--mono); font-size: var(--text-2xs); color: var(--text-dim); }
 .ops-bars__legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-4); font-size: var(--text-xs); color: var(--text-muted); }
 .ops-key::before { content: ''; display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: var(--space-1); border-radius: var(--r-xs); background: var(--text-dim); }
-.ops-key--ds::before { background: var(--accent); }
+.ops-key--models::before { background: var(--accent); }
 .ops-key--aws::before { background: var(--hue-economic); }
 
 .ops-scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-md); }

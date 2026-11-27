@@ -1,6 +1,6 @@
 'use strict';
 
-// The money panel (monitoring/ops.json, private). DeepSeek is an ESTIMATE from the [usage] log lines priced with prices.json;
+// The money panel (monitoring/ops.json, private). AI-model spend (`models`, every provider) is an ESTIMATE from the [usage] log lines priced with prices.json;
 // AWS is Cost Explorer's own daily figure. Facts only: a source that failed keeps the earlier days and says why in `errors`.
 const { CONFIG } = require('./config');
 const { lastDays, dayOf, isoWeek } = require('./days');
@@ -92,18 +92,19 @@ function buildOps({ usage, cost, readers: readersPull, quality: qualityPull = nu
   const keep = CONFIG.retainOpsDays;
   const p = prev || {};
 
-  let dsDays = (p.deepseek && p.deepseek.days) || [];
+  // `deepseek` was this section's name until 2026-11-27: only the first run after the rename reads it; delete this fallback after that run.
+  let modelDays = (p.models || p.deepseek || {}).days || [];
   let unitDays = (p.unitCosts && p.unitCosts.days) || [];
   if (usage.rows) {
     const perDay = usageDays(usage.rows, prices, window);
     // No usage line at all for a day means no data (log retention, or an outage), not a free day.
-    dsDays = mergeDays(dsDays, window.map((d) => ({ date: d, usd: perDay[d].length ? linesUsd(perDay[d]) : null, lines: perDay[d] })), keep);
+    modelDays = mergeDays(modelDays, window.map((d) => ({ date: d, usd: perDay[d].length ? linesUsd(perDay[d]) : null, lines: perDay[d] })), keep);
     unitDays = mergeDays(unitDays, window.map((d) => unitCostsFor(d, perDay[d], raw[d])), keep);
   }
-  const unpriced = [...new Set(dsDays.flatMap((d) => d.lines.filter((l) => l.usd == null).map((l) => l.model)))].sort();
+  const unpriced = [...new Set(modelDays.flatMap((d) => d.lines.filter((l) => l.usd == null).map((l) => l.model)))].sort();
 
   const weeks = {};
-  for (const d of dsDays) {
+  for (const d of modelDays) {
     const w = isoWeek(d.date);
     weeks[w] = (weeks[w] || 0) + matchUsd(d.lines, CONFIG.weeklyReview.fn, null);
   }
@@ -118,21 +119,21 @@ function buildOps({ usage, cost, readers: readersPull, quality: qualityPull = nu
     else awsError = cost.error;
   }
 
-  const dsYesterday = dsDays.find((d) => d.date === yesterday);
+  const modelYesterday = modelDays.find((d) => d.date === yesterday);
   const awsYesterday = awsDaysOut.find((d) => d.date === yesterday);
   return {
     schemaVersion: 1,
     asOf: new Date(now).toISOString(),
     producer: 'newsHealth',
-    deepseek: {
+    models: {
       estimate: true,
       method: 'tokens from the [usage] log lines, priced hour by hour (peak and off-peak) with src/prices.json',
       pricesSource: prices.source, pricesFetchedAt: prices.fetchedAt,
       error: usage.error || null,
-      yesterday: dsYesterday ? { date: yesterday, usd: dsYesterday.usd } : null,
-      monthToDate: monthToDate(dsDays, today),
+      yesterday: modelYesterday ? { date: yesterday, usd: modelYesterday.usd } : null,
+      monthToDate: monthToDate(modelDays, today),
       unpriced,
-      days: dsDays,
+      days: modelDays,
     },
     aws: {
       source: 'Cost Explorer GetCostAndUsage, UnblendedCost, daily by service',
@@ -141,7 +142,7 @@ function buildOps({ usage, cost, readers: readersPull, quality: qualityPull = nu
       monthToDate: monthToDate(awsDaysOut, today),
       days: awsDaysOut,
     },
-    readers: buildReaders({ pull: readersPull, prev, dsDays, now }),
+    readers: buildReaders({ pull: readersPull, prev, modelDays, now }),
     quality: buildQuality({ pull: qualityPull, prev, now }),
     unitCosts: {
       labels: Object.fromEntries(Object.entries(CONFIG.units).map(([id, u]) => [id, u.label])),

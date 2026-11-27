@@ -86,7 +86,7 @@ async function run({ aws, now = Date.now(), dry = false, skipCost = false, skipR
 
 exports.handler = async (event = {}) => {
   const { health, ops, wrote } = await run({ aws: makeAws(), dry: Boolean(event.dry), healFlag: event.heal || null, skipCost: Boolean(event.skipCost), skipReaders: Boolean(event.skipReaders), skipQuality: Boolean(event.skipQuality) });
-  return { wrote, asOf: health.asOf, usageError: ops.deepseek.error, costError: ops.aws.error, readers: ops.readers.cloudflare.status };
+  return { wrote, asOf: health.asOf, usageError: ops.models.error, costError: ops.aws.error, readers: ops.readers.cloudflare.status };
 };
 
 exports.run = run;

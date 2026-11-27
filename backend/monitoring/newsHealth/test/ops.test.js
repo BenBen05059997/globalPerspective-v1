@@ -88,10 +88,10 @@ const usage = { rows: [
 
 test('ops.json: yesterday, month to date, unit costs and the weekly review', () => {
   const ops = buildOps({ usage, cost: { rows: [{ day: '2026-11-03', service: 'S3', usd: 0.4 }], error: null, pulledAt: '2026-11-04T00:10:00.000Z' }, raw, prices, prev: null, now: NOW });
-  assert.equal(ops.deepseek.estimate, true);
-  assert.equal(ops.deepseek.yesterday.date, '2026-11-03');
-  near(ops.deepseek.yesterday.usd, 0.15 + 0.15 + 0.66 + 0.66 + 0.66);
-  near(ops.deepseek.monthToDate.usd, 0.15 + 0.15 + 0.66 * 4);
+  assert.equal(ops.models.estimate, true);
+  assert.equal(ops.models.yesterday.date, '2026-11-03');
+  near(ops.models.yesterday.usd, 0.15 + 0.15 + 0.66 + 0.66 + 0.66);
+  near(ops.models.monthToDate.usd, 0.15 + 0.15 + 0.66 * 4);
   const day = ops.unitCosts.days.find((d) => d.date === '2026-11-03');
   assert.deepEqual(day.entry, { usd: 0.3, count: 40, per: 0.0075 });
   assert.deepEqual(day.forecast, { usd: 0.66, count: 20, per: 0.033 });
@@ -99,16 +99,16 @@ test('ops.json: yesterday, month to date, unit costs and the weekly review', () 
   assert.deepEqual(day.dailyBrief, { usd: 0.66, count: 1, per: 0.66 });
   assert.deepEqual(ops.unitCosts.weeklyReview, [{ week: '2026-W45', usd: 0.66 }]);
   assert.equal(ops.aws.yesterday.usd, 0.4);
-  assert.deepEqual(ops.deepseek.unpriced, []);
+  assert.deepEqual(ops.models.unpriced, []);
   // a day with no usage line is no data, not a free day
-  assert.equal(ops.deepseek.days.find((d) => d.date === '2026-10-30').usd, null);
+  assert.equal(ops.models.days.find((d) => d.date === '2026-10-30').usd, null);
 });
 
 test('a failed source keeps the earlier days and says why', () => {
   const first = buildOps({ usage, cost: { rows: [{ day: '2026-11-03', service: 'S3', usd: 0.4 }], pulledAt: '2026-11-04T00:10:00.000Z' }, raw, prices, prev: null, now: NOW });
   const later = buildOps({ usage: { rows: null, error: 'query timed out' }, cost: { rows: null, error: 'ce denied' }, raw, prices, prev: first, now: NOW + 3600000 });
-  assert.equal(later.deepseek.error, 'query timed out');
-  assert.equal(later.deepseek.yesterday.usd, first.deepseek.yesterday.usd);
+  assert.equal(later.models.error, 'query timed out');
+  assert.equal(later.models.yesterday.usd, first.models.yesterday.usd);
   assert.equal(later.aws.error, 'ce denied');
   assert.equal(later.aws.yesterday.usd, 0.4);
   assert.equal(later.aws.pulledAt, '2026-11-04T00:10:00.000Z');
@@ -124,6 +124,14 @@ test('no cost pull this run: the earlier AWS days stay and the error clears noth
 
 test('an unknown model is listed as unpriced and adds nothing to the total', () => {
   const ops = buildOps({ usage: { rows: [row({ model: 'jev-1.14.0' }), row({ promptTokens: 1000000, completionTokens: 0 })], error: null }, cost: null, raw, prices, prev: null, now: NOW });
-  assert.deepEqual(ops.deepseek.unpriced, ['jev-1.14.0']);
-  assert.equal(ops.deepseek.yesterday.usd, 0.15);
+  assert.deepEqual(ops.models.unpriced, ['jev-1.14.0']);
+  assert.equal(ops.models.yesterday.usd, 0.15);
+});
+
+test('the first run after the rename carries the retained days over from the old `deepseek` section', () => {
+  const first = buildOps({ usage, cost: null, raw, prices, prev: null, now: NOW });
+  const { models, ...rest } = first;
+  const next = buildOps({ usage: { rows: null, error: 'query timed out' }, cost: null, raw, prices, prev: { ...rest, deepseek: models }, now: NOW + 3600000 });
+  assert.deepEqual(next.models.days, first.models.days);
+  assert.equal(next.deepseek, undefined);
 });

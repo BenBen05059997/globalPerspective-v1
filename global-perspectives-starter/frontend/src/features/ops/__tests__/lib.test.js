@@ -49,7 +49,7 @@ describe('money lib', () => {
   });
 
   it('by Lambda: yesterday and month to date, an all-unpriced Lambda has no amount', () => {
-    const rows = byLambda(devOpsData().deepseek);
+    const rows = byLambda(devOpsData().models);
     const ing = rows.find((r) => r.fn === 'newsSituationIngest');
     expect(ing.yesterday).toBeCloseTo(0.0878, 4);
     expect(ing.month).toBeGreaterThan(ing.yesterday);
@@ -62,7 +62,7 @@ describe('money lib', () => {
   it('bars: the last 14 days, null where a source has no day', () => {
     const bars = dailyBars(devOpsData());
     expect(bars.length).toBe(14);
-    expect(bars[0]).toEqual({ date: '2026-10-22', deepseek: null, aws: 0.75 });
+    expect(bars[0]).toEqual({ date: '2026-10-22', models: null, aws: 0.75 });
     expect(bars[13].aws).toBeNull();
     expect(dailyBars(null)).toEqual([]);
   });

@@ -70,12 +70,12 @@ describe('OpsPage money panel', () => {
     renderPage();
     const money = await screen.findByRole('region', { name: 'Money' });
     const stat = (label) => within(money).getByText(label).closest('.ops-stat').querySelector('.ops-stat__value').textContent;
-    expect(stat('DeepSeek 3 Nov, estimate')).toBe('$0.37');
-    expect(stat('DeepSeek 2026-11 to date, estimate')).toBe('$3.19');
+    expect(stat('AI models 3 Nov, estimate')).toBe('$0.37');
+    expect(stat('AI models 2026-11 to date, estimate')).toBe('$3.19');
     expect(stat('AWS 3 Nov')).toBe('$0.37');
     expect(stat('AWS 2026-11 to date')).toBe('$1.45');
     expect(within(money).getByText(/from 1 Nov, 4 days of data/)).toBeTruthy();
-    const table = within(money).getByRole('table', { name: /DeepSeek by Lambda/ });
+    const table = within(money).getByRole('table', { name: /AI models by Lambda/ });
     expect(within(table).getByText('newsSituationIngest')).toBeTruthy();
     expect(within(table).getAllByText('unpriced').length).toBeGreaterThan(0); // the jev model has no price
     expect(within(money).getByRole('table', { name: /Unit costs/ })).toBeTruthy();
@@ -88,16 +88,16 @@ describe('OpsPage money panel', () => {
     renderPage();
     const money = await screen.findByRole('region', { name: 'Money' });
     const first = money.querySelector('.ops-bars__day');
-    expect(first.getAttribute('title')).toBe('22 Oct: DeepSeek no data (estimate), AWS $0.75');
+    expect(first.getAttribute('title')).toBe('22 Oct: AI models no data (estimate), AWS $0.75');
   });
 
   it('names a source that failed on the last run', async () => {
     const ops = devOpsData();
-    ops.deepseek.error = 'Logs Insights query still Running after 60 s';
+    ops.models.error = 'Logs Insights query still Running after 60 s';
     ops.aws.error = 'AccessDeniedException';
     opsReply = () => Promise.resolve({ status: 200, data: ops });
     renderPage();
-    expect(await screen.findByText(/DeepSeek estimate was not updated on the last run: Logs Insights/)).toBeTruthy();
+    expect(await screen.findByText(/AI-model estimate was not updated on the last run: Logs Insights/)).toBeTruthy();
     expect(screen.getByText(/AWS cost was not updated on the last run: AccessDeniedException/)).toBeTruthy();
   });
 

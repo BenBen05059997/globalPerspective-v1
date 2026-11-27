@@ -29,5 +29,5 @@ Code: built and committed on a branch. Not yet done: deploy, any env change, any
 - Relation to 0056: its Flash-versus-Pro tests were not re-run for Claude. Haiku 5.5 is the first choice because the operator picked it, not because a recorded test chose it. Rule 1 of 0056 (a job's model is chosen by a recorded test) still applies; the tests for Claude are not yet done.
 - Prompts were tuned for DeepSeek and are unchanged. Output shape, length and JSON discipline can differ on Claude.
 - `newsModelGuard` reads only model ids that start with `deepseek-`, so `anthropic:...` values are ignored by it, and its DeepSeek balance check and email are unchanged. While DeepSeek stays below its threshold it keeps emailing; that is a separate choice.
-- The `/ops` money panel still carries the key `deepseek`; Claude lines are priced into the same total.
+- The `/ops` money panel still carries the key `deepseek`; Claude lines are priced into the same total. (Renamed `models`, labelled "AI models", on 2026-11-27.)
 - Not yet done: set `ANTHROPIC_API_KEY` on the Lambdas, change model env values, deploy the Lambdas, compare Claude output with DeepSeek's.
